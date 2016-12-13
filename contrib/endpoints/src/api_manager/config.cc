@@ -258,7 +258,7 @@ bool Config::LoadRpcMethods(ApiManagerEnvInterface *env,
 bool Config::LoadAuthentication(ApiManagerEnvInterface *env) {
   // Parsing auth config.
   const ::google::api::Authentication &auth = service_.authentication();
-  map<string, ::google::api::AuthProvider> provider_id_provider_map;
+  map<string, const ::google::api::AuthProvider*> provider_id_provider_map;
   for (const auto &provider : auth.providers()) {
     if (provider.id().empty()) {
       env->LogError("Missing id field in AuthProvider.");
@@ -274,7 +274,7 @@ bool Config::LoadAuthentication(ApiManagerEnvInterface *env) {
     } else {
       SetJwksUri(provider.issuer(), string(), true);
     }
-    provider_id_provider_map[provider.id()] = provider;
+    provider_id_provider_map[provider.id()] = &provider;
   }
 
   for (const auto &rule : auth.rules()) {
@@ -296,7 +296,8 @@ bool Config::LoadAuthentication(ApiManagerEnvInterface *env) {
         env->LogError(error.c_str());
         continue;
       }
-      auto provider = utils::FindOrNull(provider_id_provider_map, provider_id);
+      auto provider = utils::FindPtrOrNull(provider_id_provider_map,
+                                           provider_id);
       if (provider == nullptr) {
         std::string error = "Undefined provider_id: " + provider_id;
         env->LogError(error.c_str());
