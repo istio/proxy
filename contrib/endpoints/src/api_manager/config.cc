@@ -302,7 +302,7 @@ bool Config::LoadAuthentication(ApiManagerEnvInterface *env) {
         std::string error = "Undefined provider_id: " + provider_id;
         env->LogError(error.c_str());
       } else {
-        std::string audiences = provider->audiences().empty()
+        const std::string &audiences = provider->audiences().empty()
                               ? requirement.audiences()
                               : provider->audiences();
         (*method)->addAudiencesForIssuer(provider->issuer(), audiences);
