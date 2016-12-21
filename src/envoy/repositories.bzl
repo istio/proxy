@@ -522,13 +522,16 @@ cc_library(
         "source/**/*.cc",
         "source/**/*.h",
         "include/**/*.h",
-    ], exclude=["source/exe/main.cc"]) + [
+    ]) + [
         "source/common/version_generated.cc",
     ],
     copts = [
         "-I./external/envoy_git/include",
         "-I./external/envoy_git/source",
         "-include ./external/envoy_git/source/precompiled/precompiled.h",
+    ],
+    includes = [
+         "include",
     ],
     linkopts = [
         "-lpthread",
