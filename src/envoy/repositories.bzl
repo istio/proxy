@@ -522,11 +522,10 @@ cc_library(
         "source/**/*.cc",
         "source/**/*.h",
         "include/**/*.h",
-    ]) + [
+    ], exclude=["source/exe/main.cc"]) + [
         "source/common/version_generated.cc",
     ],
     copts = [
-        "-I./external/envoy_git/include",
         "-I./external/envoy_git/source",
         "-include ./external/envoy_git/source/precompiled/precompiled.h",
     ],
@@ -554,6 +553,21 @@ cc_library(
         "//external:rapidjson",
         "//external:event_pthreads",
     ],
+)
+
+cc_library(
+    name = "envoy-main",
+    srcs = [
+        "source/exe/main.cc",
+    ],
+    copts = [
+        "-I./external/envoy_git/source",
+        "-include ./external/envoy_git/source/precompiled/precompiled.h",
+    ],
+    deps = [
+        ":envoy-common",
+    ],
+    linkstatic=1,
 )
 
 cc_binary(

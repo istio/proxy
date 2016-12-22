@@ -27,7 +27,8 @@ cc_binary(
         "//contrib/endpoints/include:api_manager",
         "//contrib/endpoints/src/grpc/transcoding:transcoding",
         "//external:servicecontrol",
-        "@envoy_git//:envoy-common"
+        "@envoy_git//:envoy-common",
+        "@envoy_git//:envoy-main"
     ],
     linkstatic=1,
 )
