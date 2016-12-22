@@ -55,7 +55,7 @@ struct SupportedMetric {
   ::google::api::MetricDescriptor_ValueType value_type;
 
   enum Mark { PRODUCER = 0, CONSUMER = 1 };
-  enum Tag { START = 0, INTERMEDIATE = 1, FINAL = 2 };
+  enum Tag { START = 0, INTERMEDIATE = 1, FINAL = 2, NONSTREAMING = 3, };
   Tag tag;
   Mark mark;
   Status (*set)(const SupportedMetric& m, const ReportRequestInfo& info,
@@ -321,42 +321,42 @@ const SupportedMetric supported_metrics[] = {
         "serviceruntime.googleapis.com/api/consumer/total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        SupportedMetric::NONSTREAMING, SupportedMetric::CONSUMER,
         set_distribution_metric_to_request_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::NONSTREAMING, SupportedMetric::PRODUCER,
         set_distribution_metric_to_request_time,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        SupportedMetric::NONSTREAMING, SupportedMetric::CONSUMER,
         set_distribution_metric_to_backend_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::NONSTREAMING, SupportedMetric::PRODUCER,
         set_distribution_metric_to_backend_time,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        SupportedMetric::NONSTREAMING, SupportedMetric::CONSUMER,
         set_distribution_metric_to_overhead_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::NONSTREAMING, SupportedMetric::PRODUCER,
         set_distribution_metric_to_overhead_time,
     },
     {
@@ -970,9 +970,13 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
       if (send_consumer_metric || m->mark != SupportedMetric::CONSUMER) {
         if (m->set) {
           if ((info.is_first_report && m->tag == SupportedMetric::START) ||
-              (info.is_final_report &&
+              (info.is_final_report && info.streaming_durations > 0 &&
                (m->tag == SupportedMetric::FINAL ||
                 m->tag == SupportedMetric::INTERMEDIATE)) ||
+            (info.is_final_report && info.streaming_durations == 0 &&
+              (m->tag == SupportedMetric::FINAL ||
+                 m->tag == SupportedMetric::NONSTREAMING ||
+               m->tag == SupportedMetric::INTERMEDIATE)) ||
               (!info.is_final_report &&
                m->tag == SupportedMetric::INTERMEDIATE)) {
             status = (m->set)(*m, info, op);
