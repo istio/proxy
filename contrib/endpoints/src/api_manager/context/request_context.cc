@@ -264,7 +264,7 @@ void RequestContext::FillReportRequestInfo(
 
     // Must be after response_code and method are assigned.
     FillLogMessage(info);
-    if(!method()->request_streaming() && !method()->response_streaming()) {
+    if(method() && !method()->request_streaming() && !method()->response_streaming()) {
       response->GetLatencyInfo(&info->latency);
     }
   }
