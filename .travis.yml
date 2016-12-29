@@ -21,6 +21,7 @@ cache:
   directories:
     - $HOME/bazel/install
     - $HOME/bazel/outbase
+    - $HOME/clang
 
 before_install:
   - mkdir -p ${HOME}/bazel/install

@@ -18,20 +18,21 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_FORMAT="$(which clang-format)" || CLANG_FORMAT="${HOME}/clang/bin/clang-format"
-
-CLANG_VERSION="$(${CLANG_FORMAT} -version | cut -d ' ' -f 3)"
+# Install required clang version to a folder and cache it.
 CLANG_VERSION_REQUIRED="3.8.0"
-if [[ "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
-  echo "Current version: ${CLANG_VERSION}"
-  CLANG_DIRECTORY=$(mktemp -d /tmp/clang_XXXXX)
+CLANG_DIRECTORY="${HOME}/clang"
+CLANG_FORMAT="${CLANG_DIRECTORY}/bin/clang-format"
+
+if [[ ! -x "${CLANG_FORMAT}" ]]; then
   echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
+  mkdir -p ${CLANG_DIRECTORY}
   curl --silent --show-error --retry 10 \
     "http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-x86_64-linux-gnu-ubuntu-14.04.tar.xz" \
     | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
-  && CLANG_FORMAT="${CLANG_DIRECTORY}/bin/clang-format" \
   || { echo "Could not install required clang-format. Skip formating." ; exit 0 ; }
 fi
+
+echo "Checking file format ..."
 
 pushd ${ROOT} > /dev/null
 
@@ -45,5 +46,6 @@ if [[ "${#CHANGED_FILES}" -ne 0 ]]; then
   echo "Files not formatted: ${CHANGED_FILES[@]}"
   exit 1
 fi
+echo "All files are properly formatted."
 
 popd
