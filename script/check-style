@@ -27,7 +27,7 @@ if [[ ! -x "${CLANG_FORMAT}" ]]; then
   echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
   mkdir -p ${CLANG_DIRECTORY}
   curl --silent --show-error --retry 10 \
-    "http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-x86_64-linux-gnu-ubuntu-16.04.tar.xz" \
+    "http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-x86_64-linux-gnu-ubuntu-14.04.tar.xz" \
     | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
   || { echo "Could not install required clang-format. Skip formating." ; exit 0 ; }
 fi
