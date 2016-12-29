@@ -59,7 +59,7 @@ class ApiManagerEnvInterface {
   // of the request
   // (possibly before returning).
   virtual void RunHTTPRequest(std::unique_ptr<HTTPRequest> request) = 0;
-  
+
   virtual void RunGRPCRequest(std::unique_ptr<GRPCRequest> request) = 0;
 };
 
