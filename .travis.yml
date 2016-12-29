@@ -34,6 +34,7 @@ before_install:
   - cat .bazelrc.travis .bazelrc.orig > .bazelrc
 
 script:
+  - script/check-style
   - bazel --output_base=${HOME}/bazel/outbase test //...
 
 notifications:
