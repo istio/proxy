@@ -20,6 +20,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 CLANG_FORMAT="$(which clang-format)" || CLANG_FORMAT="${HOME}/clang/bin/clang-format"
 
+CLANG_FORMAT_VERSION="$(${CLANG_FORMAT} -version | cut -d ' ' -f 3)"
+CLANG_FORMAT_VERSION_REQUIRED="3.8.0"
+if [[ "${CLANG_FORMAT_VERSION}" != "${CLANG_FORMAT_VERSION_REQUIRED}" ]]; then
+  echo "Skipping: clang-format ${CLANG_FORMAT_VERSION_REQUIRED} required."
+  echo "Current version: ${CLANG_FORMAT_VERSION}"
+  exit 0
+fi
+
 pushd ${ROOT} > /dev/null
 
 SOURCE_FILES=($(git ls-tree -r HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))
