@@ -50,7 +50,7 @@ class GRPCRequest {
     return *this;
   }
 
-  // DNS or IP address could be server_ for grpc request.
+  // DNS or IP address of the gRPC server.
   // For envoy, we use cluster name as server_.
   const std::string& server() const { return server_; }
   GRPCRequest& set_server(const std::string& value) {
