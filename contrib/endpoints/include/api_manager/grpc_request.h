@@ -39,6 +39,7 @@ class GRPCRequest {
     callback_(status, std::move(body));
   }
 
+  // the gRPC method to call
   const std::string& method() const { return method_; }
   GRPCRequest& set_method(const std::string& value) {
     method_ = value;
@@ -49,6 +50,8 @@ class GRPCRequest {
     return *this;
   }
 
+  // DNS or IP address could be server_ for grpc request.
+  // For envoy, we use cluster name as server_.
   const std::string& server() const { return server_; }
   GRPCRequest& set_server(const std::string& value) {
     server_ = value;
@@ -59,6 +62,7 @@ class GRPCRequest {
     return *this;
   }
 
+  // The gRPC service name.
   const std::string& service() const { return service_; }
   GRPCRequest& set_service(const std::string& value) {
     service_ = value;
@@ -69,6 +73,7 @@ class GRPCRequest {
     return *this;
   }
 
+  // The request body serialized as string.
   const std::string& body() const { return body_; }
   GRPCRequest& set_body(const std::string& value) {
     body_ = value;
@@ -82,8 +87,6 @@ class GRPCRequest {
  private:
   std::function<void(utils::Status, std::string&&)> callback_;
   std::string method_;
-  // DNS or IP address could be server_ for grpc request.
-  // For envoy, we use cluster name as server_.
   std::string server_;
   std::string service_;
   std::string body_;

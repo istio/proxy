@@ -59,9 +59,8 @@ class ApiManagerEnvInterface {
   // of the request
   // (possibly before returning).
   virtual void RunHTTPRequest(std::unique_ptr<HTTPRequest> request) = 0;
-
-  // TODO: make it virtual here.
-  void RunGRPCRequest(std::unique_ptr<GRPCRequest> request){};
+  
+  virtual void RunGRPCRequest(std::unique_ptr<GRPCRequest> request) = 0;
 };
 
 }  // namespace api_manager
