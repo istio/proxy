@@ -38,9 +38,6 @@ namespace service_control {
 
 // Basic information about the API call (operation).
 struct OperationInfo {
-  // The service name
-  ::google::protobuf::StringPiece service_name;
-
   // Identity of the operation. It must be unique within the scope of the
   // service. If the service calls Check() and Report() on the same operation,
   // the two calls should carry the same operation id.

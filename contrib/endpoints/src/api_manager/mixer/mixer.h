@@ -25,7 +25,8 @@ namespace mixer {
 // This implementation uses service-control-client-cxx module.
 class Mixer : public service_control::Interface {
  public:
-  static service_control::Interface* Create(ApiManagerEnvInterface* env);
+  static service_control::Interface* Create(ApiManagerEnvInterface* env,
+                                            const std::string& service_name);
 
   virtual ~Mixer();
 
@@ -42,14 +43,18 @@ class Mixer : public service_control::Interface {
   virtual utils::Status Close();
 
   virtual utils::Status GetStatistics(service_control::Statistics* stat) const;
+  const std::string& service_name() const { return service_name_; }
 
  private:
   // The constructor.
-  Mixer(ApiManagerEnvInterface* env);
+  Mixer(ApiManagerEnvInterface* env, const std::string& service_name);
 
   // The Api Manager environment interface.
   ApiManagerEnvInterface* env_;
   int64_t request_index_;
+
+  // The service name.
+  std::string service_name_;
 };
 
 }  // namespace mixer

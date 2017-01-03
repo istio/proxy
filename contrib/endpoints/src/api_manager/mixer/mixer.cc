@@ -94,22 +94,24 @@ void SetAttributeDict(Map<int32_t, std::string>* dict) {
 }
 
 void CovertToPb(const service_control::CheckRequestInfo& info,
+                const std::string& service_name,
                 ::istio::mixer::v1::Attributes* attr) {
   SetAttributeDict(attr->mutable_dictionary());
 
   auto* str_attrs = attr->mutable_string_attributes();
-  (*str_attrs)[ATTR_SERVICE_NAME] = info.service_name;
+  (*str_attrs)[ATTR_SERVICE_NAME] = service_name;
   (*str_attrs)[ATTR_PEER_ID] = "Proxy";
   (*str_attrs)[ATTR_OPERATION_NAME] = info.operation_name;
   (*str_attrs)[ATTR_API_KEY] = info.api_key;
 }
 
 void CovertToPb(const service_control::ReportRequestInfo& info,
+                const std::string& service_name,
                 ::istio::mixer::v1::Attributes* attr) {
   SetAttributeDict(attr->mutable_dictionary());
 
   auto* str_attrs = attr->mutable_string_attributes();
-  (*str_attrs)[ATTR_SERVICE_NAME] = info.service_name;
+  (*str_attrs)[ATTR_SERVICE_NAME] = service_name;
   (*str_attrs)[ATTR_PEER_ID] = "Proxy";
   (*str_attrs)[ATTR_OPERATION_NAME] = info.operation_name;
   (*str_attrs)[ATTR_API_KEY] = info.api_key;
@@ -131,7 +133,8 @@ void CovertToPb(const service_control::ReportRequestInfo& info,
 
 }  // namespace
 
-Mixer::Mixer(ApiManagerEnvInterface* env) : env_(env), request_index_(0) {}
+Mixer::Mixer(ApiManagerEnvInterface* env, const std::string& service_name)
+    : env_(env), request_index_(0), service_name_(service_name) {}
 
 Mixer::~Mixer() {}
 
@@ -159,13 +162,13 @@ Status Mixer::Report(const service_control::ReportRequestInfo& info) {
 
   ::istio::mixer::v1::ReportRequest request;
   request.set_request_index(++request_index_);
-  CovertToPb(info, request.mutable_attribute_update());
+  CovertToPb(info, service_name(), request.mutable_attribute_update());
   env_->LogInfo(std::string("Send Report: ") + request.DebugString());
 
   std::string request_body;
   request.SerializeToString(&request_body);
 
-  grpc_request->set_service("istio.mixer.v1.Mixer")
+  grpc_request->set_server("mixer_server")
       .set_method("Report")
       .set_body(request_body);
 
@@ -199,13 +202,13 @@ void Mixer::Check(
 
   ::istio::mixer::v1::CheckRequest request;
   request.set_request_index(++request_index_);
-  CovertToPb(info, request.mutable_attribute_update());
+  CovertToPb(info, service_name(), request.mutable_attribute_update());
   env_->LogInfo(std::string("Send Check: ") + request.DebugString());
 
   std::string request_body;
   request.SerializeToString(&request_body);
 
-  grpc_request->set_service("istio.mixer.v1.Mixer")
+  grpc_request->set_server("mixer_server")
       .set_method("Check")
       .set_body(request_body);
 
@@ -216,8 +219,9 @@ Status Mixer::GetStatistics(service_control::Statistics* esp_stat) const {
   return Status::OK;
 }
 
-service_control::Interface* Mixer::Create(ApiManagerEnvInterface* env) {
-  return new Mixer(env);
+service_control::Interface* Mixer::Create(ApiManagerEnvInterface* env,
+                                          const std::string& service_name) {
+  return new Mixer(env, service_name);
 }
 
 }  // namespace mixer
