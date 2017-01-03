@@ -43,7 +43,6 @@ class Mixer : public service_control::Interface {
   virtual utils::Status Close();
 
   virtual utils::Status GetStatistics(service_control::Statistics* stat) const;
-  const std::string& service_name() const { return service_name_; }
 
  private:
   // The constructor.

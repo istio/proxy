@@ -162,7 +162,7 @@ Status Mixer::Report(const service_control::ReportRequestInfo& info) {
 
   ::istio::mixer::v1::ReportRequest request;
   request.set_request_index(++request_index_);
-  CovertToPb(info, service_name(), request.mutable_attribute_update());
+  CovertToPb(info, service_name_, request.mutable_attribute_update());
   env_->LogInfo(std::string("Send Report: ") + request.DebugString());
 
   std::string request_body;
@@ -202,7 +202,7 @@ void Mixer::Check(
 
   ::istio::mixer::v1::CheckRequest request;
   request.set_request_index(++request_index_);
-  CovertToPb(info, service_name(), request.mutable_attribute_update());
+  CovertToPb(info, service_name_, request.mutable_attribute_update());
   env_->LogInfo(std::string("Send Check: ") + request.DebugString());
 
   std::string request_body;
