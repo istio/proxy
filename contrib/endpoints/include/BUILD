@@ -14,7 +14,6 @@
 #
 ################################################################################
 #
-exports_files(["version"])
 
 cc_library(
     name = "api_manager",
@@ -33,7 +32,7 @@ cc_library(
         ":headers",
     ],
     visibility = [
-        "//contrib/endpoints/src/api_manager:__subpackages__",
+        "//contrib/endpoints/src:__subpackages__",
     ],
 )
 
@@ -43,6 +42,7 @@ filegroup(
         "api_manager/api_manager.h",
         "api_manager/compute_platform.h",
         "api_manager/env_interface.h",
+        "api_manager/grpc_request.h",
         "api_manager/http_request.h",
         "api_manager/method.h",
         "api_manager/method_call_info.h",
@@ -53,20 +53,6 @@ filegroup(
         "api_manager/response.h",
         "api_manager/service_control.h",
         "api_manager/utils/status.h",
-        "api_manager/version.h",
-    ],
-)
-
-genrule(
-    name = "api_manager_version_header",
-    srcs = [
-        ":version",
-    ],
-    outs = [
-        "api_manager/version.h",
-    ],
-    cmd = "$(location //contrib/endpoints/tools:create_version) $(location :version) > $@",
-    tools = [
-        "//contrib/endpoints/tools:create_version",
+        "api_manager/utils/version.h",
     ],
 )

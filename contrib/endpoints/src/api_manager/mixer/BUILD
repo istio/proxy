@@ -14,44 +14,29 @@
 #
 ################################################################################
 #
-
-licenses(["notice"])
-
-exports_files(["README"])
+package(default_visibility = ["//contrib/endpoints/src/api_manager:__subpackages__"])
 
 cc_library(
-    name = "zlib",
+    name = "mixer",
     srcs = [
-        "adler32.c",
-        "crc32.c",
-        "crc32.h",
-        "deflate.c",
-        "deflate.h",
-        "infback.c",
-        "inffast.c",
-        "inffast.h",
-        "inffixed.h",
-        "inflate.c",
-        "inflate.h",
-        "inftrees.c",
-        "inftrees.h",
-        "trees.c",
-        "trees.h",
-        "zconf.h",
-        "zutil.c",
-        "zutil.h",
+        "mixer.cc",
     ],
     hdrs = [
-        "zlib.h",
+        "mixer.h",
     ],
-    copts = [
-        "-Wno-shift-negative-value",
-        "-Wno-unknown-warning-option",
-    ],
-    defines = [
-        "Z_SOLO",
-    ],
-    visibility = [
-        "//visibility:public",
+    linkopts = select({
+        "//:darwin": [],
+        "//conditions:default": [
+            "-lm",
+            "-luuid",
+        ],
+    }),
+    deps = [
+        "//external:grpc++",
+        "//external:mixer_api_cc_proto",
+        "//external:protobuf",
+        "//contrib/endpoints/src/api_manager:impl_headers",
+        "//contrib/endpoints/src/api_manager/service_control",
+        "//contrib/endpoints/src/api_manager/utils",
     ],
 )
