@@ -46,7 +46,7 @@ TEST(UrlTest, PrependHttps) {
   std::unique_ptr<ApiManagerEnvInterface> env(
       new ::testing::NiceMock<MockApiManagerEnvironmentWithLog>());
   std::unique_ptr<Config> config(
-      Config::Create(env.get(), prepend_https_config, "", true));
+      Config::Create(env.get(), prepend_https_config, ""));
   ASSERT_TRUE(config);
   Url url(&config->service(), config->server_config());
   // https:// got prepended by default.
@@ -63,7 +63,7 @@ TEST(UrlTest, ServerControlOverride) {
   std::unique_ptr<ApiManagerEnvInterface> env(
       new ::testing::NiceMock<MockApiManagerEnvironmentWithLog>());
   std::unique_ptr<Config> config(
-      Config::Create(env.get(), prepend_https_config, server_config, true));
+      Config::Create(env.get(), prepend_https_config, server_config));
   ASSERT_TRUE(config);
   ASSERT_TRUE(config->server_config());
   Url url(&config->service(), config->server_config());

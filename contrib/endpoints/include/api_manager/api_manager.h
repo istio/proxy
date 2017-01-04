@@ -112,8 +112,7 @@ class ApiManagerFactory {
   // use a different environment than the one provided.
   std::shared_ptr<ApiManager> GetOrCreateApiManager(
       std::unique_ptr<ApiManagerEnvInterface> env,
-      const std::string &service_config, const std::string &server_config,
-      const bool service_control);
+      const std::string &service_config, const std::string &server_config);
 
  private:
   typedef std::map<std::string, std::weak_ptr<ApiManager>> ApiManagerMap;

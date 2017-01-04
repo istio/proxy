@@ -34,11 +34,15 @@ class Config : public Logger::Loggable<Logger::Id::http> {
 
     std::string service_config_content = ReadFile(service_config);
 
+    const std::string server_config = config.getString("server_config");
+
+    std::string server_config_content = ReadFile(server_config);
+
     std::unique_ptr<google::api_manager::ApiManagerEnvInterface> env(
         new Env(server));
 
     api_manager_ = api_manager_factory_.GetOrCreateApiManager(
-        std::move(env), service_config_content, "", false);
+        std::move(env), service_config_content, server_config_content);
 
     api_manager_->Init();
     log().debug("Called ApiManager::Config constructor: {}", __func__);

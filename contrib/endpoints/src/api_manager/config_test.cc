@@ -40,7 +40,7 @@ TEST(Config, CreateFromBinaryProto) {
 
   std::string proto(service.SerializeAsString());
   ::testing::NiceMock<MockApiManagerEnvironment> env;
-  std::unique_ptr<Config> config = Config::Create(&env, proto, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, proto, "");
   ASSERT_NE(nullptr, config.get());
 
   const MethodInfo *method = config->GetMethodInfo("GET", "/path/a/b/c");
@@ -77,21 +77,19 @@ TEST(Config, ServerConfigProto) {
   ::testing::NiceMock<MockApiManagerEnvironmentWithLog> env;
 
   std::unique_ptr<Config> config =
-      Config::Create(&env, kServiceNameConfig, kServerConfig, true);
+      Config::Create(&env, kServiceNameConfig, kServerConfig);
 
   EXPECT_TRUE(config);
 
   auto server_config = config->server_config();
   EXPECT_NE(nullptr, server_config);
 
-  ASSERT_EQ(1000,
-            server_config->service_control_config()
-                .check_aggregator_config()
-                .cache_entries());
-  ASSERT_EQ(15,
-            server_config->service_control_config()
-                .report_aggregator_config()
-                .flush_interval_ms());
+  ASSERT_EQ(1000, server_config->service_control_config()
+                      .check_aggregator_config()
+                      .cache_entries());
+  ASSERT_EQ(15, server_config->service_control_config()
+                    .report_aggregator_config()
+                    .flush_interval_ms());
 }
 
 static const char kInvalidServerConfig[] = R"(
@@ -108,7 +106,7 @@ TEST(Config, InvalidServerConfigProto) {
   ::testing::NiceMock<MockApiManagerEnvironmentWithLog> env;
 
   std::unique_ptr<Config> config =
-      Config::Create(&env, kServiceNameConfig, kInvalidServerConfig, true);
+      Config::Create(&env, kServiceNameConfig, kInvalidServerConfig);
 
   EXPECT_TRUE(config);
 
@@ -121,8 +119,7 @@ const char invalid_config[] = "this is an invalid service config";
 TEST(Config, InvalidConfig) {
   ::testing::NiceMock<MockApiManagerEnvironment> env;
 
-  std::unique_ptr<Config> config =
-      Config::Create(&env, invalid_config, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, invalid_config, "");
   ASSERT_EQ(nullptr, config.get());
 }
 
@@ -135,8 +132,7 @@ TEST(Config, NoServiceName) {
   ASSERT_TRUE(service.SerializeToString(&service_binary));
 
   ::testing::NiceMock<MockApiManagerEnvironment> env;
-  std::unique_ptr<Config> config =
-      Config::Create(&env, service_binary, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, service_binary, "");
   ASSERT_EQ(nullptr, config.get());
 }
 
@@ -171,7 +167,7 @@ static const char http_config_with_some_errors[] =
 TEST(Config, HttpConfigLoading) {
   ::testing::NiceMock<MockApiManagerEnvironment> env;
   std::unique_ptr<Config> config =
-      Config::Create(&env, http_config_with_some_errors, "", true);
+      Config::Create(&env, http_config_with_some_errors, "");
   ASSERT_NE(nullptr, config.get());
 
   const MethodInfo *method = config->GetMethodInfo("GET", "/valid/foo");
@@ -217,7 +213,7 @@ TEST(Config, MethodWithUnknownProvider) {
   ::testing::NiceMock<MockApiManagerEnvironment> env;
 
   std::unique_ptr<Config> config =
-      Config::Create(&env, auth_config_with_some_errors, "", true);
+      Config::Create(&env, auth_config_with_some_errors, "");
   ASSERT_NE(nullptr, config.get());
 
   const MethodInfo *method = config->GetMethodInfo("GET", "/method/good");
@@ -251,7 +247,7 @@ static const char usage_config[] =
 TEST(Config, TestLoadUsage) {
   ::testing::NiceMock<MockApiManagerEnvironment> env;
 
-  std::unique_ptr<Config> config = Config::Create(&env, usage_config, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, usage_config, "");
   ASSERT_NE(nullptr, config.get());
 
   const MethodInfo *method1 = config->GetMethodInfo("GET", "/xyz/method1/abc");
@@ -287,7 +283,7 @@ TEST(Config, TestCustomMethod) {
   ::testing::NiceMock<MockApiManagerEnvironment> env;
 
   std::unique_ptr<Config> config =
-      Config::Create(&env, custom_method_config, "", true);
+      Config::Create(&env, custom_method_config, "");
   ASSERT_NE(nullptr, config.get());
 
   const MethodInfo *method1 = config->GetMethodInfo("GET", "/xyz/method1/abc");
@@ -359,7 +355,7 @@ static const char auth_config[] =
 TEST(Config, TestLoadAuthentication) {
   MockApiManagerEnvironmentWithLog env;
 
-  std::unique_ptr<Config> config = Config::Create(&env, auth_config, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, auth_config, "");
   ASSERT_NE(nullptr, config.get());
 
   const MethodInfo *method1 = config->GetMethodInfo("GET", "/xyz/method1/abc");
@@ -449,7 +445,7 @@ TEST(Config, TestLoadSystemParameters) {
   MockApiManagerEnvironmentWithLog env;
 
   std::unique_ptr<Config> config =
-      Config::Create(&env, system_parameter_config, "", true);
+      Config::Create(&env, system_parameter_config, "");
   ASSERT_NE(nullptr, config.get());
 
   const MethodInfo *method1 = config->GetMethodInfo("GET", "/xyz/method1/abc");
@@ -488,8 +484,7 @@ static const char backends_config[] =
 TEST(Config, LoadBackends) {
   MockApiManagerEnvironmentWithLog env;
 
-  std::unique_ptr<Config> config =
-      Config::Create(&env, backends_config, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, backends_config, "");
   ASSERT_TRUE(config);
 
   const MethodInfo *method_with_backend =
@@ -536,7 +531,7 @@ TEST(Config, RpcMethodsWithHttpRules) {
       }
     )";
 
-  std::unique_ptr<Config> config = Config::Create(&env, config_text, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
   const MethodInfo *list_shelves =
@@ -627,7 +622,7 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
       }
     )";
 
-  std::unique_ptr<Config> config = Config::Create(&env, config_text, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
   MethodCallInfo list_shelves =
@@ -792,7 +787,7 @@ TEST(Config, TestHttpOptions) {
  }
 )";
 
-  std::unique_ptr<Config> config = Config::Create(&env, config_text, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
   // The one from service config.
@@ -840,7 +835,7 @@ TEST(Config, TestHttpOptionsSelector) {
  }
 )";
 
-  std::unique_ptr<Config> config = Config::Create(&env, config_text, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
   auto method1 = config->GetMethodInfo("OPTIONS", "/shelves");
@@ -868,7 +863,7 @@ TEST(Config, TestCorsDisabled) {
  }
 )";
 
-  std::unique_ptr<Config> config = Config::Create(&env, config_text, "", true);
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
   auto method1 = config->GetMethodInfo("OPTIONS", "/shelves");

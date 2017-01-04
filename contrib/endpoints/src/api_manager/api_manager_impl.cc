@@ -27,8 +27,8 @@ namespace api_manager {
 namespace {
 
 std::shared_ptr<ApiManager> CreateApiManager(
-    std::unique_ptr<ApiManagerEnvInterface> env, std::unique_ptr<Config> config,
-    const bool service_control) {
+    std::unique_ptr<ApiManagerEnvInterface> env,
+    std::unique_ptr<Config> config) {
   return std::shared_ptr<ApiManager>(
       new ApiManagerImpl(std::move(env), std::move(config)));
 }
@@ -51,10 +51,9 @@ std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
 
 std::shared_ptr<ApiManager> ApiManagerFactory::GetOrCreateApiManager(
     std::unique_ptr<ApiManagerEnvInterface> env,
-    const std::string& service_config, const std::string& server_config,
-    const bool service_control) {
+    const std::string& service_config, const std::string& server_config) {
   std::unique_ptr<Config> config =
-      Config::Create(env.get(), service_config, server_config, service_control);
+      Config::Create(env.get(), service_config, server_config);
   if (config == nullptr) {
     return nullptr;
   }
@@ -67,8 +66,7 @@ std::shared_ptr<ApiManager> ApiManagerFactory::GetOrCreateApiManager(
   if (!result) {
     // TODO: Handle the case where the caller gives us a different
     // config with the same service name.
-    result =
-        CreateApiManager(std::move(env), std::move(config), service_control);
+    result = CreateApiManager(std::move(env), std::move(config));
     it->second = result;
   }
 

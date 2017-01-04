@@ -203,7 +203,6 @@ void Env::RunGRPCRequest(
   client.send(
       std::move(message), *callbacks,
       Optional<std::chrono::milliseconds>(std::chrono::milliseconds(10000)));
-  return;
 }
 }
 }

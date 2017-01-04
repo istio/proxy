@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# Copyright (C) Extensible Service Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+ROOT="$(git rev-parse --show-toplevel)"
+SKIP="$(git config --bool hooks.clang-format.skip)"
+
+if [[ "${SKIP}" == "true" ]]; then
+  echo "Skipping clang-format since it's disabled."
+  exit 0
+fi
+
+CLANG_FORMAT="$(git config --path hooks.clang-format.path)"
+if [[ ! -x "${CLANG_FORMAT}" ]]; then
+  CLANG_FORMAT="$(command -v clang-format)"
+fi
+
+if [[ ! -x "${CLANG_FORMAT}" ]]; then
+  echo "Skipping clang-format: " \
+      "\"${CLANG_FORMAT}\" doesn't exists or not executable"
+  exit 0
+fi
+
+#CLANG_FORMAT_VERSION="$(${CLANG_FORMAT} -version | cut -d ' ' -f 3)"
+#CLANG_FORMAT_VERSION_REQUIRED="3.8"
+#if ! [[ "${CLANG_FORMAT_VERSION}" =~ "${CLANG_FORMAT_VERSION_REQUIRED}" ]]; then
+#  echo "Skipping: clang-format ${CLANG_FORMAT_VERSION_REQUIRED} required."
+#  exit 0
+#fi
+
+DIRTY_FILES=($(git diff --name-only | grep -E '\.(h|c|cc|proto)$'))
+if [[ "${#DIRTY_FILES}" -ne 0 ]]; then
+  echo "Found dirty files: ${DIRTY_FILES[@]}"
+  echo "stash or add them before commit."
+  exit 1
+fi
+
+SOURCE_FILES=($(git ls-files | grep -E '\.(h|c|cc|proto)$'))
+
+if [[ "${#SOURCE_FILES}" -ne 0 ]]; then
+  pushd "${ROOT}" > /dev/null
+  "${CLANG_FORMAT}" -style=Google -i "${SOURCE_FILES[@]}"
+  git add "${SOURCE_FILES[@]}"
+  echo "Formatted all source codes"
+  popd > /dev/null
+else
+  echo "No source files."
+fi
+
+BUILDIFIER="$(which buildifier)"
+if [[ -x "${BUILDIFIER}" ]]; then
+  ${BUILDIFIER} -showlog -mode=check $(find . -iname BUILD -type f)
+else
+  echo "Buildifier does not exist"
+fi
