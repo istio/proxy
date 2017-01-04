@@ -114,8 +114,7 @@ class HTTPRequestCallbacks : public AsyncClient::Callbacks {
         std::stoi(response->headers().Status()->value().c_str()), "");
     std::map<std::string, std::string> headers;
     response->headers().iterate(
-        [&](const HeaderEntry &header, void *) -> void {},
-        nullptr);
+        [&](const HeaderEntry &header, void *) -> void {}, nullptr);
     request_->OnComplete(status, std::move(headers), response->bodyAsString());
     delete this;
   }
