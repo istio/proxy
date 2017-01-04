@@ -31,4 +31,5 @@ cc_binary(
         "@envoy_git//:envoy-main"
     ],
     linkstatic=1,
+    visibility=["//visibility:public"],
 )

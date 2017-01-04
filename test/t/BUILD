@@ -14,46 +14,26 @@
 #
 ################################################################################
 #
+load("//test:nginx.bzl", "nginx_test")
+load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library")
 
-load(
-    "//:repositories.bzl",
-    "boringssl_repositories",
-    "protobuf_repositories",
-    "googletest_repositories",
+perl_library(
+    name = "perl_library",
+    srcs = glob(["*.pm"]),
+    data = glob(["testdata/*"]),
+    deps = [
+        "//external:nginx_test",
+    ],
 )
 
-boringssl_repositories()
-
-protobuf_repositories()
-
-googletest_repositories()
-
-load(
-    "//contrib/endpoints:repositories.bzl",
-    "grpc_repositories",
-    "mixerapi_repositories",
-    "servicecontrol_client_repositories",
+nginx_test(
+    name = "check",
+    srcs = [
+        "check.t",
+    ],
+    nginx = "//src/envoy/prototype:envoy_esp",
+    deps = [
+        ":perl_library",
+    ],
+    tags = ["local"],
 )
-
-grpc_repositories()
-
-mixerapi_repositories()
-
-servicecontrol_client_repositories()
-
-load(
-    "//src/envoy:repositories.bzl",
-    "envoy_repositories",
-)
-
-envoy_repositories()
-
-load(
-    "//test:repositories.bzl",
-    "perl_repositories",
-    "nginx_test_repositories",
-)
-
-perl_repositories()
-
-nginx_test_repositories()
