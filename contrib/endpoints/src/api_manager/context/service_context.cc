@@ -15,6 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "contrib/endpoints/src/api_manager/context/service_context.h"
+#include "contrib/endpoints/src/api_manager/mixer/mixer.h"
 
 #include "contrib/endpoints/src/api_manager/service_control/aggregated.h"
 
@@ -85,10 +86,15 @@ const std::string& ServiceContext::project_id() const {
 }
 
 std::unique_ptr<service_control::Interface> ServiceContext::CreateInterface() {
-  return std::unique_ptr<service_control::Interface>(
-      service_control::Aggregated::Create(config_->service(),
-                                          config_->server_config(), env_.get(),
-                                          &service_account_token_));
+  if (config_->is_service_control()) {
+    return std::unique_ptr<service_control::Interface>(
+        service_control::Aggregated::Create(
+            config_->service(), config_->server_config(), env_.get(),
+            &service_account_token_));
+  } else {
+    return std::unique_ptr<service_control::Interface>(
+        mixer::Mixer::Create(env_.get(), config_->service().name()));
+  }
 }
 
 std::unique_ptr<cloud_trace::Aggregator>

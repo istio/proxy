@@ -169,6 +169,7 @@ Status Mixer::Report(const service_control::ReportRequestInfo& info) {
   request.SerializeToString(&request_body);
 
   grpc_request->set_server("mixer_server")
+      .set_service("istio.mixer.v1.Mixer")
       .set_method("Report")
       .set_body(request_body);
 
@@ -209,6 +210,7 @@ void Mixer::Check(
   request.SerializeToString(&request_body);
 
   grpc_request->set_server("mixer_server")
+      .set_service("istio.mixer.v1.Mixer")
       .set_method("Check")
       .set_body(request_body);
 

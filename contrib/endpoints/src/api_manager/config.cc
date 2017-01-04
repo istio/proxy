@@ -416,8 +416,10 @@ void Config::LoadServerConfig(ApiManagerEnvInterface *env,
 
 std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
                                        const std::string &service_config,
-                                       const std::string &server_config) {
+                                       const std::string &server_config,
+                                       const bool service_control) {
   std::unique_ptr<Config> config(new Config);
+  config->is_service_control_ = service_control;
   if (!config->LoadService(env, service_config)) {
     return nullptr;
   }

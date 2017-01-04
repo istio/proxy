@@ -40,7 +40,8 @@ class Config {
   // not server_config.
   static std::unique_ptr<Config> Create(ApiManagerEnvInterface *env,
                                         const std::string &service_config,
-                                        const std::string &server_config);
+                                        const std::string &server_config,
+                                        const bool service_control);
 
   // Returns server_config.  nullptr if no server_config.
   const proto::ServerConfig *server_config() const {
@@ -60,6 +61,8 @@ class Config {
                                    const std::string &query_params) const;
 
   const ::google::api::Service &service() const { return service_; }
+
+  const bool is_service_control() const { return is_service_control_; }
 
   // TODO: Remove in favor of service().
   const std::string &service_name() const { return service_.name(); }
@@ -123,6 +126,7 @@ class Config {
   std::unique_ptr<proto::ServerConfig> server_config_;
   PathMatcherPtr path_matcher_;
   std::map<std::string, MethodInfoImplPtr> method_map_;
+  bool is_service_control_;
   // Maps issuer to {jwksUri, openIdValid} pair.
   // jwksUri is populated either from service config, or by openId discovery.
   // openIdValid means whether or not we need to try openId discovery to fetch

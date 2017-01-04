@@ -36,7 +36,8 @@ class ApiManagerTest : public ::testing::Test {
 
 std::shared_ptr<ApiManager> ApiManagerTest::MakeApiManager(
     std::unique_ptr<ApiManagerEnvInterface> env, const char *service_config) {
-  return factory_.GetOrCreateApiManager(std::move(env), service_config, "");
+  return factory_.GetOrCreateApiManager(std::move(env), service_config, "",
+                                        true);
 }
 
 TEST_F(ApiManagerTest, EmptyConfig) {

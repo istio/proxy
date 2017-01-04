@@ -38,7 +38,7 @@ class Config : public Logger::Loggable<Logger::Id::http> {
         new Env(server));
 
     api_manager_ = api_manager_factory_.GetOrCreateApiManager(
-        std::move(env), service_config_content, "");
+        std::move(env), service_config_content, "", false);
 
     api_manager_->Init();
     log().debug("Called ApiManager::Config constructor: {}", __func__);

@@ -53,7 +53,7 @@ class FetchMetadataTest : public ::testing::Test {
     raw_env_ = env.get();
 
     std::unique_ptr<Config> config =
-        Config::Create(raw_env_, kServiceConfig, "");
+        Config::Create(raw_env_, kServiceConfig, "", true);
     ASSERT_NE(config.get(), nullptr);
 
     service_context_ = std::make_shared<context::ServiceContext>(
