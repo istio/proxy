@@ -77,7 +77,7 @@ experimental {
 }
 
 mixer_options {
-  mixer_server_name: "mixer_server"
+  mixer_server: "mixer_server"
 }
 )";
 
@@ -127,7 +127,7 @@ TEST(ServerConfigProto, ServerConfigFromString) {
   EXPECT_EQ(false, server_config.experimental().disable_log_status());
 
   // Check mixer options
-  EXPECT_EQ("mixer_server", server_config.mixer_options().mixer_server_name());
+  EXPECT_EQ("mixer_server", server_config.mixer_options().mixer_server());
 }
 
 TEST(ServerConfigProto, ValidateSampleServerConfig) {

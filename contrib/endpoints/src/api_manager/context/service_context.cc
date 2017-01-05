@@ -89,7 +89,7 @@ std::unique_ptr<service_control::Interface> ServiceContext::CreateInterface() {
   if (config_->server_config() &&
       config_->server_config()->has_mixer_options()) {
     return std::unique_ptr<service_control::Interface>(
-        mixer::Mixer::Create(env_.get(), config_->service().name()));
+        mixer::Mixer::Create(env_.get(), config_.get()));
   } else {
     return std::unique_ptr<service_control::Interface>(
         service_control::Aggregated::Create(

@@ -3,7 +3,11 @@
 #include "common/http/headers.h"
 #include "common/http/message_impl.h"
 #include "envoy/event/timer.h"
+#include "google/protobuf/stubs/status.h"
 #include "source/common/grpc/common.h"
+
+using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace Http {
 namespace ApiManager {
@@ -11,10 +15,10 @@ namespace ApiManager {
 void Http::ApiManager::Env::Log(LogLevel level, const char *message) {
   switch (level) {
     case LogLevel::DEBUG:
-      log().warn("{}", message);
+      log().debug("{}", message);
       break;
     case LogLevel::INFO:
-      log().warn("{}", message);
+      log().debug("{}", message);
       break;
     case LogLevel::WARNING:
       log().warn("{}", message);
@@ -114,7 +118,11 @@ class HTTPRequestCallbacks : public AsyncClient::Callbacks {
         std::stoi(response->headers().Status()->value().c_str()), "");
     std::map<std::string, std::string> headers;
     response->headers().iterate(
-        [&](const HeaderEntry &header, void *) -> void {}, nullptr);
+        [&](const HeaderEntry &header, void *) -> void {
+          // TODO: fix it
+          // headers.emplace(header.key().c_str(), header.value().c_str());
+        },
+        nullptr);
     request_->OnComplete(status, std::move(headers), response->bodyAsString());
     delete this;
   }
@@ -173,8 +181,7 @@ class GrpcRequestCallbacks : public AsyncClient::Callbacks {
     delete this;
   }
   virtual void onFailure(AsyncClient::FailureReason reason) override {
-    google::api_manager::utils::Status status =
-        google::api_manager::utils::Status::OK;
+    google::api_manager::utils::Status status(-1, "Cannot connect to Mixer");
     request_->OnComplete(status, "");
     delete this;
   }
@@ -182,7 +189,7 @@ class GrpcRequestCallbacks : public AsyncClient::Callbacks {
 
 void Env::RunHTTPRequest(
     std::unique_ptr<google::api_manager::HTTPRequest> request) {
-  auto &client = cm_.httpAsyncClientForCluster("mixer_server");
+  auto &client = cm_.httpAsyncClientForCluster("api_manager");
 
   MessagePtr message{new HTTPRequest(request.get())};
   HTTPRequestCallbacks *callbacks =
@@ -194,7 +201,7 @@ void Env::RunHTTPRequest(
 
 void Env::RunGRPCRequest(
     std::unique_ptr<google::api_manager::GRPCRequest> request) {
-  auto &client = cm_.httpAsyncClientForCluster("mixer_server");
+  auto &client = cm_.httpAsyncClientForCluster(request->server());
 
   Http::MessagePtr message =
       PrepareGrpcHeaders("localhost", request->service(), request->method());

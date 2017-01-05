@@ -30,13 +30,21 @@ class Config : public Logger::Loggable<Logger::Id::http> {
  public:
   Config(const Json::Object& config, Server::Instance& server)
       : cm_(server.clusterManager()) {
-    const std::string service_config = config.getString("service_config");
+    std::string service_config_content;
+    if (config.hasObject("service_config")) {
+      const std::string service_config = config.getString("service_config");
+      service_config_content = ReadFile(service_config);
+    } else {
+      log().error("Service_config is not specified: {}", __func__);
+    }
 
-    std::string service_config_content = ReadFile(service_config);
-
-    const std::string server_config = config.getString("server_config");
-
-    std::string server_config_content = ReadFile(server_config);
+    std::string server_config_content;
+    if (config.hasObject("server_config")) {
+      const std::string server_config = config.getString("server_config");
+      server_config_content = ReadFile(server_config);
+    } else {
+      log().warn("Server_config is not specified: {}", __func__);
+    }
 
     std::unique_ptr<google::api_manager::ApiManagerEnvInterface> env(
         new Env(server));
