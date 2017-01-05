@@ -65,6 +65,8 @@ std::unique_ptr<google::api_manager::PeriodicTimer> Env::StartPeriodicTimer(
 }
 
 static const LowerCaseString kApiManagerUrl("x-api-manager-url");
+static const LowerCaseString kGrpcTEKey("te");
+static const std::string kGrpcTEValue("trailers");
 
 class HTTPRequest : public Http::Message {
  private:
@@ -157,6 +159,7 @@ Http::MessagePtr PrepareGrpcHeaders(const std::string &upstream_cluster,
       fmt::format("/{}/{}", service_full_name, method_name));
   message->headers().insertHost().value(upstream_cluster);
   message->headers().insertContentType().value(Grpc::Common::GRPC_CONTENT_TYPE);
+  message->headers().addStatic(kGrpcTEKey, kGrpcTEValue);
   return message;
 }
 }  // annoymous namespace
