@@ -26,6 +26,8 @@ namespace api_manager {
 namespace mixer {
 namespace {
 
+const char kMixerServiceName[] = "istio.mixer.v1.Mixer";
+
 enum AttributeIndex {
   ATTR_SERVICE_NAME = 0,
   ATTR_PEER_ID,
@@ -170,7 +172,7 @@ Status Mixer::Report(const service_control::ReportRequestInfo& info) {
 
   grpc_request
       ->set_server(config_->server_config()->mixer_options().mixer_server())
-      .set_service("istio.mixer.v1.Mixer")
+      .set_service(kMixerServiceName)
       .set_method("Report")
       .set_body(request_body);
 
@@ -212,7 +214,7 @@ void Mixer::Check(
 
   grpc_request
       ->set_server(config_->server_config()->mixer_options().mixer_server())
-      .set_service("istio.mixer.v1.Mixer")
+      .set_service(kMixerServiceName)
       .set_method("Check")
       .set_body(request_body);
 
