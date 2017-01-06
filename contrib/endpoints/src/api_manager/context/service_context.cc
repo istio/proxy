@@ -74,6 +74,9 @@ MethodCallInfo ServiceContext::GetMethodCallInfo(
   if (config_ == nullptr) {
     return MethodCallInfo();
   }
+  if (http_method == "HEAD") {
+    return config_->GetMethodCallInfo("GET", url, query_params);
+  }
   return config_->GetMethodCallInfo(http_method, url, query_params);
 }
 
