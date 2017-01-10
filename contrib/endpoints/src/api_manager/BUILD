@@ -68,6 +68,8 @@ cc_library(
         "api_manager_impl.cc",
         "check_auth.cc",
         "check_auth.h",
+        "check_security_rules.cc",
+        "check_security_rules.h",
         "check_service_control.cc",
         "check_service_control.h",
         "check_workflow.cc",
