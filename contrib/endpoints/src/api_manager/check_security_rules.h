@@ -24,7 +24,7 @@ namespace api_manager {
 // This function checks security rules for a given request.
 // It is called by CheckWorkflow class when processing a request.
 void CheckSecurityRules(std::shared_ptr<context::RequestContext> context,
-std::function<void(utils::Status status)> continuation);
+                        std::function<void(utils::Status status)> continuation);
 
 }  // namespace api_manager
 }  // namespace google

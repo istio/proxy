@@ -27,7 +27,8 @@ namespace api_manager {
 
 namespace {
 
-const char kFirebaseServerStaging[] = "https://staging-firebaserules.sandbox.googleapis.com/";
+const char kFirebaseServerStaging[] =
+    "https://staging-firebaserules.sandbox.googleapis.com/";
 
 // An AuthzChecker object is created for every incoming request. It does
 // authorizaiton by calling Firebase Rules service.
@@ -40,12 +41,11 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
 
  private:
   // Helper function to send a http GET request.
-  void HttpFetch(const std::string &url,
-                 const std::string &request_body,
+  void HttpFetch(const std::string &url, const std::string &request_body,
                  std::function<void(Status, std::string &&)> continuation);
 
   // Get Auth token for accessing Firebase Rules service.
-  const std::string& GetAuthToken();
+  const std::string &GetAuthToken();
 
   // Request context.
   std::shared_ptr<context::RequestContext> context_;
@@ -68,22 +68,18 @@ void AuthzChecker::Check() {
   // If so, call Firebase Rules service TestRuleset API.
 }
 
-const std::string& AuthzChecker::GetAuthToken() {
+const std::string &AuthzChecker::GetAuthToken() {
   // TODO: Get Auth token for accessing Firebase Rules service.
   static std::string empty;
   return empty;
 }
 
 void AuthzChecker::HttpFetch(
-    const std::string &url,
-    const std::string &request_body,
+    const std::string &url, const std::string &request_body,
     std::function<void(Status, std::string &&)> continuation) {
-  std::unique_ptr<HTTPRequest> request(
-      new HTTPRequest([continuation](
-          Status status, std::map<std::string, std::string> &&,
-          std::string &&body) {
-        continuation(status, std::move(body));
-      }));
+  std::unique_ptr<HTTPRequest> request(new HTTPRequest([continuation](
+      Status status, std::map<std::string, std::string> &&,
+      std::string &&body) { continuation(status, std::move(body)); }));
   if (!request) {
     continuation(Status(Code::INTERNAL, "Out of memory"), "");
     return;
@@ -108,4 +104,3 @@ void CheckSecurityRules(std::shared_ptr<context::RequestContext> context,
 
 }  // namespace api_manager
 }  // namespace google
-
