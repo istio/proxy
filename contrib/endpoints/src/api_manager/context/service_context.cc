@@ -74,10 +74,12 @@ MethodCallInfo ServiceContext::GetMethodCallInfo(
   if (config_ == nullptr) {
     return MethodCallInfo();
   }
-  if (http_method == "HEAD") {
-    return config_->GetMethodCallInfo("GET", url, query_params);
+  MethodCallInfo method_call_info =
+      config_->GetMethodCallInfo(http_method, url, query_params);
+  if (method_call_info.method_info == nullptr && http_method == "HEAD") {
+    method_call_info = config_->GetMethodCallInfo("GET", url, query_params);
   }
-  return config_->GetMethodCallInfo(http_method, url, query_params);
+  return method_call_info;
 }
 
 const std::string& ServiceContext::project_id() const {
