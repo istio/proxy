@@ -44,7 +44,6 @@ const int kIntermediateReportInterval = 10;
 
 const char kHTTPHeadMethod[] = "HEAD";
 const char kHTTPGetMethod[] = "GET";
-
 }
 
 ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
