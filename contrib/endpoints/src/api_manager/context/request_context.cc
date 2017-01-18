@@ -225,6 +225,39 @@ void RequestContext::FillCheckRequestInfo(
   info->allow_unregistered_calls = method()->allow_unregistered_calls();
 }
 
+// TODO:: JAEBONG:: All hard corded for test. Need to read it from the
+// configuration
+void RequestContext::FillAllocateQuotaRequestInfo(
+    service_control::QuotaRequestInfo *info) {
+  FillOperationInfo(info);
+
+  info->method_name = this->method_call_.method_info->name();
+
+  // TODO:: JAEBONG::
+  info->labels["servicecontrol.googleapis.com/caller_ip"] =
+      request_->GetClientIP();
+  info->labels["servicecontrol.googleapis.com/referer"] = this->http_referer_;
+  info->labels["servicecontrol.googleapis.com/user"] = "integration_test_user";
+
+  info->quota_metrics.push_back(
+      *(new ::google::api_manager::service_control::MetricValueInfo(
+          "chemisttest.googleapis.com/operation/free_read_group_count",
+          (int64_t)100)));
+  info->quota_metrics.push_back(
+      *(new ::google::api_manager::service_control::MetricValueInfo(
+          "chemisttest.googleapis.com/operation/qps_only_count",
+          (int64_t)100)));
+  info->quota_metrics.push_back(
+      *(new ::google::api_manager::service_control::MetricValueInfo(
+          "chemisttest.googleapis.com/operation/num_vms", (int64_t)100)));
+  info->quota_metrics.push_back(
+      *(new ::google::api_manager::service_control::MetricValueInfo(
+          "metric_with_no_limit", (int64_t)100)));
+
+  // info->client_ip = request_->GetClientIP();
+  // info->allow_unregistered_calls = method()->allow_unregistered_calls();
+}
+
 void RequestContext::FillReportRequestInfo(
     Response *response, service_control::ReportRequestInfo *info) {
   FillOperationInfo(info);

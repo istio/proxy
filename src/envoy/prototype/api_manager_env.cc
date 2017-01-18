@@ -18,7 +18,7 @@ void Http::ApiManager::Env::Log(LogLevel level, const char *message) {
       log().debug("{}", message);
       break;
     case LogLevel::INFO:
-      log().info("{}", message);
+      log().debug("{}", message);
       break;
     case LogLevel::WARNING:
       log().warn("{}", message);

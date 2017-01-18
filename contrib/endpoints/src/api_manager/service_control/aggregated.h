@@ -49,6 +49,10 @@ class Aggregated : public Interface {
       const CheckRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
       std::function<void(utils::Status, const CheckResponseInfo&)> on_done);
 
+  virtual void Quota(
+      const QuotaRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
+      std::function<void(utils::Status, const QuotaResponseInfo&)> on_done);
+
   virtual utils::Status Init();
   virtual utils::Status Close();
 
@@ -111,6 +115,12 @@ class Aggregated : public Interface {
             ::google::service_control_client::TransportDoneFunc on_done,
             cloud_trace::CloudTraceSpan* parent_span);
 
+  // Calls to service control server.
+  template <class RequestType, class ResponseType>
+  void CallLocalService(const RequestType& request, ResponseType* response,
+            ::google::service_control_client::TransportDoneFunc on_done,
+            cloud_trace::CloudTraceSpan* parent_span);
+
   // Gets the auth token to access service control server.
   const std::string& GetAuthToken();
 
@@ -134,6 +144,10 @@ class Aggregated : public Interface {
   // The service control client instance.
   std::unique_ptr<::google::service_control_client::ServiceControlClient>
       client_;
+
+  // The protobuf pool to reuse CheckRequest protobuf.
+  ProtoPool<::google::api::servicecontrol::v1::AllocateQuotaRequest> quota_pool_;
+
   // The protobuf pool to reuse CheckRequest protobuf.
   ProtoPool<::google::api::servicecontrol::v1::CheckRequest> check_pool_;
   // The protobuf pool to reuse ReportRequest protobuf.

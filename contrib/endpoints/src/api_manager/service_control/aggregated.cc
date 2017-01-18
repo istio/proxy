@@ -22,6 +22,8 @@
 
 using ::google::api::servicecontrol::v1::CheckRequest;
 using ::google::api::servicecontrol::v1::CheckResponse;
+using ::google::api::servicecontrol::v1::AllocateQuotaRequest;
+using ::google::api::servicecontrol::v1::AllocateQuotaResponse;
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::api::servicecontrol::v1::ReportResponse;
 using ::google::api_manager::proto::ServerConfig;
@@ -29,6 +31,7 @@ using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 
 using ::google::service_control_client::CheckAggregationOptions;
+using ::google::service_control_client::QuotaAggregationOptions;
 using ::google::service_control_client::ReportAggregationOptions;
 using ::google::service_control_client::ServiceControlClient;
 using ::google::service_control_client::ServiceControlClientOptions;
@@ -81,6 +84,25 @@ CheckAggregationOptions GetCheckAggregationOptions(
                                    check_config.response_expiration_ms());
   }
   return CheckAggregationOptions(kCheckAggregationEntries,
+                                 kCheckAggregationFlushIntervalMs,
+                                 kCheckAggregationExpirationMs);
+}
+
+// TODO:: jaebong - need to add quota configuration
+// Generate QuotaAggregationOptions
+QuotaAggregationOptions GetQuotaAggregationOptions(
+    const ServerConfig* server_config) {
+  if (server_config && server_config->has_service_control_config() &&
+      server_config->service_control_config().has_check_aggregator_config()) {
+    const auto& check_config =
+        server_config->service_control_config().check_aggregator_config();
+
+    return QuotaAggregationOptions(check_config.cache_entries(),
+                                   check_config.flush_interval_ms(),
+                                   check_config.response_expiration_ms());
+  }
+
+  return QuotaAggregationOptions(kCheckAggregationEntries,
                                  kCheckAggregationFlushIntervalMs,
                                  kCheckAggregationExpirationMs);
 }
@@ -186,6 +208,14 @@ Status Aggregated::Init() {
   options.check_transport = [this](
       const CheckRequest& request, CheckResponse* response,
       TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
+
+  // TODO:: jaebong
+  options.quota_transport = [this](const AllocateQuotaRequest& request,
+                                   AllocateQuotaResponse* response,
+                                   TransportDoneFunc on_done) {
+    CallLocalService(request, response, on_done, nullptr);
+  };
+
   options.report_transport = [this](
       const ReportRequest& request, ReportResponse* response,
       TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
@@ -193,10 +223,10 @@ Status Aggregated::Init() {
   options.periodic_timer = [this](int interval_ms,
                                   std::function<void()> callback)
       -> std::unique_ptr<::google::service_control_client::PeriodicTimer> {
-        return std::unique_ptr<::google::service_control_client::PeriodicTimer>(
-            new ApiManagerPeriodicTimer(env_->StartPeriodicTimer(
-                std::chrono::milliseconds(interval_ms), callback)));
-      };
+    return std::unique_ptr<::google::service_control_client::PeriodicTimer>(
+        new ApiManagerPeriodicTimer(env_->StartPeriodicTimer(
+            std::chrono::milliseconds(interval_ms), callback)));
+  };
   client_ = ::google::service_control_client::CreateServiceControlClient(
       service_->name(), service_->id(), options);
   return Status::OK;
@@ -317,6 +347,60 @@ void Aggregated::Check(
   check_pool_.Free(std::move(request));
 }
 
+void Aggregated::Quota(
+    const QuotaRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
+    std::function<void(utils::Status, const QuotaResponseInfo&)> on_done) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateChildSpan(parent_span, "QuotaServiceControlCache"));
+
+  QuotaResponseInfo dummy_response_info;
+  if (!client_) {
+    on_done(Status(Code::INTERNAL, "Missing service control client"),
+            dummy_response_info);
+    return;
+  }
+
+  auto request = quota_pool_.Alloc();
+
+  Status status =
+      service_control_proto_.FillAllocateQuotaRequest(info, request.get());
+  if (!status.ok()) {
+    on_done(status, dummy_response_info);
+    quota_pool_.Free(std::move(request));
+    return;
+  }
+
+  AllocateQuotaResponse* response = new AllocateQuotaResponse();
+
+  auto check_on_done = [this, response, on_done, trace_span](
+      const ::google::protobuf::util::Status& status) {
+    QuotaResponseInfo response_info;
+
+    if (status.ok()) {
+      utils::Status status = Proto::ConvertAllocateQuotaResponse(
+          *response, service_control_proto_.service_name(), &response_info);
+
+      on_done(utils::Status::OK, response_info);
+    } else {
+      on_done(Status(status.error_code(), status.error_message(),
+                     Status::SERVICE_CONTROL),
+              response_info);
+    }
+  };
+
+  client_->Quota(*request, response, check_on_done,
+                 [trace_span, this](const AllocateQuotaRequest& request,
+                                    AllocateQuotaResponse* response,
+                                    TransportDoneFunc on_done) {
+                   CallLocalService(request, response, on_done,
+                                    trace_span.get());
+                 });
+
+  // There is no reference to request anymore at this point and it is safe to
+  // free request now.
+  quota_pool_.Free(std::move(request));
+}
+
 Status Aggregated::GetStatistics(Statistics* esp_stat) const {
   if (!client_) {
     return Status(Code::INTERNAL, "Missing service control client");
@@ -339,6 +423,95 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
   esp_stat->max_report_size = max_report_size_;
 
   return Status::OK;
+}
+
+// TODO:: jaebong
+// This function is copy of Call to send AllocateQuotaRequest to the fake quota
+// conroller service running locall
+// This needs to be updated once quota service API is available
+template <class RequestType, class ResponseType>
+void Aggregated::CallLocalService(
+    const RequestType& request, ResponseType* response,
+    ::google::service_control_client::TransportDoneFunc on_done,
+    cloud_trace::CloudTraceSpan* parent_span) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateChildSpan(parent_span, "Call ServiceControl server"));
+
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([response, on_done,
+                                                             trace_span, this](
+      Status status, std::map<std::string, std::string>&&, std::string&& body) {
+    TRACE(trace_span) << "HTTP response status: " << status.ToString();
+    if (status.ok()) {
+      // Handle 200 response
+      if (!response->ParseFromString(body)) {
+        status =
+            Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
+      }
+    } else {
+      const std::string& url = typeid(RequestType) == typeid(CheckRequest)
+                                   ? url_.check_url()
+                                   : url_.report_url();
+      env_->LogError(std::string("Failed to call ") + url + ", Error: " +
+                     status.ToString() + ", Response body: " + body);
+
+      // Handle NGX error as opposed to pass-through error code
+      if (status.code() < 0) {
+        status =
+            Status(Code::UNAVAILABLE, "Failed to connect to service control");
+      } else {
+        status =
+            Status(Code::UNAVAILABLE,
+                   "Service control request failed with HTTP response code " +
+                       std::to_string(status.code()));
+      }
+    }
+    on_done(status.ToProto());
+  }));
+
+  bool is_check = (typeid(RequestType) == typeid(CheckRequest));
+
+  // TODO:: JAEBONG:: this is fake quota control API running on my dev env
+  // http://172.17.130.31:8089/v1/services/jaebonginternal.sandbox.google.com:report
+  const std::string& url =
+      "http://172.17.130.31:8089/v1/services/"
+      "jaebonginternal.sandbox.google.com:report";
+
+  TRACE(trace_span) << "Http request URL: " << url;
+
+  std::string request_body;
+  request.SerializeToString(&request_body);
+
+  if (!is_check && (request_body.size() > max_report_size_)) {
+    max_report_size_ = request_body.size();
+  }
+
+  http_request->set_url(url)
+      .set_method("POST")
+      .set_auth_token(GetAuthToken())
+      .set_header("Content-Type", application_proto)
+      .set_body(request_body);
+
+  // Set timeout on the request if it was so configured.
+  if (is_check) {
+    http_request->set_timeout_ms(kCheckDefaultTimeoutInMs);
+  } else {
+    http_request->set_timeout_ms(kReportDefaultTimeoutInMs);
+  }
+  if (server_config_ != nullptr &&
+      server_config_->has_service_control_config()) {
+    const auto& config = server_config_->service_control_config();
+    if (is_check) {
+      if (config.check_timeout_ms() > 0) {
+        http_request->set_timeout_ms(config.check_timeout_ms());
+      }
+    } else {
+      if (config.report_timeout_ms() > 0) {
+        http_request->set_timeout_ms(config.report_timeout_ms());
+      }
+    }
+  }
+
+  env_->RunHTTPRequest(std::move(http_request));
 }
 
 template <class RequestType, class ResponseType>

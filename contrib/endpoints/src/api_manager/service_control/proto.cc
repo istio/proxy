@@ -30,6 +30,7 @@
 #include "utils/distribution_helper.h"
 
 using ::google::api::servicecontrol::v1::CheckError;
+using ::google::api::servicecontrol::v1::QuotaError;
 using ::google::api::servicecontrol::v1::CheckRequest;
 using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::Distribution;
@@ -905,6 +906,51 @@ Proto::Proto(const std::set<std::string>& logs,
       service_name_(service_name),
       service_config_id_(service_config_id) {}
 
+
+// TODO:: JAEBONG::
+utils::Status Proto::FillAllocateQuotaRequest(
+    const QuotaRequestInfo& info,
+    ::google::api::servicecontrol::v1::AllocateQuotaRequest* request) {
+
+  ::google::api::servicecontrol::v1::QuotaOperation* operation = request->mutable_allocate_operation();
+
+  request->set_service_name(service_name_);
+  request->set_service_config_id(service_config_id_);
+
+  operation->set_operation_id(info.operation_id);
+  operation->set_consumer_id("api_key:" + info.api_key.ToString());
+
+  operation->set_method_name(info.method_name);
+
+  auto labels = operation->mutable_labels();
+  for(auto it : info.labels) {
+    (*labels)[it.first] = it.second;
+  }
+
+  for(auto it : info.quota_metrics) {
+    auto set = operation->add_quota_metrics();
+    set->set_metric_name(it.metric_name);
+
+    auto value = set->add_metric_values();
+    switch(it.value_type) {
+      case MetricValueType::BOOL:
+        value->set_bool_value(it.bool_value);
+        break;
+      case MetricValueType::INT64:
+        value->set_int64_value(it.int64_value);
+        break;
+      case MetricValueType::DOUBLE:
+        value->set_double_value(it.double_value);
+        break;
+      case MetricValueType::STRING:
+        value->set_string_value(it.string_value);
+        break;
+    }
+  }
+
+  return Status::OK;
+}
+
 Status Proto::FillCheckRequest(const CheckRequestInfo& info,
                                CheckRequest* request) {
   Status status = VerifyRequiredCheckFields(info);
@@ -988,6 +1034,28 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     for (auto it = logs_.begin(), end = logs_.end(); it != end; it++) {
       FillLogEntry(info, *it, current_time, op->add_log_entries());
     }
+  }
+
+  return Status::OK;
+}
+
+// TODO:: jaebong::
+Status Proto::ConvertAllocateQuotaResponse(
+    const ::google::api::servicecontrol::v1::AllocateQuotaResponse& response,
+    const std::string& service_name, QuotaResponseInfo* quota_response_info) {
+
+  //response.operation_id()
+
+  if (response.allocate_errors().size() == 0) {
+    return Status::OK;
+  }
+
+  const QuotaError& error = response.allocate_errors().Get(0);
+  switch (error.code()) {
+    default:
+      return Status(Code::INTERNAL,
+                    std::string("Request blocked due to unsupported error code: ") + std::to_string(error.code()),
+                    Status::SERVICE_CONTROL);
   }
 
   return Status::OK;
