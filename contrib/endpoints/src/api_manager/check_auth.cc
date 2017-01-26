@@ -213,7 +213,9 @@ void AuthChecker::LookupJwtCache() {
   if (cache_hit) {
     CheckAudience(true);
   } else {
+    env_->LogInfo("Before Parse JWT");
     ParseJwt();
+    env_->LogInfo("After Parse JWT");
   }
 }
 
@@ -242,6 +244,8 @@ void AuthChecker::CheckAudience(bool cache_hit) {
   context_->set_auth_issuer(user_info_.issuer);
   context_->set_auth_audience(audience);
   context_->set_auth_authorized_party(user_info_.authorized_party);
+
+  context_->set_auth_claims(user_info_.claims);
 
   // Remove http/s header and trailing '/' for issuer.
   std::string issuer = utils::GetUrlContent(user_info_.issuer);
