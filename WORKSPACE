@@ -16,29 +16,42 @@
 #
 
 load(
-    "//:repositories.bzl",
-    "boringssl_repositories",
-    "protobuf_repositories",
-    "googletest_repositories",
-)
-
-boringssl_repositories()
-
-protobuf_repositories()
-
-googletest_repositories()
-
-load(
     "//contrib/endpoints:repositories.bzl",
-    "grpc_repositories",
-    "mixerapi_repositories",
+    "mixer_client_repositories",
     "servicecontrol_client_repositories",
 )
 
+mixer_client_repositories()
+
+# Workaround for Bazel > 0.4.0 since it needs newer protobuf.bzl from:
+# https://github.com/google/protobuf/pull/2246
+# Do not use this git_repository for anything else than protobuf.bzl
+new_git_repository(
+    name = "protobuf_bzl",
+    # Injecting an empty BUILD file to prevent using any build target
+    build_file_content = "",
+    commit = "05090726144b6e632c50f47720ff51049bfcbef6",
+    remote = "https://github.com/google/protobuf.git",
+)
+
+load(
+    "@mixerclient_git//:repositories.bzl",
+    "boringssl_repositories",
+    "protobuf_repositories",
+    "googletest_repositories",
+    "googleapis_repositories",
+    "grpc_repositories",
+    "mixerapi_repositories",
+)
+
+boringssl_repositories()
+protobuf_repositories()
+googletest_repositories()
+googleapis_repositories()
 grpc_repositories()
+mixerapi_repositories(protobuf_repo="@protobuf_bzl//")
 
-mixerapi_repositories()
-
+# This has to run after googleapis_respoistories.
 servicecontrol_client_repositories()
 
 load(
@@ -47,3 +60,4 @@ load(
 )
 
 envoy_repositories()
+
