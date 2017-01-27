@@ -81,6 +81,7 @@ class Request : public google::api_manager::Request {
     return header_map_.Path()->value().c_str();
   }
   virtual std::string GetClientIP() override { return ""; }
+  virtual std::string GetClientHost() override { return ""; }
   virtual bool FindQuery(const std::string& name, std::string* query) override {
     if (!query_parsed_) {
       auto header = header_map_.Path();
@@ -214,13 +215,16 @@ class Instance : public Http::StreamFilter,
                 status.ToJson());
     if (!status.ok() && state_ != Responded) {
       state_ = Responded;
-      Utility::sendLocalReply(*decoder_callbacks_, Code(status.HttpCode()),
-                              status.ToJson());
+      decoder_callbacks_->dispatcher().post([this, status]() {
+        Utility::sendLocalReply(*decoder_callbacks_, Code(status.HttpCode()),
+                                status.ToJson());
+      });
       return;
     }
     state_ = Complete;
     if (!initiating_call_) {
-      decoder_callbacks_->continueDecoding();
+      decoder_callbacks_->dispatcher().post(
+          [this]() { decoder_callbacks_->continueDecoding(); });
     }
   }
 
