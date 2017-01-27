@@ -71,6 +71,7 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
                                std::unique_ptr<Request> request)
     : service_context_(service_context),
       request_(std::move(request)),
+      auth_claims_(nullptr),
       is_first_report_(true) {
   start_time_ = std::chrono::system_clock::now();
   last_report_time_ = std::chrono::steady_clock::now();

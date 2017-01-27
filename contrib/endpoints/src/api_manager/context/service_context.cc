@@ -44,6 +44,9 @@ const int kIntermediateReportInterval = 10;
 
 const char kHTTPHeadMethod[] = "HEAD";
 const char kHTTPGetMethod[] = "GET";
+
+const char kFirebaseAudience[] =
+    "https://staging-firebaserules.sandbox.googleapis.com/google.firebase.rules.v1.FirebaseRulesService";
 }
 
 ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
@@ -69,6 +72,9 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
                                         ->service_control_config()
                                         .intermediate_report_min_interval();
   }
+
+  service_account_token_.SetAudience(
+      auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE, kFirebaseAudience);
 }
 
 MethodCallInfo ServiceContext::GetMethodCallInfo(

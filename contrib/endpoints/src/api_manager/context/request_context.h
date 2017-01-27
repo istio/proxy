@@ -112,6 +112,16 @@ class RequestContext {
     last_report_time_ = tp;
   }
 
+  void set_auth_claims(std::string &claims) {
+    auth_claims_ = claims;
+  }
+
+  std::string &auth_claims() {
+    return auth_claims_;
+  }
+
+  const std::string GetAuthToken();
+
  private:
   // Fill OperationInfo
   void FillOperationInfo(service_control::OperationInfo *info);
@@ -162,6 +172,9 @@ class RequestContext {
   // auth_authorized_party. It will be used in service control Check() and
   // Report().
   std::string auth_authorized_party_;
+
+  // Auth Claims: This is the decoded payload of the JWT token
+  std::string auth_claims_;
 
   // Used by cloud tracing.
   std::unique_ptr<cloud_trace::CloudTrace> cloud_trace_;

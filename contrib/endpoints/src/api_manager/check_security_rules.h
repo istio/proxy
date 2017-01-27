@@ -15,8 +15,13 @@
 #ifndef API_MANAGER_CHECK_SECURITY_RULES_H_
 #define API_MANAGER_CHECK_SECURITY_RULES_H_
 
-#include "contrib/endpoints/include/api_manager/utils/status.h"
+#include "contrib/endpoints/include/api_manager/api_manager.h"
+#include "contrib/endpoints/src/api_manager/auth/service_account_token.h"
 #include "contrib/endpoints/src/api_manager/context/request_context.h"
+#include "contrib/endpoints/include/api_manager/utils/status.h"
+
+#include <string>
+using ::google::api_manager::utils::Status;
 
 namespace google {
 namespace api_manager {
