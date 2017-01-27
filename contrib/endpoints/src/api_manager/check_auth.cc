@@ -213,9 +213,7 @@ void AuthChecker::LookupJwtCache() {
   if (cache_hit) {
     CheckAudience(true);
   } else {
-    env_->LogInfo("Before Parse JWT");
     ParseJwt();
-    env_->LogInfo("After Parse JWT");
   }
 }
 
