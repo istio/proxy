@@ -332,6 +332,7 @@ void AuthzChecker::HttpFetch(
   request->set_method(method)
       .set_url(url)
       .set_auth_token(GetAuthToken());
+
   if (method != "GET") {
      request->set_header("Content-Type", "application/json")
       .set_body(request_body);
