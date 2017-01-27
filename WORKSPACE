@@ -65,3 +65,13 @@ load(
 )
 
 envoy_repositories()
+
+load(
+    "//test:repositories.bzl",
+    "perl_repositories",
+    "nginx_test_repositories",
+)
+
+perl_repositories()
+
+nginx_test_repositories()

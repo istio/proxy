@@ -14,24 +14,26 @@
 #
 ################################################################################
 #
+load("//test:nginx.bzl", "nginx_test")
+load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library")
 
-package(default_visibility = ["//visibility:public"])
-
-cc_binary(
-    name = "envoy_esp",
-    srcs = [
-        "api_manager_filter.cc",
-        "api_manager_env.cc",
-        "api_manager_env.h",
-    ],
+perl_library(
+    name = "perl_library",
+    srcs = glob(["*.pm"]),
+    data = glob(["testdata/*"]),
     deps = [
-        "//external:protobuf",
-        "//contrib/endpoints/include:api_manager",
-        "//contrib/endpoints/src/grpc/transcoding:transcoding",
-        "//external:servicecontrol",
-        "@envoy_git//:envoy-common",
-        "@envoy_git//:envoy-main"
+        "//external:nginx_test",
     ],
-    linkstatic=1,
-    visibility=["//visibility:public"],
+)
+
+nginx_test(
+    name = "check",
+    srcs = [
+        "check.t",
+    ],
+    nginx = "//src/envoy/prototype:envoy_esp",
+    deps = [
+        ":perl_library",
+    ],
+    tags = ["local"],
 )

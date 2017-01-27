@@ -1,0 +1,43 @@
+name: "endpoints-test.cloudendpointsapis.com"
+id: "2016-08-25r1"
+http {
+  rules {
+    selector: "ListShelves"
+    get: "/shelves"
+  }
+  rules {
+    selector: "CorsShelves"
+    custom: {
+      kind: "OPTIONS"
+      path: "/shelves"
+    }
+  }
+  rules {
+    selector: "CreateShelf"
+    post: "/shelves"
+  }
+  rules {
+    selector: "GetShelf"
+    get: "/shelves/{shelf}"
+  }
+  rules {
+    selector: "DeleteShelf"
+    delete: "/shelves/{shelf}"
+  }
+  rules {
+    selector: "ListBooks"
+    get: "/shelves/{shelf}/books"
+  }
+  rules {
+    selector: "CreateBook"
+    post: "/shelves/{shelf}/books"
+  }
+  rules {
+    selector: "GetBook"
+    get: "/shelves/{shelf}/books/{book}"
+  }
+  rules {
+    selector: "DeleteBook"
+    delete: "/shelves/{shelf}/books/{book}"
+  }
+}
