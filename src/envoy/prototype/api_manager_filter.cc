@@ -13,6 +13,12 @@
 
 namespace Http {
 namespace ApiManager {
+namespace {
+
+// Define lower case string for X-Forwarded-Host.
+const LowerCaseString kHeaderNameXFH("x-forwarded-host", false);
+
+}  // namespace
 
 std::string ReadFile(const std::string& file_name) {
   std::ifstream t(file_name);
@@ -100,8 +106,7 @@ class Request : public google::api_manager::Request {
   }
 
   virtual std::string GetClientHost() override {
-    LowerCaseString key("x-forwarded-host", false);
-    const HeaderEntry* entry = header_map_.get(key);
+    const HeaderEntry* entry = header_map_.get(kHeaderNameXFH);
     if (entry == nullptr) {
       return virtual_host_;
     }
