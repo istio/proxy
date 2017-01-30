@@ -97,7 +97,7 @@ struct DistributionHelperOptions {
 };
 
 const DistributionHelperOptions time_distribution = {29, 2.0, 1e-6};
-const DistributionHelperOptions size_distribution = {29, 2.0, 1e-6};
+const DistributionHelperOptions size_distribution = {8, 10.0, 1};
 const double kMsToSecs = 1e-3;
 
 Status AddDistributionMetric(const DistributionHelperOptions& options,
