@@ -46,7 +46,8 @@ const char kHTTPHeadMethod[] = "HEAD";
 const char kHTTPGetMethod[] = "GET";
 
 const char kFirebaseAudience[] =
-    "https://staging-firebaserules.sandbox.googleapis.com/google.firebase.rules.v1.FirebaseRulesService";
+    "https://staging-firebaserules.sandbox.googleapis.com/"
+    "google.firebase.rules.v1.FirebaseRulesService";
 }
 
 ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,

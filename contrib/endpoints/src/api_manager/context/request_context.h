@@ -112,13 +112,9 @@ class RequestContext {
     last_report_time_ = tp;
   }
 
-  void set_auth_claims(const std::string &claims) {
-    auth_claims_ = claims;
-  }
+  void set_auth_claims(const std::string &claims) { auth_claims_ = claims; }
 
-  std::string &auth_claims() {
-    return auth_claims_;
-  }
+  std::string &auth_claims() { return auth_claims_; }
 
  private:
   // Fill OperationInfo

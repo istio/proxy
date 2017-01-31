@@ -15,9 +15,9 @@
 #ifndef API_MANAGER_CHECK_SECURITY_RULES_H_
 #define API_MANAGER_CHECK_SECURITY_RULES_H_
 
+#include <string>
 #include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "contrib/endpoints/src/api_manager/context/request_context.h"
-#include <string>
 
 namespace google {
 namespace api_manager {

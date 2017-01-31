@@ -50,7 +50,6 @@ message TestRulesetRequest {
 
     // Optional set of variable values to use during evaluation.
     map<string, google.protobuf.Value> variables = 5;
-
   }
 
   // The set of test cases to run against the `Source` if it is well-formed.
