@@ -20,14 +20,6 @@
 #include <uuid/uuid.h>
 #include <sstream>
 
-extern "C" {
-#include "grpc/grpc.h"
-#include "grpc/support/alloc.h"
-#include "grpc/support/log.h"
-#include "grpc/support/string_util.h"
-#include "grpc/support/sync.h"
-}
-
 using ::google::api_manager::utils::Status;
 
 namespace google {
