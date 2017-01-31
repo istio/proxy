@@ -700,6 +700,10 @@ grpc_jwt_verifier_status JwtValidatorImpl::FillUserInfoAndSetExp(
   // Optional field.
   const grpc_json *grpc_json = grpc_jwt_claims_json(claims_);
 
+  /*for (grpc_json *cur = json->child; cur != nullptr; cur = cur->next) {
+    user_info->claims.emplace(std::string(cur->key), std::string(cur->value));
+  } */
+
   char *json_str = grpc_json_dump_to_string(const_cast<::grpc_json *>(grpc_json), 0);
   user_info->claims = json_str == nullptr ? "" : json_str;
 

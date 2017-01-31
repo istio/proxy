@@ -38,6 +38,19 @@ cc_proto_library(
     visibility = ["//visibility:public"],
 )
 
+cc_proto_library(
+    name = "security_rules_proto",
+    srcs = [
+        "proto/security_rules.proto",
+    ],
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//external:cc_wkt_protos",
+    ],
+)
+
 cc_library(
     name = "auth_headers",
     hdrs = [
@@ -99,6 +112,7 @@ cc_library(
         ":auth_headers",
         ":impl_headers",
         ":server_config_proto",
+        ":security_rules_proto",
         "//contrib/endpoints/src/api_manager/auth",
         "//contrib/endpoints/src/api_manager/cloud_trace",
         "//contrib/endpoints/src/api_manager/context",

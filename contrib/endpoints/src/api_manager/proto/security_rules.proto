@@ -1,0 +1,58 @@
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+syntax = "proto3";
+
+package google.api_manager.proto;
+
+import "google/protobuf/struct.proto";
+
+message TestRulesetRequest {
+  message TestCase {
+    // The set of supported test case expectations.
+    enum Expectation {
+      EXPECTATION_UNSPECIFIED = 0;  // Unspecified expectation.
+      ALLOW = 1;                    // Expect an allowed result.
+      DENY = 2;                     // Expect a denied result.
+    }
+
+    // The name of the service that is the subject of the test case.
+    string service_name = 1;
+
+    // The RESTful resource path of the mock `request`.
+    string resource_path = 2;
+
+    // The `request` `operation`. The operation will typically be one of `get`,
+    // `list`, `create`, `update`, or `delete`. Services also may provide custom
+    // operations.
+    string operation = 3;
+
+    // Test expectation.
+    Expectation expectation = 4;
+
+    // (--
+    // Variables and fake resources need to be updated to support multiple
+    // services and the standardized `request` definition.
+    // --)
+
+    // Optional set of variable values to use during evaluation.
+    map<string, google.protobuf.Value> variables = 5;
+
+  }
+
+  // The set of test cases to run against the `Source` if it is well-formed.
+  repeated TestCase test_cases = 3;
+}

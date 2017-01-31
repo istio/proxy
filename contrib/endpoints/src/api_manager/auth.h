@@ -15,6 +15,7 @@
 #ifndef API_MANAGER_AUTH_H_
 #define API_MANAGER_AUTH_H_
 
+#include <map>
 #include <set>
 #include <sstream>
 #include <string>
