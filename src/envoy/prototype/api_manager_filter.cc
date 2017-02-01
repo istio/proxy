@@ -186,9 +186,7 @@ class Response : public google::api_manager::Response {
 
 const Http::HeaderMapImpl BadRequest{{Http::Headers::get().Status, "400"}};
 
-class Instance : public Http::StreamFilter,
-                 public Http::AccessLog::Instance,
-                 public Logger::Loggable<Logger::Id::http> {
+class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
  private:
   std::shared_ptr<google::api_manager::ApiManager> api_manager_;
   std::unique_ptr<google::api_manager::RequestHandlerInterface>
@@ -309,9 +307,12 @@ class Instance : public Http::StreamFilter,
         new Response(request_info));
     request_handler_->Report(std::move(response), []() {});
   }
-  // There are two log() functions. Use this Log() to redirect to base class
-  // log().
-  spdlog::logger& Log() { return Logger::Loggable<Logger::Id::http>::log(); }
+
+  spdlog::logger& Log() {
+    static spdlog::logger& instance =
+        Logger::Registry::getLog(Logger::Id::http);
+    return instance;
+  }
 };
 }
 }
