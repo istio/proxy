@@ -65,8 +65,12 @@ class ServiceContext {
     return !is_auth_force_disabled_ && config_->HasAuth();
   }
 
-  bool RequireRulesCheck() const {
-    return RequireAuth() && !is_check_security_rules_disabled_;
+  bool IsRulesCheckEnabled() const {
+    return RequireAuth() && config_->server_config() &&
+           !config_->server_config()
+                ->api_check_security_rules_config()
+                .firebase_server()
+                .empty();
   }
 
   auth::Certs &certs() { return certs_; }
@@ -129,9 +133,6 @@ class ServiceContext {
 
   // Is auth force-disabled
   bool is_auth_force_disabled_;
-
-  // Is check security rules disabled
-  bool is_check_security_rules_disabled_;
 
   // The time interval for grpc intermediate report.
   int64_t intermediate_report_interval_;

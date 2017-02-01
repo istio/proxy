@@ -150,9 +150,6 @@ message ApiAuthenticationConfig {
 message ApiCheckSecurityRulesConfig {
   // Firebase server to use.
   string firebase_server = 1;
-
-  // Allows to disable the API authorization
-  bool force_disable = 2;
 }
 
 message MixerOptions {
