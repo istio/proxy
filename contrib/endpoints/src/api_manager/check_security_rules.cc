@@ -54,7 +54,7 @@ const std::string GetReleaseName(
          request_context->service_context()->service().apis(0).version();
 }
 
-const std::string GetRulesetTestUri(std::string &ruleset_id) {
+const std::string GetRulesetTestUri(const std::string &ruleset_id) {
   return std::string(kFirebaseServerStaging) + "v1/" + ruleset_id +
          ":test?alt=json";
 }
@@ -96,7 +96,7 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
 
  private:
   // Helper method that invokes the test firebase service api.
-  void CallTest(std::string &ruleset_id,
+  void CallTest(const std::string &ruleset_id,
                 std::shared_ptr<context::RequestContext> context,
                 std::function<void(Status status)> continuation);
 
@@ -175,7 +175,7 @@ void AuthzChecker::Check(
             });
 }
 
-void AuthzChecker::CallTest(std::string &ruleset_id,
+void AuthzChecker::CallTest(const std::string &ruleset_id,
                             std::shared_ptr<context::RequestContext> context,
                             std::function<void(Status status)> continuation) {
   std::string body;
