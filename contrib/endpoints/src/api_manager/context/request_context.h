@@ -114,7 +114,7 @@ class RequestContext {
 
   void set_auth_claims(const std::string &claims) { auth_claims_ = claims; }
 
-  std::string &auth_claims() { return auth_claims_; }
+  const std::string &auth_claims() { return auth_claims_; }
 
  private:
   // Fill OperationInfo

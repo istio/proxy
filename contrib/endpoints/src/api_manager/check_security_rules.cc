@@ -39,6 +39,7 @@ const char kFirebaseService[] =
 const char kFailedFirebaseReleaseFetch[] = "Failed to fetch Firebase Release";
 const char kFailedFirebaseTest[] = "Failed to execute Firebase Test";
 const char kInvalidResponse[] = "Invalid JSON response from Firebase Service";
+const char kTestSuccess[] = "SUCCESS";
 
 void SetProtoValue(std::string key, ::google::protobuf::Value &value,
                    ::google::protobuf::Value *head) {
@@ -141,7 +142,7 @@ void AuthzChecker::Check(
   if (!context->service_context()->RequireRulesCheck() ||
       context->method() == nullptr || !context->method()->auth()) {
     env_->LogDebug(
-        std::string("Autherization and JWT validation was not performed") +
+        "Autherization and JWT validation was not performed"
         " skipping authorization");
     final_continuation(Status::OK);
     return;
@@ -250,7 +251,7 @@ Status AuthzChecker::ParseTestResponse(
     if (result == nullptr) {
       env_->LogInfo("Result state is empty");
       status = invalid;
-    } else if (std::string(result) != "SUCCESS") {
+    } else if (std::string(result) != kTestSuccess) {
       status = Status(Code::PERMISSION_DENIED,
                       std::string("Unauthorized ") +
                           context->request()->GetRequestHTTPMethod() +
