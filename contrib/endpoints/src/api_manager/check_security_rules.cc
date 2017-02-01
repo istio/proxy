@@ -113,7 +113,7 @@ void AuthzChecker::Check(
   // TODO: Check service config to see if "useSecurityRules" is specified.
   // If so, call Firebase Rules service TestRuleset API.
 
-  if (!context->service_context()->RequireAuth() ||
+  if (!context->service_context()->RequireRulesCheck() ||
       context->method() == nullptr || !context->method()->auth()) {
     env_->LogDebug(
         std::string("Autherization and JWT validation was not performed") +

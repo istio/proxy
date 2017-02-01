@@ -65,6 +65,10 @@ class ServiceContext {
     return !is_auth_force_disabled_ && config_->HasAuth();
   }
 
+  bool RequireRulesCheck() const {
+    return RequireAuth() && !is_check_security_rules_disabled_;
+  }
+
   auth::Certs &certs() { return certs_; }
   auth::JwtCache &jwt_cache() { return jwt_cache_; }
 
@@ -125,6 +129,9 @@ class ServiceContext {
 
   // Is auth force-disabled
   bool is_auth_force_disabled_;
+
+  // Is check security rules disabled
+  bool is_check_security_rules_disabled_;
 
   // The time interval for grpc intermediate report.
   int64_t intermediate_report_interval_;
