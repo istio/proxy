@@ -40,6 +40,47 @@ const char kFailedFirebaseReleaseFetch[] = "Failed to fetch Firebase Release";
 const char kFailedFirebaseTest[] = "Failed to execute Firebase Test";
 const char kInvalidResponse[] = "Invalid JSON response from Firebase Service";
 
+void SetProtoValue(std::string key, ::google::protobuf::Value &value,
+                   ::google::protobuf::Value *head) {
+  ::google::protobuf::Struct *s = head->mutable_struct_value();
+  Map<std::string, google::protobuf::Value> *fields = s->mutable_fields();
+  (*fields)[key] = value;
+}
+
+const std::string GetReleaseName(
+    std::shared_ptr<context::RequestContext> request_context) {
+  return request_context->service_context()->service_name() + ":" +
+         request_context->service_context()->service().apis(0).version();
+}
+
+const std::string GetRulesetTestUri(std::string &ruleset_id) {
+  return std::string(kFirebaseServerStaging) + "v1/" + ruleset_id +
+         ":test?alt=json";
+}
+
+const std::string GetReleaseUrl(
+    std::shared_ptr<context::RequestContext> request_context) {
+  return std::string(kFirebaseServerStaging) + "v1/projects/" +
+         request_context->service_context()->project_id() + "/releases/" +
+         GetReleaseName(request_context);
+}
+
+std::string GetOperation(std::string &httpMethod) {
+  if (httpMethod == "POST") {
+    return std::string("create");
+  }
+
+  if (httpMethod == "GET" || httpMethod == "HEAD" || httpMethod == "OPTIONS") {
+    return std::string("get");
+  }
+
+  if (httpMethod == "DELETE") {
+    return std::string("delete");
+  }
+
+  return std::string("update");
+}
+
 // An AuthzChecker object is created for every incoming request. It does
 // authorizaiton by calling Firebase Rules service.
 class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
@@ -54,9 +95,9 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
 
  private:
   // Helper method that invokes the test firebase service api.
-  void FirebaseCheck(std::string &ruleset_id,
-                     std::shared_ptr<context::RequestContext> context,
-                     std::function<void(Status status)> continuation);
+  void CallTest(std::string &ruleset_id,
+                std::shared_ptr<context::RequestContext> context,
+                std::function<void(Status status)> continuation);
 
   // Parse the respose for GET RELEASE API call
   Status ParseReleaseResponse(const std::string &json_str,
@@ -68,17 +109,7 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
 
   // Builds the request body for the TESP API call.
   Status BuildTestRequestBody(std::shared_ptr<context::RequestContext> context,
-                              std::string &result_string);
-
-  // Get the release name to used in Firebase API call
-  static const std::string GetReleaseName(
-      std::shared_ptr<context::RequestContext> request_context);
-
-  // Get the URL for the Release request.
-  static const std::string GetReleaseUrl(
-      std::shared_ptr<context::RequestContext> request_context);
-
-  static const std::string GetRulesetTestUri(std::string &ruleset_id);
+                              std::string *result_string);
 
   // Invoke the HTTP call
   void HttpFetch(const std::string &url, const std::string &method,
@@ -90,12 +121,6 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
     return sa_token_->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE);
   }
-
-  // Get Firebase specific operation Id based on the http Method.
-  static std::string GetOperation(std::string &httpMethod);
-
-  void SetProtoValue(::google::protobuf::Value &head, std::string key,
-                     ::google::protobuf::Value &value);
 
   std::shared_ptr<AuthzChecker> GetPtr() { return shared_from_this(); }
 
@@ -124,7 +149,7 @@ void AuthzChecker::Check(
 
   // Fetch the Release attributes.
   auto checker = GetPtr();
-  HttpFetch(AuthzChecker::GetReleaseUrl(context), "GET", "",
+  HttpFetch(GetReleaseUrl(context), "GET", "",
             [context, final_continuation, checker](Status status,
                                                    std::string &&body) {
               std::string ruleset_id;
@@ -134,7 +159,7 @@ void AuthzChecker::Check(
                 status = checker->ParseReleaseResponse(body, &ruleset_id);
               } else {
                 checker->env_->LogError(std::string("GetReleaseName for ") +
-                                        AuthzChecker::GetReleaseUrl(context) +
+                                        GetReleaseUrl(context) +
                                         " with status " + status.ToString());
                 status = Status(Code::INTERNAL, kFailedFirebaseReleaseFetch);
               }
@@ -142,26 +167,25 @@ void AuthzChecker::Check(
               // If the parsing of the release body is successful, then call the
               // Test Api for firebase rules service.
               if (status.ok()) {
-                checker->FirebaseCheck(ruleset_id, context, final_continuation);
+                checker->CallTest(ruleset_id, context, final_continuation);
               } else {
                 final_continuation(status);
               }
             });
 }
 
-void AuthzChecker::FirebaseCheck(
-    std::string &ruleset_id, std::shared_ptr<context::RequestContext> context,
-    std::function<void(Status status)> continuation) {
-  auto checker = GetPtr();
-
+void AuthzChecker::CallTest(std::string &ruleset_id,
+                            std::shared_ptr<context::RequestContext> context,
+                            std::function<void(Status status)> continuation) {
   std::string body;
-  Status status = BuildTestRequestBody(context, body);
+  Status status = BuildTestRequestBody(context, &body);
   if (!status.ok()) {
     continuation(status);
     return;
   }
 
-  HttpFetch(AuthzChecker::GetRulesetTestUri(ruleset_id), "POST", body,
+  auto checker = GetPtr();
+  HttpFetch(GetRulesetTestUri(ruleset_id), "POST", body,
             [context, continuation, checker, ruleset_id](Status status,
                                                          std::string &&body) {
 
@@ -190,13 +214,13 @@ Status AuthzChecker::ParseReleaseResponse(const std::string &json_str,
 
   Status status = Status::OK;
   const char *id = GetStringValue(json, "rulesetName");
-  (*ruleset_id) = (id == nullptr) ? "" : GetStringValue(json, "rulesetName");
+  (*ruleset_id) = (id == nullptr) ? "" : id;
 
   if (ruleset_id->empty()) {
     env_->LogError("Empty ruleset Id received from firebase service");
     status = Status(Code::INTERNAL, kInvalidResponse);
   } else {
-    env_->LogInfo(std::string("Received ruleset Id: ") + *ruleset_id);
+    env_->LogDebug(std::string("Received ruleset Id: ") + *ruleset_id);
   }
 
   grpc_json_destroy(json);
@@ -240,32 +264,16 @@ Status AuthzChecker::ParseTestResponse(
   return status;
 }
 
-std::string AuthzChecker::GetOperation(std::string &httpMethod) {
-  if (httpMethod == "POST") {
-    return std::string("create");
-  }
-
-  if (httpMethod == "GET" || httpMethod == "HEAD" || httpMethod == "OPTIONS") {
-    return std::string("get");
-  }
-
-  if (httpMethod == "DELETE") {
-    return std::string("delete");
-  }
-
-  return std::string("update");
-}
-
 Status AuthzChecker::BuildTestRequestBody(
     std::shared_ptr<context::RequestContext> context,
-    std::string &result_string) {
+    std::string *result_string) {
   proto::TestRulesetRequest request;
-  proto::TestRulesetRequest::TestCase *test_case = request.add_test_cases();
-  std::string httpMethod = context->request()->GetRequestHTTPMethod();
+  auto *test_case = request.add_test_cases();
+  auto httpMethod = context->request()->GetRequestHTTPMethod();
 
   test_case->set_service_name(context->service_context()->service_name());
   test_case->set_resource_path(context->request()->GetRequestPath());
-  test_case->set_operation(AuthzChecker::GetOperation(httpMethod));
+  test_case->set_operation(GetOperation(httpMethod));
   test_case->set_expectation(proto::TestRulesetRequest::TestCase::ALLOW);
 
   ::google::protobuf::Value auth;
@@ -279,49 +287,23 @@ Status AuthzChecker::BuildTestRequestBody(
     return status;
   }
 
-  SetProtoValue(token, "token", claims);
-  SetProtoValue(auth, "auth", token);
+  SetProtoValue("token", claims, &token);
+  SetProtoValue("auth", token, &auth);
 
   Map<std::string, google::protobuf::Value> *variables =
       test_case->mutable_variables();
   (*variables)["request"] = auth;
 
   status =
-      utils::ProtoToJson(request, &result_string, utils::JsonOptions::DEFAULT);
+      utils::ProtoToJson(request, result_string, utils::JsonOptions::DEFAULT);
   if (status.ok()) {
-    env_->LogDebug(std::string("PRotobuf to JSON string = ") + result_string);
+    env_->LogDebug(std::string("PRotobuf to JSON string = ") + *result_string);
   } else {
     env_->LogError(std::string("Error creating TestRulesetRequest") +
                    status.ToString());
   }
 
   return status;
-}
-
-void AuthzChecker::SetProtoValue(::google::protobuf::Value &head,
-                                 std::string key,
-                                 ::google::protobuf::Value &value) {
-  ::google::protobuf::Struct *s = head.mutable_struct_value();
-  Map<std::string, google::protobuf::Value> *fields = s->mutable_fields();
-  (*fields)[key] = value;
-}
-
-const std::string AuthzChecker::GetReleaseName(
-    std::shared_ptr<context::RequestContext> request_context) {
-  return request_context->service_context()->service_name() + ":" +
-         request_context->service_context()->service().apis(0).version();
-}
-
-const std::string AuthzChecker::GetRulesetTestUri(std::string &ruleset_id) {
-  return std::string(kFirebaseServerStaging) + "v1/" + ruleset_id +
-         ":test?alt=json";
-}
-
-const std::string AuthzChecker::GetReleaseUrl(
-    std::shared_ptr<context::RequestContext> request_context) {
-  return std::string(kFirebaseServerStaging) + "v1/projects/" +
-         request_context->service_context()->project_id() + "/releases/" +
-         AuthzChecker::GetReleaseName(request_context);
 }
 
 void AuthzChecker::HttpFetch(
