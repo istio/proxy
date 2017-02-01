@@ -63,8 +63,8 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
                                   .force_disable()),
       is_check_security_rules_disabled_(config_->server_config() &&
                                         config_->server_config()
-                                        ->api_check_security_rules_config()
-                                        .force_disable()) {
+                                            ->api_check_security_rules_config()
+                                            .force_disable()) {
   intermediate_report_interval_ = kIntermediateReportInterval;
 
   // Check server_config override.
