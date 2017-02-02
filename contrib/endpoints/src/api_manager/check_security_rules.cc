@@ -56,10 +56,6 @@ const char kRequest[] = "request";
 const char kContentType[] = "Content-Type";
 const char kApplication[] = "application/json";
 
-const std::string &GetFirebaseServer(const context::RequestContext &context) {
-  return context.service_context()->config()->GetFirebaseServer();
-}
-
 void SetProtoValue(const std::string &key,
                    const ::google::protobuf::Value &value,
                    ::google::protobuf::Value *head) {
@@ -75,12 +71,13 @@ const std::string GetReleaseName(const context::RequestContext &context) {
 
 const std::string GetRulesetTestUri(const context::RequestContext &context,
                                     const std::string &ruleset_id) {
-  return GetFirebaseServer(context) + kV1 + ruleset_id + kTestQuery;
+  return context.service_context()->config()->GetFirebaseServer() + kV1 +
+         ruleset_id + kTestQuery;
 }
 
 const std::string GetReleaseUrl(const context::RequestContext &context) {
-  return GetFirebaseServer(context) + kV1 + kProjects +
-         context.service_context()->project_id() + kReleases +
+  return context.service_context()->config()->GetFirebaseServer() + kV1 +
+         kProjects + context.service_context()->project_id() + kReleases +
          GetReleaseName(context);
 }
 

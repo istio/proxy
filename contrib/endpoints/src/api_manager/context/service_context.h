@@ -67,8 +67,6 @@ class ServiceContext {
 
   bool IsRulesCheckEnabled() const {
     return RequireAuth() && service().apis_size() > 0 &&
-           config_->server_config() &&
-           config_->server_config()->has_api_check_security_rules_config() &&
            !config_->GetFirebaseServer().empty();
   }
 
