@@ -870,6 +870,23 @@ TEST(Config, TestCorsDisabled) {
   ASSERT_EQ(nullptr, method1);
 }
 
+TEST(Config, TestFirebaseServerCheck) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char server_config[] = R"(
+api_check_security_rules_config {
+  firebase_server: "https://myfirebaseserver.com/"
+}
+)";
+
+  std::unique_ptr<Config> config =
+      Config::Create(&env, kServiceNameConfig, server_config);
+  ASSERT_TRUE(config);
+
+  auto server = config->GetFirebaseServer();
+  ASSERT_EQ(server, "https://myfirebaseserver.com/");
+}
+
 }  // namespace
 
 }  // namespace api_manager

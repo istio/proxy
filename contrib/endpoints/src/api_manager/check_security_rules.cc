@@ -56,12 +56,8 @@ const char kRequest[] = "request";
 const char kContentType[] = "Content-Type";
 const char kApplication[] = "application/json";
 
-const std::string GetFirebaseServer(const context::RequestContext &context) {
-  return context.service_context()
-      ->config()
-      ->server_config()
-      ->api_check_security_rules_config()
-      .firebase_server();
+const std::string &GetFirebaseServer(const context::RequestContext &context) {
+  return context.service_context()->config()->GetFirebaseServer();
 }
 
 void SetProtoValue(const std::string &key,
