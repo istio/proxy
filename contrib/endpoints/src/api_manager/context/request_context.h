@@ -37,7 +37,9 @@ class RequestContext {
                  std::unique_ptr<Request> request);
 
   // Get the ApiManagerImpl object.
-  context::ServiceContext *service_context() { return service_context_.get(); }
+  context::ServiceContext *service_context() const {
+    return service_context_.get();
+  }
 
   // Get the request object.
   Request *request() { return request_.get(); }
@@ -112,6 +114,10 @@ class RequestContext {
     last_report_time_ = tp;
   }
 
+  void set_auth_claims(const std::string &claims) { auth_claims_ = claims; }
+
+  const std::string &auth_claims() { return auth_claims_; }
+
  private:
   // Fill OperationInfo
   void FillOperationInfo(service_control::OperationInfo *info);
@@ -162,6 +168,9 @@ class RequestContext {
   // auth_authorized_party. It will be used in service control Check() and
   // Report().
   std::string auth_authorized_party_;
+
+  // Auth Claims: This is the decoded payload of the JWT token
+  std::string auth_claims_;
 
   // Used by cloud tracing.
   std::unique_ptr<cloud_trace::CloudTrace> cloud_trace_;

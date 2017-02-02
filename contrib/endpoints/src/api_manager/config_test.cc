@@ -870,6 +870,45 @@ TEST(Config, TestCorsDisabled) {
   ASSERT_EQ(nullptr, method1);
 }
 
+TEST(Config, TestFirebaseServerCheck) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char server_config[] = R"(
+api_check_security_rules_config {
+  firebase_server: "https://myfirebaseserver.com/"
+}
+)";
+
+  std::unique_ptr<Config> config =
+      Config::Create(&env, kServiceNameConfig, server_config);
+  ASSERT_TRUE(config);
+
+  ASSERT_EQ(config->GetFirebaseServer(), "https://myfirebaseserver.com/");
+}
+
+TEST(Config, TestEmptyFirebaseServerCheck) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char server_config[] = R"(
+service_control_config {
+  check_aggregator_config {
+    cache_entries: 1000
+    flush_interval_ms: 10
+    response_expiration_ms: 20
+  }
+  report_aggregator_config {
+    cache_entries: 1020
+    flush_interval_ms: 15
+  }
+}
+)";
+
+  std::unique_ptr<Config> config =
+      Config::Create(&env, kServiceNameConfig, server_config);
+  ASSERT_TRUE(config);
+
+  ASSERT_TRUE(config->GetFirebaseServer().empty());
+}
 }  // namespace
 
 }  // namespace api_manager

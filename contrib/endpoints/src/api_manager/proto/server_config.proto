@@ -39,6 +39,9 @@ message ServerConfig {
   // Envoy/esp talks to Mixer, has to specify this field.
   MixerOptions mixer_options = 6;
 
+  // Server config used for API authorization via Firebase Rules.
+  ApiCheckSecurityRulesConfig api_check_security_rules_config = 7;
+
   // Experimental flags
   Experimental experimental = 999;
 }
@@ -141,6 +144,12 @@ message ApiAuthenticationConfig {
   // Allows to disable the API authentication regardless of the auth
   // configuration in service config.
   bool force_disable = 1;
+}
+
+// Server config for API Authorization via Firebase Rules
+message ApiCheckSecurityRulesConfig {
+  // Firebase server to use.
+  string firebase_server = 1;
 }
 
 message MixerOptions {

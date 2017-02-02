@@ -78,6 +78,9 @@ class Config {
   void SetJwksUri(const std::string &issuer, const std::string &jwks_uri,
                   bool openid_valid);
 
+  // Get the Firebase server from Server config
+  std::string GetFirebaseServer();
+
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Config);
 
