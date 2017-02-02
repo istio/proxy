@@ -33,15 +33,33 @@ namespace {
 const char kFirebaseServerStaging[] =
     "https://staging-firebaserules.sandbox.googleapis.com/";
 
-const char kFirebaseService[] =
-    "/google.firebase.rules.v1.FirebaseRulesService";
-
 const char kFailedFirebaseReleaseFetch[] = "Failed to fetch Firebase Release";
 const char kFailedFirebaseTest[] = "Failed to execute Firebase Test";
 const char kInvalidResponse[] = "Invalid JSON response from Firebase Service";
 const char kTestSuccess[] = "SUCCESS";
+const char kHttpGetMethod[] = "GET";
+const char kHttpPostMethod[] = "POST";
+const char kHttpHeadMethod[] = "HEAD";
+const char kHttpOptionsMethod[] = "OPTIONS";
+const char kHttpDeleteMethod[] = "DELETE";
+const char kFirebaseCreateMethod[] = "create";
+const char kFirebaseGetMethod[] = "get";
+const char kFirebaseDeleteMethod[] = "delete";
+const char kFirebaseUpdateMethod[] = "update";
+const char kV1[] = "v1/";
+const char kTestQuery[] = ":test?alt=json";
+const char kProjects[] = "projects/";
+const char kReleases[] = "/releases/";
+const char kRulesetName[] = "rulesetName";
+const char kTestResults[] = "testResults";
+const char kState[] = "state";
+const char kToken[] = "token";
+const char kAuth[] = "auth";
+const char kRequest[] = "request";
+const char kContentType[] = "Content-Type";
+const char kApplication[] = "application/json";
 
-const std::string GetFirebaseServer(context::RequestContext &context) {
+const std::string GetFirebaseServer(const context::RequestContext &context) {
   return context.service_context()
       ->config()
       ->server_config()
@@ -57,36 +75,37 @@ void SetProtoValue(const std::string &key,
   (*fields)[key] = value;
 }
 
-const std::string GetReleaseName(context::RequestContext &context) {
+const std::string GetReleaseName(const context::RequestContext &context) {
   return context.service_context()->service_name() + ":" +
          context.service_context()->service().apis(0).version();
 }
 
-const std::string GetRulesetTestUri(context::RequestContext &context,
+const std::string GetRulesetTestUri(const context::RequestContext &context,
                                     const std::string &ruleset_id) {
-  return GetFirebaseServer(context) + "v1/" + ruleset_id + ":test?alt=json";
+  return GetFirebaseServer(context) + kV1 + ruleset_id + kTestQuery;
 }
 
-const std::string GetReleaseUrl(context::RequestContext &context) {
-  return GetFirebaseServer(context) + "v1/projects/" +
-         context.service_context()->project_id() + "/releases/" +
+const std::string GetReleaseUrl(const context::RequestContext &context) {
+  return GetFirebaseServer(context) + kV1 + kProjects +
+         context.service_context()->project_id() + kReleases +
          GetReleaseName(context);
 }
 
-std::string GetOperation(std::string &httpMethod) {
-  if (httpMethod == "POST") {
-    return std::string("create");
+const std::string GetOperation(const std::string &httpMethod) {
+  if (httpMethod == kHttpPostMethod) {
+    return kFirebaseCreateMethod;
   }
 
-  if (httpMethod == "GET" || httpMethod == "HEAD" || httpMethod == "OPTIONS") {
-    return std::string("get");
+  if (httpMethod == kHttpGetMethod || httpMethod == kHttpHeadMethod ||
+      httpMethod == kHttpOptionsMethod) {
+    return kFirebaseGetMethod;
   }
 
-  if (httpMethod == "DELETE") {
-    return std::string("delete");
+  if (httpMethod == kHttpDeleteMethod) {
+    return kFirebaseDeleteMethod;
   }
 
-  return std::string("update");
+  return kFirebaseUpdateMethod;
 }
 
 // An AuthzChecker object is created for every incoming request. It does
@@ -155,7 +174,7 @@ void AuthzChecker::Check(
 
   // Fetch the Release attributes.
   auto checker = GetPtr();
-  HttpFetch(GetReleaseUrl(*context.get()), "GET", "",
+  HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
             [context, final_continuation, checker](Status status,
                                                    std::string &&body) {
               std::string ruleset_id;
@@ -191,7 +210,7 @@ void AuthzChecker::CallTest(const std::string &ruleset_id,
   }
 
   auto checker = GetPtr();
-  HttpFetch(GetRulesetTestUri(*context.get(), ruleset_id), "POST", body,
+  HttpFetch(GetRulesetTestUri(*context, ruleset_id), kHttpPostMethod, body,
             [context, continuation, checker, ruleset_id](Status status,
                                                          std::string &&body) {
 
@@ -219,7 +238,7 @@ Status AuthzChecker::ParseReleaseResponse(const std::string &json_str,
   }
 
   Status status = Status::OK;
-  const char *id = GetStringValue(json, "rulesetName");
+  const char *id = GetStringValue(json, kRulesetName);
   *ruleset_id = (id == nullptr) ? "" : id;
 
   if (ruleset_id->empty()) {
@@ -246,12 +265,12 @@ Status AuthzChecker::ParseTestResponse(context::RequestContext &context,
   Status status = Status::OK;
   Status invalid = Status(Code::INTERNAL, kInvalidResponse);
 
-  const grpc_json *testResults = GetProperty(json, "testResults");
+  const grpc_json *testResults = GetProperty(json, kTestResults);
   if (testResults == nullptr) {
     env_->LogError("TestResults are null");
     status = invalid;
   } else {
-    const char *result = GetStringValue(testResults->child, "state");
+    const char *result = GetStringValue(testResults->child, kState);
     if (result == nullptr) {
       env_->LogInfo("Result state is empty");
       status = invalid;
@@ -291,11 +310,11 @@ Status AuthzChecker::BuildTestRequestBody(context::RequestContext &context,
     return status;
   }
 
-  SetProtoValue("token", claims, &token);
-  SetProtoValue("auth", token, &auth);
+  SetProtoValue(kToken, claims, &token);
+  SetProtoValue(kAuth, token, &auth);
 
   auto *variables = test_case->mutable_variables();
-  (*variables)["request"] = auth;
+  (*variables)[kRequest] = auth;
 
   status =
       utils::ProtoToJson(request, result_string, utils::JsonOptions::DEFAULT);
@@ -327,9 +346,8 @@ void AuthzChecker::HttpFetch(
 
   request->set_method(method).set_url(url).set_auth_token(GetAuthToken());
 
-  if (method != "GET") {
-    request->set_header("Content-Type", "application/json")
-        .set_body(request_body);
+  if (method != kHttpGetMethod) {
+    request->set_header(kContentType, kApplication).set_body(request_body);
   }
 
   env_->RunHTTPRequest(std::move(request));

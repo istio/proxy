@@ -703,7 +703,9 @@ grpc_jwt_verifier_status JwtValidatorImpl::FillUserInfoAndSetExp(
   char *json_str =
       grpc_json_dump_to_string(const_cast<::grpc_json *>(grpc_json), 0);
   user_info->claims = json_str == nullptr ? "" : json_str;
-  gpr_free(json_str);
+  if (json_str != nullptr) {
+    gpr_free(json_str);
+  }
 
   const char *email = GetStringValue(grpc_json, "email");
   user_info->email = email == nullptr ? "" : email;

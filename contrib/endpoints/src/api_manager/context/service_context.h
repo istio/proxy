@@ -67,6 +67,7 @@ class ServiceContext {
 
   bool IsRulesCheckEnabled() const {
     return RequireAuth() && config_->server_config() &&
+           config_->server_config()->has_api_authentication_config() &&
            !config_->server_config()
                 ->api_check_security_rules_config()
                 .firebase_server()

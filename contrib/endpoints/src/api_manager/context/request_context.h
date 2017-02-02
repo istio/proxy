@@ -37,7 +37,9 @@ class RequestContext {
                  std::unique_ptr<Request> request);
 
   // Get the ApiManagerImpl object.
-  context::ServiceContext *service_context() { return service_context_.get(); }
+  context::ServiceContext *service_context() const {
+    return service_context_.get();
+  }
 
   // Get the request object.
   Request *request() { return request_.get(); }
