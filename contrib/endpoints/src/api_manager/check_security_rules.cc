@@ -64,24 +64,24 @@ void SetProtoValue(const std::string &key,
   (*fields)[key] = value;
 }
 
-const std::string GetReleaseName(const context::RequestContext &context) {
+std::string GetReleaseName(const context::RequestContext &context) {
   return context.service_context()->service_name() + ":" +
          context.service_context()->service().apis(0).version();
 }
 
-const std::string GetRulesetTestUri(const context::RequestContext &context,
-                                    const std::string &ruleset_id) {
+std::string GetRulesetTestUri(const context::RequestContext &context,
+                              const std::string &ruleset_id) {
   return context.service_context()->config()->GetFirebaseServer() + kV1 +
          ruleset_id + kTestQuery;
 }
 
-const std::string GetReleaseUrl(const context::RequestContext &context) {
+std::string GetReleaseUrl(const context::RequestContext &context) {
   return context.service_context()->config()->GetFirebaseServer() + kV1 +
          kProjects + context.service_context()->project_id() + kReleases +
          GetReleaseName(context);
 }
 
-const std::string GetOperation(const std::string &httpMethod) {
+std::string GetOperation(const std::string &httpMethod) {
   if (httpMethod == kHttpPostMethod) {
     return kFirebaseCreateMethod;
   }

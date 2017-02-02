@@ -513,7 +513,7 @@ void Config::SetJwksUri(const string &issuer, const string &jwks_uri,
   }
 }
 
-const std::string Config::GetFirebaseServer() {
+std::string Config::GetFirebaseServer() {
   if (server_config_ == nullptr) {
     return "";
   }

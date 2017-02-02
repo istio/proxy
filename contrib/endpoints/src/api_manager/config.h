@@ -79,7 +79,7 @@ class Config {
                   bool openid_valid);
 
   // Get the Firebase server from Server config
-  const std::string GetFirebaseServer();
+  std::string GetFirebaseServer();
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Config);
