@@ -30,9 +30,6 @@ namespace google {
 namespace api_manager {
 namespace {
 
-const char kFirebaseServerStaging[] =
-    "https://staging-firebaserules.sandbox.googleapis.com/";
-
 const char kFailedFirebaseReleaseFetch[] = "Failed to fetch Firebase Release";
 const char kFailedFirebaseTest[] = "Failed to execute Firebase Test";
 const char kInvalidResponse[] = "Invalid JSON response from Firebase Service";
