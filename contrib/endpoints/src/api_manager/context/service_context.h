@@ -69,10 +69,7 @@ class ServiceContext {
     return RequireAuth() && service().apis_size() > 0 &&
            config_->server_config() &&
            config_->server_config()->has_api_check_security_rules_config() &&
-           !config_->server_config()
-                ->api_check_security_rules_config()
-                .firebase_server()
-                .empty();
+           !config_->GetFirebaseServer().empty();
   }
 
   auth::Certs &certs() { return certs_; }
