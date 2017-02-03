@@ -221,7 +221,7 @@ cc_library(
 
     native.new_http_archive(
         name = "tclap_tar",
-        url = "https://sourceforge.net/projects/tclap/files/tclap-1.2.1.tar.gz/download",
+        url = "https://storage.googleapis.com/istio-build-deps/tclap-1.2.1.tar.gz",
         type = "tar.gz",
         strip_prefix = "tclap-1.2.1",
         build_file_content = BUILD,
@@ -629,6 +629,6 @@ cc_test(
     native.new_git_repository(
         name = "envoy_git",
         remote = "https://github.com/lyft/envoy.git",
-        commit = "c36bb76e304ab4c5584a07303e2953a170888319",
+        commit = "02c6fc97b4c21d25ab596a25208fbe283e927f6a",
         build_file_content = BUILD,
     )
