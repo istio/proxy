@@ -17,17 +17,25 @@
 
 package(default_visibility = ["//visibility:public"])
 
-cc_binary(
-    name = "envoy_esp",
+cc_library(
+    name = "filter_lib",
     srcs = [
         "http_control.cc",
         "http_control.h",
         "http_filter.cc",
     ],
-    linkstatic = 1,
     deps = [
         "//external:mixer_client_lib",
         "@envoy_git//:envoy-common",
+    ],
+    alwayslink = 1,
+)
+
+cc_binary(
+    name = "envoy_esp",
+    linkstatic = 1,
+    deps = [
+        ":filter_lib",
         "@envoy_git//:envoy-main",
     ],
 )

@@ -220,10 +220,11 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
     // Make sure not to use any class members at the callback.
     // The class may be gone when it is called.
     // Log() is a static function so it is OK.
-    http_control_->Report(
-        request_data_, request_info, [](const Status& status) {
-          Log().debug("Report returns status: {}", status.ToString());
-        });
+    http_control_->Report(request_data_, response_headers, request_info,
+                          [](const Status& status) {
+                            Log().debug("Report returns status: {}",
+                                        status.ToString());
+                          });
   }
 
   static spdlog::logger& Log() {

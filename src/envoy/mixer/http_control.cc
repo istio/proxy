@@ -30,6 +30,10 @@ const std::string kEnvNameTargetService = "TARGET_SERVICE";
 // Define lower case string for X-Forwarded-Host.
 const LowerCaseString kHeaderNameXFH("x-forwarded-host", false);
 
+const std::string kRequestHeaderPrefix = "requestHeader:";
+const std::string kRequestParamPrefix = "requestParameter:";
+const std::string kResponseHeaderPrefix = "responseHeader:";
+
 // Define attribute names
 const std::string kAttrNamePeerId = "peerId";
 const std::string kAttrNameURL = "url";
@@ -87,6 +91,55 @@ std::string GetLastForwardedHost(const HeaderMap& header_map) {
   return xff_list.back();
 }
 
+void FillRequestHeaderAttributes(const HeaderMap& header_map,
+                                 Attributes* attr) {
+  // Pass in all headers
+  header_map.iterate(
+      [](const HeaderEntry& header, void* context) {
+        auto attr = static_cast<Attributes*>(context);
+        attr->attributes[kRequestHeaderPrefix + header.key().c_str()] =
+            StringValue(header.value().c_str());
+      },
+      attr);
+
+  // Pass in all Query parameters.
+  auto path = header_map.Path();
+  if (path != nullptr) {
+    for (const auto& it : Utility::parseQueryString(path->value().c_str())) {
+      attr->attributes[kRequestParamPrefix + it.first] = StringValue(it.second);
+    }
+  }
+
+  SetStringAttribute(kAttrNameOriginIp, GetFirstForwardedFor(header_map), attr);
+  SetStringAttribute(kAttrNameOriginHost, GetLastForwardedHost(header_map),
+                     attr);
+}
+
+void FillResponseHeaderAttributes(const HeaderMap& header_map,
+                                  Attributes* attr) {
+  header_map.iterate(
+      [](const HeaderEntry& header, void* context) {
+        auto attr = static_cast<Attributes*>(context);
+        attr->attributes[kResponseHeaderPrefix + header.key().c_str()] =
+            StringValue(header.value().c_str());
+      },
+      attr);
+}
+
+void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
+                               Attributes* attr) {
+  if (info.bytesReceived() >= 0) {
+    attr->attributes[kAttrNameRequestSize] = Int64Value(info.bytesReceived());
+  }
+  if (info.bytesSent() >= 0) {
+    attr->attributes[kAttrNameResponseSize] = Int64Value(info.bytesSent());
+  }
+  if (info.duration().count() >= 0) {
+    attr->attributes[kAttrNameResponseTime] =
+        Int64Value(info.duration().count());
+  }
+}
+
 }  // namespace
 
 HttpControl::HttpControl(const std::string& mixer_server) {
@@ -102,43 +155,10 @@ HttpControl::HttpControl(const std::string& mixer_server) {
 
 void HttpControl::FillCheckAttributes(const HeaderMap& header_map,
                                       Attributes* attr) {
-  // Pass in all headers
-  header_map.iterate(
-      [](const HeaderEntry& header, void* context) -> void {
-        auto attr = static_cast<Attributes*>(context);
-        attr->attributes[header.key().c_str()] =
-            StringValue(header.value().c_str());
-      },
-      attr);
-
-  // Pass in all Query parameters.
-  auto path = header_map.Path();
-  if (path != nullptr) {
-    for (const auto& it : Utility::parseQueryString(path->value().c_str())) {
-      attr->attributes[it.first] = StringValue(it.second);
-    }
-  }
-
-  SetStringAttribute(kAttrNameOriginIp, GetFirstForwardedFor(header_map), attr);
-  SetStringAttribute(kAttrNameOriginHost, GetLastForwardedHost(header_map),
-                     attr);
+  FillRequestHeaderAttributes(header_map, attr);
 
   SetStringAttribute(kAttrNameTargetService, target_service_, attr);
   attr->attributes[kAttrNamePeerId] = StringValue(kProxyPeerID);
-}
-
-void HttpControl::FillReportAttributes(const AccessLog::RequestInfo& info,
-                                       Attributes* attr) {
-  if (info.bytesReceived() >= 0) {
-    attr->attributes[kAttrNameRequestSize] = Int64Value(info.bytesReceived());
-  }
-  if (info.bytesSent() >= 0) {
-    attr->attributes[kAttrNameResponseSize] = Int64Value(info.bytesSent());
-  }
-  if (info.duration().count() >= 0) {
-    attr->attributes[kAttrNameResponseTime] =
-        Int64Value(info.duration().count());
-  }
 }
 
 void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
@@ -149,11 +169,13 @@ void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
 }
 
 void HttpControl::Report(HttpRequestDataPtr request_data,
+                         const HeaderMap* response_headers,
                          const AccessLog::RequestInfo& request_info,
                          DoneFunc on_done) {
   // Use all Check attributes for Report.
   // Add additional Report attributes.
-  FillReportAttributes(request_info, &request_data->attributes);
+  FillResponseHeaderAttributes(*response_headers, &request_data->attributes);
+  FillRequestInfoAttributes(request_info, &request_data->attributes);
   log().debug("Send Report: {}", request_data->attributes.DebugString());
   mixer_client_->Report(request_data->attributes, on_done);
 }

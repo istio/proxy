@@ -45,14 +45,13 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
 
   // Make mixer report call.
   void Report(HttpRequestDataPtr request_data,
+              const HeaderMap* response_headers,
               const AccessLog::RequestInfo& request_info,
               ::istio::mixer_client::DoneFunc on_done);
 
  private:
   void FillCheckAttributes(const HeaderMap& header_map,
                            ::istio::mixer_client::Attributes* attr);
-  void FillReportAttributes(const AccessLog::RequestInfo& info,
-                            ::istio::mixer_client::Attributes* attr);
 
   // The mixer client
   std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client_;
