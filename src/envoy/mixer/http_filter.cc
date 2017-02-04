@@ -245,7 +245,7 @@ class MixerConfig : public HttpFilterConfigFactory {
   HttpFilterFactoryCb tryCreateFilterFactory(
       HttpFilterType type, const std::string& name, const Json::Object& config,
       const std::string&, Server::Instance& server) override {
-    if (type != HttpFilterType::Both || name != "esp") {
+    if (type != HttpFilterType::Both || name != "mixer") {
       return nullptr;
     }
 
