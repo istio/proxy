@@ -64,8 +64,9 @@ class Config {
   // TODO: Remove in favor of service().
   const std::string &service_name() const { return service_.name(); }
 
-  // TODO: Remove in favor of service().
-  bool HasAuth() const { return service_.has_authentication(); }
+  bool HasAuth() const { return service_.has_experimental() &&
+      service_.experimental().has_authorization() &&
+      service_.experimental().authorization().has_provider(); }
 
   // Returns true if the caller should try openId discovery to fetch jwksUri.
   // url is set to the openId discovery link in this case. Returns false
