@@ -67,7 +67,10 @@ class ServiceContext {
 
   bool IsRulesCheckEnabled() const {
     return RequireAuth() && service().apis_size() > 0 &&
-           !config_->GetFirebaseServer().empty();
+        (!config_->GetFirebaseServer().empty() ||
+            (service().has_experimental() &&
+                service().experimental().has_authorization() &&
+                service().experimental().authorization().has_provider()));
   }
 
   auth::Certs &certs() { return certs_; }
