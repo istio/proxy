@@ -30,7 +30,7 @@
 
 extern "C" {
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <openssl/rsa.h>
 
 //////////////////////////////////////////////////////

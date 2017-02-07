@@ -163,7 +163,7 @@ def grpc_repositories(bind=True):
 
     native.git_repository(
         name = "grpc_git",
-        commit = "d28417c856366df704200f544e72d31056931bce",
+        commit = "bb3edafea245a9780cc4c10f0b58da21e8193f38", # v1.1.1
         remote = "https://github.com/grpc/grpc.git",
     )
 
@@ -190,7 +190,7 @@ def grpc_repositories(bind=True):
 
         native.bind(
             name = "grpc_lib",
-            actual = "@grpc_git//:grpc++_reflection",
+            actual = "@grpc_git//:grpc++_codegen_proto",
         )
 
 def googleapis_repositories(protobuf_repo="@protobuf_git//", bind=True):
@@ -337,7 +337,7 @@ def servicecontrol_client_repositories(bind=True):
 def mixer_client_repositories(bind=True):
     native.git_repository(
         name = "mixerclient_git",
-        commit = "80e450a5126960e8e6337c3631cf2ef984038eab",
+        commit = "c86e204444c72e82486c34086084ecde854f8603",
         remote = "https://github.com/istio/mixerclient.git",
     )
 
