@@ -254,6 +254,8 @@ cc_proto_library(
         "google/api/control.proto",
         "google/api/documentation.proto",
         "google/api/endpoint.proto",
+        "google/api/experimental/authorization_config.proto",
+        "google/api/experimental/experimental.proto",
         "google/api/http.proto",
         "google/api/label.proto",
         "google/api/log.proto",
@@ -293,7 +295,7 @@ cc_proto_library(
 
     native.new_git_repository(
         name = "googleapis_git",
-        commit = "db1d4547dc56a798915e0eb2c795585385922165",
+        commit = "412867fb105722fb9d2cd9af90af1f8f120de238",
         remote = "https://github.com/googleapis/googleapis.git",
         build_file_content = BUILD,
     )
