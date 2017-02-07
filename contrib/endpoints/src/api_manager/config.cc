@@ -514,18 +514,16 @@ void Config::SetJwksUri(const string &issuer, const string &jwks_uri,
 }
 
 std::string Config::GetFirebaseServer() {
+  // Server config overwrites service config.
   if (server_config_ != nullptr &&
       server_config_->has_api_check_security_rules_config() &&
       !server_config_->api_check_security_rules_config().firebase_server().empty()) {
-    // It is the testing environment, use server config.
     return server_config_->api_check_security_rules_config().firebase_server();
   }
 
   if (service_.has_experimental() &&
       service_.experimental().has_authorization() &&
       !service_.experimental().authorization().provider().empty()) {
-    // In real environment, server_config_ should be null. And we rely on the
-    // field in service.
     return service_.experimental().authorization().provider();
   }
   return "";
