@@ -29,7 +29,7 @@ mainFlow(utils) {
       utils.updatePullRequest('verify', success)
     }
   }
-  if (utils.runStage('RELEASE')) {
+  if (utils.runStage('POSTSUBMIT')) {
     defaultNode(gitUtils) {
       sh 'script/release-binary'
     }
@@ -38,17 +38,21 @@ mainFlow(utils) {
 
 def presubmit(gitUtils, bazel) {
   goBuildNode(gitUtils, 'istio.io/manager') {
-    bazel.updateBazelRc()
     stage('Code Check') {
       sh('bin/check.sh')
     }
-    stage('Bazel Build') {
-      sh('touch platform/kube/config')
+    bazel.updateBazelRc()
+    stage('Bazel Fetch') {
       bazel.fetch('-k //...')
+    }
+    stage('Bazel Build') {
       bazel.build('//...')
     }
     stage('Bazel Tests') {
       bazel.test('//...')
+    }
+    stage('Push Test Binary') {
+      sh 'script/release-binary'
     }
   }
 }
