@@ -37,9 +37,9 @@ mainFlow(utils) {
 }
 
 def presubmit(gitUtils, bazel) {
-  goBuildNode(gitUtils, 'istio.io/manager') {
+  buildNode(gitUtils) {
     stage('Code Check') {
-      sh('bin/check.sh')
+      sh('script/check-style')
     }
     bazel.updateBazelRc()
     stage('Bazel Fetch') {
