@@ -514,19 +514,20 @@ void Config::SetJwksUri(const string &issuer, const string &jwks_uri,
 }
 
 std::string Config::GetFirebaseServer() {
-  if (server_config_ == nullptr) {
-    if (service_.has_experimental() &&
-        service_.experimental().has_authorization() &&
-        service_.experimental().authorization().has_provider()) {
-      // In real environment, server_config_ should be null. And we rely on the
-      // field in service.
-      return service_.experimental().authorization().provider();
-    }
-    return "";
+  if (server_config_ != nullptr && server_config_->has_api_check_security_rules_config() &&
+      server_config_->api_check_security_rules_config().has_firebase_server()) {
+    // It is the testing environment, use server config.
+    return server_config_->api_check_security_rules_config().firebase_server();
   }
 
-  // It is the testing environment, use server config.
-  return server_config_->api_check_security_rules_config().firebase_server();
+  if (service_.has_experimental() &&
+      service_.experimental().has_authorization() &&
+      service_.experimental().authorization().has_provider()) {
+    // In real environment, server_config_ should be null. And we rely on the
+    // field in service.
+    return service_.experimental().authorization().provider();
+  }
+  return "";
 }
 
 }  // namespace api_manager
