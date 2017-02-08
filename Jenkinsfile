@@ -46,7 +46,7 @@ def presubmit(gitUtils, bazel) {
       bazel.fetch('-k //...')
     }
     stage('Bazel Build') {
-      bazel.build('//...')
+      bazel.build('--strategy=CppCompile=standalone //...')
     }
     stage('Bazel Tests') {
       bazel.test('//...')
