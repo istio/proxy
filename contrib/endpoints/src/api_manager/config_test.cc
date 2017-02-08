@@ -557,7 +557,7 @@ TEST(Config, RpcMethodsWithHttpRules) {
             create_shelves->response_type_url());
   EXPECT_EQ(true, create_shelves->response_streaming());
 
-  // Matching through http rule path must yield the same method
+  // Matching through http rule path must yield the same method.
   EXPECT_EQ(list_shelves, config->GetMethodInfo("GET", "/shelves"));
   EXPECT_EQ(create_shelves, config->GetMethodInfo("POST", "/shelves"));
 }
