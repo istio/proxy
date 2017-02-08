@@ -13,7 +13,7 @@ def bazel = new Bazel()
 
 node {
   gitUtils.initialize()
-  //bazel.setVars()
+  bazel.setVars()
 }
 
 mainFlow(utils) {
@@ -38,16 +38,15 @@ mainFlow(utils) {
 
 def presubmit(gitUtils, bazel) {
   buildNode(gitUtils) {
-    // stage('Code Check') {
-    //   sh('script/check-style')
-    // }
-    // bazel.updateBazelRc()
-    // stage('Bazel Fetch') {
-    //   bazel.fetch('-k //...')
-    // }
+    stage('Code Check') {
+      sh('script/check-style')
+    }
+    bazel.updateBazelRc()
+    stage('Bazel Fetch') {
+      bazel.fetch('-k //...')
+    }
     stage('Bazel Build') {
-      sh("bazel --batch  build --sandbox_debug //...")
-      // bazel.build('--strategy=CppCompile=standalone //...')
+      bazel.build('//...')
     }
     stage('Bazel Tests') {
       bazel.test('//...')
