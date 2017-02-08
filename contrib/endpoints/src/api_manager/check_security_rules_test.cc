@@ -101,7 +101,8 @@ control {
   environment: "http://127.0.0.1:8081"
 })";
 
-const char kJwtEmailPayload[] = R"({"iss":"https://accounts.google.com","iat":1486575396,"exp":1486578996,"aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","email":"limin-429@appspot.gserviceaccount.com"})";
+const char kJwtEmailPayload[] =
+    R"({"iss":"https://accounts.google.com","iat":1486575396,"exp":1486578996,"aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","email":"limin-429@appspot.gserviceaccount.com"})";
 
 static const char kServerConfig[] = R"(
 api_check_security_rules_config {
@@ -146,7 +147,8 @@ static const char kTestResultSuccess[] = R"(
 )";
 
 std::pair<std::string, std::string> GetConfigWithAuthForceDisabled() {
-  std::string service_config = std::string(kServiceName) + kApis + kAuthentication + kHttp;
+  std::string service_config =
+      std::string(kServiceName) + kApis + kAuthentication + kHttp;
   const char server_config[] = R"(
 api_authentication_config {
 force_disable:  true
@@ -164,26 +166,26 @@ std::pair<std::string, std::string> GetConfigWithNoAuth() {
 }
 
 std::pair<std::string, std::string> GetConfigWithoutApis() {
-  std::string service_config = std::string(kServiceName) + kAuthentication + kHttp;
+  std::string service_config =
+      std::string(kServiceName) + kAuthentication + kHttp;
 
   return std::make_pair(service_config, std::string(kServerConfig));
 }
 
 std::pair<std::string, std::string> GetConfigWithoutServer() {
-  std::string service_config = std::string(kServiceName) +
-      kApis + kAuthentication + kHttp;
+  std::string service_config =
+      std::string(kServiceName) + kApis + kAuthentication + kHttp;
   return std::make_pair(service_config, "");
 }
 
 std::pair<std::string, std::string> GetValidConfig() {
-  std::string service_config = std::string(kServiceName) +
-      kApis + kAuthentication + kHttp;
+  std::string service_config =
+      std::string(kServiceName) + kApis + kAuthentication + kHttp;
   return std::make_pair(service_config, kServerConfig);
 }
 
-
-class CheckDisableSecurityRulesTest :
-  public ::testing::TestWithParam<std::pair<std::string, std::string>>{
+class CheckDisableSecurityRulesTest
+    : public ::testing::TestWithParam<std::pair<std::string, std::string>> {
  public:
   void SetUp() {
     std::unique_ptr<MockApiManagerEnvironment> env(
@@ -194,8 +196,8 @@ class CheckDisableSecurityRulesTest :
     std::string server_config;
 
     std::tie(service_config, server_config) = GetParam();
-    std::unique_ptr<Config> config = Config::Create(raw_env_, service_config,
-                                                    server_config);
+    std::unique_ptr<Config> config =
+        Config::Create(raw_env_, service_config, server_config);
 
     ASSERT_TRUE(config != nullptr);
 
@@ -210,8 +212,7 @@ class CheckDisableSecurityRulesTest :
 
     request_context_ = std::make_shared<context::RequestContext>(
         service_context_, std::move(request));
-    EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-        .Times(0);
+    EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
   }
 
   MockApiManagerEnvironment *raw_env_;
@@ -233,15 +234,13 @@ INSTANTIATE_TEST_CASE_P(ConfigToDisableFirebaseRulesCheck,
 
 class CheckSecurityRulesTest : public ::testing::Test {
  public:
-
   void SetUp(std::string service_config, std::string server_config) {
-
     std::unique_ptr<MockApiManagerEnvironment> env(
         new ::testing::NiceMock<MockApiManagerEnvironment>());
     raw_env_ = env.get();
 
-    std::unique_ptr<Config> config = Config::Create(raw_env_, service_config,
-                                                    server_config);
+    std::unique_ptr<Config> config =
+        Config::Create(raw_env_, service_config, server_config);
     ASSERT_TRUE(config != nullptr);
 
     service_context_ = std::make_shared<context::ServiceContext>(
@@ -261,13 +260,15 @@ class CheckSecurityRulesTest : public ::testing::Test {
 
     request_context_ = std::make_shared<context::RequestContext>(
         service_context_, std::move(request));
-    release_url_ = "https://myfirebaseserver.com/v1/projects/myfirebaseapp/"
+    release_url_ =
+        "https://myfirebaseserver.com/v1/projects/myfirebaseapp/"
         "releases/myfirebaseapp.appspot.com:v1";
 
-    ruleset_test_url_ = "https://myfirebaseserver.com/v1"
+    ruleset_test_url_ =
+        "https://myfirebaseserver.com/v1"
         "/projects/myfirebaseapp/rulesets/99045fc0-a5e4-47e2-a665-f88593594b6b"
         ":test?alt=json";
-       }
+  }
 
   MockApiManagerEnvironment *raw_env_;
   MockRequest *raw_request_;
@@ -278,139 +279,135 @@ class CheckSecurityRulesTest : public ::testing::Test {
 };
 
 TEST_F(CheckSecurityRulesTest, CheckAuthzFailGetRelease) {
-  std::string service_config = std::string(kBadServiceName) + kProducerProjectId
-      + kApis + kAuthentication + kHttp;
+  std::string service_config = std::string(kBadServiceName) +
+                               kProducerProjectId + kApis + kAuthentication +
+                               kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-        Property(&HTTPRequest::url, StrNe(release_url_)),
-        Property(&HTTPRequest::method, StrCaseEq("GET")))))
-        .WillOnce(Invoke([] (HTTPRequest *req) {
+                             Property(&HTTPRequest::url, StrNe(release_url_)),
+                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
+      .WillOnce(Invoke([](HTTPRequest *req) {
 
-          std::map<std::string, std::string> empty;
-          std::string body(kReleaseError);
-          req->OnComplete(
-                Status(Code::NOT_FOUND, "Requested entity was not found"),
-                std::move(empty), std::move(body));
+        std::map<std::string, std::string> empty;
+        std::string body(kReleaseError);
+        req->OnComplete(
+            Status(Code::NOT_FOUND, "Requested entity was not found"),
+            std::move(empty), std::move(body));
 
-        }));
+      }));
 
-  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-      Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
-      Property(&HTTPRequest::method, StrCaseEq("POST")))))
-              .Times(0);
+  EXPECT_CALL(*raw_env_,
+              DoRunHTTPRequest(
+                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
+                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
+      .Times(0);
 
   auto ptr = this;
-  CheckSecurityRules(request_context_,
-                         [ptr](Status status) {
-                           ptr->raw_env_->LogInfo(status.ToString());
-                           ASSERT_TRUE(!status.ok()); });
+  CheckSecurityRules(request_context_, [ptr](Status status) {
+    ptr->raw_env_->LogInfo(status.ToString());
+    ASSERT_TRUE(!status.ok());
+  });
 }
 
 TEST_F(CheckSecurityRulesTest, CheckAuthzFailTestRuleset) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
-      kApis + kAuthentication + kHttp;
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-        Property(&HTTPRequest::url, StrEq(release_url_)),
-        Property(&HTTPRequest::method, StrCaseEq("GET")))))
-        .WillOnce(Invoke([] (HTTPRequest *req) {
+                             Property(&HTTPRequest::url, StrEq(release_url_)),
+                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
+      .WillOnce(Invoke([](HTTPRequest *req) {
 
-          std::map<std::string, std::string> empty;
-          std::string body(kRelease);
-          req->OnComplete(Status::OK,
-                std::move(empty), std::move(body));
+        std::map<std::string, std::string> empty;
+        std::string body(kRelease);
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
 
-        }));
+      }));
 
-  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-      Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
-      Property(&HTTPRequest::method, StrCaseEq("POST")))))
-              .WillOnce(Invoke([] (HTTPRequest *req) {
-                std::map<std::string, std::string> empty;
-                std::string body;
-                req->OnComplete(Status(Code::INTERNAL, "Cannot talk to server"),
-                                std::move(empty), std::move(body));
-              }));
+  EXPECT_CALL(*raw_env_,
+              DoRunHTTPRequest(
+                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
+                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
+      .WillOnce(Invoke([](HTTPRequest *req) {
+        std::map<std::string, std::string> empty;
+        std::string body;
+        req->OnComplete(Status(Code::INTERNAL, "Cannot talk to server"),
+                        std::move(empty), std::move(body));
+      }));
 
   CheckSecurityRules(request_context_,
-                     [] (Status status) {
-                       ASSERT_FALSE(status.ok()); });
+                     [](Status status) { ASSERT_FALSE(status.ok()); });
 }
 
 TEST_F(CheckSecurityRulesTest, CheckAutzFailWithTestResultFailure) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
-      kApis + kAuthentication + kHttp;
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-        Property(&HTTPRequest::url, StrEq(release_url_)),
-        Property(&HTTPRequest::method, StrCaseEq("GET")))))
-        .WillOnce(Invoke([] (HTTPRequest *req) {
+                             Property(&HTTPRequest::url, StrEq(release_url_)),
+                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
+      .WillOnce(Invoke([](HTTPRequest *req) {
 
-          std::map<std::string, std::string> empty;
-          std::string body(kRelease);
-          req->OnComplete(Status::OK,
-                std::move(empty), std::move(body));
+        std::map<std::string, std::string> empty;
+        std::string body(kRelease);
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
 
-        }));
+      }));
 
-  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-      Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
-      Property(&HTTPRequest::method, StrCaseEq("POST")))))
-              .WillOnce(Invoke([] (HTTPRequest *req) {
-                std::map<std::string, std::string> empty;
-                std::string body = kTestResultFailure;
-                req->OnComplete(Status::OK,
-                                std::move(empty), std::move(body));
-              }));
+  EXPECT_CALL(*raw_env_,
+              DoRunHTTPRequest(
+                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
+                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
+      .WillOnce(Invoke([](HTTPRequest *req) {
+        std::map<std::string, std::string> empty;
+        std::string body = kTestResultFailure;
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
+      }));
 
-  CheckSecurityRules(request_context_,
-                     [] (Status status) {
-                       ASSERT_TRUE(status.CanonicalCode() == Code::PERMISSION_DENIED); });
-
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.CanonicalCode() == Code::PERMISSION_DENIED);
+  });
 }
 
 TEST_F(CheckSecurityRulesTest, CheckAuthzSuccess) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
-      kApis + kAuthentication + kHttp;
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-        Property(&HTTPRequest::url, StrEq(release_url_)),
-        Property(&HTTPRequest::method, StrCaseEq("GET")))))
-        .WillOnce(Invoke([] (HTTPRequest *req) {
+                             Property(&HTTPRequest::url, StrEq(release_url_)),
+                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
+      .WillOnce(Invoke([](HTTPRequest *req) {
 
-          std::map<std::string, std::string> empty;
-          std::string body(kRelease);
-          req->OnComplete(Status::OK,
-                std::move(empty), std::move(body));
+        std::map<std::string, std::string> empty;
+        std::string body(kRelease);
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
 
-        }));
+      }));
 
-  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-      Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
-      Property(&HTTPRequest::method, StrCaseEq("POST")))))
-              .WillOnce(Invoke([] (HTTPRequest *req) {
-                std::map<std::string, std::string> empty;
-                std::string body = kTestResultSuccess;
-                req->OnComplete(Status::OK,
-                                std::move(empty), std::move(body));
-              }));
+  EXPECT_CALL(*raw_env_,
+              DoRunHTTPRequest(
+                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
+                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
+      .WillOnce(Invoke([](HTTPRequest *req) {
+        std::map<std::string, std::string> empty;
+        std::string body = kTestResultSuccess;
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
+      }));
 
   CheckSecurityRules(request_context_,
-                     [] (Status status) {
-                       ASSERT_TRUE(status.ok()); });
+                     [](Status status) { ASSERT_TRUE(status.ok()); });
 }
-
 }
-} // namespace api_manager
-} // namespace google
+}  // namespace api_manager
+}  // namespace google

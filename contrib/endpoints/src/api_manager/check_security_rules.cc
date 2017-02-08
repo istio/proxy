@@ -71,14 +71,14 @@ std::string GetReleaseName(const context::RequestContext &context) {
 
 std::string GetRulesetTestUri(const context::RequestContext &context,
                               const std::string &ruleset_id) {
-  return context.service_context()->config()->GetFirebaseServer() + kV1 +
-         "/" + ruleset_id + kTestQuery;
+  return context.service_context()->config()->GetFirebaseServer() + kV1 + "/" +
+         ruleset_id + kTestQuery;
 }
 
 std::string GetReleaseUrl(const context::RequestContext &context) {
   return context.service_context()->config()->GetFirebaseServer() + kV1 +
-         kProjects + "/" + context.service_context()->project_id() +
-         kReleases + "/" + GetReleaseName(context);
+         kProjects + "/" + context.service_context()->project_id() + kReleases +
+         "/" + GetReleaseName(context);
 }
 
 std::string GetOperation(const std::string &httpMethod) {
