@@ -58,17 +58,17 @@ TEST(Config, CreateFromBinaryProto) {
 }
 
 static const char kServerConfig[] = R"(
-  service_control_config {
-    check_aggregator_config {
-      cache_entries: 1000
-      flush_interval_ms: 10
-      response_expiration_ms: 20
-    }
-    report_aggregator_config {
-      cache_entries: 1020
-      flush_interval_ms: 15
-    }
+service_control_config {
+  check_aggregator_config {
+    cache_entries: 1000
+    flush_interval_ms: 10
+    response_expiration_ms: 20
   }
+  report_aggregator_config {
+    cache_entries: 1020
+    flush_interval_ms: 15
+  }
+}
 )";
 
 const char kServiceNameConfig[] = "name: \"service-one\"\n";
@@ -93,13 +93,13 @@ TEST(Config, ServerConfigProto) {
 }
 
 static const char kInvalidServerConfig[] = R"(
-  service_control_config {
-    type: 1
-    config {
-      cache_entries: 1020
-      flush_interval_ms: 15
-    }
+service_control_config {
+  type: 1
+  config {
+    cache_entries: 1020
+    flush_interval_ms: 15
   }
+}
 )";
 
 TEST(Config, InvalidServerConfigProto) {
@@ -750,41 +750,41 @@ TEST(Config, TestHttpOptions) {
   MockApiManagerEnvironmentWithLog env;
 
   static const char config_text[] = R"(
-    name: "Service.Name"
-    endpoints {
-      name: "Service.Name"
-      allow_cors: true
-    }
-    http {
-      rules {
-        selector: "ListShelves"
-        get: "/shelves"
-      }
-      rules {
-        selector: "CorsShelves"
-        custom: {
-          kind: "OPTIONS"
-          path: "/shelves"
-        }
-      }
-      rules {
-        selector: "CreateShelf"
-        post: "/shelves"
-      }
-      rules {
-        selector: "GetShelf"
-        get: "/shelves/{shelf}"
-      }
-      rules {
-        selector: "DeleteShelf"
-        delete: "/shelves/{shelf}"
-      }
-      rules {
-        selector: "GetShelfBook"
-        get: "/shelves/{shelf}/books"
-      }
-    }
-  )";
+ name: "Service.Name"
+ endpoints {
+   name: "Service.Name"
+   allow_cors: true
+ }
+ http {
+   rules {
+     selector: "ListShelves"
+     get: "/shelves"
+   }
+   rules {
+     selector: "CorsShelves"
+     custom: {
+       kind: "OPTIONS"
+       path: "/shelves"
+     }
+   }
+   rules {
+     selector: "CreateShelf"
+     post: "/shelves"
+   }
+   rules {
+     selector: "GetShelf"
+     get: "/shelves/{shelf}"
+   }
+   rules {
+     selector: "DeleteShelf"
+     delete: "/shelves/{shelf}"
+   }
+   rules {
+     selector: "GetShelfBook"
+     get: "/shelves/{shelf}/books"
+   }
+ }
+)";
 
   std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
@@ -817,22 +817,22 @@ TEST(Config, TestHttpOptionsSelector) {
   MockApiManagerEnvironmentWithLog env;
 
   static const char config_text[] = R"(
-    name: "Service.Name"
-    endpoints {
-      name: "Service.Name"
-      allow_cors: true
-    }
-    http {
-      rules {
-        selector: "CORS"
-        get: "/shelves"
-      }
-      rules {
-        selector: "CORS.1"
-        get: "/shelves/{shelf}"
-      }
-    }
-  )";
+ name: "Service.Name"
+ endpoints {
+   name: "Service.Name"
+   allow_cors: true
+ }
+ http {
+   rules {
+     selector: "CORS"
+     get: "/shelves"
+   }
+   rules {
+     selector: "CORS.1"
+     get: "/shelves/{shelf}"
+   }
+ }
+)";
 
   std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
