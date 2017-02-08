@@ -849,18 +849,18 @@ TEST(Config, TestCorsDisabled) {
   MockApiManagerEnvironmentWithLog env;
 
   static const char config_text[] = R"(
-    name: "Service.Name"
-    http {
-      rules {
-        selector: "CORS"
-        get: "/shelves"
-      }
-      rules {
-        selector: "CORS.1"
-        get: "/shelves/{shelf}"
-      }
-    }
-  )";
+ name: "Service.Name"
+ http {
+   rules {
+     selector: "CORS"
+     get: "/shelves"
+   }
+   rules {
+     selector: "CORS.1"
+     get: "/shelves/{shelf}"
+   }
+ }
+)";
 
   std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
