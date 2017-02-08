@@ -517,7 +517,9 @@ std::string Config::GetFirebaseServer() {
   // Server config overwrites service config.
   if (server_config_ != nullptr &&
       server_config_->has_api_check_security_rules_config() &&
-      !server_config_->api_check_security_rules_config().firebase_server().empty()) {
+      !server_config_->api_check_security_rules_config()
+           .firebase_server()
+           .empty()) {
     return server_config_->api_check_security_rules_config().firebase_server();
   }
 

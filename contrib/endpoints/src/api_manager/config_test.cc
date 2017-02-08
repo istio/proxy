@@ -925,8 +925,8 @@ TEST(Config, TestFirebaseServerCheckWithServiceAuthzWithServerAuthz) {
 TEST(Config, TestFirebaseServerCheckWithoutServiceAuthzWithoutServerAuthz) {
   MockApiManagerEnvironmentWithLog env;
 
-  std::unique_ptr<Config> config =
-      Config::Create(&env, kServiceConfigWithoutAuthz, kServerConfigWithoutAuthz);
+  std::unique_ptr<Config> config = Config::Create(
+      &env, kServiceConfigWithoutAuthz, kServerConfigWithoutAuthz);
   ASSERT_TRUE(config);
 
   ASSERT_EQ(config->GetFirebaseServer(), "");
