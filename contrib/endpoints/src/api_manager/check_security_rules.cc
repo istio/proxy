@@ -43,10 +43,10 @@ const char kFirebaseCreateMethod[] = "create";
 const char kFirebaseGetMethod[] = "get";
 const char kFirebaseDeleteMethod[] = "delete";
 const char kFirebaseUpdateMethod[] = "update";
-const char kV1[] = "v1/";
+const char kV1[] = "/v1";
 const char kTestQuery[] = ":test?alt=json";
-const char kProjects[] = "projects/";
-const char kReleases[] = "/releases/";
+const char kProjects[] = "/projects";
+const char kReleases[] = "/releases";
 const char kRulesetName[] = "rulesetName";
 const char kTestResults[] = "testResults";
 const char kState[] = "state";
@@ -72,13 +72,13 @@ std::string GetReleaseName(const context::RequestContext &context) {
 std::string GetRulesetTestUri(const context::RequestContext &context,
                               const std::string &ruleset_id) {
   return context.service_context()->config()->GetFirebaseServer() + kV1 +
-         ruleset_id + kTestQuery;
+         "/" + ruleset_id + kTestQuery;
 }
 
 std::string GetReleaseUrl(const context::RequestContext &context) {
   return context.service_context()->config()->GetFirebaseServer() + kV1 +
-         kProjects + context.service_context()->project_id() + kReleases +
-         GetReleaseName(context);
+         kProjects + "/" + context.service_context()->project_id() +
+         kReleases + "/" + GetReleaseName(context);
 }
 
 std::string GetOperation(const std::string &httpMethod) {
