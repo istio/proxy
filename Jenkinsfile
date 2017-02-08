@@ -13,7 +13,7 @@ def bazel = new Bazel()
 
 node {
   gitUtils.initialize()
-  bazel.setVars()
+  //bazel.setVars()
 }
 
 mainFlow(utils) {
@@ -30,7 +30,7 @@ mainFlow(utils) {
     }
   }
   if (utils.runStage('POSTSUBMIT')) {
-    defaultNode(gitUtils) {
+    buildNode(gitUtils) {
       sh 'script/release-binary'
     }
   }
