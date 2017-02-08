@@ -161,12 +161,12 @@ const EVP_MD *EvpMdFromAlg(const char *alg);
 size_t HashSizeFromAlg(const char *alg);
 
 // Parses str into grpc_json object. Does not own buffer.
-grpc_json *DecodeBase64AndParseJson(grpc_exec_ctx* exec_ctx, const char *str,
+grpc_json *DecodeBase64AndParseJson(grpc_exec_ctx *exec_ctx, const char *str,
                                     size_t len, gpr_slice *buffer);
 
 // Gets BIGNUM from b64 string, used for extracting pkey from jwk.
 // Result owned by rsa_.
-BIGNUM *BigNumFromBase64String(grpc_exec_ctx* exec_ctx, const char *b64);
+BIGNUM *BigNumFromBase64String(grpc_exec_ctx *exec_ctx, const char *b64);
 
 }  // namespace
 
@@ -188,7 +188,7 @@ JwtValidatorImpl::JwtValidatorImpl(const char *jwt, size_t jwt_len)
       rsa_(nullptr),
       pkey_(nullptr),
       md_ctx_(nullptr),
-      exec_ctx_(GRPC_EXEC_CTX_INIT){
+      exec_ctx_(GRPC_EXEC_CTX_INIT) {
   header_buffer_ = gpr_empty_slice();
   signed_buffer_ = gpr_empty_slice();
   sig_buffer_ = gpr_empty_slice();
@@ -307,7 +307,8 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   if (dot == nullptr) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
-  header_json_ = DecodeBase64AndParseJson(&exec_ctx_, cur, dot - cur, &header_buffer_);
+  header_json_ =
+      DecodeBase64AndParseJson(&exec_ctx_, cur, dot - cur, &header_buffer_);
   CreateJoseHeader();
   if (header_ == nullptr) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
@@ -360,8 +361,8 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
   cur = dot + 1;
-  sig_buffer_ =
-      grpc_base64_decode_with_len(&exec_ctx_, cur, jwt_len - signed_jwt_len - 1, 1);
+  sig_buffer_ = grpc_base64_decode_with_len(&exec_ctx_, cur,
+                                            jwt_len - signed_jwt_len - 1, 1);
   if (GPR_SLICE_IS_EMPTY(sig_buffer_)) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
@@ -582,9 +583,11 @@ bool JwtValidatorImpl::ExtractPubkeyFromJwk(const grpc_json *jkey) {
   }
 
   const char *rsa_n = GetStringValue(jkey, "n");
-  rsa_->n = rsa_n == nullptr ? nullptr : BigNumFromBase64String(&exec_ctx_, rsa_n);
+  rsa_->n =
+      rsa_n == nullptr ? nullptr : BigNumFromBase64String(&exec_ctx_, rsa_n);
   const char *rsa_e = GetStringValue(jkey, "e");
-  rsa_->e = rsa_e == nullptr ? nullptr : BigNumFromBase64String(&exec_ctx_, rsa_e);
+  rsa_->e =
+      rsa_e == nullptr ? nullptr : BigNumFromBase64String(&exec_ctx_, rsa_e);
 
   if (rsa_->e == nullptr || rsa_->n == nullptr) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
@@ -741,7 +744,7 @@ size_t HashSizeFromAlg(const char *alg) {
   }
 }
 
-grpc_json *DecodeBase64AndParseJson(grpc_exec_ctx* exec_ctx, const char *str,
+grpc_json *DecodeBase64AndParseJson(grpc_exec_ctx *exec_ctx, const char *str,
                                     size_t len, gpr_slice *buffer) {
   grpc_json *json;
 
@@ -759,7 +762,7 @@ grpc_json *DecodeBase64AndParseJson(grpc_exec_ctx* exec_ctx, const char *str,
   return json;
 }
 
-BIGNUM *BigNumFromBase64String(grpc_exec_ctx* exec_ctx, const char *b64) {
+BIGNUM *BigNumFromBase64String(grpc_exec_ctx *exec_ctx, const char *b64) {
   BIGNUM *result = nullptr;
   gpr_slice bin;
 
