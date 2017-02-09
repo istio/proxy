@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2017 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,16 +37,22 @@ namespace google {
 namespace api_manager {
 
 namespace {
+// Service name to be used.
 const char kServiceName[] = R"(
-name: "myfirebaseapp.appspot.com")";
+name: "myfirebaseapp.appspot.com"
+)";
 
+// Bad service name that will result in bad release name
 const char kBadServiceName[] = R"(
-name: "badService.appspot.com")";
+name: "badService.appspot.com"
+)";
 
+// Producer project Id used to create the release URL
 const char kProducerProjectId[] = R"(
 producer_project_id: "myfirebaseapp"
 )";
 
+// APIs definition.
 const char kApis[] = R"(
 apis {
   name: "Bookstore"
@@ -68,6 +74,7 @@ apis {
   }
 })";
 
+// Authentication part of service config
 const char kAuthentication[] = R"(
 authentication {
   providers {
@@ -90,6 +97,7 @@ authentication {
   }
 })";
 
+// Http part of service config
 const char kHttp[] = R"(
 http {
   rules {
@@ -101,14 +109,17 @@ control {
   environment: "http://127.0.0.1:8081"
 })";
 
+// Jwt payload to be used
 const char kJwtEmailPayload[] =
     R"({"iss":"https://accounts.google.com","iat":1486575396,"exp":1486578996,"aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","email":"limin-429@appspot.gserviceaccount.com"})";
 
+// Firebase Server config
 static const char kServerConfig[] = R"(
 api_check_security_rules_config {
   firebase_server: "https://myfirebaseserver.com"
 })";
 
+// The response to GetRelease call to firebase server.
 static const char kRelease[] = R"(
 {
   "name": "projects/myfirebaseapp/releases/myfirebaseapp.appspot.com:v1",
@@ -117,6 +128,7 @@ static const char kRelease[] = R"(
   "updateTime": "2017-01-10T16:52:27.764111Z"
 })";
 
+// Error response for GetRelease on bad release name
 static const char kReleaseError[] = R"(
 {
   "error": {
@@ -126,6 +138,7 @@ static const char kReleaseError[] = R"(
   }
 })";
 
+// TestRuleset returns Failure which means unauthorized access.
 static const char kTestResultFailure[] = R"(
 {
   "testResults": [
@@ -136,6 +149,7 @@ static const char kTestResultFailure[] = R"(
 }
 )";
 
+// TestRuleset call to Firebase response on success.
 static const char kTestResultSuccess[] = R"(
 {
   "testResults": [
@@ -146,12 +160,14 @@ static const char kTestResultSuccess[] = R"(
 }
 )";
 
+// Get a server configuration that has auth disabled. This should disable
+// security rules check by default.
 std::pair<std::string, std::string> GetConfigWithAuthForceDisabled() {
   std::string service_config =
       std::string(kServiceName) + kApis + kAuthentication + kHttp;
   const char server_config[] = R"(
 api_authentication_config {
-force_disable:  true
+  force_disable:  true
 }
 api_check_security_rules_config {
   firebase_server: "https://myfirebaseserver.com"
@@ -160,11 +176,15 @@ api_check_security_rules_config {
   return std::make_pair(service_config, server_config);
 }
 
+// Get service configuration with no authentication member field. This will
+// disable auth and will also disable security rules check.
 std::pair<std::string, std::string> GetConfigWithNoAuth() {
   std::string service_config = std::string(kServiceName) + kApis + kHttp;
   return std::make_pair(service_config, std::string(kServerConfig));
 }
 
+// Get Service configuration with no apis. This will result in the version field
+// no present and should disable security rules check.
 std::pair<std::string, std::string> GetConfigWithoutApis() {
   std::string service_config =
       std::string(kServiceName) + kAuthentication + kHttp;
@@ -172,32 +192,36 @@ std::pair<std::string, std::string> GetConfigWithoutApis() {
   return std::make_pair(service_config, std::string(kServerConfig));
 }
 
+// There is no firebase server configuration.
 std::pair<std::string, std::string> GetConfigWithoutServer() {
   std::string service_config =
       std::string(kServiceName) + kApis + kAuthentication + kHttp;
   return std::make_pair(service_config, "");
 }
 
+// Get a valid configuration. This will enable security check rules.
 std::pair<std::string, std::string> GetValidConfig() {
   std::string service_config =
       std::string(kServiceName) + kApis + kAuthentication + kHttp;
   return std::make_pair(service_config, kServerConfig);
 }
 
+// This test class is parameterized and creates Config object based on the
+// service and server configuration provided.
 class CheckDisableSecurityRulesTest
     : public ::testing::TestWithParam<std::pair<std::string, std::string>> {
  public:
   void SetUp() {
     std::unique_ptr<MockApiManagerEnvironment> env(
         new ::testing::NiceMock<MockApiManagerEnvironment>());
-    raw_env_ = env.get();
+    MockApiManagerEnvironment *raw_env = env.get();
 
     std::string service_config;
     std::string server_config;
 
     std::tie(service_config, server_config) = GetParam();
     std::unique_ptr<Config> config =
-        Config::Create(raw_env_, service_config, server_config);
+        Config::Create(raw_env, service_config, server_config);
 
     ASSERT_TRUE(config != nullptr);
 
@@ -208,30 +232,31 @@ class CheckDisableSecurityRulesTest
 
     std::unique_ptr<MockRequest> request(
         new ::testing::NiceMock<MockRequest>());
-    raw_request = request.get();
 
     request_context_ = std::make_shared<context::RequestContext>(
         service_context_, std::move(request));
-    EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
+    EXPECT_CALL(*raw_env, DoRunHTTPRequest(_)).Times(0);
   }
 
-  MockApiManagerEnvironment *raw_env_;
-  MockRequest *raw_request;
   std::shared_ptr<context::RequestContext> request_context_;
   std::shared_ptr<context::ServiceContext> service_context_;
 };
 
+// Paramterized test that will check for various configurations that will
+// disable auth.
 TEST_P(CheckDisableSecurityRulesTest, CheckAuthzDisabled) {
   CheckSecurityRules(request_context_,
                      [](Status status) { ASSERT_TRUE(status.ok()); });
 }
 
+// Invoke the tests on CheckDisableSecurityRulesTest with various parameters.
 INSTANTIATE_TEST_CASE_P(ConfigToDisableFirebaseRulesCheck,
                         CheckDisableSecurityRulesTest,
                         testing::Values(GetConfigWithNoAuth(),
                                         GetConfigWithoutApis(),
                                         GetConfigWithoutServer()));
 
+// Class that sets up the required objects to test various scenarios.
 class CheckSecurityRulesTest : public ::testing::Test {
  public:
   void SetUp(std::string service_config, std::string server_config) {
@@ -278,6 +303,10 @@ class CheckSecurityRulesTest : public ::testing::Test {
   std::string ruleset_test_url_;
 };
 
+// If the release name is bad, then check the following:
+// 1. Ensure that GetRuleset request is inovked on bad release name.
+// 2. In this case return Status with NOT_FOUND
+// 3. Ensure that there are no mor HTTP calls made to firbase TestRuleset
 TEST_F(CheckSecurityRulesTest, CheckAuthzFailGetRelease) {
   std::string service_config = std::string(kBadServiceName) +
                                kProducerProjectId + kApis + kAuthentication +
@@ -305,12 +334,18 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzFailGetRelease) {
       .Times(0);
 
   auto ptr = this;
-  CheckSecurityRules(request_context_, [ptr](Status status) {
-    ptr->raw_env_->LogInfo(status.ToString());
-    ASSERT_TRUE(!status.ok());
-  });
+  CheckSecurityRules(request_context_,
+                     [ptr](Status status) { ASSERT_TRUE(!status.ok()); });
 }
 
+// Check that the right status is returned when TestRuleset completes with an
+// error. This is modelled as an internal error.
+// 1. Ensure that GetRelease is invoked on the correct release url and correct
+// method.
+// 2. The mock will respond with the ruleset Id.
+// 3. Ensure that TestRuleset is invoked on the the righ URl and method.
+// 4. In this case, mock will return an INTERNAL ERROR.
+// 5. Make sure that status is not OK in this case.
 TEST_F(CheckSecurityRulesTest, CheckAuthzFailTestRuleset) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
                                kApis + kAuthentication + kHttp;
@@ -340,11 +375,18 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzFailTestRuleset) {
                         std::move(empty), std::move(body));
       }));
 
-  CheckSecurityRules(request_context_,
-                     [](Status status) { ASSERT_FALSE(status.ok()); });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.CanonicalCode() == Code::INTERNAL);
+  });
 }
 
-TEST_F(CheckSecurityRulesTest, CheckAutzFailWithTestResultFailure) {
+// Check behavior when TestResultset return a "FAILURE" message.
+// 1. Ensure GetRelease is invoked properly and in this case mock responds with
+// the ruelset Id.
+// 2. Ensure that the TestResultset is invoked correctly and respond wit ha
+// Status::OK but with Failure body.
+// 3. Asser that the final status returned is PERMISSION DENIED.
+TEST_F(CheckSecurityRulesTest, CheckAuthzFailWithTestResultFailure) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
                                kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
@@ -377,6 +419,12 @@ TEST_F(CheckSecurityRulesTest, CheckAutzFailWithTestResultFailure) {
   });
 }
 
+// Check for success case.
+// 1. Ensure GetRelease is invoked properly and in this case mock responds with
+// the ruelset Id.
+// 2. Ensure that the TestResultset is invoked correctly and respond wit ha
+// Status::OK but with SUCCESS body.
+// 3. Asser that the final status returned is OK.
 TEST_F(CheckSecurityRulesTest, CheckAuthzSuccess) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
                                kApis + kAuthentication + kHttp;
