@@ -18,8 +18,19 @@
 #
 set -ex
 
+# This docker image can be used as:
+#
+# docker run IMAGE -a backend_address -p PORT -m MIXER_SERVER
+#
+
 PROJECT=istio-testing
-IMAGE_NAME="gcr.io/${PROJECT}/proxy:experiment"
+IMAGE_PREFIX="gcr.io/${PROJECT}/proxy"
+
+DATE_PART=$(date +"%Y%m%d")
+SHA_PART=$(git show -q HEAD --pretty=format:%h)
+DOCKER_TAG="${DATE_PART}${SHA_PART}"
+
+IMAGE_NAME="${IMAGE_PREFIX}:${DOCKER_TAG}"
 
 gcloud docker --authorize-only
 
@@ -27,4 +38,9 @@ bazel run --config=release //src/envoy/mixer:proxy "${IMAGE_NAME}"
 
 gcloud docker -- push "${IMAGE_NAME}"
 
+IMAGE_LATEST="${IMAGE_PREFIX}:latest"
+
+docker tag -f "${IMAGE_NAME}" "${IMAGE_LATEST}"
+
+gcloud docker -- push "${IMAGE_LATEST}"
 

@@ -50,10 +50,18 @@ pkg_tar(
 )
 
 pkg_tar(
+    name = "start_envoy_tar",
+    extension = "tar.gz",
+    files = ["start_envoy"],
+    mode = "0755",
+    package_dir = "/usr/local/bin/",
+)
+
+pkg_tar(
     name = "config_tar",
     extension = "tar.gz",
-    files = ["envoy-mixer.conf"],
-    mode = "0755",
+    files = ["envoy.conf.template"],
+    mode = "0666",
     package_dir = "/etc/opt/proxy",
     tags = ["manual"],
 )
@@ -62,8 +70,13 @@ docker_build(
     name = "proxy",
     base = "@docker_ubuntu//:xenial",
     entrypoint = [
+        "/usr/local/bin/start_envoy",
+        "-e",
         "/usr/local/bin/envoy",
-        "-c /etc/opt/proxy/envoy-mixer.conf",
+        "-c",
+        "/etc/opt/proxy/envoy.conf",
+        "-t",
+        "/etc/opt/proxy/envoy.conf.template",
     ],
     ports = ["9090"],
     repository = "istio",
@@ -71,5 +84,6 @@ docker_build(
     tars = [
         ":config_tar",
         ":envoy_tar",
+        ":start_envoy_tar",
     ],
 )
