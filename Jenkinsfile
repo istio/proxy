@@ -33,6 +33,7 @@ mainFlow(utils) {
   }
   if (utils.runStage('POSTSUBMIT')) {
     buildNode(gitUtils) {
+      bazel.updateBazelRc()
       sh 'script/release-binary'
     }
   }
