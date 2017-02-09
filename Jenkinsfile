@@ -13,7 +13,9 @@ def bazel = new Bazel()
 
 node {
   gitUtils.initialize()
-  bazel.setVars()
+  // Proxy does build work correctly with Hazelcast.
+  // Must use .bazelrc.jenkins
+  bazel.setVars('', '')
 }
 
 mainFlow(utils) {
