@@ -100,7 +100,8 @@ void FillRequestHeaderAttributes(const HeaderMap& header_map,
       },
       attr);
 
-  SetStringAttribute(kAttrNameRequestPath, header_map.Path()->value().c_str(), attr);
+  SetStringAttribute(kAttrNameRequestPath, header_map.Path()->value().c_str(),
+                     attr);
   SetStringAttribute(kAttrNameOriginIp, GetFirstForwardedFor(header_map), attr);
   SetStringAttribute(kAttrNameOriginHost, GetLastForwardedHost(header_map),
                      attr);
