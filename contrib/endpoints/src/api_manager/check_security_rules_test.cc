@@ -184,7 +184,7 @@ std::pair<std::string, std::string> GetConfigWithNoAuth() {
 }
 
 // Get Service configuration with no apis. This will result in the version field
-// no present and should disable security rules check.
+// not present and should disable security rules check.
 std::pair<std::string, std::string> GetConfigWithoutApis() {
   std::string service_config =
       std::string(kServiceName) + kAuthentication + kHttp;
@@ -306,7 +306,7 @@ class CheckSecurityRulesTest : public ::testing::Test {
 // If the release name is bad, then check the following:
 // 1. Ensure that GetRuleset request is inovked on bad release name.
 // 2. In this case return Status with NOT_FOUND
-// 3. Ensure that there are no mor HTTP calls made to firbase TestRuleset
+// 3. Ensure that there are no more HTTP calls made to firbase TestRuleset
 TEST_F(CheckSecurityRulesTest, CheckAuthzFailGetRelease) {
   std::string service_config = std::string(kBadServiceName) +
                                kProducerProjectId + kApis + kAuthentication +
