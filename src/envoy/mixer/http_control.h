@@ -38,7 +38,7 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
  public:
   // The constructor.
   HttpControl(const std::string& mixer_server,
-              const std::map<std::string, std::string>&& attributes);
+              std::map<std::string, std::string>&& attributes);
 
   // Make mixer check call.
   void Check(HttpRequestDataPtr request_data, HeaderMap& headers,
