@@ -134,22 +134,23 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
 
 }  // namespace
 
-HttpControl::HttpControl(const std::string& mixer_server,
-                         const std::map<std::string, std::string>& attributes) {
+HttpControl::HttpControl(
+    const std::string& mixer_server,
+    const std::map<std::string, std::string>&& attributes) {
   ::istio::mixer_client::MixerClientOptions options;
   options.mixer_server = mixer_server;
   mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
 
-  source_service_ = attributes.at(kAttrNameTargetService);
-  target_service_ = attributes.at(kAttrNameSourceService);
+  config_attributes_ = std::move(attributes);
 }
 
 void HttpControl::FillCheckAttributes(const HeaderMap& header_map,
                                       Attributes* attr) {
   FillRequestHeaderAttributes(header_map, attr);
 
-  SetStringAttribute(kAttrNameSourceService, source_service_, attr);
-  SetStringAttribute(kAttrNameTargetService, target_service_, attr);
+  for (auto attribute : config_attributes_) {
+    SetStringAttribute(attribute.first, attribute.second, attr);
+  }
 }
 
 void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,

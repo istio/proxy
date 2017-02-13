@@ -105,7 +105,8 @@ class Config : public Logger::Loggable<Logger::Id::http> {
       log().warn("No attributes is specified in the config: {}", __func__);
     }
 
-    http_control_ = std::make_shared<HttpControl>(mixer_server, attributes);
+    http_control_ =
+        std::make_shared<HttpControl>(mixer_server, std::move(attributes));
     log().debug("Called Mixer::Config contructor with mixer_server: ",
                 mixer_server);
   }
