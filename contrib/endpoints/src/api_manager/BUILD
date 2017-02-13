@@ -279,3 +279,18 @@ cc_test(
         "//external:googletest_main",
     ],
 )
+
+cc_test(
+    name = "check_security_rules_test",
+    size = "small",
+    srcs = [
+        "check_security_rules_test.cc",
+        "mock_request.h",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":api_manager",
+        ":mock_api_manager_environment",
+        "//external:googletest_main",
+    ],
+)
