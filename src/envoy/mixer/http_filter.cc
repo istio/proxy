@@ -101,8 +101,6 @@ class Config : public Logger::Loggable<Logger::Id::http> {
       for (const std::string& attr : config.getStringArray("attributes")) {
         attributes[attr] = config.getString(attr);
       }
-    } else {
-      log().warn("No attributes is specified in the config: {}", __func__);
     }
 
     http_control_ =
