@@ -51,7 +51,7 @@ class Aggregated : public Interface {
 
   virtual void Quota(
       const QuotaRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
-      std::function<void(utils::Status, const QuotaResponseInfo&)> on_done);
+      std::function<void(utils::Status)> on_done);
 
   virtual utils::Status Init();
   virtual utils::Status Close();

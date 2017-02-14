@@ -79,7 +79,7 @@ class Interface {
   // body.
   virtual void Quota(
       const QuotaRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
-      std::function<void(utils::Status, const QuotaResponseInfo&)> on_done) = 0;
+      std::function<void(utils::Status)> on_done) = 0;
 
   // Get statistics of ServiceControl library.
   virtual utils::Status GetStatistics(Statistics* stat) const = 0;

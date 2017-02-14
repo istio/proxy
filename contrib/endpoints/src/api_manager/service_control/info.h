@@ -117,24 +117,6 @@ struct QuotaRequestInfo : public OperationInfo {
 
 enum QuotaResponseCacheStatus { WAITING, CACHED };
 
-struct QuotaResponseInfo {
-  bool is_api_key_valid;
-  bool service_is_activated;
-  bool is_quota_allocated;
-  bool is_accept_request;
-  QuotaResponseCacheStatus status;
-
-  std::vector<MetricValueInfo> quota_metrics;
-  std::unordered_map<std::string, int64_t> quota_aggregation;
-
-  QuotaResponseInfo()
-      : is_api_key_valid(true),
-        service_is_activated(true),
-        is_quota_allocated(true),
-        is_accept_request(true),
-        status(QuotaResponseCacheStatus::WAITING) {}
-};
-
 // Information to fill Report request protobuf.
 struct ReportRequestInfo : public OperationInfo {
   // The HTTP response code.

@@ -71,7 +71,7 @@ class Proto final {
 
   static utils::Status ConvertAllocateQuotaResponse(
       const ::google::api::servicecontrol::v1::AllocateQuotaResponse& response,
-      const std::string& service_name, QuotaResponseInfo* quota_response_info);
+      const std::string& service_name);
 
   static bool IsMetricSupported(const ::google::api::MetricDescriptor& metric);
   static bool IsLabelSupported(const ::google::api::LabelDescriptor& label);

@@ -366,14 +366,12 @@ void Aggregated::Check(
 
 void Aggregated::Quota(
     const QuotaRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
-    std::function<void(utils::Status, const QuotaResponseInfo&)> on_done) {
+    std::function<void(utils::Status)> on_done) {
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
       CreateChildSpan(parent_span, "QuotaServiceControlCache"));
 
-  QuotaResponseInfo dummy_response_info;
   if (!client_) {
-    on_done(Status(Code::INTERNAL, "Missing service control client"),
-            dummy_response_info);
+    on_done(Status(Code::INTERNAL, "Missing service control client"));
     return;
   }
 
@@ -382,7 +380,7 @@ void Aggregated::Quota(
   Status status =
       service_control_proto_.FillAllocateQuotaRequest(info, request.get());
   if (!status.ok()) {
-    on_done(status, dummy_response_info);
+    on_done(status);
     quota_pool_.Free(std::move(request));
     return;
   }
@@ -391,16 +389,13 @@ void Aggregated::Quota(
 
   auto check_on_done = [this, response, on_done, trace_span](
       const ::google::protobuf::util::Status& status) {
-    QuotaResponseInfo response_info;
-
     if (status.ok()) {
       utils::Status status = Proto::ConvertAllocateQuotaResponse(
-          *response, service_control_proto_.service_name(), &response_info);
-      on_done(utils::Status::OK, response_info);
+          *response, service_control_proto_.service_name());
+      on_done(utils::Status::OK);
     } else {
       on_done(Status(status.error_code(), status.error_message(),
-                     Status::SERVICE_CONTROL),
-              response_info);
+                     Status::SERVICE_CONTROL));
     }
 
     delete response;

@@ -1089,7 +1089,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 
 Status Proto::ConvertAllocateQuotaResponse(
     const ::google::api::servicecontrol::v1::AllocateQuotaResponse& response,
-    const std::string& service_name, QuotaResponseInfo* quota_response_info) {
+    const std::string& service_name) {
   // response.operation_id()
   if (response.allocate_errors().size() == 0) {
     return Status::OK;
