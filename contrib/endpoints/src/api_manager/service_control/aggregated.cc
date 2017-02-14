@@ -403,6 +403,7 @@ void Aggregated::Quota(const QuotaRequestInfo& info,
 
   AllocateQuotaRequest* quota_request_copy = new AllocateQuotaRequest(*request);
 
+  // TODO(jaebong) Temporarily call Chemist directly instead of using service control client library
   Call(*request, response,
        [this, quota_request_copy, response,
         check_on_done](::google::protobuf::util::Status status) {
