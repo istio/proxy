@@ -49,9 +49,9 @@ class Aggregated : public Interface {
       const CheckRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
       std::function<void(utils::Status, const CheckResponseInfo&)> on_done);
 
-  virtual void Quota(
-      const QuotaRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
-      std::function<void(utils::Status)> on_done);
+  virtual void Quota(const QuotaRequestInfo& info,
+                     cloud_trace::CloudTraceSpan* parent_span,
+                     std::function<void(utils::Status)> on_done);
 
   virtual utils::Status Init();
   virtual utils::Status Close();
@@ -143,7 +143,8 @@ class Aggregated : public Interface {
       client_;
 
   // The protobuf pool to reuse CheckRequest protobuf.
-  ProtoPool<::google::api::servicecontrol::v1::AllocateQuotaRequest> quota_pool_;
+  ProtoPool<::google::api::servicecontrol::v1::AllocateQuotaRequest>
+      quota_pool_;
 
   // The protobuf pool to reuse CheckRequest protobuf.
   ProtoPool<::google::api::servicecontrol::v1::CheckRequest> check_pool_;

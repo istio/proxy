@@ -911,9 +911,11 @@ Proto::Proto(const std::set<std::string>& logs,
       service_name_(service_name),
       service_config_id_(service_config_id) {}
 
-utils::Status Proto::FillAllocateQuotaRequest(const QuotaRequestInfo& info, ::google::api::servicecontrol::v1::AllocateQuotaRequest* request) {
-
-  ::google::api::servicecontrol::v1::QuotaOperation* operation = request->mutable_allocate_operation();
+utils::Status Proto::FillAllocateQuotaRequest(
+    const QuotaRequestInfo& info,
+    ::google::api::servicecontrol::v1::AllocateQuotaRequest* request) {
+  ::google::api::servicecontrol::v1::QuotaOperation* operation =
+      request->mutable_allocate_operation();
 
   // service_name
   request->set_service_name(service_name_);
@@ -931,7 +933,7 @@ utils::Status Proto::FillAllocateQuotaRequest(const QuotaRequestInfo& info, ::go
   // allocate_operation.consumer_id
   if (!info.api_key.empty()) {
     operation->set_consumer_id(std::string(kConsumerIdApiKey) +
-                        std::string(info.api_key));
+                               std::string(info.api_key));
   }
 
   // TODO(jaebong) - Read from service conf?
@@ -939,7 +941,6 @@ utils::Status Proto::FillAllocateQuotaRequest(const QuotaRequestInfo& info, ::go
   operation->set_quota_mode(
       ::google::api::servicecontrol::v1::QuotaOperation_QuotaMode::
           QuotaOperation_QuotaMode_NORMAL);
-
 
   // allocate_operation.labels
   auto* labels = operation->mutable_labels();
@@ -953,8 +954,6 @@ utils::Status Proto::FillAllocateQuotaRequest(const QuotaRequestInfo& info, ::go
   (*labels)[kServiceControlUserAgent] = kUserAgent;
   (*labels)[kServiceControlServiceAgent] =
       kServiceAgentPrefix + utils::Version::instance().get();
-
-
 
   // allocate_operation.quota_metrics
 

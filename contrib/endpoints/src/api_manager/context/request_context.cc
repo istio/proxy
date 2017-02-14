@@ -228,7 +228,6 @@ void RequestContext::FillCheckRequestInfo(
 
 void RequestContext::FillAllocateQuotaRequestInfo(
     service_control::QuotaRequestInfo *info) {
-
   FillOperationInfo(info);
 
   info->client_ip = request_->GetClientIP();
@@ -241,7 +240,7 @@ void RequestContext::FillAllocateQuotaRequestInfo(
 
   // TODO(jaebong) need to set quota rule and metric rule
   info->quota_rule_ = nullptr;
-  info->metric_rule_= nullptr;
+  info->metric_rule_ = nullptr;
 }
 
 void RequestContext::FillReportRequestInfo(

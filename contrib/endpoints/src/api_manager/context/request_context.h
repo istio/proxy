@@ -63,7 +63,6 @@ class RequestContext {
     check_response_info_ = check_response_info;
   }
 
-
   // Fill CheckRequestInfo
   void FillCheckRequestInfo(service_control::CheckRequestInfo *info);
 

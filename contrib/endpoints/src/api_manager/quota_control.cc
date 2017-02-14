@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////////////
-// includes should be ordered. This seems like a bug in clang-format?
+//
 #include <iostream>
 
 #include "contrib/endpoints/src/api_manager/cloud_trace/cloud_trace.h"
@@ -55,15 +55,13 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
     return;
   }
 
-
   service_control::QuotaRequestInfo info;
   context->FillAllocateQuotaRequestInfo(&info);
   context->service_context()->service_control()->Quota(
       info, trace_span.get(),
-      [context, continuation, trace_span](
-          utils::Status status) {
+      [context, continuation, trace_span](utils::Status status) {
 
-    TRACE(trace_span) << "Quota service control request returned with "
+        TRACE(trace_span) << "Quota service control request returned with "
                           << "status " << status.ToString();
 
         continuation(status);

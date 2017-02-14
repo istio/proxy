@@ -77,9 +77,9 @@ class Interface {
   // If status code is less than 20, within the ranges defined by
   // google/protobuf/stubs/status.h, is from parsing error response
   // body.
-  virtual void Quota(
-      const QuotaRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
-      std::function<void(utils::Status)> on_done) = 0;
+  virtual void Quota(const QuotaRequestInfo& info,
+                     cloud_trace::CloudTraceSpan* parent_span,
+                     std::function<void(utils::Status)> on_done) = 0;
 
   // Get statistics of ServiceControl library.
   virtual utils::Status GetStatistics(Statistics* stat) const = 0;

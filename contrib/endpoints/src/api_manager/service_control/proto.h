@@ -19,8 +19,8 @@
 #include "contrib/endpoints/src/api_manager/service_control/info.h"
 #include "google/api/label.pb.h"
 #include "google/api/metric.pb.h"
-#include "google/api/servicecontrol/v1/service_controller.pb.h"
 #include "google/api/servicecontrol/v1/quota_controller.pb.h"
+#include "google/api/servicecontrol/v1/service_controller.pb.h"
 
 namespace google {
 namespace api_manager {
