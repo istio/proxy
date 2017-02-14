@@ -72,8 +72,6 @@ struct OperationInfo {
 
 // Information to fill Check request protobuf.
 struct CheckRequestInfo : public OperationInfo {
-  // The client IP address.
-  std::string client_ip;
   // Whether the method allow unregistered calls.
   bool allow_unregistered_calls;
 
@@ -92,18 +90,6 @@ struct CheckResponseInfo {
   CheckResponseInfo() : is_api_key_valid(true), service_is_activated(true) {}
 };
 
-struct MetricValueInfo {
-  std::string metric_name;
-  int64_t metric_value;
-
-  std::unordered_map<std::string, std::string> labels;
-  std::chrono::system_clock::time_point start_time;
-  std::chrono::system_clock::time_point end_time;
-
-  MetricValueInfo(std::string name, int64_t value)
-      : metric_name(name), metric_value(value) {}
-};
-
 struct QuotaRequestInfo : public OperationInfo {
   std::string method_name;
   // The client IP address.
@@ -114,8 +100,6 @@ struct QuotaRequestInfo : public OperationInfo {
   ::google::api::QuotaRule* quota_rule_;
   ::google::api::MetricRule* metric_rule_;
 };
-
-enum QuotaResponseCacheStatus { WAITING, CACHED };
 
 // Information to fill Report request protobuf.
 struct ReportRequestInfo : public OperationInfo {

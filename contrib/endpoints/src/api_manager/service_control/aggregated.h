@@ -116,7 +116,7 @@ class Aggregated : public Interface {
             cloud_trace::CloudTraceSpan* parent_span);
 
   // Gets the auth token to access service control server.
-  const std::string& GetAuthToken(auth::ServiceAccountToken* token_);
+  const std::string& GetAuthToken(auth::ServiceAccountToken* token);
 
   // the sevice config.
   const ::google::api::Service* service_;
@@ -129,7 +129,7 @@ class Aggregated : public Interface {
   // service account token.
   auth::ServiceAccountToken* sa_token_;
 
-  // quota service account token.
+  // TODO(jaebong) quota service account token.
   auth::ServiceAccountToken* sa_token_quota_;
 
   // The object to fill service control Check and Report protobuf.
@@ -142,7 +142,7 @@ class Aggregated : public Interface {
   std::unique_ptr<::google::service_control_client::ServiceControlClient>
       client_;
 
-  // The protobuf pool to reuse CheckRequest protobuf.
+  // The protobuf pool to reuse AllocateQuotaRequest protobuf.
   ProtoPool<::google::api::servicecontrol::v1::AllocateQuotaRequest>
       quota_pool_;
 

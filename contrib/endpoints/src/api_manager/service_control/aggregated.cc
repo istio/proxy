@@ -495,13 +495,13 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
     max_report_size_ = request_body.size();
   }
 
-  auto token_ = (typeid(RequestType) == typeid(AllocateQuotaRequest))
+  auto token = (typeid(RequestType) == typeid(AllocateQuotaRequest))
                     ? sa_token_quota_
                     : sa_token_;
 
   http_request->set_url(url)
       .set_method("POST")
-      .set_auth_token(GetAuthToken(token_))
+      .set_auth_token(GetAuthToken(token))
       .set_header("Content-Type", application_proto)
       .set_body(request_body);
 
@@ -535,9 +535,9 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   env_->RunHTTPRequest(std::move(http_request));
 }
 
-const std::string& Aggregated::GetAuthToken(auth::ServiceAccountToken* token_) {
-  if (token_) {
-    return token_->GetAuthToken(
+const std::string& Aggregated::GetAuthToken(auth::ServiceAccountToken* token) {
+  if (token) {
+    return token->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
   } else {
     static std::string empty;

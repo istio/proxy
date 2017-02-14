@@ -956,7 +956,7 @@ utils::Status Proto::FillAllocateQuotaRequest(
       kServiceAgentPrefix + utils::Version::instance().get();
 
   // allocate_operation.quota_metrics
-
+  // TODO(jaebong) need to update after the configuration module change
   // handle group rules
   if (info.quota_rule_ != nullptr) {
     MetricValueSet* value_set = operation->add_quota_metrics();
@@ -984,16 +984,6 @@ utils::Status Proto::FillAllocateQuotaRequest(
       value->set_int64_value(cost <= 0 ? 1 : cost);
     }
   }
-
-  /*
-  for (auto it : info.quota_metrics) {
-    auto set = operation->add_quota_metrics();
-    set->set_metric_name(it.metric_name);
-
-    auto value = set->add_metric_values();
-    value->set_int64_value(it.metric_value);
-  }
-  */
 
   return Status::OK;
 }
