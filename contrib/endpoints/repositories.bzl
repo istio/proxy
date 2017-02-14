@@ -196,9 +196,10 @@ def grpc_repositories(bind=True):
 
 def servicecontrol_client_repositories(bind=True):
 
-    native.local_repository(
+    native.git_repository(
         name = "servicecontrol_client_git",
-        path = "/usr/local/google/home/qians/ESP-project/service-control-client-cxx",
+        commit = "069bc7156d92a2d84929309d69610c76f6b8dab9",
+        remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
     )
 
     if bind:
