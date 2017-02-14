@@ -63,8 +63,16 @@ class RequestContext {
     check_response_info_ = check_response_info;
   }
 
+  // TODO(jaebong): set quota_response_info
+  void set_quota_response_info(const service_control::QuotaResponseInfo &quota_response_info) {
+    quota_response_info_ = quota_response_info;
+  }
+
   // Fill CheckRequestInfo
   void FillCheckRequestInfo(service_control::CheckRequestInfo *info);
+
+  // Fill AllocateQuotaRequestInfo
+  void FillAllocateQuotaRequestInfo(service_control::QuotaRequestInfo *info);
 
   // Fill ReportRequestInfo
   void FillReportRequestInfo(Response *response,
@@ -149,6 +157,8 @@ class RequestContext {
 
   // Pass check response data to Report call.
   service_control::CheckResponseInfo check_response_info_;
+
+  service_control::QuotaResponseInfo quota_response_info_;
 
   // Needed by both Check() and Report, extract it once and store it here.
   std::string http_referer_;

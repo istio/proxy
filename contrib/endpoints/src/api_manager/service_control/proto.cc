@@ -30,6 +30,7 @@
 #include "utils/distribution_helper.h"
 
 using ::google::api::servicecontrol::v1::CheckError;
+using ::google::api::servicecontrol::v1::QuotaError;
 using ::google::api::servicecontrol::v1::CheckRequest;
 using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::Distribution;
@@ -48,6 +49,11 @@ using ::google::service_control_client::DistributionHelper;
 namespace google {
 namespace api_manager {
 namespace service_control {
+
+const char kConsumerQuotaUsedCount[] =
+    "serviceruntime.googleapis.com/api/consumer/quota_used_count";
+
+const char kQuotaName[] = "/quota_name";
 
 struct SupportedMetric {
   const char* name;
@@ -905,6 +911,94 @@ Proto::Proto(const std::set<std::string>& logs,
       service_name_(service_name),
       service_config_id_(service_config_id) {}
 
+utils::Status Proto::FillAllocateQuotaRequest(const QuotaRequestInfo& info, ::google::api::servicecontrol::v1::AllocateQuotaRequest* request) {
+
+  ::google::api::servicecontrol::v1::QuotaOperation* operation = request->mutable_allocate_operation();
+
+  // service_name
+  request->set_service_name(service_name_);
+  // service_config_id
+  request->set_service_config_id(service_config_id_);
+
+  // allocate_operation.operation_id
+  if (!info.operation_id.empty()) {
+    operation->set_operation_id(info.operation_id);
+  }
+  // allocate_operation.method_name
+  if (!info.method_name.empty()) {
+    operation->set_method_name(info.method_name);
+  }
+  // allocate_operation.consumer_id
+  if (!info.api_key.empty()) {
+    operation->set_consumer_id(std::string(kConsumerIdApiKey) +
+                        std::string(info.api_key));
+  }
+
+  // TODO(jaebong) - Read from service conf?
+  // allocate_operation.quota_mode
+  operation->set_quota_mode(
+      ::google::api::servicecontrol::v1::QuotaOperation_QuotaMode::
+          QuotaOperation_QuotaMode_NORMAL);
+
+
+  // allocate_operation.labels
+  auto* labels = operation->mutable_labels();
+  if (!info.client_ip.empty()) {
+    (*labels)[kServiceControlCallerIp] = info.client_ip;
+  }
+
+  if (!info.referer.empty()) {
+    (*labels)[kServiceControlReferer] = info.referer;
+  }
+  (*labels)[kServiceControlUserAgent] = kUserAgent;
+  (*labels)[kServiceControlServiceAgent] =
+      kServiceAgentPrefix + utils::Version::instance().get();
+
+
+
+  // allocate_operation.quota_metrics
+
+  // handle group rules
+  if (info.quota_rule_ != nullptr) {
+    MetricValueSet* value_set = operation->add_quota_metrics();
+    value_set->set_metric_name(kConsumerQuotaUsedCount);
+
+    for (const auto& group : info.quota_rule_->groups()) {
+      MetricValue* value = value_set->add_metric_values();
+      (*value->mutable_labels())[kQuotaName] = group.group();
+      // Quota cost should be always larger than 0. Default to 1 if not.
+      // When super quota (go/pollux-detailed-design) is ready, negative value
+      // should not happen due to validation.
+      value->set_int64_value(group.cost() <= 0 ? 1 : group.cost());
+    }
+
+    return Status::OK;
+  }
+
+  // handle metric rules
+  if (info.metric_rule_ != nullptr) {
+    for (const auto& metric_and_cost : info.metric_rule_->metric_costs()) {
+      MetricValueSet* value_set = operation->add_quota_metrics();
+      value_set->set_metric_name(metric_and_cost.first);
+      MetricValue* value = value_set->add_metric_values();
+      const auto& cost = metric_and_cost.second;
+      value->set_int64_value(cost <= 0 ? 1 : cost);
+    }
+  }
+
+  /*
+  for (auto it : info.quota_metrics) {
+    auto set = operation->add_quota_metrics();
+    set->set_metric_name(it.metric_name);
+
+    auto value = set->add_metric_values();
+    value->set_int64_value(it.metric_value);
+  }
+  */
+
+  return Status::OK;
+}
+
 Status Proto::FillCheckRequest(const CheckRequestInfo& info,
                                CheckRequest* request) {
   Status status = VerifyRequiredCheckFields(info);
@@ -988,6 +1082,97 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     for (auto it = logs_.begin(), end = logs_.end(); it != end; it++) {
       FillLogEntry(info, *it, current_time, op->add_log_entries());
     }
+  }
+
+  return Status::OK;
+}
+
+Status Proto::ConvertAllocateQuotaResponse(
+    const ::google::api::servicecontrol::v1::AllocateQuotaResponse& response,
+    const std::string& service_name, QuotaResponseInfo* quota_response_info) {
+  // response.operation_id()
+  if (response.allocate_errors().size() == 0) {
+    return Status::OK;
+  }
+
+  const ::google::api::servicecontrol::v1::QuotaError& error =
+      response.allocate_errors().Get(0);
+
+  switch (error.code()) {
+    case ::google::api::servicecontrol::v1::QuotaError::UNSPECIFIED:
+      // This is never used.
+      break;
+
+    case ::google::api::servicecontrol::v1::QuotaError::RESOURCE_EXHAUSTED:
+      // Quota allocation failed.
+      // Same as [google.rpc.Code.RESOURCE_EXHAUSTED][].
+      return Status(Code::PERMISSION_DENIED, "Quota allocation failed.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::PROJECT_SUSPENDED:
+      // Consumer project has been suspended.
+      return Status(Code::PERMISSION_DENIED, "Project suspended.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::SERVICE_NOT_ENABLED:
+      // Consumer has not enabled the service.
+      return Status(Code::PERMISSION_DENIED,
+                    std::string("API ") + service_name +
+                        " is not enabled for the project.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::BILLING_NOT_ACTIVE:
+      // Consumer cannot access the service because billing is disabled.
+      return Status(Code::PERMISSION_DENIED,
+                    std::string("API ") + service_name +
+                        " has billing disabled. Please enable it.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::PROJECT_DELETED:
+    // Consumer's project has been marked as deleted (soft deletion).
+    case ::google::api::servicecontrol::v1::QuotaError::PROJECT_INVALID:
+      // Consumer's project number or ID does not represent a valid project.
+      return Status(Code::INVALID_ARGUMENT,
+                    "Client project not valid. Please pass a valid project.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::IP_ADDRESS_BLOCKED:
+      // IP address of the consumer is invalid for the specific consumer
+      // project.
+      return Status(Code::PERMISSION_DENIED, "IP address blocked.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::REFERER_BLOCKED:
+      // Referer address of the consumer request is invalid for the specific
+      // consumer project.
+      return Status(Code::PERMISSION_DENIED, "Referer blocked.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::CLIENT_APP_BLOCKED:
+      // Client application of the consumer request is invalid for the
+      // specific consumer project.
+      return Status(Code::PERMISSION_DENIED, "Client app blocked.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::API_KEY_INVALID:
+      // Specified API key is invalid.
+      return Status(Code::INVALID_ARGUMENT,
+                    "API key not valid. Please pass a valid API key.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::API_KEY_EXPIRED:
+      // Specified API Key has expired.
+      return Status(Code::INVALID_ARGUMENT,
+                    "API key expired. Please renew the API key.");
+
+    case ::google::api::servicecontrol::v1::QuotaError::
+        PROJECT_STATUS_UNVAILABLE:
+    // The backend server for looking up project id/number is unavailable.
+    case ::google::api::servicecontrol::v1::QuotaError::
+        SERVICE_STATUS_UNAVAILABLE:
+    // The backend server for checking service status is unavailable.
+    case ::google::api::servicecontrol::v1::QuotaError::
+        BILLING_STATUS_UNAVAILABLE:
+      // The backend server for checking billing status is unavailable.
+      // Fail open for internal server errors per recommendation
+      return Status::OK;
+
+    default:
+      return Status(
+          Code::INTERNAL,
+          std::string("Request blocked due to unsupported error code: ") +
+              std::to_string(error.code()));
   }
 
   return Status::OK;

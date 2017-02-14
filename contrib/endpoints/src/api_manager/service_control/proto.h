@@ -20,6 +20,7 @@
 #include "google/api/label.pb.h"
 #include "google/api/metric.pb.h"
 #include "google/api/servicecontrol/v1/service_controller.pb.h"
+#include "google/api/servicecontrol/v1/quota_controller.pb.h"
 
 namespace google {
 namespace api_manager {
@@ -48,6 +49,10 @@ class Proto final {
       const CheckRequestInfo& info,
       ::google::api::servicecontrol::v1::CheckRequest* request);
 
+  utils::Status FillAllocateQuotaRequest(
+      const QuotaRequestInfo& info,
+      ::google::api::servicecontrol::v1::AllocateQuotaRequest* request);
+
   // Fills the CheckRequest protobuf from info.
   // FillReportRequest function should copy the strings pointed by info.
   // These buffers may be freed after the FillReportRequest call.
@@ -63,6 +68,10 @@ class Proto final {
   static utils::Status ConvertCheckResponse(
       const ::google::api::servicecontrol::v1::CheckResponse& response,
       const std::string& service_name, CheckResponseInfo* check_response_info);
+
+  static utils::Status ConvertAllocateQuotaResponse(
+      const ::google::api::servicecontrol::v1::AllocateQuotaResponse& response,
+      const std::string& service_name, QuotaResponseInfo* quota_response_info);
 
   static bool IsMetricSupported(const ::google::api::MetricDescriptor& metric);
   static bool IsLabelSupported(const ::google::api::LabelDescriptor& label);

@@ -17,7 +17,8 @@
 
 #include "google/protobuf/stubs/stringpiece.h"
 
-#include <string.h>
+#include "google/api/quota.pb.h"
+
 #include <time.h>
 #include <chrono>
 #include <memory>
@@ -71,6 +72,8 @@ struct OperationInfo {
 
 // Information to fill Check request protobuf.
 struct CheckRequestInfo : public OperationInfo {
+  // The client IP address.
+  std::string client_ip;
   // Whether the method allow unregistered calls.
   bool allow_unregistered_calls;
 
@@ -87,6 +90,49 @@ struct CheckResponseInfo {
   // By default api_key is valid and service is activated.
   // They only set to false by the check response from server.
   CheckResponseInfo() : is_api_key_valid(true), service_is_activated(true) {}
+};
+
+struct MetricValueInfo {
+  std::string metric_name;
+  int64_t metric_value;
+
+  std::unordered_map<std::string, std::string> labels;
+  std::chrono::system_clock::time_point start_time;
+  std::chrono::system_clock::time_point end_time;
+
+  MetricValueInfo(std::string name, int64_t value)
+      : metric_name(name), metric_value(value) {}
+};
+
+struct QuotaRequestInfo : public OperationInfo {
+  std::string method_name;
+  // The client IP address.
+  std::string client_ip;
+
+  std::unordered_map<std::string, std::string> labels;
+
+  ::google::api::QuotaRule* quota_rule_;
+  ::google::api::MetricRule* metric_rule_;
+};
+
+enum QuotaResponseCacheStatus { WAITING, CACHED };
+
+struct QuotaResponseInfo {
+  bool is_api_key_valid;
+  bool service_is_activated;
+  bool is_quota_allocated;
+  bool is_accept_request;
+  QuotaResponseCacheStatus status;
+
+  std::vector<MetricValueInfo> quota_metrics;
+  std::unordered_map<std::string, int64_t> quota_aggregation;
+
+  QuotaResponseInfo()
+      : is_api_key_valid(true),
+        service_is_activated(true),
+        is_quota_allocated(true),
+        is_accept_request(true),
+        status(QuotaResponseCacheStatus::WAITING) {}
 };
 
 // Information to fill Report request protobuf.
