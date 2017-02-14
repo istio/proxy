@@ -49,6 +49,10 @@ class Aggregated : public Interface {
       const CheckRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
       std::function<void(utils::Status, const CheckResponseInfo&)> on_done);
 
+  virtual void Quota(const QuotaRequestInfo& info,
+                     cloud_trace::CloudTraceSpan* parent_span,
+                     std::function<void(utils::Status)> on_done);
+
   virtual utils::Status Init();
   virtual utils::Status Close();
 
@@ -112,7 +116,7 @@ class Aggregated : public Interface {
             cloud_trace::CloudTraceSpan* parent_span);
 
   // Gets the auth token to access service control server.
-  const std::string& GetAuthToken();
+  const std::string& GetAuthToken(auth::ServiceAccountToken* token);
 
   // the sevice config.
   const ::google::api::Service* service_;
@@ -125,6 +129,9 @@ class Aggregated : public Interface {
   // service account token.
   auth::ServiceAccountToken* sa_token_;
 
+  // TODO(jaebong) quota service account token.
+  auth::ServiceAccountToken* sa_token_quota_;
+
   // The object to fill service control Check and Report protobuf.
   Proto service_control_proto_;
 
@@ -134,6 +141,11 @@ class Aggregated : public Interface {
   // The service control client instance.
   std::unique_ptr<::google::service_control_client::ServiceControlClient>
       client_;
+
+  // The protobuf pool to reuse AllocateQuotaRequest protobuf.
+  ProtoPool<::google::api::servicecontrol::v1::AllocateQuotaRequest>
+      quota_pool_;
+
   // The protobuf pool to reuse CheckRequest protobuf.
   ProtoPool<::google::api::servicecontrol::v1::CheckRequest> check_pool_;
   // The protobuf pool to reuse ReportRequest protobuf.

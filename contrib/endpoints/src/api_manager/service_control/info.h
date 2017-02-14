@@ -17,7 +17,8 @@
 
 #include "google/protobuf/stubs/stringpiece.h"
 
-#include <string.h>
+#include "google/api/quota.pb.h"
+
 #include <time.h>
 #include <chrono>
 #include <memory>
@@ -87,6 +88,17 @@ struct CheckResponseInfo {
   // By default api_key is valid and service is activated.
   // They only set to false by the check response from server.
   CheckResponseInfo() : is_api_key_valid(true), service_is_activated(true) {}
+};
+
+struct QuotaRequestInfo : public OperationInfo {
+  std::string method_name;
+  // The client IP address.
+  std::string client_ip;
+
+  std::unordered_map<std::string, std::string> labels;
+
+  ::google::api::QuotaRule* quota_rule_;
+  ::google::api::MetricRule* metric_rule_;
 };
 
 // Information to fill Report request protobuf.
