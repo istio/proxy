@@ -403,7 +403,8 @@ void Aggregated::Quota(const QuotaRequestInfo& info,
 
   AllocateQuotaRequest* quota_request_copy = new AllocateQuotaRequest(*request);
 
-  // TODO(jaebong) Temporarily call Chemist directly instead of using service control client library
+  // TODO(jaebong) Temporarily call Chemist directly instead of using service
+  // control client library
   Call(*request, response,
        [this, quota_request_copy, response,
         check_on_done](::google::protobuf::util::Status status) {
@@ -497,8 +498,8 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   }
 
   auto token = (typeid(RequestType) == typeid(AllocateQuotaRequest))
-                    ? sa_token_quota_
-                    : sa_token_;
+                   ? sa_token_quota_
+                   : sa_token_;
 
   http_request->set_url(url)
       .set_method("POST")
