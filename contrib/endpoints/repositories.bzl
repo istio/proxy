@@ -32,8 +32,11 @@ def zlib_repositories(bind=True):
 #
 ################################################################################
 #
+
 licenses(["notice"])
+
 exports_files(["README"])
+
 cc_library(
     name = "zlib",
     srcs = [
@@ -102,8 +105,11 @@ def nanopb_repositories(bind=True):
 #
 ################################################################################
 #
+
 licenses(["notice"])
+
 exports_files(["LICENSE.txt"])
+
 cc_library(
     name = "nanopb",
     srcs = [
@@ -120,6 +126,7 @@ cc_library(
         "//visibility:public",
     ],
 )
+
 genrule(
     name = "includes",
     srcs = [
