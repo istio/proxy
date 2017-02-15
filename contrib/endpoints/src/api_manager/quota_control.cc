@@ -37,24 +37,6 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
     return;
   }
 
-  if (context->api_key().empty()) {
-    if (context->method()->allow_unregistered_calls()) {
-      // Not need to call Check.
-      TRACE(trace_span) << "Service control check is not needed";
-      continuation(Status::OK);
-      return;
-    }
-
-    TRACE(trace_span) << "Failed at checking caller identity.";
-    continuation(
-        Status(Code::UNAUTHENTICATED,
-               "Method doesn't allow unregistered callers (callers without "
-               "established identity). Please use API Key or other form of "
-               "API consumer identity to call this API.",
-               Status::SERVICE_CONTROL));
-    return;
-  }
-
   service_control::QuotaRequestInfo info;
   context->FillAllocateQuotaRequestInfo(&info);
   context->service_context()->service_control()->Quota(

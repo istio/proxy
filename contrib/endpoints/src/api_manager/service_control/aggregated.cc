@@ -100,8 +100,7 @@ CheckAggregationOptions GetCheckAggregationOptions(
 // TODO(jaebong): - need to add quota configuration
 // Generate QuotaAggregationOptions
 QuotaAggregationOptions GetQuotaAggregationOptions(
-    const ServerConfig* server_config,
-    const ::google::api::Service* service_config) {
+    const ServerConfig* server_config) {
   QuotaAggregationOptions option = QuotaAggregationOptions(
       kQuotaAggregationEntries, kQuotaAggregationRefreshMs);
 
@@ -165,7 +164,6 @@ Aggregated::Aggregated(const ::google::api::Service& service,
       server_config_(server_config),
       env_(env),
       sa_token_(sa_token),
-      sa_token_quota_(nullptr),
       service_control_proto_(logs, metrics, labels, service.name(),
                              service.id()),
       url_(service_, server_config),
@@ -176,14 +174,10 @@ Aggregated::Aggregated(const ::google::api::Service& service,
     sa_token_->SetAudience(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL,
         url_.service_control() + servicecontrol_service);
+    sa_token_->SetAudience(
+        auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL,
+        url_.service_control() + quotacontrol_service);
   }
-
-  sa_token_quota_ = new auth::ServiceAccountToken(env);
-  sa_token_quota_->SetClientAuthSecret(
-      server_config->google_authentication_secret());
-  sa_token_quota_->SetAudience(
-      auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL,
-      url_.service_control() + quotacontrol_service);
 }
 
 Aggregated::Aggregated(const std::set<std::string>& logs,
@@ -193,13 +187,12 @@ Aggregated::Aggregated(const std::set<std::string>& logs,
       server_config_(nullptr),
       env_(env),
       sa_token_(nullptr),
-      sa_token_quota_(nullptr),
       service_control_proto_(logs, "", ""),
       url_(service_, server_config_),
       client_(std::move(client)),
       max_report_size_(0) {}
 
-Aggregated::~Aggregated() { delete sa_token_quota_; }
+Aggregated::~Aggregated() {}
 
 Status Aggregated::Init() {
   // Init() can be called repeatedly.
@@ -212,7 +205,7 @@ Status Aggregated::Init() {
   // env->StartPeriodicTimer doens't work at constructor.
   ServiceControlClientOptions options(
       GetCheckAggregationOptions(server_config_),
-      GetQuotaAggregationOptions(server_config_, service_),
+      GetQuotaAggregationOptions(server_config_),
       GetReportAggregationOptions(server_config_));
 
   std::stringstream ss;
@@ -387,12 +380,14 @@ void Aggregated::Quota(const QuotaRequestInfo& info,
 
   AllocateQuotaResponse* response = new AllocateQuotaResponse();
 
-  auto check_on_done = [this, response, on_done, trace_span](
+  auto quota_on_done = [this, response, on_done, trace_span](
       const ::google::protobuf::util::Status& status) {
+    TRACE(trace_span) << "AllocateQuotaRequst returned with status: "
+                      << status.ToString();
+
     if (status.ok()) {
-      utils::Status status = Proto::ConvertAllocateQuotaResponse(
-          *response, service_control_proto_.service_name());
-      on_done(utils::Status::OK);
+      on_done(Proto::ConvertAllocateQuotaResponse(
+          *response, service_control_proto_.service_name()));
     } else {
       on_done(Status(status.error_code(), status.error_message(),
                      Status::SERVICE_CONTROL));
@@ -401,15 +396,11 @@ void Aggregated::Quota(const QuotaRequestInfo& info,
     delete response;
   };
 
-  AllocateQuotaRequest* quota_request_copy = new AllocateQuotaRequest(*request);
-
   // TODO(jaebong) Temporarily call Chemist directly instead of using service
   // control client library
   Call(*request, response,
-       [this, quota_request_copy, response,
-        check_on_done](::google::protobuf::util::Status status) {
-         delete quota_request_copy;
-         check_on_done(status);
+       [quota_on_done](::google::protobuf::util::Status status) {
+         quota_on_done(status);
        },
        trace_span.get());
 
@@ -442,71 +433,20 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
   return Status::OK;
 }
 
-template <class RequestType, class ResponseType>
-void Aggregated::Call(const RequestType& request, ResponseType* response,
-                      TransportDoneFunc on_done,
-                      cloud_trace::CloudTraceSpan* parent_span) {
-  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
-      CreateChildSpan(parent_span, "Call ServiceControl server"));
-  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([response, on_done,
-                                                             trace_span, this](
-      Status status, std::map<std::string, std::string>&&, std::string&& body) {
-    TRACE(trace_span) << "HTTP response status: " << status.ToString();
-    if (status.ok()) {
-      // Handle 200 response
-      if (!response->ParseFromString(body)) {
-        status =
-            Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
-      }
-    } else {
-      const std::string& url =
-          typeid(RequestType) == typeid(CheckRequest)
-              ? url_.check_url()
-              : typeid(RequestType) == typeid(ReportRequest) ? url_.report_url()
-                                                             : url_.quota_url();
-      env_->LogError(std::string("Failed to call ") + url + ", Error: " +
-                     status.ToString() + ", Response body: " + body);
-
-      // Handle NGX error as opposed to pass-through error code
-      if (status.code() < 0) {
-        status =
-            Status(Code::UNAVAILABLE, "Failed to connect to service control");
-      } else {
-        status =
-            Status(Code::UNAVAILABLE,
-                   "Service control request failed with HTTP response code " +
-                       std::to_string(status.code()));
-      }
-    }
-    on_done(status.ToProto());
-  }));
-
-  const std::string& url = (typeid(RequestType) == typeid(CheckRequest))
-                               ? url_.check_url()
-                               : typeid(RequestType) == typeid(ReportRequest)
-                                     ? url_.report_url()
-                                     : url_.quota_url();
-
-  TRACE(trace_span) << "Http request URL: " << url;
-
-  std::string request_body;
-  request.SerializeToString(&request_body);
-
-  if ((typeid(RequestType) == typeid(ReportRequest)) &&
-      (request_body.size() > max_report_size_)) {
-    max_report_size_ = request_body.size();
+template <class RequestType>
+const std::string& Aggregated::GetApiReqeustUrl(const RequestType& request) {
+  if (typeid(request) == typeid(CheckRequest)) {
+    return url_.check_url();
+  } else if (typeid(request) == typeid(AllocateQuotaRequest)) {
+    return url_.quota_url();
+  } else {
+    return url_.report_url();
   }
+}
 
-  auto token = (typeid(RequestType) == typeid(AllocateQuotaRequest))
-                   ? sa_token_quota_
-                   : sa_token_;
-
-  http_request->set_url(url)
-      .set_method("POST")
-      .set_auth_token(GetAuthToken(token))
-      .set_header("Content-Type", application_proto)
-      .set_body(request_body);
-
+template <class RequestType>
+void Aggregated::SetHttpRequestTimeout(
+    const RequestType& request, std::unique_ptr<HTTPRequest>& http_request) {
   // Set timeout on the request if it was so configured.
   if (typeid(RequestType) == typeid(CheckRequest)) {
     http_request->set_timeout_ms(kCheckDefaultTimeoutInMs);
@@ -533,18 +473,79 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
       }
     }
   }
-
-  env_->RunHTTPRequest(std::move(http_request));
 }
 
-const std::string& Aggregated::GetAuthToken(auth::ServiceAccountToken* token) {
-  if (token) {
-    return token->GetAuthToken(
+template <class RequestType>
+const std::string& Aggregated::GetAuthToken(const RequestType& request) {
+  if (typeid(request) == typeid(AllocateQuotaRequest)) {
+    return sa_token_->GetAuthToken(
+        auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL);
+  } else if (typeid(request) == typeid(CheckRequest) ||
+             typeid(request) == typeid(ReportRequest)) {
+    return sa_token_->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
   } else {
     static std::string empty;
     return empty;
   }
+}
+
+template <class RequestType, class ResponseType>
+void Aggregated::Call(const RequestType& request, ResponseType* response,
+                      TransportDoneFunc on_done,
+                      cloud_trace::CloudTraceSpan* parent_span) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateChildSpan(parent_span, "Call ServiceControl server"));
+
+  const std::string& url = GetApiReqeustUrl(request);
+  TRACE(trace_span) << "Http request URL: " << url;
+
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([url, response,
+                                                             on_done,
+                                                             trace_span, this](
+      Status status, std::map<std::string, std::string>&&, std::string&& body) {
+    TRACE(trace_span) << "HTTP response status: " << status.ToString();
+    if (status.ok()) {
+      // Handle 200 response
+      if (!response->ParseFromString(body)) {
+        status =
+            Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
+      }
+    } else {
+      env_->LogError(std::string("Failed to call ") + url + ", Error: " +
+                     status.ToString() + ", Response body: " + body);
+
+      // Handle NGX error as opposed to pass-through error code
+      if (status.code() < 0) {
+        status =
+            Status(Code::UNAVAILABLE, "Failed to connect to service control");
+      } else {
+        status =
+            Status(Code::UNAVAILABLE,
+                   "Service control request failed with HTTP response code " +
+                       std::to_string(status.code()));
+      }
+    }
+    on_done(status.ToProto());
+  }));
+
+  std::string request_body;
+  request.SerializeToString(&request_body);
+
+  if ((typeid(RequestType) == typeid(ReportRequest)) &&
+      (request_body.size() > max_report_size_)) {
+    max_report_size_ = request_body.size();
+  }
+
+  http_request->set_url(url)
+      .set_method("POST")
+      .set_auth_token(GetAuthToken(request))
+      .set_header("Content-Type", application_proto)
+      .set_body(request_body);
+
+  SetHttpRequestTimeout(request, http_request);
+
+  env_->RunHTTPRequest(std::move(http_request));
 }
 
 Interface* Aggregated::Create(const ::google::api::Service& service,

@@ -233,11 +233,6 @@ void RequestContext::FillAllocateQuotaRequestInfo(
   info->client_ip = request_->GetClientIP();
   info->method_name = this->method_call_.method_info->name();
 
-  info->labels["servicecontrol.googleapis.com/caller_ip"] =
-      request_->GetClientIP();
-  info->labels["servicecontrol.googleapis.com/referer"] = this->http_referer_;
-  info->labels["servicecontrol.googleapis.com/user"] = "integration_test_user";
-
   // TODO(jaebong) need to set quota rule and metric rule
   info->quota_rule_ = nullptr;
   info->metric_rule_ = nullptr;

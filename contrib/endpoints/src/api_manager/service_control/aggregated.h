@@ -115,6 +115,16 @@ class Aggregated : public Interface {
             ::google::service_control_client::TransportDoneFunc on_done,
             cloud_trace::CloudTraceSpan* parent_span);
 
+  template <class RequestType>
+  const std::string& GetApiReqeustUrl(const RequestType& request);
+
+  template <class RequestType>
+  void SetHttpRequestTimeout(const RequestType& request,
+                             std::unique_ptr<HTTPRequest>& http_request);
+
+  template <class RequestType>
+  const std::string& GetAuthToken(const RequestType& request);
+
   // Gets the auth token to access service control server.
   const std::string& GetAuthToken(auth::ServiceAccountToken* token);
 
@@ -128,9 +138,6 @@ class Aggregated : public Interface {
 
   // service account token.
   auth::ServiceAccountToken* sa_token_;
-
-  // TODO(jaebong) quota service account token.
-  auth::ServiceAccountToken* sa_token_quota_;
 
   // The object to fill service control Check and Report protobuf.
   Proto service_control_proto_;

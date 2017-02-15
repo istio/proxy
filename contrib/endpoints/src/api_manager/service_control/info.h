@@ -95,8 +95,6 @@ struct QuotaRequestInfo : public OperationInfo {
   // The client IP address.
   std::string client_ip;
 
-  std::unordered_map<std::string, std::string> labels;
-
   ::google::api::QuotaRule* quota_rule_;
   ::google::api::MetricRule* metric_rule_;
 };
