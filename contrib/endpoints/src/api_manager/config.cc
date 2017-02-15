@@ -105,13 +105,49 @@ MethodInfoImpl *Config::GetOrCreateMethodInfoImpl(const string &name,
   auto i = method_map_.find(selector);
   if (i == std::end(method_map_)) {
     auto info =
+
         MethodInfoImplPtr(new MethodInfoImpl(name, api_name, api_version));
+
     info->set_selector(selector);
     info->set_rpc_method_full_name(path);
     i = method_map_.emplace(selector, std::move(info)).first;
   }
   return i->second.get();
 }
+
+ bool Config::LoadQuotaRule(ApiManagerEnvInterface *env) {
+    for (const auto &rule : service_.quota().metric_rules()) {
+      auto method = utils::FindOrNull(method_map_,
+                                      rule.selector());
+      if (method) {
+        for (auto &metric_cost : rule.metric_costs()) {
+          (*method)->add_metric_cost(metric_cost.first,
+                                  metric_cost.second);
+        }
+      } else {
+        env->LogDebug("Method not Found.");
+      }
+    }
+
+      for (const auto &rule : service_.quota().rules()) {
+        auto method = utils::FindOrNull(method_map_, rule.selector());
+        if (method) {
+          for (const auto &group_name: rule.groups()) {
+            for (const auto &group: service_.quota().groups()) {
+              if (group.name() == group_name.group()) {
+                for (const auto &limit : group.limits()) {
+                  (*method)->add_metric_cost(limit.metric(),
+                                          group_name.cost());
+                }
+              }
+              }
+            }
+          }
+        }
+
+
+    return true;
+  }
 
 bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
                              PathMatcherBuilder *pmb) {
@@ -323,7 +359,7 @@ bool Config::LoadUsage(ApiManagerEnvInterface *env) {
     }
   }
   return true;
-}
+ }
 
 bool Config::LoadSystemParameters(ApiManagerEnvInterface *env) {
   for (auto &rule : service_.system_parameters().rules()) {

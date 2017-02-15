@@ -62,6 +62,8 @@ class MethodInfoImpl : public MethodInfo {
 
   const std::string &backend_address() const { return backend_address_; }
 
+  const std::map<std::string, int64_t>& metric_cost_map() const { return metric_cost_map_; }
+
   const std::string &rpc_method_full_name() const {
     return rpc_method_full_name_;
   }
@@ -90,11 +92,16 @@ class MethodInfoImpl : public MethodInfo {
     url_query_parameters_[name].push_back(url_query_parameter);
   }
 
+  void add_metric_cost(const std::string& metric, int64_t cost) {
+    metric_cost_map_[metric] = cost;
+  }
+
   // After add all system parameters, lookup some of them to cache
   // their lookup results.
   void process_system_parameters();
 
   void set_selector(const std::string &selector) { selector_ = selector; }
+
 
   void set_backend_address(const std::string &address) {
     backend_address_ = address;
@@ -175,6 +182,9 @@ class MethodInfoImpl : public MethodInfo {
 
   // Whether the response is streaming or not.
   bool response_streaming_;
+
+  // map of metric and its cost
+  std::map<std::string, int64_t> metric_cost_map_;
 };
 
 typedef std::unique_ptr<MethodInfoImpl> MethodInfoImplPtr;
