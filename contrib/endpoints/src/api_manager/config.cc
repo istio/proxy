@@ -113,6 +113,36 @@ MethodInfoImpl *Config::GetOrCreateMethodInfoImpl(const string &name,
   return i->second.get();
 }
 
+bool Config::LoadQuotaRule(ApiManagerEnvInterface *env) {
+  for (const auto &rule : service_.quota().metric_rules()) {
+    auto method = utils::FindOrNull(method_map_, rule.selector());
+    if (method) {
+      for (auto &metric_cost : rule.metric_costs()) {
+        (*method)->add_metric_cost(metric_cost.first, metric_cost.second);
+      }
+    } else {
+      env->LogDebug("Method not Found.");
+    }
+  }
+
+  for (const auto &rule : service_.quota().rules()) {
+    auto method = utils::FindOrNull(method_map_, rule.selector());
+    if (method) {
+      for (const auto &group_name : rule.groups()) {
+        for (const auto &group : service_.quota().groups()) {
+          if (group.name() == group_name.group()) {
+            for (const auto &limit : group.limits()) {
+              (*method)->add_metric_cost(limit.metric(), group_name.cost());
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
                              PathMatcherBuilder *pmb) {
   std::set<std::string> all_urls, urls_with_options;
