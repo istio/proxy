@@ -92,8 +92,6 @@ struct CheckResponseInfo {
 
 struct QuotaRequestInfo : public OperationInfo {
   std::string method_name;
-  // The client IP address.
-  std::string client_ip;
 
   ::google::api::QuotaRule* quota_rule_;
   ::google::api::MetricRule* metric_rule_;

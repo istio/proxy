@@ -290,33 +290,33 @@ cc_proto_library(
 )
 """.format(protobuf_repo)
 
-
-    native.new_git_repository(
+    # TODO(jaebong) This is temporary repository change introduced by protobuf
+    # files hack. It needs to be rollback after the googapis repository update
+    native.git_repository(
         name = "googleapis_git",
-        commit = "db1d4547dc56a798915e0eb2c795585385922165",
-        remote = "https://github.com/googleapis/googleapis.git",
-        build_file_content = BUILD,
+        commit = "069bc7156d92a2d84929309d69610c76f6b8dab9",
+        remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
     )
 
     if bind:
         native.bind(
             name = "servicecontrol",
-            actual = "@googleapis_git//:servicecontrol",
+            actual = "@googleapis_git//proto:servicecontrol",
         )
 
         native.bind(
             name = "servicecontrol_genproto",
-            actual = "@googleapis_git//:servicecontrol_genproto",
+            actual = "@googleapis_git//proto:servicecontrol_genproto",
         )
 
         native.bind(
             name = "service_config",
-            actual = "@googleapis_git//:service_config",
+            actual = "@googleapis_git//proto:service_config",
         )
 
         native.bind(
             name = "cloud_trace",
-            actual = "@googleapis_git//:cloud_trace",
+            actual = "@googleapis_git//proto:cloud_trace",
         )
 
 def servicecontrol_client_repositories(bind=True):

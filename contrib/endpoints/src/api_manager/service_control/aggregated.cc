@@ -31,7 +31,8 @@ using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 
 using ::google::service_control_client::CheckAggregationOptions;
-using ::google::service_control_client::QuotaAggregationOptions;
+// TODO(jaebong) enable this after service_control_client library is updated
+// using ::google::service_control_client::QuotaAggregationOptions;
 using ::google::service_control_client::ReportAggregationOptions;
 using ::google::service_control_client::ServiceControlClient;
 using ::google::service_control_client::ServiceControlClientOptions;
@@ -97,6 +98,8 @@ CheckAggregationOptions GetCheckAggregationOptions(
                                  kCheckAggregationExpirationMs);
 }
 
+// TODO(jaebong) enable this after service_control_client library is updated
+/*
 // TODO(jaebong): - need to add quota configuration
 // Generate QuotaAggregationOptions
 QuotaAggregationOptions GetQuotaAggregationOptions(
@@ -115,6 +118,7 @@ QuotaAggregationOptions GetQuotaAggregationOptions(
 
   return option;
 }
+*/
 
 // Generates ReportAggregationOptions.
 ReportAggregationOptions GetReportAggregationOptions(
@@ -205,7 +209,9 @@ Status Aggregated::Init() {
   // env->StartPeriodicTimer doens't work at constructor.
   ServiceControlClientOptions options(
       GetCheckAggregationOptions(server_config_),
-      GetQuotaAggregationOptions(server_config_),
+      // TODO(jaebong) enable this after service_control_client library is
+      // updated
+      //      GetQuotaAggregationOptions(server_config_),
       GetReportAggregationOptions(server_config_));
 
   std::stringstream ss;
@@ -222,9 +228,13 @@ Status Aggregated::Init() {
       const CheckRequest& request, CheckResponse* response,
       TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
 
-  options.quota_transport = [this](
-      const AllocateQuotaRequest& request, AllocateQuotaResponse* response,
-      TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
+  /*
+    // TODO(jaebong) enable this after service_control_client library is updated
+    options.quota_transport = [this](
+        const AllocateQuotaRequest& request, AllocateQuotaResponse* response,
+        TransportDoneFunc on_done) { Call(request, response, on_done, nullptr);
+    };
+  */
 
   options.report_transport = [this](
       const ReportRequest& request, ReportResponse* response,
@@ -398,11 +408,7 @@ void Aggregated::Quota(const QuotaRequestInfo& info,
 
   // TODO(jaebong) Temporarily call Chemist directly instead of using service
   // control client library
-  Call(*request, response,
-       [quota_on_done](::google::protobuf::util::Status status) {
-         quota_on_done(status);
-       },
-       trace_span.get());
+  Call(*request, response, quota_on_done, trace_span.get());
 
   // There is no reference to request anymore at this point and it is safe to
   // free request now.
@@ -445,48 +451,47 @@ const std::string& Aggregated::GetApiReqeustUrl(const RequestType& request) {
 }
 
 template <class RequestType>
-void Aggregated::SetHttpRequestTimeout(
-    const RequestType& request, std::unique_ptr<HTTPRequest>& http_request) {
+int Aggregated::GetHttpRequestTimeout(const RequestType& request) {
+  int timeout_ms = 0;
+
   // Set timeout on the request if it was so configured.
-  if (typeid(RequestType) == typeid(CheckRequest)) {
-    http_request->set_timeout_ms(kCheckDefaultTimeoutInMs);
-  } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
-    http_request->set_timeout_ms(kAllocateQuotaDefaultTimeoutInMs);
+  if (typeid(request) == typeid(CheckRequest)) {
+    timeout_ms = kCheckDefaultTimeoutInMs;
+  } else if (typeid(request) == typeid(AllocateQuotaRequest)) {
+    timeout_ms = kAllocateQuotaDefaultTimeoutInMs;
   } else {
-    http_request->set_timeout_ms(kReportDefaultTimeoutInMs);
+    timeout_ms = kReportDefaultTimeoutInMs;
   }
 
   if (server_config_ != nullptr &&
       server_config_->has_service_control_config()) {
     const auto& config = server_config_->service_control_config();
-    if (typeid(RequestType) == typeid(CheckRequest)) {
+    if (typeid(request) == typeid(CheckRequest)) {
       if (config.check_timeout_ms() > 0) {
-        http_request->set_timeout_ms(config.check_timeout_ms());
+        timeout_ms = config.check_timeout_ms();
       }
-    } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
+    } else if (typeid(request) == typeid(AllocateQuotaRequest)) {
       if (config.quota_timeout_ms() > 0) {
-        http_request->set_timeout_ms(config.quota_timeout_ms());
+        timeout_ms = config.quota_timeout_ms();
       }
     } else {
       if (config.report_timeout_ms() > 0) {
-        http_request->set_timeout_ms(config.report_timeout_ms());
+        timeout_ms = config.report_timeout_ms();
       }
     }
   }
+
+  return timeout_ms;
 }
 
 template <class RequestType>
 const std::string& Aggregated::GetAuthToken(const RequestType& request) {
-  if (typeid(request) == typeid(AllocateQuotaRequest)) {
+  if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
     return sa_token_->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL);
-  } else if (typeid(request) == typeid(CheckRequest) ||
-             typeid(request) == typeid(ReportRequest)) {
+  } else {
     return sa_token_->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
-  } else {
-    static std::string empty;
-    return empty;
   }
 }
 
@@ -543,7 +548,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
       .set_header("Content-Type", application_proto)
       .set_body(request_body);
 
-  SetHttpRequestTimeout(request, http_request);
+  http_request->set_timeout_ms(GetHttpRequestTimeout(request));
 
   env_->RunHTTPRequest(std::move(http_request));
 }

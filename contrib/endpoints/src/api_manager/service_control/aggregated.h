@@ -23,6 +23,7 @@
 #include "contrib/endpoints/src/api_manager/service_control/proto.h"
 #include "contrib/endpoints/src/api_manager/service_control/url.h"
 #include "google/api/service.pb.h"
+#include "google/api/servicecontrol/v1/quota_controller.pb.h"
 #include "google/api/servicecontrol/v1/service_controller.pb.h"
 #include "include/service_control_client.h"
 
@@ -119,14 +120,10 @@ class Aggregated : public Interface {
   const std::string& GetApiReqeustUrl(const RequestType& request);
 
   template <class RequestType>
-  void SetHttpRequestTimeout(const RequestType& request,
-                             std::unique_ptr<HTTPRequest>& http_request);
+  int GetHttpRequestTimeout(const RequestType& request);
 
   template <class RequestType>
   const std::string& GetAuthToken(const RequestType& request);
-
-  // Gets the auth token to access service control server.
-  const std::string& GetAuthToken(auth::ServiceAccountToken* token);
 
   // the sevice config.
   const ::google::api::Service* service_;
