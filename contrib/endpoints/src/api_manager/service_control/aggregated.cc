@@ -486,12 +486,17 @@ int Aggregated::GetHttpRequestTimeout(const RequestType& request) {
 
 template <class RequestType>
 const std::string& Aggregated::GetAuthToken(const RequestType& request) {
-  if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
-    return sa_token_->GetAuthToken(
-        auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL);
+  if (sa_token_) {
+    if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
+      return sa_token_->GetAuthToken(
+          auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL);
+    } else {
+      return sa_token_->GetAuthToken(
+          auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
+    }
   } else {
-    return sa_token_->GetAuthToken(
-        auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
+    static std::string empty;
+    return empty;
   }
 }
 
