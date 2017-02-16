@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "contrib/endpoints/include/api_manager/method.h"
 #include "contrib/endpoints/src/api_manager/utils/stl_util.h"
@@ -62,8 +63,8 @@ class MethodInfoImpl : public MethodInfo {
 
   const std::string &backend_address() const { return backend_address_; }
 
-  const std::map<std::string, int64_t> &metric_cost_map() const {
-    return metric_cost_map_;
+  const std::vector<std::pair<std::string, int>> &metric_cost_vector() const {
+    return metric_cost_vector_;
   }
 
   const std::string &rpc_method_full_name() const {
@@ -95,7 +96,7 @@ class MethodInfoImpl : public MethodInfo {
   }
 
   void add_metric_cost(const std::string &metric, int64_t cost) {
-    metric_cost_map_[metric] = cost;
+    metric_cost_vector_.push_back(std::make_pair(metric, cost));
   }
 
   // After add all system parameters, lookup some of them to cache
@@ -147,13 +148,13 @@ class MethodInfoImpl : public MethodInfo {
   // such as API Key)?
   bool allow_unregistered_calls_;
   // Issuers to allowed audiences map.
-  std::map<std::string, std::set<std::string> > issuer_audiences_map_;
+  std::map<std::string, std::set<std::string>> issuer_audiences_map_;
 
   // system parameter map of parameter name to http_header name.
-  std::map<std::string, std::vector<std::string> > http_header_parameters_;
+  std::map<std::string, std::vector<std::string>> http_header_parameters_;
 
   // system parameter map of parameter name to url query parameter name.
-  std::map<std::string, std::vector<std::string> > url_query_parameters_;
+  std::map<std::string, std::vector<std::string>> url_query_parameters_;
 
   // all the names of system query parameters
   std::set<std::string> system_query_parameter_names_;
@@ -185,7 +186,7 @@ class MethodInfoImpl : public MethodInfo {
   bool response_streaming_;
 
   // map of metric and its cost
-  std::map<std::string, int64_t> metric_cost_map_;
+  std::vector<std::pair<std::string, int>> metric_cost_vector_;
 };
 
 typedef std::unique_ptr<MethodInfoImpl> MethodInfoImplPtr;

@@ -121,22 +121,7 @@ bool Config::LoadQuotaRule(ApiManagerEnvInterface *env) {
         (*method)->add_metric_cost(metric_cost.first, metric_cost.second);
       }
     } else {
-      env->LogDebug("Method not Found.");
-    }
-  }
-
-  for (const auto &rule : service_.quota().rules()) {
-    auto method = utils::FindOrNull(method_map_, rule.selector());
-    if (method) {
-      for (const auto &group_name : rule.groups()) {
-        for (const auto &group : service_.quota().groups()) {
-          if (group.name() == group_name.group()) {
-            for (const auto &limit : group.limits()) {
-              (*method)->add_metric_cost(limit.metric(), group_name.cost());
-            }
-          }
-        }
-      }
+      env->LogError("Metric rule with selector is mismatched.");
     }
   }
 
