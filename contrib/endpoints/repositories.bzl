@@ -226,4 +226,3 @@ def servicecontrol_client_repositories(bind=True):
             name = "cloud_trace",
             actual = "@servicecontrol_client_git//proto:cloud_trace",
         )
-
