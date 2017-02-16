@@ -116,12 +116,15 @@ class Aggregated : public Interface {
             ::google::service_control_client::TransportDoneFunc on_done,
             cloud_trace::CloudTraceSpan* parent_span);
 
+  // Returns API request url based on RequestType
   template <class RequestType>
   const std::string& GetApiReqeustUrl();
 
+  // Returns API request timeout in ms based on RequestType
   template <class RequestType>
   int GetHttpRequestTimeout();
 
+  // Returns API request auth token based on RequestType
   template <class RequestType>
   const std::string& GetAuthToken();
 
