@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+                   // Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ MethodInfoImpl::MethodInfoImpl(const string &name, const string &api_name,
       api_key_http_headers_(nullptr),
       api_key_url_query_parameters_(nullptr),
       request_streaming_(false),
-      response_streaming_(false) {}
+      response_streaming_(false){}
 
 void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
                                            const string &audiences_list) {
