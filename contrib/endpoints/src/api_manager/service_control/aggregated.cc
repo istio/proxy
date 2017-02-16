@@ -440,10 +440,10 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
 }
 
 template <class RequestType>
-const std::string& Aggregated::GetApiReqeustUrl(const RequestType& request) {
-  if (typeid(request) == typeid(CheckRequest)) {
+const std::string& Aggregated::GetApiReqeustUrl() {
+  if (typeid(RequestType) == typeid(CheckRequest)) {
     return url_.check_url();
-  } else if (typeid(request) == typeid(AllocateQuotaRequest)) {
+  } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
     return url_.quota_url();
   } else {
     return url_.report_url();
@@ -451,13 +451,13 @@ const std::string& Aggregated::GetApiReqeustUrl(const RequestType& request) {
 }
 
 template <class RequestType>
-int Aggregated::GetHttpRequestTimeout(const RequestType& request) {
+int Aggregated::GetHttpRequestTimeout() {
   int timeout_ms = 0;
 
   // Set timeout on the request if it was so configured.
-  if (typeid(request) == typeid(CheckRequest)) {
+  if (typeid(RequestType) == typeid(CheckRequest)) {
     timeout_ms = kCheckDefaultTimeoutInMs;
-  } else if (typeid(request) == typeid(AllocateQuotaRequest)) {
+  } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
     timeout_ms = kAllocateQuotaDefaultTimeoutInMs;
   } else {
     timeout_ms = kReportDefaultTimeoutInMs;
@@ -466,11 +466,11 @@ int Aggregated::GetHttpRequestTimeout(const RequestType& request) {
   if (server_config_ != nullptr &&
       server_config_->has_service_control_config()) {
     const auto& config = server_config_->service_control_config();
-    if (typeid(request) == typeid(CheckRequest)) {
+    if (typeid(RequestType) == typeid(CheckRequest)) {
       if (config.check_timeout_ms() > 0) {
         timeout_ms = config.check_timeout_ms();
       }
-    } else if (typeid(request) == typeid(AllocateQuotaRequest)) {
+    } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
       if (config.quota_timeout_ms() > 0) {
         timeout_ms = config.quota_timeout_ms();
       }
@@ -485,7 +485,7 @@ int Aggregated::GetHttpRequestTimeout(const RequestType& request) {
 }
 
 template <class RequestType>
-const std::string& Aggregated::GetAuthToken(const RequestType& request) {
+const std::string& Aggregated::GetAuthToken() {
   if (sa_token_) {
     if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
       return sa_token_->GetAuthToken(
@@ -507,7 +507,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
       CreateChildSpan(parent_span, "Call ServiceControl server"));
 
-  const std::string& url = GetApiReqeustUrl(request);
+  const std::string& url = GetApiReqeustUrl<RequestType>();
   TRACE(trace_span) << "Http request URL: " << url;
 
   std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([url, response,
@@ -549,11 +549,11 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
 
   http_request->set_url(url)
       .set_method("POST")
-      .set_auth_token(GetAuthToken(request))
+      .set_auth_token(GetAuthToken<RequestType>())
       .set_header("Content-Type", application_proto)
       .set_body(request_body);
 
-  http_request->set_timeout_ms(GetHttpRequestTimeout(request));
+  http_request->set_timeout_ms(GetHttpRequestTimeout<RequestType>());
 
   env_->RunHTTPRequest(std::move(http_request));
 }

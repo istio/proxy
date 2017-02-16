@@ -117,13 +117,13 @@ class Aggregated : public Interface {
             cloud_trace::CloudTraceSpan* parent_span);
 
   template <class RequestType>
-  const std::string& GetApiReqeustUrl(const RequestType& request);
+  const std::string& GetApiReqeustUrl();
 
   template <class RequestType>
-  int GetHttpRequestTimeout(const RequestType& request);
+  int GetHttpRequestTimeout();
 
   template <class RequestType>
-  const std::string& GetAuthToken(const RequestType& request);
+  const std::string& GetAuthToken();
 
   // the sevice config.
   const ::google::api::Service* service_;
