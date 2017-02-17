@@ -25,6 +25,7 @@
 #include "contrib/endpoints/src/api_manager/method_impl.h"
 #include "contrib/endpoints/src/api_manager/path_matcher.h"
 #include "contrib/endpoints/src/api_manager/proto/server_config.pb.h"
+#include "google/api/quota.pb.h"
 #include "google/api/service.pb.h"
 
 namespace google {
