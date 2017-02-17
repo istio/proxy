@@ -234,8 +234,7 @@ void RequestContext::FillAllocateQuotaRequestInfo(
   info->method_name = this->method_call_.method_info->name();
 
   // TODO(jaebong) need to set quota rule and metric rule
-  info->quota_rule_ = nullptr;
-  info->metric_rule_ = nullptr;
+  info->metric_cost_map = &this->method_call_.method_info->metric_cost_vector();
 }
 
 void RequestContext::FillReportRequestInfo(

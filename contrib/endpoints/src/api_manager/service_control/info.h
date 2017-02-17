@@ -93,8 +93,7 @@ struct CheckResponseInfo {
 struct QuotaRequestInfo : public OperationInfo {
   std::string method_name;
 
-  ::google::api::QuotaRule* quota_rule_;
-  ::google::api::MetricRule* metric_rule_;
+  const std::vector<std::pair<std::string, int>>* metric_cost_map;
 };
 
 // Information to fill Report request protobuf.

@@ -955,32 +955,12 @@ utils::Status Proto::FillAllocateQuotaRequest(
   (*labels)[kServiceControlServiceAgent] =
       kServiceAgentPrefix + utils::Version::instance().get();
 
-  // allocate_operation.quota_metrics
-  // TODO(jaebong) need to update after the configuration module change
-  // handle group rules
-  if (info.quota_rule_ != nullptr) {
-    MetricValueSet* value_set = operation->add_quota_metrics();
-    value_set->set_metric_name(kConsumerQuotaUsedCount);
-
-    for (const auto& group : info.quota_rule_->groups()) {
-      MetricValue* value = value_set->add_metric_values();
-      (*value->mutable_labels())[kQuotaName] = group.group();
-      // Quota cost should be always larger than 0. Default to 1 if not.
-      // When super quota (go/pollux-detailed-design) is ready, negative value
-      // should not happen due to validation.
-      value->set_int64_value(group.cost() <= 0 ? 1 : group.cost());
-    }
-
-    return Status::OK;
-  }
-
-  // handle metric rules
-  if (info.metric_rule_ != nullptr) {
-    for (const auto& metric_and_cost : info.metric_rule_->metric_costs()) {
+  if (info.metric_cost_map) {
+    for (auto metric : *info.metric_cost_map) {
       MetricValueSet* value_set = operation->add_quota_metrics();
-      value_set->set_metric_name(metric_and_cost.first);
+      value_set->set_metric_name(metric.first);
       MetricValue* value = value_set->add_metric_values();
-      const auto& cost = metric_and_cost.second;
+      const auto& cost = metric.second;
       value->set_int64_value(cost <= 0 ? 1 : cost);
     }
   }

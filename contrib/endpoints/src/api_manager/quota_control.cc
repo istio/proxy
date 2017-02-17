@@ -31,7 +31,7 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
       CreateSpan(context->cloud_trace(), "QuotaControl"));
 
-  if (!context->service_context()->service_control()) {
+  if (context->method()->metric_cost_vector().size() == 0) {
     TRACE(trace_span) << "Quota control check is not needed";
     continuation(Status::OK);
     return;
