@@ -121,7 +121,9 @@ bool Config::LoadQuotaRule(ApiManagerEnvInterface *env) {
         (*method)->add_metric_cost(metric_cost.first, metric_cost.second);
       }
     } else {
-      env->LogError("Metric rule with selector is mismatched.");
+      env->LogError("Metric rule with selector " + rule.selector() +
+                    "is mismatched.");
+      return false;
     }
   }
 
@@ -456,6 +458,9 @@ std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
     return nullptr;
   }
   if (!config->LoadBackends(env)) {
+    return nullptr;
+  }
+  if (!config->LoadQuotaRule(env)) {
     return nullptr;
   }
   return config;
