@@ -112,6 +112,8 @@ class Config {
   // Load SystemParameters info to MethodInfo.
   bool LoadSystemParameters(ApiManagerEnvInterface *env);
 
+  bool LoadQuotaRule(ApiManagerEnvInterface *env);
+
   // Gets the MethodInfoImpl creating it if necessary
   MethodInfoImpl *GetOrCreateMethodInfoImpl(const std::string &name,
                                             const std::string &api_name,
