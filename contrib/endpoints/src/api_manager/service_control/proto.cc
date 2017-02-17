@@ -955,8 +955,8 @@ utils::Status Proto::FillAllocateQuotaRequest(
   (*labels)[kServiceControlServiceAgent] =
       kServiceAgentPrefix + utils::Version::instance().get();
 
-  if (info.metric_cost_map) {
-    for (auto metric : *info.metric_cost_map) {
+  if (info.metric_cost_vector) {
+    for (auto metric : *info.metric_cost_vector) {
       MetricValueSet* value_set = operation->add_quota_metrics();
       value_set->set_metric_name(metric.first);
       MetricValue* value = value_set->add_metric_values();

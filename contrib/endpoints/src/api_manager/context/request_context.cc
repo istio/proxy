@@ -232,9 +232,8 @@ void RequestContext::FillAllocateQuotaRequestInfo(
 
   info->client_ip = request_->GetClientIP();
   info->method_name = this->method_call_.method_info->name();
-
-  // TODO(jaebong) need to set quota rule and metric rule
-  info->metric_cost_map = &this->method_call_.method_info->metric_cost_vector();
+  info->metric_cost_vector =
+      &this->method_call_.method_info->metric_cost_vector();
 }
 
 void RequestContext::FillReportRequestInfo(

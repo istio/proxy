@@ -93,7 +93,7 @@ struct CheckResponseInfo {
 struct QuotaRequestInfo : public OperationInfo {
   std::string method_name;
 
-  const std::vector<std::pair<std::string, int>>* metric_cost_map;
+  const std::vector<std::pair<std::string, int>>* metric_cost_vector;
 };
 
 // Information to fill Report request protobuf.
