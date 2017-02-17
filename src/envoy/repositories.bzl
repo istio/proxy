@@ -498,7 +498,7 @@ cc_library(
         "windows_port.c",
     ],
     hdrs = [
-				"ares_config.h",
+        "ares_config.h",
         "ares.h",
         "ares_build.h",
         "ares_data.h",
@@ -518,7 +518,7 @@ cc_library(
         "ares_strcasecmp.h",
         "ares_strdup.h",
         "ares_version.h",
-				"ares_writev.h",
+        "ares_writev.h",
         "bitncmp.h",
         "nameser.h",
         "setup_once.h",
@@ -529,6 +529,7 @@ cc_library(
     includes = ["."],
     visibility = ["//visibility:public"],
 )
+
 genrule(
     name = "config",
     srcs = glob(["**/*"]),
