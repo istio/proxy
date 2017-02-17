@@ -32,7 +32,7 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
       CreateSpan(context->cloud_trace(), "QuotaControl"));
 
   if (!context->service_context()->service_control()) {
-    TRACE(trace_span) << "Service control check is not needed";
+    TRACE(trace_span) << "Quota control check is not needed";
     continuation(Status::OK);
     return;
   }
