@@ -533,7 +533,7 @@ genrule(
     name = "config",
     srcs = glob(["**/*"]),
     outs = ["ares_config.h"],
-    cmd = "pushd external/cares_git ; ./buildconf ; ./configure ; ls ; cp ares_config.h ../../$@",
+    cmd = "pushd external/cares_git ; ./buildconf ; ./configure ; cp ares_config.h ../../$@",
     visibility = ["//visibility:public"],
 )
 
