@@ -872,6 +872,7 @@ TEST(Config, TestCorsDisabled) {
 
 TEST(Config, TestInvalidMetricRules) {
   MockApiManagerEnvironmentWithLog env;
+  // There is no http.rule or api.method to match the selector.
   static const char config_text[] = R"(
 name: "Service.Name"
 quota {
@@ -910,10 +911,6 @@ quota {
          key: "test.googleapis.com/operation/get_shelves"
          value: 100
       }
-      metric_costs {
-         key: "test.googleapis.com/operation/request"
-         value: 10
-      }
    }
    metric_rules {
       selector: "DeleteShelf"
@@ -932,13 +929,10 @@ quota {
   ASSERT_NE(nullptr, method1);
 
   auto metric_cost_vector = method1->metric_cost_vector();
-  ASSERT_EQ(2, metric_cost_vector.size());
-  ASSERT_EQ("test.googleapis.com/operation/request",
-            metric_cost_vector[0].first);
-  ASSERT_EQ(10, metric_cost_vector[0].second);
+  ASSERT_EQ(1, metric_cost_vector.size());
   ASSERT_EQ("test.googleapis.com/operation/get_shelves",
-            metric_cost_vector[1].first);
-  ASSERT_EQ(100, metric_cost_vector[1].second);
+            metric_cost_vector[0].first);
+  ASSERT_EQ(100, metric_cost_vector[0].second);
 
   auto method2 = config->GetMethodInfo("DELETE", "/shelves");
   ASSERT_NE(nullptr, method1);
