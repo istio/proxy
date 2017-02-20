@@ -911,6 +911,10 @@ quota {
          key: "test.googleapis.com/operation/get_shelves"
          value: 100
       }
+      metric_costs {
+          key: "test.googleapis.com/operation/request"
+          value: 10
+       }
    }
    metric_rules {
       selector: "DeleteShelf"
@@ -925,16 +929,22 @@ quota {
   std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
-  auto method1 = config->GetMethodInfo("GET", "/shelves");
+  const MethodInfo *method1 = config->GetMethodInfo("GET", "/shelves");
   ASSERT_NE(nullptr, method1);
 
-  auto metric_cost_vector = method1->metric_cost_vector();
-  ASSERT_EQ(1, metric_cost_vector.size());
+  std::vector<std::pair<std::string, int>> metric_cost_vector =
+      method1->metric_cost_vector();
+  std::sort(metric_cost_vector.begin(), metric_cost_vector.end());
+  ASSERT_EQ(2, metric_cost_vector.size());
   ASSERT_EQ("test.googleapis.com/operation/get_shelves",
             metric_cost_vector[0].first);
   ASSERT_EQ(100, metric_cost_vector[0].second);
 
-  auto method2 = config->GetMethodInfo("DELETE", "/shelves");
+  ASSERT_EQ("test.googleapis.com/operation/request",
+            metric_cost_vector[1].first);
+  ASSERT_EQ(10, metric_cost_vector[1].second);
+
+  const MethodInfo *method2 = config->GetMethodInfo("DELETE", "/shelves");
   ASSERT_NE(nullptr, method1);
 
   metric_cost_vector = method2->metric_cost_vector();
