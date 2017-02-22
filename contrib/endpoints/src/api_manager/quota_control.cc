@@ -46,7 +46,10 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
         TRACE(trace_span) << "Quota service control request returned with "
                           << "status " << status.ToString();
 
-        continuation(status);
+        // if the quota control service API is not available, then pass client
+        // requests
+        continuation((status.code() == Code::UNAVAILABLE) ? utils::Status::OK
+                                                          : status);
       });
 }
 
