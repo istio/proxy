@@ -148,8 +148,7 @@ HttpControl::HttpControl(const std::string& mixer_server,
   mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
 }
 
-void HttpControl::FillCheckAttributes(HeaderMap& header_map,
-                                      Attributes* attr) {
+void HttpControl::FillCheckAttributes(HeaderMap& header_map, Attributes* attr) {
   // Extract attributes from x-istio-attributes header
   const HeaderEntry* entry = header_map.get(Utils::kHeaderNameIstioAttributes);
   if (entry) {
