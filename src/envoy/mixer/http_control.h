@@ -51,7 +51,7 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
               ::istio::mixer_client::DoneFunc on_done);
 
  private:
-  void FillCheckAttributes(const HeaderMap& header_map,
+  void FillCheckAttributes(HeaderMap& header_map,
                            ::istio::mixer_client::Attributes* attr);
 
   // The mixer client

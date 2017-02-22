@@ -17,6 +17,15 @@
 
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 load("@bazel_tools//tools/build_defs/docker:docker.bzl", "docker_build")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+
+cc_proto_library(
+    name = "string_map_proto",
+    srcs = ["string_map.proto"],
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    visibility = ["//visibility:public"],
+)
 
 cc_library(
     name = "filter_lib",
@@ -24,8 +33,12 @@ cc_library(
         "http_control.cc",
         "http_control.h",
         "http_filter.cc",
+        "send_attribute_filter.cc",
+        "utils.cc",
+        "utils.h",
     ],
     deps = [
+        ":string_map_proto",
         "//external:mixer_client_lib",
         "@envoy_git//:envoy-common",
     ],
