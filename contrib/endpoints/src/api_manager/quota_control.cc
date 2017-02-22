@@ -46,8 +46,8 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
         TRACE(trace_span) << "Quota service control request returned with "
                           << "status " << status.ToString();
 
-        // if the quota control service API is not available, then pass client
-        // requests
+        // quota control is using "failed open" policy. If the server is not
+        // available, allow the request to go.
         continuation((status.code() == Code::UNAVAILABLE) ? utils::Status::OK
                                                           : status);
       });
