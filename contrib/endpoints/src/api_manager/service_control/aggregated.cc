@@ -287,8 +287,8 @@ void Aggregated::Check(
     if (status.ok()) {
       Status status = Proto::ConvertCheckResponse(
           *response, service_control_proto_.service_name(), &response_info);
-      // If server replied with either invalid api_key or not actived service,
-      // the request is failed even allow_unregistered_calls is true. Most
+      // If server replied with either invalid api_key or not activated service,
+      // the request is rejected even allow_unregistered_calls is true. Most
       // likely, users provide a wrong api key. By failing the request, the
       // users will be notified with the error and have chance to correct it.
       // Otherwise, the Report call will fail. It is very hard to notice and
