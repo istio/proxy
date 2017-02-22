@@ -36,7 +36,7 @@ const std::string kJsonNameAttributes("attributes");
 class Config : public Logger::Loggable<Logger::Id::http> {
  private:
   Upstream::ClusterManager& cm_;
-  std::string serialized_attributes_;
+  std::string attributes_;
 
  public:
   Config(const Json::Object& config, Server::Instance& server)
@@ -45,14 +45,12 @@ class Config : public Logger::Loggable<Logger::Id::http> {
         Utils::ExtractStringMap(config, kJsonNameAttributes);
     if (!attributes.empty()) {
       std::string serialized_str = Utils::SerializeStringMap(attributes);
-      serialized_attributes_ =
+      attributes_ =
           Base64::encode(serialized_str.c_str(), serialized_str.size());
     }
   }
 
-  const std::string& serialized_attributes() const {
-    return serialized_attributes_;
-  }
+  const std::string& attributes() const { return attributes_; }
 };
 
 typedef std::shared_ptr<Config> ConfigPtr;
@@ -66,9 +64,9 @@ class Instance : public Http::StreamDecoderFilter {
 
   FilterHeadersStatus decodeHeaders(HeaderMap& headers,
                                     bool end_stream) override {
-    if (!config_->serialized_attributes().empty()) {
+    if (!config_->attributes().empty()) {
       headers.addStatic(Utils::kHeaderNameIstioAttributes,
-                        config_->serialized_attributes());
+                        config_->attributes());
     }
     return FilterHeadersStatus::Continue;
   }
