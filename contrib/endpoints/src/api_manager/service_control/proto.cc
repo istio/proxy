@@ -1074,7 +1074,7 @@ Status Proto::ConvertAllocateQuotaResponse(
     case ::google::api::servicecontrol::v1::QuotaError::RESOURCE_EXHAUSTED:
       // Quota allocation failed.
       // Same as [google.rpc.Code.RESOURCE_EXHAUSTED][].
-      return Status(Code::PERMISSION_DENIED, "Quota allocation failed.");
+      return Status(Code::RESOURCE_EXHAUSTED, "Quota allocation failed.");
 
     case ::google::api::servicecontrol::v1::QuotaError::PROJECT_SUSPENDED:
       // Consumer project has been suspended.
