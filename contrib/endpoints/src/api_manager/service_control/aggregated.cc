@@ -193,10 +193,10 @@ Status Aggregated::Init() {
   options.periodic_timer = [this](int interval_ms,
                                   std::function<void()> callback)
       -> std::unique_ptr<::google::service_control_client::PeriodicTimer> {
-    return std::unique_ptr<::google::service_control_client::PeriodicTimer>(
-        new ApiManagerPeriodicTimer(env_->StartPeriodicTimer(
-            std::chrono::milliseconds(interval_ms), callback)));
-  };
+        return std::unique_ptr<::google::service_control_client::PeriodicTimer>(
+            new ApiManagerPeriodicTimer(env_->StartPeriodicTimer(
+                std::chrono::milliseconds(interval_ms), callback)));
+      };
   client_ = ::google::service_control_client::CreateServiceControlClient(
       service_->name(), service_->id(), options);
   return Status::OK;
@@ -287,12 +287,11 @@ void Aggregated::Check(
     if (status.ok()) {
       Status status = Proto::ConvertCheckResponse(
           *response, service_control_proto_.service_name(), &response_info);
-      // If allow_unregistered_calls is true, it is always OK to proceed.
-      if (allow_unregistered_calls) {
-        if (response_info.is_api_key_valid &&
-            response_info.service_is_activated) {
-          on_done(Status::OK, response_info);
-        }
+      // When allow_unregistered_calls is true, it is always OK to proceed if
+      // the api_key is valid and service is activated.
+      if (allow_unregistered_calls && response_info.is_api_key_valid &&
+          response_info.service_is_activated) {
+        on_done(Status::OK, response_info);
       } else {
         on_done(status, response_info);
       }
