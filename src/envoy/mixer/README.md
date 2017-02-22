@@ -53,7 +53,7 @@ This Proxy will use Envoy and talk to Mixer server.
 
 This module has two HTTP filters:
 1. mixer filter: intercept all HTTP requests, call the mixer.
-2. send_attribute filter: Send some attributes to next hop istio/proxy with mixer filter.
+2. forward_attribute filter: Forward attributes to the upstream istio/proxy.
 
 ### *mixer* filter:
 
@@ -74,16 +74,16 @@ This filter will intercept all HTTP requests and call Mixer. Here is its config:
 
 Notes:
 * mixer_server is required
-* attributes: these attributes will be send to mixer
+* attributes: these attributes will be send to the mixer
 
-### *send_attribute* HTTP filter:
+### *forward_attribute* HTTP filter:
 
-This filer will send attributes to the next hop istio/proxy with mixer_filter.
+This filer will forward attributes to the upstream istio/proxy.
 
 ```
    "filters": [
       "type": "decoder",
-      "name": "send_attribute",
+      "name": "forward_attribute",
       "config": {
          "attributes": {
             "attribute_name1": "attribute_value1",
@@ -93,7 +93,7 @@ This filer will send attributes to the next hop istio/proxy with mixer_filter.
 ```
 
 Notes:
-* attributes: these attributes will be send to the next hop istio/proxy with mixer filter.
+* attributes: these attributes will be forwarded to the upstream istio/proxy.
 
 
 

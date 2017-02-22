@@ -85,7 +85,7 @@
             "filters": [
               {
                 "type": "decoder",
-                "name": "send_attribute",
+                "name": "forward_attribute",
                 "config": {
                    "attributes": {
                       "source.uid": "POD11",

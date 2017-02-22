@@ -1,4 +1,4 @@
-/* Copyright 2016 Google Inc. All Rights Reserved.
+/* Copyright 2017 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,24 +24,22 @@
 #include "src/envoy/mixer/utils.h"
 
 namespace Http {
-namespace AddHeader {
+namespace ForwardAttribute {
 namespace {
 
-// The Json object name to specify attributes to pass to
-// next hop istio proxy.
+// The Json object name to specify attributes which will be forwarded
+// to the upstream istio proxy.
 const std::string kJsonNameAttributes("attributes");
 
 }  // namespace
 
 class Config : public Logger::Loggable<Logger::Id::http> {
  private:
-  Upstream::ClusterManager& cm_;
   std::string attributes_;
 
  public:
-  Config(const Json::Object& config, Server::Instance& server)
-      : cm_(server.clusterManager()) {
-    const auto& attributes =
+  Config(const Json::Object& config) {
+    Utils::StringMap attributes =
         Utils::ExtractStringMap(config, kJsonNameAttributes);
     if (!attributes.empty()) {
       std::string serialized_str = Utils::SerializeStringMap(attributes);
@@ -55,18 +53,17 @@ class Config : public Logger::Loggable<Logger::Id::http> {
 
 typedef std::shared_ptr<Config> ConfigPtr;
 
-class Instance : public Http::StreamDecoderFilter {
+class ForwardAttributeFilter : public Http::StreamDecoderFilter {
  private:
   ConfigPtr config_;
 
  public:
-  Instance(ConfigPtr config) : config_(config) {}
+  ForwardAttributeFilter(ConfigPtr config) : config_(config) {}
 
   FilterHeadersStatus decodeHeaders(HeaderMap& headers,
                                     bool end_stream) override {
     if (!config_->attributes().empty()) {
-      headers.addStatic(Utils::kHeaderNameIstioAttributes,
-                        config_->attributes());
+      headers.addStatic(Utils::kIstioAttributeHeader, config_->attributes());
     }
     return FilterHeadersStatus::Continue;
   }
@@ -84,33 +81,34 @@ class Instance : public Http::StreamDecoderFilter {
       StreamDecoderFilterCallbacks& callbacks) override {}
 };
 
-}  // namespace AddHeader
+}  // namespace ForwardAttribute
 }  // namespace Http
 
 namespace Server {
 namespace Configuration {
 
-class AddHeaderConfig : public HttpFilterConfigFactory {
+class ForwardAttributeConfig : public HttpFilterConfigFactory {
  public:
   HttpFilterFactoryCb tryCreateFilterFactory(
       HttpFilterType type, const std::string& name, const Json::Object& config,
       const std::string&, Server::Instance& server) override {
-    if (type != HttpFilterType::Decoder || name != "send_attribute") {
+    if (type != HttpFilterType::Decoder || name != "forward_attribute") {
       return nullptr;
     }
 
-    Http::AddHeader::ConfigPtr add_header_config(
-        new Http::AddHeader::Config(config, server));
+    Http::ForwardAttribute::ConfigPtr add_header_config(
+        new Http::ForwardAttribute::Config(config));
     return [add_header_config](
                Http::FilterChainFactoryCallbacks& callbacks) -> void {
-      std::shared_ptr<Http::AddHeader::Instance> instance(
-          new Http::AddHeader::Instance(add_header_config));
+      std::shared_ptr<Http::ForwardAttribute::ForwardAttributeFilter> instance(
+          new Http::ForwardAttribute::ForwardAttributeFilter(
+              add_header_config));
       callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterPtr(instance));
     };
   }
 };
 
-static RegisterHttpFilterConfigFactory<AddHeaderConfig> register_;
+static RegisterHttpFilterConfigFactory<ForwardAttributeConfig> register_;
 
 }  // namespace Configuration
 }  // namespace server

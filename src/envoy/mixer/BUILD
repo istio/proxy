@@ -30,10 +30,10 @@ cc_proto_library(
 cc_library(
     name = "filter_lib",
     srcs = [
+        "forward_attribute_filter.cc",
         "http_control.cc",
         "http_control.h",
         "http_filter.cc",
-        "send_attribute_filter.cc",
         "utils.cc",
         "utils.h",
     ],

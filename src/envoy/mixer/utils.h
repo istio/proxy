@@ -1,4 +1,4 @@
-/* Copyright 2016 Google Inc. All Rights Reserved.
+/* Copyright 2017 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ namespace Http {
 namespace Utils {
 
 // The internal header to pass istio attributes.
-extern const LowerCaseString kHeaderNameIstioAttributes;
+extern const LowerCaseString kIstioAttributeHeader;
 
 // The string map.
 typedef std::map<std::string, std::string> StringMap;

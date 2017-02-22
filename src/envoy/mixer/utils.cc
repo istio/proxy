@@ -1,4 +1,5 @@
-/*
+/* Copyright 2017 Istio Authors. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,13 +19,13 @@
 namespace Http {
 namespace Utils {
 
-const LowerCaseString kHeaderNameIstioAttributes("x-istio-attributes");
+const LowerCaseString kIstioAttributeHeader("x-istio-attributes");
 
 StringMap ExtractStringMap(const Json::Object& json, const std::string& name) {
   StringMap map;
   if (json.hasObject(name)) {
-    auto json_obj = json.getObject(name);
-    auto raw_obj = json_obj.get();
+    Json::ObjectPtr json_obj = json.getObject(name);
+    Json::Object* raw_obj = json_obj.get();
     json_obj->iterate(
         [&map, raw_obj](const std::string& key, const Json::Object&) -> bool {
           map[key] = raw_obj->getString(key);
@@ -36,7 +37,7 @@ StringMap ExtractStringMap(const Json::Object& json, const std::string& name) {
 
 std::string SerializeStringMap(const StringMap& string_map) {
   ::istio::proxy::mixer::StringMap pb;
-  auto map_pb = pb.mutable_map();
+  ::google::protobuf::Map<std::string, std::string>* map_pb = pb.mutable_map();
   for (const auto& it : string_map) {
     (*map_pb)[it.first] = it.second;
   }
