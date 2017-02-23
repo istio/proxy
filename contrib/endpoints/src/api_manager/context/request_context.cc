@@ -227,6 +227,16 @@ void RequestContext::FillCheckRequestInfo(
   info->allow_unregistered_calls = method()->allow_unregistered_calls();
 }
 
+void RequestContext::FillAllocateQuotaRequestInfo(
+    service_control::QuotaRequestInfo *info) {
+  FillOperationInfo(info);
+
+  info->client_ip = request_->GetClientIP();
+  info->method_name = this->method_call_.method_info->name();
+  info->metric_cost_vector =
+      &this->method_call_.method_info->metric_cost_vector();
+}
+
 void RequestContext::FillReportRequestInfo(
     Response *response, service_control::ReportRequestInfo *info) {
   FillOperationInfo(info);

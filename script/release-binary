@@ -44,6 +44,7 @@ sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 # Copy it to the bucket.
 echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
 gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+<<<<<<< HEAD
 
 # Build the debug binary
 BINARY_NAME="envoy-debug-${SHA}.tar.gz"
@@ -56,3 +57,5 @@ sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 # Copy it to the bucket.
 echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
 gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+=======
+>>>>>>> origin/rate_limiting
