@@ -1,4 +1,5 @@
-/*
+/* Copyright 2017 Istio Authors. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,8 +14,13 @@
  */
 
 #include "src/envoy/mixer/http_control.h"
+
+#include "common/common/base64.h"
 #include "common/common/utility.h"
 #include "common/http/utility.h"
+
+#include "src/envoy/mixer/string_map.pb.h"
+#include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
 using ::istio::mixer_client::Attributes;
@@ -37,6 +43,7 @@ const std::string kAttrNameResponseSize = "response.size";
 const std::string kAttrNameResponseTime = "response.time";
 const std::string kAttrNameOriginIp = "origin.ip";
 const std::string kAttrNameOriginHost = "origin.host";
+const std::string kResponseStatusCode = "response.status.code";
 
 Attributes::Value StringValue(const std::string& str) {
   Attributes::Value v;
@@ -76,7 +83,8 @@ std::string GetLastForwardedHost(const HeaderMap& header_map) {
   if (entry == nullptr) {
     return "";
   }
-  auto xff_list = StringUtil::split(entry->value().c_str(), ',');
+  std::vector<std::string> xff_list =
+      StringUtil::split(entry->value().c_str(), ',');
   if (xff_list.empty()) {
     return "";
   }
@@ -88,7 +96,7 @@ void FillRequestHeaderAttributes(const HeaderMap& header_map,
   // Pass in all headers
   header_map.iterate(
       [](const HeaderEntry& header, void* context) {
-        auto attr = static_cast<Attributes*>(context);
+        Attributes* attr = static_cast<Attributes*>(context);
         attr->attributes[kRequestHeaderPrefix + header.key().c_str()] =
             StringValue(header.value().c_str());
       },
@@ -105,7 +113,7 @@ void FillResponseHeaderAttributes(const HeaderMap& header_map,
                                   Attributes* attr) {
   header_map.iterate(
       [](const HeaderEntry& header, void* context) {
-        auto attr = static_cast<Attributes*>(context);
+        Attributes* attr = static_cast<Attributes*>(context);
         attr->attributes[kResponseHeaderPrefix + header.key().c_str()] =
             StringValue(header.value().c_str());
       },
@@ -113,7 +121,7 @@ void FillResponseHeaderAttributes(const HeaderMap& header_map,
 }
 
 void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
-                               Attributes* attr) {
+                               int check_status_code, Attributes* attr) {
   if (info.bytesReceived() >= 0) {
     attr->attributes[kAttrNameRequestSize] = Int64Value(info.bytesReceived());
   }
@@ -123,6 +131,13 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
   if (info.duration().count() >= 0) {
     attr->attributes[kAttrNameResponseTime] =
         Int64Value(info.duration().count());
+  }
+  if (info.responseCode().valid()) {
+    attr->attributes[kResponseStatusCode] =
+        StringValue(std::to_string(info.responseCode().value()));
+  } else {
+    attr->attributes[kResponseStatusCode] =
+        StringValue(std::to_string(check_status_code));
   }
 }
 
@@ -136,8 +151,19 @@ HttpControl::HttpControl(const std::string& mixer_server,
   mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
 }
 
-void HttpControl::FillCheckAttributes(const HeaderMap& header_map,
-                                      Attributes* attr) {
+void HttpControl::FillCheckAttributes(HeaderMap& header_map, Attributes* attr) {
+  // Extract attributes from x-istio-attributes header
+  const HeaderEntry* entry = header_map.get(Utils::kIstioAttributeHeader);
+  if (entry) {
+    ::istio::proxy::mixer::StringMap pb;
+    std::string str(entry->value().c_str(), entry->value().size());
+    pb.ParseFromString(Base64::decode(str));
+    for (const auto& it : pb.map()) {
+      SetStringAttribute(it.first, it.second, attr);
+    }
+    header_map.remove(Utils::kIstioAttributeHeader);
+  }
+
   FillRequestHeaderAttributes(header_map, attr);
 
   for (const auto& attribute : config_attributes_) {
@@ -155,11 +181,12 @@ void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
 void HttpControl::Report(HttpRequestDataPtr request_data,
                          const HeaderMap* response_headers,
                          const AccessLog::RequestInfo& request_info,
-                         DoneFunc on_done) {
+                         int check_status, DoneFunc on_done) {
   // Use all Check attributes for Report.
   // Add additional Report attributes.
   FillResponseHeaderAttributes(*response_headers, &request_data->attributes);
-  FillRequestInfoAttributes(request_info, &request_data->attributes);
+  FillRequestInfoAttributes(request_info, check_status,
+                            &request_data->attributes);
   log().debug("Send Report: {}", request_data->attributes.DebugString());
   mixer_client_->Report(request_data->attributes, on_done);
 }
