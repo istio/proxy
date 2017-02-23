@@ -76,6 +76,12 @@ void FillCheckRequestInfo(CheckRequestInfo* request) {
   request->referer = "referer";
 }
 
+void FillAllocateQuotaRequestInfo(QuotaRequestInfo* request) {
+  request->client_ip = "1.2.3.4";
+  request->referer = "referer";
+  request->method_name = "operation_name";
+}
+
 void FillReportRequestInfo(ReportRequestInfo* request) {
   request->referer = "referer";
   request->response_code = 200;
@@ -122,6 +128,12 @@ std::string CheckRequestToString(gasv1::CheckRequest* request) {
   return text;
 }
 
+std::string AllocateQuotaRequestToString(gasv1::AllocateQuotaRequest* request) {
+  std::string text;
+  google::protobuf::TextFormat::PrintToString(*request, &text);
+  return text;
+}
+
 std::string ReportRequestToString(gasv1::ReportRequest* request) {
   gasv1::Operation* op = request->mutable_operations(0);
   SetFixTimeStamps(op);
@@ -158,6 +170,70 @@ TEST_F(ProtoTest, FillGoodCheckRequestTest) {
 
   std::string text = CheckRequestToString(&request);
   std::string expected_text = ReadTestBaseline("check_request.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillGoodAllocateQuotaRequestTest) {
+  std::vector<std::pair<std::string, int>> metric_cost_vector;
+  metric_cost_vector.push_back(
+      std::make_pair<std::string, int>("metric_first", 1));
+  metric_cost_vector.push_back(
+      std::make_pair<std::string, int>("metric_second", 2));
+
+  google::api_manager::service_control::QuotaRequestInfo info;
+
+  info.metric_cost_vector = &metric_cost_vector;
+
+  FillOperationInfo(&info);
+  FillAllocateQuotaRequestInfo(&info);
+
+  gasv1::AllocateQuotaRequest request;
+  ASSERT_TRUE(scp_.FillAllocateQuotaRequest(info, &request).ok());
+
+  std::string text = AllocateQuotaRequestToString(&request);
+  std::string expected_text = ReadTestBaseline("allocate_quota_request.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillAllocateQuotaRequestNoMethodNameTest) {
+  std::vector<std::pair<std::string, int>> metric_cost_vector;
+  metric_cost_vector.push_back(
+      std::make_pair<std::string, int>("metric_first", 1));
+  metric_cost_vector.push_back(
+      std::make_pair<std::string, int>("metric_second", 2));
+
+  google::api_manager::service_control::QuotaRequestInfo info;
+
+  FillOperationInfo(&info);
+  info.metric_cost_vector = &metric_cost_vector;
+  info.client_ip = "1.2.3.4";
+  info.referer = "referer";
+  info.method_name = "";
+
+  gasv1::AllocateQuotaRequest request;
+  ASSERT_TRUE(scp_.FillAllocateQuotaRequest(info, &request).ok());
+
+  std::string text = AllocateQuotaRequestToString(&request);
+  std::string expected_text =
+      ReadTestBaseline("allocate_quota_request_no_method_name.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillNoMetricRulesAllocateQuotaRequestTest) {
+  google::api_manager::service_control::QuotaRequestInfo info;
+
+  info.metric_cost_vector = nullptr;
+
+  FillOperationInfo(&info);
+  FillAllocateQuotaRequestInfo(&info);
+
+  gasv1::AllocateQuotaRequest request;
+  ASSERT_TRUE(scp_.FillAllocateQuotaRequest(info, &request).ok());
+
+  std::string text = AllocateQuotaRequestToString(&request);
+  std::string expected_text =
+      ReadTestBaseline("allocate_quota_request_no_metrics_rule.golden");
+
   ASSERT_EQ(expected_text, text);
 }
 
