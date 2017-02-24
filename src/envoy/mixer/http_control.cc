@@ -33,17 +33,21 @@ namespace {
 // Define lower case string for X-Forwarded-Host.
 const LowerCaseString kHeaderNameXFH("x-forwarded-host", false);
 
-const std::string kRequestHeaderPrefix = "request.headers.";
-const std::string kResponseHeaderPrefix = "response.headers.";
-
 // Define attribute names
-const std::string kAttrNameRequestPath = "request.path";
-const std::string kAttrNameRequestSize = "request.size";
-const std::string kAttrNameResponseSize = "response.size";
-const std::string kAttrNameResponseTime = "response.time";
-const std::string kAttrNameOriginIp = "origin.ip";
-const std::string kAttrNameOriginHost = "origin.host";
+const std::string kRequestPath = "request.path";
+const std::string kRequestHost = "request.host";
+const std::string kRequestSize = "request.size";
+const std::string kRequestTime = "request.time";
+const std::string kRequestHeaders = "request.headers";
+
+const std::string kResponseHeaders = "response.headers";
+const std::string kResponseSize = "response.size";
+const std::string kResponseTime = "response.time";
+const std::string kResponseLatency = "response.latency";
 const std::string kResponseHttpCode = "response.http.code";
+
+const std::string kOriginIp = "origin.ip";
+const std::string kOriginHost = "origin.host";
 
 Attributes::Value StringValue(const std::string& str) {
   Attributes::Value v;
@@ -52,10 +56,33 @@ Attributes::Value StringValue(const std::string& str) {
   return v;
 }
 
+Attributes::Value StringMapValue(
+    std::map<std::string, std::string>&& string_map) {
+  Attributes::Value v;
+  v.type = Attributes::Value::STRING_MAP;
+  v.string_map_v.swap(string_map);
+  return v;
+}
+
 Attributes::Value Int64Value(int64_t value) {
   Attributes::Value v;
   v.type = Attributes::Value::INT64;
   v.value.int64_v = value;
+  return v;
+}
+
+Attributes::Value TimeValue(
+    std::chrono::time_point<std::chrono::system_clock> value) {
+  Attributes::Value v;
+  v.type = Attributes::Value::TIME;
+  v.time_v = value;
+  return v;
+}
+
+Attributes::Value DurationValue(std::chrono::nanoseconds value) {
+  Attributes::Value v;
+  v.type = Attributes::Value::DURATION;
+  v.duration_nanos_v = value;
   return v;
 }
 
@@ -91,47 +118,50 @@ std::string GetLastForwardedHost(const HeaderMap& header_map) {
   return xff_list.back();
 }
 
-void FillRequestHeaderAttributes(const HeaderMap& header_map,
-                                 Attributes* attr) {
-  // Pass in all headers
+std::map<std::string, std::string> ExtractHeaders(const HeaderMap& header_map) {
+  std::map<std::string, std::string> headers;
   header_map.iterate(
       [](const HeaderEntry& header, void* context) {
-        Attributes* attr = static_cast<Attributes*>(context);
-        attr->attributes[kRequestHeaderPrefix + header.key().c_str()] =
-            StringValue(header.value().c_str());
+        std::map<std::string, std::string>* header_map =
+            static_cast<std::map<std::string, std::string>*>(context);
+        (*header_map)[header.key().c_str()] = header.value().c_str();
       },
-      attr);
+      &headers);
+  return headers;
+}
 
-  SetStringAttribute(kAttrNameRequestPath, header_map.Path()->value().c_str(),
-                     attr);
-  SetStringAttribute(kAttrNameOriginIp, GetFirstForwardedFor(header_map), attr);
-  SetStringAttribute(kAttrNameOriginHost, GetLastForwardedHost(header_map),
-                     attr);
+void FillRequestHeaderAttributes(const HeaderMap& header_map,
+                                 Attributes* attr) {
+  SetStringAttribute(kRequestPath, header_map.Path()->value().c_str(), attr);
+  SetStringAttribute(kRequestHost, header_map.Host()->value().c_str(), attr);
+  attr->attributes[kRequestTime] = TimeValue(std::chrono::system_clock::now());
+  SetStringAttribute(kOriginIp, GetFirstForwardedFor(header_map), attr);
+  SetStringAttribute(kOriginHost, GetLastForwardedHost(header_map), attr);
+  attr->attributes[kRequestHeaders] =
+      StringMapValue(ExtractHeaders(header_map));
 }
 
 void FillResponseHeaderAttributes(const HeaderMap& header_map,
                                   Attributes* attr) {
-  header_map.iterate(
-      [](const HeaderEntry& header, void* context) {
-        Attributes* attr = static_cast<Attributes*>(context);
-        attr->attributes[kResponseHeaderPrefix + header.key().c_str()] =
-            StringValue(header.value().c_str());
-      },
-      attr);
+  attr->attributes[kResponseHeaders] =
+      StringMapValue(ExtractHeaders(header_map));
+  attr->attributes[kResponseTime] = TimeValue(std::chrono::system_clock::now());
 }
 
 void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
                                int check_status_code, Attributes* attr) {
   if (info.bytesReceived() >= 0) {
-    attr->attributes[kAttrNameRequestSize] = Int64Value(info.bytesReceived());
+    attr->attributes[kRequestSize] = Int64Value(info.bytesReceived());
   }
   if (info.bytesSent() >= 0) {
-    attr->attributes[kAttrNameResponseSize] = Int64Value(info.bytesSent());
+    attr->attributes[kResponseSize] = Int64Value(info.bytesSent());
   }
-  if (info.duration().count() >= 0) {
-    attr->attributes[kAttrNameResponseTime] =
-        Int64Value(info.duration().count());
+
+  if (info.duration().count() > 0) {
+    attr->attributes[kResponseLatency] = DurationValue(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(info.duration()));
   }
+
   if (info.responseCode().valid()) {
     attr->attributes[kResponseHttpCode] =
         Int64Value(info.responseCode().value());
@@ -184,6 +214,7 @@ void HttpControl::Report(HttpRequestDataPtr request_data,
   // Use all Check attributes for Report.
   // Add additional Report attributes.
   FillResponseHeaderAttributes(*response_headers, &request_data->attributes);
+
   FillRequestInfoAttributes(request_info, check_status,
                             &request_data->attributes);
   log().debug("Send Report: {}", request_data->attributes.DebugString());
