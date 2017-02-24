@@ -219,24 +219,6 @@ TEST_F(ProtoTest, FillAllocateQuotaRequestNoMethodNameTest) {
   ASSERT_EQ(expected_text, text);
 }
 
-TEST_F(ProtoTest, FillNoMetricRulesAllocateQuotaRequestTest) {
-  google::api_manager::service_control::QuotaRequestInfo info;
-
-  info.metric_cost_vector = nullptr;
-
-  FillOperationInfo(&info);
-  FillAllocateQuotaRequestInfo(&info);
-
-  gasv1::AllocateQuotaRequest request;
-  ASSERT_TRUE(scp_.FillAllocateQuotaRequest(info, &request).ok());
-
-  std::string text = AllocateQuotaRequestToString(&request);
-  std::string expected_text =
-      ReadTestBaseline("allocate_quota_request_no_metrics_rule.golden");
-
-  ASSERT_EQ(expected_text, text);
-}
-
 TEST_F(ProtoTest, FillNoApiKeyCheckRequestTest) {
   CheckRequestInfo info;
   info.operation_id = "operation_id";

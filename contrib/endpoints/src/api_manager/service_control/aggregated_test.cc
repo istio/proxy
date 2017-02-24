@@ -231,7 +231,7 @@ TEST_F(AggregatedTestWithRealClient, CheckOKTest) {
   EXPECT_EQ(stat.send_report_operations, 0);
 }
 
-class QuotaAllocationFailedTestWithRealClient : public ::testing::Test {
+class QuotaAllocationTestWithRealClient : public ::testing::Test {
  public:
   void SetUp() {
     service_.set_name("test_service");
@@ -242,16 +242,46 @@ class QuotaAllocationFailedTestWithRealClient : public ::testing::Test {
     ASSERT_TRUE((bool)(sc_lib_));
     // This is the call actually creating the client.
     sc_lib_->Init();
+
+    metric_cost_vector_ = {{"metric_first", 1}, {"metric_second", 2}};
   }
 
   void DoRunHTTPRequest(HTTPRequest* request) {
     std::map<std::string, std::string> headers;
-    AllocateQuotaResponse allocate_quota_response_;
+
+    AllocateQuotaRequest quota_request;
+    AllocateQuotaResponse quota_response;
+
+    ASSERT_TRUE(quota_request.ParseFromString(request->body()));
+    ASSERT_EQ(quota_request.allocate_operation().quota_metrics_size(), 2);
+
+    std::set<std::pair<std::string, int>> expected_costs = {
+        {"metric_first", 1}, {"metric_second", 2}};
+    std::set<std::pair<std::string, int>> actual_costs;
+
+    for (auto rule : quota_request.allocate_operation().quota_metrics()) {
+      actual_costs.insert(std::make_pair(rule.metric_name(),
+                                         rule.metric_values(0).int64_value()));
+    }
+
+    ASSERT_EQ(actual_costs, expected_costs);
 
     ASSERT_TRUE(::google::protobuf::TextFormat::ParseFromString(
-        kAllocateQuotaResponseErrorExhausted, &allocate_quota_response_));
+        kAllocateQuotaResponse, &quota_response));
 
-    std::string body = allocate_quota_response_.SerializeAsString();
+    std::string body = quota_response.SerializeAsString();
+
+    request->OnComplete(Status::OK, std::move(headers), std::move(body));
+  }
+
+  void DoRunHTTPRequestAllocationFailed(HTTPRequest* request) {
+    std::map<std::string, std::string> headers;
+    AllocateQuotaResponse quota_response;
+
+    ASSERT_TRUE(::google::protobuf::TextFormat::ParseFromString(
+        kAllocateQuotaResponseErrorExhausted, &quota_response));
+
+    std::string body = quota_response.SerializeAsString();
 
     request->OnComplete(Status::OK, std::move(headers), std::move(body));
   }
@@ -259,12 +289,27 @@ class QuotaAllocationFailedTestWithRealClient : public ::testing::Test {
   ::google::api::Service service_;
   std::unique_ptr<MockApiManagerEnvironment> env_;
   std::unique_ptr<Interface> sc_lib_;
+  std::vector<std::pair<std::string, int>> metric_cost_vector_;
 };
 
-TEST_F(QuotaAllocationFailedTestWithRealClient, AllocateQuotaTest) {
+TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaTest) {
   EXPECT_CALL(*env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke(
-          this, &QuotaAllocationFailedTestWithRealClient::DoRunHTTPRequest));
+      .WillOnce(
+          Invoke(this, &QuotaAllocationTestWithRealClient::DoRunHTTPRequest));
+
+  QuotaRequestInfo info;
+
+  info.metric_cost_vector = &metric_cost_vector_;
+
+  FillOperationInfo(&info);
+  sc_lib_->Quota(info, nullptr,
+                 [](Status status) { ASSERT_TRUE(status.ok()); });
+}
+
+TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaFailedTest) {
+  EXPECT_CALL(*env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke(this, &QuotaAllocationTestWithRealClient::
+                                 DoRunHTTPRequestAllocationFailed));
 
   std::vector<std::pair<std::string, int>> metric_cost_vector;
   metric_cost_vector.push_back(
@@ -280,73 +325,6 @@ TEST_F(QuotaAllocationFailedTestWithRealClient, AllocateQuotaTest) {
   sc_lib_->Quota(info, nullptr, [](Status status) {
     ASSERT_TRUE(status.code() == Code::RESOURCE_EXHAUSTED);
   });
-}
-
-class QuotaAllocationTestWithRealClient : public ::testing::Test {
- public:
-  void SetUp() {
-    service_.set_name("test_service");
-    service_.mutable_control()->set_environment(
-        "servicecontrol.googleapis.com");
-    env_.reset(new ::testing::NiceMock<MockApiManagerEnvironment>);
-    sc_lib_.reset(Aggregated::Create(service_, nullptr, env_.get(), nullptr));
-    ASSERT_TRUE((bool)(sc_lib_));
-    // This is the call actually creating the client.
-    sc_lib_->Init();
-  }
-
-  void DoRunHTTPRequest(HTTPRequest* request) {
-    std::map<std::string, std::string> headers;
-    AllocateQuotaRequest allocate_quota_request_;
-    AllocateQuotaResponse allocate_quota_response_;
-
-    ASSERT_TRUE(allocate_quota_request_.ParseFromString(request->body()));
-    ASSERT_EQ(allocate_quota_request_.allocate_operation().quota_metrics_size(),
-              2);
-
-    std::unordered_map<std::string, int> metric_rules;
-    for (auto rule :
-         allocate_quota_request_.allocate_operation().quota_metrics()) {
-      metric_rules[rule.metric_name()] = rule.metric_values(0).int64_value();
-    }
-    ASSERT_EQ(metric_rules.size(), 2);
-
-    ASSERT_NE(metric_rules.find("metric_first"), metric_rules.end());
-    ASSERT_NE(metric_rules.find("metric_second"), metric_rules.end());
-    ASSERT_EQ(metric_rules["metric_first"], 1);
-    ASSERT_EQ(metric_rules["metric_second"], 2);
-
-    ASSERT_TRUE(::google::protobuf::TextFormat::ParseFromString(
-        kAllocateQuotaResponse, &allocate_quota_response_));
-
-    std::string body = allocate_quota_response_.SerializeAsString();
-
-    request->OnComplete(Status::OK, std::move(headers), std::move(body));
-  }
-
-  ::google::api::Service service_;
-  std::unique_ptr<MockApiManagerEnvironment> env_;
-  std::unique_ptr<Interface> sc_lib_;
-};
-
-TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaTest) {
-  EXPECT_CALL(*env_, DoRunHTTPRequest(_))
-      .WillOnce(
-          Invoke(this, &QuotaAllocationTestWithRealClient::DoRunHTTPRequest));
-
-  std::vector<std::pair<std::string, int>> metric_cost_vector;
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_first", 1));
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_second", 2));
-
-  QuotaRequestInfo info;
-
-  info.metric_cost_vector = &metric_cost_vector;
-
-  FillOperationInfo(&info);
-  sc_lib_->Quota(info, nullptr,
-                 [](Status status) { ASSERT_TRUE(status.ok()); });
 }
 
 TEST(AggregatedServiceControlTest, Create) {
