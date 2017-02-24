@@ -246,11 +246,16 @@ class QuotaAllocationTestWithRealClient : public ::testing::Test {
     metric_cost_vector_ = {{"metric_first", 1}, {"metric_second", 2}};
   }
 
+  std::string getResponseBody(const char* response) {
+    AllocateQuotaResponse quota_response;
+    ::google::protobuf::TextFormat::ParseFromString(response, &quota_response);
+    return quota_response.SerializeAsString();
+  }
+
   void DoRunHTTPRequest(HTTPRequest* request) {
     std::map<std::string, std::string> headers;
 
     AllocateQuotaRequest quota_request;
-    AllocateQuotaResponse quota_response;
 
     ASSERT_TRUE(quota_request.ParseFromString(request->body()));
     ASSERT_EQ(quota_request.allocate_operation().quota_metrics_size(), 2);
@@ -266,24 +271,16 @@ class QuotaAllocationTestWithRealClient : public ::testing::Test {
 
     ASSERT_EQ(actual_costs, expected_costs);
 
-    ASSERT_TRUE(::google::protobuf::TextFormat::ParseFromString(
-        kAllocateQuotaResponse, &quota_response));
-
-    std::string body = quota_response.SerializeAsString();
-
-    request->OnComplete(Status::OK, std::move(headers), std::move(body));
+    request->OnComplete(Status::OK, std::move(headers),
+                        std::move(getResponseBody(kAllocateQuotaResponse)));
   }
 
   void DoRunHTTPRequestAllocationFailed(HTTPRequest* request) {
     std::map<std::string, std::string> headers;
-    AllocateQuotaResponse quota_response;
 
-    ASSERT_TRUE(::google::protobuf::TextFormat::ParseFromString(
-        kAllocateQuotaResponseErrorExhausted, &quota_response));
-
-    std::string body = quota_response.SerializeAsString();
-
-    request->OnComplete(Status::OK, std::move(headers), std::move(body));
+    request->OnComplete(
+        Status::OK, std::move(headers),
+        std::move(getResponseBody(kAllocateQuotaResponseErrorExhausted)));
   }
 
   ::google::api::Service service_;

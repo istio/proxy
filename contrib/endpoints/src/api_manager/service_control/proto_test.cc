@@ -174,14 +174,10 @@ TEST_F(ProtoTest, FillGoodCheckRequestTest) {
 }
 
 TEST_F(ProtoTest, FillGoodAllocateQuotaRequestTest) {
-  std::vector<std::pair<std::string, int>> metric_cost_vector;
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_first", 1));
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_second", 2));
+  std::vector<std::pair<std::string, int>> metric_cost_vector = {
+      {"metric_first", 1}, {"metric_second", 2}};
 
   google::api_manager::service_control::QuotaRequestInfo info;
-
   info.metric_cost_vector = &metric_cost_vector;
 
   FillOperationInfo(&info);
@@ -196,14 +192,10 @@ TEST_F(ProtoTest, FillGoodAllocateQuotaRequestTest) {
 }
 
 TEST_F(ProtoTest, FillAllocateQuotaRequestNoMethodNameTest) {
-  std::vector<std::pair<std::string, int>> metric_cost_vector;
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_first", 1));
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_second", 2));
+  std::vector<std::pair<std::string, int>> metric_cost_vector = {
+      {"metric_first", 1}, {"metric_second", 2}};
 
   google::api_manager::service_control::QuotaRequestInfo info;
-
   FillOperationInfo(&info);
   info.metric_cost_vector = &metric_cost_vector;
   info.client_ip = "1.2.3.4";
