@@ -298,7 +298,6 @@ TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaTest) {
           Invoke(this, &QuotaAllocationTestWithRealClient::DoRunHTTPRequest));
 
   QuotaRequestInfo info;
-
   info.metric_cost_vector = &metric_cost_vector_;
 
   FillOperationInfo(&info);
@@ -311,15 +310,8 @@ TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaFailedTest) {
       .WillOnce(Invoke(this, &QuotaAllocationTestWithRealClient::
                                  DoRunHTTPRequestAllocationFailed));
 
-  std::vector<std::pair<std::string, int>> metric_cost_vector;
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_first", 1));
-  metric_cost_vector.push_back(
-      std::make_pair<std::string, int>("metric_second", 2));
-
   QuotaRequestInfo info;
-
-  info.metric_cost_vector = &metric_cost_vector;
+  info.metric_cost_vector = &metric_cost_vector_;
 
   FillOperationInfo(&info);
   sc_lib_->Quota(info, nullptr, [](Status status) {
