@@ -30,7 +30,6 @@ namespace Http {
 namespace Mixer {
 namespace {
 
-
 // Define attribute names
 const std::string kRequestPath = "request.path";
 const std::string kRequestHost = "request.host";
