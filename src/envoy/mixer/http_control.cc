@@ -30,8 +30,6 @@ namespace Http {
 namespace Mixer {
 namespace {
 
-// Define lower case string for X-Forwarded-Host.
-const LowerCaseString kHeaderNameXFH("x-forwarded-host", false);
 
 // Define attribute names
 const std::string kRequestPath = "request.path";
@@ -45,9 +43,6 @@ const std::string kResponseSize = "response.size";
 const std::string kResponseTime = "response.time";
 const std::string kResponseLatency = "response.latency";
 const std::string kResponseHttpCode = "response.http.code";
-
-const std::string kOriginIp = "origin.ip";
-const std::string kOriginHost = "origin.host";
 
 Attributes::Value StringValue(const std::string& str) {
   Attributes::Value v;
@@ -93,31 +88,6 @@ void SetStringAttribute(const std::string& name, const std::string& value,
   }
 }
 
-std::string GetFirstForwardedFor(const HeaderMap& header_map) {
-  if (!header_map.ForwardedFor()) {
-    return "";
-  }
-  std::vector<std::string> xff_address_list =
-      StringUtil::split(header_map.ForwardedFor()->value().c_str(), ',');
-  if (xff_address_list.empty()) {
-    return "";
-  }
-  return xff_address_list.front();
-}
-
-std::string GetLastForwardedHost(const HeaderMap& header_map) {
-  const HeaderEntry* entry = header_map.get(kHeaderNameXFH);
-  if (entry == nullptr) {
-    return "";
-  }
-  std::vector<std::string> xff_list =
-      StringUtil::split(entry->value().c_str(), ',');
-  if (xff_list.empty()) {
-    return "";
-  }
-  return xff_list.back();
-}
-
 std::map<std::string, std::string> ExtractHeaders(const HeaderMap& header_map) {
   std::map<std::string, std::string> headers;
   header_map.iterate(
@@ -135,8 +105,6 @@ void FillRequestHeaderAttributes(const HeaderMap& header_map,
   SetStringAttribute(kRequestPath, header_map.Path()->value().c_str(), attr);
   SetStringAttribute(kRequestHost, header_map.Host()->value().c_str(), attr);
   attr->attributes[kRequestTime] = TimeValue(std::chrono::system_clock::now());
-  SetStringAttribute(kOriginIp, GetFirstForwardedFor(header_map), attr);
-  SetStringAttribute(kOriginHost, GetLastForwardedHost(header_map), attr);
   attr->attributes[kRequestHeaders] =
       StringMapValue(ExtractHeaders(header_map));
 }
