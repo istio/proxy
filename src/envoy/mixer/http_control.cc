@@ -171,8 +171,8 @@ void HttpControl::FillCheckAttributes(HeaderMap& header_map, Attributes* attr) {
   }
 }
 
-void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers, std::string origin_user,
-                        DoneFunc on_done) {
+void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
+                        std::string origin_user, DoneFunc on_done) {
   FillCheckAttributes(headers, &request_data->attributes);
   SetStringAttribute(kOriginUser, origin_user, &request_data->attributes);
   log().debug("Send Check: {}", request_data->attributes.DebugString());
