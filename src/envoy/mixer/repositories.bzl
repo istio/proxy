@@ -15,22 +15,17 @@
 ################################################################################
 #
 
-package(default_visibility = ["//visibility:public"])
+MIXER_CLIENT = "5b5745f29ac5a8babe79ada573defaa83f3bb9e7"
 
-cc_binary(
-    name = "envoy_esp",
-    srcs = [
-        "api_manager_filter.cc",
-        "api_manager_env.cc",
-        "api_manager_env.h",
-    ],
-    deps = [
-        "//external:protobuf",
-        "//contrib/endpoints/include:api_manager",
-        "//contrib/endpoints/src/grpc/transcoding:transcoding",
-        "//external:servicecontrol",
-        "@envoy_git//:envoy-common",
-        "@envoy_git//:envoy-main"
-    ],
-    linkstatic=1,
-)
+def mixer_client_repositories(bind=True):
+    native.git_repository(
+        name = "mixerclient_git",
+        commit = MIXER_CLIENT,
+        remote = "https://github.com/istio/mixerclient.git",
+    )
+
+    if bind:
+        native.bind(
+            name = "mixer_client_lib",
+            actual = "@mixerclient_git//:mixer_client_lib",
+        )
