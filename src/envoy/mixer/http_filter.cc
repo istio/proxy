@@ -1,4 +1,4 @@
-/* Copyright 2016 Google Inc. All Rights Reserved.
+/* Copyright 2017 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "envoy/server/instance.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/mixer/http_control.h"
+#include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
@@ -30,8 +31,11 @@ namespace Http {
 namespace Mixer {
 namespace {
 
-// Define lower case string for X-Forwarded-Host.
-const LowerCaseString kHeaderNameXFH("x-forwarded-host", false);
+// The Json object name for mixer-server.
+const std::string kJsonNameMixerServer("mixer_server");
+
+// The Json object name for static attributes.
+const std::string kJsonNameMixerAttributes("attributes");
 
 // Convert Status::code to HTTP code
 int HttpCode(int code) {
@@ -88,16 +92,20 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   Config(const Json::Object& config, Server::Instance& server)
       : cm_(server.clusterManager()) {
     std::string mixer_server;
-    if (config.hasObject("mixer_server")) {
-      mixer_server = config.getString("mixer_server");
+    if (config.hasObject(kJsonNameMixerServer)) {
+      mixer_server = config.getString(kJsonNameMixerServer);
     } else {
       log().error(
           "mixer_server is required but not specified in the config: {}",
           __func__);
     }
 
-    http_control_ = std::make_shared<HttpControl>(mixer_server);
-    log().debug("Called Mixer::Config contructor with mixer_server: ",
+    std::map<std::string, std::string> attributes =
+        Utils::ExtractStringMap(config, kJsonNameMixerAttributes);
+
+    http_control_ =
+        std::make_shared<HttpControl>(mixer_server, std::move(attributes));
+    log().debug("Called Mixer::Config constructor with mixer_server: ",
                 mixer_server);
   }
 
@@ -118,12 +126,14 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
   StreamEncoderFilterCallbacks* encoder_callbacks_;
 
   bool initiating_call_;
+  int check_status_code_;
 
  public:
   Instance(ConfigPtr config)
       : http_control_(config->http_control()),
         state_(NotStarted),
-        initiating_call_(false) {
+        initiating_call_(false),
+        check_status_code_(HttpCode(StatusCode::UNKNOWN)) {
     Log().debug("Called Mixer::Instance : {}", __func__);
   }
 
@@ -182,8 +192,8 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
                 status.ToString());
     if (!status.ok() && state_ != Responded) {
       state_ = Responded;
-      Utility::sendLocalReply(*decoder_callbacks_,
-                              Code(HttpCode(status.error_code())),
+      check_status_code_ = HttpCode(status.error_code());
+      Utility::sendLocalReply(*decoder_callbacks_, Code(check_status_code_),
                               status.ToString());
       return;
     }
@@ -221,7 +231,7 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
     // The class may be gone when it is called.
     // Log() is a static function so it is OK.
     http_control_->Report(request_data_, response_headers, request_info,
-                          [](const Status& status) {
+                          check_status_code_, [](const Status& status) {
                             Log().debug("Report returns status: {}",
                                         status.ToString());
                           });

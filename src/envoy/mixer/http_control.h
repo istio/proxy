@@ -1,4 +1,4 @@
-/* Copyright 2016 Google Inc. All Rights Reserved.
+/* Copyright 2017 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,8 @@ typedef std::shared_ptr<HttpRequestData> HttpRequestDataPtr;
 class HttpControl final : public Logger::Loggable<Logger::Id::http> {
  public:
   // The constructor.
-  HttpControl(const std::string& mixer_server);
+  HttpControl(const std::string& mixer_server,
+              std::map<std::string, std::string>&& attributes);
 
   // Make mixer check call.
   void Check(HttpRequestDataPtr request_data, HeaderMap& headers,
@@ -46,19 +47,17 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
   // Make mixer report call.
   void Report(HttpRequestDataPtr request_data,
               const HeaderMap* response_headers,
-              const AccessLog::RequestInfo& request_info,
+              const AccessLog::RequestInfo& request_info, int check_status_code,
               ::istio::mixer_client::DoneFunc on_done);
 
  private:
-  void FillCheckAttributes(const HeaderMap& header_map,
+  void FillCheckAttributes(HeaderMap& header_map,
                            ::istio::mixer_client::Attributes* attr);
 
   // The mixer client
   std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client_;
-  // Source service
-  std::string source_service_;
-  // Target service
-  std::string target_service_;
+  // The attributes read from the config file.
+  std::map<std::string, std::string> config_attributes_;
 };
 
 }  // namespace Mixer
