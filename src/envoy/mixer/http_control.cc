@@ -25,7 +25,7 @@
 using ::google::protobuf::util::Status;
 using ::istio::mixer_client::Attributes;
 using ::istio::mixer_client::DoneFunc;
- 
+
 namespace Http {
 namespace Mixer {
 namespace {
