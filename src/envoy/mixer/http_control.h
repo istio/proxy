@@ -41,7 +41,7 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
               std::map<std::string, std::string>&& attributes);
 
   // Make mixer check call.
-  void Check(HttpRequestDataPtr request_data, HeaderMap& headers,
+  void Check(HttpRequestDataPtr request_data, HeaderMap& headers, std::string origin_user,
              ::istio::mixer_client::DoneFunc on_done);
 
   // Make mixer report call.

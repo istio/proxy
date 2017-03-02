@@ -31,17 +31,19 @@ namespace Mixer {
 namespace {
 
 // Define attribute names
-const std::string kRequestPath = "request.path";
+const std::string kOriginUser = "origin.user";
+
+const std::string kRequestHeaders = "request.headers";
 const std::string kRequestHost = "request.host";
+const std::string kRequestPath = "request.path";
 const std::string kRequestSize = "request.size";
 const std::string kRequestTime = "request.time";
-const std::string kRequestHeaders = "request.headers";
 
 const std::string kResponseHeaders = "response.headers";
+const std::string kResponseHttpCode = "response.http.code";
+const std::string kResponseLatency = "response.latency";
 const std::string kResponseSize = "response.size";
 const std::string kResponseTime = "response.time";
-const std::string kResponseLatency = "response.latency";
-const std::string kResponseHttpCode = "response.http.code";
 
 Attributes::Value StringValue(const std::string& str) {
   Attributes::Value v;
@@ -169,10 +171,16 @@ void HttpControl::FillCheckAttributes(HeaderMap& header_map, Attributes* attr) {
   }
 }
 
-void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
+void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers, std::string origin_user,
                         DoneFunc on_done) {
   FillCheckAttributes(headers, &request_data->attributes);
-  log().debug("Send Check: {}", request_data->attributes.DebugString());
+  if (origin_user != "") {
+    log().debug("Wattttttttttttttttttttttttt Set origin_user: {}", origin_user);
+    request_data->attributes.attributes[kOriginUser] = StringValue(origin_user);
+  } else {
+    log().debug("Wattttttttttttttttttttttttt origin_user is empty");
+  }
+  log().debug("Wattttttttttttttttttttttttttt Send Check: {}", request_data->attributes.DebugString());
   mixer_client_->Check(request_data->attributes, on_done);
 }
 
