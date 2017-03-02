@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,29 +16,31 @@
 #
 ################################################################################
 #
-package(default_visibility = ["//contrib/endpoints/src/api_manager:__subpackages__"])
+set -ex
 
-cc_library(
-    name = "mixer",
-    srcs = [
-        "mixer.cc",
-    ],
-    hdrs = [
-        "mixer.h",
-    ],
-    linkopts = select({
-        "//:darwin": [],
-        "//conditions:default": [
-            "-lm",
-            "-luuid",
-        ],
-    }),
-    deps = [
-        "//contrib/endpoints/src/api_manager:impl_headers",
-        "//contrib/endpoints/src/api_manager/service_control",
-        "//contrib/endpoints/src/api_manager/utils",
-        "//external:grpc++",
-        "//external:mixer_client_lib",
-        "//external:protobuf",
-    ],
-)
+# This docker image can be used as:
+#
+# docker run IMAGE -a backend_address -p PORT -m MIXER_SERVER
+#
+
+PROJECT=istio-testing
+IMAGE_PREFIX="gcr.io/${PROJECT}/proxy"
+
+DATE_PART=$(date +"%Y%m%d")
+SHA_PART=$(git show -q HEAD --pretty=format:%h)
+DOCKER_TAG="${DATE_PART}${SHA_PART}"
+
+IMAGE_NAME="${IMAGE_PREFIX}:${DOCKER_TAG}"
+
+gcloud docker --authorize-only
+
+bazel run --config=release //src/envoy/mixer:proxy "${IMAGE_NAME}"
+
+gcloud docker -- push "${IMAGE_NAME}"
+
+IMAGE_LATEST="${IMAGE_PREFIX}:latest"
+
+docker tag -f "${IMAGE_NAME}" "${IMAGE_LATEST}"
+
+gcloud docker -- push "${IMAGE_LATEST}"
+
