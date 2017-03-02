@@ -154,7 +154,8 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
     request_data_ = std::make_shared<HttpRequestData>();
 
     std::string origin_user;
-    Ssl::Connection* ssl = const_cast<Ssl::Connection *>(decoder_callbacks_->ssl());
+    Ssl::Connection* ssl =
+        const_cast<Ssl::Connection*>(decoder_callbacks_->ssl());
     if (ssl != nullptr) {
       origin_user = ssl->uriSanPeerCertificate();
     }
