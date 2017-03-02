@@ -174,9 +174,7 @@ void HttpControl::FillCheckAttributes(HeaderMap& header_map, Attributes* attr) {
 void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers, std::string origin_user,
                         DoneFunc on_done) {
   FillCheckAttributes(headers, &request_data->attributes);
-  if (origin_user != "") {
-    request_data->attributes.attributes[kOriginUser] = StringValue(origin_user);
-  }
+  SetStringAttribute(kOriginUser, origin_user, &request_data->attributes);
   log().debug("Send Check: {}", request_data->attributes.DebugString());
   mixer_client_->Check(request_data->attributes, on_done);
 }
