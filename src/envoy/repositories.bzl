@@ -432,7 +432,7 @@ cc_library(
     native.new_http_archive(
         name = "nghttp2_tar",
         url = "https://github.com/nghttp2/nghttp2/releases/download/v1.20.0/nghttp2-1.20.0.tar.gz",
-        strip_prefix = "nghttp2-1.20.0",
+        strip_prefix = "nghttp2-1.0.0",
         build_file_content = BUILD,
     )
 
