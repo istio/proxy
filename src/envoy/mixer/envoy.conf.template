@@ -53,7 +53,7 @@
       ]
     },
     {
-      "port": 70722,
+      "port": 7070,
       "bind_to_port": true,
       "filters": [
         {
@@ -106,7 +106,7 @@
   ],
   "admin": {
     "access_log_path": "/dev/stdout",
-    "port": 9003
+    "port": 9001
   },
   "cluster_manager": {
     "clusters": [
