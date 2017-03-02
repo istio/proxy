@@ -63,5 +63,5 @@ sed -e "s|\${PORT}|${PORT}|g" \
     -e "s|\${MIXER_SERVER}|${MIXER_SERVER}|g" \
     "${TEMPLATE}" > "${CONFIG}"
 
-"${ENVOY}" -c "${CONFIG}" "${DEBUG}" --base-id 123
+"${ENVOY}" -c "${CONFIG}" "${DEBUG}"
 

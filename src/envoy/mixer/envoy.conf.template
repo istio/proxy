@@ -3,12 +3,6 @@
     {
       "port": ${PORT},
       "bind_to_port": true,
-      "ssl_context": {
-        "alpn_protocols": "http/1.1",
-        "cert_chain_file": "server.cert.pem",
-        "private_key_file": "server.key.pem",
-        "ca_cert_file": "client-ca.cert.pem"
-      },
       "filters": [
         {
           "type": "read",
@@ -59,7 +53,7 @@
       ]
     },
     {
-      "port": 7070,
+      "port": 70722,
       "bind_to_port": true,
       "filters": [
         {
@@ -112,7 +106,7 @@
   ],
   "admin": {
     "access_log_path": "/dev/stdout",
-    "port": 9001
+    "port": 9003
   },
   "cluster_manager": {
     "clusters": [

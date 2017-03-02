@@ -175,13 +175,9 @@ void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers, std
                         DoneFunc on_done) {
   FillCheckAttributes(headers, &request_data->attributes);
   if (origin_user != "") {
-    log().debug("Wattttttttttttttttttttttttt Set origin_user: {}", origin_user);
     request_data->attributes.attributes[kOriginUser] = StringValue(origin_user);
-  } else {
-    log().debug("Wattttttttttttttttttttttttt origin_user is empty");
-    request_data->attributes.attributes[kOriginUser] = StringValue("My_test");
   }
-  log().debug("Wattttttttttttttttttttttttttt Send Check: {}", request_data->attributes.DebugString());
+  log().debug("Send Check: {}", request_data->attributes.DebugString());
   mixer_client_->Check(request_data->attributes, on_done);
 }
 
