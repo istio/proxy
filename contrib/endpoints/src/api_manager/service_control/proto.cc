@@ -1132,8 +1132,11 @@ Status Proto::ConvertAllocateQuotaResponse(
     // The backend server for checking service status is unavailable.
     case ::google::api::servicecontrol::v1::QuotaError::
         BILLING_STATUS_UNAVAILABLE:
-      // The backend server for checking billing status is unavailable.
-      // Fail open for internal server errors per recommendation
+    // The backend server for checking billing status is unavailable.
+    // Fail open for internal server errors per recommendation
+    case ::google::api::servicecontrol::v1::QuotaError::
+        QUOTA_SYSTEM_UNAVAILABLE:
+      // The backend server for checking quota limits is unavailable.
       return Status::OK;
 
     default:
