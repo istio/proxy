@@ -936,7 +936,6 @@ utils::Status Proto::FillAllocateQuotaRequest(
                                std::string(info.api_key));
   }
 
-  // TODO(jaebong) - Read from service conf?
   // allocate_operation.quota_mode
   operation->set_quota_mode(
       ::google::api::servicecontrol::v1::QuotaOperation_QuotaMode::
