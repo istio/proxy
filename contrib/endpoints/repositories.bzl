@@ -193,8 +193,13 @@ def grpc_repositories(bind=True):
             actual = "@grpc_git//:grpc++_codegen_proto",
         )
 
+def googleapis_repositories(protobuf_repo="@protobuf_git//", bind=True):
+    BUILD = """
+
+""".format(protobuf_repo)
 
 def servicecontrol_client_repositories(bind=True):
+    googleapis_repositories(bind=bind)
 
     native.git_repository(
         name = "servicecontrol_client_git",
