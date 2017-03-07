@@ -31,7 +31,19 @@ namespace Mixer {
 namespace {
 
 // Define attribute names
-const std::string kOriginUser = "origin.user";
+const std::string kAttrNameRequestSize = "request.size";
+const std::string kAttrNameResponseSize = "response.size";
+const std::string kAttrNameResponseTime = "response.time";
+const std::string kAttrNameOriginIp = "origin.ip";
+const std::string kAttrNameOriginHost = "origin.host";
+const std::string kResponseHttpCode = "response.http.code";
+
+Attributes::Value StringValue(const std::string& str) {
+  Attributes::Value v;
+  v.type = Attributes::Value::STRING;
+  v.str_v = str;
+  return v;
+}
 
 const std::string kRequestHeaders = "request.headers";
 const std::string kRequestHost = "request.host";
@@ -101,10 +113,9 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
 
   if (info.responseCode().valid()) {
     attr->attributes[kResponseHttpCode] =
-        Attributes::Int64Value(info.responseCode().value());
+        Int64Value(info.responseCode().value());
   } else {
-    attr->attributes[kResponseHttpCode] =
-        Attributes::Int64Value(check_status_code);
+    attr->attributes[kResponseHttpCode] = Int64Value(check_status_code);
   }
 }
 
