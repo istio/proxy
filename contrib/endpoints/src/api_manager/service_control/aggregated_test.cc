@@ -32,6 +32,7 @@ using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 using ::google::service_control_client::ServiceControlClient;
 using ::google::service_control_client::TransportCheckFunc;
+using ::google::service_control_client::TransportQuotaFunc;
 using ::google::service_control_client::TransportReportFunc;
 using ::testing::Return;
 using ::testing::Invoke;
@@ -89,6 +90,15 @@ class MockServiceControClient : public ServiceControlClient {
                                                        CheckResponse*));
   MOCK_METHOD4(Check, void(const CheckRequest&, CheckResponse*, DoneCallback,
                            TransportCheckFunc));
+
+  MOCK_METHOD2(Quota,
+               ::google::protobuf::util::Status(const AllocateQuotaRequest&,
+                                                AllocateQuotaResponse*));
+  MOCK_METHOD3(Quota, void(const AllocateQuotaRequest&, AllocateQuotaResponse*,
+                           DoneCallback));
+  MOCK_METHOD4(Quota, void(const AllocateQuotaRequest&, AllocateQuotaResponse*,
+                           DoneCallback, TransportQuotaFunc));
+
   MOCK_METHOD3(Report,
                void(const ReportRequest&, ReportResponse*, DoneCallback));
   MOCK_METHOD2(Report, ::google::protobuf::util::Status(const ReportRequest&,

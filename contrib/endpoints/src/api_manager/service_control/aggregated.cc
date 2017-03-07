@@ -31,8 +31,7 @@ using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 
 using ::google::service_control_client::CheckAggregationOptions;
-// TODO(jaebong) enable this after service_control_client library is updated
-// using ::google::service_control_client::QuotaAggregationOptions;
+using ::google::service_control_client::QuotaAggregationOptions;
 using ::google::service_control_client::ReportAggregationOptions;
 using ::google::service_control_client::ServiceControlClient;
 using ::google::service_control_client::ServiceControlClientOptions;
@@ -98,9 +97,6 @@ CheckAggregationOptions GetCheckAggregationOptions(
                                  kCheckAggregationExpirationMs);
 }
 
-// TODO(jaebong) enable this after service_control_client library is updated
-/*
-// TODO(jaebong): - need to add quota configuration
 // Generate QuotaAggregationOptions
 QuotaAggregationOptions GetQuotaAggregationOptions(
     const ServerConfig* server_config) {
@@ -118,7 +114,6 @@ QuotaAggregationOptions GetQuotaAggregationOptions(
 
   return option;
 }
-*/
 
 // Generates ReportAggregationOptions.
 ReportAggregationOptions GetReportAggregationOptions(
@@ -209,9 +204,7 @@ Status Aggregated::Init() {
   // env->StartPeriodicTimer doens't work at constructor.
   ServiceControlClientOptions options(
       GetCheckAggregationOptions(server_config_),
-      // TODO(jaebong) enable this after service_control_client library is
-      // updated
-      //      GetQuotaAggregationOptions(server_config_),
+      GetQuotaAggregationOptions(server_config_),
       GetReportAggregationOptions(server_config_));
 
   std::stringstream ss;
@@ -228,13 +221,9 @@ Status Aggregated::Init() {
       const CheckRequest& request, CheckResponse* response,
       TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
 
-  /*
-    // TODO(jaebong) enable this after service_control_client library is updated
-    options.quota_transport = [this](
-        const AllocateQuotaRequest& request, AllocateQuotaResponse* response,
-        TransportDoneFunc on_done) { Call(request, response, on_done, nullptr);
-    };
-  */
+  options.quota_transport = [this](
+      const AllocateQuotaRequest& request, AllocateQuotaResponse* response,
+      TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
 
   options.report_transport = [this](
       const ReportRequest& request, ReportResponse* response,
@@ -412,9 +401,12 @@ void Aggregated::Quota(const QuotaRequestInfo& info,
     delete response;
   };
 
-  // TODO(jaebong) Temporarily call Chemist directly instead of using service
-  // control client library
-  Call(*request, response, quota_on_done, trace_span.get());
+  client_->Quota(*request, response, quota_on_done,
+                 [trace_span, this](const AllocateQuotaRequest& request,
+                                    AllocateQuotaResponse* response,
+                                    TransportDoneFunc on_done) {
+                   Call(request, response, on_done, trace_span.get());
+                 });
 
   // There is no reference to request anymore at this point and it is safe to
   // free request now.
