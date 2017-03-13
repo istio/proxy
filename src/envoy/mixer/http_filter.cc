@@ -19,6 +19,7 @@
 #include "common/http/headers.h"
 #include "common/http/utility.h"
 #include "envoy/server/instance.h"
+#include "envoy/ssl/connection.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/mixer/http_control.h"
 #include "src/envoy/mixer/utils.h"
@@ -151,8 +152,16 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
     state_ = Calling;
     initiating_call_ = true;
     request_data_ = std::make_shared<HttpRequestData>();
+
+    std::string origin_user;
+    Ssl::Connection* ssl =
+        const_cast<Ssl::Connection*>(decoder_callbacks_->ssl());
+    if (ssl != nullptr) {
+      origin_user = ssl->uriSanPeerCertificate();
+    }
+
     http_control_->Check(
-        request_data_, headers,
+        request_data_, headers, origin_user,
         wrapper([this](const Status& status) { completeCheck(status); }));
     initiating_call_ = false;
 
@@ -180,6 +189,7 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
     }
     return FilterTrailersStatus::Continue;
   }
+
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
@@ -227,6 +237,8 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
                    const HeaderMap* response_headers,
                    const AccessLog::RequestInfo& request_info) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
+    // If decodeHaeders() is not called, not to call Mixer report.
+    if (!request_data_) return;
     // Make sure not to use any class members at the callback.
     // The class may be gone when it is called.
     // Log() is a static function so it is OK.
