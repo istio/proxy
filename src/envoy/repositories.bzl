@@ -751,6 +751,6 @@ cc_test(
     native.new_git_repository(
         name = "envoy_git",
         remote = "https://github.com/lyft/envoy.git",
-        commit = "9dcac8ca111ecc8da059d1f8d42eb766b44bacd6", # https://github.com/lyft/envoy/pull/553
+        commit = "9dcac8ca111ecc8da059d1f8d42eb766b44bacd6",
         build_file_content = BUILD,
     )
