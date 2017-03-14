@@ -1,6 +1,6 @@
 #!groovy
 
-@Library('testutils@stable-838b134')
+@Library('testutils@e81f09c0b520144591da5e576a2884b0e9d0645d')
 
 import org.istio.testutils.Utilities
 import org.istio.testutils.GitUtilities
@@ -12,25 +12,23 @@ def utils = new Utilities()
 def bazel = new Bazel()
 
 mainFlow(utils) {
-  pullRequest(utils) {
-    node {
-      gitUtils.initialize()
-      // Proxy does build work correctly with Hazelcast.
-      // Must use .bazelrc.jenkins
-      bazel.setVars('', '')
-    }
+  node {
+    gitUtils.initialize()
+    // Proxy does build work correctly with Hazelcast.
+    // Must use .bazelrc.jenkins
+    bazel.setVars('', '')
+  }
 
-    if (utils.runStage('PRESUBMIT')) {
-      presubmit(gitUtils, bazel)
-    }
-    if (utils.runStage('POSTSUBMIT')) {
-      postsubmit(gitUtils, bazel, utils)
-    }
+  if (utils.runStage('PRESUBMIT')) {
+    presubmit(gitUtils, bazel)
+  }
+  if (utils.runStage('POSTSUBMIT')) {
+    postsubmit(gitUtils, bazel, utils)
   }
 }
 
 def presubmit(gitUtils, bazel) {
-  buildNode(gitUtils) {
+  buildNode(gitUtils, 'proxy') {
     stage('Code Check') {
       sh('script/check-style')
     }
@@ -44,6 +42,8 @@ def presubmit(gitUtils, bazel) {
     stage('Bazel Tests') {
       bazel.test('//...')
     }
+  }
+  buildNode(gitUtils, 'proxy-release') {
     stage('Push Test Binary') {
       sh 'script/release-binary'
     }
@@ -51,7 +51,7 @@ def presubmit(gitUtils, bazel) {
 }
 
 def postsubmit(gitUtils, bazel, utils) {
-  buildNode(gitUtils) {
+  buildNode(gitUtils, 'proxy-release') {
     bazel.updateBazelRc()
     stage('Push Binary') {
       sh 'script/release-binary'
