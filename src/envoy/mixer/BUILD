@@ -1,4 +1,4 @@
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
 #
 ################################################################################
 #
-
 
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 load("//src/envoy/mixer:proxy_docker.bzl", "proxy_docker_build")
@@ -48,6 +47,7 @@ cc_library(
 cc_binary(
     name = "envoy",
     linkstatic = 1,
+    visibility = [":__subpackages__"],
     deps = [
         ":filter_lib",
         "@envoy_git//:envoy-main",
@@ -80,10 +80,6 @@ pkg_tar(
 )
 
 proxy_docker_build(
-    images = [
-        {"name": "proxy",       "base": "@docker_ubuntu//:xenial"},
-        {"name": "proxy_debug", "base": "@ubuntu_xenial_debug//file"},
-    ],
     entrypoint = [
         "/usr/local/bin/start_envoy",
         "-e",
@@ -92,6 +88,16 @@ proxy_docker_build(
         "/etc/opt/proxy/envoy.conf",
         "-t",
         "/etc/opt/proxy/envoy.conf.template",
+    ],
+    images = [
+        {
+            "name": "proxy",
+            "base": "@docker_ubuntu//:xenial",
+        },
+        {
+            "name": "proxy_debug",
+            "base": "@ubuntu_xenial_debug//file",
+        },
     ],
     ports = ["9090"],
     repository = "istio",
