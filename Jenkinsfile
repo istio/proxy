@@ -42,8 +42,6 @@ def presubmit(gitUtils, bazel) {
     stage('Bazel Tests') {
       bazel.test('//...')
     }
-  }
-  buildNode(gitUtils, 'proxy-release') {
     stage('Push Test Binary') {
       sh 'script/release-binary'
     }
@@ -51,7 +49,7 @@ def presubmit(gitUtils, bazel) {
 }
 
 def postsubmit(gitUtils, bazel, utils) {
-  buildNode(gitUtils, 'proxy-release') {
+  buildNode(gitUtils, 'proxy') {
     bazel.updateBazelRc()
     stage('Push Binary') {
       sh 'script/release-binary'
