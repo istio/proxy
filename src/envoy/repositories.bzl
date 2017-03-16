@@ -62,6 +62,7 @@ event_srcs = [
     "evthread.c",
     "evutil.c",
     "evutil_rand.c",
+    "evutil_time.c",
     "http.c",
     "listener.c",
     "log.c",
@@ -86,9 +87,7 @@ cc_library(
         "defer-internal.h",
         "evbuffer-internal.h",
         "event-internal.h",
-        "event.h",
         "evthread-internal.h",
-        "evutil.h",
         "http-internal.h",
         "iocp-internal.h",
         "ipv6-internal.h",
@@ -134,8 +133,8 @@ cc_library(
 
     native.new_http_archive(
         name = "libevent_git",
-        url = "https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz",
-        strip_prefix = "libevent-2.0.22-stable",
+        url = "https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz",
+        strip_prefix = "libevent-2.1.8-stable",
         build_file_content = BUILD,
     )
 
@@ -752,6 +751,7 @@ cc_test(
     native.new_git_repository(
         name = "envoy_git",
         remote = "https://github.com/lyft/envoy.git",
-        commit = "70e5d651b55d356770529e5bee9c6b2707d9cf21", # 3/1/2017
+        commit = "b72309da41fba0c1222a72262b83bedc7294df65", # Mar 13 2017
         build_file_content = BUILD,
     )
+
