@@ -137,7 +137,7 @@ class Config : public Logger::Loggable<Logger::Id::http> {
 
 typedef std::shared_ptr<Config> ConfigPtr;
 
-class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
+class Instance : public Http::StreamDecoderFilter, public Http::AccessLog::Instance {
  private:
   std::shared_ptr<HttpControl> http_control_;
   ConfigPtr config_;
@@ -147,7 +147,6 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
   State state_;
 
   StreamDecoderFilterCallbacks* decoder_callbacks_;
-  StreamEncoderFilterCallbacks* encoder_callbacks_;
 
   bool initiating_call_;
   int check_status_code_;
@@ -283,29 +282,6 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
     }
   }
 
-  virtual FilterHeadersStatus encodeHeaders(HeaderMap& headers,
-                                            bool end_stream) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    return FilterHeadersStatus::Continue;
-  }
-
-  virtual FilterDataStatus encodeData(Buffer::Instance& data,
-                                      bool end_stream) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    return FilterDataStatus::Continue;
-  }
-
-  virtual FilterTrailersStatus encodeTrailers(HeaderMap& trailers) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    return FilterTrailersStatus::Continue;
-  }
-
-  virtual void setEncoderFilterCallbacks(
-      StreamEncoderFilterCallbacks& callbacks) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    encoder_callbacks_ = &callbacks;
-  }
-
   virtual void log(const HeaderMap* request_headers,
                    const HeaderMap* response_headers,
                    const AccessLog::RequestInfo& request_info) override {
@@ -340,7 +316,7 @@ class MixerConfig : public HttpFilterConfigFactory {
   HttpFilterFactoryCb tryCreateFilterFactory(
       HttpFilterType type, const std::string& name, const Json::Object& config,
       const std::string&, Server::Instance& server) override {
-    if (type != HttpFilterType::Both || name != "mixer") {
+    if (type != HttpFilterType::Decoder || name != "mixer") {
       return nullptr;
     }
 
@@ -350,7 +326,7 @@ class MixerConfig : public HttpFilterConfigFactory {
         [mixer_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
           std::shared_ptr<Http::Mixer::Instance> instance(
               new Http::Mixer::Instance(mixer_config));
-          callbacks.addStreamFilter(Http::StreamFilterPtr(instance));
+          callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterPtr(instance));
           callbacks.addAccessLogHandler(Http::AccessLog::InstancePtr(instance));
         };
   }
