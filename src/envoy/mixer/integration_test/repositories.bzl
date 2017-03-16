@@ -2,13 +2,13 @@
 def integration_test_repositories():
     native.git_repository(
         name = "io_bazel_rules_go",
-        commit = "76c63b5cd0d47c1f2b47ab4953db96c574af1c1d", # Jan 16, 2017 (v0.3.3/0.4.0)
+        commit = "9496d79880a7d55b8e4a96f04688d70a374eaaf4", # Jan 16, 2017 (v0.3.3/0.4.0)
         remote = "https://github.com/bazelbuild/rules_go.git",
     )
 
     native.git_repository(
         name = "org_pubref_rules_protobuf",
-        commit = "52c843147b50e0f6d7a7d5bb261410e5097f19d3", # Feb 06 2017 (gogo* support)
+        commit = "d42e895387c658eda90276aea018056fcdcb30e4", # Mar 07 2017 (gogo* support)
         remote = "https://github.com/pubref/rules_protobuf",
     )
 
@@ -24,17 +24,20 @@ load("@org_pubref_rules_protobuf//gogo:rules.bzl", "gogoslick_proto_library")
 gogoslick_proto_library(
     name = "mixer/v1",
     importmap = {
+        "gogoproto/gogo.proto": "github.com/gogo/protobuf/gogoproto",
         "google/rpc/status.proto": "github.com/googleapis/googleapis/google/rpc",
         "google/protobuf/timestamp.proto": "github.com/gogo/protobuf/types",
         "google/protobuf/duration.proto": "github.com/gogo/protobuf/types",
     },
     imports = [
+        "../../external/com_github_gogo_protobuf",
         "../../external/com_github_google_protobuf/src",
         "../../external/com_github_googleapis_googleapis",
     ],
     inputs = [
         "@com_github_google_protobuf//:well_known_protos",
         "@com_github_googleapis_googleapis//:status_proto",
+        "@com_github_gogo_protobuf//gogoproto:go_default_library_protos",
     ],
     protos = [
         "mixer/v1/attributes.proto",
@@ -47,9 +50,71 @@ gogoslick_proto_library(
     visibility = ["//visibility:public"],
     with_grpc = True,
     deps = [
+        "@com_github_gogo_protobuf//gogoproto:go_default_library",
         "@com_github_gogo_protobuf//sortkeys:go_default_library",
         "@com_github_gogo_protobuf//types:go_default_library",
         "@com_github_googleapis_googleapis//:google/rpc",
+    ],
+)
+
+DESCRIPTOR_FILE_GROUP = [
+    "mixer/v1/config/descriptor/attribute_descriptor.proto",
+    "mixer/v1/config/descriptor/label_descriptor.proto",
+    "mixer/v1/config/descriptor/log_entry_descriptor.proto",
+    "mixer/v1/config/descriptor/metric_descriptor.proto",
+    "mixer/v1/config/descriptor/monitored_resource_descriptor.proto",
+    "mixer/v1/config/descriptor/principal_descriptor.proto",
+    "mixer/v1/config/descriptor/quota_descriptor.proto",
+    "mixer/v1/config/descriptor/value_type.proto",
+]
+
+gogoslick_proto_library(
+    name = "mixer/v1/config",
+    importmap = {
+        "google/protobuf/struct.proto": "github.com/gogo/protobuf/types",
+        "mixer/v1/config/descriptor/log_entry_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
+        "mixer/v1/config/descriptor/metric_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
+        "mixer/v1/config/descriptor/monitored_resource_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
+        "mixer/v1/config/descriptor/principal_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
+        "mixer/v1/config/descriptor/quota_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
+    },
+    imports = [
+        "../../external/com_github_google_protobuf/src",
+    ],
+    inputs = DESCRIPTOR_FILE_GROUP + [
+        "@com_github_google_protobuf//:well_known_protos",
+    ],
+    protos = [
+        "mixer/v1/config/cfg.proto",
+    ],
+    verbose = 0,
+    visibility = ["//visibility:public"],
+    with_grpc = False,
+    deps = [
+        ":mixer/v1/config/descriptor",
+        "@com_github_gogo_protobuf//sortkeys:go_default_library",
+        "@com_github_gogo_protobuf//types:go_default_library",
+        "@com_github_googleapis_googleapis//:google/rpc",
+    ],
+)
+
+gogoslick_proto_library(
+    name = "mixer/v1/config/descriptor",
+    importmap = {
+        "google/protobuf/duration.proto": "github.com/gogo/protobuf/types",
+    },
+    imports = [
+        "../../external/com_github_google_protobuf/src",
+    ],
+    inputs = [
+        "@com_github_google_protobuf//:well_known_protos",
+    ],
+    protos = DESCRIPTOR_FILE_GROUP,
+    verbose = 0,
+    visibility = ["//visibility:public"],
+    with_grpc = False,
+    deps = [
+        "@com_github_gogo_protobuf//types:go_default_library",
     ],
 )
 """
@@ -57,7 +122,7 @@ gogoslick_proto_library(
     native.new_git_repository(
         name = "com_github_istio_api",
         build_file_content = ISTIO_API_BUILD_FILE,
-        commit = "36787dfa214fb9ba24ce2bfaa54d07ab887141f0", # Feb 27, 2017 (no releases)
+        commit = "2cb09827d7f09a6e88eac2c2249dcb45c5419f09", # Mar. 14, 2017 (no releases)
         remote = "https://github.com/istio/api.git",
     )
 

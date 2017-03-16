@@ -33,6 +33,7 @@ go_library(
         "@com_github_golang_protobuf//proto:go_default_library",
         "@com_github_googleapis_googleapis//:google/rpc",
         "@com_github_istio_api//:mixer/v1",
+        "@com_github_istio_mixer//pkg/api:go_default_library",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )
