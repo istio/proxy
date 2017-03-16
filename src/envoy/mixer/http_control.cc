@@ -141,7 +141,14 @@ void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
   FillCheckAttributes(headers, &request_data->attributes);
   SetStringAttribute(kOriginUser, origin_user, &request_data->attributes);
   log().debug("Send Check: {}", request_data->attributes.DebugString());
-  mixer_client_->Check(request_data->attributes, on_done);
+
+  auto check_on_done = [this, on_done](const Status& status) {
+    if (status.ok()) {
+
+    }
+    on_done(status);
+  }
+  mixer_client_->Check(request_data->attributes, check_on_done);
 }
 
 void HttpControl::Report(HttpRequestDataPtr request_data,
