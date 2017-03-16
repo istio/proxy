@@ -137,7 +137,8 @@ class Config : public Logger::Loggable<Logger::Id::http> {
 
 typedef std::shared_ptr<Config> ConfigPtr;
 
-class Instance : public Http::StreamDecoderFilter, public Http::AccessLog::Instance {
+class Instance : public Http::StreamDecoderFilter,
+                 public Http::AccessLog::Instance {
  private:
   std::shared_ptr<HttpControl> http_control_;
   ConfigPtr config_;
@@ -150,6 +151,8 @@ class Instance : public Http::StreamDecoderFilter, public Http::AccessLog::Insta
 
   bool initiating_call_;
   int check_status_code_;
+
+  bool mixer_disabled_;
 
   // mixer control switch (off by default)
   bool mixer_disabled() {
@@ -202,7 +205,8 @@ class Instance : public Http::StreamDecoderFilter, public Http::AccessLog::Insta
                         config_->forward_attributes());
     }
 
-    if (mixer_disabled()) {
+    mixer_disabled_ = mixer_disabled();
+    if (mixer_disabled_) {
       return FilterHeadersStatus::Continue;
     }
 
@@ -231,7 +235,7 @@ class Instance : public Http::StreamDecoderFilter, public Http::AccessLog::Insta
 
   FilterDataStatus decodeData(Buffer::Instance& data,
                               bool end_stream) override {
-    if (mixer_disabled()) {
+    if (mixer_disabled_) {
       return FilterDataStatus::Continue;
     }
 
@@ -244,7 +248,7 @@ class Instance : public Http::StreamDecoderFilter, public Http::AccessLog::Insta
   }
 
   FilterTrailersStatus decodeTrailers(HeaderMap& trailers) override {
-    if (mixer_disabled()) {
+    if (mixer_disabled_) {
       return FilterTrailersStatus::Continue;
     }
 
@@ -322,13 +326,13 @@ class MixerConfig : public HttpFilterConfigFactory {
 
     Http::Mixer::ConfigPtr mixer_config(
         new Http::Mixer::Config(config, server));
-    return
-        [mixer_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-          std::shared_ptr<Http::Mixer::Instance> instance(
-              new Http::Mixer::Instance(mixer_config));
-          callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterPtr(instance));
-          callbacks.addAccessLogHandler(Http::AccessLog::InstancePtr(instance));
-        };
+    return [mixer_config](
+               Http::FilterChainFactoryCallbacks& callbacks) -> void {
+      std::shared_ptr<Http::Mixer::Instance> instance(
+          new Http::Mixer::Instance(mixer_config));
+      callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterPtr(instance));
+      callbacks.addAccessLogHandler(Http::AccessLog::InstancePtr(instance));
+    };
   }
 };
 
