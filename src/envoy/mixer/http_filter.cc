@@ -152,11 +152,23 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
   bool initiating_call_;
   int check_status_code_;
 
-  // mixer control switch (on by default)
+  // mixer control switch (off by default)
   bool mixer_disabled() {
     auto route = decoder_callbacks_->route()->routeEntry();
     if (route != nullptr) {
       auto key = route->opaqueConfig().find(kJsonNameMixerSwitch);
+      if (key != route->opaqueConfig().end() && key->second == "on") {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // attribute forward switch (on by default)
+  bool forward_disabled() {
+    auto route = decoder_callbacks_->route()->routeEntry();
+    if (route != nullptr) {
+      auto key = route->opaqueConfig().find(kJsonNameForwardSwitch);
       if (key != route->opaqueConfig().end() && key->second == "off") {
         return true;
       }
@@ -186,17 +198,9 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
                                     bool end_stream) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
 
-    // forward attributes (off by default)
-    if (!config_->forward_attributes().empty()) {
-      // detect disable switch in the opaque config
-      auto route = decoder_callbacks_->route()->routeEntry();
-      if (route != nullptr) {
-        auto key = route->opaqueConfig().find(kJsonNameForwardSwitch);
-        if (key != route->opaqueConfig().end() && key->second == "on") {
-          headers.addStatic(Utils::kIstioAttributeHeader,
-                            config_->forward_attributes());
-        }
-      }
+    if (!config_->forward_attributes().empty() && !forward_disabled()) {
+      headers.addStatic(Utils::kIstioAttributeHeader,
+                        config_->forward_attributes());
     }
 
     if (mixer_disabled()) {
