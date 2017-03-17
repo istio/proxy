@@ -60,7 +60,7 @@ This filter will intercept all HTTP requests and call Mixer. Here is its config:
 
 ```
    "filters": [
-      "type": "both",
+      "type": "decoder",
       "name": "mixer",
       "config": {
          "mixer_server": "${MIXER_SERVER}",
