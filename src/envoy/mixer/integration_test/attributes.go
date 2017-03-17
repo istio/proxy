@@ -18,90 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
-	mixerpb "istio.io/api/mixer/v1"
+	"github.com/istio/mixer/pkg/attribute"
 )
 
-type Dictionary map[int32]string
-
-type Bag struct {
-	strings    map[string]string
-	int64s     map[string]int64
-	float64s   map[string]float64
-	bools      map[string]bool
-	times      map[string]time.Time
-	durations  map[string]time.Duration
-	bytes      map[string][]uint8
-	stringMaps map[string]map[string]string
-}
-
-func newBag() *Bag {
-	return &Bag{
-		strings:    make(map[string]string),
-		int64s:     make(map[string]int64),
-		float64s:   make(map[string]float64),
-		bools:      make(map[string]bool),
-		times:      make(map[string]time.Time),
-		durations:  make(map[string]time.Duration),
-		bytes:      make(map[string][]uint8),
-		stringMaps: make(map[string]map[string]string),
-	}
-}
-
-func (rb *Bag) update(dictionary Dictionary, attrs *mixerpb.Attributes) error {
-	// delete requested attributes
-	for _, d := range attrs.DeletedAttributes {
-		if name, present := dictionary[d]; present {
-			delete(rb.strings, name)
-			delete(rb.int64s, name)
-			delete(rb.float64s, name)
-			delete(rb.bools, name)
-			delete(rb.times, name)
-			delete(rb.durations, name)
-			delete(rb.bytes, name)
-			delete(rb.stringMaps, name)
-		}
-	}
-
-	// apply all attributes
-	for k, v := range attrs.StringAttributes {
-		rb.strings[dictionary[k]] = v
-	}
-	for k, v := range attrs.Int64Attributes {
-		rb.int64s[dictionary[k]] = v
-	}
-	for k, v := range attrs.DoubleAttributes {
-		rb.float64s[dictionary[k]] = v
-	}
-	for k, v := range attrs.BoolAttributes {
-		rb.bools[dictionary[k]] = v
-	}
-	for k, v := range attrs.TimestampAttributes {
-		rb.times[dictionary[k]], _ = ptypes.TimestampFromProto(v)
-	}
-	for k, v := range attrs.DurationAttributes {
-		rb.durations[dictionary[k]], _ = ptypes.DurationFromProto(v)
-	}
-	for k, v := range attrs.BytesAttributes {
-		rb.bytes[dictionary[k]] = v
-	}
-	for k, v := range attrs.StringMapAttributes {
-		m := rb.stringMaps[dictionary[k]]
-		if m == nil {
-			m = make(map[string]string)
-			rb.stringMaps[dictionary[k]] = m
-		}
-		for k2, v2 := range v.Map {
-			m[dictionary[k2]] = v2
-		}
-	}
-
-	return nil
-}
-
-func (rb *Bag) getAllKeys() map[string]bool {
+func (rb *attribute.MutableBag) getAllKeys() map[string]bool {
 	all_keys := make(map[string]bool)
 	for k := range rb.strings {
 		all_keys[k] = true
@@ -217,22 +138,4 @@ func (rb *Bag) Verify(json_results string) error {
 		return fmt.Errorf("Following attributes are not expected: %s", s)
 	}
 	return nil
-}
-
-type Context struct {
-	dict Dictionary
-	curr *Bag
-}
-
-func NewContext() *Context {
-	return &Context{
-		curr: newBag(),
-	}
-}
-
-func (c *Context) Update(attrs *mixerpb.Attributes) error {
-	if len(attrs.Dictionary) > 0 {
-		c.dict = attrs.Dictionary
-	}
-	return c.curr.update(c.dict, attrs)
 }

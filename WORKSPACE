@@ -104,8 +104,14 @@ load(
 )
 integration_test_repositories()
 
+load(
+    "//src/envoy/mixer/integration_test:mmm.bzl",
+    "mmm",
+)
+mmm()
+
 load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
-go_repositories()
+#go_repositories()
 
 load("@org_pubref_rules_protobuf//protobuf:rules.bzl", "proto_repositories")
 proto_repositories()

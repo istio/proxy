@@ -20,7 +20,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
-        "attributes.go",
         "envoy.go",
         "http_client.go",
         "http_server.go",
@@ -34,6 +33,9 @@ go_library(
         "@com_github_googleapis_googleapis//:google/rpc",
         "@com_github_istio_api//:mixer/v1",
         "@com_github_istio_mixer//pkg/api:go_default_library",
+        "@com_github_istio_mixer//pkg/attribute:go_default_library",
+        "@com_github_istio_mixer//pkg/pool:go_default_library",
+        "@com_github_istio_mixer//pkg/tracing:go_default_library",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )

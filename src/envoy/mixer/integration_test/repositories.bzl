@@ -1,17 +1,5 @@
 
-def integration_test_repositories():
-    native.git_repository(
-        name = "io_bazel_rules_go",
-        commit = "9496d79880a7d55b8e4a96f04688d70a374eaaf4", # Jan 16, 2017 (v0.3.3/0.4.0)
-        remote = "https://github.com/bazelbuild/rules_go.git",
-    )
-
-    native.git_repository(
-        name = "org_pubref_rules_protobuf",
-        commit = "d42e895387c658eda90276aea018056fcdcb30e4", # Mar 07 2017 (gogo* support)
-        remote = "https://github.com/pubref/rules_protobuf",
-    )
-
+def go_istio_api_repositories():
     ISTIO_API_BUILD_FILE = """
 package(default_visibility = ["//visibility:public"])
 
@@ -126,6 +114,7 @@ gogoslick_proto_library(
         remote = "https://github.com/istio/api.git",
     )
 
+def go_googleapis_repositories():
     GOOGLEAPIS_BUILD_FILE = """
 package(default_visibility = ["//visibility:public"])
 
@@ -180,3 +169,20 @@ filegroup(
         commit = "13ac2436c5e3d568bd0e938f6ed58b77a48aba15", # Oct 21, 2016 (only release pre-dates sha)
         remote = "https://github.com/googleapis/googleapis.git",
     )
+    
+def integration_test_repositories():
+    native.git_repository(
+        name = "io_bazel_rules_go",
+        commit = "9496d79880a7d55b8e4a96f04688d70a374eaaf4", # Jan 16, 2017 (v0.3.3/0.4.0)
+        remote = "https://github.com/bazelbuild/rules_go.git",
+    )
+
+    native.git_repository(
+        name = "org_pubref_rules_protobuf",
+        commit = "d42e895387c658eda90276aea018056fcdcb30e4", # Mar 07 2017 (gogo* support)
+        remote = "https://github.com/pubref/rules_protobuf",
+    )
+
+    go_istio_api_repositories()
+    go_googleapis_repositories()
+    
