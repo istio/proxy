@@ -80,5 +80,13 @@ Notes:
 * mixer_attributes: these attributes will be send to the mixer
 * forward_attributes: these attributes will be forwarded to the upstream istio/proxy.
 
+By default, mixer filter forwards attributes and does not invoke mixer server. You can customize this behavior per HTTP route by supplying an opaque config:
 
+```
+    "opaque_config": {
+      "mixer_control": "on",
+      "mixer_forward": "off"
+    }
+```
 
+This config reverts the behavior by sending requests to mixer server but not forwarding any attributes.
