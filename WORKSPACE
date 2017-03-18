@@ -98,95 +98,22 @@ http_file(
 )
 
 # Following go repositories are for building go integration test for mixer filter.
-load(
-    "//src/envoy/mixer/integration_test:repositories.bzl",
-    "integration_test_repositories",
-)
-integration_test_repositories()
-
-load(
-    "//src/envoy/mixer/integration_test:mmm.bzl",
-    "mmm",
-)
-mmm()
-
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
-#go_repositories()
-
-load("@org_pubref_rules_protobuf//protobuf:rules.bzl", "proto_repositories")
-proto_repositories()
-
-load("@org_pubref_rules_protobuf//gogo:rules.bzl", "gogo_proto_repositories")
-gogo_proto_repositories()
-
-new_go_repository(
-    name = "com_github_google_go_genproto",
-    commit = "b3e7c2fb04031add52c4817f53f43757ccbf9c18", # Dec 15, 2016 (no releases)
-    importpath = "google.golang.org/genproto",
+git_repository(
+    name = "io_bazel_rules_go",
+    commit = "9496d79880a7d55b8e4a96f04688d70a374eaaf4", # Mar 3, 2017 (v0.4.1)
+    remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
-new_go_repository(
-    name = "org_golang_google_grpc",
-    commit = "708a7f9f3283aa2d4f6132d287d78683babe55c8", # Dec 5, 2016 (v1.0.5)
-    importpath = "google.golang.org/grpc",
+git_repository(
+    name = "org_pubref_rules_protobuf",
+    commit = "d42e895387c658eda90276aea018056fcdcb30e4", # Mar 07 2017 (gogo* support)
+    remote = "https://github.com/pubref/rules_protobuf",
 )
 
-new_go_repository(
-    name = "com_github_golang_glog",
-    commit = "23def4e6c14b4da8ac2ed8007337bc5eb5007998", # Jan 26, 2016 (no releases)
-    importpath = "github.com/golang/glog",
+local_repository(
+    name = "git_istio_mixer_bzl",
+    path = "/usr/local/google/home/qiwzhang/github/istio/mixer",
 )
 
-new_go_repository(
-    name = "com_github_ghodss_yaml",
-    commit = "04f313413ffd65ce25f2541bfd2b2ceec5c0908c", # Dec 6, 2016 (no releases)
-    importpath = "github.com/ghodss/yaml",
-)
-
-new_go_repository(
-    name = "in_gopkg_yaml_v2",
-    commit = "14227de293ca979cf205cd88769fe71ed96a97e2", # Jan 24, 2017 (no releases)
-    importpath = "gopkg.in/yaml.v2",
-)
-
-new_go_repository(
-    name = "com_github_spf13_cobra",
-    commit = "35136c09d8da66b901337c6e86fd8e88a1a255bd", # Jan 30, 2017 (no releases)
-    importpath = "github.com/spf13/cobra",
-)
-
-new_go_repository(
-    name = "com_github_spf13_pflag",
-    commit = "9ff6c6923cfffbcd502984b8e0c80539a94968b7", # Jan 30, 2017 (no releases)
-    importpath = "github.com/spf13/pflag",
-)
-
-new_go_repository(
-    name = "com_github_hashicorp_go_multierror",
-    commit = "ed905158d87462226a13fe39ddf685ea65f1c11f", # Dec 16, 2016 (no releases)
-    importpath = "github.com/hashicorp/go-multierror",
-)
-
-new_go_repository(
-    name = "com_github_hashicorp_errwrap",
-    commit = "7554cd9344cec97297fa6649b055a8c98c2a1e55", # Oct 27, 2014 (no releases)
-    importpath = "github.com/hashicorp/errwrap",
-)
-
-new_go_repository(
-    name = "com_github_opentracing_opentracing_go",
-    commit = "0c3154a3c2ce79d3271985848659870599dfb77c", # Sep 26, 2016 (v1.0.0)
-    importpath = "github.com/opentracing/opentracing-go",
-)
-
-new_go_repository(
-    name = "com_github_opentracing_basictracer",
-    commit = "1b32af207119a14b1b231d451df3ed04a72efebf", # Sep 29, 2016 (no releases)
-    importpath = "github.com/opentracing/basictracer-go",
-)
-
-go_repository(
-    name = "com_github_istio_mixer",
-    commit = "0b2ef133ff6c912855cd059a8f98721ed51d0f93",
-    importpath = "github.com/istio/mixer",
-)
+load("//src/envoy/mixer/integration_test:repositories.bzl", "test_repositories")
+test_repositories()
