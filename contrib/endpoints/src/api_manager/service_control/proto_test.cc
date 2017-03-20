@@ -174,7 +174,8 @@ TEST_F(ProtoTest, FillGoodCheckRequestAndroidIosTest) {
   ASSERT_TRUE(scp_.FillCheckRequest(info, &request).ok());
 
   std::string text = CheckRequestToString(&request);
-  std::string expected_text = ReadTestBaseline("check_request_android_ios.golden");
+  std::string expected_text =
+      ReadTestBaseline("check_request_android_ios.golden");
   ASSERT_EQ(expected_text, text);
 }
 
