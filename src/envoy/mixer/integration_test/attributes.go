@@ -19,37 +19,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/istio/mixer/pkg/attribute"
+	"istio.io/mixer/pkg/attribute"
 )
-
-func (rb *attribute.MutableBag) getAllKeys() map[string]bool {
-	all_keys := make(map[string]bool)
-	for k := range rb.strings {
-		all_keys[k] = true
-	}
-	for k := range rb.int64s {
-		all_keys[k] = true
-	}
-	for k := range rb.float64s {
-		all_keys[k] = true
-	}
-	for k := range rb.bools {
-		all_keys[k] = true
-	}
-	for k := range rb.times {
-		all_keys[k] = true
-	}
-	for k := range rb.durations {
-		all_keys[k] = true
-	}
-	for k := range rb.bytes {
-		all_keys[k] = true
-	}
-	for k := range rb.stringMaps {
-		all_keys[k] = true
-	}
-	return all_keys
-}
 
 func verifyStringMap(actual map[string]string, expected map[string]interface{}) error {
 	for k, v := range expected {
@@ -75,28 +46,30 @@ func verifyStringMap(actual map[string]string, expected map[string]interface{}) 
 }
 
 // Please see the comment at top of mixer_test.go for verification rules
-func (rb *Bag) Verify(json_results string) error {
+func Verify(b *attribute.MutableBag, json_results string) error {
 	var r map[string]interface{}
 	if err := json.Unmarshal([]byte(json_results), &r); err != nil {
 		return fmt.Errorf("unable to decode json %v", err)
 	}
 
-	all_keys := rb.getAllKeys()
+	all_keys := make(map[string]bool)
+	for _, k := range b.Names() {
+		all_keys[k] = true
+	}
 
 	for k, v := range r {
 		switch vv := v.(type) {
 		case string:
 			// "*" means only checking key.
 			if vv == "*" {
-				if _, ok := all_keys[k]; !ok {
+				if _, ok := b.Get(k); !ok {
 					return fmt.Errorf("attribute %+v is expected", k)
 				}
 			} else {
-				if val, ok := rb.strings[k]; ok {
-					vstring := v.(string)
-					if val != vstring {
+				if val, ok := b.Get(k); ok {
+					if val.(string) != v.(string) {
 						return fmt.Errorf("attribute %+v value doesn't match. Actual %+v, expected %+v",
-							k, val, vstring)
+							k, val.(string), v.(string))
 					}
 				} else {
 					return fmt.Errorf("attribute %+v is expected", k)
@@ -105,18 +78,18 @@ func (rb *Bag) Verify(json_results string) error {
 		case float64:
 			// Json converts all integers to float64,
 			// Our tests only verify size related attributes which are int64 type
-			if val, ok := rb.int64s[k]; ok {
+			if val, ok := b.Get(k); ok {
 				vint64 := int64(vv)
-				if val != vint64 {
+				if val.(int64) != vint64 {
 					return fmt.Errorf("attribute %+v value doesn't match. Actual %+v, expected %+v",
-						k, val, vint64)
+						k, val.(int64), vint64)
 				}
 			} else {
 				return fmt.Errorf("attribute %+v is expected", k)
 			}
 		case map[string]interface{}:
-			if val, ok := rb.stringMaps[k]; ok {
-				if err := verifyStringMap(val, v.(map[string]interface{})); err != nil {
+			if val, ok := b.Get(k); ok {
+				if err := verifyStringMap(val.(map[string]string), v.(map[string]interface{})); err != nil {
 					return fmt.Errorf("attribute %+v StringMap doesn't match: %+v", k, err)
 				}
 			} else {

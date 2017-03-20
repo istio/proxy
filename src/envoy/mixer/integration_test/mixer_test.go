@@ -257,14 +257,16 @@ const reportAttributesBackendFail = `
 
 func verifyAttributes(
 	s *TestSetup, tag string, check string, report string, t *testing.T) {
-	/*	if err := s.mixer.check.ctx.curr.Verify(check); err != nil {
-			t.Fatalf("Failed to verify %s check: %v\n, Attributes: %+v",
-				tag, err, s.mixer.check.ctx.curr)
-		}
-		if err := s.mixer.report.ctx.curr.Verify(report); err != nil {
-			t.Fatalf("Failed to verify %s report: %v\n, Attributes: %+v",
-				tag, err, s.mixer.report.ctx.curr)
-		} */
+	_ = <-s.mixer.check.ch
+	if err := Verify(s.mixer.check.bag, check); err != nil {
+		t.Fatalf("Failed to verify %s check: %v\n, Attributes: %+v",
+			tag, err, s.mixer.check.bag)
+	}
+	_ = <-s.mixer.report.ch
+	if err := Verify(s.mixer.report.bag, report); err != nil {
+		t.Fatalf("Failed to verify %s report: %v\n, Attributes: %+v",
+			tag, err, s.mixer.report.bag)
+	}
 }
 
 func TestMixer(t *testing.T) {

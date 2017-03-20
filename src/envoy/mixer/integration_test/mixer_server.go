@@ -31,22 +31,22 @@ import (
 )
 
 type Handler struct {
-	bag      attribute.MutableBag
-	count    int
+	bag      *attribute.MutableBag
+	ch       chan int
 	r_status rpc.Status
 }
 
 func newHandler() *Handler {
 	return &Handler{
 		bag:      nil,
-		count:    0,
+		ch:       make(chan int, 1),
 		r_status: rpc.Status{},
 	}
 }
 
-func (h *Handler) run(bag attribute.MutableBag) rpc.Status {
-	h.bag = bag
-	h.count++
+func (h *Handler) run(bag *attribute.MutableBag) rpc.Status {
+	h.bag = attribute.CopyBag(bag)
+	h.ch <- 1
 	return h.r_status
 }
 
@@ -61,19 +61,19 @@ type MixerServer struct {
 	quota  *Handler
 }
 
-func (ts *MixerServer) Check(ctx context.Context, bag attribute.MutableBag,
+func (ts *MixerServer) Check(ctx context.Context, bag *attribute.MutableBag,
 	request *mixerpb.CheckRequest, response *mixerpb.CheckResponse) {
 	response.RequestIndex = request.RequestIndex
 	response.Result = ts.check.run(bag)
 }
 
-func (ts *MixerServer) Report(ctx context.Context, bag attribute.MutableBag,
+func (ts *MixerServer) Report(ctx context.Context, bag *attribute.MutableBag,
 	request *mixerpb.ReportRequest, response *mixerpb.ReportResponse) {
 	response.RequestIndex = request.RequestIndex
 	response.Result = ts.report.run(bag)
 }
 
-func (ts *MixerServer) Quota(ctx context.Context, bag attribute.MutableBag,
+func (ts *MixerServer) Quota(ctx context.Context, bag *attribute.MutableBag,
 	request *mixerpb.QuotaRequest, response *mixerpb.QuotaResponse) {
 	response.RequestIndex = request.RequestIndex
 	response.Result = ts.quota.run(bag)

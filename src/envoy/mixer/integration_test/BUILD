@@ -20,6 +20,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "attributes.go",
         "envoy.go",
         "http_client.go",
         "http_server.go",
