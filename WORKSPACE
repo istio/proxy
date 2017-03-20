@@ -110,10 +110,5 @@ git_repository(
     remote = "https://github.com/pubref/rules_protobuf",
 )
 
-local_repository(
-    name = "git_istio_mixer_bzl",
-    path = "/usr/local/google/home/qiwzhang/github/istio/mixer",
-)
-
-load("//src/envoy/mixer/integration_test:repositories.bzl", "test_repositories")
-test_repositories()
+load("//src/envoy/mixer/integration_test:repositories.bzl", "go_mixer_repositories")
+go_mixer_repositories()
