@@ -114,6 +114,23 @@ HttpControl::HttpControl(const std::string& mixer_server,
   ::istio::mixer_client::MixerClientOptions options;
   options.mixer_server = mixer_server;
   mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
+
+  // Extract quota attributes
+  auto it = config_attributes_.find(::istio::mixer_client::kQuotaName);
+  if (it != config_attributes_.end()) {
+    quota_attributes_.attributes[ ::istio::mixer_client::kQuotaName] =
+        Attributes::StringValue(it->second);
+    config_attributes_.erase(it);
+
+    int64_t amount = 1;  // default amount to 1.
+    it = config_attributes_.find(::istio::mixer_client::kQuotaAmount);
+    if (it != config_attributes_.end()) {
+      amount = std::stoi(it->second);
+      config_attributes_.erase(it);
+    }
+    quota_attributes_.attributes[ ::istio::mixer_client::kQuotaAmount] =
+        Attributes::Int64Value(amount);
+  }
 }
 
 void HttpControl::FillCheckAttributes(HeaderMap& header_map, Attributes* attr) {
@@ -144,10 +161,14 @@ void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
 
   auto check_on_done = [this, on_done](const Status& status) {
     if (status.ok()) {
-
+      if (!quota_attributes_.attributes.empty()) {
+        log().debug("Send Quota: {}", quota_attributes_.DebugString());
+        mixer_client_->Quota(quota_attributes_, on_done);
+        return;  // Not to call on_done again.
+      }
     }
     on_done(status);
-  }
+  };
   mixer_client_->Check(request_data->attributes, check_on_done);
 }
 
