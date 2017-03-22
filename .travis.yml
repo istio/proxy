@@ -21,7 +21,7 @@ jdk:
   - oraclejdk8
 
 env:
-  - BAZEL_VERSION=0.4.3
+  - BAZEL_VERSION=0.4.5
 
 cache:
   directories:
