@@ -302,7 +302,7 @@ cc_proto_library(
     native.new_git_repository(
         name = "lightstep_common_git",
         remote = "https://github.com/lightstep/lightstep-tracer-common.git",
-        commit = "fe1f65f4a221746f9fffe8bf544c81d4e1b8aded",
+        commit = "cbbecd671c1ae1f20ae873c5da688c8c14d04ec3",
         build_file_content = COMMON_BUILD,
     )
 
