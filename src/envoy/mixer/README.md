@@ -67,7 +67,7 @@ This filter will intercept all HTTP requests and call Mixer. Here is its config:
          "mixer_attributes" : {
             "attribute_name1": "attribute_value1",
             "attribute_name2": "attribute_value2",
-            "quota.name": "RequestCount",
+            "quota.name": "RequestCount"
          },
          "forward_attributes" : {
             "attribute_name1": "attribute_value1",

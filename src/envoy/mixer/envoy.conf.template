@@ -43,7 +43,7 @@
                   "mixer_attributes": {
                       "target.uid": "POD222",
                       "target.namespace": "XYZ222",
-		      "quota.name": "RequestCount"
+                      "quota.name": "RequestCount"
                   }
                 }
               },
