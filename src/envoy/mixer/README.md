@@ -52,9 +52,7 @@ This Proxy will use Envoy and talk to Mixer server.
   curl http://localhost:7070/echo -d "hello world"
 ```
 
-## How to configurate HTTP filters
-
-### *mixer* filter:
+## How to configurate HTTP Mixer filters
 
 This filter will intercept all HTTP requests and call Mixer. Here is its config:
 
@@ -72,7 +70,14 @@ This filter will intercept all HTTP requests and call Mixer. Here is its config:
          "forward_attributes" : {
             "attribute_name1": "attribute_value1",
             "attribute_name2": "attribute_value2"
-         }
+         },
+         "quota_name": "RequestCount",
+         "quota_amount": "1",
+         "check_cache_keys": [
+              "request.host",
+              "request.path",
+              "origin.user"
+         ]
     }
 ```
 
@@ -80,9 +85,10 @@ Notes:
 * mixer_server is required
 * mixer_attributes: these attributes will be send to the mixer
 * forward_attributes: these attributes will be forwarded to the upstream istio/proxy.
-* "quota.name" and "quota.amount" are used for quota call. "quota.amount" is default to 1 if missing.
+* quota_name, quota_amount are used for making quota call. quota_amount is default to 1 if missing.
+* check_cache_keys is to cache check calls. If missing or empty, check calls are not cached.
 
-By default, mixer filter forwards attributes and does not invoke mixer server. You can customize this behavior per HTTP route by supplying an opaque config:
+By default, mixer filter forwards attributes and does not invoke mixer server. You can customize this behavior per HTTP route by supplying an opaque config in the route config:
 
 ```
     "opaque_config": {
@@ -91,4 +97,4 @@ By default, mixer filter forwards attributes and does not invoke mixer server. Y
     }
 ```
 
-This config reverts the behavior by sending requests to mixer server but not forwarding any attributes.
+This route opaque config reverts the behavior by sending requests to mixer server but not forwarding any attributes.
