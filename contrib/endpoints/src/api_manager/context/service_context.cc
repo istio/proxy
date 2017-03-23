@@ -76,6 +76,18 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
 
   service_account_token_.SetAudience(
       auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE, kFirebaseAudience);
+
+  if (config_->server_config() &&
+      !config_->server_config()
+           ->api_check_security_rules_config()
+           .authorization_service_audience()
+           .empty()) {
+    service_account_token_.SetAudience(
+        auth::ServiceAccountToken::JWT_TOKEN_FOR_AUTHORIZATION_SERVICE,
+        config_->server_config()
+            ->api_check_security_rules_config()
+            .authorization_service_audience());
+  }
 }
 
 MethodCallInfo ServiceContext::GetMethodCallInfo(

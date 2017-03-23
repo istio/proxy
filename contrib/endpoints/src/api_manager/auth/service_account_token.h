@@ -65,6 +65,7 @@ class ServiceAccountToken {
     JWT_TOKEN_FOR_SERVICE_CONTROL = 0,
     JWT_TOKEN_FOR_CLOUD_TRACING,
     JWT_TOKEN_FOR_FIREBASE,
+    JWT_TOKEN_FOR_AUTHORIZATION_SERVICE,
     JWT_TOKEN_TYPE_MAX,
   };
   // Set audience.  Only calcualtes JWT token with specified audience.

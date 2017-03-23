@@ -118,6 +118,7 @@ cc_library(
         "//contrib/endpoints/src/api_manager/context",
         "//contrib/endpoints/src/api_manager/service_control",
         "//contrib/endpoints/src/api_manager/utils",
+        "//contrib/endpoints/src/api_manager/firebase_rules",
         "//external:cc_wkt_protos",
         "//external:cloud_trace",
         "//external:googletest_prod",
@@ -291,6 +292,8 @@ cc_test(
     deps = [
         ":api_manager",
         ":mock_api_manager_environment",
+        ":security_rules_proto",
+        "//external:cc_wkt_protos",
         "//external:googletest_main",
     ],
 )

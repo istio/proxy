@@ -25,6 +25,8 @@ namespace utils {
 // processed string.
 std::string GetUrlContent(const std::string &url);
 
+bool IsHttpRequest(const std::string &url);
+
 }  // namespace utils
 }  // namespace api_manager
 }  // namespace google
