@@ -63,6 +63,25 @@ class MockApiManagerEnvironmentWithLog : public ApiManagerEnvInterface {
   }
 };
 
+class MyMockApiManagerEnvironment : public ApiManagerEnvInterface {
+ public:
+  void Log(LogLevel level, const char *message) {
+    std::cout << "LOG: " << message << std::endl;
+  }
+  MOCK_METHOD1(MakeTag, void *(std::function<void(bool)>));
+  MOCK_METHOD2(StartPeriodicTimer,
+               std::unique_ptr<PeriodicTimer>(std::chrono::milliseconds,
+                                              std::function<void()>));
+  MOCK_METHOD1(DoRunHTTPRequest, void(HTTPRequest *));
+  MOCK_METHOD1(DoRunGRPCRequest, void(GRPCRequest *));
+  virtual void RunHTTPRequest(std::unique_ptr<HTTPRequest> req) {
+    DoRunHTTPRequest(req.get());
+  }
+  virtual void RunGRPCRequest(std::unique_ptr<GRPCRequest> req) {
+    DoRunGRPCRequest(req.get());
+  }
+};
+
 }  // namespace api_manager
 }  // namespace google
 

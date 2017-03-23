@@ -42,7 +42,7 @@ class RequestContext {
   }
 
   // Get the request object.
-  Request *request() { return request_.get(); }
+  Request *request() const { return request_.get(); }
 
   // Get the method info.
   const MethodInfo *method() const { return method_call_.method_info; }
@@ -116,7 +116,7 @@ class RequestContext {
 
   void set_auth_claims(const std::string &claims) { auth_claims_ = claims; }
 
-  const std::string &auth_claims() { return auth_claims_; }
+  const std::string &auth_claims() const { return auth_claims_; }
 
  private:
   // Fill OperationInfo
