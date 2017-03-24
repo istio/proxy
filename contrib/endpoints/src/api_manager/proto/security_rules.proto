@@ -24,7 +24,7 @@ import "google/protobuf/struct.proto";
 // The protobufs in this file model the messages that flow from ESP to Firebase
 // rules service. The naming of the protobufs start with "Test" and should not
 // be confused that the protobufs are used for testing. The protobuf names and
-// message structure exactly match the protobufs defined in the firebase rules. 
+// message structure exactly match the protobufs defined in the firebase rules.
 message TestCase {
   // The set of supported test case expectations.
   enum Expectation {
