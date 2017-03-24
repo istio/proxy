@@ -146,6 +146,7 @@ message ApiAuthenticationConfig {
 message ApiCheckSecurityRulesConfig {
   // Firebase server to use.
   string firebase_server = 1;
+  string authorization_service_audience = 2;
 }
 
 message Experimental {

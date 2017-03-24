@@ -20,9 +20,13 @@
 #include "contrib/endpoints/src/api_manager/context/service_context.h"
 #include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
 #include "contrib/endpoints/src/api_manager/mock_request.h"
+#include "contrib/endpoints/src/api_manager/proto/security_rules.pb.h"
+#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
+#include "google/protobuf/util/message_differencer.h"
 
 using ::testing::_;
 using ::testing::AllOf;
+using ::testing::InSequence;
 using ::testing::Invoke;
 using ::testing::Property;
 using ::testing::Return;
@@ -30,8 +34,18 @@ using ::testing::StrCaseEq;
 using ::testing::StrEq;
 using ::testing::StrNe;
 
+using ::google::protobuf::util::MessageDifferencer;
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::Map;
 using ::google::protobuf::util::error::Code;
+using ::google::protobuf::RepeatedPtrField;
+
+// Tuple with arg<0> = function name
+// arg<1> = url, arg<2> = method, arg<3> = body.
+using FuncTuple =
+    std::tuple<std::string, std::string, std::string, std::string>;
+using ::google::api_manager::proto::TestRulesetResponse;
+using FunctionCall = TestRulesetResponse::TestResult::FunctionCall;
 
 namespace google {
 namespace api_manager {
@@ -138,27 +152,69 @@ static const char kReleaseError[] = R"(
   }
 })";
 
-// TestRuleset returns Failure which means unauthorized access.
-static const char kTestResultFailure[] = R"(
+static const char kDummyBody[] = R"(
 {
-  "testResults": [
-    {
-      "state": "FAILURE"
-    }
-  ]
-}
-)";
+  "key" : "value"
+})";
 
-// TestRuleset call to Firebase response on success.
-static const char kTestResultSuccess[] = R"(
-{
-  "testResults": [
-    {
-      "state": "SUCCESS"
-    }
-  ]
+const char kFirstRequest[] =
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","iat":1486575396,"iss":"https://accounts.google.com","exp":1486578996}}}}]}})";
+
+const char kSecondRequest[] =
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","azp":"limin-429@appspot.gserviceaccount.com","aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","iss":"https://accounts.google.com","email_verified":true,"iat":1486575396,"exp":1486578996}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}}]}]}})";
+
+const char kThirdRequest[] =
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"azp":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"email_verified":true,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iss":"https://accounts.google.com"}}},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}}]}]}})";
+
+::google::protobuf::Value ToValue(const std::string &arg) {
+  ::google::protobuf::Value value;
+  value.set_string_value(arg);
+  return value;
 }
-)";
+
+MATCHER_P3(HTTPRequestMatches, url, method, body, "") {
+  if (arg->url() != url) {
+    return false;
+  }
+
+  if (strcasecmp(method.c_str(), arg->method().c_str()) != 0) {
+    return false;
+  }
+
+  if (body.empty() || arg->body().empty()) {
+    return body.empty() && arg->body().empty();
+  }
+
+  google::protobuf::Value actual;
+  google::protobuf::Value expected;
+
+  if (utils::JsonToProto(body, &expected) != Status::OK ||
+      utils::JsonToProto(arg->body(), &actual) != Status::OK) {
+    return false;
+  }
+
+  return MessageDifferencer::Equals(actual, expected);
+}
+
+FunctionCall BuildCall(const std::string &name, const std::string &url,
+                       const std::string &method, const std::string &body) {
+  FunctionCall func_call;
+  func_call.set_function(name);
+
+  if (!url.empty()) {
+    *(func_call.add_args()) = ToValue(url);
+  }
+
+  if (!method.empty()) {
+    *(func_call.add_args()) = ToValue(method);
+  }
+
+  if (!body.empty()) {
+    *(func_call.add_args()) = ToValue(body);
+  }
+
+  return func_call;
+}
 
 // Get a server configuration that has auth disabled. This should disable
 // security rules check by default.
@@ -295,6 +351,56 @@ class CheckSecurityRulesTest : public ::testing::Test {
         ":test?alt=json";
   }
 
+  void ExpectCall(std::string url, std::string method, std::string body,
+                  std::string response, Status status = Status::OK) {
+    EXPECT_CALL(*raw_env_,
+                DoRunHTTPRequest(HTTPRequestMatches(url, method, body)))
+        .WillOnce(Invoke([response, status](HTTPRequest *req) {
+          std::map<std::string, std::string> empty;
+          std::string body(response);
+          req->OnComplete(status, std::move(empty), std::move(body));
+        }));
+  }
+
+  std::string BuildTestRulesetResponse(
+      bool isSuccess, std::vector<FuncTuple> funcs = std::vector<FuncTuple>()) {
+    TestRulesetResponse response;
+    auto *result = response.add_test_results();
+    result->set_state(isSuccess ? TestRulesetResponse::TestResult::SUCCESS
+                                : TestRulesetResponse::TestResult::FAILURE);
+
+    std::string url, method, body;
+    for (auto http : funcs) {
+      auto *func = result->add_function_calls();
+      func->set_function(std::get<0>(http));
+      if (!std::get<1>(http).empty()) {
+        func->add_args()->set_string_value(std::get<1>(http));
+      }
+
+      if (!std::get<2>(http).empty()) {
+        func->add_args()->set_string_value(std::get<2>(http));
+      }
+
+      if (!std::get<3>(http).empty()) {
+        ::google::protobuf::Value body;
+        Status status = utils::JsonToProto(std::get<3>(http), &body);
+        *(func->add_args()) = body;
+      }
+    }
+
+    std::string json_str;
+    utils::ProtoToJson(response, &json_str, utils::JsonOptions::DEFAULT);
+    return json_str;
+  }
+
+  void SetProtoValue(const std::string &key,
+                     const ::google::protobuf::Value &value,
+                     ::google::protobuf::Value *head) {
+    ::google::protobuf::Struct *s = head->mutable_struct_value();
+    Map<std::string, google::protobuf::Value> *fields = s->mutable_fields();
+    (*fields)[key] = value;
+  }
+
   MockApiManagerEnvironment *raw_env_;
   MockRequest *raw_request_;
   std::shared_ptr<context::RequestContext> request_context_;
@@ -353,27 +459,9 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzFailTestRuleset) {
   SetUp(service_config, server_config);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
-  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-                             Property(&HTTPRequest::url, StrEq(release_url_)),
-                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
-      .WillOnce(Invoke([](HTTPRequest *req) {
-
-        std::map<std::string, std::string> empty;
-        std::string body(kRelease);
-        req->OnComplete(Status::OK, std::move(empty), std::move(body));
-
-      }));
-
-  EXPECT_CALL(*raw_env_,
-              DoRunHTTPRequest(
-                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
-                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
-      .WillOnce(Invoke([](HTTPRequest *req) {
-        std::map<std::string, std::string> empty;
-        std::string body;
-        req->OnComplete(Status(Code::INTERNAL, "Cannot talk to server"),
-                        std::move(empty), std::move(body));
-      }));
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest, "",
+             Status(Code::INTERNAL, "Cannot talk to server"));
 
   CheckSecurityRules(request_context_, [](Status status) {
     ASSERT_TRUE(status.CanonicalCode() == Code::INTERNAL);
@@ -393,26 +481,10 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzFailWithTestResultFailure) {
   SetUp(service_config, server_config);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
-  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-                             Property(&HTTPRequest::url, StrEq(release_url_)),
-                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
-      .WillOnce(Invoke([](HTTPRequest *req) {
+  ExpectCall(release_url_, "GET", "", kRelease);
 
-        std::map<std::string, std::string> empty;
-        std::string body(kRelease);
-        req->OnComplete(Status::OK, std::move(empty), std::move(body));
-
-      }));
-
-  EXPECT_CALL(*raw_env_,
-              DoRunHTTPRequest(
-                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
-                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
-      .WillOnce(Invoke([](HTTPRequest *req) {
-        std::map<std::string, std::string> empty;
-        std::string body = kTestResultFailure;
-        req->OnComplete(Status::OK, std::move(empty), std::move(body));
-      }));
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(false));
 
   CheckSecurityRules(request_context_, [](Status status) {
     ASSERT_TRUE(status.CanonicalCode() == Code::PERMISSION_DENIED);
@@ -432,30 +504,125 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzSuccess) {
   SetUp(service_config, server_config);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
-  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
-                             Property(&HTTPRequest::url, StrEq(release_url_)),
-                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
-      .WillOnce(Invoke([](HTTPRequest *req) {
-
-        std::map<std::string, std::string> empty;
-        std::string body(kRelease);
-        req->OnComplete(Status::OK, std::move(empty), std::move(body));
-
-      }));
-
-  EXPECT_CALL(*raw_env_,
-              DoRunHTTPRequest(
-                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
-                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
-      .WillOnce(Invoke([](HTTPRequest *req) {
-        std::map<std::string, std::string> empty;
-        std::string body = kTestResultSuccess;
-        req->OnComplete(Status::OK, std::move(empty), std::move(body));
-      }));
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(true));
 
   CheckSecurityRules(request_context_,
                      [](Status status) { ASSERT_TRUE(status.ok()); });
 }
+
+class CheckSecurityRulesFunctions : public CheckSecurityRulesTest,
+                                    public ::testing::WithParamInterface<bool> {
+ public:
+  void SetUp() {
+    std::string service_config = std::string(kServiceName) +
+                                 kProducerProjectId + kApis + kAuthentication +
+                                 kHttp;
+    std::string server_config = kServerConfig;
+    CheckSecurityRulesTest::SetUp(service_config, server_config);
+    request_context_->set_auth_claims(kJwtEmailPayload);
+
+    InSequence s;
+
+    ExpectCall(release_url_, "GET", "", kRelease);
+    ExpectCall(
+        ruleset_test_url_, "POST", kFirstRequest,
+        BuildTestRulesetResponse(
+            false, {std::make_tuple("f1", "http://url1", "POST", kDummyBody)}));
+
+    ExpectCall("http://url1", "POST", kDummyBody, kDummyBody);
+    ExpectCall(
+        ruleset_test_url_, "POST", kSecondRequest,
+        BuildTestRulesetResponse(
+            false, {std::make_tuple("f2", "http://url2", "GET", kDummyBody),
+                    std::make_tuple("f3", "https://url3", "GET", kDummyBody),
+                    std::make_tuple("f1", "http://url1", "POST", kDummyBody)}));
+    ExpectCall("http://url2", "GET", kDummyBody, kDummyBody);
+    ExpectCall("https://url3", "GET", kDummyBody, kDummyBody);
+    ExpectCall(ruleset_test_url_, "POST", kThirdRequest,
+               BuildTestRulesetResponse(
+                   GetParam(),
+                   {std::make_tuple("f2", "http://url2", "GET", kDummyBody),
+                    std::make_tuple("f3", "https://url3", "GET", kDummyBody),
+                    std::make_tuple("f1", "http://url1", "POST", kDummyBody)}));
+  }
+};
+
+// Check the function call request response loop:
+// 1. ESP Send TestRulesetRequest (No function calls)
+// 2. ESP gets TestRulesetResponse with f1("http://url1, "POST", kDummyBody)
+// 3. ESP Send HTTP request to f1.url
+// 4. ESP Send TestRulesetRequest with (f1.url, "POST", kDummyBody,
+//                                      kDummyResponse);
+// 5. EST gets TestRulesetResponse with f1, f2, f3
+// 6. ESP Send HTTP request to f2.url and f3.url. (checks f1 response is
+// buffered).
+// 7. ESP Send TestRulesetRequest with (f1, f2, f3)
+// 8. ESP receives TestRulesetRequest
+TEST_P(CheckSecurityRulesFunctions, CheckMultipleFunctions) {
+  auto ptr = this;
+  auto success = GetParam();
+  CheckSecurityRules(request_context_, [ptr, success](Status status) {
+    if (success) {
+      ASSERT_TRUE(status.ok()) << status.ToString();
+    } else {
+      ASSERT_TRUE(status.CanonicalCode() == Code::PERMISSION_DENIED)
+          << status.ToString();
+    }
+  });
+}
+
+INSTANTIATE_TEST_CASE_P(CheckMultipleFunctionSuccessFailure,
+                        CheckSecurityRulesFunctions, ::testing::Bool());
+
+class CheckSecurityRulesBadFunctions
+    : public CheckSecurityRulesTest,
+      public ::testing::WithParamInterface<FuncTuple> {
+ public:
+  void SetUp() {
+    std::string service_config = std::string(kServiceName) +
+                                 kProducerProjectId + kApis + kAuthentication +
+                                 kHttp;
+    std::string server_config = kServerConfig;
+    CheckSecurityRulesTest::SetUp(service_config, server_config);
+    request_context_->set_auth_claims(kJwtEmailPayload);
+
+    InSequence s;
+
+    ExpectCall(release_url_, "GET", "", kRelease);
+    ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+               BuildTestRulesetResponse(false, {GetParam()}));
+
+    EXPECT_CALL(*raw_env_,
+                DoRunHTTPRequest(AllOf(
+                    Property(&HTTPRequest::url, StrEq(std::get<1>(GetParam()))),
+                    Property(&HTTPRequest::method,
+                             StrCaseEq(std::get<2>(GetParam()))))))
+        .Times(0);
+  }
+};
+
+TEST_P(CheckSecurityRulesBadFunctions, CheckBadFunctionArguments) {
+  auto ptr = this;
+  CheckSecurityRules(request_context_, [ptr](Status status) {
+    ASSERT_TRUE(status.CanonicalCode() == Code::INVALID_ARGUMENT)
+        << status.ToString();
+  });
+}
+
+INSTANTIATE_TEST_CASE_P(CheckSecurityRulesBadFunctionArguments,
+                        CheckSecurityRulesBadFunctions,
+                        ::testing::Values(
+                            // Empty function name
+                            std::make_tuple("", "http://url1", "POST",
+                                            kDummyBody),
+                            // Argument count less than 2
+                            std::make_tuple("f1", "", "", ""),
+                            // The url is not set
+                            std::make_tuple("f1", "", "POST", kDummyBody),
+                            // The url is not a http or https protocol
+                            std::make_tuple("f1", "ftp://url1", "BODY", "")));
 }
 }  // namespace api_manager
 }  // namespace google
