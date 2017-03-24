@@ -33,6 +33,8 @@ namespace google {
 namespace api_manager {
 namespace firebase_rules {
 
+// This structure models any HTTP request that is to be invoked. These include
+// both the TestRuleset Request as well as the user defined requests.
 struct HttpRequest {
   std::string url;
   std::string method;
@@ -94,18 +96,55 @@ class FirebaseRequest {
   std::vector<std::pair<FunctionCall, std::string>>::const_iterator Find(
       const FunctionCall &func_call);
 
+  // The API manager environment. Primarily used for logging.
   ApiManagerEnvInterface *env_;
+
+  // The request context for the current request in progress.
   std::shared_ptr<context::RequestContext> context_;
+
+  // The test ruleset name which contains the firebase rules and is used to
+  // invoke TestRuleset API.
   std::string ruleset_name_;
-  std::string service_name_;
+
+  // The Firebase server that supports the TestRuleset requests.
   std::string firebase_server_;
+
+  // This variable tracks the status of the state machine.
   Status current_status_;
+
+  // Variable to track if the state machine is done processing. This is set to
+  // true either when the processing is successfully done or when an error is
+  // encountered and current_status_ is not Statu::OK anymore.
   bool is_done_;
+
+  // The map is used to buffer the response for the user defined function calls.
   std::vector<std::pair<FunctionCall, std::string>> funcs_with_result_;
+
+  // The iterator iterates over the FunctionCalls the user wishes to invoke. So
+  // long as this iterator is valid, the state machine issues HTTP requests to
+  // the user defined HTTP endpoints. Once the iterator is equl to
+  // func_call_iter.end(), then the TestRuleset is issued which includes the
+  // function calls along with their responses.
   RepeatedPtrField<FunctionCall>::const_iterator func_call_iter_;
+
+  // The Test ruleset response currently being processed.
   TestRulesetResponse response_;
+
+  // This variable points to either firebase_http_request_ or
+  // external_http_request_. This will allow the state machine to understand if
+  // the response received is for TestRuleset or user defined HTTP endpoint. If
+  // next_request points to firebase_http_request_, upon receiving a response,
+  // the state machine will convert the response to TestRulesetResponse and
+  // process the response. If next_request_ points to external_http_request_,
+  // then the reponse provided via UpdateResponse is converted into a
+  // protobuf::Value. This value is initialized to nullptr and will be nullptr
+  // once is_done_ is set to true.
   HttpRequest *next_request_;
+
+  // The HTTP request to be sent to firebase TestRuleset API
   HttpRequest firebase_http_request_;
+
+  // The HTTP request invoked for user provided HTTP endpoint.
   HttpRequest external_http_request_;
 };
 

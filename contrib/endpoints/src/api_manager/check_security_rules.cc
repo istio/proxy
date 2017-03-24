@@ -64,7 +64,8 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
              std::function<void(Status status)> continuation);
 
  private:
-  // Helper method that invokes Http requests for firebase rules.
+  // This method invokes the Firebase TestRuleset API endpoint as well as user
+  // defined endpoints provided by the TestRulesetResponse.
   void CallNextRequest(std::function<void(Status status)> continuation);
 
   // Parse the respose for GET RELEASE API call

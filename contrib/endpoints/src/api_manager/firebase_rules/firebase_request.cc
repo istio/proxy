@@ -81,7 +81,6 @@ FirebaseRequest::FirebaseRequest(
     : env_(env),
       context_(context),
       ruleset_name_(ruleset_name),
-      service_name_(context->service_context()->service_name()),
       firebase_server_(
           context->service_context()->config()->GetFirebaseServer()),
       current_status_(Status::OK),
