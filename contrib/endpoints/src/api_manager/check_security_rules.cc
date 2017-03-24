@@ -140,7 +140,7 @@ void AuthzChecker::Check(
 
 void AuthzChecker::CallNextRequest(
     std::function<void(Status status)> continuation) {
-  if (request_->IsDone()) {
+  if (request_->is_done()) {
     continuation(request_->RequestStatus());
     return;
   }

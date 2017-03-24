@@ -104,10 +104,10 @@ FirebaseRequest::FirebaseRequest(
   next_request_ = &firebase_http_request_;
 }
 
-bool FirebaseRequest::IsDone() { return is_done_; }
+bool FirebaseRequest::is_done() { return is_done_; }
 
 HttpRequest FirebaseRequest::GetHttpRequest() {
-  if (IsDone()) {
+  if (is_done()) {
     return HttpRequest();
   }
 
@@ -122,7 +122,7 @@ HttpRequest FirebaseRequest::GetHttpRequest() {
 Status FirebaseRequest::RequestStatus() { return current_status_; }
 
 void FirebaseRequest::UpdateResponse(const std::string &body) {
-  if (IsDone()) {
+  if (is_done()) {
     env_->LogError(
         "Receive a response body when no HTTP request is outstanding");
     return;
@@ -131,7 +131,7 @@ void FirebaseRequest::UpdateResponse(const std::string &body) {
   if (next_request_ == nullptr) {
     env_->LogError(
         "Received a response when there is no request set"
-        "and when IsDone is false."
+        "and when is_done is false."
         " Looks like a code bug...");
     SetStatus(Status(Code::INTERNAL,
                      "Internal state error while processing Http request"));
@@ -276,7 +276,7 @@ FirebaseRequest::Find(const FunctionCall &func_call) {
 }
 
 Status FirebaseRequest::ProcessFunctionCallResponse(const std::string &body) {
-  if (IsDone() || AllFunctionCallsProcessed()) {
+  if (is_done() || AllFunctionCallsProcessed()) {
     return Status(Code::INTERNAL,
                   "No external function calls present."
                   " But received a response. Possible code bug");
@@ -289,7 +289,7 @@ Status FirebaseRequest::ProcessFunctionCallResponse(const std::string &body) {
 
 // Sets the next HTTP request that should be issued.
 Status FirebaseRequest::SetNextRequest() {
-  if (IsDone()) {
+  if (is_done()) {
     next_request_ = nullptr;
     return current_status_;
   }

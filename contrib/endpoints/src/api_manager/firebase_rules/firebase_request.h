@@ -46,7 +46,7 @@ struct HttpRequest {
 // to be generated as a part of the TestRuleset request and response cycle.
 // Here is the intented use of this code:
 // FirebaseRequest request(...);
-// while(!request.IsDone()) {
+// while(!request.is_done()) {
 //  std::string url, method, body;
 //
 //  /* The following is not a valid C++ statement. But written so the reader can
@@ -70,9 +70,9 @@ class FirebaseRequest {
                   std::shared_ptr<context::RequestContext> context);
 
   // If the firebase Request calling can be terminated.
-  bool IsDone();
+  bool is_done();
 
-  // Get the request status. This request status is only valid if IsDone is
+  // Get the request status. This request status is only valid if is_done is
   // true.
   Status RequestStatus();
 

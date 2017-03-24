@@ -397,7 +397,7 @@ class CheckSecurityRulesTest : public ::testing::Test {
                      const ::google::protobuf::Value &value,
                      ::google::protobuf::Value *head) {
     ::google::protobuf::Struct *s = head->mutable_struct_value();
-    Map<std::string, google::protobuf::Value> *fields = s->mutable_fields();
+    auto *fields = s->mutable_fields();
     (*fields)[key] = value;
   }
 
