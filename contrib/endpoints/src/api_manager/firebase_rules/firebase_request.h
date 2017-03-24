@@ -20,13 +20,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "contrib/endpoints/src/api_manager/context/request_context.h"
 #include "contrib/endpoints/src/api_manager/proto/security_rules.pb.h"
-#include "contrib/endpoints/include/api_manager/utils/status.h"
 
 using ::google::api_manager::utils::Status;
-using TestRulesetResponse =
-  ::google::api_manager::proto::TestRulesetResponse;
+using TestRulesetResponse = ::google::api_manager::proto::TestRulesetResponse;
 using FunctionCall = TestRulesetResponse::TestResult::FunctionCall;
 using ::google::protobuf::RepeatedPtrField;
 
@@ -35,10 +34,10 @@ namespace api_manager {
 namespace firebase_rules {
 
 struct HttpRequest {
-    std::string url;
-    std::string method;
-    std::string body;
-    auth::ServiceAccountToken::JWT_TOKEN_TYPE token_type;
+  std::string url;
+  std::string method;
+  std::string body;
+  auth::ServiceAccountToken::JWT_TOKEN_TYPE token_type;
 };
 
 // A FirebaseRequest object understands the various http requests that need
@@ -64,7 +63,6 @@ struct HttpRequest {
 // }
 class FirebaseRequest {
  public:
-
   // Constructor.
   FirebaseRequest(const std::string &ruleset_name, ApiManagerEnvInterface *env,
                   std::shared_ptr<context::RequestContext> context);
@@ -83,7 +81,6 @@ class FirebaseRequest {
   void UpdateResponse(const std::string &body);
 
  private:
-
   Status UpdateRulesetRequestBody(
       const RepeatedPtrField<FunctionCall> &func_calls);
   Status ProcessTestRulesetResponse(const std::string &body);
@@ -94,8 +91,8 @@ class FirebaseRequest {
   void SetStatus(const Status &status);
   Status SetNextRequest();
   bool AllFunctionCallsProcessed();
-  std::vector<std::pair<FunctionCall, std::string>>::const_iterator
-      Find(const FunctionCall &func_call);
+  std::vector<std::pair<FunctionCall, std::string>>::const_iterator Find(
+      const FunctionCall &func_call);
 
   ApiManagerEnvInterface *env_;
   std::shared_ptr<context::RequestContext> context_;
@@ -105,16 +102,15 @@ class FirebaseRequest {
   Status current_status_;
   bool is_done_;
   std::vector<std::pair<FunctionCall, std::string>> funcs_with_result_;
-  RepeatedPtrField<FunctionCall>::const_iterator
-      func_call_iter_;
+  RepeatedPtrField<FunctionCall>::const_iterator func_call_iter_;
   TestRulesetResponse response_;
   HttpRequest *next_request_;
   HttpRequest firebase_http_request_;
   HttpRequest external_http_request_;
 };
 
-} // namespace firebase_rules
-} // namespace api_manager
-} // namespace google
+}  // namespace firebase_rules
+}  // namespace api_manager
+}  // namespace google
 
-#endif // FIREBASE_RULES_REQUEST_HELPER_H_
+#endif  // FIREBASE_RULES_REQUEST_HELPER_H_
