@@ -64,8 +64,7 @@ CheckOptions GetCheckOptions(const MixerConfig& config) {
   CheckOptions options(kCheckCacheEntries, expiration * 1000,
                        (expiration + 1) * 1000);
 
-  options.cache_keys.insert(config.check_cache_keys.begin(),
-                            config.check_cache_keys.end());
+  options.cache_keys = config.check_cache_keys;
 
   return options;
 }

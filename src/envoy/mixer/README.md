@@ -86,11 +86,11 @@ Notes:
 * mixer_server is required
 * mixer_attributes: these attributes will be sent to the mixer in both Check and Report calls.
 * forward_attributes: these attributes will be forwarded to the upstream istio/proxy. It will send them to mixer in Check and Report calls.
-* quota_name, quota_amount are used for making quota call. quota_amount is default to 1 if missing.
+* quota_name, quota_amount are used for making quota call. quota_amount defaults to 1.
 * check_cache_keys is to cache check calls. If missing or empty, check calls are not cached.
 
 ## HTTP Route opaque config
-By default, mixer filter only forwards attributes and does not call mixer server. This behavior can be changed per HTTP route by supplying an opaque config:
+By default, the mixer filter only forwards attributes and does not call mixer server. This behavior can be changed per HTTP route by supplying an opaque config:
 
 ```
  "routes": [
@@ -123,9 +123,10 @@ Usually client proxy is not configured to call mixer (it can be enabled in the r
 
 ## How to enable cache for Check calls
 
-Check calls can be cached. By default, it is not enabled. It can be enabled by supplying non-empty "check_cache_keys" string list in the mixer filter config. Only these attributes in the Check request, their keys and values, are used to calculate the key for the cache lookup. If it is a cache hit, the cached response will be used.  The cached response will be expired in 5 minutes by default. It can be overrided by supplying "check_cache_expiration_in_seconds" in the mixer filter config.
+Check calls can be cached. By default, it is not enabled. It can be enabled by supplying non-empty "check_cache_keys" string list in the mixer filter config. Only these attributes in the Check request, their keys and values, are used to calculate the key for the cache lookup. If it is a cache hit, the cached response will be used.
+The cached response will be expired in 5 minutes by default. It can be overrided by supplying "check_cache_expiration_in_seconds" in the mixer filter config. The Check response from the mixer has an expiration field. If it is filled, it will be used. By design, the mixer will control the cache expiration time.
 
-Following is a sample mixer filter config to enable check cache:
+Following is a sample mixer filter config to enable the Check call cache:
 ```
          "check_cache_expiration_in_seconds": "600",
          "check_cache_keys": [
