@@ -24,6 +24,9 @@ using ::google::api_manager::utils::Status;
 using ::google::api_manager::proto::TestRulesetResponse;
 using ::google::protobuf::util::MessageDifferencer;
 using ::google::protobuf::Map;
+using TestRulesetResponse = ::google::api_manager::proto::TestRulesetResponse;
+using FunctionCall = TestRulesetResponse::TestResult::FunctionCall;
+using ::google::protobuf::RepeatedPtrField;
 
 namespace google {
 namespace api_manager {

@@ -78,17 +78,11 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
                  auth::ServiceAccountToken::JWT_TOKEN_TYPE token_type,
                  std::function<void(Status, std::string &&)> continuation);
 
-  // Get the auth token for Firebase service
-  const std::string &GetAuthToken(
-      auth::ServiceAccountToken::JWT_TOKEN_TYPE token_type) {
-    return sa_token_->GetAuthToken(token_type);
-  }
-
   std::shared_ptr<AuthzChecker> GetPtr() { return shared_from_this(); }
 
   ApiManagerEnvInterface *env_;
   auth::ServiceAccountToken *sa_token_;
-  std::unique_ptr<FirebaseRequest> request_;
+  std::unique_ptr<FirebaseRequest> request_handler_;
 };
 
 AuthzChecker::AuthzChecker(ApiManagerEnvInterface *env,
@@ -108,7 +102,7 @@ void AuthzChecker::Check(
     return;
   }
 
-  // Fetch the Release attributes.
+  // Fetch the Release attributes and get ruleset name.
   auto checker = GetPtr();
   HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
             auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE,
@@ -129,7 +123,7 @@ void AuthzChecker::Check(
               // If the parsing of the release body is successful, then call the
               // Test Api for firebase rules service.
               if (status.ok()) {
-                checker->request_ = std::unique_ptr<FirebaseRequest>(
+                checker->request_handler_ = std::unique_ptr<FirebaseRequest>(
                     new FirebaseRequest(ruleset_id, checker->env_, context));
                 checker->CallNextRequest(final_continuation);
               } else {
@@ -140,20 +134,20 @@ void AuthzChecker::Check(
 
 void AuthzChecker::CallNextRequest(
     std::function<void(Status status)> continuation) {
-  if (request_->is_done()) {
-    continuation(request_->RequestStatus());
+  if (request_handler_->is_done()) {
+    continuation(request_handler_->RequestStatus());
     return;
   }
 
   auto checker = GetPtr();
-  auto httpRequest = request_->GetHttpRequest();
-  HttpFetch(httpRequest.url, httpRequest.method, httpRequest.body,
-            httpRequest.token_type,
+  firebase_rules::HttpRequest http_request = request_handler_->GetHttpRequest();
+  HttpFetch(http_request.url, http_request.method, http_request.body,
+            http_request.token_type,
             [continuation, checker](Status status, std::string &&body) {
 
               checker->env_->LogError(std::string("Response Body = ") + body);
               if (status.ok()) {
-                checker->request_->UpdateResponse(body);
+                checker->request_handler_->UpdateResponse(body);
                 checker->CallNextRequest(continuation);
               } else {
                 checker->env_->LogError(std::string("Test API failed with ") +
@@ -206,7 +200,7 @@ void AuthzChecker::HttpFetch(
   }
 
   request->set_method(method).set_url(url).set_auth_token(
-      GetAuthToken(token_type));
+      sa_token_->GetAuthToken(token_type));
 
   if (!request_body.empty()) {
     request->set_header(kContentType, kApplication).set_body(request_body);
