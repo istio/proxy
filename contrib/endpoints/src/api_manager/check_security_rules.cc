@@ -68,7 +68,7 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
   // defined endpoints provided by the TestRulesetResponse.
   void CallNextRequest(std::function<void(Status status)> continuation);
 
-  // Parse the respose for GET RELEASE API call
+  // Parse the response for GET RELEASE API call
   Status ParseReleaseResponse(const std::string &json_str,
                               std::string *ruleset_id);
 
