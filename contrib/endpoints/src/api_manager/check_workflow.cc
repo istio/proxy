@@ -16,6 +16,7 @@
 
 #include "contrib/endpoints/src/api_manager/check_workflow.h"
 #include "contrib/endpoints/src/api_manager/check_auth.h"
+#include "contrib/endpoints/src/api_manager/check_security_rules.h"
 #include "contrib/endpoints/src/api_manager/check_service_control.h"
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
 
@@ -33,6 +34,8 @@ void CheckWorkflow::RegisterAll() {
   Register(CheckAuth);
   // Checks service control.
   Register(CheckServiceControl);
+  // Check Security Rules.
+  Register(CheckSecurityRules);
 }
 
 void CheckWorkflow::Register(CheckHandler handler) {
