@@ -17,7 +17,8 @@
 
 #include "google/protobuf/stubs/stringpiece.h"
 
-#include <string.h>
+#include <string>
+#include <vector>
 #include <time.h>
 #include <chrono>
 #include <memory>
@@ -92,6 +93,73 @@ struct CheckResponseInfo {
   // By default api_key is valid and service is activated.
   // They only set to false by the check response from server.
   CheckResponseInfo() : is_api_key_valid(true), service_is_activated(true) {}
+};
+
+enum MetricValueType {
+  INT64,
+  BOOL,
+  DOUBLE,
+  STRING
+};
+
+struct MetricValueInfo {
+  std::string metric_name;
+  std::unordered_map<std::string, std::string> labels;
+
+  std::chrono::system_clock::time_point start_time;
+  std::chrono::system_clock::time_point end_time;
+
+  int64_t int64_value;
+  bool bool_value;
+  double double_value;
+  std::string string_value;
+
+  MetricValueType value_type;
+
+  MetricValueInfo(std::string name, int64_t value)
+      : metric_name(name),
+        int64_value(value),
+        bool_value(false),
+        double_value(0.0f),
+        string_value(""),
+        value_type(MetricValueType::INT64) {}
+
+  MetricValueInfo(std::string name, bool value)
+      : metric_name(name),
+        int64_value(0),
+        bool_value(value),
+        double_value(0.0f),
+        string_value(""),
+        value_type(MetricValueType::BOOL) {}
+
+  MetricValueInfo(std::string name, double value)
+      : metric_name(name),
+        int64_value(0),
+        bool_value(false),
+        double_value(value),
+        string_value(""),
+        value_type(MetricValueType::DOUBLE) {}
+
+  MetricValueInfo(std::string name, std::string value)
+      : metric_name(name),
+        int64_value(0),
+        bool_value(false),
+        double_value(0.0f),
+        string_value(value),
+        value_type(MetricValueType::STRING) {}
+};
+
+struct QuotaRequestInfo : public OperationInfo {
+  std::string method_name;
+
+
+  std::unordered_map<std::string, std::string> labels;
+  std::vector<MetricValueInfo> quota_metrics;
+};
+
+struct QuotaResponseInfo {
+  bool is_quota_allocated;
+  QuotaResponseInfo() : is_quota_allocated(true) {}
 };
 
 // Information to fill Report request protobuf.
