@@ -738,6 +738,6 @@ cc_test(
     native.new_git_repository(
         name = "envoy_git",
         remote = "https://github.com/lyft/envoy.git",
-        commit = "09f078b016da908ba8b861857f2a12a43933ba40", # Mar 21 2017
+        commit = "168764479000909930a0c9764a43904b4e276fef", # Mar 29 2017
         build_file_content = BUILD,
     )
