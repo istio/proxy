@@ -28,17 +28,18 @@ namespace google {
 namespace api_manager {
 namespace {
 
-const char kFailedFirebaseReleaseFetch[] = "Failed to fetch Firebase Release";
-const char kFailedFirebaseTest[] = "Failed to execute Firebase Test";
-const char kInvalidResponse[] = "Invalid JSON response from Firebase Service";
-const char kV1[] = "/v1";
-const char kHttpGetMethod[] = "GET";
-const char kProjects[] = "/projects";
-const char kReleases[] = "/releases";
-const char kRulesetName[] = "rulesetName";
-const char kTestResults[] = "testResults";
-const char kContentType[] = "Content-Type";
-const char kApplication[] = "application/json";
+const std::string kFailedFirebaseReleaseFetch =
+    "Failed to fetch Firebase Release";
+const std::string kFailedFirebaseTest = "Failed to execute Firebase Test";
+const std::string kInvalidResponse =
+    "Invalid JSON response from Firebase Service";
+const std::string kV1 = "/v1";
+const std::string kHttpGetMethod = "GET";
+const std::string kProjects = "/projects";
+const std::string kReleases = "/releases";
+const std::string kRulesetName = "rulesetName";
+const std::string kContentType = "Content-Type";
+const std::string kApplication = "application/json";
 
 std::string GetReleaseName(const context::RequestContext &context) {
   return context.service_context()->service_name() + ":" +
@@ -168,7 +169,7 @@ Status AuthzChecker::ParseReleaseResponse(const std::string &json_str,
   }
 
   Status status = Status::OK;
-  const char *id = GetStringValue(json, kRulesetName);
+  const char *id = GetStringValue(json, kRulesetName.c_str());
   *ruleset_id = (id == nullptr) ? "" : id;
 
   if (ruleset_id->empty()) {

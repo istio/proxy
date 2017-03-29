@@ -34,21 +34,21 @@ namespace firebase_rules {
 
 namespace {
 
-const char kToken[] = "token";
-const char kAuth[] = "auth";
-const char kPath[] = "path";
-const char kMethod[] = "method";
-const char kHttpGetMethod[] = "GET";
-const char kHttpPostMethod[] = "POST";
-const char kHttpHeadMethod[] = "HEAD";
-const char kHttpOptionsMethod[] = "OPTIONS";
-const char kHttpDeleteMethod[] = "DELETE";
-const char kFirebaseCreateMethod[] = "create";
-const char kFirebaseGetMethod[] = "get";
-const char kFirebaseDeleteMethod[] = "delete";
-const char kFirebaseUpdateMethod[] = "update";
-const char kV1[] = "/v1";
-const char kTestQuery[] = ":test?alt=json";
+const std::string kToken = "token";
+const std::string kAuth = "auth";
+const std::string kPath = "path";
+const std::string kMethod = "method";
+const std::string kHttpGetMethod = "GET";
+const std::string kHttpPostMethod = "POST";
+const std::string kHttpHeadMethod = "HEAD";
+const std::string kHttpOptionsMethod = "OPTIONS";
+const std::string kHttpDeleteMethod = "DELETE";
+const std::string kFirebaseCreateMethod = "create";
+const std::string kFirebaseGetMethod = "get";
+const std::string kFirebaseDeleteMethod = "delete";
+const std::string kFirebaseUpdateMethod = "update";
+const std::string kV1 = "/v1";
+const std::string kTestQuery = ":test?alt=json";
 
 void SetProtoValue(const std::string &key,
                    const ::google::protobuf::Value &value,
@@ -59,7 +59,7 @@ void SetProtoValue(const std::string &key,
 }
 
 // Convert HTTP method to Firebase specific method.
-std::string GetOperation(const std::string &httpMethod) {
+const std::string &GetOperation(const std::string &httpMethod) {
   if (httpMethod == kHttpPostMethod) {
     return kFirebaseCreateMethod;
   }
@@ -125,17 +125,15 @@ HttpRequest FirebaseRequest::GetHttpRequest() {
 Status FirebaseRequest::RequestStatus() { return current_status_; }
 
 void FirebaseRequest::UpdateResponse(const std::string &body) {
-  if (is_done()) {
-    env_->LogError(
-        "Receive a response body when no HTTP request is outstanding");
-    return;
-  }
+  GOOGLE_DCHECK(!is_done())
+      << "Receive a response body when no HTTP request is outstanding";
 
-  if (next_request_ == nullptr) {
-    env_->LogError(
-        "Received a response when there is no request set"
-        "and when is_done is false."
-        " Looks like a code bug...");
+  GOOGLE_DCHECK(next_request_)
+      << "Received a response when there is no request set"
+         "and when is_done is false."
+         " Looks like a code bug...";
+
+  if (is_done() || next_request_ == nullptr) {
     SetStatus(Status(Code::INTERNAL,
                      "Internal state error while processing Http request"));
     return;
