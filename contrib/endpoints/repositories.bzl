@@ -195,15 +195,136 @@ def grpc_repositories(bind=True):
 
 def googleapis_repositories(protobuf_repo="@protobuf_git//", bind=True):
     BUILD = """
+# Copyright 2016 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+################################################################################
+#
+licenses(["notice"])
 
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+
+cc_proto_library(
+    name = "servicecontrol",
+    srcs = [
+        "google/api/servicecontrol/v1/check_error.proto",
+        "google/api/servicecontrol/v1/distribution.proto",
+        "google/api/servicecontrol/v1/log_entry.proto",
+        "google/api/servicecontrol/v1/metric_value.proto",
+        "google/api/servicecontrol/v1/operation.proto",
+        "google/api/servicecontrol/v1/service_controller.proto",
+        "google/logging/type/http_request.proto",
+        "google/logging/type/log_severity.proto",
+        "google/rpc/error_details.proto",
+        "google/rpc/status.proto",
+        "google/type/money.proto",
+    ],
+    include = ".",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":service_config",
+    ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
+)
+
+cc_proto_library(
+    name = "service_config",
+    srcs = [
+        "google/api/annotations.proto",
+        "google/api/auth.proto",
+        "google/api/backend.proto",
+        "google/api/billing.proto",
+        "google/api/consumer.proto",
+        "google/api/context.proto",
+        "google/api/control.proto",
+        "google/api/documentation.proto",
+        "google/api/endpoint.proto",
+        "google/api/http.proto",
+        "google/api/label.proto",
+        "google/api/log.proto",
+        "google/api/logging.proto",
+        "google/api/metric.proto",
+        "google/api/experimental/experimental.proto",
+        "google/api/experimental/authorization_config.proto",
+        "google/api/monitored_resource.proto",
+        "google/api/monitoring.proto",
+        "google/api/quota.proto",
+        "google/api/service.proto",
+        "google/api/source_info.proto",
+        "google/api/system_parameter.proto",
+        "google/api/usage.proto",
+    ],
+    include = ".",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//external:cc_wkt_protos",
+    ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
+)
+
+cc_proto_library(
+    name = "cloud_trace",
+    srcs = [
+        "google/devtools/cloudtrace/v1/trace.proto",
+    ],
+    include = ".",
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":service_config",
+        "//external:cc_wkt_protos",
+    ],
+)
 """.format(protobuf_repo)
+
+    native.new_git_repository(
+        name = "googleapis_git",
+        commit = "2fe0050bd2a6d4c6ba798c0311f0b149b8997314",
+        remote = "https://github.com/googleapis/googleapis.git",
+        build_file_content = BUILD,
+    )
+
+    if bind:
+        native.bind(
+            name = "servicecontrol",
+            actual = "@googleapis_git//:servicecontrol",
+        )
+
+        native.bind(
+            name = "servicecontrol_genproto",
+            actual = "@googleapis_git//:servicecontrol_genproto",
+        )
+
+        native.bind(
+            name = "service_config",
+            actual = "@googleapis_git//:service_config",
+        )
+
+        native.bind(
+            name = "cloud_trace",
+            actual = "@googleapis_git//:cloud_trace",
+        )
 
 def servicecontrol_client_repositories(bind=True):
     googleapis_repositories(bind=bind)
 
     native.git_repository(
         name = "servicecontrol_client_git",
-        commit = "c815b890f6ac60e9dc57f80c97b1bccc9930c073",
+        commit = "05dc862c518963717a37ef723db37325fb9e4d8e",
         remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
     )
 
@@ -213,21 +334,10 @@ def servicecontrol_client_repositories(bind=True):
             actual = "@servicecontrol_client_git//:service_control_client_lib",
         )
         native.bind(
-            name = "servicecontrol",
-            actual = "@servicecontrol_client_git//proto:servicecontrol",
+            name = "quotacontrol",
+            actual = "@servicecontrol_client_git//proto:quotacontrol",
         )
-
         native.bind(
-            name = "servicecontrol_genproto",
-            actual = "@servicecontrol_client_git//proto:servicecontrol_genproto",
-        )
-
-        native.bind(
-            name = "service_config",
-            actual = "@servicecontrol_client_git//proto:service_config",
-        )
-
-        native.bind(
-            name = "cloud_trace",
-            actual = "@servicecontrol_client_git//proto:cloud_trace",
+            name = "quotacontrol_genproto",
+            actual = "@servicecontrol_client_git//proto:quotacontrol_genproto",
         )
