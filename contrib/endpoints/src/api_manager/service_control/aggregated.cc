@@ -61,7 +61,7 @@ const int kReportAggregationFlushIntervalMs = 1000;
 // The default connection timeout for check requests.
 const int kCheckDefaultTimeoutInMs = 5000;
 // The default connection timeout for allocate quota requests.
-const int kAllocateQuotaDefaultTimeoutInMs = 5000;
+const int kAllocateQuotaDefaultTimeoutInMs = 1000;
 // The default connection timeout for report requests.
 const int kReportDefaultTimeoutInMs = 15000;
 

@@ -324,7 +324,7 @@ def servicecontrol_client_repositories(bind=True):
 
     native.git_repository(
         name = "servicecontrol_client_git",
-        commit = "05dc862c518963717a37ef723db37325fb9e4d8e",
+        commit = "edc35cb1cedd55c824e5eba41601129d23e45671",
         remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
     )
 
