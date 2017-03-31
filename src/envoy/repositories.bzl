@@ -567,6 +567,6 @@ def envoy_repositories(bind=True):
     )
     native.git_repository(
         name = "envoy",
-        remote = "https://github.com/htuch/envoy.git",
-        commit = "95d4328d08b407a71c58829d8b9ae89d24747de8",
+        remote = "https://github.com/lyft/envoy.git",
+        commit = "bf3f23ad439ee83b91015dc4d0d7cb53b14bf1bc",
     )
