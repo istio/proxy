@@ -1,4 +1,4 @@
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,17 +15,15 @@
 ################################################################################
 #
 
-MIXER_CLIENT = "c5d857e28bfcc53f20f59466b464f99526737545"
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
-def mixer_client_repositories(bind=True):
-    native.git_repository(
-        name = "mixerclient_git",
-        commit = MIXER_CLIENT,
-        remote = "https://github.com/istio/mixerclient.git",
+def go_test_suite(tests, library, data, tags, size="small"):
+  for test in tests:
+    go_test(
+        name = test.split(".")[0],
+        size = size,
+        srcs = [test],
+        data = data,
+        library = library,
+        tags = tags,
     )
-
-    if bind:
-        native.bind(
-            name = "mixer_client_lib",
-            actual = "@mixerclient_git//:mixer_client_lib",
-        )
