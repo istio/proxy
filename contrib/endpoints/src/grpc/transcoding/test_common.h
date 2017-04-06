@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "contrib/endpoints/src/grpc/transcoding/transcoder_input_stream.h"
 #include "google/api/service.pb.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/text_format.h"
@@ -34,7 +35,7 @@ namespace testing {
 // An implementation of ZeroCopyInputStream for testing.
 // The tests define the chunks that TestZeroCopyInputStream produces.
 class TestZeroCopyInputStream
-    : public ::google::protobuf::io::ZeroCopyInputStream {
+    : public TranscoderInputStream {
  public:
   TestZeroCopyInputStream();
 
@@ -50,7 +51,8 @@ class TestZeroCopyInputStream
   // ZeroCopyInputStream methods
   bool Next(const void** data, int* size);
   void BackUp(int count);
-  ::google::protobuf::int64 ByteCount() const;
+  int64_t BytesAvailable() const;
+  ::google::protobuf::int64 ByteCount() const { return 0; } // Not implemented
   bool Skip(int) { return false; }  // Not implemented
 
  private:
