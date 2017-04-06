@@ -180,6 +180,10 @@ class RequestContext {
 
   // The time point of last intermediate report
   std::chrono::steady_clock::time_point last_report_time_;
+
+  // The accumulated data sent till last intermediate report
+  int64_t last_request_bytes;
+  int64_t last_response_bytes;
 };
 
 }  // namespace context
