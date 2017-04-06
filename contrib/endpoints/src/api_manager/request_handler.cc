@@ -65,6 +65,10 @@ void RequestHandler::AttemptIntermediateReport() {
   info.is_final_report = false;
   context_->FillReportRequestInfo(NULL, &info);
 
+  // Make sure we send delta metrics for intermediate reports.
+  info.request_bytes -= last_request_bytes;
+  info.response_bytes -= last_response_bytes;
+
   // Calling service_control Report.
   Status status = context_->service_context()->service_control()->Report(info);
   if (!status.ok()) {
@@ -74,6 +78,9 @@ void RequestHandler::AttemptIntermediateReport() {
     context_->set_first_report(false);
   }
   context_->set_last_report_time(std::chrono::steady_clock::now());
+
+  last_request_bytes += info.request_bytes;
+  last_response_bytes += info.response_bytes;
 }
 
 // Sends a report.

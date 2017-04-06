@@ -31,7 +31,9 @@ class RequestHandler : public RequestHandlerInterface {
                  std::unique_ptr<Request> request_data)
       : context_(new context::RequestContext(service_context,
                                              std::move(request_data))),
-        check_workflow_(check_workflow) {}
+        check_workflow_(check_workflow),
+        last_request_bytes(0),
+        last_response_bytes(0) {}
 
   virtual ~RequestHandler(){};
 
@@ -60,6 +62,10 @@ class RequestHandler : public RequestHandlerInterface {
   std::shared_ptr<context::RequestContext> context_;
 
   std::shared_ptr<CheckWorkflow> check_workflow_;
+
+  int64_t last_request_bytes;
+
+  int64_t last_response_bytes;
 };
 
 }  // namespace api_manager
