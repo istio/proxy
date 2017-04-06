@@ -278,8 +278,14 @@ void RequestContext::FillReportRequestInfo(
   } else {
     info->request_size = response->GetRequestSize();
     info->response_size = response->GetResponseSize();
-    info->request_bytes = info->request_size;
-    info->response_bytes = info->response_size;
+    info->request_bytes = info->request_size - last_request_bytes;
+    if (info->request_bytes < 0) {
+      info->request_bytes = 0;
+    }
+    info->response_bytes = info->response_size - last_response_bytes;
+    if (info->response_bytes < 0) {
+      info->response_bytes = 0;
+    }
 
     info->streaming_request_message_counts =
         request_->GetGrpcRequestMessageCounts();
