@@ -74,8 +74,7 @@ class MessageStream {
   // Virtual destructor
   virtual ~MessageStream() {}
   // Creates ZeroCopyInputStream implementation based on this stream
-  std::unique_ptr<TranscoderInputStream>
-  CreateInputStream();
+  std::unique_ptr<TranscoderInputStream> CreateInputStream();
 };
 
 }  // namespace transcoding

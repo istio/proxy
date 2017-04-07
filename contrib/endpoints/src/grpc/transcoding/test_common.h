@@ -34,8 +34,7 @@ namespace testing {
 
 // An implementation of ZeroCopyInputStream for testing.
 // The tests define the chunks that TestZeroCopyInputStream produces.
-class TestZeroCopyInputStream
-    : public TranscoderInputStream {
+class TestZeroCopyInputStream : public TranscoderInputStream {
  public:
   TestZeroCopyInputStream();
 
@@ -52,8 +51,8 @@ class TestZeroCopyInputStream
   bool Next(const void** data, int* size);
   void BackUp(int count);
   int64_t BytesAvailable() const;
-  ::google::protobuf::int64 ByteCount() const { return 0; } // Not implemented
-  bool Skip(int) { return false; }  // Not implemented
+  ::google::protobuf::int64 ByteCount() const { return 0; }  // Not implemented
+  bool Skip(int) { return false; }                           // Not implemented
 
  private:
   std::deque<std::string> chunks_;

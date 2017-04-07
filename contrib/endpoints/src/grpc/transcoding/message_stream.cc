@@ -71,7 +71,7 @@ class InputStreamOverMessageStream : public TranscoderInputStream {
 
   bool Skip(int) { return false; }  // Not implemented (no need)
 
-  google::protobuf::int64 ByteCount() const { return 0; } // Not implemented
+  google::protobuf::int64 ByteCount() const { return 0; }  // Not implemented
 
   int64_t BytesAvailable() const {
     if (position_ >= message_.size()) {
@@ -104,8 +104,7 @@ class InputStreamOverMessageStream : public TranscoderInputStream {
 
 }  // namespace
 
-std::unique_ptr<TranscoderInputStream>
-MessageStream::CreateInputStream() {
+std::unique_ptr<TranscoderInputStream> MessageStream::CreateInputStream() {
   return std::unique_ptr<TranscoderInputStream>(
       new InputStreamOverMessageStream(this));
 }

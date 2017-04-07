@@ -52,22 +52,16 @@ class TranscoderImpl : public Transcoder {
                  std::unique_ptr<ResponseToJsonTranslator> response_translator)
       : request_translator_(std::move(request_translator)),
         response_translator_(std::move(response_translator)),
-        request_stream_(
-            request_translator_->Output().CreateInputStream()),
-        response_stream_(
-            response_translator_->CreateInputStream()) {}
+        request_stream_(request_translator_->Output().CreateInputStream()),
+        response_stream_(response_translator_->CreateInputStream()) {}
 
   // Transcoder implementation
-  TranscoderInputStream* RequestOutput() {
-    return request_stream_.get();
-  }
+  TranscoderInputStream* RequestOutput() { return request_stream_.get(); }
   pbutil::Status RequestStatus() {
     return request_translator_->Output().Status();
   }
 
-  pbio::ZeroCopyInputStream* ResponseOutput() {
-    return response_stream_.get();
-  }
+  pbio::ZeroCopyInputStream* ResponseOutput() { return response_stream_.get(); }
   pbutil::Status ResponseStatus() { return response_translator_->Status(); }
 
  private:

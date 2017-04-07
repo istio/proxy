@@ -21,7 +21,8 @@ namespace google {
 namespace api_manager {
 namespace transcoding {
 
-class TranscoderInputStream : public virtual google::protobuf::io::ZeroCopyInputStream {
+class TranscoderInputStream
+    : public virtual google::protobuf::io::ZeroCopyInputStream {
  public:
   // returns the number of bytes available to read at the moment.
   virtual int64_t BytesAvailable() const = 0;
