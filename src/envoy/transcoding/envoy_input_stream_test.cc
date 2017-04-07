@@ -93,6 +93,5 @@ TEST_F(EnvoyInputStreamTest, Finish) {
 
   EXPECT_EQ(4, buffer.length());
 }
-
 }
 }

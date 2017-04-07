@@ -60,4 +60,4 @@ int64_t EnvoyInputStream::BytesAvailable() const {
   return buffer_.length() - position_;
 }
 
-} // namespace Grpc
+}  // namespace Grpc

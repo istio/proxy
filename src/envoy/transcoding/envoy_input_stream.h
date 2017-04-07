@@ -35,8 +35,10 @@ class EnvoyInputStream
   // TranscoderInputStream
   virtual bool Next(const void **data, int *size) override;
   virtual void BackUp(int count) override;
-  virtual bool Skip(int count) override { return false; } // Not implemented
-  virtual google::protobuf::int64 ByteCount() const override { return byte_count_; }
+  virtual bool Skip(int count) override { return false; }  // Not implemented
+  virtual google::protobuf::int64 ByteCount() const override {
+    return byte_count_;
+  }
   virtual int64_t BytesAvailable() const override;
 
  private:
@@ -46,4 +48,4 @@ class EnvoyInputStream
   bool finished_{false};
 };
 
-} // namespace Grpc
+}  // namespace Grpc
