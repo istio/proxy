@@ -125,8 +125,7 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
     attr->attributes[kResponseCode] =
         Attributes::Int64Value(info.responseCode().value());
   } else {
-    attr->attributes[kResponseCode] =
-        Attributes::Int64Value(check_status_code);
+    attr->attributes[kResponseCode] = Attributes::Int64Value(check_status_code);
   }
 }
 
