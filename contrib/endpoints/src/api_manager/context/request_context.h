@@ -112,6 +112,8 @@ class RequestContext {
     last_report_time_ = tp;
   }
 
+  std::string GetRequestHTTPMethodWithOverride();
+
  private:
   // Fill OperationInfo
   void FillOperationInfo(service_control::OperationInfo *info);
