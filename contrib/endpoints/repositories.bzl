@@ -214,7 +214,7 @@ def googleapis_repositories(protobuf_repo="@protobuf_git//", bind=True):
 
 licenses(["notice"])
 
-load("{}:protobuf.bzl", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 exports_files(glob(["google/**"]))
 
@@ -254,16 +254,18 @@ cc_proto_library(
         "google/api/control.proto",
         "google/api/documentation.proto",
         "google/api/endpoint.proto",
-        "google/api/experimental/authorization_config.proto",
-        "google/api/experimental/experimental.proto",
         "google/api/http.proto",
         "google/api/label.proto",
         "google/api/log.proto",
         "google/api/logging.proto",
         "google/api/metric.proto",
+        "google/api/experimental/experimental.proto",
+        "google/api/experimental/authorization_config.proto",
         "google/api/monitored_resource.proto",
         "google/api/monitoring.proto",
+        "google/api/quota.proto",
         "google/api/service.proto",
+        "google/api/source_info.proto",
         "google/api/system_parameter.proto",
         "google/api/usage.proto",
     ],
@@ -292,10 +294,9 @@ cc_proto_library(
 )
 """.format(protobuf_repo)
 
-
     native.new_git_repository(
         name = "googleapis_git",
-        commit = "412867fb105722fb9d2cd9af90af1f8f120de238",
+        commit = "2fe0050bd2a6d4c6ba798c0311f0b149b8997314",
         remote = "https://github.com/googleapis/googleapis.git",
         build_file_content = BUILD,
     )
@@ -326,7 +327,7 @@ def servicecontrol_client_repositories(bind=True):
 
     native.git_repository(
         name = "servicecontrol_client_git",
-        commit = "d739d755365c6a13d0b4164506fd593f53932f5d",
+        commit = "3d1a30d9221e700542eeaaf20eab69faddb63894",
         remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
     )
 
@@ -334,4 +335,12 @@ def servicecontrol_client_repositories(bind=True):
         native.bind(
             name = "servicecontrol_client",
             actual = "@servicecontrol_client_git//:service_control_client_lib",
+        )
+        native.bind(
+            name = "quotacontrol",
+            actual = "@servicecontrol_client_git//proto:quotacontrol",
+        )
+        native.bind(
+            name = "quotacontrol_genproto",
+            actual = "@servicecontrol_client_git//proto:quotacontrol_genproto",
         )

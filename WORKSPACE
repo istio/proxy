@@ -96,3 +96,19 @@ http_file(
     url = "https://storage.googleapis.com/istio-build/manager/ubuntu_xenial_debug-" + DEBUG_BASE_IMAGE_SHA + ".tar.gz",
     sha256 = DEBUG_BASE_IMAGE_SHA,
 )
+
+# Following go repositories are for building go integration test for mixer filter.
+git_repository(
+    name = "io_bazel_rules_go",
+    commit = "2d9f328a9723baf2d037ba9db28d9d0e30683938", # Apr 6, 2017 (buildifier fix)
+    remote = "https://github.com/bazelbuild/rules_go.git",
+)
+
+git_repository(
+    name = "org_pubref_rules_protobuf",
+    commit = "d42e895387c658eda90276aea018056fcdcb30e4", # Mar 07 2017 (gogo* support)
+    remote = "https://github.com/pubref/rules_protobuf",
+)
+
+load("//src/envoy/mixer/integration_test:repositories.bzl", "go_mixer_repositories")
+go_mixer_repositories()

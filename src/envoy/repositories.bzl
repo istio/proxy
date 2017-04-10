@@ -235,25 +235,6 @@ def lightstep_repositories(bind=True):
     BUILD = """
 load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
-genrule(
-    name = "envoy_carrier_pb",
-    srcs = ["src/c++11/envoy/envoy_carrier.proto"],
-    outs = ["lightstep/envoy_carrier.proto"],
-    cmd = "cp $(SRCS) $@",
-)
-
-cc_proto_library(
-    name = "envoy_carrier_proto",
-    srcs = ["lightstep/envoy_carrier.proto"],
-    include = ".",
-    deps = [
-        "//external:cc_wkt_protos",
-    ],
-    protoc = "//external:protoc",
-    default_runtime = "//external:protobuf",
-    visibility = ["//visibility:public"],
-)
-
 cc_library(
     name = "lightstep_core",
     srcs = [
@@ -266,7 +247,7 @@ cc_library(
         "src/c++11/lightstep/impl.h",
         "src/c++11/lightstep/options.h",
         "src/c++11/lightstep/propagation.h",
-        "src/c++11/lightstep/envoy.h",
+        "src/c++11/lightstep/carrier.h",
         "src/c++11/lightstep/span.h",
         "src/c++11/lightstep/tracer.h",
         "src/c++11/lightstep/util.h",
@@ -275,7 +256,7 @@ cc_library(
         "src/c++11/mapbox_variant/variant.hpp",
     ],
     copts = [
-        "-DPACKAGE_VERSION='\\"0.19\\"'",
+        "-DPACKAGE_VERSION='\\"0.36\\"'",
         "-Iexternal/lightstep_git/src/c++11/lightstep",
         "-Iexternal/lightstep_git/src/c++11/mapbox_variant",
     ],
@@ -285,7 +266,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@lightstep_common_git//:collector_proto",
-        ":envoy_carrier_proto",
+        "@lightstep_common_git//:lightstep_carrier_proto",
         "//external:protobuf",
     ],
 )"""
@@ -293,16 +274,9 @@ cc_library(
     COMMON_BUILD = """
 load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
-genrule(
-    name = "collector_pb",
-    srcs = ["collector.proto"],
-    outs = ["lightstep/collector.proto"],
-    cmd = "cp $(SRCS) $@",
-)
-
 cc_proto_library(
     name = "collector_proto",
-    srcs = ["lightstep/collector.proto"],
+    srcs = ["collector.proto"],
     include = ".",
     deps = [
         "//external:cc_wkt_protos",
@@ -310,19 +284,32 @@ cc_proto_library(
     protoc = "//external:protoc",
     default_runtime = "//external:protobuf",
     visibility = ["//visibility:public"],
-)"""
+)
+
+cc_proto_library(
+    name = "lightstep_carrier_proto",
+    srcs = ["lightstep_carrier.proto"],
+    include = ".",
+    deps = [
+        "//external:cc_wkt_protos",
+    ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
+    visibility = ["//visibility:public"],
+)
+"""
 
     native.new_git_repository(
         name = "lightstep_common_git",
         remote = "https://github.com/lightstep/lightstep-tracer-common.git",
-        commit = "8d932f7f76cd286691e6179621d0012b0ff1e6aa",
+        commit = "cbbecd671c1ae1f20ae873c5da688c8c14d04ec3",
         build_file_content = COMMON_BUILD,
     )
 
     native.new_git_repository(
         name = "lightstep_git",
         remote = "https://github.com/lightstep/lightstep-tracer-cpp.git",
-        commit = "5a71d623cac17a059041b04fabca4ed86ffff7cc",
+        commit = "f1dc8f3dfd529350e053fd21273e627f409ae428", # 0.36
         build_file_content = BUILD,
     )
 
@@ -572,185 +559,14 @@ def envoy_repositories(bind=True):
     rapidjson_repositories(bind)
     nghttp2_repositories(bind)
     ares_repositories(bind)
-
-    BUILD = """
-load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
-
-exports_files(["source/precompiled/precompiled.h"])
-
-package(default_visibility = ["//visibility:public"])
-
-genrule(
-    name = "envoy-ratelimit-proto",
-    srcs = [
-        "source/common/ratelimit/ratelimit.proto",
-    ],
-    outs = [
-        "source/common/generated/ratelimit.proto",
-    ],
-    cmd = "cp $(SRCS) $@",
-)
-
-cc_proto_library(
-    name = "envoy-ratelimit-pb",
-    srcs = [
-        "source/common/generated/ratelimit.proto",
-    ],
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
-    include = "source",
-)
-
-genrule(
-    name = "envoy-test-proto",
-    srcs = [
-        "test/proto/helloworld.proto",
-    ],
-    outs = [
-        "test/generated/helloworld.proto",
-    ],
-    cmd = "cp $(SRCS) $@",
-)
-
-cc_proto_library(
-    name = "envoy-test-pb",
-    srcs = [
-        "test/generated/helloworld.proto",
-    ],
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
-    include = "test",
-)
-
-genrule(
-    name = "envoy-version",
-    srcs = glob([
-        ".git/**",
-    ]),
-    tools = [
-        "tools/gen_git_sha.sh",
-    ],
-    outs = [
-        "source/common/version_generated.cc",
-    ],
-    cmd = "touch $@ && $(location tools/gen_git_sha.sh) $$(dirname $(location tools/gen_git_sha.sh)) $@",
-    local = 1,
-)
-
-cc_library(
-    name = "envoy-common",
-    srcs = glob([
-        "source/**/*.cc",
-        "source/**/*.h",
-        "include/**/*.h",
-    ], exclude=["source/exe/main.cc"]) + [
-        "source/common/version_generated.cc",
-    ],
-    copts = [
-        "-I./external/envoy_git/source",
-        "-include ./external/envoy_git/source/precompiled/precompiled.h",
-    ],
-    includes = [
-         "include",
-    ],
-    linkopts = [
-        "-lpthread",
-        "-lanl",
-        "-lrt",
-    ],
-    linkstatic=1,
-    alwayslink=1,
-    deps = [
-        ":envoy-ratelimit-pb",
-        "//external:ares",
-        "//external:libssl",
-        "//external:nghttp2",
-        "//external:spdlog",
-        "//external:tclap",
-        "//external:lightstep",
-        "//external:event",
-        "//external:protobuf",
-        "//external:http_parser",
-        "//external:rapidjson",
-        "//external:event_pthreads",
-    ],
-)
-
-cc_library(
-    name = "envoy-main",
-    srcs = [
-        "source/exe/main.cc",
-    ],
-    copts = [
-        "-I./external/envoy_git/source",
-        "-include ./external/envoy_git/source/precompiled/precompiled.h",
-    ],
-    deps = [
-        ":envoy-common",
-    ],
-    linkstatic=1,
-)
-
-cc_binary(
-    name = "envoy",
-    srcs = [
-        "source/exe/main.cc",
-    ],
-    copts = [
-        "-I./external/envoy_git/source",
-        "-include ./external/envoy_git/source/precompiled/precompiled.h",
-    ],
-    deps = [
-        ":envoy-common",
-    ],
-    linkstatic=1,
-)
-
-cc_library(
-    name = "envoy-test-lib",
-    srcs = glob([
-        "test/**/*.cc",
-        "test/**/*.h",
-    ]),
-    copts = [
-        "-I./external/envoy_git/source",
-        "-include ./external/envoy_git/test/precompiled/precompiled_test.h",
-    ],
-    includes = [
-        "include",
-    ],
-    deps = [
-        ":envoy-common",
-        ":envoy-test-pb",
-        "//external:googletest",
-    ],
-    alwayslink=1,
-)
-
-filegroup(
-    name = "envoy-testdata",
-    srcs = glob([
-        "generated/**/*",
-        "test/**/*",
-    ]),
-)
-
-cc_test(
-    name = "envoy-test",
-    data = [
-        ":envoy-testdata",
-    ],
-    deps = [
-        ":envoy-test-lib",
-        ":envoy-test-pb",
-        "//external:googletest",
-    ],
-    linkstatic=1,
-)"""
-
-    native.new_git_repository(
-        name = "envoy_git",
+    # @boringssl is defined in //:repositories.bzl, but bound to libssl for
+    # grpc. Rebind to what envoy expects here.
+    native.bind(
+        name = "ssl",
+        actual = "@boringssl//:ssl",
+    )
+    native.git_repository(
+        name = "envoy",
         remote = "https://github.com/lyft/envoy.git",
-        commit = "9dcac8ca111ecc8da059d1f8d42eb766b44bacd6", # https://github.com/lyft/envoy/pull/553
-        build_file_content = BUILD,
+        commit = "bf3f23ad439ee83b91015dc4d0d7cb53b14bf1bc",
     )

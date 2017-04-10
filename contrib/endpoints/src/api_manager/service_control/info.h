@@ -17,7 +17,8 @@
 
 #include "google/protobuf/stubs/stringpiece.h"
 
-#include <string.h>
+#include "google/api/quota.pb.h"
+
 #include <time.h>
 #include <chrono>
 #include <memory>
@@ -74,6 +75,11 @@ struct CheckRequestInfo : public OperationInfo {
   // Whether the method allow unregistered calls.
   bool allow_unregistered_calls;
 
+  // used for api key restriction check
+  std::string android_package_name;
+  std::string android_cert_fingerprint;
+  std::string ios_bundle_id;
+
   CheckRequestInfo() : allow_unregistered_calls(false) {}
 };
 
@@ -87,6 +93,12 @@ struct CheckResponseInfo {
   // By default api_key is valid and service is activated.
   // They only set to false by the check response from server.
   CheckResponseInfo() : is_api_key_valid(true), service_is_activated(true) {}
+};
+
+struct QuotaRequestInfo : public OperationInfo {
+  std::string method_name;
+
+  const std::vector<std::pair<std::string, int>>* metric_cost_vector;
 };
 
 // Information to fill Report request protobuf.
