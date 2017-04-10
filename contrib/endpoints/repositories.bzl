@@ -251,8 +251,6 @@ cc_proto_library(
         "google/api/control.proto",
         "google/api/documentation.proto",
         "google/api/endpoint.proto",
-        "google/api/experimental/authorization_config.proto",
-        "google/api/experimental/experimental.proto",
         "google/api/http.proto",
         "google/api/label.proto",
         "google/api/log.proto",
