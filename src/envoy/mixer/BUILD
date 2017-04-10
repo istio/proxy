@@ -15,7 +15,6 @@
 ################################################################################
 #
 
-
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 load("//src/envoy/mixer:proxy_docker.bzl", "proxy_docker_build")
 load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
@@ -31,7 +30,8 @@ cc_proto_library(
 cc_library(
     name = "filter_lib",
     srcs = [
-        "forward_attribute_filter.cc",
+        "config.cc",
+        "config.h",
         "http_control.cc",
         "http_control.h",
         "http_filter.cc",
@@ -41,7 +41,7 @@ cc_library(
     deps = [
         ":string_map_proto",
         "//external:mixer_client_lib",
-        "@envoy_git//:envoy-common",
+        "@envoy//source/exe:envoy_common_lib",
     ],
     alwayslink = 1,
 )
@@ -49,9 +49,11 @@ cc_library(
 cc_binary(
     name = "envoy",
     linkstatic = 1,
+    linkopts = ["-lrt"],
+    visibility = [":__subpackages__"],
     deps = [
         ":filter_lib",
-        "@envoy_git//:envoy-main",
+        "@envoy//source/exe:envoy_main_lib",
     ],
 )
 
@@ -81,10 +83,6 @@ pkg_tar(
 )
 
 proxy_docker_build(
-    images = [
-        {"name": "proxy",       "base": "@docker_ubuntu//:xenial"},
-        {"name": "proxy_debug", "base": "@ubuntu_xenial_debug//file"},
-    ],
     entrypoint = [
         "/usr/local/bin/start_envoy",
         "-e",
@@ -93,6 +91,16 @@ proxy_docker_build(
         "/etc/opt/proxy/envoy.conf",
         "-t",
         "/etc/opt/proxy/envoy.conf.template",
+    ],
+    images = [
+        {
+            "name": "proxy",
+            "base": "@docker_ubuntu//:xenial",
+        },
+        {
+            "name": "proxy_debug",
+            "base": "@ubuntu_xenial_debug//file",
+        },
     ],
     ports = ["9090"],
     repository = "istio",

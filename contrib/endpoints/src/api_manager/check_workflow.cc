@@ -19,6 +19,7 @@
 #include "contrib/endpoints/src/api_manager/check_security_rules.h"
 #include "contrib/endpoints/src/api_manager/check_service_control.h"
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
+#include "contrib/endpoints/src/api_manager/quota_control.h"
 
 using ::google::api_manager::utils::Status;
 
@@ -36,6 +37,8 @@ void CheckWorkflow::RegisterAll() {
   Register(CheckServiceControl);
   // Check Security Rules.
   Register(CheckSecurityRules);
+  // Quota control
+  Register(QuotaControl);
 }
 
 void CheckWorkflow::Register(CheckHandler handler) {

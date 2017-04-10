@@ -1,7 +1,7 @@
 {
   "listeners": [
     {
-      "port": ${PORT},
+      "address": "tcp://0.0.0.0:${PORT}",
       "bind_to_port": true,
       "filters": [
         {
@@ -19,7 +19,11 @@
                     {
                       "timeout_ms": 0,
                       "prefix": "/",
-                      "cluster": "service1"
+                      "cluster": "service1",
+                      "opaque_config": {
+                        "mixer_control": "on",
+                        "mixer_forward": "off"
+                      }
                     }
                   ]
                 }
@@ -32,14 +36,21 @@
             ],
             "filters": [
               {
-                "type": "both",
+                "type": "decoder",
                 "name": "mixer",
                 "config": {
                   "mixer_server": "${MIXER_SERVER}",
-                  "attributes": {
+                  "mixer_attributes": {
                       "target.uid": "POD222",
                       "target.namespace": "XYZ222"
-                  }
+                  },
+                  "quota_name": "RequestCount",
+                  "quota_amount": "1",
+                  "check_cache_keys": [
+                      "request.host",
+                      "request.path",
+                      "origin.user"
+                  ]
                 }
               },
               {
@@ -53,7 +64,7 @@
       ]
     },
     {
-      "port": 7070,
+      "address": "tcp://0.0.0.0:7070",
       "bind_to_port": true,
       "filters": [
         {
@@ -85,9 +96,10 @@
             "filters": [
               {
                 "type": "decoder",
-                "name": "forward_attribute",
+                "name": "mixer",
                 "config": {
-                   "attributes": {
+                   "mixer_server": "${MIXER_SERVER}",
+                   "forward_attributes": {
                       "source.uid": "POD11",
                       "source.namespace": "XYZ11"
                    }
@@ -106,7 +118,7 @@
   ],
   "admin": {
     "access_log_path": "/dev/stdout",
-    "port": 9001
+    "address": "tcp://0.0.0.0:9001"
   },
   "cluster_manager": {
     "clusters": [

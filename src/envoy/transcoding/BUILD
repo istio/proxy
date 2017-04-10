@@ -14,18 +14,27 @@
 #
 ################################################################################
 #
+cc_library(
+    name = "envoy_input_stream",
+    srcs = [
+        "envoy_input_stream.cc",
+    ],
+    hdrs = [
+        "envoy_input_stream.h",
+    ],
+    deps = [
+        "//contrib/endpoints/src/grpc/transcoding:transcoder_input_stream",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
 
-MIXER_CLIENT = "92a305961bcea90ed349ffdbb0ea299c6f6bacad"
-
-def mixer_client_repositories(bind=True):
-    native.git_repository(
-        name = "mixerclient_git",
-        commit = MIXER_CLIENT,
-        remote = "https://github.com/istio/mixerclient.git",
-    )
-
-    if bind:
-        native.bind(
-            name = "mixer_client_lib",
-            actual = "@mixerclient_git//:mixer_client_lib",
-        )
+cc_test(
+    name = "envoy_input_stream_test",
+    srcs = [
+        "envoy_input_stream_test.cc",
+    ],
+    deps = [
+        ":envoy_input_stream",
+        "@googletest_git//:googletest_main",
+    ],
+)

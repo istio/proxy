@@ -51,6 +51,16 @@ const char kDefaultApiKeyQueryName1[] = "key";
 const char kDefaultApiKeyQueryName2[] = "api_key";
 const char kDefaultApiKeyHeaderName[] = "x-api-key";
 
+// Header for android package name, used for api key restriction check.
+const char kXAndroidPackage[] = "x-android-package";
+
+// Header for android certificate fingerprint, used for api key restriction
+// check.
+const char kXAndroidCert[] = "x-android-cert";
+
+// Header for IOS bundle identifier, used for api key restriction check.
+const char kXIosBundleId[] = "x-ios-bundle-identifier";
+
 // Default location
 const char kDefaultLocation[] = "us-central1";
 
@@ -71,7 +81,9 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
                                std::unique_ptr<Request> request)
     : service_context_(service_context),
       request_(std::move(request)),
-      is_first_report_(true) {
+      is_first_report_(true),
+      last_request_bytes_(0),
+      last_response_bytes_(0) {
   start_time_ = std::chrono::system_clock::now();
   last_report_time_ = std::chrono::steady_clock::now();
   operation_id_ = GenerateUUID();
@@ -225,6 +237,20 @@ void RequestContext::FillCheckRequestInfo(
     service_control::CheckRequestInfo *info) {
   FillOperationInfo(info);
   info->allow_unregistered_calls = method()->allow_unregistered_calls();
+
+  request_->FindHeader(kXAndroidPackage, &info->android_package_name);
+  request_->FindHeader(kXAndroidCert, &info->android_cert_fingerprint);
+  request_->FindHeader(kXIosBundleId, &info->ios_bundle_id);
+}
+
+void RequestContext::FillAllocateQuotaRequestInfo(
+    service_control::QuotaRequestInfo *info) {
+  FillOperationInfo(info);
+
+  info->client_ip = request_->GetClientIP();
+  info->method_name = this->method_call_.method_info->name();
+  info->metric_cost_vector =
+      &this->method_call_.method_info->metric_cost_vector();
 }
 
 void RequestContext::FillReportRequestInfo(
@@ -243,13 +269,23 @@ void RequestContext::FillReportRequestInfo(
   info->auth_audience = auth_audience_;
 
   if (!info->is_final_report) {
-    info->request_bytes = request_->GetGrpcRequestBytes();
-    info->response_bytes = request_->GetGrpcResponseBytes();
+    // Make sure we send delta metrics for intermediate reports.
+    info->request_bytes = request_->GetGrpcRequestBytes() - last_request_bytes_;
+    info->response_bytes =
+        request_->GetGrpcResponseBytes() - last_response_bytes_;
+    last_request_bytes_ += info->request_bytes;
+    last_response_bytes_ += info->response_bytes;
   } else {
     info->request_size = response->GetRequestSize();
     info->response_size = response->GetResponseSize();
-    info->request_bytes = info->request_size;
-    info->response_bytes = info->response_size;
+    info->request_bytes = info->request_size - last_request_bytes_;
+    if (info->request_bytes < 0) {
+      info->request_bytes = 0;
+    }
+    info->response_bytes = info->response_size - last_response_bytes_;
+    if (info->response_bytes < 0) {
+      info->response_bytes = 0;
+    }
 
     info->streaming_request_message_counts =
         request_->GetGrpcRequestMessageCounts();

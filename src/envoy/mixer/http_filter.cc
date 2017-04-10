@@ -15,12 +15,14 @@
 
 #include "precompiled/precompiled.h"
 
+#include "common/common/base64.h"
 #include "common/common/logger.h"
 #include "common/http/headers.h"
 #include "common/http/utility.h"
 #include "envoy/server/instance.h"
 #include "envoy/ssl/connection.h"
 #include "server/config/network/http_connection_manager.h"
+#include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/http_control.h"
 #include "src/envoy/mixer/utils.h"
 
@@ -32,11 +34,11 @@ namespace Http {
 namespace Mixer {
 namespace {
 
-// The Json object name for mixer-server.
-const std::string kJsonNameMixerServer("mixer_server");
+// Switch to turn off attribute forwarding
+const std::string kJsonNameForwardSwitch("mixer_forward");
 
-// The Json object name for static attributes.
-const std::string kJsonNameMixerAttributes("attributes");
+// Switch to turn off mixer check/report/quota
+const std::string kJsonNameMixerSwitch("mixer_control");
 
 // Convert Status::code to HTTP code
 int HttpCode(int code) {
@@ -88,50 +90,90 @@ class Config : public Logger::Loggable<Logger::Id::http> {
  private:
   std::shared_ptr<HttpControl> http_control_;
   Upstream::ClusterManager& cm_;
+  std::string forward_attributes_;
+  MixerConfig mixer_config_;
 
  public:
   Config(const Json::Object& config, Server::Instance& server)
       : cm_(server.clusterManager()) {
-    std::string mixer_server;
-    if (config.hasObject(kJsonNameMixerServer)) {
-      mixer_server = config.getString(kJsonNameMixerServer);
-    } else {
+    mixer_config_.Load(config);
+    if (mixer_config_.mixer_server.empty()) {
       log().error(
           "mixer_server is required but not specified in the config: {}",
           __func__);
+    } else {
+      log().debug("Called Mixer::Config constructor with mixer_server: ",
+                  mixer_config_.mixer_server);
     }
 
-    std::map<std::string, std::string> attributes =
-        Utils::ExtractStringMap(config, kJsonNameMixerAttributes);
+    if (!mixer_config_.forward_attributes.empty()) {
+      std::string serialized_str =
+          Utils::SerializeStringMap(mixer_config_.forward_attributes);
+      forward_attributes_ =
+          Base64::encode(serialized_str.c_str(), serialized_str.size());
+      log().debug("Mixer forward attributes set: ", serialized_str);
+    }
 
-    http_control_ =
-        std::make_shared<HttpControl>(mixer_server, std::move(attributes));
-    log().debug("Called Mixer::Config constructor with mixer_server: ",
-                mixer_server);
+    http_control_ = std::make_shared<HttpControl>(mixer_config_);
   }
 
   std::shared_ptr<HttpControl>& http_control() { return http_control_; }
+  const std::string& forward_attributes() const { return forward_attributes_; }
 };
 
 typedef std::shared_ptr<Config> ConfigPtr;
 
-class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
+class Instance : public Http::StreamDecoderFilter,
+                 public Http::AccessLog::Instance {
  private:
   std::shared_ptr<HttpControl> http_control_;
+  ConfigPtr config_;
   std::shared_ptr<HttpRequestData> request_data_;
 
   enum State { NotStarted, Calling, Complete, Responded };
   State state_;
 
   StreamDecoderFilterCallbacks* decoder_callbacks_;
-  StreamEncoderFilterCallbacks* encoder_callbacks_;
 
   bool initiating_call_;
   int check_status_code_;
 
+  bool mixer_disabled_;
+
+  // mixer control switch (off by default)
+  bool mixer_disabled() {
+    auto route = decoder_callbacks_->route();
+    if (route != nullptr) {
+      auto entry = route->routeEntry();
+      if (entry != nullptr) {
+        auto key = entry->opaqueConfig().find(kJsonNameMixerSwitch);
+        if (key != entry->opaqueConfig().end() && key->second == "on") {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // attribute forward switch (on by default)
+  bool forward_disabled() {
+    auto route = decoder_callbacks_->route();
+    if (route != nullptr) {
+      auto entry = route->routeEntry();
+      if (entry != nullptr) {
+        auto key = entry->opaqueConfig().find(kJsonNameForwardSwitch);
+        if (key != entry->opaqueConfig().end() && key->second == "off") {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
  public:
   Instance(ConfigPtr config)
       : http_control_(config->http_control()),
+        config_(config),
         state_(NotStarted),
         initiating_call_(false),
         check_status_code_(HttpCode(StatusCode::UNKNOWN)) {
@@ -149,6 +191,17 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
   FilterHeadersStatus decodeHeaders(HeaderMap& headers,
                                     bool end_stream) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
+
+    if (!config_->forward_attributes().empty() && !forward_disabled()) {
+      headers.addStatic(Utils::kIstioAttributeHeader,
+                        config_->forward_attributes());
+    }
+
+    mixer_disabled_ = mixer_disabled();
+    if (mixer_disabled_) {
+      return FilterHeadersStatus::Continue;
+    }
+
     state_ = Calling;
     initiating_call_ = true;
     request_data_ = std::make_shared<HttpRequestData>();
@@ -174,6 +227,10 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
 
   FilterDataStatus decodeData(Buffer::Instance& data,
                               bool end_stream) override {
+    if (mixer_disabled_) {
+      return FilterDataStatus::Continue;
+    }
+
     Log().debug("Called Mixer::Instance : {} ({}, {})", __func__, data.length(),
                 end_stream);
     if (state_ == Calling) {
@@ -183,6 +240,10 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
   }
 
   FilterTrailersStatus decodeTrailers(HeaderMap& trailers) override {
+    if (mixer_disabled_) {
+      return FilterTrailersStatus::Continue;
+    }
+
     Log().debug("Called Mixer::Instance : {}", __func__);
     if (state_ == Calling) {
       return FilterTrailersStatus::StopIteration;
@@ -197,6 +258,7 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
     decoder_callbacks_->addResetStreamCallback(
         [this]() { state_ = Responded; });
   }
+
   void completeCheck(const Status& status) {
     Log().debug("Called Mixer::Instance : check complete {}",
                 status.ToString());
@@ -207,30 +269,11 @@ class Instance : public Http::StreamFilter, public Http::AccessLog::Instance {
                               status.ToString());
       return;
     }
+
     state_ = Complete;
     if (!initiating_call_) {
       decoder_callbacks_->continueDecoding();
     }
-  }
-
-  virtual FilterHeadersStatus encodeHeaders(HeaderMap& headers,
-                                            bool end_stream) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    return FilterHeadersStatus::Continue;
-  }
-  virtual FilterDataStatus encodeData(Buffer::Instance& data,
-                                      bool end_stream) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    return FilterDataStatus::Continue;
-  }
-  virtual FilterTrailersStatus encodeTrailers(HeaderMap& trailers) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    return FilterTrailersStatus::Continue;
-  }
-  virtual void setEncoderFilterCallbacks(
-      StreamEncoderFilterCallbacks& callbacks) override {
-    Log().debug("Called Mixer::Instance : {}", __func__);
-    encoder_callbacks_ = &callbacks;
   }
 
   virtual void log(const HeaderMap* request_headers,
@@ -267,7 +310,7 @@ class MixerConfig : public HttpFilterConfigFactory {
   HttpFilterFactoryCb tryCreateFilterFactory(
       HttpFilterType type, const std::string& name, const Json::Object& config,
       const std::string&, Server::Instance& server) override {
-    if (type != HttpFilterType::Both || name != "mixer") {
+    if (type != HttpFilterType::Decoder || name != "mixer") {
       return nullptr;
     }
 
@@ -277,8 +320,10 @@ class MixerConfig : public HttpFilterConfigFactory {
         [mixer_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
           std::shared_ptr<Http::Mixer::Instance> instance(
               new Http::Mixer::Instance(mixer_config));
-          callbacks.addStreamFilter(Http::StreamFilterPtr(instance));
-          callbacks.addAccessLogHandler(Http::AccessLog::InstancePtr(instance));
+          callbacks.addStreamDecoderFilter(
+              Http::StreamDecoderFilterSharedPtr(instance));
+          callbacks.addAccessLogHandler(
+              Http::AccessLog::InstanceSharedPtr(instance));
         };
   }
 };
@@ -286,4 +331,4 @@ class MixerConfig : public HttpFilterConfigFactory {
 static RegisterHttpFilterConfigFactory<MixerConfig> register_;
 
 }  // namespace Configuration
-}  // namespace server
+}  // namespace Server
