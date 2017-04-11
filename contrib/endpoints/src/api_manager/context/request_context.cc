@@ -130,10 +130,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
 
 std::string RequestContext::GetRequestHTTPMethodWithOverride() {
   std::string method;
-  bool is_override_present = request_->FindHeader(kHttpMethodOverrideHeader,
-                                                &method);
 
-  if (!is_override_present) {
+  if (!request_->FindHeader(kHttpMethodOverrideHeader, &method)) {
     method = request()->GetRequestHTTPMethod();
   }
 
