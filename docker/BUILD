@@ -7,5 +7,5 @@ alias(
 
 alias(
     name = "envoy_debug",
-    actual = "//src/envoy/mixer:proxy_image_debug",
+    actual = "//src/envoy/mixer:envoy_image_debug",
 )
