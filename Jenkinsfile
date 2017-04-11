@@ -1,6 +1,6 @@
 #!groovy
 
-@Library('testutils@stable-3e4d089')
+@Library('testutils@stable-96c1bdb')
 
 import org.istio.testutils.Utilities
 import org.istio.testutils.GitUtilities
@@ -52,11 +52,6 @@ def postsubmit(gitUtils, bazel, utils) {
     bazel.updateBazelRc()
     stage('Push Binary') {
       sh 'script/release-binary'
-    }
-    stage('Docker Push') {
-      def images = 'proxy,proxy_debug'
-      def tags = "${gitUtils.GIT_SHORT_SHA},\$(date +%Y-%m-%d-%H.%M.%S),latest"
-      utils.publishDockerImages(images, tags, 'release')
     }
   }
 }
