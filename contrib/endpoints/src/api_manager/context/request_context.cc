@@ -135,8 +135,8 @@ std::string RequestContext::GetRequestHTTPMethodWithOverride() {
     method = request()->GetRequestHTTPMethod();
   }
 
-  service_context()->env()->LogDebug(std::string("Request method SET TO: ")
-                                    + method);
+  service_context()->env()->LogDebug(std::string("Request method SET TO: ") +
+                                     method);
 
   return method;
 }
