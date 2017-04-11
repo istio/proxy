@@ -130,13 +130,14 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
 
 std::string RequestContext::GetRequestHTTPMethodWithOverride() {
   std::string method;
-  request_->FindHeader(kHttpMethodOverrideHeader, &method);
+  bool is_override_present = request_->FindHeader(kHttpMethodOverrideHeader,
+                                                &method);
 
-  if (method.empty()) {
+  if (!is_override_present) {
     method = request()->GetRequestHTTPMethod();
   }
 
-  service_context()->env()->LogInfo(std::string("Request method SET TO: ")
+  service_context()->env()->LogDebug(std::string("Request method SET TO: ")
                                     + method);
 
   return method;
