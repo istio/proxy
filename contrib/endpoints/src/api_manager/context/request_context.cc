@@ -102,14 +102,10 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   //    http template variables, url path parts) in MethodCallInfo and extract
   //    variables lazily when needed.
 
-  service_context_->env()->LogInfo(std::string("METHOD USED = ") + method);
   method_call_ =
       service_context_->GetMethodCallInfo(method, path, query_params);
 
   if (method_call_.method_info) {
-    service_context_->env()->LogInfo(std::string("METHOD INFO PRESENT")
-                                     + method_call_.method_info->name());
-
     ExtractApiKey();
   }
   request_->FindHeader("referer", &http_referer_);
@@ -136,12 +132,12 @@ std::string RequestContext::GetRequestHTTPMethodWithOverride() {
   std::string method;
   request_->FindHeader(kHttpMethodOverrideHeader, &method);
 
-  service_context()->env()->LogInfo("CAME HERE ####################################");
   if (method.empty()) {
     method = request()->GetRequestHTTPMethod();
   }
-  
-  service_context()->env()->LogInfo(std::string("METHOD SET TO: ") + method);
+
+  service_context()->env()->LogInfo(std::string("Request method SET TO: ")
+                                    + method);
 
   return method;
 }
