@@ -66,6 +66,9 @@ class RequestContext {
   // Fill CheckRequestInfo
   void FillCheckRequestInfo(service_control::CheckRequestInfo *info);
 
+  // FillAllocateQuotaRequestInfo
+  void FillAllocateQuotaRequestInfo(service_control::QuotaRequestInfo *info);
+
   // Fill ReportRequestInfo
   void FillReportRequestInfo(Response *response,
                              service_control::ReportRequestInfo *info);
@@ -183,6 +186,10 @@ class RequestContext {
 
   // The time point of last intermediate report
   std::chrono::steady_clock::time_point last_report_time_;
+
+  // The accumulated data sent till last intermediate report
+  int64_t last_request_bytes_;
+  int64_t last_response_bytes_;
 };
 
 }  // namespace context
