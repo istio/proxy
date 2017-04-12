@@ -77,8 +77,6 @@ class ServiceAccountToken {
   // Gets the auth token to access Google services.
   // If client auth secret is specified, use it to calcualte JWT token.
   // Otherwise, use the access token fetched from metadata server.
-  // If ignore_cache is true then a JWT token is regenerated even if the current
-  // cached JWT token is valid.
   const std::string& GetAuthToken(JWT_TOKEN_TYPE type);
 
   // Gets the auth token to access Google services. This method accepts an
