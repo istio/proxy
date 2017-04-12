@@ -151,12 +151,13 @@ void AuthzChecker::CallNextRequest(
             [continuation, checker](Status status, std::string &&body) {
 
               checker->env_->LogError(std::string("Response Body = ") + body);
-              if (status.ok()) {
+              if (status.ok() && !body.empty()) {
                 checker->request_handler_->UpdateResponse(body);
                 checker->CallNextRequest(continuation);
               } else {
-                checker->env_->LogError(std::string("Test API failed with ") +
-                                        status.ToString());
+                checker->env_->LogError(
+                    std::string("Test API failed with ") +
+                    (status.ok() ? "Empty Response" : status.ToString()));
                 status = Status(Code::INTERNAL, kFailedFirebaseTest);
                 continuation(status);
               }
