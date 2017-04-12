@@ -23,6 +23,9 @@
 using ::google::api_manager::auth::GetStringValue;
 using ::google::api_manager::firebase_rules::FirebaseRequest;
 using ::google::api_manager::utils::Status;
+const char kFirebaseAudience[] =
+    "https://staging-firebaserules.sandbox.googleapis.com/"
+    "google.firebase.rules.v1.FirebaseRulesService";
 
 namespace google {
 namespace api_manager {
@@ -77,6 +80,7 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
   void HttpFetch(const std::string &url, const std::string &method,
                  const std::string &request_body,
                  auth::ServiceAccountToken::JWT_TOKEN_TYPE token_type,
+                 const std::string &audience,
                  std::function<void(Status, std::string &&)> continuation);
 
   std::shared_ptr<AuthzChecker> GetPtr() { return shared_from_this(); }
@@ -107,8 +111,8 @@ void AuthzChecker::Check(
   auto checker = GetPtr();
   HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
             auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE,
-            [context, final_continuation, checker](Status status,
-                                                   std::string &&body) {
+            kFirebaseAudience, [context, final_continuation, checker](
+                                   Status status, std::string &&body) {
               std::string ruleset_id;
               if (status.ok()) {
                 checker->env_->LogDebug(
@@ -143,16 +147,17 @@ void AuthzChecker::CallNextRequest(
   auto checker = GetPtr();
   firebase_rules::HttpRequest http_request = request_handler_->GetHttpRequest();
   HttpFetch(http_request.url, http_request.method, http_request.body,
-            http_request.token_type,
+            http_request.token_type, http_request.audience,
             [continuation, checker](Status status, std::string &&body) {
 
               checker->env_->LogError(std::string("Response Body = ") + body);
-              if (status.ok()) {
+              if (status.ok() && !body.empty()) {
                 checker->request_handler_->UpdateResponse(body);
                 checker->CallNextRequest(continuation);
               } else {
-                checker->env_->LogError(std::string("Test API failed with ") +
-                                        status.ToString());
+                checker->env_->LogError(
+                    std::string("Test API failed with ") +
+                    (status.ok() ? "Empty Response" : status.ToString()));
                 status = Status(Code::INTERNAL, kFailedFirebaseTest);
                 continuation(status);
               }
@@ -187,6 +192,7 @@ void AuthzChecker::HttpFetch(
     const std::string &url, const std::string &method,
     const std::string &request_body,
     auth::ServiceAccountToken::JWT_TOKEN_TYPE token_type,
+    const std::string &audience,
     std::function<void(Status, std::string &&)> continuation) {
   env_->LogDebug(std::string("Issue HTTP Request to url :") + url +
                  " method : " + method + " body: " + request_body);
@@ -201,7 +207,7 @@ void AuthzChecker::HttpFetch(
   }
 
   request->set_method(method).set_url(url).set_auth_token(
-      sa_token_->GetAuthToken(token_type));
+      sa_token_->GetAuthToken(token_type, audience));
 
   if (!request_body.empty()) {
     request->set_header(kContentType, kApplication).set_body(request_body);
