@@ -59,11 +59,12 @@ void ServiceAccountToken::SetAudience(JWT_TOKEN_TYPE type,
   jwt_tokens_[type].set_audience(audience);
 }
 
-const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type) {
+const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type,
+                                                     bool ignore_cache) {
   // Uses authentication secret if available.
   if (!client_auth_secret_.empty()) {
     GOOGLE_CHECK(type >= 0 && type < JWT_TOKEN_TYPE_MAX);
-    if (!jwt_tokens_[type].is_valid(0)) {
+    if (ignore_cache || !jwt_tokens_[type].is_valid(0)) {
       Status status = jwt_tokens_[type].GenerateJwtToken(client_auth_secret_);
       if (!status.ok()) {
         if (env_) {
@@ -79,9 +80,9 @@ const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type) {
 }
 
 const std::string& ServiceAccountToken::GetAuthToken(
-    JWT_TOKEN_TYPE type, const std::string& audience) {
+    JWT_TOKEN_TYPE type, const std::string& audience, bool ignore_cache) {
   SetAudience(type, audience);
-  return GetAuthToken(type);
+  return GetAuthToken(type, ignore_cache);
 }
 
 Status ServiceAccountToken::JwtTokenInfo::GenerateJwtToken(

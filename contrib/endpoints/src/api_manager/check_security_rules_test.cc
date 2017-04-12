@@ -537,26 +537,30 @@ class CheckSecurityRulesFunctions : public CheckSecurityRulesTest,
     InSequence s;
 
     ExpectCall(release_url_, "GET", "", kRelease);
-    ExpectCall(
-        ruleset_test_url_, "POST", kFirstRequest,
-        BuildTestRulesetResponse(
-            false, {std::make_tuple("f1", "http://url1", "POST", kDummyBody, kDummyAudience)}));
+    ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+               BuildTestRulesetResponse(
+                   false, {std::make_tuple("f1", "http://url1", "POST",
+                                           kDummyBody, kDummyAudience)}));
 
     ExpectCall("http://url1", "POST", kDummyBody, kDummyBody);
-    ExpectCall(
-        ruleset_test_url_, "POST", kSecondRequest,
-        BuildTestRulesetResponse(
-            false, {std::make_tuple("f2", "http://url2", "GET", kDummyBody, kDummyAudience),
-                    std::make_tuple("f3", "https://url3", "GET", kDummyBody, kDummyAudience),
-                    std::make_tuple("f1", "http://url1", "POST", kDummyBody, kDummyAudience)}));
+    ExpectCall(ruleset_test_url_, "POST", kSecondRequest,
+               BuildTestRulesetResponse(
+                   false, {std::make_tuple("f2", "http://url2", "GET",
+                                           kDummyBody, kDummyAudience),
+                           std::make_tuple("f3", "https://url3", "GET",
+                                           kDummyBody, kDummyAudience),
+                           std::make_tuple("f1", "http://url1", "POST",
+                                           kDummyBody, kDummyAudience)}));
     ExpectCall("http://url2", "GET", kDummyBody, kDummyBody);
     ExpectCall("https://url3", "GET", kDummyBody, kDummyBody);
     ExpectCall(ruleset_test_url_, "POST", kThirdRequest,
                BuildTestRulesetResponse(
-                   GetParam(),
-                   {std::make_tuple("f2", "http://url2", "GET", kDummyBody, kDummyAudience),
-                    std::make_tuple("f3", "https://url3", "GET", kDummyBody, kDummyAudience),
-                    std::make_tuple("f1", "http://url1", "POST", kDummyBody, kDummyAudience)}));
+                   GetParam(), {std::make_tuple("f2", "http://url2", "GET",
+                                                kDummyBody, kDummyAudience),
+                                std::make_tuple("f3", "https://url3", "GET",
+                                                kDummyBody, kDummyAudience),
+                                std::make_tuple("f1", "http://url1", "POST",
+                                                kDummyBody, kDummyAudience)}));
   }
 };
 
@@ -622,20 +626,19 @@ TEST_P(CheckSecurityRulesBadFunctions, CheckBadFunctionArguments) {
   });
 }
 
-INSTANTIATE_TEST_CASE_P(CheckSecurityRulesBadFunctionArguments,
-                        CheckSecurityRulesBadFunctions,
-                        ::testing::Values(
-                            // Empty function name
-                            std::make_tuple("", "http://url1", "POST",
-                                            kDummyBody, kDummyAudience),
-                            // Argument count less than 3
-                            std::make_tuple("f1", "http://url1", "", "", kDummyAudience),
-                            // The url is not set
-                            std::make_tuple("f1", "", "POST", kDummyBody, kDummyAudience),
-                            // The url is not a http or https protocol
-                            std::make_tuple("f1", "ftp://url1", "POST", kDummyBody, kDummyAudience),
-                            // The audience is not present
-                            std::make_tuple("f1", "http://url1", "GET", kDummyBody, "")));
+INSTANTIATE_TEST_CASE_P(
+    CheckSecurityRulesBadFunctionArguments, CheckSecurityRulesBadFunctions,
+    ::testing::Values(
+        // Empty function name
+        std::make_tuple("", "http://url1", "POST", kDummyBody, kDummyAudience),
+        // Argument count less than 3
+        std::make_tuple("f1", "http://url1", "", "", kDummyAudience),
+        // The url is not set
+        std::make_tuple("f1", "", "POST", kDummyBody, kDummyAudience),
+        // The url is not a http or https protocol
+        std::make_tuple("f1", "ftp://url1", "POST", kDummyBody, kDummyAudience),
+        // The audience is not present
+        std::make_tuple("f1", "http://url1", "GET", kDummyBody, "")));
 }
 }  // namespace api_manager
 }  // namespace google

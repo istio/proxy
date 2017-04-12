@@ -310,7 +310,8 @@ Status FirebaseRequest::SetNextRequest() {
       auto call = *func_call_iter_;
       external_http_request_.url = call.args(0).string_value();
       external_http_request_.method = call.args(1).string_value();
-      external_http_request_.audience = call.args(call.args_size()-1).string_value();
+      external_http_request_.audience =
+          call.args(call.args_size() - 1).string_value();
       std::string body;
       status =
           utils::ProtoToJson(call.args(2), &body, utils::JsonOptions::DEFAULT);
@@ -354,11 +355,12 @@ Status FirebaseRequest::CheckFuncCallArgs(const FunctionCall &func) {
         std::string(func.function() + " Arguments 1 and 2 should be strings"));
   }
 
-  if (func.args(func.args_size()-1).kind_case() != google::protobuf::Value::kStringValue) {
+  if (func.args(func.args_size() - 1).kind_case() !=
+      google::protobuf::Value::kStringValue) {
     return Status(
         Code::INVALID_ARGUMENT,
         std::string(func.function() + "The last argument should be a string"
-                    "that specifies audience"));
+                                      "that specifies audience"));
   }
 
   if (!utils::IsHttpRequest(func.args(0).string_value())) {
