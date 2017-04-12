@@ -49,6 +49,9 @@ const std::string kFirebaseDeleteMethod = "delete";
 const std::string kFirebaseUpdateMethod = "update";
 const std::string kV1 = "/v1";
 const std::string kTestQuery = ":test?alt=json";
+const char kFirebaseAudience[] =
+    "https://staging-firebaserules.sandbox.googleapis.com/"
+    "google.firebase.rules.v1.FirebaseRulesService";
 
 void SetProtoValue(const std::string &key,
                    const ::google::protobuf::Value &value,
@@ -94,6 +97,8 @@ FirebaseRequest::FirebaseRequest(
   firebase_http_request_.method = kHttpPostMethod;
   firebase_http_request_.token_type =
       auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE;
+  firebase_http_request_.audience = kFirebaseAudience;
+
   external_http_request_.token_type =
       auth::ServiceAccountToken::JWT_TOKEN_FOR_AUTHORIZATION_SERVICE;
 
@@ -305,6 +310,7 @@ Status FirebaseRequest::SetNextRequest() {
       auto call = *func_call_iter_;
       external_http_request_.url = call.args(0).string_value();
       external_http_request_.method = call.args(1).string_value();
+      external_http_request_.audience = call.args(call.args_size()-1).string_value();
       std::string body;
       status =
           utils::ProtoToJson(call.args(2), &body, utils::JsonOptions::DEFAULT);
@@ -334,9 +340,9 @@ Status FirebaseRequest::CheckFuncCallArgs(const FunctionCall &func) {
 
   // We only support functions that call with three argument: HTTP URL, HTTP
   // method and body. The body can be empty
-  if (func.args_size() < 2 || func.args_size() > 3) {
+  if (func.args_size() < 3 || func.args_size() > 4) {
     std::ostringstream os;
-    os << func.function() << " Require 2 or 3 arguments. But has "
+    os << func.function() << " Require 3 or 4 arguments. But has "
        << func.args_size();
     return Status(Code::INVALID_ARGUMENT, os.str());
   }
@@ -346,6 +352,13 @@ Status FirebaseRequest::CheckFuncCallArgs(const FunctionCall &func) {
     return Status(
         Code::INVALID_ARGUMENT,
         std::string(func.function() + " Arguments 1 and 2 should be strings"));
+  }
+
+  if (func.args(func.args_size()-1).kind_case() != google::protobuf::Value::kStringValue) {
+    return Status(
+        Code::INVALID_ARGUMENT,
+        std::string(func.function() + "The last argument should be a string"
+                    "that specifies audience"));
   }
 
   if (!utils::IsHttpRequest(func.args(0).string_value())) {

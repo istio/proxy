@@ -43,7 +43,7 @@ using ::google::protobuf::RepeatedPtrField;
 // Tuple with arg<0> = function name
 // arg<1> = url, arg<2> = method, arg<3> = body.
 using FuncTuple =
-    std::tuple<std::string, std::string, std::string, std::string>;
+    std::tuple<std::string, std::string, std::string, std::string, std::string>;
 using ::google::api_manager::proto::TestRulesetResponse;
 using FunctionCall = TestRulesetResponse::TestResult::FunctionCall;
 
@@ -157,14 +157,16 @@ static const char kDummyBody[] = R"(
   "key" : "value"
 })";
 
+static const char kDummyAudience[] = "test-audience";
+
 const char kFirstRequest[] =
     R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","iat":1486575396,"iss":"https://accounts.google.com","exp":1486578996}}}}]}})";
 
 const char kSecondRequest[] =
-    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","azp":"limin-429@appspot.gserviceaccount.com","aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","iss":"https://accounts.google.com","email_verified":true,"iat":1486575396,"exp":1486578996}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}}]}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","azp":"limin-429@appspot.gserviceaccount.com","aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","iss":"https://accounts.google.com","email_verified":true,"iat":1486575396,"exp":1486578996}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
 
 const char kThirdRequest[] =
-    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"azp":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"email_verified":true,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iss":"https://accounts.google.com"}}},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}}],"result":{"value":{"key":"value"}}}]}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"azp":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"email_verified":true,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iss":"https://accounts.google.com"}}},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
 
 ::google::protobuf::Value ToValue(const std::string &arg) {
   ::google::protobuf::Value value;
@@ -197,7 +199,8 @@ MATCHER_P3(HTTPRequestMatches, url, method, body, "") {
 }
 
 FunctionCall BuildCall(const std::string &name, const std::string &url,
-                       const std::string &method, const std::string &body) {
+                       const std::string &method, const std::string &body,
+                       const std::string &audience) {
   FunctionCall func_call;
   func_call.set_function(name);
 
@@ -211,6 +214,10 @@ FunctionCall BuildCall(const std::string &name, const std::string &url,
 
   if (!body.empty()) {
     *(func_call.add_args()) = ToValue(body);
+  }
+
+  if (!audience.empty()) {
+    *(func_call.add_args()) = ToValue(audience);
   }
 
   return func_call;
@@ -386,6 +393,10 @@ class CheckSecurityRulesTest : public ::testing::Test {
         Status status = utils::JsonToProto(std::get<3>(http), &body);
         *(func->add_args()) = body;
       }
+
+      if (!std::get<4>(http).empty()) {
+        func->add_args()->set_string_value(std::get<4>(http));
+      }
     }
 
     std::string json_str;
@@ -529,23 +540,23 @@ class CheckSecurityRulesFunctions : public CheckSecurityRulesTest,
     ExpectCall(
         ruleset_test_url_, "POST", kFirstRequest,
         BuildTestRulesetResponse(
-            false, {std::make_tuple("f1", "http://url1", "POST", kDummyBody)}));
+            false, {std::make_tuple("f1", "http://url1", "POST", kDummyBody, kDummyAudience)}));
 
     ExpectCall("http://url1", "POST", kDummyBody, kDummyBody);
     ExpectCall(
         ruleset_test_url_, "POST", kSecondRequest,
         BuildTestRulesetResponse(
-            false, {std::make_tuple("f2", "http://url2", "GET", kDummyBody),
-                    std::make_tuple("f3", "https://url3", "GET", kDummyBody),
-                    std::make_tuple("f1", "http://url1", "POST", kDummyBody)}));
+            false, {std::make_tuple("f2", "http://url2", "GET", kDummyBody, kDummyAudience),
+                    std::make_tuple("f3", "https://url3", "GET", kDummyBody, kDummyAudience),
+                    std::make_tuple("f1", "http://url1", "POST", kDummyBody, kDummyAudience)}));
     ExpectCall("http://url2", "GET", kDummyBody, kDummyBody);
     ExpectCall("https://url3", "GET", kDummyBody, kDummyBody);
     ExpectCall(ruleset_test_url_, "POST", kThirdRequest,
                BuildTestRulesetResponse(
                    GetParam(),
-                   {std::make_tuple("f2", "http://url2", "GET", kDummyBody),
-                    std::make_tuple("f3", "https://url3", "GET", kDummyBody),
-                    std::make_tuple("f1", "http://url1", "POST", kDummyBody)}));
+                   {std::make_tuple("f2", "http://url2", "GET", kDummyBody, kDummyAudience),
+                    std::make_tuple("f3", "https://url3", "GET", kDummyBody, kDummyAudience),
+                    std::make_tuple("f1", "http://url1", "POST", kDummyBody, kDummyAudience)}));
   }
 };
 
@@ -616,13 +627,15 @@ INSTANTIATE_TEST_CASE_P(CheckSecurityRulesBadFunctionArguments,
                         ::testing::Values(
                             // Empty function name
                             std::make_tuple("", "http://url1", "POST",
-                                            kDummyBody),
-                            // Argument count less than 2
-                            std::make_tuple("f1", "", "", ""),
+                                            kDummyBody, kDummyAudience),
+                            // Argument count less than 3
+                            std::make_tuple("f1", "http://url1", "", "", kDummyAudience),
                             // The url is not set
-                            std::make_tuple("f1", "", "POST", kDummyBody),
+                            std::make_tuple("f1", "", "POST", kDummyBody, kDummyAudience),
                             // The url is not a http or https protocol
-                            std::make_tuple("f1", "ftp://url1", "BODY", "")));
+                            std::make_tuple("f1", "ftp://url1", "POST", kDummyBody, kDummyAudience),
+                            // The audience is not present
+                            std::make_tuple("f1", "http://url1", "GET", kDummyBody, "")));
 }
 }  // namespace api_manager
 }  // namespace google

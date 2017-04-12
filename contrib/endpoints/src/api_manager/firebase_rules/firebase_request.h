@@ -74,6 +74,7 @@ struct HttpRequest {
   std::string method;
   std::string body;
   auth::ServiceAccountToken::JWT_TOKEN_TYPE token_type;
+  std::string audience;
 };
 
 // A FirebaseRequest object understands the various http requests that need

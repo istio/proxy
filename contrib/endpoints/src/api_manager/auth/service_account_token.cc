@@ -78,6 +78,12 @@ const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type) {
   return access_token_.token();
 }
 
+const std::string& ServiceAccountToken::GetAuthToken(
+    JWT_TOKEN_TYPE type, const std::string& audience) {
+  SetAudience(type, audience);
+  return GetAuthToken(type);
+}
+
 Status ServiceAccountToken::JwtTokenInfo::GenerateJwtToken(
     const std::string& client_auth_secret) {
   // Make sure audience is set.
