@@ -40,6 +40,7 @@ class MockRequest : public Request {
   MOCK_METHOD0(GetGrpcResponseBytes, int64_t());
   MOCK_METHOD0(GetGrpcRequestMessageCounts, int64_t());
   MOCK_METHOD0(GetGrpcResponseMessageCounts, int64_t());
+  MOCK_METHOD1(GetHeaders, void(std::map<std::string, std::string> *));
 };
 
 }  // namespace api_manager

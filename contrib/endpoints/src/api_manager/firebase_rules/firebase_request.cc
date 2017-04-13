@@ -38,6 +38,7 @@ const std::string kToken = "token";
 const std::string kAuth = "auth";
 const std::string kPath = "path";
 const std::string kMethod = "method";
+const std::string kHeaders = "headers";
 const std::string kHttpGetMethod = "GET";
 const std::string kHttpPostMethod = "POST";
 const std::string kHttpHeadMethod = "HEAD";
@@ -180,6 +181,7 @@ Status FirebaseRequest::UpdateRulesetRequestBody(
   ::google::protobuf::Value claims;
   ::google::protobuf::Value path;
   ::google::protobuf::Value method;
+  ::google::protobuf::Value headers;
 
   Status status = utils::JsonToProto(context_->auth_claims(), &claims);
   if (!status.ok()) {
@@ -188,6 +190,10 @@ Status FirebaseRequest::UpdateRulesetRequestBody(
 
   auto *variables = test_case->mutable_request()->mutable_struct_value();
   auto *fields = variables->mutable_fields();
+  GetHeaders(&headers);
+  if (headers.kind_case() != ::google::protobuf::Value::kNullValue) {
+    (*fields)[kHeaders] = headers;
+  }
 
   path.set_string_value(context_->request()->GetRequestPath());
   (*fields)[kPath] = path;
@@ -214,6 +220,26 @@ Status FirebaseRequest::UpdateRulesetRequestBody(
   }
 
   return status;
+}
+
+void FirebaseRequest::GetHeaders(::google::protobuf::Value *headers) {
+  if (headers == nullptr) {
+    return;
+  }
+
+  std::map<std::string, std::string> req_headers;
+  context_->request()->GetHeaders(&req_headers);
+  if (req_headers.size() == 0) {
+    headers->set_null_value(::google::protobuf::NullValue::NULL_VALUE);
+    return;
+  }
+
+  auto *map = headers->mutable_struct_value()->mutable_fields();
+  for (auto const &kvp : req_headers) {
+    ::google::protobuf::Value value;
+    value.set_string_value(kvp.second);
+    (*map)[kvp.first] = value;
+  }
 }
 
 Status FirebaseRequest::ProcessTestRulesetResponse(const std::string &body) {
