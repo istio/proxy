@@ -134,6 +134,7 @@ class FirebaseRequest {
   std::vector<std::pair<proto::TestRulesetResponse::TestResult::FunctionCall,
                         std::string>>::const_iterator
   Find(const proto::TestRulesetResponse::TestResult::FunctionCall &func_call);
+  void GetHeaders(::google::protobuf::Value *value);
 
   // The API manager environment. Primarily used for logging.
   ApiManagerEnvInterface *env_;

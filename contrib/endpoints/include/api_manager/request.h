@@ -70,6 +70,13 @@ class Request {
   // Adds a header to backend. If the header exists, overwrite its value
   virtual utils::Status AddHeaderToBackend(const std::string &key,
                                            const std::string &value) = 0;
+
+  // Gets all HTTP request headers. This method cannot be made into a pure
+  // virtual function until all the implementations of this class also implement
+  // the GetHeaders method. Changing this to a pure virtual function should be
+  // done with a lot of care and making sure that all implementations of this
+  // class have implemented this method.
+  virtual void GetHeaders(std::map<std::string, std::string> *headers) = 0;
 };
 
 }  // namespace api_manager

@@ -160,13 +160,13 @@ static const char kDummyBody[] = R"(
 static const char kDummyAudience[] = "test-audience";
 
 const char kFirstRequest[] =
-    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","iat":1486575396,"iss":"https://accounts.google.com","exp":1486578996}}}}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"path":"/ListShelves","method":"get","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iat":1486575396,"iss":"https://accounts.google.com","exp":1486578996}}}}]}})";
 
 const char kSecondRequest[] =
-    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","azp":"limin-429@appspot.gserviceaccount.com","aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","iss":"https://accounts.google.com","email_verified":true,"iat":1486575396,"exp":1486578996}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","azp":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"email_verified":true,"aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","exp":1486578996,"iss":"https://accounts.google.com"}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
 
 const char kThirdRequest[] =
-    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"azp":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"email_verified":true,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iss":"https://accounts.google.com"}}},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"iss":"https://accounts.google.com","iat":1486575396,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","azp":"limin-429@appspot.gserviceaccount.com","email_verified":true}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
 
 ::google::protobuf::Value ToValue(const std::string &arg) {
   ::google::protobuf::Value value;
@@ -196,31 +196,6 @@ MATCHER_P3(HTTPRequestMatches, url, method, body, "") {
   }
 
   return MessageDifferencer::Equals(actual, expected);
-}
-
-FunctionCall BuildCall(const std::string &name, const std::string &url,
-                       const std::string &method, const std::string &body,
-                       const std::string &audience) {
-  FunctionCall func_call;
-  func_call.set_function(name);
-
-  if (!url.empty()) {
-    *(func_call.add_args()) = ToValue(url);
-  }
-
-  if (!method.empty()) {
-    *(func_call.add_args()) = ToValue(method);
-  }
-
-  if (!body.empty()) {
-    *(func_call.add_args()) = ToValue(body);
-  }
-
-  if (!audience.empty()) {
-    *(func_call.add_args()) = ToValue(audience);
-  }
-
-  return func_call;
 }
 
 // Get a server configuration that has auth disabled. This should disable
@@ -345,6 +320,14 @@ class CheckSecurityRulesTest : public ::testing::Test {
 
     ON_CALL(*raw_request_, GetRequestPath())
         .WillByDefault(Return(std::string("/ListShelves")));
+
+    ON_CALL(*raw_request_, GetHeaders(_))
+        .WillByDefault(
+            testing::Invoke([](std::map<std::string, std::string> *map) {
+              if (map != nullptr) {
+                (*map)["Pragma"] = "Custom value";
+              }
+            }));
 
     request_context_ = std::make_shared<context::RequestContext>(
         service_context_, std::move(request));
