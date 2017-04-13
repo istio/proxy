@@ -33,10 +33,10 @@ void CheckWorkflow::RegisterAll() {
   Register(FetchServiceAccountToken);
   // Authentication checks.
   Register(CheckAuth);
-  // Checks service control.
-  Register(CheckServiceControl);
   // Check Security Rules.
   Register(CheckSecurityRules);
+  // Checks service control.
+  Register(CheckServiceControl);
   // Quota control
   Register(QuotaControl);
 }
