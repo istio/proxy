@@ -72,7 +72,7 @@ class Request {
                                            const std::string &value) = 0;
 
   // Gets all HTTP request headers.
-  virtual void GetHeaders(std::map<std::string, std::string> *headers) { }
+  virtual void GetHeaders(std::map<std::string, std::string> *headers) {}
 };
 
 }  // namespace api_manager

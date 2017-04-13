@@ -160,13 +160,13 @@ static const char kDummyBody[] = R"(
 static const char kDummyAudience[] = "test-audience";
 
 const char kFirstRequest[] =
-  R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"path":"/ListShelves","method":"get","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iat":1486575396,"iss":"https://accounts.google.com","exp":1486578996}}}}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"path":"/ListShelves","method":"get","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","email_verified":true,"azp":"limin-429@appspot.gserviceaccount.com","sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iat":1486575396,"iss":"https://accounts.google.com","exp":1486578996}}}}]}})";
 
 const char kSecondRequest[] =
-  R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","azp":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"email_verified":true,"aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","exp":1486578996,"iss":"https://accounts.google.com"}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","azp":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"email_verified":true,"aud":"https://myfirebaseapp.appspot.com","sub":"113424383671131376652","exp":1486578996,"iss":"https://accounts.google.com"}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
 
 const char kThirdRequest[] =
-  R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"iss":"https://accounts.google.com","iat":1486575396,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","azp":"limin-429@appspot.gserviceaccount.com","email_verified":true}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
+    R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"headers":{"Pragma":"Custom value"},"auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"iss":"https://accounts.google.com","iat":1486575396,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","azp":"limin-429@appspot.gserviceaccount.com","email_verified":true}},"method":"get","path":"/ListShelves"},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
 
 ::google::protobuf::Value ToValue(const std::string &arg) {
   ::google::protobuf::Value value;
@@ -322,8 +322,8 @@ class CheckSecurityRulesTest : public ::testing::Test {
         .WillByDefault(Return(std::string("/ListShelves")));
 
     ON_CALL(*raw_request_, GetHeaders(_))
-        .WillByDefault(testing::Invoke(
-            [](std::map<std::string, std::string> *map) {
+        .WillByDefault(
+            testing::Invoke([](std::map<std::string, std::string> *map) {
               if (map != nullptr) {
                 (*map)["Pragma"] = "Custom value";
               }

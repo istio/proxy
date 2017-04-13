@@ -235,7 +235,7 @@ void FirebaseRequest::GetHeaders(::google::protobuf::Value *headers) {
   }
 
   auto *map = headers->mutable_struct_value()->mutable_fields();
-  for (auto const &kvp : req_headers) {
+  for (const auto &kvp : req_headers) {
     ::google::protobuf::Value value;
     value.set_string_value(kvp.second);
     (*map)[kvp.first] = value;
