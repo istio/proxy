@@ -76,7 +76,7 @@ class Request {
   // the GetHeaders method. Changing this to a pure virtual function should be
   // done with a lot of care and making sure that all implementations of this
   // class have implemented this method.
-  virtual void GetHeaders(std::map<std::string, std::string> *headers) {}
+  virtual void GetHeaders(std::map<std::string, std::string> *headers) = 0;
 };
 
 }  // namespace api_manager
