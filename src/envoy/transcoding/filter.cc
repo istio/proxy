@@ -81,7 +81,6 @@ class Instance : public Http::StreamFilter,
       // TODO: Check RequesStatus
     }
 
-
     return Http::FilterDataStatus::Continue;
   }
 
@@ -125,7 +124,6 @@ class Instance : public Http::StreamFilter,
       // TODO: Check ResponseStatus
     }
 
-
     return Http::FilterDataStatus::Continue;
   }
 
@@ -148,8 +146,8 @@ class Instance : public Http::StreamFilter,
   Http::StreamEncoderFilterCallbacks* encoder_callbacks_{nullptr};
 };
 
-} // namespace Transcoding
-} // namespace Grpc
+}  // namespace Transcoding
+}  // namespace Grpc
 
 namespace Server {
 namespace Configuration {
@@ -176,5 +174,5 @@ class TranscodingConfig : public HttpFilterConfigFactory {
 
 static RegisterHttpFilterConfigFactory<TranscodingConfig> register_;
 
-} // namespace Configuration
-} // namespace Server
+}  // namespace Configuration
+}  // namespace Server

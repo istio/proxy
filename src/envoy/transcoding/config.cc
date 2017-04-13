@@ -101,7 +101,8 @@ Status Config::CreateTranscoder(const Http::HeaderMap& headers,
   auto method = ResolveMethod(headers.Method()->value().c_str(),
                               headers.Path()->value().c_str());
   if (!method) {
-    return Status(Code::NOT_FOUND, "Could not resolve " + path + " to a method");
+    return Status(Code::NOT_FOUND,
+                  "Could not resolve " + path + " to a method");
   }
 
   RequestInfo request_info;
