@@ -236,18 +236,10 @@ void ExtractBindingsFromQueryParameters(
 
 }  // namespace
 
-PathMatcher::PathMatcher(PathMatcherBuilder& builder)
-    : default_root_ptr_(builder.default_root_ptr_->Clone()),
-      strict_service_matching_(builder.strict_service_matching_),
+PathMatcher::PathMatcher(PathMatcherBuilder&& builder)
+    : root_ptr_(std::move(builder.root_ptr_)),
       custom_verbs_(builder.custom_verbs_),
-      methods_(std::move(builder.methods_)) {
-  for (auto key_value : builder.root_ptr_map_) {
-    utils::InsertIfNotPresent(&root_ptr_map_, key_value.first,
-                              key_value.second->Clone());
-  }
-}
-
-PathMatcher::~PathMatcher() { utils::STLDeleteValues(&root_ptr_map_); }
+      methods_(std::move(builder.methods_)) {}
 
 // Lookup is a wrapper method for the recursive node Lookup. First, the wrapper
 // splits the request path into slash-separated path parts. Next, the method
@@ -263,26 +255,14 @@ MethodInfo* PathMatcher::Lookup(const string& http_method, const string& url,
                                 std::string* body_field_path) const {
   const vector<string> parts = ExtractRequestParts(url);
 
-  PathMatcherNode* root_ptr = utils::FindPtrOrNull(root_ptr_map_, "");
-
   // If service_name has not been registered to ESP and strict_service_matching_
   // is set to false, tries to lookup the method in all registered services.
-  if (root_ptr == nullptr && !strict_service_matching_) {
-    root_ptr = default_root_ptr_.get();
-  }
-  if (root_ptr == nullptr) {
+  if (root_ptr_ == nullptr) {
     return nullptr;
   }
 
   PathMatcherLookupResult lookup_result =
-      LookupInPathMatcherNode(*root_ptr, parts, http_method);
-  // In non strict match case, if not found from the map with the exact service,
-  // needs to try the default one again.
-  if (lookup_result.data == nullptr && !strict_service_matching_ &&
-      root_ptr != default_root_ptr_.get()) {
-    root_ptr = default_root_ptr_.get();
-    lookup_result = LookupInPathMatcherNode(*root_ptr, parts, http_method);
-  }
+      LookupInPathMatcherNode(*root_ptr_, parts, http_method);
   // Return nullptr if nothing is found or the result is marked for duplication.
   if (lookup_result.data == nullptr || lookup_result.is_multiple) {
     return nullptr;
@@ -307,16 +287,10 @@ MethodInfo* PathMatcher::Lookup(const string& http_method,
 }
 
 // Initializes the builder with a root Path Segment
-PathMatcherBuilder::PathMatcherBuilder(bool strict_service_matching)
-    : default_root_ptr_(new PathMatcherNode()),
-      strict_service_matching_(strict_service_matching) {}
-
-PathMatcherBuilder::~PathMatcherBuilder() {
-  utils::STLDeleteValues(&root_ptr_map_);
-}
+PathMatcherBuilder::PathMatcherBuilder() : root_ptr_(new PathMatcherNode()) {}
 
 PathMatcherPtr PathMatcherBuilder::Build() {
-  return PathMatcherPtr(new PathMatcher(*this));
+  return PathMatcherPtr(new PathMatcher(std::move(*this)));
 }
 
 void PathMatcherBuilder::InsertPathToNode(const PathMatcherNode::PathInfo& path,
@@ -350,13 +324,9 @@ bool PathMatcherBuilder::Register(string http_method, string http_template,
   method_data->method = method;
   method_data->variables = std::move(ht->Variables());
   method_data->body_field_path = std::move(body_field_path);
-  // Don't mark batch methods as duplicates, since we insert them into each
-  // service, and their graphs are all the same. We'll just use the first one
-  // as the default. This allows batch requests on any service name to work.
-  InsertPathToNode(path_info, method_data.get(), http_method, false,
-                   default_root_ptr_.get());
-  PathMatcherNode* root_ptr = utils::LookupOrInsertNew(&root_ptr_map_, "");
-  InsertPathToNode(path_info, method_data.get(), http_method, true, root_ptr);
+
+  InsertPathToNode(path_info, method_data.get(), http_method, true,
+                   root_ptr_.get());
   // Add the method_data to the methods_ vector for cleanup
   methods_.emplace_back(std::move(method_data));
   return true;

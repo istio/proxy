@@ -71,7 +71,7 @@ namespace {
 
 class PathMatcherTest : public ::testing::Test {
  protected:
-  PathMatcherTest() : builder_(false) {}
+  PathMatcherTest() {}
   ~PathMatcherTest() { utils::STLDeleteElements(&stored_methods_); }
 
   MethodInfo* AddPathWithBodyFieldPath(std::string http_method,

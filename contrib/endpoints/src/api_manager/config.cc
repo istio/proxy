@@ -439,7 +439,7 @@ std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
     return nullptr;
   }
   config->LoadServerConfig(env, server_config);
-  PathMatcherBuilder pmb(false /* strict_service_matching */);
+  PathMatcherBuilder pmb;
   // Load apis before http rules to store API versions
   if (!config->LoadRpcMethods(env, &pmb)) {
     return nullptr;
