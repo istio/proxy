@@ -34,7 +34,7 @@ class PathMatcherBuilder;  // required for PathMatcher constructor
 class PathMatcherNode;
 
 typedef std::shared_ptr<PathMatcher> PathMatcherPtr;
-typedef std::unordered_map<std::string, PathMatcherNode*>
+typedef std::unordered_map<std::string, PathMatcherNode *>
     ServiceRootPathMatcherNodeMap;
 
 // The immutable, thread safe PathMatcher stores a mapping from a combination of
@@ -58,18 +58,16 @@ class PathMatcher {
  public:
   // Creates a Path Matcher with a Builder by deep-copying the builder's root
   // node.
-  explicit PathMatcher(PathMatcherBuilder& builder);
+  explicit PathMatcher(PathMatcherBuilder &builder);
   ~PathMatcher();
 
-  MethodInfo* Lookup(const std::string& service_name,
-                     const std::string& http_method, const std::string& path,
-                     const std::string& query_params,
-                     std::vector<VariableBinding>* variable_bindings,
-                     std::string* body_field_path) const;
+  MethodInfo *Lookup(const std::string &http_method, const std::string &path,
+                     const std::string &query_params,
+                     std::vector<VariableBinding> *variable_bindings,
+                     std::string *body_field_path) const;
 
-  MethodInfo* Lookup(const std::string& service_name,
-                     const std::string& http_method,
-                     const std::string& path) const;
+  MethodInfo *Lookup(const std::string &http_method,
+                     const std::string &path) const;
 
  private:
   // A map between service names and their root path matcher nodes.
@@ -83,7 +81,7 @@ class PathMatcher {
   std::set<std::string> custom_verbs_;
   // Data we store per each registered method
   struct MethodData {
-    MethodInfo* method;
+    MethodInfo *method;
     std::vector<HttpTemplate::Variable> variables;
     std::string body_field_path;
   };
@@ -110,9 +108,8 @@ class PathMatcherBuilder {
   // Registrations are one-to-one. If this function is called more than once, it
   // replaces the existing method. Only the last registered method is stored.
   // Return false if path is an invalid http template.
-  bool Register(std::string service_name, std::string http_method,
-                std::string path, std::string body_field_path,
-                MethodInfo* method);
+  bool Register(std::string http_method, std::string path,
+                std::string body_field_path, MethodInfo *method);
 
   // Returns a shared_ptr to a thread safe PathMatcher that contains all
   // registered path-WrapperGraph pairs.
@@ -120,10 +117,9 @@ class PathMatcherBuilder {
 
  private:
   // Inserts a path to a PathMatcherNode.
-  void InsertPathToNode(const PathMatcherNode::PathInfo& path,
-                        void* method_data, std::string service_name,
-                        std::string http_method, bool mark_duplicates,
-                        PathMatcherNode* root_ptr);
+  void InsertPathToNode(const PathMatcherNode::PathInfo &path,
+                        void *method_data, std::string http_method,
+                        bool mark_duplicates, PathMatcherNode *root_ptr);
   // A map between service names and their root path matcher nodes.
   ServiceRootPathMatcherNodeMap root_ptr_map_;
   // A root node shared by all services, i.e. paths of all services will be

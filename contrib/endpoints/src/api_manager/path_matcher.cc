@@ -257,14 +257,13 @@ PathMatcher::~PathMatcher() { utils::STLDeleteValues(&root_ptr_map_); }
 // values parsed from the path.
 // TODO: cache results by adding get/put methods here (if profiling reveals
 // benefit)
-MethodInfo* PathMatcher::Lookup(const string& service_name,
-                                const string& http_method, const string& url,
+MethodInfo* PathMatcher::Lookup(const string& http_method, const string& url,
                                 const string& query_params,
                                 std::vector<VariableBinding>* variable_bindings,
                                 std::string* body_field_path) const {
   const vector<string> parts = ExtractRequestParts(url);
 
-  PathMatcherNode* root_ptr = utils::FindPtrOrNull(root_ptr_map_, service_name);
+  PathMatcherNode* root_ptr = utils::FindPtrOrNull(root_ptr_map_, "");
 
   // If service_name has not been registered to ESP and strict_service_matching_
   // is set to false, tries to lookup the method in all registered services.
@@ -302,10 +301,9 @@ MethodInfo* PathMatcher::Lookup(const string& service_name,
   return method_data->method;
 }
 
-MethodInfo* PathMatcher::Lookup(const string& service_name,
-                                const string& http_method,
+MethodInfo* PathMatcher::Lookup(const string& http_method,
                                 const string& path) const {
-  return Lookup(service_name, http_method, path, string(), nullptr, nullptr);
+  return Lookup(http_method, path, string(), nullptr, nullptr);
 }
 
 // Initializes the builder with a root Path Segment
@@ -323,12 +321,10 @@ PathMatcherPtr PathMatcherBuilder::Build() {
 
 void PathMatcherBuilder::InsertPathToNode(const PathMatcherNode::PathInfo& path,
                                           void* method_data,
-                                          string service_name,
-                                          string http_method,
+                                          std::string http_method,
                                           bool mark_duplicates,
                                           PathMatcherNode* root_ptr) {
-  if (root_ptr->InsertPath(path, http_method, service_name, method_data,
-                           mark_duplicates)) {
+  if (root_ptr->InsertPath(path, http_method, method_data, mark_duplicates)) {
     //    VLOG(3) << "Registered WrapperGraph for " <<
     //    http_template.as_string();
   } else {
@@ -338,9 +334,8 @@ void PathMatcherBuilder::InsertPathToNode(const PathMatcherNode::PathInfo& path,
 
 // This wrapper converts the |http_rule| into a HttpTemplate. Then, inserts the
 // template into the trie.
-bool PathMatcherBuilder::Register(string service_name, string http_method,
-                                  string http_template, string body_field_path,
-                                  MethodInfo* method) {
+bool PathMatcherBuilder::Register(string http_method, string http_template,
+                                  string body_field_path, MethodInfo* method) {
   std::unique_ptr<HttpTemplate> ht(HttpTemplate::Parse(http_template));
   if (nullptr == ht) {
     return false;
@@ -358,12 +353,10 @@ bool PathMatcherBuilder::Register(string service_name, string http_method,
   // Don't mark batch methods as duplicates, since we insert them into each
   // service, and their graphs are all the same. We'll just use the first one
   // as the default. This allows batch requests on any service name to work.
-  InsertPathToNode(path_info, method_data.get(), kDefaultServiceName,
-                   http_method, false, default_root_ptr_.get());
-  PathMatcherNode* root_ptr =
-      utils::LookupOrInsertNew(&root_ptr_map_, service_name);
-  InsertPathToNode(path_info, method_data.get(), service_name, http_method,
-                   true, root_ptr);
+  InsertPathToNode(path_info, method_data.get(), http_method, false,
+                   default_root_ptr_.get());
+  PathMatcherNode* root_ptr = utils::LookupOrInsertNew(&root_ptr_map_, "");
+  InsertPathToNode(path_info, method_data.get(), http_method, true, root_ptr);
   // Add the method_data to the methods_ vector for cleanup
   methods_.emplace_back(std::move(method_data));
   return true;
