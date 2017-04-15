@@ -102,7 +102,7 @@ class PathMatcherBuilder {
   bool Register(std::string http_method, std::string path,
                 std::string body_field_path, MethodInfo *method);
 
-  // Returns a shared_ptr to a thread safe PathMatcher that contains all
+  // Returns a unique_ptr to a thread safe PathMatcher that contains all
   // registered path-WrapperGraph pairs. Note the PathMatchBuilder instance
   // will be moved so cannot use after invoking Build().
   PathMatcherPtr Build();
