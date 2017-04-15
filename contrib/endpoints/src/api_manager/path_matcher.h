@@ -29,11 +29,7 @@
 namespace google {
 namespace api_manager {
 
-class PathMatcher;         // required for typedef PathMatcherPtr
 class PathMatcherBuilder;  // required for PathMatcher constructor
-class PathMatcherNode;
-
-typedef std::shared_ptr<PathMatcher> PathMatcherPtr;
 
 // The immutable, thread safe PathMatcher stores a mapping from a combination of
 // a service (host) name and a HTTP path to your method (MethodInfo*). It is
@@ -54,9 +50,6 @@ typedef std::shared_ptr<PathMatcher> PathMatcherPtr;
 //
 class PathMatcher {
  public:
-  // Creates a Path Matcher with a Builder by deep-copying the builder's root
-  // node.
-  explicit PathMatcher(PathMatcherBuilder &&builder);
   ~PathMatcher(){};
 
   MethodInfo *Lookup(const std::string &http_method, const std::string &path,
@@ -68,6 +61,9 @@ class PathMatcher {
                      const std::string &path) const;
 
  private:
+  // Creates a Path Matcher with a Builder by moving the builder's root node.
+  explicit PathMatcher(PathMatcherBuilder &&builder);
+
   // A root node shared by all services, i.e. paths of all services will be
   // registered to this node.
   std::unique_ptr<PathMatcherNode> root_ptr_;
@@ -87,6 +83,8 @@ class PathMatcher {
   friend class PathMatcherBuilder;
 };
 
+typedef std::unique_ptr<PathMatcher> PathMatcherPtr;
+
 // This PathMatcherBuilder is used to register path-WrapperGraph pairs and
 // instantiate an immutable, thread safe PathMatcher.
 //
@@ -105,7 +103,8 @@ class PathMatcherBuilder {
                 std::string body_field_path, MethodInfo *method);
 
   // Returns a shared_ptr to a thread safe PathMatcher that contains all
-  // registered path-WrapperGraph pairs.
+  // registered path-WrapperGraph pairs. Note the PathMatchBuilder instance
+  // will be moved so cannot use after invoking Build().
   PathMatcherPtr Build();
 
  private:

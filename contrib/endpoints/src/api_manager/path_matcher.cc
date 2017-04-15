@@ -238,7 +238,7 @@ void ExtractBindingsFromQueryParameters(
 
 PathMatcher::PathMatcher(PathMatcherBuilder&& builder)
     : root_ptr_(std::move(builder.root_ptr_)),
-      custom_verbs_(builder.custom_verbs_),
+      custom_verbs_(std::move(builder.custom_verbs_)),
       methods_(std::move(builder.methods_)) {}
 
 // Lookup is a wrapper method for the recursive node Lookup. First, the wrapper
