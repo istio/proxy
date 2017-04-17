@@ -316,6 +316,7 @@ TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaFailedTest) {
   EXPECT_CALL(*env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke(this, &QuotaAllocationTestWithRealClient::
                                  DoRunHTTPRequestAllocationFailed));
+
   QuotaRequestInfo info;
   info.metric_cost_vector = &metric_cost_vector_;
 
