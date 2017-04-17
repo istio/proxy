@@ -312,6 +312,22 @@ TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaTest) {
                  [](Status status) { ASSERT_TRUE(status.ok()); });
 }
 
+TEST_F(QuotaAllocationTestWithRealClient, AllocateQuotaFailedTest) {
+  EXPECT_CALL(*env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke(this, &QuotaAllocationTestWithRealClient::
+                                 DoRunHTTPRequestAllocationFailed));
+  QuotaRequestInfo info;
+  info.metric_cost_vector = &metric_cost_vector_;
+
+  FillOperationInfo(&info);
+  sc_lib_->Quota(info, nullptr, [info, this](Status status) {
+    EXPECT_EQ(status.code(), Code::OK);
+    sc_lib_->Quota(info, nullptr, [](Status status) {
+      EXPECT_EQ(status.code(), Code::RESOURCE_EXHAUSTED);
+    });
+  });
+}
+
 TEST(AggregatedServiceControlTest, Create) {
   // Verify that invalid service config yields nullptr.
   ::google::api::Service
