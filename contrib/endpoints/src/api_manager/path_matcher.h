@@ -55,12 +55,11 @@ class PathMatcher {
   ~PathMatcher(){};
 
   Method Lookup(const std::string &http_method, const std::string &path,
-                     const std::string &query_params,
-                     std::vector<VariableBinding> *variable_bindings,
-                     std::string *body_field_path) const;
+                const std::string &query_params,
+                std::vector<VariableBinding> *variable_bindings,
+                std::string *body_field_path) const;
 
-  Method Lookup(const std::string &http_method,
-                     const std::string &path) const;
+  Method Lookup(const std::string &http_method, const std::string &path) const;
 
  private:
   // Creates a Path Matcher with a Builder by moving the builder's root node.

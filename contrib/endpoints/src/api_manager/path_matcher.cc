@@ -25,33 +25,10 @@
 #include <string>
 #include <vector>
 
-using std::string;
-using std::vector;
-
 namespace google {
 namespace api_manager {
 
 namespace {
-
-// Converts a request path into a format that can be used to perform a request
-// lookup in the PathMatcher trie. This utility method sanitizes the request
-// path and then splits the path into slash separated parts. Returns an empty
-// vector if the sanitized path is "/".
-//
-// custom_verbs is a set of configured custom verbs that are used to match
-// against any custom verbs in request path. If the request_path contains a
-// custom verb not found in custom_verbs, it is treated as a part of the path.
-//
-// - Strips off query string: "/a?foo=bar" --> "/a"
-// - Collapses extra slashes: "///" --> "/"
-vector<string> ExtractRequestParts(string req_path);
-
-// Looks up on a PathMatcherNode.
-PathMatcherLookupResult LookupInPathMatcherNode(const PathMatcherNode& root,
-                                                const vector<string>& parts,
-                                                const HttpMethod& http_method);
-
-PathMatcherNode::PathInfo TransformHttpTemplate(const HttpTemplate& ht);
 
 std::vector<std::string>& split(const std::string& s, char delim,
                                 std::vector<std::string>& elems) {
@@ -116,8 +93,8 @@ inline int hex_digit_to_int(char c) {
 //
 // If the next three characters are an escaped character then this function will
 // also return what character is escaped.
-bool GetEscapedChar(const string& src, size_t i, bool unescape_reserved_chars,
-                    char* out) {
+bool GetEscapedChar(const std::string& src, size_t i,
+                    bool unescape_reserved_chars, char* out) {
   if (i + 2 < src.size() && src[i] == '%') {
     if (ascii_isxdigit(src[i + 1]) && ascii_isxdigit(src[i + 2])) {
       char c =
@@ -211,7 +188,7 @@ void ExtractBindingsFromQueryParameters(
   // Query parameters may also contain system parameters such as `api_key`.
   // We'll need to ignore these. Example:
   //      book.id=123&book.author=Neal%20Stephenson&api_key=AIzaSyAz7fhBkC35D2M
-  vector<std::string> params;
+  std::vector<std::string> params;
   split(query_params, '&', params);
   for (const auto& param : params) {
     size_t pos = param.find('=');
@@ -232,6 +209,62 @@ void ExtractBindingsFromQueryParameters(
   }
 }
 
+// Converts a request path into a format that can be used to perform a request
+// lookup in the PathMatcher trie. This utility method sanitizes the request
+// path and then splits the path into slash separated parts. Returns an empty
+// vector if the sanitized path is "/".
+//
+// custom_verbs is a set of configured custom verbs that are used to match
+// against any custom verbs in request path. If the request_path contains a
+// custom verb not found in custom_verbs, it is treated as a part of the path.
+//
+// - Strips off query string: "/a?foo=bar" --> "/a"
+// - Collapses extra slashes: "///" --> "/"
+std::vector<std::string> ExtractRequestParts(std::string path) {
+  // Remove query parameters.
+  path = path.substr(0, path.find_first_of('?'));
+
+  // Replace last ':' with '/' to handle custom verb.
+  // But not for /foo:bar/const.
+  std::size_t last_colon_pos = path.find_last_of(':');
+  std::size_t last_slash_pos = path.find_last_of('/');
+  if (last_colon_pos != std::string::npos && last_colon_pos > last_slash_pos) {
+    path[last_colon_pos] = '/';
+  }
+
+  std::vector<std::string> result;
+  if (path.size() > 0) {
+    split(path.substr(1), '/', result);
+  }
+  // Removes all trailing empty parts caused by extra "/".
+  while (!result.empty() && (*(--result.end())).empty()) {
+    result.pop_back();
+  }
+  return result;
+}
+
+// Looks up on a PathMatcherNode.
+PathMatcherLookupResult LookupInPathMatcherNode(
+    const PathMatcherNode& root, const std::vector<std::string>& parts,
+    const HttpMethod& http_method) {
+  PathMatcherLookupResult result;
+  root.LookupPath(parts.begin(), parts.end(), http_method, &result);
+  return result;
+}
+
+PathMatcherNode::PathInfo TransformHttpTemplate(const HttpTemplate& ht) {
+  PathMatcherNode::PathInfo::Builder builder;
+
+  for (const std::string& part : ht.segments()) {
+    builder.AppendLiteralNode(part);
+  }
+  if (!ht.verb().empty()) {
+    builder.AppendLiteralNode(ht.verb());
+  }
+
+  return builder.Build();
+}
+
 }  // namespace
 
 template <class Method>
@@ -249,11 +282,12 @@ PathMatcher<Method>::PathMatcher(PathMatcherBuilder<Method>&& builder)
 // TODO: cache results by adding get/put methods here (if profiling reveals
 // benefit)
 template <class Method>
-Method PathMatcher<Method>::Lookup(const string& http_method, const string& url,
-                                const string& query_params,
-                                std::vector<VariableBinding>* variable_bindings,
-                                std::string* body_field_path) const {
-  const vector<string> parts = ExtractRequestParts(url);
+Method PathMatcher<Method>::Lookup(
+    const std::string& http_method, const std::string& url,
+    const std::string& query_params,
+    std::vector<VariableBinding>* variable_bindings,
+    std::string* body_field_path) const {
+  const std::vector<std::string> parts = ExtractRequestParts(url);
 
   // If service_name has not been registered to ESP and strict_service_matching_
   // is set to false, tries to lookup the method in all registered services.
@@ -282,14 +316,15 @@ Method PathMatcher<Method>::Lookup(const string& http_method, const string& url,
 }
 
 template <class Method>
-Method PathMatcher<Method>::Lookup(const string& http_method,
-                                const string& path) const {
-  return Lookup(http_method, path, string(), nullptr, nullptr);
+Method PathMatcher<Method>::Lookup(const std::string& http_method,
+                                   const std::string& path) const {
+  return Lookup(http_method, path, std::string(), nullptr, nullptr);
 }
 
 // Initializes the builder with a root Path Segment
 template <class Method>
-PathMatcherBuilder<Method>::PathMatcherBuilder() : root_ptr_(new PathMatcherNode()) {}
+PathMatcherBuilder<Method>::PathMatcherBuilder()
+    : root_ptr_(new PathMatcherNode()) {}
 
 template <class Method>
 PathMatcherPtr<Method> PathMatcherBuilder<Method>::Build() {
@@ -297,11 +332,9 @@ PathMatcherPtr<Method> PathMatcherBuilder<Method>::Build() {
 }
 
 template <class Method>
-void PathMatcherBuilder<Method>::InsertPathToNode(const PathMatcherNode::PathInfo& path,
-                                          void* method_data,
-                                          std::string http_method,
-                                          bool mark_duplicates,
-                                          PathMatcherNode* root_ptr) {
+void PathMatcherBuilder<Method>::InsertPathToNode(
+    const PathMatcherNode::PathInfo& path, void* method_data,
+    std::string http_method, bool mark_duplicates, PathMatcherNode* root_ptr) {
   if (root_ptr->InsertPath(path, http_method, method_data, mark_duplicates)) {
     //    VLOG(3) << "Registered WrapperGraph for " <<
     //    http_template.as_string();
@@ -313,8 +346,10 @@ void PathMatcherBuilder<Method>::InsertPathToNode(const PathMatcherNode::PathInf
 // This wrapper converts the |http_rule| into a HttpTemplate. Then, inserts the
 // template into the trie.
 template <class Method>
-bool PathMatcherBuilder<Method>::Register(string http_method, string http_template,
-                                  string body_field_path, Method method) {
+bool PathMatcherBuilder<Method>::Register(std::string http_method,
+                                          std::string http_template,
+                                          std::string body_field_path,
+                                          Method method) {
   std::unique_ptr<HttpTemplate> ht(HttpTemplate::Parse(http_template));
   if (nullptr == ht) {
     return false;
@@ -337,56 +372,8 @@ bool PathMatcherBuilder<Method>::Register(string http_method, string http_templa
   return true;
 }
 
-namespace {
-
-vector<string> ExtractRequestParts(string path) {
-  // Remove query parameters.
-  path = path.substr(0, path.find_first_of('?'));
-
-  // Replace last ':' with '/' to handle custom verb.
-  // But not for /foo:bar/const.
-  std::size_t last_colon_pos = path.find_last_of(':');
-  std::size_t last_slash_pos = path.find_last_of('/');
-  if (last_colon_pos != std::string::npos && last_colon_pos > last_slash_pos) {
-    path[last_colon_pos] = '/';
-  }
-
-  vector<string> result;
-  if (path.size() > 0) {
-    split(path.substr(1), '/', result);
-  }
-  // Removes all trailing empty parts caused by extra "/".
-  while (!result.empty() && (*(--result.end())).empty()) {
-    result.pop_back();
-  }
-  return result;
-}
-
-PathMatcherLookupResult LookupInPathMatcherNode(const PathMatcherNode& root,
-                                                const vector<string>& parts,
-                                                const HttpMethod& http_method) {
-  PathMatcherLookupResult result;
-  root.LookupPath(parts.begin(), parts.end(), http_method, &result);
-  return result;
-}
-
-PathMatcherNode::PathInfo TransformHttpTemplate(const HttpTemplate& ht) {
-  PathMatcherNode::PathInfo::Builder builder;
-
-  for (const string& part : ht.segments()) {
-    builder.AppendLiteralNode(part);
-  }
-  if (!ht.verb().empty()) {
-    builder.AppendLiteralNode(ht.verb());
-  }
-
-  return builder.Build();
-}
-
-}  // namespace
-
-template class PathMatcher<MethodInfo *>;
-template class PathMatcherBuilder<MethodInfo *>;
+template class PathMatcher<MethodInfo*>;
+template class PathMatcherBuilder<MethodInfo*>;
 
 }  // namespace api_manager
 }  // namespace google
