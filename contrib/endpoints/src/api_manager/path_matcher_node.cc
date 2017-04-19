@@ -61,8 +61,7 @@ typename Collection::value_type::second_type& LookupOrInsertNew(
     Collection* const collection,
     const typename Collection::value_type::first_type& key) {
   typedef typename Collection::value_type::second_type Mapped;
-  typedef
-      typename util::gtl::map_util_internal::PointeeType<Mapped>::type Element;
+  typedef typename Mapped::element_type Element;
   std::pair<typename Collection::iterator, bool> ret =
       collection->insert(typename Collection::value_type(key, Mapped()));
   if (ret.second) {
