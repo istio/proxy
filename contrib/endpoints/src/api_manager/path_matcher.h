@@ -29,6 +29,7 @@
 namespace google {
 namespace api_manager {
 
+template <class Method>
 class PathMatcherBuilder;  // required for PathMatcher constructor
 
 // The immutable, thread safe PathMatcher stores a mapping from a combination of
@@ -41,28 +42,29 @@ class PathMatcherBuilder;  // required for PathMatcher constructor
 // 1) building the PathMatcher:
 //     PathMatcherBuilder builder(false);
 //     for each (service_name, http_method, url_path, associated method)
-//         builder.register(service_name, http_method, url_path, datat);
+//         builder.register(service_name, http_method, url_path, data);
 //     PathMater matcher = builder.Build();
 // 2) lookup:
 //      MethodInfo * method = matcher.Lookup(service_name, http_method,
 //                                           url_path);
 //      if (method == nullptr)  failed to find it.
 //
+template <class Method>
 class PathMatcher {
  public:
   ~PathMatcher(){};
 
-  MethodInfo *Lookup(const std::string &http_method, const std::string &path,
+  Method Lookup(const std::string &http_method, const std::string &path,
                      const std::string &query_params,
                      std::vector<VariableBinding> *variable_bindings,
                      std::string *body_field_path) const;
 
-  MethodInfo *Lookup(const std::string &http_method,
+  Method Lookup(const std::string &http_method,
                      const std::string &path) const;
 
  private:
   // Creates a Path Matcher with a Builder by moving the builder's root node.
-  explicit PathMatcher(PathMatcherBuilder &&builder);
+  explicit PathMatcher(PathMatcherBuilder<Method> &&builder);
 
   // A root node shared by all services, i.e. paths of all services will be
   // registered to this node.
@@ -71,7 +73,7 @@ class PathMatcher {
   std::set<std::string> custom_verbs_;
   // Data we store per each registered method
   struct MethodData {
-    MethodInfo *method;
+    Method method;
     std::vector<HttpTemplate::Variable> variables;
     std::string body_field_path;
   };
@@ -80,15 +82,17 @@ class PathMatcher {
   std::vector<std::unique_ptr<MethodData>> methods_;
 
  private:
-  friend class PathMatcherBuilder;
+  friend class PathMatcherBuilder<Method>;
 };
 
-typedef std::unique_ptr<PathMatcher> PathMatcherPtr;
+template <class Method>
+using PathMatcherPtr = std::unique_ptr<PathMatcher<Method>>;
 
 // This PathMatcherBuilder is used to register path-WrapperGraph pairs and
 // instantiate an immutable, thread safe PathMatcher.
 //
 // The PathMatcherBuilder itself is NOT THREAD SAFE.
+template <class Method>
 class PathMatcherBuilder {
  public:
   PathMatcherBuilder();
@@ -100,12 +104,12 @@ class PathMatcherBuilder {
   // replaces the existing method. Only the last registered method is stored.
   // Return false if path is an invalid http template.
   bool Register(std::string http_method, std::string path,
-                std::string body_field_path, MethodInfo *method);
+                std::string body_field_path, Method method);
 
   // Returns a unique_ptr to a thread safe PathMatcher that contains all
   // registered path-WrapperGraph pairs. Note the PathMatchBuilder instance
   // will be moved so cannot use after invoking Build().
-  PathMatcherPtr Build();
+  PathMatcherPtr<Method> Build();
 
  private:
   // Inserts a path to a PathMatcherNode.
@@ -120,10 +124,10 @@ class PathMatcherBuilder {
   // be multiple templates in different services on a server. Consider moving
   // this to PathMatcherNode.
   std::set<std::string> custom_verbs_;
-  typedef PathMatcher::MethodData MethodData;
+  typedef typename PathMatcher<Method>::MethodData MethodData;
   std::vector<std::unique_ptr<MethodData>> methods_;
 
-  friend class PathMatcher;
+  friend class PathMatcher<Method>;
 };
 
 }  // namespace api_manager

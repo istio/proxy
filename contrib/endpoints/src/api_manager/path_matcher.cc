@@ -33,8 +33,6 @@ namespace api_manager {
 
 namespace {
 
-const char kDefaultServiceName[] = "Default";
-
 // Converts a request path into a format that can be used to perform a request
 // lookup in the PathMatcher trie. This utility method sanitizes the request
 // path and then splits the path into slash separated parts. Returns an empty
@@ -236,7 +234,8 @@ void ExtractBindingsFromQueryParameters(
 
 }  // namespace
 
-PathMatcher::PathMatcher(PathMatcherBuilder&& builder)
+template <class Method>
+PathMatcher<Method>::PathMatcher(PathMatcherBuilder<Method>&& builder)
     : root_ptr_(std::move(builder.root_ptr_)),
       custom_verbs_(std::move(builder.custom_verbs_)),
       methods_(std::move(builder.methods_)) {}
@@ -249,7 +248,8 @@ PathMatcher::PathMatcher(PathMatcherBuilder&& builder)
 // values parsed from the path.
 // TODO: cache results by adding get/put methods here (if profiling reveals
 // benefit)
-MethodInfo* PathMatcher::Lookup(const string& http_method, const string& url,
+template <class Method>
+Method PathMatcher<Method>::Lookup(const string& http_method, const string& url,
                                 const string& query_params,
                                 std::vector<VariableBinding>* variable_bindings,
                                 std::string* body_field_path) const {
@@ -281,19 +281,23 @@ MethodInfo* PathMatcher::Lookup(const string& http_method, const string& url,
   return method_data->method;
 }
 
-MethodInfo* PathMatcher::Lookup(const string& http_method,
+template <class Method>
+Method PathMatcher<Method>::Lookup(const string& http_method,
                                 const string& path) const {
   return Lookup(http_method, path, string(), nullptr, nullptr);
 }
 
 // Initializes the builder with a root Path Segment
-PathMatcherBuilder::PathMatcherBuilder() : root_ptr_(new PathMatcherNode()) {}
+template <class Method>
+PathMatcherBuilder<Method>::PathMatcherBuilder() : root_ptr_(new PathMatcherNode()) {}
 
-PathMatcherPtr PathMatcherBuilder::Build() {
-  return PathMatcherPtr(new PathMatcher(std::move(*this)));
+template <class Method>
+PathMatcherPtr<Method> PathMatcherBuilder<Method>::Build() {
+  return PathMatcherPtr<Method>(new PathMatcher<Method>(std::move(*this)));
 }
 
-void PathMatcherBuilder::InsertPathToNode(const PathMatcherNode::PathInfo& path,
+template <class Method>
+void PathMatcherBuilder<Method>::InsertPathToNode(const PathMatcherNode::PathInfo& path,
                                           void* method_data,
                                           std::string http_method,
                                           bool mark_duplicates,
@@ -308,8 +312,9 @@ void PathMatcherBuilder::InsertPathToNode(const PathMatcherNode::PathInfo& path,
 
 // This wrapper converts the |http_rule| into a HttpTemplate. Then, inserts the
 // template into the trie.
-bool PathMatcherBuilder::Register(string http_method, string http_template,
-                                  string body_field_path, MethodInfo* method) {
+template <class Method>
+bool PathMatcherBuilder<Method>::Register(string http_method, string http_template,
+                                  string body_field_path, Method method) {
   std::unique_ptr<HttpTemplate> ht(HttpTemplate::Parse(http_template));
   if (nullptr == ht) {
     return false;
@@ -379,6 +384,9 @@ PathMatcherNode::PathInfo TransformHttpTemplate(const HttpTemplate& ht) {
 }
 
 }  // namespace
+
+template class PathMatcher<MethodInfo *>;
+template class PathMatcherBuilder<MethodInfo *>;
 
 }  // namespace api_manager
 }  // namespace google
