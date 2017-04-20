@@ -56,7 +56,6 @@ bool operator==(const Binding& b1, const Binding& b2) {
   return b1.field_path == b2.field_path && b1.value == b2.value;
 }
 
-
 std::string FieldPathToString(const FieldPath& fp) {
   std::string s;
   for (const auto& f : fp) {
