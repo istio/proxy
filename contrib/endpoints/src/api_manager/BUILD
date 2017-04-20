@@ -122,8 +122,6 @@ cc_library(
     ],
     deps = [
         ":http_template",
-        # TODO: remove this deps
-        "//contrib/endpoints/src/api_manager/utils",
     ],
 )
 
