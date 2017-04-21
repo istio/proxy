@@ -54,7 +54,7 @@ void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
   set<string> &audiences = issuer_audiences_map_[iss];
 
   // Audience list is comma-delimited with possible white spaces.
-  char *tokens = strtok(const_cast<char *>(audiences_list.c_str()), " ,");
+  char *tokens = strtok(&audiences_list[0], " ,");
   while (tokens != nullptr) {
     std::string aud = utils::GetUrlContent(tokens);
     if (!aud.empty()) {
