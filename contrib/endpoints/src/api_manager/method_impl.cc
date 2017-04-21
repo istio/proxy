@@ -16,6 +16,7 @@
 //
 #include "contrib/endpoints/src/api_manager/method_impl.h"
 #include <cstring>
+#include <string.h>
 #include "contrib/endpoints/src/api_manager/utils/url_util.h"
 
 using std::map;
@@ -52,8 +53,9 @@ void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
   }
 
   set<string> &audiences = issuer_audiences_map_[iss];
-  char *audiences_copy = new char[audiences_list.length()+1];
-  std::strcpy(audiences_copy, audiences_list.c_str());
+  char audiences_copy[audiences_list.length()+1];
+  std::strncpy(audiences_copy, audiences_list.c_str(),
+                audiences_list.length()+1);
 
   // Audience list is comma-delimited with possible white spaces.
   char *tokens = std::strtok(audiences_copy, " ,");
