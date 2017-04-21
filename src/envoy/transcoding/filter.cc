@@ -55,7 +55,7 @@ class Instance : public Http::StreamFilter,
       headers.insertContentType().value(kGrpcContentType);
       headers.addStatic(kTeHeader, kTeTrailers);
     } else {
-      log().debug("No transcoding");
+      log().debug("No transcoding" + status.ToString());
     }
 
     return Http::FilterHeadersStatus::Continue;

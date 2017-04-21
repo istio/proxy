@@ -82,16 +82,36 @@ Config::Config(const Json::Object& config, Server::Instance& server) {
   if (!descriptor_set.ParseFromIstream(&input)) {
     throw EnvoyException("Unable to parse proto descriptor");
   }
-  log().debug("transcoding filter loaded");
+
   for (const auto& file : descriptor_set.file()) {
     if (descriptor_pool_.BuildFile(file) == nullptr) {
       throw EnvoyException("Unable to parse proto descriptor");
     }
   }
+
+  google::api_manager::PathMatcherBuilder<MethodInfo*> pmb;
+
+  for (const auto& service_name : config.getStringArray("services")) {
+    auto service = descriptor_pool_.FindServiceByName(service_name);
+    for (int i = 0; i < service->method_count(); ++i) {
+      auto method = service->method(i);
+
+      auto method_info = new MethodInfo(method);
+      methods_.emplace_back(method_info);
+
+      // TODO: Look for options
+      pmb.Register("POST", "/" + service->full_name() + "/" + method->name(), "", method_info);
+    }
+  }
+
+  path_matcher_ = pmb.Build();
+
   resolver_.reset(google::protobuf::util::NewTypeResolverForDescriptorPool(
       kTypeUrlPrefix, &descriptor_pool_));
   info_.reset(google::protobuf::util::converter::TypeInfo::NewTypeInfo(
       resolver_.get()));
+
+  log().debug("transcoding filter loaded");
 }
 
 Status Config::CreateTranscoder(const Http::HeaderMap& headers,
@@ -100,12 +120,13 @@ Status Config::CreateTranscoder(const Http::HeaderMap& headers,
                                 std::unique_ptr<Transcoder>* transcoder) {
   std::string path = headers.Path()->value().c_str();
 
-  auto method = ResolveMethod(headers.Method()->value().c_str(),
-                              headers.Path()->value().c_str());
-  if (!method) {
+  auto method_info = path_matcher_->Lookup(headers.Method()->value().c_str(), path);
+  if (!method_info) {
     return Status(Code::NOT_FOUND,
                   "Could not resolve " + path + " to a method");
   }
+
+  auto method = method_info->method();
 
   RequestInfo request_info;
   auto status = MethodToRequestInfo(method, &request_info);
@@ -144,25 +165,6 @@ Status Config::MethodToRequestInfo(
   }
 
   return Status::OK;
-}
-
-const google::protobuf::MethodDescriptor* Config::ResolveMethod(
-    const std::string& method, const std::string& path) {
-  auto sep = path.find('/', 1);
-  if (sep == std::string::npos) {
-    log().debug("No separator");
-    return nullptr;
-  }
-
-  // TODO: support path bindings
-  std::string service_name = path.substr(1, sep - 1);
-  auto service = descriptor_pool_.FindServiceByName(service_name);
-  if (service == nullptr) {
-    return nullptr;
-  }
-
-  std::string method_name = path.substr(sep + 1);
-  return service->FindMethodByName(method_name);
 }
 
 }  // namespace Transcoding

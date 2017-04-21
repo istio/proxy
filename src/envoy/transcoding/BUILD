@@ -48,6 +48,8 @@ cc_library(
     ],
     deps = [
         ":envoy_input_stream",
+        # TODO: Move path_matcher out
+        "//contrib/endpoints/src/api_manager:path_matcher",
         "//contrib/endpoints/src/grpc/transcoding",
         "@envoy//source/exe:envoy_common_lib",
     ],
