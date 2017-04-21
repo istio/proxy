@@ -82,7 +82,7 @@ class MethodInfoImpl : public MethodInfo {
   // Adds allowed audiences (comma delimated, no space) for the issuer.
   // audiences_list can be empty.
   void addAudiencesForIssuer(const std::string &issuer,
-                             const std::string &audiences_list);
+                             const std::string audiences_list);
   void set_auth(bool v) { auth_ = v; }
   void set_allow_unregistered_calls(bool v) { allow_unregistered_calls_ = v; }
 

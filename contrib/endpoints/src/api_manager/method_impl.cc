@@ -42,7 +42,7 @@ MethodInfoImpl::MethodInfoImpl(const string &name, const string &api_name,
       response_streaming_(false) {}
 
 void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
-                                           const string &audiences_list) {
+                                           string audiences_list) {
   if (issuer.empty()) {
     return;
   }
