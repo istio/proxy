@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "contrib/endpoints/src/api_manager/method_impl.h"
-#include <string.h>
+#include <cstring>
 #include "contrib/endpoints/src/api_manager/utils/url_util.h"
 
 using std::map;
@@ -42,7 +42,7 @@ MethodInfoImpl::MethodInfoImpl(const string &name, const string &api_name,
       response_streaming_(false) {}
 
 void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
-                                           string audiences_list) {
+                                           const string &audiences_list) {
   if (issuer.empty()) {
     return;
   }
@@ -52,15 +52,17 @@ void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
   }
 
   set<string> &audiences = issuer_audiences_map_[iss];
+  char *audiences_copy = new char[audiences_list.length()+1];
+  std::strcpy(audiences_copy, audiences_list.c_str());
 
   // Audience list is comma-delimited with possible white spaces.
-  char *tokens = strtok(&audiences_list[0], " ,");
+  char *tokens = std::strtok(audiences_copy, " ,");
   while (tokens != nullptr) {
     std::string aud = utils::GetUrlContent(tokens);
     if (!aud.empty()) {
       audiences.insert(aud);
     }
-    tokens = strtok(nullptr, " ,");
+    tokens = std::strtok(nullptr, " ,");
   }
 }
 
