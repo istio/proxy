@@ -40,6 +40,6 @@ gcloud docker -- push "${IMAGE_NAME}"
 
 IMAGE_LATEST="${IMAGE_PREFIX}:latest"
 
-docker tag -f "${IMAGE_NAME}" "${IMAGE_LATEST}"
+docker tag "${IMAGE_NAME}" "${IMAGE_LATEST}"
 
 gcloud docker -- push "${IMAGE_LATEST}"
