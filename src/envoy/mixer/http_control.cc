@@ -175,7 +175,6 @@ HttpControl::HttpControl(const MixerConfig& mixer_config)
   MixerClientOptions options(GetCheckOptions(mixer_config),
                              GetQuotaOptions(mixer_config));
   options.mixer_server = mixer_config_.mixer_server;
-  log().debug("client options: quota_cache: {}", options.quota_options.num_entries);
   mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
 
   mixer_config_.ExtractQuotaAttributes(&quota_attributes_);
