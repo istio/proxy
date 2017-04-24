@@ -44,7 +44,6 @@ func TestQuotaCache(t *testing.T) {
 	// Issues a GET echo request with 0 size body
 	tag := "OKGet"
 	ok := 0
-	reject := 0
 	// Will trigger a new prefetch after half of minPrefech is used.
 	for i := 0; i < okRequestNum; i++ {
 		code, _, err := HTTPGet(url)
@@ -53,14 +52,15 @@ func TestQuotaCache(t *testing.T) {
 		}
 		if code == 200 {
 			ok++
-		} else {
-			reject++
 		}
 	}
-	// Prefetch quota calls should be very small, less than 5.
-	if s.mixer.quota.count >= okRequestNum/2 {
-		s.t.Fatalf("%s mixer quota call count: %v, should be less than %v",
-			tag, s.mixer.quota.count, okRequestNum/2)
+	// Two quota calls are triggered for 10 requests:
+	// minPrefetch is 10, a new prefetch is started at 1/2 of minPrefetch.
+	// 1) prefetch amount = 10
+	// 2) prefetch amount = 10  after 5 requests.
+	if s.mixer.quota.count > 2 {
+		s.t.Fatalf("%s mixer quota call count: %v, should not be more than 2",
+			tag, s.mixer.quota.count)
 	}
 	if ok < okRequestNum {
 		s.t.Fatalf("%s granted request count: %v, should be %v",
@@ -73,6 +73,8 @@ func TestQuotaCache(t *testing.T) {
 		Code:    int32(rpc.RESOURCE_EXHAUSTED),
 		Message: "Not enought qouta.",
 	}
+	reject := 0
+	others := 0
 	for i := 0; i < rejectRequestNum; i++ {
 		code, _, err := HTTPGet(url)
 		if err != nil {
@@ -80,17 +82,28 @@ func TestQuotaCache(t *testing.T) {
 		}
 		if code == 200 {
 			ok++
-		} else {
+		} else if code == 429 {
 			reject++
+		} else {
+			others++
 		}
 	}
-	// Prefetch quota calls should be very small, less than 10.
-	if s.mixer.quota.count >= okRequestNum {
-		s.t.Fatalf("%s mixer quota call count: %v, should be less than %v",
-			tag, s.mixer.quota.count, okRequestNum)
+	// Total should be 3 qutoa calls.
+	// minPrefetch is 10, a new prefetch is started at 1/2 of minPrefetch.
+	// 1) prefetch amount = 10  granted 10
+	// 2) prefetch amount = 10  after 5 requests.  granted 10
+	// 3) prefetch amount = 14  after 14 requests,  rejected.
+	if s.mixer.quota.count > 3 {
+		s.t.Fatalf("%s mixer quota call count: %v, should not be more than 3",
+			tag, s.mixer.quota.count)
 	}
-	if reject == 0 {
-		s.t.Fatalf("%s rejected request count: %v should not be zero.",
+	// Should be more than 20 requests rejected.
+	// Mixer server granted 20 tokens (from two prefetch calls).
+	if reject < 20 {
+		s.t.Fatalf("%s rejected request count: %v should be equal to 20.",
 			tag, reject)
+	}
+	if others > 0 {
+		s.t.Fatalf("%s should not have any other failures: %v", tag, others)
 	}
 }
