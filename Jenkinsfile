@@ -32,6 +32,7 @@ def presubmit(gitUtils, bazel) {
       sh('script/check-license-headers')
       sh('script/check-style')
     }
+    sh('bazel clean')
     bazel.updateBazelRc()
     stage('Bazel Fetch') {
       bazel.fetch('-k //...')
