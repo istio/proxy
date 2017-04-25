@@ -73,6 +73,7 @@ This filter will intercept all HTTP requests and call Mixer. Here is its config:
          },
          "quota_name": "RequestCount",
          "quota_amount": "1",
+         "quota_cache": "on",
          "check_cache_expiration_in_seconds": "600",
          "check_cache_keys": [
               "request.host",
@@ -115,6 +116,16 @@ Quota (rate limiting) is enforced by the mixer. Mixer needs to be configured wit
 
 Mixer client can be configured to make Quota call for all requests.  If "quota_name" is specified in the mixer filter config, mixer client will call Quota with the specified quota name.  If "quota_amount" is specified, it will call with that amount, otherwise the used amount is 1.
 
+The [quota prefetch](http://https://github.com/istio/mixerclient/blob/master/prefetch/README.md) is deployed in the mixer client. By default, it is off. It can be enabled by adding "quota_cache" as "on" in the mixer filter config.
+
+Following config will enable rate limiting with cache:
+
+```
+         "quota_name": "RequestCount",
+         "quota_cache": "on",
+
+```
+
 
 ## How to pass some attributes from client proxy to mixer.
 
@@ -141,3 +152,13 @@ Following is a sample mixer filter config to enable the Check call cache:
 For the string map attributes in the above example:
 1) "request.headers" attribute is a string map, "request.headers/:method" cache key means only its ":method" key and value are used for cache key.
 2) "source.labels" attribute is a string map, "source.labels" cache key means all key value pairs for the string map will be used.
+
+## How to change network failure policy
+
+When there is any network problems between the proxy and the mixer server, what should the proxy do for its Check calls?  There are two policy: fail open or fail close.  By default, it is using fail open policy.  It can be changed by adding this mixer filter config "network_fail_policy". Its value can be "open" or "close".  For example, following config will change the policy to fail close.
+
+```
+         "network_fail_policy": "close",
+
+```
+
