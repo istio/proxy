@@ -33,6 +33,8 @@ def presubmit(gitUtils, bazel) {
       sh('script/check-style')
     }
     bazel.updateBazelRc()
+    // TODO(sebastienvas): Fix Jenkins to build without cleaning
+    sh('bazel clean')
     stage('Bazel Fetch') {
       bazel.fetch('-k //...')
     }
