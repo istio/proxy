@@ -20,6 +20,8 @@
 #include "contrib/endpoints/src/grpc/transcoding/response_to_json_translator.h"
 #include "envoy/common/exception.h"
 #include "envoy/http/filter.h"
+#include "google/api/annotations.pb.h"
+#include "google/api/http.pb.h"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/util/type_resolver.h"
@@ -98,8 +100,34 @@ Config::Config(const Json::Object& config, Server::Instance& server) {
 
       auto method_info = new MethodInfo(method);
       methods_.emplace_back(method_info);
+      auto http_rule = method->options().GetExtension(google::api::http);
 
-      // TODO: Look for options
+      log().debug("/" + service->full_name() + "/" + method->name());
+      log().debug(http_rule.DebugString());
+
+      switch (http_rule.pattern_case()) {
+        case ::google::api::HttpRule::kGet:
+          pmb.Register("GET", http_rule.get(), http_rule.body(), method_info);
+          break;
+        case ::google::api::HttpRule::kPut:
+          pmb.Register("PUT", http_rule.put(), http_rule.body(), method_info);
+          break;
+        case ::google::api::HttpRule::kPost:
+          pmb.Register("POST", http_rule.post(), http_rule.body(), method_info);
+          break;
+        case ::google::api::HttpRule::kDelete:
+          pmb.Register("DELETE", http_rule.delete_(), http_rule.body(), method_info);
+          break;
+        case ::google::api::HttpRule::kPatch:
+          pmb.Register("PATCH", http_rule.patch(), http_rule.body(), method_info);
+          break;
+        case ::google::api::HttpRule::kCustom:
+          pmb.Register(http_rule.custom().kind(), http_rule.custom().path(), http_rule.body(), method_info);
+          break;
+        default:
+          break;
+      }
+
       pmb.Register("POST", "/" + service->full_name() + "/" + method->name(), "", method_info);
     }
   }
@@ -117,34 +145,36 @@ Config::Config(const Json::Object& config, Server::Instance& server) {
 Status Config::CreateTranscoder(const Http::HeaderMap& headers,
                                 ZeroCopyInputStream* request_input,
                                 TranscoderInputStream* response_input,
-                                std::unique_ptr<Transcoder>* transcoder) {
+                                std::unique_ptr<Transcoder>& transcoder,
+                                const google::protobuf::MethodDescriptor* &method_descriptor) {
+  std::string method = headers.Method()->value().c_str();
   std::string path = headers.Path()->value().c_str();
 
-  auto method_info = path_matcher_->Lookup(headers.Method()->value().c_str(), path);
+  auto method_info = path_matcher_->Lookup(method, path);
   if (!method_info) {
     return Status(Code::NOT_FOUND,
                   "Could not resolve " + path + " to a method");
   }
 
-  auto method = method_info->method();
+  method_descriptor = method_info->method();
 
   RequestInfo request_info;
-  auto status = MethodToRequestInfo(method, &request_info);
+  auto status = MethodToRequestInfo(method_descriptor, &request_info);
   if (!status.ok()) {
     return status;
   }
 
   std::unique_ptr<JsonRequestTranslator> request_translator{
       new JsonRequestTranslator(resolver_.get(), request_input, request_info,
-                                method->client_streaming(), true)};
+                                method_descriptor->client_streaming(), true)};
 
   auto response_type_url =
-      kTypeUrlPrefix + "/" + method->output_type()->full_name();
+      kTypeUrlPrefix + "/" + method_descriptor->output_type()->full_name();
   std::unique_ptr<ResponseToJsonTranslator> response_translator{
       new ResponseToJsonTranslator(resolver_.get(), response_type_url,
-                                   method->server_streaming(), response_input)};
+                                   method_descriptor->server_streaming(), response_input)};
 
-  transcoder->reset(new TranscoderImpl(std::move(request_translator),
+  transcoder.reset(new TranscoderImpl(std::move(request_translator),
                                        std::move(response_translator)));
   return Status::OK;
 }

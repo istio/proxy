@@ -53,8 +53,9 @@ class Config : public Logger::Loggable<Logger::Id::config> {
       const Http::HeaderMap& headers,
       google::protobuf::io::ZeroCopyInputStream* request_input,
       google::api_manager::transcoding::TranscoderInputStream* response_input,
-      std::unique_ptr<google::api_manager::transcoding::Transcoder>*
-          transcoder);
+      std::unique_ptr<google::api_manager::transcoding::Transcoder>&
+          transcoder,
+      const google::protobuf::MethodDescriptor* &method_descriptor);
 
   google::protobuf::util::Status MethodToRequestInfo(
       const google::protobuf::MethodDescriptor* method,

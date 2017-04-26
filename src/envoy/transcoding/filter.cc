@@ -47,12 +47,17 @@ class Instance : public Http::StreamFilter,
 
   Http::FilterHeadersStatus decodeHeaders(Http::HeaderMap& headers,
                                           bool end_stream) override {
+    const google::protobuf::MethodDescriptor* method;
     auto status = config_->CreateTranscoder(headers, &request_in_,
-                                            &response_in_, &transcoder_);
+                                            &response_in_, transcoder_, method);
     if (status.ok()) {
       headers.removeContentType();
       headers.removeContentLength();
       headers.insertContentType().value(kGrpcContentType);
+
+      headers.removePath();
+      headers.insertPath().value("/" + method->service()->full_name() + "/" + method->name());
+
       headers.addStatic(kTeHeader, kTeTrailers);
     } else {
       log().debug("No transcoding" + status.ToString());
