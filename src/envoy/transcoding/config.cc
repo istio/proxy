@@ -116,19 +116,23 @@ Config::Config(const Json::Object& config, Server::Instance& server) {
           pmb.Register("POST", http_rule.post(), http_rule.body(), method_info);
           break;
         case ::google::api::HttpRule::kDelete:
-          pmb.Register("DELETE", http_rule.delete_(), http_rule.body(), method_info);
+          pmb.Register("DELETE", http_rule.delete_(), http_rule.body(),
+                       method_info);
           break;
         case ::google::api::HttpRule::kPatch:
-          pmb.Register("PATCH", http_rule.patch(), http_rule.body(), method_info);
+          pmb.Register("PATCH", http_rule.patch(), http_rule.body(),
+                       method_info);
           break;
         case ::google::api::HttpRule::kCustom:
-          pmb.Register(http_rule.custom().kind(), http_rule.custom().path(), http_rule.body(), method_info);
+          pmb.Register(http_rule.custom().kind(), http_rule.custom().path(),
+                       http_rule.body(), method_info);
           break;
         default:
           break;
       }
 
-      pmb.Register("POST", "/" + service->full_name() + "/" + method->name(), "", method_info);
+      pmb.Register("POST", "/" + service->full_name() + "/" + method->name(),
+                   "", method_info);
     }
   }
 
@@ -142,11 +146,11 @@ Config::Config(const Json::Object& config, Server::Instance& server) {
   log().debug("transcoding filter loaded");
 }
 
-Status Config::CreateTranscoder(const Http::HeaderMap& headers,
-                                ZeroCopyInputStream* request_input,
-                                TranscoderInputStream* response_input,
-                                std::unique_ptr<Transcoder>& transcoder,
-                                const google::protobuf::MethodDescriptor* &method_descriptor) {
+Status Config::CreateTranscoder(
+    const Http::HeaderMap& headers, ZeroCopyInputStream* request_input,
+    TranscoderInputStream* response_input,
+    std::unique_ptr<Transcoder>& transcoder,
+    const google::protobuf::MethodDescriptor*& method_descriptor) {
   std::string method = headers.Method()->value().c_str();
   std::string path = headers.Path()->value().c_str();
 
@@ -172,10 +176,11 @@ Status Config::CreateTranscoder(const Http::HeaderMap& headers,
       kTypeUrlPrefix + "/" + method_descriptor->output_type()->full_name();
   std::unique_ptr<ResponseToJsonTranslator> response_translator{
       new ResponseToJsonTranslator(resolver_.get(), response_type_url,
-                                   method_descriptor->server_streaming(), response_input)};
+                                   method_descriptor->server_streaming(),
+                                   response_input)};
 
   transcoder.reset(new TranscoderImpl(std::move(request_translator),
-                                       std::move(response_translator)));
+                                      std::move(response_translator)));
   return Status::OK;
 }
 

@@ -56,7 +56,8 @@ class Instance : public Http::StreamFilter,
       headers.insertContentType().value(kGrpcContentType);
 
       headers.removePath();
-      headers.insertPath().value("/" + method->service()->full_name() + "/" + method->name());
+      headers.insertPath().value("/" + method->service()->full_name() + "/" +
+                                 method->name());
 
       headers.addStatic(kTeHeader, kTeTrailers);
     } else {

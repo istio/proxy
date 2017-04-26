@@ -34,8 +34,7 @@ class Instance;
 class MethodInfo {
  public:
   MethodInfo(const google::protobuf::MethodDescriptor* method)
-      : method_(method) {
-  }
+      : method_(method) {}
   const std::set<std::string> system_query_parameter_names() const {
     return std::set<std::string>();
   }
@@ -53,9 +52,8 @@ class Config : public Logger::Loggable<Logger::Id::config> {
       const Http::HeaderMap& headers,
       google::protobuf::io::ZeroCopyInputStream* request_input,
       google::api_manager::transcoding::TranscoderInputStream* response_input,
-      std::unique_ptr<google::api_manager::transcoding::Transcoder>&
-          transcoder,
-      const google::protobuf::MethodDescriptor* &method_descriptor);
+      std::unique_ptr<google::api_manager::transcoding::Transcoder>& transcoder,
+      const google::protobuf::MethodDescriptor*& method_descriptor);
 
   google::protobuf::util::Status MethodToRequestInfo(
       const google::protobuf::MethodDescriptor* method,
