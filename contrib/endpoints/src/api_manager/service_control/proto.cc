@@ -962,7 +962,7 @@ utils::Status Proto::FillAllocateQuotaRequest(
                                std::string(info.api_key));
   } else if (!info.producer_project_id.empty()) {
     operation->set_consumer_id(std::string(kConsumerIdProject) +
-                        std::string(info.producer_project_id));
+                               std::string(info.producer_project_id));
   }
 
   // allocate_operation.quota_mode

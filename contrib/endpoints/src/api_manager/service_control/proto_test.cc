@@ -261,8 +261,8 @@ TEST_F(ProtoTest, FillNoApiKeyNoProjectIdAllocateQuotaRequestTest) {
   ASSERT_TRUE(scp_.FillAllocateQuotaRequest(info, &request).ok());
 
   std::string text = AllocateQuotaRequestToString(&request);
-  std::string expected_text =
-      ReadTestBaseline("allocate_quota_request_without_api_key_projectid.golden");
+  std::string expected_text = ReadTestBaseline(
+      "allocate_quota_request_without_api_key_projectid.golden");
   ASSERT_EQ(expected_text, text);
 }
 
