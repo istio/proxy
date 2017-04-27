@@ -51,13 +51,11 @@ class Instance : public Http::StreamFilter,
     auto status = config_->CreateTranscoder(headers, &request_in_,
                                             &response_in_, transcoder_, method);
     if (status.ok()) {
-      headers.removeContentType();
       headers.removeContentLength();
       headers.insertContentType().value(kGrpcContentType);
-
-      headers.removePath();
       headers.insertPath().value("/" + method->service()->full_name() + "/" +
                                  method->name());
+      headers.insertMethod().value(std::string("POST"));
 
       headers.addStatic(kTeHeader, kTeTrailers);
     } else {

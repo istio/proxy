@@ -95,6 +95,9 @@ Config::Config(const Json::Object& config, Server::Instance& server) {
 
   for (const auto& service_name : config.getStringArray("services")) {
     auto service = descriptor_pool_.FindServiceByName(service_name);
+    if (service == nullptr) {
+      throw EnvoyException("Could not find '" + service_name + "' in the proto descriptor");
+    }
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
 
