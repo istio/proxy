@@ -759,6 +759,7 @@ const int supported_labels_count =
 
 // Define Service Control constant strings
 const char kConsumerIdApiKey[] = "api_key:";
+const char kConsumerIdProject[] = "project:";
 
 // Following names for for Log struct_playload field names:
 const char kLogFieldNameTimestamp[] = "timestamp";
@@ -959,6 +960,9 @@ utils::Status Proto::FillAllocateQuotaRequest(
   if (!info.api_key.empty()) {
     operation->set_consumer_id(std::string(kConsumerIdApiKey) +
                                std::string(info.api_key));
+  } else if (!info.producer_project_id.empty()) {
+    operation->set_consumer_id(std::string(kConsumerIdProject) +
+                        std::string(info.producer_project_id));
   }
 
   // allocate_operation.quota_mode
