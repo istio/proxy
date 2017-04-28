@@ -47,10 +47,6 @@ class GlobalContext {
     return &service_account_token_;
   }
 
-  // certs and jwt_cache
-  auth::Certs &certs() { return certs_; }
-  auth::JwtCache &jwt_cache() { return jwt_cache_; }
-
   // metadata server
   void SetMetadataServer(const std::string &server) {
     metadata_server_ = server;
@@ -85,9 +81,6 @@ class GlobalContext {
   std::unique_ptr<cloud_trace::Aggregator> CreateCloudTraceAggregator();
 
   std::unique_ptr<ApiManagerEnvInterface> env_;
-
-  auth::Certs certs_;
-  auth::JwtCache jwt_cache_;
 
   std::shared_ptr<proto::ServerConfig> server_config_;
 

@@ -72,8 +72,8 @@ class ServiceContext {
            !config_->GetFirebaseServer().empty();
   }
 
-  auth::Certs &certs() { return global_context_->certs(); }
-  auth::JwtCache &jwt_cache() { return global_context_->jwt_cache(); }
+  auth::Certs &certs() { return certs_; }
+  auth::JwtCache &jwt_cache() { return jwt_cache_; }
 
   bool GetJwksUri(const std::string &issuer, std::string *url) {
     return config_->GetJwksUri(issuer, url);
@@ -114,6 +114,9 @@ class ServiceContext {
   std::shared_ptr<GlobalContext> global_context_;
   // The service config object.
   std::unique_ptr<Config> config_;
+
+  auth::Certs certs_;
+  auth::JwtCache jwt_cache_;
 
   // The service control object.
   std::unique_ptr<service_control::Interface> service_control_;
