@@ -103,6 +103,9 @@ class ApiManagerImpl : public ApiManager {
   std::shared_ptr<context::GlobalContext> global_context_;
   // Service context
   // TODO: will be a map<config_id, ServiceContext>
+  // All ServiceContext objects are referring to the same service
+  // but different versions. One ESP instance needs to load
+  // multiple versions in order to support service rollout automation.
   std::shared_ptr<context::ServiceContext> service_context_;
 };
 
