@@ -266,6 +266,10 @@ class Instance : public Http::StreamDecoderFilter,
   void completeCheck(const Status& status) {
     Log().debug("Called Mixer::Instance : check complete {}",
                 status.ToString());
+    // This stream has been reset, abort the callback.
+    if (state_ == Responded) {
+      return;
+    }
     if (!status.ok() && state_ != Responded) {
       state_ = Responded;
       check_status_code_ = HttpCode(status.error_code());
