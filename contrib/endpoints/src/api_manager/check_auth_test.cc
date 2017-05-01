@@ -84,6 +84,53 @@ const char kServiceConfig[] =
     "  environment : \"http://127.0.0.1:8081\"\n"
     "}\n";
 
+const char kServiceConfigWithAudiences[] =
+    "name: \"endpoints-test1.cloudendpointsapis.com\"\n"
+    "authentication {\n"
+    "    providers: [\n"
+    "    {\n"
+    "      id: \"issuer1\"\n"
+    "      issuer: \"https://issuer1.com\"\n"
+    "      audiences: \"bad-audience, "
+    "http://endpoints-test.cloudendpointsapis.com\"\n"
+    "    },\n"
+    "    {\n"
+    "      id: \"openid_fail\"\n"
+    "      issuer: \"http://openid_fail\"\n"
+    "      audiences: \"bad-audience, endpoints-test.cloudendpointsapis.com\"\n"
+    "    },\n"
+    "    {\n"
+    "      id: \"issuer2\"\n"
+    "      issuer: \"https://issuer2.com\"\n"
+    "      jwks_uri: \"https://issuer2.com/pubkey\"\n"
+    "      audiences: \"bad-audience,endpoints-test.cloudendpointsapis.com\"\n"
+    "    }\n"
+    "    ],\n"
+    "    rules: {\n"
+    "      selector: \"ListShelves\"\n"
+    "      requirements: [\n"
+    "      {\n"
+    "        provider_id: \"issuer1\"\n"
+    "      },\n"
+    "      {\n"
+    "        provider_id: \"openid_fail\"\n"
+    "      },\n"
+    "      {\n"
+    "        provider_id: \"issuer2\"\n"
+    "      }\n"
+    "      ]\n"
+    "    }\n"
+    "}\n"
+    "http {\n"
+    "  rules {\n"
+    "    selector: \"ListShelves\"\n"
+    "    get: \"/ListShelves\"\n"
+    "  }\n"
+    "}\n"
+    "control {\n"
+    "  environment : \"http://127.0.0.1:8081\"\n"
+    "}\n";
+
 // Auth token generated with the following header and payload.
 //{
 // "alg": "RS256",
@@ -318,7 +365,7 @@ const char kUserInfo_kSub2_kIss[] =
 const char kUserInfo_kSub_kIss2[] =
     "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjIuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
 
-class CheckAuthTest : public ::testing::Test {
+class CheckAuthTest : public ::testing::TestWithParam<std::string> {
  public:
   void SetUp() {
     std::unique_ptr<MockApiManagerEnvironment> env(
@@ -326,8 +373,7 @@ class CheckAuthTest : public ::testing::Test {
     // save the raw pointer of env before calling std::move(env).
     raw_env_ = env.get();
 
-    std::unique_ptr<Config> config =
-        Config::Create(raw_env_, kServiceConfig, "");
+    std::unique_ptr<Config> config = Config::Create(raw_env_, GetParam(), "");
     ASSERT_NE(config.get(), nullptr);
 
     service_context_ = std::make_shared<context::ServiceContext>(
@@ -407,7 +453,7 @@ void CheckAuthTest::TestValidToken(const std::string &auth_token) {
 // Step 2. Use the same auth token, which should be cached in JWT cache.
 // Step 3. Use a different auth token signed by the same issuer. This time,
 //         token is not cached, but key is cached.
-TEST_F(CheckAuthTest, TestOKAuth) {
+TEST_P(CheckAuthTest, TestOKAuth) {
   // Step 1. Check auth requires open ID discovery and fetching public key.
   TestValidToken(kToken);
 
@@ -451,7 +497,7 @@ TEST_F(CheckAuthTest, TestOKAuth) {
 // Step 1. Try to fetch key URI via OpenID discovery but failed.
 // Step 2. Use a different token signed by the same issuer, no HTTP request
 //         is sent this time because the failure result was cached.
-TEST_F(CheckAuthTest, TestOpenIdFailed) {
+TEST_P(CheckAuthTest, TestOpenIdFailed) {
   // Step 1. Try to fetch key URI via OpenID discovery but failed.
   // Use FindQuery to get auth token.
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
@@ -503,7 +549,7 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
 
 // jwks_uri is already specified in service config. Hence, no need to
 // do openID discovery.
-TEST_F(CheckAuthTest, TestNoOpenId) {
+TEST_P(CheckAuthTest, TestNoOpenId) {
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kBearer) + std::string(kTokenIssuer2);
@@ -525,7 +571,7 @@ TEST_F(CheckAuthTest, TestNoOpenId) {
 }
 
 // Negative test: invalid token and expired token.
-TEST_F(CheckAuthTest, TestInvalidToken) {
+TEST_P(CheckAuthTest, TestInvalidToken) {
   // Invalid token.
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
@@ -578,7 +624,7 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
 }
 
 // Negative test: bad audience
-TEST_F(CheckAuthTest, TestBadAudience) {
+TEST_P(CheckAuthTest, TestBadAudience) {
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kBearer) + std::string(kTokenBadAud);
@@ -594,22 +640,27 @@ TEST_F(CheckAuthTest, TestBadAudience) {
 }
 
 // Positive test: audience is service name with https prefix.
-TEST_F(CheckAuthTest, TestHttpsAudience) { TestValidToken(kTokenHttpsAud); }
+TEST_P(CheckAuthTest, TestHttpsAudience) { TestValidToken(kTokenHttpsAud); }
 
 // Positive test: audience is service name with https prefix and a trailing
 // slash.
-TEST_F(CheckAuthTest, TestHttpsSlashAudience) {
+TEST_P(CheckAuthTest, TestHttpsSlashAudience) {
   TestValidToken(kTokenHttpsSlashAud);
 }
 
 // Positive test: audience is service name with http prefix.
-TEST_F(CheckAuthTest, TestHttpAudience) { TestValidToken(kTokenHttpAud); }
+TEST_P(CheckAuthTest, TestHttpAudience) { TestValidToken(kTokenHttpAud); }
 
 // Positive test: audience is service name with http prefix and a trailing
 // slash.
-TEST_F(CheckAuthTest, TestHttpSlashAudience) {
+TEST_P(CheckAuthTest, TestHttpSlashAudience) {
   TestValidToken(kTokenHttpSlashAud);
 }
+
+INSTANTIATE_TEST_CASE_P(ServiceConfigsWithAndWithoutAudiencesCheck,
+                        CheckAuthTest,
+                        testing::Values(kServiceConfig,
+                                        kServiceConfigWithAudiences));
 
 }  // namespace
 

@@ -18,7 +18,7 @@
 
 #include "contrib/endpoints/include/api_manager/http_request.h"
 #include "contrib/endpoints/src/api_manager/auth/lib/auth_token.h"
-
+#include <cstring>
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 
@@ -176,10 +176,11 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
                   // process token from the body
                   char *auth_token = nullptr;
                   int expires = 0;
+                  char body_copy[body.length()+1];
+                  std::strncpy(body_copy, body.c_str(), body.length()+1);
                   if (!auth::esp_get_service_account_auth_token(
-                          const_cast<char *>(body.data()), body.length(),
-                          &auth_token, &expires) ||
-                      token == nullptr) {
+                          body_copy, body.length(), &auth_token, &expires)
+                      || token == nullptr) {
                     env->LogDebug("Failed to parse token response body");
                     token->set_state(auth::ServiceAccountToken::FAILED);
                     continuation(Status(Code::INTERNAL, kFailedTokenParse));
