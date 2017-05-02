@@ -1,6 +1,7 @@
 sudo: required
-
 dist: trusty
+language: go
+go_import_path: istio.io/proxy
 
 addons:
   apt:
@@ -18,11 +19,14 @@ branches:
 
 language: cpp
 
+go:
+- 1.8.x
+
 jdk:
   - oraclejdk8
 
 env:
-  - BAZEL_VERSION=0.4.5
+  - BAZEL_VERSION=0.4.4
 
 cache:
   directories:
