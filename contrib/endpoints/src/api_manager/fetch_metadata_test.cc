@@ -16,6 +16,7 @@
 //
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
 
+#include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/context/service_context.h"
 #include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
 #include "contrib/endpoints/src/api_manager/mock_request.h"
@@ -54,12 +55,13 @@ class FetchMetadataTest : public ::testing::Test {
 
     std::unique_ptr<Config> config = Config::Create(raw_env_, kServiceConfig);
     ASSERT_NE(config.get(), nullptr);
-
+    auto global_context =
+        std::make_shared<context::GlobalContext>(std::move(env), "");
     service_context_ = std::make_shared<context::ServiceContext>(
-        std::move(env), "", std::move(config));
+        global_context, std::move(config));
     ASSERT_NE(service_context_.get(), nullptr);
 
-    service_context_->SetMetadataServer(kMetadataServer);
+    global_context->SetMetadataServer(kMetadataServer);
 
     std::unique_ptr<MockRequest> request(
         new ::testing::NiceMock<MockRequest>());
