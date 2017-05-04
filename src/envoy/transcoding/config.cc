@@ -166,7 +166,8 @@ Status Config::CreateTranscoder(
 
   RequestInfo request_info;
   std::vector<VariableBinding> variable_bidings;
-  auto method_info = path_matcher_->Lookup(method, path, args, &variable_bidings, &request_info.body_field_path);
+  auto method_info = path_matcher_->Lookup(
+      method, path, args, &variable_bidings, &request_info.body_field_path);
   if (!method_info) {
     return Status(Code::NOT_FOUND,
                   "Could not resolve " + path + " to a method");
@@ -178,8 +179,9 @@ Status Config::CreateTranscoder(
     return status;
   }
 
-  for (const auto &binding: variable_bidings) {
-    google::api_manager::transcoding::RequestWeaver::BindingInfo resolved_binding;
+  for (const auto& binding : variable_bidings) {
+    google::api_manager::transcoding::RequestWeaver::BindingInfo
+        resolved_binding;
     auto status = type_helper_->ResolveFieldPath(*request_info.message_type,
                                                  binding.field_path,
                                                  &resolved_binding.field_path);
@@ -195,7 +197,8 @@ Status Config::CreateTranscoder(
   }
 
   std::unique_ptr<JsonRequestTranslator> request_translator{
-      new JsonRequestTranslator(type_helper_->Resolver(), request_input, request_info,
+      new JsonRequestTranslator(type_helper_->Resolver(), request_input,
+                                request_info,
                                 method_descriptor->client_streaming(), true)};
 
   auto response_type_url =
