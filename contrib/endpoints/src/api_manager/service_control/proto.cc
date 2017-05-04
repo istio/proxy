@@ -410,7 +410,7 @@ const SupportedMetric supported_metrics[] = {
         set_distribution_metric_to_overhead_time,
     },
     {
-       "serviceruntime.googleapis.com/api/producer/by_consumer/"
+        "serviceruntime.googleapis.com/api/producer/by_consumer/"
         "request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
