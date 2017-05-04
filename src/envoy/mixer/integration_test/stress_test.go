@@ -17,7 +17,6 @@ package test
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -42,7 +41,7 @@ func TestStressEnvoy(t *testing.T) {
 	for k := 0; k < concurrent; k++ {
 		go func() {
 			for true {
-				if _, err := http.Get(url); err != nil {
+				if err := HTTPFastGet(url); err != nil {
 					t.Errorf("Failed in request: %v", err)
 				}
 				atomic.AddUint64(&count, 1)
