@@ -119,7 +119,7 @@ utils::Status ApiManagerImpl::GetStatistics(
     if (it.second->service_control()) {
       service_control::Statistics stat;
       it.second->service_control()->GetStatistics(&stat);
-      statistics->service_control_statistics += stat;
+      statistics->service_control_statistics.Merge(stat);
     }
   }
   return utils::Status::OK;
