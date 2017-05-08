@@ -31,6 +31,12 @@ float WeightedSelector::score(int index) {
 }
 
 const std::string& WeightedSelector::Select() {
+  if (list_.size() == 0) {
+    static std::string empty;
+    return empty;
+  }
+
+  // An optimization for size=1, the most popular case.
   if (list_.size() == 1) {
     return list_[0].first;
   }
