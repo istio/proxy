@@ -80,6 +80,9 @@ class GlobalContext {
   // get producer project id from fetched metadata
   const std::string &project_id() const;
 
+  const std::string &service_name() const { return service_name_; }
+  void set_service_name(const std::string &name) { service_name_ = name; }
+
  private:
   // create cloud trace.
   std::unique_ptr<cloud_trace::Aggregator> CreateCloudTraceAggregator();
@@ -95,6 +98,8 @@ class GlobalContext {
   // nullptr.
   std::unique_ptr<cloud_trace::Aggregator> cloud_trace_aggregator_;
 
+  // service name;
+  std::string service_name_;
   // meta data server.
   std::string metadata_server_;
   // GCE metadata

@@ -39,6 +39,18 @@ void ApiManagerImpl::AddConfig(const std::string &service_config,
   std::unique_ptr<Config> config =
       Config::Create(global_context_->env(), service_config);
   if (config != nullptr) {
+    std::string service_name = config->service().name();
+    if (global_context_->service_name().empty()) {
+      global_context_->set_service_name(service_name);
+    } else {
+      if (service_name != global_context_->service_name()) {
+        auto err_msg = std::string("Mismatched service name; existing: ") +
+                       global_context_->service_name() + ", new: " +
+                       service_name;
+        global_context_->env()->LogError(err_msg);
+        return;
+      }
+    }
     std::string config_id = config->service().id();
     service_context_map_[config_id] = std::make_shared<context::ServiceContext>(
         global_context_, std::move(config));
@@ -94,11 +106,7 @@ bool ApiManagerImpl::Enabled() const {
 }
 
 const std::string &ApiManagerImpl::service_name() const {
-  if (service_context_map_.empty()) {
-    static std::string empty;
-    return empty;
-  }
-  return service_context_map_.begin()->second->service_name();
+  return global_context_->service_name();
 }
 
 const ::google::api::Service &ApiManagerImpl::service(
