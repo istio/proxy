@@ -118,8 +118,10 @@ utils::Status ApiManagerImpl::GetStatistics(
   for (const auto &it : service_context_map_) {
     if (it.second->service_control()) {
       service_control::Statistics stat;
-      it.second->service_control()->GetStatistics(&stat);
-      statistics->service_control_statistics.Merge(stat);
+      auto status = it.second->service_control()->GetStatistics(&stat);
+      if (status.ok()) {
+        statistics->service_control_statistics.Merge(stat);
+      }
     }
   }
   return utils::Status::OK;
