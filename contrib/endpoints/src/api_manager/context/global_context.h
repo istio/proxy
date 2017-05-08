@@ -61,6 +61,14 @@ class GlobalContext {
     return server_config_;
   }
 
+  bool DisableLogStatus() {
+    if (server_config() && server_config()->has_experimental()) {
+      const auto &experimental = server_config()->experimental();
+      return experimental.disable_log_status();
+    }
+    return false;
+  }
+
   // report interval can be override by server_config.
   int64_t intermediate_report_interval() const {
     return intermediate_report_interval_;
