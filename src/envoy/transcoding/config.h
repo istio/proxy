@@ -62,14 +62,18 @@ class Config : public Logger::Loggable<Logger::Id::config> {
  public:
   Config(const Json::Object& config, Server::Instance& server);
 
-  google::protobuf::util::Status CreateTranscoder(
+  Config() {}
+
+  virtual ~Config() {}
+
+  virtual google::protobuf::util::Status CreateTranscoder(
       const Http::HeaderMap& headers,
       google::protobuf::io::ZeroCopyInputStream* request_input,
       google::api_manager::transcoding::TranscoderInputStream* response_input,
       std::unique_ptr<google::api_manager::transcoding::Transcoder>& transcoder,
       const google::protobuf::MethodDescriptor*& method_descriptor);
 
-  google::protobuf::util::Status MethodToRequestInfo(
+  virtual google::protobuf::util::Status MethodToRequestInfo(
       const google::protobuf::MethodDescriptor* method,
       google::api_manager::transcoding::RequestInfo* info);
 
@@ -78,8 +82,6 @@ class Config : public Logger::Loggable<Logger::Id::config> {
   google::api_manager::PathMatcherPtr<MethodInfo*> path_matcher_;
   std::vector<std::unique_ptr<MethodInfo>> methods_;
   std::unique_ptr<google::api_manager::transcoding::TypeHelper> type_helper_;
-
-  friend class Instance;
 };
 
 typedef std::shared_ptr<Config> ConfigSharedPtr;

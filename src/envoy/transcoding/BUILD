@@ -45,6 +45,7 @@ cc_library(
         "config.cc",
         "config.h",
         "filter.cc",
+        "filter.h",
     ],
     deps = [
         ":envoy_input_stream",
@@ -67,5 +68,19 @@ cc_binary(
     ],
     linkopts = [
         "-lrt",
+    ],
+)
+
+cc_test(
+    name = "filter_test",
+    srcs = [
+        "filter_test.cc",
+    ],
+    deps = [
+        "filter_lib",
+        "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
+        "@envoy//test/test_common:utility_lib",
+        "@envoy//test:main",
     ],
 )
