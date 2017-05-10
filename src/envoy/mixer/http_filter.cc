@@ -264,6 +264,10 @@ class Instance : public Http::StreamDecoderFilter,
   }
 
   void callQuota(const Status& status) {
+    if (!status.ok()) {
+      completeCheck(status);
+      return;
+    }
     auto instance = GetPtr();
     http_control_->Quota(request_data_,
                          GetThreadJumpFunc([instance](const Status& status) {
