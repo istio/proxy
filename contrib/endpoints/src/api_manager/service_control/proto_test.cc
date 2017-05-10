@@ -229,6 +229,43 @@ TEST_F(ProtoTest, FillAllocateQuotaRequestNoMethodNameTest) {
   ASSERT_EQ(expected_text, text);
 }
 
+TEST_F(ProtoTest, FillNoApiKeyAllocateQuotaRequestTest) {
+  std::vector<std::pair<std::string, int>> metric_cost_vector = {
+      {"metric_first", 1}, {"metric_second", 2}};
+
+  QuotaRequestInfo info;
+  FillAllocateQuotaRequestInfo(&info);
+  info.operation_id = "operation_id";
+  info.producer_project_id = "project_id";
+  info.metric_cost_vector = &metric_cost_vector;
+
+  gasv1::AllocateQuotaRequest request;
+  ASSERT_TRUE(scp_.FillAllocateQuotaRequest(info, &request).ok());
+
+  std::string text = AllocateQuotaRequestToString(&request);
+  std::string expected_text =
+      ReadTestBaseline("allocate_quota_request_without_api_key.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillNoApiKeyNoProjectIdAllocateQuotaRequestTest) {
+  std::vector<std::pair<std::string, int>> metric_cost_vector = {
+      {"metric_first", 1}, {"metric_second", 2}};
+
+  QuotaRequestInfo info;
+  FillAllocateQuotaRequestInfo(&info);
+  info.operation_id = "operation_id";
+  info.metric_cost_vector = &metric_cost_vector;
+
+  gasv1::AllocateQuotaRequest request;
+  ASSERT_TRUE(scp_.FillAllocateQuotaRequest(info, &request).ok());
+
+  std::string text = AllocateQuotaRequestToString(&request);
+  std::string expected_text = ReadTestBaseline(
+      "allocate_quota_request_without_api_key_projectid.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
 TEST_F(ProtoTest, FillNoApiKeyCheckRequestTest) {
   CheckRequestInfo info;
   info.operation_id = "operation_id";
