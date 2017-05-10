@@ -97,25 +97,15 @@ class ServiceContext {
   // Methods accessing instance_count_ and is_terminated_ should be protected
   // by the same mutex instance
 
-  int64_t instance_count() {
-    return instance_count_;
-  }
+  int64_t instance_count() { return instance_count_; }
 
-  void increase_instance_count() {
-    instance_count_++;
-  }
+  void increase_instance_count() { instance_count_++; }
 
-  void decrease_instance_count() {
-    instance_count_--;
-  }
+  void decrease_instance_count() { instance_count_--; }
 
-  bool is_terminated() {
-    return is_terminated_;
-  }
+  bool is_terminated() { return is_terminated_; }
 
-  void set_terminated() {
-    is_terminated_ = true;
-  }
+  void set_terminated() { is_terminated_ = true; }
 
  private:
   // Create service control.

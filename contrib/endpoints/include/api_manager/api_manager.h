@@ -85,11 +85,10 @@ class ApiManager {
 
   // Release the RequestHandler instance created by CreateRequestHandler
   virtual void ReleaseRequestHandler(
-      const std::unique_ptr<RequestHandlerInterface>& request_handler) = 0;
+      const std::unique_ptr<RequestHandlerInterface> &request_handler) = 0;
 
   // To get the api manager statistics.
-  virtual utils::Status GetStatistics(
-      ApiManagerStatistics *statistics) = 0;
+  virtual utils::Status GetStatistics(ApiManagerStatistics *statistics) = 0;
 
  protected:
   ApiManager() {}

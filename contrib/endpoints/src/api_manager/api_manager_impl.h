@@ -15,8 +15,8 @@
 #ifndef API_MANAGER_API_MANAGER_IMPL_H_
 #define API_MANAGER_API_MANAGER_IMPL_H_
 
-#include <mutex>
 #include <cassert>
+#include <mutex>
 
 #include "contrib/endpoints/include/api_manager/api_manager.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
@@ -39,8 +39,7 @@ class ApiManagerImpl : public ApiManager {
   bool Enabled() override;
 
   const std::string &service_name() const override;
-  const ::google::api::Service &service(
-      const std::string &config_id) override;
+  const ::google::api::Service &service(const std::string &config_id) override;
 
   utils::Status Init() override;
   utils::Status Close() override;
@@ -49,7 +48,7 @@ class ApiManagerImpl : public ApiManager {
       std::unique_ptr<Request> request) override;
 
   void ReleaseRequestHandler(
-      const std::unique_ptr<RequestHandlerInterface>& request_handler) override;
+      const std::unique_ptr<RequestHandlerInterface> &request_handler) override;
 
   bool get_logging_status_disabled() override {
     return global_context_->DisableLogStatus();

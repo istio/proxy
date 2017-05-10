@@ -130,8 +130,7 @@ const ::google::api::Service &ApiManagerImpl::service(
   return empty;
 }
 
-utils::Status ApiManagerImpl::GetStatistics(
-    ApiManagerStatistics *statistics) {
+utils::Status ApiManagerImpl::GetStatistics(ApiManagerStatistics *statistics) {
   memset(&statistics->service_control_statistics, 0,
          sizeof(service_control::Statistics));
 
@@ -165,7 +164,7 @@ std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
 }
 
 void ApiManagerImpl::ReleaseRequestHandler(
-    const std::unique_ptr<RequestHandlerInterface>& request_handler) {
+    const std::unique_ptr<RequestHandlerInterface> &request_handler) {
   std::lock_guard<std::mutex> lock(service_context_mutex_);
 
   auto config_id = request_handler->GetServiceConfigId();
@@ -173,12 +172,12 @@ void ApiManagerImpl::ReleaseRequestHandler(
   assert(iter != service_context_map_.end());
   auto context = iter->second;
 
-  if(context->instance_count() > 0) {
+  if (context->instance_count() > 0) {
     context->decrease_instance_count();
 
     // if the current context is marked to terminated, and instance count
     // is 0, then api_manager can be safely removed
-    if(context->is_terminated() == true && context->instance_count()) {
+    if (context->is_terminated() == true && context->instance_count()) {
       service_context_map_.erase(config_id);
     }
   }
