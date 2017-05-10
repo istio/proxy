@@ -41,14 +41,14 @@ class ApiManager {
   virtual ~ApiManager() {}
 
   // Returns true if either auth is required or service control is configured.
-  virtual bool Enabled() const = 0;
+  virtual bool Enabled() = 0;
 
   // Gets the service name.
   virtual const std::string &service_name() const = 0;
 
   // Gets the service config by config_id.
   virtual const ::google::api::Service &service(
-      const std::string &config_id) const = 0;
+      const std::string &config_id) = 0;
 
   // Initializes the API Manager. It should be called:
   // 1) Before first CreateRequestHandler().
@@ -83,9 +83,13 @@ class ApiManager {
   virtual std::unique_ptr<RequestHandlerInterface> CreateRequestHandler(
       std::unique_ptr<Request> request) = 0;
 
+  // Release the RequestHandler instance created by CreateRequestHandler
+  virtual void ReleaseRequestHandler(
+      const std::unique_ptr<RequestHandlerInterface>& request_handler) = 0;
+
   // To get the api manager statistics.
   virtual utils::Status GetStatistics(
-      ApiManagerStatistics *statistics) const = 0;
+      ApiManagerStatistics *statistics) = 0;
 
  protected:
   ApiManager() {}

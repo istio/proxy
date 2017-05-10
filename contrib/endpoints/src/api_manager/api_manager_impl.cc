@@ -18,6 +18,7 @@
 #include "contrib/endpoints/src/api_manager/check_workflow.h"
 #include "contrib/endpoints/src/api_manager/request_handler.h"
 
+#include <mutex>
 namespace google {
 namespace api_manager {
 
@@ -36,6 +37,8 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
 
 void ApiManagerImpl::AddConfig(const std::string &service_config,
                                bool deploy_it) {
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
   std::unique_ptr<Config> config =
       Config::Create(global_context_->env(), service_config);
   if (config != nullptr) {
@@ -75,6 +78,8 @@ utils::Status ApiManagerImpl::Init() {
     global_context_->cloud_trace_aggregator()->Init();
   }
 
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
   for (auto it : service_context_map_) {
     if (it.second->service_control()) {
       it.second->service_control()->Init();
@@ -88,6 +93,8 @@ utils::Status ApiManagerImpl::Close() {
     global_context_->cloud_trace_aggregator()->SendAndClearTraces();
   }
 
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
   for (auto it : service_context_map_) {
     if (it.second->service_control()) {
       it.second->service_control()->Close();
@@ -96,7 +103,9 @@ utils::Status ApiManagerImpl::Close() {
   return utils::Status::OK;
 }
 
-bool ApiManagerImpl::Enabled() const {
+bool ApiManagerImpl::Enabled() {
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
   for (const auto &it : service_context_map_) {
     if (it.second->Enabled()) {
       return true;
@@ -110,7 +119,9 @@ const std::string &ApiManagerImpl::service_name() const {
 }
 
 const ::google::api::Service &ApiManagerImpl::service(
-    const std::string &config_id) const {
+    const std::string &config_id) {
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
   const auto &it = service_context_map_.find(config_id);
   if (it != service_context_map_.end()) {
     return it->second->service();
@@ -120,9 +131,12 @@ const ::google::api::Service &ApiManagerImpl::service(
 }
 
 utils::Status ApiManagerImpl::GetStatistics(
-    ApiManagerStatistics *statistics) const {
+    ApiManagerStatistics *statistics) {
   memset(&statistics->service_control_statistics, 0,
          sizeof(service_control::Statistics));
+
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
   for (const auto &it : service_context_map_) {
     if (it.second->service_control()) {
       service_control::Statistics stat;
@@ -137,10 +151,37 @@ utils::Status ApiManagerImpl::GetStatistics(
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
     std::unique_ptr<Request> request_data) {
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
   std::string config_id = service_selector_->Select();
+  auto iter = service_context_map_.find(config_id);
+  assert(iter != service_context_map_.end());
+  auto context = iter->second;
+
+  context->increase_instance_count();
+
   return std::unique_ptr<RequestHandlerInterface>(
-      new RequestHandler(check_workflow_, service_context_map_[config_id],
-                         std::move(request_data)));
+      new RequestHandler(check_workflow_, context, std::move(request_data)));
+}
+
+void ApiManagerImpl::ReleaseRequestHandler(
+    const std::unique_ptr<RequestHandlerInterface>& request_handler) {
+  std::lock_guard<std::mutex> lock(service_context_mutex_);
+
+  auto config_id = request_handler->GetServiceConfigId();
+  auto iter = service_context_map_.find(config_id);
+  assert(iter != service_context_map_.end());
+  auto context = iter->second;
+
+  if(context->instance_count() > 0) {
+    context->decrease_instance_count();
+
+    // if the current context is marked to terminated, and instance count
+    // is 0, then api_manager can be safely removed
+    if(context->is_terminated() == true && context->instance_count()) {
+      service_context_map_.erase(config_id);
+    }
+  }
 }
 
 std::shared_ptr<ApiManager> ApiManagerFactory::CreateApiManager(
