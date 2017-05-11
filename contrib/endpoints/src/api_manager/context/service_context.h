@@ -88,18 +88,11 @@ class ServiceContext {
     return global_context_->cloud_trace_aggregator();
   }
 
-  bool DisableLogStatus() {
-    if (config_->server_config() &&
-        config_->server_config()->has_experimental()) {
-      const auto &experimental = config_->server_config()->experimental();
-      return experimental.disable_log_status();
-    }
-    return false;
-  }
-
   int64_t intermediate_report_interval() const {
     return global_context_->intermediate_report_interval();
   }
+
+  std::shared_ptr<GlobalContext> global_context() { return global_context_; }
 
  private:
   // Create service control.
