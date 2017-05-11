@@ -134,10 +134,6 @@ Config::Config(const Json::Object& config) {
         default:
           break;
       }
-
-      //      pmb.Register("POST", "/" + service->full_name() + "/" +
-      //      method->name(),
-      //                   "", method_info);
     }
   }
 
