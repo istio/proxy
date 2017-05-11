@@ -40,12 +40,12 @@ const std::string kTeTrailers{"trailers"};
 Instance::Instance(Config& config) : config_(config) {}
 
 Http::FilterHeadersStatus Instance::decodeHeaders(Http::HeaderMap& headers,
-                                        bool end_stream) {
+                                                  bool end_stream) {
   log().debug("Transcoding::Instance::decodeHeaders");
 
   const google::protobuf::MethodDescriptor* method;
-  auto status = config_.CreateTranscoder(headers, &request_in_,
-                                          &response_in_, transcoder_, method);
+  auto status = config_.CreateTranscoder(headers, &request_in_, &response_in_,
+                                         transcoder_, method);
   if (status.ok()) {
     headers.removeContentLength();
     headers.insertContentType().value(kGrpcContentType);
@@ -74,7 +74,7 @@ Http::FilterHeadersStatus Instance::decodeHeaders(Http::HeaderMap& headers,
 }
 
 Http::FilterDataStatus Instance::decodeData(Buffer::Instance& data,
-                                  bool end_stream) {
+                                            bool end_stream) {
   log().debug("Transcoding::Instance::decodeData");
   if (transcoder_) {
     request_in_.Move(data);
@@ -87,27 +87,25 @@ Http::FilterDataStatus Instance::decodeData(Buffer::Instance& data,
   return Http::FilterDataStatus::Continue;
 }
 
-Http::FilterTrailersStatus Instance::decodeTrailers(
-    Http::HeaderMap& trailers)  {
+Http::FilterTrailersStatus Instance::decodeTrailers(Http::HeaderMap& trailers) {
   return Http::FilterTrailersStatus::Continue;
 }
 
 void Instance::setDecoderFilterCallbacks(
-    Http::StreamDecoderFilterCallbacks& callbacks)  {
+    Http::StreamDecoderFilterCallbacks& callbacks) {
   decoder_callbacks_ = &callbacks;
 }
 
 Http::FilterHeadersStatus Instance::encodeHeaders(Http::HeaderMap& headers,
-                                        bool end_stream)  {
+                                                  bool end_stream) {
   if (transcoder_) {
-    headers.removeContentType();
     headers.insertContentType().value(kJsonContentType);
   }
   return Http::FilterHeadersStatus::Continue;
 }
 
 Http::FilterDataStatus Instance::encodeData(Buffer::Instance& data,
-                                  bool end_stream)  {
+                                            bool end_stream) {
   if (transcoder_) {
     response_in_.Move(data);
 
@@ -123,18 +121,17 @@ Http::FilterDataStatus Instance::encodeData(Buffer::Instance& data,
   return Http::FilterDataStatus::Continue;
 }
 
-Http::FilterTrailersStatus Instance::encodeTrailers(
-    Http::HeaderMap& trailers)  {
+Http::FilterTrailersStatus Instance::encodeTrailers(Http::HeaderMap& trailers) {
   return Http::FilterTrailersStatus::Continue;
 }
 
 void Instance::setEncoderFilterCallbacks(
-    Http::StreamEncoderFilterCallbacks& callbacks)  {
+    Http::StreamEncoderFilterCallbacks& callbacks) {
   encoder_callbacks_ = &callbacks;
 }
 
 bool Instance::ReadToBuffer(google::protobuf::io::ZeroCopyInputStream* stream,
-                  Buffer::Instance& data) {
+                            Buffer::Instance& data) {
   const void* out;
   int size;
   while (stream->Next(&out, &size)) {
@@ -163,7 +160,7 @@ class TranscodingConfig : public HttpFilterConfigFactory {
     }
 
     Grpc::Transcoding::ConfigSharedPtr transcoding_config{
-        new Grpc::Transcoding::Config(config, server)};
+        new Grpc::Transcoding::Config(config)};
     return [transcoding_config](
                Http::FilterChainFactoryCallbacks& callbacks) -> void {
       std::shared_ptr<Grpc::Transcoding::Instance> instance =

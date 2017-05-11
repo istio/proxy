@@ -78,9 +78,14 @@ cc_test(
     ],
     deps = [
         "filter_lib",
+        "//src/envoy/transcoding/test:bookstore_proto",
+        "@envoy//source/common/grpc:codec_lib",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
         "@envoy//test:main",
+    ],
+    data = [
+        "//src/envoy/transcoding/test:bookstore_descriptor",
     ],
 )

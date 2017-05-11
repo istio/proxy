@@ -15,12 +15,11 @@
 #pragma once
 
 #include "envoy/buffer/buffer.h"
-#include "envoy/http/header_map.h"
 #include "envoy/http/filter.h"
+#include "envoy/http/header_map.h"
 
 #include "src/envoy/transcoding/config.h"
 #include "src/envoy/transcoding/envoy_input_stream.h"
-
 
 namespace Grpc {
 namespace Transcoding {
@@ -36,8 +35,7 @@ class Instance : public Http::StreamFilter,
   Http::FilterDataStatus decodeData(Buffer::Instance& data,
                                     bool end_stream) override;
 
-  Http::FilterTrailersStatus decodeTrailers(
-      Http::HeaderMap& trailers) override;
+  Http::FilterTrailersStatus decodeTrailers(Http::HeaderMap& trailers) override;
 
   void setDecoderFilterCallbacks(
       Http::StreamDecoderFilterCallbacks& callbacks) override;
@@ -48,8 +46,7 @@ class Instance : public Http::StreamFilter,
   Http::FilterDataStatus encodeData(Buffer::Instance& data,
                                     bool end_stream) override;
 
-  Http::FilterTrailersStatus encodeTrailers(
-      Http::HeaderMap& trailers) override;
+  Http::FilterTrailersStatus encodeTrailers(Http::HeaderMap& trailers) override;
 
   void setEncoderFilterCallbacks(
       Http::StreamEncoderFilterCallbacks& callbacks) override;
