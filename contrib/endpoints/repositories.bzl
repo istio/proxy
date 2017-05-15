@@ -14,11 +14,7 @@
 #
 ################################################################################
 #
-load("//:repositories.bzl", "googleapis_repositories")
-
 def servicecontrol_client_repositories(bind=True):
-    googleapis_repositories(bind=bind)
-
     native.git_repository(
         name = "servicecontrol_client_git",
         commit = "e2cc62493ef835b34bca6d6d9951abb690295e85",
