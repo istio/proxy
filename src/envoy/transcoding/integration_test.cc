@@ -94,6 +94,7 @@ TEST_F(TranscodingIntegrationTest, BasicUnary) {
   response->waitForEndStream();
   EXPECT_TRUE(request_stream->complete());
   EXPECT_TRUE(response->complete());
+  EXPECT_EQ("{\"id\":\"20\",\"theme\":\"Children\"}", response->body());
 
   codec_client->close();
   fake_upstream_connection->close();
