@@ -109,8 +109,8 @@ void AuthzChecker::Check(
   HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
             auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE,
             context->service_context()->config()->GetFirebaseAudience(),
-            [context, final_continuation, checker](
-                                   Status status, std::string &&body) {
+            [context, final_continuation, checker](Status status,
+                                                   std::string &&body) {
               std::string ruleset_id;
               if (status.ok()) {
                 checker->env_->LogDebug(
