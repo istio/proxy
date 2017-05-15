@@ -21,6 +21,7 @@ load(
     "protobuf_repositories",
     "googletest_repositories",
     "transcoding_repositories",
+    "grpc_repositories",
 )
 
 boringssl_repositories()
@@ -31,13 +32,12 @@ googletest_repositories()
 
 transcoding_repositories()
 
+grpc_repositories(envoy_deps=True)
+
 load(
     "//contrib/endpoints:repositories.bzl",
-    "grpc_repositories",
     "servicecontrol_client_repositories",
 )
-
-grpc_repositories()
 
 servicecontrol_client_repositories()
 
