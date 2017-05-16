@@ -23,9 +23,6 @@
 using ::google::api_manager::auth::GetStringValue;
 using ::google::api_manager::firebase_rules::FirebaseRequest;
 using ::google::api_manager::utils::Status;
-const char kFirebaseAudience[] =
-    "https://staging-firebaserules.sandbox.googleapis.com/"
-    "google.firebase.rules.v1.FirebaseRulesService";
 
 namespace google {
 namespace api_manager {
@@ -102,7 +99,7 @@ void AuthzChecker::Check(
 
   if (!context->service_context()->IsRulesCheckEnabled() ||
       context->method() == nullptr || !context->method()->auth()) {
-    env_->LogDebug("Skipping Firebase Rules checks since it is disabled.");
+    env_->LogInfo("Skipping Firebase Rules checks since it is disabled.");
     final_continuation(Status::OK);
     return;
   }
@@ -111,8 +108,9 @@ void AuthzChecker::Check(
   auto checker = GetPtr();
   HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
             auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE,
-            kFirebaseAudience, [context, final_continuation, checker](
-                                   Status status, std::string &&body) {
+            context->service_context()->config()->GetFirebaseAudience(),
+            [context, final_continuation, checker](Status status,
+                                                   std::string &&body) {
               std::string ruleset_id;
               if (status.ok()) {
                 checker->env_->LogDebug(
