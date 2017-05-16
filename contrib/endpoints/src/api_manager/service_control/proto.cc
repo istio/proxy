@@ -1169,17 +1169,17 @@ Status Proto::ConvertAllocateQuotaResponse(
       return Status(Code::RESOURCE_EXHAUSTED, error.description());
 
     case ::google::api::servicecontrol::v1::QuotaError::PROJECT_SUSPENDED:
-      // Consumer project has been suspended.
+    // Consumer project has been suspended.
     case ::google::api::servicecontrol::v1::QuotaError::SERVICE_NOT_ENABLED:
-      // Consumer has not enabled the service.
+    // Consumer has not enabled the service.
     case ::google::api::servicecontrol::v1::QuotaError::BILLING_NOT_ACTIVE:
-      // Consumer cannot access the service because billing is disabled.
+    // Consumer cannot access the service because billing is disabled.
     case ::google::api::servicecontrol::v1::QuotaError::IP_ADDRESS_BLOCKED:
-      // IP address of the consumer is invalid for the specific consumer
-      // project.
+    // IP address of the consumer is invalid for the specific consumer
+    // project.
     case ::google::api::servicecontrol::v1::QuotaError::REFERER_BLOCKED:
-      // Referer address of the consumer request is invalid for the specific
-      // consumer project.
+    // Referer address of the consumer request is invalid for the specific
+    // consumer project.
     case ::google::api::servicecontrol::v1::QuotaError::CLIENT_APP_BLOCKED:
       // Client application of the consumer request is invalid for the
       // specific consumer project.
@@ -1188,13 +1188,12 @@ Status Proto::ConvertAllocateQuotaResponse(
     case ::google::api::servicecontrol::v1::QuotaError::PROJECT_DELETED:
     // Consumer's project has been marked as deleted (soft deletion).
     case ::google::api::servicecontrol::v1::QuotaError::PROJECT_INVALID:
-      // Consumer's project number or ID does not represent a valid project.
+    // Consumer's project number or ID does not represent a valid project.
     case ::google::api::servicecontrol::v1::QuotaError::API_KEY_INVALID:
-      // Specified API key is invalid.
+    // Specified API key is invalid.
     case ::google::api::servicecontrol::v1::QuotaError::API_KEY_EXPIRED:
       // Specified API Key has expired.
       return Status(Code::INVALID_ARGUMENT, error.description());
-
 
     case ::google::api::servicecontrol::v1::QuotaError::
         PROJECT_STATUS_UNVAILABLE:
@@ -1212,8 +1211,7 @@ Status Proto::ConvertAllocateQuotaResponse(
       return Status::OK;
 
     default:
-      return Status(
-          Code::INTERNAL, error.description());
+      return Status(Code::INTERNAL, error.description());
   }
 
   return Status::OK;
