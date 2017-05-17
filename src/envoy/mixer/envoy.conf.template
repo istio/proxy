@@ -45,12 +45,7 @@
                       "target.service": "foo.svc.cluster.local"
                   },
                   "quota_name": "RequestCount",
-                  "quota_amount": "1",
-                  "check_cache_keys": [
-                      "request.host",
-                      "request.path",
-                      "origin.user"
-                  ]
+                  "quota_amount": "1"
                 }
               },
               {
@@ -141,6 +136,18 @@
         "hosts": [
           {
             "url": "tcp://localhost:9090"
+          }
+        ]
+      },
+      {
+        "name": "mixer_server",
+        "connect_timeout_ms": 5000,
+        "type": "strict_dns",
+        "lb_type": "round_robin",
+        "features": "http2",
+        "hosts": [
+          {
+            "url": "tcp://${MIXER_SERVER}"
           }
         ]
       }

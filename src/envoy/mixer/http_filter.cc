@@ -101,14 +101,6 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   Config(const Json::Object& config, Server::Instance& server)
       : cm_(server.clusterManager()) {
     mixer_config_.Load(config);
-    if (mixer_config_.mixer_server.empty()) {
-      log().error(
-          "mixer_server is required but not specified in the config: {}",
-          __func__);
-    } else {
-      log().debug("Called Mixer::Config constructor with mixer_server: ",
-                  mixer_config_.mixer_server);
-    }
 
     if (!mixer_config_.forward_attributes.empty()) {
       std::string serialized_str =
@@ -117,6 +109,8 @@ class Config : public Logger::Loggable<Logger::Id::http> {
           Base64::encode(serialized_str.c_str(), serialized_str.size());
       log().debug("Mixer forward attributes set: ", serialized_str);
     }
+
+    http_control_ = std::make_shared<HttpControl>(mixer_config_, cm_);
   }
 
   std::shared_ptr<HttpControl> http_control() {
@@ -196,14 +190,6 @@ class Instance : public Http::StreamDecoderFilter,
   // Returns a shared pointer of this object.
   std::shared_ptr<Instance> GetPtr() { return shared_from_this(); }
 
-  // Jump thread; on_done will be called at the dispatcher thread.
-  DoneFunc GetThreadJumpFunc(DoneFunc on_done) {
-    auto& dispatcher = decoder_callbacks_->dispatcher();
-    return [&dispatcher, on_done](const Status& status) {
-      dispatcher.post([status, on_done]() { on_done(status); });
-    };
-  }
-
   FilterHeadersStatus decodeHeaders(HeaderMap& headers,
                                     bool end_stream) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
@@ -231,9 +217,9 @@ class Instance : public Http::StreamDecoderFilter,
 
     auto instance = GetPtr();
     http_control_->Check(request_data_, headers, origin_user,
-                         GetThreadJumpFunc([instance](const Status& status) {
+                         [instance](const Status& status) {
                            instance->callQuota(status);
-                         }));
+                         });
     initiating_call_ = false;
 
     if (state_ == Complete) {
@@ -280,15 +266,15 @@ class Instance : public Http::StreamDecoderFilter,
     if (state_ == Responded) {
       return;
     }
-    if (!status.ok()) {
+    if (true || !status.ok()) {
       completeCheck(status);
       return;
     }
     auto instance = GetPtr();
     http_control_->Quota(request_data_,
-                         GetThreadJumpFunc([instance](const Status& status) {
+                         [instance](const Status& status) {
                            instance->completeCheck(status);
-                         }));
+                         });
   }
 
   void completeCheck(const Status& status) {
@@ -319,6 +305,7 @@ class Instance : public Http::StreamDecoderFilter,
                    const AccessLog::RequestInfo& request_info) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     // If decodeHaeders() is not called, not to call Mixer report.
+    return;
     if (!request_data_) return;
     // Make sure not to use any class members at the callback.
     // The class may be gone when it is called.

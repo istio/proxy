@@ -18,16 +18,22 @@
 #include "common/common/base64.h"
 #include "common/common/utility.h"
 #include "common/http/utility.h"
+#include "common/grpc/rpc_channel_impl.h"
+//#include "envoy/common/optional.h"
+#include "mixer/v1/service.grpc.pb.h"
 
 #include "src/envoy/mixer/string_map.pb.h"
 #include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
+using ::google::protobuf::util::error::Code;
 using ::istio::mixer_client::CheckOptions;
 using ::istio::mixer_client::Attributes;
 using ::istio::mixer_client::DoneFunc;
 using ::istio::mixer_client::MixerClientOptions;
 using ::istio::mixer_client::QuotaOptions;
+using ::istio::mixer::v1::CheckRequest;
+using ::istio::mixer::v1::CheckResponse;
 
 namespace Envoy {
 namespace Http {
@@ -173,13 +179,52 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
   }
 }
 
+class CheckTransport : public Grpc::RpcChannelCallbacks {
+ public:
+  CheckTransport(Upstream::ClusterManager& cm)
+    : channel_(NewChannel(cm)), stub_(channel_) {}
+
+  void Call(const CheckRequest& request, CheckResponse* response,
+            DoneFunc on_done) {
+    on_done_ = on_done;
+    stub_.Check(nullptr, request, response, nullptr);
+  }
+
+  void onSuccess() override {
+    on_done(Status::OK);
+    delete this;
+  }
+
+  void onFailure(const Optional<uint64_t>& grpc_status,
+                 const std::string& message) override {
+    int code = grpc_status.valid() ? grpc_status.value() : Code::UNKNOWN;
+    on_done(Status(static_cast<Code>(code), message));
+    delete this;
+  }
+
+ private:
+  Grpc::RpcChannelPtr NewChannel(Upstream::ClusterManager& cm) {
+    return Grpc::RpcChannelPtr(new Grpc::RpcChannelImpl(cm, "mixer_server", *this,
+							Optional<std::chrono::milliseconds>()));
+  }
+
+  DoneFunc on_done_;
+  Grpc::RpcChannelPtr channel_;
+  ::istio::mixer::v1::Mixer::Stub stub_;
+};
+
 }  // namespace
 
-HttpControl::HttpControl(const MixerConfig& mixer_config)
-    : mixer_config_(mixer_config) {
+HttpControl::HttpControl(const MixerConfig& mixer_config,
+                         Upstream::ClusterManager& cm)
+    : mixer_config_(mixer_config), cm_(cm) {
   MixerClientOptions options(GetCheckOptions(mixer_config),
                              GetQuotaOptions(mixer_config));
-  options.mixer_server = mixer_config_.mixer_server;
+  options.check_transport = [cm_](const CheckRequest& request,
+                                  CheckResponse* response, DoneFunc on_done) {
+    CheckTransport* transport = new CheckTransport(cm_);
+    transport->Call(request, response, on_done);
+  };
   mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
 
   mixer_config_.ExtractQuotaAttributes(&quota_attributes_);
