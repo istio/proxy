@@ -113,7 +113,7 @@ class Config : public Logger::Loggable<Logger::Id::http> {
       log().debug("Mixer forward attributes set: ", serialized_str);
     }
 
-    http_control_ = std::make_shared<HttpControl>(mixer_config_);
+    http_control_ = std::make_shared<HttpControl>(mixer_config_, cm_);
   }
 
   std::shared_ptr<HttpControl>& http_control() { return http_control_; }
@@ -267,7 +267,7 @@ class Instance : public Http::StreamDecoderFilter,
     if (state_ == Responded) {
       return;
     }
-    if (!status.ok()) {
+    if (true || !status.ok()) {
       completeCheck(status);
       return;
     }
@@ -306,6 +306,7 @@ class Instance : public Http::StreamDecoderFilter,
                    const AccessLog::RequestInfo& request_info) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     // If decodeHaeders() is not called, not to call Mixer report.
+    return;
     if (!request_data_) return;
     // Make sure not to use any class members at the callback.
     // The class may be gone when it is called.
