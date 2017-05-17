@@ -36,7 +36,7 @@ def boringssl_repositories(bind=True):
 def protobuf_repositories(bind=True):
     native.git_repository(
         name = "protobuf_git",
-        commit = "593e917c176b5bc5aafa57bf9f6030d749d91cd5",  # v3.2.0
+        commit = "455b61c6b0f39ac269b26969877dd3c6f3e32270",  # 2017-05-08
         remote = "https://github.com/google/protobuf.git",
     )
 
