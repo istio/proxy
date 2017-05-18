@@ -38,7 +38,6 @@ const int kClientSecretAuthTokenExpiration(3600 - 100);
 
 Status ServiceAccountToken::SetClientAuthSecret(const std::string& secret) {
   client_auth_secret_ = secret;
-
   for (unsigned int i = 0; i < JWT_TOKEN_TYPE_MAX; i++) {
     if (!jwt_tokens_[i].audience().empty()) {
       Status status = jwt_tokens_[i].GenerateJwtToken(client_auth_secret_);

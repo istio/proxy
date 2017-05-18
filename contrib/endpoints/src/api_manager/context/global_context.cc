@@ -50,6 +50,7 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       is_auth_force_disabled_(false),
       intermediate_report_interval_(kIntermediateReportInterval) {
   // Need to load server config first.
+
   server_config_ = Config::LoadServerConfig(env_.get(), server_config);
 
   cloud_trace_aggregator_ = CreateCloudTraceAggregator();
@@ -61,6 +62,8 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
     }
 
     service_name_ = server_config_->service_name();
+    config_id_ = server_config_->config_id();
+    rollout_strategy_ = server_config_->rollout_strategy();
 
     service_account_token_.SetClientAuthSecret(
         server_config_->google_authentication_secret());

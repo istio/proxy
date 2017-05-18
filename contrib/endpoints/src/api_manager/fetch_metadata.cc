@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////////////
+#include <iostream>
 
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
 

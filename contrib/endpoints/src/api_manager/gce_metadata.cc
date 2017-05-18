@@ -15,7 +15,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "contrib/endpoints/src/api_manager/gce_metadata.h"
-
 #include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
 #include "google/protobuf/stubs/status.h"
 
@@ -53,6 +52,11 @@ Status GceMetadata::ParseFromJson(std::string *json_str) {
   gae_server_software_ =
       SafeAssign(GetStringValue(attributes, "gae_server_software"));
   kube_env_ = SafeAssign(GetStringValue(attributes, "kube-env"));
+
+  endpoints_service_name_ =
+      SafeAssign(GetStringValue(attributes, "endpoints-service-name"));
+  endpoints_service_config_id_ =
+      SafeAssign(GetStringValue(attributes, "endpoints-service-config-id"));
 
   grpc_json_destroy(json);
 

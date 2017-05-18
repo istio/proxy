@@ -63,6 +63,7 @@ cc_library(
     hdrs = [
         "api_manager_impl.h",
         "config.h",
+        "config_manager_impl.h",
         "gce_metadata.h",
         "method_impl.h",
         "request_handler.h",
@@ -85,6 +86,8 @@ cc_library(
         "check_workflow.cc",
         "check_workflow.h",
         "config.cc",
+        "config_manager_impl.cc",
+        "config_manager_impl.h",
         "fetch_metadata.cc",
         "fetch_metadata.h",
         "gce_metadata.cc",
