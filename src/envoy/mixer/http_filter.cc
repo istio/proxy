@@ -87,7 +87,6 @@ int HttpCode(int code) {
 
 class Config : public Logger::Loggable<Logger::Id::http> {
  private:
-  std::shared_ptr<HttpControl> http_control_;
   Upstream::ClusterManager& cm_;
   std::string forward_attributes_;
   MixerConfig mixer_config_;
@@ -112,11 +111,15 @@ class Config : public Logger::Loggable<Logger::Id::http> {
           Base64::encode(serialized_str.c_str(), serialized_str.size());
       log().debug("Mixer forward attributes set: ", serialized_str);
     }
-
-    http_control_ = std::make_shared<HttpControl>(mixer_config_);
   }
 
-  std::shared_ptr<HttpControl>& http_control() { return http_control_; }
+  std::shared_ptr<HttpControl> http_control() {
+    static thread_local std::shared_ptr<HttpControl> http_control;
+    if (!http_control) {
+      http_control = std::make_shared<HttpControl>(mixer_config_);
+    }
+    return http_control;
+  }
   const std::string& forward_attributes() const { return forward_attributes_; }
 };
 
