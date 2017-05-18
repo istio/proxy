@@ -68,8 +68,8 @@ TEST_F(ApiManagerTest, CorrectStatistics) {
   std::shared_ptr<ApiManager> api_manager(
       MakeApiManager(std::move(env), kServiceForStatistics));
   EXPECT_TRUE(api_manager);
-  api_manager->Init();
   EXPECT_TRUE(api_manager->Enabled());
+  api_manager->Init();
   ApiManagerStatistics statistics;
   api_manager->GetStatistics(&statistics);
   const service_control::Statistics &service_control_stat =

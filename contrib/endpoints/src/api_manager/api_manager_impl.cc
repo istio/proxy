@@ -14,9 +14,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include <iostream>
-#include <thread>
-
 #include "contrib/endpoints/src/api_manager/api_manager_impl.h"
 #include "contrib/endpoints/src/api_manager/check_workflow.h"
 #include "contrib/endpoints/src/api_manager/request_handler.h"
@@ -28,11 +25,43 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                                const std::string &service_config,
                                const std::string &server_config)
     : global_context_(
-          new context::GlobalContext(std::move(env), server_config)),
-      service_config_(service_config),
-      initialized_(false) {
+          new context::GlobalContext(std::move(env), server_config)) {
+  if (!service_config.empty()) {
+    AddConfig(service_config, true);
+  }
+
   check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);
   check_workflow_->RegisterAll();
+}
+
+void ApiManagerImpl::AddConfig(const std::string &service_config,
+                               bool deploy_it) {
+  std::unique_ptr<Config> config =
+      Config::Create(global_context_->env(), service_config);
+  if (config != nullptr) {
+    std::string service_name = config->service().name();
+    if (global_context_->service_name().empty()) {
+      global_context_->set_service_name(service_name);
+    } else {
+      if (service_name != global_context_->service_name()) {
+        auto err_msg = std::string("Mismatched service name; existing: ") +
+                       global_context_->service_name() + ", new: " +
+                       service_name;
+        global_context_->env()->LogError(err_msg);
+        return;
+      }
+    }
+    std::string config_id = config->service().id();
+    service_context_map_[config_id] = std::make_shared<context::ServiceContext>(
+        global_context_, std::move(config));
+    // TODO: if this function is called at worker process, need to call
+    // service_context->service_control()->Init().
+    // ApiManagerImpl constructor is called at master process, not at worker
+    // process.
+    if (deploy_it) {
+      DeployConfigs({{config_id, 0}});
+    }
+  }
 }
 
 // Deploy these configs according to the traffic percentage.
@@ -46,64 +75,12 @@ utils::Status ApiManagerImpl::Init() {
     global_context_->cloud_trace_aggregator()->Init();
   }
 
-  if (!service_config_.empty()) {
-    // service config was defined in the nginx config
-    // no need to create a config manager
-    update_rollouts({{service_config_, 0}});
-  } else {
-    // Initialize the config manager instance
-    config_manager_.reset(new ConfigManagerImpl(
-        global_context_,
-        [this](std::vector<std::pair<std::string, int>> &list) {
-          update_rollouts(list);
-        }));
-
-    config_manager_->Init();
-  }
-
-  return utils::Status::OK;
-}
-
-void ApiManagerImpl::update_rollouts(
-    const std::vector<std::pair<std::string, int>> &configs) {
-  std::vector<std::pair<std::string, int>> selector;
-
-  for (auto service_config : configs) {
-    std::unique_ptr<Config> config =
-        Config::Create(global_context_->env(), service_config.first);
-
-    if (config != nullptr) {
-      std::string service_name = config->service().name();
-
-      if (global_context_->service_name().empty()) {
-        global_context_->set_service_name(service_name);
-      }
-
-      if (service_name != global_context_->service_name()) {
-        auto err_msg = std::string("Mismatched service name; existing: ") +
-                       global_context_->service_name() + ", new: " +
-                       service_name;
-        global_context_->env()->LogError(err_msg);
-      }
-
-      std::string config_id = config->service().id();
-
-      service_context_map_[config_id] =
-          std::make_shared<context::ServiceContext>(global_context_,
-                                                    std::move(config));
-
-      service_context_map_[config_id]->service_control()->Init();
-
-      selector.push_back({config_id, service_config.second});
+  for (auto it : service_context_map_) {
+    if (it.second->service_control()) {
+      it.second->service_control()->Init();
     }
   }
-
-  service_selector_.reset(new WeightedSelector(std::move(selector)));
-
-  // Set the config manager instance was initialize.
-  // Now API manager can accept client requests
-  initialized_ = true;
-  global_context_->env()->LogInfo("ApiManager has been initialized");
+  return utils::Status::OK;
 }
 
 utils::Status ApiManagerImpl::Close() {
@@ -155,7 +132,6 @@ utils::Status ApiManagerImpl::GetStatistics(
       }
     }
   }
-
   return utils::Status::OK;
 }
 

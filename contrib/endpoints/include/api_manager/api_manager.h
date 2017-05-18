@@ -87,8 +87,6 @@ class ApiManager {
   virtual utils::Status GetStatistics(
       ApiManagerStatistics *statistics) const = 0;
 
-  virtual bool Initialized() = 0;
-
  protected:
   ApiManager() {}
 

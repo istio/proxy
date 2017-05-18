@@ -16,7 +16,6 @@
 #define API_MANAGER_API_MANAGER_IMPL_H_
 
 #include "contrib/endpoints/include/api_manager/api_manager.h"
-#include "contrib/endpoints/src/api_manager/config_manager_impl.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/context/service_context.h"
 #include "contrib/endpoints/src/api_manager/service_control/interface.h"
@@ -52,14 +51,13 @@ class ApiManagerImpl : public ApiManager {
 
   utils::Status GetStatistics(ApiManagerStatistics *statistics) const override;
 
+  // Add a new service config.
+  void AddConfig(const std::string &service_config, bool deploy_it);
+
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);
 
-  bool Initialized() override { return initialized_; }
-
  private:
-  void update_rollouts(const std::vector<std::pair<std::string, int>> &configs);
-
   // The check work flow.
   std::shared_ptr<CheckWorkflow> check_workflow_;
 
@@ -75,12 +73,6 @@ class ApiManagerImpl : public ApiManager {
 
   // A weighted service selector.
   std::unique_ptr<WeightedSelector> service_selector_;
-
-  std::unique_ptr<ConfigManager> config_manager_;
-
-  std::string service_config_;
-
-  bool initialized_;
 };
 
 }  // namespace api_manager
