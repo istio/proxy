@@ -27,6 +27,9 @@ import "google/protobuf/empty.proto";
 service Bookstore {
   // Returns a list of all shelves in the bookstore.
   rpc ListShelves(google.protobuf.Empty) returns (ListShelvesResponse) {
+    option (google.api.http) = {
+      get: "/shelves"
+    };
   }
   // Creates a new shelf in the bookstore.
   rpc CreateShelf(CreateShelfRequest) returns (Shelf) {

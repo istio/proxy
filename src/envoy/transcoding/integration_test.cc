@@ -19,6 +19,7 @@
 #include "src/envoy/transcoding/test/bookstore.pb.h"
 
 #include "google/protobuf/stubs/status.h"
+#include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
 
@@ -28,6 +29,7 @@
 using google::protobuf::util::MessageDifferencer;
 using google::protobuf::util::Status;
 using google::protobuf::Message;
+using google::protobuf::TextFormat;
 
 namespace Envoy {
 namespace {
@@ -56,11 +58,13 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
 
  protected:
   template <class RequestType, class ResponseType>
-  void testTranscoding(Http::Message& request,
-                       const std::vector<RequestType>& grpc_request_messages,
-                       const std::vector<ResponseType>& grpc_response_messages,
+  void testTranscoding(Http::HeaderMap&& request_headers,
+                       const std::string& request_body,
+                       const std::vector<std::string>& grpc_request_messages,
+                       const std::vector<std::string>& grpc_response_messages,
                        const Status& grpc_status,
-                       Http::Message& expected_response) {
+                       Http::HeaderMap&& response_headers,
+                       const std::string& response_body) {
     IntegrationCodecClientPtr codec_client;
     FakeHttpConnectionPtr fake_upstream_connection;
     IntegrationStreamDecoderPtr response(
@@ -70,12 +74,13 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
     codec_client =
         makeHttpConnection(lookupPort("http"), Http::CodecClient::Type::HTTP1);
 
-    if (request.body()) {
+    if (!request_body.empty()) {
       Http::StreamEncoder& encoder =
-          codec_client->startRequest(request.headers(), *response);
-      codec_client->sendData(encoder, *request.body(), true);
+          codec_client->startRequest(request_headers, *response);
+      Buffer::OwnedImpl body(request_body);
+      codec_client->sendData(encoder, body, true);
     } else {
-      codec_client->makeHeaderOnlyRequest(request.headers(), *response);
+      codec_client->makeHeaderOnlyRequest(request_headers, *response);
     }
 
     if (!grpc_request_messages.empty()) {
@@ -92,11 +97,15 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
 
       for (size_t i = 0; i < grpc_request_messages.size(); ++i) {
         RequestType actual_message;
-        actual_message.ParseFromArray(
-            frames[i].data_->linearize(frames[i].length_), frames[i].length_);
+        EXPECT_TRUE(actual_message.ParseFromArray(
+            frames[i].data_->linearize(frames[i].length_), frames[i].length_));
 
-        EXPECT_TRUE(MessageDifferencer::Equals(grpc_request_messages[i],
-                                               actual_message));
+        RequestType expected_message;
+        EXPECT_TRUE(TextFormat::ParseFromString(grpc_request_messages[i],
+                                                &expected_message));
+
+        EXPECT_TRUE(
+            MessageDifferencer::Equivalent(expected_message, actual_message));
       }
     }
 
@@ -111,7 +120,10 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
         request_stream->encodeHeaders(response_headers, true);
       } else {
         request_stream->encodeHeaders(response_headers, false);
-        for (const auto& response_message : grpc_response_messages) {
+        for (const auto& response_message_str : grpc_response_messages) {
+          ResponseType response_message;
+          EXPECT_TRUE(TextFormat::ParseFromString(response_message_str,
+                                                  &response_message));
           auto buffer = Grpc::Common::serializeBody(response_message);
           request_stream->encodeData(*buffer, false);
         }
@@ -126,7 +138,7 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
 
     response->waitForEndStream();
     EXPECT_TRUE(response->complete());
-    expected_response.headers().iterate(
+    response_headers.iterate(
         [](const Http::HeaderEntry& entry, void* context) -> void {
           IntegrationStreamDecoder* response =
               static_cast<IntegrationStreamDecoder*>(context);
@@ -135,8 +147,8 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
                        response->headers().get(lower_key)->value().c_str());
         },
         response.get());
-    if (expected_response.body()) {
-      EXPECT_EQ(expected_response.bodyAsString(), response->body());
+    if (!response_body.empty()) {
+      EXPECT_EQ(response_body, response->body());
     }
 
     codec_client->close();
@@ -145,29 +157,17 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
   }
 };
 
-TEST_F(TranscodingIntegrationTest, BasicUnary) {
-  Http::MessagePtr request(new Http::RequestMessageImpl(Http::HeaderMapPtr{
-      new Http::TestHeaderMapImpl{{":method", "POST"},
-                                  {":path", "/shelf"},
-                                  {":authority", "host"},
-                                  {"content-type", "application/json"}}}));
-  request->body().reset(new Buffer::OwnedImpl{"{\"theme\": \"Children\"}"});
-  bookstore::CreateShelfRequest csr;
-  csr.mutable_shelf()->set_theme("Children");
-
-  bookstore::Shelf response_pb;
-  response_pb.set_id(20);
-  response_pb.set_theme("Children");
-
-  Http::MessagePtr response(new Http::ResponseMessageImpl(
-      Http::HeaderMapPtr{new Http::TestHeaderMapImpl{
-          {":status", "200"}, {"content-type", "application/json"}}}));
-
-  response->body().reset(
-      new Buffer::OwnedImpl{"{\"id\":\"20\",\"theme\":\"Children\"}"});
-
+TEST_F(TranscodingIntegrationTest, UnaryPost) {
   testTranscoding<bookstore::CreateShelfRequest, bookstore::Shelf>(
-      *request, {csr}, {response_pb}, Status::OK, *response);
+      Http::TestHeaderMapImpl{{":method", "POST"},
+                              {":path", "/shelf"},
+                              {":authority", "host"},
+                              {"content-type", "application/json"}},
+      R"({"theme": "Children"})", {R"(shelf { theme: "Children" })"},
+      {R"(id: 20 theme: "Children" )"}, Status::OK,
+      Http::TestHeaderMapImpl{{":status", "200"},
+                              {"content-type", "application/json"}},
+      R"({"id":"20","theme":"Children"})");
 }
 
 }  // namespace
