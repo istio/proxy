@@ -28,6 +28,7 @@
 
 using google::protobuf::util::MessageDifferencer;
 using google::protobuf::util::Status;
+using google::protobuf::Empty;
 using google::protobuf::Message;
 using google::protobuf::TextFormat;
 
@@ -83,23 +84,24 @@ class TranscodingIntegrationTest : public BaseIntegrationTest,
       codec_client->makeHeaderOnlyRequest(request_headers, *response);
     }
 
+    fake_upstream_connection =
+        fake_upstreams_[0]->waitForHttpConnection(*dispatcher_);
     if (!grpc_request_messages.empty()) {
-      fake_upstream_connection =
-          fake_upstreams_[0]->waitForHttpConnection(*dispatcher_);
       request_stream = fake_upstream_connection->waitForNewStream();
       request_stream->waitForEndStream(*dispatcher_);
 
       Grpc::Decoder grpc_decoder;
       std::vector<Grpc::Frame> frames;
-      grpc_decoder.decode(request_stream->body(), frames);
-
+      EXPECT_TRUE(grpc_decoder.decode(request_stream->body(), frames));
       EXPECT_EQ(grpc_request_messages.size(), frames.size());
 
       for (size_t i = 0; i < grpc_request_messages.size(); ++i) {
         RequestType actual_message;
-        EXPECT_TRUE(actual_message.ParseFromArray(
-            frames[i].data_->linearize(frames[i].length_), frames[i].length_));
-
+        if (frames[i].length_ > 0) {
+          EXPECT_TRUE(actual_message.ParseFromArray(
+              frames[i].data_->linearize(frames[i].length_),
+              frames[i].length_));
+        }
         RequestType expected_message;
         EXPECT_TRUE(TextFormat::ParseFromString(grpc_request_messages[i],
                                                 &expected_message));
@@ -168,6 +170,124 @@ TEST_F(TranscodingIntegrationTest, UnaryPost) {
       Http::TestHeaderMapImpl{{":status", "200"},
                               {"content-type", "application/json"}},
       R"({"id":"20","theme":"Children"})");
+}
+
+TEST_F(TranscodingIntegrationTest, UnaryGet) {
+  testTranscoding<Empty, bookstore::ListShelvesResponse>(
+      Http::TestHeaderMapImpl{
+          {":method", "GET"}, {":path", "/shelves"}, {":authority", "host"}},
+      "", {""}, {R"(shelves { id: 20 theme: "Children" }
+          shelves { id: 1 theme: "Foo" } )"},
+      Status::OK, Http::TestHeaderMapImpl{{":status", "200"},
+                                          {"content-type", "application/json"}},
+      R"({"shelves":[{"id":"20","theme":"Children"},{"id":"1","theme":"Foo"}]})");
+}
+
+TEST_F(TranscodingIntegrationTest, UnaryDelete) {
+  testTranscoding<bookstore::DeleteBookRequest, Empty>(
+      Http::TestHeaderMapImpl{{":method", "DELETE"},
+                              {":path", "/shelves/456/books/123"},
+                              {":authority", "host"}},
+      "", {"shelf: 456 book: 123"}, {""}, Status::OK,
+      Http::TestHeaderMapImpl{{":status", "200"},
+                              {"content-type", "application/json"}},
+      "{}");
+}
+
+TEST_F(TranscodingIntegrationTest, BindingAndBody) {
+  testTranscoding<bookstore::CreateBookRequest, bookstore::Book>(
+      Http::TestHeaderMapImpl{{":method", "POST"},
+                              {":path", "/shelves/1/books"},
+                              {":authority", "host"}},
+      R"({"author" : "Leo Tolstoy", "title" : "War and Peace"})",
+      {R"(shelf: 1 book { author: "Leo Tolstoy" title: "War and Peace" })"},
+      {
+          R"(id: 3 author: "Leo Tolstoy" title: "War and Peace")",
+      },
+      Status::OK, Http::TestHeaderMapImpl{{":status", "200"},
+                                          {"content-type", "application/json"}},
+      R"({"id":"3","author":"Leo Tolstoy","title":"War and Peace"})");
+}
+
+TEST_F(TranscodingIntegrationTest, ServerStreamingGet) {
+  testTranscoding<bookstore::ListBooksRequest, bookstore::Book>(
+      Http::TestHeaderMapImpl{{":method", "GET"},
+                              {":path", "/shelves/1/books"},
+                              {":authority", "host"}},
+      "", {"shelf: 1"},
+      {R"(id: 1 author: "Neal Stephenson" title: "Readme")",
+       R"(id: 2 author: "George R.R. Martin" title: "A Game of Thrones")"},
+      Status::OK, Http::TestHeaderMapImpl{{":status", "200"},
+                                          {"content-type", "application/json"}},
+      R"([{"id":"1","author":"Neal Stephenson","title":"Readme"})"
+      R"(,{"id":"2","author":"George R.R. Martin","title":"A Game of Thrones"}])");
+}
+
+TEST_F(TranscodingIntegrationTest, StreamingPost) {
+  testTranscoding<bookstore::CreateShelfRequest, bookstore::Shelf>(
+      Http::TestHeaderMapImpl{{":method", "POST"},
+                              {":path", "/bulk/shelves"},
+                              {":authority", "host"}},
+      R"([
+        { "theme" : "Classics" },
+        { "theme" : "Satire" },
+        { "theme" : "Russian" },
+        { "theme" : "Children" },
+        { "theme" : "Documentary" },
+        { "theme" : "Mystery" },
+      ])",
+      {R"(shelf { theme: "Classics" })",
+       R"(shelf { theme: "Satire" })",
+       R"(shelf { theme: "Russian" })",
+       R"(shelf { theme: "Children" })",
+       R"(shelf { theme: "Documentary" })",
+       R"(shelf { theme: "Mystery" })"},
+      {R"(id: 3 theme: "Classics")",
+       R"(id: 4 theme: "Satire")",
+       R"(id: 5 theme: "Russian")",
+       R"(id: 6 theme: "Children")",
+       R"(id: 7 theme: "Documentary")",
+       R"(id: 8 theme: "Mystery")"},
+      Status::OK, Http::TestHeaderMapImpl{{":status", "200"},
+                                          {"content-type", "application/json"}},
+      R"([{"id":"3","theme":"Classics"})"
+      R"(,{"id":"4","theme":"Satire"})"
+      R"(,{"id":"5","theme":"Russian"})"
+      R"(,{"id":"6","theme":"Children"})"
+      R"(,{"id":"7","theme":"Documentary"})"
+      R"(,{"id":"8","theme":"Mystery"}])");
+}
+
+TEST_F(TranscodingIntegrationTest, InvalidJson) {
+  testTranscoding<bookstore::CreateShelfRequest, bookstore::Shelf>(
+      Http::TestHeaderMapImpl{
+          {":method", "POST"}, {":path", "/shelf"}, {":authority", "host"}},
+      R"(INVALID_JSON)", {}, {}, Status::OK,
+      Http::TestHeaderMapImpl{{":status", "400"},
+                              {"content-type", "text/plain"}},
+      "Unexpected token.\n"
+      "INVALID_JSON\n"
+      "^");
+
+  testTranscoding<bookstore::CreateShelfRequest, bookstore::Shelf>(
+      Http::TestHeaderMapImpl{
+          {":method", "POST"}, {":path", "/shelf"}, {":authority", "host"}},
+      R"({ "theme" : "Children")", {}, {}, Status::OK,
+      Http::TestHeaderMapImpl{{":status", "400"},
+                              {"content-type", "text/plain"}},
+      "Unexpected end of string. Expected , or } after key:value pair.\n"
+      "\n"
+      "^");
+
+  testTranscoding<bookstore::CreateShelfRequest, bookstore::Shelf>(
+      Http::TestHeaderMapImpl{
+          {":method", "POST"}, {":path", "/shelf"}, {":authority", "host"}},
+      R"({ "theme"  "Children" })", {}, {}, Status::OK,
+      Http::TestHeaderMapImpl{{":status", "400"},
+                              {"content-type", "text/plain"}},
+      "Expected : between key:value pair.\n"
+      "{ \"theme\"  \"Children\" }\n"
+      "           ^");
 }
 
 }  // namespace
