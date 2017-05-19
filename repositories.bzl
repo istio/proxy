@@ -36,7 +36,7 @@ def boringssl_repositories(bind=True):
 def protobuf_repositories(bind=True):
     native.git_repository(
         name = "protobuf_git",
-        commit = "6df0923c05cf8e0da44e858a7133c0b55bad90d9",  # istio branch
+        commit = "580b222e225076d0d7a6c65d472398a5f089fb51",  # istio branch
         remote = "https://github.com/istio/protobuf.git",
     )
 
