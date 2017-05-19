@@ -830,7 +830,7 @@ const char kLogFieldNameLogMessage[] = "log_message";
 const char kLogFieldNameRequestLatency[] = "request_latency_in_ms";
 const char kLogFieldNameUrl[] = "url";
 const char kLogFieldNameErrorCause[] = "error_cause";
-const char kLogFieldClientIP[] = "client_IP";
+const char kLogFieldClientIP[] = "client_ip";
 
 // Convert timestamp from time_point to Timestamp
 Timestamp CreateTimestamp(std::chrono::system_clock::time_point tp) {
