@@ -464,8 +464,7 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzFailWithEmptyTestRulesetResponse) {
   request_context_->set_auth_claims(kJwtEmailPayload);
   ExpectCall(release_url_, "GET", "", kRelease);
 
-  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
-             "{}");
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest, "{}");
   CheckSecurityRules(request_context_, [](Status status) {
     ASSERT_TRUE(status.CanonicalCode() == Code::INTERNAL);
   });
