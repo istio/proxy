@@ -21,6 +21,7 @@
 #include "src/envoy/transcoding/config.h"
 #include "src/envoy/transcoding/envoy_input_stream.h"
 
+namespace Envoy {
 namespace Grpc {
 namespace Transcoding {
 
@@ -51,6 +52,8 @@ class Instance : public Http::StreamFilter,
   void setEncoderFilterCallbacks(
       Http::StreamEncoderFilterCallbacks& callbacks) override;
 
+  void onDestroy() override {}
+
  private:
   bool ReadToBuffer(google::protobuf::io::ZeroCopyInputStream* stream,
                     Buffer::Instance& data);
@@ -61,7 +64,10 @@ class Instance : public Http::StreamFilter,
   EnvoyInputStream response_in_;
   Http::StreamDecoderFilterCallbacks* decoder_callbacks_{nullptr};
   Http::StreamEncoderFilterCallbacks* encoder_callbacks_{nullptr};
+
+  bool error_{false};
 };
 
 }  // namespace Transcoding
 }  // namespace Grpc
+}  // namespace Envoy
