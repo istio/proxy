@@ -94,6 +94,19 @@ class ServiceContext {
 
   std::shared_ptr<GlobalContext> global_context() { return global_context_; }
 
+  // Methods accessing instance_count_ and is_terminated_ should be protected
+  // by the same mutex instance
+
+  int64_t instance_count() { return instance_count_; }
+
+  void increase_instance_count() { instance_count_++; }
+
+  void decrease_instance_count() { instance_count_--; }
+
+  bool is_terminated() { return is_terminated_; }
+
+  void set_terminated() { is_terminated_ = true; }
+
  private:
   // Create service control.
   std::unique_ptr<service_control::Interface> CreateInterface();
@@ -108,6 +121,12 @@ class ServiceContext {
 
   // The service control object.
   std::unique_ptr<service_control::Interface> service_control_;
+
+  // Number of instances using the the context.
+  int64_t instance_count_;
+
+  // The current context is marked terminated
+  bool is_terminated_;
 };
 
 }  // namespace context

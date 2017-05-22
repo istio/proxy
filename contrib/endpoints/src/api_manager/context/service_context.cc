@@ -31,7 +31,9 @@ ServiceContext::ServiceContext(std::shared_ptr<GlobalContext> global_context,
                                std::unique_ptr<Config> config)
     : global_context_(global_context),
       config_(std::move(config)),
-      service_control_(CreateInterface()) {
+      service_control_(CreateInterface()),
+      instance_count_(0),
+      is_terminated_(false) {
   config_->set_server_config(global_context_->server_config());
 }
 
