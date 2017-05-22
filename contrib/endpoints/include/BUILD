@@ -41,6 +41,7 @@ filegroup(
     srcs = [
         "api_manager/api_manager.h",
         "api_manager/compute_platform.h",
+        "api_manager/config_manager.h",
         "api_manager/env_interface.h",
         "api_manager/grpc_request.h",
         "api_manager/http_request.h",
