@@ -60,30 +60,6 @@ const char kValidConfigDateFormat[] = "%Y-%m-%d";
 const char kConfigRevisionDelimeter = 'r';
 // static configs for error handling
 static std::vector<std::pair<std::string, int>> empty_configs;
-
-// Check config_id is valid
-bool isValidConfigId(const std::string& config_id) {
-  if (config_id.length() < 12) {
-    return false;
-  }
-
-  if (config_id[10] != kConfigRevisionDelimeter) {
-    return false;
-  }
-
-  struct tm tm;
-  std::string date_part = config_id.substr(0, 10);
-  if (!strptime(date_part.c_str(), kValidConfigDateFormat, &tm)) {
-    return false;
-  }
-
-  std::string revision_part = config_id.substr(11);
-  if (std::stoi(revision_part) == 0 && revision_part.compare("0") != 0) {
-    return false;
-  }
-
-  return true;
-}
 };
 
 ConfigManager::ConfigManager(
@@ -116,108 +92,85 @@ ConfigManager::ConfigManager(
 void ConfigManager::Init() {
   if (global_context_->service_name().empty() ||
       global_context_->config_id().empty()) {
-    std::function<void(utils::Status)> callback = [this](utils::Status status) {
+    GlobalFetchGceMetadata(global_context_, [this](utils::Status status) {
       on_fetch_metadata(status);
-    };
-
-    GlobalFetchGceMetadata(global_context_, callback);
+    });
   } else {
     on_fetch_metadata(utils::Status::OK);
   }
 }
 
 void ConfigManager::on_fetch_metadata(utils::Status status) {
-  if (status.ok()) {
-    // Update service_name
-    if (global_context_->service_name().empty()) {
-      global_context_->set_service_name(
-          global_context_->gce_metadata()->endpoints_service_name());
-    }
-
-    // Update config_id
-    if (global_context_->config_id().empty()) {
-      global_context_->config_id(
-          global_context_->gce_metadata()->endpoints_service_config_id());
-    }
-
-    // Call ApiManager call with Code::ABORTED, ESP will stop moving forward
-    if (global_context_->service_name().empty()) {
-      std::string msg = "API service name not specified in configuration files";
-      global_context_->env()->LogError(msg);
-      config_roollout_callback_(utils::Status(Code::ABORTED, msg),
-                                empty_configs);
-      return;
-    }
-
-    // TODO(jaebong) config_id should not be empty for the first version
-    // This part will be removed after the rollouts feature added
-    if (global_context_->config_id().empty()) {
-      std::string msg = "API config_id not specified in configuration files";
-      global_context_->env()->LogError(msg);
-      config_roollout_callback_(utils::Status(Code::ABORTED, msg),
-                                empty_configs);
-      return;
-    }
-
-    // Check config_id is invalid
-    if (!isValidConfigId(global_context_->config_id())) {
-      std::string msg = "Invalid config_id: " + global_context_->config_id();
-      global_context_->env()->LogError(msg);
-      config_roollout_callback_(utils::Status(Code::ABORTED, msg),
-                                empty_configs);
-      return;
-    }
-
-    std::function<void(utils::Status)> callback = [this](utils::Status status) {
-      on_fetch_auth_token(status);
-    };
-    // Fetch service account token
-    GlobalFetchServiceAccountToken(global_context_, callback);
-  } else if (status.code() == Code::INTERNAL) {
-    // Failed to fetch meta data
-    global_context_->env()->LogError("Metadata fetch failed.");
-    config_roollout_callback_(utils::Status(Code::ABORTED, status.message()),
-                              empty_configs);
-  } else {
+  if (!status.ok()) {
     // We should not get here
     global_context_->env()->LogError("Unexpected status: " + status.ToString());
     config_roollout_callback_(utils::Status(Code::ABORTED, status.message()),
                               empty_configs);
+    return;
   }
+
+  // Update service_name
+  if (global_context_->service_name().empty()) {
+    global_context_->set_service_name(
+        global_context_->gce_metadata()->endpoints_service_name());
+  }
+
+  // Update config_id
+  if (global_context_->config_id().empty()) {
+    global_context_->config_id(
+        global_context_->gce_metadata()->endpoints_service_config_id());
+  }
+
+  // Call ApiManager call with Code::ABORTED, ESP will stop moving forward
+  if (global_context_->service_name().empty()) {
+    std::string msg = "API service name not specified in configuration files";
+    global_context_->env()->LogError(msg);
+    config_roollout_callback_(utils::Status(Code::ABORTED, msg), empty_configs);
+    return;
+  }
+
+  // TODO(jaebong) config_id should not be empty for the first version
+  // This part will be removed after the rollouts feature added
+  if (global_context_->config_id().empty()) {
+    std::string msg = "API config_id not specified in configuration files";
+    global_context_->env()->LogError(msg);
+    config_roollout_callback_(utils::Status(Code::ABORTED, msg), empty_configs);
+    return;
+  }
+
+  // Fetch service account token
+  GlobalFetchServiceAccountToken(global_context_, [this](utils::Status status) {
+    on_fetch_auth_token(status);
+  });
 }
 
 void ConfigManager::on_fetch_auth_token(utils::Status status) {
-  if (status.ok()) {
-    if (global_context_->service_account_token()) {
-      // register auth token for servicemanagement services
-      global_context_->service_account_token()->SetAudience(
-          auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICEMANAGEMENT_SERVICES,
-          service_management_url_ + kServiceManagementServiceManager);
-    }
-
-    // Fetch configs from the Inception
-    std::shared_ptr<ConfigsFetchInfo> fetchInfo(new ConfigsFetchInfo);
-    // For now, config manager has only one config_id (100% rollout)
-    fetchInfo->rollouts = {{global_context_->config_id(), 0}};
-    fetch_configs(fetchInfo, 0);
-
-  } else if (status.code() == Code::INTERNAL) {
-    // Failed to fetch auth token.
-    global_context_->env()->LogError("Auth token fetch failed.");
-    config_roollout_callback_(utils::Status(Code::ABORTED, status.message()),
-                              empty_configs);
-  } else {
+  if (!status.ok()) {
     // We should not get here
     global_context_->env()->LogError("Unexpected status: " + status.ToString());
     config_roollout_callback_(utils::Status(Code::ABORTED, status.message()),
                               empty_configs);
   }
+
+  if (global_context_->service_account_token()) {
+    // register auth token for servicemanagement services
+    global_context_->service_account_token()->SetAudience(
+        auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICEMANAGEMENT_SERVICES,
+        service_management_url_ + kServiceManagementServiceManager);
+  }
+
+  // Fetch configs from the Inception
+  auto fetchInfo = std::make_shared<ConfigsFetchInfo>();
+
+  // For now, config manager has only one config_id (100% rollout)
+  fetchInfo->rollouts = {{global_context_->config_id(), 0}};
+  fetch_configs(fetchInfo);
 }
 
-void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo,
-                                  std::size_t index) {
+void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo) {
   // Finished fetching configs.
-  if (fetchInfo->rollouts.size() <= index || index < 0) {
+  if (fetchInfo->rollouts.size() <= (size_t)fetchInfo->index_ ||
+      fetchInfo->index_ < 0) {
     // Failed to fetch all configs or rollouts are empty
     if (fetchInfo->rollouts.size() == 0 || fetchInfo->configs.size() == 0) {
       // first time, call the ApiManager callback function with an error
@@ -229,27 +182,28 @@ void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo,
 
     // Update ApiManager
     config_roollout_callback_(utils::Status::OK, fetchInfo->configs);
-
     return;
   }
 
-  HttpCallbackFunction on_fetch_done = [this, &fetchInfo, index](
+  HttpCallbackFunction on_fetch_done = [this, &fetchInfo](
       const utils::Status& status, const std::string& config) {
     if (status.ok()) {
-      fetchInfo->configs.push_back({config, fetchInfo->rollouts[index].second});
+      fetchInfo->configs.push_back(
+          {config, fetchInfo->rollouts[fetchInfo->index_].second});
     } else {
       global_context_->env()->LogError(
           std::string("Unable to decide the config_id: " +
-                      fetchInfo->rollouts[index].first));
+                      fetchInfo->rollouts[fetchInfo->index_].first));
     }
 
     // move on to the next config_id
-    fetch_configs(fetchInfo, index + 1);
+    fetchInfo->index_++;
+    fetch_configs(fetchInfo);
   };
 
   const std::string url = service_management_url_ + "/v1/services/" +
                           global_context_->service_name() + "/configs/" +
-                          fetchInfo->rollouts[index].first;
+                          fetchInfo->rollouts[fetchInfo->index_].first;
 
   call(url, on_fetch_done);
 }

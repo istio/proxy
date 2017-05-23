@@ -26,6 +26,8 @@
 namespace google {
 namespace api_manager {
 
+namespace {
+
 // HTTP request callback
 typedef std::function<void(const utils::Status&, const std::string&)>
     HttpCallbackFunction;
@@ -43,9 +45,18 @@ typedef std::function<void(const utils::Status& status,
 
 // Data structure to fetch configs from rollouts
 struct ConfigsFetchInfo {
+  ConfigsFetchInfo() : index_(0) {}
+
+  // config_ids to be fetched and rollouts percentages
   std::vector<std::pair<std::string, int>> rollouts;
+  // fetched ServiceConfig and rollouts percentages
   std::vector<std::pair<std::string, int>> configs;
+
+  // index to be fetched
+  int index_;
 };
+
+}  // namespace anonymous
 
 // Manages configuration downloading
 class ConfigManager {
@@ -62,8 +73,7 @@ class ConfigManager {
  private:
   // Fetch ServiceConfig details from the latest successful rollouts
   // https://goo.gl/I2nD4M
-  void fetch_configs(std::shared_ptr<ConfigsFetchInfo> rollouts,
-                     std::size_t index);
+  void fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo);
 
   // Send HTTP GET request to ServiceManagement API
   void call(const std::string& url, HttpCallbackFunction on_done);

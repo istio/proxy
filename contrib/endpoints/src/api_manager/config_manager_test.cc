@@ -638,7 +638,7 @@ TEST_F(ConfigManagerMetadataTest,
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [](const utils::Status& status,
                           std::vector<std::pair<std::string, int>>& list) {
-        ASSERT_EQ("ABORTED: Invalid config_id: invalid", status.ToString());
+        ASSERT_EQ("ABORTED: Failed to load configs", status.ToString());
       }));
 
   config_manager->Init();
