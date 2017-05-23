@@ -183,14 +183,6 @@ class Instance : public Http::StreamDecoderFilter,
   // Returns a shared pointer of this object.
   std::shared_ptr<Instance> GetPtr() { return shared_from_this(); }
 
-  // Jump thread; on_done will be called at the dispatcher thread.
-  DoneFunc GetThreadJumpFunc(DoneFunc on_done) {
-    auto& dispatcher = decoder_callbacks_->dispatcher();
-    return [&dispatcher, on_done](const Status& status) {
-      dispatcher.post([status, on_done]() { on_done(status); });
-    };
-  }
-
   FilterHeadersStatus decodeHeaders(HeaderMap& headers,
                                     bool end_stream) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
@@ -217,10 +209,9 @@ class Instance : public Http::StreamDecoderFilter,
     }
 
     auto instance = GetPtr();
-    http_control_->Check(request_data_, headers, origin_user,
-                         GetThreadJumpFunc([instance](const Status& status) {
-                           instance->callQuota(status);
-                         }));
+    http_control_->Check(
+        request_data_, headers, origin_user,
+        [instance](const Status& status) { instance->callQuota(status); });
     initiating_call_ = false;
 
     if (state_ == Complete) {
@@ -260,6 +251,7 @@ class Instance : public Http::StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     decoder_callbacks_ = &callbacks;
+    thread_set_dispatcher(decoder_callbacks_->dispatcher());
   }
 
   void callQuota(const Status& status) {
@@ -267,15 +259,14 @@ class Instance : public Http::StreamDecoderFilter,
     if (state_ == Responded) {
       return;
     }
-    if (true || !status.ok()) {
+    if (!status.ok()) {
       completeCheck(status);
       return;
     }
     auto instance = GetPtr();
-    http_control_->Quota(request_data_,
-                         GetThreadJumpFunc([instance](const Status& status) {
-                           instance->completeCheck(status);
-                         }));
+    http_control_->Quota(request_data_, [instance](const Status& status) {
+      instance->completeCheck(status);
+    });
   }
 
   void completeCheck(const Status& status) {
@@ -306,7 +297,6 @@ class Instance : public Http::StreamDecoderFilter,
                    const AccessLog::RequestInfo& request_info) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     // If decodeHaeders() is not called, not to call Mixer report.
-    return;
     if (!request_data_) return;
     // Make sure not to use any class members at the callback.
     // The class may be gone when it is called.

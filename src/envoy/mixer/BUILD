@@ -42,7 +42,6 @@ cc_library(
         ":string_map_proto",
         "//external:mixer_client_lib",
         "@envoy//source/exe:envoy_common_lib",
-        "@envoy//source/common/grpc:rpc_channel_lib",
     ],
     alwayslink = 1,
 )
