@@ -259,6 +259,7 @@ class Instance : public Http::StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     decoder_callbacks_ = &callbacks;
+    thread_set_dispatcher(decoder_callbacks_->dispatcher());
   }
 
   void callQuota(const Status& status) {
@@ -266,7 +267,7 @@ class Instance : public Http::StreamDecoderFilter,
     if (state_ == Responded) {
       return;
     }
-    if (true || !status.ok()) {
+    if (!status.ok()) {
       completeCheck(status);
       return;
     }
@@ -305,7 +306,6 @@ class Instance : public Http::StreamDecoderFilter,
                    const AccessLog::RequestInfo& request_info) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     // If decodeHaeders() is not called, not to call Mixer report.
-    return;
     if (!request_data_) return;
     // Make sure not to use any class members at the callback.
     // The class may be gone when it is called.

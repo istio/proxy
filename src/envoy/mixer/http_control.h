@@ -59,7 +59,6 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
   void FillCheckAttributes(HeaderMap& header_map,
                            ::istio::mixer_client::Attributes* attr);
 
-  Upstream::ClusterManager& cm_;
   // The mixer client
   std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client_;
   // The mixer config
@@ -67,6 +66,9 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
   // Quota attributes; extracted from envoy filter config.
   ::istio::mixer_client::Attributes quota_attributes_;
 };
+
+void thread_set_dispatcher(Event::Dispatcher& dispatcher);
+void thread_dispatcher_post(std::function<void()> fn);
 
 }  // namespace Mixer
 }  // namespace Http
