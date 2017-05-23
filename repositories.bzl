@@ -230,6 +230,9 @@ cc_library(
     defines = [
         "Z_SOLO",
     ],
+    includes = [
+        ".",
+    ],
     visibility = [
         "//visibility:public",
     ],
