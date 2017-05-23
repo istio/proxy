@@ -12,10 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef API_MANAGER_CONFIG_MANAGER_IMPL_H_
-#define API_MANAGER_CONFIG_MANAGER_IMPL_H_
+#ifndef API_MANAGER_CONFIG_MANAGER_H_
+#define API_MANAGER_CONFIG_MANAGER_H_
 
-#include "contrib/endpoints/include/api_manager/config_manager.h"
 #include "contrib/endpoints/include/api_manager/http_request.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
@@ -27,51 +26,62 @@
 namespace google {
 namespace api_manager {
 
+// HTTP request callback
 typedef std::function<void(const utils::Status&, const std::string&)>
-    ApiCallbackFunction;
+    HttpCallbackFunction;
 
-class ConfigManagerImpl : public ConfigManager {
+// ApiManagerCallbackFunction is the callback provided by ApiManager.
+// ConfigManager calls the callback after the service config download
+//
+// status
+//  - Code::OK        Config manager was successfully initialized
+//  - Code::ABORTED   Fatal error
+// configs - pairs of ServiceConfig in text and rollout percentages
+typedef std::function<void(const utils::Status& status,
+                           std::vector<std::pair<std::string, int>>& configs)>
+    ApiManagerCallbackFunction;
+
+// Data structure to fetch configs from rollouts
+struct ConfigsFetchInfo {
+  std::vector<std::pair<std::string, int>> rollouts;
+  std::vector<std::pair<std::string, int>> configs;
+};
+
+// Manages configuration downloading
+class ConfigManager {
  public:
-  ConfigManagerImpl(
-      std::shared_ptr<context::GlobalContext> global_context,
-      std::function<void(const utils::Status&,
-                         std::vector<std::pair<std::string, int>>&)>
-          config_roollout_callback);
+  ConfigManager(std::shared_ptr<context::GlobalContext> global_context,
+                ApiManagerCallbackFunction config_roollout_callback);
 
-  virtual ~ConfigManagerImpl(){};
+  virtual ~ConfigManager(){};
 
  public:
-  void Init() override;
+  // Initialize the instance
+  void Init();
 
  private:
   // Fetch ServiceConfig details from the latest successful rollouts
   // https://goo.gl/I2nD4M
-  void fetch_configs(std::vector<std::pair<std::string, int>> rollouts,
-                     std::size_t index,
-                     std::vector<std::pair<std::string, int>> output);
+  void fetch_configs(std::shared_ptr<ConfigsFetchInfo> rollouts,
+                     std::size_t index);
 
   // Send HTTP GET request to ServiceManagement API
-  void call(const std::string& url, ApiCallbackFunction on_done);
+  void call(const std::string& url, HttpCallbackFunction on_done);
 
   // Generate Auth token for ServiceManagement API
   const std::string& get_auth_token();
 
-  // Returns callback to trigger fetching metadata
-  std::function<void(utils::Status)> get_fetch_metadata_callback();
+  // Handle metadata fetch done
+  void on_fetch_metadata(utils::Status status);
 
-  // Returns callback to trigger fetching auth token
-  std::function<void(utils::Status)> get_fetch_auth_token_callback();
-
-  // Internal callback functions
-  std::function<void(utils::Status)> on_fetch_metadata_callback_;
-  std::function<void(utils::Status)> on_fetch_auth_token_callback_;
+  // Handle auth token fetch done
+  void on_fetch_auth_token(utils::Status status);
 
   // Global context provided by ApiManager
   std::shared_ptr<context::GlobalContext> global_context_;
 
-  std::function<void(const utils::Status&,
-                     std::vector<std::pair<std::string, int>>&)>
-      config_roollout_callback_;
+  // ApiManager updated callback
+  ApiManagerCallbackFunction config_roollout_callback_;
 
   // Service Management API base url
   std::string service_management_url_;
@@ -81,4 +91,4 @@ class ConfigManagerImpl : public ConfigManager {
 
 }  // namespace api_manager
 }  // namespace google
-#endif  // API_MANAGER_CONFIG_MANAGER_IMPL_H_
+#endif  // API_MANAGER_CONFIG_MANAGER_H_

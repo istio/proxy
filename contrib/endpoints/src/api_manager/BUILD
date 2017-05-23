@@ -63,7 +63,6 @@ cc_library(
     hdrs = [
         "api_manager_impl.h",
         "config.h",
-        "config_manager_impl.h",
         "gce_metadata.h",
         "method_impl.h",
         "request_handler.h",
@@ -86,8 +85,8 @@ cc_library(
         "check_workflow.cc",
         "check_workflow.h",
         "config.cc",
-        "config_manager_impl.cc",
-        "config_manager_impl.h",
+        "config_manager.cc",
+        "config_manager.h",
         "fetch_metadata.cc",
         "fetch_metadata.h",
         "gce_metadata.cc",
@@ -205,10 +204,10 @@ cc_test(
 )
 
 cc_test(
-    name = "config_manager_impl_test",
+    name = "config_manager_test",
     size = "small",
     srcs = [
-        "config_manager_impl_test.cc",
+        "config_manager_test.cc",
         "mock_request.h",
     ],
     linkstatic = 1,

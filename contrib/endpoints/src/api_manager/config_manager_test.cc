@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "contrib/endpoints/src/api_manager/config_manager_impl.h"
+#include "contrib/endpoints/src/api_manager/config_manager.h"
 
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/context/request_context.h"
@@ -336,7 +336,7 @@ const char kRolloutsResponseEmpty[] = R"(
 )";
 
 // service_name, config_id in server config
-class ConfigManagerImplServiceNameConfigIdInServerConfTest
+class ConfigManagerServiceNameConfigIdInServerConfTest
     : public ::testing::Test {
  public:
   void SetUp() {
@@ -356,7 +356,7 @@ class ConfigManagerImplServiceNameConfigIdInServerConfTest
   std::shared_ptr<context::GlobalContext> global_context_;
 };
 
-TEST_F(ConfigManagerImplServiceNameConfigIdInServerConfTest,
+TEST_F(ConfigManagerServiceNameConfigIdInServerConfTest,
        TestServiceNameAndConfigIdFromServerConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
@@ -381,7 +381,7 @@ TEST_F(ConfigManagerImplServiceNameConfigIdInServerConfTest,
   ASSERT_EQ("service_name_from_server_config", global_context_->service_name());
   ASSERT_EQ("2017-05-01r1", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [](const utils::Status& status,
                           std::vector<std::pair<std::string, int>>& list) {
 
@@ -394,7 +394,7 @@ TEST_F(ConfigManagerImplServiceNameConfigIdInServerConfTest,
   config_manager->Init();
 }
 
-TEST_F(ConfigManagerImplServiceNameConfigIdInServerConfTest,
+TEST_F(ConfigManagerServiceNameConfigIdInServerConfTest,
        TestServiceNameAndConfigIdFromServerConfigFailedToFetch) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
@@ -416,7 +416,7 @@ TEST_F(ConfigManagerImplServiceNameConfigIdInServerConfTest,
   ASSERT_EQ("service_name_from_server_config", global_context_->service_name());
   ASSERT_EQ("2017-05-01r1", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [](const utils::Status& status,
                           std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: Failed to load configs", status.ToString());
@@ -426,7 +426,7 @@ TEST_F(ConfigManagerImplServiceNameConfigIdInServerConfTest,
 }
 
 // service_name in server_config
-class ConfigManagerImplNameInServerConfTest : public ::testing::Test {
+class ConfigManagerNameInServerConfTest : public ::testing::Test {
  public:
   void SetUp() {
     env_.reset(new ::testing::NiceMock<MockApiManagerEnvironment>());
@@ -448,7 +448,7 @@ class ConfigManagerImplNameInServerConfTest : public ::testing::Test {
   std::shared_ptr<context::GlobalContext> global_context_;
 };
 
-TEST_F(ConfigManagerImplNameInServerConfTest,
+TEST_F(ConfigManagerNameInServerConfTest,
        TestNameFromServerConfAndConfigIdFromMetadata) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
@@ -472,7 +472,7 @@ TEST_F(ConfigManagerImplNameInServerConfTest,
   ASSERT_EQ("service_name_from_server_config", global_context_->service_name());
   ASSERT_EQ("", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [this](const utils::Status& status,
                               std::vector<std::pair<std::string, int>>& list) {
 
@@ -488,7 +488,7 @@ TEST_F(ConfigManagerImplNameInServerConfTest,
   config_manager->Init();
 }
 
-TEST_F(ConfigManagerImplNameInServerConfTest,
+TEST_F(ConfigManagerNameInServerConfTest,
        TestNameFromServerConfAndConfigIdWasNotSpecified) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
@@ -512,7 +512,7 @@ TEST_F(ConfigManagerImplNameInServerConfTest,
   ASSERT_EQ("service_name_from_server_config", global_context_->service_name());
   ASSERT_EQ("", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [this](const utils::Status& status,
                               std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: API config_id not specified in configuration files",
@@ -523,7 +523,7 @@ TEST_F(ConfigManagerImplNameInServerConfTest,
 }
 
 // no service_name and config_id in service config
-class ConfigManagerImplMetadataTest : public ::testing::Test {
+class ConfigManagerMetadataTest : public ::testing::Test {
  public:
   void SetUp() {
     env_.reset(new ::testing::NiceMock<MockApiManagerEnvironment>());
@@ -548,8 +548,7 @@ class ConfigManagerImplMetadataTest : public ::testing::Test {
   std::shared_ptr<context::RequestContext> context_;
 };
 
-TEST_F(ConfigManagerImplMetadataTest,
-       TestServiceNameAndConfigIdFromGceMetadata) {
+TEST_F(ConfigManagerMetadataTest, TestServiceNameAndConfigIdFromGceMetadata) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
         std::map<std::string, std::string> data = {
@@ -571,7 +570,7 @@ TEST_F(ConfigManagerImplMetadataTest,
   ASSERT_EQ("", global_context_->service_name());
   ASSERT_EQ("", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [](const utils::Status& status,
                           std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("OK", status.ToString());
@@ -583,8 +582,7 @@ TEST_F(ConfigManagerImplMetadataTest,
   config_manager->Init();
 }
 
-TEST_F(ConfigManagerImplMetadataTest,
-       TestNoServiceNameAndConfigIdFromGceMetadata) {
+TEST_F(ConfigManagerMetadataTest, TestNoServiceNameAndConfigIdFromGceMetadata) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
         std::map<std::string, std::string> data = {
@@ -604,7 +602,7 @@ TEST_F(ConfigManagerImplMetadataTest,
   ASSERT_EQ("", global_context_->service_name());
   ASSERT_EQ("", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [](const utils::Status& status,
                           std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ(
@@ -616,7 +614,7 @@ TEST_F(ConfigManagerImplMetadataTest,
   config_manager->Init();
 }
 
-TEST_F(ConfigManagerImplMetadataTest,
+TEST_F(ConfigManagerMetadataTest,
        TestServiceNameAndInvalidConfigIdFromGceMetadata) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
@@ -637,7 +635,7 @@ TEST_F(ConfigManagerImplMetadataTest,
   ASSERT_EQ("", global_context_->service_name());
   ASSERT_EQ("", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [](const utils::Status& status,
                           std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: Invalid config_id: invalid", status.ToString());
@@ -646,7 +644,7 @@ TEST_F(ConfigManagerImplMetadataTest,
   config_manager->Init();
 }
 
-class ConfigManagerImplUserDefinedMetadataTest : public ::testing::Test {
+class ConfigManagerUserDefinedMetadataTest : public ::testing::Test {
  public:
   void SetUp() {
     env_.reset(new ::testing::NiceMock<MockApiManagerEnvironment>());
@@ -669,7 +667,7 @@ class ConfigManagerImplUserDefinedMetadataTest : public ::testing::Test {
   std::shared_ptr<context::GlobalContext> global_context_;
 };
 
-TEST_F(ConfigManagerImplUserDefinedMetadataTest,
+TEST_F(ConfigManagerUserDefinedMetadataTest,
        TestServiceNameAndConfigIdFromGceMetadata) {
   // FetchGceMetadata responses with headers and status OK.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
@@ -694,7 +692,7 @@ TEST_F(ConfigManagerImplUserDefinedMetadataTest,
   ASSERT_EQ("", global_context_->service_name());
   ASSERT_EQ("", global_context_->config_id());
 
-  std::shared_ptr<ConfigManagerImpl> config_manager(new ConfigManagerImpl(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_, [](const utils::Status& status,
                           std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("OK", status.ToString());
