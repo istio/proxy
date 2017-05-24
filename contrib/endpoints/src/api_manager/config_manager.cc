@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "contrib/endpoints/src/api_manager/config_manager.h"
+#include "contrib/endpoints/src/api_manager/service_management_fetch.h"
 #include "contrib/endpoints/src/api_manager/utils/marshalling.h"
 #include "utils/marshalling.h"
 
@@ -38,14 +39,6 @@ namespace google {
 namespace api_manager {
 
 namespace {
-
-const char kDelimiter[] = "\0";
-const int kDelimiterLength = 1;
-
-// Initial metadata fetch timeout (1s)
-const int kInceptionFetchTimeout = 1000;
-// Maximum number of retries to fetch metadata
-const int kInceptionFetchRetries = 5;
 // Default rollouts refresh interval in ms
 const int kConfigUpdateCheckInterval = 60000;
 
@@ -55,12 +48,9 @@ const char kServiceManagementService[] =
     "https://servicemanagement.googleapis.com";
 const char kServiceManagementServiceManager[] =
     "/google.api.servicemanagement.v1.ServiceManager";
-// config_id validation
-const char kValidConfigDateFormat[] = "%Y-%m-%d";
-const char kConfigRevisionDelimeter = 'r';
 // static configs for error handling
 static std::vector<std::pair<std::string, int>> empty_configs;
-};
+}  // namespace anonymous
 
 ConfigManager::ConfigManager(
     std::shared_ptr<context::GlobalContext> global_context,
@@ -77,7 +67,12 @@ ConfigManager::ConfigManager(
              .empty()) {
       service_management_url_ =
           global_context_->server_config()->service_management_config().url();
+    } else {
+      global_context_->server_config()
+          ->mutable_service_management_config()
+          ->set_url(kServiceManagementService);
     }
+
     // update refresh interval in ms
     if (global_context_->server_config()
             ->service_management_config()
@@ -85,7 +80,18 @@ ConfigManager::ConfigManager(
       refresh_interval_ms_ = global_context_->server_config()
                                  ->service_management_config()
                                  .refresh_interval_ms();
+    } else {
+      global_context_->server_config()
+          ->mutable_service_management_config()
+          ->set_refresh_interval_ms(kConfigUpdateCheckInterval);
     }
+  } else {
+    global_context_->server_config()
+        ->mutable_service_management_config()
+        ->set_url(kServiceManagementService);
+    global_context_->server_config()
+        ->mutable_service_management_config()
+        ->set_refresh_interval_ms(kConfigUpdateCheckInterval);
   }
 }
 
@@ -167,10 +173,11 @@ void ConfigManager::on_fetch_auth_token(utils::Status status) {
   fetch_configs(fetchInfo);
 }
 
+// Fetch configs from rollouts. fetchInfo has rollouts and fetched configs
 void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo) {
   // Finished fetching configs.
-  if (fetchInfo->rollouts.size() <= (size_t)fetchInfo->index_ ||
-      fetchInfo->index_ < 0) {
+  if (fetchInfo->rollouts.size() <= (size_t)fetchInfo->index ||
+      fetchInfo->index < 0) {
     // Failed to fetch all configs or rollouts are empty
     if (fetchInfo->rollouts.size() == 0 || fetchInfo->configs.size() == 0) {
       // first time, call the ApiManager callback function with an error
@@ -185,71 +192,23 @@ void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo) {
     return;
   }
 
-  HttpCallbackFunction on_fetch_done = [this, &fetchInfo](
-      const utils::Status& status, const std::string& config) {
-    if (status.ok()) {
-      fetchInfo->configs.push_back(
-          {config, fetchInfo->rollouts[fetchInfo->index_].second});
-    } else {
-      global_context_->env()->LogError(
-          std::string("Unable to decide the config_id: " +
-                      fetchInfo->rollouts[fetchInfo->index_].first));
-    }
-
-    // move on to the next config_id
-    fetchInfo->index_++;
-    fetch_configs(fetchInfo);
-  };
-
-  const std::string url = service_management_url_ + "/v1/services/" +
-                          global_context_->service_name() + "/configs/" +
-                          fetchInfo->rollouts[fetchInfo->index_].first;
-
-  call(url, on_fetch_done);
-}
-
-void ConfigManager::call(const std::string& url, HttpCallbackFunction on_done) {
-  std::unique_ptr<HTTPRequest> http_request(
-      new HTTPRequest([this, url, on_done](
-          utils::Status status, std::map<std::string, std::string>&& headers,
-          std::string&& body) {
-        if (!status.ok()) {
-          global_context_->env()->LogError(
-              std::string("Failed to call ") + url + ", Error: " +
-              status.ToString() + ", Response body: " + body);
-
-          // Handle NGX error as opposed to pass-through error code
-          if (status.code() < 0) {
-            status = utils::Status(Code::UNAVAILABLE,
-                                   "Failed to connect to service management");
-          } else {
-            status = utils::Status(
-                Code::UNAVAILABLE,
-                "Service management request failed with HTTP response code " +
-                    std::to_string(status.code()));
-          }
+  FetchServiceManagementConfig(
+      global_context_, fetchInfo->rollouts[fetchInfo->index].first,
+      [this, &fetchInfo](const utils::Status& status,
+                         const std::string& config) {
+        if (status.ok()) {
+          fetchInfo->configs.push_back(
+              {config, fetchInfo->rollouts[fetchInfo->index].second});
+        } else {
+          global_context_->env()->LogError(std::string(
+              "Unable to download ServiceConfig for the config_id: " +
+              fetchInfo->rollouts[fetchInfo->index].first));
         }
 
-        on_done(status, body);
-      }));
-
-  http_request->set_url(url)
-      .set_method("GET")
-      .set_auth_token(get_auth_token())
-      .set_timeout_ms(kInceptionFetchTimeout)
-      .set_max_retries(kInceptionFetchRetries);
-
-  global_context_->env()->RunHTTPRequest(std::move(http_request));
-}
-
-const std::string& ConfigManager::get_auth_token() {
-  if (global_context_->service_account_token()) {
-    return global_context_->service_account_token()->GetAuthToken(
-        auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICEMANAGEMENT_SERVICES);
-  } else {
-    static std::string empty;
-    return empty;
-  }
+        // move on to the next config_id
+        fetchInfo->index++;
+        fetch_configs(fetchInfo);
+      });
 }
 
 }  // namespace api_manager

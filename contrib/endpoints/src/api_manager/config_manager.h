@@ -19,6 +19,7 @@
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
 #include "contrib/endpoints/src/api_manager/proto/server_config.pb.h"
+#include "contrib/endpoints/src/api_manager/service_management_fetch.h"
 
 #include "google/api/servicemanagement/v1/servicemanager.pb.h"
 #include "google/protobuf/stubs/status.h"
@@ -28,16 +29,13 @@ namespace api_manager {
 
 namespace {
 
-// HTTP request callback
-typedef std::function<void(const utils::Status&, const std::string&)>
-    HttpCallbackFunction;
-
 // ApiManagerCallbackFunction is the callback provided by ApiManager.
 // ConfigManager calls the callback after the service config download
 //
 // status
 //  - Code::OK        Config manager was successfully initialized
 //  - Code::ABORTED   Fatal error
+//  - Code::UNKNOWN   Config manager was not initialized yet
 // configs - pairs of ServiceConfig in text and rollout percentages
 typedef std::function<void(const utils::Status& status,
                            std::vector<std::pair<std::string, int>>& configs)>
@@ -45,15 +43,14 @@ typedef std::function<void(const utils::Status& status,
 
 // Data structure to fetch configs from rollouts
 struct ConfigsFetchInfo {
-  ConfigsFetchInfo() : index_(0) {}
-
+  ConfigsFetchInfo() : index(0) {}
   // config_ids to be fetched and rollouts percentages
   std::vector<std::pair<std::string, int>> rollouts;
   // fetched ServiceConfig and rollouts percentages
   std::vector<std::pair<std::string, int>> configs;
 
   // index to be fetched
-  int index_;
+  int index;
 };
 
 }  // namespace anonymous
@@ -74,12 +71,6 @@ class ConfigManager {
   // Fetch ServiceConfig details from the latest successful rollouts
   // https://goo.gl/I2nD4M
   void fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo);
-
-  // Send HTTP GET request to ServiceManagement API
-  void call(const std::string& url, HttpCallbackFunction on_done);
-
-  // Generate Auth token for ServiceManagement API
-  const std::string& get_auth_token();
 
   // Handle metadata fetch done
   void on_fetch_metadata(utils::Status status);
