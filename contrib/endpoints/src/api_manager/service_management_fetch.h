@@ -35,11 +35,6 @@ void FetchServiceManagementConfig(
     std::shared_ptr<context::GlobalContext>, std::string config_id,
     std::function<void(utils::Status, const std::string& config)> callback);
 
-// Fetches Rollouts from the ServiceManagement service
-void FetchServiceManagementRollouts(
-    std::shared_ptr<context::GlobalContext>, std::string config_id,
-    std::function<void(utils::Status, ListServiceRolloutsResponse*)>);
-
 }  // namespace api_manager
 }  // namespace google
 #endif  // API_MANAGER_SERVICE_MANAGEMENT_FETCH_H_
