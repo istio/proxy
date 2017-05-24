@@ -17,29 +17,18 @@
 
 #include "common/common/base64.h"
 #include "common/common/utility.h"
-#include "common/grpc/rpc_channel_impl.h"
 #include "common/http/utility.h"
-#include "mixer/v1/service.pb.h"
 
+#include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/string_map.pb.h"
 #include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
-using pbCode = ::google::protobuf::util::error::Code;
 using ::istio::mixer_client::Attributes;
 using ::istio::mixer_client::CheckOptions;
 using ::istio::mixer_client::DoneFunc;
 using ::istio::mixer_client::MixerClientOptions;
-using ::istio::mixer_client::TransportCheckFunc;
-using ::istio::mixer_client::TransportReportFunc;
-using ::istio::mixer_client::TransportQuotaFunc;
 using ::istio::mixer_client::QuotaOptions;
-using ::istio::mixer::v1::CheckRequest;
-using ::istio::mixer::v1::CheckResponse;
-using ::istio::mixer::v1::ReportRequest;
-using ::istio::mixer::v1::ReportResponse;
-using ::istio::mixer::v1::QuotaRequest;
-using ::istio::mixer::v1::QuotaResponse;
 
 namespace Envoy {
 namespace Http {
@@ -185,132 +174,17 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
   }
 }
 
-class ClusterManagerStore {
- public:
-  ClusterManagerStore(Upstream::ClusterManager& cm) : cm_(cm) {}
-  Upstream::ClusterManager& cm() { return cm_; }
-
- private:
-  Upstream::ClusterManager& cm_;
-};
-
 }  // namespace
-
-thread_local Event::Dispatcher* thread_dispatcher = nullptr;
-void thread_set_dispatcher(Event::Dispatcher& dispatcher) {
-  if (!thread_dispatcher) {
-    thread_dispatcher = &dispatcher;
-  }
-}
-void thread_dispatcher_post(std::function<void()> fn) {
-  ASSERT(thread_dispatcher);
-  thread_dispatcher->post(fn);
-}
-
-// gRPC request timeout
-const std::chrono::milliseconds kGrpcRequestTimeoutMs(5000);
-
-class GrpcTransport : public Grpc::RpcChannelCallbacks,
-                      public Logger::Loggable<Logger::Id::http> {
- public:
-  GrpcTransport(Upstream::ClusterManager& cm)
-      : channel_(std::move(NewChannel(cm))), stub_(channel_.get()) {}
-
-  void onPreRequestCustomizeHeaders(Http::HeaderMap& headers) override {}
-
-  void onSuccess() override {
-    log().debug("grpc: return OK");
-    on_done_(Status::OK);
-    thread_dispatcher_post([this]() { delete this; });
-  }
-
-  void onFailure(const Optional<uint64_t>& grpc_status,
-                 const std::string& message) override {
-    int code = grpc_status.valid() ? grpc_status.value() : pbCode::UNKNOWN;
-    log().debug("grpc failure: return {}, error {}", code, message);
-    on_done_(Status(static_cast<pbCode>(code),
-                    ::google::protobuf::StringPiece(message)));
-    thread_dispatcher_post([this]() { delete this; });
-  }
-
- protected:
-  Grpc::RpcChannelPtr NewChannel(Upstream::ClusterManager& cm) {
-    return Grpc::RpcChannelPtr(new Grpc::RpcChannelImpl(
-        cm, "mixer_server", *this,
-        Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs)));
-  }
-
-  DoneFunc on_done_;
-  Grpc::RpcChannelPtr channel_;
-  ::istio::mixer::v1::Mixer::Stub stub_;
-};
-
-class CheckTransport : public GrpcTransport {
- public:
-  CheckTransport(Upstream::ClusterManager& cm) : GrpcTransport(cm) {}
-
-  static TransportCheckFunc GetFunc(std::shared_ptr<ClusterManagerStore> cms) {
-    return [cms](const CheckRequest& request, CheckResponse* response,
-                 DoneFunc on_done) {
-      CheckTransport* transport = new CheckTransport(cms->cm());
-      transport->Call(request, response, on_done);
-    };
-  }
-  void Call(const CheckRequest& request, CheckResponse* response,
-            DoneFunc on_done) {
-    on_done_ = on_done;
-    log().debug("Call grpc check: {}", request.DebugString());
-    stub_.Check(nullptr, &request, response, nullptr);
-  }
-};
-
-class ReportTransport : public GrpcTransport {
- public:
-  ReportTransport(Upstream::ClusterManager& cm) : GrpcTransport(cm) {}
-
-  static TransportReportFunc GetFunc(std::shared_ptr<ClusterManagerStore> cms) {
-    return [cms](const ReportRequest& request, ReportResponse* response,
-                 DoneFunc on_done) {
-      ReportTransport* transport = new ReportTransport(cms->cm());
-      transport->Call(request, response, on_done);
-    };
-  }
-  void Call(const ReportRequest& request, ReportResponse* response,
-            DoneFunc on_done) {
-    on_done_ = on_done;
-    log().debug("Call grpc report: {}", request.DebugString());
-    stub_.Report(nullptr, &request, response, nullptr);
-  }
-};
-
-class QuotaTransport : public GrpcTransport {
- public:
-  QuotaTransport(Upstream::ClusterManager& cm) : GrpcTransport(cm) {}
-
-  static TransportQuotaFunc GetFunc(std::shared_ptr<ClusterManagerStore> cms) {
-    return [cms](const QuotaRequest& request, QuotaResponse* response,
-                 DoneFunc on_done) {
-      QuotaTransport* transport = new QuotaTransport(cms->cm());
-      transport->Call(request, response, on_done);
-    };
-  }
-  void Call(const QuotaRequest& request, QuotaResponse* response,
-            DoneFunc on_done) {
-    on_done_ = on_done;
-    log().debug("Call grpc quota: {}", request.DebugString());
-    stub_.Quota(nullptr, &request, response, nullptr);
-  }
-};
 
 HttpControl::HttpControl(const MixerConfig& mixer_config,
                          Upstream::ClusterManager& cm)
     : mixer_config_(mixer_config) {
   MixerClientOptions options(GetCheckOptions(mixer_config),
                              GetQuotaOptions(mixer_config));
-  auto ss = std::make_shared<ClusterManagerStore>(cm);
-  options.check_transport = CheckTransport::GetFunc(ss);
-  options.report_transport = ReportTransport::GetFunc(ss);
-  options.quota_transport = QuotaTransport::GetFunc(ss);
+  auto cms = std::make_shared<ClusterManagerStore>(cm);
+  options.check_transport = CheckGrpcTransport::GetFunc(cms);
+  options.report_transport = ReportGrpcTransport::GetFunc(cms);
+  options.quota_transport = QuotaGrpcTransport::GetFunc(cms);
   mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
 
   mixer_config_.ExtractQuotaAttributes(&quota_attributes_);

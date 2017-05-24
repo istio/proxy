@@ -21,12 +21,12 @@
 #include "envoy/ssl/connection.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/mixer/config.h"
+#include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/http_control.h"
 #include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
-using ::istio::mixer_client::DoneFunc;
 
 namespace Envoy {
 namespace Http {
@@ -251,7 +251,7 @@ class Instance : public Http::StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     decoder_callbacks_ = &callbacks;
-    thread_set_dispatcher(decoder_callbacks_->dispatcher());
+    GrpcTransport::SetDispatcher(decoder_callbacks_->dispatcher());
   }
 
   void callQuota(const Status& status) {
