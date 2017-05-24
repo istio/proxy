@@ -67,9 +67,6 @@ class HttpControl final : public Logger::Loggable<Logger::Id::http> {
   ::istio::mixer_client::Attributes quota_attributes_;
 };
 
-void thread_set_dispatcher(Event::Dispatcher& dispatcher);
-void thread_dispatcher_post(std::function<void()> fn);
-
 }  // namespace Mixer
 }  // namespace Http
 }  // namespace Envoy
