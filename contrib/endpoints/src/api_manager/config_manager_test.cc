@@ -387,7 +387,7 @@ TEST_F(ConfigManagerServiceNameConfigIdInServerConfTest,
 
         ASSERT_EQ(1, list.size());
         ASSERT_EQ(kServiceConfig1, list[0].first);
-        ASSERT_EQ(0, list[0].second);
+        ASSERT_EQ(100, list[0].second);
 
       }));
 
@@ -481,7 +481,7 @@ TEST_F(ConfigManagerNameInServerConfTest,
 
         ASSERT_EQ(1, list.size());
         ASSERT_EQ(kServiceConfig2, list[0].first);
-        ASSERT_EQ(0, list[0].second);
+        ASSERT_EQ(100, list[0].second);
 
       }));
 
@@ -576,7 +576,7 @@ TEST_F(ConfigManagerMetadataTest, TestServiceNameAndConfigIdFromGceMetadata) {
         ASSERT_EQ("OK", status.ToString());
         ASSERT_EQ(1, list.size());
         ASSERT_EQ(kServiceConfig1, list[0].first);
-        ASSERT_EQ(0, list[0].second);
+        ASSERT_EQ(100, list[0].second);
       }));
 
   config_manager->Init();
@@ -698,7 +698,7 @@ TEST_F(ConfigManagerUserDefinedMetadataTest,
         ASSERT_EQ("OK", status.ToString());
         ASSERT_EQ(1, list.size());
         ASSERT_EQ(kServiceConfig1, list[0].first);
-        ASSERT_EQ(0, list[0].second);
+        ASSERT_EQ(100, list[0].second);
       }));
 
   config_manager->Init();

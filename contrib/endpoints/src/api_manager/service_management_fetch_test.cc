@@ -14,6 +14,7 @@
  */
 #include "contrib/endpoints/src/api_manager/service_management_fetch.h"
 
+#include "contrib/endpoints/src/api_manager/config.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/context/request_context.h"
 #include "contrib/endpoints/src/api_manager/context/service_context.h"
@@ -76,29 +77,21 @@ const char kServerConfigWithServiceNameConfigId[] = R"(
 
 }  // namespace
 
-class service_management_fetchTest : public ::testing::Test {
+class ServiceManagementFetchTest : public ::testing::Test {
  public:
   void SetUp() {
     env_.reset(new ::testing::NiceMock<MockApiManagerEnvironment>());
     // save the raw pointer of env before calling std::move(env).
     raw_env_ = env_.get();
 
-    global_context_ = std::make_shared<context::GlobalContext>(
-        std::move(env_), kServerConfigWithServiceNameConfigId);
-
-    if (global_context_->service_account_token()) {
-      // register auth token for servicemanagement services
-      global_context_->service_account_token()->SetAudience(
-          auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICEMANAGEMENT_SERVICES,
-          std::string(kServiceManagementService) +
-              kServiceManagementServiceManager);
-    }
+    std::string serviceConfig(kServerConfigWithServiceNameConfigId);
+    global_context_ = std::make_shared<context::GlobalContext>(std::move(env_),
+                                                               serviceConfig);
 
     std::unique_ptr<MockRequest> request(
         new ::testing::NiceMock<MockRequest>());
 
     std::unique_ptr<Config> config = Config::Create(raw_env_, kServiceConfig);
-    ASSERT_NE(config.get(), nullptr);
 
     global_context_->server_config()
         ->mutable_service_management_config()
@@ -111,22 +104,11 @@ class service_management_fetchTest : public ::testing::Test {
   std::shared_ptr<context::GlobalContext> global_context_;
 };
 
-TEST_F(service_management_fetchTest, TestFetchServiceManagementConfig) {
+TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
-        std::map<std::string, std::string> data = {
-            {"https://servicemanagement.googleapis.com/v1/services/"
-             "service_name_from_server_config/configs/2017-05-01r1",
-             kServiceConfig1}};
-
         std::map<std::string, std::string> headers;
-        if (data.find(req->url()) == data.end()) {
-          req->OnComplete(Status(Code::NOT_FOUND, "Not Found"),
-                          std::move(headers), std::move(data[req->url()]));
-        } else {
-          req->OnComplete(Status::OK, std::move(headers),
-                          std::move(data[req->url()]));
-        }
+        req->OnComplete(Status::OK, std::move(headers), kServiceConfig1);
       }));
 
   FetchServiceManagementConfig(
@@ -139,19 +121,12 @@ TEST_F(service_management_fetchTest, TestFetchServiceManagementConfig) {
       });
 }
 
-TEST_F(service_management_fetchTest, TestFetchServiceManagementConfig404) {
+TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig404) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillRepeatedly(Invoke([](HTTPRequest* req) {
-        std::map<std::string, std::string> data = {};
-
         std::map<std::string, std::string> headers;
-        if (data.find(req->url()) == data.end()) {
-          req->OnComplete(Status(Code::NOT_FOUND, "Not Found"),
-                          std::move(headers), std::move(data[req->url()]));
-        } else {
-          req->OnComplete(Status::OK, std::move(headers),
-                          std::move(data[req->url()]));
-        }
+        req->OnComplete(Status(Code::NOT_FOUND, "Not Found"),
+                        std::move(headers), "");
       }));
 
   FetchServiceManagementConfig(

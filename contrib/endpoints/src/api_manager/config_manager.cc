@@ -43,11 +43,7 @@ namespace {
 const int kConfigUpdateCheckInterval = 60000;
 
 const char kRolloutStrategyManaged[] = "managed";
-// Default service management API url
-const char kServiceManagementService[] =
-    "https://servicemanagement.googleapis.com";
-const char kServiceManagementServiceManager[] =
-    "/google.api.servicemanagement.v1.ServiceManager";
+
 // static configs for error handling
 static std::vector<std::pair<std::string, int>> empty_configs;
 }  // namespace anonymous
@@ -57,7 +53,6 @@ ConfigManager::ConfigManager(
     ApiManagerCallbackFunction config_roollout_callback)
     : global_context_(global_context),
       config_roollout_callback_(config_roollout_callback),
-      service_management_url_(kServiceManagementService),
       refresh_interval_ms_(kConfigUpdateCheckInterval) {
   if (global_context_->server_config()->has_service_management_config()) {
     // update ServiceManagement service API url
@@ -65,12 +60,8 @@ ConfigManager::ConfigManager(
              ->service_management_config()
              .url()
              .empty()) {
-      service_management_url_ =
+      service_management_host_ =
           global_context_->server_config()->service_management_config().url();
-    } else {
-      global_context_->server_config()
-          ->mutable_service_management_config()
-          ->set_url(kServiceManagementService);
     }
 
     // update refresh interval in ms
@@ -80,18 +71,7 @@ ConfigManager::ConfigManager(
       refresh_interval_ms_ = global_context_->server_config()
                                  ->service_management_config()
                                  .refresh_interval_ms();
-    } else {
-      global_context_->server_config()
-          ->mutable_service_management_config()
-          ->set_refresh_interval_ms(kConfigUpdateCheckInterval);
     }
-  } else {
-    global_context_->server_config()
-        ->mutable_service_management_config()
-        ->set_url(kServiceManagementService);
-    global_context_->server_config()
-        ->mutable_service_management_config()
-        ->set_refresh_interval_ms(kConfigUpdateCheckInterval);
   }
 }
 
@@ -158,26 +138,18 @@ void ConfigManager::on_fetch_auth_token(utils::Status status) {
                               empty_configs);
   }
 
-  if (global_context_->service_account_token()) {
-    // register auth token for servicemanagement services
-    global_context_->service_account_token()->SetAudience(
-        auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICEMANAGEMENT_SERVICES,
-        service_management_url_ + kServiceManagementServiceManager);
-  }
-
   // Fetch configs from the Inception
   auto fetchInfo = std::make_shared<ConfigsFetchInfo>();
 
   // For now, config manager has only one config_id (100% rollout)
-  fetchInfo->rollouts = {{global_context_->config_id(), 0}};
+  fetchInfo->rollouts = {{global_context_->config_id(), 100}};
   fetch_configs(fetchInfo);
 }
 
 // Fetch configs from rollouts. fetchInfo has rollouts and fetched configs
 void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo) {
   // Finished fetching configs.
-  if (fetchInfo->rollouts.size() <= (size_t)fetchInfo->index ||
-      fetchInfo->index < 0) {
+  if (fetchInfo->rollouts.size() <= (size_t)fetchInfo->index) {
     // Failed to fetch all configs or rollouts are empty
     if (fetchInfo->rollouts.size() == 0 || fetchInfo->configs.size() == 0) {
       // first time, call the ApiManager callback function with an error
