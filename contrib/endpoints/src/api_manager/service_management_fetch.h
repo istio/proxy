@@ -30,7 +30,7 @@ namespace api_manager {
 
 namespace {
 // HTTP request callback
-typedef std::function<void(const utils::Status&, const std::string&&)>
+typedef std::function<void(const utils::Status&, std::string&&)>
     HttpCallbackFunction;
 }
 
@@ -43,7 +43,7 @@ class ServiceManagementFetch {
   // Fetches ServiceConfig from the ServiceManagement service
   void GetConfig(
       std::string config_id,
-      std::function<void(utils::Status, const std::string&& config)> callback);
+      std::function<void(utils::Status, std::string&& config)> callback);
 
  private:
   // Make a http GET request

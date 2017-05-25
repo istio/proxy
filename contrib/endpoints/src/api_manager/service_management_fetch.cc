@@ -54,7 +54,7 @@ ServiceManagementFetch::ServiceManagementFetch(
 
 void ServiceManagementFetch::GetConfig(
     std::string config_id,
-    std::function<void(utils::Status, const std::string&& config)> callback) {
+    std::function<void(utils::Status, std::string&& config)> callback) {
   // context->server_config()->service_management_config().url() was set by
   // the constructor of ConfigManager class
   const std::string url = host_ + "/v1/services/" +
