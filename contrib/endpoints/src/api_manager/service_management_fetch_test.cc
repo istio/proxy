@@ -93,15 +93,15 @@ class ServiceManagementFetchTest : public ::testing::Test {
 
     std::unique_ptr<Config> config = Config::Create(raw_env_, kServiceConfig);
 
-    global_context_->server_config()
-        ->mutable_service_management_config()
-        ->set_url(kServiceManagementService);
+    service_management_fetch_.reset(
+        new ServiceManagementFetch(global_context_));
   }
 
   std::unique_ptr<MockApiManagerEnvironment> env_;
   MockApiManagerEnvironment* raw_env_;
 
   std::shared_ptr<context::GlobalContext> global_context_;
+  std::shared_ptr<ServiceManagementFetch> service_management_fetch_;
 };
 
 TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig) {
@@ -111,9 +111,8 @@ TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig) {
         req->OnComplete(Status::OK, std::move(headers), kServiceConfig1);
       }));
 
-  FetchServiceManagementConfig(
-      global_context_, "2017-05-01r1",
-      [](utils::Status status, const std::string& config) {
+  service_management_fetch_->GetConfig(
+      "2017-05-01r1", [](utils::Status status, const std::string& config) {
         ASSERT_EQ(Code::OK, status.code());
         ASSERT_EQ(kServiceConfig1, config);
 
@@ -129,9 +128,8 @@ TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig404) {
                         std::move(headers), "");
       }));
 
-  FetchServiceManagementConfig(
-      global_context_, "2017-05-01r1",
-      [](utils::Status status, const std::string& config) {
+  service_management_fetch_->GetConfig(
+      "2017-05-01r1", [](utils::Status status, const std::string& config) {
         ASSERT_EQ(Code::UNAVAILABLE, status.code());
         ASSERT_EQ(
             "UNAVAILABLE: Service management request failed with HTTP response "

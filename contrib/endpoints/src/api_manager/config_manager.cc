@@ -55,15 +55,6 @@ ConfigManager::ConfigManager(
       config_roollout_callback_(config_roollout_callback),
       refresh_interval_ms_(kConfigUpdateCheckInterval) {
   if (global_context_->server_config()->has_service_management_config()) {
-    // update ServiceManagement service API url
-    if (!global_context_->server_config()
-             ->service_management_config()
-             .url()
-             .empty()) {
-      service_management_host_ =
-          global_context_->server_config()->service_management_config().url();
-    }
-
     // update refresh interval in ms
     if (global_context_->server_config()
             ->service_management_config()
@@ -73,6 +64,9 @@ ConfigManager::ConfigManager(
                                  .refresh_interval_ms();
     }
   }
+
+  service_management_fetch_.reset(new ServiceManagementFetch(global_context));
+  assert(service_management_fetch_);
 }
 
 void ConfigManager::Init() {
@@ -164,8 +158,8 @@ void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo) {
     return;
   }
 
-  FetchServiceManagementConfig(
-      global_context_, fetchInfo->rollouts[fetchInfo->index].first,
+  service_management_fetch_->GetConfig(
+      fetchInfo->rollouts[fetchInfo->index].first,
       [this, &fetchInfo](const utils::Status& status,
                          const std::string& config) {
         if (status.ok()) {

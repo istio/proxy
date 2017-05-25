@@ -84,10 +84,10 @@ class ConfigManager {
   // ApiManager updated callback
   ApiManagerCallbackFunction config_roollout_callback_;
 
-  // Service Management API base url
-  std::string service_management_host_;
   // Rollouts refresh check interval in ms
   int refresh_interval_ms_;
+
+  std::unique_ptr<ServiceManagementFetch> service_management_fetch_;
 };
 
 }  // namespace api_manager

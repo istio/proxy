@@ -30,10 +30,33 @@ using ::google::api::servicemanagement::v1::Rollout_RolloutStatus;
 namespace google {
 namespace api_manager {
 
-// Fetches ServiceConfig from the ServiceManagement service
-void FetchServiceManagementConfig(
-    std::shared_ptr<context::GlobalContext>, std::string config_id,
-    std::function<void(utils::Status, const std::string& config)> callback);
+namespace {
+// HTTP request callback
+typedef std::function<void(const utils::Status&, const std::string&)>
+    HttpCallbackFunction;
+}
+
+class ServiceManagementFetch {
+ public:
+  ServiceManagementFetch(
+      std::shared_ptr<context::GlobalContext> global_context);
+  virtual ~ServiceManagementFetch(){};
+
+  // Fetches ServiceConfig from the ServiceManagement service
+  void GetConfig(
+      std::string config_id,
+      std::function<void(utils::Status, const std::string& config)> callback);
+
+ private:
+  // Make a http GET request
+  void call(const std::string& url, HttpCallbackFunction on_done);
+  // Generate Auth Token
+  const std::string& get_auth_token();
+
+  std::shared_ptr<context::GlobalContext> global_context_;
+
+  std::string host_;
+};
 
 }  // namespace api_manager
 }  // namespace google
