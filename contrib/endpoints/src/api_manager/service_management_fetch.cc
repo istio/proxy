@@ -14,8 +14,6 @@
  */
 #include "contrib/endpoints/src/api_manager/service_management_fetch.h"
 
-#include <iostream>
-
 namespace google {
 namespace api_manager {
 
@@ -35,8 +33,7 @@ const char kServiceManagementPath[] =
 
 ServiceManagementFetch::ServiceManagementFetch(
     std::shared_ptr<context::GlobalContext> global_context)
-    : global_context_(global_context), host_("") {
-  host_ = std::string(kServiceManagementHost);
+    : global_context_(global_context), host_(kServiceManagementHost) {
   if (global_context->server_config()->has_service_management_config()) {
     if (!global_context->server_config()
              ->service_management_config()
@@ -89,7 +86,7 @@ void ServiceManagementFetch::call(const std::string& url,
           }
         }
 
-        on_done(status, body);
+        on_done(status, std::move(body));
       }));
 
   http_request->set_url(url)

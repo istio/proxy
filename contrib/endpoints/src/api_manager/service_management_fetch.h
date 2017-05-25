@@ -18,9 +18,7 @@
 #include <functional>
 #include <string>
 
-#include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
-
 #include "google/api/servicemanagement/v1/servicemanager.pb.h"
 
 using ::google::api::Service;
@@ -52,9 +50,10 @@ class ServiceManagementFetch {
   void call(const std::string& url, HttpCallbackFunction on_done);
   // Generate Auth Token
   const std::string& get_auth_token();
-
+  // Global context
   std::shared_ptr<context::GlobalContext> global_context_;
-
+  // ServiceManagement API host url. the default value is
+  // https://servicemanagement.googleapis.com
   std::string host_;
 };
 

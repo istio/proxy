@@ -18,11 +18,7 @@
 #include "contrib/endpoints/include/api_manager/http_request.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
-#include "contrib/endpoints/src/api_manager/proto/server_config.pb.h"
 #include "contrib/endpoints/src/api_manager/service_management_fetch.h"
-
-#include "google/api/servicemanagement/v1/servicemanager.pb.h"
-#include "google/protobuf/stubs/status.h"
 
 namespace google {
 namespace api_manager {
@@ -48,6 +44,10 @@ struct ConfigsFetchInfo {
   std::vector<std::pair<std::string, int>> rollouts;
   // fetched ServiceConfig and rollouts percentages
   std::vector<std::pair<std::string, int>> configs;
+  // Finished fetching
+  inline bool IsCompleted() { return ((size_t)index >= rollouts.size()); }
+  // Move on to the next
+  inline void Next() { index++; }
 
   // index to be fetched
   int index;
@@ -59,7 +59,7 @@ struct ConfigsFetchInfo {
 class ConfigManager {
  public:
   ConfigManager(std::shared_ptr<context::GlobalContext> global_context,
-                ApiManagerCallbackFunction config_roollout_callback);
+                ApiManagerCallbackFunction config_rollout_callback);
 
   virtual ~ConfigManager(){};
 
@@ -82,11 +82,11 @@ class ConfigManager {
   std::shared_ptr<context::GlobalContext> global_context_;
 
   // ApiManager updated callback
-  ApiManagerCallbackFunction config_roollout_callback_;
+  ApiManagerCallbackFunction config_rollout_callback_;
 
   // Rollouts refresh check interval in ms
   int refresh_interval_ms_;
-
+  // ServiceManagement service client instance
   std::unique_ptr<ServiceManagementFetch> service_management_fetch_;
 };
 

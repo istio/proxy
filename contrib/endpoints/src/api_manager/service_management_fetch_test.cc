@@ -101,7 +101,7 @@ class ServiceManagementFetchTest : public ::testing::Test {
   MockApiManagerEnvironment* raw_env_;
 
   std::shared_ptr<context::GlobalContext> global_context_;
-  std::shared_ptr<ServiceManagementFetch> service_management_fetch_;
+  std::unique_ptr<ServiceManagementFetch> service_management_fetch_;
 };
 
 TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig) {
