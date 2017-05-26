@@ -108,8 +108,6 @@ TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig) {
       "2017-05-01r1", [](utils::Status status, const std::string& config) {
         ASSERT_EQ(Code::OK, status.code());
         ASSERT_EQ(kServiceConfig1, config);
-
-        std::cout << status.ToString() << std::endl;
       });
 }
 
@@ -128,8 +126,6 @@ TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig404) {
             "UNAVAILABLE: Service management request was failed with HTTP "
             "response code 5",
             status.ToString());
-
-        std::cout << status.ToString() << std::endl;
       });
 }
 

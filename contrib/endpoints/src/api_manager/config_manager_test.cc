@@ -670,7 +670,6 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdTest,
       .WillRepeatedly(Invoke([this](HTTPRequest* req) {
         history_.push_back(req->url());
 
-        std::cout << req->url() << std::endl;
         std::map<std::string, std::string> data = {
             {"http://localhost/computeMetadata/v1/?recursive=true",
              kGceMetadataWithServiceNameAndInvalidConfigId}};
@@ -733,7 +732,6 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdMetadataDisabledTest,
       .WillRepeatedly(Invoke([this](HTTPRequest* req) {
         history_.push_back(req->url());
 
-        std::cout << req->url() << std::endl;
         std::map<std::string, std::string> data = {
             {"http://localhost/computeMetadata/v1/?recursive=true",
              kGceMetadataWithServiceNameAndInvalidConfigId}};
