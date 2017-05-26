@@ -18,11 +18,10 @@ namespace google {
 namespace api_manager {
 
 namespace {
-
-// Initial metadata fetch timeout (1s)
-const int kInceptionFetchTimeout = 1000;
-// Maximum number of retries to fetch metadata
-const int kInceptionFetchRetries = 5;
+// The default HTTP request timeout in ms.
+const int kHttpReqestTimeout = 1000;
+// Maximum number of HTTP request retries
+const int kHttpRequestRetries = 5;
 
 // Default service management API url
 const char kServiceManagementHost[] =
@@ -44,61 +43,58 @@ ServiceManagementFetch::ServiceManagementFetch(
     }
   }
 
-  if (global_context->service_account_token()) {
+  if (global_context_->service_account_token()) {
     // register auth token for servicemanagement services
-    global_context->service_account_token()->SetAudience(
+    global_context_->service_account_token()->SetAudience(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICEMANAGEMENT_SERVICES,
         host_ + kServiceManagementPath);
   }
 }
 
-void ServiceManagementFetch::GetConfig(
-    std::string config_id,
-    std::function<void(utils::Status, std::string&& config)> callback) {
-  // context->server_config()->service_management_config().url() was set by
-  // the constructor of ConfigManager class
+void ServiceManagementFetch::GetConfig(std::string config_id,
+                                       HttpCallbackFunction callback) {
   const std::string url = host_ + "/v1/services/" +
                           global_context_->service_name() + "/configs/" +
                           config_id;
-  call(url, callback);
+  Call(url, callback);
 }
 
-void ServiceManagementFetch::call(const std::string& url,
+void ServiceManagementFetch::Call(const std::string& url,
                                   HttpCallbackFunction on_done) {
-  std::unique_ptr<HTTPRequest> http_request(
-      new HTTPRequest([this, url, on_done](
-          utils::Status status, std::map<std::string, std::string>&& headers,
-          std::string&& body) {
-        if (!status.ok()) {
-          global_context_->env()->LogError(
-              std::string("Failed to call ") + url + ", Error: " +
-              status.ToString() + ", Response body: " + body);
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([this, url,
+                                                             on_done](
+      utils::Status status, std::map<std::string, std::string>&& headers,
+      std::string&& body) {
+    if (!status.ok()) {
+      global_context_->env()->LogError(std::string("Failed to call ") + url +
+                                       ", Error: " + status.ToString() +
+                                       ", Response body: " + body);
 
-          // Handle NGX error as opposed to pass-through error code
-          if (status.code() < 0) {
-            status = utils::Status(Code::UNAVAILABLE,
-                                   "Failed to connect to service management");
-          } else {
-            status = utils::Status(
-                Code::UNAVAILABLE,
-                "Service management request failed with HTTP response code " +
-                    std::to_string(status.code()));
-          }
-        }
+      // Handle NGX error as opposed to pass-through error code
+      if (status.code() < 0) {
+        status = utils::Status(Code::UNAVAILABLE,
+                               "Failed to connect to the service management");
+      } else {
+        status = utils::Status(
+            Code::UNAVAILABLE,
+            "Service management request was failed with HTTP response code " +
+                std::to_string(status.code()));
+      }
+    }
 
-        on_done(status, std::move(body));
-      }));
+    on_done(status, std::move(body));
+  }));
 
   http_request->set_url(url)
       .set_method("GET")
-      .set_auth_token(get_auth_token())
-      .set_timeout_ms(kInceptionFetchTimeout)
-      .set_max_retries(kInceptionFetchRetries);
+      .set_auth_token(GetAuthToken())
+      .set_timeout_ms(kHttpReqestTimeout)
+      .set_max_retries(kHttpRequestRetries);
 
   global_context_->env()->RunHTTPRequest(std::move(http_request));
 }
 
-const std::string& ServiceManagementFetch::get_auth_token() {
+const std::string& ServiceManagementFetch::GetAuthToken() {
   if (global_context_->service_account_token()) {
     return global_context_->service_account_token()->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICEMANAGEMENT_SERVICES);

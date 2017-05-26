@@ -15,9 +15,7 @@
 #ifndef API_MANAGER_CONFIG_MANAGER_H_
 #define API_MANAGER_CONFIG_MANAGER_H_
 
-#include "contrib/endpoints/include/api_manager/http_request.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
-#include "contrib/endpoints/src/api_manager/fetch_metadata.h"
 #include "contrib/endpoints/src/api_manager/service_management_fetch.h"
 
 namespace google {
@@ -25,7 +23,7 @@ namespace api_manager {
 
 namespace {
 
-// ApiManagerCallbackFunction is the callback provided by ApiManager.
+// RolloutApplyFunction is the callback provided by ApiManager.
 // ConfigManager calls the callback after the service config download
 //
 // status
@@ -33,9 +31,10 @@ namespace {
 //  - Code::ABORTED   Fatal error
 //  - Code::UNKNOWN   Config manager was not initialized yet
 // configs - pairs of ServiceConfig in text and rollout percentages
-typedef std::function<void(const utils::Status& status,
-                           std::vector<std::pair<std::string, int>>& configs)>
-    ApiManagerCallbackFunction;
+typedef std::function<void(
+    const utils::Status& status,
+    const std::vector<std::pair<std::string, int>>& configs)>
+    RolloutApplyFunction;
 
 // Data structure to fetch configs from rollouts
 struct ConfigsFetchInfo {
@@ -48,8 +47,12 @@ struct ConfigsFetchInfo {
   inline bool IsCompleted() { return ((size_t)index >= rollouts.size()); }
   // Move on to the next
   inline void Next() { index++; }
+  // Check fetched rollout is empty
+  inline bool IsRolloutsEmpty() { return rollouts.empty(); }
+  // Check fetched configs are empty
+  inline bool IsConfigsEmpty() { return configs.empty(); }
 
-  // index to be fetched
+  // Rollouts index to be fetched
   int index;
 };
 
@@ -59,8 +62,7 @@ struct ConfigsFetchInfo {
 class ConfigManager {
  public:
   ConfigManager(std::shared_ptr<context::GlobalContext> global_context,
-                ApiManagerCallbackFunction config_rollout_callback);
-
+                RolloutApplyFunction config_rollout_callback);
   virtual ~ConfigManager(){};
 
  public:
@@ -70,20 +72,16 @@ class ConfigManager {
  private:
   // Fetch ServiceConfig details from the latest successful rollouts
   // https://goo.gl/I2nD4M
-  void fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo);
-
+  void FetchConfigs(std::shared_ptr<ConfigsFetchInfo> config_fetch_info);
   // Handle metadata fetch done
-  void on_fetch_metadata(utils::Status status);
-
+  void OnFetchMetadataDone(utils::Status status);
   // Handle auth token fetch done
-  void on_fetch_auth_token(utils::Status status);
+  void OnFetchAuthTokenDone(utils::Status status);
 
   // Global context provided by ApiManager
   std::shared_ptr<context::GlobalContext> global_context_;
-
   // ApiManager updated callback
-  ApiManagerCallbackFunction config_rollout_callback_;
-
+  RolloutApplyFunction rollout_apply_function_;
   // Rollouts refresh check interval in ms
   int refresh_interval_ms_;
   // ServiceManagement service client instance

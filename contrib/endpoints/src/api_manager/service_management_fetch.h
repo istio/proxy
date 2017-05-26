@@ -41,15 +41,14 @@ class ServiceManagementFetch {
   virtual ~ServiceManagementFetch(){};
 
   // Fetches ServiceConfig from the ServiceManagement service
-  void GetConfig(
-      std::string config_id,
-      std::function<void(utils::Status, std::string&& config)> callback);
+  void GetConfig(std::string config_id, HttpCallbackFunction callback);
 
  private:
   // Make a http GET request
-  void call(const std::string& url, HttpCallbackFunction on_done);
+  void Call(const std::string& url, HttpCallbackFunction on_done);
   // Generate Auth Token
-  const std::string& get_auth_token();
+  const std::string& GetAuthToken();
+
   // Global context
   std::shared_ptr<context::GlobalContext> global_context_;
   // ServiceManagement API host url. the default value is

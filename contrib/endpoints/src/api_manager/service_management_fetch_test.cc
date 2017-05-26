@@ -15,11 +15,7 @@
 #include "contrib/endpoints/src/api_manager/service_management_fetch.h"
 
 #include "contrib/endpoints/src/api_manager/config.h"
-#include "contrib/endpoints/src/api_manager/context/global_context.h"
-#include "contrib/endpoints/src/api_manager/context/request_context.h"
-#include "contrib/endpoints/src/api_manager/context/service_context.h"
 #include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
-#include "contrib/endpoints/src/api_manager/mock_request.h"
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -31,11 +27,6 @@ using ::google::api_manager::utils::Status;
 namespace google {
 namespace api_manager {
 namespace {
-
-const char kServiceManagementService[] =
-    "https://servicemanagement.googleapis.com";
-const char kServiceManagementServiceManager[] =
-    "/google.api.servicemanagement.v1.ServiceManager";
 
 const char kServiceConfig[] = R"(
 {
@@ -84,14 +75,11 @@ class ServiceManagementFetchTest : public ::testing::Test {
     // save the raw pointer of env before calling std::move(env).
     raw_env_ = env_.get();
 
-    std::string serviceConfig(kServerConfigWithServiceNameConfigId);
+    std::string server_config(kServerConfigWithServiceNameConfigId);
     global_context_ = std::make_shared<context::GlobalContext>(std::move(env_),
-                                                               serviceConfig);
+                                                               server_config);
 
-    std::unique_ptr<MockRequest> request(
-        new ::testing::NiceMock<MockRequest>());
-
-    std::unique_ptr<Config> config = Config::Create(raw_env_, kServiceConfig);
+    std::unique_ptr<Config> config = Config::Create(raw_env_, server_config);
 
     service_management_fetch_.reset(
         new ServiceManagementFetch(global_context_));
@@ -106,7 +94,12 @@ class ServiceManagementFetchTest : public ::testing::Test {
 
 TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillRepeatedly(Invoke([](HTTPRequest* req) {
+      .WillOnce(Invoke([](HTTPRequest* req) {
+        ASSERT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_server_config/configs/2017-05-01r1",
+            req->url());
+
         std::map<std::string, std::string> headers;
         req->OnComplete(Status::OK, std::move(headers), kServiceConfig1);
       }));
@@ -132,8 +125,8 @@ TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig404) {
       "2017-05-01r1", [](utils::Status status, const std::string& config) {
         ASSERT_EQ(Code::UNAVAILABLE, status.code());
         ASSERT_EQ(
-            "UNAVAILABLE: Service management request failed with HTTP response "
-            "code 5",
+            "UNAVAILABLE: Service management request was failed with HTTP "
+            "response code 5",
             status.ToString());
 
         std::cout << status.ToString() << std::endl;

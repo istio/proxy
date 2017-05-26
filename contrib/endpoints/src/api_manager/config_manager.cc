@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "contrib/endpoints/src/api_manager/config_manager.h"
+#include "contrib/endpoints/src/api_manager/fetch_metadata.h"
 #include "contrib/endpoints/src/api_manager/service_management_fetch.h"
 
 namespace google {
@@ -22,17 +23,15 @@ namespace {
 // Default rollouts refresh interval in ms
 const int kConfigUpdateCheckInterval = 60000;
 
-const char kRolloutStrategyManaged[] = "managed";
-
 // static configs for error handling
-static std::vector<std::pair<std::string, int>> empty_configs;
+static std::vector<std::pair<std::string, int>> kEmptyConfigs;
 }  // namespace anonymous
 
 ConfigManager::ConfigManager(
     std::shared_ptr<context::GlobalContext> global_context,
-    ApiManagerCallbackFunction config_rollout_callback)
+    RolloutApplyFunction rollout_apply_function)
     : global_context_(global_context),
-      config_rollout_callback_(config_rollout_callback),
+      rollout_apply_function_(rollout_apply_function),
       refresh_interval_ms_(kConfigUpdateCheckInterval) {
   if (global_context_->server_config()->has_service_management_config()) {
     // update refresh interval in ms
@@ -52,19 +51,19 @@ void ConfigManager::Init() {
   if (global_context_->service_name().empty() ||
       global_context_->config_id().empty()) {
     GlobalFetchGceMetadata(global_context_, [this](utils::Status status) {
-      on_fetch_metadata(status);
+      OnFetchMetadataDone(status);
     });
   } else {
-    on_fetch_metadata(utils::Status::OK);
+    OnFetchMetadataDone(utils::Status::OK);
   }
 }
 
-void ConfigManager::on_fetch_metadata(utils::Status status) {
+void ConfigManager::OnFetchMetadataDone(utils::Status status) {
   if (!status.ok()) {
     // We should not get here
     global_context_->env()->LogError("Unexpected status: " + status.ToString());
-    config_rollout_callback_(utils::Status(Code::ABORTED, status.message()),
-                             empty_configs);
+    rollout_apply_function_(utils::Status(Code::ABORTED, status.ToString()),
+                            kEmptyConfigs);
     return;
   }
 
@@ -80,80 +79,82 @@ void ConfigManager::on_fetch_metadata(utils::Status status) {
         global_context_->gce_metadata()->endpoints_service_config_id());
   }
 
-  // Call ApiManager call with Code::ABORTED, ESP will stop moving forward
+  // Call ApiManager with status Code::ABORTED, ESP will stop moving forward
   if (global_context_->service_name().empty()) {
-    std::string msg = "API service name not specified in configuration files";
+    std::string msg = "API service name is not specified";
     global_context_->env()->LogError(msg);
-    config_rollout_callback_(utils::Status(Code::ABORTED, msg), empty_configs);
+    rollout_apply_function_(utils::Status(Code::ABORTED, msg), kEmptyConfigs);
     return;
   }
 
   // TODO(jaebong) config_id should not be empty for the first version
   // This part will be removed after the rollouts feature added
   if (global_context_->config_id().empty()) {
-    std::string msg = "API config_id not specified in configuration files";
+    std::string msg = "API config_id is not specified";
     global_context_->env()->LogError(msg);
-    config_rollout_callback_(utils::Status(Code::ABORTED, msg), empty_configs);
+    rollout_apply_function_(utils::Status(Code::ABORTED, msg), kEmptyConfigs);
     return;
   }
 
   // Fetch service account token
   GlobalFetchServiceAccountToken(global_context_, [this](utils::Status status) {
-    on_fetch_auth_token(status);
+    OnFetchAuthTokenDone(status);
   });
 }
 
-void ConfigManager::on_fetch_auth_token(utils::Status status) {
+void ConfigManager::OnFetchAuthTokenDone(utils::Status status) {
   if (!status.ok()) {
     // We should not get here
     global_context_->env()->LogError("Unexpected status: " + status.ToString());
-    config_rollout_callback_(utils::Status(Code::ABORTED, status.message()),
-                             empty_configs);
+    rollout_apply_function_(utils::Status(Code::ABORTED, status.ToString()),
+                            kEmptyConfigs);
   }
 
   // Fetch configs from the Inception
-  auto fetchInfo = std::make_shared<ConfigsFetchInfo>();
+  auto config_fetch_info = std::make_shared<ConfigsFetchInfo>();
 
   // For now, config manager has only one config_id (100% rollout)
-  fetchInfo->rollouts = {{global_context_->config_id(), 100}};
-  fetch_configs(fetchInfo);
+  config_fetch_info->rollouts.assign({{global_context_->config_id(), 100}});
+  FetchConfigs(config_fetch_info);
 }
 
-// Fetch configs from rollouts. fetchInfo has rollouts and fetched configs
-void ConfigManager::fetch_configs(std::shared_ptr<ConfigsFetchInfo> fetchInfo) {
+// Fetch configs from rollouts. fetch_info has rollouts and fetched configs
+void ConfigManager::FetchConfigs(
+    std::shared_ptr<ConfigsFetchInfo> config_fetch_info) {
   // Finished fetching configs.
-  if (fetchInfo->IsCompleted()) {
+  if (config_fetch_info->IsCompleted()) {
     // Failed to fetch all configs or rollouts are empty
-    if (fetchInfo->rollouts.size() == 0 || fetchInfo->configs.size() == 0) {
+    if (config_fetch_info->IsRolloutsEmpty() ||
+        config_fetch_info->IsConfigsEmpty()) {
       // first time, call the ApiManager callback function with an error
-      config_rollout_callback_(
-          utils::Status(Code::ABORTED, "Failed to load configs"),
-          empty_configs);
+      rollout_apply_function_(
+          utils::Status(Code::ABORTED, "Failed to download the service config"),
+          kEmptyConfigs);
       return;
     }
 
     // Update ApiManager
-    config_rollout_callback_(utils::Status::OK, fetchInfo->configs);
+    rollout_apply_function_(utils::Status::OK, config_fetch_info->configs);
     return;
   }
 
   service_management_fetch_->GetConfig(
-      fetchInfo->rollouts[fetchInfo->index].first,
-      [this, &fetchInfo](const utils::Status& status,
-                         const std::string& config) {
+      config_fetch_info->rollouts[config_fetch_info->index].first,
+      [this, config_fetch_info](const utils::Status& status,
+                                const std::string& config) {
         if (status.ok()) {
-          fetchInfo->configs.push_back(
+          config_fetch_info->configs.push_back(
               {std::move(config),
-               fetchInfo->rollouts[fetchInfo->index].second});
+               config_fetch_info->rollouts[config_fetch_info->index].second});
         } else {
           global_context_->env()->LogError(std::string(
-              "Unable to download ServiceConfig for the config_id: " +
-              fetchInfo->rollouts[fetchInfo->index].first));
+              "Unable to download Service config for the config_id: " +
+              config_fetch_info->rollouts[config_fetch_info->index].first));
         }
 
         // move on to the next config_id
-        fetchInfo->Next();
-        fetch_configs(fetchInfo);
+        config_fetch_info->Next();
+        FetchConfigs(config_fetch_info);
       });
 }
 
