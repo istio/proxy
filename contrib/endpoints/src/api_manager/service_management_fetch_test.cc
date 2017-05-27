@@ -107,7 +107,7 @@ TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig) {
   service_management_fetch_->GetConfig(
       "2017-05-01r1", 100,
       [](utils::Status status, const std::string& config_id, int percentage,
-         const std::string& config) {
+          std::string&& config) {
         ASSERT_EQ(Code::OK, status.code());
         ASSERT_EQ(kServiceConfig1, config);
       });
@@ -124,7 +124,7 @@ TEST_F(ServiceManagementFetchTest, TestFetchServiceManagementConfig404) {
   service_management_fetch_->GetConfig(
       "2017-05-01r1", 100,
       [](utils::Status status, const std::string& config_id, int percentage,
-         const std::string& config) {
+         std::string&& config) {
         ASSERT_EQ(Code::UNAVAILABLE, status.code());
         ASSERT_EQ(
             "UNAVAILABLE: Service management request was failed with HTTP "
