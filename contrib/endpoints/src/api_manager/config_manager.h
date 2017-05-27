@@ -38,22 +38,24 @@ typedef std::function<void(
 
 // Data structure to fetch configs from rollouts
 struct ConfigsFetchInfo {
-  ConfigsFetchInfo() : index(0) {}
+  ConfigsFetchInfo() : finished(0) {}
+
+  ConfigsFetchInfo(std::vector<std::pair<std::string, int>>&& rollouts)
+      : rollouts(std::move(rollouts)), finished(0) {}
+
   // config_ids to be fetched and rollouts percentages
   std::vector<std::pair<std::string, int>> rollouts;
   // fetched ServiceConfig and rollouts percentages
   std::vector<std::pair<std::string, int>> configs;
   // Finished fetching
-  inline bool IsCompleted() { return ((size_t)index >= rollouts.size()); }
-  // Move on to the next
-  inline void Next() { index++; }
+  inline bool IsCompleted() { return ((size_t)finished == rollouts.size()); }
   // Check fetched rollout is empty
   inline bool IsRolloutsEmpty() { return rollouts.empty(); }
   // Check fetched configs are empty
   inline bool IsConfigsEmpty() { return configs.empty(); }
 
-  // Rollouts index to be fetched
-  int index;
+  // Finished service config fetch count
+  int finished;
 };
 
 }  // namespace anonymous

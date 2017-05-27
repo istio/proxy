@@ -30,7 +30,8 @@ namespace api_manager {
 
 namespace {
 // HTTP request callback
-typedef std::function<void(const utils::Status&, std::string&&)>
+typedef std::function<void(const utils::Status&, const std::string config_id,
+                           int percentage, std::string&&)>
     HttpCallbackFunction;
 }
 
@@ -41,11 +42,13 @@ class ServiceManagementFetch {
   virtual ~ServiceManagementFetch(){};
 
   // Fetches ServiceConfig from the ServiceManagement service
-  void GetConfig(std::string config_id, HttpCallbackFunction callback);
+  void GetConfig(const std::string& config_id, int percentage,
+                 HttpCallbackFunction callback);
 
  private:
   // Make a http GET request
-  void Call(const std::string& url, HttpCallbackFunction on_done);
+  void Call(const std::string& url, const std::string& config_id,
+            int percentage, HttpCallbackFunction on_done);
   // Generate Auth Token
   const std::string& GetAuthToken();
 
