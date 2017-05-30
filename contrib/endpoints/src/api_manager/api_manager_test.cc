@@ -15,13 +15,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "contrib/endpoints/include/api_manager/api_manager.h"
-
-#include "contrib/endpoints/src/api_manager/config.h"
-#include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
 #include "gtest/gtest.h"
-
-#include <memory>
 
 using ::testing::_;
 using ::testing::Invoke;
