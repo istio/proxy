@@ -32,7 +32,8 @@ ConfigManager::ConfigManager(
     : global_context_(global_context),
       rollout_apply_function_(rollout_apply_function),
       refresh_interval_ms_(kCheckNewRolloutInterval) {
-  if (global_context_->server_config()->has_service_management_config()) {
+  if (global_context_->server_config() &&
+      global_context_->server_config()->has_service_management_config()) {
     // update refresh interval in ms
     if (global_context_->server_config()
             ->service_management_config()

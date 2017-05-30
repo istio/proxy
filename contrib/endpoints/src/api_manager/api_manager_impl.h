@@ -16,6 +16,7 @@
 #define API_MANAGER_API_MANAGER_IMPL_H_
 
 #include "contrib/endpoints/include/api_manager/api_manager.h"
+#include "contrib/endpoints/src/api_manager/config_manager.h"
 #include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/context/service_context.h"
 #include "contrib/endpoints/src/api_manager/service_control/interface.h"
@@ -52,10 +53,17 @@ class ApiManagerImpl : public ApiManager {
   utils::Status GetStatistics(ApiManagerStatistics *statistics) const override;
 
   // Add a new service config.
-  void AddConfig(const std::string &service_config, bool deploy_it);
+  // Return true if service_config is valid, otherwise return false.
+  // config_id will be updated when the deployment was successful
+  bool AddConfig(const std::string &service_config, std::string &config_id);
 
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);
+
+  // Return the initialization status
+  inline utils::Status InitializationStatus() override {
+    return initialization_status_;
+  }
 
  private:
   // The check work flow.
@@ -73,6 +81,15 @@ class ApiManagerImpl : public ApiManager {
 
   // A weighted service selector.
   std::unique_ptr<WeightedSelector> service_selector_;
+
+  // A config manager
+  std::unique_ptr<ConfigManager> config_manager_;
+
+  // Initialization status.
+  //  - Code::UNKNOWN   Not initialized yet. The default value.
+  //  - Code::OK        Successfully initialized
+  //  - Code::ABORTED   Initialization was failed
+  utils::Status initialization_status_;
 };
 
 }  // namespace api_manager
