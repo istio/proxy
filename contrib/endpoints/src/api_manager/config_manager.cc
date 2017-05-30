@@ -122,40 +122,41 @@ void ConfigManager::OnFetchAuthTokenDone(utils::Status status) {
 void ConfigManager::FetchConfigs(
     std::shared_ptr<ConfigsFetchInfo> config_fetch_info) {
   for (auto rollout : config_fetch_info->rollouts) {
-    service_management_fetch_->GetConfig(
-        rollout.first, rollout.second,
-        [this, config_fetch_info](const utils::Status& status,
-                                  const std::string& config_id, int percentage,
-                                  std::string&& config) {
+    std::string config_id = rollout.first;
+    int percentage = rollout.second;
+    service_management_fetch_->GetConfig(config_id, [this, config_id,
+                                                     percentage,
+                                                     config_fetch_info](
+                                                        const utils::Status&
+                                                            status,
+                                                        std::string&& config) {
 
-          if (status.ok()) {
-            config_fetch_info->configs.push_back(
-                {std::move(config), percentage});
-          } else {
-            global_context_->env()->LogError(std::string(
-                "Unable to download Service config for the config_id: " +
-                config_id));
-          }
+      if (status.ok()) {
+        config_fetch_info->configs.push_back({std::move(config), percentage});
+      } else {
+        global_context_->env()->LogError(std::string(
+            "Unable to download Service config for the config_id: " +
+            config_id));
+      }
 
-          config_fetch_info->finished++;
+      config_fetch_info->finished++;
 
-          if (config_fetch_info->IsCompleted()) {
-            // Failed to fetch all configs or rollouts are empty
-            if (config_fetch_info->IsRolloutsEmpty() ||
-                config_fetch_info->IsConfigsEmpty()) {
-              // first time, call the ApiManager callback function with an error
-              rollout_apply_function_(
-                  utils::Status(Code::ABORTED,
-                                "Failed to download the service config"),
-                  kEmptyConfigs);
-              return;
-            }
+      if (config_fetch_info->IsCompleted()) {
+        // Failed to fetch all configs or rollouts are empty
+        if (config_fetch_info->IsRolloutsEmpty() ||
+            config_fetch_info->IsConfigsEmpty()) {
+          // first time, call the ApiManager callback function with an error
+          rollout_apply_function_(
+              utils::Status(Code::ABORTED,
+                            "Failed to download the service config"),
+              kEmptyConfigs);
+          return;
+        }
 
-            // Update ApiManager
-            rollout_apply_function_(utils::Status::OK,
-                                    config_fetch_info->configs);
-          }
-        });
+        // Update ApiManager
+        rollout_apply_function_(utils::Status::OK, config_fetch_info->configs);
+      }
+    });
   }
 }
 

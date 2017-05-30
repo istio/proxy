@@ -52,19 +52,17 @@ ServiceManagementFetch::ServiceManagementFetch(
 }
 
 void ServiceManagementFetch::GetConfig(const std::string& config_id,
-                                       int percentage,
                                        HttpCallbackFunction on_done) {
   const std::string url = host_ + "/v1/services/" +
                           global_context_->service_name() + "/configs/" +
                           config_id;
-  Call(url, config_id, percentage, on_done);
+  Call(url, on_done);
 }
 
 void ServiceManagementFetch::Call(const std::string& url,
-                                  const std::string& config_id, int percentage,
                                   HttpCallbackFunction on_done) {
-  std::unique_ptr<HTTPRequest>
-  http_request(new HTTPRequest([this, url, config_id, percentage, on_done](
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([this, url,
+                                                             on_done](
       utils::Status status, std::map<std::string, std::string>&& headers,
       std::string&& body) {
 
@@ -85,7 +83,7 @@ void ServiceManagementFetch::Call(const std::string& url,
       }
     }
 
-    on_done(status, config_id, percentage, std::move(body));
+    on_done(status, std::move(body));
   }));
 
   http_request->set_url(url)
