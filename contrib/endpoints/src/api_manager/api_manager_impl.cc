@@ -21,6 +21,12 @@
 namespace google {
 namespace api_manager {
 
+namespace {
+
+const char kConfigRolloutStrategy[] = "managed";
+
+}  // namespace unknown
+
 ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                                const std::string &service_config,
                                const std::string &server_config)
@@ -95,7 +101,10 @@ utils::Status ApiManagerImpl::Init() {
       }
     }
 
-    return config_loading_status_;
+    if (global_context_->rollout_strategy().compare(
+            std::string(kConfigRolloutStrategy)) != 0) {
+      return config_loading_status_;
+    }
   }
 
   config_manager_.reset(new ConfigManager(
