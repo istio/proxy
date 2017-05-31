@@ -43,6 +43,9 @@ class GrpcTransport : public Grpc::RpcChannelCallbacks,
 
   static void SetDispatcher(Event::Dispatcher& dispatcher);
 
+  // Check if mixer server cluster configured in cluster_manager.
+  static bool IsMixerServerConfigured(Upstream::ClusterManager& cm);
+
  protected:
   // Create a new grpc channel.
   Grpc::RpcChannelPtr NewChannel(Upstream::ClusterManager& cm);

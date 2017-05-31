@@ -27,6 +27,9 @@ namespace {
 // gRPC request timeout
 const std::chrono::milliseconds kGrpcRequestTimeoutMs(5000);
 
+// The name for the mixer server cluster.
+const char* kMixerServerClusterName = "mixer_server";
+
 // A thread local dispatcher.
 thread_local Event::Dispatcher* thread_dispatcher = nullptr;
 
@@ -66,8 +69,12 @@ void GrpcTransport::onFailure(const Optional<uint64_t>& grpc_status,
 
 Grpc::RpcChannelPtr GrpcTransport::NewChannel(Upstream::ClusterManager& cm) {
   return Grpc::RpcChannelPtr(new Grpc::RpcChannelImpl(
-      cm, "mixer_server", *this,
+      cm, kMixerServerClusterName, *this,
       Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs)));
+}
+
+bool GrpcTransport::IsMixerServerConfigured(Upstream::ClusterManager& cm) {
+  return cm.get(kMixerServerClusterName) != nullptr;
 }
 
 }  // namespace Mixer
