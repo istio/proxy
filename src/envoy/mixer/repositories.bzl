@@ -18,9 +18,10 @@
 MIXER_CLIENT = "d670be7d5a2427b543a5a128f6c1c2392eacbd37"
 
 def mixer_client_repositories(bind=True):
-    native.local_repository(
+    native.git_repository(
         name = "mixerclient_git",
-	path = "/home/qiwzhang/github/istio/mixerclient",
+        commit = "a6cc6b60a1194ebd16909b375fe40a232c5896d0",
+        remote = "https://github.com/istio/mixerclient.git",
     )
 
     if bind:

@@ -96,15 +96,6 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   Config(const Json::Object& config, Server::Instance& server)
       : cm_(server.clusterManager()) {
     mixer_config_.Load(config);
-    if (mixer_config_.mixer_server.empty()) {
-      log().error(
-          "mixer_server is required but not specified in the config: {}",
-          __func__);
-    } else {
-      log().debug("Called Mixer::Config constructor with mixer_server: ",
-                  mixer_config_.mixer_server);
-    }
-
     if (!mixer_config_.forward_attributes.empty()) {
       std::string serialized_str =
           Utils::SerializeStringMap(mixer_config_.forward_attributes);

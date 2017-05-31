@@ -39,7 +39,6 @@
                 "type": "decoder",
                 "name": "mixer",
                 "config": {
-                  "mixer_server": "${MIXER_SERVER}",
                   "mixer_attributes": {
                       "target.uid": "POD222",
                       "target.service": "foo.svc.cluster.local"
@@ -93,7 +92,6 @@
                 "type": "decoder",
                 "name": "mixer",
                 "config": {
-                   "mixer_server": "${MIXER_SERVER}",
                    "forward_attributes": {
                       "source.uid": "POD11",
                       "source.namespace": "XYZ11"
