@@ -26,7 +26,6 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                                const std::string &server_config)
     : global_context_(
           new context::GlobalContext(std::move(env), server_config)),
-      config_manager_(nullptr),
       service_config_(service_config),
       config_loading_status_(
           utils::Status(Code::UNKNOWN, "Not initialized yet")) {
@@ -56,12 +55,12 @@ bool ApiManagerImpl::AddConfig(const std::string &service_config,
     }
   }
 
-  config_id->assign(config->service().id());
+  *config_id = config->service().id();
 
-  service_context_map_[*config_id] = std::make_shared<context::ServiceContext>(
+  auto context_service = std::make_shared<context::ServiceContext>(
       global_context_, std::move(config));
-
-  service_context_map_[*config_id]->service_control()->Init();
+  context_service->service_control()->Init();
+  service_context_map_[*config_id] = context_service;
 
   return true;
 }
@@ -87,7 +86,7 @@ utils::Status ApiManagerImpl::Init() {
       config_loading_status_ =
           utils::Status(Code::ABORTED, "Invalid service config");
     }
-    return utils::Status::OK;
+    return config_loading_status_;
   }
 
   config_manager_.reset(new ConfigManager(
@@ -96,16 +95,18 @@ utils::Status ApiManagerImpl::Init() {
              const std::vector<std::pair<std::string, int>> &configs) {
         if (status.ok()) {
           std::vector<std::pair<std::string, int>> rollouts;
-          std::string config_id;
 
           for (auto item : configs) {
+            std::string config_id;
             if (AddConfig(item.first, &config_id)) {
               rollouts.push_back({config_id, item.second});
-            } else {
-              config_loading_status_ =
-                  utils::Status(Code::ABORTED, "Invalid service config");
-              return;
             }
+          }
+
+          if (rollouts.size() == 0) {
+            config_loading_status_ =
+                utils::Status(Code::ABORTED, "Invalid service config");
+            return;
           }
 
           DeployConfigs(std::move(rollouts));
