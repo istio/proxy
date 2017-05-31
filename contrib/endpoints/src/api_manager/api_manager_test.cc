@@ -15,13 +15,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "contrib/endpoints/include/api_manager/api_manager.h"
-
-#include "contrib/endpoints/src/api_manager/config.h"
-#include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
 #include "gtest/gtest.h"
-
-#include <memory>
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -136,8 +131,9 @@ TEST_F(ApiManagerTest, CorrectStatistics) {
   std::shared_ptr<ApiManager> api_manager(
       MakeApiManager(std::move(env), kServiceForStatistics));
   EXPECT_TRUE(api_manager);
-  EXPECT_TRUE(api_manager->Enabled());
+  EXPECT_FALSE(api_manager->Enabled());
   api_manager->Init();
+  EXPECT_TRUE(api_manager->Enabled());
   ApiManagerStatistics statistics;
   api_manager->GetStatistics(&statistics);
   const service_control::Statistics &service_control_stat =
@@ -169,13 +165,13 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
 
   // Already initialized
   EXPECT_TRUE(api_manager);
-  EXPECT_EQ("OK", api_manager->InitializationStatus().ToString());
-  EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
+  EXPECT_EQ("UNKNOWN: Not initialized yet",
+            api_manager->ConfigLoadingStatus().ToString());
 
   api_manager->Init();
 
   // No change is expected
-  EXPECT_EQ("OK", api_manager->InitializationStatus().ToString());
+  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
   EXPECT_TRUE(api_manager->Enabled());
   EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
 }
@@ -199,14 +195,14 @@ TEST_F(ApiManagerTest, InitializedByConfigManager) {
 
   EXPECT_TRUE(api_manager);
   EXPECT_EQ("UNKNOWN: Not initialized yet",
-            api_manager->InitializationStatus().ToString());
+            api_manager->ConfigLoadingStatus().ToString());
   EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
 
   api_manager->Init();
 
   // Successfully initialized by ConfigManager
-  EXPECT_EQ("OK", api_manager->InitializationStatus().ToString());
+  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
   EXPECT_TRUE(api_manager->Enabled());
   EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
 }
@@ -232,14 +228,14 @@ TEST_F(ApiManagerTest,
 
   EXPECT_TRUE(api_manager);
   EXPECT_EQ("UNKNOWN: Not initialized yet",
-            api_manager->InitializationStatus().ToString());
+            api_manager->ConfigLoadingStatus().ToString());
   EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
 
   api_manager->Init();
 
   EXPECT_EQ("ABORTED: Invalid service config",
-            api_manager->InitializationStatus().ToString());
+            api_manager->ConfigLoadingStatus().ToString());
   EXPECT_FALSE(api_manager->Enabled());
 
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
