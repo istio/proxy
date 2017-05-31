@@ -24,6 +24,7 @@
 #include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
+using StatusCode = ::google::protobuf::util::error::Code;
 using ::istio::mixer_client::Attributes;
 using ::istio::mixer_client::CheckOptions;
 using ::istio::mixer_client::DoneFunc;
@@ -179,13 +180,17 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
 HttpControl::HttpControl(const MixerConfig& mixer_config,
                          Upstream::ClusterManager& cm)
     : mixer_config_(mixer_config) {
-  MixerClientOptions options(GetCheckOptions(mixer_config),
-                             GetQuotaOptions(mixer_config));
-  auto cms = std::make_shared<ClusterManagerStore>(cm);
-  options.check_transport = CheckGrpcTransport::GetFunc(cms);
-  options.report_transport = ReportGrpcTransport::GetFunc(cms);
-  options.quota_transport = QuotaGrpcTransport::GetFunc(cms);
-  mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
+  if (GrpcTransport::IsMixerServerConfigured(cm)) {
+    MixerClientOptions options(GetCheckOptions(mixer_config),
+                               GetQuotaOptions(mixer_config));
+    auto cms = std::make_shared<ClusterManagerStore>(cm);
+    options.check_transport = CheckGrpcTransport::GetFunc(cms);
+    options.report_transport = ReportGrpcTransport::GetFunc(cms);
+    options.quota_transport = QuotaGrpcTransport::GetFunc(cms);
+    mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
+  } else {
+    log().error("Mixer server cluster is not configured");
+  }
 
   mixer_config_.ExtractQuotaAttributes(&quota_attributes_);
 }
@@ -212,6 +217,11 @@ void HttpControl::FillCheckAttributes(HeaderMap& header_map, Attributes* attr) {
 
 void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
                         std::string origin_user, DoneFunc on_done) {
+  if (!mixer_client_) {
+    on_done(
+        Status(StatusCode::INVALID_ARGUMENT, "Missing mixer_server cluster"));
+    return;
+  }
   FillCheckAttributes(headers, &request_data->attributes);
   SetStringAttribute(kOriginUser, origin_user, &request_data->attributes);
   log().debug("Send Check: {}", request_data->attributes.DebugString());
@@ -219,6 +229,12 @@ void HttpControl::Check(HttpRequestDataPtr request_data, HeaderMap& headers,
 }
 
 void HttpControl::Quota(HttpRequestDataPtr request_data, DoneFunc on_done) {
+  if (!mixer_client_) {
+    on_done(
+        Status(StatusCode::INVALID_ARGUMENT, "Missing mixer_server cluster"));
+    return;
+  }
+
   if (quota_attributes_.attributes.empty()) {
     on_done(Status::OK);
     return;
@@ -239,6 +255,12 @@ void HttpControl::Report(HttpRequestDataPtr request_data,
                          const HeaderMap* response_headers,
                          const AccessLog::RequestInfo& request_info,
                          int check_status, DoneFunc on_done) {
+  if (!mixer_client_) {
+    on_done(
+        Status(StatusCode::INVALID_ARGUMENT, "Missing mixer_server cluster"));
+    return;
+  }
+
   // Use all Check attributes for Report.
   // Add additional Report attributes.
   FillResponseHeaderAttributes(response_headers, &request_data->attributes);
