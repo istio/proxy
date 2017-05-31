@@ -122,7 +122,6 @@ const envoyConfTempl = `
                 "type": "decoder",
                 "name": "mixer",
                 "config": {
-                  "mixer_server": "{{.MixerServer}}",
 {{.ServerConfig}}
                 }
               },
@@ -171,7 +170,6 @@ const envoyConfTempl = `
                 "type": "decoder",
                 "name": "mixer",
                 "config": {
-                   "mixer_server": "{{.MixerServer}}",
 {{.ClientConfig}}
                 }
               },
@@ -211,6 +209,24 @@ const envoyConfTempl = `
         "hosts": [
           {
             "url": "tcp://localhost:{{.ServerPort}}"
+          }
+        ]
+      },
+      {
+        "name": "mixer_server",
+        "connect_timeout_ms": 5000,
+        "type": "strict_dns",
+	"circuit_breakers": {
+           "default": {
+	      "max_pending_requests": 10000,
+	      "max_requests": 10000
+            }
+	},
+        "lb_type": "round_robin",
+        "features": "http2",
+        "hosts": [
+          {
+            "url": "tcp://{{.MixerServer}}"
           }
         ]
       }

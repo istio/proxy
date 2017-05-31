@@ -82,13 +82,13 @@ func (s *TestSetup) VerifyReport(tag string, result string) {
 
 func (s *TestSetup) VerifyQuota(tag string, name string, amount int64) {
 	_ = <-s.mixer.quota.ch
-	if s.mixer.quota_request.Quota != name {
+	if s.mixer.qma.Quota != name {
 		s.t.Fatalf("Failed to verify %s quota name: %v, expected: %v\n",
-			tag, s.mixer.quota_request.Quota, name)
+			tag, s.mixer.qma.Quota, name)
 	}
-	if s.mixer.quota_request.Amount != amount {
+	if s.mixer.qma.Amount != amount {
 		s.t.Fatalf("Failed to verify %s quota amount: %v, expected: %v\n",
-			tag, s.mixer.quota_request.Amount, amount)
+			tag, s.mixer.qma.Amount, amount)
 	}
 }
 
