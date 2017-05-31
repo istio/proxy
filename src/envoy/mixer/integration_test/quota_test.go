@@ -43,7 +43,6 @@ func TestQuotaCall(t *testing.T) {
 
 	// Issues a failed POST request caused by Mixer Quota
 	tag = "QuotaFail"
-	s.mixer.quota_request = nil
 	s.mixer.quota.r_status = rpc.Status{
 		Code:    int32(rpc.RESOURCE_EXHAUSTED),
 		Message: mixerQuotaFailMessage,
