@@ -55,7 +55,8 @@ class ApiManagerImpl : public ApiManager {
   // Add a new service config.
   // Return true if service_config is valid, otherwise return false.
   // config_id will be updated when the deployment was successful
-  bool AddConfig(const std::string &service_config, std::string *config_id);
+  bool AddConfig(const std::string &service_config, std::string *config_id,
+                 bool initialize);
 
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);
@@ -84,9 +85,6 @@ class ApiManagerImpl : public ApiManager {
 
   // A config manager
   std::unique_ptr<ConfigManager> config_manager_;
-
-  // Service config text provided by ngix which will be used in Init()
-  std::string service_config_;
 
   // Initialization status.
   //  - Code::UNKNOWN   Not initialized yet. The default value.

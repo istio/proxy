@@ -131,9 +131,8 @@ TEST_F(ApiManagerTest, CorrectStatistics) {
   std::shared_ptr<ApiManager> api_manager(
       MakeApiManager(std::move(env), kServiceForStatistics));
   EXPECT_TRUE(api_manager);
-  EXPECT_FALSE(api_manager->Enabled());
-  api_manager->Init();
   EXPECT_TRUE(api_manager->Enabled());
+  api_manager->Init();
   ApiManagerStatistics statistics;
   api_manager->GetStatistics(&statistics);
   const service_control::Statistics &service_control_stat =
@@ -165,8 +164,7 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
 
   // Already initialized
   EXPECT_TRUE(api_manager);
-  EXPECT_EQ("UNKNOWN: Not initialized yet",
-            api_manager->ConfigLoadingStatus().ToString());
+  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
 
   api_manager->Init();
 

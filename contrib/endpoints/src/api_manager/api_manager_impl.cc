@@ -26,15 +26,25 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                                const std::string &server_config)
     : global_context_(
           new context::GlobalContext(std::move(env), server_config)),
-      service_config_(service_config),
       config_loading_status_(
           utils::Status(Code::UNKNOWN, "Not initialized yet")) {
+  if (!service_config.empty()) {
+    std::string config_id;
+    if (AddConfig(service_config, &config_id, false)) {
+      DeployConfigs({{config_id, 100}});
+      config_loading_status_ = utils::Status::OK;
+    } else {
+      config_loading_status_ =
+          utils::Status(Code::ABORTED, "Invalid service config");
+    }
+  }
+
   check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);
   check_workflow_->RegisterAll();
 }
 
 bool ApiManagerImpl::AddConfig(const std::string &service_config,
-                               std::string *config_id) {
+                               std::string *config_id, bool initialize) {
   std::unique_ptr<Config> config =
       Config::Create(global_context_->env(), service_config);
   if (config == nullptr) {
@@ -59,7 +69,9 @@ bool ApiManagerImpl::AddConfig(const std::string &service_config,
 
   auto context_service = std::make_shared<context::ServiceContext>(
       global_context_, std::move(config));
-  context_service->service_control()->Init();
+  if (initialize == true && context_service->service_control()) {
+    context_service->service_control()->Init();
+  }
   service_context_map_[*config_id] = context_service;
 
   return true;
@@ -76,16 +88,13 @@ utils::Status ApiManagerImpl::Init() {
     global_context_->cloud_trace_aggregator()->Init();
   }
 
-  if (!service_config_.empty()) {
-    std::string config_id;
-    if (AddConfig(service_config_, &config_id)) {
-      DeployConfigs({{config_id, 100}});
-
-      config_loading_status_ = utils::Status::OK;
-    } else {
-      config_loading_status_ =
-          utils::Status(Code::ABORTED, "Invalid service config");
+  if (!service_context_map_.empty()) {
+    for (auto it : service_context_map_) {
+      if (it.second->service_control()) {
+        it.second->service_control()->Init();
+      }
     }
+
     return config_loading_status_;
   }
 
@@ -98,7 +107,7 @@ utils::Status ApiManagerImpl::Init() {
 
           for (auto item : configs) {
             std::string config_id;
-            if (AddConfig(item.first, &config_id)) {
+            if (AddConfig(item.first, &config_id, true)) {
               rollouts.push_back({config_id, item.second});
             }
           }
