@@ -111,14 +111,12 @@ void ConfigManager::OnFetchAuthTokenDone(utils::Status status) {
     return;
   }
 
-  if (global_context_->service_config().empty()) {
-    // Fetch configs from the Inception
-    // For now, config manager has only one config_id (100% rollout)
-    std::shared_ptr<ConfigsFetchInfo> config_fetch_info(
-        new ConfigsFetchInfo({{global_context_->config_id(), 100}}));
+  // Fetch configs from the Inception
+  // For now, config manager has only one config_id (100% rollout)
+  std::shared_ptr<ConfigsFetchInfo> config_fetch_info(
+      new ConfigsFetchInfo({{global_context_->config_id(), 100}}));
 
-    FetchConfigs(config_fetch_info);
-  }
+  FetchConfigs(config_fetch_info);
 }
 
 // Fetch configs from rollouts. fetch_info has rollouts and fetched configs

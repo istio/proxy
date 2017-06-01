@@ -35,8 +35,6 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
       config_loading_status_(
           utils::Status(Code::UNKNOWN, "Not initialized yet")) {
   if (!service_config.empty()) {
-    global_context_->service_config(service_config);
-
     std::string config_id;
     if (AddConfig(service_config, &config_id, false)) {
       DeployConfigs({{config_id, 100}});
@@ -101,6 +99,11 @@ utils::Status ApiManagerImpl::Init() {
       if (it.second->service_control()) {
         it.second->service_control()->Init();
       }
+    }
+
+    if (global_context_->rollout_strategy() !=
+        std::string(kConfigRolloutStrategy)) {
+      return config_loading_status_;
     }
   }
 
