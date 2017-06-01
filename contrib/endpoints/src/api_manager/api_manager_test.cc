@@ -14,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/include/api_manager/api_manager.h"
+#include "contrib/endpoints/src/api_manager/api_manager_impl.h"
 #include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
 #include "gtest/gtest.h"
 
@@ -128,8 +128,9 @@ TEST_F(ApiManagerTest, CorrectStatistics) {
   std::unique_ptr<ApiManagerEnvInterface> env(
       new ::testing::NiceMock<MockApiManagerEnvironment>());
 
-  std::shared_ptr<ApiManager> api_manager(
-      MakeApiManager(std::move(env), kServiceForStatistics));
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(
+          MakeApiManager(std::move(env), kServiceForStatistics)));
   EXPECT_TRUE(api_manager);
   EXPECT_TRUE(api_manager->Enabled());
   api_manager->Init();
@@ -152,15 +153,12 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
       new ::testing::NiceMock<MockApiManagerEnvironment>());
 
   // ServiceManagement service should not be called
-  EXPECT_CALL(*(env.get()), DoRunHTTPRequest(_))
-      .Times(0)
-      .WillOnce(Invoke([this](HTTPRequest *req) {
-        EXPECT_TRUE(false);
+  EXPECT_CALL(*(env.get()), DoRunHTTPRequest(_)).Times(0);
 
-      }));
-
-  std::shared_ptr<ApiManager> api_manager(MakeApiManager(
-      std::move(env), kServiceConfig1, kServerConfigWithServiceNameConfigId));
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(
+          MakeApiManager(std::move(env), kServiceConfig1,
+                         kServerConfigWithServiceNameConfigId)));
 
   // Already initialized
   EXPECT_TRUE(api_manager);
@@ -188,11 +186,12 @@ TEST_F(ApiManagerTest, InitializedByConfigManager) {
         req->OnComplete(Status::OK, {}, std::move(kServiceConfig1));
       }));
 
-  std::shared_ptr<ApiManager> api_manager(
-      MakeApiManager(std::move(env), "", kServerConfigWithServiceNameConfigId));
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), "", kServerConfigWithServiceNameConfigId)));
 
   EXPECT_TRUE(api_manager);
-  EXPECT_EQ("UNKNOWN: Not initialized yet",
+  EXPECT_EQ("UNAVAILABLE: Not initialized yet",
             api_manager->ConfigLoadingStatus().ToString());
   EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
@@ -221,11 +220,12 @@ TEST_F(ApiManagerTest,
         req->OnComplete(Status::OK, {}, std::move(kServiceConfig2));
       }));
 
-  std::shared_ptr<ApiManager> api_manager(
-      MakeApiManager(std::move(env), "", kServerConfigWithServiceNameConfigId));
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), "", kServerConfigWithServiceNameConfigId)));
 
   EXPECT_TRUE(api_manager);
-  EXPECT_EQ("UNKNOWN: Not initialized yet",
+  EXPECT_EQ("UNAVAILABLE: Not initialized yet",
             api_manager->ConfigLoadingStatus().ToString());
   EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());

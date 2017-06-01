@@ -55,16 +55,14 @@ class ApiManagerImpl : public ApiManager {
   // Add a new service config.
   // Return true if service_config is valid, otherwise return false.
   // config_id will be updated when the deployment was successful
-  bool AddConfig(const std::string &service_config, std::string *config_id,
-                 bool initialize);
+  utils::Status AddConfig(const std::string &service_config, bool initialize,
+                          std::string *config_id);
 
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);
 
   // Return the initialization status
-  inline utils::Status ConfigLoadingStatus() override {
-    return config_loading_status_;
-  }
+  inline utils::Status ConfigLoadingStatus() { return config_loading_status_; }
 
  private:
   // The check work flow.
@@ -86,10 +84,9 @@ class ApiManagerImpl : public ApiManager {
   // A config manager
   std::unique_ptr<ConfigManager> config_manager_;
 
-  // Initialization status.
-  //  - Code::UNKNOWN   Not initialized yet. The default value.
-  //  - Code::OK        Successfully initialized
-  //  - Code::ABORTED   Initialization was failed
+  //  - Code::UNAVAILABLE Not initialized yet. The default value.
+  //  - Code::OK          Successfully initialized
+  //  - Code::ABORTED     Initialization was failed
   utils::Status config_loading_status_;
 };
 

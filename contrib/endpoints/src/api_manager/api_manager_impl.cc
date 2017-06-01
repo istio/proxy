@@ -33,10 +33,10 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
     : global_context_(
           new context::GlobalContext(std::move(env), server_config)),
       config_loading_status_(
-          utils::Status(Code::UNKNOWN, "Not initialized yet")) {
+          utils::Status(Code::UNAVAILABLE, "Not initialized yet")) {
   if (!service_config.empty()) {
     std::string config_id;
-    if (AddConfig(service_config, &config_id, false)) {
+    if (AddConfig(service_config, false, &config_id).ok()) {
       DeployConfigs({{config_id, 100}});
       config_loading_status_ = utils::Status::OK;
     } else {
@@ -49,14 +49,16 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
   check_workflow_->RegisterAll();
 }
 
-bool ApiManagerImpl::AddConfig(const std::string &service_config,
-                               std::string *config_id, bool initialize) {
+utils::Status ApiManagerImpl::AddConfig(const std::string &service_config,
+                                        bool initialize,
+                                        std::string *config_id) {
   std::unique_ptr<Config> config =
       Config::Create(global_context_->env(), service_config);
   if (config == nullptr) {
-    global_context_->env()->LogError(std::string("Invalid service config: ") +
-                                     service_config);
-    return false;
+    std::string err_msg =
+        std::string("Invalid service config: ") + service_config;
+    global_context_->env()->LogError(err_msg);
+    return utils::Status(Code::INVALID_ARGUMENT, err_msg);
   }
 
   std::string service_name = config->service().name();
@@ -67,7 +69,7 @@ bool ApiManagerImpl::AddConfig(const std::string &service_config,
       auto err_msg = std::string("Mismatched service name; existing: ") +
                      global_context_->service_name() + ", new: " + service_name;
       global_context_->env()->LogError(err_msg);
-      return false;
+      return utils::Status(Code::INVALID_ARGUMENT, err_msg);
     }
   }
 
@@ -80,7 +82,7 @@ bool ApiManagerImpl::AddConfig(const std::string &service_config,
   }
   service_context_map_[*config_id] = context_service;
 
-  return true;
+  return utils::Status::OK;
 }
 
 // Deploy these configs according to the traffic percentage.
@@ -106,8 +108,8 @@ utils::Status ApiManagerImpl::Init() {
     }
   }
 
-  config_manager_.reset(new ConfigManager(
-      global_context_,
+  config_manager_.reset(new ConfigManager(global_context_));
+  config_manager_->Init(
       [this](const utils::Status &status,
              const std::vector<std::pair<std::string, int>> &configs) {
         if (status.ok()) {
@@ -115,7 +117,7 @@ utils::Status ApiManagerImpl::Init() {
 
           for (auto item : configs) {
             std::string config_id;
-            if (AddConfig(item.first, &config_id, true)) {
+            if (AddConfig(item.first, true, &config_id).ok()) {
               rollouts.push_back({config_id, item.second});
             }
           }
@@ -129,8 +131,7 @@ utils::Status ApiManagerImpl::Init() {
           DeployConfigs(std::move(rollouts));
         }
         config_loading_status_ = status;
-      }));
-  config_manager_->Init();
+      });
 
   return utils::Status::OK;
 }
