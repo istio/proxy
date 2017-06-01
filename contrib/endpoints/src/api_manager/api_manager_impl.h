@@ -91,7 +91,6 @@ class ApiManagerImpl : public ApiManager {
   //  - Code::OK        Successfully initialized
   //  - Code::ABORTED   Initialization was failed
   utils::Status config_loading_status_;
-
 };
 
 }  // namespace api_manager
