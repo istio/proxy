@@ -71,6 +71,11 @@ const checkCacheConfig = `
                   ]
 `
 
+// A config with network fail close policy
+const networkFailClose = `
+                  "network_fail_policy": "close"
+`
+
 // The default client proxy mixer config
 const defaultClientMixerConfig = `
                    "forward_attributes": {
