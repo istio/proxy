@@ -23,7 +23,7 @@ namespace api_manager {
 
 namespace {
 
-const char kConfigRolloutStrategy[] = "managed";
+const std::string kConfigRolloutManaged("managed");
 
 }  // namespace unknown
 
@@ -101,8 +101,7 @@ utils::Status ApiManagerImpl::Init() {
       }
     }
 
-    if (global_context_->rollout_strategy() !=
-        std::string(kConfigRolloutStrategy)) {
+    if (global_context_->rollout_strategy() != kConfigRolloutManaged) {
       return config_loading_status_;
     }
   }
