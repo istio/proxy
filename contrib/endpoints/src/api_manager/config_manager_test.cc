@@ -380,7 +380,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
   ASSERT_EQ("2017-05-01r1", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
 
@@ -420,7 +420,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
   ASSERT_EQ("2017-05-01r1", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: Failed to download the service config",
@@ -483,7 +483,7 @@ TEST_F(ConfigManagerServiceNameTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
 
@@ -527,7 +527,7 @@ TEST_F(ConfigManagerServiceNameTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: API config_id is not specified", status.ToString());
@@ -585,7 +585,7 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("OK", status.ToString());
@@ -626,7 +626,7 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: API config_id is not specified", status.ToString());
@@ -654,7 +654,7 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [](const utils::Status& status,
          const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: API service name is not specified",
@@ -686,7 +686,7 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: Failed to download the service config",
@@ -748,7 +748,7 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdMetadataDisabledTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("ABORTED: API service name is not specified",
@@ -804,7 +804,7 @@ TEST_F(ConfigManagerNoServiceNameNoConfigIdUserDefinedMetadataTest,
   ASSERT_EQ("", global_context_->config_id());
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
+      global_context_, "",
       [this](const utils::Status& status,
              const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ("OK", status.ToString());

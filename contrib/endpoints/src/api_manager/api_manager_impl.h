@@ -91,6 +91,9 @@ class ApiManagerImpl : public ApiManager {
   //  - Code::OK        Successfully initialized
   //  - Code::ABORTED   Initialization was failed
   utils::Status config_loading_status_;
+
+  // service_config provided by esp module
+  std::string service_config_;
 };
 
 }  // namespace api_manager

@@ -28,10 +28,11 @@ static std::vector<std::pair<std::string, int>> kEmptyConfigs;
 
 ConfigManager::ConfigManager(
     std::shared_ptr<context::GlobalContext> global_context,
-    RolloutApplyFunction rollout_apply_function)
+    std::string service_config, RolloutApplyFunction rollout_apply_function)
     : global_context_(global_context),
       rollout_apply_function_(rollout_apply_function),
-      refresh_interval_ms_(kCheckNewRolloutInterval) {
+      refresh_interval_ms_(kCheckNewRolloutInterval),
+      service_config_(service_config) {
   if (global_context_->server_config() &&
       global_context_->server_config()->has_service_management_config()) {
     // update refresh interval in ms
@@ -111,12 +112,14 @@ void ConfigManager::OnFetchAuthTokenDone(utils::Status status) {
     return;
   }
 
-  // Fetch configs from the Inception
-  // For now, config manager has only one config_id (100% rollout)
-  std::shared_ptr<ConfigsFetchInfo> config_fetch_info(
-      new ConfigsFetchInfo({{global_context_->config_id(), 100}}));
+  if (service_config_.empty()) {
+    // Fetch configs from the Inception
+    // For now, config manager has only one config_id (100% rollout)
+    std::shared_ptr<ConfigsFetchInfo> config_fetch_info(
+        new ConfigsFetchInfo({{global_context_->config_id(), 100}}));
 
-  FetchConfigs(config_fetch_info);
+    FetchConfigs(config_fetch_info);
+  }
 }
 
 // Fetch configs from rollouts. fetch_info has rollouts and fetched configs
