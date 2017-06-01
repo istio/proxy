@@ -94,8 +94,7 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   Upstream::ClusterManager& cm_;
   std::string forward_attributes_;
   MixerConfig mixer_config_;
-  std::mutex map_mutex_;
-  std::map<std::thread::id, std::shared_ptr<HttpControl>> http_control_map_;
+  std::shared_ptr<HttpControl> http_control_;
 
  public:
   Config(const Json::Object& config, Server::Instance& server)
@@ -112,17 +111,7 @@ class Config : public Logger::Loggable<Logger::Id::http> {
     http_control_ = std::make_shared<HttpControl>(mixer_config_, cm_);
   }
 
-  std::shared_ptr<HttpControl> http_control() {
-    std::thread::id id = std::this_thread::get_id();
-    std::lock_guard<std::mutex> lock(map_mutex_);
-    auto it = http_control_map_.find(id);
-    if (it != http_control_map_.end()) {
-      return it->second;
-    }
-    auto http_control = std::make_shared<HttpControl>(mixer_config_);
-    http_control_map_[id] = http_control;
-    return http_control;
-  }
+  std::shared_ptr<HttpControl> http_control() { return http_control_; }
   const std::string& forward_attributes() const { return forward_attributes_; }
 };
 
@@ -215,10 +204,9 @@ class Instance : public Http::StreamDecoderFilter,
     }
 
     auto instance = GetPtr();
-    http_control_->Check(request_data_, headers, origin_user,
-                         [instance](const Status& status) {
-                           instance->callQuota(status);
-                         });
+    http_control_->Check(
+        request_data_, headers, origin_user,
+        [instance](const Status& status) { instance->callQuota(status); });
     initiating_call_ = false;
 
     if (state_ == Complete) {
@@ -271,10 +259,9 @@ class Instance : public Http::StreamDecoderFilter,
       return;
     }
     auto instance = GetPtr();
-    http_control_->Quota(request_data_,
-                         [instance](const Status& status) {
-                           instance->completeCheck(status);
-                         });
+    http_control_->Quota(request_data_, [instance](const Status& status) {
+      instance->completeCheck(status);
+    });
   }
 
   void completeCheck(const Status& status) {

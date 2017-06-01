@@ -15,12 +15,12 @@
 ################################################################################
 #
 
-MIXER_CLIENT = "9371d76016ba0fd2148d421a9b53147465619527"
+MIXER_CLIENT = "190a55a81ab716224131b3fe0488d7fc1571be79"
 
 def mixer_client_repositories(bind=True):
     native.git_repository(
         name = "mixerclient_git",
-        commit = "190a55a81ab716224131b3fe0488d7fc1571be79",
+        commit = MIXER_CLIENT,
         remote = "https://github.com/istio/mixerclient.git",
     )
 
