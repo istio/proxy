@@ -66,6 +66,8 @@ go_test_suite(
     tests = [
         "check_cache_test.go",
         "check_report_test.go",
+        "check_fail_open_test.go",
+        "check_fail_close_test.go",
         "failed_request_test.go",
         "quota_cache_test.go",
         "quota_test.go",

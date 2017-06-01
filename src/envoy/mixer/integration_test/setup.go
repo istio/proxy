@@ -20,26 +20,32 @@ import (
 )
 
 type TestSetup struct {
+	t        *testing.T
+	conf     string
+	stress   bool
+	no_mixer bool
+
 	envoy   *Envoy
 	mixer   *MixerServer
 	backend *HttpServer
-	t       *testing.T
 }
 
-func SetUp(t *testing.T, conf string, stress bool) (s TestSetup, err error) {
-	s.t = t
-	s.envoy, err = NewEnvoy(conf, stress)
+func (s *TestSetup) SetUp() error {
+	var err error
+	s.envoy, err = NewEnvoy(s.conf, s.stress)
 	if err != nil {
 		log.Printf("unable to create Envoy %v", err)
 	} else {
 		s.envoy.Start()
 	}
 
-	s.mixer, err = NewMixerServer(MixerPort, stress)
-	if err != nil {
-		log.Printf("unable to create mixer server %v", err)
-	} else {
-		s.mixer.Start()
+	if !s.no_mixer {
+		s.mixer, err = NewMixerServer(MixerPort, s.stress)
+		if err != nil {
+			log.Printf("unable to create mixer server %v", err)
+		} else {
+			s.mixer.Start()
+		}
 	}
 
 	s.backend, err = NewHttpServer(BackendPort)
@@ -48,12 +54,14 @@ func SetUp(t *testing.T, conf string, stress bool) (s TestSetup, err error) {
 	} else {
 		s.backend.Start()
 	}
-	return s, err
+	return err
 }
 
 func (s *TestSetup) TearDown() {
 	s.envoy.Stop()
-	s.mixer.Stop()
+	if s.mixer != nil {
+		s.mixer.Stop()
+	}
 	s.backend.Stop()
 }
 

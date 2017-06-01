@@ -60,7 +60,15 @@ void GrpcTransport::onSuccess() {
 
 void GrpcTransport::onFailure(const Optional<uint64_t>& grpc_status,
                               const std::string& message) {
-  int code = grpc_status.valid() ? grpc_status.value() : StatusCode::UNKNOWN;
+  // Envoy source/common/grpc/common.cc line 92
+  // return invalid grpc_status and "non-200 response code" message
+  // when failed to connect to grpc server.
+  int code;
+  if (!grpc_status.valid() && message == "non-200 response code") {
+    code = StatusCode::UNAVAILABLE;
+  } else {
+    code = grpc_status.valid() ? grpc_status.value() : StatusCode::UNKNOWN;
+  }
   log().debug("grpc failure: return {}, error {}", code, message);
   on_done_(Status(static_cast<StatusCode>(code),
                   ::google::protobuf::StringPiece(message)));
