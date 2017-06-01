@@ -64,7 +64,6 @@ struct ConfigsFetchInfo {
 class ConfigManager {
  public:
   ConfigManager(std::shared_ptr<context::GlobalContext> global_context,
-                std::string service_config,
                 RolloutApplyFunction config_rollout_callback);
   virtual ~ConfigManager(){};
 
@@ -89,7 +88,6 @@ class ConfigManager {
   int refresh_interval_ms_;
   // ServiceManagement service client instance
   std::unique_ptr<ServiceManagementFetch> service_management_fetch_;
-  std::string service_config_;
 };
 
 }  // namespace api_manager

@@ -91,6 +91,12 @@ class GlobalContext {
     rollout_strategy_ = rollout_strategy;
   }
 
+  // setter and getter of service_config_
+  const std::string &service_config() const { return service_config_; }
+  void service_config(const std::string &service_config) {
+    service_config_ = service_config;
+  }
+
  private:
   // create cloud trace.
   std::unique_ptr<cloud_trace::Aggregator> CreateCloudTraceAggregator();
@@ -106,6 +112,8 @@ class GlobalContext {
   // nullptr.
   std::unique_ptr<cloud_trace::Aggregator> cloud_trace_aggregator_;
 
+  // service_config configured in esp
+  std::string service_config_;
   // service name;
   std::string service_name_;
   // config id;
