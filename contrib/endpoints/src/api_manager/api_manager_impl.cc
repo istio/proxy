@@ -127,7 +127,7 @@ utils::Status ApiManagerImpl::Init() {
                 utils::Status(Code::ABORTED, "Invalid service config");
 
             // Abort pending Call and Report callbacks
-            ExecuteAndClearPendingCheckReportCallback(config_loading_status_);
+            NotifyPendingRequests(config_loading_status_);
             return;
           }
 
@@ -136,18 +136,17 @@ utils::Status ApiManagerImpl::Init() {
         config_loading_status_ = status;
 
         // Execute pending Call and Report callbacks
-        ExecuteAndClearPendingCheckReportCallback(config_loading_status_);
+        NotifyPendingRequests(config_loading_status_);
       });
 
   return utils::Status::OK;
 }
 
-void ApiManagerImpl::ExecuteAndClearPendingCheckReportCallback(
-    utils::Status status) {
-  for (auto const &pending_callback : pending_check_report_callbacks_) {
+void ApiManagerImpl::NotifyPendingRequests(utils::Status status) {
+  for (auto const &pending_callback : pending_request_callbacks_) {
     pending_callback(status);
   }
-  pending_check_report_callbacks_.clear();
+  pending_request_callbacks_.clear();
 }
 
 utils::Status ApiManagerImpl::Close() {
@@ -186,12 +185,16 @@ const ::google::api::Service &ApiManagerImpl::service(
   return empty;
 }
 
-std::shared_ptr<context::ServiceContext> ApiManagerImpl::GetServiceContext() {
+std::shared_ptr<context::ServiceContext> ApiManagerImpl::SelectService() {
   const auto &it = service_context_map_.find(service_selector_->Select());
   if (it != service_context_map_.end()) {
     return it->second;
   }
   return nullptr;
+}
+
+bool ApiManagerImpl::IsConfigLoadingDone() {
+  return config_loading_status_.code() != Code::UNAVAILABLE;
 }
 
 utils::Status ApiManagerImpl::GetStatistics(
@@ -212,7 +215,7 @@ utils::Status ApiManagerImpl::GetStatistics(
 
 void ApiManagerImpl::AddPendingCheckReportCallback(
     std::function<void(utils::Status)> callback) {
-  pending_check_report_callbacks_.push_back(callback);
+  pending_request_callbacks_.push_back(callback);
 }
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(

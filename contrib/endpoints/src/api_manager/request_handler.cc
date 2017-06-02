@@ -30,17 +30,17 @@ namespace google {
 namespace api_manager {
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
-  if (api_manager_->ConfigLoadingStatus().ok()) {
+  if (api_manager_->IsConfigLoadingDone()) {
     InternalCheck(continuation);
   } else {
     pending_check_callback_exist_ = true;
     api_manager_->AddPendingCheckReportCallback(
         [continuation, this](utils::Status status) {
+          pending_check_callback_exist_ = false;
           if (status.ok()) {
             InternalCheck(continuation);
           } else {
             continuation(status);
-            pending_check_callback_exist_ = false;
           }
         });
   }
@@ -48,16 +48,13 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
 
 void RequestHandler::InternalCheck(
     std::function<void(utils::Status status)> continuation) {
-  if (!context_) {
-    CreateRequestContext();
-  }
+  CreateRequestContext();
 
   auto interception = [continuation, this](utils::Status status) {
     if (status.ok() && context_->cloud_trace()) {
       context_->StartBackendSpanAndSetTraceContext();
     }
     continuation(status);
-    pending_check_callback_exist_ = false;
   };
 
   context_->set_check_continuation(interception);
@@ -102,7 +99,7 @@ void RequestHandler::AttemptIntermediateReport() {
 // Sends a report.
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
-  if (api_manager_->ConfigLoadingStatus().ok()) {
+  if (api_manager_->IsConfigLoadingDone()) {
     InternalReport(std::move(response), continuation);
   } else {
     if (pending_check_callback_exist_) {
@@ -187,7 +184,7 @@ std::string RequestHandler::GetRpcMethodFullName() const {
 }
 
 void RequestHandler::CreateRequestContext() {
-  auto service_context = api_manager_->GetServiceContext();
+  auto service_context = api_manager_->SelectService();
   if (service_context) {
     context_ = std::make_shared<context::RequestContext>(
         service_context, std::move(request_data_));
