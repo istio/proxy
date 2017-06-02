@@ -72,7 +72,8 @@ class ApiManagerImpl : public ApiManager {
   const std::string SelectConfigId();
 
   // Append Check or Report callback
-  void AddPendingCheckReportCallback(std::function<void(utils::Status)> callback);
+  void AddPendingCheckReportCallback(
+      std::function<void(utils::Status)> callback);
 
  private:
   // Execute all pending Check and Report callbacks
