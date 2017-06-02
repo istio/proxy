@@ -59,10 +59,10 @@ class RequestHandler : public RequestHandlerInterface {
   virtual std::string GetRpcMethodFullName() const;
 
   // Get the method info.
-  const MethodInfo *method() const { return context_->method(); }
+  const MethodInfo* method() const { return context_->method(); }
 
   // Get the method info.
-  const MethodCallInfo *method_call() const { return context_->method_call(); }
+  const MethodCallInfo* method_call() const { return context_->method_call(); }
 
  private:
   // Initialize context_ from ApiManager
@@ -80,7 +80,7 @@ class RequestHandler : public RequestHandlerInterface {
   // In order to control the life time of context object, a shared_ptr is used.
   // This object holds a ref_count, the continuation will hold another one.
   std::shared_ptr<context::RequestContext> context_;
-  // Check Workflow instance
+
   std::shared_ptr<CheckWorkflow> check_workflow_;
   // Unique copy of the request data to initialize context_ later
   std::unique_ptr<Request> request_data_;
