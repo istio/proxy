@@ -64,7 +64,20 @@ class ApiManagerImpl : public ApiManager {
   // Return the initialization status
   inline utils::Status ConfigLoadingStatus() { return config_loading_status_; }
 
+  // Return ServiceContext for the config_id
+  std::shared_ptr<context::ServiceContext> GetServiceContext(
+      const std::string config_id);
+
+  // Return selected config_id
+  const std::string SelectConfigId();
+
+  // Append Check or Report callback
+  void AddPendingCheckReportCallback(std::function<void(utils::Status)> callback);
+
  private:
+  // Execute all pending Check and Report callbacks
+  void ExecutePendingCheckReportCallback(utils::Status status);
+
   // The check work flow.
   std::shared_ptr<CheckWorkflow> check_workflow_;
 
@@ -88,6 +101,10 @@ class ApiManagerImpl : public ApiManager {
   //  - Code::OK          Successfully initialized
   //  - Code::ABORTED     Initialization was failed
   utils::Status config_loading_status_;
+
+  // List of pending Check and Report callback
+  std::vector<std::function<void(utils::Status)>>
+      pending_check_report_callbacks_;
 };
 
 }  // namespace api_manager

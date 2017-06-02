@@ -125,15 +125,27 @@ utils::Status ApiManagerImpl::Init() {
           if (rollouts.size() == 0) {
             config_loading_status_ =
                 utils::Status(Code::ABORTED, "Invalid service config");
+
+            // Abort pending Call and Report callbacks
+            ExecutePendingCheckReportCallback(config_loading_status_);
             return;
           }
 
           DeployConfigs(std::move(rollouts));
         }
         config_loading_status_ = status;
+
+        // Execute pending Call and Report callbacks
+        ExecutePendingCheckReportCallback(config_loading_status_);
       });
 
   return utils::Status::OK;
+}
+
+void ApiManagerImpl::ExecutePendingCheckReportCallback(utils::Status status) {
+  for (auto const &pending_callback : pending_check_report_callbacks_) {
+    pending_callback(status);
+  }
 }
 
 utils::Status ApiManagerImpl::Close() {
@@ -172,6 +184,19 @@ const ::google::api::Service &ApiManagerImpl::service(
   return empty;
 }
 
+const std::string ApiManagerImpl::SelectConfigId() {
+  return service_selector_->Select();
+}
+
+std::shared_ptr<context::ServiceContext> ApiManagerImpl::GetServiceContext(
+    const std::string config_id) {
+  const auto &it = service_context_map_.find(config_id);
+  if (it != service_context_map_.end()) {
+    return it->second;
+  }
+  return nullptr;
+}
+
 utils::Status ApiManagerImpl::GetStatistics(
     ApiManagerStatistics *statistics) const {
   memset(&statistics->service_control_statistics, 0,
@@ -188,12 +213,19 @@ utils::Status ApiManagerImpl::GetStatistics(
   return utils::Status::OK;
 }
 
+void ApiManagerImpl::AddPendingCheckReportCallback(
+    std::function<void(utils::Status)> callback) {
+  pending_check_report_callbacks_.push_back(callback);
+}
+
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
     std::unique_ptr<Request> request_data) {
-  std::string config_id = service_selector_->Select();
   return std::unique_ptr<RequestHandlerInterface>(
-      new RequestHandler(check_workflow_, service_context_map_[config_id],
-                         std::move(request_data)));
+      (config_loading_status_.code() == Code::UNAVAILABLE)
+          ? new RequestHandler(this, check_workflow_, std::move(request_data))
+          : new RequestHandler(check_workflow_,
+                               GetServiceContext(SelectConfigId()),
+                               std::move(request_data)));
 }
 
 std::shared_ptr<ApiManager> ApiManagerFactory::CreateApiManager(

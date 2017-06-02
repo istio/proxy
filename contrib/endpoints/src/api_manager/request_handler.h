@@ -26,12 +26,22 @@ namespace api_manager {
 // Implements RequestHandlerInterface.
 class RequestHandler : public RequestHandlerInterface {
  public:
+  // Constructor for initialized ApiManager
   RequestHandler(std::shared_ptr<CheckWorkflow> check_workflow,
                  std::shared_ptr<context::ServiceContext> service_context,
                  std::unique_ptr<Request> request_data)
-      : context_(new context::RequestContext(service_context,
+      : api_manager_(nullptr),
+        context_(new context::RequestContext(service_context,
                                              std::move(request_data))),
         check_workflow_(check_workflow) {}
+
+  // Constructor for uninitialized ApiManager
+  RequestHandler(ApiManagerImpl* api_manager,
+                 std::shared_ptr<CheckWorkflow> check_workflow,
+                 std::unique_ptr<Request> request_data)
+      : api_manager_(api_manager),
+        check_workflow_(check_workflow),
+        request_data_(std::move(request_data)) {}
 
   virtual ~RequestHandler(){};
 
@@ -55,13 +65,25 @@ class RequestHandler : public RequestHandlerInterface {
   const MethodCallInfo *method_call() const { return context_->method_call(); }
 
  private:
+  // Initialize context_ from ApiManager
+  void InitializeContext();
+  // Internal Check
+  void InternalCheck(std::function<void(utils::Status status)> continuation);
+  // Internal Report
+  void InternalReport(std::unique_ptr<Response> response,
+                      std::function<void(void)> continuation);
+  // ApiManager instance
+  ApiManagerImpl* api_manager_;
+
   // The context object needs to pass to the continuation function the check
   // handler as a lambda capture so it can be passed to the next check handler.
   // In order to control the life time of context object, a shared_ptr is used.
   // This object holds a ref_count, the continuation will hold another one.
   std::shared_ptr<context::RequestContext> context_;
-
+  // Check Workflow instance
   std::shared_ptr<CheckWorkflow> check_workflow_;
+  // Unique copy of the request data to initialize context_ later
+  std::unique_ptr<Request> request_data_;
 };
 
 }  // namespace api_manager

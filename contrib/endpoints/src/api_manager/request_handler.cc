@@ -30,7 +30,24 @@ namespace google {
 namespace api_manager {
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
-  auto interception = [continuation, this](Status status) {
+  if (context_) {
+    InternalCheck(continuation);
+  } else {
+    api_manager_->AddPendingCheckReportCallback(
+        [continuation, this](utils::Status status) {
+          if (status.ok()) {
+            InitializeContext();
+            InternalCheck(continuation);
+          } else {
+            continuation(status);
+          }
+        });
+  }
+}
+
+void RequestHandler::InternalCheck(
+    std::function<void(utils::Status status)> continuation) {
+  auto interception = [continuation, this](utils::Status status) {
     if (status.ok() && context_->cloud_trace()) {
       context_->StartBackendSpanAndSetTraceContext();
     }
@@ -79,6 +96,26 @@ void RequestHandler::AttemptIntermediateReport() {
 // Sends a report.
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
+  if (context_) {
+    InternalReport(std::move(response), continuation);
+  } else {
+    std::shared_ptr<Response> copied_response(std::move(response));
+    api_manager_->AddPendingCheckReportCallback(
+        [copied_response, continuation, this](utils::Status status) {
+          if (status.ok()) {
+            InitializeContext();
+            InternalReport(
+                std::unique_ptr<Response>(std::move(copied_response.get())),
+                continuation);
+          } else {
+            continuation();
+          }
+        });
+  }
+}
+
+void RequestHandler::InternalReport(std::unique_ptr<Response> response,
+                                    std::function<void(void)> continuation) {
   // Close backend trace span.
   context_->EndBackendSpan();
 
@@ -116,7 +153,7 @@ void RequestHandler::Report(std::unique_ptr<Response> response,
 }
 
 std::string RequestHandler::GetServiceConfigId() const {
-  return context_->service_context()->service().id();
+  return context_ ? context_->service_context()->service().id() : "";
 }
 
 std::string RequestHandler::GetBackendAddress() const {
@@ -133,6 +170,15 @@ std::string RequestHandler::GetRpcMethodFullName() const {
     return context_->method()->rpc_method_full_name();
   } else {
     return std::string();
+  }
+}
+
+void RequestHandler::InitializeContext() {
+  const std::string config_id = api_manager_->SelectConfigId();
+  auto service_context = api_manager_->GetServiceContext(config_id);
+  if (service_context) {
+    context_ = std::make_shared<context::RequestContext>(
+        service_context, std::move(request_data_));
   }
 }
 
