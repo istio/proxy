@@ -127,7 +127,7 @@ utils::Status ApiManagerImpl::Init() {
                 utils::Status(Code::ABORTED, "Invalid service config");
 
             // Abort pending Call and Report callbacks
-            ExecutePendingCheckReportCallback(config_loading_status_);
+            ExecuteAndClearPendingCheckReportCallback(config_loading_status_);
             return;
           }
 
@@ -136,16 +136,18 @@ utils::Status ApiManagerImpl::Init() {
         config_loading_status_ = status;
 
         // Execute pending Call and Report callbacks
-        ExecutePendingCheckReportCallback(config_loading_status_);
+        ExecuteAndClearPendingCheckReportCallback(config_loading_status_);
       });
 
   return utils::Status::OK;
 }
 
-void ApiManagerImpl::ExecutePendingCheckReportCallback(utils::Status status) {
+void ApiManagerImpl::ExecuteAndClearPendingCheckReportCallback(
+    utils::Status status) {
   for (auto const &pending_callback : pending_check_report_callbacks_) {
     pending_callback(status);
   }
+  pending_check_report_callbacks_.clear();
 }
 
 utils::Status ApiManagerImpl::Close() {
@@ -184,13 +186,8 @@ const ::google::api::Service &ApiManagerImpl::service(
   return empty;
 }
 
-const std::string ApiManagerImpl::SelectConfigId() {
-  return service_selector_->Select();
-}
-
-std::shared_ptr<context::ServiceContext> ApiManagerImpl::GetServiceContext(
-    const std::string config_id) {
-  const auto &it = service_context_map_.find(config_id);
+std::shared_ptr<context::ServiceContext> ApiManagerImpl::GetServiceContext() {
+  const auto &it = service_context_map_.find(service_selector_->Select());
   if (it != service_context_map_.end()) {
     return it->second;
   }
@@ -221,11 +218,7 @@ void ApiManagerImpl::AddPendingCheckReportCallback(
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
     std::unique_ptr<Request> request_data) {
   return std::unique_ptr<RequestHandlerInterface>(
-      (config_loading_status_.code() == Code::UNAVAILABLE)
-          ? new RequestHandler(this, check_workflow_, std::move(request_data))
-          : new RequestHandler(check_workflow_,
-                               GetServiceContext(SelectConfigId()),
-                               std::move(request_data)));
+      new RequestHandler(this, check_workflow_, std::move(request_data)));
 }
 
 std::shared_ptr<ApiManager> ApiManagerFactory::CreateApiManager(

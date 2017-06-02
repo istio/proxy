@@ -30,16 +30,17 @@ namespace google {
 namespace api_manager {
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
-  if (context_) {
+  if (api_manager_->ConfigLoadingStatus().ok()) {
     InternalCheck(continuation);
   } else {
+    pending_check_callback_exist_ = true;
     api_manager_->AddPendingCheckReportCallback(
         [continuation, this](utils::Status status) {
           if (status.ok()) {
-            InitializeContext();
             InternalCheck(continuation);
           } else {
             continuation(status);
+            pending_check_callback_exist_ = false;
           }
         });
   }
@@ -47,11 +48,16 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
 
 void RequestHandler::InternalCheck(
     std::function<void(utils::Status status)> continuation) {
+  if (!context_) {
+    CreateRequestContext();
+  }
+
   auto interception = [continuation, this](utils::Status status) {
     if (status.ok() && context_->cloud_trace()) {
       context_->StartBackendSpanAndSetTraceContext();
     }
     continuation(status);
+    pending_check_callback_exist_ = false;
   };
 
   context_->set_check_continuation(interception);
@@ -96,14 +102,18 @@ void RequestHandler::AttemptIntermediateReport() {
 // Sends a report.
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
-  if (context_) {
+  if (api_manager_->ConfigLoadingStatus().ok()) {
     InternalReport(std::move(response), continuation);
   } else {
+    if (pending_check_callback_exist_) {
+      continuation();
+      return;
+    }
+
     std::shared_ptr<Response> copied_response(std::move(response));
     api_manager_->AddPendingCheckReportCallback(
         [copied_response, continuation, this](utils::Status status) {
           if (status.ok()) {
-            InitializeContext();
             InternalReport(
                 std::unique_ptr<Response>(std::move(copied_response.get())),
                 continuation);
@@ -116,6 +126,9 @@ void RequestHandler::Report(std::unique_ptr<Response> response,
 
 void RequestHandler::InternalReport(std::unique_ptr<Response> response,
                                     std::function<void(void)> continuation) {
+  if (!context_) {
+    CreateRequestContext();
+  }
   // Close backend trace span.
   context_->EndBackendSpan();
 
@@ -173,9 +186,8 @@ std::string RequestHandler::GetRpcMethodFullName() const {
   }
 }
 
-void RequestHandler::InitializeContext() {
-  const std::string config_id = api_manager_->SelectConfigId();
-  auto service_context = api_manager_->GetServiceContext(config_id);
+void RequestHandler::CreateRequestContext() {
+  auto service_context = api_manager_->GetServiceContext();
   if (service_context) {
     context_ = std::make_shared<context::RequestContext>(
         service_context, std::move(request_data_));

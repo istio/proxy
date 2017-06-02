@@ -26,22 +26,13 @@ namespace api_manager {
 // Implements RequestHandlerInterface.
 class RequestHandler : public RequestHandlerInterface {
  public:
-  // Constructor for initialized ApiManager
-  RequestHandler(std::shared_ptr<CheckWorkflow> check_workflow,
-                 std::shared_ptr<context::ServiceContext> service_context,
-                 std::unique_ptr<Request> request_data)
-      : api_manager_(nullptr),
-        context_(new context::RequestContext(service_context,
-                                             std::move(request_data))),
-        check_workflow_(check_workflow) {}
-
-  // Constructor for uninitialized ApiManager
   RequestHandler(ApiManagerImpl* api_manager,
                  std::shared_ptr<CheckWorkflow> check_workflow,
                  std::unique_ptr<Request> request_data)
       : api_manager_(api_manager),
         check_workflow_(check_workflow),
-        request_data_(std::move(request_data)) {}
+        request_data_(std::move(request_data)),
+        pending_check_callback_exist_(false) {}
 
   virtual ~RequestHandler(){};
 
@@ -65,8 +56,8 @@ class RequestHandler : public RequestHandlerInterface {
   const MethodCallInfo* method_call() const { return context_->method_call(); }
 
  private:
-  // Initialize context_ from ApiManager
-  void InitializeContext();
+  // Create a context_ from ApiManager
+  void CreateRequestContext();
   // Internal Check
   void InternalCheck(std::function<void(utils::Status status)> continuation);
   // Internal Report
@@ -84,6 +75,9 @@ class RequestHandler : public RequestHandlerInterface {
   std::shared_ptr<CheckWorkflow> check_workflow_;
   // Unique copy of the request data to initialize context_ later
   std::unique_ptr<Request> request_data_;
+
+  // Pending Check callback was registered and not handled yet
+  bool pending_check_callback_exist_;
 };
 
 }  // namespace api_manager

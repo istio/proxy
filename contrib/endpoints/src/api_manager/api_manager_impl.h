@@ -65,11 +65,7 @@ class ApiManagerImpl : public ApiManager {
   inline utils::Status ConfigLoadingStatus() { return config_loading_status_; }
 
   // Return ServiceContext for the config_id
-  std::shared_ptr<context::ServiceContext> GetServiceContext(
-      const std::string config_id);
-
-  // Return selected config_id
-  const std::string SelectConfigId();
+  std::shared_ptr<context::ServiceContext> GetServiceContext();
 
   // Append Check or Report callback
   void AddPendingCheckReportCallback(
@@ -77,7 +73,7 @@ class ApiManagerImpl : public ApiManager {
 
  private:
   // Execute all pending Check and Report callbacks
-  void ExecutePendingCheckReportCallback(utils::Status status);
+  void ExecuteAndClearPendingCheckReportCallback(utils::Status status);
 
   // The check work flow.
   std::shared_ptr<CheckWorkflow> check_workflow_;
