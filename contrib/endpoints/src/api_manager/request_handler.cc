@@ -30,25 +30,31 @@ namespace google {
 namespace api_manager {
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
-  if (api_manager_->IsConfigLoadingDone()) {
-    InternalCheck(continuation);
-  } else {
-    pending_check_callback_exist_ = true;
-    api_manager_->AddPendingCheckReportCallback(
+  if (api_manager_->IsConfigLoadingInProgress()) {
+    pending_request_callback_exist_ = true;
+    api_manager_->AddPendingRequestCallback(
         [continuation, this](utils::Status status) {
-          pending_check_callback_exist_ = false;
+          pending_request_callback_exist_ = false;
           if (status.ok()) {
             InternalCheck(continuation);
           } else {
-            continuation(status);
+            // Let esp pass through the client request.
+            continuation(utils::Status::OK);
           }
         });
+  } else if (api_manager_->IsConfigLoadingSucceeded()) {
+    InternalCheck(continuation);
+  } else {
+    // Let esp pass through the client request.
+    continuation(utils::Status::OK);
   }
 }
 
 void RequestHandler::InternalCheck(
     std::function<void(utils::Status status)> continuation) {
-  CreateRequestContext();
+  if (!context_) {
+    CreateRequestContext();
+  }
 
   auto interception = [continuation, this](utils::Status status) {
     if (status.ok() && context_->cloud_trace()) {
@@ -99,16 +105,14 @@ void RequestHandler::AttemptIntermediateReport() {
 // Sends a report.
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
-  if (api_manager_->IsConfigLoadingDone()) {
-    InternalReport(std::move(response), continuation);
-  } else {
-    if (pending_check_callback_exist_) {
+  if (api_manager_->IsConfigLoadingInProgress()) {
+    if (pending_request_callback_exist_) {
       continuation();
       return;
     }
 
     std::shared_ptr<Response> copied_response(std::move(response));
-    api_manager_->AddPendingCheckReportCallback(
+    api_manager_->AddPendingRequestCallback(
         [copied_response, continuation, this](utils::Status status) {
           if (status.ok()) {
             InternalReport(
@@ -118,6 +122,10 @@ void RequestHandler::Report(std::unique_ptr<Response> response,
             continuation();
           }
         });
+  } else if (api_manager_->IsConfigLoadingSucceeded()) {
+    InternalReport(std::move(response), continuation);
+  } else {
+    continuation();
   }
 }
 

@@ -32,7 +32,7 @@ class RequestHandler : public RequestHandlerInterface {
       : api_manager_(api_manager),
         check_workflow_(check_workflow),
         request_data_(std::move(request_data)),
-        pending_check_callback_exist_(false) {}
+        pending_request_callback_exist_(false) {}
 
   virtual ~RequestHandler(){};
 
@@ -76,8 +76,8 @@ class RequestHandler : public RequestHandlerInterface {
   // Unique copy of the request data to initialize context_ later
   std::unique_ptr<Request> request_data_;
 
-  // Pending Check callback was registered and not handled yet
-  bool pending_check_callback_exist_;
+  // Pending request callback was registered and not handled yet
+  bool pending_request_callback_exist_;
 };
 
 }  // namespace api_manager

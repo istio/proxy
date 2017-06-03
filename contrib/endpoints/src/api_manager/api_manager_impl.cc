@@ -193,8 +193,12 @@ std::shared_ptr<context::ServiceContext> ApiManagerImpl::SelectService() {
   return nullptr;
 }
 
-bool ApiManagerImpl::IsConfigLoadingDone() {
-  return config_loading_status_.code() != Code::UNAVAILABLE;
+bool ApiManagerImpl::IsConfigLoadingInProgress() {
+  return config_loading_status_.code() == Code::UNAVAILABLE;
+}
+
+bool ApiManagerImpl::IsConfigLoadingSucceeded() {
+  return config_loading_status_.ok();
 }
 
 utils::Status ApiManagerImpl::GetStatistics(
@@ -213,7 +217,7 @@ utils::Status ApiManagerImpl::GetStatistics(
   return utils::Status::OK;
 }
 
-void ApiManagerImpl::AddPendingCheckReportCallback(
+void ApiManagerImpl::AddPendingRequestCallback(
     std::function<void(utils::Status)> callback) {
   pending_request_callbacks_.push_back(callback);
 }

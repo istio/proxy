@@ -68,11 +68,13 @@ class ApiManagerImpl : public ApiManager {
   std::shared_ptr<context::ServiceContext> SelectService();
 
   // Append Check or Report callback
-  void AddPendingCheckReportCallback(
-      std::function<void(utils::Status)> callback);
+  void AddPendingRequestCallback(std::function<void(utils::Status)> callback);
 
-  // Return true if config loading was done
-  bool IsConfigLoadingDone();
+  // Return true if config loading is still in progress
+  bool IsConfigLoadingInProgress();
+
+  // Return true if config loading was succeeded
+  bool IsConfigLoadingSucceeded();
 
  private:
   // Notify pending requests
