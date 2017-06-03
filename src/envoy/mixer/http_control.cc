@@ -21,6 +21,7 @@
 
 #include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/string_map.pb.h"
+#include "src/envoy/mixer/thread_dispatcher.h"
 #include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
@@ -161,6 +162,17 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
   }
 }
 
+// A class to wrap envoy timer for mixer client timer.
+class EnvoyTimer : public ::istio::mixer_client::Timer {
+ public:
+  EnvoyTimer(Event::TimerPtr timer) : timer_(std::move(timer)) {}
+
+  void Stop() override { timer_->disableTimer(); }
+
+ private:
+  Event::TimerPtr timer_;
+};
+
 }  // namespace
 
 HttpControl::HttpControl(const MixerConfig& mixer_config,
@@ -173,6 +185,16 @@ HttpControl::HttpControl(const MixerConfig& mixer_config,
     options.check_transport = CheckGrpcTransport::GetFunc(cms);
     options.report_transport = ReportGrpcTransport::GetFunc(cms);
     options.quota_transport = QuotaGrpcTransport::GetFunc(cms);
+
+    options.timer_create_func = [](int interval_ms,
+                                   std::function<void()> timer_cb)
+        -> std::unique_ptr<::istio::mixer_client::Timer> {
+          Event::TimerPtr timer = GetThreadDispatcher().createTimer(timer_cb);
+          timer->enableTimer(std::chrono::milliseconds(interval_ms));
+          return std::unique_ptr<::istio::mixer_client::Timer>(
+              new EnvoyTimer(std::move(timer)));
+        };
+
     mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
   } else {
     log().error("Mixer server cluster is not configured");
