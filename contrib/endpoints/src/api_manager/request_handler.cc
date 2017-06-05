@@ -198,7 +198,7 @@ bool RequestHandler::CreateRequestContext() {
         service_context, std::move(request_data_));
   }
 
-  return !context_;
+  return context_ != nullptr;
 }
 
 }  // namespace api_manager
