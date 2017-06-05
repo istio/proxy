@@ -37,16 +37,19 @@ const int kClientSecretAuthTokenExpiration(3600 - 100);
 }  // namespace
 
 Status ServiceAccountToken::SetClientAuthSecret(const std::string& secret) {
-  client_auth_secret_ = secret;
 
-  for (unsigned int i = 0; i < JWT_TOKEN_TYPE_MAX; i++) {
-    if (!jwt_tokens_[i].audience().empty()) {
-      Status status = jwt_tokens_[i].GenerateJwtToken(client_auth_secret_);
-      if (!status.ok()) {
-        if (env_) {
-          env_->LogError("Failed to generate auth token.");
+  if (!secret.empty()) {
+    client_auth_secret_ = secret;
+
+    for (unsigned int i = 0; i < JWT_TOKEN_TYPE_MAX; i++) {
+      if (!jwt_tokens_[i].audience().empty()) {
+        Status status = jwt_tokens_[i].GenerateJwtToken(client_auth_secret_);
+        if (!status.ok()) {
+          if (env_) {
+            env_->LogError("Failed to generate auth token.");
+          }
+          return status;
         }
-        return status;
       }
     }
   }
