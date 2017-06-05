@@ -57,7 +57,7 @@ class RequestHandler : public RequestHandlerInterface {
 
  private:
   // Create a context_ from ApiManager
-  void CreateRequestContext();
+  std::shared_ptr<context::RequestContext> CreateRequestContext();
   // Internal Check
   void InternalCheck(std::function<void(utils::Status status)> continuation);
   // Internal Report
