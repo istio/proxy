@@ -37,7 +37,6 @@ const int kClientSecretAuthTokenExpiration(3600 - 100);
 }  // namespace
 
 Status ServiceAccountToken::SetClientAuthSecret(const std::string& secret) {
-
   if (secret.empty()) {
     env_->LogDebug("SetClientAuthSecret called with empty secret");
     return Status::OK;
