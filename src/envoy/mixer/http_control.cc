@@ -168,7 +168,7 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
   EnvoyTimer(Event::TimerPtr timer) : timer_(std::move(timer)) {}
 
   void Stop() override { timer_->disableTimer(); }
-  void Reset(int interval_ms) override {
+  void Start(int interval_ms) override {
     timer_->enableTimer(std::chrono::milliseconds(interval_ms));
   }
 
