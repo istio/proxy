@@ -168,6 +168,9 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
   EnvoyTimer(Event::TimerPtr timer) : timer_(std::move(timer)) {}
 
   void Stop() override { timer_->disableTimer(); }
+  void Reset(int interval_ms) override {
+    timer_->enableTimer(std::chrono::milliseconds(interval_ms));
+  }
 
  private:
   Event::TimerPtr timer_;
@@ -186,13 +189,10 @@ HttpControl::HttpControl(const MixerConfig& mixer_config,
     options.report_transport = ReportGrpcTransport::GetFunc(cms);
     options.quota_transport = QuotaGrpcTransport::GetFunc(cms);
 
-    options.timer_create_func = [](int interval_ms,
-                                   std::function<void()> timer_cb)
+    options.timer_create_func = [](std::function<void()> timer_cb)
         -> std::unique_ptr<::istio::mixer_client::Timer> {
-          Event::TimerPtr timer = GetThreadDispatcher().createTimer(timer_cb);
-          timer->enableTimer(std::chrono::milliseconds(interval_ms));
           return std::unique_ptr<::istio::mixer_client::Timer>(
-              new EnvoyTimer(std::move(timer)));
+              new EnvoyTimer(GetThreadDispatcher().createTimer(timer_cb)));
         };
 
     mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
