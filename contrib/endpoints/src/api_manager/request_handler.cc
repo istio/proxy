@@ -55,6 +55,7 @@ void RequestHandler::InternalCheck(
       context_->service_context()->env()->LogError(
           "Failed to create a request context");
       continuation(utils::Status::OK);
+      return;
     }
   }
 
@@ -131,6 +132,7 @@ void RequestHandler::InternalReport(std::unique_ptr<Response> response,
       context_->service_context()->env()->LogError(
           "Failed to create a request context");
       continuation();
+      return;
     }
   }
 
