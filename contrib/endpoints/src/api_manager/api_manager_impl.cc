@@ -186,6 +186,9 @@ const ::google::api::Service &ApiManagerImpl::service(
 }
 
 std::shared_ptr<context::ServiceContext> ApiManagerImpl::SelectService() {
+  if (service_context_map_.empty()) {
+    return nullptr;
+  }
   const auto &it = service_context_map_.find(service_selector_->Select());
   if (it != service_context_map_.end()) {
     return it->second;

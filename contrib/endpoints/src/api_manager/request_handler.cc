@@ -191,15 +191,14 @@ std::string RequestHandler::GetRpcMethodFullName() const {
   }
 }
 
-std::shared_ptr<context::RequestContext>
-RequestHandler::CreateRequestContext() {
+bool RequestHandler::CreateRequestContext() {
   auto service_context = api_manager_->SelectService();
   if (service_context) {
     context_ = std::make_shared<context::RequestContext>(
         service_context, std::move(request_data_));
   }
 
-  return context_;
+  return !context_;
 }
 
 }  // namespace api_manager

@@ -64,7 +64,7 @@ class ApiManagerImpl : public ApiManager {
   // Return the initialization status
   inline utils::Status ConfigLoadingStatus() { return config_loading_status_; }
 
-  // Return ServiceContext for the config_id
+  // Return ServiceContext for selected by WeightedSelector
   std::shared_ptr<context::ServiceContext> SelectService();
 
   // Append Check or Report callback

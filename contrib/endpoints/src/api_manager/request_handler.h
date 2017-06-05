@@ -55,8 +55,9 @@ class RequestHandler : public RequestHandlerInterface {
   const MethodCallInfo* method_call() const { return context_->method_call(); }
 
  private:
-  // Create a context_ from ApiManager
-  std::shared_ptr<context::RequestContext> CreateRequestContext();
+  // Create a context_ from ApiManager. Return true if the RequestContext was
+  // successfully created
+  bool CreateRequestContext();
   // Internal Check
   void InternalCheck(std::function<void(utils::Status status)> continuation);
   // Internal Report
