@@ -69,31 +69,6 @@ const char kServiceConfig1[] = R"(
 }
 )";
 
-const char kServiceConfig2[] = R"(
-{
-  "name": "different.test.appspot.com",
-  "title": "Bookstore",
-  "control": {
-    "environment": "servicecontrol.googleapis.com"
-  },
-  "id": "2017-05-01r0"
-}
-)";
-
-const char kGceMetadataWithServiceNameAndConfigId[] = R"(
-{
-  "project": {
-    "projectId": "test-project"
-  },
-  "instance": {
-    "attributes":{
-      "endpoints-service-name": "service_name_from_metadata",
-      "endpoints-service-config-id":"2017-05-01r1"
-    }
-  }
-}
-)";
-
 const char kReportResponseSucceeded[] = R"(
 service_config_id: "2017-02-08r9"
 
