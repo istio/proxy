@@ -605,8 +605,7 @@ TEST_F(RequestHandlerTest, PendingCheckApiManagerInitializationFailed) {
   // ApiManager initialization was failed.
   // Report callback will be called right away.
   std::unique_ptr<Response> response(new ResponseMock());
-  request_handler->Report(std::move(response),
-                          [this]() {
+  request_handler->Report(std::move(response), [this]() {
     callback_run_count_++;
     EXPECT_EQ(2, callback_run_count_);
   });
