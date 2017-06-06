@@ -196,6 +196,8 @@ TEST_F(RequestHandlerTest, PendingCheckApiManagerInitSucceeded) {
   EXPECT_EQ("bookstore.test.appspot.com", api_manager_->service_name());
   EXPECT_EQ("", api_manager_->service("2017-05-01r0").id());
 
+  // api-key is not required and api-key is not provided, so
+  // not need to make remote call for Check().
   request_handler_->Check([this](utils::Status status) {
     callback_run_count_++;
     EXPECT_OK(status);
