@@ -160,7 +160,7 @@ cc_library(
 def transcoding_repositories(bind=True):
     native.git_repository(
         name = "httpjson_transcoding",
-        commit = "d91a0fae8f9248c6b317abfa55b773fd62873818",
+        commit = "842ea24064bdef0d6705f8093d374f4f3127ff98",
         remote = "https://github.com/grpc-ecosystem/grpc-httpjson-transcoding.git",
     )
 
