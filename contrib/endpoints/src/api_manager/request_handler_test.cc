@@ -162,6 +162,7 @@ class RequestHandlerTest : public ::testing::Test {
                                                   {"ip", "127.0.0.1"},
                                                   {"host", "localhost"},
                                                   {"path", "/echo"}})));
+  	EXPECT_EQ("", request_handler_->GetServiceConfigId());
   }
 
  protected:
