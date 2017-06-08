@@ -61,11 +61,10 @@ class ApiManagerImpl : public ApiManager {
   // Return ServiceContext for selected by WeightedSelector
   std::shared_ptr<context::ServiceContext> SelectService();
 
-  // Return true if config loading is still in progress
-  bool IsConfigLoadingInProgress() override;
-
-  // Return true if config loading was succeeded
-  bool IsConfigLoadingSucceeded() override;
+  // Return the initialization status
+  inline utils::Status ConfigLoadingStatus() const override {
+    return config_loading_status_;
+  }
 
  private:
   // Use these configs according to the traffic percentage.

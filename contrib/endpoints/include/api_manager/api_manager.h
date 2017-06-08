@@ -87,11 +87,8 @@ class ApiManager {
   virtual utils::Status GetStatistics(
       ApiManagerStatistics *statistics) const = 0;
 
-  // Return true if config loading is still in progress
-  virtual bool IsConfigLoadingInProgress() = 0;
-
-  // Return true if config loading was succeeded
-  virtual bool IsConfigLoadingSucceeded() = 0;
+  // Return the initialization status
+  virtual utils::Status ConfigLoadingStatus() const = 0;
 
  protected:
   ApiManager() {}

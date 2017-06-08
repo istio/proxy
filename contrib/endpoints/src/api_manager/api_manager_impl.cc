@@ -183,14 +183,6 @@ std::shared_ptr<context::ServiceContext> ApiManagerImpl::SelectService() {
   return nullptr;
 }
 
-bool ApiManagerImpl::IsConfigLoadingInProgress() {
-  return config_loading_status_.code() == Code::UNAVAILABLE;
-}
-
-bool ApiManagerImpl::IsConfigLoadingSucceeded() {
-  return config_loading_status_.ok() && service_context_map_.size() > 0;
-}
-
 utils::Status ApiManagerImpl::GetStatistics(
     ApiManagerStatistics *statistics) const {
   memset(&statistics->service_control_statistics, 0,

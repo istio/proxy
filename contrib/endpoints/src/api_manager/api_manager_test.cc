@@ -171,7 +171,7 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
                          kServerConfigWithServiceNameConfigId)));
 
   EXPECT_TRUE(api_manager);
-  EXPECT_TRUE(api_manager->IsConfigLoadingSucceeded());
+  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
 
   auto service = api_manager->SelectService();
   EXPECT_TRUE(service);
@@ -180,7 +180,7 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
 
   api_manager->Init();
 
-  EXPECT_TRUE(api_manager->IsConfigLoadingSucceeded());
+  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
   EXPECT_TRUE(api_manager->Enabled());
   EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
 
@@ -208,19 +208,14 @@ TEST_F(ApiManagerTest, InitializedByConfigManager) {
           std::move(env), "", kServerConfigWithServiceNameConfigId)));
 
   EXPECT_TRUE(api_manager);
-  EXPECT_FALSE(api_manager->IsConfigLoadingSucceeded());
+  EXPECT_EQ("UNAVAILABLE: Not initialized yet",
+            api_manager->ConfigLoadingStatus().ToString());
   EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
 
-  EXPECT_TRUE(api_manager->IsConfigLoadingInProgress());
-  EXPECT_FALSE(api_manager->IsConfigLoadingSucceeded());
-
   api_manager->Init();
 
-  EXPECT_FALSE(api_manager->IsConfigLoadingInProgress());
-  EXPECT_TRUE(api_manager->IsConfigLoadingSucceeded());
-
-  EXPECT_TRUE(api_manager->IsConfigLoadingSucceeded());
+  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
   EXPECT_TRUE(api_manager->Enabled());
   EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
 
@@ -249,16 +244,15 @@ TEST_F(ApiManagerTest, ConfigManagerInitializationFailed) {
           std::move(env), "", kServerConfigWithServiceNameConfigId)));
 
   EXPECT_TRUE(api_manager);
-  EXPECT_TRUE(api_manager->IsConfigLoadingInProgress());
-  EXPECT_FALSE(api_manager->IsConfigLoadingSucceeded());
-
+  EXPECT_EQ("UNAVAILABLE: Not initialized yet",
+            api_manager->ConfigLoadingStatus().ToString());
   EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
 
   api_manager->Init();
 
-  EXPECT_FALSE(api_manager->IsConfigLoadingInProgress());
-  EXPECT_FALSE(api_manager->IsConfigLoadingSucceeded());
+  EXPECT_EQ("ABORTED: Failed to download the service config",
+            api_manager->ConfigLoadingStatus().ToString());
 
   auto service = api_manager->SelectService();
   EXPECT_FALSE(service);
@@ -283,16 +277,15 @@ TEST_F(ApiManagerTest,
           std::move(env), "", kServerConfigWithServiceNameConfigId)));
 
   EXPECT_TRUE(api_manager);
-  EXPECT_TRUE(api_manager->IsConfigLoadingInProgress());
-  EXPECT_FALSE(api_manager->IsConfigLoadingSucceeded());
-
+  EXPECT_EQ("UNAVAILABLE: Not initialized yet",
+            api_manager->ConfigLoadingStatus().ToString());
   EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
 
   api_manager->Init();
 
-  EXPECT_FALSE(api_manager->IsConfigLoadingInProgress());
-  EXPECT_FALSE(api_manager->IsConfigLoadingSucceeded());
+  EXPECT_EQ("ABORTED: Invalid service config",
+            api_manager->ConfigLoadingStatus().ToString());
   EXPECT_FALSE(api_manager->Enabled());
 
   EXPECT_EQ("", api_manager->service("2017-05-01r0").id());
