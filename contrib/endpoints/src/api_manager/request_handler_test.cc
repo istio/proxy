@@ -175,6 +175,25 @@ class RequestHandlerTest : public ::testing::Test {
   ApiManagerFactory factory_;
 };
 
+TEST_F(RequestHandlerTest, ManagerInitSucceededContextWasCreated) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager =
+      std::make_shared<ApiManagerImpl>(std::move(env), kServiceConfig1,
+                                       kServerConfigWithServiceNameConfigId);
+  EXPECT_TRUE(api_manager);
+
+  std::unique_ptr<RequestHandlerInterface> request_handler =
+      api_manager->CreateRequestHandler(
+          std::unique_ptr<Request>(new RequestMock({{"method", "GET"},
+                                                    {"ip", "127.0.0.1"},
+                                                    {"host", "localhost"},
+                                                    {"path", "/echo"}})));
+  EXPECT_TRUE(request_handler);
+  EXPECT_EQ("2017-05-01r0", request_handler->GetServiceConfigId());
+}
+
 TEST_F(RequestHandlerTest, PendingCheckApiManagerInitSucceeded) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest *req) {

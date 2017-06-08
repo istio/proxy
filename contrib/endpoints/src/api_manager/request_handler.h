@@ -28,10 +28,7 @@ class RequestHandler : public RequestHandlerInterface {
  public:
   RequestHandler(ApiManagerImpl* api_manager,
                  std::shared_ptr<CheckWorkflow> check_workflow,
-                 std::unique_ptr<Request> request_data)
-      : api_manager_(api_manager),
-        check_workflow_(check_workflow),
-        request_data_(std::move(request_data)) {}
+                 std::unique_ptr<Request> request_data);
 
   virtual ~RequestHandler(){};
 

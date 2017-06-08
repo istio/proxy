@@ -29,6 +29,17 @@ using google::devtools::cloudtrace::v1::Traces;
 namespace google {
 namespace api_manager {
 
+RequestHandler::RequestHandler(ApiManagerImpl* api_manager,
+                               std::shared_ptr<CheckWorkflow> check_workflow,
+                               std::unique_ptr<Request> request_data)
+    : api_manager_(api_manager),
+      check_workflow_(check_workflow),
+      request_data_(std::move(request_data)) {
+  if (api_manager->IsConfigLoadingSucceeded()) {
+    CreateRequestContext();
+  }
+}
+
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   if (api_manager_->IsConfigLoadingInProgress()) {
     api_manager_->AddPendingRequestCallback(
