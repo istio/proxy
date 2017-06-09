@@ -16,6 +16,7 @@
 //
 #include "contrib/endpoints/src/api_manager/auth/lib/auth_token.h"
 #include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
+#include "contrib/endpoints/src/api_manager/auth/lib/grpc_jwt_verifier.h"
 
 #include <openssl/hmac.h>
 #include <openssl/pem.h>

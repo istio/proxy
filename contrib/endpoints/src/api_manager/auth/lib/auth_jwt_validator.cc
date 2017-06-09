@@ -67,6 +67,7 @@ extern "C" {
 #include <string>
 
 #include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
+#include "contrib/endpoints/src/api_manager/auth/lib/grpc_jwt_verifier.h"
 
 using std::string;
 using std::chrono::system_clock;
@@ -97,7 +98,7 @@ class JwtValidatorImpl : public JwtValidator {
   grpc_jwt_verifier_status Validate(const char *jwt, size_t jwt_len,
                                     const char *pkey, size_t pkey_len,
                                     const char *aud);
-  grpc_jwt_verifier_status ParseImpl();
+  grpc_jwt_verifier_status ParseImpl(std::string *error_message);
   grpc_jwt_verifier_status VerifySignatureImpl(const char *pkey,
                                                size_t pkey_len);
   // Parses the audiences and removes the audiences from the json object.
@@ -239,7 +240,8 @@ JwtValidatorImpl::~JwtValidatorImpl() {
 }
 
 Status JwtValidatorImpl::Parse(UserInfo *user_info) {
-  grpc_jwt_verifier_status status = ParseImpl();
+  std::string error_message;
+  grpc_jwt_verifier_status status = ParseImpl(&error_message);
   if (status == GRPC_JWT_VERIFIER_OK) {
     status = FillUserInfoAndSetExp(user_info);
     if (status == GRPC_JWT_VERIFIER_OK) {
@@ -291,11 +293,12 @@ void JwtValidatorImpl::UpdateAudience(grpc_json *json) {
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
+grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(std::string *error_message) {
   // ====================
   // Basic check.
   // ====================
   if (jwt == nullptr || jwt_len <= 0) {
+    *error_message  = "JWT is null or jwt_len <= 0";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
 
@@ -305,12 +308,14 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   const char *cur = jwt;
   const char *dot = strchr(cur, '.');
   if (dot == nullptr) {
+    *error_message = "Cannot find any \'.\'";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
   header_json_ =
       DecodeBase64AndParseJson(&exec_ctx_, cur, dot - cur, &header_buffer_);
   CreateJoseHeader();
   if (header_ == nullptr) {
+    *error_message = "Cannot fine Jose Header";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
 
@@ -320,6 +325,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   cur = dot + 1;
   dot = strchr(cur, '.');
   if (dot == nullptr) {
+    *error_message = "Cannot find second dot";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
 
@@ -332,21 +338,16 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
     if (!GPR_SLICE_IS_EMPTY(claims_buffer)) {
       gpr_slice_unref(claims_buffer);
     }
+    *error_message = "Empty Json Claim";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
   UpdateAudience(claims_json);
   // Takes ownershp of claims_json and claims_buffer.
   claims_ = grpc_jwt_claims_from_json(&exec_ctx_, claims_json, claims_buffer);
 
-  if (claims_ == nullptr) {
-    gpr_log(GPR_ERROR,
-            "JWT claims could not be created."
-            " Incompatible value types for some claim(s)");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
-  }
-
   // issuer is mandatory. grpc_jwt_claims_issuer checks if claims_ is nullptr.
   if (grpc_jwt_claims_issuer(claims_) == nullptr) {
+    *error_message = "No issuer found in claims";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
 
@@ -356,6 +357,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   grpc_jwt_verifier_status status =
       grpc_jwt_claims_check(claims_, grpc_jwt_claims_audience(claims_));
   if (status != GRPC_JWT_VERIFIER_OK) {
+    *error_message = "FORMAT ERROR 1";
     return status;
   }
 
@@ -365,12 +367,14 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   size_t signed_jwt_len = (size_t)(dot - jwt);
   signed_buffer_ = gpr_slice_from_copied_buffer(jwt, signed_jwt_len);
   if (GPR_SLICE_IS_EMPTY(signed_buffer_)) {
+    *error_message = "FORMAT ERROR 2";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
   cur = dot + 1;
   sig_buffer_ = grpc_base64_decode_with_len(&exec_ctx_, cur,
                                             jwt_len - signed_jwt_len - 1, 1);
   if (GPR_SLICE_IS_EMPTY(sig_buffer_)) {
+    *error_message = "FORMAT ERROR 3";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
 
@@ -715,19 +719,12 @@ grpc_jwt_verifier_status JwtValidatorImpl::FillUserInfoAndSetExp(
 
   // Optional field.
   const grpc_json *grpc_json = grpc_jwt_claims_json(claims_);
-
-  char *json_str =
-      grpc_json_dump_to_string(const_cast<::grpc_json *>(grpc_json), 0);
-  if (json_str != nullptr) {
-    user_info->claims = json_str;
-    gpr_free(json_str);
-  }
-
   const char *email = GetStringValue(grpc_json, "email");
   user_info->email = email == nullptr ? "" : email;
   const char *authorized_party = GetStringValue(grpc_json, "azp");
   user_info->authorized_party =
       authorized_party == nullptr ? "" : authorized_party;
+
   exp_ = system_clock::from_time_t(grpc_jwt_claims_expires_at(claims_).tv_sec);
 
   return GRPC_JWT_VERIFIER_OK;
