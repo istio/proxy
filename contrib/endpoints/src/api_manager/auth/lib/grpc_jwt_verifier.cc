@@ -15,7 +15,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-
 #include "contrib/endpoints/src/api_manager/auth/lib/grpc_jwt_verifier.h"
 
 #include <limits.h>
@@ -235,7 +234,8 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims *claims) {
 grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
                                            grpc_json *json, grpc_slice buffer) {
   grpc_json *cur;
-  grpc_jwt_claims *claims = (grpc_jwt_claims *)gpr_malloc(sizeof(grpc_jwt_claims));
+  grpc_jwt_claims *claims =
+      (grpc_jwt_claims *)gpr_malloc(sizeof(grpc_jwt_claims));
   memset(claims, 0, sizeof(grpc_jwt_claims));
   claims->json = json;
   claims->buffer = buffer;
@@ -726,7 +726,8 @@ const char *grpc_jwt_issuer_email_domain(const char *issuer) {
   if (dot == NULL || dot == email_domain) return email_domain;
   GPR_ASSERT(dot > email_domain);
   /* There may be a subdomain, we just want the domain. */
-  dot = (const char *)gpr_memrchr(email_domain, '.', (size_t)(dot - email_domain));
+  dot = (const char *)gpr_memrchr(email_domain, '.',
+                                  (size_t)(dot - email_domain));
   if (dot == NULL) return email_domain;
   return dot + 1;
 }
@@ -748,8 +749,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   if (ctx->header->kid == NULL) {
     gpr_log(GPR_ERROR, "Missing kid in jose header.");
     ctx->user_cb(exec_ctx, ctx->user_data,
-                   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
-                   NULL);
+                 GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
     verifier_cb_ctx_destroy(exec_ctx, ctx);
     return;
   }
@@ -757,8 +757,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   if (iss == NULL) {
     gpr_log(GPR_ERROR, "Missing iss in claims.");
     ctx->user_cb(exec_ctx, ctx->user_data,
-                   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
-                   NULL);
+                 GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
     verifier_cb_ctx_destroy(exec_ctx, ctx);
     return;
   }
@@ -776,8 +775,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
     if (mapping == NULL) {
       gpr_log(GPR_ERROR, "Missing mapping for issuer email.");
       ctx->user_cb(exec_ctx, ctx->user_data,
-                   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
-                   NULL);
+                   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
       verifier_cb_ctx_destroy(exec_ctx, ctx);
       return;
     }
@@ -876,13 +874,15 @@ error:
 grpc_jwt_verifier *grpc_jwt_verifier_create(
     const grpc_jwt_verifier_email_domain_key_url_mapping *mappings,
     size_t num_mappings) {
-  grpc_jwt_verifier *v = (grpc_jwt_verifier *)gpr_malloc(sizeof(grpc_jwt_verifier));
+  grpc_jwt_verifier *v =
+      (grpc_jwt_verifier *)gpr_malloc(sizeof(grpc_jwt_verifier));
   memset(v, 0, sizeof(grpc_jwt_verifier));
   grpc_httpcli_context_init(&v->http_ctx);
 
   /* We know at least of one mapping. */
   v->allocated_mappings = 1 + num_mappings;
-  v->mappings = (email_key_mapping *)gpr_malloc(v->allocated_mappings * sizeof(email_key_mapping));
+  v->mappings = (email_key_mapping *)gpr_malloc(v->allocated_mappings *
+                                                sizeof(email_key_mapping));
   verifier_put_mapping(v, GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN,
                        GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX);
   /* User-Provided mappings. */

@@ -66,8 +66,8 @@ extern "C" {
 #include <set>
 #include <string>
 
-#include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
 #include "contrib/endpoints/src/api_manager/auth/lib/grpc_jwt_verifier.h"
+#include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
 
 using std::string;
 using std::chrono::system_clock;
@@ -293,12 +293,13 @@ void JwtValidatorImpl::UpdateAudience(grpc_json *json) {
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(std::string *error_message) {
+grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(
+    std::string *error_message) {
   // ====================
   // Basic check.
   // ====================
   if (jwt == nullptr || jwt_len <= 0) {
-    *error_message  = "JWT is null or jwt_len <= 0";
+    *error_message = "JWT is null or jwt_len <= 0";
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
 
