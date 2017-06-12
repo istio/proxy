@@ -44,14 +44,12 @@ message ServerConfig {
   // The service name.
   string service_name = 8;
 
-  // Maps service configuration files to their corresponding traffic percentage.
-  // Key is the service configuration file, Value is the traffic percentage
-  // which must be greater than 0.0 and the sum must equal to 100.0.
-  map<string, double> service_configs = 12;
-
-  // TODO(jaebong): This will be deprecated once service_configs is applied
-  // The service config id to use at the start of ESP.
+  // The service config id to use at the start of ESP. It has higher precedence
+  // than init_service_configs
   string config_id = 9;
+
+  // Init Service Configs.
+  repeated ServiceConfigTrafficPercentage init_service_configs = 12;
 
   // The service config rollout strategy, [fixed|managed]
   // fixed:  never change service config dynamically.
@@ -194,6 +192,15 @@ message ServiceManagementConfig {
   // The maximum milliseconds before config manager check updated rollouts,
   // if not specified defaults to 60000
   int32 refresh_interval_ms = 2;
+}
+
+// Maps service configuration files to their corresponding traffic percentage.
+message ServiceConfigTrafficPercentage {
+  // The service configuration file name
+  string service_config = 1;
+  // The traffic percentage which must be greater than 0.0 and the sum must
+  // equal to 100.0.
+  double traffic_percentage = 2;
 }
 
 message Experimental {
