@@ -41,9 +41,6 @@ message ServerConfig {
   // Service Management API configuration
   ServiceManagementConfig service_management_config = 11;
 
-  // The service name.
-  string service_name = 8;
-
   // Init Service Configs.
   repeated ServiceConfigTrafficPercentage init_service_configs = 12;
 
