@@ -44,11 +44,8 @@ message ServerConfig {
   // The service name.
   string service_name = 8;
 
-  // The service config id to use at the start of ESP. It has higher precedence
-  // than init_service_configs
-  string config_id = 9;
-
   // Init Service Configs.
+  // only use when service_id is not specified and not in the metadata either.
   repeated ServiceConfigTrafficPercentage init_service_configs = 12;
 
   // The service config rollout strategy, [fixed|managed]
@@ -197,9 +194,8 @@ message ServiceManagementConfig {
 // Maps service configuration files to their corresponding traffic percentage.
 message ServiceConfigTrafficPercentage {
   // The service configuration file name
-  string service_config = 1;
-  // The traffic percentage which must be greater than 0.0 and the sum must
-  // equal to 100.0.
+  string service_config_file_full_path = 1;
+  // The traffic percentage
   double traffic_percentage = 2;
 }
 
