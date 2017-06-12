@@ -66,8 +66,8 @@ extern "C" {
 #include <set>
 #include <string>
 
-#include "contrib/endpoints/src/api_manager/auth/lib/grpc_jwt_verifier.h"
 #include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
+#include "contrib/endpoints/src/api_manager/auth/lib/jwt_verifier.h"
 
 using std::string;
 using std::chrono::system_clock;
@@ -95,12 +95,11 @@ class JwtValidatorImpl : public JwtValidator {
 
  private:
   // Validates given JWT with pkey.
-  grpc_jwt_verifier_status Validate(const char *jwt, size_t jwt_len,
-                                    const char *pkey, size_t pkey_len,
-                                    const char *aud);
-  grpc_jwt_verifier_status ParseImpl(std::string *error_message);
-  grpc_jwt_verifier_status VerifySignatureImpl(const char *pkey,
-                                               size_t pkey_len);
+  jwt_verifier_status Validate(const char *jwt, size_t jwt_len,
+                               const char *pkey, size_t pkey_len,
+                               const char *aud);
+  jwt_verifier_status ParseImpl(std::string *error_message);
+  jwt_verifier_status VerifySignatureImpl(const char *pkey, size_t pkey_len);
   // Parses the audiences and removes the audiences from the json object.
   void UpdateAudience(grpc_json *json);
 
@@ -108,9 +107,9 @@ class JwtValidatorImpl : public JwtValidator {
   void CreateJoseHeader();
   // Checks required fields and fills User Info from claims_.
   // And sets expiration time to exp_.
-  grpc_jwt_verifier_status FillUserInfoAndSetExp(UserInfo *user_info);
+  jwt_verifier_status FillUserInfoAndSetExp(UserInfo *user_info);
   // Finds the public key and verifies JWT signature with it.
-  grpc_jwt_verifier_status FindAndVerifySignature();
+  jwt_verifier_status FindAndVerifySignature();
   // Extracts the public key from x509 string (key) and sets it to pkey_.
   // Returns true if successful.
   bool ExtractPubkeyFromX509(const char *key);
@@ -119,16 +118,16 @@ class JwtValidatorImpl : public JwtValidator {
   bool ExtractPubkeyFromJwk(const grpc_json *jkey);
   // Extracts the public key from jwk key set and verifies JWT signature with
   // it.
-  grpc_jwt_verifier_status ExtractAndVerifyJwkKeys(const grpc_json *jwt_keys);
+  jwt_verifier_status ExtractAndVerifyJwkKeys(const grpc_json *jwt_keys);
   // Extracts the public key from pkey_json_ and verifies JWT signature with
   // it.
-  grpc_jwt_verifier_status ExtractAndVerifyX509Keys();
+  jwt_verifier_status ExtractAndVerifyX509Keys();
   // Verifies signature with pkey_.
-  grpc_jwt_verifier_status VerifyPubkey();
+  jwt_verifier_status VerifyPubkey();
   // Verifies RS (asymmetric) signature.
-  grpc_jwt_verifier_status VerifyRsSignature(const char *pkey, size_t pkey_len);
+  jwt_verifier_status VerifyRsSignature(const char *pkey, size_t pkey_len);
   // Verifies HS (symmetric) signature.
-  grpc_jwt_verifier_status VerifyHsSignature(const char *pkey, size_t pkey_len);
+  jwt_verifier_status VerifyHsSignature(const char *pkey, size_t pkey_len);
 
   // Not owned.
   const char *jwt;
@@ -137,7 +136,7 @@ class JwtValidatorImpl : public JwtValidator {
   JoseHeader *header_;
   grpc_json *header_json_;
   gpr_slice header_buffer_;
-  grpc_jwt_claims *claims_;
+  jwt_claims *claims_;
   gpr_slice sig_buffer_;
   gpr_slice signed_buffer_;
 
@@ -208,7 +207,7 @@ JwtValidatorImpl::~JwtValidatorImpl() {
     grpc_json_destroy(pkey_json_);
   }
   if (claims_ != nullptr) {
-    grpc_jwt_claims_destroy(&exec_ctx_, claims_);
+    jwt_claims_destroy(&exec_ctx_, claims_);
   }
   if (!GPR_SLICE_IS_EMPTY(header_buffer_)) {
     gpr_slice_unref(header_buffer_);
@@ -241,16 +240,15 @@ JwtValidatorImpl::~JwtValidatorImpl() {
 
 Status JwtValidatorImpl::Parse(UserInfo *user_info) {
   std::string error_message;
-  grpc_jwt_verifier_status status = ParseImpl(&error_message);
-  if (status == GRPC_JWT_VERIFIER_OK) {
+  jwt_verifier_status status = ParseImpl(&error_message);
+  if (status == JWT_VERIFIER_OK) {
     status = FillUserInfoAndSetExp(user_info);
-    if (status == GRPC_JWT_VERIFIER_OK) {
+    if (status == JWT_VERIFIER_OK) {
       return Status::OK;
     }
   }
 
-  return Status(Code::UNAUTHENTICATED,
-                grpc_jwt_verifier_status_to_string(status));
+  return Status(Code::UNAUTHENTICATED, jwt_verifier_status_to_string(status));
 }
 
 // Extracts and removes the audiences from the token.
@@ -293,14 +291,13 @@ void JwtValidatorImpl::UpdateAudience(grpc_json *json) {
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(
-    std::string *error_message) {
+jwt_verifier_status JwtValidatorImpl::ParseImpl(std::string *error_message) {
   // ====================
   // Basic check.
   // ====================
   if (jwt == nullptr || jwt_len <= 0) {
     *error_message = "JWT is null or jwt_len <= 0";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
 
   // ====================
@@ -310,14 +307,14 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(
   const char *dot = strchr(cur, '.');
   if (dot == nullptr) {
     *error_message = "Cannot find any \'.\'";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   header_json_ =
       DecodeBase64AndParseJson(&exec_ctx_, cur, dot - cur, &header_buffer_);
   CreateJoseHeader();
   if (header_ == nullptr) {
     *error_message = "Cannot fine Jose Header";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
 
   // =============================
@@ -327,7 +324,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(
   dot = strchr(cur, '.');
   if (dot == nullptr) {
     *error_message = "Cannot find second dot";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
 
   // claim_buffer is the only exception that requires deallocation for failure
@@ -340,31 +337,31 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(
       gpr_slice_unref(claims_buffer);
     }
     *error_message = "Empty Json Claim";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   UpdateAudience(claims_json);
   // Takes ownershp of claims_json and claims_buffer.
-  claims_ = grpc_jwt_claims_from_json(&exec_ctx_, claims_json, claims_buffer);
+  claims_ = jwt_claims_from_json(&exec_ctx_, claims_json, claims_buffer);
 
   if (claims_ == nullptr) {
     gpr_log(GPR_ERROR,
             "JWT claims could not be created."
             " Incompatible value types for some claim(s)");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
 
-  // issuer is mandatory. grpc_jwt_claims_issuer checks if claims_ is nullptr.
-  if (grpc_jwt_claims_issuer(claims_) == nullptr) {
+  // issuer is mandatory. jwt_claims_issuer checks if claims_ is nullptr.
+  if (jwt_claims_issuer(claims_) == nullptr) {
     *error_message = "No issuer found in claims";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
 
   // Check timestamp.
   // Passing in its own audience to skip audience check.
   // Audience check should be done by the caller.
-  grpc_jwt_verifier_status status =
-      grpc_jwt_claims_check(claims_, grpc_jwt_claims_audience(claims_));
-  if (status != GRPC_JWT_VERIFIER_OK) {
+  jwt_verifier_status status =
+      jwt_claims_check(claims_, jwt_claims_audience(claims_));
+  if (status != JWT_VERIFIER_OK) {
     *error_message = "FORMAT ERROR 1";
     return status;
   }
@@ -376,39 +373,38 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl(
   signed_buffer_ = gpr_slice_from_copied_buffer(jwt, signed_jwt_len);
   if (GPR_SLICE_IS_EMPTY(signed_buffer_)) {
     *error_message = "FORMAT ERROR 2";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   cur = dot + 1;
   sig_buffer_ = grpc_base64_decode_with_len(&exec_ctx_, cur,
                                             jwt_len - signed_jwt_len - 1, 1);
   if (GPR_SLICE_IS_EMPTY(sig_buffer_)) {
     *error_message = "FORMAT ERROR 3";
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
 
-  return GRPC_JWT_VERIFIER_OK;
+  return JWT_VERIFIER_OK;
 }
 
 Status JwtValidatorImpl::VerifySignature(const char *pkey, size_t pkey_len) {
-  grpc_jwt_verifier_status status = VerifySignatureImpl(pkey, pkey_len);
-  if (status == GRPC_JWT_VERIFIER_OK) {
+  jwt_verifier_status status = VerifySignatureImpl(pkey, pkey_len);
+  if (status == JWT_VERIFIER_OK) {
     return Status::OK;
   } else {
-    return Status(Code::UNAUTHENTICATED,
-                  grpc_jwt_verifier_status_to_string(status));
+    return Status(Code::UNAUTHENTICATED, jwt_verifier_status_to_string(status));
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifySignatureImpl(
-    const char *pkey, size_t pkey_len) {
+jwt_verifier_status JwtValidatorImpl::VerifySignatureImpl(const char *pkey,
+                                                          size_t pkey_len) {
   if (pkey == nullptr || pkey_len <= 0) {
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
   if (jwt == nullptr || jwt_len <= 0) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   if (GPR_SLICE_IS_EMPTY(signed_buffer_) || GPR_SLICE_IS_EMPTY(sig_buffer_)) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   if (strncmp(header_->alg, "RS", 2) == 0) {  // Asymmetric keys.
     return VerifyRsSignature(pkey, pkey_len);
@@ -439,14 +435,14 @@ void JwtValidatorImpl::CreateJoseHeader() {
   header_->kid = GetStringValue(header_json_, "kid");
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::FindAndVerifySignature() {
+jwt_verifier_status JwtValidatorImpl::FindAndVerifySignature() {
   if (pkey_json_ == nullptr) {
     gpr_log(GPR_ERROR, "The public keys are empty.");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
   if (header_ == nullptr) {
     gpr_log(GPR_ERROR, "JWT header is empty.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   // JWK set https://tools.ietf.org/html/rfc7517#section-5.
   const grpc_json *jwk_keys = GetProperty(pkey_json_, "keys");
@@ -459,7 +455,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::FindAndVerifySignature() {
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
+jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
   // Precondition (checked by caller): pkey_json_ and header_ are not nullptr.
   if (header_->kid != nullptr) {
     const char *value = GetStringValue(pkey_json_, header_->kid);
@@ -467,12 +463,12 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
       gpr_log(GPR_ERROR,
               "Cannot find matching key in key set for kid=%s and alg=%s",
               header_->kid, header_->alg);
-      return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+      return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     }
     if (!ExtractPubkeyFromX509(value)) {
       gpr_log(GPR_ERROR, "Failed to extract public key from X509 key (%s)",
               header_->kid);
-      return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+      return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     }
     return VerifyPubkey();
   }
@@ -482,22 +478,22 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
   if (pkey_json_->child == nullptr) {
     gpr_log(GPR_ERROR, "Failed to extract public key from X509 key (%s)",
             header_->kid);
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
   for (cur = pkey_json_->child; cur != nullptr; cur = cur->next) {
     if (cur->value == nullptr || !ExtractPubkeyFromX509(cur->value)) {
       // Failed to extract public key from current X509 key, try next one.
       continue;
     }
-    if (VerifyPubkey() == GRPC_JWT_VERIFIER_OK) {
-      return GRPC_JWT_VERIFIER_OK;
+    if (VerifyPubkey() == JWT_VERIFIER_OK) {
+      return JWT_VERIFIER_OK;
     }
   }
   // header_->kid is nullptr. The JWT cannot be validated with any of the keys.
   // Return error.
   gpr_log(GPR_ERROR,
           "The JWT cannot be validated with any of the public keys.");
-  return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  return JWT_VERIFIER_BAD_SIGNATURE;
 }
 
 bool JwtValidatorImpl::ExtractPubkeyFromX509(const char *key) {
@@ -532,20 +528,20 @@ bool JwtValidatorImpl::ExtractPubkeyFromX509(const char *key) {
   return true;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
+jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
     const grpc_json *jwk_keys) {
   // Precondition (checked by caller): jwk_keys and header_ are not nullptr.
   if (jwk_keys->type != GRPC_JSON_ARRAY) {
     gpr_log(GPR_ERROR,
             "Unexpected value type of keys property in jwks key set.");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
 
   const grpc_json *jkey = nullptr;
 
   if (jwk_keys->child == nullptr) {
     gpr_log(GPR_ERROR, "The jwks key set is empty");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
   // JWK format from https://tools.ietf.org/html/rfc7518#section-6.
   for (jkey = jwk_keys->child; jkey != nullptr; jkey = jkey->next) {
@@ -573,8 +569,8 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
     }
     // If kid is not specified in the header, try all keys. If the JWT can be
     // validated with any of the keys, the request is successful.
-    if (VerifyPubkey() == GRPC_JWT_VERIFIER_OK) {
-      return GRPC_JWT_VERIFIER_OK;
+    if (VerifyPubkey() == JWT_VERIFIER_OK) {
+      return JWT_VERIFIER_OK;
     }
   }
 
@@ -582,13 +578,13 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
     gpr_log(GPR_ERROR,
             "Cannot find matching key in key set for kid=%s and alg=%s",
             header_->kid, header_->alg);
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
   // header_->kid is nullptr. The JWT cannot be validated with any of the keys.
   // Return error.
   gpr_log(GPR_ERROR,
           "The JWT cannot be validated with any of the public keys.");
-  return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  return JWT_VERIFIER_BAD_SIGNATURE;
 }
 
 bool JwtValidatorImpl::ExtractPubkeyFromJwk(const grpc_json *jkey) {
@@ -624,26 +620,26 @@ bool JwtValidatorImpl::ExtractPubkeyFromJwk(const grpc_json *jkey) {
   return true;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyRsSignature(const char *pkey,
-                                                             size_t pkey_len) {
+jwt_verifier_status JwtValidatorImpl::VerifyRsSignature(const char *pkey,
+                                                        size_t pkey_len) {
   pkey_buffer_ = gpr_slice_from_copied_buffer(pkey, pkey_len);
   if (GPR_SLICE_IS_EMPTY(pkey_buffer_)) {
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
   pkey_json_ = grpc_json_parse_string_with_len(
       reinterpret_cast<char *>(GPR_SLICE_START_PTR(pkey_buffer_)),
       GPR_SLICE_LENGTH(pkey_buffer_));
   if (pkey_json_ == nullptr) {
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
 
   return FindAndVerifySignature();
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey() {
+jwt_verifier_status JwtValidatorImpl::VerifyPubkey() {
   if (pkey_ == nullptr) {
     gpr_log(GPR_ERROR, "Cannot find public key.");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
   if (md_ctx_ != nullptr) {
     EVP_MD_CTX_destroy(md_ctx_);
@@ -651,7 +647,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey() {
   md_ctx_ = EVP_MD_CTX_create();
   if (md_ctx_ == nullptr) {
     gpr_log(GPR_ERROR, "Could not create EVP_MD_CTX.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return JWT_VERIFIER_BAD_SIGNATURE;
   }
   const EVP_MD *md = EvpMdFromAlg(header_->alg);
 
@@ -659,30 +655,30 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey() {
 
   if (EVP_DigestVerifyInit(md_ctx_, nullptr, md, nullptr, pkey_) != 1) {
     gpr_log(GPR_ERROR, "EVP_DigestVerifyInit failed.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return JWT_VERIFIER_BAD_SIGNATURE;
   }
   if (EVP_DigestVerifyUpdate(md_ctx_, GPR_SLICE_START_PTR(signed_buffer_),
                              GPR_SLICE_LENGTH(signed_buffer_)) != 1) {
     gpr_log(GPR_ERROR, "EVP_DigestVerifyUpdate failed.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return JWT_VERIFIER_BAD_SIGNATURE;
   }
   if (EVP_DigestVerifyFinal(md_ctx_, GPR_SLICE_START_PTR(sig_buffer_),
                             GPR_SLICE_LENGTH(sig_buffer_)) != 1) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return JWT_VERIFIER_BAD_SIGNATURE;
   }
-  return GRPC_JWT_VERIFIER_OK;
+  return JWT_VERIFIER_OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyHsSignature(const char *pkey,
-                                                             size_t pkey_len) {
+jwt_verifier_status JwtValidatorImpl::VerifyHsSignature(const char *pkey,
+                                                        size_t pkey_len) {
   const EVP_MD *md = EvpMdFromAlg(header_->alg);
   GPR_ASSERT(md != nullptr);  // Checked before.
 
   pkey_buffer_ = grpc_base64_decode_with_len(&exec_ctx_, pkey, pkey_len, 1);
   if (GPR_SLICE_IS_EMPTY(pkey_buffer_)) {
     gpr_log(GPR_ERROR, "Unable to decode base64 of secret");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
 
   unsigned char res[HashSizeFromAlg(header_->alg)];
@@ -692,50 +688,50 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyHsSignature(const char *pkey,
        res, &res_len);
   if (res_len == 0) {
     gpr_log(GPR_ERROR, "Cannot compute HMAC from secret.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return JWT_VERIFIER_BAD_SIGNATURE;
   }
 
   if (res_len != GPR_SLICE_LENGTH(sig_buffer_) ||
       CRYPTO_memcmp(reinterpret_cast<void *>(GPR_SLICE_START_PTR(sig_buffer_)),
                     reinterpret_cast<void *>(res), res_len) != 0) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return JWT_VERIFIER_BAD_SIGNATURE;
   }
-  return GRPC_JWT_VERIFIER_OK;
+  return JWT_VERIFIER_OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::FillUserInfoAndSetExp(
+jwt_verifier_status JwtValidatorImpl::FillUserInfoAndSetExp(
     UserInfo *user_info) {
   // Required fields.
-  const char *issuer = grpc_jwt_claims_issuer(claims_);
+  const char *issuer = jwt_claims_issuer(claims_);
   if (issuer == nullptr) {
     gpr_log(GPR_ERROR, "Missing issuer field.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   if (audiences_.empty()) {
     gpr_log(GPR_ERROR, "Missing audience field.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
-  const char *subject = grpc_jwt_claims_subject(claims_);
+  const char *subject = jwt_claims_subject(claims_);
   if (subject == nullptr) {
     gpr_log(GPR_ERROR, "Missing subject field.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return JWT_VERIFIER_BAD_FORMAT;
   }
   user_info->issuer = issuer;
   user_info->audiences = audiences_;
   user_info->id = subject;
 
   // Optional field.
-  const grpc_json *grpc_json = grpc_jwt_claims_json(claims_);
+  const grpc_json *grpc_json = jwt_claims_json(claims_);
   const char *email = GetStringValue(grpc_json, "email");
   user_info->email = email == nullptr ? "" : email;
   const char *authorized_party = GetStringValue(grpc_json, "azp");
   user_info->authorized_party =
       authorized_party == nullptr ? "" : authorized_party;
 
-  exp_ = system_clock::from_time_t(grpc_jwt_claims_expires_at(claims_).tv_sec);
+  exp_ = system_clock::from_time_t(jwt_claims_expires_at(claims_).tv_sec);
 
-  return GRPC_JWT_VERIFIER_OK;
+  return JWT_VERIFIER_OK;
 }
 
 const EVP_MD *EvpMdFromAlg(const char *alg) {

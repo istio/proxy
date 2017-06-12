@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-#include "contrib/endpoints/src/api_manager/auth/lib/grpc_jwt_verifier.h"
+#include "contrib/endpoints/src/api_manager/auth/lib/jwt_verifier.h"
 
 #include <limits.h>
 #include <string.h>
@@ -37,24 +37,28 @@ extern "C" {
 #include "src/core/lib/tsi/ssl_types.h"
 }
 
+namespace google {
+namespace api_manager {
+namespace auth {
+
 /* --- Utils. --- */
 
-const char *grpc_jwt_verifier_status_to_string(
-    grpc_jwt_verifier_status status) {
+const char *jwt_verifier_status_to_string(
+    jwt_verifier_status status) {
   switch (status) {
-    case GRPC_JWT_VERIFIER_OK:
+    case JWT_VERIFIER_OK:
       return "OK";
-    case GRPC_JWT_VERIFIER_BAD_SIGNATURE:
+    case JWT_VERIFIER_BAD_SIGNATURE:
       return "BAD_SIGNATURE";
-    case GRPC_JWT_VERIFIER_BAD_FORMAT:
+    case JWT_VERIFIER_BAD_FORMAT:
       return "BAD_FORMAT";
-    case GRPC_JWT_VERIFIER_BAD_AUDIENCE:
+    case JWT_VERIFIER_BAD_AUDIENCE:
       return "BAD_AUDIENCE";
-    case GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR:
+    case JWT_VERIFIER_KEY_RETRIEVAL_ERROR:
       return "KEY_RETRIEVAL_ERROR";
-    case GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE:
+    case JWT_VERIFIER_TIME_CONSTRAINT_FAILURE:
       return "TIME_CONSTRAINT_FAILURE";
-    case GRPC_JWT_VERIFIER_GENERIC_ERROR:
+    case JWT_VERIFIER_GENERIC_ERROR:
       return "GENERIC_ERROR";
     default:
       return "UNKNOWN";
@@ -170,7 +174,7 @@ error:
 
 /* --- JWT claims. see http://tools.ietf.org/html/rfc7519#section-4.1 */
 
-struct grpc_jwt_claims {
+struct jwt_claims {
   /* Well known properties already parsed. */
   const char *sub;
   const char *iss;
@@ -184,59 +188,59 @@ struct grpc_jwt_claims {
   grpc_slice buffer;
 };
 
-void grpc_jwt_claims_destroy(grpc_exec_ctx *exec_ctx, grpc_jwt_claims *claims) {
+void jwt_claims_destroy(grpc_exec_ctx *exec_ctx, jwt_claims *claims) {
   grpc_json_destroy(claims->json);
   grpc_slice_unref_internal(exec_ctx, claims->buffer);
   gpr_free(claims);
 }
 
-const grpc_json *grpc_jwt_claims_json(const grpc_jwt_claims *claims) {
+const grpc_json *jwt_claims_json(const jwt_claims *claims) {
   if (claims == NULL) return NULL;
   return claims->json;
 }
 
-const char *grpc_jwt_claims_subject(const grpc_jwt_claims *claims) {
+const char *jwt_claims_subject(const jwt_claims *claims) {
   if (claims == NULL) return NULL;
   return claims->sub;
 }
 
-const char *grpc_jwt_claims_issuer(const grpc_jwt_claims *claims) {
+const char *jwt_claims_issuer(const jwt_claims *claims) {
   if (claims == NULL) return NULL;
   return claims->iss;
 }
 
-const char *grpc_jwt_claims_id(const grpc_jwt_claims *claims) {
+const char *jwt_claims_id(const jwt_claims *claims) {
   if (claims == NULL) return NULL;
   return claims->jti;
 }
 
-const char *grpc_jwt_claims_audience(const grpc_jwt_claims *claims) {
+const char *jwt_claims_audience(const jwt_claims *claims) {
   if (claims == NULL) return NULL;
   return claims->aud;
 }
 
-gpr_timespec grpc_jwt_claims_issued_at(const grpc_jwt_claims *claims) {
+gpr_timespec jwt_claims_issued_at(const jwt_claims *claims) {
   if (claims == NULL) return gpr_inf_past(GPR_CLOCK_REALTIME);
   return claims->iat;
 }
 
-gpr_timespec grpc_jwt_claims_expires_at(const grpc_jwt_claims *claims) {
+gpr_timespec jwt_claims_expires_at(const jwt_claims *claims) {
   if (claims == NULL) return gpr_inf_future(GPR_CLOCK_REALTIME);
   return claims->exp;
 }
 
-gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims *claims) {
+gpr_timespec jwt_claims_not_before(const jwt_claims *claims) {
   if (claims == NULL) return gpr_inf_past(GPR_CLOCK_REALTIME);
   return claims->nbf;
 }
 
 /* Takes ownership of json and buffer even in case of failure. */
-grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
+jwt_claims *jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
                                            grpc_json *json, grpc_slice buffer) {
   grpc_json *cur;
-  grpc_jwt_claims *claims =
-      (grpc_jwt_claims *)gpr_malloc(sizeof(grpc_jwt_claims));
-  memset(claims, 0, sizeof(grpc_jwt_claims));
+  jwt_claims *claims =
+      (jwt_claims *)gpr_malloc(sizeof(jwt_claims));
+  memset(claims, 0, sizeof(jwt_claims));
   claims->json = json;
   claims->buffer = buffer;
   claims->iat = gpr_inf_past(GPR_CLOCK_REALTIME);
@@ -274,11 +278,11 @@ grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
   return claims;
 
 error:
-  grpc_jwt_claims_destroy(exec_ctx, claims);
+  jwt_claims_destroy(exec_ctx, claims);
   return NULL;
 }
 
-grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
+jwt_verifier_status jwt_claims_check(const jwt_claims *claims,
                                                const char *audience) {
   gpr_timespec skewed_now;
   int audience_ok;
@@ -286,27 +290,27 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
   GPR_ASSERT(claims != NULL);
 
   skewed_now =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), jwt_verifier_clock_skew);
   if (gpr_time_cmp(skewed_now, claims->nbf) < 0) {
     gpr_log(GPR_ERROR, "JWT is not valid yet.");
-    return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
+    return JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
   skewed_now =
-      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
+      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), jwt_verifier_clock_skew);
   if (gpr_time_cmp(skewed_now, claims->exp) > 0) {
     gpr_log(GPR_ERROR, "JWT is expired.");
-    return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
+    return JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
 
   /* This should be probably up to the upper layer to decide but let's harcode
      the 99% use case here for email issuers, where the JWT must be self
      issued. */
-  if (grpc_jwt_issuer_email_domain(claims->iss) != NULL &&
+  if (jwt_issuer_email_domain(claims->iss) != NULL &&
       claims->sub != NULL && strcmp(claims->iss, claims->sub) != 0) {
     gpr_log(GPR_ERROR,
             "Email issuer (%s) cannot assert another subject (%s) than itself.",
             claims->iss, claims->sub);
-    return GRPC_JWT_VERIFIER_BAD_SUBJECT;
+    return JWT_VERIFIER_BAD_SUBJECT;
   }
 
   if (audience == NULL) {
@@ -318,9 +322,9 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
     gpr_log(GPR_ERROR, "Audience mismatch: expected %s and found %s.",
             audience == NULL ? "NULL" : audience,
             claims->aud == NULL ? "NULL" : claims->aud);
-    return GRPC_JWT_VERIFIER_BAD_AUDIENCE;
+    return JWT_VERIFIER_BAD_AUDIENCE;
   }
-  return GRPC_JWT_VERIFIER_OK;
+  return JWT_VERIFIER_OK;
 }
 
 /* --- verifier_cb_ctx object. --- */
@@ -332,24 +336,24 @@ typedef enum {
 } http_response_index;
 
 typedef struct {
-  grpc_jwt_verifier *verifier;
+  jwt_verifier *verifier;
   grpc_polling_entity pollent;
   jose_header *header;
-  grpc_jwt_claims *claims;
+  jwt_claims *claims;
   char *audience;
   grpc_slice signature;
   grpc_slice signed_data;
   void *user_data;
-  grpc_jwt_verification_done_cb user_cb;
+  jwt_verification_done_cb user_cb;
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
 } verifier_cb_ctx;
 
 /* Takes ownership of the header, claims and signature. */
 static verifier_cb_ctx *verifier_cb_ctx_create(
-    grpc_jwt_verifier *verifier, grpc_pollset *pollset, jose_header *header,
-    grpc_jwt_claims *claims, const char *audience, grpc_slice signature,
+    jwt_verifier *verifier, grpc_pollset *pollset, jose_header *header,
+    jwt_claims *claims, const char *audience, grpc_slice signature,
     const char *signed_jwt, size_t signed_jwt_len, void *user_data,
-    grpc_jwt_verification_done_cb cb) {
+    jwt_verification_done_cb cb) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)gpr_malloc(sizeof(verifier_cb_ctx));
   memset(ctx, 0, sizeof(verifier_cb_ctx));
@@ -368,7 +372,7 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
 
 void verifier_cb_ctx_destroy(grpc_exec_ctx *exec_ctx, verifier_cb_ctx *ctx) {
   if (ctx->audience != NULL) gpr_free(ctx->audience);
-  if (ctx->claims != NULL) grpc_jwt_claims_destroy(exec_ctx, ctx->claims);
+  if (ctx->claims != NULL) jwt_claims_destroy(exec_ctx, ctx->claims);
   grpc_slice_unref_internal(exec_ctx, ctx->signature);
   grpc_slice_unref_internal(exec_ctx, ctx->signed_data);
   jose_header_destroy(exec_ctx, ctx->header);
@@ -379,20 +383,20 @@ void verifier_cb_ctx_destroy(grpc_exec_ctx *exec_ctx, verifier_cb_ctx *ctx) {
   gpr_free(ctx);
 }
 
-/* --- grpc_jwt_verifier object. --- */
+/* --- jwt_verifier object. --- */
 
 /* Clock skew defaults to one minute. */
-gpr_timespec grpc_jwt_verifier_clock_skew = {60, 0, GPR_TIMESPAN};
+gpr_timespec jwt_verifier_clock_skew = {60, 0, GPR_TIMESPAN};
 
 /* Max delay defaults to one minute. */
-gpr_timespec grpc_jwt_verifier_max_delay = {60, 0, GPR_TIMESPAN};
+gpr_timespec jwt_verifier_max_delay = {60, 0, GPR_TIMESPAN};
 
 typedef struct {
   char *email_domain;
   char *key_url_prefix;
 } email_key_mapping;
 
-struct grpc_jwt_verifier {
+struct jwt_verifier {
   email_key_mapping *mappings;
   size_t num_mappings; /* Should be very few, linear search ok. */
   size_t allocated_mappings;
@@ -597,11 +601,11 @@ static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
   grpc_json *json = json_from_http(&ctx->responses[HTTP_RESPONSE_KEYS]);
   EVP_PKEY *verification_key = NULL;
-  grpc_jwt_verifier_status status = GRPC_JWT_VERIFIER_GENERIC_ERROR;
-  grpc_jwt_claims *claims = NULL;
+  jwt_verifier_status status = JWT_VERIFIER_GENERIC_ERROR;
+  jwt_claims *claims = NULL;
 
   if (json == NULL) {
-    status = GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    status = JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     goto end;
   }
   verification_key =
@@ -609,18 +613,18 @@ static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   if (verification_key == NULL) {
     gpr_log(GPR_ERROR, "Could not find verification key with kid %s.",
             ctx->header->kid);
-    status = GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    status = JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     goto end;
   }
 
   if (!verify_jwt_signature(verification_key, ctx->header->alg, ctx->signature,
                             ctx->signed_data)) {
-    status = GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    status = JWT_VERIFIER_BAD_SIGNATURE;
     goto end;
   }
 
-  status = grpc_jwt_claims_check(ctx->claims, ctx->audience);
-  if (status == GRPC_JWT_VERIFIER_OK) {
+  status = jwt_claims_check(ctx->claims, ctx->audience);
+  if (status == JWT_VERIFIER_OK) {
     /* Pass ownership. */
     claims = ctx->claims;
     ctx->claims = NULL;
@@ -672,7 +676,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
         grpc_resource_quota_create("jwt_verifier");
     grpc_httpcli_get(
         exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), jwt_verifier_max_delay),
         grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
         &ctx->responses[HTTP_RESPONSE_KEYS]);
     grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
@@ -683,12 +687,12 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
 
 error:
   if (json != NULL) grpc_json_destroy(json);
-  ctx->user_cb(exec_ctx, ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
+  ctx->user_cb(exec_ctx, ctx->user_data, JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
                NULL);
   verifier_cb_ctx_destroy(exec_ctx, ctx);
 }
 
-static email_key_mapping *verifier_get_mapping(grpc_jwt_verifier *v,
+static email_key_mapping *verifier_get_mapping(jwt_verifier *v,
                                                const char *email_domain) {
   size_t i;
   if (v->mappings == NULL) return NULL;
@@ -700,7 +704,7 @@ static email_key_mapping *verifier_get_mapping(grpc_jwt_verifier *v,
   return NULL;
 }
 
-static void verifier_put_mapping(grpc_jwt_verifier *v, const char *email_domain,
+static void verifier_put_mapping(jwt_verifier *v, const char *email_domain,
                                  const char *key_url_prefix) {
   email_key_mapping *mapping = verifier_get_mapping(v, email_domain);
   GPR_ASSERT(v->num_mappings < v->allocated_mappings);
@@ -717,7 +721,7 @@ static void verifier_put_mapping(grpc_jwt_verifier *v, const char *email_domain,
 
 /* Very non-sophisticated way to detect an email address. Should be good
    enough for now... */
-const char *grpc_jwt_issuer_email_domain(const char *issuer) {
+const char *jwt_issuer_email_domain(const char *issuer) {
   const char *at_sign = strchr(issuer, '@');
   if (at_sign == NULL) return NULL;
   const char *email_domain = at_sign + 1;
@@ -749,7 +753,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   if (ctx->header->kid == NULL) {
     gpr_log(GPR_ERROR, "Missing kid in jose header.");
     ctx->user_cb(exec_ctx, ctx->user_data,
-                 GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
+                 JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
     verifier_cb_ctx_destroy(exec_ctx, ctx);
     return;
   }
@@ -757,7 +761,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   if (iss == NULL) {
     gpr_log(GPR_ERROR, "Missing iss in claims.");
     ctx->user_cb(exec_ctx, ctx->user_data,
-                 GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
+                 JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
     verifier_cb_ctx_destroy(exec_ctx, ctx);
     return;
   }
@@ -767,7 +771,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
      Nobody seems to implement the account/email/webfinger part 2. of the spec
      so we will rely instead on email/url mappings if we detect such an issuer.
      Part 4, on the other hand is implemented by both google and salesforce. */
-  email_domain = grpc_jwt_issuer_email_domain(iss);
+  email_domain = jwt_issuer_email_domain(iss);
   if (email_domain != NULL) {
     email_key_mapping *mapping;
     GPR_ASSERT(ctx->verifier != NULL);
@@ -775,7 +779,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
     if (mapping == NULL) {
       gpr_log(GPR_ERROR, "Missing mapping for issuer email.");
       ctx->user_cb(exec_ctx, ctx->user_data,
-                   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
+                   JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
       verifier_cb_ctx_destroy(exec_ctx, ctx);
       return;
     }
@@ -813,7 +817,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), jwt_verifier_max_delay),
       http_cb, &ctx->responses[rsp_idx]);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   gpr_free(req.host);
@@ -821,16 +825,16 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   return;
 }
 
-void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
-                              grpc_jwt_verifier *verifier,
+void jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
+                              jwt_verifier *verifier,
                               grpc_pollset *pollset, const char *jwt,
                               const char *audience,
-                              grpc_jwt_verification_done_cb cb,
+                              jwt_verification_done_cb cb,
                               void *user_data) {
   const char *dot = NULL;
   grpc_json *json;
   jose_header *header = NULL;
-  grpc_jwt_claims *claims = NULL;
+  jwt_claims *claims = NULL;
   grpc_slice header_buffer;
   grpc_slice claims_buffer;
   grpc_slice signature;
@@ -852,7 +856,7 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
   json = parse_json_part_from_jwt(exec_ctx, cur, (size_t)(dot - cur),
                                   &claims_buffer);
   if (json == NULL) goto error;
-  claims = grpc_jwt_claims_from_json(exec_ctx, json, claims_buffer);
+  claims = jwt_claims_from_json(exec_ctx, json, claims_buffer);
   if (claims == NULL) goto error;
 
   signed_jwt_len = (size_t)(dot - jwt);
@@ -867,16 +871,16 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
 
 error:
   if (header != NULL) jose_header_destroy(exec_ctx, header);
-  if (claims != NULL) grpc_jwt_claims_destroy(exec_ctx, claims);
-  cb(exec_ctx, user_data, GRPC_JWT_VERIFIER_BAD_FORMAT, NULL);
+  if (claims != NULL) jwt_claims_destroy(exec_ctx, claims);
+  cb(exec_ctx, user_data, JWT_VERIFIER_BAD_FORMAT, NULL);
 }
 
-grpc_jwt_verifier *grpc_jwt_verifier_create(
-    const grpc_jwt_verifier_email_domain_key_url_mapping *mappings,
+jwt_verifier *jwt_verifier_create(
+    const jwt_verifier_email_domain_key_url_mapping *mappings,
     size_t num_mappings) {
-  grpc_jwt_verifier *v =
-      (grpc_jwt_verifier *)gpr_malloc(sizeof(grpc_jwt_verifier));
-  memset(v, 0, sizeof(grpc_jwt_verifier));
+  jwt_verifier *v =
+      (jwt_verifier *)gpr_malloc(sizeof(jwt_verifier));
+  memset(v, 0, sizeof(jwt_verifier));
   grpc_httpcli_context_init(&v->http_ctx);
 
   /* We know at least of one mapping. */
@@ -896,7 +900,7 @@ grpc_jwt_verifier *grpc_jwt_verifier_create(
   return v;
 }
 
-void grpc_jwt_verifier_destroy(grpc_jwt_verifier *v) {
+void jwt_verifier_destroy(jwt_verifier *v) {
   size_t i;
   if (v == NULL) return;
   grpc_httpcli_context_destroy(&v->http_ctx);
@@ -909,3 +913,7 @@ void grpc_jwt_verifier_destroy(grpc_jwt_verifier *v) {
   }
   gpr_free(v);
 }
+
+} // namespace auth
+} // namespace api_manager
+} // namespace google
