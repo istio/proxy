@@ -45,7 +45,6 @@ message ServerConfig {
   string service_name = 8;
 
   // Init Service Configs.
-  // only use when service_id is not specified and not in the metadata either.
   repeated ServiceConfigTrafficPercentage init_service_configs = 12;
 
   // The service config rollout strategy, [fixed|managed]
