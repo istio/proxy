@@ -44,6 +44,12 @@ message ServerConfig {
   // The service name.
   string service_name = 8;
 
+  // Maps service configuration files to their corresponding traffic percentage.
+  // Key is the service configuration file, Value is the traffic percentage
+  // which must be greater than 0.0 and the sum must equal to 100.0.
+  map<string, double> service_configs = 12;
+
+  // TODO(jaebong): This will be deprecated once service_configs is applied
   // The service config id to use at the start of ESP.
   string config_id = 9;
 
