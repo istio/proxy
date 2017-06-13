@@ -53,10 +53,7 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
       std::ifstream config_file(item.service_config_file_full_path());
       if (config_file.is_open()) {
         std::stringstream content;
-        std::string line;
-        while (getline(config_file, line)) {
-          content << line << '\n';
-        }
+        content << config_file.rdbuf();
         config_file.close();
 
         std::string config_id;
