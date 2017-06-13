@@ -30,6 +30,7 @@ class CheckWorkflow;
 class ApiManagerImpl : public ApiManager {
  public:
   ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
+                 const std::string &service_config,
                  const std::string &server_config);
 
   bool Enabled() const override;
