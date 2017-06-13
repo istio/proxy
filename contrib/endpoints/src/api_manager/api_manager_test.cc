@@ -30,15 +30,59 @@ namespace api_manager {
 
 namespace {
 
-const char kServerConfigWithServiceNameConfigId[] = R"(
+const char kServerConfigWithSingleServiceConfig[] = R"(
 {
   "google_authentication_secret": "{}",
   "metadata_server_config": {
     "enabled": true,
     "url": "http://localhost"
   },
-  "service_name": "bookstore.test.appspot.com",
-  "config_id": "2017-05-01r0"
+  "init_service_configs": [
+    {
+      "service_config_file_full_path": "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json",
+      "traffic_percentage": 100
+    }
+  ]
+}
+)";
+
+const char kServerConfigWithPartialServiceConfig[] = R"(
+{
+  "google_authentication_secret": "{}",
+  "metadata_server_config": {
+    "enabled": true,
+    "url": "http://localhost"
+  },
+  "init_service_configs": [
+    {
+      "service_config_file_full_path": "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json",
+      "traffic_percentage": 80
+    },
+    {
+      "service_config_file_full_path": "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_2.json",
+      "traffic_percentage": 20
+    }
+  ]
+}
+)";
+
+const char kServerConfigWithPartialServiceConfigFailed[] = R"(
+{
+  "google_authentication_secret": "{}",
+  "metadata_server_config": {
+    "enabled": true,
+    "url": "http://localhost"
+  },
+  "init_service_configs": [
+    {
+      "service_config_file_full_path": "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json",
+      "traffic_percentage": 80
+    },
+    {
+      "service_config_file_full_path": "not_found.json",
+      "traffic_percentage": 20
+    }
+  ]
 }
 )";
 
@@ -62,17 +106,6 @@ const char kServiceConfig1[] = R"(
       }
     ]
   },
-  "control": {
-    "environment": "servicecontrol.googleapis.com"
-  },
-  "id": "2017-05-01r0"
-}
-)";
-
-const char kServiceConfig2[] = R"(
-{
-  "name": "different.test.appspot.com",
-  "title": "Bookstore",
   "control": {
     "environment": "servicecontrol.googleapis.com"
   },
@@ -168,10 +201,10 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
   std::shared_ptr<ApiManagerImpl> api_manager(
       std::dynamic_pointer_cast<ApiManagerImpl>(
           MakeApiManager(std::move(env), kServiceConfig1,
-                         kServerConfigWithServiceNameConfigId)));
+                         kServerConfigWithSingleServiceConfig)));
 
   EXPECT_TRUE(api_manager);
-  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
+  EXPECT_TRUE(api_manager->Enabled());
 
   auto service = api_manager->SelectService();
   EXPECT_TRUE(service);
@@ -180,7 +213,6 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
 
   api_manager->Init();
 
-  EXPECT_EQ("OK", api_manager->ConfigLoadingStatus().ToString());
   EXPECT_TRUE(api_manager->Enabled());
   EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
 
@@ -188,6 +220,78 @@ TEST_F(ApiManagerTest, InitializedOnApiManagerInstanceCreation) {
   EXPECT_TRUE(service);
   EXPECT_EQ("bookstore.test.appspot.com", service->service_name());
   EXPECT_EQ("2017-05-01r0", service->service().id());
+}
+
+TEST_F(ApiManagerTest, InitializedByConfigManager) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), "", kServerConfigWithSingleServiceConfig)));
+
+  EXPECT_TRUE(api_manager);
+  EXPECT_TRUE(api_manager->Enabled());
+  EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
+  EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
+
+  api_manager->Init();
+
+  EXPECT_TRUE(api_manager->Enabled());
+  EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
+
+  auto service = api_manager->SelectService();
+  EXPECT_TRUE(service);
+  EXPECT_EQ("bookstore.test.appspot.com", service->service_name());
+  EXPECT_EQ("2017-05-01r0", service->service().id());
+}
+
+TEST_F(ApiManagerTest, kServerConfigWithPartialServiceConfig) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), "", kServerConfigWithPartialServiceConfig)));
+
+  EXPECT_TRUE(api_manager);
+  EXPECT_TRUE(api_manager->Enabled());
+  EXPECT_EQ("bookstore.test.appspot.com", api_manager->service_name());
+  EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
+  EXPECT_EQ("2017-05-01r1", api_manager->service("2017-05-01r1").id());
+
+  api_manager->Init();
+
+  EXPECT_TRUE(api_manager->Enabled());
+  EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
+  EXPECT_EQ("2017-05-01r1", api_manager->service("2017-05-01r1").id());
+
+  std::unordered_map<std::string, int> counter = {{"2017-05-01r0", 0},
+                                                  {"2017-05-01r1", 0}};
+  for (int i = 0; i < 100; i++) {
+    auto service = api_manager->SelectService();
+    EXPECT_TRUE(service);
+    EXPECT_EQ("bookstore.test.appspot.com", service->service_name());
+    counter[service->service().id()]++;
+  }
+  EXPECT_EQ(80, counter["2017-05-01r0"]);
+  EXPECT_EQ(20, counter["2017-05-01r1"]);
+}
+
+TEST_F(ApiManagerTest, kServerConfigWithInvaludServiceConfig) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), "", kServerConfigWithPartialServiceConfigFailed)));
+
+  EXPECT_TRUE(api_manager);
+  EXPECT_FALSE(api_manager->Enabled());
+
+  api_manager->Init();
+
+  EXPECT_FALSE(api_manager->Enabled());
 }
 
 }  // namespace
