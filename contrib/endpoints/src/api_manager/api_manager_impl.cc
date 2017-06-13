@@ -88,6 +88,10 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
       config_loading_status_ =
           utils::Status(Code::ABORTED, "Invalid service config");
     }
+  } else {
+    std::string err_msg = "Service config was not specified";
+    global_context_->env()->LogError(err_msg);
+    config_loading_status_ = utils::Status(Code::ABORTED, err_msg);
   }
 
   check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);

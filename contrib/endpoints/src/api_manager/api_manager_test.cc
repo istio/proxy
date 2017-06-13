@@ -86,6 +86,16 @@ const char kServerConfigWithPartialServiceConfigFailed[] = R"(
 }
 )";
 
+const char kServerConfigWithNoServiceConfig[] = R"(
+{
+  "google_authentication_secret": "{}",
+  "metadata_server_config": {
+    "enabled": true,
+    "url": "http://localhost"
+  }
+}
+)";
+
 const char kServiceConfig1[] = R"(
 {
   "name": "bookstore.test.appspot.com",
@@ -285,6 +295,22 @@ TEST_F(ApiManagerTest, kServerConfigWithInvaludServiceConfig) {
   std::shared_ptr<ApiManagerImpl> api_manager(
       std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
           std::move(env), "", kServerConfigWithPartialServiceConfigFailed)));
+
+  EXPECT_TRUE(api_manager);
+  EXPECT_FALSE(api_manager->Enabled());
+
+  api_manager->Init();
+
+  EXPECT_FALSE(api_manager->Enabled());
+}
+
+TEST_F(ApiManagerTest, kServerConfigServiceConfigNotSpecifed) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), "", kServerConfigWithNoServiceConfig)));
 
   EXPECT_TRUE(api_manager);
   EXPECT_FALSE(api_manager->Enabled());
