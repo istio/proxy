@@ -47,6 +47,8 @@ struct ConfigsFetchInfo {
   std::vector<std::pair<std::string, int>> rollouts;
   // fetched ServiceConfig and rollouts percentages
   std::vector<std::pair<std::string, int>> configs;
+  // rollout id
+  std::string rollout_id;
   // Finished fetching
   inline bool IsCompleted() { return ((size_t)finished == rollouts.size()); }
   // Check fetched rollout is empty
@@ -90,7 +92,7 @@ class ConfigManager {
   // Periodic timer task to refresh rollouts
   std::unique_ptr<PeriodicTimer> rollouts_refresh_timer_;
   // Previous rollouts id
-  std::string previous_rollotus_id_;
+  std::string current_rollout_id_;
 };
 
 }  // namespace api_manager

@@ -93,13 +93,14 @@ void ConfigManager::FetchRollouts() {
       return;
     }
 
-    if (previous_rollotus_id_ == response.rollouts(0).rollout_id()) {
+    if (current_rollout_id_ == response.rollouts(0).rollout_id()) {
       return;
     }
-    previous_rollotus_id_ = response.rollouts(0).rollout_id();
 
     std::shared_ptr<ConfigsFetchInfo> config_fetch_info =
         std::make_shared<ConfigsFetchInfo>();
+
+    config_fetch_info->rollout_id = response.rollouts(0).rollout_id();
 
     for (auto percentage :
          response.rollouts(0).traffic_percent_strategy().percentages()) {
@@ -149,6 +150,7 @@ void ConfigManager::FetchConfigs(
 
         // Update ApiManager
         rollout_apply_function_(utils::Status::OK, config_fetch_info->configs);
+        current_rollout_id_ = config_fetch_info->rollout_id;
       }
     });
   }
