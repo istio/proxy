@@ -47,7 +47,8 @@ const char kServerConfigWithServiceName[] = R"(
       "refresh_interval_ms": 1000
     }
   },
-  "service_name": "service_name_from_server_config"
+  "service_name": "service_name_from_server_config",
+  "rollout_strategy": "managed"
 }
 )";
 
@@ -112,7 +113,7 @@ const char kRolloutsResponse2[] = R"(
 {
   "rollouts": [
     {
-      "rolloutId": "2017-05-01r0",
+      "rolloutId": "2017-05-01r1",
       "createTime": "2017-05-01T22:40:09.884Z",
       "createdBy": "test_user@google.com",
       "status": "SUCCESS",
@@ -201,6 +202,8 @@ class ConfigManagerServiceNameConfigIdTest : public ::testing::Test {
     global_context_ = std::make_shared<context::GlobalContext>(
         std::move(env_), kServerConfigWithServiceName);
 
+    global_context_->set_service_name("service_name_from_metadata");
+
     history_.clear();
   }
 
@@ -212,11 +215,6 @@ class ConfigManagerServiceNameConfigIdTest : public ::testing::Test {
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ("http://localhost/computeMetadata/v1/?recursive=true",
-                  req->url());
-        req->OnComplete(Status::OK, {}, kGceMetadataWithServiceNameAndConfigId);
-      }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
@@ -252,11 +250,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ("http://localhost/computeMetadata/v1/?recursive=true",
-                  req->url());
-        req->OnComplete(Status::OK, {}, kGceMetadataWithServiceNameAndConfigId);
-      }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
@@ -300,11 +293,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ("http://localhost/computeMetadata/v1/?recursive=true",
-                  req->url());
-        req->OnComplete(Status::OK, {}, kGceMetadataWithServiceNameAndConfigId);
-      }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"

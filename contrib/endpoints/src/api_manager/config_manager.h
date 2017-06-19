@@ -71,26 +71,26 @@ class ConfigManager {
   void Init(RolloutApplyFunction config_rollout_callback);
 
  private:
+  // Fetch the latest rollouts
+  void FetchRollouts();
   // Fetch ServiceConfig details from the latest successful rollouts
   // https://goo.gl/I2nD4M
   void FetchConfigs(std::shared_ptr<ConfigsFetchInfo> config_fetch_info);
-  // Handle metadata fetch done
-  void OnFetchMetadataDone(utils::Status status);
-  // Handle auth token fetch done
-  void OnFetchAuthTokenDone(utils::Status status);
+  // Period timer task
+  void OnRolloutsRefreshTimer();
 
   // Global context provided by ApiManager
   std::shared_ptr<context::GlobalContext> global_context_;
   // ApiManager updated callback
   RolloutApplyFunction rollout_apply_function_;
-  // Service Management API base url
-  std::string service_management_url_;
   // Rollouts refresh check interval in ms
   int refresh_interval_ms_;
   // ServiceManagement service client instance
   std::unique_ptr<ServiceManagementFetch> service_management_fetch_;
   // Periodic timer task to refresh rollouts
   std::unique_ptr<PeriodicTimer> rollouts_refresh_timer_;
+  // Previous rollouts id
+  std::string previous_rollotus_id_;
 };
 
 }  // namespace api_manager

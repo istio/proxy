@@ -35,14 +35,6 @@ ConfigManager::ConfigManager(
       refresh_interval_ms_(kCheckNewRolloutInterval) {
   if (global_context_->server_config() &&
       global_context_->server_config()->has_service_management_config()) {
-    // update ServiceManagement service API url
-    if (!global_context_->server_config()
-             ->service_management_config()
-             .url()
-             .empty()) {
-      service_management_url_ =
-          global_context_->server_config()->service_management_config().url();
-    }
     // update refresh interval in ms
     if (global_context_->server_config()
             ->service_management_config()
@@ -59,86 +51,69 @@ ConfigManager::ConfigManager(
 void ConfigManager::Init(RolloutApplyFunction rollout_apply_function) {
   rollout_apply_function_ = rollout_apply_function;
 
-  if (global_context_->service_name().empty()) {
-    GlobalFetchGceMetadata(global_context_, [this](utils::Status status) {
-      OnFetchMetadataDone(status);
-    });
-  } else {
-    OnFetchMetadataDone(utils::Status::OK);
+  if (global_context_->rollout_strategy() == kRolloutStrategyManaged) {
+    rollouts_refresh_timer_ = global_context_->env()->StartPeriodicTimer(
+        std::chrono::milliseconds(refresh_interval_ms_),
+        [this]() { OnRolloutsRefreshTimer(); });
   }
 }
 
-void ConfigManager::OnFetchMetadataDone(utils::Status status) {
-  if (!status.ok()) {
-    global_context_->env()->LogError("Unexpected status: " + status.ToString());
-    return;
-  }
-
-  if (global_context_->service_name().empty()) {
-    global_context_->set_service_name(
-        global_context_->gce_metadata()->endpoints_service_name());
-  }
-
-  if (global_context_->service_name().empty()) {
-    global_context_->env()->LogError("API service name is not specified");
-    return;
-  }
-
+void ConfigManager::OnRolloutsRefreshTimer() {
   GlobalFetchServiceAccountToken(global_context_, [this](utils::Status status) {
-    OnFetchAuthTokenDone(status);
+    if (!status.ok()) {
+      global_context_->env()->LogError("Unexpected status: " +
+                                       status.ToString());
+      return;
+    }
+    FetchRollouts();
   });
 }
 
-void ConfigManager::OnFetchAuthTokenDone(utils::Status status) {
-  if (!status.ok()) {
-    // We should not get here
-    global_context_->env()->LogError("Unexpected status: " + status.ToString());
-    return;
-  }
+void ConfigManager::FetchRollouts() {
+  service_management_fetch_->GetRollouts([this](const utils::Status& status,
+                                                std::string&& rollouts) {
+    if (!status.ok()) {
+      global_context_->env()->LogError(
+          std::string("Failed to download rollouts: ") + status.ToString() +
+          ", Response body: " + rollouts);
+      return;
+    }
 
-  rollouts_refresh_timer_ = global_context_->env()->StartPeriodicTimer(
-      std::chrono::milliseconds(refresh_interval_ms_), [this]() {
-        service_management_fetch_->GetRollouts([this](
-            const utils::Status& status, std::string&& rollouts) {
-          if (!status.ok()) {
-            global_context_->env()->LogError(
-                std::string("Failed to download rollouts: ") +
-                status.ToString() + ", Response body: " + rollouts);
-            return;
-          }
+    ListServiceRolloutsResponse response;
+    if (!utils::JsonToProto(rollouts, (::google::protobuf::Message*)&response)
+             .ok()) {
+      global_context_->env()->LogError(std::string("Invalid response: ") +
+                                       status.ToString() + ", Response body: " +
+                                       rollouts);
+      return;
+    }
 
-          ListServiceRolloutsResponse response;
-          if (!utils::JsonToProto(rollouts,
-                                  (::google::protobuf::Message*)&response)
-                   .ok()) {
-            global_context_->env()->LogError(std::string("Invalid response: ") +
-                                             status.ToString() +
-                                             ", Response body: " + rollouts);
-            return;
-          }
+    if (response.rollouts_size() == 0) {
+      global_context_->env()->LogError("No active rollouts");
+      return;
+    }
 
-          if (response.rollouts_size() == 0) {
-            global_context_->env()->LogError("No active rollouts");
-            return;
-          }
+    if (previous_rollotus_id_ == response.rollouts(0).rollout_id()) {
+      return;
+    }
+    previous_rollotus_id_ = response.rollouts(0).rollout_id();
 
-          std::shared_ptr<ConfigsFetchInfo> config_fetch_info =
-              std::make_shared<ConfigsFetchInfo>();
+    std::shared_ptr<ConfigsFetchInfo> config_fetch_info =
+        std::make_shared<ConfigsFetchInfo>();
 
-          for (auto percentage :
-               response.rollouts(0).traffic_percent_strategy().percentages()) {
-            config_fetch_info->rollouts.push_back(
-                {percentage.first, round(percentage.second)});
-          }
+    for (auto percentage :
+         response.rollouts(0).traffic_percent_strategy().percentages()) {
+      config_fetch_info->rollouts.push_back(
+          {percentage.first, round(percentage.second)});
+    }
 
-          if (config_fetch_info->rollouts.size() == 0) {
-            global_context_->env()->LogError("No active rollouts");
-            return;
-          }
+    if (config_fetch_info->rollouts.size() == 0) {
+      global_context_->env()->LogError("No active rollouts");
+      return;
+    }
 
-          FetchConfigs(config_fetch_info);
-        });
-      });
+    FetchConfigs(config_fetch_info);
+  });
 }
 
 // Fetch configs from rollouts. fetch_info has rollouts and fetched configs
