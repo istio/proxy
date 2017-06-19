@@ -349,6 +349,59 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
   ASSERT_EQ(2, sequence);
 }
 
+TEST_F(ConfigManagerServiceNameConfigIdTest,
+       RolloutSingleServiceConfigNoupdate) {
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        ASSERT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
+      }))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        ASSERT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/configs/2017-05-01r0",
+            req->url());
+        req->OnComplete(Status::OK, {}, kServiceConfig1);
+      }))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        ASSERT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
+      }));
+
+  std::shared_ptr<ConfigManager> config_manager(
+      new ConfigManager(global_context_));
+
+  int sequence = 0;
+
+  config_manager->Init([this, &sequence](
+      const utils::Status& status,
+      const std::vector<std::pair<std::string, int>>& list) {
+
+    ASSERT_EQ(1, list.size());
+
+    // depends on sequence, different service_config will downloaded
+    ASSERT_EQ(kServiceConfig1, list[0].first);
+
+    ASSERT_EQ(100, list[0].second);
+
+    sequence++;
+  });
+  // run first periodic timer
+  ASSERT_EQ(0, sequence);
+  raw_env_->RunTimer();
+  // run second periodic timer
+  ASSERT_EQ(1, sequence);
+  raw_env_->RunTimer();
+  // Same rollout_id, no update
+  ASSERT_EQ(1, sequence);
+}
+
 }  // namespace
 }  // namespace api_manager
 }  // namespace google
