@@ -384,10 +384,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       const std::vector<std::pair<std::string, int>>& list) {
 
     ASSERT_EQ(1, list.size());
-
-    // depends on sequence, different service_config will downloaded
     ASSERT_EQ(kServiceConfig1, list[0].first);
-
     ASSERT_EQ(100, list[0].second);
 
     sequence++;
