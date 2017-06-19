@@ -30,8 +30,10 @@ static std::vector<std::pair<std::string, int>> kEmptyConfigs;
 }  // namespace anonymous
 
 ConfigManager::ConfigManager(
-    std::shared_ptr<context::GlobalContext> global_context)
+    std::shared_ptr<context::GlobalContext> global_context,
+    RolloutApplyFunction rollout_apply_function)
     : global_context_(global_context),
+      rollout_apply_function_(rollout_apply_function),
       refresh_interval_ms_(kCheckNewRolloutInterval) {
   if (global_context_->server_config() &&
       global_context_->server_config()->has_service_management_config()) {
@@ -48,10 +50,15 @@ ConfigManager::ConfigManager(
   service_management_fetch_.reset(new ServiceManagementFetch(global_context));
 }
 
-void ConfigManager::Init(RolloutApplyFunction rollout_apply_function) {
-  rollout_apply_function_ = rollout_apply_function;
+ConfigManager::~ConfigManager() {
+  if (rollouts_refresh_timer_) {
+    rollouts_refresh_timer_->Stop();
+  }
+};
 
-  if (global_context_->rollout_strategy() == kRolloutStrategyManaged) {
+void ConfigManager::Init() {
+  if (global_context_->rollout_strategy() == kRolloutStrategyManaged &&
+      refresh_interval_ms_ > 0) {
     rollouts_refresh_timer_ = global_context_->env()->StartPeriodicTimer(
         std::chrono::milliseconds(refresh_interval_ms_),
         [this]() { OnRolloutsRefreshTimer(); });

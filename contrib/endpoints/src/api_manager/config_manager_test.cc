@@ -128,7 +128,7 @@ const char kRolloutsResponse2[] = R"(
 }
 )";
 
-const char kRolloutsResponseFailedRollouts[] = R"(
+const char kRolloutsResponseMultipleServiceConfig[] = R"(
 {
   "rollouts": [
     {
@@ -230,11 +230,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
         req->OnComplete(Status::OK, {}, kServiceConfig1);
       }));
 
-  std::shared_ptr<ConfigManager> config_manager(
-      new ConfigManager(global_context_));
-
   int sequence = 0;
-  config_manager->Init(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
+      global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
 
@@ -242,7 +240,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
         ASSERT_EQ(kServiceConfig1, list[0].first);
         ASSERT_EQ(100, list[0].second);
         sequence++;
-      });
+      }));
+
+  config_manager->Init();
   ASSERT_EQ(0, sequence);
   raw_env_->RunTimer();
   ASSERT_EQ(1, sequence);
@@ -255,7 +255,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
-        req->OnComplete(Status::OK, {}, kRolloutsResponseFailedRollouts);
+        req->OnComplete(Status::OK, {}, kRolloutsResponseMultipleServiceConfig);
       }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
@@ -272,11 +272,10 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
         req->OnComplete(Status::OK, {}, kServiceConfig2);
       }));
 
-  std::shared_ptr<ConfigManager> config_manager(
-      new ConfigManager(global_context_));
-
   int sequence = 0;
-  config_manager->Init(
+
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
+      global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
         ASSERT_EQ(2, list.size());
@@ -285,7 +284,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
         ASSERT_EQ(kServiceConfig2, list[1].first);
         ASSERT_EQ(20, list[1].second);
         sequence++;
-      });
+      }));
+
+  config_manager->Init();
   ASSERT_EQ(0, sequence);
   raw_env_->RunTimer();
   ASSERT_EQ(1, sequence);
@@ -322,24 +323,25 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
         req->OnComplete(Status::OK, {}, kServiceConfig2);
       }));
 
-  std::shared_ptr<ConfigManager> config_manager(
-      new ConfigManager(global_context_));
-
   int sequence = 0;
 
-  config_manager->Init([this, &sequence](
-      const utils::Status& status,
-      const std::vector<std::pair<std::string, int>>& list) {
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
+      global_context_,
+      [this, &sequence](const utils::Status& status,
+                        const std::vector<std::pair<std::string, int>>& list) {
 
-    ASSERT_EQ(1, list.size());
+        ASSERT_EQ(1, list.size());
 
-    // depends on sequence, different service_config will downloaded
-    ASSERT_EQ(sequence == 0 ? kServiceConfig1 : kServiceConfig2, list[0].first);
+        // depends on sequence, different service_config will downloaded
+        ASSERT_EQ(sequence == 0 ? kServiceConfig1 : kServiceConfig2,
+                  list[0].first);
 
-    ASSERT_EQ(100, list[0].second);
+        ASSERT_EQ(100, list[0].second);
 
-    sequence++;
-  });
+        sequence++;
+      }));
+
+  config_manager->Init();
   // run first periodic timer
   ASSERT_EQ(0, sequence);
   raw_env_->RunTimer();
@@ -374,12 +376,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }));
 
-  std::shared_ptr<ConfigManager> config_manager(
-      new ConfigManager(global_context_));
-
   int sequence = 0;
-
-  config_manager->Init(
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
+      global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
 
@@ -388,7 +387,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         ASSERT_EQ(100, list[0].second);
 
         sequence++;
-      });
+      }));
+
+  config_manager->Init();
   // run first periodic timer
   ASSERT_EQ(0, sequence);
   raw_env_->RunTimer();

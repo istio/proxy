@@ -27,10 +27,10 @@ namespace {
 // ConfigManager calls the callback after the service config download
 //
 // status
-//  - Code::OK        Config manager was successfully initialized
-//  - Code::ABORTED   Fatal error
-//  - Code::UNKNOWN   Config manager was not initialized yet
-// configs - pairs of ServiceConfig in text and rollout percentages
+//  - Code::UNAVAILABLE Not initialized yet. The default value.
+//  - Code::OK          Successfully initialized
+//  - Code::ABORTED     Initialization was failed
+// configs - pairs of ServiceConfig in text and rollout percentage
 typedef std::function<void(
     const utils::Status& status,
     const std::vector<std::pair<std::string, int>>& configs)>
@@ -65,12 +65,16 @@ struct ConfigsFetchInfo {
 // Manages configuration downloading
 class ConfigManager {
  public:
-  ConfigManager(std::shared_ptr<context::GlobalContext> global_context);
-  virtual ~ConfigManager(){};
+  // the periodic timer task initialize by Init() invokes the
+  // rollout_apply_function when it successfully downloads the latest successful
+  // rollout
+  ConfigManager(std::shared_ptr<context::GlobalContext> global_context,
+                RolloutApplyFunction rollout_apply_function);
+  virtual ~ConfigManager();
 
  public:
-  // Initialize the instance
-  void Init(RolloutApplyFunction config_rollout_callback);
+  // Initialize the periodic timer task
+  void Init();
 
  private:
   // Fetch the latest rollouts
