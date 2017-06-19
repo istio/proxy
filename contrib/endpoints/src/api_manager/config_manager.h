@@ -83,10 +83,14 @@ class ConfigManager {
   std::shared_ptr<context::GlobalContext> global_context_;
   // ApiManager updated callback
   RolloutApplyFunction rollout_apply_function_;
+  // Service Management API base url
+  std::string service_management_url_;
   // Rollouts refresh check interval in ms
   int refresh_interval_ms_;
   // ServiceManagement service client instance
   std::unique_ptr<ServiceManagementFetch> service_management_fetch_;
+  // Periodic timer task to refresh rollouts
+  std::unique_ptr<PeriodicTimer> rollouts_refresh_timer_;
 };
 
 }  // namespace api_manager

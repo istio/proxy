@@ -14,6 +14,7 @@
  */
 #include "contrib/endpoints/src/api_manager/config_manager.h"
 #include "contrib/endpoints/src/api_manager/fetch_metadata.h"
+#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
 
 namespace google {
 namespace api_manager {
@@ -21,6 +22,8 @@ namespace api_manager {
 namespace {
 // Default rollouts refresh interval in ms
 const int kCheckNewRolloutInterval = 60000;
+
+const char kRolloutStrategyManaged[] = "managed";
 
 // static configs for error handling
 static std::vector<std::pair<std::string, int>> kEmptyConfigs;
@@ -32,6 +35,14 @@ ConfigManager::ConfigManager(
       refresh_interval_ms_(kCheckNewRolloutInterval) {
   if (global_context_->server_config() &&
       global_context_->server_config()->has_service_management_config()) {
+    // update ServiceManagement service API url
+    if (!global_context_->server_config()
+             ->service_management_config()
+             .url()
+             .empty()) {
+      service_management_url_ =
+          global_context_->server_config()->service_management_config().url();
+    }
     // update refresh interval in ms
     if (global_context_->server_config()
             ->service_management_config()
@@ -48,8 +59,7 @@ ConfigManager::ConfigManager(
 void ConfigManager::Init(RolloutApplyFunction rollout_apply_function) {
   rollout_apply_function_ = rollout_apply_function;
 
-  if (global_context_->service_name().empty() ||
-      global_context_->config_id().empty()) {
+  if (global_context_->service_name().empty()) {
     GlobalFetchGceMetadata(global_context_, [this](utils::Status status) {
       OnFetchMetadataDone(status);
     });
@@ -60,43 +70,20 @@ void ConfigManager::Init(RolloutApplyFunction rollout_apply_function) {
 
 void ConfigManager::OnFetchMetadataDone(utils::Status status) {
   if (!status.ok()) {
-    // We should not get here
     global_context_->env()->LogError("Unexpected status: " + status.ToString());
-    rollout_apply_function_(utils::Status(Code::ABORTED, status.ToString()),
-                            kEmptyConfigs);
     return;
   }
 
-  // Update service_name
   if (global_context_->service_name().empty()) {
     global_context_->set_service_name(
         global_context_->gce_metadata()->endpoints_service_name());
   }
 
-  // Update config_id
-  if (global_context_->config_id().empty()) {
-    global_context_->config_id(
-        global_context_->gce_metadata()->endpoints_service_config_id());
-  }
-
-  // Call ApiManager with status Code::ABORTED, ESP will stop moving forward
   if (global_context_->service_name().empty()) {
-    std::string msg = "API service name is not specified";
-    global_context_->env()->LogError(msg);
-    rollout_apply_function_(utils::Status(Code::ABORTED, msg), kEmptyConfigs);
+    global_context_->env()->LogError("API service name is not specified");
     return;
   }
 
-  // TODO(jaebong) config_id should not be empty for the first version
-  // This part will be removed after the rollouts feature added
-  if (global_context_->config_id().empty()) {
-    std::string msg = "API config_id is not specified";
-    global_context_->env()->LogError(msg);
-    rollout_apply_function_(utils::Status(Code::ABORTED, msg), kEmptyConfigs);
-    return;
-  }
-
-  // Fetch service account token
   GlobalFetchServiceAccountToken(global_context_, [this](utils::Status status) {
     OnFetchAuthTokenDone(status);
   });
@@ -106,17 +93,52 @@ void ConfigManager::OnFetchAuthTokenDone(utils::Status status) {
   if (!status.ok()) {
     // We should not get here
     global_context_->env()->LogError("Unexpected status: " + status.ToString());
-    rollout_apply_function_(utils::Status(Code::ABORTED, status.ToString()),
-                            kEmptyConfigs);
     return;
   }
 
-  // Fetch configs from the Inception
-  // For now, config manager has only one config_id (100% rollout)
-  std::shared_ptr<ConfigsFetchInfo> config_fetch_info(
-      new ConfigsFetchInfo({{global_context_->config_id(), 100}}));
+  rollouts_refresh_timer_ = global_context_->env()->StartPeriodicTimer(
+      std::chrono::milliseconds(refresh_interval_ms_), [this]() {
+        service_management_fetch_->GetRollouts([this](
+            const utils::Status& status, std::string&& rollouts) {
+          if (!status.ok()) {
+            global_context_->env()->LogError(
+                std::string("Failed to download rollouts: ") +
+                status.ToString() + ", Response body: " + rollouts);
+            return;
+          }
 
-  FetchConfigs(config_fetch_info);
+          ListServiceRolloutsResponse response;
+          if (!utils::JsonToProto(rollouts,
+                                  (::google::protobuf::Message*)&response)
+                   .ok()) {
+            global_context_->env()->LogError(std::string("Invalid response: ") +
+                                             status.ToString() +
+                                             ", Response body: " + rollouts);
+            return;
+          }
+
+          if (response.rollouts_size() == 0) {
+            global_context_->env()->LogError("No active rollouts");
+            return;
+          }
+
+          std::shared_ptr<ConfigsFetchInfo> config_fetch_info =
+              std::make_shared<ConfigsFetchInfo>();
+
+          for (auto percentage :
+               response.rollouts(0).traffic_percent_strategy().percentages()) {
+            config_fetch_info->rollouts.push_back(
+                {percentage.first, round(percentage.second)});
+          }
+
+          if (config_fetch_info->rollouts.size() == 0) {
+            global_context_->env()->LogError("No active rollouts");
+            return;
+          }
+
+          FetchConfigs(config_fetch_info);
+        });
+      });
 }
 
 // Fetch configs from rollouts. fetch_info has rollouts and fetched configs
@@ -143,14 +165,10 @@ void ConfigManager::FetchConfigs(
       config_fetch_info->finished++;
 
       if (config_fetch_info->IsCompleted()) {
-        // Failed to fetch all configs or rollouts are empty
         if (config_fetch_info->IsRolloutsEmpty() ||
             config_fetch_info->IsConfigsEmpty()) {
-          // first time, call the ApiManager callback function with an error
-          rollout_apply_function_(
-              utils::Status(Code::ABORTED,
-                            "Failed to download the service config"),
-              kEmptyConfigs);
+          global_context_->env()->LogError(
+              "Failed to download the service config");
           return;
         }
 
