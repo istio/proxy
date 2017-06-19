@@ -70,51 +70,56 @@ void ConfigManager::OnRolloutsRefreshTimer() {
 }
 
 void ConfigManager::FetchRollouts() {
-  service_management_fetch_->GetRollouts([this](const utils::Status& status,
-                                                std::string&& rollouts) {
-    if (!status.ok()) {
-      global_context_->env()->LogError(
-          std::string("Failed to download rollouts: ") + status.ToString() +
-          ", Response body: " + rollouts);
-      return;
-    }
+  service_management_fetch_->GetRollouts(
+      [this](const utils::Status& status, std::string&& rollouts) {
+        OnRolloutResponse(status, std::move(rollouts));
+      });
+}
 
-    ListServiceRolloutsResponse response;
-    if (!utils::JsonToProto(rollouts, (::google::protobuf::Message*)&response)
-             .ok()) {
-      global_context_->env()->LogError(std::string("Invalid response: ") +
-                                       status.ToString() + ", Response body: " +
-                                       rollouts);
-      return;
-    }
+void ConfigManager::OnRolloutResponse(const utils::Status& status,
+                                      std::string&& rollouts) {
+  if (!status.ok()) {
+    global_context_->env()->LogError(
+        std::string("Failed to download rollouts: ") + status.ToString() +
+        ", Response body: " + rollouts);
+    return;
+  }
 
-    if (response.rollouts_size() == 0) {
-      global_context_->env()->LogError("No active rollouts");
-      return;
-    }
+  ListServiceRolloutsResponse response;
+  if (!utils::JsonToProto(rollouts, (::google::protobuf::Message*)&response)
+           .ok()) {
+    global_context_->env()->LogError(std::string("Invalid response: ") +
+                                     status.ToString() + ", Response body: " +
+                                     rollouts);
+    return;
+  }
 
-    if (current_rollout_id_ == response.rollouts(0).rollout_id()) {
-      return;
-    }
+  if (response.rollouts_size() == 0) {
+    global_context_->env()->LogError("No active rollouts");
+    return;
+  }
 
-    std::shared_ptr<ConfigsFetchInfo> config_fetch_info =
-        std::make_shared<ConfigsFetchInfo>();
+  if (current_rollout_id_ == response.rollouts(0).rollout_id()) {
+    return;
+  }
 
-    config_fetch_info->rollout_id = response.rollouts(0).rollout_id();
+  std::shared_ptr<ConfigsFetchInfo> config_fetch_info =
+      std::make_shared<ConfigsFetchInfo>();
 
-    for (auto percentage :
-         response.rollouts(0).traffic_percent_strategy().percentages()) {
-      config_fetch_info->rollouts.push_back(
-          {percentage.first, round(percentage.second)});
-    }
+  config_fetch_info->rollout_id = response.rollouts(0).rollout_id();
 
-    if (config_fetch_info->rollouts.size() == 0) {
-      global_context_->env()->LogError("No active rollouts");
-      return;
-    }
+  for (auto percentage :
+       response.rollouts(0).traffic_percent_strategy().percentages()) {
+    config_fetch_info->rollouts.push_back(
+        {percentage.first, round(percentage.second)});
+  }
 
-    FetchConfigs(config_fetch_info);
-  });
+  if (config_fetch_info->rollouts.size() == 0) {
+    global_context_->env()->LogError("No active rollouts");
+    return;
+  }
+
+  FetchConfigs(config_fetch_info);
 }
 
 // Fetch configs from rollouts. fetch_info has rollouts and fetched configs

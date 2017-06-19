@@ -80,6 +80,8 @@ class ConfigManager {
   void FetchConfigs(std::shared_ptr<ConfigsFetchInfo> config_fetch_info);
   // Period timer task
   void OnRolloutsRefreshTimer();
+  // Rollout response handler
+  void OnRolloutResponse(const utils::Status& status, std::string&& rollouts);
 
   // Global context provided by ApiManager
   std::shared_ptr<context::GlobalContext> global_context_;
