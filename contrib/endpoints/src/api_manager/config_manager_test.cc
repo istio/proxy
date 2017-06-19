@@ -379,16 +379,16 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
 
   int sequence = 0;
 
-  config_manager->Init([this, &sequence](
-      const utils::Status& status,
-      const std::vector<std::pair<std::string, int>>& list) {
+  config_manager->Init(
+      [this, &sequence](const utils::Status& status,
+                        const std::vector<std::pair<std::string, int>>& list) {
 
-    ASSERT_EQ(1, list.size());
-    ASSERT_EQ(kServiceConfig1, list[0].first);
-    ASSERT_EQ(100, list[0].second);
+        ASSERT_EQ(1, list.size());
+        ASSERT_EQ(kServiceConfig1, list[0].first);
+        ASSERT_EQ(100, list[0].second);
 
-    sequence++;
-  });
+        sequence++;
+      });
   // run first periodic timer
   ASSERT_EQ(0, sequence);
   raw_env_->RunTimer();
