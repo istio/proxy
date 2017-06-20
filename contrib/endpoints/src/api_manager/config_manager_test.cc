@@ -259,11 +259,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }));
 
-  // set rollout_id to 2017-05-01r0 which is same as kRolloutsResponse1
-  global_context_->server_config()
-      ->mutable_init_service_configs()
-      ->set_rollout_id("2017-05-01r0");
-
   int sequence = 0;
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_,
@@ -275,6 +270,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         ASSERT_EQ(100, list[0].second);
         sequence++;
       }));
+
+  // set rollout_id to 2017-05-01r0 which is same as kRolloutsResponse1
+  config_manager->set_current_rollout_id("2017-05-01r0");
 
   config_manager->Init();
   ASSERT_EQ(0, sequence);

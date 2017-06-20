@@ -47,11 +47,6 @@ ConfigManager::ConfigManager(
     }
   }
 
-  if (global_context_->server_config()->has_init_service_configs()) {
-    current_rollout_id_ =
-        global_context_->server_config()->init_service_configs().rollout_id();
-  }
-
   service_management_fetch_.reset(new ServiceManagementFetch(global_context));
 }
 

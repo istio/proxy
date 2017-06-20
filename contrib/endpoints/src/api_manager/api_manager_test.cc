@@ -37,7 +37,7 @@ const char kServerConfigWithSingleServiceConfig[] = R"(
     "enabled": true,
     "url": "http://localhost"
   },
-  "init_service_configs": {
+  "service_config_rollout": {
     traffic_percentages: {
       "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json": 100
     }
@@ -52,7 +52,7 @@ const char kServerConfigWithPartialServiceConfig[] = R"(
     "enabled": true,
     "url": "http://localhost"
   },
-  "init_service_configs": {
+  "service_config_rollout": {
     traffic_percentages: {
       "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json": 80,
       "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_2.json": 20,
@@ -68,7 +68,7 @@ const char kServerConfigWithPartialServiceConfigFailed[] = R"(
     "enabled": true,
     "url": "http://localhost"
   },
-  "init_service_configs": {
+  "service_config_rollout": {
     traffic_percentages: {
       "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json": 80,
       "not_found.json": 20,

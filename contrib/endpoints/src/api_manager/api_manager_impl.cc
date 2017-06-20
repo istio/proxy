@@ -43,13 +43,13 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
     return;
   }
 
-  if (global_context_->server_config()->has_init_service_configs() &&
+  if (global_context_->server_config()->has_service_config_rollout() &&
       global_context_->server_config()
-              ->init_service_configs()
+              ->service_config_rollout()
               .traffic_percentages_size() > 0) {
     std::vector<std::pair<std::string, int>> list;
     for (auto item : global_context_->server_config()
-                         ->init_service_configs()
+                         ->service_config_rollout()
                          .traffic_percentages()) {
       std::ifstream config_file(item.first);
       if (config_file.is_open()) {

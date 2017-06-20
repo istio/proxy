@@ -42,7 +42,7 @@ message ServerConfig {
   ServiceManagementConfig service_management_config = 11;
 
   // Init Service Configs.
-  InitServiceConfigs init_service_configs = 12;
+  ServiceConfigRollout service_config_rollout = 12;
 
   // The service config rollout strategy, [fixed|managed]
   // fixed:  never change service config dynamically.
@@ -195,7 +195,7 @@ message ServiceConfigTrafficPercentage {
   double traffic_percentage = 2;
 }
 
-message InitServiceConfigs {
+message ServiceConfigRollout {
   // Maps service configuration file path to their corresponding traffic
   // percentage. Key is the full path of the service configuration file,
   // Value is the traffic percentage
