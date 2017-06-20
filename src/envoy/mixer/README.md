@@ -52,7 +52,7 @@ This Proxy will use Envoy and talk to Mixer server.
   curl http://localhost:7070/echo -d "hello world"
 ```
 
-n## How to configurate Mixer server
+## How to configurate Mixer server
 
 In Envoy config, Mixer server has to be one of "clusters" under "cluster_manager".
 For examples:
