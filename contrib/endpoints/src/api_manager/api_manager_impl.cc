@@ -85,7 +85,7 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
 }
 
 utils::Status ApiManagerImpl::AddAndDeployConfigs(
-    std::vector<std::pair<std::string, int>> &&configs, bool initialize) {
+    const std::vector<std::pair<std::string, int>> &&configs, bool initialize) {
   std::vector<std::pair<std::string, int>> list;
   for (auto item : configs) {
     std::string config_id;
@@ -173,7 +173,7 @@ utils::Status ApiManagerImpl::Init() {
     config_manager_.reset(new ConfigManager(
         global_context_,
         [this](const utils::Status &status,
-               std::vector<std::pair<std::string, int>> &&configs) {
+               const std::vector<std::pair<std::string, int>> &configs) {
           if (status.ok()) {
             AddAndDeployConfigs(std::move(configs), true);
           }

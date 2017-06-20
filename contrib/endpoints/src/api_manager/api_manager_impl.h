@@ -67,7 +67,8 @@ class ApiManagerImpl : public ApiManager {
   // Add and deploy service configs. Return utils::Status::OK when everything
   // is ok.
   utils::Status AddAndDeployConfigs(
-      std::vector<std::pair<std::string, int>> &&configs, bool initialize);
+      const std::vector<std::pair<std::string, int>> &&configs,
+      bool initialize);
 
   // The check work flow.
   std::shared_ptr<CheckWorkflow> check_workflow_;
