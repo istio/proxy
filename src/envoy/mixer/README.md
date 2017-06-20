@@ -29,6 +29,7 @@ This Proxy will use Envoy and talk to Mixer server.
 ```
   
   The server will run at port 9091.
+  In order to run Mixer locally, you also need to edit `testdata/configroot/scopes/global/subjects/global/rules.yml` as described in its comments.
 
 * Start backend Echo server.
 
