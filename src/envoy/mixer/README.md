@@ -23,9 +23,9 @@ This Proxy will use Envoy and talk to Mixer server.
 * Start mixer server. In mixer folder run:
 
 ```
-  bazel-bin/cmd/server/mixs server
-    --globalConfigFile testdata/globalconfig.yml
-    --serviceConfigFile testdata/serviceconfig.yml  --logtostderr
+  bazel-bin/cmd/server/mixs server \
+    --configStoreURL=fs://$(pwd)/testdata/configroot \
+    --alsologtostderr
 ```
   
   The server will run at port 9091
