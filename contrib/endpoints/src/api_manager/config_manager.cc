@@ -153,15 +153,16 @@ void ConfigManager::FetchConfigs(
       config_fetch_info->finished++;
 
       if (config_fetch_info->IsCompleted()) {
-        if (config_fetch_info->IsRolloutsEmpty() ||
-            config_fetch_info->IsConfigsEmpty()) {
+        if (config_fetch_info->rollouts.size() !=
+            config_fetch_info->configs.size()) {
           global_context_->env()->LogError(
               "Failed to download the service config");
           return;
         }
 
         // Update ApiManager
-        rollout_apply_function_(utils::Status::OK, config_fetch_info->configs);
+        rollout_apply_function_(utils::Status::OK,
+                                std::move(config_fetch_info->configs));
         current_rollout_id_ = config_fetch_info->rollout_id;
       }
     });
