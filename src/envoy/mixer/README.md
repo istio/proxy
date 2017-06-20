@@ -28,7 +28,7 @@ This Proxy will use Envoy and talk to Mixer server.
     --alsologtostderr
 ```
   
-  The server will run at port 9091
+  The server will run at port 9091.
 
 * Start backend Echo server.
 
