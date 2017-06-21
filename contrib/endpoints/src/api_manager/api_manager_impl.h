@@ -92,11 +92,6 @@ class ApiManagerImpl : public ApiManager {
   // A config manager will be initialized when server_config.rollout_strategy is
   // set to "managed"
   std::unique_ptr<ConfigManager> config_manager_;
-
-  //  - Code::UNAVAILABLE Not initialized yet. The default value.
-  //  - Code::OK          Successfully initialized
-  //  - Code::ABORTED     Initialization was failed
-  utils::Status config_loading_status_;
 };
 
 }  // namespace api_manager
