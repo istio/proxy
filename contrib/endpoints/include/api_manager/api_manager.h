@@ -87,6 +87,12 @@ class ApiManager {
   virtual utils::Status GetStatistics(
       ApiManagerStatistics *statistics) const = 0;
 
+  // Returns the config loading status.
+  //  - Code::UNAVAILABLE Not initialized yet. The default value.
+  //  - Code::OK          Successfully initialized
+  //  - Code::ABORTED     Initialization was failed
+  virtual utils::Status ConfigLoadingStatus() = 0;
+
  protected:
   ApiManager() {}
 

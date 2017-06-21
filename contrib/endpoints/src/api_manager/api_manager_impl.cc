@@ -59,10 +59,11 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
 
         list.push_back({content.str(), round(item.second)});
       } else {
-        global_context_->env()->LogError(
-            "Failed to open an api service configuration file: " + item.first);
-        config_loading_status_ =
-            utils::Status(Code::ABORTED, "Invalid service config");
+        std::string err_msg =
+            std::string("Failed to open an api service configuration file: ") +
+            item.first;
+        global_context_->env()->LogError(err_msg);
+        config_loading_status_ = utils::Status(Code::ABORTED, err_msg);
         break;
       }
     }
@@ -92,9 +93,7 @@ utils::Status ApiManagerImpl::AddAndDeployConfigs(
     if (AddConfig(item.first, initialize, &config_id).ok()) {
       list.push_back({config_id, round(item.second)});
     } else {
-      std::string msg = "Invalid service config";
-      global_context_->env()->LogError(msg);
-      return utils::Status(Code::ABORTED, msg);
+      return utils::Status(Code::ABORTED, "Invalid service config");
     }
   }
 
@@ -117,10 +116,7 @@ utils::Status ApiManagerImpl::AddConfig(const std::string &service_config,
   std::unique_ptr<Config> config =
       Config::Create(global_context_->env(), service_config);
   if (config == nullptr) {
-    std::string err_msg =
-        std::string("Invalid service config: ") + service_config;
-    global_context_->env()->LogError(err_msg);
-    return utils::Status(Code::INVALID_ARGUMENT, err_msg);
+    return utils::Status(Code::INVALID_ARGUMENT, "Invalid service config");
   }
 
   std::string service_name = config->service().name();
