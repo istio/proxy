@@ -60,9 +60,9 @@ class ApiManagerImpl : public ApiManager {
   // Return ServiceContext for selected by WeightedSelector
   std::shared_ptr<context::ServiceContext> SelectService();
 
-  utils::Status ConfigLoadingStatus() override {
-    return config_loading_status_;
-  }
+  // Load service rollouts. This can be called only once, the data is from
+  // server_config.
+  utils::Status LoadServiceRollouts() override;
 
  private:
   // Use these configs according to the traffic percentage.

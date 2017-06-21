@@ -43,6 +43,11 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
     return;
   }
 
+  check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);
+  check_workflow_->RegisterAll();
+}
+
+utils::Status ApiManagerImpl::LoadServiceRollouts() {
   if (global_context_->server_config()->has_service_config_rollout() &&
       global_context_->server_config()
               ->service_config_rollout()
@@ -81,8 +86,7 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
     config_loading_status_ = utils::Status(Code::ABORTED, err_msg);
   }
 
-  check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);
-  check_workflow_->RegisterAll();
+  return config_loading_status_;
 }
 
 utils::Status ApiManagerImpl::AddAndDeployConfigs(
