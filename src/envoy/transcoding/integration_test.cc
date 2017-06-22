@@ -39,7 +39,8 @@ namespace {
 class TranscodingIntegrationTest : public BaseIntegrationTest,
                                    public testing::Test {
  public:
-  TranscodingIntegrationTest() : BaseIntegrationTest(Network::Address::IpVersion::v4) {}
+  TranscodingIntegrationTest()
+      : BaseIntegrationTest(Network::Address::IpVersion::v4) {}
   /**
    * Global initializer for all integration tests.
    */
