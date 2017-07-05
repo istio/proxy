@@ -6,6 +6,12 @@
       "filters": [
         {
           "type": "read",
+          "name": "mixer",
+          "config": {
+          }
+        },
+        {
+          "type": "read",
           "name": "http_connection_manager",
           "config": {
             "codec_type": "auto",
