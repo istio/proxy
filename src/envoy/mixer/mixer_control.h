@@ -15,10 +15,10 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #include "common/common/logger.h"
 #include "common/http/headers.h"
@@ -92,7 +92,8 @@ class MixerControlPerThreadStore {
  private:
   CreateFunc create_func_;
   std::mutex map_mutex_;
-  std::map<std::thread::id, std::shared_ptr<MixerControl>> instance_map_;
+  std::unordered_map<std::thread::id, std::shared_ptr<MixerControl>>
+      instance_map_;
 };
 
 }  // namespace Mixer
