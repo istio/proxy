@@ -20,17 +20,18 @@
 #include "server/config/network/http_connection_manager.h"
 #include "server/configuration_impl.h"
 #include "src/envoy/mixer/config.h"
+#include "src/envoy/mixer/thread_dispatcher.h"
 
 #include <map>
 
-//using ::google::protobuf::util::Status;
-//using StatusCode = ::google::protobuf::util::error::Code;
+// using ::google::protobuf::util::Status;
+// using StatusCode = ::google::protobuf::util::error::Code;
 
 namespace Envoy {
 namespace Tcp {
 namespace Mixer {
 
-  class Config : public Logger::Loggable<Logger::Id::filter> {
+class Config : public Logger::Loggable<Logger::Id::filter> {
  private:
   Upstream::ClusterManager& cm_;
 
@@ -43,10 +44,11 @@ typedef std::shared_ptr<Config> ConfigPtr;
 
 class Instance : public Network::ReadFilter,
                  public Network::ConnectionCallbacks,
-		 Logger::Loggable<Logger::Id::filter>,
+                 Logger::Loggable<Logger::Id::filter>,
                  public std::enable_shared_from_this<Instance> {
  private:
   ConfigPtr config_;
+  uint64_t request_bytes_ = 0, response_bytes_ = 0;
   Network::ReadFilterCallbacks* filter_callbacks_{};
 
  public:
@@ -59,15 +61,16 @@ class Instance : public Network::ReadFilter,
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance& data) override {
-    conn_log_info("tcp filter on data: {}", filter_callbacks_->connection(), data.length());
+    conn_log_info("tcp filter on data: {}", filter_callbacks_->connection(),
+                  data.length());
     return Network::FilterStatus::Continue;
   }
 
   Network::FilterStatus onNewConnection() override {
-    conn_log_info("new tcp connection", filter_callbacks_->connection());
-    if (!filter_callbacks_->upstreamHost()) {
-      conn_log_info("new tcp connection, no upstream", filter_callbacks_->connection());
-    }
+    conn_log_info("new tcp connection: remote {}, local {}",
+		  filter_callbacks_->connection(),
+		  filter_callbacks_->connection().remoteAddress().asString(),
+		  filter_callbacks_->connection().localAddress().asString());
     return Network::FilterStatus::Continue;
   }
 
@@ -76,6 +79,7 @@ class Instance : public Network::ReadFilter,
     log().debug("Called Tcp Mixer::Instance : {}", __func__);
     filter_callbacks_ = &callbacks;
     filter_callbacks_->connection().addConnectionCallbacks(*this);
+    Http::Mixer::SetThreadDispatcher(filter_callbacks_->connection().dispatcher());
   }
 
   // Network::ConnectionCallbacks
