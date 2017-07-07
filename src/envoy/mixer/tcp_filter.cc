@@ -22,8 +22,6 @@
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/thread_dispatcher.h"
 
-#include <map>
-
 // using ::google::protobuf::util::Status;
 // using StatusCode = ::google::protobuf::util::error::Code;
 
@@ -34,17 +32,21 @@ namespace Mixer {
 class Config : public Logger::Loggable<Logger::Id::filter> {
  private:
   Upstream::ClusterManager& cm_;
+  Http::Mixer::MixerConfig mixer_config_;
 
  public:
   Config(const Json::Object& config, Server::Instance& server)
-      : cm_(server.clusterManager()) {}
+      : cm_(server.clusterManager()) {
+    mixer_config_.Load(config);
+    log().debug("Mixer Tcp Filter Config loaded.");
+  }
 };
 
 typedef std::shared_ptr<Config> ConfigPtr;
 
-class Instance : public Network::ReadFilter,
+class Instance : public Network::Filter,
                  public Network::ConnectionCallbacks,
-                 Logger::Loggable<Logger::Id::filter>,
+                 public Logger::Loggable<Logger::Id::filter>,
                  public std::enable_shared_from_this<Instance> {
  private:
   ConfigPtr config_;
@@ -55,19 +57,29 @@ class Instance : public Network::ReadFilter,
   Instance(ConfigPtr config) : config_(config) {
     log().debug("Called Tcp Mixer::Instance : {}", __func__);
   }
+  ~Instance() {
+    log().debug("Called Tcp Mixer::Instance : {}", __func__);
+  }
 
   // Returns a shared pointer of this object.
   std::shared_ptr<Instance> GetPtr() { return shared_from_this(); }
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance& data) override {
-    conn_log_info("tcp filter on data: {}", filter_callbacks_->connection(),
+    conn_log_debug("tcp filter onRead: {}", filter_callbacks_->connection(),
+                  data.length());
+    return Network::FilterStatus::Continue;
+  }
+
+  // Network::WriteFilter
+  Network::FilterStatus onWrite(Buffer::Instance& data) override {
+    conn_log_debug("tcp filter onWrite: {}", filter_callbacks_->connection(),
                   data.length());
     return Network::FilterStatus::Continue;
   }
 
   Network::FilterStatus onNewConnection() override {
-    conn_log_info("new tcp connection: remote {}, local {}",
+    conn_log_debug("new tcp connection: remote {}, local {}",
 		  filter_callbacks_->connection(),
 		  filter_callbacks_->connection().remoteAddress().asString(),
 		  filter_callbacks_->connection().localAddress().asString());
@@ -99,14 +111,16 @@ class TcpMixerFilter : public NetworkFilterConfigFactory {
   NetworkFilterFactoryCb tryCreateFilterFactory(
       NetworkFilterType type, const std::string& name,
       const Json::Object& config, Server::Instance& server) override {
-    if (type != NetworkFilterType::Read || name != "mixer") {
+    if (type != NetworkFilterType::Both || name != "mixer") {
       return nullptr;
     }
 
     Tcp::Mixer::ConfigPtr mixer_config(new Tcp::Mixer::Config(config, server));
     return [mixer_config](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addReadFilter(
-          Network::ReadFilterSharedPtr{new Tcp::Mixer::Instance(mixer_config)});
+          std::shared_ptr<Tcp::Mixer::Instance> instance =
+              std::make_shared<Tcp::Mixer::Instance>(mixer_config);
+      filter_manager.addReadFilter(Network::ReadFilterSharedPtr(instance));
+      filter_manager.addWriteFilter(Network::WriteFilterSharedPtr(instance));
     };
   }
 };

@@ -6,12 +6,6 @@
       "filters": [
         {
           "type": "read",
-          "name": "mixer",
-          "config": {
-          }
-        },
-        {
-          "type": "read",
           "name": "http_connection_manager",
           "config": {
             "codec_type": "auto",
@@ -110,6 +104,31 @@
                 "config": {}
               }
             ]
+          }
+        }
+      ]
+    },
+    {
+      "address": "tcp://0.0.0.0:6060",
+      "bind_to_port": true,
+      "filters": [
+        {
+          "type": "both",
+          "name": "mixer",
+          "config": {}
+        },
+        {
+          "type": "read",
+          "name": "tcp_proxy",
+          "config": {
+            "stat_prefix": "tcp",
+            "route_config": {
+              "routes": [
+                {
+                  "cluster": "service1"
+                }
+              ]
+            }
           }
         }
       ]
