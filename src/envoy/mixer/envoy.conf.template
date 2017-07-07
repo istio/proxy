@@ -115,7 +115,13 @@
         {
           "type": "both",
           "name": "mixer",
-          "config": {}
+          "config": {
+              "mixer_attributes": {
+                  "target.uid": "POD222",
+                  "target.service": "foo.svc.cluster.local"
+               },
+               "quota_name": "RequestCount"
+          }
         },
         {
           "type": "read",
