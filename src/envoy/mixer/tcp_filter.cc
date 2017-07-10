@@ -16,9 +16,8 @@
 #include "common/common/logger.h"
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
-#include "envoy/server/instance.h"
+#include "envoy/registry/registry.h"
 #include "server/config/network/http_connection_manager.h"
-#include "server/configuration_impl.h"
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/mixer_control.h"
 #include "src/envoy/mixer/thread_dispatcher.h"
@@ -37,8 +36,9 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
   MixerControlPerThreadStore mixer_control_store_;
 
  public:
-  TcpConfig(const Json::Object& config, Server::Instance& server)
-      : cm_(server.clusterManager()),
+  TcpConfig(const Json::Object& config,
+            Server::Configuration::FactoryContext& context)
+      : cm_(context.clusterManager()),
         mixer_control_store_([this]() -> std::shared_ptr<MixerControl> {
           return std::make_shared<MixerControl>(mixer_config_, cm_);
         }) {
@@ -179,17 +179,12 @@ class TcpInstance : public Network::Filter,
 namespace Server {
 namespace Configuration {
 
-class TcpMixerFilter : public NetworkFilterConfigFactory {
+class TcpMixerFilterFactory : public NamedNetworkFilterConfigFactory {
  public:
-  NetworkFilterFactoryCb tryCreateFilterFactory(
-      NetworkFilterType type, const std::string& name,
-      const Json::Object& config, Server::Instance& server) override {
-    if (type != NetworkFilterType::Both || name != "mixer") {
-      return nullptr;
-    }
-
+  NetworkFilterFactoryCb createFilterFactory(const Json::Object& config,
+                                             FactoryContext& context) {
     Http::Mixer::TcpConfigPtr tcp_config(
-        new Http::Mixer::TcpConfig(config, server));
+        new Http::Mixer::TcpConfig(config, context));
     return [tcp_config](Network::FilterManager& filter_manager) -> void {
       std::shared_ptr<Http::Mixer::TcpInstance> instance =
           std::make_shared<Http::Mixer::TcpInstance>(tcp_config);
@@ -197,9 +192,13 @@ class TcpMixerFilter : public NetworkFilterConfigFactory {
       filter_manager.addWriteFilter(Network::WriteFilterSharedPtr(instance));
     };
   }
+  std::string name() override { return "mixer"; }
+  NetworkFilterType type() override { return NetworkFilterType::Both; }
 };
 
-static RegisterNetworkFilterConfigFactory<TcpMixerFilter> register_;
+static Registry::RegisterFactory<TcpMixerFilterFactory,
+                                 NamedNetworkFilterConfigFactory>
+    register_;
 
 }  // namespace Configuration
 }  // namespace Server
