@@ -202,11 +202,11 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
 
 MixerControl::MixerControl(const MixerConfig& mixer_config,
                            Upstream::ClusterManager& cm)
-    : mixer_config_(mixer_config) {
+    : cm_(cm), mixer_config_(mixer_config) {
   if (GrpcTransport::IsMixerServerConfigured(cm)) {
     MixerClientOptions options(GetCheckOptions(mixer_config), ReportOptions(),
                                QuotaOptions());
-    auto cms = std::make_shared<ClusterManagerStore>(cm);
+    auto cms = std::make_shared<GrpcTransportInitData>(cm);
     options.check_transport = CheckGrpcTransport::GetFunc(cms);
     options.report_transport = ReportGrpcTransport::GetFunc(cms);
 
@@ -225,7 +225,7 @@ MixerControl::MixerControl(const MixerConfig& mixer_config,
 }
 
 void MixerControl::SendCheck(HttpRequestDataPtr request_data,
-                             DoneFunc on_done) {
+                             const HeaderMap* headers, DoneFunc on_done) {
   for (const auto& attribute : quota_attributes_.attributes) {
     request_data->attributes.attributes[attribute.first] = attribute.second;
   }
@@ -238,7 +238,9 @@ void MixerControl::SendCheck(HttpRequestDataPtr request_data,
       Attributes::TimeValue(std::chrono::system_clock::now());
 
   log().debug("Send Check: {}", request_data->attributes.DebugString());
-  mixer_client_->Check(request_data->attributes, on_done);
+  auto cms = std::make_shared<GrpcTransportInitData>(cm_, headers);
+  mixer_client_->Check(request_data->attributes,
+                       CheckGrpcTransport::GetFunc(cms), on_done);
 }
 
 void MixerControl::SendReport(HttpRequestDataPtr request_data) {
@@ -259,7 +261,7 @@ void MixerControl::CheckHttp(HttpRequestDataPtr request_data,
   FillCheckAttributes(headers, &request_data->attributes);
   SetStringAttribute(kOriginUser, origin_user, &request_data->attributes);
 
-  SendCheck(request_data, on_done);
+  SendCheck(request_data, &headers, on_done);
 }
 
 void MixerControl::ReportHttp(HttpRequestDataPtr request_data,
@@ -305,7 +307,7 @@ void MixerControl::CheckTcp(HttpRequestDataPtr request_data,
     SetInt64Attribute(kLocalPort, local_ip->port(), &request_data->attributes);
   }
 
-  SendCheck(request_data, on_done);
+  SendCheck(request_data, nullptr, on_done);
 }
 
 void MixerControl::ReportTcp(

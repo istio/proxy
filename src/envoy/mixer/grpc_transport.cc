@@ -31,10 +31,20 @@ const std::chrono::milliseconds kGrpcRequestTimeoutMs(5000);
 // The name for the mixer server cluster.
 const char* kMixerServerClusterName = "mixer_server";
 
+// HTTP trace headers that should pass to gRPC metadata from origin request.
+const LowerCaseString kHttpTraceHeders[]{
+    LowerCaseString("x-request-id"),      LowerCaseString("x-b3-traceid"),
+    LowerCaseString("x-b3-spanid"),       LowerCaseString("x-b3-parentspanid"),
+    LowerCaseString("x-b3-sampled"),      LowerCaseString("x-b3-flags"),
+    LowerCaseString("x-ot-span-context"),
+};
+
 }  // namespace
 
-GrpcTransport::GrpcTransport(Upstream::ClusterManager& cm)
-    : channel_(NewChannel(cm)), stub_(channel_.get()) {}
+GrpcTransport::GrpcTransport(const GrpcTransportInitData& init_data)
+    : channel_(NewChannel(init_data.cm())),
+      stub_(channel_.get()),
+      headers_(init_data.headers()) {}
 
 void GrpcTransport::onSuccess() {
   log().debug("grpc: return OK");
@@ -70,6 +80,18 @@ Grpc::RpcChannelPtr GrpcTransport::NewChannel(Upstream::ClusterManager& cm) {
 
 bool GrpcTransport::IsMixerServerConfigured(Upstream::ClusterManager& cm) {
   return cm.get(kMixerServerClusterName) != nullptr;
+}
+
+void GrpcTransport::onPreRequestCustomizeHeaders(Http::HeaderMap& headers) {
+  if (!headers_) return;
+
+  for (const auto& key : kHttpTraceHeders) {
+    const HeaderEntry* entry = headers_->get(key);
+    if (entry) {
+      std::string val(entry->value().c_str(), entry->value().size());
+      headers.addStaticKey(key, val);
+    }
+  }
 }
 
 }  // namespace Mixer
