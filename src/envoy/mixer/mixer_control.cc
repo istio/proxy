@@ -206,9 +206,8 @@ MixerControl::MixerControl(const MixerConfig& mixer_config,
   if (GrpcTransport::IsMixerServerConfigured(cm)) {
     MixerClientOptions options(GetCheckOptions(mixer_config), ReportOptions(),
                                QuotaOptions());
-    auto cms = std::make_shared<GrpcTransportInitData>(cm);
-    options.check_transport = CheckGrpcTransport::GetFunc(cms);
-    options.report_transport = ReportGrpcTransport::GetFunc(cms);
+    options.check_transport = CheckGrpcTransport::GetFunc(cm, nullptr);
+    options.report_transport = ReportGrpcTransport::GetFunc(cm);
 
     options.timer_create_func = [](std::function<void()> timer_cb)
         -> std::unique_ptr<::istio::mixer_client::Timer> {
@@ -238,9 +237,8 @@ void MixerControl::SendCheck(HttpRequestDataPtr request_data,
       Attributes::TimeValue(std::chrono::system_clock::now());
 
   log().debug("Send Check: {}", request_data->attributes.DebugString());
-  auto cms = std::make_shared<GrpcTransportInitData>(cm_, headers);
   mixer_client_->Check(request_data->attributes,
-                       CheckGrpcTransport::GetFunc(cms), on_done);
+                       CheckGrpcTransport::GetFunc(cm_, headers), on_done);
 }
 
 void MixerControl::SendReport(HttpRequestDataPtr request_data) {

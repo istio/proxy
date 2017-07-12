@@ -32,7 +32,8 @@ const std::chrono::milliseconds kGrpcRequestTimeoutMs(5000);
 const char* kMixerServerClusterName = "mixer_server";
 
 // HTTP trace headers that should pass to gRPC metadata from origin request.
-const LowerCaseString kHttpTraceHeders[]{
+// x-request-id is added for easy debugging.
+const LowerCaseString kHttpTraceHeaders[]{
     LowerCaseString("x-request-id"),      LowerCaseString("x-b3-traceid"),
     LowerCaseString("x-b3-spanid"),       LowerCaseString("x-b3-parentspanid"),
     LowerCaseString("x-b3-sampled"),      LowerCaseString("x-b3-flags"),
@@ -41,10 +42,9 @@ const LowerCaseString kHttpTraceHeders[]{
 
 }  // namespace
 
-GrpcTransport::GrpcTransport(const GrpcTransportInitData& init_data)
-    : channel_(NewChannel(init_data.cm())),
-      stub_(channel_.get()),
-      headers_(init_data.headers()) {}
+GrpcTransport::GrpcTransport(Upstream::ClusterManager& cm,
+                             const HeaderMap* headers)
+    : channel_(NewChannel(cm)), stub_(channel_.get()), headers_(headers) {}
 
 void GrpcTransport::onSuccess() {
   log().debug("grpc: return OK");
@@ -85,7 +85,7 @@ bool GrpcTransport::IsMixerServerConfigured(Upstream::ClusterManager& cm) {
 void GrpcTransport::onPreRequestCustomizeHeaders(Http::HeaderMap& headers) {
   if (!headers_) return;
 
-  for (const auto& key : kHttpTraceHeders) {
+  for (const auto& key : kHttpTraceHeaders) {
     const HeaderEntry* entry = headers_->get(key);
     if (entry) {
       std::string val(entry->value().c_str(), entry->value().size());
