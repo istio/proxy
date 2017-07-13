@@ -395,6 +395,36 @@ TEST_F(ProtoTest, CredentailIdIssuerAudienceTest) {
             "jwtauth:issuer=YXV0aC1pc3N1ZXI&audience=YXV0aC1hdWRpZW5jZQ");
 }
 
+TEST_F(ProtoTest, FillLogEntryClientIpTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+  info.client_ip = "1.2.3.4";
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  ASSERT_EQ(request.operations_size(), 1);
+  ASSERT_EQ(request.operations(0).log_entries_size(), 1);
+
+  auto fields = request.operations(0).log_entries(0).struct_payload().fields();
+  ASSERT_NE(fields.find("client_IP"), fields.end());
+  ASSERT_EQ(fields["client_IP"].string_value(), "1.2.3.4");
+}
+
+TEST_F(ProtoTest, FillLogEntryClientIpEmptyTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  ASSERT_EQ(request.operations_size(), 1);
+  ASSERT_EQ(request.operations(0).log_entries_size(), 1);
+
+  auto fields = request.operations(0).log_entries(0).struct_payload().fields();
+  ASSERT_EQ(fields.find("client_IP"), fields.end());
+}
+
 }  // namespace
 
 }  // namespace service_control
