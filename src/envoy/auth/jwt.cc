@@ -42,7 +42,7 @@ std::string decode(std::string input) {
 
 namespace Util {
 
-uint8_t* unsigned_c_str(const std::string& str) {
+uint8_t* unsignedCStr(const std::string& str) {
   return reinterpret_cast<uint8_t*>(const_cast<char*>(str.c_str()));
 }
 
@@ -59,10 +59,10 @@ std::vector<std::string> split(std::string str, char delimiter) {
 
 }  // namespace Util
 
-bssl::UniquePtr<EVP_PKEY> Jwt::evp_pkey_from_str(const std::string& pkey_pem) {
+bssl::UniquePtr<EVP_PKEY> Jwt::evpPkeyFromStr(const std::string& pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
   bssl::UniquePtr<RSA> rsa(RSA_public_key_from_bytes(
-      Util::unsigned_c_str(pkey_der), pkey_der.length()));
+      Util::unsignedCStr(pkey_der), pkey_der.length()));
   if (rsa == nullptr) {
     return nullptr;
   }
@@ -72,7 +72,7 @@ bssl::UniquePtr<EVP_PKEY> Jwt::evp_pkey_from_str(const std::string& pkey_pem) {
   return key;
 }
 
-const EVP_MD* Jwt::evp_md_from_alg(const std::string& alg) {
+const EVP_MD* Jwt::evpMdFromAlg(const std::string& alg) {
   //  bssl::UniquePtr<const EVP_MD> Jwt::evp_md_from_alg(const std::string& alg)
   //  {
   /*
@@ -89,13 +89,12 @@ const EVP_MD* Jwt::evp_md_from_alg(const std::string& alg) {
   }
 }
 
-bool Jwt::verify_signature(bssl::UniquePtr<EVP_PKEY> key,
-                           const std::string& alg, uint8_t* signature,
-                           size_t signature_len, uint8_t* signed_data,
-                           size_t signed_data_len) {
+bool Jwt::verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
+                          uint8_t* signature, size_t signature_len,
+                          uint8_t* signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
   //  bssl::UniquePtr<const EVP_MD> md(std::move( evp_md_from_alg(alg)));
-  const EVP_MD* md = evp_md_from_alg(alg);
+  const EVP_MD* md = evpMdFromAlg(alg);
 
   assert(md != nullptr);
   if (md_ctx == nullptr) {
@@ -114,13 +113,12 @@ bool Jwt::verify_signature(bssl::UniquePtr<EVP_PKEY> key,
   return true;
 }
 
-bool Jwt::verify_signature(const std::string& pkey_pem, const std::string& alg,
-                           const std::string& signature,
-                           const std::string& signed_data) {
-  return verify_signature(evp_pkey_from_str(pkey_pem), alg,
-                          Util::unsigned_c_str(signature), signature.length(),
-                          Util::unsigned_c_str(signed_data),
-                          signed_data.length());
+bool Jwt::verifySignature(const std::string& pkey_pem, const std::string& alg,
+                          const std::string& signature,
+                          const std::string& signed_data) {
+  return verifySignature(evpPkeyFromStr(pkey_pem), alg,
+                         Util::unsignedCStr(signature), signature.length(),
+                         Util::unsignedCStr(signed_data), signed_data.length());
 }
 
 std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
@@ -151,7 +149,7 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
   std::string alg = alg_v.GetString();
 
   std::string signature = Base64url::decode(signature_base64url_encoded);
-  bool valid = verify_signature(pkey_pem, alg, signature, signed_data);
+  bool valid = verifySignature(pkey_pem, alg, signature, signed_data);
 
   // if signature is invalid, it will not decode the payload
   if (!valid) {
