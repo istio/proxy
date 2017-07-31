@@ -1,15 +1,9 @@
-//
-// Created by mtakigiku on 7/27/17.
-//
-
 #include "jwt.h"
 
 #include "common/common/base64.h"
 #include "openssl/evp.h"
 #include "openssl/rsa.h"
 #include "rapidjson/document.h"
-
-//#include <boost/algorithm/string.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -95,7 +89,6 @@ bool Jwt::verify_signature(EVP_PKEY* key, const std::string& alg,
                            uint8_t* signature, size_t signature_len,
                            uint8_t* signed_data, size_t signed_data_len) {
   EVP_MD_CTX* md_ctx = EVP_MD_CTX_create();
-
   const EVP_MD* md = evp_md_from_alg(alg);
 
   bool result = false;

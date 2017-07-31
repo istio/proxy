@@ -1,18 +1,6 @@
-//#include "common/buffer/buffer_impl.h"
-//#include "common/http/filter/ip_tagging_filter.h"
-//#include "common/http/header_map_impl.h"
-//#include "common/http/headers.h"
-
 #include "jwt.h"
 
-//#include "test/mocks/http/mocks.h"
 #include "test/test_common/utility.h"
-
-//#include "gmock/gmock.h"
-//#include "gtest/gtest.h"
-
-// using testing::Return;
-// using testing::_;
 
 namespace Envoy {
 namespace Http {

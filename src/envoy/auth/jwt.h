@@ -1,7 +1,3 @@
-//
-// Created by mtakigiku on 7/27/17.
-//
-
 #ifndef PROXY_JWT_H
 #define PROXY_JWT_H
 
