@@ -1,5 +1,6 @@
 #include "jwt.h"
 
+//#include "common/common/utility.h"
 #include "test/test_common/utility.h"
 
 namespace Envoy {
@@ -42,24 +43,6 @@ class JwtTest : public testing::Test {
       "+hHYL6nqwOR3ej0VqCTLS0OloC0LuCpLV7CnSpwbp2Qg/c+MDzQ0TH8g8drIzR5h"
       "Fe9a3NlNRMXgUU5RqbLnR9zfXr7b9oEszQIDAQAB";
 };
-
-TEST_F(JwtTest, Util_Split) {
-  auto jwt_split = Util::split(jwt, '.');
-  EXPECT_EQ(jwt_split.size(), 3);
-  auto header = jwt_split[0];
-  auto payload = jwt_split[1];
-  auto signature = jwt_split[2];
-  EXPECT_STREQ(header.c_str(), jwt_header_encoded.c_str());
-  EXPECT_STREQ(payload.c_str(), jwt_payload_encoded.c_str());
-  EXPECT_STREQ(signature.c_str(), jwt_signature_encoded.c_str());
-}
-
-TEST_F(JwtTest, Base64url_decode) {
-  auto header_str = Base64url::decode(jwt_header_encoded);
-  EXPECT_STREQ(header_str.c_str(), header.c_str());
-  auto payload_str = Base64url::decode(jwt_payload_encoded);
-  EXPECT_STREQ(payload_str.c_str(), payload.c_str());
-}
 
 TEST_F(JwtTest, Jwt_decode) {
   Jwt ob = Jwt();

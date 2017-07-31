@@ -1,6 +1,7 @@
 #include "jwt.h"
 
 #include "common/common/base64.h"
+#include "common/common/utility.h"
 #include "openssl/evp.h"
 #include "openssl/rsa.h"
 #include "rapidjson/document.h"
@@ -124,7 +125,8 @@ bool Jwt::verify_signature(const std::string& pkey_pem, const std::string& alg,
 
 std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
                                                  const std::string& pkey_pem) {
-  std::vector<std::string> jwt_split = Util::split(jwt, '.');
+  //  std::vector<std::string> jwt_split = Util::split(jwt, '.');
+  std::vector<std::string> jwt_split = StringUtil::split(jwt, '.');
   if (jwt_split.size() != 3) {
     return nullptr;
   }

@@ -17,13 +17,13 @@ namespace Base64url {
 std::string decode(std::string input);
 
 }  // Base64url
-
-namespace Util {
-
-uint8_t* unsigned_c_str(const std::string& str);
-std::vector<std::string> split(std::string str, char c);
-
-}  // Util
+//
+// namespace Util {
+//
+// uint8_t* unsigned_c_str(const std::string& str);
+// std::vector<std::string> split(std::string str, char c);
+//
+//}  // Util
 
 class Jwt {
  public:
