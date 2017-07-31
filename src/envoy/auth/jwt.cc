@@ -117,9 +117,9 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
   if (jwt_split.size() != 3) {
     return nullptr;
   }
-  std::string header_base64url_encoded = jwt_split[0];
-  std::string payload_base64url_encoded = jwt_split[1];
-  std::string signature_base64url_encoded = jwt_split[2];
+  const std::string& header_base64url_encoded = jwt_split[0];
+  const std::string& payload_base64url_encoded = jwt_split[1];
+  const std::string& signature_base64url_encoded = jwt_split[2];
   std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
 
   /*
