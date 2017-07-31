@@ -1,6 +1,5 @@
 #include "jwt.h"
 
-//#include "common/common/utility.h"
 #include "test/test_common/utility.h"
 
 namespace Envoy {
@@ -47,9 +46,6 @@ class JwtTest : public testing::Test {
 TEST_F(JwtTest, Jwt_decode) {
   Jwt ob = Jwt();
   auto payload = ob.decode(jwt, pubkey);
-
-  //  bool valid = result.first;
-  //  rapidjson::Document* payload = result.second;
 
   EXPECT_TRUE(payload != nullptr);
 

@@ -46,17 +46,6 @@ const uint8_t* unsignedCStr(const std::string& str) {
   return reinterpret_cast<const uint8_t*>(str.c_str());
 }
 
-std::vector<std::string> split(std::string str, char delimiter) {
-  std::vector<std::string> internal;
-  std::stringstream ss(str);
-  std::string tok;
-
-  while (std::getline(ss, tok, delimiter)) {
-    internal.push_back(tok);
-  }
-  return internal;
-}
-
 }  // namespace Util
 
 bssl::UniquePtr<EVP_PKEY> Jwt::evpPkeyFromStr(const std::string& pkey_pem) {
@@ -73,16 +62,12 @@ bssl::UniquePtr<EVP_PKEY> Jwt::evpPkeyFromStr(const std::string& pkey_pem) {
 }
 
 const EVP_MD* Jwt::evpMdFromAlg(const std::string& alg) {
-  //  bssl::UniquePtr<const EVP_MD> Jwt::evp_md_from_alg(const std::string& alg)
-  //  {
   /*
    * may use
    * EVP_sha384() if alg == "RS384" and
    * EVP_sha512() if alg == "RS512"
    */
   if (alg == "RS256") {
-    //    bssl::UniquePtr<const EVP_MD> ptr(EVP_sha256());
-    //    return ptr;
     return EVP_sha256();
   } else {
     return nullptr;
@@ -93,7 +78,6 @@ bool Jwt::verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
                           const uint8_t* signature, size_t signature_len,
                           const uint8_t* signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
-  //  bssl::UniquePtr<const EVP_MD> md(std::move( evp_md_from_alg(alg)));
   const EVP_MD* md = evpMdFromAlg(alg);
 
   assert(md != nullptr);
@@ -123,7 +107,6 @@ bool Jwt::verifySignature(const std::string& pkey_pem, const std::string& alg,
 
 std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
                                                  const std::string& pkey_pem) {
-  //  std::vector<std::string> jwt_split = Util::split(jwt, '.');
   std::vector<std::string> jwt_split = StringUtil::split(jwt, '.');
   if (jwt_split.size() != 3) {
     return nullptr;
