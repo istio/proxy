@@ -42,8 +42,8 @@ std::string decode(std::string input) {
 
 namespace Util {
 
-uint8_t* unsignedCStr(const std::string& str) {
-  return reinterpret_cast<uint8_t*>(const_cast<char*>(str.c_str()));
+const uint8_t* unsignedCStr(const std::string& str) {
+  return reinterpret_cast<const uint8_t*>(str.c_str());
 }
 
 std::vector<std::string> split(std::string str, char delimiter) {
@@ -90,8 +90,8 @@ const EVP_MD* Jwt::evpMdFromAlg(const std::string& alg) {
 }
 
 bool Jwt::verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
-                          uint8_t* signature, size_t signature_len,
-                          uint8_t* signed_data, size_t signed_data_len) {
+                          const uint8_t* signature, size_t signature_len,
+                          const uint8_t* signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
   //  bssl::UniquePtr<const EVP_MD> md(std::move( evp_md_from_alg(alg)));
   const EVP_MD* md = evpMdFromAlg(alg);

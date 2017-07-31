@@ -35,8 +35,8 @@ class Jwt {
   const EVP_MD* evpMdFromAlg(const std::string& alg);
   //  bssl::UniquePtr<const EVP_MD> evp_md_from_alg(const std::string& alg);
   bool verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
-                       uint8_t* signature, size_t signature_len,
-                       uint8_t* signed_data, size_t signed_data_len);
+                       const uint8_t* signature, size_t signature_len,
+                       const uint8_t* signed_data, size_t signed_data_len);
   bool verifySignature(const std::string& pkey_pem, const std::string& alg,
                        const std::string& signature,
                        const std::string& signed_data);
