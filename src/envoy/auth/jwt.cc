@@ -58,86 +58,75 @@ std::vector<std::string> split(std::string str, char delimiter) {
 
 }  // namespace Util
 
-EVP_PKEY* Jwt::evp_pkey_from_str(const std::string& pkey_pem) {
+bssl::UniquePtr<EVP_PKEY> Jwt::evp_pkey_from_str(const std::string& pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
-  RSA* rsa = RSA_public_key_from_bytes(Util::unsigned_c_str(pkey_der),
-                                       pkey_der.length());
-  if (rsa == NULL) {
-    return NULL;
+  bssl::UniquePtr<RSA> rsa(RSA_public_key_from_bytes(
+      Util::unsigned_c_str(pkey_der), pkey_der.length()));
+  if (rsa == nullptr) {
+    return nullptr;
   }
-  EVP_PKEY* key = EVP_PKEY_new();
-  EVP_PKEY_set1_RSA(key, rsa);
-  RSA_free(rsa);
+  bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
+  EVP_PKEY_set1_RSA(key.get(), rsa.get());
 
   return key;
 }
 
 const EVP_MD* Jwt::evp_md_from_alg(const std::string& alg) {
+  //  bssl::UniquePtr<const EVP_MD> Jwt::evp_md_from_alg(const std::string& alg)
+  //  {
   /*
    * may use
    * EVP_sha384() if alg == "RS384" and
    * EVP_sha512() if alg == "RS512"
    */
   if (alg == "RS256") {
+    //    bssl::UniquePtr<const EVP_MD> ptr(EVP_sha256());
+    //    return ptr;
     return EVP_sha256();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
-bool Jwt::verify_signature(EVP_PKEY* key, const std::string& alg,
-                           uint8_t* signature, size_t signature_len,
-                           uint8_t* signed_data, size_t signed_data_len) {
-  EVP_MD_CTX* md_ctx = EVP_MD_CTX_create();
+bool Jwt::verify_signature(bssl::UniquePtr<EVP_PKEY> key,
+                           const std::string& alg, uint8_t* signature,
+                           size_t signature_len, uint8_t* signed_data,
+                           size_t signed_data_len) {
+  bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
+  //  bssl::UniquePtr<const EVP_MD> md(std::move( evp_md_from_alg(alg)));
   const EVP_MD* md = evp_md_from_alg(alg);
 
-  bool result = false;
-
-  assert(md != NULL);
-  if (md_ctx == NULL) {
-    goto end;
+  assert(md != nullptr);
+  if (md_ctx == nullptr) {
+    return false;
   }
-  if (EVP_DigestVerifyInit(md_ctx, NULL, md, NULL, key) != 1) {
-    goto end;
+  if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key.get()) !=
+      1) {
+    return false;
   }
-  if (EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_len) != 1) {
-    goto end;
+  if (EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len) != 1) {
+    return false;
   }
-  if (EVP_DigestVerifyFinal(md_ctx, signature, signature_len) != 1) {
-    goto end;
+  if (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) != 1) {
+    return false;
   }
-  result = true;
-
-end:
-  if (md_ctx != NULL) {
-    EVP_MD_CTX_destroy(md_ctx);
-  }
-  return result;
+  return true;
 }
 
 bool Jwt::verify_signature(const std::string& pkey_pem, const std::string& alg,
-                           const std::string signature,
+                           const std::string& signature,
                            const std::string& signed_data) {
-  EVP_PKEY* key = evp_pkey_from_str(pkey_pem);
-
-  bool valid = verify_signature(
-      key, alg, Util::unsigned_c_str(signature), signature.length(),
-      Util::unsigned_c_str(signed_data), signed_data.length());
-
-  if (key != NULL) EVP_PKEY_free(key);
-
-  return valid;
+  return verify_signature(evp_pkey_from_str(pkey_pem), alg,
+                          Util::unsigned_c_str(signature), signature.length(),
+                          Util::unsigned_c_str(signed_data),
+                          signed_data.length());
 }
 
-std::pair<bool, rapidjson::Document*> Jwt::decode(const std::string& jwt,
-                                                  const std::string& pkey_pem) {
-  // return value in failure cases
-  std::pair<bool, rapidjson::Document*> failed =
-      std::make_pair(false, (rapidjson::Document*)NULL);
-
+std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
+                                                 const std::string& pkey_pem) {
   std::vector<std::string> jwt_split = Util::split(jwt, '.');
   if (jwt_split.size() != 3) {
-    return failed;
+    return nullptr;
   }
   std::string header_base64url_encoded = jwt_split[0];
   std::string payload_base64url_encoded = jwt_split[1];
@@ -151,24 +140,30 @@ std::pair<bool, rapidjson::Document*> Jwt::decode(const std::string& jwt,
   header_json.Parse(Base64url::decode(header_base64url_encoded).c_str());
 
   if (!header_json.HasMember("alg")) {
-    return failed;
+    return nullptr;
   }
   rapidjson::Value& alg_v = header_json["alg"];
   if (!alg_v.IsString()) {
-    return failed;
+    return nullptr;
   }
   std::string alg = alg_v.GetString();
 
   std::string signature = Base64url::decode(signature_base64url_encoded);
   bool valid = verify_signature(pkey_pem, alg, signature, signed_data);
 
+  // if signature is invalid, it will not decode the payload
+  if (!valid) {
+    return nullptr;
+  }
+
   /*
    * decode payload
    */
-  rapidjson::Document* payload_json = new rapidjson::Document();
-  payload_json->Parse(Base64url::decode(payload_base64url_encoded).c_str());
+  std::unique_ptr<rapidjson::Document> payload_json_ptr(
+      new rapidjson::Document());
+  payload_json_ptr->Parse(Base64url::decode(payload_base64url_encoded).c_str());
 
-  return std::make_pair(valid, payload_json);
+  return payload_json_ptr;
 };
 
 }  // Auth

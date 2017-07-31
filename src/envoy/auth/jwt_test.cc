@@ -63,12 +63,12 @@ TEST_F(JwtTest, Base64url_decode) {
 
 TEST_F(JwtTest, Jwt_decode) {
   Jwt ob = Jwt();
-  auto result = ob.decode(jwt, pubkey);
+  auto payload = ob.decode(jwt, pubkey);
 
-  bool valid = result.first;
-  rapidjson::Document* payload = result.second;
+  //  bool valid = result.first;
+  //  rapidjson::Document* payload = result.second;
 
-  EXPECT_TRUE(valid);
+  EXPECT_TRUE(payload != nullptr);
 
   EXPECT_TRUE((*payload)["iss"].IsString());
   std::string iss = (*payload)["iss"].GetString();
@@ -81,8 +81,6 @@ TEST_F(JwtTest, Jwt_decode) {
   EXPECT_TRUE((*payload)["exp"].IsInt64());
   int64_t exp = (*payload)["exp"].GetInt64();
   EXPECT_EQ(1501281058LL, exp);
-
-  delete payload;
 }
 
 }  // namespace Auth

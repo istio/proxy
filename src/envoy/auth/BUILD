@@ -17,20 +17,29 @@ envoy_cc_binary(
 )
 
 envoy_cc_library(
-    name = "http_filter_lib",
-    srcs = [
-        "http_filter.cc",
-        "jwt.cc",
-    ],
-    hdrs = [
-        "http_filter.h",
-        "jwt.h",
-    ],
+    name = "jwt_lib",
+    srcs = ["jwt.cc"],
+    hdrs = ["jwt.h"],
     repository = "@envoy",
     deps = [
         "@envoy//source/exe:envoy_common_lib",
         "//external:rapidjson",
         "//external:ssl",
+    ],
+)
+
+envoy_cc_library(
+    name = "http_filter_lib",
+    srcs = [
+        "http_filter.cc",
+    ],
+    hdrs = [
+        "http_filter.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":jwt_lib",
+        "@envoy//source/exe:envoy_common_lib",
     ],
 )
 
@@ -63,7 +72,7 @@ envoy_cc_test(
     data = [],
     repository = "@envoy",
     deps = [
-        ":http_filter_config",
+        ":jwt_lib",
         "@envoy//test/test_common:utility_lib",
     ],
 )
