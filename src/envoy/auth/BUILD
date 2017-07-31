@@ -74,6 +74,7 @@ envoy_cc_test(
     deps = [
         ":jwt_lib",
         "@envoy//test/test_common:utility_lib",
+        "@envoy//source/exe:envoy_common_lib",
     ],
 )
 

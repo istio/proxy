@@ -1,5 +1,6 @@
 #include "jwt.h"
 
+#include "common/common/utility.h"
 #include "test/test_common/utility.h"
 
 namespace Envoy {
@@ -60,6 +61,105 @@ TEST_F(JwtTest, Jwt_decode) {
   EXPECT_TRUE((*payload)["exp"].IsInt64());
   int64_t exp = (*payload)["exp"].GetInt64();
   EXPECT_EQ(1501281058LL, exp);
+}
+
+TEST_F(JwtTest, invalid_signature) {
+  auto invalid_jwt = jwt;
+  invalid_jwt[jwt.length() - 1] = jwt[jwt.length() - 1] != 'a' ? 'a' : 'b';
+
+  Jwt ob = Jwt();
+  auto payload = ob.decode(invalid_jwt, pubkey);
+
+  EXPECT_TRUE(payload == nullptr);
+}
+
+TEST_F(JwtTest, invalid_publickey) {
+  auto invalid_pubkey = pubkey;
+  invalid_pubkey[pubkey.length() - 1] =
+      pubkey[pubkey.length() - 1] != 'a' ? 'a' : 'b';
+
+  Jwt ob = Jwt();
+  auto payload = ob.decode(jwt, invalid_pubkey);
+
+  EXPECT_TRUE(payload == nullptr);
+}
+
+TEST_F(JwtTest, base64url_badinput_header) {
+  auto invalid_header = jwt_header_encoded + 'a';
+  auto invalid_jwt = StringUtil::join(
+      std::vector<std::string>{invalid_header, jwt_payload_encoded,
+                               jwt_signature_encoded},
+      ".");
+
+  Jwt ob = Jwt();
+  auto payload = ob.decode(invalid_jwt, pubkey);
+
+  EXPECT_TRUE(payload == nullptr);
+}
+
+TEST_F(JwtTest, base64url_badinput_payload) {
+  auto invalid_payload = jwt_payload_encoded + 'a';
+  auto invalid_jwt = StringUtil::join(
+      std::vector<std::string>{jwt_header_encoded, invalid_payload,
+                               jwt_signature_encoded},
+      ".");
+
+  Jwt ob = Jwt();
+  auto payload = ob.decode(invalid_jwt, pubkey);
+
+  EXPECT_TRUE(payload == nullptr);
+}
+
+TEST_F(JwtTest, base64url_badinput_signature) {
+  auto invalid_signature = jwt_signature_encoded + 'a';
+  auto invalid_jwt = StringUtil::join(
+      std::vector<std::string>{jwt_header_encoded, jwt_payload_encoded,
+                               invalid_signature},
+      ".");
+
+  Jwt ob = Jwt();
+  auto payload = ob.decode(invalid_jwt, pubkey);
+
+  EXPECT_TRUE(payload == nullptr);
+}
+
+TEST_F(JwtTest, jwt_invalid_number_of_dots) {
+  auto invalid_jwt = jwt + '.';
+
+  Jwt ob = Jwt();
+  auto payload = ob.decode(invalid_jwt, pubkey);
+
+  EXPECT_TRUE(payload == nullptr);
+}
+
+TEST_F(JwtTest, json_badinput_header) {
+  /*
+   * TODO
+   */
+}
+
+TEST_F(JwtTest, json_badinput_payload) {
+  /*
+   * TODO
+   */
+}
+
+TEST_F(JwtTest, alg_absent_in_header) {
+  /*
+   * TODO
+   */
+}
+
+TEST_F(JwtTest, alg_is_not_string) {
+  /*
+   * TODO
+   */
+}
+
+TEST_F(JwtTest, invalid_alg) {
+  /*
+   * TODO
+   */
 }
 
 }  // namespace Auth

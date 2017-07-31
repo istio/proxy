@@ -81,8 +81,6 @@ bool Jwt::verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
                           const uint8_t* signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
   const EVP_MD* md = evpMdFromAlg(alg);
-  //  bssl::UniquePtr<const EVP_MD> md(evpMdFromAlg(alg));
-  //  std::unique_ptr<const EVP_MD> md(evpMdFromAlg(alg));
 
   if (md == nullptr) {
     return false;
@@ -113,6 +111,9 @@ bool Jwt::verifySignature(const std::string& pkey_pem, const std::string& alg,
 
 std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
                                                  const std::string& pkey_pem) {
+  if (std::count(jwt.begin(), jwt.end(), '.') != 2) {
+    return nullptr;
+  }
   std::vector<std::string> jwt_split = StringUtil::split(jwt, '.');
   if (jwt_split.size() != 3) {
     return nullptr;
