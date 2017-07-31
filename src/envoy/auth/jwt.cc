@@ -32,8 +32,10 @@ std::string decode(std::string input) {
       input += "=";
       break;
     default:
-      /* invalid base64url input*/
-      assert(0);
+      /*
+       * for invalid base64url input, return empty string
+       */
+      return "";
   }
   return Base64::decode(input);
 }
@@ -79,8 +81,12 @@ bool Jwt::verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
                           const uint8_t* signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
   const EVP_MD* md = evpMdFromAlg(alg);
+  //  bssl::UniquePtr<const EVP_MD> md(evpMdFromAlg(alg));
+  //  std::unique_ptr<const EVP_MD> md(evpMdFromAlg(alg));
 
-  assert(md != nullptr);
+  if (md == nullptr) {
+    return false;
+  }
   if (md_ctx == nullptr) {
     return false;
   }
@@ -120,7 +126,10 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
    * verification
    */
   rapidjson::Document header_json;
-  header_json.Parse(Base64url::decode(header_base64url_encoded).c_str());
+  if (header_json.Parse(Base64url::decode(header_base64url_encoded).c_str())
+          .HasParseError()) {
+    return nullptr;
+  }
 
   if (!header_json.HasMember("alg")) {
     return nullptr;
@@ -144,7 +153,11 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
    */
   std::unique_ptr<rapidjson::Document> payload_json_ptr(
       new rapidjson::Document());
-  payload_json_ptr->Parse(Base64url::decode(payload_base64url_encoded).c_str());
+  if (payload_json_ptr
+          ->Parse(Base64url::decode(payload_base64url_encoded).c_str())
+          .HasParseError()) {
+    return nullptr;
+  }
 
   return payload_json_ptr;
 };
