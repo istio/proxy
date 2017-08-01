@@ -31,6 +31,7 @@
 namespace Envoy {
 namespace Http {
 namespace Auth {
+namespace {
 
 namespace Base64url {
 
@@ -69,13 +70,13 @@ std::string decode(std::string input) {
 
 namespace Util {
 
-const uint8_t* castToUChar(const std::string& str) {
-  return reinterpret_cast<const uint8_t*>(str.c_str());
+const uint8_t *castToUChar(const std::string &str) {
+  return reinterpret_cast<const uint8_t *>(str.c_str());
 }
 
 }  // namespace Util
 
-bssl::UniquePtr<EVP_PKEY> Jwt::evpPkeyFromStr(const std::string& pkey_pem) {
+bssl::UniquePtr<EVP_PKEY> evpPkeyFromStr(const std::string &pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
   bssl::UniquePtr<RSA> rsa(RSA_public_key_from_bytes(
       Util::castToUChar(pkey_der), pkey_der.length()));
@@ -88,7 +89,7 @@ bssl::UniquePtr<EVP_PKEY> Jwt::evpPkeyFromStr(const std::string& pkey_pem) {
   return key;
 }
 
-const EVP_MD* Jwt::evpMdFromAlg(const std::string& alg) {
+const EVP_MD *evpMdFromAlg(const std::string &alg) {
   /*
    * may use
    * EVP_sha384() if alg == "RS384" and
@@ -101,11 +102,11 @@ const EVP_MD* Jwt::evpMdFromAlg(const std::string& alg) {
   }
 }
 
-bool Jwt::verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
-                          const uint8_t* signature, size_t signature_len,
-                          const uint8_t* signed_data, size_t signed_data_len) {
+bool verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string &alg,
+                     const uint8_t *signature, size_t signature_len,
+                     const uint8_t *signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
-  const EVP_MD* md = evpMdFromAlg(alg);
+  const EVP_MD *md = evpMdFromAlg(alg);
 
   if (md == nullptr) {
     return false;
@@ -126,16 +127,20 @@ bool Jwt::verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string& alg,
   return true;
 }
 
-bool Jwt::verifySignature(const std::string& pkey_pem, const std::string& alg,
-                          const std::string& signature,
-                          const std::string& signed_data) {
+bool verifySignature(const std::string &pkey_pem, const std::string &alg,
+                     const std::string &signature,
+                     const std::string &signed_data) {
   return verifySignature(evpPkeyFromStr(pkey_pem), alg,
                          Util::castToUChar(signature), signature.length(),
                          Util::castToUChar(signed_data), signed_data.length());
 }
 
-std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
-                                                 const std::string& pkey_pem) {
+}  // namespace
+
+namespace Jwt {
+
+std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
+                                            const std::string &pkey_pem) {
   /*
    * TODO: return failure reason (something like
    * https://github.com/grpc/grpc/blob/master/src/core/lib/security/credentials/jwt/jwt_verifier.h#L38)
@@ -155,9 +160,9 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
   if (jwt_split.size() != 3) {
     return nullptr;
   }
-  const std::string& header_base64url_encoded = jwt_split[0];
-  const std::string& payload_base64url_encoded = jwt_split[1];
-  const std::string& signature_base64url_encoded = jwt_split[2];
+  const std::string &header_base64url_encoded = jwt_split[0];
+  const std::string &payload_base64url_encoded = jwt_split[1];
+  const std::string &signature_base64url_encoded = jwt_split[2];
   std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
 
   /*
@@ -172,7 +177,7 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
   if (!header_json.HasMember("alg")) {
     return nullptr;
   }
-  rapidjson::Value& alg_v = header_json["alg"];
+  rapidjson::Value &alg_v = header_json["alg"];
   if (!alg_v.IsString()) {
     return nullptr;
   }
@@ -200,6 +205,7 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
   return payload_json_ptr;
 };
 
+}  // Jwt
 }  // Auth
 }  // Http
 }  // Envoy
