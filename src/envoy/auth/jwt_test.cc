@@ -45,8 +45,7 @@ class JwtTest : public testing::Test {
 };
 
 TEST_F(JwtTest, JwtDecode) {
-  Jwt ob = Jwt();
-  auto payload = ob.decode(jwt, pubkey);
+  auto payload = Jwt::decode(jwt, pubkey);
 
   EXPECT_TRUE(payload != nullptr);
 
@@ -67,8 +66,7 @@ TEST_F(JwtTest, InvalidSignature) {
   auto invalid_jwt = jwt;
   invalid_jwt[jwt.length() - 1] = jwt[jwt.length() - 1] != 'a' ? 'a' : 'b';
 
-  Jwt ob = Jwt();
-  auto payload = ob.decode(invalid_jwt, pubkey);
+  auto payload = Jwt::decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -78,8 +76,7 @@ TEST_F(JwtTest, InvalidPublickey) {
   invalid_pubkey[pubkey.length() - 1] =
       pubkey[pubkey.length() - 1] != 'a' ? 'a' : 'b';
 
-  Jwt ob = Jwt();
-  auto payload = ob.decode(jwt, invalid_pubkey);
+  auto payload = Jwt::decode(jwt, invalid_pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -91,8 +88,7 @@ TEST_F(JwtTest, Base64urlBadInputHeader) {
                                jwt_signature_encoded},
       ".");
 
-  Jwt ob = Jwt();
-  auto payload = ob.decode(invalid_jwt, pubkey);
+  auto payload = Jwt::decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -104,8 +100,7 @@ TEST_F(JwtTest, Base64urlBadInputPayload) {
                                jwt_signature_encoded},
       ".");
 
-  Jwt ob = Jwt();
-  auto payload = ob.decode(invalid_jwt, pubkey);
+  auto payload = Jwt::decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -117,8 +112,7 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
                                invalid_signature},
       ".");
 
-  Jwt ob = Jwt();
-  auto payload = ob.decode(invalid_jwt, pubkey);
+  auto payload = Jwt::decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -126,8 +120,7 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
 TEST_F(JwtTest, JwtInvalidNumberOfDots) {
   auto invalid_jwt = jwt + '.';
 
-  Jwt ob = Jwt();
-  auto payload = ob.decode(invalid_jwt, pubkey);
+  auto payload = Jwt::decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
