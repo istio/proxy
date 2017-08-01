@@ -57,6 +57,121 @@ class JwtTest : public testing::Test {
       "zz1pBtTIUx68xs5ZGe7cIJ7E8n4pMX10eeuh36h+aossePeuHulYmjr4N0/1jG7a"
       "+hHYL6nqwOR3ej0VqCTLS0OloC0LuCpLV7CnSpwbp2Qg/c+MDzQ0TH8g8drIzR5h"
       "Fe9a3NlNRMXgUU5RqbLnR9zfXr7b9oEszQIDAQAB";
+
+  const std::string privatekey =
+      "-----BEGIN RSA PRIVATE KEY-----\n"
+      "MIIEowIBAAKCAQEAtw7MNxUTxmzWROCD5BqJxmzT7xqc9KsnAjbXCoqEEHDx4WBl\n"
+      "fcwkXHt9e/2+Uwi3Arz3FOMNKwGGlbr7clBY3utsjUs8BTF0kO/poAmSTdSuGeh2\n"
+      "mSbcVHvmQ7X/kichWwx5Qj0Xj4REU3Gixu1gQIr3GATPAIULo5lj/ebOGAa+l0wI\n"
+      "G80Nzz1pBtTIUx68xs5ZGe7cIJ7E8n4pMX10eeuh36h+aossePeuHulYmjr4N0/1\n"
+      "jG7a+hHYL6nqwOR3ej0VqCTLS0OloC0LuCpLV7CnSpwbp2Qg/c+MDzQ0TH8g8drI\n"
+      "zR5hFe9a3NlNRMXgUU5RqbLnR9zfXr7b9oEszQIDAQABAoIBAQCgQQ8cRZJrSkqG\n"
+      "P7qWzXjBwfIDR1wSgWcD9DhrXPniXs4RzM7swvMuF1myW1/r1xxIBF+V5HNZq9tD\n"
+      "Z07LM3WpqZX9V9iyfyoZ3D29QcPX6RGFUtHIn5GRUGoz6rdTHnh/+bqJ92uR02vx\n"
+      "VPD4j0SNHFrWpxcE0HRxA07bLtxLgNbzXRNmzAB1eKMcrTu/W9Q1zI1opbsQbHbA\n"
+      "CjbPEdt8INi9ij7d+XRO6xsnM20KgeuKx1lFebYN9TKGEEx8BCGINOEyWx1lLhsm\n"
+      "V6S0XGVwWYdo2ulMWO9M0lNYPzX3AnluDVb3e1Yq2aZ1r7t/GrnGDILA1N2KrAEb\n"
+      "AAKHmYNNAoGBAPAv9qJqf4CP3tVDdto9273DA4Mp4Kjd6lio5CaF8jd/4552T3UK\n"
+      "N0Q7N6xaWbRYi6xsCZymC4/6DhmLG/vzZOOhHkTsvLshP81IYpWwjm4rF6BfCSl7\n"
+      "ip+1z8qonrElxes68+vc1mNhor6GGsxyGe0C18+KzpQ0fEB5J4p0OHGnAoGBAMMb\n"
+      "/fpr6FxXcjUgZzRlxHx1HriN6r8Jkzc+wAcQXWyPUOD8OFLcRuvikQ16sa+SlN4E\n"
+      "HfhbFn17ABsikUAIVh0pPkHqMsrGFxDn9JrORXUpNhLdBHa6ZH+we8yUe4G0X4Mc\n"
+      "R7c8OT26p2zMg5uqz7bQ1nJ/YWlP4nLqIytehnRrAoGAT6Rn0JUlsBiEmAylxVoL\n"
+      "mhGnAYAKWZQ0F6/w7wEtPs/uRuYOFM4NY1eLb2AKLK3LqqGsUkAQx23v7PJelh2v\n"
+      "z3bmVY52SkqNIGGnJuGDaO5rCCdbH2EypyCfRSDCdhUDWquSpBv3Dr8aOri2/CG9\n"
+      "jQSLUOtC8ouww6Qow1UkPjMCgYB8kTicU5ysqCAAj0mVCIxkMZqFlgYUJhbZpLSR\n"
+      "Tf93uiCXJDEJph2ZqLOXeYhMYjetb896qx02y/sLWAyIZ0ojoBthlhcLo2FCp/Vh\n"
+      "iOSLot4lOPsKmoJji9fei8Y2z2RTnxCiik65fJw8OG6mSm4HeFoSDAWzaQ9Y8ue1\n"
+      "XspVNQKBgAiHh4QfiFbgyFOlKdfcq7Scq98MA3mlmFeTx4Epe0A9xxhjbLrn362+\n"
+      "ZSCUhkdYkVkly4QVYHJ6Idzk47uUfEC6WlLEAnjKf9LD8vMmZ14yWR2CingYTIY1\n"
+      "LL2jMkSYEJx102t2088meCuJzEsF3BzEWOP8RfbFlciT7FFVeiM4\n"
+      "-----END RSA PRIVATE KEY-----";
+
+  /*
+   * jwt with header replaced by
+   * "{"alg":"RS256","typ":"JWT", this is a invalid json}"
+   */
+  const std::string jwt_with_bad_json_header =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsIHRoaXMgaXMgYSBpbnZhbGlkIGpzb259."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0."
+      "ERgdOJdVCrUAaAIMaAG6rgAR7M6ZJUjvKxIMgb9jrfsEVzsetb4UlPsrO-FBA4LUT_"
+      "xIshL4Bzd0_3w63v7xol2-iAQgW_7PQeeEEqqMcyfkuXEhHu_lXawAlpqKhCmFuyIeYBiSs-"
+      "RRIqHCutIJSBfcIGLMRcVzpMODfwMMlzjw6SlfMuy68h54TpBt1glvwEg71lVVO7IE3Fxwgl"
+      "EDR_2MrVwjmyes9TmDgsj_zBHHn_d09kVqV_adYXtVec9fyo7meODQXB_"
+      "eWm065WsSRFksQn8fidWtrAfdcSzYe2wN0doP-QYzJeWKll15XVRKS67NeENz40Wd_Tr_"
+      "tyHBHw";
+
+  /*
+   * jwt with payload replaced by
+   * "this is not a json"
+   */
+  const std::string jwt_with_bad_json_payload =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.dGhpcyBpcyBub3QgYSBqc29u."
+      "NhQjffMuBkYA9MXq3Fi3h2RRR6vNsYHOjF22GRHRcAEsTHJGYpWsU0MpkWnSJ04Ktx6PFp8f"
+      "jRUI0bLtLC2R2Nv3VQNfvcZy0cJmlEWGZbRjEA2AwOaMpiKX-6z5BtMic9hG5Aw1IDxf_"
+      "ZvqiE5nRxPBnMXxsINgJ1veTd0zBhOsr0Y3Onl2O3UJSqrQn4kSqjpTENODjSJcJcfiy15sU"
+      "MX7wCiP_FSjLAW-"
+      "mcaa8RdV49LegwB185eK9UmTJ98yTqEN7w9wcKkZFe8vpojkJX8an0EjGOTJ_5IsU1A_"
+      "Xv1Z1ZQYGTOEsMH8j9zWslYTRq15bDIyALHRD46UHqjDSQ";
+
+  /*
+   * jwt with header replaced by
+   * "{"typ":"JWT"}"
+   */
+  const std::string jwt_with_alg_absent =
+      "eyJ0eXAiOiJKV1QifQ."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0"
+      "."
+      "MGJmMDU2YjViZmJhMzE5MGI3MTRiMmE4NDhiMmIzNzI2Mzk3MGUwOGVmZTAwMzc0YzY4MWFj"
+      "NzgzMDZjZWRlYgoyZWY3Mzk2NWE2MjYxZWI2M2FhMGFjM2E1NDQ1MjNmMjZmNjU2Y2MxYWIz"
+      "YTczNGFlYTg4ZDIyN2YyZmM4YTI5CjM5OTQwNjI2ZjI3ZDlmZTM4M2JjY2NhZjIxMmJlY2U5"
+      "Y2Q3NGY5YmY2YWY2ZDI2ZTEyNDllMjU4NGVhZTllMGQKMzg0YzVlZmUzY2ZkMWE1NzM4YTIw"
+      "MzBmYTQ0OWY0NDQ1MTNhOTQ4NTRkMzgxMzdkMTljMWQ3ZmYxYjNlMzJkMQoxMGMyN2VjZDQ5"
+      "MTMzNjZiZmE4Zjg3ZTEyNWQzMGEwYjhhYjUyYWE5YzZmZTcwM2FmZDliMjkzODY3OWYxNWQy"
+      "CjZiNWIzZjgzYTk0Zjg1MjFkMDhiNmYyNzY1MTM1N2MyYWI0MzBkM2FlYjg5MTFmNjM5ZGNj"
+      "MGM2NTcxNThmOWUKOWQ1ZDM2NWFkNGVjOTgwYmNkY2RiMDUzM2MzYjY2MjJmYWJiMDViNjNk"
+      "NjIxMDJiZDkyZDE3ZjZkZDhiMTBkOQo1YjBlMDRiZWU2MDBjNjRhNzM0ZGE1ZGY2YjljMGY5"
+      "ZDM1Mzk3MjcyNDcyN2RjMTViYjk1MjMwZjdmYmU5MzYx";
+
+  /*
+   * jwt with header replaced by
+   * "{"alg":256,"typ":"JWT"}"
+   */
+  const std::string jwt_with_alg_is_not_string =
+      "eyJhbGciOjI1NiwidHlwIjoiSldUIn0."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0."
+      "ODYxMDhhZjY5MjEyMGQ4ZjE5YzMzYmQzZDY3MmE1NjFjNDM1NzdhYmNhNDM0Njg2MWMwNGI4"
+      "ZDNhZDExNjUxZgphZTU0ZjMzZWVmMWMzYmQyOTEwNGIxNTA3ZDllZTI0ZmY0OWFkZTYwNGUz"
+      "MGUzMWIxN2MwMTIzNTY0NDYzNjBlCjEyZDk3ZGRiMDAwZDgwMDFmYjcwOTIzZDYzY2VhMzE1"
+      "MjcyNzdlY2RhYzZkMWU5MThmOThjOTFkNTZiM2NhYWIKNjA0ZThiNWI4N2MwNWM4M2RkODE4"
+      "NWYwNDBiYjY4Yjk3MmY5MDc2YmYzYTk3ZjM0OWVhYjA1ZTdjYzdhOGEzZApjMGU4Y2Y0MzJl"
+      "NzY2MDAwYTQ0ZDg1ZmE5MjgzM2ExNjNjOGM3OTllMTEyNTM5OWMzYzY3MThiMzY2ZjU5YTVl"
+      "CjVjYTdjZTBmNDdlMjZhYjU3M2Y2NDI4ZmRmYzQ2N2NjZjQ4OWFjNTA1OTRhM2NlYTlhNTE1"
+      "ODJhMDE1ODA2YzkKZmRhNTFmODliNTk3NjA4Njg2NzNiMDUwMzdiY2IzOTQzMzViYzU2YmFk"
+      "ODUyOWIwZWJmMjc1OTkxMTkzZjdjMwo0MDFjYWRlZDI4NjA2MmNlZTFhOGU3YWFiMDJiNjcy"
+      "NGVhYmVmMjA3MGQyYzFlMmY3NDRiM2IyNjU0MGQzZmUx";
+
+  /*
+   * jwt with header replaced by
+   * "{"alg":"InvalidAlg","typ":"JWT"}"
+   */
+  const std::string jwt_with_invalid_alg =
+      "eyJhbGciOiJJbnZhbGlkQWxnIiwidHlwIjoiSldUIn0."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0."
+      "MjQ3ZThmMTQ1YWYwZDIyZjVlZDlhZTJhOWIzYWI2OGY5ZTcyZWU1ZmJlNzA1ODE2NjkxZDU3"
+      "OGY0MmU0OTlhNgpiMmY0NmM2OTI3Yjc1Mjk3NDdhYTQyZTY3Mjk2NGY0MzkzMzgwMjhlNjE2"
+      "ZDk2YWM4NDQwZTQ1MGRiYTM5NjJmCjNlODU0YjljOTNjOTg4YTZmNjVkNDhiYmViNTBkZTg5"
+      "NWZjOGNmM2NmY2I0MGY1MmU0YjQwMWFjYWZlMjU0M2EKMzc3MjU2YzgyNmZlODIxYTgxNDZm"
+      "ZDZkODhkZjg3Yzg1MjJkYTM4MWI4MmZiNTMwOGYxODAzMGZjZGNjMjAxYgpmYmM2NzRiZGQ5"
+      "YWMyNzYwZDliYzBlMTMwMDA2OTE3MTBmM2U5YmZlN2Y4OGYwM2JjMWFhNTAwZTY2ZmVhMDk5"
+      "CjlhYjVlOTFiZGVkNGMxZTBmMzBiNTdiOGM0MDY0MGViNjMyNTE2Zjc5YTczNzM0YTViM2M2"
+      "YjAxMGQ4MjYyYmUKM2U1MjMyMTE4MzUxY2U5M2VkNmY1NWJhYTFmNmU5M2NmMzVlZjJiNjRi"
+      "MDYxNzU4YWJmYzdkNzUzYzAxMWVhNgo3NTg1N2MwMGY3YTE3Y2E3YWI2NGJlMWIyYjdkNzZl"
+      "NWJlMThhZWFmZWY5NDU5MjAxY2RkY2NkZGZiZjczMjQ2";
 };
 
 TEST_F(JwtTest, JwtDecode) {
@@ -134,40 +249,33 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
 
 TEST_F(JwtTest, JwtInvalidNumberOfDots) {
   auto invalid_jwt = jwt + '.';
-
   auto payload = Jwt::decode(invalid_jwt, pubkey);
-
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JsonBadInputHeader) {
-  /*
-   * TODO
-   */
+  auto payload = Jwt::decode(jwt_with_bad_json_header, pubkey);
+  EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JsonBadInputPayload) {
-  /*
-   * TODO
-   */
+  auto payload = Jwt::decode(jwt_with_bad_json_payload, pubkey);
+  EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, AlgAbsentInHeader) {
-  /*
-   * TODO
-   */
+  auto payload = Jwt::decode(jwt_with_alg_absent, pubkey);
+  EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, AlgIsNotString) {
-  /*
-   * TODO
-   */
+  auto payload = Jwt::decode(jwt_with_alg_is_not_string, pubkey);
+  EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, InvalidAlg) {
-  /*
-   * TODO
-   */
+  auto payload = Jwt::decode(jwt_with_invalid_alg, pubkey);
+  EXPECT_TRUE(payload == nullptr);
 }
 
 }  // namespace Auth

@@ -36,6 +36,9 @@ namespace Base64url {
 
 std::string decode(std::string input) {
   /*
+   * TODO: check input validity
+   */
+  /*
    * base64url is using '-', '_' instead of '+', '/' in base64 string.
    */
   std::replace(input.begin(), input.end(), '-', '+');
@@ -137,6 +140,11 @@ std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
    * TODO: return failure reason (something like
    * https://github.com/grpc/grpc/blob/master/src/core/lib/security/credentials/jwt/jwt_verifier.h#L38)
    */
+
+  /*
+   * TODO: support jwk
+   */
+
   /*
    * jwt must have exactly 2 dots
    */
