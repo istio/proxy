@@ -66,7 +66,7 @@ std::string decode(std::string input) {
 
 namespace Util {
 
-const uint8_t* unsignedCStr(const std::string& str) {
+const uint8_t* castToUChar(const std::string& str) {
   return reinterpret_cast<const uint8_t*>(str.c_str());
 }
 
@@ -75,7 +75,7 @@ const uint8_t* unsignedCStr(const std::string& str) {
 bssl::UniquePtr<EVP_PKEY> Jwt::evpPkeyFromStr(const std::string& pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
   bssl::UniquePtr<RSA> rsa(RSA_public_key_from_bytes(
-      Util::unsignedCStr(pkey_der), pkey_der.length()));
+      Util::castToUChar(pkey_der), pkey_der.length()));
   if (rsa == nullptr) {
     return nullptr;
   }
@@ -127,8 +127,8 @@ bool Jwt::verifySignature(const std::string& pkey_pem, const std::string& alg,
                           const std::string& signature,
                           const std::string& signed_data) {
   return verifySignature(evpPkeyFromStr(pkey_pem), alg,
-                         Util::unsignedCStr(signature), signature.length(),
-                         Util::unsignedCStr(signed_data), signed_data.length());
+                         Util::castToUChar(signature), signature.length(),
+                         Util::castToUChar(signed_data), signed_data.length());
 }
 
 std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
