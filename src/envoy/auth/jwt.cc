@@ -35,8 +35,15 @@ namespace Auth {
 namespace Base64url {
 
 std::string decode(std::string input) {
+  /*
+   * base64url is using '-', '_' instead of '+', '/' in base64 string.
+   */
   std::replace(input.begin(), input.end(), '-', '+');
   std::replace(input.begin(), input.end(), '_', '/');
+  /*
+   * base64 string should be padded with '=' so as to the length of the string
+   * is divisible by 4.
+   */
   switch (input.length() % 4) {
     case 0:
       break;
