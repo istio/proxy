@@ -203,8 +203,7 @@ TEST_F(JwtTest, InvalidSignature) {
 
 TEST_F(JwtTest, InvalidPublickey) {
   auto invalid_pubkey = pubkey;
-  invalid_pubkey[pubkey.length() - 1] =
-      pubkey[pubkey.length() - 1] != 'a' ? 'a' : 'b';
+  invalid_pubkey[0] = pubkey[0] != 'a' ? 'a' : 'b';
 
   auto payload = Jwt::decode(jwt, invalid_pubkey);
 
