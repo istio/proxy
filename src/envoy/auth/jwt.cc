@@ -111,6 +111,9 @@ bool Jwt::verifySignature(const std::string& pkey_pem, const std::string& alg,
 
 std::unique_ptr<rapidjson::Document> Jwt::decode(const std::string& jwt,
                                                  const std::string& pkey_pem) {
+  /*
+   * jwt must have exactly 2 dots
+   */
   if (std::count(jwt.begin(), jwt.end(), '.') != 2) {
     return nullptr;
   }

@@ -44,7 +44,7 @@ class JwtTest : public testing::Test {
       "Fe9a3NlNRMXgUU5RqbLnR9zfXr7b9oEszQIDAQAB";
 };
 
-TEST_F(JwtTest, Jwt_decode) {
+TEST_F(JwtTest, JwtDecode) {
   Jwt ob = Jwt();
   auto payload = ob.decode(jwt, pubkey);
 
@@ -63,7 +63,7 @@ TEST_F(JwtTest, Jwt_decode) {
   EXPECT_EQ(1501281058LL, exp);
 }
 
-TEST_F(JwtTest, invalid_signature) {
+TEST_F(JwtTest, InvalidSignature) {
   auto invalid_jwt = jwt;
   invalid_jwt[jwt.length() - 1] = jwt[jwt.length() - 1] != 'a' ? 'a' : 'b';
 
@@ -73,7 +73,7 @@ TEST_F(JwtTest, invalid_signature) {
   EXPECT_TRUE(payload == nullptr);
 }
 
-TEST_F(JwtTest, invalid_publickey) {
+TEST_F(JwtTest, InvalidPublickey) {
   auto invalid_pubkey = pubkey;
   invalid_pubkey[pubkey.length() - 1] =
       pubkey[pubkey.length() - 1] != 'a' ? 'a' : 'b';
@@ -84,7 +84,7 @@ TEST_F(JwtTest, invalid_publickey) {
   EXPECT_TRUE(payload == nullptr);
 }
 
-TEST_F(JwtTest, base64url_badinput_header) {
+TEST_F(JwtTest, Base64urlBadInputHeader) {
   auto invalid_header = jwt_header_encoded + 'a';
   auto invalid_jwt = StringUtil::join(
       std::vector<std::string>{invalid_header, jwt_payload_encoded,
@@ -97,7 +97,7 @@ TEST_F(JwtTest, base64url_badinput_header) {
   EXPECT_TRUE(payload == nullptr);
 }
 
-TEST_F(JwtTest, base64url_badinput_payload) {
+TEST_F(JwtTest, Base64urlBadInputPayload) {
   auto invalid_payload = jwt_payload_encoded + 'a';
   auto invalid_jwt = StringUtil::join(
       std::vector<std::string>{jwt_header_encoded, invalid_payload,
@@ -110,7 +110,7 @@ TEST_F(JwtTest, base64url_badinput_payload) {
   EXPECT_TRUE(payload == nullptr);
 }
 
-TEST_F(JwtTest, base64url_badinput_signature) {
+TEST_F(JwtTest, Base64urlBadinputSignature) {
   auto invalid_signature = jwt_signature_encoded + 'a';
   auto invalid_jwt = StringUtil::join(
       std::vector<std::string>{jwt_header_encoded, jwt_payload_encoded,
@@ -123,7 +123,7 @@ TEST_F(JwtTest, base64url_badinput_signature) {
   EXPECT_TRUE(payload == nullptr);
 }
 
-TEST_F(JwtTest, jwt_invalid_number_of_dots) {
+TEST_F(JwtTest, JwtInvalidNumberOfDots) {
   auto invalid_jwt = jwt + '.';
 
   Jwt ob = Jwt();
@@ -132,31 +132,31 @@ TEST_F(JwtTest, jwt_invalid_number_of_dots) {
   EXPECT_TRUE(payload == nullptr);
 }
 
-TEST_F(JwtTest, json_badinput_header) {
+TEST_F(JwtTest, JsonBadInputHeader) {
   /*
    * TODO
    */
 }
 
-TEST_F(JwtTest, json_badinput_payload) {
+TEST_F(JwtTest, JsonBadInputPayload) {
   /*
    * TODO
    */
 }
 
-TEST_F(JwtTest, alg_absent_in_header) {
+TEST_F(JwtTest, AlgAbsentInHeader) {
   /*
    * TODO
    */
 }
 
-TEST_F(JwtTest, alg_is_not_string) {
+TEST_F(JwtTest, AlgIsNotString) {
   /*
    * TODO
    */
 }
 
-TEST_F(JwtTest, invalid_alg) {
+TEST_F(JwtTest, InvalidAlg) {
   /*
    * TODO
    */
