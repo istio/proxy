@@ -37,7 +37,7 @@ namespace {
 // https://opensource.apple.com/source/QuickTimeStreamingServer/QuickTimeStreamingServer-452/CommonUtilitiesLib/base64.c
 //
 // and modified the position of 62 ('+' to '-') and 63 ('/' to '_')
-const uint8_t REVERSE_LOOKUP_TABLE_BASE64URL[256] = {
+const uint8_t kReverseLookupTableBase64Url[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
     64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 52, 53, 54, 55, 56, 57, 58, 59, 60,
@@ -54,7 +54,7 @@ const uint8_t REVERSE_LOOKUP_TABLE_BASE64URL[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64};
 
 bool IsNotBase64UrlChar(int8_t c) {
-  return REVERSE_LOOKUP_TABLE_BASE64URL[static_cast<int32_t>(c)] & 64;
+  return kReverseLookupTableBase64Url[static_cast<int32_t>(c)] & 64;
 }
 
 std::string Base64UrlDecode(std::string input) {

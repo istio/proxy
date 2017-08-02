@@ -24,7 +24,7 @@ namespace Auth {
 
 class JwtTest : public testing::Test {
  public:
-  const std::string jwt =
+  const std::string kJwt =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
       "ImV4cCI6MTUwMTI4MTA1OH0.FxT92eaBr9thDpeWaQh0YFhblVggn86DBpnTa_"
@@ -34,11 +34,11 @@ class JwtTest : public testing::Test {
       "N09hdvlCtAF87Fu1qqfwEQ93A-J7m08bZJoyIPcNmTcYGHwfMR4-lcI5cC_93C_"
       "5BGE1FHPLOHpNghLuM6-rhOtgwZc9ywupn_bBK3QzuAoDnYwpqQhgQL_CdUD_bSHcmWFkw";
 
-  const std::string jwt_header_encoded = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
-  const std::string jwt_payload_encoded =
+  const std::string kJwtHeaderEncoded = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
+  const std::string kJwtPayloadEncoded =
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
       "ImV4cCI6MTUwMTI4MTA1OH0";
-  const std::string jwt_signature_encoded =
+  const std::string kJwtSignatureEncoded =
       "FxT92eaBr9thDpeWaQh0YFhblVggn86DBpnTa_"
       "DVO4mNoGEkdpuhYq3epHPAs9EluuxdSkDJ3fCoI758ggGDw8GbqyJAcOsH10fBOrQbB7EFRB"
       "CI1xz6-6GEUac5PxyDnwy3liwC_"
@@ -46,11 +46,11 @@ class JwtTest : public testing::Test {
       "N09hdvlCtAF87Fu1qqfwEQ93A-J7m08bZJoyIPcNmTcYGHwfMR4-lcI5cC_93C_"
       "5BGE1FHPLOHpNghLuM6-rhOtgwZc9ywupn_bBK3QzuAoDnYwpqQhgQL_CdUD_bSHcmWFkw";
 
-  const std::string header = R"EOF({"alg":"RS256","typ":"JWT"})EOF";
-  const std::string payload =
+  const std::string kHeader = R"EOF({"alg":"RS256","typ":"JWT"})EOF";
+  const std::string kPayload =
       R"EOF({"iss":"https://example.com","sub":"test@example.com","exp":1501281058})EOF";
 
-  const std::string pubkey =
+  const std::string kPublicKey =
       "MIIBCgKCAQEAtw7MNxUTxmzWROCD5BqJxmzT7xqc9KsnAjbXCoqEEHDx4WBlfcwk"
       "XHt9e/2+Uwi3Arz3FOMNKwGGlbr7clBY3utsjUs8BTF0kO/poAmSTdSuGeh2mSbc"
       "VHvmQ7X/kichWwx5Qj0Xj4REU3Gixu1gQIr3GATPAIULo5lj/ebOGAa+l0wIG80N"
@@ -58,7 +58,7 @@ class JwtTest : public testing::Test {
       "+hHYL6nqwOR3ej0VqCTLS0OloC0LuCpLV7CnSpwbp2Qg/c+MDzQ0TH8g8drIzR5h"
       "Fe9a3NlNRMXgUU5RqbLnR9zfXr7b9oEszQIDAQAB";
 
-  const std::string privatekey =
+  const std::string kPrivateKey =
       "-----BEGIN RSA PRIVATE KEY-----\n"
       "MIIEowIBAAKCAQEAtw7MNxUTxmzWROCD5BqJxmzT7xqc9KsnAjbXCoqEEHDx4WBl\n"
       "fcwkXHt9e/2+Uwi3Arz3FOMNKwGGlbr7clBY3utsjUs8BTF0kO/poAmSTdSuGeh2\n"
@@ -91,7 +91,7 @@ class JwtTest : public testing::Test {
    * jwt with header replaced by
    * "{"alg":"RS256","typ":"JWT", this is a invalid json}"
    */
-  const std::string jwt_with_bad_json_header =
+  const std::string kJwtWithBadJsonHeader =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsIHRoaXMgaXMgYSBpbnZhbGlkIGpzb259."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
       "ImV4cCI6MTUwMTI4MTA1OH0."
@@ -106,7 +106,7 @@ class JwtTest : public testing::Test {
    * jwt with payload replaced by
    * "this is not a json"
    */
-  const std::string jwt_with_bad_json_payload =
+  const std::string kJwtWithBadJsonPayload =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.dGhpcyBpcyBub3QgYSBqc29u."
       "NhQjffMuBkYA9MXq3Fi3h2RRR6vNsYHOjF22GRHRcAEsTHJGYpWsU0MpkWnSJ04Ktx6PFp8f"
       "jRUI0bLtLC2R2Nv3VQNfvcZy0cJmlEWGZbRjEA2AwOaMpiKX-6z5BtMic9hG5Aw1IDxf_"
@@ -119,7 +119,7 @@ class JwtTest : public testing::Test {
    * jwt with header replaced by
    * "{"typ":"JWT"}"
    */
-  const std::string jwt_with_alg_absent =
+  const std::string kJwtWithAlgAbsent =
       "eyJ0eXAiOiJKV1QifQ."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
       "ImV4cCI6MTUwMTI4MTA1OH0"
@@ -139,7 +139,7 @@ class JwtTest : public testing::Test {
    * jwt with header replaced by
    * "{"alg":256,"typ":"JWT"}"
    */
-  const std::string jwt_with_alg_is_not_string =
+  const std::string kJwtWithAlgIsNotString =
       "eyJhbGciOjI1NiwidHlwIjoiSldUIn0."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
       "ImV4cCI6MTUwMTI4MTA1OH0."
@@ -158,7 +158,7 @@ class JwtTest : public testing::Test {
    * jwt with header replaced by
    * "{"alg":"InvalidAlg","typ":"JWT"}"
    */
-  const std::string jwt_with_invalid_alg =
+  const std::string kJwtWithInvalidAlg =
       "eyJhbGciOiJJbnZhbGlkQWxnIiwidHlwIjoiSldUIn0."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
       "ImV4cCI6MTUwMTI4MTA1OH0."
@@ -175,7 +175,7 @@ class JwtTest : public testing::Test {
 };
 
 TEST_F(JwtTest, JwtDecode) {
-  auto payload = Jwt::Decode(jwt, pubkey);
+  auto payload = Jwt::Decode(kJwt, kPublicKey);
 
   EXPECT_TRUE(payload != nullptr);
 
@@ -193,87 +193,87 @@ TEST_F(JwtTest, JwtDecode) {
 }
 
 TEST_F(JwtTest, InvalidSignature) {
-  auto invalid_jwt = jwt;
-  invalid_jwt[jwt.length() - 1] = jwt[jwt.length() - 1] != 'a' ? 'a' : 'b';
+  auto invalid_jwt = kJwt;
+  invalid_jwt[kJwt.length() - 1] = kJwt[kJwt.length() - 1] != 'a' ? 'a' : 'b';
 
-  auto payload = Jwt::Decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, InvalidPublickey) {
-  auto invalid_pubkey = pubkey;
-  invalid_pubkey[0] = pubkey[0] != 'a' ? 'a' : 'b';
+  auto invalid_pubkey = kPublicKey;
+  invalid_pubkey[0] = kPublicKey[0] != 'a' ? 'a' : 'b';
 
-  auto payload = Jwt::Decode(jwt, invalid_pubkey);
+  auto payload = Jwt::Decode(kJwt, invalid_pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, Base64urlBadInputHeader) {
-  auto invalid_header = jwt_header_encoded + 'a';
+  auto invalid_header = kJwtHeaderEncoded + 'a';
   auto invalid_jwt = StringUtil::join(
-      std::vector<std::string>{invalid_header, jwt_payload_encoded,
-                               jwt_signature_encoded},
+      std::vector<std::string>{invalid_header, kJwtPayloadEncoded,
+                               kJwtSignatureEncoded},
       ".");
 
-  auto payload = Jwt::Decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, Base64urlBadInputPayload) {
-  auto invalid_payload = jwt_payload_encoded + 'a';
+  auto invalid_payload = kJwtPayloadEncoded + 'a';
   auto invalid_jwt = StringUtil::join(
-      std::vector<std::string>{jwt_header_encoded, invalid_payload,
-                               jwt_signature_encoded},
+      std::vector<std::string>{kJwtHeaderEncoded, invalid_payload,
+                               kJwtSignatureEncoded},
       ".");
 
-  auto payload = Jwt::Decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, Base64urlBadinputSignature) {
-  auto invalid_signature = jwt_signature_encoded + 'a';
+  auto invalid_signature = kJwtSignatureEncoded + 'a';
   auto invalid_jwt = StringUtil::join(
-      std::vector<std::string>{jwt_header_encoded, jwt_payload_encoded,
+      std::vector<std::string>{kJwtHeaderEncoded, kJwtPayloadEncoded,
                                invalid_signature},
       ".");
 
-  auto payload = Jwt::Decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JwtInvalidNumberOfDots) {
-  auto invalid_jwt = jwt + '.';
-  auto payload = Jwt::Decode(invalid_jwt, pubkey);
+  auto invalid_jwt = kJwt + '.';
+  auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JsonBadInputHeader) {
-  auto payload = Jwt::Decode(jwt_with_bad_json_header, pubkey);
+  auto payload = Jwt::Decode(kJwtWithBadJsonHeader, kPublicKey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JsonBadInputPayload) {
-  auto payload = Jwt::Decode(jwt_with_bad_json_payload, pubkey);
+  auto payload = Jwt::Decode(kJwtWithBadJsonPayload, kPublicKey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, AlgAbsentInHeader) {
-  auto payload = Jwt::Decode(jwt_with_alg_absent, pubkey);
+  auto payload = Jwt::Decode(kJwtWithAlgAbsent, kPublicKey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, AlgIsNotString) {
-  auto payload = Jwt::Decode(jwt_with_alg_is_not_string, pubkey);
+  auto payload = Jwt::Decode(kJwtWithAlgIsNotString, kPublicKey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, InvalidAlg) {
-  auto payload = Jwt::Decode(jwt_with_invalid_alg, pubkey);
+  auto payload = Jwt::Decode(kJwtWithInvalidAlg, kPublicKey);
   EXPECT_TRUE(payload == nullptr);
 }
 
