@@ -69,7 +69,7 @@ api_dependencies()
 # Following go repositories are for building go integration test for mixer filter.
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "87cdda3fc0fd65c63ef0316533be03ea4956f809",  # April 7 2017 (0.4.2)
+    commit = "ec640f0c017a04594695f76bb4531d8769b2c27b",  # Jul 21, 2017
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
@@ -85,7 +85,7 @@ git_repository(
 # //src/envoy/mixer/integration_test
 # They are directly copied from its WORKSPACE
 
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "new_go_repository")
+load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "new_go_repository", "go_repository")
 go_repositories()
 
 load("@org_pubref_rules_protobuf//protobuf:rules.bzl", "proto_repositories")
@@ -436,3 +436,42 @@ git_repository(
 
 load("//src/envoy/mixer/integration_test:repositories.bzl", "go_mixer_repositories")
 go_mixer_repositories()
+
+###########################################
+# Following dependencies are needed for building pilot agent, which starts envoy
+git_repository(
+    name = "com_github_istio_pilot",
+    remote = "https://github.com/istio/pilot.git",
+    commit = "e35f5d1e012dd6f8dc711d2190d86832f342a821", # Jul 31
+)
+new_git_repository(
+    name = "io_istio_api",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//proto:go_proto_library.bzl", "go_proto_library")
+package(default_visibility = ["//visibility:public"])
+go_prefix("istio.io/api/proxy/v1/config")
+go_proto_library(
+    name = "go_default_library",
+    srcs = glob(["proxy/v1/config/*.proto"]),
+    deps = [
+        "@com_github_golang_protobuf//ptypes/any:go_default_library",
+        "@com_github_golang_protobuf//ptypes/duration:go_default_library",
+        "@com_github_golang_protobuf//ptypes/wrappers:go_default_library",
+    ],
+)
+    """,
+    commit = "af5afdafc95826a5716facc2ea025f1e27bb8225",  # June 8, 2017
+    remote = "https://github.com/istio/api.git",
+)
+
+go_repository(
+    name = "org_golang_x_time",
+    commit = "8be79e1e0910c292df4e79c241bb7e8f7e725959",
+    importpath = "golang.org/x/time",
+)
+new_go_repository(
+    name = "com_github_howeyc_fsnotify",
+    commit = "f0c08ee9c60704c1879025f2ae0ff3e000082c13",
+    importpath = "github.com/howeyc/fsnotify",
+)
