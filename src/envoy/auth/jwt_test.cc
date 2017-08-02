@@ -177,7 +177,7 @@ class JwtTest : public testing::Test {
 TEST_F(JwtTest, JwtDecode) {
   auto payload = Jwt::Decode(kJwt, kPublicKey);
 
-  EXPECT_TRUE(payload != nullptr);
+  EXPECT_TRUE(payload);
 
   EXPECT_TRUE((*payload)["iss"].IsString());
   std::string iss = (*payload)["iss"].GetString();
@@ -198,7 +198,7 @@ TEST_F(JwtTest, InvalidSignature) {
 
   auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, InvalidPublickey) {
@@ -207,7 +207,7 @@ TEST_F(JwtTest, InvalidPublickey) {
 
   auto payload = Jwt::Decode(kJwt, invalid_pubkey);
 
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, Base64urlBadInputHeader) {
@@ -219,7 +219,7 @@ TEST_F(JwtTest, Base64urlBadInputHeader) {
 
   auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, Base64urlBadInputPayload) {
@@ -231,7 +231,7 @@ TEST_F(JwtTest, Base64urlBadInputPayload) {
 
   auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, Base64urlBadinputSignature) {
@@ -243,38 +243,38 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
 
   auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
 
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, JwtInvalidNumberOfDots) {
   auto invalid_jwt = kJwt + '.';
   auto payload = Jwt::Decode(invalid_jwt, kPublicKey);
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, JsonBadInputHeader) {
   auto payload = Jwt::Decode(kJwtWithBadJsonHeader, kPublicKey);
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, JsonBadInputPayload) {
   auto payload = Jwt::Decode(kJwtWithBadJsonPayload, kPublicKey);
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, AlgAbsentInHeader) {
   auto payload = Jwt::Decode(kJwtWithAlgAbsent, kPublicKey);
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, AlgIsNotString) {
   auto payload = Jwt::Decode(kJwtWithAlgIsNotString, kPublicKey);
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 TEST_F(JwtTest, InvalidAlg) {
   auto payload = Jwt::Decode(kJwtWithInvalidAlg, kPublicKey);
-  EXPECT_TRUE(payload == nullptr);
+  EXPECT_FALSE(payload);
 }
 
 }  // namespace Auth
