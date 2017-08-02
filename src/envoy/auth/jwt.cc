@@ -33,8 +33,6 @@ namespace Http {
 namespace Auth {
 namespace {
 
-namespace Base64url {
-
 // Conversion table is taken from
 // https://opensource.apple.com/source/QuickTimeStreamingServer/QuickTimeStreamingServer-452/CommonUtilitiesLib/base64.c
 //
@@ -59,7 +57,7 @@ bool isNotBase64UrlChar(int8_t c) {
   return REVERSE_LOOKUP_TABLE_BASE64URL[static_cast<int32_t>(c)] & 64;
 }
 
-std::string decode(std::string input) {
+std::string base64UrlDecode(std::string input) {
   /*
    * if input contains non-base64url character, return empty string
    */
@@ -95,20 +93,14 @@ std::string decode(std::string input) {
   return Base64::decode(input);
 }
 
-}  // namespace Base64url
-
-namespace Util {
-
 const uint8_t *castToUChar(const std::string &str) {
   return reinterpret_cast<const uint8_t *>(str.c_str());
 }
 
-}  // namespace Util
-
 bssl::UniquePtr<EVP_PKEY> evpPkeyFromStr(const std::string &pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
-  bssl::UniquePtr<RSA> rsa(RSA_public_key_from_bytes(
-      Util::castToUChar(pkey_der), pkey_der.length()));
+  bssl::UniquePtr<RSA> rsa(
+      RSA_public_key_from_bytes(castToUChar(pkey_der), pkey_der.length()));
   if (rsa == nullptr) {
     return nullptr;
   }
@@ -159,9 +151,9 @@ bool verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string &alg,
 bool verifySignature(const std::string &pkey_pem, const std::string &alg,
                      const std::string &signature,
                      const std::string &signed_data) {
-  return verifySignature(evpPkeyFromStr(pkey_pem), alg,
-                         Util::castToUChar(signature), signature.length(),
-                         Util::castToUChar(signed_data), signed_data.length());
+  return verifySignature(evpPkeyFromStr(pkey_pem), alg, castToUChar(signature),
+                         signature.length(), castToUChar(signed_data),
+                         signed_data.length());
 }
 
 }  // namespace
@@ -198,7 +190,7 @@ std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
    * verification
    */
   rapidjson::Document header_json;
-  if (header_json.Parse(Base64url::decode(header_base64url_encoded).c_str())
+  if (header_json.Parse(base64UrlDecode(header_base64url_encoded).c_str())
           .HasParseError()) {
     return nullptr;
   }
@@ -212,7 +204,7 @@ std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
   }
   std::string alg = alg_v.GetString();
 
-  std::string signature = Base64url::decode(signature_base64url_encoded);
+  std::string signature = base64UrlDecode(signature_base64url_encoded);
   bool valid = verifySignature(pkey_pem, alg, signature, signed_data);
 
   // if signature is invalid, it will not decode the payload
@@ -226,7 +218,7 @@ std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
   std::unique_ptr<rapidjson::Document> payload_json_ptr(
       new rapidjson::Document());
   if (payload_json_ptr
-          ->Parse(Base64url::decode(payload_base64url_encoded).c_str())
+          ->Parse(base64UrlDecode(payload_base64url_encoded).c_str())
           .HasParseError()) {
     return nullptr;
   }
