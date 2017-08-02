@@ -28,6 +28,9 @@ namespace Http {
 namespace Auth {
 namespace Jwt {
 
+// This function verifies JWT signature and returns the decoded payload as a
+// JSON if the signature is valid.
+// If verification failed, it returns nullptr.
 std::unique_ptr<rapidjson::Document> Decode(const std::string& jwt,
                                             const std::string& pkey_pem);
 

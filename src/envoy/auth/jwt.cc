@@ -200,15 +200,13 @@ std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
   }
 
   // decode payload
-  std::unique_ptr<rapidjson::Document> payload_json_ptr(
-      new rapidjson::Document());
-  if (payload_json_ptr
-          ->Parse(Base64UrlDecode(payload_base64url_encoded).c_str())
+  std::unique_ptr<rapidjson::Document> payload_json(new rapidjson::Document());
+  if (payload_json->Parse(Base64UrlDecode(payload_base64url_encoded).c_str())
           .HasParseError()) {
     return nullptr;
   }
 
-  return payload_json_ptr;
+  return payload_json;
 };
 
 }  // Jwt
