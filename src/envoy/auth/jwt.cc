@@ -94,7 +94,7 @@ bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
   bssl::UniquePtr<RSA> rsa(
       RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()));
-  if (rsa == nullptr) {
+  if (!rsa) {
     return nullptr;
   }
   bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
@@ -120,10 +120,10 @@ bool VerifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string &alg,
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
   const EVP_MD *md = EvpMdFromAlg(alg);
 
-  if (md == nullptr) {
+  if (!md) {
     return false;
   }
-  if (md_ctx == nullptr) {
+  if (!md_ctx) {
     return false;
   }
   if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key.get()) !=
