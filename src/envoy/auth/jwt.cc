@@ -58,23 +58,18 @@ bool IsNotBase64UrlChar(int8_t c) {
 }
 
 std::string Base64UrlDecode(std::string input) {
-  /*
-   * if input contains non-base64url character, return empty string
-   */
+  // if input contains non-base64url character, return empty string
   if (std::find_if(input.begin(), input.end(), IsNotBase64UrlChar) !=
       input.end()) {
     return "";
   }
 
-  /*
-   * base64url is using '-', '_' instead of '+', '/' in base64 string.
-   */
+  // base64url is using '-', '_' instead of '+', '/' in base64 string.
   std::replace(input.begin(), input.end(), '-', '+');
   std::replace(input.begin(), input.end(), '_', '/');
-  /*
-   * base64 string should be padded with '=' so as to the length of the string
-   * is divisible by 4.
-   */
+
+  // base64 string should be padded with '=' so as to the length of the string
+  // is divisible by 4.
   switch (input.length() % 4) {
     case 0:
       break;
@@ -85,9 +80,7 @@ std::string Base64UrlDecode(std::string input) {
       input += "=";
       break;
     default:
-      /*
-       * an invalid base64url input. return empty string.
-       */
+      // * an invalid base64url input. return empty string.
       return "";
   }
   return Base64::decode(input);
@@ -111,11 +104,9 @@ bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
 }
 
 const EVP_MD *EvpMdFromAlg(const std::string &alg) {
-  /*
-   * may use
-   * EVP_sha384() if alg == "RS384" and
-   * EVP_sha512() if alg == "RS512"
-   */
+  // may use
+  // EVP_sha384() if alg == "RS384" and
+  // EVP_sha512() if alg == "RS512"
   if (alg == "RS256") {
     return EVP_sha256();
   } else {
@@ -171,9 +162,7 @@ std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
    * TODO: support jwk
    */
 
-  /*
-   * jwt must have exactly 2 dots
-   */
+  // jwt must have exactly 2 dots
   if (std::count(jwt.begin(), jwt.end(), '.') != 2) {
     return nullptr;
   }
@@ -186,9 +175,7 @@ std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
   const std::string &signature_base64url_encoded = jwt_split[2];
   std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
 
-  /*
-   * verification
-   */
+  // verification
   rapidjson::Document header_json;
   if (header_json.Parse(Base64UrlDecode(header_base64url_encoded).c_str())
           .HasParseError()) {
@@ -212,9 +199,7 @@ std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
     return nullptr;
   }
 
-  /*
-   * decode payload
-   */
+  // decode payload
   std::unique_ptr<rapidjson::Document> payload_json_ptr(
       new rapidjson::Document());
   if (payload_json_ptr
