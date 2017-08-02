@@ -28,7 +28,7 @@ namespace Http {
 namespace Auth {
 namespace Jwt {
 
-std::unique_ptr<rapidjson::Document> decode(const std::string& jwt,
+std::unique_ptr<rapidjson::Document> Decode(const std::string& jwt,
                                             const std::string& pkey_pem);
 
 }  // Jwt

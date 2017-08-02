@@ -53,15 +53,15 @@ const uint8_t REVERSE_LOOKUP_TABLE_BASE64URL[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
     64, 64, 64, 64, 64, 64, 64, 64, 64};
 
-bool isNotBase64UrlChar(int8_t c) {
+bool IsNotBase64UrlChar(int8_t c) {
   return REVERSE_LOOKUP_TABLE_BASE64URL[static_cast<int32_t>(c)] & 64;
 }
 
-std::string base64UrlDecode(std::string input) {
+std::string Base64UrlDecode(std::string input) {
   /*
    * if input contains non-base64url character, return empty string
    */
-  if (std::find_if(input.begin(), input.end(), isNotBase64UrlChar) !=
+  if (std::find_if(input.begin(), input.end(), IsNotBase64UrlChar) !=
       input.end()) {
     return "";
   }
@@ -93,14 +93,14 @@ std::string base64UrlDecode(std::string input) {
   return Base64::decode(input);
 }
 
-const uint8_t *castToUChar(const std::string &str) {
+const uint8_t *CastToUChar(const std::string &str) {
   return reinterpret_cast<const uint8_t *>(str.c_str());
 }
 
-bssl::UniquePtr<EVP_PKEY> evpPkeyFromStr(const std::string &pkey_pem) {
+bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
   bssl::UniquePtr<RSA> rsa(
-      RSA_public_key_from_bytes(castToUChar(pkey_der), pkey_der.length()));
+      RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()));
   if (rsa == nullptr) {
     return nullptr;
   }
@@ -110,7 +110,7 @@ bssl::UniquePtr<EVP_PKEY> evpPkeyFromStr(const std::string &pkey_pem) {
   return key;
 }
 
-const EVP_MD *evpMdFromAlg(const std::string &alg) {
+const EVP_MD *EvpMdFromAlg(const std::string &alg) {
   /*
    * may use
    * EVP_sha384() if alg == "RS384" and
@@ -123,11 +123,11 @@ const EVP_MD *evpMdFromAlg(const std::string &alg) {
   }
 }
 
-bool verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string &alg,
+bool VerifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string &alg,
                      const uint8_t *signature, size_t signature_len,
                      const uint8_t *signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
-  const EVP_MD *md = evpMdFromAlg(alg);
+  const EVP_MD *md = EvpMdFromAlg(alg);
 
   if (md == nullptr) {
     return false;
@@ -148,11 +148,11 @@ bool verifySignature(bssl::UniquePtr<EVP_PKEY> key, const std::string &alg,
   return true;
 }
 
-bool verifySignature(const std::string &pkey_pem, const std::string &alg,
+bool VerifySignature(const std::string &pkey_pem, const std::string &alg,
                      const std::string &signature,
                      const std::string &signed_data) {
-  return verifySignature(evpPkeyFromStr(pkey_pem), alg, castToUChar(signature),
-                         signature.length(), castToUChar(signed_data),
+  return VerifySignature(EvpPkeyFromStr(pkey_pem), alg, CastToUChar(signature),
+                         signature.length(), CastToUChar(signed_data),
                          signed_data.length());
 }
 
@@ -160,7 +160,7 @@ bool verifySignature(const std::string &pkey_pem, const std::string &alg,
 
 namespace Jwt {
 
-std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
+std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
                                             const std::string &pkey_pem) {
   /*
    * TODO: return failure reason (something like
@@ -190,7 +190,7 @@ std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
    * verification
    */
   rapidjson::Document header_json;
-  if (header_json.Parse(base64UrlDecode(header_base64url_encoded).c_str())
+  if (header_json.Parse(Base64UrlDecode(header_base64url_encoded).c_str())
           .HasParseError()) {
     return nullptr;
   }
@@ -204,8 +204,8 @@ std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
   }
   std::string alg = alg_v.GetString();
 
-  std::string signature = base64UrlDecode(signature_base64url_encoded);
-  bool valid = verifySignature(pkey_pem, alg, signature, signed_data);
+  std::string signature = Base64UrlDecode(signature_base64url_encoded);
+  bool valid = VerifySignature(pkey_pem, alg, signature, signed_data);
 
   // if signature is invalid, it will not decode the payload
   if (!valid) {
@@ -218,7 +218,7 @@ std::unique_ptr<rapidjson::Document> decode(const std::string &jwt,
   std::unique_ptr<rapidjson::Document> payload_json_ptr(
       new rapidjson::Document());
   if (payload_json_ptr
-          ->Parse(base64UrlDecode(payload_base64url_encoded).c_str())
+          ->Parse(Base64UrlDecode(payload_base64url_encoded).c_str())
           .HasParseError()) {
     return nullptr;
   }

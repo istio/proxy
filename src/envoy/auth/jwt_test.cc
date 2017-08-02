@@ -175,7 +175,7 @@ class JwtTest : public testing::Test {
 };
 
 TEST_F(JwtTest, JwtDecode) {
-  auto payload = Jwt::decode(jwt, pubkey);
+  auto payload = Jwt::Decode(jwt, pubkey);
 
   EXPECT_TRUE(payload != nullptr);
 
@@ -196,7 +196,7 @@ TEST_F(JwtTest, InvalidSignature) {
   auto invalid_jwt = jwt;
   invalid_jwt[jwt.length() - 1] = jwt[jwt.length() - 1] != 'a' ? 'a' : 'b';
 
-  auto payload = Jwt::decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -205,7 +205,7 @@ TEST_F(JwtTest, InvalidPublickey) {
   auto invalid_pubkey = pubkey;
   invalid_pubkey[0] = pubkey[0] != 'a' ? 'a' : 'b';
 
-  auto payload = Jwt::decode(jwt, invalid_pubkey);
+  auto payload = Jwt::Decode(jwt, invalid_pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -217,7 +217,7 @@ TEST_F(JwtTest, Base64urlBadInputHeader) {
                                jwt_signature_encoded},
       ".");
 
-  auto payload = Jwt::decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -229,7 +229,7 @@ TEST_F(JwtTest, Base64urlBadInputPayload) {
                                jwt_signature_encoded},
       ".");
 
-  auto payload = Jwt::decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
@@ -241,39 +241,39 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
                                invalid_signature},
       ".");
 
-  auto payload = Jwt::decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, pubkey);
 
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JwtInvalidNumberOfDots) {
   auto invalid_jwt = jwt + '.';
-  auto payload = Jwt::decode(invalid_jwt, pubkey);
+  auto payload = Jwt::Decode(invalid_jwt, pubkey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JsonBadInputHeader) {
-  auto payload = Jwt::decode(jwt_with_bad_json_header, pubkey);
+  auto payload = Jwt::Decode(jwt_with_bad_json_header, pubkey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, JsonBadInputPayload) {
-  auto payload = Jwt::decode(jwt_with_bad_json_payload, pubkey);
+  auto payload = Jwt::Decode(jwt_with_bad_json_payload, pubkey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, AlgAbsentInHeader) {
-  auto payload = Jwt::decode(jwt_with_alg_absent, pubkey);
+  auto payload = Jwt::Decode(jwt_with_alg_absent, pubkey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, AlgIsNotString) {
-  auto payload = Jwt::decode(jwt_with_alg_is_not_string, pubkey);
+  auto payload = Jwt::Decode(jwt_with_alg_is_not_string, pubkey);
   EXPECT_TRUE(payload == nullptr);
 }
 
 TEST_F(JwtTest, InvalidAlg) {
-  auto payload = Jwt::decode(jwt_with_invalid_alg, pubkey);
+  auto payload = Jwt::Decode(jwt_with_invalid_alg, pubkey);
   EXPECT_TRUE(payload == nullptr);
 }
 
