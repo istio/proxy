@@ -172,10 +172,13 @@ class JwtTest : public testing::Test {
       "YjAxMGQ4MjYyYmUKM2U1MjMyMTE4MzUxY2U5M2VkNmY1NWJhYTFmNmU5M2NmMzVlZjJiNjRi"
       "MDYxNzU4YWJmYzdkNzUzYzAxMWVhNgo3NTg1N2MwMGY3YTE3Y2E3YWI2NGJlMWIyYjdkNzZl"
       "NWJlMThhZWFmZWY5NDU5MjAxY2RkY2NkZGZiZjczMjQ2";
+};
 
+class JwtTestWithJwk : public testing::Test {
+ public:
   // The following public key jwk and token are taken from
   // https://github.com/cloudendpoints/esp/blob/master/src/api_manager/auth/lib/auth_jwt_validator_test.cc
-  const std::string kPublicKeyJwk =
+  const std::string kPublicKey =
       "{\"keys\": [{\"kty\": \"RSA\",\"alg\": \"RS256\",\"use\": "
       "\"sig\",\"kid\": \"62a93512c9ee4c7f8067b5a216dade2763d32a47\",\"n\": "
       "\"0YWnm_eplO9BFtXszMRQNL5UtZ8HJdTH2jK7vjs4XdLkPW7YBkkm_"
@@ -209,7 +212,7 @@ class JwtTest : public testing::Test {
   //     "noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
   //   "aud": "http://myservice.com/myapi"
   // }
-  const std::string kTokenNoKid =
+  const std::string kJwtNoKid =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
       "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1M"
       "jNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb"
@@ -332,8 +335,8 @@ TEST_F(JwtTest, InvalidAlg) {
   EXPECT_FALSE(payload);
 }
 
-TEST_F(JwtTest, JwtDecodeWithJwk) {
-  auto payload = Jwt::DecodeWithJwk(kTokenNoKid, kPublicKeyJwk);
+TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
+  auto payload = Jwt::DecodeWithJwk(kJwtNoKid, kPublicKey);
 
   EXPECT_TRUE(payload);
 
