@@ -15,25 +15,110 @@
 ################################################################################
 #
 
-load(
-    "//:repositories.bzl",
-    "boringssl_repositories",
-    "protobuf_repositories",
-    "googletest_repositories",
+git_repository(
+        name = "boringssl",
+        commit = "16efcb2dba4690b9940d9b95ef703f1bbd07494d",  # 2017-03-20
+        remote = "https://boringssl.googlesource.com/boringssl",
 )
 
-boringssl_repositories()
-
-protobuf_repositories()
-
-googletest_repositories()
-
-load(
-    "//src/envoy/mixer:repositories.bzl",
-    "mixer_client_repositories",
+git_repository(
+        name = "protobuf_git",
+        commit = "580b222e225076d0d7a6c65d472398a5f089fb51",  # istio branch
+        remote = "https://github.com/istio/protobuf.git",
 )
 
-mixer_client_repositories()
+new_git_repository(
+        name = "googletest_git",
+        build_file = "tools/bazelbuild/BUILD.googletest",
+        commit = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0",
+        remote = "https://github.com/google/googletest.git",
+)
+
+bind(
+        name = "boringssl_crypto",
+        actual = "@boringssl//:crypto",
+)
+
+bind(
+        name = "libssl",
+        actual = "@boringssl//:ssl",
+)
+
+bind(
+            name = "protoc",
+            actual = "@protobuf_git//:protoc",
+)
+
+bind(
+            name = "protobuf",
+            actual = "@protobuf_git//:protobuf",
+)
+
+bind(
+            name = "cc_wkt_protos",
+            actual = "@protobuf_git//:cc_wkt_protos",
+)
+
+bind(
+            name = "cc_wkt_protos_genproto",
+            actual = "@protobuf_git//:cc_wkt_protos_genproto",
+)
+
+bind(
+            name = "protobuf_compiler",
+            actual = "@protobuf_git//:protoc_lib",
+)
+
+bind(
+            name = "protobuf_clib",
+            actual = "@protobuf_git//:protoc_lib",
+)
+
+bind(
+            name = "googletest",
+            actual = "@googletest_git//:googletest",
+)
+
+bind(
+            name = "googletest_main",
+            actual = "@googletest_git//:googletest_main",
+)
+
+bind(
+            name = "googletest_prod",
+            actual = "@googletest_git//:googletest_prod",
+)
+
+
+new_git_repository(
+        name = "lightstep_common_git",
+        remote = "https://github.com/lightstep/lightstep-tracer-common.git",
+        commit = "cbbecd671c1ae1f20ae873c5da688c8c14d04ec3",
+        build_file = "tools/bazelbuild/BUILD.lightstep_common",
+)
+
+new_git_repository(
+        name = "lightstep_git",
+        remote = "https://github.com/lightstep/lightstep-tracer-cpp.git",
+        commit = "f1dc8f3dfd529350e053fd21273e627f409ae428", # 0.36
+        build_file = "tools/bazelbuild/BUILD.lightstep",
+)
+
+bind(
+            name = "lightstep",
+            actual = "@lightstep_git//:lightstep_core",
+)
+
+git_repository(
+        name = "mixerclient_git",
+        commit = "6746a3b4e564e0a8a582f84ad1e72ba55dc1aa6d",
+        remote = "https://github.com/istio/mixerclient.git",
+)
+
+bind(
+            name = "mixer_client_lib",
+            actual = "@mixerclient_git//:mixer_client_lib",
+)
 
 load(
     "@mixerclient_git//:repositories.bzl",
@@ -41,12 +126,12 @@ load(
     "mixerapi_repositories",
 )
 
+# googleapis_git preo, with custom build file. Envoy has its own variant.
 googleapis_repositories()
+
+## Defines mixerapi_git and the cc_proto, as well as gogoproto_git
 mixerapi_repositories()
 
-load("//src/envoy:repositories.bzl", "lightstep_repositories")
-
-lightstep_repositories()
 
 # Bind BoringSSL for Envoy
 bind(
@@ -54,6 +139,7 @@ bind(
     actual = "@boringssl//:ssl",
 )
 
+# Envoy requirements and deps, partially overriden by the rules above (see skip_targets).
 git_repository(
     name = "envoy",
     remote = "https://github.com/lyft/envoy.git",
@@ -84,6 +170,8 @@ git_repository(
 # Following dependencies are needed for building istio/mixer for
 # //src/envoy/mixer/integration_test
 # They are directly copied from its WORKSPACE
+
+# TODO: move integration tests and mixer dep to istio repository.
 
 load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "new_go_repository", "go_repository")
 go_repositories()
@@ -434,6 +522,9 @@ git_repository(
 
 ############################################################
 
+# com_github_istio_mixer
+# com_github_istio_api - with custom build rule for gogo
+# another com_github_googleapis_googleapis (different from the one in mixer_client or envoy)
 load("//src/envoy/mixer/integration_test:repositories.bzl", "go_mixer_repositories")
 go_mixer_repositories()
 
