@@ -102,19 +102,21 @@ const uint8_t *CastToUChar(const std::string &str) {
   return reinterpret_cast<const uint8_t *>(str.c_str());
 }
 
-bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(const bssl::UniquePtr<RSA> &rsa) {
+bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(RSA *rsa) {
   if (!rsa) {
     return nullptr;
   }
   bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
-  EVP_PKEY_set1_RSA(key.get(), rsa.get());
+  EVP_PKEY_set1_RSA(key.get(), rsa);
   return key;
 }
 
 bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
   std::string pkey_der = Base64::decode(pkey_pem);
-  return EvpPkeyFromRsa(bssl::UniquePtr<RSA>(
-      RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length())));
+  return EvpPkeyFromRsa(
+      bssl::UniquePtr<RSA>(
+          RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()))
+          .get());
 }
 
 BIGNUM *BigNumFromBase64UrlString(const std::string &s) {
@@ -142,7 +144,7 @@ bssl::UniquePtr<RSA> RsaFromJwk(const std::string &n, const std::string &e) {
 
 bssl::UniquePtr<EVP_PKEY> EvpPkeyFromJwk(const std::string &n,
                                          const std::string &e) {
-  return EvpPkeyFromRsa(RsaFromJwk(n, e));
+  return EvpPkeyFromRsa(RsaFromJwk(n, e).get());
 }
 
 const EVP_MD *EvpMdFromAlg(const std::string &alg) {
