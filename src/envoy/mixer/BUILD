@@ -16,47 +16,60 @@
 #
 
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
-load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_proto_library",
+    "envoy_cc_library",
+    "envoy_cc_binary",
+    "envoy_linkopts",
+)
 
 cc_proto_library(
     name = "string_map_proto",
     srcs = ["string_map.proto"],
     default_runtime = "//external:protobuf",
+    linkstatic = 1,
     protoc = "//external:protoc",
     visibility = ["//visibility:public"],
 )
 
+# This is a dummy cc_library to provide linkopts to envoy_cc_library
 cc_library(
+    name = "uuid",
+    linkopts = ["-luuid"],
+    linkstatic = 1,
+)
+
+envoy_cc_library(
     name = "filter_lib",
     srcs = [
         "config.cc",
         "config.h",
         "grpc_transport.cc",
         "grpc_transport.h",
+        "http_filter.cc",
         "mixer_control.cc",
         "mixer_control.h",
-        "http_filter.cc",
         "tcp_filter.cc",
         "thread_dispatcher.cc",
         "thread_dispatcher.h",
         "utils.cc",
         "utils.h",
     ],
+    repository = "@envoy",
     deps = [
         ":string_map_proto",
+        ":uuid",
         "//external:mixer_client_lib",
+        "@envoy//source/common/grpc:rpc_channel_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
-    alwayslink = 1,
 )
 
-cc_binary(
+envoy_cc_binary(
     name = "envoy",
-    linkopts = [
-        "-lrt",
-        "-luuid",
-    ],
-    linkstatic = 1,
+    repository = "@envoy",
     visibility = [":__subpackages__"],
     deps = [
         ":filter_lib",
@@ -88,4 +101,3 @@ pkg_tar(
     package_dir = "/etc/opt/proxy",
     tags = ["manual"],
 )
-
