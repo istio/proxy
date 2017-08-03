@@ -119,20 +119,19 @@ bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
           .get());
 }
 
-BIGNUM *BigNumFromBase64UrlString(const std::string &s) {
-  std::string s_decoded = Base64UrlDecode(s);
-  if (s_decoded == "") {
-    return nullptr;
-  }
-  return BN_bin2bn(CastToUChar(s_decoded), s_decoded.length(), NULL);
-}
-
 bssl::UniquePtr<RSA> RsaFromJwk(const std::string &n, const std::string &e) {
   bssl::UniquePtr<RSA> rsa(RSA_new());
   if (!rsa) {
     // Couldn't create RSA key.
     return nullptr;
   }
+  auto BigNumFromBase64UrlString = [](const std::string &s) -> BIGNUM * {
+    std::string s_decoded = Base64UrlDecode(s);
+    if (s_decoded == "") {
+      return nullptr;
+    }
+    return BN_bin2bn(CastToUChar(s_decoded), s_decoded.length(), NULL);
+  };
   rsa->n = BigNumFromBase64UrlString(n);
   rsa->e = BigNumFromBase64UrlString(e);
   if (!rsa->n || !rsa->e) {
