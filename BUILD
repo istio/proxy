@@ -73,4 +73,5 @@ pkg_deb(
     package = "istio",
     postinst = "tools/deb/postinst.sh",
     version = "0.2.1",
+    visibility = ["//visibility:public"],
 )
