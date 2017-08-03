@@ -284,10 +284,16 @@ std::unique_ptr<rapidjson::Document> DecodeWithJwk(const std::string &jwt,
   if (!verifier.Setup(jwt)) {
     return nullptr;
   }
-  std::string kid_jwt =
-      verifier.header.HasMember("kid") && verifier.header["kid"].IsString()
-          ? verifier.header["kid"].GetString()
-          : "";
+  std::string kid_jwt = "";
+  if (verifier.header.HasMember("kid")) {
+    if (verifier.header["kid"].IsString()) {
+      kid_jwt = verifier.header["kid"].GetString();
+    } else {
+      // if header has invalid format (non-string) "kid", verification is
+      // considered to be failed
+      return nullptr;
+    }
+  }
 
   // parse JWKs
   rapidjson::Document jwks_json;

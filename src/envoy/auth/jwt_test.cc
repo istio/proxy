@@ -199,37 +199,112 @@ class JwtTestWithJwk : public testing::Test {
       "ZDtLd1i24STUw39KH0pcSdfFbL2NtEZdNeam1DDdk0iUtJSPZliUHJBI_pj8M-2Mn_"
       "oA8jBuI8YKwBqYkZCN1I95Q\",\"e\": \"AQAB\"}]}";
 
-  // Header (kid is not specified):
-  // {
-  //   "alg": "RS256",
-  //   "typ": "JWT"
-  // }
+  const std::string kPrivateKey =
+      "-----BEGIN PRIVATE KEY-----\n"
+      "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCoOLtPHgOE289C\n"
+      "yXWh/HFzZ49AVyz4vSZdijpMZLrgJj/ZaY629iVws1mOG511lVXZfzybQx/BpIDX\n"
+      "rAT5GIoz2GqjkRjwE9ePnsIyJgDKIe5A+nXJrKMyCgTU/aO+nh6oX4FOKWUYm3lb\n"
+      "lG5e2L26p8y0JB1qAHwQLcw1G5T8p14uAHLeVLeijgs5h37viREFVluTbCeaZvsi\n"
+      "E/06gtzX7v72pTW6GkPGYTonAFq7SYNLAydgNLgb8wvXt0L5kO0t3WLbhJNTDf0o\n"
+      "fSlxJ18VsvY20Rl015qbUMN2TSJS0lI9mWJQckEj+mPwz7Yyf+gDyMG4jxgrAGpi\n"
+      "RkI3Uj3lAgMBAAECggEAOuaaVyp4KvXYDVeC07QTeUgCdZHQkkuQemIi5YrDkCZ0\n"
+      "Zsi6CsAG/f4eVk6/BGPEioItk2OeY+wYnOuDVkDMazjUpe7xH2ajLIt3DZ4W2q+k\n"
+      "v6WyxmmnPqcZaAZjZiPxMh02pkqCNmqBxJolRxp23DtSxqR6lBoVVojinpnIwem6\n"
+      "xyUl65u0mvlluMLCbKeGW/K9bGxT+qd3qWtYFLo5C3qQscXH4L0m96AjGgHUYW6M\n"
+      "Ffs94ETNfHjqICbyvXOklabSVYenXVRL24TOKIHWkywhi1wW+Q6zHDADSdDVYw5l\n"
+      "DaXz7nMzJ2X7cuRP9zrPpxByCYUZeJDqej0Pi7h7ZQKBgQDdI7Yb3xFXpbuPd1VS\n"
+      "tNMltMKzEp5uQ7FXyDNI6C8+9TrjNMduTQ3REGqEcfdWA79FTJq95IM7RjXX9Aae\n"
+      "p6cLekyH8MDH/SI744vCedkD2bjpA6MNQrzNkaubzGJgzNiZhjIAqnDAD3ljHI61\n"
+      "NbADc32SQMejb6zlEh8hssSsXwKBgQDCvXhTIO/EuE/y5Kyb/4RGMtVaQ2cpPCoB\n"
+      "GPASbEAHcsRk+4E7RtaoDQC1cBRy+zmiHUA9iI9XZyqD2xwwM89fzqMj5Yhgukvo\n"
+      "XMxvMh8NrTneK9q3/M3mV1AVg71FJQ2oBr8KOXSEbnF25V6/ara2+EpH2C2GDMAo\n"
+      "pgEnZ0/8OwKBgFB58IoQEdWdwLYjLW/d0oGEWN6mRfXGuMFDYDaGGLuGrxmEWZdw\n"
+      "fzi4CquMdgBdeLwVdrLoeEGX+XxPmCEgzg/FQBiwqtec7VpyIqhxg2J9V2elJS9s\n"
+      "PB1rh9I4/QxRP/oO9h9753BdsUU6XUzg7t8ypl4VKRH3UCpFAANZdW1tAoGAK4ad\n"
+      "tjbOYHGxrOBflB5wOiByf1JBZH4GBWjFf9iiFwgXzVpJcC5NHBKL7gG3EFwGba2M\n"
+      "BjTXlPmCDyaSDlQGLavJ2uQar0P0Y2MabmANgMkO/hFfOXBPtQQe6jAfxayaeMvJ\n"
+      "N0fQOylUQvbRTodTf2HPeG9g/W0sJem0qFH3FrECgYEAnwixjpd1Zm/diJuP0+Lb\n"
+      "YUzDP+Afy78IP3mXlbaQ/RVd7fJzMx6HOc8s4rQo1m0Y84Ztot0vwm9+S54mxVSo\n"
+      "6tvh9q0D7VLDgf+2NpnrDW7eMB3n0SrLJ83Mjc5rZ+wv7m033EPaWSr/TFtc/MaF\n"
+      "aOI20MEe3be96HHuWD3lTK0=\n"
+      "-----END PRIVATE KEY-----";
+
+  // JWT without kid
+  // Header:  {"alg":"RS256","typ":"JWT"}
   // Payload:
-  // {
-  //   "iss": "628645741881-"
-  //     "noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-  //   "sub": "628645741881-"
-  //     "noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-  //   "aud": "http://myservice.com/myapi"
-  // }
+  // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058}
   const std::string kJwtNoKid =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
-      "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1M"
-      "jNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb"
-      "20"
-      "iLCJzdWIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGx"
-      "AZ"
-      "GV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJodHRwOi8vbXlzZXJ2aWNlL"
-      "mN"
-      "vbS9teWFwaSJ9.gq_4ucjddQDjYK5FJr_kXmMo2fgSEB6Js1zopcQLVpCKFDNb-"
-      "TQ97go0wuk5"
-      "_vlSp_8I2ImrcdwYbAKqYCzcdyBXkAYoHCGgmY-v6MwZFUvrIaDzR_"
-      "M3rmY8sQ8cdN3MN6ZRbB"
-      "6opHwDP1lUEx4bZn_ZBjJMPgqbIqGmhoT1UpfPF6P1eI7sXYru-"
-      "4KVna0STOynLl3d7JYb7E-8"
-      "ifcjUJLhat8JR4zR8i4-zWjn6d6j_"
-      "NI7ZvMROnao77D9YyhXv56zfsXRatKzzYtxPlQMz4AjP-"
-      "bUHfbHmhiIOOAeEKFuIVUAwM17j54M6VQ5jnAabY5O-ermLfwPiXvNt2L2SA==";
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0.XYPg6VPrq-H1Kl-kgmAfGFomVpnmdZLIAo0g6dhJb2Be_"
+      "koZ2T76xg5_Lr828hsLKxUfzwNxl5-k1cdz_kAst6vei0hdnOYqRQ8EhkZS_"
+      "5Y2vWMrzGHw7AUPKCQvSnNqJG5HV8YdeOfpsLhQTd-"
+      "tG61q39FWzJ5Ra5lkxWhcrVDQFtVy7KQrbm2dxhNEHAR2v6xXP21p1T5xFBdmGZbHFiH63N9"
+      "dwdRgWjkvPVTUqxrZil7PSM2zg_GTBETp_"
+      "qS7Wwf8C0V9o2KZu0KDV0j0c9nZPWTv3IMlaGZAtQgJUeyemzRDtf4g2yG3xBZrLm3AzDUj_"
+      "EX_pmQAHA5ZjPVCAw";
+
+  // JWT with correct kid
+  // Header:
+  // {"alg":"RS256","typ":"JWT","kid":"b3319a147514df7ee5e4bcdee51350cc890cc89e"}
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058}
+  const std::string kJwtWithCorrectKid =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzMzE5YTE0NzUxNGRmN2VlNWU0"
+      "YmNkZWU1MTM1MGNjODkwY2M4OWUifQ."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0.QYWtQR2JNhLBJXtpJfFisF0WSyzLbD-9dynqwZt_"
+      "KlQZAIoZpr65BRNEyRzpt0jYrk7RA7hUR2cS9kB3AIKuWA8kVZubrVhSv_fiX6phjf_"
+      "bZYj92kDtMiPJf7RCuGyMgKXwwf4b1Sr67zamcTmQXf26DT415rnrUHVqTlOIW50TjNa1bbO"
+      "fNyKZC3LFnKGEzkfaIeXYdGiSERVOTtOFF5cUtZA2OVyeAT3mE1NuBWxz0v7xJ4zdIwHwxFU"
+      "wd_5tB57j_"
+      "zCEC9NwnwTiZ8wcaSyMWc4GJUn4bJs22BTNlRt5ElWl6RuBohxZA7nXwWig5CoLZmCpYpb8L"
+      "fBxyCpqJQ";
+
+  // JWT with existing but incorrect kid
+  // Header:
+  // {"alg":"RS256","typ":"JWT","kid":"62a93512c9ee4c7f8067b5a216dade2763d32a47"}
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058}
+  const std::string kJwtWithIncorrectKid =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjYyYTkzNTEyYzllZTRjN2Y4MDY3"
+      "YjVhMjE2ZGFkZTI3NjNkMzJhNDcifQ."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0."
+      "adrKqsjKh4zdOuw9rMZr0Kn2LLYG1OUfDuvnO6tk75NKCHpKX6oI8moNYhgcCQU4AoCKXZ_"
+      "u-oMl54QTx9lX9xZ2VUWKTxcJEOnpoJb-DVv_FgIG9ETe5wcCS8Y9pQ2-hxtO1_LWYok1-"
+      "A01Q4929u6WNw_Og4rFXR6VSpZxXHOQrEwW44D2-Lngu1PtPjWIz3rO6cOiYaTGCS6-"
+      "TVeLFnB32KQg823WhFhWzzHjhYRO7NOrl-IjfGn3zYD_"
+      "DfSoMY3A6LeOFCPp0JX1gcKcs2mxaF6e3LfVoBiOBZGvgG_"
+      "jx3y85hF2BZiANbSf1nlLQFdjk_CWbLPhTWeSfLXMOg";
+
+  // JWT with nonexist kid
+  // Header:  {"alg":"RS256","typ":"JWT","kid":"blahblahblah"}
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058}
+  const std::string kJwtWithNonExistKid =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJsYWhibGFoYmxhaCJ9."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0.digk0Fr_IdcWgJNVyeVDw2dC1cQG6LsHwg5pIN93L4_"
+      "xhEDI3ZFoZ8aE44kvQHWLicnHDlhELqtF-"
+      "TqxrhfnitpLE7jiyknSu6NVXxtRBcZ3dOTKryVJDvDXcYXOaaP8infnh82loHfhikgg1xmk9"
+      "rcH50jtc3BkxWNbpNgPyaAAE2tEisIInaxeX0gqkwiNVrLGe1hfwdtdlWFL1WENGlyniQBvB"
+      "Mwi8DgG_F0eyFKTSRWoaNQQXQruEK0YIcwDj9tkYOXq8cLAnRK9zSYc5-"
+      "15Hlzfb8eE77pID0HZN-Axeui4IY22I_kYftd0OEqlwXJv_v5p6kNaHsQ9QbtAkw";
+
+  // JWT with bad-formatted kid
+  // Header:  {"alg":"RS256","typ":"JWT","kid":1}
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058}
+  const std::string kJwtWithBadFormatKid =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6MX0."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0."
+      "oYq0UkokShprH2YO5b84CI5fEu0sKWmEJimyJQ9YZbvaGtf6zaLbdVJBTbh6plBno-"
+      "miUhjqXZtDdmBexQzp5HPHoIUwQxlGggCuJRdEnmw65Ul9WFWtS7M9g8DqVKaCo9MO-"
+      "apCsylPZsRSzzZuaTPorZktELt6XcUIxeXOKOSZJ78sHsRrDeLhlELd9Q0b6hzAdDEYCvYE6"
+      "woc3DiRHk19nsEgdg5O1RWKjTAcdd3oD9ecznzvVmAZT8gXrGXPd49tn1qHkVr1G621Ypi9V"
+      "37BD2KXH3jN9_EBocxwcxhkPwSLtP3dgkfls_f5GoWCgmp-c5ycIskCDcIjxRnPjg";
 };
 
 TEST_F(JwtTest, JwtDecode) {
@@ -337,29 +412,51 @@ TEST_F(JwtTest, InvalidAlg) {
 
 TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
   auto payload = Jwt::DecodeWithJwk(kJwtNoKid, kPublicKey);
-
   EXPECT_TRUE(payload);
 
   EXPECT_TRUE((*payload)["iss"].IsString());
   std::string iss = (*payload)["iss"].GetString();
-  EXPECT_STREQ(iss.c_str(),
-               "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer."
-               "gserviceaccount.com");
+  EXPECT_STREQ("https://example.com", iss.c_str());
 
   EXPECT_TRUE((*payload)["sub"].IsString());
   std::string sub = (*payload)["sub"].GetString();
-  EXPECT_STREQ(sub.c_str(),
-               "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer."
-               "gserviceaccount.com");
+  EXPECT_STREQ("test@example.com", sub.c_str());
 
-  EXPECT_TRUE((*payload)["aud"].IsString());
-  std::string aud = (*payload)["aud"].GetString();
-  EXPECT_STREQ(aud.c_str(), "http://myservice.com/myapi");
+  EXPECT_TRUE((*payload)["exp"].IsInt64());
+  int64_t exp = (*payload)["exp"].GetInt64();
+  EXPECT_EQ(1501281058LL, exp);
 }
 
-/*
- * TODO: add failure tests for JWKs
- */
+TEST_F(JwtTestWithJwk, CorrectKid) {
+  auto payload = Jwt::DecodeWithJwk(kJwtWithCorrectKid, kPublicKey);
+
+  EXPECT_TRUE((*payload)["iss"].IsString());
+  std::string iss = (*payload)["iss"].GetString();
+  EXPECT_STREQ("https://example.com", iss.c_str());
+
+  EXPECT_TRUE((*payload)["sub"].IsString());
+  std::string sub = (*payload)["sub"].GetString();
+  EXPECT_STREQ("test@example.com", sub.c_str());
+
+  EXPECT_TRUE((*payload)["exp"].IsInt64());
+  int64_t exp = (*payload)["exp"].GetInt64();
+  EXPECT_EQ(1501281058LL, exp);
+}
+
+TEST_F(JwtTestWithJwk, IncorrectKid) {
+  auto payload = Jwt::DecodeWithJwk(kJwtWithIncorrectKid, kPublicKey);
+  EXPECT_FALSE(payload);
+}
+
+TEST_F(JwtTestWithJwk, NonExistKid) {
+  auto payload = Jwt::DecodeWithJwk(kJwtWithNonExistKid, kPublicKey);
+  EXPECT_FALSE(payload);
+}
+
+TEST_F(JwtTestWithJwk, BadFormatKid) {
+  auto payload = Jwt::DecodeWithJwk(kJwtWithBadFormatKid, kPublicKey);
+  EXPECT_FALSE(payload);
+}
 
 }  // namespace Auth
 }  // namespace Http
