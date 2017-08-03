@@ -158,10 +158,9 @@ const EVP_MD *EvpMdFromAlg(const std::string &alg) {
   }
 }
 
-bool VerifySignature(const bssl::UniquePtr<EVP_PKEY> &key,
-                     const std::string &alg, const uint8_t *signature,
-                     size_t signature_len, const uint8_t *signed_data,
-                     size_t signed_data_len) {
+bool VerifySignature(EVP_PKEY *key, const std::string &alg,
+                     const uint8_t *signature, size_t signature_len,
+                     const uint8_t *signed_data, size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
   const EVP_MD *md = EvpMdFromAlg(alg);
 
@@ -171,8 +170,7 @@ bool VerifySignature(const bssl::UniquePtr<EVP_PKEY> &key,
   if (!md_ctx) {
     return false;
   }
-  if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key.get()) !=
-      1) {
+  if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key) != 1) {
     return false;
   }
   if (EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len) != 1) {
@@ -184,8 +182,8 @@ bool VerifySignature(const bssl::UniquePtr<EVP_PKEY> &key,
   return true;
 }
 
-bool VerifySignature(const bssl::UniquePtr<EVP_PKEY> &key,
-                     const std::string &alg, const std::string &signature,
+bool VerifySignature(EVP_PKEY *key, const std::string &alg,
+                     const std::string &signature,
                      const std::string &signed_data) {
   return VerifySignature(key, alg, CastToUChar(signature), signature.length(),
                          CastToUChar(signed_data), signed_data.length());
@@ -232,7 +230,7 @@ class Internal {
   }
 
   // Setup() must be called before VerifySignature().
-  bool VerifySignature(const bssl::UniquePtr<EVP_PKEY> &key) {
+  bool VerifySignature(EVP_PKEY *key) {
     std::string signature = Base64UrlDecode(jwt_split[2]);
     if (signature == "") {
       // invalid signature
@@ -271,7 +269,7 @@ std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
   if (!internal.Setup(jwt)) {
     return nullptr;
   }
-  if (!internal.VerifySignature(EvpPkeyFromStr(pkey_pem))) {
+  if (!internal.VerifySignature(EvpPkeyFromStr(pkey_pem).get())) {
     return nullptr;
   }
   return internal.Payload();
@@ -327,7 +325,7 @@ std::unique_ptr<rapidjson::Document> DecodeWithJwk(const std::string &jwt,
       continue;
     }
     if (internal.VerifySignature(
-            EvpPkeyFromJwk(jwk["n"].GetString(), jwk["e"].GetString()))) {
+            EvpPkeyFromJwk(jwk["n"].GetString(), jwk["e"].GetString()).get())) {
       return internal.Payload();
     }
   }
