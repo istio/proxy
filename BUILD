@@ -34,10 +34,9 @@ load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar", "pkg_deb")
 pkg_tar(
     name = "istio-bin",
     files = [
-        "@pilot//cmd/pilot-agent:pilot-agent",
-        "@pilot//cmd/pilot-discovery:pilot-discovery",
-        "@pilot//docker:prepare_proxy",
-        "@proxy//src/envoy/mixer:envoy",
+        "//src/envoy/mixer:envoy",
+        "@com_github_istio_pilot//cmd/pilot-agent:pilot-agent",
+        "@com_github_istio_pilot//docker:prepare_proxy",
     ],
     mode = "0755",
     package_dir = "/usr/local/bin",

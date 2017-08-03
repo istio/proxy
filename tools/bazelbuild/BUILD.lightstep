@@ -21,7 +21,7 @@ cc_library(
         "src/c++11/mapbox_variant/variant.hpp",
     ],
     copts = [
-        "-DPACKAGE_VERSION='\\"0.36\\"'",
+        "-DPACKAGE_VERSION='\"0.36\"'",
         "-Iexternal/lightstep_git/src/c++11/lightstep",
         "-Iexternal/lightstep_git/src/c++11/mapbox_variant",
     ],
