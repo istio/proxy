@@ -23,14 +23,10 @@
 #include "rapidjson/document.h"
 
 #include <algorithm>
-#include <iostream>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <typeinfo>
 
 namespace Envoy {
 namespace Http {
