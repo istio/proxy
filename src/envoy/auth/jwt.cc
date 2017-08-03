@@ -194,7 +194,15 @@ bool VerifySignature(EVP_PKEY *key, const std::string &alg,
 namespace Jwt {
 namespace {
 
-class Internal {
+// Class to decode and verify JWT. Setup() must be called before
+// VerifySignature() and Payload(). If you do not need the signature
+// verification, VerifySignature() can be skipped.
+// Usage example:
+//   Verifier v;
+//   if(!v.Setup(jwt)) return nullptr;
+//   if(!v.VerifySignature(publickey)) return nullptr;
+//   return v.Payload();
+class Verifier {
  public:
   rapidjson::Document header;
   std::string alg;
@@ -265,25 +273,25 @@ std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
    * TODO: return failure reason (something like
    * https://github.com/grpc/grpc/blob/master/src/core/lib/security/credentials/jwt/jwt_verifier.h#L38)
    */
-  Internal internal;
-  if (!internal.Setup(jwt)) {
+  Verifier verifier;
+  if (!verifier.Setup(jwt)) {
     return nullptr;
   }
-  if (!internal.VerifySignature(EvpPkeyFromStr(pkey_pem).get())) {
+  if (!verifier.VerifySignature(EvpPkeyFromStr(pkey_pem).get())) {
     return nullptr;
   }
-  return internal.Payload();
+  return verifier.Payload();
 }
 
 std::unique_ptr<rapidjson::Document> DecodeWithJwk(const std::string &jwt,
                                                    const std::string &jwks) {
-  Internal internal;
-  if (!internal.Setup(jwt)) {
+  Verifier verifier;
+  if (!verifier.Setup(jwt)) {
     return nullptr;
   }
   std::string kid_jwt =
-      internal.header.HasMember("kid") && internal.header["kid"].IsString()
-          ? internal.header["kid"].GetString()
+      verifier.header.HasMember("kid") && verifier.header["kid"].IsString()
+          ? verifier.header["kid"].GetString()
           : "";
 
   // parse JWKs
@@ -313,7 +321,7 @@ std::unique_ptr<rapidjson::Document> DecodeWithJwk(const std::string &jwt,
 
     // the same alg must be used.
     if (!jwk.HasMember("alg") || !jwk["alg"].IsString() ||
-        jwk["alg"].GetString() != internal.alg) {
+        jwk["alg"].GetString() != verifier.alg) {
       continue;
     }
 
@@ -324,9 +332,9 @@ std::unique_ptr<rapidjson::Document> DecodeWithJwk(const std::string &jwt,
     if (!jwk.HasMember("e") || !jwk["e"].IsString()) {
       continue;
     }
-    if (internal.VerifySignature(
+    if (verifier.VerifySignature(
             EvpPkeyFromJwk(jwk["n"].GetString(), jwk["e"].GetString()).get())) {
-      return internal.Payload();
+      return verifier.Payload();
     }
   }
   return nullptr;
