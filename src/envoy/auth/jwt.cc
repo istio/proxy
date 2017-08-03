@@ -273,14 +273,10 @@ std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
    * TODO: return failure reason (something like
    * https://github.com/grpc/grpc/blob/master/src/core/lib/security/credentials/jwt/jwt_verifier.h#L38)
    */
-  Verifier verifier;
-  if (!verifier.Setup(jwt)) {
-    return nullptr;
-  }
-  if (!verifier.VerifySignature(EvpPkeyFromStr(pkey_pem).get())) {
-    return nullptr;
-  }
-  return verifier.Payload();
+  Verifier v;
+  return v.Setup(jwt) && v.VerifySignature(EvpPkeyFromStr(pkey_pem).get())
+             ? v.Payload()
+             : nullptr;
 }
 
 std::unique_ptr<rapidjson::Document> DecodeWithJwk(const std::string &jwt,
