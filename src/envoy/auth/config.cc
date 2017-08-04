@@ -46,6 +46,7 @@ std::shared_ptr<IssuerInfo> JwtAuthConfig::LoadPubkeyFromObject(
   return nullptr;
 }
 
+// Load information of an issuer. Returns nullptr if bad-formatted.
 std::shared_ptr<IssuerInfo> JwtAuthConfig::LoadIssuer(Json::Object *json) {
   if (json->hasObject("discovery_document")) {
     return LoadIssuerFromDiscoveryDocment(
@@ -60,6 +61,7 @@ std::shared_ptr<IssuerInfo> JwtAuthConfig::LoadIssuer(Json::Object *json) {
   return nullptr;
 }
 
+// Load config from envoy config.
 void JwtAuthConfig::Load(const Json::Object &json) {
   issuers_.clear();
   if (json.hasObject("issuers")) {

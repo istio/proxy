@@ -24,26 +24,26 @@ namespace Envoy {
 namespace Http {
 namespace Auth {
 
-// A config for Jwt Auth filter
-// struct JwtAuthConfig{
-//  void Load(const Json::Object& json);
-//};
-
+// Class to hold an issuer's info.
 class IssuerInfo {
  public:
-  std::string name_;
-  std::string pkey_type_;
-  std::string pkey_;
+  std::string name_;       // e.g. "https://accounts.google.com"
+  std::string pkey_type_;  // format of public key. "jwks" or "pem"
+  std::string pkey_;       // public key
   IssuerInfo(const std::string &name, const std::string &pkey_type,
              const std::string &pkey);
 };
 
+// A config for Jwt auth filter
 class JwtAuthConfig {
  public:
   JwtAuthConfig(const Json::Object &config) { Load(config); }
+
+  // Each element corresponds to an issuer
   std::vector<std::shared_ptr<IssuerInfo> > issuers_;
 
  private:
+  // Load the config from envoy config.
   void Load(const Json::Object &json);
   std::shared_ptr<IssuerInfo> LoadIssuer(Json::Object *json);
   std::shared_ptr<IssuerInfo> LoadIssuerFromDiscoveryDocment(

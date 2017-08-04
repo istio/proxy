@@ -61,6 +61,11 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
         const std::string& type = iss->pkey_type_;
         const std::string& pkey = iss->pkey_;
 
+        /*
+         * TODO: check JWT's issuer
+         */
+
+        // verifying and decoding JWT
         std::unique_ptr<rapidjson::Document> payload;
         if (type == "pem") {
           payload = Auth::Jwt::Decode(jwt, pkey);
