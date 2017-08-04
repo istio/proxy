@@ -15,30 +15,50 @@
 
 #pragma once
 
-#include <string>
+#include "config.h"
 
 #include "server/config/network/http_connection_manager.h"
+
+#include <map>
+#include <memory>
+#include <string>
 
 namespace Envoy {
 namespace Http {
 
 class JwtVerificationFilter : public StreamDecoderFilter {
  public:
-  JwtVerificationFilter();
+  JwtVerificationFilter(std::shared_ptr<Auth::JwtAuthConfig> config);
   ~JwtVerificationFilter();
 
   // Http::StreamFilterBase
   void onDestroy() override;
 
   // Http::StreamDecoderFilter
-  FilterHeadersStatus decodeHeaders(HeaderMap&, bool) override;
+  FilterHeadersStatus decodeHeaders(HeaderMap& headers, bool) override;
   FilterDataStatus decodeData(Buffer::Instance&, bool) override;
   FilterTrailersStatus decodeTrailers(HeaderMap&) override;
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
 
+  const LowerCaseString kAuthorizationHeaderKey =
+      LowerCaseString("Authorization");
+  const std::string kAuthorizationHeaderTokenPrefix = "Bearer ";
+  const LowerCaseString& AuthorizedHeaderKey();
+
  private:
   StreamDecoderFilterCallbacks* decoder_callbacks_;
+  std::shared_ptr<Auth::JwtAuthConfig> config_;
+
+  enum State { Calling, Complete };
+  State state_;
+  bool stopped_;
+
+  std::map<std::string, std::shared_ptr<Auth::IssuerInfo> > calling_issuers_;
+  void ReceivePubkey(HeaderMap& headers, std::string issuer_name, bool succeed,
+                     const std::string& pubkey);
+  void LoadPubkeys(HeaderMap& headers);
+  void CompleteVerification(HeaderMap& headers);
 };
 
 }  // Http
