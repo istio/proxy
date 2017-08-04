@@ -49,6 +49,8 @@ envoy_cc_library(
     name = "http_filter_lib",
     srcs = [
         "http_filter.cc",
+        "config.h",
+        "config.cc",
     ],
     hdrs = [
         "http_filter.h",
@@ -73,10 +75,14 @@ envoy_cc_library(
 envoy_cc_test(
     name = "http_filter_integration_test",
     srcs = [":integration_test/http_filter_integration_test.cc"],
-    data = [":integration_test/envoy.conf"],
+    data = [
+        ":integration_test/envoy.conf",
+        ":integration_test/envoy.conf.pem",
+    ],
     repository = "@envoy",
     deps = [
         ":http_filter_config",
+        ":jwt_lib",
         "@envoy//test/integration:integration_lib",
     ],
 )

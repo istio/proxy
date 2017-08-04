@@ -15,30 +15,37 @@
 
 #pragma once
 
-#include <string>
+#include "config.h"
 
 #include "server/config/network/http_connection_manager.h"
+
+#include <memory>
+#include <string>
 
 namespace Envoy {
 namespace Http {
 
 class JwtVerificationFilter : public StreamDecoderFilter {
  public:
-  JwtVerificationFilter();
+  JwtVerificationFilter(std::shared_ptr<Auth::JwtAuthConfig> config);
   ~JwtVerificationFilter();
 
   // Http::StreamFilterBase
   void onDestroy() override;
 
   // Http::StreamDecoderFilter
-  FilterHeadersStatus decodeHeaders(HeaderMap&, bool) override;
+  FilterHeadersStatus decodeHeaders(HeaderMap& headers, bool) override;
   FilterDataStatus decodeData(Buffer::Instance&, bool) override;
   FilterTrailersStatus decodeTrailers(HeaderMap&) override;
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
 
+  const LowerCaseString& headerKey();
+  const std::string& headerValue();  // temporary; TODO: replace appropriately
+
  private:
   StreamDecoderFilterCallbacks* decoder_callbacks_;
+  std::shared_ptr<Auth::JwtAuthConfig> config_;
 };
 
 }  // Http

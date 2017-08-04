@@ -15,25 +15,86 @@
 
 #include <string>
 
+#include "config.h"
 #include "http_filter.h"
+#include "jwt.h"
 
 #include "server/config/network/http_connection_manager.h"
 
 namespace Envoy {
 namespace Http {
 
+const LowerCaseString& JwtVerificationFilter::headerKey() {
+  static LowerCaseString* key = new LowerCaseString("Istio-Auth-UserInfo");
+  return *key;
+}
+
 /*
- * TODO: receive issuer's info & pubkey
+ * temporary
+ * TODO: replace appropriately
  */
-JwtVerificationFilter::JwtVerificationFilter() {}
+const std::string& JwtVerificationFilter::headerValue() {
+  static std::string* val = new std::string("success");
+  return *val;
+}
+
+JwtVerificationFilter::JwtVerificationFilter(
+    std::shared_ptr<Auth::JwtAuthConfig> config) {
+  config_ = config;
+}
 
 JwtVerificationFilter::~JwtVerificationFilter() {}
 
 void JwtVerificationFilter::onDestroy() {}
 
-FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap&, bool) {
+FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
+                                                         bool) {
+  const HeaderEntry* entry = headers.get(LowerCaseString("Authorization"));
+  if (entry) {
+    const HeaderString& value = entry->value();
+    const std::string bearer = "Bearer ";
+    if (strncmp(value.c_str(), bearer.c_str(), bearer.length()) == 0) {
+      std::string jwt(value.c_str() + bearer.length());
+
+      for (const auto& iss : config_->issuers_) {
+        const std::string& issuer_name = iss->name_;
+        const std::string& type = iss->pkey_type_;
+        const std::string& pkey = iss->pkey_;
+
+        std::unique_ptr<rapidjson::Document> payload;
+        if (type == "pem") {
+          payload = Auth::Jwt::Decode(jwt, pkey);
+        } else if (type == "jwks") {
+          /*
+           * TODO: implement
+           */
+        }
+
+        if (payload) {
+          if (payload->HasMember("iss") && (*payload)["iss"].IsString() &&
+              (*payload)["iss"].GetString() == issuer_name) {
+            /*
+             * TODO: check exp claim
+             */
+            // verification success
+            /*
+             * TODO: add payload to HTTP header
+             */
+            /*
+             * temporary
+             * TODO: replace appropriately
+             */
+            headers.addStatic(headerKey(), headerValue());
+
+            return FilterHeadersStatus::Continue;
+          }
+        }
+      }
+    }
+  }
   /*
-   * TODO: verify the JWT in the auth header
+   * This is OK?
+   * TODO: check about FilterHeaderStatus
    */
   return FilterHeadersStatus::Continue;
 }
