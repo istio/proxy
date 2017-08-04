@@ -70,7 +70,7 @@ envoy_cc_library(
 envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
-    visibility = [":__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         ":filter_lib",
         "@envoy//source/exe:envoy_main_entry_lib",
