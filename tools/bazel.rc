@@ -53,4 +53,5 @@ build:release -c opt
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
-
+# Hack to let envoy compile on trusty (regex won't work, but we don't use them in istio)
+build --copt "-D_GLIBCXX_REGEX_STATE_LIMIT=1"
