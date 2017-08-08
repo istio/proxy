@@ -89,7 +89,8 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
              * temporary
              * TODO: replace appropriately
              */
-            headers.addStatic(headerKey(), headerValue());
+            //            headers.addStatic(headerKey(), headerValue());
+            headers.addReferenceKey(headerKey(), headerValue());
 
             return FilterHeadersStatus::Continue;
           }

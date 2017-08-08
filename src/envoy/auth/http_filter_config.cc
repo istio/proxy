@@ -28,9 +28,9 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
  public:
   HttpFilterFactoryCb createFilterFactory(const Json::Object& config,
                                           const std::string&,
-                                          FactoryContext&) override {
+                                          FactoryContext& context) override {
     std::shared_ptr<Http::Auth::JwtAuthConfig> auth_config(
-        new Http::Auth::JwtAuthConfig(config));
+        new Http::Auth::JwtAuthConfig(config, context));
     return [auth_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
       callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterSharedPtr{
           new Http::JwtVerificationFilter(auth_config)});

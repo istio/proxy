@@ -49,8 +49,6 @@ envoy_cc_library(
     name = "http_filter_lib",
     srcs = [
         "http_filter.cc",
-        "config.h",
-        "config.cc",
     ],
     hdrs = [
         "http_filter.h",
@@ -58,6 +56,7 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":jwt_lib",
+        ":config_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -78,6 +77,8 @@ envoy_cc_test(
     data = [
         ":integration_test/envoy.conf",
         ":integration_test/envoy.conf.pem",
+        ":integration_test/envoy.conf.jwk",
+        ":integration_test/googleapis.com.pem",
     ],
     repository = "@envoy",
     deps = [
@@ -100,3 +101,34 @@ envoy_cc_test(
         "@envoy//test/test_common:utility_lib",
     ],
 )
+
+envoy_cc_library(
+    name = "config_lib",
+    srcs = [
+        "config.cc",
+    ],
+    hdrs = [
+        "config.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "config_test",
+    srcs = [
+        ":config_test.cc",
+    ],
+    data = [
+        ":integration_test/pubkey.jwk"
+    ],
+    repository = "@envoy",
+    deps = [
+        ":config_lib",
+        "@envoy//test/test_common:utility_lib",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+

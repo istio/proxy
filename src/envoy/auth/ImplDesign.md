@@ -38,12 +38,15 @@ Format of `<config>`:
    {
      “discovery_document”: {
        “uri”: <uri of document>, 
+       "cluster": <name of cluster>,
        “value”: <raw string of document>,
+       "jwks_cluster": <name of jwks' cluster>,
      },
      “name”: <string of issuer name>,
      “pubkey”: {
         “type”: <type>, 
         “uri”: <uri>, 
+        "cluster": <name of cluster>,
         “value”: <raw string of public key(s)>,
      }, 
    },
@@ -53,8 +56,10 @@ Format of `<config>`:
 ```
 Where
 - `discovery_document` or (`name` and `pubkey`) is required
-- If `discovery_document` is used, `uri` or `value` is required
+- If `discovery_document` is used, 
+  - (`uri` and `cluster`) or `value` is required
+  - `jwks_cluster` is required
 - If `pubkey` is used,
   - `type` is required
     - `<type>` is in `{"jwks" (, "pem", ...)}`
-  - `uri` or `value` is required
+  - (`uri` and `cluster`) or `value` is required

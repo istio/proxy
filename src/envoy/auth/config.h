@@ -17,6 +17,8 @@
 #define PROXY_CONFIG_H
 
 #include "envoy/json/json_object.h"
+#include "envoy/upstream/cluster_manager.h"
+#include "server/config/network/http_connection_manager.h"
 
 #include <vector>
 
@@ -37,7 +39,11 @@ class IssuerInfo {
 // A config for Jwt auth filter
 class JwtAuthConfig {
  public:
-  JwtAuthConfig(const Json::Object &config) { Load(config); }
+  JwtAuthConfig(const Json::Object &config,
+                Server::Configuration::FactoryContext &context)
+      : cm_(context.clusterManager()) {
+    Load(config);
+  }
 
   // Each element corresponds to an issuer
   std::vector<std::shared_ptr<IssuerInfo> > issuers_;
@@ -46,9 +52,18 @@ class JwtAuthConfig {
   // Load the config from envoy config.
   void Load(const Json::Object &json);
   std::shared_ptr<IssuerInfo> LoadIssuer(Json::Object *json);
-  std::shared_ptr<IssuerInfo> LoadIssuerFromDiscoveryDocment(
+  std::shared_ptr<IssuerInfo> LoadIssuerFromDiscoveryDocument(
       Json::Object *json);
   std::shared_ptr<IssuerInfo> LoadPubkeyFromObject(Json::Object *json);
+  std::string ReadWholeFile(const std::string &path);
+  std::string ReadWholeFileByHttp(const std::string &uri,
+                                  const std::string &cluster);
+  std::string GetContentFromUri(const std::string &uri,
+                                const std::string &cluster);
+  std::shared_ptr<IssuerInfo> LoadIssuerFromDiscoveryDocumentStr(
+      const std::string &doc, const std::string &cluster);
+
+  Upstream::ClusterManager &cm_;
 };
 
 }  // namespace Auth
