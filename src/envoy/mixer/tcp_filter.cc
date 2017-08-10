@@ -23,6 +23,7 @@
 #include "src/envoy/mixer/mixer_control.h"
 #include "src/envoy/mixer/thread_dispatcher.h"
 
+using namespace std::chrono;
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
 
@@ -67,9 +68,10 @@ class TcpInstance : public Network::Filter,
   Network::ReadFilterCallbacks* filter_callbacks_{};
   State state_{State::NotStarted};
   bool calling_check_{};
-  uint64_t request_bytes_{};
-  uint64_t response_bytes_{};
+  uint64_t received_bytes_{};
+  uint64_t send_bytes_{};
   int check_status_code_{};
+  time_point<system_clock> start_time_;
 
  public:
   TcpInstance(TcpConfigPtr config)
@@ -87,13 +89,14 @@ class TcpInstance : public Network::Filter,
     filter_callbacks_ = &callbacks;
     filter_callbacks_->connection().addConnectionCallbacks(*this);
     SetThreadDispatcher(filter_callbacks_->connection().dispatcher());
+    start_time_ = system_clock::now();
   }
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance& data) override {
     conn_log_debug("Called TcpInstance onRead bytes: {}",
                    filter_callbacks_->connection(), data.length());
-    request_bytes_ += data.length();
+    received_bytes_ += data.length();
     return Network::FilterStatus::Continue;
   }
 
@@ -101,7 +104,7 @@ class TcpInstance : public Network::Filter,
   Network::FilterStatus onWrite(Buffer::Instance& data) override {
     conn_log_debug("Called TcpInstance onWrite bytes: {}",
                    filter_callbacks_->connection(), data.length());
-    response_bytes_ += data.length();
+    send_bytes_ += data.length();
     return Network::FilterStatus::Continue;
   }
 
@@ -166,9 +169,10 @@ class TcpInstance : public Network::Filter,
     if (event == Network::ConnectionEvent::RemoteClose ||
         event == Network::ConnectionEvent::LocalClose) {
       if (state_ != State::Closed && request_data_) {
-        mixer_control_->ReportTcp(request_data_, request_bytes_,
-                                  response_bytes_, check_status_code_,
-                                  filter_callbacks_->upstreamHost());
+        mixer_control_->ReportTcp(
+            request_data_, received_bytes_, send_bytes_, check_status_code_,
+            duration_cast<nanoseconds>(system_clock::now() - start_time_),
+            filter_callbacks_->upstreamHost());
       }
       state_ = State::Closed;
     }
