@@ -11,6 +11,9 @@ RUN apt-get update && \
     net-tools \
     libc6-dbg gdb valgrind \
     vim \
+    nano \
+    emacs \
+    wrk \
     lsof \
     sudo
 ADD proxy-redirection-clear /usr/local/bin/proxy-redirection-clear
