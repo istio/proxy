@@ -45,9 +45,15 @@ void AsyncClientCallbacks::onSuccess(MessagePtr &&response) {
 
   auto len = response->body()->length();
   std::string body(static_cast<char *>(response->body()->linearize(len)), len);
-  printf("\n\t\nbody:\n\tsize=%lu\n\t%s\n\n", len, body.c_str());
+  printf("\n\tbody:\n\n\tsize=%lu\n\t%s\n\n", len, body.c_str());
 
-  cb_(true, body);
+  auto status = std::string(response->headers().Status()->value().c_str());
+  printf("\tStatus = %s\n", status.c_str());
+  if (status == "200") {
+    cb_(true, body);
+  } else {
+    cb_(false, "");
+  }
 }
 void AsyncClientCallbacks::onFailure(AsyncClient::FailureReason /*reason*/) {
   printf("\n%s\n", __func__);

@@ -23,22 +23,36 @@
 #include "envoy/http/async_client.h"
 #include "server/config/network/http_connection_manager.h"
 
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
 namespace Envoy {
 namespace Http {
+
+namespace {
+
+std::string JsonToString(rapidjson::Document* d) {
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  d->Accept(writer);
+  return buffer.GetString();
+}
+
+}  // namespace
 
 const LowerCaseString& JwtVerificationFilter::headerKey() {
   static LowerCaseString* key = new LowerCaseString("Istio-Auth-UserInfo");
   return *key;
 }
 
-/*
- * temporary
- * TODO: replace appropriately
- */
-const std::string& JwtVerificationFilter::headerValue() {
-  static std::string* val = new std::string("success");
-  return *val;
-}
+///*
+// * temporary
+// * TODO: replace appropriately
+// */
+// const std::string& JwtVerificationFilter::headerValue() {
+//  static std::string* val = new std::string("success");
+//  return *val;
+//}
 
 JwtVerificationFilter::JwtVerificationFilter(
     std::shared_ptr<Auth::JwtAuthConfig> config) {
@@ -52,6 +66,12 @@ void JwtVerificationFilter::onDestroy() {}
 FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
                                                          bool) {
   printf("\n%s\n", __func__);
+
+  headers.iterate(
+      [](const HeaderEntry& header, void*) {
+        printf("\t%s\t%s\n", header.key().c_str(), header.value().c_str());
+      },
+      nullptr);
 
   state_ = Calling;
 
@@ -150,6 +170,11 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
         const std::string& type = iss->pkey_type();
         const std::string& pkey = iss->pkey();
 
+        printf("\tname = %s\n", issuer_name.c_str());
+        printf("\ttype = %s\n", type.c_str());
+        printf("\tpkey = %s\n", pkey.c_str());
+        printf("\ttoken = %s\n", jwt.c_str());
+
         /*
          * TODO: check JWT's issuer
          */
@@ -159,9 +184,7 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
         if (type == "pem") {
           payload = Auth::Jwt::Decode(jwt, pkey);
         } else if (type == "jwks") {
-          /*
-           * TODO: implement
-           */
+          payload = Auth::Jwt::DecodeWithJwk(jwt, pkey);
         }
 
         if (payload) {
@@ -179,16 +202,27 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
              * TODO: replace appropriately
              */
             //            headers.addStatic(headerKey(), headerValue());
-            headers.addReferenceKey(headerKey(), headerValue());
+            auto payload_str = JsonToString(payload.get());
+            printf("\n\tadd to header: %s\n", payload_str.c_str());
+            headers.addReferenceKey(headerKey(), payload_str);
+            goto end;
           }
         }
       }
     }
   }
-  state_ = Complete;
+
   /*
    * TODO: the case if verification failed
    */
+  // verification failed
+  // temporary
+  printf("\n\tadd to header: %s\n", "verification failed");
+  headers.addReferenceKey(headerKey(), "verification failed");
+
+end:
+
+  state_ = Complete;
 }
 
 }  // Http

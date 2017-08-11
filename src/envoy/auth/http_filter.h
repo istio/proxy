@@ -42,7 +42,8 @@ class JwtVerificationFilter : public StreamDecoderFilter {
       StreamDecoderFilterCallbacks& callbacks) override;
 
   const LowerCaseString& headerKey();
-  const std::string& headerValue();  // temporary; TODO: replace appropriately
+  //  const std::string& headerValue();  // temporary; TODO: replace
+  //  appropriately
 
  private:
   StreamDecoderFilterCallbacks* decoder_callbacks_;
