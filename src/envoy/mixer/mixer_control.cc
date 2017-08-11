@@ -24,7 +24,6 @@
 #include "src/envoy/mixer/thread_dispatcher.h"
 #include "src/envoy/mixer/utils.h"
 
-using namespace std::chrono;
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
 using ::istio::mixer_client::Attributes;
@@ -164,8 +163,8 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
   SetInt64Attribute(kRequestSize, info.bytesReceived(), attr);
   SetInt64Attribute(kResponseSize, info.bytesSent(), attr);
 
-  attr->attributes[kResponseDuration] =
-      Attributes::DurationValue(duration_cast<nanoseconds>(info.duration()));
+  attr->attributes[kResponseDuration] = Attributes::DurationValue(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(info.duration()));
 
   if (info.responseCode().valid()) {
     SetInt64Attribute(kResponseCode, info.responseCode().value(), attr);
@@ -197,7 +196,7 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
 
   void Stop() override { timer_->disableTimer(); }
   void Start(int interval_ms) override {
-    timer_->enableTimer(milliseconds(interval_ms));
+    timer_->enableTimer(std::chrono::milliseconds(interval_ms));
   }
 
  private:
@@ -261,7 +260,7 @@ void MixerControl::CheckHttp(HttpRequestDataPtr request_data,
   SetStringAttribute(kSourceUser, source_user, &request_data->attributes);
 
   request_data->attributes.attributes[kRequestTime] =
-      Attributes::TimeValue(system_clock::now());
+      Attributes::TimeValue(std::chrono::system_clock::now());
   SetStringAttribute(kContextProtocol, "http", &request_data->attributes);
 
   SendCheck(request_data, &headers, on_done);
@@ -283,7 +282,7 @@ void MixerControl::ReportHttp(HttpRequestDataPtr request_data,
                             &request_data->attributes);
 
   request_data->attributes.attributes[kResponseTime] =
-      Attributes::TimeValue(system_clock::now());
+      Attributes::TimeValue(std::chrono::system_clock::now());
   SendReport(request_data);
 }
 
@@ -307,14 +306,15 @@ void MixerControl::CheckTcp(HttpRequestDataPtr request_data,
   }
 
   request_data->attributes.attributes[kContextTime] =
-      Attributes::TimeValue(system_clock::now());
+      Attributes::TimeValue(std::chrono::system_clock::now());
   SetStringAttribute(kContextProtocol, "tcp", &request_data->attributes);
   SendCheck(request_data, nullptr, on_done);
 }
 
 void MixerControl::ReportTcp(
     HttpRequestDataPtr request_data, uint64_t received_bytes,
-    uint64_t send_bytes, int check_status_code, nanoseconds duration,
+    uint64_t send_bytes, int check_status_code,
+    std::chrono::nanoseconds duration,
     Upstream::HostDescriptionConstSharedPtr upstreamHost) {
   if (!mixer_client_) {
     return;
@@ -345,7 +345,7 @@ void MixerControl::ReportTcp(
   }
 
   request_data->attributes.attributes[kContextTime] =
-      Attributes::TimeValue(system_clock::now());
+      Attributes::TimeValue(std::chrono::system_clock::now());
   SendReport(request_data);
 }
 
