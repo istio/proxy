@@ -28,6 +28,7 @@ const (
 // Check attributes from a fail GET request from mixer
 const checkAttributesMixerFail = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -36,6 +37,10 @@ const checkAttributesMixerFail = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
@@ -52,6 +57,7 @@ const checkAttributesMixerFail = `
 // Report attributes from a fail GET request from mixer
 const reportAttributesMixerFail = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -60,6 +66,10 @@ const reportAttributesMixerFail = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
@@ -88,6 +98,7 @@ const reportAttributesMixerFail = `
 // Report attributes from a fail GET request from backend
 const reportAttributesBackendFail = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -96,6 +107,10 @@ const reportAttributesBackendFail = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {

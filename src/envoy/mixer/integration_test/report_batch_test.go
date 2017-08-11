@@ -22,6 +22,7 @@ import (
 // Report attributes from a good GET request
 const reportAttributesOkGet = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -30,6 +31,10 @@ const reportAttributesOkGet = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
@@ -58,6 +63,7 @@ const reportAttributesOkGet = `
 // Report attributes from a good POST request
 const reportAttributesOkPost1 = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -66,6 +72,10 @@ const reportAttributesOkPost1 = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
@@ -94,6 +104,7 @@ const reportAttributesOkPost1 = `
 // Report attributes from a good POST request
 const reportAttributesOkPost2 = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -102,6 +113,10 @@ const reportAttributesOkPost2 = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {

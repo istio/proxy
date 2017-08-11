@@ -22,6 +22,7 @@ import (
 // Check attributes from a good GET request
 const checkAttributesOkGet = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -30,6 +31,10 @@ const checkAttributesOkGet = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
@@ -46,6 +51,7 @@ const checkAttributesOkGet = `
 // Report attributes from a good GET request
 const reportAttributesOkGet = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -54,6 +60,10 @@ const reportAttributesOkGet = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
@@ -82,6 +92,7 @@ const reportAttributesOkGet = `
 // Check attributes from a good POST request
 const checkAttributesOkPost = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -90,6 +101,10 @@ const checkAttributesOkPost = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
@@ -106,6 +121,7 @@ const checkAttributesOkPost = `
 // Report attributes from a good POST request
 const reportAttributesOkPost = `
 {
+  "context.protocol": "http",
   "request.host": "localhost:27070",
   "request.path": "/echo",
   "request.time": "*",
@@ -114,6 +130,10 @@ const reportAttributesOkPost = `
   "request.scheme": "http",
   "source.uid": "POD11",
   "source.namespace": "XYZ11",
+  "source.name": "source-name",
+  "source.user": "source-user",
+  "target.name": "target-name",
+  "target.user": "target-user",
   "target.uid": "POD222",
   "target.namespace": "XYZ222",
   "request.headers": {
