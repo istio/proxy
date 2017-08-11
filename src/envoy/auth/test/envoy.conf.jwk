@@ -1,0 +1,100 @@
+{
+  "listeners": [
+    {
+      "address": "tcp://0.0.0.0:9090",
+      "bind_to_port": true,
+      "filters": [
+        {
+          "type": "read",
+          "name": "http_connection_manager",
+          "config": {
+            "codec_type": "auto",
+            "stat_prefix": "ingress_http",
+            "route_config": {
+              "virtual_hosts": [
+                {
+                  "name": "backend",
+                  "domains": ["*"],
+                  "routes": [
+                    {
+                      "prefix": "/",
+                      "cluster": "service1"
+                    }
+                  ]
+                }
+              ]
+            },
+            "access_log": [
+              {
+                "path": "/dev/stdout"
+              }
+            ],
+            "filters": [
+              {
+                "type": "decoder",
+                "name": "jwt-auth",
+                "config": {
+                  "issuers": [
+                    {
+                      "name": "https://accounts.google.com",
+                      "pubkey": {
+                        "type": "jwks",
+                        "uri": "https://www.googleapis.com/oauth2/v3/certs",
+                        "cluster": "googleapis"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "decoder",
+                "name": "router",
+                "config": {}
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "admin": {
+    "access_log_path": "/dev/stdout",
+    "address": "tcp://0.0.0.0:9001"
+  },
+  "cluster_manager": {
+    "clusters": [
+      {
+        "name": "service1",
+        "connect_timeout_ms": 5000,
+        "type": "strict_dns",
+        "lb_type": "round_robin",
+        "hosts": [
+          {
+            "url": "tcp://localhost:8080"
+          }
+        ]
+      },
+      {
+        "name": "googleapis",
+        "connect_timeout_ms": 5000,
+        "type": "strict_dns",
+      	"circuit_breakers": {
+         "default": {
+          "max_pending_requests": 10000,
+          "max_requests": 10000
+         }
+      	},
+        "ssl_context": {
+          "ca_cert_file": "src/envoy/auth/integration_test/googleapis.com.pem"
+        },
+        "lb_type": "round_robin",
+        "features": "http2",
+        "hosts": [
+          {
+            "url": "tcp://www.googleapis.com:443"
+          }
+        ]
+      }
+    ]
+  }
+}
