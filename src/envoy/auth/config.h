@@ -42,7 +42,6 @@ class AsyncClientCallbacks : public AsyncClient::Callbacks {
   void onFailure(AsyncClient::FailureReason /*reason*/);
 
   void Call(const std::string &uri);
-  //  void End();
 
  private:
   Upstream::ClusterManager &cm_;
@@ -70,8 +69,6 @@ class IssuerInfo {
   std::string cluster_;
 
   bool Preload(Json::Object *json);
-  //  bool preload_succeed_;
-  //  Upstream::ClusterManager &cm_;
   std::string name_;       // e.g. "https://accounts.google.com"
   std::string pkey_type_;  // format of public key. "jwks" or "pem"
   std::string pkey_;       // public key
