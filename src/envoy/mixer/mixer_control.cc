@@ -254,7 +254,8 @@ void MixerControl::ForwardAttributes(HeaderMap& headers,
   }
   std::string serialized_str = Utils::SerializeTwoStringMaps(
       mixer_config_.forward_attributes, route_attributes);
-  std::string base64 = Base64::encode(serialized_str.c_str(), serialized_str.size());
+  std::string base64 =
+      Base64::encode(serialized_str.c_str(), serialized_str.size());
   log().debug("Mixer forward attributes set: {}", base64);
   headers.addReferenceKey(Utils::kIstioAttributeHeader, base64);
 }
