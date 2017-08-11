@@ -19,6 +19,7 @@
 
 #include "server/config/network/http_connection_manager.h"
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -46,6 +47,16 @@ class JwtVerificationFilter : public StreamDecoderFilter {
  private:
   StreamDecoderFilterCallbacks* decoder_callbacks_;
   std::shared_ptr<Auth::JwtAuthConfig> config_;
+
+  enum State { Calling, Complete };
+  State state_;
+  bool stopped_;
+
+  std::map<std::string, std::shared_ptr<Auth::IssuerInfo> > calling_pubkeys_;
+  void ReceivePubkey(HeaderMap& headers, std::string issuer_name, bool succeed,
+                     const std::string& pubkey);
+  void LoadPubkeys(HeaderMap& headers);
+  void CompleteVerification(HeaderMap& headers);
 };
 
 }  // Http

@@ -78,6 +78,7 @@ envoy_cc_test(
         ":integration_test/envoy.conf",
         ":integration_test/envoy.conf.pem",
         ":integration_test/envoy.conf.jwk",
+        ":integration_test/envoy.conf.jwk.temp",
         ":integration_test/googleapis.com.pem",
     ],
     repository = "@envoy",

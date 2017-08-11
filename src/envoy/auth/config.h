@@ -16,6 +16,9 @@
 #ifndef PROXY_CONFIG_H
 #define PROXY_CONFIG_H
 
+#include "common/http/message_impl.h"
+#include "envoy/http/async_client.h"
+#include "envoy/json/json_object.h"
 #include "envoy/json/json_object.h"
 #include "envoy/upstream/cluster_manager.h"
 #include "server/config/network/http_connection_manager.h"
@@ -26,14 +29,54 @@ namespace Envoy {
 namespace Http {
 namespace Auth {
 
+class AsyncClientCallbacks : public AsyncClient::Callbacks {
+ public:
+  AsyncClientCallbacks(Upstream::ClusterManager &cm, const std::string &cluster,
+                       std::function<void(bool, const std::string &)> cb)
+      : cm_(cm),
+        cluster_(cm.get(cluster)->info()),
+        timeout_(Optional<std::chrono::milliseconds>()),
+        cb_(cb) {}
+  void onSuccess(MessagePtr &&response);
+
+  void onFailure(AsyncClient::FailureReason /*reason*/);
+
+  void Call(const std::string &uri);
+  //  void End();
+
+ private:
+  Upstream::ClusterManager &cm_;
+  Upstream::ClusterInfoConstSharedPtr cluster_;
+  Optional<std::chrono::milliseconds> timeout_;
+  std::function<void(bool, const std::string &)> cb_;
+};
+
 // Class to hold an issuer's info.
 class IssuerInfo {
  public:
+  std::string name();
+  std::string pkey_type();
+  std::string pkey();
+  IssuerInfo(Json::Object *json) : loaded_(false) {
+    printf("\n%s\n", __func__);
+    failed_ = !Preload(json);
+    if (failed_) {
+      printf("\n\tIssuerInfo::Preload failed\n\n");
+    }
+  }
+  bool failed_;
+  bool loaded_;
+  std::string uri_;
+  std::string cluster_;
+
+  bool Preload(Json::Object *json);
+  //  bool preload_succeed_;
+  //  Upstream::ClusterManager &cm_;
   std::string name_;       // e.g. "https://accounts.google.com"
   std::string pkey_type_;  // format of public key. "jwks" or "pem"
   std::string pkey_;       // public key
-  IssuerInfo(const std::string &name, const std::string &pkey_type,
-             const std::string &pkey);
+
+  std::unique_ptr<AsyncClientCallbacks> async_client_cb_;
 };
 
 // A config for Jwt auth filter
@@ -42,28 +85,17 @@ class JwtAuthConfig {
   JwtAuthConfig(const Json::Object &config,
                 Server::Configuration::FactoryContext &context)
       : cm_(context.clusterManager()) {
+    printf("\n\tConfit ctor\n\n");
     Load(config);
   }
 
   // Each element corresponds to an issuer
   std::vector<std::shared_ptr<IssuerInfo> > issuers_;
+  Upstream::ClusterManager &cm_;
 
  private:
   // Load the config from envoy config.
   void Load(const Json::Object &json);
-  std::shared_ptr<IssuerInfo> LoadIssuer(Json::Object *json);
-  std::shared_ptr<IssuerInfo> LoadIssuerFromDiscoveryDocument(
-      Json::Object *json);
-  std::shared_ptr<IssuerInfo> LoadPubkeyFromObject(Json::Object *json);
-  std::string ReadWholeFile(const std::string &path);
-  std::string ReadWholeFileByHttp(const std::string &uri,
-                                  const std::string &cluster);
-  std::string GetContentFromUri(const std::string &uri,
-                                const std::string &cluster);
-  std::shared_ptr<IssuerInfo> LoadIssuerFromDiscoveryDocumentStr(
-      const std::string &doc, const std::string &cluster);
-
-  Upstream::ClusterManager &cm_;
 };
 
 }  // namespace Auth
