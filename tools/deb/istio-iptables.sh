@@ -3,6 +3,7 @@
 
 set -o nounset
 set -o pipefail
+IFS=,
 
 ISTIO_SIDECAR_CONFIG=${ISTIO_SIDECAR_CONFIG:-/var/lib/istio/envoy/sidecar.env}
 if [ ! -r $ISTIO_SIDECAR_CONFIG ]; then
@@ -37,8 +38,15 @@ iptables -t nat -X ISTIO_OUTPUT
 iptables -t nat -N ISTIO_REDIRECT                                             -m comment --comment "istio/redirect-common-chain"
 iptables -t nat -A ISTIO_REDIRECT -p tcp -j REDIRECT --to-port ${ENVOY_PORT:-15001}  -m comment --comment "istio/redirect-to-envoy-port"
 
-IFS=,
-if [ ! -z "${ISTIO_LOCAL_PORTS:-}" ]; then
+# Makes sure SSH is not redirectred
+iptables -t nat -A PREROUTING -p tcp --dport 22 -j RETURN
+
+if [ "${ISTIO_LOCAL_PORTS:-}" == "*" ]; then
+     for port in ${ISTIO_LOCAL_EXCLUDE_PORTS}; do
+        iptables -t nat -A PREROUTING -p tcp --dport ${port} -j RETURN
+     done
+     iptables -t nat -A PREROUTING -p tcp -j ISTIO_REDIRECT
+elif [ ! -z "${ISTIO_LOCAL_PORTS:-}" ]; then
     for port in ${ISTIO_LOCAL_PORTS}; do
         iptables -t nat -A PREROUTING -p tcp --dport ${port} -j ISTIO_REDIRECT
     done
