@@ -1,9 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Script to run Envoy for Istio.
 
 # Load config variables
-. /var/lib/istio/envoy/sidecar.env
+set -e
+
+ISTIO_SIDECAR_CONFIG=${ISTIO_SIDECAR_CONFIG:-/var/lib/istio/envoy/sidecar.env}
+
+if [[! -f $ISTIO_SIDECAR_CONFIG]]; then
+  echo "Missing sidecar config: $ISTIO_SIDECAR_CONFIG"
+  exit 1
+fi
+
+. $ISTIO_SIDECAR_CONFIG
 
 /usr/local/bin/istio-iptables.sh
 
