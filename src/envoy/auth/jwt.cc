@@ -23,6 +23,7 @@
 #include "rapidjson/document.h"
 
 #include <algorithm>
+#include <map>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -31,6 +32,32 @@
 namespace Envoy {
 namespace Http {
 namespace Auth {
+
+std::string StatusToString(Status status) {
+  static std::map<Status, std::string> table = {
+      {Status::OK, "OK"},
+      {Status::JWT_BAD_FORMAT, "JWT_BAD_FORMAT"},
+      {Status::JWT_HEADER_PARSE_ERROR, "JWT_HEADER_PARSE_ERROR"},
+      {Status::JWT_HEADER_NO_ALG, "JWT_HEADER_NO_ALG"},
+      {Status::JWT_HEADER_BAD_ALG, "JWT_HEADER_BAD_ALG"},
+      {Status::JWT_SIGNATURE_PARSE_ERROR, "JWT_SIGNATURE_PARSE_ERROR"},
+      {Status::JWT_INVALID_SIGNATURE, "JWT_INVALID_SIGNATURE"},
+      {Status::JWT_PAYLOAD_PARSE_ERROR, "JWT_PAYLOAD_PARSE_ERROR"},
+      {Status::JWT_HEADER_BAD_KID, "JWT_HEADER_BAD_KID"},
+      {Status::JWK_PARSE_ERROR, "JWK_PARSE_ERROR"},
+      {Status::JWK_NO_KEYS, "JWK_NO_KEYS"},
+      {Status::JWK_BAD_KEYS, "JWK_BAD_KEYS"},
+      {Status::JWK_NO_VALID_PUBKEY, "JWK_NO_VALID_PUBKEY"},
+      {Status::KID_UNMATCH, "KID_UNMATCH"},
+      {Status::ALG_NOT_IMPLEMENTED, "ALG_NOT_IMPLEMENTED"},
+      {Status::PUBKEY_PEM_BAD_FORMAT, "PUBKEY_PEM_BAD_FORMAT"},
+      {Status::PUBKEY_RSA_OBJECT_NULL, "PUBKEY_RSA_OBJECT_NULL"},
+      {Status::EVP_MD_CTX_CREATE_FAIL, "EVP_MD_CTX_CREATE_FAIL"},
+      {Status::DIGEST_VERIFY_INIT_FAIL, "DIGEST_VERIFY_INIT_FAIL"},
+      {Status::DIGEST_VERIFY_UPDATE_FAIL, "DIGEST_VERIFY_UPDATE_FAIL"}};
+  return table[status];
+}
+
 namespace {
 
 // Conversion table is taken from
@@ -102,102 +129,78 @@ const uint8_t *CastToUChar(const std::string &str) {
   return reinterpret_cast<const uint8_t *>(str.c_str());
 }
 
-bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(RSA *rsa) {
-  if (!rsa) {
-    return nullptr;
-  }
-  bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
-  EVP_PKEY_set1_RSA(key.get(), rsa);
-  return key;
-}
+class EvpPkeyGetter {
+ public:
+  // It holds failure reason.
+  Status status_;
 
-bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
-  std::string pkey_der = Base64::decode(pkey_pem);
-  return EvpPkeyFromRsa(
-      bssl::UniquePtr<RSA>(
-          RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()))
-          .get());
-}
+  EvpPkeyGetter() : status_(Status::OK) {}
 
-bssl::UniquePtr<BIGNUM> BigNumFromBase64UrlString(const std::string &s) {
-  std::string s_decoded = Base64UrlDecode(s);
-  if (s_decoded == "") {
-    return nullptr;
+  bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
+    std::string pkey_der = Base64::decode(pkey_pem);
+    if (pkey_der == "") {
+      UpdateStatus(Status::PUBKEY_PEM_BAD_FORMAT);
+      return nullptr;
+    }
+    return EvpPkeyFromRsa(
+        bssl::UniquePtr<RSA>(
+            RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()))
+            .get());
   }
-  return bssl::UniquePtr<BIGNUM>(
-      BN_bin2bn(CastToUChar(s_decoded), s_decoded.length(), NULL));
+
+  bssl::UniquePtr<EVP_PKEY> EvpPkeyFromJwk(const std::string &n,
+                                           const std::string &e) {
+    return EvpPkeyFromRsa(RsaFromJwk(n, e).get());
+  }
+
+ private:
+  void UpdateStatus(Status status) {
+    if (status_ == Status::OK) {
+      status_ = status;
+    }
+  }
+
+  bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(RSA *rsa) {
+    if (!rsa) {
+      UpdateStatus(Status::PUBKEY_RSA_OBJECT_NULL);
+      return nullptr;
+    }
+    bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
+    EVP_PKEY_set1_RSA(key.get(), rsa);
+    return key;
+  }
+
+  bssl::UniquePtr<BIGNUM> BigNumFromBase64UrlString(const std::string &s) {
+    std::string s_decoded = Base64UrlDecode(s);
+    if (s_decoded == "") {
+      return nullptr;
+    }
+    return bssl::UniquePtr<BIGNUM>(
+        BN_bin2bn(CastToUChar(s_decoded), s_decoded.length(), NULL));
+  };
+
+  bssl::UniquePtr<RSA> RsaFromJwk(const std::string &n, const std::string &e) {
+    bssl::UniquePtr<RSA> rsa(RSA_new());
+    if (!rsa) {
+      // Couldn't create RSA key.
+      status_ = Status::PUBKEY_RSA_OBJECT_NULL;
+      return nullptr;
+    }
+    rsa->n = BigNumFromBase64UrlString(n).release();
+    rsa->e = BigNumFromBase64UrlString(e).release();
+    if (!rsa->n || !rsa->e) {
+      // RSA public key field is missing.
+      return nullptr;
+    }
+    return rsa;
+  }
 };
-
-bssl::UniquePtr<RSA> RsaFromJwk(const std::string &n, const std::string &e) {
-  bssl::UniquePtr<RSA> rsa(RSA_new());
-  if (!rsa) {
-    // Couldn't create RSA key.
-    return nullptr;
-  }
-  rsa->n = BigNumFromBase64UrlString(n).release();
-  rsa->e = BigNumFromBase64UrlString(e).release();
-  if (!rsa->n || !rsa->e) {
-    // RSA public key field is missing.
-    return nullptr;
-  }
-  return rsa;
-}
-
-bssl::UniquePtr<EVP_PKEY> EvpPkeyFromJwk(const std::string &n,
-                                         const std::string &e) {
-  return EvpPkeyFromRsa(RsaFromJwk(n, e).get());
-}
-
-const EVP_MD *EvpMdFromAlg(const std::string &alg) {
-  // may use
-  // EVP_sha384() if alg == "RS384" and
-  // EVP_sha512() if alg == "RS512"
-  if (alg == "RS256") {
-    return EVP_sha256();
-  } else {
-    return nullptr;
-  }
-}
-
-bool VerifySignature(EVP_PKEY *key, const std::string &alg,
-                     const uint8_t *signature, size_t signature_len,
-                     const uint8_t *signed_data, size_t signed_data_len) {
-  bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
-  const EVP_MD *md = EvpMdFromAlg(alg);
-
-  if (!md) {
-    return false;
-  }
-  if (!md_ctx) {
-    return false;
-  }
-  if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key) != 1) {
-    return false;
-  }
-  if (EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len) != 1) {
-    return false;
-  }
-  if (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) != 1) {
-    return false;
-  }
-  return true;
-}
-
-bool VerifySignature(EVP_PKEY *key, const std::string &alg,
-                     const std::string &signature,
-                     const std::string &signed_data) {
-  return VerifySignature(key, alg, CastToUChar(signature), signature.length(),
-                         CastToUChar(signed_data), signed_data.length());
-}
-
-}  // namespace
-
-namespace Jwt {
-namespace {
 
 // Class to decode and verify JWT. Setup() must be called before
 // VerifySignature() and Payload(). If you do not need the signature
 // verification, VerifySignature() can be skipped.
+// When verification fails, status_ holds the reason of failure.
+//
 // Usage example:
 //   Verifier v;
 //   if(!v.Setup(jwt)) return nullptr;
@@ -207,6 +210,9 @@ class Verifier {
  public:
   rapidjson::Document header;
   std::string alg;
+  Status status_;
+
+  Verifier() : status_(Status::OK) {}
 
   // Parses header JSON. This function must be called before accessing header or
   // alg.
@@ -214,23 +220,28 @@ class Verifier {
   bool Setup(const std::string &jwt) {
     // jwt must have exactly 2 dots
     if (std::count(jwt.begin(), jwt.end(), '.') != 2) {
+      UpdateStatus(Status::JWT_BAD_FORMAT);
       return false;
     }
     jwt_split = StringUtil::split(jwt, '.');
     if (jwt_split.size() != 3) {
+      UpdateStatus(Status::JWT_BAD_FORMAT);
       return false;
     }
 
     // parse header json
     if (header.Parse(Base64UrlDecode(jwt_split[0]).c_str()).HasParseError()) {
+      UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
       return false;
     }
 
     if (!header.HasMember("alg")) {
+      UpdateStatus(Status::JWT_HEADER_NO_ALG);
       return false;
     }
     rapidjson::Value &alg_v = header["alg"];
     if (!alg_v.IsString()) {
+      UpdateStatus(Status::JWT_HEADER_BAD_ALG);
       return false;
     }
     alg = alg_v.GetString();
@@ -242,11 +253,16 @@ class Verifier {
   bool VerifySignature(EVP_PKEY *key) {
     std::string signature = Base64UrlDecode(jwt_split[2]);
     if (signature == "") {
-      // invalid signature
+      // Signature is a bad Base64url input.
+      UpdateStatus(Status::JWT_SIGNATURE_PARSE_ERROR);
       return false;
     }
     std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
-    return Auth::VerifySignature(key, alg, signature, signed_data);
+    if (!VerifySignature(key, alg, signature, signed_data)) {
+      UpdateStatus(Status::JWT_INVALID_SIGNATURE);
+      return false;
+    }
+    return true;
   }
 
   // Returns payload JSON.
@@ -257,6 +273,7 @@ class Verifier {
         new rapidjson::Document());
     if (payload_json->Parse(Base64UrlDecode(jwt_split[1]).c_str())
             .HasParseError()) {
+      UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
       return nullptr;
     }
     return payload_json;
@@ -264,86 +281,183 @@ class Verifier {
 
  private:
   std::vector<std::string> jwt_split;
-};
 
-}  // namespace
-
-std::unique_ptr<rapidjson::Document> Decode(const std::string &jwt,
-                                            const std::string &pkey_pem) {
-  /*
-   * TODO: return failure reason (something like
-   * https://github.com/grpc/grpc/blob/master/src/core/lib/security/credentials/jwt/jwt_verifier.h#L38)
-   */
-  Verifier v;
-  return v.Setup(jwt) && v.VerifySignature(EvpPkeyFromStr(pkey_pem).get())
-             ? v.Payload()
-             : nullptr;
-}
-
-std::unique_ptr<rapidjson::Document> DecodeWithJwk(const std::string &jwt,
-                                                   const std::string &jwks) {
-  Verifier verifier;
-  if (!verifier.Setup(jwt)) {
-    return nullptr;
+  // Not overwrite failure status to keep the reason of the first failure
+  void UpdateStatus(Status status) {
+    if (status_ == Status::OK) {
+      status_ = status;
+    }
   }
-  std::string kid_jwt = "";
-  if (verifier.header.HasMember("kid")) {
-    if (verifier.header["kid"].IsString()) {
-      kid_jwt = verifier.header["kid"].GetString();
+
+  const EVP_MD *EvpMdFromAlg(const std::string &alg) {
+    // may use
+    // EVP_sha384() if alg == "RS384" and
+    // EVP_sha512() if alg == "RS512"
+    if (alg == "RS256") {
+      return EVP_sha256();
     } else {
-      // if header has invalid format (non-string) "kid", verification is
-      // considered to be failed
       return nullptr;
     }
   }
 
-  // parse JWKs
+  bool VerifySignature(EVP_PKEY *key, const std::string &alg,
+                       const uint8_t *signature, size_t signature_len,
+                       const uint8_t *signed_data, size_t signed_data_len) {
+    bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
+    const EVP_MD *md = EvpMdFromAlg(alg);
+
+    if (!md) {
+      UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
+      return false;
+    }
+    if (!md_ctx) {
+      UpdateStatus(Status::EVP_MD_CTX_CREATE_FAIL);
+      return false;
+    }
+    if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key) != 1) {
+      UpdateStatus(Status::DIGEST_VERIFY_INIT_FAIL);
+      return false;
+    }
+    if (EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len) !=
+        1) {
+      UpdateStatus(Status::DIGEST_VERIFY_UPDATE_FAIL);
+      return false;
+    }
+    if (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) != 1) {
+      UpdateStatus(Status::JWT_INVALID_SIGNATURE);
+      return false;
+    }
+    return true;
+  }
+
+  bool VerifySignature(EVP_PKEY *key, const std::string &alg,
+                       const std::string &signature,
+                       const std::string &signed_data) {
+    return VerifySignature(key, alg, CastToUChar(signature), signature.length(),
+                           CastToUChar(signed_data), signed_data.length());
+  }
+};
+
+}  // namespace
+
+void JwtVerifier::UpdateStatus(Status status) {
+  // Not overwrite failure status to keep the reason of the first failure
+  if (status_ == Status::OK) {
+    status_ = status;
+  }
+}
+
+void JwtVerifierPem::SetPublicKey(const std::string &pkey_pem) {
+  EvpPkeyGetter e;
+  pkey_ = e.EvpPkeyFromStr(pkey_pem);
+  UpdateStatus(e.status_);
+}
+
+std::unique_ptr<rapidjson::Document> JwtVerifierPem::Decode(
+    const std::string &jwt) {
+  Verifier v;
+  auto payload = !pkey_ || !v.Setup(jwt) || !v.VerifySignature(pkey_.get())
+                     ? nullptr
+                     : v.Payload();
+  UpdateStatus(v.status_);
+  return payload;
+}
+
+void JwtVerifierJwks::SetPublicKey(const std::string &pkey_jwks) {
   rapidjson::Document jwks_json;
-  if (jwks_json.Parse(jwks.c_str()).HasParseError()) {
-    return nullptr;
+  if (jwks_json.Parse(pkey_jwks.c_str()).HasParseError()) {
+    UpdateStatus(Status::JWK_PARSE_ERROR);
+    return;
   }
   auto keys = jwks_json.FindMember("keys");
   if (keys == jwks_json.MemberEnd()) {
-    // jwks doesn't have "keys"
-    return nullptr;
+    UpdateStatus(Status::JWK_NO_KEYS);
+    return;
   }
   if (!keys->value.IsArray()) {
-    return nullptr;
+    UpdateStatus(Status::JWK_BAD_KEYS);
+    return;
   }
 
-  for (auto &jwk : keys->value.GetArray()) {
+  for (auto &jwk_json : keys->value.GetArray()) {
+    std::unique_ptr<Jwk> jwk(new Jwk());
+
+    if (!jwk_json.HasMember("kid") || !jwk_json["kid"].IsString()) {
+      continue;
+    }
+    jwk->kid_ = jwk_json["kid"].GetString();
+
+    if (!jwk_json.HasMember("alg") || !jwk_json["alg"].IsString()) {
+      continue;
+    }
+    jwk->alg_ = jwk_json["alg"].GetString();
+
+    // public key
+    if (!jwk_json.HasMember("n") || !jwk_json["n"].IsString()) {
+      continue;
+    }
+    if (!jwk_json.HasMember("e") || !jwk_json["e"].IsString()) {
+      continue;
+    }
+    EvpPkeyGetter e;
+    jwk->pkey_ =
+        e.EvpPkeyFromJwk(jwk_json["n"].GetString(), jwk_json["e"].GetString());
+
+    jwks_.push_back(std::move(jwk));
+  }
+  if (jwks_.size() == 0) {
+    UpdateStatus(Status::JWK_NO_VALID_PUBKEY);
+  }
+}
+
+std::unique_ptr<rapidjson::Document> JwtVerifierJwks::Decode(
+    const std::string &jwt) {
+  Verifier v;
+  if (!v.Setup(jwt)) {
+    UpdateStatus(v.status_);
+    return nullptr;
+  }
+  std::string kid_jwt = "";
+  if (v.header.HasMember("kid")) {
+    if (v.header["kid"].IsString()) {
+      kid_jwt = v.header["kid"].GetString();
+    } else {
+      // if header has invalid format (non-string) "kid", verification is
+      // considered to be failed
+      UpdateStatus(Status::JWT_HEADER_BAD_KID);
+      return nullptr;
+    }
+  }
+
+  bool kid_matched = false;
+  for (auto &jwk : jwks_) {
     // If kid is specified in JWT, JWK with the same kid is used for
     // verification.
     // If kid is not specified in JWT, try all JWK.
-    if (kid_jwt != "") {
-      if (!jwk.HasMember("kid") || !jwk["kid"].IsString() ||
-          jwk["kid"].GetString() != kid_jwt) {
-        continue;
-      }
+    if (kid_jwt != "" && jwk->kid_ != kid_jwt) {
+      continue;
     }
+    kid_matched = true;
 
-    // the same alg must be used.
-    if (!jwk.HasMember("alg") || !jwk["alg"].IsString() ||
-        jwk["alg"].GetString() != verifier.alg) {
+    // The same alg must be used.
+    if (jwk->alg_ != v.alg) {
       continue;
     }
 
-    // verification
-    if (!jwk.HasMember("n") || !jwk["n"].IsString()) {
-      continue;
+    if (v.VerifySignature(jwk->pkey_.get())) {
+      return v.Payload();
     }
-    if (!jwk.HasMember("e") || !jwk["e"].IsString()) {
-      continue;
-    }
-    if (verifier.VerifySignature(
-            EvpPkeyFromJwk(jwk["n"].GetString(), jwk["e"].GetString()).get())) {
-      return verifier.Payload();
-    }
+  }
+
+  if (kid_matched) {
+    UpdateStatus(Status::JWT_INVALID_SIGNATURE);
+  } else {
+    UpdateStatus(Status::KID_UNMATCH);
   }
   return nullptr;
 }
 
-}  // Jwt
+//}  // Jwt
 }  // Auth
 }  // Http
 }  // Envoy
