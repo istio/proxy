@@ -2,7 +2,7 @@ load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar", "pkg_deb")
 
 pkg_tar(
     name = "envoy-bin",
-    srcs = [
+    files = [
         "istio-iptables.sh",
         "istio-start.sh",
         "//src/envoy/mixer:envoy",
@@ -13,7 +13,7 @@ pkg_tar(
 
 pkg_tar(
     name = "istio-conf",
-    srcs = [
+    files = [
         "envoy.json",
         "sidecar.env",
     ],
@@ -23,7 +23,7 @@ pkg_tar(
 
 pkg_tar(
     name = "istio-systemd",
-    srcs = ["istio.service"],
+    files = ["istio.service"],
     mode = "644",
     package_dir = "/lib/systemd/system",
 )
