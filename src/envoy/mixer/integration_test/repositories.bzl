@@ -26,11 +26,11 @@ def go_istio_api_repositories(use_local=False):
 
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix", "go_library")
 
 go_prefix("istio.io/api")
 
-load("@org_pubref_rules_protobuf//gogo:rules.bzl", "gogoslick_proto_library")
+load("@org_pubref_rules_protobuf//gogo:rules.bzl", "gogoslick_proto_library", "gogo_proto_compile")
 
 gogoslick_proto_library(
     name = "mixer/v1",
@@ -76,8 +76,11 @@ DESCRIPTOR_FILE_GROUP = [
     "mixer/v1/config/descriptor/value_type.proto",
 ]
 
-gogoslick_proto_library(
-    name = "mixer/v1/config",
+# gogoslick_proto_compile cannot be used here. it generates Equal, Size, and
+# MarshalTo methods for google.protobuf.Struct, which we then later replace
+# with interface{}. This causes compilation issues.
+gogo_proto_compile(
+    name = "mixer/v1/config_gen",
     importmap = {
         "google/protobuf/struct.proto": "github.com/gogo/protobuf/types",
         "mixer/v1/config/descriptor/log_entry_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
@@ -85,7 +88,7 @@ gogoslick_proto_library(
         "mixer/v1/config/descriptor/monitored_resource_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
         "mixer/v1/config/descriptor/principal_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
         "mixer/v1/config/descriptor/quota_descriptor.proto": "istio.io/api/mixer/v1/config/descriptor",
-	"mixer/v1/config/descriptor/value_type.proto": "istio.io/api/mixer/v1/config/descriptor",
+        "mixer/v1/config/descriptor/value_type.proto": "istio.io/api/mixer/v1/config/descriptor",
     },
     imports = [
         "../../external/com_github_google_protobuf/src",
@@ -99,12 +102,6 @@ gogoslick_proto_library(
     verbose = 0,
     visibility = ["//visibility:public"],
     with_grpc = False,
-    deps = [
-        ":mixer/v1/config/descriptor",
-        "@com_github_gogo_protobuf//sortkeys:go_default_library",
-        "@com_github_gogo_protobuf//types:go_default_library",
-        "@com_github_googleapis_googleapis//:google/rpc",
-    ],
 )
 
 gogoslick_proto_library(
@@ -123,7 +120,7 @@ gogoslick_proto_library(
     visibility = ["//visibility:public"],
     with_grpc = False,
     deps = [
-  	"@com_github_gogo_protobuf//sortkeys:go_default_library",
+        "@com_github_gogo_protobuf//sortkeys:go_default_library",
         "@com_github_gogo_protobuf//types:go_default_library",
     ],
 )
@@ -131,6 +128,24 @@ gogoslick_proto_library(
 filegroup(
     name = "mixer/v1/config/descriptor_protos",
     srcs = DESCRIPTOR_FILE_GROUP,
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "mixer/v1/config_fixed",
+    srcs = [":mixer/v1/config_gen"],
+    outs = ["fixed_cfg.pb.go"],
+    cmd = "sed " +
+          "-e 's/*google_protobuf.Struct/interface{}/g' " +
+          "-e 's/ValueType_VALUE_TYPE_UNSPECIFIED/VALUE_TYPE_UNSPECIFIED/g' " +
+          "$(location :mixer/v1/config_gen) | $(location @org_golang_x_tools_imports//:goimports) > $@",
+    message = "Applying overrides to cfg proto",
+    tools = ["@org_golang_x_tools_imports//:goimports"],
+)
+
+filegroup(
+    name = "mixer/v1/attributes_file",
+    srcs = ["mixer/v1/global_dictionary.yaml"],
     visibility = ["//visibility:public"],
 )
 """
@@ -216,6 +231,6 @@ def go_mixer_repositories(use_local_api=False):
 
     go_repository(
         name = "com_github_istio_mixer",
-        commit = "a671ce8d3c98aa4b92ee7ddce714e435be3c789f",
+        commit = "a3036388dff48ee4f970b30f76bab6573a7ea182",
         importpath = "github.com/istio/mixer",
     )
