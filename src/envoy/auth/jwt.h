@@ -98,7 +98,7 @@ class JwtVerifier {
   virtual ~JwtVerifier() {}
 
   // This function should be called before Decode().
-  virtual void SetPublicKey(const std::string& pkey) = 0;
+  virtual JwtVerifier& SetPublicKey(const std::string& pkey) = 0;
 
   // This function verifies JWT signature and returns the decoded payload as a
   // JSON if the signature is valid.
@@ -116,11 +116,10 @@ class JwtVerifier {
 //
 // Usage example:
 //   JwtVerifierPem v;
-//   v.SetPublicKey(public_key);
-//   auto payload = v.Decode(jwt);
+//   auto payload = v.SetPublicKey(public_key).Decode(jwt);
 class JwtVerifierPem : public JwtVerifier {
  public:
-  void SetPublicKey(const std::string& pkey_pem) override;
+  JwtVerifierPem& SetPublicKey(const std::string& pkey_pem) override;
   std::unique_ptr<rapidjson::Document> Decode(const std::string& jwt) override;
 
  private:
@@ -131,11 +130,10 @@ class JwtVerifierPem : public JwtVerifier {
 //
 // Usage example:
 //   JwtVerifierJwks v;
-//   v.SetPublicKey(public_key);
-//   auto payload = v.Decode(jwt);
+//   auto payload = v.SetPublicKey(public_key).Decode(jwt);
 class JwtVerifierJwks : public JwtVerifier {
  public:
-  void SetPublicKey(const std::string& pkey_jwks) override;
+  JwtVerifierJwks& SetPublicKey(const std::string& pkey_jwks) override;
   std::unique_ptr<rapidjson::Document> Decode(const std::string& jwt) override;
 
  private:

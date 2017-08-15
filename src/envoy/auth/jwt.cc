@@ -347,36 +347,37 @@ void JwtVerifier::UpdateStatus(Status status) {
   }
 }
 
-void JwtVerifierPem::SetPublicKey(const std::string &pkey_pem) {
+JwtVerifierPem &JwtVerifierPem::SetPublicKey(const std::string &pkey_pem) {
   EvpPkeyGetter e;
   pkey_ = e.EvpPkeyFromStr(pkey_pem);
   UpdateStatus(e.status_);
+  return *this;
 }
 
 std::unique_ptr<rapidjson::Document> JwtVerifierPem::Decode(
     const std::string &jwt) {
   Verifier v;
-  auto payload = !pkey_ || !v.Setup(jwt) || !v.VerifySignature(pkey_.get())
-                     ? nullptr
-                     : v.Payload();
+  auto payload = pkey_ && v.Setup(jwt) && v.VerifySignature(pkey_.get())
+                     ? v.Payload()
+                     : nullptr;
   UpdateStatus(v.status_);
   return payload;
 }
 
-void JwtVerifierJwks::SetPublicKey(const std::string &pkey_jwks) {
+JwtVerifierJwks &JwtVerifierJwks::SetPublicKey(const std::string &pkey_jwks) {
   rapidjson::Document jwks_json;
   if (jwks_json.Parse(pkey_jwks.c_str()).HasParseError()) {
     UpdateStatus(Status::JWK_PARSE_ERROR);
-    return;
+    return *this;
   }
   auto keys = jwks_json.FindMember("keys");
   if (keys == jwks_json.MemberEnd()) {
     UpdateStatus(Status::JWK_NO_KEYS);
-    return;
+    return *this;
   }
   if (!keys->value.IsArray()) {
     UpdateStatus(Status::JWK_BAD_KEYS);
-    return;
+    return *this;
   }
 
   for (auto &jwk_json : keys->value.GetArray()) {
@@ -408,6 +409,7 @@ void JwtVerifierJwks::SetPublicKey(const std::string &pkey_jwks) {
   if (jwks_.size() == 0) {
     UpdateStatus(Status::JWK_NO_VALID_PUBKEY);
   }
+  return *this;
 }
 
 std::unique_ptr<rapidjson::Document> JwtVerifierJwks::Decode(
@@ -457,7 +459,6 @@ std::unique_ptr<rapidjson::Document> JwtVerifierJwks::Decode(
   return nullptr;
 }
 
-//}  // Jwt
 }  // Auth
 }  // Http
 }  // Envoy

@@ -309,8 +309,7 @@ class JwtTestWithJwk : public testing::Test {
 
 TEST_F(JwtTest, JwtDecode) {
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwt);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwt);
 
   EXPECT_TRUE(payload);
   EXPECT_EQ(v.status_, Status::OK);
@@ -333,8 +332,7 @@ TEST_F(JwtTest, InvalidSignature) {
   invalid_jwt[kJwt.length() - 1] = kJwt[kJwt.length() - 1] != 'a' ? 'a' : 'b';
 
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(invalid_jwt);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(invalid_jwt);
 
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_INVALID_SIGNATURE);
@@ -345,8 +343,7 @@ TEST_F(JwtTest, InvalidPublickey) {
   invalid_pubkey[0] = kPublicKey[0] != 'a' ? 'a' : 'b';
 
   JwtVerifierPem v;
-  v.SetPublicKey(invalid_pubkey);
-  auto payload = v.Decode(kJwt);
+  auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwt);
 
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::PUBKEY_RSA_OBJECT_NULL);
@@ -356,8 +353,7 @@ TEST_F(JwtTest, PublickeyInvalidBase64) {
   auto invalid_pubkey = "a";
 
   JwtVerifierPem v;
-  v.SetPublicKey(invalid_pubkey);
-  auto payload = v.Decode(kJwt);
+  auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwt);
 
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::PUBKEY_PEM_BAD_FORMAT);
@@ -371,8 +367,7 @@ TEST_F(JwtTest, Base64urlBadInputHeader) {
       ".");
 
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(invalid_jwt);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(invalid_jwt);
 
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_HEADER_PARSE_ERROR);
@@ -386,8 +381,7 @@ TEST_F(JwtTest, Base64urlBadInputPayload) {
       ".");
 
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(invalid_jwt);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(invalid_jwt);
 
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_INVALID_SIGNATURE);
@@ -401,8 +395,7 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
       ".");
 
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(invalid_jwt);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(invalid_jwt);
 
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_SIGNATURE_PARSE_ERROR);
@@ -411,56 +404,49 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
 TEST_F(JwtTest, JwtInvalidNumberOfDots) {
   auto invalid_jwt = kJwt + '.';
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(invalid_jwt);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(invalid_jwt);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_BAD_FORMAT);
 }
 
 TEST_F(JwtTest, JsonBadInputHeader) {
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithBadJsonHeader);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithBadJsonHeader);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_HEADER_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, JsonBadInputPayload) {
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithBadJsonPayload);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithBadJsonPayload);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_PAYLOAD_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, AlgAbsentInHeader) {
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithAlgAbsent);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithAlgAbsent);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_HEADER_NO_ALG);
 }
 
 TEST_F(JwtTest, AlgIsNotString) {
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithAlgIsNotString);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithAlgIsNotString);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_HEADER_BAD_ALG);
 }
 
 TEST_F(JwtTest, InvalidAlg) {
   JwtVerifierPem v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithInvalidAlg);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithInvalidAlg);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::ALG_NOT_IMPLEMENTED);
 }
 
 TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
   JwtVerifierJwks v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtNoKid);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtNoKid);
   EXPECT_TRUE(payload);
   EXPECT_EQ(v.status_, Status::OK);
 
@@ -479,8 +465,7 @@ TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
 
 TEST_F(JwtTestWithJwk, CorrectKid) {
   JwtVerifierJwks v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithCorrectKid);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithCorrectKid);
 
   EXPECT_EQ(v.status_, Status::OK);
 
@@ -499,24 +484,21 @@ TEST_F(JwtTestWithJwk, CorrectKid) {
 
 TEST_F(JwtTestWithJwk, IncorrectKid) {
   JwtVerifierJwks v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithIncorrectKid);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithIncorrectKid);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_INVALID_SIGNATURE);
 }
 
 TEST_F(JwtTestWithJwk, NonExistKid) {
   JwtVerifierJwks v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithNonExistKid);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithNonExistKid);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::KID_UNMATCH);
 }
 
 TEST_F(JwtTestWithJwk, BadFormatKid) {
   JwtVerifierJwks v;
-  v.SetPublicKey(kPublicKey);
-  auto payload = v.Decode(kJwtWithBadFormatKid);
+  auto payload = v.SetPublicKey(kPublicKey).Decode(kJwtWithBadFormatKid);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWT_HEADER_BAD_KID);
 }
@@ -524,8 +506,7 @@ TEST_F(JwtTestWithJwk, BadFormatKid) {
 TEST_F(JwtTestWithJwk, JwkBadJson) {
   std::string invalid_pubkey = "foobar";
   JwtVerifierJwks v;
-  v.SetPublicKey(invalid_pubkey);
-  auto payload = v.Decode(kJwtNoKid);
+  auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwtNoKid);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWK_PARSE_ERROR);
 }
@@ -533,8 +514,7 @@ TEST_F(JwtTestWithJwk, JwkBadJson) {
 TEST_F(JwtTestWithJwk, JwkNoKeys) {
   std::string invalid_pubkey = R"EOF({"foo":"bar"})EOF";
   JwtVerifierJwks v;
-  v.SetPublicKey(invalid_pubkey);
-  auto payload = v.Decode(kJwtNoKid);
+  auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwtNoKid);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWK_NO_KEYS);
 }
@@ -542,8 +522,7 @@ TEST_F(JwtTestWithJwk, JwkNoKeys) {
 TEST_F(JwtTestWithJwk, JwkBadKeys) {
   std::string invalid_pubkey = R"EOF({"keys":"foobar"})EOF";
   JwtVerifierJwks v;
-  v.SetPublicKey(invalid_pubkey);
-  auto payload = v.Decode(kJwtNoKid);
+  auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwtNoKid);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWK_BAD_KEYS);
 }
@@ -551,8 +530,7 @@ TEST_F(JwtTestWithJwk, JwkBadKeys) {
 TEST_F(JwtTestWithJwk, JwkBadPublicKey) {
   std::string invalid_pubkey = R"EOF({"keys":[]})EOF";
   JwtVerifierJwks v;
-  v.SetPublicKey(invalid_pubkey);
-  auto payload = v.Decode(kJwtNoKid);
+  auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwtNoKid);
   EXPECT_FALSE(payload);
   EXPECT_EQ(v.status_, Status::JWK_NO_VALID_PUBKEY);
 }
