@@ -78,15 +78,6 @@ enum class Status {
 
   // RSA object was null while creating EVP_PKEY object.
   PUBKEY_RSA_OBJECT_NULL,
-
-  // Failed to create EVP_MD_CTX object.
-  EVP_MD_CTX_CREATE_FAIL,
-
-  // Failed in DigestVerifyInit()
-  DIGEST_VERIFY_INIT_FAIL,
-
-  // Failed in DigestVerifyUpdate()
-  DIGEST_VERIFY_UPDATE_FAIL,
 };
 
 std::string StatusToString(Status status);

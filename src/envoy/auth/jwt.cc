@@ -51,10 +51,7 @@ std::string StatusToString(Status status) {
       {Status::KID_UNMATCH, "KID_UNMATCH"},
       {Status::ALG_NOT_IMPLEMENTED, "ALG_NOT_IMPLEMENTED"},
       {Status::PUBKEY_PEM_BAD_FORMAT, "PUBKEY_PEM_BAD_FORMAT"},
-      {Status::PUBKEY_RSA_OBJECT_NULL, "PUBKEY_RSA_OBJECT_NULL"},
-      {Status::EVP_MD_CTX_CREATE_FAIL, "EVP_MD_CTX_CREATE_FAIL"},
-      {Status::DIGEST_VERIFY_INIT_FAIL, "DIGEST_VERIFY_INIT_FAIL"},
-      {Status::DIGEST_VERIFY_UPDATE_FAIL, "DIGEST_VERIFY_UPDATE_FAIL"}};
+      {Status::PUBKEY_RSA_OBJECT_NULL, "PUBKEY_RSA_OBJECT_NULL"}};
   return table[status];
 }
 
@@ -330,19 +327,8 @@ class Verifier {
       UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
       return false;
     }
-    if (!md_ctx) {
-      UpdateStatus(Status::EVP_MD_CTX_CREATE_FAIL);
-      return false;
-    }
-    if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key) != 1) {
-      UpdateStatus(Status::DIGEST_VERIFY_INIT_FAIL);
-      return false;
-    }
-    if (EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len) !=
-        1) {
-      UpdateStatus(Status::DIGEST_VERIFY_UPDATE_FAIL);
-      return false;
-    }
+    EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
+    EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
     if (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) != 1) {
       UpdateStatus(Status::JWT_INVALID_SIGNATURE);
       return false;
