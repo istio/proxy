@@ -33,7 +33,7 @@ fi
 # a blacklist.
 if [ -z "${ENVOY_UID:-}" ]; then
   # Default to the UID of ENVOY_USER and root
-  ENVOY_UID=$(id -u ${ENVOY_USER:-istio})
+  ENVOY_UID=$(id -u ${ENVOY_USER:-istio-proxy})
   if [ ! $? == 0 ]; then
      echo "Invalid istio user $ENVOY_UID $ENVOY_USER"
      exit 1
