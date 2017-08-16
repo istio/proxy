@@ -82,7 +82,7 @@ const LowerCaseString kRefererHeaderKey("referer");
 // Check cache size: 10000 cache entries.
 const int kCheckCacheEntries = 10000;
 
-CheckOptions GetCheckOptions(const MixerConfig& config) {
+CheckOptions GetCheckOptions(const MixerConfig &config) {
   CheckOptions options(kCheckCacheEntries);
   options.cache_keys = config.check_cache_keys;
 
@@ -93,32 +93,32 @@ CheckOptions GetCheckOptions(const MixerConfig& config) {
   return options;
 }
 
-void SetStringAttribute(const std::string& name, const std::string& value,
-                        Attributes* attr) {
+void SetStringAttribute(const std::string &name, const std::string &value,
+                        Attributes *attr) {
   if (!value.empty()) {
     attr->attributes[name] = Attributes::StringValue(value);
   }
 }
 
-void SetInt64Attribute(const std::string& name, uint64_t value,
-                       Attributes* attr) {
+void SetInt64Attribute(const std::string &name, uint64_t value,
+                       Attributes *attr) {
   attr->attributes[name] = Attributes::Int64Value(value);
 }
 
-std::map<std::string, std::string> ExtractHeaders(const HeaderMap& header_map) {
+std::map<std::string, std::string> ExtractHeaders(const HeaderMap &header_map) {
   std::map<std::string, std::string> headers;
   header_map.iterate(
-      [](const HeaderEntry& header, void* context) {
-        std::map<std::string, std::string>* header_map =
-            static_cast<std::map<std::string, std::string>*>(context);
+      [](const HeaderEntry &header, void *context) {
+        std::map<std::string, std::string> *header_map =
+            static_cast<std::map<std::string, std::string> *>(context);
         (*header_map)[header.key().c_str()] = header.value().c_str();
       },
       &headers);
   return headers;
 }
 
-void FillRequestHeaderAttributes(const HeaderMap& header_map,
-                                 Attributes* attr) {
+void FillRequestHeaderAttributes(const HeaderMap &header_map,
+                                 Attributes *attr) {
   SetStringAttribute(kRequestPath, header_map.Path()->value().c_str(), attr);
   SetStringAttribute(kRequestHost, header_map.Host()->value().c_str(), attr);
 
@@ -138,7 +138,7 @@ void FillRequestHeaderAttributes(const HeaderMap& header_map,
                        attr);
   }
 
-  const HeaderEntry* referer = header_map.get(kRefererHeaderKey);
+  const HeaderEntry *referer = header_map.get(kRefererHeaderKey);
   if (referer) {
     std::string val(referer->value().c_str(), referer->value().size());
     SetStringAttribute(kRequestReferer, val, attr);
@@ -148,16 +148,16 @@ void FillRequestHeaderAttributes(const HeaderMap& header_map,
       Attributes::StringMapValue(ExtractHeaders(header_map));
 }
 
-void FillResponseHeaderAttributes(const HeaderMap* header_map,
-                                  Attributes* attr) {
+void FillResponseHeaderAttributes(const HeaderMap *header_map,
+                                  Attributes *attr) {
   if (header_map) {
     attr->attributes[kResponseHeaders] =
         Attributes::StringMapValue(ExtractHeaders(*header_map));
   }
 }
 
-void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
-                               int check_status_code, Attributes* attr) {
+void FillRequestInfoAttributes(const AccessLog::RequestInfo &info,
+                               int check_status_code, Attributes *attr) {
   SetInt64Attribute(kRequestSize, info.bytesReceived(), attr);
   SetInt64Attribute(kResponseSize, info.bytesSent(), attr);
 
@@ -187,8 +187,8 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
 
 }  // namespace
 
-MixerControl::MixerControl(const MixerConfig& mixer_config,
-                           Upstream::ClusterManager& cm)
+MixerControl::MixerControl(const MixerConfig &mixer_config,
+                           Upstream::ClusterManager &cm)
     : cm_(cm), mixer_config_(mixer_config) {
   if (GrpcTransport::IsMixerServerConfigured(cm)) {
     MixerClientOptions options(GetCheckOptions(mixer_config), ReportOptions(),
@@ -211,10 +211,9 @@ MixerControl::MixerControl(const MixerConfig& mixer_config,
 }
 
 void MixerControl::SendCheck(HttpRequestDataPtr request_data,
-                             const HeaderMap* headers, DoneFunc on_done) {
+                             const HeaderMap *headers, DoneFunc on_done) {
   if (!mixer_client_) {
-    on_done(
-        Status(StatusCode::INVALID_ARGUMENT, "Missing mixer_server cluster"));
+    on_done(Status(StatusCode::UNAVAILABLE, "Missing mixer_server cluster"));
     return;
   }
   log().debug("Send Check: {}", request_data->attributes.DebugString());
@@ -230,8 +229,8 @@ void MixerControl::SendReport(HttpRequestDataPtr request_data) {
   mixer_client_->Report(request_data->attributes);
 }
 
-void MixerControl::ForwardAttributes(HeaderMap& headers,
-                                     const Utils::StringMap& route_attributes) {
+void MixerControl::ForwardAttributes(HeaderMap &headers,
+                                     const Utils::StringMap &route_attributes) {
   if (mixer_config_.forward_attributes.empty() && route_attributes.empty()) {
     return;
   }
@@ -244,21 +243,21 @@ void MixerControl::ForwardAttributes(HeaderMap& headers,
 }
 
 void MixerControl::BuildHttpCheck(
-    HttpRequestDataPtr request_data, HeaderMap& headers,
-    const ::istio::proxy::mixer::StringMap& map_pb, std::string source_user,
-    const Utils::StringMap& route_attributes,
-    const Network::Connection* connection) {
-  for (const auto& it : map_pb.map()) {
+    HttpRequestDataPtr request_data, HeaderMap &headers,
+    const ::istio::proxy::mixer::StringMap &map_pb, std::string source_user,
+    const Utils::StringMap &route_attributes,
+    const Network::Connection *connection) {
+  for (const auto &it : map_pb.map()) {
     SetStringAttribute(it.first, it.second, &request_data->attributes);
   }
-  for (const auto& attribute : route_attributes) {
+  for (const auto &attribute : route_attributes) {
     SetStringAttribute(attribute.first, attribute.second,
                        &request_data->attributes);
   }
   FillRequestHeaderAttributes(headers, &request_data->attributes);
 
   if (connection) {
-    const Network::Address::Ip* remote_ip = connection->remoteAddress().ip();
+    const Network::Address::Ip *remote_ip = connection->remoteAddress().ip();
     if (remote_ip) {
       SetStringAttribute(kSourceIp, remote_ip->addressAsString(),
                          &request_data->attributes);
@@ -273,18 +272,18 @@ void MixerControl::BuildHttpCheck(
       Attributes::TimeValue(std::chrono::system_clock::now());
   SetStringAttribute(kContextProtocol, "http", &request_data->attributes);
 
-  for (const auto& attribute : quota_attributes_.attributes) {
+  for (const auto &attribute : quota_attributes_.attributes) {
     request_data->attributes.attributes[attribute.first] = attribute.second;
   }
-  for (const auto& attribute : mixer_config_.mixer_attributes) {
+  for (const auto &attribute : mixer_config_.mixer_attributes) {
     SetStringAttribute(attribute.first, attribute.second,
                        &request_data->attributes);
   }
 }
 
 void MixerControl::BuildHttpReport(HttpRequestDataPtr request_data,
-                                   const HeaderMap* response_headers,
-                                   const AccessLog::RequestInfo& request_info,
+                                   const HeaderMap *response_headers,
+                                   const AccessLog::RequestInfo &request_info,
                                    int check_status) {
   // Use all Check attributes for Report.
   // Add additional Report attributes.
@@ -298,11 +297,11 @@ void MixerControl::BuildHttpReport(HttpRequestDataPtr request_data,
 }
 
 void MixerControl::BuildTcpCheck(HttpRequestDataPtr request_data,
-                                 Network::Connection& connection,
+                                 Network::Connection &connection,
                                  std::string source_user) {
   SetStringAttribute(kSourceUser, source_user, &request_data->attributes);
 
-  const Network::Address::Ip* remote_ip = connection.remoteAddress().ip();
+  const Network::Address::Ip *remote_ip = connection.remoteAddress().ip();
   if (remote_ip) {
     SetStringAttribute(kSourceIp, remote_ip->addressAsString(),
                        &request_data->attributes);
@@ -314,10 +313,10 @@ void MixerControl::BuildTcpCheck(HttpRequestDataPtr request_data,
       Attributes::TimeValue(std::chrono::system_clock::now());
   SetStringAttribute(kContextProtocol, "tcp", &request_data->attributes);
 
-  for (const auto& attribute : quota_attributes_.attributes) {
+  for (const auto &attribute : quota_attributes_.attributes) {
     request_data->attributes.attributes[attribute.first] = attribute.second;
   }
-  for (const auto& attribute : mixer_config_.mixer_attributes) {
+  for (const auto &attribute : mixer_config_.mixer_attributes) {
     SetStringAttribute(attribute.first, attribute.second,
                        &request_data->attributes);
   }
@@ -343,7 +342,7 @@ void MixerControl::BuildTcpReport(
                     &request_data->attributes);
 
   if (upstreamHost && upstreamHost->address()) {
-    const Network::Address::Ip* target_ip = upstreamHost->address()->ip();
+    const Network::Address::Ip *target_ip = upstreamHost->address()->ip();
     if (target_ip) {
       SetStringAttribute(kTargetIp, target_ip->addressAsString(),
                          &request_data->attributes);

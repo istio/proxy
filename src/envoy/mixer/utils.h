@@ -21,6 +21,8 @@
 #include "common/http/headers.h"
 #include "envoy/json/json_object.h"
 
+using ::google::protobuf::util::Status;
+
 namespace Envoy {
 namespace Http {
 namespace Utils {
@@ -32,8 +34,15 @@ extern const LowerCaseString kIstioAttributeHeader;
 typedef std::map<std::string, std::string> StringMap;
 
 // Serialize two string maps to string.
-std::string SerializeTwoStringMaps(const StringMap& map1,
-                                   const StringMap& map2);
+std::string SerializeTwoStringMaps(const StringMap &map1,
+                                   const StringMap &map2);
+
+// Convert Status::code to HTTP code
+int HttpCode(int code);
+
+// Returns true of status is 200 or 5xx (fail open).
+// False otherwise.
+bool CheckStatus(const Status &status);
 
 }  // namespace Utils
 }  // namespace Http
