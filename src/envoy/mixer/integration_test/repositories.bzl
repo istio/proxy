@@ -15,10 +15,7 @@
 ################################################################################
 #
 load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "new_go_repository", "go_repository")
-load("@org_pubref_rules_protobuf//protobuf:rules.bzl", "proto_repositories")
-
 load("@org_pubref_rules_protobuf//gogo:rules.bzl", "gogo_proto_repositories")
-load("@org_pubref_rules_protobuf//cpp:rules.bzl", "cpp_proto_repositories")
 
 def go_istio_api_repositories(use_local=False):
     ISTIO_API_BUILD_FILE = """
@@ -159,7 +156,7 @@ filegroup(
       native.new_git_repository(
           name = "com_github_istio_api",
           build_file_content = ISTIO_API_BUILD_FILE,
-          commit = "ee9769f5b3304d9e01cd7ed6fb1dbb9b08e96210",
+          commit = "c77e57cdaa2341e41115a8f0dbf18001ad5646c5",
           remote = "https://github.com/istio/api.git",
       )
 
@@ -225,9 +222,74 @@ filegroup(
         remote = "https://github.com/googleapis/googleapis.git",
     )
 
+def go_x_tools_imports_repositories():
+    BUILD_FILE = """
+package(default_visibility = ["//visibility:public"])
+load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+
+go_prefix("golang.org/x/tools")
+
+licenses(["notice"])  # New BSD
+
+exports_files(["LICENSE"])
+
+go_binary(
+    name = "goimports",
+    srcs = [
+        "cmd/goimports/doc.go",
+        "cmd/goimports/goimports.go",
+        "cmd/goimports/goimports_gc.go",
+        "cmd/goimports/goimports_not_gc.go",
+    ],
+    deps = [
+        "@org_golang_x_tools//imports:go_default_library",
+    ],
+)
+"""
+    # bazel rule for fixing up cfg.pb.go relies on running goimports
+    # we import it here as a git repository to allow projection of a
+    # simple build rule that will build the binary for usage (and avoid
+    # the need to project a more complicated BUILD file over the entire
+    # tools repo.)
+    native.new_git_repository(
+	name = "org_golang_x_tools_imports",
+        build_file_content = BUILD_FILE,
+        commit = "e6cb469339aef5b7be0c89de730d5f3cc8e47e50",  # Jun 23, 2017 (no releases)
+        remote = "https://github.com/golang/tools.git",
+    )
+
 def go_mixer_repositories(use_local_api=False):
+    go_repositories()
+    gogo_proto_repositories()
+    go_x_tools_imports_repositories()
     go_istio_api_repositories(use_local_api)
     go_googleapis_repositories()
+
+    go_repository(
+        name = "org_golang_x_text",
+        build_file_name = "BUILD.bazel",
+        commit = "f4b4367115ec2de254587813edaa901bc1c723a8",  # Mar 31, 2017 (no releases)
+        importpath = "golang.org/x/text",
+    )
+
+    go_repository(
+        name = "org_golang_x_tools",
+        commit = "e6cb469339aef5b7be0c89de730d5f3cc8e47e50",  # Jun 23, 2017 (no releases)
+        importpath = "golang.org/x/tools",
+    )
+
+    go_repository(
+        name = "com_github_hashicorp_go_multierror",
+        commit = "ed905158d87462226a13fe39ddf685ea65f1c11f",  # Dec 16, 2016 (no releases)
+        importpath = "github.com/hashicorp/go-multierror",
+    )
+
+    go_repository(
+        name = "com_github_hashicorp_errwrap",
+        commit = "7554cd9344cec97297fa6649b055a8c98c2a1e55",  # Oct 27, 2014 (no releases)
+        importpath = "github.com/hashicorp/errwrap",
+    )
 
     go_repository(
         name = "com_github_istio_mixer",
