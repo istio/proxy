@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "common/http/headers.h"
 #include "src/envoy/mixer/utils.h"
 #include "src/envoy/mixer/string_map.pb.h"
 
