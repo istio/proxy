@@ -32,12 +32,12 @@ namespace Http {
 namespace Mixer {
 
 class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
-private:
+ private:
   Upstream::ClusterManager &cm_;
   MixerConfig mixer_config_;
   MixerControlPerThreadStore mixer_control_store_;
 
-public:
+ public:
   TcpConfig(const Json::Object &config,
             Server::Configuration::FactoryContext &context)
       : cm_(context.clusterManager()),
@@ -59,7 +59,7 @@ class TcpInstance : public Network::Filter,
                     public Network::ConnectionCallbacks,
                     public Logger::Loggable<Logger::Id::filter>,
                     public std::enable_shared_from_this<TcpInstance> {
-private:
+ private:
   enum class State { NotStarted, Calling, Completed, Closed };
 
   TcpConfigPtr config_;
@@ -73,7 +73,7 @@ private:
   int check_status_code_{};
   std::chrono::time_point<std::chrono::system_clock> start_time_;
 
-public:
+ public:
   TcpInstance(TcpConfigPtr config)
       : config_(config), mixer_control_(config->mixer_control()) {
     log().debug("Called TcpInstance: {}", __func__);
@@ -186,14 +186,14 @@ public:
   void onBelowWriteBufferLowWatermark() override {}
 };
 
-} // namespace Mixer
-} // namespace Http
+}  // namespace Mixer
+}  // namespace Http
 
 namespace Server {
 namespace Configuration {
 
 class TcpMixerFilterFactory : public NamedNetworkFilterConfigFactory {
-public:
+ public:
   NetworkFilterFactoryCb createFilterFactory(const Json::Object &config,
                                              FactoryContext &context) {
     Http::Mixer::TcpConfigPtr tcp_config(
@@ -213,6 +213,6 @@ static Registry::RegisterFactory<TcpMixerFilterFactory,
                                  NamedNetworkFilterConfigFactory>
     register_;
 
-} // namespace Configuration
-} // namespace Server
-} // namespace Envoy
+}  // namespace Configuration
+}  // namespace Server
+}  // namespace Envoy

@@ -41,6 +41,6 @@ int HttpCode(int code);
 // Returns true of status is 200 or 5xx (fail open).
 // False otherwise.
 bool CheckStatus(const Status &status);
-} // namespace Utils
-} // namespace Http
-} // namespace Envoy
+}  // namespace Utils
+}  // namespace Http
+}  // namespace Envoy

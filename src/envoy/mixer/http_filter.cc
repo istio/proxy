@@ -50,15 +50,15 @@ const std::string kPrefixMixerAttributes("mixer_attributes.");
 // The prefix in route opaque data to define
 // a sub string map of mixer attributes forwarded to upstream proxy.
 const std::string kPrefixForwardAttributes("mixer_forward_attributes.");
-} // namespace
+}  // namespace
 
 class Config : public Logger::Loggable<Logger::Id::http> {
-private:
+ private:
   Upstream::ClusterManager &cm_;
   MixerConfig mixer_config_;
   MixerControlPerThreadStore mixer_control_store_;
 
-public:
+ public:
   Config(const Json::Object &config,
          Server::Configuration::FactoryContext &context)
       : cm_(context.clusterManager()),
@@ -78,7 +78,7 @@ typedef std::shared_ptr<Config> ConfigPtr;
 class Instance : public Http::StreamDecoderFilter,
                  public Http::AccessLog::Instance,
                  public std::enable_shared_from_this<Instance> {
-private:
+ private:
   std::shared_ptr<MixerControl> mixer_control_;
   ConfigPtr config_;
   std::shared_ptr<HttpRequestData> request_data_;
@@ -144,10 +144,12 @@ private:
     return attrs;
   }
 
-public:
+ public:
   Instance(ConfigPtr config)
-      : mixer_control_(config->mixer_control()), config_(config),
-        state_(NotStarted), initiating_call_(false),
+      : mixer_control_(config->mixer_control()),
+        config_(config),
+        state_(NotStarted),
+        initiating_call_(false),
         check_status_code_(utils::HttpCode(StatusCode::UNKNOWN)) {
     Log().debug("Called Mixer::Instance : {}", __func__);
   }
@@ -236,8 +238,8 @@ public:
     return FilterTrailersStatus::Continue;
   }
 
-  void
-  setDecoderFilterCallbacks(StreamDecoderFilterCallbacks &callbacks) override {
+  void setDecoderFilterCallbacks(
+      StreamDecoderFilterCallbacks &callbacks) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     decoder_callbacks_ = &callbacks;
     SetThreadDispatcher(decoder_callbacks_->dispatcher());
@@ -270,8 +272,7 @@ public:
                    const AccessLog::RequestInfo &request_info) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     // If decodeHaeders() is not called, not to call Mixer report.
-    if (!request_data_)
-      return;
+    if (!request_data_) return;
     mixer_control_->BuildHttpReport(request_data_, response_headers,
                                     request_info, check_status_code_);
     mixer_control_->SendReport(request_data_);
@@ -284,14 +285,14 @@ public:
   }
 };
 
-} // namespace Mixer
-} // namespace Http
+}  // namespace Mixer
+}  // namespace Http
 
 namespace Server {
 namespace Configuration {
 
 class MixerConfigFactory : public NamedHttpFilterConfigFactory {
-public:
+ public:
   HttpFilterFactoryCb createFilterFactory(const Json::Object &config,
                                           const std::string &,
                                           FactoryContext &context) override {
@@ -315,6 +316,6 @@ static Registry::RegisterFactory<MixerConfigFactory,
                                  NamedHttpFilterConfigFactory>
     register_;
 
-} // namespace Configuration
-} // namespace Server
-} // namespace Envoy
+}  // namespace Configuration
+}  // namespace Server
+}  // namespace Envoy

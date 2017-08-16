@@ -124,10 +124,10 @@ void FillRequestHeaderAttributes(const HeaderMap &header_map,
 
   // Since we're in an HTTP filter, if the scheme header doesn't exist we can
   // fill it in with a reasonable value.
-  SetStringAttribute(kRequestScheme,
-                     header_map.Scheme() ? header_map.Scheme()->value().c_str()
-                                         : "http",
-                     attr);
+  SetStringAttribute(
+      kRequestScheme,
+      header_map.Scheme() ? header_map.Scheme()->value().c_str() : "http",
+      attr);
 
   if (header_map.UserAgent()) {
     SetStringAttribute(kRequestUserAgent,
@@ -173,7 +173,7 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo &info,
 
 // A class to wrap envoy timer for mixer client timer.
 class EnvoyTimer : public ::istio::mixer_client::Timer {
-public:
+ public:
   EnvoyTimer(Event::TimerPtr timer) : timer_(std::move(timer)) {}
 
   void Stop() override { timer_->disableTimer(); }
@@ -181,11 +181,11 @@ public:
     timer_->enableTimer(std::chrono::milliseconds(interval_ms));
   }
 
-private:
+ private:
   Event::TimerPtr timer_;
 };
 
-} // namespace
+}  // namespace
 
 MixerControl::MixerControl(const MixerConfig &mixer_config,
                            Upstream::ClusterManager &cm)
@@ -367,6 +367,6 @@ std::shared_ptr<MixerControl> MixerControlPerThreadStore::Get() {
   return mixer_control;
 }
 
-} // namespace Mixer
-} // namespace Http
-} // namespace Envoy
+}  // namespace Mixer
+}  // namespace Http
+}  // namespace Envoy
