@@ -214,7 +214,7 @@ void MixerControl::SendCheck(HttpRequestDataPtr request_data,
                              const HeaderMap* headers, DoneFunc on_done) {
   if (!mixer_client_) {
     on_done(
-        Status(StatusCode::INVALID_ARGUMENT, "Missing mixer_server cluster"));
+        Status(StatusCode::UNAVAILABLE, "Missing mixer_server cluster"));
     return;
   }
   log().debug("Send Check: {}", request_data->attributes.DebugString());
