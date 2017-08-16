@@ -50,51 +50,6 @@ const std::string kPrefixMixerAttributes("mixer_attributes.");
 // The prefix in route opaque data to define
 // a sub string map of mixer attributes forwarded to upstream proxy.
 const std::string kPrefixForwardAttributes("mixer_forward_attributes.");
-
-// Convert Status::code to HTTP code
-int HttpCode(int code) {
-  // Map Canonical codes to HTTP status codes. This is based on the mapping
-  // defined by the protobuf http error space.
-  switch (code) {
-    case StatusCode::OK:
-      return 200;
-    case StatusCode::CANCELLED:
-      return 499;
-    case StatusCode::UNKNOWN:
-      return 500;
-    case StatusCode::INVALID_ARGUMENT:
-      return 400;
-    case StatusCode::DEADLINE_EXCEEDED:
-      return 504;
-    case StatusCode::NOT_FOUND:
-      return 404;
-    case StatusCode::ALREADY_EXISTS:
-      return 409;
-    case StatusCode::PERMISSION_DENIED:
-      return 403;
-    case StatusCode::RESOURCE_EXHAUSTED:
-      return 429;
-    case StatusCode::FAILED_PRECONDITION:
-      return 400;
-    case StatusCode::ABORTED:
-      return 409;
-    case StatusCode::OUT_OF_RANGE:
-      return 400;
-    case StatusCode::UNIMPLEMENTED:
-      return 501;
-    case StatusCode::INTERNAL:
-      return 500;
-    case StatusCode::UNAVAILABLE:
-      return 503;
-    case StatusCode::DATA_LOSS:
-      return 500;
-    case StatusCode::UNAUTHENTICATED:
-      return 401;
-    default:
-      return 500;
-  }
-}
-
 }  // namespace
 
 class Config : public Logger::Loggable<Logger::Id::http> {
@@ -195,7 +150,7 @@ class Instance : public Http::StreamDecoderFilter,
         config_(config),
         state_(NotStarted),
         initiating_call_(false),
-        check_status_code_(HttpCode(StatusCode::UNKNOWN)) {
+        check_status_code_(utils::HttpCode(StatusCode::UNKNOWN)) {
     Log().debug("Called Mixer::Instance : {}", __func__);
   }
 
@@ -297,9 +252,9 @@ class Instance : public Http::StreamDecoderFilter,
     if (state_ == Responded) {
       return;
     }
-    if (!status.ok() && state_ != Responded) {
+    if (!Utils::CheckStatus(status) && state_ != Responded) {
       state_ = Responded;
-      check_status_code_ = HttpCode(status.error_code());
+      check_status_code_ = Utils::HttpCode(status.error_code());
       Utility::sendLocalReply(*decoder_callbacks_, false,
                               Code(check_status_code_), status.ToString());
       return;

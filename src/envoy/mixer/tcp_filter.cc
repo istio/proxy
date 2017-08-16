@@ -22,6 +22,7 @@
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/mixer_control.h"
 #include "src/envoy/mixer/thread_dispatcher.h"
+#include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
@@ -146,7 +147,7 @@ class TcpInstance : public Network::Filter,
     state_ = State::Completed;
     filter_callbacks_->connection().readDisable(false);
 
-    if (!status.ok()) {
+    if (!Utils::CheckStatus(status)) {
       check_status_code_ = status.error_code();
       filter_callbacks_->connection().close(
           Network::ConnectionCloseType::NoFlush);
