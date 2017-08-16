@@ -220,14 +220,19 @@ class EvpPkeyGetter {
 //   return v.Payload();
 class Verifier {
  public:
-  rapidjson::Document header;
-  std::string alg;
-  Status status_;
-
   Verifier() : status_(Status::OK) {}
 
-  // Parses header JSON. This function must be called before accessing header or
-  // alg.
+  // Returns the parsed header. Setup() must be called before this.
+  rapidjson::Document &Header() { return header_; }
+
+  // Returns "alg" in the header. Setup() must be called before this.
+  std::string &Alg() { return alg_; };
+
+  // Returns "OK" or the failure reason.
+  Status GetStatus() { return status_; }
+
+  // Parses header JSON. This function must be called before calling Header() or
+  // Alg().
   // It returns false if parse fails.
   bool Setup(const std::string &jwt) {
     // jwt must have exactly 2 dots
@@ -242,21 +247,21 @@ class Verifier {
     }
 
     // parse header json
-    if (header.Parse(Base64UrlDecode(jwt_split[0]).c_str()).HasParseError()) {
+    if (header_.Parse(Base64UrlDecode(jwt_split[0]).c_str()).HasParseError()) {
       UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
       return false;
     }
 
-    if (!header.HasMember("alg")) {
+    if (!header_.HasMember("alg")) {
       UpdateStatus(Status::JWT_HEADER_NO_ALG);
       return false;
     }
-    rapidjson::Value &alg_v = header["alg"];
+    rapidjson::Value &alg_v = header_["alg"];
     if (!alg_v.IsString()) {
       UpdateStatus(Status::JWT_HEADER_BAD_ALG);
       return false;
     }
-    alg = alg_v.GetString();
+    alg_ = alg_v.GetString();
 
     return true;
   }
@@ -270,7 +275,7 @@ class Verifier {
       return false;
     }
     std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
-    if (!VerifySignature(key, alg, signature, signed_data)) {
+    if (!VerifySignature(key, alg_, signature, signed_data)) {
       UpdateStatus(Status::JWT_INVALID_SIGNATURE);
       return false;
     }
@@ -293,6 +298,9 @@ class Verifier {
 
  private:
   std::vector<std::string> jwt_split;
+  rapidjson::Document header_;
+  std::string alg_;
+  Status status_;
 
   // Not overwrite failure status to keep the reason of the first failure
   void UpdateStatus(Status status) {
@@ -372,7 +380,7 @@ std::unique_ptr<rapidjson::Document> JwtVerifierPem::Decode(
   auto payload = pkey_ && v.Setup(jwt) && v.VerifySignature(pkey_.get())
                      ? v.Payload()
                      : nullptr;
-  UpdateStatus(v.status_);
+  UpdateStatus(v.GetStatus());
   return payload;
 }
 
@@ -428,13 +436,13 @@ std::unique_ptr<rapidjson::Document> JwtVerifierJwks::Decode(
     const std::string &jwt) {
   Verifier v;
   if (!v.Setup(jwt)) {
-    UpdateStatus(v.status_);
+    UpdateStatus(v.GetStatus());
     return nullptr;
   }
   std::string kid_jwt = "";
-  if (v.header.HasMember("kid")) {
-    if (v.header["kid"].IsString()) {
-      kid_jwt = v.header["kid"].GetString();
+  if (v.Header().HasMember("kid")) {
+    if (v.Header()["kid"].IsString()) {
+      kid_jwt = v.Header()["kid"].GetString();
     } else {
       // if header has invalid format (non-string) "kid", verification is
       // considered to be failed
@@ -454,7 +462,7 @@ std::unique_ptr<rapidjson::Document> JwtVerifierJwks::Decode(
     kid_matched = true;
 
     // The same alg must be used.
-    if (jwk->alg_ != v.alg) {
+    if (jwk->alg_ != v.Alg()) {
       continue;
     }
 
