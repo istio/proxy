@@ -140,10 +140,10 @@ const uint8_t *CastToUChar(const std::string &str) {
 // (You can use EvpPkeyFromJwk() for JWKs)
 class EvpPkeyGetter {
  public:
-  // It holds failure reason.
-  Status status_;
-
   EvpPkeyGetter() : status_(Status::OK) {}
+
+  // It returns "OK" or the failure reason.
+  Status GetStatus() { return status_; }
 
   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
     std::string pkey_der = Base64::decode(pkey_pem);
@@ -163,6 +163,9 @@ class EvpPkeyGetter {
   }
 
  private:
+  // It holds failure reason.
+  Status status_;
+
   void UpdateStatus(Status status) {
     if (status_ == Status::OK) {
       status_ = status;
@@ -359,7 +362,7 @@ void JwtVerifier::UpdateStatus(Status status) {
 JwtVerifierPem &JwtVerifierPem::SetPublicKey(const std::string &pkey_pem) {
   EvpPkeyGetter e;
   pkey_ = e.EvpPkeyFromStr(pkey_pem);
-  UpdateStatus(e.status_);
+  UpdateStatus(e.GetStatus());
   return *this;
 }
 
