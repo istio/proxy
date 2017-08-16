@@ -106,10 +106,14 @@ class JwtVerifier {
   // reason.
   virtual std::unique_ptr<rapidjson::Document> Decode(
       const std::string& jwt) = 0;
-  Status status_;
+
+  Status GetStatus() { return status_; }
 
  protected:
   void UpdateStatus(Status status);
+
+ private:
+  Status status_;
 };
 
 // JWT verifier with PEM format public key.
