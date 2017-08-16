@@ -129,6 +129,15 @@ const uint8_t *CastToUChar(const std::string &str) {
   return reinterpret_cast<const uint8_t *>(str.c_str());
 }
 
+// Class to create EVP_PKEY object from string of public key, formatted in PEM
+// or JWKs.
+// If it failed, status_ holds the failure reason.
+//
+// Usage example:
+//   EvpPkeyGetter e;
+//   bssl::UniquePtr<EVP_PKEY> pkey =
+//   e.EvpPkeyFromStr(pem_formatted_public_key);
+// (You can use EvpPkeyFromJwk() for JWKs)
 class EvpPkeyGetter {
  public:
   // It holds failure reason.
