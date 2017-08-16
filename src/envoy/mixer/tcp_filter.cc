@@ -32,14 +32,14 @@ namespace Http {
 namespace Mixer {
 
 class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
- private:
-  Upstream::ClusterManager& cm_;
+private:
+  Upstream::ClusterManager &cm_;
   MixerConfig mixer_config_;
   MixerControlPerThreadStore mixer_control_store_;
 
- public:
-  TcpConfig(const Json::Object& config,
-            Server::Configuration::FactoryContext& context)
+public:
+  TcpConfig(const Json::Object &config,
+            Server::Configuration::FactoryContext &context)
       : cm_(context.clusterManager()),
         mixer_control_store_([this]() -> std::shared_ptr<MixerControl> {
           return std::make_shared<MixerControl>(mixer_config_, cm_);
@@ -59,13 +59,13 @@ class TcpInstance : public Network::Filter,
                     public Network::ConnectionCallbacks,
                     public Logger::Loggable<Logger::Id::filter>,
                     public std::enable_shared_from_this<TcpInstance> {
- private:
+private:
   enum class State { NotStarted, Calling, Completed, Closed };
 
   TcpConfigPtr config_;
   std::shared_ptr<MixerControl> mixer_control_;
   std::shared_ptr<HttpRequestData> request_data_;
-  Network::ReadFilterCallbacks* filter_callbacks_{};
+  Network::ReadFilterCallbacks *filter_callbacks_{};
   State state_{State::NotStarted};
   bool calling_check_{};
   uint64_t received_bytes_{};
@@ -73,7 +73,7 @@ class TcpInstance : public Network::Filter,
   int check_status_code_{};
   std::chrono::time_point<std::chrono::system_clock> start_time_;
 
- public:
+public:
   TcpInstance(TcpConfigPtr config)
       : config_(config), mixer_control_(config->mixer_control()) {
     log().debug("Called TcpInstance: {}", __func__);
@@ -84,7 +84,7 @@ class TcpInstance : public Network::Filter,
   std::shared_ptr<TcpInstance> GetPtr() { return shared_from_this(); }
 
   void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override {
+      Network::ReadFilterCallbacks &callbacks) override {
     log().debug("Called TcpInstance: {}", __func__);
     filter_callbacks_ = &callbacks;
     filter_callbacks_->connection().addConnectionCallbacks(*this);
@@ -93,7 +93,7 @@ class TcpInstance : public Network::Filter,
   }
 
   // Network::ReadFilter
-  Network::FilterStatus onData(Buffer::Instance& data) override {
+  Network::FilterStatus onData(Buffer::Instance &data) override {
     conn_log_debug("Called TcpInstance onRead bytes: {}",
                    filter_callbacks_->connection(), data.length());
     received_bytes_ += data.length();
@@ -101,7 +101,7 @@ class TcpInstance : public Network::Filter,
   }
 
   // Network::WriteFilter
-  Network::FilterStatus onWrite(Buffer::Instance& data) override {
+  Network::FilterStatus onWrite(Buffer::Instance &data) override {
     conn_log_debug("Called TcpInstance onWrite bytes: {}",
                    filter_callbacks_->connection(), data.length());
     send_bytes_ += data.length();
@@ -119,7 +119,7 @@ class TcpInstance : public Network::Filter,
       request_data_ = std::make_shared<HttpRequestData>();
 
       std::string origin_user;
-      Ssl::Connection* ssl = filter_callbacks_->connection().ssl();
+      Ssl::Connection *ssl = filter_callbacks_->connection().ssl();
       if (ssl != nullptr) {
         origin_user = ssl->uriSanPeerCertificate();
       }
@@ -130,7 +130,7 @@ class TcpInstance : public Network::Filter,
       mixer_control_->BuildTcpCheck(
           request_data_, filter_callbacks_->connection(), origin_user);
       mixer_control_->SendCheck(request_data_, nullptr,
-                                [instance](const Status& status) {
+                                [instance](const Status &status) {
                                   instance->completeCheck(status);
                                 });
       calling_check_ = false;
@@ -139,7 +139,7 @@ class TcpInstance : public Network::Filter,
                                     : Network::FilterStatus::Continue;
   }
 
-  void completeCheck(const Status& status) {
+  void completeCheck(const Status &status) {
     log().debug("Called TcpInstance completeCheck: {}", status.ToString());
     if (state_ == State::Closed) {
       return;
@@ -186,19 +186,19 @@ class TcpInstance : public Network::Filter,
   void onBelowWriteBufferLowWatermark() override {}
 };
 
-}  // namespace Mixer
-}  // namespace Http
+} // namespace Mixer
+} // namespace Http
 
 namespace Server {
 namespace Configuration {
 
 class TcpMixerFilterFactory : public NamedNetworkFilterConfigFactory {
- public:
-  NetworkFilterFactoryCb createFilterFactory(const Json::Object& config,
-                                             FactoryContext& context) {
+public:
+  NetworkFilterFactoryCb createFilterFactory(const Json::Object &config,
+                                             FactoryContext &context) {
     Http::Mixer::TcpConfigPtr tcp_config(
         new Http::Mixer::TcpConfig(config, context));
-    return [tcp_config](Network::FilterManager& filter_manager) -> void {
+    return [tcp_config](Network::FilterManager &filter_manager) -> void {
       std::shared_ptr<Http::Mixer::TcpInstance> instance =
           std::make_shared<Http::Mixer::TcpInstance>(tcp_config);
       filter_manager.addReadFilter(Network::ReadFilterSharedPtr(instance));
@@ -213,6 +213,6 @@ static Registry::RegisterFactory<TcpMixerFilterFactory,
                                  NamedNetworkFilterConfigFactory>
     register_;
 
-}  // namespace Configuration
-}  // namespace Server
-}  // namespace Envoy
+} // namespace Configuration
+} // namespace Server
+} // namespace Envoy

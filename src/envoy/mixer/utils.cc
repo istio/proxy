@@ -25,14 +25,14 @@ namespace Utils {
 
 const LowerCaseString kIstioAttributeHeader("x-istio-attributes");
 
-std::string SerializeTwoStringMaps(const StringMap& map1,
-                                   const StringMap& map2) {
+std::string SerializeTwoStringMaps(const StringMap &map1,
+                                   const StringMap &map2) {
   ::istio::proxy::mixer::StringMap pb;
-  ::google::protobuf::Map<std::string, std::string>* map_pb = pb.mutable_map();
-  for (const auto& it : map1) {
+  ::google::protobuf::Map<std::string, std::string> *map_pb = pb.mutable_map();
+  for (const auto &it : map1) {
     (*map_pb)[it.first] = it.second;
   }
-  for (const auto& it : map2) {
+  for (const auto &it : map2) {
     (*map_pb)[it.first] = it.second;
   }
   std::string str;
@@ -45,46 +45,46 @@ int HttpCode(int code) {
   // Map Canonical codes to HTTP status codes. This is based on the mapping
   // defined by the protobuf http error space.
   switch (code) {
-    case StatusCode::OK:
-      return 200;
-    case StatusCode::CANCELLED:
-      return 499;
-    case StatusCode::UNKNOWN:
-      return 500;
-    case StatusCode::INVALID_ARGUMENT:
-      return 400;
-    case StatusCode::DEADLINE_EXCEEDED:
-      return 504;
-    case StatusCode::NOT_FOUND:
-      return 404;
-    case StatusCode::ALREADY_EXISTS:
-      return 409;
-    case StatusCode::PERMISSION_DENIED:
-      return 403;
-    case StatusCode::RESOURCE_EXHAUSTED:
-      return 429;
-    case StatusCode::FAILED_PRECONDITION:
-      return 400;
-    case StatusCode::ABORTED:
-      return 409;
-    case StatusCode::OUT_OF_RANGE:
-      return 400;
-    case StatusCode::UNIMPLEMENTED:
-      return 501;
-    case StatusCode::INTERNAL:
-      return 500;
-    case StatusCode::UNAVAILABLE:
-      return 503;
-    case StatusCode::DATA_LOSS:
-      return 500;
-    case StatusCode::UNAUTHENTICATED:
-      return 401;
-    default:
-      return 500;
+  case StatusCode::OK:
+    return 200;
+  case StatusCode::CANCELLED:
+    return 499;
+  case StatusCode::UNKNOWN:
+    return 500;
+  case StatusCode::INVALID_ARGUMENT:
+    return 400;
+  case StatusCode::DEADLINE_EXCEEDED:
+    return 504;
+  case StatusCode::NOT_FOUND:
+    return 404;
+  case StatusCode::ALREADY_EXISTS:
+    return 409;
+  case StatusCode::PERMISSION_DENIED:
+    return 403;
+  case StatusCode::RESOURCE_EXHAUSTED:
+    return 429;
+  case StatusCode::FAILED_PRECONDITION:
+    return 400;
+  case StatusCode::ABORTED:
+    return 409;
+  case StatusCode::OUT_OF_RANGE:
+    return 400;
+  case StatusCode::UNIMPLEMENTED:
+    return 501;
+  case StatusCode::INTERNAL:
+    return 500;
+  case StatusCode::UNAVAILABLE:
+    return 503;
+  case StatusCode::DATA_LOSS:
+    return 500;
+  case StatusCode::UNAUTHENTICATED:
+    return 401;
+  default:
+    return 500;
   }
 }
 
-bool CheckStatus(const Status& status) {
+bool CheckStatus(const Status &status) {
   int code = HttpCode(status.error_code());
   if ((code == 200) || (code >= 500)) {
     return true; // we fail open on 5xx errors from mixer
@@ -92,6 +92,6 @@ bool CheckStatus(const Status& status) {
   return false;
 }
 
-}  // namespace Utils
-}  // namespace Http
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Http
+} // namespace Envoy
