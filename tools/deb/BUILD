@@ -33,6 +33,7 @@ pkg_tar(
     extension = "tar.gz",
     deps = [
         ":envoy-bin",
+        ":istio-conf",
         ":istio-systemd",
     ],
 )
