@@ -223,10 +223,10 @@ class Verifier {
   Verifier() : status_(Status::OK) {}
 
   // Returns the parsed header. Setup() must be called before this.
-  rapidjson::Document &Header() { return header_; }
+  const rapidjson::Document &Header() { return header_; }
 
   // Returns "alg" in the header. Setup() must be called before this.
-  std::string &Alg() { return alg_; };
+  const std::string &Alg() { return alg_; };
 
   // Returns "OK" or the failure reason.
   Status GetStatus() { return status_; }
