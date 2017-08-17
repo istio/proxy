@@ -87,7 +87,7 @@ const reportAttributesOkGet = `
      "date": "*",
      "content-type": "text/plain; charset=utf-8",
      "content-length": "0",
-     ":status": "'200'",
+     ":status": "200",
      "server": "envoy"
   }
 }
@@ -161,7 +161,7 @@ const reportAttributesOkPost = `
      "date": "*",
      "content-type": "text/plain",
      "content-length": "12",
-     ":status": "'200'",
+     ":status": "200",
      "server": "envoy"
   }
 }

@@ -67,5 +67,11 @@ git_repository(
     remote = "https://github.com/pubref/rules_protobuf",
 )
 
-load("//src/envoy/mixer/integration_test:repositories.bzl", "go_mixer_repositories")
-go_mixer_repositories()
+git_repository(
+    name = "com_github_istio_mixer",
+    commit = "8b32177f003e0874d11a23b34ae843bcff93f9ba",  # Aug 17, 2017
+    remote = "https://github.com/istio/mixer",
+)
+
+load("@com_github_istio_mixer//test:repositories.bzl", "mixer_test_repositories")
+mixer_test_repositories()
