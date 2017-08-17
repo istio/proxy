@@ -20,6 +20,7 @@ load(":test_suite.bzl", "go_test_suite")
 
 go_library(
     name = "go_default_library",
+    testonly = 1,
     srcs = [
         "attributes.go",
         "envoy.go",

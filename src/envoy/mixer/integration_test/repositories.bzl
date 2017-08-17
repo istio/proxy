@@ -293,6 +293,6 @@ def go_mixer_repositories(use_local_api=False):
 
     go_repository(
         name = "com_github_istio_mixer",
-        commit = "a3036388dff48ee4f970b30f76bab6573a7ea182",
+        commit = "4b3296a43ce940ba47fab7ad35fdf5c0c18778cd",
         importpath = "github.com/istio/mixer",
     )
