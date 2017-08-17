@@ -263,23 +263,23 @@ class Verifier {
     }
     alg_ = alg_v.GetString();
 
-    return true;
-  }
-
-  // Setup() must be called before VerifySignature().
-  bool VerifySignature(EVP_PKEY *key) {
-    std::string signature = Base64UrlDecode(jwt_split[2]);
-    if (signature == "") {
+    // Set up signature
+    signature_ = Base64UrlDecode(jwt_split[2]);
+    if (signature_ == "") {
       // Signature is a bad Base64url input.
       UpdateStatus(Status::JWT_SIGNATURE_PARSE_ERROR);
       return false;
     }
-    std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
-    if (!VerifySignature(key, alg_, signature, signed_data)) {
-      UpdateStatus(Status::JWT_INVALID_SIGNATURE);
-      return false;
-    }
+
     return true;
+  }
+
+  // Setup() must be called before VerifySignature().
+  // When verification fails, UpdateStatus(Status::JWT_INVALID_SIGNATURE) is NOT
+  // called.
+  bool VerifySignature(EVP_PKEY *key) {
+    std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
+    return VerifySignature(key, alg_, signature_, signed_data);
   }
 
   // Returns payload JSON.
@@ -299,6 +299,7 @@ class Verifier {
  private:
   std::vector<std::string> jwt_split;
   rapidjson::Document header_;
+  std::string signature_;
   std::string alg_;
   Status status_;
 
@@ -332,11 +333,7 @@ class Verifier {
     }
     EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
     EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
-    if (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) != 1) {
-      UpdateStatus(Status::JWT_INVALID_SIGNATURE);
-      return false;
-    }
-    return true;
+    return (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) == 1);
   }
 
   bool VerifySignature(EVP_PKEY *key, const std::string &alg,
@@ -349,48 +346,43 @@ class Verifier {
 
 }  // namespace
 
-void JwtVerifier::UpdateStatus(Status status) {
-  // Not overwrite failure status to keep the reason of the first failure
-  if (status_ == Status::OK) {
-    status_ = status;
+void Pubkeys::ParseFromPemCore(const std::string &pkey_pem) {
+  keys_.clear();
+  std::unique_ptr<Pubkey> key_ptr(new Pubkey());
+  EvpPkeyGetter e;
+  key_ptr->key_ = e.EvpPkeyFromStr(pkey_pem);
+  UpdateStatus(e.GetStatus());
+  if (e.GetStatus() == Status::OK) {
+    keys_.push_back(std::move(key_ptr));
   }
 }
 
-JwtVerifierPem &JwtVerifierPem::SetPublicKey(const std::string &pkey_pem) {
-  EvpPkeyGetter e;
-  pkey_ = e.EvpPkeyFromStr(pkey_pem);
-  UpdateStatus(e.GetStatus());
-  return *this;
+std::unique_ptr<Pubkeys> Pubkeys::ParseFromPem(const std::string &pkey_pem) {
+  std::unique_ptr<Pubkeys> keys(new Pubkeys());
+  keys->ParseFromPemCore(pkey_pem);
+  return keys;
 }
 
-std::unique_ptr<rapidjson::Document> JwtVerifierPem::Decode(
-    const std::string &jwt) {
-  Verifier v;
-  auto payload = pkey_ && v.Setup(jwt) && v.VerifySignature(pkey_.get())
-                     ? v.Payload()
-                     : nullptr;
-  UpdateStatus(v.GetStatus());
-  return payload;
-}
+void Pubkeys::ParseFromJwksCore(const std::string &pkey_jwks) {
+  keys_.clear();
 
-JwtVerifierJwks &JwtVerifierJwks::SetPublicKey(const std::string &pkey_jwks) {
   rapidjson::Document jwks_json;
   if (jwks_json.Parse(pkey_jwks.c_str()).HasParseError()) {
     UpdateStatus(Status::JWK_PARSE_ERROR);
-    return *this;
+    return;
   }
   auto keys = jwks_json.FindMember("keys");
   if (keys == jwks_json.MemberEnd()) {
     UpdateStatus(Status::JWK_NO_KEYS);
-    return *this;
+    return;
   }
   if (!keys->value.IsArray()) {
     UpdateStatus(Status::JWK_BAD_KEYS);
-    return *this;
+    return;
   }
 
   for (auto &jwk_json : keys->value.GetArray()) {
-    std::unique_ptr<Jwk> jwk(new Jwk());
+    std::unique_ptr<Pubkey> jwk(new Pubkey());
 
     if (!jwk_json.HasMember("kid") || !jwk_json["kid"].IsString()) {
       continue;
@@ -400,6 +392,7 @@ JwtVerifierJwks &JwtVerifierJwks::SetPublicKey(const std::string &pkey_jwks) {
     if (!jwk_json.HasMember("alg") || !jwk_json["alg"].IsString()) {
       continue;
     }
+    jwk->alg_specified_ = true;
     jwk->alg_ = jwk_json["alg"].GetString();
 
     // public key
@@ -410,19 +403,30 @@ JwtVerifierJwks &JwtVerifierJwks::SetPublicKey(const std::string &pkey_jwks) {
       continue;
     }
     EvpPkeyGetter e;
-    jwk->pkey_ =
+    jwk->key_ =
         e.EvpPkeyFromJwk(jwk_json["n"].GetString(), jwk_json["e"].GetString());
 
-    jwks_.push_back(std::move(jwk));
+    keys_.push_back(std::move(jwk));
   }
-  if (jwks_.size() == 0) {
+  if (keys_.size() == 0) {
     UpdateStatus(Status::JWK_NO_VALID_PUBKEY);
   }
-  return *this;
 }
 
-std::unique_ptr<rapidjson::Document> JwtVerifierJwks::Decode(
-    const std::string &jwt) {
+std::unique_ptr<Pubkeys> Pubkeys::ParseFromJwks(const std::string &pkey_jwks) {
+  std::unique_ptr<Pubkeys> keys(new Pubkeys());
+  keys->ParseFromJwksCore(pkey_jwks);
+  return keys;
+}
+
+std::unique_ptr<rapidjson::Document> JwtVerifier::Decode(
+    const Pubkeys &pubkeys, const std::string &jwt) {
+  // If pubkeys status is not OK, inherits its status and return nullptr.
+  if (pubkeys.GetStatus() != Status::OK) {
+    UpdateStatus(pubkeys.GetStatus());
+    return nullptr;
+  }
+
   Verifier v;
   if (!v.Setup(jwt)) {
     UpdateStatus(v.GetStatus());
@@ -440,27 +444,31 @@ std::unique_ptr<rapidjson::Document> JwtVerifierJwks::Decode(
     }
   }
 
-  bool kid_matched = false;
-  for (auto &jwk : jwks_) {
+  bool kid_alg_matched = false;
+  for (auto &pubkey : pubkeys.keys_) {
     // If kid is specified in JWT, JWK with the same kid is used for
     // verification.
     // If kid is not specified in JWT, try all JWK.
-    if (kid_jwt != "" && jwk->kid_ != kid_jwt) {
+    if (kid_jwt != "" && pubkey->kid_ != kid_jwt) {
       continue;
     }
-    kid_matched = true;
 
     // The same alg must be used.
-    if (jwk->alg_ != v.Alg()) {
+    if (pubkey->alg_specified_ && pubkey->alg_ != v.Alg()) {
       continue;
     }
+    kid_alg_matched = true;
 
-    if (v.VerifySignature(jwk->pkey_.get())) {
-      return v.Payload();
+    if (v.VerifySignature(pubkey->key_.get())) {
+      auto payload = v.Payload();
+      UpdateStatus(v.GetStatus());
+      return payload;
     }
   }
 
-  if (kid_matched) {
+  // Verification failed.
+  UpdateStatus(v.GetStatus());
+  if (kid_alg_matched) {
     UpdateStatus(Status::JWT_INVALID_SIGNATURE);
   } else {
     UpdateStatus(Status::KID_UNMATCH);

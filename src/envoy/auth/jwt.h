@@ -85,64 +85,72 @@ enum class Status {
 
 std::string StatusToString(Status status);
 
-// Base class for JWT Verifiers.
-class JwtVerifier {
+// Base class to keep the status that represents "OK" or the first failure
+// reason
+class WithStatus {
  public:
-  JwtVerifier() : status_(Status::OK) {}
-  virtual ~JwtVerifier() {}
-
-  // This function should be called before Decode().
-  virtual JwtVerifier& SetPublicKey(const std::string& pkey) = 0;
-
-  // This function verifies JWT signature and returns the decoded payload as a
-  // JSON if the signature is valid.
-  // If verification failed, it returns nullptr, and status_ holds the failture
-  // reason.
-  virtual std::unique_ptr<rapidjson::Document> Decode(
-      const std::string& jwt) = 0;
-
-  Status GetStatus() { return status_; }
+  WithStatus() : status_(Status::OK) {}
+  Status GetStatus() const { return status_; }
 
  protected:
-  void UpdateStatus(Status status);
+  void UpdateStatus(Status status) {
+    // Not overwrite failure status to keep the reason of the first failure
+    if (status_ == Status::OK) {
+      status_ = status;
+    }
+  }
 
  private:
   Status status_;
 };
 
-// JWT verifier with PEM format public key.
+class Pubkeys;
+
+// JWT Verifier class.
 //
 // Usage example:
-//   JwtVerifierPem v;
-//   auto payload = v.SetPublicKey(public_key).Decode(jwt);
-class JwtVerifierPem : public JwtVerifier {
+//   JwtVerifier v;
+//   std::unique_ptr<Pubkeys> pubkey = ...
+//   auto payload = v.Decode(pubkey, jwt);
+//   Status s = v.GetStatus();
+class JwtVerifier : public WithStatus {
  public:
-  JwtVerifierPem& SetPublicKey(const std::string& pkey_pem) override;
-  std::unique_ptr<rapidjson::Document> Decode(const std::string& jwt) override;
-
- private:
-  bssl::UniquePtr<EVP_PKEY> pkey_;
+  // This function verifies JWT signature and returns the decoded payload as a
+  // JSON if the signature is valid.
+  // If verification failed, it returns nullptr, and GetStatus() returns a
+  // Status object of the failture reason.
+  std::unique_ptr<rapidjson::Document> Decode(const Pubkeys &pubkeys,
+                                              const std::string &jwt);
 };
 
-// JWT verifier with JWKs format public keys.
+// Class to parse and a hold public key(s).
+// It also holds the failure reason if parse failed.
 //
 // Usage example:
-//   JwtVerifierJwks v;
-//   auto payload = v.SetPublicKey(public_key).Decode(jwt);
-class JwtVerifierJwks : public JwtVerifier {
+//   std::unique_ptr<Pubkeys> keys = Pubkeys::ParseFromJwks(jwks_string);
+//   if(keys->GetStatus() == Status::OK) { ... }
+class Pubkeys : public WithStatus {
  public:
-  JwtVerifierJwks& SetPublicKey(const std::string& pkey_jwks) override;
-  std::unique_ptr<rapidjson::Document> Decode(const std::string& jwt) override;
+  Pubkeys(){};
+  static std::unique_ptr<Pubkeys> ParseFromPem(const std::string &pkey_pem);
+  static std::unique_ptr<Pubkeys> ParseFromJwks(const std::string &pkey_jwks);
 
  private:
-  class Jwk {
+  void ParseFromPemCore(const std::string &pkey_pem);
+  void ParseFromJwksCore(const std::string &pkey_jwks);
+
+  class Pubkey {
    public:
+    Pubkey(){};
+    bssl::UniquePtr<EVP_PKEY> key_;
     std::string kid_;
+    bool alg_specified_ = false;
     std::string alg_;
-    bssl::UniquePtr<EVP_PKEY> pkey_;
-    Jwk(){};
   };
-  std::vector<std::unique_ptr<Jwk> > jwks_;
+  std::vector<std::unique_ptr<Pubkey> > keys_;
+
+  friend std::unique_ptr<rapidjson::Document> JwtVerifier::Decode(
+      const Pubkeys &pubkeys, const std::string &jwt);
 };
 
 }  // Auth
