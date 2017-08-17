@@ -50,8 +50,9 @@ std::string StatusToString(Status status) {
       {Status::JWK_NO_VALID_PUBKEY, "JWK_NO_VALID_PUBKEY"},
       {Status::KID_UNMATCH, "KID_UNMATCH"},
       {Status::ALG_NOT_IMPLEMENTED, "ALG_NOT_IMPLEMENTED"},
-      {Status::PUBKEY_PEM_BAD_FORMAT, "PUBKEY_PEM_BAD_FORMAT"},
-      {Status::PUBKEY_RSA_OBJECT_NULL, "PUBKEY_RSA_OBJECT_NULL"}};
+      {Status::PEM_PUBKEY_BAD_BASE64, "PEM_PUBKEY_BAD_BASE64"},
+      {Status::PEM_PUBKEY_PARSE_ERROR, "PEM_PUBKEY_PARSE_ERROR"},
+      {Status::JWK_PUBKEY_PARSE_ERROR, "JWK_PUBKEY_PARSE_ERROR"}};
   return table[status];
 }
 
@@ -145,13 +146,15 @@ class EvpPkeyGetter {
   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
     std::string pkey_der = Base64::decode(pkey_pem);
     if (pkey_der == "") {
-      UpdateStatus(Status::PUBKEY_PEM_BAD_FORMAT);
+      UpdateStatus(Status::PEM_PUBKEY_BAD_BASE64);
       return nullptr;
     }
-    return EvpPkeyFromRsa(
-        bssl::UniquePtr<RSA>(
-            RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()))
-            .get());
+    auto rsa = bssl::UniquePtr<RSA>(
+        RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()));
+    if (!rsa) {
+      UpdateStatus(Status::PEM_PUBKEY_PARSE_ERROR);
+    }
+    return EvpPkeyFromRsa(rsa.get());
   }
 
   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromJwk(const std::string &n,
@@ -169,9 +172,10 @@ class EvpPkeyGetter {
     }
   }
 
+  // In the case where rsa is nullptr, UpdateStatus() should be called
+  // appropriately elsewhere.
   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(RSA *rsa) {
     if (!rsa) {
-      UpdateStatus(Status::PUBKEY_RSA_OBJECT_NULL);
       return nullptr;
     }
     bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
@@ -190,15 +194,14 @@ class EvpPkeyGetter {
 
   bssl::UniquePtr<RSA> RsaFromJwk(const std::string &n, const std::string &e) {
     bssl::UniquePtr<RSA> rsa(RSA_new());
-    if (!rsa) {
-      // Couldn't create RSA key.
-      status_ = Status::PUBKEY_RSA_OBJECT_NULL;
-      return nullptr;
-    }
+    // It crash if RSA object couldn't be created.
+    assert(rsa);
+
     rsa->n = BigNumFromBase64UrlString(n).release();
     rsa->e = BigNumFromBase64UrlString(e).release();
     if (!rsa->n || !rsa->e) {
-      // RSA public key field is missing.
+      // RSA public key field is missing or has parse error.
+      UpdateStatus(Status::JWK_PUBKEY_PARSE_ERROR);
       return nullptr;
     }
     return rsa;

@@ -346,7 +346,7 @@ TEST_F(JwtTest, InvalidPublickey) {
   auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwt);
 
   EXPECT_FALSE(payload);
-  EXPECT_EQ(v.GetStatus(), Status::PUBKEY_RSA_OBJECT_NULL);
+  EXPECT_EQ(v.GetStatus(), Status::PEM_PUBKEY_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, PublickeyInvalidBase64) {
@@ -356,7 +356,7 @@ TEST_F(JwtTest, PublickeyInvalidBase64) {
   auto payload = v.SetPublicKey(invalid_pubkey).Decode(kJwt);
 
   EXPECT_FALSE(payload);
-  EXPECT_EQ(v.GetStatus(), Status::PUBKEY_PEM_BAD_FORMAT);
+  EXPECT_EQ(v.GetStatus(), Status::PEM_PUBKEY_BAD_BASE64);
 }
 
 TEST_F(JwtTest, Base64urlBadInputHeader) {

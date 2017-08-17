@@ -73,11 +73,14 @@ enum class Status {
   // Value of "alg" in the header is invalid.
   ALG_NOT_IMPLEMENTED,
 
-  // Public key is an invalid Base64 input.
-  PUBKEY_PEM_BAD_FORMAT,
+  // Given PEM formatted public key is an invalid Base64 input.
+  PEM_PUBKEY_BAD_BASE64,
 
-  // RSA object was null while creating EVP_PKEY object.
-  PUBKEY_RSA_OBJECT_NULL,
+  // A parse error on PEM formatted public key happened.
+  PEM_PUBKEY_PARSE_ERROR,
+
+  // "n" or" "e" field of a JWK has a parse error or is missing.
+  JWK_PUBKEY_PARSE_ERROR,
 };
 
 std::string StatusToString(Status status);
