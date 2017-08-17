@@ -119,6 +119,8 @@ class JwtVerifier : public WithStatus {
   // JSON if the signature is valid.
   // If verification failed, it returns nullptr, and GetStatus() returns a
   // Status object of the failture reason.
+  // When pubkeys.GetStatus() is not equal to Status::OK, this function returns
+  // nullptr and the public key's status is handed over to JwtVerifier.
   std::unique_ptr<rapidjson::Document> Decode(const Pubkeys &pubkeys,
                                               const std::string &jwt);
 };
