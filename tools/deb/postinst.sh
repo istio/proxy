@@ -18,8 +18,11 @@ if [ ! -e /etc/istio ]; then
 fi
 
 mkdir -p /var/lib/istio/envoy
+mkdir -p /var/lib/istio/proxy
 mkdir -p /var/lib/istio/config
 mkdir -p /var/log/istio
 
-chown istio-proxy.istio-proxy /var/lib/istio/envoy /var/lib/istio/config /var/log/istio
+touch /var/lib/istio/config/mesh
+
+chown istio-proxy.istio-proxy /var/lib/istio/envoy /var/lib/istio/config /var/log/istio /var/lib/istio/config/mesh /var/lib/istio/proxy
 
