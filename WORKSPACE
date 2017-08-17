@@ -63,9 +63,8 @@ git_repository(
 
 git_repository(
     name = "org_pubref_rules_protobuf",
-    commit = "d8624842ab237a3f9fecbbe4fae1a33ae3215d2e",
-    # forked with special fix: https://github.com/pubref/rules_protobuf/pull/93
-    remote = "https://github.com/qiwzhang/rules_protobuf",
+    commit = "9ede1dbc38f0b89ae6cd8e206a22dd93cc1d5637",
+    remote = "https://github.com/pubref/rules_protobuf",
 )
 
 load("//src/envoy/mixer/integration_test:repositories.bzl", "go_mixer_repositories")
