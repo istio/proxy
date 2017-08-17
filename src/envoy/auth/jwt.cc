@@ -382,18 +382,18 @@ void Pubkeys::ParseFromJwksCore(const std::string &pkey_jwks) {
   }
 
   for (auto &jwk_json : keys->value.GetArray()) {
-    std::unique_ptr<Pubkey> jwk(new Pubkey());
+    std::unique_ptr<Pubkey> pubkey(new Pubkey());
 
     if (!jwk_json.HasMember("kid") || !jwk_json["kid"].IsString()) {
       continue;
     }
-    jwk->kid_ = jwk_json["kid"].GetString();
+    pubkey->kid_ = jwk_json["kid"].GetString();
 
     if (!jwk_json.HasMember("alg") || !jwk_json["alg"].IsString()) {
       continue;
     }
-    jwk->alg_specified_ = true;
-    jwk->alg_ = jwk_json["alg"].GetString();
+    pubkey->alg_specified_ = true;
+    pubkey->alg_ = jwk_json["alg"].GetString();
 
     // public key
     if (!jwk_json.HasMember("n") || !jwk_json["n"].IsString()) {
@@ -403,10 +403,10 @@ void Pubkeys::ParseFromJwksCore(const std::string &pkey_jwks) {
       continue;
     }
     EvpPkeyGetter e;
-    jwk->key_ =
+    pubkey->key_ =
         e.EvpPkeyFromJwk(jwk_json["n"].GetString(), jwk_json["e"].GetString());
 
-    keys_.push_back(std::move(jwk));
+    keys_.push_back(std::move(pubkey));
   }
   if (keys_.size() == 0) {
     UpdateStatus(Status::JWK_NO_VALID_PUBKEY);
