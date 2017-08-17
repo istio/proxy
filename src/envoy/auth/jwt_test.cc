@@ -501,7 +501,7 @@ TEST_F(JwtTestWithJwk, NonExistKid) {
   auto payload =
       v.Decode(*Pubkeys::ParseFromJwks(kPublicKey), kJwtWithNonExistKid);
   EXPECT_FALSE(payload);
-  EXPECT_EQ(v.GetStatus(), Status::KID_UNMATCH);
+  EXPECT_EQ(v.GetStatus(), Status::KID_ALG_UNMATCH);
 }
 
 TEST_F(JwtTestWithJwk, BadFormatKid) {

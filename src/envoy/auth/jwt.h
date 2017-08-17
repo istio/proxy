@@ -67,8 +67,8 @@ enum class Status {
   // There are no valid public key in given JWKs.
   JWK_NO_VALID_PUBKEY,
 
-  // There is no key the kid of which matches that of the given JWT.
-  KID_UNMATCH,
+  // There is no key the kid and the alg of which match those of the given JWT.
+  KID_ALG_UNMATCH,
 
   // Value of "alg" in the header is invalid.
   ALG_NOT_IMPLEMENTED,

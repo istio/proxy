@@ -48,7 +48,7 @@ std::string StatusToString(Status status) {
       {Status::JWK_NO_KEYS, "JWK_NO_KEYS"},
       {Status::JWK_BAD_KEYS, "JWK_BAD_KEYS"},
       {Status::JWK_NO_VALID_PUBKEY, "JWK_NO_VALID_PUBKEY"},
-      {Status::KID_UNMATCH, "KID_UNMATCH"},
+      {Status::KID_ALG_UNMATCH, "KID_ALG_UNMATCH"},
       {Status::ALG_NOT_IMPLEMENTED, "ALG_NOT_IMPLEMENTED"},
       {Status::PEM_PUBKEY_BAD_BASE64, "PEM_PUBKEY_BAD_BASE64"},
       {Status::PEM_PUBKEY_PARSE_ERROR, "PEM_PUBKEY_PARSE_ERROR"},
@@ -471,7 +471,7 @@ std::unique_ptr<rapidjson::Document> JwtVerifier::Decode(
   if (kid_alg_matched) {
     UpdateStatus(Status::JWT_INVALID_SIGNATURE);
   } else {
-    UpdateStatus(Status::KID_UNMATCH);
+    UpdateStatus(Status::KID_ALG_UNMATCH);
   }
   return nullptr;
 }
