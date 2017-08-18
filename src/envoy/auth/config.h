@@ -56,7 +56,7 @@ class AsyncClientCallbacks : public AsyncClient::Callbacks {
 // Struct to hold an issuer's information.
 struct IssuerInfo {
   IssuerInfo(Json::Object *json) : loaded_(false) { failed_ = !Preload(json); }
-  bool failed_;          // If Preload() failed or not
+  bool failed_;          // True if Preload() or fetching public key failed
   bool loaded_;          // If the public key is loaded or not
   std::string uri_;      // URI for public key
   std::string cluster_;  // Envoy cluster name for public key
