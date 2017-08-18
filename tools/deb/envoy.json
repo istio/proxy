@@ -6,7 +6,7 @@
     "refresh_delay_ms": 10000
   },
   "admin": {
-    "access_log_path": "/var/log/istio/envoy_admin.log",
+    "access_log_path": "/dev/stdout",
     "address": "tcp://0.0.0.0:15000"
   },
   "cluster_manager": {

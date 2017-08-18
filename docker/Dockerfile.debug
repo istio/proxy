@@ -19,8 +19,12 @@ RUN apt-get update && \
 # Deprecated: use "/usr/local/bin/istio-iptables.sh clear"
 ADD proxy-redirection-clear /usr/local/bin/proxy-redirection-clear
 ADD proxy-redirection-restore /usr/local/bin/proxy-redirection-restore
+ADD istio-iptables.sh /usr/local/bin/istio-iptables.sh
+ADD istio-start.sh /usr/local/bin/istio-start.sh
+ADD envoy.json /var/lib/istio/envoy/envoy.json
 ADD envoy /usr/local/bin/envoy
 RUN useradd -m --uid 1337 istio-proxy
 # To allow tcpdump and other utilities.
 RUN echo "istio-proxy ALL=NOPASSWD: ALL" >> /etc/sudoers
-ENTRYPOINT /usr/local/bin/envoy
+
+ENTRYPOINT /usr/local/bin/istio-start.sh
