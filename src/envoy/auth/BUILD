@@ -75,11 +75,7 @@ envoy_cc_test(
     name = "http_filter_integration_test",
     srcs = [":integration_test/http_filter_integration_test.cc"],
     data = [
-        ":integration_test/envoy.conf",
-        ":integration_test/envoy.conf.pem",
         ":integration_test/envoy.conf.jwk",
-        ":integration_test/envoy.conf.jwk.temp",
-        ":integration_test/googleapis.com.pem",
     ],
     repository = "@envoy",
     deps = [

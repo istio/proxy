@@ -4,8 +4,7 @@ In HTTP Authorization header
 - `Authorization: Bearer <JWT>` 	
 
 ##How to pass payload
-Add some HTTP header `<hoge>: <content>`
-- `<hoge> = Istio-Auth-UserInfo`
+Add an HTTP header `Istio-Auth-UserInfo: <content>`
 - `<content>` = 
     - `<payload_json_string>` or
     - `<payload_json_string_base64urlEncoded>` or
