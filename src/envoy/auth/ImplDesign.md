@@ -1,16 +1,16 @@
-##How to recieve JWT
+## How to recieve JWT
 
 In HTTP Authorization header
 - `Authorization: Bearer <JWT>` 	
 
-##How to pass payload
+## How to pass payload
 Add an HTTP header `Istio-Auth-UserInfo: <content>`
 - `<content>` = 
     - `<payload_json_string>` or
     - `<payload_json_string_base64urlEncoded>` or
     - `<raw JWT without signature>`
 
-##How to receive config of issuer / pubkey(s)
+## How to receive config of issuer / pubkey(s)
 For each issuer, one of them is required:
 - discovery document
   - via uri or raw string 
@@ -19,7 +19,7 @@ For each issuer, one of them is required:
   - public key's format: JWK (, pem, ...)
 
 
-###How
+### Config format
 
 In Envoy config,
 ```
