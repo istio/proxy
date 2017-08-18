@@ -1,4 +1,7 @@
 FROM ubuntu:xenial
+RUN apt-get update && \
+    apt-get install -y \
+    iptables
 ADD envoy /usr/local/bin/envoy
 ENTRYPOINT /usr/local/bin/envoy
 

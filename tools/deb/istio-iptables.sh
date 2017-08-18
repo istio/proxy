@@ -30,6 +30,17 @@
 # After more testing, the goal is to replace and unify the script in K8S - by generating
 # the sidecar image using the .deb file created by proxy.
 
+function usage() {
+  echo "${0} -p PORT -u UID [-h]"
+  echo ''
+  echo '  -p: Specify the envoy port to which redirect all TCP traffic (default $ENVOY_PORT = 150001)'
+  echo '  -u: Specify the UID of the user for which the redirection is not'
+  echo '      applied. Typically, this is the UID of the proxy container (default to uid of $ENVOY_USER, uid of istio_proxy, or 1337)'
+  echo '  -i: Comma separated list of IP ranges in CIDR form to redirect to envoy (optional)'
+  echo ''
+  echo 'Using environment variables in $ISTIO_SIDECAR_CONFIG (default: /var/lib/istio/envoy/sidecar.env)'
+}
+
 set -o nounset
 set -o pipefail
 IFS=,
@@ -38,6 +49,32 @@ ISTIO_SIDECAR_CONFIG=${ISTIO_SIDECAR_CONFIG:-/var/lib/istio/envoy/sidecar.env}
 if [ -r ${ISTIO_SIDECAR_CONFIG} ]; then
   . ${ISTIO_SIDECAR_CONFIG}
 fi
+
+IP_RANGES_INCLUDE=${ISTIO_SERVICE_CIDR:-}
+
+while getopts ":p:u:e:i:h" opt; do
+  case ${opt} in
+    p)
+      ENVOY_PORT=${OPTARG}
+      ;;
+    u)
+      ENVOY_UID=${OPTARG}
+      ;;
+    i)
+      IP_RANGES_INCLUDE=${OPTARG}
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
 
 # TODO: more flexibility - maybe a whitelist of users to be captured for output instead of
 # a blacklist.
@@ -48,6 +85,8 @@ if [ -z "${ENVOY_UID:-}" ]; then
      echo "Invalid istio user $ENVOY_UID $ENVOY_USER"
      exit 1
   fi
+  # If ENVOY_UID is not explicitly defined (as it would be in k8s env), we add root to the list,
+  # for ca agent.
   ENVOY_UID=${ENVOY_UID},0
 fi
 
@@ -117,8 +156,8 @@ done
 iptables -t nat -A ISTIO_OUTPUT -d 127.0.0.1/32 -j RETURN
 
 IFS=,
-if [ -n "${ISTIO_SERVICE_CIDR:-}" ]; then
-    for cidr in ${ISTIO_SERVICE_CIDR}; do
+if [ -n "${IP_RANGES_INCLUDE:-}" ]; then
+    for cidr in ${IP_RANGES_INCLUDE}; do
         iptables -t nat -A ISTIO_OUTPUT -d ${cidr} -j ISTIO_REDIRECT
     done
     iptables -t nat -A ISTIO_OUTPUT -j RETURN
