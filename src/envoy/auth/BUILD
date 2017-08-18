@@ -117,20 +117,3 @@ envoy_cc_library(
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
-
-envoy_cc_test(
-    name = "config_test",
-    srcs = [
-        ":config_test.cc",
-    ],
-    data = [
-        ":integration_test/pubkey.jwk"
-    ],
-    repository = "@envoy",
-    deps = [
-        ":config_lib",
-        "@envoy//test/test_common:utility_lib",
-        "@envoy//source/exe:envoy_common_lib",
-    ],
-)
-
