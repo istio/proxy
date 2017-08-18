@@ -17,8 +17,18 @@
 ################################################################################
 #
 # Initialization script responsible for setting up port forwarding for Istio sidecar.
+
 # Based on pilot/docker/prepare_proxy.sh - but instead of capturing all traffic, only capture
 # configured ranges.
+# Compared to the K8S docker sidecar:
+# - use config files - manual or pushed by an config system.
+# - fine grain control over what inbound ports are captured
+# - more control over what outbound traffic is captured
+# - can be run multiple times, will cleanup previous rules
+# - the "clean" option will remove all rules it previously added.
+
+# After more testing, the goal is to replace and unify the script in K8S - by generating
+# the sidecar image using the .deb file created by proxy.
 
 set -o nounset
 set -o pipefail
