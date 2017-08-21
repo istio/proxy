@@ -6,10 +6,11 @@
 # Script requires a working docker on the test machine
 # It is run in the proxy dir, will create a docker image with proxy deb installed
 
-export DOCKER_IMAGE=${DOCKER_IMAGE:-rawvm_test}
-tools/deb/test/build_docker.sh
-
+DOCKER_IMAGE=${DOCKER_IMAGE:-rawvm_test}
 DOCKER_NAME=${DOCKER_NAME:-iptest}
+
+# Create a docker image, using the release script - but without uploading.
+DEBUG_IMAGE_NAME=${DOCKER_IMAGE} script/release-docker debug
 
 function compare_output() {
     EXPECTED=$1
@@ -27,14 +28,9 @@ function compare_output() {
     fi
 }
 
-if [[ ${1:-} == "run" ]] ; then
-  # Start a docker container - needs priviledged for iptable manipulation.
-  DTAG=$(docker run --name ${DOCKER_NAME} -d -v `pwd`:/ws/proxy --privileged ${DOCKER_IMAGE}  /bin/bash -c "trap : TERM INT; sleep infinity & wait")
-
-  # trap "docker rm -f ${DTAG}" EXIT
-
-  # Driver to run the commands in the container. Kube exec could be used instead.
-  # RUN="docker exec -i ${DOCKER_NAME}  /bin/bash -c "
+if [[ ${1:-} == "debug" ]] ; then
+  # Start the docker container, for debugging - needs priviledged for iptable manipulation.
+  DTAG=$(docker run --name ${DOCKER_NAME} -d -v `pwd`:/ws/proxy --entrypoint=/bin/bash --privileged ${DOCKER_IMAGE}  /bin/bash -c "trap : TERM INT; sleep infinity & wait")
 
   echo "Access the docker images as: docker exec -it ${DTAG} /bin/bash"
   echo "Make sure to remove it when done: docker rm -f ${DTAG}"
@@ -42,8 +38,7 @@ if [[ ${1:-} == "run" ]] ; then
 
 else
   # Start a docker container - needs priviledged for iptable manipulation.
-
-  DTAG=$(docker run --name ${DOCKER_NAME} -v `pwd`:/ws/proxy --privileged ${DOCKER_IMAGE} /ws/proxy/tools/deb/test/iptables_tests.sh )
+  DTAG=$(docker run --name ${DOCKER_NAME} -v `pwd`:/ws/proxy --entrypoint=/bin/bash --cap-add=NET_ADMIN ${DOCKER_IMAGE} /ws/proxy/tools/deb/test/iptables_tests.sh )
   docker rm ${DOCKER_NAME}
 
   compare_output tools/deb/test/golden.in test.logs/real.in

@@ -16,25 +16,21 @@
 #
 ################################################################################
 #
-# Script to run Envoy for Istio.
+# Script to configure and start the Istio sidecar.
 
-# Load config variables
 set -e
 
+# Load optional config variables
 ISTIO_SIDECAR_CONFIG=${ISTIO_SIDECAR_CONFIG:-/var/lib/istio/envoy/sidecar.env}
-
 if [[ -r ${ISTIO_SIDECAR_CONFIG} ]]; then
   . $ISTIO_SIDECAR_CONFIG
 fi
 
+# Set defaults
 ISTIO_BIN_BASE=${ISTIO_BIN_BASE:-/usr/local/bin}
 ISTIO_LOG_DIR=${ISTIO_LOG_DIR:-/var/log/istio}
 ISTIO_CFG=${ISTIO_CFG:-/var/lib/istio}
-
-# Update iptables
-${ISTIO_BIN_BASE}/istio-iptables.sh
-
-NS=${ISTIO_NAMESPACE:-default}
+POD_NAMESPACE=${POD_NAMESPACE:-default}
 
 if [ -z "${ISTIO_SVC_IP:-}" ]; then
   ISTIO_SVC_IP=$(hostname --ip-address)
@@ -44,8 +40,20 @@ if [ -z "${POD_NAME:-}" ]; then
   POD_NAME=$(hostname -s)
 fi
 
+
+# Init option will only initialize iptables. Can be used
+if [[ ${1-} == "init" || ${1-} == "-p" ]] ; then
+  # Update iptables, based on current config. This is for backward compatibility with the init image mode.
+  # The sidecar image can replace the k8s init image, to avoid downloading 2 different images.
+  ${ISTIO_BIN_BASE}/istio-iptables.sh $*
+  exit 0
+fi
+
+# Update iptables, based on config file
+${ISTIO_BIN_BASE}/istio-iptables.sh
+
 if [ -f ${ISTIO_BIN_BASE}/pilot-agent ]; then
-  exec su -s /bin/bash -c "INSTANCE_IP=${ISTIO_SVC_IP} POD_NAME=${POD_NAME} POD_NAMESPACE=${NS} exec ${ISTIO_BIN_BASE}/pilot-agent proxy > ${ISTIO_LOG_DIR}/istio.log 2>&1" istio-proxy
+  exec su -s /bin/bash -c "INSTANCE_IP=${ISTIO_SVC_IP} POD_NAME=${POD_NAME} POD_NAMESPACE=${POD_NAMESPACE} exec ${ISTIO_BIN_BASE}/pilot-agent proxy > ${ISTIO_LOG_DIR}/istio.log 2>&1" istio-proxy
 else
   ENVOY_CFG=${ENVOY_CFG:-${ISTIO_CFG}/envoy/envoy.json}
   # Run envoy directly - agent not installed. This should be used only for debugging/testing standalone envoy

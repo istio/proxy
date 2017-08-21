@@ -16,24 +16,41 @@
 #
 ################################################################################
 #
+
+# Build the docker images, and upload them to gcloud.
+#
+# For development, you can pass "debug" parameter to only build debug image and skip the upload.
+# You can override DEBUG_IMAGE_NAME, RELEASE_IMAGE_NAME to specify a different destination for upload.
+# You can also set TAG, PROJECT, REPO - the upload will go to $REPO/$PROJECT/envoy[-debug]:$TAG
+
+# To run locally, use
+# docker run -it --cap-add=NET_ADMIN --rm [--entrypoint /bin/bash] -p 15000:15000 ... gcr.io/istio-testing/envoy-debug:$TAG
+
 set -ex
 set -o errexit
 set -o nounset
 set -o pipefail
 
-PROJECT="istio-testing"
+PROJECT=${PROJECT:-istio-testing}
+
 DATE_PART=$(date +"%Y%m%d")
 SHA_PART=$(git show -q HEAD --pretty=format:%h)
+
 DOCKER_TAG="${DATE_PART}-${SHA_PART}"
+
+REPO=${REPO:-gcr.io}
+
+TAG=${TAG:-DOCKER_TAG}
 
 BAZEL_TARGET_DIR="bazel-bin/src/envoy/mixer"
 
 BAZEL_TARGET="${BAZEL_TARGET_DIR}/envoy"
-RELEASE_IMAGE_NAME="gcr.io/${PROJECT}/envoy:${DOCKER_TAG}"
-DEBUG_IMAGE_NAME="gcr.io/${PROJECT}/envoy-debug:${DOCKER_TAG}"
+RELEASE_IMAGE_NAME=${RELEASE_IMAGE_NAME:-${REPO}/${PROJECT}/envoy:${TAG}}
+DEBUG_IMAGE_NAME=${DEBUG_IMAGE_NAME:-${REPO}/${PROJECT}/envoy-debug:${TAG}}
 
-gcloud docker --authorize-only
-
+if [[ ${1-} != "debug" ]] ; then
+   gcloud docker --authorize-only
+fi
 
 echo Publishing debug docker image
 bazel build -c dbg //src/envoy/mixer:envoy
@@ -44,7 +61,10 @@ cp tools/deb/envoy.json ${BAZEL_TARGET_DIR}
 cp docker/proxy-* ${BAZEL_TARGET_DIR}
 cp docker/Dockerfile.debug ${BAZEL_TARGET_DIR}
 docker build -f ${BAZEL_TARGET_DIR}/Dockerfile.debug -t "${DEBUG_IMAGE_NAME}" ${BAZEL_TARGET_DIR}
-gcloud docker -- push "${DEBUG_IMAGE_NAME}"
+
+if [[ ${1-} != "debug" ]] ; then
+   gcloud docker -- push "${DEBUG_IMAGE_NAME}"
+fi
 
 if [[ ${1-} == "debug" ]] ; then
   # Don't push the opt image.
