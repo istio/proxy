@@ -329,7 +329,7 @@ TEST_F(JwtTest, JwtDecode) {
 
 TEST_F(JwtTest, InvalidSignature) {
   auto invalid_jwt = kJwt;
-  invalid_jwt[kJwt.length() - 1] = kJwt[kJwt.length() - 1] != 'a' ? 'a' : 'b';
+  invalid_jwt[kJwt.length() - 2] = kJwt[kJwt.length() - 2] != 'a' ? 'a' : 'b';
 
   JwtVerifier v;
   auto payload = v.Decode(*Pubkeys::ParseFromPem(kPublicKey), invalid_jwt);
