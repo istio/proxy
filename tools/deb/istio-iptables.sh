@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2016 Istio Authors. All Rights Reserved.
+# Copyright 2017 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ done
 if [ -z "${ENVOY_UID:-}" ]; then
   # Default to the UID of ENVOY_USER and root
   ENVOY_UID=$(id -u ${ENVOY_USER:-istio-proxy})
-  if [ ! $? == 0 ]; then
+  if [ $? -ne 0 ]; then
      echo "Invalid istio user $ENVOY_UID $ENVOY_USER"
      exit 1
   fi

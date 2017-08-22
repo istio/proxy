@@ -30,7 +30,7 @@ function compare_output() {
 
 if [[ ${1:-} == "debug" ]] ; then
   # Start the docker container, for debugging - needs priviledged for iptable manipulation.
-  DTAG=$(docker run --name ${DOCKER_NAME} -d -v `pwd`:/ws/proxy --entrypoint=/bin/bash --privileged ${DOCKER_IMAGE}  /bin/bash -c "trap : TERM INT; sleep infinity & wait")
+  DTAG=$(docker run --name ${DOCKER_NAME} -d -v `pwd`:/ws/proxy --entrypoint=/bin/bash --cap-add=NET_ADMIN ${DOCKER_IMAGE}  /bin/bash -c "trap : TERM INT; sleep infinity & wait")
 
   echo "Access the docker images as: docker exec -it ${DTAG} /bin/bash"
   echo "Make sure to remove it when done: docker rm -f ${DTAG}"

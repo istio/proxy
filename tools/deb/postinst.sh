@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -e
 
@@ -7,7 +7,7 @@ oldversion="$2"
 
 umask 022
 
-if ! getent passwd istio >/dev/null; then
+if ! getent passwd istio-proxy >/dev/null; then
     addgroup --system istio-proxy
     adduser --system --group --home /var/lib/istio istio-proxy
 fi

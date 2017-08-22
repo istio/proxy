@@ -80,8 +80,7 @@
       "bind_to_port": true
     },
     {
-       "address": "tcp://0.0.0.0:15002",
-       "use_original_dst": true,
+       "address": "tcp://0.0.0.0:15003",
        "filters": [
         {
           "type": "read",
@@ -102,7 +101,7 @@
               "virtual_hosts": [
                 {
                   "name": "local",
-                  "domains": ["localhost"],
+                  "domains": ["*"],
                   "routes": [
                     {
                       "timeout_ms": 0,
@@ -127,10 +126,9 @@
         }
       ],
       "bind_to_port": true
-   },
+    },
     {
-      "address": "tcp://0.0.0.0:15003",
-      "use_original_dst": true,
+      "address": "tcp://0.0.0.0:15002",
       "filters": [
         {
           "type": "read",
@@ -148,7 +146,7 @@
             ],
             "rds": {
               "cluster": "rds",
-              "route_config_name": "80",
+              "route_config_name": "9999",
               "refresh_delay_ms": 1000
             },
             "http1_settings": {
