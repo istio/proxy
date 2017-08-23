@@ -45,10 +45,21 @@ set -o nounset
 set -o pipefail
 IFS=,
 
+# The cluster env can be used for common cluster settings, pushed to all VMs in the cluster.
+# This allows separating per-machine settings (the list of inbound ports, local path overrides) from cluster wide
+# settings (CIDR range)
+ISTIO_CLUSTER_CONFIG=${ISTIO_CLUSTER_CONFIG:-/var/lib/istio/envoy/cluster.env}
+if [ -r ${ISTIO_CLUSTER_CONFIG} ]; then
+  . ${ISTIO_CLUSTER_CONFIG}
+fi
+
 ISTIO_SIDECAR_CONFIG=${ISTIO_SIDECAR_CONFIG:-/var/lib/istio/envoy/sidecar.env}
 if [ -r ${ISTIO_SIDECAR_CONFIG} ]; then
   . ${ISTIO_SIDECAR_CONFIG}
 fi
+
+# TODO: load all files from a directory, similar with ufw, to make it easier for automated install scripts
+# Ideally we should generate ufw (and similar) configs as well, in case user already has an iptables solution.
 
 IP_RANGES_INCLUDE=${ISTIO_SERVICE_CIDR:-}
 
@@ -114,7 +125,7 @@ iptables -t nat -N ISTIO_REDIRECT
 iptables -t nat -A ISTIO_REDIRECT -p tcp -j REDIRECT --to-port ${ENVOY_PORT:-15001}
 
 # Handling of inbound ports. Traffic will be redirected to Envoy, which will process and forward
-# to the local service.
+# to the local service. If not set, no inbound port will be intercepted by istio iptables.
 if [ -n "${ISTIO_INBOUND_PORTS:-}" ]; then
   iptables -t nat -N ISTIO_INBOUND
   iptables -t nat -A PREROUTING -p tcp -j ISTIO_INBOUND
@@ -133,6 +144,9 @@ if [ -n "${ISTIO_INBOUND_PORTS:-}" ]; then
       done
   fi
 fi
+
+# TODO: change the default behavior to not intercept any output - user may use http_proxy or another
+# iptables wrapper (like ufw). Current default is similar with 0.1
 
 # Create a new chain for selectively redirecting outbound packets to Envoy.
 iptables -t nat -N ISTIO_OUTPUT

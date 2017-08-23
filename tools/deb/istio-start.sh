@@ -53,10 +53,10 @@ fi
 ${ISTIO_BIN_BASE}/istio-iptables.sh
 
 if [ -f ${ISTIO_BIN_BASE}/pilot-agent ]; then
-  exec su -s /bin/bash -c "INSTANCE_IP=${ISTIO_SVC_IP} POD_NAME=${POD_NAME} POD_NAMESPACE=${POD_NAMESPACE} exec ${ISTIO_BIN_BASE}/pilot-agent proxy > ${ISTIO_LOG_DIR}/istio.log 2>&1" istio-proxy
+  exec su -s /bin/bash -c "INSTANCE_IP=${ISTIO_SVC_IP} POD_NAME=${POD_NAME} POD_NAMESPACE=${POD_NAMESPACE} exec ${ISTIO_BIN_BASE}/pilot-agent proxy > ${ISTIO_LOG_DIR}/istio.log" istio-proxy
 else
   ENVOY_CFG=${ENVOY_CFG:-${ISTIO_CFG}/envoy/envoy.json}
   # Run envoy directly - agent not installed. This should be used only for debugging/testing standalone envoy
-  exec su -s /bin/bash -c "exec ${ISTIO_BIN_BASE}/envoy -c $ENVOY_CFG --restart-epoch 0 --drain-time-s 2 --parent-shutdown-time-s 3 --service-cluster istio-proxy --service-node 'sidecar~${ISTIO_SVC_IP}~mysvc.${NS}~${NS}svc.cluster.local' $ISTIO_DEBUG" istio-proxy
+  exec su -s /bin/bash -c "exec ${ISTIO_BIN_BASE}/envoy -c $ENVOY_CFG --restart-epoch 0 --drain-time-s 2 --parent-shutdown-time-s 3 --service-cluster istio-proxy --service-node 'sidecar~${ISTIO_SVC_IP}~mysvc.${NS}~${NS}svc.cluster.local' $ISTIO_DEBUG >${ISTIO_LOG_DIR}/istio.log" istio-proxy
 fi
 
