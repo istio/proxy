@@ -109,20 +109,69 @@ class Pubkeys;
 // JWT Verifier class.
 //
 // Usage example:
-//   JwtVerifier v;
+//   JwtVerifier v(jwt);
 //   std::unique_ptr<Pubkeys> pubkey = ...
-//   auto payload = v.Decode(pubkey, jwt);
-//   Status s = v.GetStatus();
+//   if (v.Verify(*pubkey)) {
+//     auto payload = v.Payload();
+//     ...
+//   } else {
+//     Status s = v.GetStatus();
+//     ...
+//   }
 class JwtVerifier : public WithStatus {
  public:
-  // This function verifies JWT signature and returns the decoded payload as a
-  // JSON if the signature is valid.
-  // If verification failed, it returns nullptr, and GetStatus() returns a
-  // Status object of the failture reason.
-  // When pubkeys.GetStatus() is not equal to Status::OK, this function returns
-  // nullptr and the public key's status is handed over to JwtVerifier.
-  std::unique_ptr<rapidjson::Document> Decode(const Pubkeys &pubkeys,
-                                              const std::string &jwt);
+  // This constructor parses the given JWT and prepares for verification.
+  // When the given JWT has a format error, GetStatus() returns the error
+  // detail.
+  JwtVerifier(const std::string& jwt);
+
+  ~JwtVerifier();
+
+  // This function verifies JWT signature.
+  // If verification failed, GetStatus() returns the failture reason.
+  // When the given JWT has a format error, this verification always fails.
+  // When pubkeys.GetStatus() is not equal to Status::OK, this verification
+  // always fails and the public key's status is handed over to JwtVerifier.
+  bool Verify(const Pubkeys& pubkeys);
+
+  // It returns a JSON object of the header of the given JWT.
+  // When the given JWT has a format error, it returns nullptr.
+  // It returns the header JSON even if the signature is invalid.
+  std::shared_ptr<rapidjson::Document> Header();
+
+  // They return a string (or base64url-encoded string) of the header JSON of
+  // the given JWT.
+  const std::string& HeaderStr();
+  const std::string& HeaderStrBase64Url();
+
+  // They return the "alg" (or "kid") value of the header of the given JWT.
+  const std::string& Alg();
+
+  // It returns the "kid" value of the header of the given JWT, or an empty
+  // string if "kid" does not exist in the header.
+  const std::string& Kid();
+
+  // It returns a JSON object of the payload of the given JWT.
+  // When the given jWT has a format error, it returns nullptr.
+  // It returns the payload JSON even if the signature is invalid.
+  std::shared_ptr<rapidjson::Document> Payload();
+
+  // They return a string (or base64url-encoded string) of the payload JSON of
+  // the given JWT.
+  const std::string& PayloadStr();
+  const std::string& PayloadStrBase64Url();
+
+  // It returns the "iss" claim value of the given JWT, or an empty string if
+  // "iss" claim does not exist.
+  const std::string& Iss();
+
+  // It returns the "exp" claim value of the given JWT, or 0 if "exp" claim does
+  // not exist.
+  int64_t Exp();
+
+ private:
+  class Impl;
+  Impl* impl_;
 };
 
 // Class to parse and a hold public key(s).
@@ -134,12 +183,12 @@ class JwtVerifier : public WithStatus {
 class Pubkeys : public WithStatus {
  public:
   Pubkeys(){};
-  static std::unique_ptr<Pubkeys> ParseFromPem(const std::string &pkey_pem);
-  static std::unique_ptr<Pubkeys> ParseFromJwks(const std::string &pkey_jwks);
+  static std::unique_ptr<Pubkeys> ParseFromPem(const std::string& pkey_pem);
+  static std::unique_ptr<Pubkeys> ParseFromJwks(const std::string& pkey_jwks);
 
  private:
-  void ParseFromPemCore(const std::string &pkey_pem);
-  void ParseFromJwksCore(const std::string &pkey_jwks);
+  void ParseFromPemCore(const std::string& pkey_pem);
+  void ParseFromJwksCore(const std::string& pkey_jwks);
 
   class Pubkey {
    public:
@@ -151,8 +200,7 @@ class Pubkeys : public WithStatus {
   };
   std::vector<std::unique_ptr<Pubkey> > keys_;
 
-  friend std::unique_ptr<rapidjson::Document> JwtVerifier::Decode(
-      const Pubkeys &pubkeys, const std::string &jwt);
+  friend bool JwtVerifier::Verify(const Pubkeys& pubkeys);
 };
 
 }  // Auth

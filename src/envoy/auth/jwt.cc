@@ -208,7 +208,38 @@ class EvpPkeyGetter {
   }
 };
 
-// Class to decode and verify JWT. Setup() must be called before
+std::pair<bool, std::string> GetStringFromJson(const rapidjson::Document &d,
+                                               const std::string &key) {
+  //  Value::ConstMemberIterator itr = document.FindMember("hello");
+  //  if (itr != document.MemberEnd())
+  //    printf("%s\n", itr->value.GetString());
+  if (!d.HasMember(key.c_str())) {
+    return std::make_pair(false, "");
+  }
+  auto &val = d[key.c_str()];
+  if (!val.IsString()) {
+    return std::make_pair(false, "");
+  }
+  return std::make_pair(true, val.GetString());
+};
+
+std::pair<bool, int64_t> GetInt64FromJson(const rapidjson::Document &d,
+                                          const std::string &key,
+                                          int64_t default_value = 0) {
+  if (!d.HasMember(key.c_str())) {
+    return std::make_pair(false, default_value);
+  }
+  auto &val = d[key.c_str()];
+  if (!val.IsInt64()) {
+    return std::make_pair(false, default_value);
+  }
+  return std::make_pair(true, val.GetInt64());
+};
+
+}  // namespace
+
+// Implementation of a class to decode and verify JWT. Setup() must be called
+// before
 // VerifySignature() and Payload(). If you do not need the signature
 // verification, VerifySignature() can be skipped.
 // When verification fails, status_ holds the reason of failure.
@@ -218,21 +249,14 @@ class EvpPkeyGetter {
 //   if(!v.Setup(jwt)) return nullptr;
 //   if(!v.VerifySignature(publickey)) return nullptr;
 //   return v.Payload();
-class Verifier {
+class JwtVerifier::Impl {
  public:
-  Verifier() : status_(Status::OK) {}
-
-  // Returns the parsed header. Setup() must be called before this.
-  const rapidjson::Document &Header() { return header_; }
-
-  // Returns "alg" in the header. Setup() must be called before this.
-  const std::string &Alg() { return alg_; };
+  Impl() : status_(Status::OK) {}
 
   // Returns "OK" or the failure reason.
   Status GetStatus() { return status_; }
 
-  // Parses header JSON. This function must be called before calling Header() or
-  // Alg().
+  // It parses the given JWT. This function must be called first.
   // It returns false if parse fails.
   bool Setup(const std::string &jwt) {
     // jwt must have exactly 2 dots
@@ -246,22 +270,48 @@ class Verifier {
       return false;
     }
 
-    // parse header json
-    if (header_.Parse(Base64UrlDecode(jwt_split[0]).c_str()).HasParseError()) {
+    // Parse header json
+    header_str_base64url_ = jwt_split[0];
+    header_str_ = Base64UrlDecode(jwt_split[0]);
+    header_ = std::shared_ptr<rapidjson::Document>(new rapidjson::Document());
+    if (header_->Parse(header_str_.c_str()).HasParseError()) {
       UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
       return false;
     }
 
-    if (!header_.HasMember("alg")) {
+    // Header should contain "alg".
+    if (!header_->HasMember("alg")) {
       UpdateStatus(Status::JWT_HEADER_NO_ALG);
       return false;
     }
-    rapidjson::Value &alg_v = header_["alg"];
+    rapidjson::Value &alg_v = (*header_)["alg"];
     if (!alg_v.IsString()) {
       UpdateStatus(Status::JWT_HEADER_BAD_ALG);
       return false;
     }
     alg_ = alg_v.GetString();
+
+    // Header may contain "kid", which should be a string if exists.
+    if (header_->HasMember("kid")) {
+      rapidjson::Value &kid_v = (*header_)["kid"];
+      if (!kid_v.IsString()) {
+        UpdateStatus(Status::JWT_HEADER_BAD_KID);
+        return false;
+      }
+      kid_ = kid_v.GetString();
+    }
+
+    // Parse payload json
+    payload_str_base64url_ = jwt_split[1];
+    payload_str_ = Base64UrlDecode(jwt_split[1]);
+    payload_ = std::shared_ptr<rapidjson::Document>(new rapidjson::Document());
+    if (payload_->Parse(payload_str_.c_str()).HasParseError()) {
+      UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
+      return false;
+    }
+
+    iss_ = GetStringFromJson(*payload_, "iss").second;
+    exp_ = GetInt64FromJson(*payload_, "exp").second;
 
     // Set up signature
     signature_ = Base64UrlDecode(jwt_split[2]);
@@ -282,26 +332,38 @@ class Verifier {
     return VerifySignature(key, alg_, signature_, signed_data);
   }
 
+  // Returns the parsed header. Setup() must be called before this.
+  std::shared_ptr<rapidjson::Document> Header() { return header_; }
+
+  const std::string &HeaderStr() { return header_str_; }
+  const std::string &HeaderStrBase64Url() { return header_str_base64url_; }
+  const std::string &Alg() { return alg_; }
+  const std::string &Kid() { return kid_; }
+
   // Returns payload JSON.
-  // VerifySignature() must be called before Payload().
-  std::unique_ptr<rapidjson::Document> Payload() {
-    // decode payload
-    std::unique_ptr<rapidjson::Document> payload_json(
-        new rapidjson::Document());
-    if (payload_json->Parse(Base64UrlDecode(jwt_split[1]).c_str())
-            .HasParseError()) {
-      UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
-      return nullptr;
-    }
-    return payload_json;
-  }
+  // Setup() must be called before Payload().
+  std::shared_ptr<rapidjson::Document> Payload() { return payload_; }
+
+  const std::string &PayloadStr() { return payload_str_; }
+  const std::string &PayloadStrBase64Url() { return payload_str_base64url_; }
+  const std::string &Iss() { return iss_; }
+  int64_t Exp() { return exp_; }
 
  private:
   std::vector<std::string> jwt_split;
-  rapidjson::Document header_;
+  std::shared_ptr<rapidjson::Document> header_;
+  std::string header_str_;
+  std::string header_str_base64url_;
+  std::shared_ptr<rapidjson::Document> payload_;
+  std::string payload_str_;
+  std::string payload_str_base64url_;
   std::string signature_;
   std::string alg_;
+  std::string kid_;
+  std::string iss_;
+  int64_t exp_;
   Status status_;
+  //  bool setup_succeeded_;
 
   // Not overwrite failure status to keep the reason of the first failure
   void UpdateStatus(Status status) {
@@ -344,7 +406,85 @@ class Verifier {
   }
 };
 
-}  // namespace
+JwtVerifier::JwtVerifier(const std::string &jwt) {
+  impl_ = new Impl();
+  impl_->Setup(jwt);
+  UpdateStatus(impl_->GetStatus());
+}
+
+JwtVerifier::~JwtVerifier() { delete impl_; }
+
+bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
+  // If setup is not successfully done, return false.
+  if (impl_->GetStatus() != Status::OK) {
+    return false;
+  }
+
+  // If pubkeys status is not OK, inherits its status and return false.
+  if (pubkeys.GetStatus() != Status::OK) {
+    UpdateStatus(pubkeys.GetStatus());
+    return false;
+  }
+
+  std::string kid_jwt = impl_->Kid();
+  bool kid_alg_matched = false;
+  for (auto &pubkey : pubkeys.keys_) {
+    // If kid is specified in JWT, JWK with the same kid is used for
+    // verification.
+    // If kid is not specified in JWT, try all JWK.
+    if (kid_jwt != "" && pubkey->kid_ != kid_jwt) {
+      continue;
+    }
+
+    // The same alg must be used.
+    if (pubkey->alg_specified_ && pubkey->alg_ != impl_->Alg()) {
+      continue;
+    }
+    kid_alg_matched = true;
+
+    if (impl_->VerifySignature(pubkey->key_.get())) {
+      // Verification succeeded.
+      return true;
+    }
+  }
+
+  // Verification failed.
+  UpdateStatus(impl_->GetStatus());
+  if (kid_alg_matched) {
+    UpdateStatus(Status::JWT_INVALID_SIGNATURE);
+  } else {
+    UpdateStatus(Status::KID_ALG_UNMATCH);
+  }
+  return false;
+}
+
+std::shared_ptr<rapidjson::Document> JwtVerifier::Header() {
+  return impl_->Header();
+}
+
+const std::string &JwtVerifier::HeaderStr() { return impl_->HeaderStr(); }
+
+const std::string &JwtVerifier::HeaderStrBase64Url() {
+  return impl_->HeaderStrBase64Url();
+}
+
+const std::string &JwtVerifier::Alg() { return impl_->Alg(); }
+
+const std::string &JwtVerifier::Kid() { return impl_->Kid(); }
+
+std::shared_ptr<rapidjson::Document> JwtVerifier::Payload() {
+  return impl_->Payload();
+}
+
+const std::string &JwtVerifier::PayloadStr() { return impl_->PayloadStr(); }
+
+const std::string &JwtVerifier::PayloadStrBase64Url() {
+  return impl_->PayloadStrBase64Url();
+}
+
+const std::string &JwtVerifier::Iss() { return impl_->Iss(); }
+
+int64_t JwtVerifier::Exp() { return impl_->Exp(); }
 
 void Pubkeys::ParseFromPemCore(const std::string &pkey_pem) {
   keys_.clear();
@@ -417,63 +557,6 @@ std::unique_ptr<Pubkeys> Pubkeys::ParseFromJwks(const std::string &pkey_jwks) {
   std::unique_ptr<Pubkeys> keys(new Pubkeys());
   keys->ParseFromJwksCore(pkey_jwks);
   return keys;
-}
-
-std::unique_ptr<rapidjson::Document> JwtVerifier::Decode(
-    const Pubkeys &pubkeys, const std::string &jwt) {
-  // If pubkeys status is not OK, inherits its status and return nullptr.
-  if (pubkeys.GetStatus() != Status::OK) {
-    UpdateStatus(pubkeys.GetStatus());
-    return nullptr;
-  }
-
-  Verifier v;
-  if (!v.Setup(jwt)) {
-    UpdateStatus(v.GetStatus());
-    return nullptr;
-  }
-  std::string kid_jwt = "";
-  if (v.Header().HasMember("kid")) {
-    if (v.Header()["kid"].IsString()) {
-      kid_jwt = v.Header()["kid"].GetString();
-    } else {
-      // if header has invalid format (non-string) "kid", verification is
-      // considered to be failed
-      UpdateStatus(Status::JWT_HEADER_BAD_KID);
-      return nullptr;
-    }
-  }
-
-  bool kid_alg_matched = false;
-  for (auto &pubkey : pubkeys.keys_) {
-    // If kid is specified in JWT, JWK with the same kid is used for
-    // verification.
-    // If kid is not specified in JWT, try all JWK.
-    if (kid_jwt != "" && pubkey->kid_ != kid_jwt) {
-      continue;
-    }
-
-    // The same alg must be used.
-    if (pubkey->alg_specified_ && pubkey->alg_ != v.Alg()) {
-      continue;
-    }
-    kid_alg_matched = true;
-
-    if (v.VerifySignature(pubkey->key_.get())) {
-      auto payload = v.Payload();
-      UpdateStatus(v.GetStatus());
-      return payload;
-    }
-  }
-
-  // Verification failed.
-  UpdateStatus(v.GetStatus());
-  if (kid_alg_matched) {
-    UpdateStatus(Status::JWT_INVALID_SIGNATURE);
-  } else {
-    UpdateStatus(Status::KID_ALG_UNMATCH);
-  }
-  return nullptr;
 }
 
 }  // Auth

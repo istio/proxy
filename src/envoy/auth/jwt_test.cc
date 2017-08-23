@@ -307,11 +307,23 @@ class JwtTestWithJwk : public testing::Test {
       "37BD2KXH3jN9_EBocxwcxhkPwSLtP3dgkfls_f5GoWCgmp-c5ycIskCDcIjxRnPjg";
 };
 
-TEST_F(JwtTest, JwtDecode) {
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(kPublicKey), kJwt);
+#define TEST_SETUP(public_key, jwt, verified) \
+  JwtVerifier v = JwtVerifier(jwt);           \
+  EXPECT_EQ(verified, v.Verify(public_key));  \
+  auto payload = v.Payload();                 \
+  if (verified) {                             \
+    EXPECT_TRUE(payload);                     \
+  }
 
-  EXPECT_TRUE(payload);
+#define TEST_SETUP_PEM(public_key, jwt, verified) \
+  TEST_SETUP(*Pubkeys::ParseFromPem(public_key), jwt, verified)
+
+#define TEST_SETUP_JWKS(public_key, jwt, verified) \
+  TEST_SETUP(*Pubkeys::ParseFromJwks(public_key), jwt, verified)
+
+TEST_F(JwtTest, JwtDecode) {
+  TEST_SETUP_PEM(kPublicKey, kJwt, true)
+
   EXPECT_EQ(v.GetStatus(), Status::OK);
 
   EXPECT_TRUE((*payload)["iss"].IsString());
@@ -330,32 +342,23 @@ TEST_F(JwtTest, JwtDecode) {
 TEST_F(JwtTest, InvalidSignature) {
   auto invalid_jwt = kJwt;
   invalid_jwt[kJwt.length() - 2] = kJwt[kJwt.length() - 2] != 'a' ? 'a' : 'b';
+  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
 
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(kPublicKey), invalid_jwt);
-
-  EXPECT_FALSE(payload);
   EXPECT_EQ(v.GetStatus(), Status::JWT_INVALID_SIGNATURE);
 }
 
 TEST_F(JwtTest, InvalidPublickey) {
   auto invalid_pubkey = kPublicKey;
   invalid_pubkey[0] = kPublicKey[0] != 'a' ? 'a' : 'b';
+  TEST_SETUP_PEM(invalid_pubkey, kJwt, false)
 
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(invalid_pubkey), kJwt);
-
-  EXPECT_FALSE(payload);
   EXPECT_EQ(v.GetStatus(), Status::PEM_PUBKEY_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, PublickeyInvalidBase64) {
   auto invalid_pubkey = "a";
+  TEST_SETUP_PEM(invalid_pubkey, kJwt, false)
 
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(invalid_pubkey), kJwt);
-
-  EXPECT_FALSE(payload);
   EXPECT_EQ(v.GetStatus(), Status::PEM_PUBKEY_BAD_BASE64);
 }
 
@@ -365,11 +368,8 @@ TEST_F(JwtTest, Base64urlBadInputHeader) {
       std::vector<std::string>{invalid_header, kJwtPayloadEncoded,
                                kJwtSignatureEncoded},
       ".");
+  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
 
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(kPublicKey), invalid_jwt);
-
-  EXPECT_FALSE(payload);
   EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_PARSE_ERROR);
 }
 
@@ -379,12 +379,9 @@ TEST_F(JwtTest, Base64urlBadInputPayload) {
       std::vector<std::string>{kJwtHeaderEncoded, invalid_payload,
                                kJwtSignatureEncoded},
       ".");
+  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
 
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(kPublicKey), invalid_jwt);
-
-  EXPECT_FALSE(payload);
-  EXPECT_EQ(v.GetStatus(), Status::JWT_INVALID_SIGNATURE);
+  EXPECT_EQ(v.GetStatus(), Status::JWT_PAYLOAD_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, Base64urlBadinputSignature) {
@@ -393,66 +390,44 @@ TEST_F(JwtTest, Base64urlBadinputSignature) {
       std::vector<std::string>{kJwtHeaderEncoded, kJwtPayloadEncoded,
                                invalid_signature},
       ".");
-
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(kPublicKey), invalid_jwt);
-
-  EXPECT_FALSE(payload);
+  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_SIGNATURE_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, JwtInvalidNumberOfDots) {
   auto invalid_jwt = kJwt + '.';
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromPem(kPublicKey), invalid_jwt);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_BAD_FORMAT);
 }
 
 TEST_F(JwtTest, JsonBadInputHeader) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromPem(kPublicKey), kJwtWithBadJsonHeader);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_PEM(kPublicKey, kJwtWithBadJsonHeader, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, JsonBadInputPayload) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromPem(kPublicKey), kJwtWithBadJsonPayload);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_PEM(kPublicKey, kJwtWithBadJsonPayload, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_PAYLOAD_PARSE_ERROR);
 }
 
 TEST_F(JwtTest, AlgAbsentInHeader) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromPem(kPublicKey), kJwtWithAlgAbsent);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_PEM(kPublicKey, kJwtWithAlgAbsent, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_NO_ALG);
 }
 
 TEST_F(JwtTest, AlgIsNotString) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromPem(kPublicKey), kJwtWithAlgIsNotString);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_PEM(kPublicKey, kJwtWithAlgIsNotString, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_BAD_ALG);
 }
 
 TEST_F(JwtTest, InvalidAlg) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromPem(kPublicKey), kJwtWithInvalidAlg);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_PEM(kPublicKey, kJwtWithInvalidAlg, false)
   EXPECT_EQ(v.GetStatus(), Status::ALG_NOT_IMPLEMENTED);
 }
 
 TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromJwks(kPublicKey), kJwtNoKid);
-  EXPECT_TRUE(payload);
+  TEST_SETUP_JWKS(kPublicKey, kJwtNoKid, true)
+
   EXPECT_EQ(v.GetStatus(), Status::OK);
 
   EXPECT_TRUE((*payload)["iss"].IsString());
@@ -469,9 +444,7 @@ TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
 }
 
 TEST_F(JwtTestWithJwk, CorrectKid) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromJwks(kPublicKey), kJwtWithCorrectKid);
+  TEST_SETUP_JWKS(kPublicKey, kJwtWithCorrectKid, true)
 
   EXPECT_EQ(v.GetStatus(), Status::OK);
 
@@ -489,58 +462,41 @@ TEST_F(JwtTestWithJwk, CorrectKid) {
 }
 
 TEST_F(JwtTestWithJwk, IncorrectKid) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromJwks(kPublicKey), kJwtWithIncorrectKid);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_JWKS(kPublicKey, kJwtWithIncorrectKid, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_INVALID_SIGNATURE);
 }
 
 TEST_F(JwtTestWithJwk, NonExistKid) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromJwks(kPublicKey), kJwtWithNonExistKid);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_JWKS(kPublicKey, kJwtWithNonExistKid, false)
   EXPECT_EQ(v.GetStatus(), Status::KID_ALG_UNMATCH);
 }
 
 TEST_F(JwtTestWithJwk, BadFormatKid) {
-  JwtVerifier v;
-  auto payload =
-      v.Decode(*Pubkeys::ParseFromJwks(kPublicKey), kJwtWithBadFormatKid);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_JWKS(kPublicKey, kJwtWithBadFormatKid, false)
   EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_BAD_KID);
 }
 
 TEST_F(JwtTestWithJwk, JwkBadJson) {
   std::string invalid_pubkey = "foobar";
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromJwks(invalid_pubkey), kJwtNoKid);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
   EXPECT_EQ(v.GetStatus(), Status::JWK_PARSE_ERROR);
 }
 
 TEST_F(JwtTestWithJwk, JwkNoKeys) {
   std::string invalid_pubkey = R"EOF({"foo":"bar"})EOF";
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromJwks(invalid_pubkey), kJwtNoKid);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
   EXPECT_EQ(v.GetStatus(), Status::JWK_NO_KEYS);
 }
 
 TEST_F(JwtTestWithJwk, JwkBadKeys) {
   std::string invalid_pubkey = R"EOF({"keys":"foobar"})EOF";
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromJwks(invalid_pubkey), kJwtNoKid);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
   EXPECT_EQ(v.GetStatus(), Status::JWK_BAD_KEYS);
 }
 
 TEST_F(JwtTestWithJwk, JwkBadPublicKey) {
   std::string invalid_pubkey = R"EOF({"keys":[]})EOF";
-  JwtVerifier v;
-  auto payload = v.Decode(*Pubkeys::ParseFromJwks(invalid_pubkey), kJwtNoKid);
-  EXPECT_FALSE(payload);
+  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
   EXPECT_EQ(v.GetStatus(), Status::JWK_NO_VALID_PUBKEY);
 }
 
