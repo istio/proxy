@@ -51,19 +51,29 @@ inline void CopyHeaderEntry(const HeaderEntry* entry,
   }
 }
 
+thread_local std::vector<GrpcTransport*> pending_freelist;
+  
 }  // namespace
 
+void GrpcTransport::FreePendingGrpcObject() {
+    for (GrpcTransport* obj : pending_freelist) {
+      delete obj;
+    }
+    pending_freelist.clear();
+  }
+  
 GrpcTransport::GrpcTransport(Upstream::ClusterManager& cm,
                              const HeaderMap* headers)
-    : channel_(NewChannel(cm)), stub_(channel_.get()), headers_(headers) {}
+    : channel_(NewChannel(cm)), stub_(channel_.get()), headers_(headers) {
+  FreePendingGrpcObject();
+}
 
 void GrpcTransport::onSuccess() {
   log().debug("grpc: return OK");
   on_done_(Status::OK);
   // RpcChannelImpl object expects its OnComplete() is called before
   // deleted.  OnCompleted() is called after onSuccess()
-  // Use the dispatch post to delay the deletion.
-  GetThreadDispatcher().post([this]() { delete this; });
+  pending_freelist.push_back(this);
 }
 
 void GrpcTransport::onFailure(const Optional<uint64_t>& grpc_status,
@@ -81,7 +91,7 @@ void GrpcTransport::onFailure(const Optional<uint64_t>& grpc_status,
   log().debug("grpc failure: return {}, error {}", code, message);
   on_done_(Status(static_cast<StatusCode>(code),
                   ::google::protobuf::StringPiece(message)));
-  GetThreadDispatcher().post([this]() { delete this; });
+  pending_freelist.push_back(this);
 }
 
 Grpc::RpcChannelPtr GrpcTransport::NewChannel(Upstream::ClusterManager& cm) {
