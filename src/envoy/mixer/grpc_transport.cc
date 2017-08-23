@@ -51,16 +51,18 @@ inline void CopyHeaderEntry(const HeaderEntry* entry,
   }
 }
 
+// GrpcTransport objects need to be freed in a delayed fashion.
+// This list stores objects pending to be freed.
 thread_local std::vector<GrpcTransport*> pending_freelist;
 
-}  // namespace
-
-void GrpcTransport::FreePendingGrpcObject() {
+void FreePendingGrpcObject() {
   for (GrpcTransport* obj : pending_freelist) {
     delete obj;
   }
   pending_freelist.clear();
 }
+
+}  // namespace
 
 GrpcTransport::GrpcTransport(Upstream::ClusterManager& cm,
                              const HeaderMap* headers)
@@ -73,6 +75,7 @@ void GrpcTransport::onSuccess() {
   on_done_(Status::OK);
   // RpcChannelImpl object expects its OnComplete() is called before
   // deleted.  OnCompleted() is called after onSuccess()
+  // delete the object in a delayed fashion.
   pending_freelist.push_back(this);
 }
 
@@ -91,6 +94,7 @@ void GrpcTransport::onFailure(const Optional<uint64_t>& grpc_status,
   log().debug("grpc failure: return {}, error {}", code, message);
   on_done_(Status(static_cast<StatusCode>(code),
                   ::google::protobuf::StringPiece(message)));
+  // delete the object in a delayed fashion.
   pending_freelist.push_back(this);
 }
 
