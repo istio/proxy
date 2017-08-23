@@ -136,12 +136,9 @@ const uint8_t *CastToUChar(const std::string &str) {
 //   bssl::UniquePtr<EVP_PKEY> pkey =
 //   e.EvpPkeyFromStr(pem_formatted_public_key);
 // (You can use EvpPkeyFromJwk() for JWKs)
-class EvpPkeyGetter {
+class EvpPkeyGetter : public WithStatus {
  public:
-  EvpPkeyGetter() : status_(Status::OK) {}
-
-  // It returns "OK" or the failure reason.
-  Status GetStatus() { return status_; }
+  EvpPkeyGetter() {}
 
   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
     std::string pkey_der = Base64::decode(pkey_pem);
@@ -163,15 +160,6 @@ class EvpPkeyGetter {
   }
 
  private:
-  // It holds failure reason.
-  Status status_;
-
-  void UpdateStatus(Status status) {
-    if (status_ == Status::OK) {
-      status_ = status;
-    }
-  }
-
   // In the case where rsa is nullptr, UpdateStatus() should be called
   // appropriately elsewhere.
   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(RSA *rsa) {
