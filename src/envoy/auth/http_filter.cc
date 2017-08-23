@@ -59,6 +59,10 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
   state_ = Calling;
   stopped_ = false;
 
+  /*
+   * TODO: update cached public key regularly
+   */
+
   // list up issuers whose public key should be fetched
   for (const auto& iss : config_->issuers_) {
     if (!iss->failed_ && !iss->loaded_) {
@@ -142,6 +146,9 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
           continue;
         }
 
+        /*
+         * TODO: update according to change of JWT lib interface
+         */
         // verifying and decoding JWT
         std::unique_ptr<rapidjson::Document> payload;
         if (iss->pkey_type_ == "pem") {
