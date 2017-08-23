@@ -249,12 +249,9 @@ std::pair<bool, int64_t> GetInt64FromJson(const rapidjson::Document &d,
 //   if(!v.Setup(jwt)) return nullptr;
 //   if(!v.VerifySignature(publickey)) return nullptr;
 //   return v.Payload();
-class JwtVerifier::Impl {
+class JwtVerifier::Impl : public WithStatus {
  public:
-  Impl() : status_(Status::OK) {}
-
-  // Returns "OK" or the failure reason.
-  Status GetStatus() { return status_; }
+  Impl() {}
 
   // It parses the given JWT. This function must be called first.
   // It returns false if parse fails.
@@ -362,15 +359,6 @@ class JwtVerifier::Impl {
   std::string kid_;
   std::string iss_;
   int64_t exp_;
-  Status status_;
-  //  bool setup_succeeded_;
-
-  // Not overwrite failure status to keep the reason of the first failure
-  void UpdateStatus(Status status) {
-    if (status_ == Status::OK) {
-      status_ = status;
-    }
-  }
 
   const EVP_MD *EvpMdFromAlg(const std::string &alg) {
     // may use
