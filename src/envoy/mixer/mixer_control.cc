@@ -86,10 +86,6 @@ const int kCheckCacheEntries = 10000;
 // The name for the mixer server cluster.
 const char* kMixerServerClusterName = "mixer_server";
 
-bool IsMixerServerConfigured(Upstream::ClusterManager& cm) {
-  return cm.get(kMixerServerClusterName) != nullptr;
-}
-
 CheckOptions GetCheckOptions(const MixerConfig& config) {
   CheckOptions options(kCheckCacheEntries);
   options.cache_keys = config.check_cache_keys;
@@ -227,32 +223,28 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
 MixerControl::MixerControl(const MixerConfig& mixer_config,
                            Upstream::ClusterManager& cm)
     : cm_(cm), mixer_config_(mixer_config) {
-  if (IsMixerServerConfigured(cm)) {
-    MixerClientOptions options(GetCheckOptions(mixer_config), ReportOptions(),
-                               QuotaOptions());
+  MixerClientOptions options(GetCheckOptions(mixer_config), ReportOptions(),
+                             QuotaOptions());
 
-    check_client_.reset(
-        new Grpc::AsyncClientImpl<istio::mixer::v1::CheckRequest,
-                                  istio::mixer::v1::CheckResponse>(
-            cm, kMixerServerClusterName));
-    report_client_.reset(
-        new Grpc::AsyncClientImpl<istio::mixer::v1::ReportRequest,
-                                  istio::mixer::v1::ReportResponse>(
-            cm, kMixerServerClusterName));
+  check_client_.reset(
+      new Grpc::AsyncClientImpl<istio::mixer::v1::CheckRequest,
+                                istio::mixer::v1::CheckResponse>(
+          cm, kMixerServerClusterName));
+  report_client_.reset(
+      new Grpc::AsyncClientImpl<istio::mixer::v1::ReportRequest,
+                                istio::mixer::v1::ReportResponse>(
+          cm, kMixerServerClusterName));
 
-    options.check_transport = CheckTransport::GetFunc(*check_client_, nullptr);
-    options.report_transport = ReportTransport::GetFunc(*report_client_);
+  options.check_transport = CheckTransport::GetFunc(*check_client_, nullptr);
+  options.report_transport = ReportTransport::GetFunc(*report_client_);
 
-    options.timer_create_func = [](std::function<void()> timer_cb)
-        -> std::unique_ptr<::istio::mixer_client::Timer> {
-          return std::unique_ptr<::istio::mixer_client::Timer>(
-              new EnvoyTimer(GetThreadDispatcher().createTimer(timer_cb)));
-        };
+  options.timer_create_func = [](std::function<void()> timer_cb)
+      -> std::unique_ptr<::istio::mixer_client::Timer> {
+        return std::unique_ptr<::istio::mixer_client::Timer>(
+            new EnvoyTimer(GetThreadDispatcher().createTimer(timer_cb)));
+      };
 
-    mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
-  } else {
-    log().error("Mixer server cluster is not configured");
-  }
+  mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
 
   mixer_config_.ExtractQuotaAttributes(&quota_attributes_);
 }
