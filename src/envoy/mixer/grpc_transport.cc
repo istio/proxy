@@ -52,16 +52,16 @@ inline void CopyHeaderEntry(const HeaderEntry* entry,
 }
 
 thread_local std::vector<GrpcTransport*> pending_freelist;
-  
+
 }  // namespace
 
 void GrpcTransport::FreePendingGrpcObject() {
-    for (GrpcTransport* obj : pending_freelist) {
-      delete obj;
-    }
-    pending_freelist.clear();
+  for (GrpcTransport* obj : pending_freelist) {
+    delete obj;
   }
-  
+  pending_freelist.clear();
+}
+
 GrpcTransport::GrpcTransport(Upstream::ClusterManager& cm,
                              const HeaderMap* headers)
     : channel_(NewChannel(cm)), stub_(channel_.get()), headers_(headers) {
