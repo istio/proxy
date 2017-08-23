@@ -20,6 +20,8 @@
 
 # To run the script, needs to override the following env with the current user.
 export PROJECT=${PROJECT:-costin-istio}
+
+# Must have iam.serviceAccountActor or owner permissions to the project. Use IAM settings.
 export ACCOUNT=${ACCOUNT:-291514510799-compute@developer.gserviceaccount.com}
 export ISTIO_REGION=${ISTIO_REGION:-us-west1}
 export ISTIO_ZONE=${ISTIO_ZONE:-us-west1-c}
@@ -27,7 +29,7 @@ export ISTIO_ZONE=${ISTIO_ZONE:-us-west1-c}
 # Name of the k8s cluster running istio control plane. Used to find the service CIDR
 K8SCLUSTER=${K8SCLUSTER:-istio-auth}
 
-TESTVM=${TESTVM:-istiotestvm}
+TESTVM=${TESTVM:-istiotestrawvm}
 
 PROXY_DIR=$(pwd)
 WS=${WS:-$(pwd)/../..}
@@ -35,6 +37,7 @@ WS=${WS:-$(pwd)/../..}
 # TODO: extend the script to use Vagrant+minikube or other ways to create the VM. The main
 # issue is that we need the k8s and VM to be on same VPC - unless we run kubeapiserver+etcd
 # standalone.
+set -x
 
 # Run a command in a VM.
 function istioRun() {
@@ -60,36 +63,68 @@ function istioCopy() {
 function istioVMInit() {
   # TODO: check if it exists and do "reset", to speed up the script.
   local NAME=$1
-  local IMAGE=${2:-debian-9-stretch-v20170717}
-  gcloud compute --project $PROJECT instances create $NAME --zone $ISTIO_ZONE \
-   --machine-type "n1-standard-1" \
-   --subnet default \
-   --can-ip-forward \
-   --service-account $ACCOUNT \
-   --scopes "https://www.googleapis.com/auth/cloud-platform" \
-   --tags "http-server","https-server" \
-   --image $IMAGE \
-   --image-project "debian-cloud" \
-   --boot-disk-size "10" \
-   --boot-disk-type "pd-standard" \
-   --boot-disk-device-name "debtest"
+  local IMAGE=${2:-debian-9-stretch-v20170816}
+  local IMAGE_PROJECT=${3:-debian-cloud}
+
+  gcloud compute --project $PROJECT instances  describe $NAME  --zone ${ISTIO_ZONE} >/dev/null
+  if [[ $? == 0 ]] ; then
+
+    gcloud compute --project $PROJECT \
+     instances reset $NAME \
+     --zone $ISTIO_ZONE \
+
+  else
+
+    gcloud compute --project $PROJECT \
+     instances create $NAME \
+     --zone $ISTIO_ZONE \
+     --machine-type "n1-standard-1" \
+     --subnet default \
+     --can-ip-forward \
+     --service-account $ACCOUNT \
+     --scopes "https://www.googleapis.com/auth/cloud-platform" \
+     --tags "http-server","https-server" \
+     --image $IMAGE \
+     --image-project $IMAGE_PROJECT \
+     --boot-disk-size "10" \
+     --boot-disk-type "pd-standard" \
+     --boot-disk-device-name "debtest"
+
+  fi
+
+  # Wait for machine to start up ssh
+  for i in {1..10}
+  do
+    istioRun $NAME 'echo hi'
+    if [[ $? -ne 0 ]] ; then
+        echo Waiting for startup $?
+        sleep 5
+    else
+        break
+    fi
+  done
+
+  # Allow access to the VM on port 80 and 9411 (where we run services)
+  gcloud compute firewall-rules create allow-external  --allow tcp:22,tcp:80,tcp:443,tcp:9411,udp:5228,icmp  --source-ranges 0.0.0.0/0
+
+
 }
 
 
 function istioVMDelete() {
-  local NAME=$1
-  gcloud compute -q --project $PROJECT instances delete $NAME --zone $ISTIO_ZONE
+  local NAME=${1:-$TESTVM}
+  gcloud compute -q --project $PROJECT --zone $ISTIO_ZONE instances delete $NAME --zone $ISTIO_ZONE
 }
 
 # Helper to get the external IP of a raw VM
 function istioVMExternalIP() {
-  local NAME=$1
-  gcloud compute --project $PROJECT instances describe $NAME --format='value(networkInterfaces[0].accessConfigs[0].natIP)'
+  local NAME=${1:-$TESTVM}
+  gcloud compute --project $PROJECT instances describe $NAME --zone $ISTIO_ZONE --format='value(networkInterfaces[0].accessConfigs[0].natIP)'
 }
 
 function istioVMInternalIP() {
-  local NAME=$1
-  gcloud compute --project $PROJECT instances describe $NAME  --format='value(networkInterfaces[0].networkIP)'
+  local NAME=${1:-$TESTVM}
+  gcloud compute --project $PROJECT instances describe $NAME  --zone $ISTIO_ZONE --format='value(networkInterfaces[0].networkIP)'
 }
 
 # Initialize the K8S cluster, generating config files for the raw VMs.
@@ -127,8 +162,6 @@ spec:
   ports:
   - port: 53
     protocol: UDP
-  - port: 53
-    protocol: TCP
   selector:
     k8s-app: kube-dns
 EOF
@@ -151,9 +184,23 @@ spec:
     istio: mixer
 EOF
 
-  PILOT_IP=$(kubectl get service istio-pilot-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  ISTIO_DNS=$(kubectl get -n kube-system service dns-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  MIXER_IP=$(kubectl get service mixer-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  for i in {1..10}
+  do
+    PILOT_IP=$(kubectl get service istio-pilot-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    ISTIO_DNS=$(kubectl get -n kube-system service dns-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    MIXER_IP=$(kubectl get service mixer-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    if [ ${PILOT_IP} == "" -o  ${PILOT_IP} == "" -o ${MIXER_IP} == "" ] ; then
+        echo Waiting for ILBs
+        sleep 10
+    else
+        break
+    fi
+  done
+
+  if [ ${PILOT_IP} == "" -o  ${PILOT_IP} == "" -o ${MIXER_IP} == "" ] ; then
+    echo "Failed to create ILBs"
+    exit 1
+  fi
 
   #/etc/dnsmasq.d/kubedns
   echo "server=/default.svc.cluster.local/$ISTIO_DNS" > kubedns
@@ -200,6 +247,7 @@ subsets:
       - ip: $IP
     ports:
       - port: $PORT
+        name: http
 EOF
 
 
@@ -207,7 +255,11 @@ EOF
 
 
 function istioRoute() {
-cat <<EOF | kubectl create -f -
+  local ROUTE=${1:-}
+  local SERVICE=${2:-}
+  local PORT=${3:-}
+
+cat <<EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -218,10 +270,10 @@ spec:
   rules:
   - http:
       paths:
-      - path: /index.html
+      - path: ${ROUTE}
         backend:
-          serviceName: rawvm
-          servicePort: 80
+          serviceName: ${SERVICE}
+          servicePort: ${PORT}
 EOF
 
 }
@@ -232,27 +284,52 @@ function istioProvisionTestWorker() {
 
  istioPrepareCluster
 
- istioRun $NAME "sudo rm -f istio-*.deb"
+ istioRun $NAME "sudo rm -f istio-*.deb machine_setup.sh"
 
  # Copy deb, helper and config files
- istioCopy $NAME kubedns tools/deb/test/machine_setup.sh $PROXY_DIR/bazel-bin/tools/deb/*.deb
+ istioCopy $NAME kubedns cluster.env tools/deb/test/machine_setup.sh $PROXY_DIR/bazel-bin/tools/deb/*.deb
 
 
- istioRun $NAME "sudo ./machine_setup.sh"
+ istioRun $NAME "sudo bash -c ./machine_setup.sh $NAME"
 
- LOCAL_IP=$(istioVMInternalIP $NAME)
-
- istioConfigHttpService rawvm 80 $LOCAL_IP
 }
 
-
+function ingressIP() {
+  kubectl get service istio-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+}
 
 function setUp() {
 
-  istioVMInit ${TESTVM}
+ LOCAL_IP=$(istioVMInternalIP $TESTVM)
 
-  istioProvisionTestWorker ${TESTVM}
+ # Configure a service for the local nginx server, and add an ingress route
+ istioConfigHttpService rawvm 80 $LOCAL_IP
+ istioRoute "/${TESTVM}/" rawvm 80
+}
 
+# Verify that cluster (istio-ingress) can reach the VM.
+function testClusterToRawVM() {
+  local INGRESS=$(ingressIP)
+
+  # -f == fail, return != 0 if status code is not 200
+  curl -f http://$INGRESS/${TESTVM}/
+
+  echo $?
+}
+
+# Verify that the VM can reach the cluster. Use the local http server running on the VM.
+function testRawVMToCluster() {
+  local RAWVM=$(istioVMExternalIP)
+
+  # -f == fail, return != 0 if status code is not 200
+  curl -f http://${RAWVM}:9411/zipkin/
+
+  echo $?
+}
+
+function test() {
+  testRawVMToCluster
+  testClusterToRawVM
 }
 
 function trearDown() {
@@ -260,6 +337,15 @@ function trearDown() {
   istioVMDelete ${TESTVM}
 }
 
-setUp
+if [[ ${1:-} == "init" ]] ; then
+  istioProvisionTestWorker ${TESTVM}
+elif [[ ${1:-} == "test" ]] ; then
+  setUp
+  test
+else
+  istioVMInit ${TESTVM}
+  istioProvisionTestWorker ${TESTVM}
+  setUp
+  test
+fi
 
-echo Setup: $(istioVMExternalIP ${TESTVM})
