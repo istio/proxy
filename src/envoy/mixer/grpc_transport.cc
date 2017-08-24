@@ -62,7 +62,7 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
           descriptor(), request, *this,
           Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
   ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
-            request->DebugString());
+            request.DebugString());
 }
 
 template <class RequestType, class ResponseType>
