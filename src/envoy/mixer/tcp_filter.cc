@@ -130,9 +130,9 @@ class TcpInstance : public Network::Filter,
       mixer_control_.BuildTcpCheck(
           request_data_, filter_callbacks_->connection(), origin_user);
       mixer_control_.SendCheck(request_data_, nullptr,
-                                [instance](const Status& status) {
-                                  instance->completeCheck(status);
-                                });
+                               [instance](const Status& status) {
+                                 instance->completeCheck(status);
+                               });
       calling_check_ = false;
     }
     return state_ == State::Calling ? Network::FilterStatus::StopIteration

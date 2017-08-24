@@ -59,7 +59,7 @@ class MixerControl final : public ThreadLocal::ThreadLocalObject,
   // Build check request attributes for HTTP.
   void BuildHttpCheck(HttpRequestDataPtr request_data, HeaderMap& headers,
                       const ::istio::proxy::mixer::StringMap& map_pb,
-                      std::string origin_user,
+                      const std::string& source_user,
                       const Utils::StringMap& route_attributes,
                       const Network::Connection* connection) const;
 
@@ -72,7 +72,7 @@ class MixerControl final : public ThreadLocal::ThreadLocalObject,
   // Build check request attributes for Tcp.
   void BuildTcpCheck(HttpRequestDataPtr request_data,
                      Network::Connection& connection,
-                     std::string origin_user) const;
+                     const std::string& source_user) const;
 
   // Build report request attributs for Tcp.
   void BuildTcpReport(

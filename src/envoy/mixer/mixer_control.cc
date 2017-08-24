@@ -258,8 +258,8 @@ void MixerControl::ForwardAttributes(
 
 void MixerControl::BuildHttpCheck(
     HttpRequestDataPtr request_data, HeaderMap& headers,
-    const ::istio::proxy::mixer::StringMap& map_pb, std::string source_user,
-    const Utils::StringMap& route_attributes,
+    const ::istio::proxy::mixer::StringMap& map_pb,
+    const std::string& source_user, const Utils::StringMap& route_attributes,
     const Network::Connection* connection) const {
   for (const auto& it : map_pb.map()) {
     SetStringAttribute(it.first, it.second, &request_data->attributes);
@@ -311,7 +311,7 @@ void MixerControl::BuildHttpReport(HttpRequestDataPtr request_data,
 
 void MixerControl::BuildTcpCheck(HttpRequestDataPtr request_data,
                                  Network::Connection& connection,
-                                 std::string source_user) const {
+                                 const std::string& source_user) const {
   SetStringAttribute(kSourceUser, source_user, &request_data->attributes);
 
   const Network::Address::Ip* remote_ip = connection.remoteAddress().ip();
