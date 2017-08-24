@@ -230,9 +230,7 @@ MixerControl::MixerControl(const MixerConfig& mixer_config,
       report_client_(
           new Grpc::AsyncClientImpl<istio::mixer::v1::ReportRequest,
                                     istio::mixer::v1::ReportResponse>(
-              cm, kMixerServerClusterName))
-
-{
+              cm, kMixerServerClusterName)) {
   MixerClientOptions options(GetCheckOptions(mixer_config), ReportOptions(),
                              QuotaOptions());
 
