@@ -60,9 +60,10 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
       on_done_(on_done),
       request_(async_client_->send(
           descriptor(), request, *this,
-          Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))){
-
-      };
+          Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
+  ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
+            request->DebugString());
+}
 
 template <class RequestType, class ResponseType>
 void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
