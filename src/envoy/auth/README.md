@@ -28,7 +28,7 @@ For every request from user client:
    If JWT is not valid, the request will be discarded and the proxy will send a response with an error message.
 
 
-## How to build 
+## How to build it
 
 * Follow https://github.com/lyft/envoy/blob/master/bazel/README.md to set up environment, and build target envoy:
 
@@ -36,7 +36,7 @@ For every request from user client:
   bazel build //src/envoy/auth:envoy
 ```
 
-## How to run
+## How to run it
 
 * Start Envoy proxy. Run
 
@@ -47,7 +47,7 @@ bazel-bin/src/envoy/auth/envoy -c src/envoy/auth/sample/envoy.conf
 * Start backend Echo server.
 
 ```
-go run src/envoy/auth/sample/backend_echo.go
+go run test/backend/echo/echo.go
 ```
 
 * Start (fake) issuer server.
