@@ -17,6 +17,7 @@
 #include "common/common/logger.h"
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
+#include "envoy/server/instance.h"
 #include "envoy/registry/registry.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/mixer/config.h"
@@ -41,10 +42,11 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
       : cm_(context.clusterManager()),
         tls_(context.threadLocal().allocateSlot()) {
     mixer_config_.Load(config);
-    tls_->set([this](Event::Dispatcher& dispatcher)
+    Runtime::RandomGenerator& random = context.server().random();
+    tls_->set([this, &random](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
                     return ThreadLocal::ThreadLocalObjectSharedPtr(
-                        new MixerControl(mixer_config_, cm_, dispatcher));
+                        new MixerControl(mixer_config_, cm_, dispatcher, random));
                   });
   }
 
