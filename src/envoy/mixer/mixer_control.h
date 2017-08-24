@@ -86,15 +86,16 @@ class MixerControl final : public Logger::Loggable<Logger::Id::http> {
 
   // Envoy cluster manager for making gRPC calls.
   Upstream::ClusterManager& cm_;
+
+  CheckTransport::AsyncClientPtr check_client_;
+  ReportTransport::AsyncClientPtr report_client_;
+
   // The mixer client
   std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client_;
   // The mixer config
   const MixerConfig& mixer_config_;
   // Quota attributes; extracted from envoy filter config.
   ::istio::mixer_client::Attributes quota_attributes_;
-
-  CheckTransport::AsyncClientPtr check_client_;
-  ReportTransport::AsyncClientPtr report_client_;
 };
 
 // A class to create and store per thread mixer control instance.
