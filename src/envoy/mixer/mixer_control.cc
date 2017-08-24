@@ -223,14 +223,14 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
 MixerControl::MixerControl(const MixerConfig& mixer_config,
                            Upstream::ClusterManager& cm)
     : cm_(cm),
-      mixer_config_(mixer_config),
       check_client_(new Grpc::AsyncClientImpl<istio::mixer::v1::CheckRequest,
                                               istio::mixer::v1::CheckResponse>(
           cm, kMixerServerClusterName)),
       report_client_(
           new Grpc::AsyncClientImpl<istio::mixer::v1::ReportRequest,
                                     istio::mixer::v1::ReportResponse>(
-              cm, kMixerServerClusterName)) {
+              cm, kMixerServerClusterName)),
+      mixer_config_(mixer_config) {
   MixerClientOptions options(GetCheckOptions(mixer_config), ReportOptions(),
                              QuotaOptions());
 
