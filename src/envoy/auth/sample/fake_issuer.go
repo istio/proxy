@@ -29,33 +29,20 @@ import (
 var (
 	port = flag.Int("port", 8081, "default http port")
 	pubkey = ""
-	pubkey_path = ""
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("%v %v %v %v\n", r.Method, r.URL, r.Proto, r.RemoteAddr)
-	for name, headers := range r.Header {
-		for _, h := range headers {
-			fmt.Printf("%v: %v\n", name, h)
-		}
-	}
-
 	fmt.Fprintf(w, "%v", pubkey)
 }
 
 func main() {
-	pubkey_path = os.Args[1]
-	b, err := ioutil.ReadFile(pubkey_path) // just pass the file name
+	b, err := ioutil.ReadFile(os.Args[1]) // just pass the file name
 	if err != nil {
 		fmt.Print(err)
 	}
-	//fmt.Println(b) // print the content as 'bytes'
 	pubkey = string(b) // convert content to a 'string'
-	fmt.Println(pubkey) // print the content as a 'string'
-
-
+	
 	flag.Parse()
-
 	fmt.Printf("Listening on port %v\n", *port)
 
 	http.HandleFunc("/", handler)
