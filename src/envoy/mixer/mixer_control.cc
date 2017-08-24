@@ -243,8 +243,8 @@ void MixerControl::SendReport(HttpRequestDataPtr request_data) {
   mixer_client_->Report(request_data->attributes);
 }
 
-void MixerControl::ForwardAttributes(HeaderMap& headers,
-                                     const Utils::StringMap& route_attributes) {
+void MixerControl::ForwardAttributes(
+    HeaderMap& headers, const Utils::StringMap& route_attributes) const {
   if (mixer_config_.forward_attributes.empty() && route_attributes.empty()) {
     return;
   }
@@ -260,7 +260,7 @@ void MixerControl::BuildHttpCheck(
     HttpRequestDataPtr request_data, HeaderMap& headers,
     const ::istio::proxy::mixer::StringMap& map_pb, std::string source_user,
     const Utils::StringMap& route_attributes,
-    const Network::Connection* connection) {
+    const Network::Connection* connection) const {
   for (const auto& it : map_pb.map()) {
     SetStringAttribute(it.first, it.second, &request_data->attributes);
   }
@@ -297,7 +297,7 @@ void MixerControl::BuildHttpCheck(
 void MixerControl::BuildHttpReport(HttpRequestDataPtr request_data,
                                    const HeaderMap* response_headers,
                                    const AccessLog::RequestInfo& request_info,
-                                   int check_status) {
+                                   int check_status) const {
   // Use all Check attributes for Report.
   // Add additional Report attributes.
   FillResponseHeaderAttributes(response_headers, &request_data->attributes);
@@ -311,7 +311,7 @@ void MixerControl::BuildHttpReport(HttpRequestDataPtr request_data,
 
 void MixerControl::BuildTcpCheck(HttpRequestDataPtr request_data,
                                  Network::Connection& connection,
-                                 std::string source_user) {
+                                 std::string source_user) const {
   SetStringAttribute(kSourceUser, source_user, &request_data->attributes);
 
   const Network::Address::Ip* remote_ip = connection.remoteAddress().ip();
@@ -338,7 +338,7 @@ void MixerControl::BuildTcpReport(
     HttpRequestDataPtr request_data, uint64_t received_bytes,
     uint64_t send_bytes, int check_status_code,
     std::chrono::nanoseconds duration,
-    Upstream::HostDescriptionConstSharedPtr upstreamHost) {
+    Upstream::HostDescriptionConstSharedPtr upstreamHost) const {
   SetInt64Attribute(kConnectionReceviedBytes, received_bytes,
                     &request_data->attributes);
   SetInt64Attribute(kConnectionReceviedTotalBytes, received_bytes,

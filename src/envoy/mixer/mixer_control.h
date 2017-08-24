@@ -54,30 +54,32 @@ class MixerControl final : public ThreadLocal::ThreadLocalObject,
 
   // Add a special header to forward mixer attribues to upstream proxy.
   void ForwardAttributes(HeaderMap& headers,
-                         const Utils::StringMap& route_attributes);
+                         const Utils::StringMap& route_attributes) const;
 
   // Build check request attributes for HTTP.
   void BuildHttpCheck(HttpRequestDataPtr request_data, HeaderMap& headers,
                       const ::istio::proxy::mixer::StringMap& map_pb,
                       std::string origin_user,
                       const Utils::StringMap& route_attributes,
-                      const Network::Connection* connection);
+                      const Network::Connection* connection) const;
 
   // Build report request attributs for HTTP.
   void BuildHttpReport(HttpRequestDataPtr request_data,
                        const HeaderMap* response_headers,
                        const AccessLog::RequestInfo& request_info,
-                       int check_status_code);
+                       int check_status_code) const;
 
   // Build check request attributes for Tcp.
   void BuildTcpCheck(HttpRequestDataPtr request_data,
-                     Network::Connection& connection, std::string origin_user);
+                     Network::Connection& connection,
+                     std::string origin_user) const;
 
   // Build report request attributs for Tcp.
-  void BuildTcpReport(HttpRequestDataPtr request_data, uint64_t received_bytes,
-                      uint64_t send_bytes, int check_status_code,
-                      std::chrono::nanoseconds duration,
-                      Upstream::HostDescriptionConstSharedPtr upstreamHost);
+  void BuildTcpReport(
+      HttpRequestDataPtr request_data, uint64_t received_bytes,
+      uint64_t send_bytes, int check_status_code,
+      std::chrono::nanoseconds duration,
+      Upstream::HostDescriptionConstSharedPtr upstreamHost) const;
 
   // Make remote check call.
   void SendCheck(HttpRequestDataPtr request_data, const HeaderMap* headers,
