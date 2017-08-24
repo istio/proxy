@@ -29,6 +29,7 @@
 #include "include/client.h"
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/grpc_transport.h"
+#include "src/envoy/mixer/string_map.pb.h"
 #include "src/envoy/mixer/utils.h"
 
 namespace Envoy {

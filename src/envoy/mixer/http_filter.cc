@@ -212,7 +212,7 @@ class Instance : public Http::StreamDecoderFilter,
     mixer_disabled_ = mixer_disabled();
     if (mixer_disabled_) {
       if (!forward_disabled()) {
-        mixer_control_->ForwardAttributes(
+        mixer_control_.ForwardAttributes(
             headers, GetRouteStringMap(kPrefixForwardAttributes));
       }
       return FilterHeadersStatus::Continue;
@@ -249,9 +249,9 @@ class Instance : public Http::StreamDecoderFilter,
     }
 
     auto instance = GetPtr();
-    mixer_control_.SendCheck(request_data_, [instance](const Status& status) {
-      instance->completeCheck(status);
-    });
+    mixer_control_.SendCheck(
+        request_data_, &headers,
+        [instance](const Status& status) { instance->completeCheck(status); });
     initiating_call_ = false;
 
     if (state_ == Complete) {
