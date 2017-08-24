@@ -159,7 +159,7 @@ If not specified, the default value is `600`.
 It specifies the set of acceptable audiences.
 If it is specified, JWT must have `aud` claim specified in this list.
 
-#### issuers (object, required)
+#### issuers (array of object, required)
 
 It specifies the issuers and their public keys.
 You can register multiple issuers and 
