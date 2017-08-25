@@ -74,8 +74,7 @@ class TcpInstance : public Network::Filter,
   std::chrono::time_point<std::chrono::system_clock> start_time_;
 
  public:
-  TcpInstance(TcpConfigPtr config)
-      : mixer_control_(config->mixer_control()) {
+  TcpInstance(TcpConfigPtr config) : mixer_control_(config->mixer_control()) {
     log().debug("Called TcpInstance: {}", __func__);
   }
 
@@ -135,10 +134,9 @@ class TcpInstance : public Network::Filter,
       calling_check_ = true;
       mixer_control_.BuildTcpCheck(
           request_data_, filter_callbacks_->connection(), origin_user);
-      mixer_control_.SendCheck(request_data_, nullptr,
-                               [this](const Status& status) {
-                                 completeCheck(status);
-                               });
+      mixer_control_.SendCheck(
+          request_data_, nullptr,
+          [this](const Status& status) { completeCheck(status); });
       calling_check_ = false;
     }
     return state_ == State::Calling ? Network::FilterStatus::StopIteration
