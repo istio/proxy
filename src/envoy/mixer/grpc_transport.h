@@ -35,37 +35,33 @@ template <class RequestType, class ResponseType>
 class GrpcTransport : public Grpc::AsyncRequestCallbacks<ResponseType>,
                       public Logger::Loggable<Logger::Id::http> {
  public:
-  using Func =
-      std::function<void(const RequestType& request, ResponseType* response,
-                         istio::mixer_client::DoneFunc on_done)>;
+  using Func = std::function<istio::mixer_client::CancelFunc(
+      const RequestType& request, ResponseType* response,
+      istio::mixer_client::DoneFunc on_done)>;
 
   using AsyncClient = Grpc::AsyncClient<RequestType, ResponseType>;
 
   typedef std::unique_ptr<AsyncClient> AsyncClientPtr;
 
-  static Func GetFunc(AsyncClient& async_client,
+  static Func GetFunc(Upstream::ClusterManager& cm,
                       const HeaderMap* headers = nullptr);
 
-  GrpcTransport(const google::protobuf::MethodDescriptor& descriptor,
+  GrpcTransport(AsyncClientPtr async_client, const RequestType& request,
                 const HeaderMap* headers, ResponseType* response,
-                istio::mixer_client::DoneFunc on_done)
-      : descriptor_(descriptor),
-        headers_(headers),
-        response_(response),
-        on_done_(on_done) {}
-
-  void Call(AsyncClient& async_client, const RequestType& request);
+                istio::mixer_client::DoneFunc on_done);
 
   // Grpc::AsyncRequestCallbacks<ResponseType>
   void onCreateInitialMetadata(Http::HeaderMap& metadata) override;
 
   void onSuccess(std::unique_ptr<ResponseType>&& response) override;
 
-  // TODO(lizan): Make this handle grpc-message too
-  void onFailure(Grpc::Status::GrpcStatus status) override;
+  void onFailure(Grpc::Status::GrpcStatus status,
+                 const std::string& message) override;
 
  private:
-  const google::protobuf::MethodDescriptor& descriptor_;
+  static const google::protobuf::MethodDescriptor& descriptor();
+
+  AsyncClientPtr async_client_;
   const HeaderMap* headers_;
   ResponseType* response_;
   ::istio::mixer_client::DoneFunc on_done_;

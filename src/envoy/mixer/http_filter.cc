@@ -18,11 +18,12 @@
 #include "common/http/headers.h"
 #include "common/http/utility.h"
 #include "envoy/registry/registry.h"
+#include "envoy/server/instance.h"
 #include "envoy/ssl/connection.h"
+#include "envoy/thread_local/thread_local.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/mixer_control.h"
-#include "src/envoy/mixer/thread_dispatcher.h"
 #include "src/envoy/mixer/utils.h"
 
 #include <map>
@@ -101,32 +102,34 @@ class Config : public Logger::Loggable<Logger::Id::http> {
  private:
   Upstream::ClusterManager& cm_;
   MixerConfig mixer_config_;
-  MixerControlPerThreadStore mixer_control_store_;
+  ThreadLocal::SlotPtr tls_;
 
  public:
   Config(const Json::Object& config,
          Server::Configuration::FactoryContext& context)
       : cm_(context.clusterManager()),
-        mixer_control_store_([this]() -> std::shared_ptr<MixerControl> {
-          return std::make_shared<MixerControl>(mixer_config_, cm_);
-        }) {
+        tls_(context.threadLocal().allocateSlot()) {
     mixer_config_.Load(config);
+    Runtime::RandomGenerator& random = context.server().random();
+    tls_->set(
+        [this, &random](Event::Dispatcher& dispatcher)
+            -> ThreadLocal::ThreadLocalObjectSharedPtr {
+              return ThreadLocal::ThreadLocalObjectSharedPtr(
+                  new MixerControl(mixer_config_, cm_, dispatcher, random));
+            });
   }
 
-  std::shared_ptr<MixerControl> mixer_control() {
-    return mixer_control_store_.Get();
-  }
+  MixerControl& mixer_control() { return tls_->getTyped<MixerControl>(); }
 };
 
 typedef std::shared_ptr<Config> ConfigPtr;
 
 class Instance : public Http::StreamDecoderFilter,
-                 public Http::AccessLog::Instance,
-                 public std::enable_shared_from_this<Instance> {
+                 public Http::AccessLog::Instance {
  private:
-  std::shared_ptr<MixerControl> mixer_control_;
-  ConfigPtr config_;
+  MixerControl& mixer_control_;
   std::shared_ptr<HttpRequestData> request_data_;
+  istio::mixer_client::CancelFunc cancel_check_;
 
   enum State { NotStarted, Calling, Complete, Responded };
   State state_;
@@ -192,26 +195,21 @@ class Instance : public Http::StreamDecoderFilter,
  public:
   Instance(ConfigPtr config)
       : mixer_control_(config->mixer_control()),
-        config_(config),
         state_(NotStarted),
         initiating_call_(false),
         check_status_code_(HttpCode(StatusCode::UNKNOWN)) {
     Log().debug("Called Mixer::Instance : {}", __func__);
   }
 
-  // Returns a shared pointer of this object.
-  std::shared_ptr<Instance> GetPtr() { return shared_from_this(); }
-
   FilterHeadersStatus decodeHeaders(HeaderMap& headers, bool) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
 
-    if (!forward_disabled()) {
-      mixer_control_->ForwardAttributes(
-          headers, GetRouteStringMap(kPrefixForwardAttributes));
-    }
-
     mixer_disabled_ = mixer_disabled();
     if (mixer_disabled_) {
+      if (!forward_disabled()) {
+        mixer_control_.ForwardAttributes(
+            headers, GetRouteStringMap(kPrefixForwardAttributes));
+      }
       return FilterHeadersStatus::Continue;
     }
 
@@ -226,12 +224,28 @@ class Instance : public Http::StreamDecoderFilter,
       origin_user = ssl->uriSanPeerCertificate();
     }
 
-    auto instance = GetPtr();
-    mixer_control_->CheckHttp(
-        request_data_, headers, origin_user,
-        GetRouteStringMap(kPrefixMixerAttributes),
-        decoder_callbacks_->connection(),
-        [instance](const Status& status) { instance->completeCheck(status); });
+    // Extract attributes from x-istio-attributes header
+    ::istio::proxy::mixer::StringMap forwarded_attributes;
+    const HeaderEntry* entry = headers.get(Utils::kIstioAttributeHeader);
+    if (entry) {
+      std::string str(entry->value().c_str(), entry->value().size());
+      forwarded_attributes.ParseFromString(Base64::decode(str));
+      headers.remove(Utils::kIstioAttributeHeader);
+    }
+
+    mixer_control_.BuildHttpCheck(request_data_, headers, forwarded_attributes,
+                                  origin_user,
+                                  GetRouteStringMap(kPrefixMixerAttributes),
+                                  decoder_callbacks_->connection());
+
+    if (!forward_disabled()) {
+      mixer_control_.ForwardAttributes(
+          headers, GetRouteStringMap(kPrefixForwardAttributes));
+    }
+
+    cancel_check_ = mixer_control_.SendCheck(
+        request_data_, &headers,
+        [this](const Status& status) { completeCheck(status); });
     initiating_call_ = false;
 
     if (state_ == Complete) {
@@ -271,7 +285,6 @@ class Instance : public Http::StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     decoder_callbacks_ = &callbacks;
-    SetThreadDispatcher(decoder_callbacks_->dispatcher());
   }
 
   void completeCheck(const Status& status) {
@@ -295,17 +308,27 @@ class Instance : public Http::StreamDecoderFilter,
     }
   }
 
-  void onDestroy() override { state_ = Responded; }
+  void onDestroy() override {
+    Log().debug("Called Mixer::Instance : {} state: {}", __func__, state_);
+    if (state_ != Calling) {
+      cancel_check_ = nullptr;
+    }
+    state_ = Responded;
+    if (cancel_check_) {
+      Log().debug("Cancelling check call");
+      cancel_check_();
+      cancel_check_ = nullptr;
+    }
+  }
 
   virtual void log(const HeaderMap*, const HeaderMap* response_headers,
                    const AccessLog::RequestInfo& request_info) override {
     Log().debug("Called Mixer::Instance : {}", __func__);
     // If decodeHaeders() is not called, not to call Mixer report.
     if (!request_data_) return;
-    // Make sure not to use any class members at the callback.
-    // The class may be gone when it is called.
-    mixer_control_->ReportHttp(request_data_, response_headers, request_info,
-                               check_status_code_);
+    mixer_control_.BuildHttpReport(request_data_, response_headers,
+                                   request_info, check_status_code_);
+    mixer_control_.SendReport(request_data_);
   }
 
   static spdlog::logger& Log() {
