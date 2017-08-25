@@ -134,7 +134,7 @@ class TcpInstance : public Network::Filter,
       calling_check_ = true;
       mixer_control_.BuildTcpCheck(
           request_data_, filter_callbacks_->connection(), origin_user);
-      mixer_control_.SendCheck(
+      cancel_check_ = mixer_control_.SendCheck(
           request_data_, nullptr,
           [this](const Status& status) { completeCheck(status); });
       calling_check_ = false;
