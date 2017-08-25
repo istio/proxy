@@ -30,7 +30,9 @@ fi
 ISTIO_BIN_BASE=${ISTIO_BIN_BASE:-/usr/local/bin}
 ISTIO_LOG_DIR=${ISTIO_LOG_DIR:-/var/log/istio}
 ISTIO_CFG=${ISTIO_CFG:-/var/lib/istio}
-POD_NAMESPACE=${POD_NAMESPACE:-default}
+NS=${POD_NAMESPACE:-default}
+SVC=${ISTO_SERVICE:-rawvm}
+
 
 if [ -z "${ISTIO_SVC_IP:-}" ]; then
   ISTIO_SVC_IP=$(hostname --ip-address)
@@ -39,7 +41,6 @@ fi
 if [ -z "${POD_NAME:-}" ]; then
   POD_NAME=$(hostname -s)
 fi
-
 
 # Init option will only initialize iptables. Can be used
 if [[ ${1-} == "init" || ${1-} == "-p" ]] ; then
@@ -53,10 +54,10 @@ fi
 ${ISTIO_BIN_BASE}/istio-iptables.sh
 
 if [ -f ${ISTIO_BIN_BASE}/pilot-agent ]; then
-  exec su -s /bin/bash -c "INSTANCE_IP=${ISTIO_SVC_IP} POD_NAME=${POD_NAME} POD_NAMESPACE=${POD_NAMESPACE} exec ${ISTIO_BIN_BASE}/pilot-agent proxy > ${ISTIO_LOG_DIR}/istio.log" istio-proxy
+  exec su -s /bin/bash -c "INSTANCE_IP=${ISTIO_SVC_IP} POD_NAME=${POD_NAME} POD_NAMESPACE=${NS} exec ${ISTIO_BIN_BASE}/pilot-agent proxy > ${ISTIO_LOG_DIR}/istio.log" istio-proxy
 else
   ENVOY_CFG=${ENVOY_CFG:-${ISTIO_CFG}/envoy/envoy.json}
   # Run envoy directly - agent not installed. This should be used only for debugging/testing standalone envoy
-  exec su -s /bin/bash -c "exec ${ISTIO_BIN_BASE}/envoy -c $ENVOY_CFG --restart-epoch 0 --drain-time-s 2 --parent-shutdown-time-s 3 --service-cluster istio-proxy --service-node 'sidecar~${ISTIO_SVC_IP}~mysvc.${NS}~${NS}svc.cluster.local' $ISTIO_DEBUG >${ISTIO_LOG_DIR}/istio.log" istio-proxy
+  exec su -s /bin/bash -c "exec ${ISTIO_BIN_BASE}/envoy -c $ENVOY_CFG --restart-epoch 0 --drain-time-s 2 --parent-shutdown-time-s 3 --service-cluster istio-proxy --service-node 'sidecar~${ISTIO_SVC_IP}~${SVC}.${NS}.svc.cluster.local~${NS}.svc.cluster.local' $ISTIO_DEBUG >${ISTIO_LOG_DIR}/istio.log" istio-proxy
 fi
 

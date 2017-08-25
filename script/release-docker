@@ -40,7 +40,7 @@ DOCKER_TAG="${DATE_PART}-${SHA_PART}"
 
 REPO=${REPO:-gcr.io}
 
-TAG=${TAG:-DOCKER_TAG}
+TAG=${TAG:-$DOCKER_TAG}
 
 BAZEL_TARGET_DIR="bazel-bin/src/envoy/mixer"
 

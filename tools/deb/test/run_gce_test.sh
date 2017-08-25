@@ -178,7 +178,7 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: 8000
+  - port: 9091
     protocol: TCP
   selector:
     istio: mixer
@@ -205,6 +205,7 @@ EOF
   #/etc/dnsmasq.d/kubedns
   echo "server=/default.svc.cluster.local/$ISTIO_DNS" > kubedns
   echo "address=/istio-mixer/$MIXER_IP" >> kubedns
+  echo "address=/mixer-server/$MIXER_IP" >> kubedns
   echo "address=/istio-pilot/$PILOT_IP" >> kubedns
 
   CIDR=$(gcloud container clusters describe ${K8SCLUSTER} --zone=${ISTIO_ZONE} --format "value(servicesIpv4Cidr)")
