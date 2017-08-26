@@ -17,12 +17,13 @@
 
 #include "common/common/base64.h"
 #include "common/common/utility.h"
+#include "common/json/json_loader.h"
 #include "openssl/bn.h"
 #include "openssl/evp.h"
 #include "openssl/rsa.h"
-#include "rapidjson/document.h"
 
 #include <algorithm>
+#include <cassert>
 #include <map>
 #include <sstream>
 #include <string>
@@ -196,34 +197,6 @@ class EvpPkeyGetter : public WithStatus {
   }
 };
 
-std::pair<bool, std::string> GetStringFromJson(const rapidjson::Document &d,
-                                               const std::string &key) {
-  //  Value::ConstMemberIterator itr = document.FindMember("hello");
-  //  if (itr != document.MemberEnd())
-  //    printf("%s\n", itr->value.GetString());
-  if (!d.HasMember(key.c_str())) {
-    return std::make_pair(false, "");
-  }
-  auto &val = d[key.c_str()];
-  if (!val.IsString()) {
-    return std::make_pair(false, "");
-  }
-  return std::make_pair(true, val.GetString());
-};
-
-std::pair<bool, int64_t> GetInt64FromJson(const rapidjson::Document &d,
-                                          const std::string &key,
-                                          int64_t default_value = 0) {
-  if (!d.HasMember(key.c_str())) {
-    return std::make_pair(false, default_value);
-  }
-  auto &val = d[key.c_str()];
-  if (!val.IsInt64()) {
-    return std::make_pair(false, default_value);
-  }
-  return std::make_pair(true, val.GetInt64());
-};
-
 }  // namespace
 
 // Implementation of a class to decode and verify JWT. Setup() must be called
@@ -258,45 +231,45 @@ class JwtVerifier::Impl : public WithStatus {
     // Parse header json
     header_str_base64url_ = jwt_split[0];
     header_str_ = Base64UrlDecode(jwt_split[0]);
-    header_ = std::shared_ptr<rapidjson::Document>(new rapidjson::Document());
-    if (header_->Parse(header_str_.c_str()).HasParseError()) {
+    try {
+      header_ = Json::Factory::loadFromString(header_str_);
+    } catch (...) {
       UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
       return false;
-    }
+    };
 
     // Header should contain "alg".
-    if (!header_->HasMember("alg")) {
+    if (!header_->hasObject("alg")) {
       UpdateStatus(Status::JWT_HEADER_NO_ALG);
       return false;
     }
-    rapidjson::Value &alg_v = (*header_)["alg"];
-    if (!alg_v.IsString()) {
+    try {
+      alg_ = header_->getString("alg");
+    } catch (...) {
       UpdateStatus(Status::JWT_HEADER_BAD_ALG);
       return false;
     }
-    alg_ = alg_v.GetString();
 
     // Header may contain "kid", which should be a string if exists.
-    if (header_->HasMember("kid")) {
-      rapidjson::Value &kid_v = (*header_)["kid"];
-      if (!kid_v.IsString()) {
-        UpdateStatus(Status::JWT_HEADER_BAD_KID);
-        return false;
-      }
-      kid_ = kid_v.GetString();
+    try {
+      kid_ = header_->getString("kid", "");
+    } catch (...) {
+      UpdateStatus(Status::JWT_HEADER_BAD_KID);
+      return false;
     }
 
     // Parse payload json
     payload_str_base64url_ = jwt_split[1];
     payload_str_ = Base64UrlDecode(jwt_split[1]);
-    payload_ = std::shared_ptr<rapidjson::Document>(new rapidjson::Document());
-    if (payload_->Parse(payload_str_.c_str()).HasParseError()) {
+    try {
+      payload_ = Json::Factory::loadFromString(payload_str_);
+    } catch (...) {
       UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
       return false;
     }
 
-    iss_ = GetStringFromJson(*payload_, "iss").second;
-    exp_ = GetInt64FromJson(*payload_, "exp").second;
+    iss_ = payload_->getString("iss", "");
+    exp_ = payload_->getInteger("exp", 0);
 
     // Set up signature
     signature_ = Base64UrlDecode(jwt_split[2]);
@@ -318,7 +291,7 @@ class JwtVerifier::Impl : public WithStatus {
   }
 
   // Returns the parsed header. Setup() must be called before this.
-  std::shared_ptr<rapidjson::Document> Header() { return header_; }
+  Json::ObjectSharedPtr Header() { return header_; }
 
   const std::string &HeaderStr() { return header_str_; }
   const std::string &HeaderStrBase64Url() { return header_str_base64url_; }
@@ -327,7 +300,7 @@ class JwtVerifier::Impl : public WithStatus {
 
   // Returns payload JSON.
   // Setup() must be called before Payload().
-  std::shared_ptr<rapidjson::Document> Payload() { return payload_; }
+  Json::ObjectSharedPtr Payload() { return payload_; }
 
   const std::string &PayloadStr() { return payload_str_; }
   const std::string &PayloadStrBase64Url() { return payload_str_base64url_; }
@@ -336,10 +309,10 @@ class JwtVerifier::Impl : public WithStatus {
 
  private:
   std::vector<std::string> jwt_split;
-  std::shared_ptr<rapidjson::Document> header_;
+  Json::ObjectSharedPtr header_;
   std::string header_str_;
   std::string header_str_base64url_;
-  std::shared_ptr<rapidjson::Document> payload_;
+  Json::ObjectSharedPtr payload_;
   std::string payload_str_;
   std::string payload_str_base64url_;
   std::string signature_;
@@ -434,9 +407,7 @@ bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
   return false;
 }
 
-std::shared_ptr<rapidjson::Document> JwtVerifier::Header() {
-  return impl_->Header();
-}
+Json::ObjectSharedPtr JwtVerifier::Header() { return impl_->Header(); }
 
 const std::string &JwtVerifier::HeaderStr() { return impl_->HeaderStr(); }
 
@@ -448,9 +419,7 @@ const std::string &JwtVerifier::Alg() { return impl_->Alg(); }
 
 const std::string &JwtVerifier::Kid() { return impl_->Kid(); }
 
-std::shared_ptr<rapidjson::Document> JwtVerifier::Payload() {
-  return impl_->Payload();
-}
+Json::ObjectSharedPtr JwtVerifier::Payload() { return impl_->Payload(); }
 
 const std::string &JwtVerifier::PayloadStr() { return impl_->PayloadStr(); }
 
@@ -482,46 +451,40 @@ std::unique_ptr<Pubkeys> Pubkeys::ParseFromPem(const std::string &pkey_pem) {
 void Pubkeys::ParseFromJwksCore(const std::string &pkey_jwks) {
   keys_.clear();
 
-  rapidjson::Document jwks_json;
-  if (jwks_json.Parse(pkey_jwks.c_str()).HasParseError()) {
+  Json::ObjectSharedPtr jwks_json;
+  try {
+    jwks_json = Json::Factory::loadFromString(pkey_jwks);
+  } catch (...) {
     UpdateStatus(Status::JWK_PARSE_ERROR);
     return;
   }
-  auto keys = jwks_json.FindMember("keys");
-  if (keys == jwks_json.MemberEnd()) {
+  std::vector<Json::ObjectSharedPtr> keys;
+  if (!jwks_json->hasObject("keys")) {
     UpdateStatus(Status::JWK_NO_KEYS);
     return;
   }
-  if (!keys->value.IsArray()) {
+  try {
+    keys = jwks_json->getObjectArray("keys", true);
+  } catch (...) {
     UpdateStatus(Status::JWK_BAD_KEYS);
     return;
   }
 
-  for (auto &jwk_json : keys->value.GetArray()) {
+  for (auto jwk_json : keys) {
     std::unique_ptr<Pubkey> pubkey(new Pubkey());
 
-    if (!jwk_json.HasMember("kid") || !jwk_json["kid"].IsString()) {
-      continue;
-    }
-    pubkey->kid_ = jwk_json["kid"].GetString();
-
-    if (!jwk_json.HasMember("alg") || !jwk_json["alg"].IsString()) {
-      continue;
-    }
-    pubkey->alg_specified_ = true;
-    pubkey->alg_ = jwk_json["alg"].GetString();
-
-    // public key
-    if (!jwk_json.HasMember("n") || !jwk_json["n"].IsString()) {
-      continue;
-    }
-    if (!jwk_json.HasMember("e") || !jwk_json["e"].IsString()) {
+    std::string n_str, e_str;
+    try {
+      pubkey->kid_ = jwk_json->getString("kid");
+      pubkey->alg_ = jwk_json->getString("alg");
+      pubkey->alg_specified_ = true;
+      n_str = jwk_json->getString("n");
+      e_str = jwk_json->getString("e");
+    } catch (...) {
       continue;
     }
     EvpPkeyGetter e;
-    pubkey->key_ =
-        e.EvpPkeyFromJwk(jwk_json["n"].GetString(), jwk_json["e"].GetString());
-
+    pubkey->key_ = e.EvpPkeyFromJwk(n_str, e_str);
     keys_.push_back(std::move(pubkey));
   }
   if (keys_.size() == 0) {

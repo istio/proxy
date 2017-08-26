@@ -325,18 +325,9 @@ TEST_F(JwtTest, JwtDecode) {
   TEST_SETUP_PEM(kPublicKey, kJwt, true)
 
   EXPECT_EQ(v.GetStatus(), Status::OK);
-
-  EXPECT_TRUE((*payload)["iss"].IsString());
-  std::string iss = (*payload)["iss"].GetString();
-  EXPECT_STREQ("https://example.com", iss.c_str());
-
-  EXPECT_TRUE((*payload)["sub"].IsString());
-  std::string sub = (*payload)["sub"].GetString();
-  EXPECT_STREQ("test@example.com", sub.c_str());
-
-  EXPECT_TRUE((*payload)["exp"].IsInt64());
-  int64_t exp = (*payload)["exp"].GetInt64();
-  EXPECT_EQ(1501281058LL, exp);
+  EXPECT_EQ("https://example.com", payload->getString("iss"));
+  EXPECT_EQ("test@example.com", payload->getString("sub"));
+  EXPECT_EQ(1501281058LL, payload->getInteger("exp"));
 }
 
 TEST_F(JwtTest, InvalidSignature) {
@@ -429,36 +420,18 @@ TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
   TEST_SETUP_JWKS(kPublicKey, kJwtNoKid, true)
 
   EXPECT_EQ(v.GetStatus(), Status::OK);
-
-  EXPECT_TRUE((*payload)["iss"].IsString());
-  std::string iss = (*payload)["iss"].GetString();
-  EXPECT_STREQ("https://example.com", iss.c_str());
-
-  EXPECT_TRUE((*payload)["sub"].IsString());
-  std::string sub = (*payload)["sub"].GetString();
-  EXPECT_STREQ("test@example.com", sub.c_str());
-
-  EXPECT_TRUE((*payload)["exp"].IsInt64());
-  int64_t exp = (*payload)["exp"].GetInt64();
-  EXPECT_EQ(1501281058LL, exp);
+  EXPECT_EQ("https://example.com", payload->getString("iss"));
+  EXPECT_EQ("test@example.com", payload->getString("sub"));
+  EXPECT_EQ(1501281058LL, payload->getInteger("exp"));
 }
 
 TEST_F(JwtTestWithJwk, CorrectKid) {
   TEST_SETUP_JWKS(kPublicKey, kJwtWithCorrectKid, true)
 
   EXPECT_EQ(v.GetStatus(), Status::OK);
-
-  EXPECT_TRUE((*payload)["iss"].IsString());
-  std::string iss = (*payload)["iss"].GetString();
-  EXPECT_STREQ("https://example.com", iss.c_str());
-
-  EXPECT_TRUE((*payload)["sub"].IsString());
-  std::string sub = (*payload)["sub"].GetString();
-  EXPECT_STREQ("test@example.com", sub.c_str());
-
-  EXPECT_TRUE((*payload)["exp"].IsInt64());
-  int64_t exp = (*payload)["exp"].GetInt64();
-  EXPECT_EQ(1501281058LL, exp);
+  EXPECT_EQ("https://example.com", payload->getString("iss"));
+  EXPECT_EQ("test@example.com", payload->getString("sub"));
+  EXPECT_EQ(1501281058LL, payload->getInteger("exp"));
 }
 
 TEST_F(JwtTestWithJwk, IncorrectKid) {

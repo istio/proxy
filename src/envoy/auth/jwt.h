@@ -16,8 +16,8 @@
 #ifndef PROXY_JWT_H
 #define PROXY_JWT_H
 
+#include "envoy/json/json_object.h"
 #include "openssl/evp.h"
-#include "rapidjson/document.h"
 
 #include <string>
 #include <utility>
@@ -134,10 +134,10 @@ class JwtVerifier : public WithStatus {
   // always fails and the public key's status is handed over to JwtVerifier.
   bool Verify(const Pubkeys& pubkeys);
 
-  // It returns a JSON object of the header of the given JWT.
+  // It returns a pointer to a JSON object of the header of the given JWT.
   // When the given JWT has a format error, it returns nullptr.
   // It returns the header JSON even if the signature is invalid.
-  std::shared_ptr<rapidjson::Document> Header();
+  Json::ObjectSharedPtr Header();
 
   // They return a string (or base64url-encoded string) of the header JSON of
   // the given JWT.
@@ -151,10 +151,10 @@ class JwtVerifier : public WithStatus {
   // string if "kid" does not exist in the header.
   const std::string& Kid();
 
-  // It returns a JSON object of the payload of the given JWT.
+  // It returns a pointer to a JSON object of the payload of the given JWT.
   // When the given jWT has a format error, it returns nullptr.
   // It returns the payload JSON even if the signature is invalid.
-  std::shared_ptr<rapidjson::Document> Payload();
+  Json::ObjectSharedPtr Payload();
 
   // They return a string (or base64url-encoded string) of the payload JSON of
   // the given JWT.
