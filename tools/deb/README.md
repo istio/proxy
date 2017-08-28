@@ -171,3 +171,5 @@ result should show each endpoint IP.
 This is the same as K8S endpoint API, except in different format.
 
  curl -v 'http://istio-pilot:8080/v1/registration/zipkin.default.svc.cluster.local|http'
+ 
+ 

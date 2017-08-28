@@ -1,5 +1,8 @@
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar", "pkg_deb")
 
+# TODO: decide the proper location for binaries and configs and update the file.
+# Current layout for binaries matches 0.1 and docker images.
+
 pkg_tar(
     name = "envoy-bin",
     files = [
