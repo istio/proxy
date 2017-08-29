@@ -237,11 +237,7 @@ spec:
   ports:
     - protocol: TCP
       port: $PORT
-<<<<<<< HEAD
       name: $TYPE
-=======
-      name: http
->>>>>>> 07d4b5b94f2766a4c3a45dd98bf26270d51c951d
 
 ---
 
@@ -254,11 +250,7 @@ subsets:
       - ip: $IP
     ports:
       - port: $PORT
-<<<<<<< HEAD
         name: $TYPE
-=======
-        name: http
->>>>>>> 07d4b5b94f2766a4c3a45dd98bf26270d51c951d
 EOF
 
 
