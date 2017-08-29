@@ -83,7 +83,7 @@ const listener1 = `{
                       "target.uid": "POD222",
                       "target.service": "foo.svc.cluster.local"
                   },
-		  "random_string": "AAAAA",
+                  "random_string": "AAAAA",
                   "quota_name": "RequestCount",
                   "quota_amount": "1"
                 }
