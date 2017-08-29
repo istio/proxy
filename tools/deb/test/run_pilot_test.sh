@@ -24,7 +24,6 @@ export GOPATH=${GOPATH:-$WS/go}
 LOG_DIR=${LOG_DIR:-log/integration}
 PILOT=${PILOT:-${GOPATH}/src/istio.io/pilot}
 
-
 function kill_all() {
   if [[ -f $LOG_DIR/pilot.pid ]] ; then
     kill -9 $(cat $LOG_DIR/pilot.pid)
@@ -134,3 +133,4 @@ else
   run_tests
   kill_all
 fi
+

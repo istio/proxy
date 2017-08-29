@@ -21,9 +21,6 @@ set -x
 
 NAME=${1-$(hostname)}
 
-# Script to run on a machine to init DNS and other packages.
-# Used for automated testing of raw VM setup
-
 # Packages required for istio DNS
 PACKAGES="dnsutils dnsmasq"
 
