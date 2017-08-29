@@ -29,10 +29,11 @@ export ISTIO_ZONE=${ISTIO_ZONE:-us-west1-c}
 # Name of the k8s cluster running istio control plane. Used to find the service CIDR
 K8SCLUSTER=${K8SCLUSTER:-istio-auth}
 
-TESTVM=${TESTVM:-istiotestrawvm}
+TESTVM=${TESTVM:-testvm}
 
-PROXY_DIR=$(pwd)
-WS=${WS:-$(pwd)/../..}
+# Assuming the script is started from the proxy dir, under istio.io
+ISTIO_IO=${ISTIO_IO:-$(pwd)/..}
+PROXY_DIR=${ISTIO_IO}/proxy
 
 # TODO: extend the script to use Vagrant+minikube or other ways to create the VM. The main
 # issue is that we need the k8s and VM to be on same VPC - unless we run kubeapiserver+etcd
@@ -55,7 +56,7 @@ function istioCopy() {
   shift
   local FILES=$*
 
-  gcloud compute scp --project $PROJECT --zone $ISTIO_ZONE $FILES ${NAME}:
+  gcloud compute scp --recurse --project $PROJECT --zone $ISTIO_ZONE $FILES ${NAME}:
 }
 
 
@@ -66,7 +67,7 @@ function istioVMInit() {
   local IMAGE=${2:-debian-9-stretch-v20170816}
   local IMAGE_PROJECT=${3:-debian-cloud}
 
-  gcloud compute --project $PROJECT instances  describe $NAME  --zone ${ISTIO_ZONE} >/dev/null
+  gcloud compute --project $PROJECT instances  describe $NAME  --zone ${ISTIO_ZONE} >/dev/null 2>/dev/null
   if [[ $? == 0 ]] ; then
 
     gcloud compute --project $PROJECT \
@@ -95,7 +96,7 @@ function istioVMInit() {
   # Wait for machine to start up ssh
   for i in {1..10}
   do
-    istioRun $NAME 'echo hi'
+    istioRun $NAME 'echo hi' >/dev/null 2>/dev/null
     if [[ $? -ne 0 ]] ; then
         echo Waiting for startup $?
         sleep 5
@@ -106,7 +107,7 @@ function istioVMInit() {
 
   # Allow access to the VM on port 80 and 9411 (where we run services)
   gcloud compute firewall-rules create allow-external  --allow tcp:22,tcp:80,tcp:443,tcp:9411,udp:5228,icmp  --source-ranges 0.0.0.0/0
-
+  gcloud compute firewall-rules list
 
 }
 
@@ -218,11 +219,13 @@ EOF
 # - port of the service
 # - service name (default to raw vm name)
 # - IP of the rawvm (will get it from gcloud if not set)
+# - type - defaults to http
 #
-function istioConfigHttpService() {
+function istioConfigService() {
   local NAME=${1:-}
   local PORT=${2:-}
   local IP=${3:-}
+  local TYPE=${4:-http}
 
   # The 'name: http' is critical - without it the service is exposed as TCP
 
@@ -235,7 +238,7 @@ spec:
   ports:
     - protocol: TCP
       port: $PORT
-      name: http
+      name: $TYPE
 
 ---
 
@@ -248,7 +251,7 @@ subsets:
       - ip: $IP
     ports:
       - port: $PORT
-        name: http
+        name: $TYPE
 EOF
 
 
@@ -288,10 +291,17 @@ function istioProvisionTestWorker() {
  istioRun $NAME "sudo rm -f istio-*.deb machine_setup.sh"
 
  # Copy deb, helper and config files
- istioCopy $NAME kubedns cluster.env tools/deb/test/machine_setup.sh $PROXY_DIR/bazel-bin/tools/deb/*.deb
+ # Reviews not copied - VMs don't support labels yet.
+ istioCopy $NAME kubedns cluster.env tools/deb/test/machine_setup.sh \
+   $ISTIO_IO/proxy/bazel-bin/tools/deb/*.deb \
+   $ISTIO_IO/pilot/bazel-bin/tools/deb/*.deb \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/details \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/mysql \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/productpage \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/ratings
 
 
- istioRun $NAME "sudo bash -c ./machine_setup.sh $NAME"
+ istioRun $NAME "sudo bash -c -x ./machine_setup.sh $NAME"
 
 }
 
@@ -304,8 +314,16 @@ function setUp() {
  LOCAL_IP=$(istioVMInternalIP $TESTVM)
 
  # Configure a service for the local nginx server, and add an ingress route
- istioConfigHttpService rawvm 80 $LOCAL_IP
- istioRoute "/${TESTVM}/" rawvm 80
+ istioConfigHttpService $TESTVM 80 $LOCAL_IP
+
+ # Bookinfo components on the VM
+ istioConfigService ${TESTVM}-details 9080 $LOCAL_IP
+ istioConfigService ${TESTVM}-productpage 9081 $LOCAL_IP
+ istioConfigService ${TESTVM}-ratings 9082 $LOCAL_IP
+ istioConfigService ${TESTVM}-mysql 3306 $LOCAL_IP
+
+ # Prepare simple test to make sure istio-ingress can reach a http server on the VM
+ istioRoute "/${TESTVM}/" ${TESTVM} 80
 }
 
 # Verify that cluster (istio-ingress) can reach the VM.
@@ -343,7 +361,14 @@ if [[ ${1:-} == "init" ]] ; then
 elif [[ ${1:-} == "test" ]] ; then
   setUp
   test
+elif [[ ${1:-} == "help" ]] ; then
+  echo "$0 init: provision an existing VM using the current build"
+  echo "$0 test: run tests"
+  echo "$0 : create or reset VM, provision and run tests"
 else
+  # By default reset or create the VM, and do all steps. The VM will be left around until
+  # next run, for debugging or other tests - next run will reset it (faster than create).
+  tools/deb/test/build_all.sh
   istioVMInit ${TESTVM}
   istioProvisionTestWorker ${TESTVM}
   setUp

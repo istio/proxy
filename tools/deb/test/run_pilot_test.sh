@@ -24,41 +24,6 @@ export GOPATH=${GOPATH:-$WS/go}
 LOG_DIR=${LOG_DIR:-log/integration}
 PILOT=${PILOT:-${GOPATH}/src/istio.io/pilot}
 
-# Build debian and binaries for all components we'll test on the VM
-# Will checkout mixer, pilot and proxy in the expected locations/
-function build_all() {
-  mkdir -p $WS/go/src/istio.io
-
-
-  if [[ -d $GOPATH/src/istio.io/pilot ]]; then
-    (cd $GOPATH/src/istio.io/pilot; git pull upstream master)
-  else
-    #(cd $GOPATH/src/istio.io; git clone https://github.com/istio/pilot)
-    (cd $GOPATH/src/istio.io; git clone https://github.com/costinm/pilot -b deb)
-  fi
-
-  if [[ -d $GOPATH/src/istio.io/istio ]]; then
-    (cd $GOPATH/src/istio.io/istio; git pull upstream master)
-  else
-    #(cd $GOPATH/src/istio.io; git clone https://github.com/istio/pilot)
-    (cd $GOPATH/src/istio.io; git clone https://github.com/costinm/istio)
-  fi
-
-  if [[ -d $GOPATH/src/istio.io/mixer ]]; then
-    (cd $GOPATH/src/istio.io/mixer; git pull upstream master)
-  else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/mixer)
-  fi
-
-  pushd $GOPATH/src/istio.io/pilot
-  bazel build ...
-  ./bin/init.sh
-  popd
-
-  (cd $GOPATH/src/istio.io/mixer; bazel build ...)
-  bazel build tools/deb/...
-
-}
 
 function kill_all() {
   if [[ -f $LOG_DIR/pilot.pid ]] ; then
@@ -153,7 +118,7 @@ function run_tests() {
 }
 
 if [[ ${1:-} == "start" ]] ; then
-  build_all
+  tools/deb/test/build_all.sh
   # Stop any previously running servers
   kill_all
   start_all
@@ -162,7 +127,7 @@ elif [[ ${1:-} == "stop" ]] ; then
 elif [[ ${1:-} == "test" ]] ; then
   run_tests
 else
-  build_all
+  tools/deb/test/build_all.sh
   # Stop any previously running servers
   kill_all
   start_all

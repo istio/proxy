@@ -17,13 +17,28 @@
 ################################################################################
 set -x
 
-NAME=${1-istiotestrawvm}
+# Script run on the test VM, to install istio components and test fixtures.
+
+NAME=${1-$(hostname)}
 
 # Script to run on a machine to init DNS and other packages.
 # Used for automated testing of raw VM setup
 
+# Packages required for istio DNS
+PACKAGES="dnsutils dnsmasq"
+
+# Debugging
+PACKAGES="$PACKAGES tcpdump netcat tmux"
+
+# Used by tests
+PACKAGES="$PACKAGES nginx ruby python-pip mariadb-server "
+
+# Install nodejs. Version in debian is old
+curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
 apt-get update
-sudo apt-get -y install dnsutils dnsmasq tcpdump netcat nginx
+sudo apt-get -y install $PACKAGES
 
 # Copy config files for DNS
 chmod go+r kubedns
@@ -44,7 +59,9 @@ if [[ $? != 0 ]]; then
 fi
 
 # Install istio binaries
-dpkg -i istio-*.deb;
+dpkg -i istio-proxy-envoy_0.2.1_amd64.deb;
+dpkg -i istio-agent_0.2.1_amd64.deb;
+# TODO: add auth agent when ready
 
 mkdir /var/www/html/$NAME
 echo "VM $NAME" > /var/www/html/$NAME/index.html
@@ -59,6 +76,23 @@ server {
     }
 EOF
 
+(cd productpage; sudo pip install -r requirements.txt)
+(cd ratings; npm install)
+
+systemctl restart nginx
+
 # Start istio
 systemctl start istio
 
+systemctl start mariadb
+
+# Start bookinfo components
+ruby details/details.rb 9080 &
+echo $! > details.pid
+
+# Note that we run productpage on a different port - 9080 is taken
+(cd productpage ; python productpage.py 9081 &)
+echo $! > productpage.pid
+
+(cd ratings ; node ratings.js 9082 &)
+echo $! > ratings.pid
