@@ -15,6 +15,7 @@
 
 #include "config.h"
 
+#include "common/filesystem/filesystem_impl.h"
 #include "common/json/json_loader.h"
 #include "envoy/json/json_object.h"
 #include "envoy/upstream/cluster_manager.h"
@@ -78,12 +79,20 @@ bool IssuerInfo::Preload(Json::Object *json) {
       std::string type = json_pubkey->getString("type");
       pkey_type_ = type;
       if (json_pubkey->hasObject("uri")) {
+        // Public key will be loaded from the specified URI.
         uri_ = json_pubkey->getString("uri");
         cluster_ = json_pubkey->hasObject("cluster")
                        ? json_pubkey->getString("cluster")
                        : "";
         return true;
+      } else if (json_pubkey->hasObject("file")) {
+        // Public key is loaded from the specified file.
+        std::string path = json_pubkey->getString("file");
+        pkey_ = Filesystem::fileReadToEnd(path);
+        loaded_ = true;
+        return true;
       } else if (json_pubkey->hasObject("value")) {
+        // Public key is written in this JSON.
         pkey_ = json_pubkey->getString("value");
         loaded_ = true;
         return true;
@@ -93,8 +102,27 @@ bool IssuerInfo::Preload(Json::Object *json) {
   return false;
 }
 
+/*
+ * TODO: add test for config loading
+ */
 // Load config from envoy config.
 void JwtAuthConfig::Load(const Json::Object &json) {
+  std::string user_info_type_str =
+      json.getString("userinfo_type", "payload_base64url");
+  if (user_info_type_str == "payload") {
+    user_info_type_ = UserInfoType::kPayload;
+  } else if (user_info_type_str == "header_payload_base64url") {
+    user_info_type_ = UserInfoType::kHeaderPayloadBase64Url;
+  } else {
+    user_info_type_ = UserInfoType::kPayloadBase64Url;
+  }
+
+  pubkey_cache_expiration_sec_ =
+      json.getInteger("pubkey_cache_expiration_sec", 600);
+
+  // Empty array if key "audience" does not exist
+  audiences_ = json.getStringArray("audience", true);
+
   issuers_.clear();
   if (json.hasObject("issuers")) {
     for (auto issuer_json : json.getObjectArray("issuers")) {

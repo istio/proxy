@@ -70,19 +70,33 @@ struct IssuerInfo {
 };
 
 // A config for Jwt auth filter
-class JwtAuthConfig {
- public:
+struct JwtAuthConfig {
   JwtAuthConfig(const Json::Object &config,
                 Server::Configuration::FactoryContext &context)
       : cm_(context.clusterManager()) {
     Load(config);
   }
 
+  // It specify which information will be included in the HTTP header of an
+  // authenticated request.
+  enum UserInfoType {
+    kPayload,                // Payload JSON
+    kPayloadBase64Url,       // base64url-encoded Payload JSON
+    kHeaderPayloadBase64Url  // JWT with signature
+  };
+  UserInfoType user_info_type_;
+
+  // Time to expire a cached public key (sec).
+  int64_t pubkey_cache_expiration_sec_;
+
+  // Audiences
+  std::vector<std::string> audiences_;
+
   // Each element corresponds to an issuer
   std::vector<std::shared_ptr<IssuerInfo> > issuers_;
+
   Upstream::ClusterManager &cm_;
 
- private:
   // Load the config from envoy config.
   void Load(const Json::Object &json);
 };
