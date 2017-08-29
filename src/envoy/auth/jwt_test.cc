@@ -16,13 +16,16 @@
 #include "jwt.h"
 
 #include "common/common/utility.h"
+#include "common/json/json_loader.h"
 #include "test/test_common/utility.h"
+
+#include <tuple>
 
 namespace Envoy {
 namespace Http {
 namespace Auth {
 
-class JwtTest : public testing::Test {
+class DatasetPem {
  public:
   // JWT with
   // Header:  {"alg":"RS256","typ":"JWT"}
@@ -49,6 +52,8 @@ class JwtTest : public testing::Test {
       "gK6p4yqOD13EuEY5aoYkeM382tDFiz5Jkh8kKbqKT7h0bhIimniXLDz6iABeNBFouczdPf04"
       "N09hdvlCtAF87Fu1qqfwEQ93A-J7m08bZJoyIPcNmTcYGHwfMR4-lcI5cC_93C_"
       "5BGE1FHPLOHpNghLuM6-rhOtgwZc9ywupn_bBK3QzuAoDnYwpqQhgQL_CdUD_bSHcmWFkw";
+  const std::string kJwtPayload =
+      R"EOF({"iss":"https://example.com","sub":"test@example.com","exp":1501281058})EOF";
 
   const std::string kPublicKey =
       "MIIBCgKCAQEAtw7MNxUTxmzWROCD5BqJxmzT7xqc9KsnAjbXCoqEEHDx4WBlfcwk"
@@ -174,7 +179,7 @@ class JwtTest : public testing::Test {
       "NWJlMThhZWFmZWY5NDU5MjAxY2RkY2NkZGZiZjczMjQ2";
 };
 
-class JwtTestWithJwk : public testing::Test {
+class DatasetJwk {
  public:
   // The following public key jwk and token are taken from
   // https://github.com/cloudendpoints/esp/blob/master/src/api_manager/auth/lib/auth_jwt_validator_test.cc
@@ -228,6 +233,10 @@ class JwtTestWithJwk : public testing::Test {
   //      "6tvh9q0D7VLDgf+2NpnrDW7eMB3n0SrLJ83Mjc5rZ+wv7m033EPaWSr/TFtc/MaF\n"
   //      "aOI20MEe3be96HHuWD3lTK0=\n"
   //      "-----END PRIVATE KEY-----";
+
+  // JWT payload JSON
+  const std::string kJwtPayload =
+      R"EOF({"iss":"https://example.com","sub":"test@example.com","exp":1501281058})EOF";
 
   // JWT without kid
   // Header:  {"alg":"RS256","typ":"JWT"}
@@ -307,171 +316,206 @@ class JwtTestWithJwk : public testing::Test {
       "37BD2KXH3jN9_EBocxwcxhkPwSLtP3dgkfls_f5GoWCgmp-c5ycIskCDcIjxRnPjg";
 };
 
-#define TEST_SETUP(public_key, jwt, verified) \
-  JwtVerifier v = JwtVerifier(jwt);           \
-  EXPECT_EQ(verified, v.Verify(public_key));  \
-  auto payload = v.Payload();                 \
-  if (verified) {                             \
-    EXPECT_TRUE(payload);                     \
+namespace {
+
+bool EqJson(Json::ObjectSharedPtr p1, Json::ObjectSharedPtr p2) {
+  return p1->asJsonString() == p2->asJsonString();
+}
+}
+
+// Struct of parameters for a test case.
+struct TestParam {
+  std::string jwt_;
+  std::string pkey_;
+  std::string pkey_type_;
+  bool verified_;
+  Status status_;
+  Json::ObjectSharedPtr payload_;
+};
+
+class JwtTest : public testing::TestWithParam<TestParam> {
+ public:
+  void SetUp() override { tp_ = GetParam(); }
+
+ protected:
+  TestParam tp_;
+};
+
+TEST_P(JwtTest, Test) {
+  JwtVerifier v = JwtVerifier(tp_.jwt_);
+  std::unique_ptr<Pubkeys> pkey;
+  if (tp_.pkey_type_ == "pem") {
+    pkey = Pubkeys::ParseFromPem(tp_.pkey_);
+  } else if (tp_.pkey_type_ == "jwks") {
+    pkey = Pubkeys::ParseFromJwks(tp_.pkey_);
+  } else {
+    ASSERT_TRUE(0);
+  }
+  EXPECT_EQ(tp_.verified_, v.Verify(*pkey));
+  EXPECT_EQ(tp_.status_, v.GetStatus());
+  auto payload = v.Payload();
+  if (tp_.verified_) {
+    EXPECT_TRUE(payload);
+    EXPECT_TRUE(EqJson(payload, tp_.payload_));
+  }
+}
+
+std::vector<TestParam> TestData() {
+  std::vector<TestParam> testdata;
+  auto add_test = [&testdata](
+      std::string jwt, std::string pkey, std::string pkey_type, bool verified,
+      Status status, Json::ObjectSharedPtr payload) -> void {
+    testdata.push_back(
+        TestParam{jwt, pkey, pkey_type, verified, status, payload});
+  };
+  {
+    DatasetPem ds;
+    {
+      // OK
+      auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+      add_test(ds.kJwt, ds.kPublicKey, "pem", true, Status::OK, payload);
+    }
+    {
+      // Invalid signature
+      auto invalid_jwt = ds.kJwt;
+      invalid_jwt[ds.kJwt.length() - 2] =
+          ds.kJwt[ds.kJwt.length() - 2] != 'a' ? 'a' : 'b';
+      add_test(invalid_jwt, ds.kPublicKey, "pem", false,
+               Status::JWT_INVALID_SIGNATURE, nullptr);
+    }
+    {
+      // Invalid public key
+      auto invalid_pubkey = ds.kPublicKey;
+      invalid_pubkey[0] = ds.kPublicKey[0] != 'a' ? 'a' : 'b';
+      add_test(ds.kJwt, invalid_pubkey, "pem", false,
+               Status::PEM_PUBKEY_PARSE_ERROR, nullptr);
+    }
+    {
+      // Public key invalid base64
+      auto invalid_pubkey = "a";
+      add_test(ds.kJwt, invalid_pubkey, "pem", false,
+               Status::PEM_PUBKEY_BAD_BASE64, nullptr);
+    }
+    {
+      // Base64urlBadInputHeader
+      auto invalid_header = ds.kJwtHeaderEncoded + "a";
+      auto invalid_jwt = StringUtil::join(
+          std::vector<std::string>{invalid_header, ds.kJwtPayloadEncoded,
+                                   ds.kJwtSignatureEncoded},
+          ".");
+      add_test(invalid_jwt, ds.kPublicKey, "pem", false,
+               Status::JWT_HEADER_PARSE_ERROR, nullptr);
+    }
+    {
+      // Base64urlBadInputPayload
+      auto invalid_payload = ds.kJwtPayloadEncoded + "a";
+      auto invalid_jwt = StringUtil::join(
+          std::vector<std::string>{ds.kJwtHeaderEncoded, invalid_payload,
+                                   ds.kJwtSignatureEncoded},
+          ".");
+      add_test(invalid_jwt, ds.kPublicKey, "pem", false,
+               Status::JWT_PAYLOAD_PARSE_ERROR, nullptr);
+    }
+    {
+      // Base64urlBadinputSignature
+      auto invalid_signature = "a";
+      auto invalid_jwt = StringUtil::join(
+          std::vector<std::string>{ds.kJwtHeaderEncoded, ds.kJwtPayloadEncoded,
+                                   invalid_signature},
+          ".");
+      add_test(invalid_jwt, ds.kPublicKey, "pem", false,
+               Status::JWT_SIGNATURE_PARSE_ERROR, nullptr);
+    }
+    {
+      // JwtInvalidNumberOfDots
+      auto invalid_jwt = ds.kJwt + '.';
+      add_test(invalid_jwt, ds.kPublicKey, "pem", false, Status::JWT_BAD_FORMAT,
+               nullptr);
+    }
+    {
+      // JsonBadInputHeader
+      add_test(ds.kJwtWithBadJsonHeader, ds.kPublicKey, "pem", false,
+               Status::JWT_HEADER_PARSE_ERROR, nullptr);
+    }
+    {
+      // JsonBadInputPayload
+      add_test(ds.kJwtWithBadJsonPayload, ds.kPublicKey, "pem", false,
+               Status::JWT_PAYLOAD_PARSE_ERROR, nullptr);
+    }
+    {
+      // AlgAbsentInHeader
+      add_test(ds.kJwtWithAlgAbsent, ds.kPublicKey, "pem", false,
+               Status::JWT_HEADER_NO_ALG, nullptr);
+    }
+    {
+      // AlgIsNotString
+      add_test(ds.kJwtWithAlgIsNotString, ds.kPublicKey, "pem", false,
+               Status::JWT_HEADER_BAD_ALG, nullptr);
+    }
+    {
+      // InvalidAlg
+      add_test(ds.kJwtWithInvalidAlg, ds.kPublicKey, "pem", false,
+               Status::ALG_NOT_IMPLEMENTED, nullptr);
+    }
+  }
+  {
+    DatasetJwk ds;
+    {
+      // JwtDecodeWithJwk
+      auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+      add_test(ds.kJwtNoKid, ds.kPublicKey, "jwks", true, Status::OK, payload);
+    }
+    {
+      // CorrectKid
+      auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+      add_test(ds.kJwtWithCorrectKid, ds.kPublicKey, "jwks", true, Status::OK,
+               payload);
+    }
+    {
+      // IncorrectKid
+      add_test(ds.kJwtWithIncorrectKid, ds.kPublicKey, "jwks", false,
+               Status::JWT_INVALID_SIGNATURE, nullptr);
+    }
+    {
+      // NonExistKid
+      add_test(ds.kJwtWithNonExistKid, ds.kPublicKey, "jwks", false,
+               Status::KID_ALG_UNMATCH, nullptr);
+    }
+    {
+      // BadFormatKid
+      add_test(ds.kJwtWithBadFormatKid, ds.kPublicKey, "jwks", false,
+               Status::JWT_HEADER_BAD_KID, nullptr);
+    }
+    {
+      // JwkBadJson
+      std::string invalid_pubkey = "foobar";
+      add_test(ds.kJwtNoKid, invalid_pubkey, "jwks", false,
+               Status::JWK_PARSE_ERROR, nullptr);
+    }
+    {
+      // JwkNoKeys
+      std::string invalid_pubkey = R"EOF({"foo":"bar"})EOF";
+      add_test(ds.kJwtNoKid, invalid_pubkey, "jwks", false, Status::JWK_NO_KEYS,
+               nullptr);
+    }
+    {
+      // JwkBadKeys
+      std::string invalid_pubkey = R"EOF({"keys":"foobar"})EOF";
+      add_test(ds.kJwtNoKid, invalid_pubkey, "jwks", false,
+               Status::JWK_BAD_KEYS, nullptr);
+    }
+    {
+      // JwkBadPublicKey
+      std::string invalid_pubkey = R"EOF({"keys":[]})EOF";
+      add_test(ds.kJwtNoKid, invalid_pubkey, "jwks", false,
+               Status::JWK_NO_VALID_PUBKEY, nullptr);
+    }
   }
 
-#define TEST_SETUP_PEM(public_key, jwt, verified) \
-  TEST_SETUP(*Pubkeys::ParseFromPem(public_key), jwt, verified)
-
-#define TEST_SETUP_JWKS(public_key, jwt, verified) \
-  TEST_SETUP(*Pubkeys::ParseFromJwks(public_key), jwt, verified)
-
-TEST_F(JwtTest, JwtDecode) {
-  TEST_SETUP_PEM(kPublicKey, kJwt, true)
-
-  EXPECT_EQ(v.GetStatus(), Status::OK);
-  EXPECT_EQ("https://example.com", payload->getString("iss"));
-  EXPECT_EQ("test@example.com", payload->getString("sub"));
-  EXPECT_EQ(1501281058LL, payload->getInteger("exp"));
+  return testdata;
 }
 
-TEST_F(JwtTest, InvalidSignature) {
-  auto invalid_jwt = kJwt;
-  invalid_jwt[kJwt.length() - 2] = kJwt[kJwt.length() - 2] != 'a' ? 'a' : 'b';
-  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
-
-  EXPECT_EQ(v.GetStatus(), Status::JWT_INVALID_SIGNATURE);
-}
-
-TEST_F(JwtTest, InvalidPublickey) {
-  auto invalid_pubkey = kPublicKey;
-  invalid_pubkey[0] = kPublicKey[0] != 'a' ? 'a' : 'b';
-  TEST_SETUP_PEM(invalid_pubkey, kJwt, false)
-
-  EXPECT_EQ(v.GetStatus(), Status::PEM_PUBKEY_PARSE_ERROR);
-}
-
-TEST_F(JwtTest, PublickeyInvalidBase64) {
-  auto invalid_pubkey = "a";
-  TEST_SETUP_PEM(invalid_pubkey, kJwt, false)
-
-  EXPECT_EQ(v.GetStatus(), Status::PEM_PUBKEY_BAD_BASE64);
-}
-
-TEST_F(JwtTest, Base64urlBadInputHeader) {
-  auto invalid_header = kJwtHeaderEncoded + "a";
-  auto invalid_jwt = StringUtil::join(
-      std::vector<std::string>{invalid_header, kJwtPayloadEncoded,
-                               kJwtSignatureEncoded},
-      ".");
-  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
-
-  EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_PARSE_ERROR);
-}
-
-TEST_F(JwtTest, Base64urlBadInputPayload) {
-  auto invalid_payload = kJwtPayloadEncoded + "a";
-  auto invalid_jwt = StringUtil::join(
-      std::vector<std::string>{kJwtHeaderEncoded, invalid_payload,
-                               kJwtSignatureEncoded},
-      ".");
-  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
-
-  EXPECT_EQ(v.GetStatus(), Status::JWT_PAYLOAD_PARSE_ERROR);
-}
-
-TEST_F(JwtTest, Base64urlBadinputSignature) {
-  auto invalid_signature = "a";
-  auto invalid_jwt = StringUtil::join(
-      std::vector<std::string>{kJwtHeaderEncoded, kJwtPayloadEncoded,
-                               invalid_signature},
-      ".");
-  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_SIGNATURE_PARSE_ERROR);
-}
-
-TEST_F(JwtTest, JwtInvalidNumberOfDots) {
-  auto invalid_jwt = kJwt + '.';
-  TEST_SETUP_PEM(kPublicKey, invalid_jwt, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_BAD_FORMAT);
-}
-
-TEST_F(JwtTest, JsonBadInputHeader) {
-  TEST_SETUP_PEM(kPublicKey, kJwtWithBadJsonHeader, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_PARSE_ERROR);
-}
-
-TEST_F(JwtTest, JsonBadInputPayload) {
-  TEST_SETUP_PEM(kPublicKey, kJwtWithBadJsonPayload, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_PAYLOAD_PARSE_ERROR);
-}
-
-TEST_F(JwtTest, AlgAbsentInHeader) {
-  TEST_SETUP_PEM(kPublicKey, kJwtWithAlgAbsent, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_NO_ALG);
-}
-
-TEST_F(JwtTest, AlgIsNotString) {
-  TEST_SETUP_PEM(kPublicKey, kJwtWithAlgIsNotString, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_BAD_ALG);
-}
-
-TEST_F(JwtTest, InvalidAlg) {
-  TEST_SETUP_PEM(kPublicKey, kJwtWithInvalidAlg, false)
-  EXPECT_EQ(v.GetStatus(), Status::ALG_NOT_IMPLEMENTED);
-}
-
-TEST_F(JwtTestWithJwk, JwtDecodeWithJwk) {
-  TEST_SETUP_JWKS(kPublicKey, kJwtNoKid, true)
-
-  EXPECT_EQ(v.GetStatus(), Status::OK);
-  EXPECT_EQ("https://example.com", payload->getString("iss"));
-  EXPECT_EQ("test@example.com", payload->getString("sub"));
-  EXPECT_EQ(1501281058LL, payload->getInteger("exp"));
-}
-
-TEST_F(JwtTestWithJwk, CorrectKid) {
-  TEST_SETUP_JWKS(kPublicKey, kJwtWithCorrectKid, true)
-
-  EXPECT_EQ(v.GetStatus(), Status::OK);
-  EXPECT_EQ("https://example.com", payload->getString("iss"));
-  EXPECT_EQ("test@example.com", payload->getString("sub"));
-  EXPECT_EQ(1501281058LL, payload->getInteger("exp"));
-}
-
-TEST_F(JwtTestWithJwk, IncorrectKid) {
-  TEST_SETUP_JWKS(kPublicKey, kJwtWithIncorrectKid, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_INVALID_SIGNATURE);
-}
-
-TEST_F(JwtTestWithJwk, NonExistKid) {
-  TEST_SETUP_JWKS(kPublicKey, kJwtWithNonExistKid, false)
-  EXPECT_EQ(v.GetStatus(), Status::KID_ALG_UNMATCH);
-}
-
-TEST_F(JwtTestWithJwk, BadFormatKid) {
-  TEST_SETUP_JWKS(kPublicKey, kJwtWithBadFormatKid, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWT_HEADER_BAD_KID);
-}
-
-TEST_F(JwtTestWithJwk, JwkBadJson) {
-  std::string invalid_pubkey = "foobar";
-  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWK_PARSE_ERROR);
-}
-
-TEST_F(JwtTestWithJwk, JwkNoKeys) {
-  std::string invalid_pubkey = R"EOF({"foo":"bar"})EOF";
-  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWK_NO_KEYS);
-}
-
-TEST_F(JwtTestWithJwk, JwkBadKeys) {
-  std::string invalid_pubkey = R"EOF({"keys":"foobar"})EOF";
-  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWK_BAD_KEYS);
-}
-
-TEST_F(JwtTestWithJwk, JwkBadPublicKey) {
-  std::string invalid_pubkey = R"EOF({"keys":[]})EOF";
-  TEST_SETUP_JWKS(invalid_pubkey, kJwtNoKid, false)
-  EXPECT_EQ(v.GetStatus(), Status::JWK_NO_VALID_PUBKEY);
-}
+INSTANTIATE_TEST_CASE_P(TestCases, JwtTest, testing::ValuesIn(TestData()));
 
 }  // namespace Auth
 }  // namespace Http
