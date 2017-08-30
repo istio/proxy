@@ -34,10 +34,14 @@ namespace Http {
 namespace Auth {
 
 void AsyncClientCallbacks::onSuccess(MessagePtr &&response) {
-  auto len = response->body()->length();
-  std::string body(static_cast<char *>(response->body()->linearize(len)), len);
-  auto status = std::string(response->headers().Status()->value().c_str());
+  std::string status = response->headers().Status()->value().c_str();
   if (status == "200") {
+    std::string body;
+    if (response->body()) {
+      auto len = response->body()->length();
+      body = std::string(static_cast<char *>(response->body()->linearize(len)),
+                         len);
+    }
     cb_(true, body);
   } else {
     cb_(false, "");
@@ -64,7 +68,7 @@ void AsyncClientCallbacks::Call(const std::string &uri) {
   MessagePtr message(new RequestMessageImpl());
   message->headers().insertMethod().value().setReference(
       Http::Headers::get().MethodValues.Get);
-  message->headers().insertPath().value().append(path.c_str(), path.size());
+  message->headers().insertPath().value(path);
   message->headers().insertHost().value(host);
 
   cm_.httpAsyncClientForCluster(cluster_->name())
