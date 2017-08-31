@@ -65,7 +65,7 @@ const quotaCacheConfig = `
 
 // A config to disable all check calls
 const disableCheckCalls = `
-                  "disable_check_calls": "true"
+                  "disable_check_calls": true
 `
 
 // A config to disable check cache

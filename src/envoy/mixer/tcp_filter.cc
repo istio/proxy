@@ -130,8 +130,8 @@ class TcpInstance : public Network::Filter,
     if (ssl != nullptr) {
       origin_user = ssl->uriSanPeerCertificate();
     }
-    mixer_control_.BuildTcpCheck(
-          request_data_, filter_callbacks_->connection(), origin_user);
+    mixer_control_.BuildTcpCheck(request_data_, filter_callbacks_->connection(),
+                                 origin_user);
 
     if (state_ == State::NotStarted && !mixer_control_.MixerCheckDisabled()) {
       state_ = State::Calling;
