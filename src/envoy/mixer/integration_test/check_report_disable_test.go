@@ -68,7 +68,7 @@ func TestCheckReportDisable(t *testing.T) {
 		t.Errorf("Failed in request %s: %v", tag, err)
 	}
 	time.Sleep(1 * time.Second)
-	// Only check send, Not report.
+	// Only send check, not report.
 	s.VerifyCheckCount(tag, 2)
 	s.VerifyReportCount(tag, 1)
 
@@ -88,7 +88,7 @@ func TestCheckReportDisable(t *testing.T) {
 		t.Errorf("Failed in request %s: %v", tag, err)
 	}
 	time.Sleep(1 * time.Second)
-	// Only report send, Not check.
+	// Only send report, not check.
 	s.VerifyCheckCount(tag, 2)
 	s.VerifyReportCount(tag, 2)
 }
