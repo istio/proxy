@@ -33,10 +33,13 @@ const std::string kForwardAttributes("forward_attributes");
 const std::string kQuotaName("quota_name");
 const std::string kQuotaAmount("quota_amount");
 
-// The Json object name for check cache keys.
-const std::string kCheckCacheKeys("check_cache_keys");
+// The Json object name to disable check cache, quota cache and report batch
+const std::string kDisableCheckCache("disable_check_cache");
+const std::string kDisableQuotaCache("disable_quota_cache");
+const std::string kDisableReportBatch("disable_report_batch");
 
 const std::string kNetworkFailPolicy("network_fail_policy");
+const std::string kDisableTcpCheckCalls("disable_tcp_check_calls");
 
 void ReadString(const Json::Object& json, const std::string& name,
                 std::string* value) {
@@ -56,14 +59,6 @@ void ReadStringMap(const Json::Object& json, const std::string& name,
   }
 }
 
-void ReadStringVector(const Json::Object& json, const std::string& name,
-                      std::vector<std::string>* value) {
-  if (json.hasObject(name)) {
-    auto v = json.getStringArray(name);
-    value->swap(v);
-  }
-}
-
 }  // namespace
 
 void MixerConfig::Load(const Json::Object& json) {
@@ -75,7 +70,11 @@ void MixerConfig::Load(const Json::Object& json) {
 
   ReadString(json, kNetworkFailPolicy, &network_fail_policy);
 
-  ReadStringVector(json, kCheckCacheKeys, &check_cache_keys);
+  disable_check_cache = json.getBoolean(kDisableCheckCache, false);
+  disable_quota_cache = json.getBoolean(kDisableQuotaCache, false);
+  disable_report_batch = json.getBoolean(kDisableReportBatch, false);
+
+  disable_tcp_check_calls = json.getBoolean(kDisableTcpCheckCalls, false);
 }
 
 void MixerConfig::ExtractQuotaAttributes(Attributes* attr) const {

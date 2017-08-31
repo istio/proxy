@@ -32,7 +32,7 @@ type TestSetup struct {
 
 func (s *TestSetup) SetUp() error {
 	var err error
-	s.envoy, err = NewEnvoy(s.conf, s.stress)
+	s.envoy, err = NewEnvoy(s.conf, "", s.stress)
 	if err != nil {
 		log.Printf("unable to create Envoy %v", err)
 	} else {
@@ -69,6 +69,13 @@ func (s *TestSetup) VerifyCheckCount(tag string, expected int) {
 	if s.mixer.check.count != expected {
 		s.t.Fatalf("%s check count doesn't match: %v\n, expected: %+v",
 			tag, s.mixer.check.count, expected)
+	}
+}
+
+func (s *TestSetup) VerifyReportCount(tag string, expected int) {
+	if s.mixer.report.count != expected {
+		s.t.Fatalf("%s report count doesn't match: %v\n, expected: %+v",
+			tag, s.mixer.report.count, expected)
 	}
 }
 
