@@ -50,7 +50,7 @@ void ReadString(const Json::Object& json, const std::string& name,
 bool ReadBoolean(const Json::Object& json, const std::string& name,
                  bool defaultValue) {
   if (json.hasObject(name)) {
-    retrun json.getBoolean(name, defaultValue);
+    return json.getBoolean(name, defaultValue);
   }
 }
 
