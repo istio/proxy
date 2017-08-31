@@ -133,7 +133,7 @@ class TcpInstance : public Network::Filter,
     mixer_control_.BuildTcpCheck(request_data_, filter_callbacks_->connection(),
                                  origin_user);
 
-    if (state_ == State::NotStarted && !mixer_control_.MixerCheckDisabled()) {
+    if (state_ == State::NotStarted && !mixer_control_.MixerTcpCheckDisabled()) {
       state_ = State::Calling;
       filter_callbacks_->connection().readDisable(true);
       calling_check_ = true;

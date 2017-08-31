@@ -60,7 +60,6 @@ go_test_suite(
         "check_fail_close_test.go",
         "check_fail_open_test.go",
         "check_report_test.go",
-        "disable_check_calls_test.go",
         "disable_check_cache_test.go",
         "failed_request_test.go",
         "quota_cache_test.go",
@@ -68,5 +67,6 @@ go_test_suite(
         "report_batch_test.go",
         "stress_test.go",
         "tcp_filter_test.go",
+        "disable_tcp_check_calls_test.go",
     ],
 )

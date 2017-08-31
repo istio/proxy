@@ -63,9 +63,9 @@ const quotaCacheConfig = `
                   "quota_name": "RequestCount"
 `
 
-// A config to disable all check calls
-const disableCheckCalls = `
-                  "disable_check_calls": true
+// A config to disable all check calls for Tcp proxy
+const disableTcpCheckCalls = `
+                  "disable_tcp_check_calls": true
 `
 
 // A config to disable check cache
