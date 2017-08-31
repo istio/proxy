@@ -76,8 +76,7 @@ const std::string kCheckStatusCode = "check.status";
 const LowerCaseString kRefererHeaderKey("referer");
 
 CheckOptions GetJustCheckOptions(const MixerConfig& config) {
-  if (config.disable_check_cache == "1" or
-      config.disable_check_cache == "true") {
+  if (config.disable_check_cache) {
     return CheckOptions(0);
   }
   return CheckOptions();
@@ -92,8 +91,7 @@ CheckOptions GetCheckOptions(const MixerConfig& config) {
 }
 
 QuotaOptions GetQuotaOptions(const MixerConfig& config) {
-  if (config.disable_quota_cache == "1" or
-      config.disable_quota_cache == "true") {
+  if (config.disable_quota_cache) {
     return QuotaOptions(0, 1000);
   }
   return QuotaOptions();

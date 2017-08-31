@@ -89,6 +89,11 @@ class MixerControl final : public ThreadLocal::ThreadLocalObject,
   // Make remote report call.
   void SendReport(HttpRequestDataPtr request_data);
 
+  // See if check calls are disabled throughout mixer filter
+  bool MixerCheckDisabled() const {
+      return mixer_config_.disable_check_calls_;
+  }
+
  private:
   // Envoy cluster manager for making gRPC calls.
   Upstream::ClusterManager& cm_;

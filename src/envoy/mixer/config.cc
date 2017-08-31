@@ -38,11 +38,19 @@ const std::string kDisableCheckCache("disable_check_cache");
 const std::string kDisableQuotaCache("disable_quota_cache");
 
 const std::string kNetworkFailPolicy("network_fail_policy");
+const std::string kDisableCheckCalls("disable_check_calls");
 
 void ReadString(const Json::Object& json, const std::string& name,
                 std::string* value) {
   if (json.hasObject(name)) {
     *value = json.getString(name);
+  }
+}
+
+bool ReadBoolean(const Json::Object& json, const std::string& name,
+                 bool defaultValue) {
+  if (json.hasObject(name)) {
+    retrun json.getBoolean(name, defaultValue);
   }
 }
 
@@ -68,8 +76,9 @@ void MixerConfig::Load(const Json::Object& json) {
 
   ReadString(json, kNetworkFailPolicy, &network_fail_policy);
 
-  ReadString(json, kDisableCheckCache, &disable_check_cache);
-  ReadString(json, kDisableQuotaCache, &disable_quota_cache);
+  disable_check_calls = ReadBoolean(json, kDisableCheckCalls, false);
+  disable_check_cache = ReadBoolean(json, kDisableCheckCache, false);
+  disable_quota_cache = ReadBoolean(json, kDisableQuotaCache, false);
 }
 
 void MixerConfig::ExtractQuotaAttributes(Attributes* attr) const {
