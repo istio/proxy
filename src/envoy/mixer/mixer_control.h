@@ -90,7 +90,9 @@ class MixerControl final : public ThreadLocal::ThreadLocalObject,
   void SendReport(HttpRequestDataPtr request_data);
 
   // See if check calls are disabled for Tcp proxy
-  bool MixerTcpCheckDisabled() const { return mixer_config_.disable_tcp_check_calls; }
+  bool MixerTcpCheckDisabled() const {
+    return mixer_config_.disable_tcp_check_calls;
+  }
 
  private:
   // Envoy cluster manager for making gRPC calls.
