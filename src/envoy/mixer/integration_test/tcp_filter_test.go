@@ -101,24 +101,3 @@ func TestTcpMixerFilter(t *testing.T) {
 	s.VerifyCheck(tag, checkAttributesOkPost)
 	s.VerifyReport(tag, reportAttributesFailPost)
 }
-
-func TestTcpMixerFilterWithReportOnly(t *testing.T) {
-	s := &TestSetup{
-		t:    t,
-		conf: basicConfig + "," + disableTcpCheckCalls,
-	}
-	if err := s.SetUp(); err != nil {
-		t.Fatalf("Failed to setup test: %v", err)
-	}
-	defer s.TearDown()
-
-	url := fmt.Sprintf("http://localhost:%d/echo", TcpProxyPort)
-
-	// Issues a POST request.
-	tag := "OKPost"
-	if _, _, err := ShortLiveHTTPPost(url, "text/plain", "Hello World!"); err != nil {
-		t.Errorf("Failed in request %s: %v", tag, err)
-	}
-	s.VerifyCheckCount(tag, 0)
-	s.VerifyReport(tag, reportAttributesOkPost)
-}
