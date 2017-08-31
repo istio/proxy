@@ -227,5 +227,6 @@ Here is its sample config:
 This filter will intercept a tcp connection:
 * Call Check at connection creation and call Report at connection close.
 * All mixer settings described above can be used here.
+* disable_tcp_check_calls is a tcp filter specific config to disable check for tcp connection.
 
 
