@@ -345,9 +345,9 @@ TEST_P(JwtTest, Test) {
   JwtVerifier v = JwtVerifier(tp_.jwt_);
   std::unique_ptr<Pubkeys> pkey;
   if (tp_.pkey_type_ == "pem") {
-    pkey = Pubkeys::ParseFromPem(tp_.pkey_);
+    pkey = Pubkeys::CreateFromPem(tp_.pkey_);
   } else if (tp_.pkey_type_ == "jwks") {
-    pkey = Pubkeys::ParseFromJwks(tp_.pkey_);
+    pkey = Pubkeys::CreateFromJwks(tp_.pkey_);
   } else {
     ASSERT_TRUE(0);
   }

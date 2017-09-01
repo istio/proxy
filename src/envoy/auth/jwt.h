@@ -183,12 +183,12 @@ class JwtVerifier : public WithStatus {
 class Pubkeys : public WithStatus {
  public:
   Pubkeys(){};
-  static std::unique_ptr<Pubkeys> ParseFromPem(const std::string& pkey_pem);
-  static std::unique_ptr<Pubkeys> ParseFromJwks(const std::string& pkey_jwks);
+  static std::unique_ptr<Pubkeys> CreateFromPem(const std::string& pkey_pem);
+  static std::unique_ptr<Pubkeys> CreateFromJwks(const std::string& pkey_jwks);
 
  private:
-  void ParseFromPemCore(const std::string& pkey_pem);
-  void ParseFromJwksCore(const std::string& pkey_jwks);
+  void CreateFromPemCore(const std::string& pkey_pem);
+  void CreateFromJwksCore(const std::string& pkey_jwks);
 
   class Pubkey {
    public:

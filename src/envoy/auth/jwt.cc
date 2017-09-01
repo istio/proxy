@@ -431,7 +431,7 @@ const std::string &JwtVerifier::Iss() { return impl_->Iss(); }
 
 int64_t JwtVerifier::Exp() { return impl_->Exp(); }
 
-void Pubkeys::ParseFromPemCore(const std::string &pkey_pem) {
+void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   keys_.clear();
   std::unique_ptr<Pubkey> key_ptr(new Pubkey());
   EvpPkeyGetter e;
@@ -442,13 +442,13 @@ void Pubkeys::ParseFromPemCore(const std::string &pkey_pem) {
   }
 }
 
-std::unique_ptr<Pubkeys> Pubkeys::ParseFromPem(const std::string &pkey_pem) {
+std::unique_ptr<Pubkeys> Pubkeys::CreateFromPem(const std::string &pkey_pem) {
   std::unique_ptr<Pubkeys> keys(new Pubkeys());
-  keys->ParseFromPemCore(pkey_pem);
+  keys->CreateFromPemCore(pkey_pem);
   return keys;
 }
 
-void Pubkeys::ParseFromJwksCore(const std::string &pkey_jwks) {
+void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
   keys_.clear();
 
   Json::ObjectSharedPtr jwks_json;
@@ -492,9 +492,9 @@ void Pubkeys::ParseFromJwksCore(const std::string &pkey_jwks) {
   }
 }
 
-std::unique_ptr<Pubkeys> Pubkeys::ParseFromJwks(const std::string &pkey_jwks) {
+std::unique_ptr<Pubkeys> Pubkeys::CreateFromJwks(const std::string &pkey_jwks) {
   std::unique_ptr<Pubkeys> keys(new Pubkeys());
-  keys->ParseFromJwksCore(pkey_jwks);
+  keys->CreateFromJwksCore(pkey_jwks);
   return keys;
 }
 
