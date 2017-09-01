@@ -121,11 +121,10 @@ class Pubkeys;
 class JwtVerifier : public WithStatus {
  public:
   // This constructor parses the given JWT and prepares for verification.
-  // When the given JWT has a format error, GetStatus() returns the error
-  // detail.
+  // You can check if the setup was successfully done by seeing if GetStatus()
+  // == Status::OK. When the given JWT has a format error, GetStatus() returns
+  // the error detail.
   JwtVerifier(const std::string& jwt);
-
-  //  ~JwtVerifier();
 
   // This function verifies JWT signature.
   // If verification failed, GetStatus() returns the failture reason.
@@ -170,7 +169,12 @@ class JwtVerifier : public WithStatus {
   int64_t Exp();
 
  private:
-  //  bool Setup(const std::string& jwt);
+  const EVP_MD* EvpMdFromAlg(const std::string& alg);
+
+  // Functions to verify with single public key.
+  // (Note: Pubkeys object passed to Verify() may contains multiple public keys)
+  // When verification fails, UpdateStatus(Status::JWT_INVALID_SIGNATURE) is NOT
+  // called.
   bool VerifySignature(EVP_PKEY* key);
   bool VerifySignature(EVP_PKEY* key, const std::string& alg,
                        const uint8_t* signature, size_t signature_len,
@@ -178,8 +182,6 @@ class JwtVerifier : public WithStatus {
   bool VerifySignature(EVP_PKEY* key, const std::string& alg,
                        const std::string& signature,
                        const std::string& signed_data);
-
-  const EVP_MD* EvpMdFromAlg(const std::string& alg);
 
   std::vector<std::string> jwt_split;
   Json::ObjectSharedPtr header_;
@@ -193,10 +195,6 @@ class JwtVerifier : public WithStatus {
   std::string kid_;
   std::string iss_;
   int64_t exp_;
-
-  //  class Impl;
-  ////  Impl* impl_;
-  //  std::unique_ptr<Impl> impl_;
 };
 
 // Class to parse and a hold public key(s).
