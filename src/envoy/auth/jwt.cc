@@ -199,173 +199,137 @@ class EvpPkeyGetter : public WithStatus {
 
 }  // namespace
 
-// Implementation of a class to decode and verify JWT. Setup() must be called
-// before
-// VerifySignature() and Payload(). If you do not need the signature
-// verification, VerifySignature() can be skipped.
-// When verification fails, status_ holds the reason of failure.
-//
-// Usage example:
-//   Verifier v;
-//   if(!v.Setup(jwt)) return nullptr;
-//   if(!v.VerifySignature(publickey)) return nullptr;
-//   return v.Payload();
-class JwtVerifier::Impl : public WithStatus {
- public:
-  Impl() {}
-
-  // It parses the given JWT. This function must be called first.
-  // It returns false if parse fails.
-  bool Setup(const std::string &jwt) {
-    // jwt must have exactly 2 dots
-    if (std::count(jwt.begin(), jwt.end(), '.') != 2) {
-      UpdateStatus(Status::JWT_BAD_FORMAT);
-      return false;
-    }
-    jwt_split = StringUtil::split(jwt, '.');
-    if (jwt_split.size() != 3) {
-      UpdateStatus(Status::JWT_BAD_FORMAT);
-      return false;
-    }
-
-    // Parse header json
-    header_str_base64url_ = jwt_split[0];
-    header_str_ = Base64UrlDecode(jwt_split[0]);
-    try {
-      header_ = Json::Factory::loadFromString(header_str_);
-    } catch (...) {
-      UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
-      return false;
-    }
-
-    // Header should contain "alg".
-    if (!header_->hasObject("alg")) {
-      UpdateStatus(Status::JWT_HEADER_NO_ALG);
-      return false;
-    }
-    try {
-      alg_ = header_->getString("alg");
-    } catch (...) {
-      UpdateStatus(Status::JWT_HEADER_BAD_ALG);
-      return false;
-    }
-
-    // Header may contain "kid", which should be a string if exists.
-    try {
-      kid_ = header_->getString("kid", "");
-    } catch (...) {
-      UpdateStatus(Status::JWT_HEADER_BAD_KID);
-      return false;
-    }
-
-    // Parse payload json
-    payload_str_base64url_ = jwt_split[1];
-    payload_str_ = Base64UrlDecode(jwt_split[1]);
-    try {
-      payload_ = Json::Factory::loadFromString(payload_str_);
-    } catch (...) {
-      UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
-      return false;
-    }
-
-    iss_ = payload_->getString("iss", "");
-    exp_ = payload_->getInteger("exp", 0);
-
-    // Set up signature
-    signature_ = Base64UrlDecode(jwt_split[2]);
-    if (signature_ == "") {
-      // Signature is a bad Base64url input.
-      UpdateStatus(Status::JWT_SIGNATURE_PARSE_ERROR);
-      return false;
-    }
-
-    return true;
-  }
-
-  // Setup() must be called before VerifySignature().
-  // When verification fails, UpdateStatus(Status::JWT_INVALID_SIGNATURE) is NOT
-  // called.
-  bool VerifySignature(EVP_PKEY *key) {
-    std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
-    return VerifySignature(key, alg_, signature_, signed_data);
-  }
-
-  // Returns the parsed header. Setup() must be called before this.
-  Json::ObjectSharedPtr Header() { return header_; }
-
-  const std::string &HeaderStr() { return header_str_; }
-  const std::string &HeaderStrBase64Url() { return header_str_base64url_; }
-  const std::string &Alg() { return alg_; }
-  const std::string &Kid() { return kid_; }
-
-  // Returns payload JSON.
-  // Setup() must be called before Payload().
-  Json::ObjectSharedPtr Payload() { return payload_; }
-
-  const std::string &PayloadStr() { return payload_str_; }
-  const std::string &PayloadStrBase64Url() { return payload_str_base64url_; }
-  const std::string &Iss() { return iss_; }
-  int64_t Exp() { return exp_; }
-
- private:
-  std::vector<std::string> jwt_split;
-  Json::ObjectSharedPtr header_;
-  std::string header_str_;
-  std::string header_str_base64url_;
-  Json::ObjectSharedPtr payload_;
-  std::string payload_str_;
-  std::string payload_str_base64url_;
-  std::string signature_;
-  std::string alg_;
-  std::string kid_;
-  std::string iss_;
-  int64_t exp_;
-
-  const EVP_MD *EvpMdFromAlg(const std::string &alg) {
-    // may use
-    // EVP_sha384() if alg == "RS384" and
-    // EVP_sha512() if alg == "RS512"
-    if (alg == "RS256") {
-      return EVP_sha256();
-    } else {
-      return nullptr;
-    }
-  }
-
-  bool VerifySignature(EVP_PKEY *key, const std::string &alg,
-                       const uint8_t *signature, size_t signature_len,
-                       const uint8_t *signed_data, size_t signed_data_len) {
-    bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
-    const EVP_MD *md = EvpMdFromAlg(alg);
-
-    if (!md) {
-      UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
-      return false;
-    }
-    EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
-    EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
-    return (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) == 1);
-  }
-
-  bool VerifySignature(EVP_PKEY *key, const std::string &alg,
-                       const std::string &signature,
-                       const std::string &signed_data) {
-    return VerifySignature(key, alg, CastToUChar(signature), signature.length(),
-                           CastToUChar(signed_data), signed_data.length());
-  }
-};
-
 JwtVerifier::JwtVerifier(const std::string &jwt) {
-  impl_ = new Impl();
-  impl_->Setup(jwt);
-  UpdateStatus(impl_->GetStatus());
+  // jwt must have exactly 2 dots
+  if (std::count(jwt.begin(), jwt.end(), '.') != 2) {
+    UpdateStatus(Status::JWT_BAD_FORMAT);
+    return;
+  }
+  jwt_split = StringUtil::split(jwt, '.');
+  if (jwt_split.size() != 3) {
+    UpdateStatus(Status::JWT_BAD_FORMAT);
+    return;
+  }
+
+  // Parse header json
+  header_str_base64url_ = jwt_split[0];
+  header_str_ = Base64UrlDecode(jwt_split[0]);
+  try {
+    header_ = Json::Factory::loadFromString(header_str_);
+  } catch (...) {
+    UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
+    return;
+  }
+
+  // Header should contain "alg".
+  if (!header_->hasObject("alg")) {
+    UpdateStatus(Status::JWT_HEADER_NO_ALG);
+    return;
+  }
+  try {
+    alg_ = header_->getString("alg");
+  } catch (...) {
+    UpdateStatus(Status::JWT_HEADER_BAD_ALG);
+    return;
+  }
+
+  // Header may contain "kid", which should be a string if exists.
+  try {
+    kid_ = header_->getString("kid", "");
+  } catch (...) {
+    UpdateStatus(Status::JWT_HEADER_BAD_KID);
+    return;
+  }
+
+  // Parse payload json
+  payload_str_base64url_ = jwt_split[1];
+  payload_str_ = Base64UrlDecode(jwt_split[1]);
+  try {
+    payload_ = Json::Factory::loadFromString(payload_str_);
+  } catch (...) {
+    UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
+    return;
+  }
+
+  iss_ = payload_->getString("iss", "");
+  exp_ = payload_->getInteger("exp", 0);
+
+  // Set up signature
+  signature_ = Base64UrlDecode(jwt_split[2]);
+  if (signature_ == "") {
+    // Signature is a bad Base64url input.
+    UpdateStatus(Status::JWT_SIGNATURE_PARSE_ERROR);
+    return;
+  }
 }
 
-JwtVerifier::~JwtVerifier() { delete impl_; }
+// Setup() must be called before VerifySignature().
+// When verification fails, UpdateStatus(Status::JWT_INVALID_SIGNATURE) is NOT
+// called.
+bool JwtVerifier::VerifySignature(EVP_PKEY *key) {
+  std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
+  return VerifySignature(key, alg_, signature_, signed_data);
+}
+
+// Returns the parsed header. Setup() must be called before this.
+Json::ObjectSharedPtr JwtVerifier::Header() { return header_; }
+
+const std::string &JwtVerifier::HeaderStr() { return header_str_; }
+const std::string &JwtVerifier::HeaderStrBase64Url() {
+  return header_str_base64url_;
+}
+const std::string &JwtVerifier::Alg() { return alg_; }
+const std::string &JwtVerifier::Kid() { return kid_; }
+
+// Returns payload JSON.
+// Setup() must be called before Payload().
+Json::ObjectSharedPtr JwtVerifier::Payload() { return payload_; }
+
+const std::string &JwtVerifier::PayloadStr() { return payload_str_; }
+const std::string &JwtVerifier::PayloadStrBase64Url() {
+  return payload_str_base64url_;
+}
+const std::string &JwtVerifier::Iss() { return iss_; }
+int64_t JwtVerifier::Exp() { return exp_; }
+
+const EVP_MD *JwtVerifier::EvpMdFromAlg(const std::string &alg) {
+  // may use
+  // EVP_sha384() if alg == "RS384" and
+  // EVP_sha512() if alg == "RS512"
+  if (alg == "RS256") {
+    return EVP_sha256();
+  } else {
+    return nullptr;
+  }
+}
+
+bool JwtVerifier::VerifySignature(EVP_PKEY *key, const std::string &alg,
+                                  const uint8_t *signature,
+                                  size_t signature_len,
+                                  const uint8_t *signed_data,
+                                  size_t signed_data_len) {
+  bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
+  const EVP_MD *md = EvpMdFromAlg(alg);
+
+  if (!md) {
+    UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
+    return false;
+  }
+  EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
+  EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
+  return (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) == 1);
+}
+
+bool JwtVerifier::VerifySignature(EVP_PKEY *key, const std::string &alg,
+                                  const std::string &signature,
+                                  const std::string &signed_data) {
+  return VerifySignature(key, alg, CastToUChar(signature), signature.length(),
+                         CastToUChar(signed_data), signed_data.length());
+}
 
 bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
   // If setup is not successfully done, return false.
-  if (impl_->GetStatus() != Status::OK) {
+  if (GetStatus() != Status::OK) {
     return false;
   }
 
@@ -375,7 +339,7 @@ bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
     return false;
   }
 
-  std::string kid_jwt = impl_->Kid();
+  std::string kid_jwt = Kid();
   bool kid_alg_matched = false;
   for (auto &pubkey : pubkeys.keys_) {
     // If kid is specified in JWT, JWK with the same kid is used for
@@ -386,19 +350,18 @@ bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
     }
 
     // The same alg must be used.
-    if (pubkey->alg_specified_ && pubkey->alg_ != impl_->Alg()) {
+    if (pubkey->alg_specified_ && pubkey->alg_ != Alg()) {
       continue;
     }
     kid_alg_matched = true;
 
-    if (impl_->VerifySignature(pubkey->key_.get())) {
+    if (VerifySignature(pubkey->key_.get())) {
       // Verification succeeded.
       return true;
     }
   }
 
   // Verification failed.
-  UpdateStatus(impl_->GetStatus());
   if (kid_alg_matched) {
     UpdateStatus(Status::JWT_INVALID_SIGNATURE);
   } else {
@@ -406,30 +369,6 @@ bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
   }
   return false;
 }
-
-Json::ObjectSharedPtr JwtVerifier::Header() { return impl_->Header(); }
-
-const std::string &JwtVerifier::HeaderStr() { return impl_->HeaderStr(); }
-
-const std::string &JwtVerifier::HeaderStrBase64Url() {
-  return impl_->HeaderStrBase64Url();
-}
-
-const std::string &JwtVerifier::Alg() { return impl_->Alg(); }
-
-const std::string &JwtVerifier::Kid() { return impl_->Kid(); }
-
-Json::ObjectSharedPtr JwtVerifier::Payload() { return impl_->Payload(); }
-
-const std::string &JwtVerifier::PayloadStr() { return impl_->PayloadStr(); }
-
-const std::string &JwtVerifier::PayloadStrBase64Url() {
-  return impl_->PayloadStrBase64Url();
-}
-
-const std::string &JwtVerifier::Iss() { return impl_->Iss(); }
-
-int64_t JwtVerifier::Exp() { return impl_->Exp(); }
 
 void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   keys_.clear();

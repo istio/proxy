@@ -125,7 +125,7 @@ class JwtVerifier : public WithStatus {
   // detail.
   JwtVerifier(const std::string& jwt);
 
-  ~JwtVerifier();
+  //  ~JwtVerifier();
 
   // This function verifies JWT signature.
   // If verification failed, GetStatus() returns the failture reason.
@@ -170,8 +170,33 @@ class JwtVerifier : public WithStatus {
   int64_t Exp();
 
  private:
-  class Impl;
-  Impl* impl_;
+  //  bool Setup(const std::string& jwt);
+  bool VerifySignature(EVP_PKEY* key);
+  bool VerifySignature(EVP_PKEY* key, const std::string& alg,
+                       const uint8_t* signature, size_t signature_len,
+                       const uint8_t* signed_data, size_t signed_data_len);
+  bool VerifySignature(EVP_PKEY* key, const std::string& alg,
+                       const std::string& signature,
+                       const std::string& signed_data);
+
+  const EVP_MD* EvpMdFromAlg(const std::string& alg);
+
+  std::vector<std::string> jwt_split;
+  Json::ObjectSharedPtr header_;
+  std::string header_str_;
+  std::string header_str_base64url_;
+  Json::ObjectSharedPtr payload_;
+  std::string payload_str_;
+  std::string payload_str_base64url_;
+  std::string signature_;
+  std::string alg_;
+  std::string kid_;
+  std::string iss_;
+  int64_t exp_;
+
+  //  class Impl;
+  ////  Impl* impl_;
+  //  std::unique_ptr<Impl> impl_;
 };
 
 // Class to parse and a hold public key(s).
