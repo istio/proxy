@@ -236,7 +236,7 @@ class JwtVerifier::Impl : public WithStatus {
     } catch (...) {
       UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
       return false;
-    };
+    }
 
     // Header should contain "alg".
     if (!header_->hasObject("alg")) {
