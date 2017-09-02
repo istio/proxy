@@ -39,11 +39,16 @@ struct MixerConfig {
   std::string quota_name;
   std::string quota_amount;
 
-  // The attribute names for check cache.
-  std::vector<std::string> check_cache_keys;
+  // boo flags to disable check cache, quota cache, and report batch.
+  bool disable_check_cache;
+  bool disable_quota_cache;
+  bool disable_report_batch;
 
   // valid values are: [open|close]
   std::string network_fail_policy;
+
+  // if value is 1 or true, disable check/quota calls.
+  bool disable_tcp_check_calls;
 
   // Load the config from envoy config.
   void Load(const Json::Object& json);
