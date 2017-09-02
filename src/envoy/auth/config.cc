@@ -148,6 +148,7 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
  */
 // Load config from envoy config.
 void JwtAuthConfig::Load(const Json::Object &json) {
+  ENVOY_LOG(debug, "JwtAuthConfig: {}", __func__);
   std::string user_info_type_str =
       json.getString("userinfo_type", "payload_base64url");
   if (user_info_type_str == "payload") {
@@ -161,15 +162,28 @@ void JwtAuthConfig::Load(const Json::Object &json) {
   pubkey_cache_expiration_sec_ =
       json.getInteger("pubkey_cache_expiration_sec", 600);
 
+  /*
+   * TODO: audiences should be able to be specified for each issuer
+   */
   // Empty array if key "audience" does not exist
-  audiences_ = json.getStringArray("audience", true);
+  try {
+    audiences_ = json.getStringArray("audience", true);
+  } catch (...) {
+    ENVOY_LOG(debug, "JwtAuthConfig: {}, Bad audiences", __func__);
+  }
 
+  // Load the issuers
   issuers_.clear();
-  if (json.hasObject("issuers")) {
-    for (auto issuer_json : json.getObjectArray("issuers")) {
-      auto issuer = std::make_shared<IssuerInfo>(issuer_json.get());
-      issuers_.push_back(issuer);
-    }
+  std::vector<Json::ObjectSharedPtr> issuer_jsons;
+  try {
+    issuer_jsons = json.getObjectArray("issuers");
+  } catch (...) {
+    ENVOY_LOG(debug, "JwtAuthConfig: {}, Bad issuers", __func__);
+    abort();
+  }
+  for (auto issuer_json : issuer_jsons) {
+    auto issuer = std::make_shared<IssuerInfo>(issuer_json.get());
+    issuers_.push_back(issuer);
   }
 }
 
