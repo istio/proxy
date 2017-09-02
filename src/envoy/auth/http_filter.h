@@ -17,6 +17,7 @@
 
 #include "config.h"
 
+#include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"
 
 #include <map>
@@ -26,7 +27,8 @@
 namespace Envoy {
 namespace Http {
 
-class JwtVerificationFilter : public StreamDecoderFilter {
+class JwtVerificationFilter : public StreamDecoderFilter,
+                              public Logger::Loggable<Logger::Id::http> {
  public:
   JwtVerificationFilter(std::shared_ptr<Auth::JwtAuthConfig> config);
   ~JwtVerificationFilter();

@@ -36,22 +36,34 @@ namespace Auth {
 void AsyncClientCallbacks::onSuccess(MessagePtr &&response) {
   std::string status = response->headers().Status()->value().c_str();
   if (status == "200") {
+    ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: success",
+              cluster_->name());
     std::string body;
     if (response->body()) {
       auto len = response->body()->length();
       body = std::string(static_cast<char *>(response->body()->linearize(len)),
                          len);
+    } else {
+      ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: body is null",
+                cluster_->name());
     }
     cb_(true, body);
   } else {
+    ENVOY_LOG(debug,
+              "AsyncClientCallbacks [cluster = {}]: response status code {}",
+              cluster_->name(), status);
     cb_(false, "");
   }
 }
 void AsyncClientCallbacks::onFailure(AsyncClient::FailureReason) {
+  ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: failed",
+            cluster_->name());
   cb_(false, "");
 }
 
 void AsyncClientCallbacks::Call(const std::string &uri) {
+  ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: {} {}",
+            cluster_->name(), __func__, uri);
   // Example:
   // uri  = "https://example.com/certs"
   // pos  :          ^
@@ -100,6 +112,7 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
         pkey_ = json_pubkey->getString("value");
         loaded_ = true;
         return;
+      } else {
       }
     }
   }

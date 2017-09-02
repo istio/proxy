@@ -18,6 +18,7 @@
 
 #include "jwt.h"
 
+#include "common/common/logger.h"
 #include "common/http/message_impl.h"
 #include "envoy/http/async_client.h"
 #include "envoy/json/json_object.h"
@@ -32,7 +33,8 @@ namespace Http {
 namespace Auth {
 
 // Callback class for AsyncClient.
-class AsyncClientCallbacks : public AsyncClient::Callbacks {
+class AsyncClientCallbacks : public AsyncClient::Callbacks,
+                             public Logger::Loggable<Logger::Id::http> {
  public:
   AsyncClientCallbacks(Upstream::ClusterManager &cm, const std::string &cluster,
                        std::function<void(bool, const std::string &)> cb)
