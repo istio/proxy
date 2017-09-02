@@ -89,41 +89,57 @@ void AsyncClientCallbacks::Call(const std::string &uri) {
 
 IssuerInfo::IssuerInfo(Json::Object *json) {
   ENVOY_LOG(debug, "IssuerInfo: {}", __func__);
-  if (json->hasObject("name") && json->hasObject("pubkey")) {
-    name_ = json->getString("name");
-    auto json_pubkey = json->getObject("pubkey").get();
-    if (json_pubkey->hasObject("type")) {
-      std::string type = json_pubkey->getString("type");
-      pkey_type_ = type;
-      if (json_pubkey->hasObject("uri")) {
-        // Public key will be loaded from the specified URI.
-        uri_ = json_pubkey->getString("uri");
-        cluster_ = json_pubkey->hasObject("cluster")
-                       ? json_pubkey->getString("cluster")
-                       : "";
-        return;
-      } else if (json_pubkey->hasObject("file")) {
-        // Public key is loaded from the specified file.
-        std::string path = json_pubkey->getString("file");
-        pkey_ = Filesystem::fileReadToEnd(path);
-        loaded_ = true;
-        return;
-      } else if (json_pubkey->hasObject("value")) {
-        // Public key is written in this JSON.
-        pkey_ = json_pubkey->getString("value");
-        loaded_ = true;
-        return;
-      } else {
-        ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key source missing",
-                  name_);
-      }
-    } else {
-      ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key type missing",
-                name_);
-    }
-  } else {
-    ENVOY_LOG(debug, "IssuerInfo: Issuer name or public key missing");
+  // Check "name"
+  name_ = json->getString("name", "");
+  if (name_ == "") {
+    ENVOY_LOG(debug, "IssuerInfo: Issuer name missing");
+    failed_ = true;
+    return;
   }
+  // Check "pubkey"
+  Json::ObjectSharedPtr json_pubkey;
+  try {
+    json_pubkey = json->getObject("pubkey");
+  } catch (...) {
+    ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key missing", name_);
+    failed_ = true;
+    return;
+  }
+  // Check "type"
+  pkey_type_ = json_pubkey->getString("type", "");
+  if (pkey_type_ == "") {
+    ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key type missing", name_);
+    failed_ = true;
+    return;
+  }
+  // Check "value"
+  std::string value = json_pubkey->getString("value", "");
+  if (value != "") {
+    // Public key is written in this JSON.
+    pkey_ = value;
+    loaded_ = true;
+    return;
+  }
+  // Check "file"
+  std::string path = json_pubkey->getString("file", "");
+  if (path != "") {
+    // Public key is loaded from the specified file.
+    pkey_ = Filesystem::fileReadToEnd(path);
+    loaded_ = true;
+    return;
+  }
+  // Check "uri" and "cluster"
+  std::string uri = json_pubkey->getString("uri", "");
+  std::string cluster = json_pubkey->getString("cluster", "");
+  if (uri != "" && cluster != "") {
+    // Public key will be loaded from the specified URI.
+    uri_ = uri;
+    cluster_ = cluster;
+    return;
+  }
+
+  // Public key not found
+  ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key source missing", name_);
   failed_ = true;
 }
 
