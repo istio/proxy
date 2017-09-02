@@ -130,8 +130,7 @@ void JwtAuthConfig::Load(const Json::Object &json) {
   issuers_.clear();
   if (json.hasObject("issuers")) {
     for (auto issuer_json : json.getObjectArray("issuers")) {
-      auto issuer =
-          std::shared_ptr<IssuerInfo>(new IssuerInfo(issuer_json.get()));
+      auto issuer = std::make_shared<IssuerInfo>(issuer_json.get());
       issuers_.push_back(issuer);
     }
   }
