@@ -52,10 +52,13 @@ JwtVerificationFilter::JwtVerificationFilter(
 
 JwtVerificationFilter::~JwtVerificationFilter() {}
 
-void JwtVerificationFilter::onDestroy() {}
+void JwtVerificationFilter::onDestroy() {
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
+}
 
 FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
                                                          bool) {
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
   state_ = Calling;
   stopped_ = false;
 
@@ -92,11 +95,13 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
   if (state_ == Complete) {
     return FilterHeadersStatus::Continue;
   }
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {} Stop", __func__);
   stopped_ = true;
   return FilterHeadersStatus::StopIteration;
 }
 
 FilterDataStatus JwtVerificationFilter::decodeData(Buffer::Instance&, bool) {
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
   if (state_ == Calling) {
     return FilterDataStatus::StopIterationAndBuffer;
   }
@@ -104,6 +109,7 @@ FilterDataStatus JwtVerificationFilter::decodeData(Buffer::Instance&, bool) {
 }
 
 FilterTrailersStatus JwtVerificationFilter::decodeTrailers(HeaderMap&) {
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
   if (state_ == Calling) {
     return FilterTrailersStatus::StopIteration;
   }
@@ -112,12 +118,15 @@ FilterTrailersStatus JwtVerificationFilter::decodeTrailers(HeaderMap&) {
 
 void JwtVerificationFilter::setDecoderFilterCallbacks(
     StreamDecoderFilterCallbacks& callbacks) {
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
   decoder_callbacks_ = &callbacks;
 }
 
 void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
                                           std::string issuer_name, bool succeed,
                                           const std::string& pubkey) {
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {} , issuer = {}", __func__,
+            issuer_name);
   auto iss_it = calling_issuers_.find(issuer_name);
   auto& iss = iss_it->second;
   iss->failed_ = !succeed;
@@ -190,7 +199,9 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
 }
 
 void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
+  ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
   std::string status = Verify(headers);
+  ENVOY_LOG(debug, "Verification status = {}", status);
   if (status != "OK") {
     // verification failed
     /*
