@@ -88,6 +88,7 @@ void AsyncClientCallbacks::Call(const std::string &uri) {
 }
 
 IssuerInfo::IssuerInfo(Json::Object *json) {
+  ENVOY_LOG(debug, "IssuerInfo: {}", __func__);
   if (json->hasObject("name") && json->hasObject("pubkey")) {
     name_ = json->getString("name");
     auto json_pubkey = json->getObject("pubkey").get();
@@ -113,8 +114,15 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
         loaded_ = true;
         return;
       } else {
+        ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key source missing",
+                  name_);
       }
+    } else {
+      ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key type missing",
+                name_);
     }
+  } else {
+    ENVOY_LOG(debug, "IssuerInfo: Issuer name or public key missing");
   }
   failed_ = true;
 }

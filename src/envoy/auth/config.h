@@ -56,7 +56,7 @@ class AsyncClientCallbacks : public AsyncClient::Callbacks,
 };
 
 // Struct to hold an issuer's information.
-struct IssuerInfo {
+struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   // This constructor loads config from JSON. When public key is given via URI,
   // it just keeps URI and cluster name, and public key will be fetched later,
   // namely in decodeHeaders() of the filter class.
