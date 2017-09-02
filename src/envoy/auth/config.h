@@ -80,11 +80,10 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
 
 // A config for Jwt auth filter
 struct JwtAuthConfig : public Logger::Loggable<Logger::Id::http> {
+  // Load the config from envoy config.
+  // It will abort when "issuers" is missing or bad-formatted.
   JwtAuthConfig(const Json::Object &config,
-                Server::Configuration::FactoryContext &context)
-      : cm_(context.clusterManager()) {
-    Load(config);
-  }
+                Server::Configuration::FactoryContext &context);
 
   // It specify which information will be included in the HTTP header of an
   // authenticated request.
@@ -105,10 +104,6 @@ struct JwtAuthConfig : public Logger::Loggable<Logger::Id::http> {
   std::vector<std::shared_ptr<IssuerInfo> > issuers_;
 
   Upstream::ClusterManager &cm_;
-
-  // Load the config from envoy config.
-  // It will abort when "issuers" is missing or bad-formatted.
-  void Load(const Json::Object &json);
 };
 
 }  // namespace Auth

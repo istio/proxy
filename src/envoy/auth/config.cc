@@ -146,11 +146,12 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
 /*
  * TODO: add test for config loading
  */
-// Load config from envoy config.
-void JwtAuthConfig::Load(const Json::Object &json) {
+JwtAuthConfig::JwtAuthConfig(const Json::Object &config,
+                             Server::Configuration::FactoryContext &context)
+    : cm_(context.clusterManager()) {
   ENVOY_LOG(debug, "JwtAuthConfig: {}", __func__);
   std::string user_info_type_str =
-      json.getString("userinfo_type", "payload_base64url");
+      config.getString("userinfo_type", "payload_base64url");
   if (user_info_type_str == "payload") {
     user_info_type_ = UserInfoType::kPayload;
   } else if (user_info_type_str == "header_payload_base64url") {
@@ -160,14 +161,14 @@ void JwtAuthConfig::Load(const Json::Object &json) {
   }
 
   pubkey_cache_expiration_sec_ =
-      json.getInteger("pubkey_cache_expiration_sec", 600);
+      config.getInteger("pubkey_cache_expiration_sec", 600);
 
   /*
    * TODO: audiences should be able to be specified for each issuer
    */
   // Empty array if key "audience" does not exist
   try {
-    audiences_ = json.getStringArray("audience", true);
+    audiences_ = config.getStringArray("audience", true);
   } catch (...) {
     ENVOY_LOG(debug, "JwtAuthConfig: {}, Bad audiences", __func__);
   }
@@ -176,7 +177,7 @@ void JwtAuthConfig::Load(const Json::Object &json) {
   issuers_.clear();
   std::vector<Json::ObjectSharedPtr> issuer_jsons;
   try {
-    issuer_jsons = json.getObjectArray("issuers");
+    issuer_jsons = config.getObjectArray("issuers");
   } catch (...) {
     ENVOY_LOG(debug, "JwtAuthConfig: {}, Bad issuers", __func__);
     abort();
