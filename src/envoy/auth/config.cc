@@ -75,7 +75,7 @@ void AsyncClientCallbacks::Call(const std::string &uri) {
       .send(std::move(message), *this, timeout_);
 }
 
-bool IssuerInfo::Preload(Json::Object *json) {
+IssuerInfo::IssuerInfo(Json::Object *json) {
   if (json->hasObject("name") && json->hasObject("pubkey")) {
     name_ = json->getString("name");
     auto json_pubkey = json->getObject("pubkey").get();
@@ -88,22 +88,22 @@ bool IssuerInfo::Preload(Json::Object *json) {
         cluster_ = json_pubkey->hasObject("cluster")
                        ? json_pubkey->getString("cluster")
                        : "";
-        return true;
+        return;
       } else if (json_pubkey->hasObject("file")) {
         // Public key is loaded from the specified file.
         std::string path = json_pubkey->getString("file");
         pkey_ = Filesystem::fileReadToEnd(path);
         loaded_ = true;
-        return true;
+        return;
       } else if (json_pubkey->hasObject("value")) {
         // Public key is written in this JSON.
         pkey_ = json_pubkey->getString("value");
         loaded_ = true;
-        return true;
+        return;
       }
     }
   }
-  return false;
+  failed_ = true;
 }
 
 /*

@@ -55,13 +55,20 @@ class AsyncClientCallbacks : public AsyncClient::Callbacks {
 
 // Struct to hold an issuer's information.
 struct IssuerInfo {
-  IssuerInfo(Json::Object *json) : loaded_(false) { failed_ = !Preload(json); }
-  bool failed_;          // True if Preload() or fetching public key failed
-  bool loaded_;          // If the public key is loaded or not
+  // This constructor loads config from JSON. When public key is given via URI,
+  // it just keeps URI and cluster name, and public key will be fetched later,
+  // namely in decodeHeaders() of the filter class.
+  IssuerInfo(Json::Object *json);
+
+  // True if the config loading in the constructor or fetching public key failed
+  bool failed_ = false;
+
+  // True if the public key is loaded
+  bool loaded_ = false;
+
   std::string uri_;      // URI for public key
   std::string cluster_;  // Envoy cluster name for public key
 
-  bool Preload(Json::Object *json);
   std::string name_;       // e.g. "https://accounts.example.com"
   std::string pkey_type_;  // Format of public key. "jwks" or "pem"
   std::string pkey_;       // Public key
