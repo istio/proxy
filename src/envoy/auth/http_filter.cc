@@ -133,57 +133,66 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   }
 }
 
-void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
+/*
+ * TODO: status as enum class
+ */
+std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
   const HeaderEntry* entry = headers.get(kAuthorizationHeaderKey);
-  if (entry) {
-    const HeaderString& value = entry->value();
-    if (strncmp(value.c_str(), kAuthorizationHeaderTokenPrefix.c_str(),
-                kAuthorizationHeaderTokenPrefix.length()) == 0) {
-      std::string jwt(value.c_str() + kAuthorizationHeaderTokenPrefix.length());
+  if (!entry) {
+    return "NO_AUTHORIZATION_HEADER";
+  }
+  const HeaderString& value = entry->value();
+  if (strncmp(value.c_str(), kAuthorizationHeaderTokenPrefix.c_str(),
+              kAuthorizationHeaderTokenPrefix.length()) != 0) {
+    return "AUTHORIZATION_HEADER_BAD_FORMAT";
+  }
+  std::string jwt(value.c_str() + kAuthorizationHeaderTokenPrefix.length());
 
-      for (const auto& iss : config_->issuers_) {
-        if (iss->failed_) {
-          continue;
-        }
+  for (const auto& iss : config_->issuers_) {
+    if (iss->failed_) {
+      continue;
+    }
+
+    /*
+     * TODO: update according to change of JWT lib interface
+     */
+    // verifying and decoding JWT
+    std::unique_ptr<rapidjson::Document> payload;
+    if (iss->pkey_type_ == "pem") {
+      payload = Auth::Jwt::Decode(jwt, iss->pkey_);
+    } else if (iss->pkey_type_ == "jwks") {
+      payload = Auth::Jwt::DecodeWithJwk(jwt, iss->pkey_);
+    }
+
+    if (payload) {
+      // verification succeeded
+      auto payload_str = JsonToString(payload.get());
+
+      // Check the issuer's name.
+      if (payload->HasMember("iss") && (*payload)["iss"].IsString() &&
+          (*payload)["iss"].GetString() == iss->name_) {
+        /*
+         * TODO: check exp claim
+         */
 
         /*
-         * TODO: update according to change of JWT lib interface
+         * TODO: replace appropriately
          */
-        // verifying and decoding JWT
-        std::unique_ptr<rapidjson::Document> payload;
-        if (iss->pkey_type_ == "pem") {
-          payload = Auth::Jwt::Decode(jwt, iss->pkey_);
-        } else if (iss->pkey_type_ == "jwks") {
-          payload = Auth::Jwt::DecodeWithJwk(jwt, iss->pkey_);
-        }
+        headers.addReferenceKey(AuthorizedHeaderKey(), payload_str);
 
-        if (payload) {
-          // verification succeeded
-          auto payload_str = JsonToString(payload.get());
-
-          // Check the issuer's name.
-          if (payload->HasMember("iss") && (*payload)["iss"].IsString() &&
-              (*payload)["iss"].GetString() == iss->name_) {
-            /*
-             * TODO: check exp claim
-             */
-
-            /*
-             * TODO: replace appropriately
-             */
-            headers.addReferenceKey(AuthorizedHeaderKey(), payload_str);
-
-            // Remove JWT from headers.
-            headers.remove(kAuthorizationHeaderKey);
-            goto end;
-          }
-        }
+        // Remove JWT from headers.
+        headers.remove(kAuthorizationHeaderKey);
+        return "OK";
       }
     }
   }
+  return "INVALID_SIGNATURE";
+}
 
-  // verification failed
-  {
+void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
+  std::string status = Verify(headers);
+  if (status != "OK") {
+    // verification failed
     /*
      * TODO: detailed information on message body
      */
@@ -193,7 +202,6 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
     return;
   }
 
-end:
   state_ = Complete;
   if (stopped_) {
     decoder_callbacks_->continueDecoding();

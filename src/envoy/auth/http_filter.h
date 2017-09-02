@@ -58,6 +58,7 @@ class JwtVerificationFilter : public StreamDecoderFilter {
   void ReceivePubkey(HeaderMap& headers, std::string issuer_name, bool succeed,
                      const std::string& pubkey);
   void LoadPubkeys(HeaderMap& headers);
+  std::string Verify(HeaderMap& headers);
   void CompleteVerification(HeaderMap& headers);
 };
 
