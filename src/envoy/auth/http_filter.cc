@@ -127,6 +127,9 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
                                           const std::string& pubkey) {
   ENVOY_LOG(debug, "Called JwtVerificationFilter : {} , issuer = {}", __func__,
             issuer_name);
+  /*
+   * TODO: handle async call timeout
+   */
   auto iss_it = calling_issuers_.find(issuer_name);
   auto& iss = iss_it->second;
   iss->failed_ = !succeed;
@@ -137,6 +140,9 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   calling_issuers_.erase(iss_it);
 
   // if receive all responses, proceed to verification
+  /*
+   * TODO: is it ok?
+   */
   if (calling_issuers_.empty()) {
     CompleteVerification(headers);
   }

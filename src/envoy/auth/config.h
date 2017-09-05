@@ -75,6 +75,9 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   std::string pkey_type_;  // Format of public key. "jwks" or "pem"
   std::string pkey_;       // Public key
 
+  /*
+   * TODO: move to appropriate place
+   */
   std::unique_ptr<AsyncClientCallbacks> async_client_cb_;
 };
 
