@@ -18,11 +18,14 @@
 
 # Function useful for setting up and testing istio on raw VM.
 # Can be sourced from a shell, and each function used independently
+
+
 if [ -z $GOPATH ]; then
   echo "GOPATH env not set, will use ~/go"
   export GOPATH=~/go
   export PATH=$PATH:$GOPATH/bin
 fi
+BASEDIR=$GOPATH/src/istio.io
 
 if [ -z $BRANCH ]; then
   BRANCH=rawvm-demo-0-2-2
@@ -33,30 +36,30 @@ fi
 # Build debian and binaries for all components we'll test on the VM
 # Will checkout or update from master, in the typical layout.
 function istio_build_all() {
-  mkdir -p $GOPATH/src/istio.io
+  mkdir -p $BASEDIR
 
   for sub in pilot istio mixer auth proxy; do
-    if [[ -d $GOPATH/src/istio.io/$sub ]]; then
-      (cd $GOPATH/src/istio.io/$sub; git pull) # stay on whichever branch
+    if [[ -d $BASEDIR/$sub ]]; then
+      (cd $BASEDIR/$sub; git pull) # stay on whichever branch
     else
-      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub -b $BRANCH)
+      (cd $BASEDIR; git clone https://github.com/istio/$sub -b $BRANCH)
     fi
   done
 
   # Note: components may still use old SHA - but the test will build the binaries from master
   # from each component, to make sure we don't test old code.
-  pushd $GOPATH/src/istio.io/pilot
+  pushd $BASEDIR/pilot
   if [ ! -r ~/.kube/config ]; then
     touch platform/kube/config
   fi
   make setup build
   popd
 
-  (cd $GOPATH/src/istio.io/mixer; bazel build ...)
+  (cd $BASEDIR/mixer; bazel build ...)
 
-  (cd $GOPATH/src/istio.io/proxy; bazel build tools/deb/...)
+  (cd $BASEDIR/proxy; bazel build tools/deb/...)
 
-  (cd $GOPATH/src/istio.io/auth; bazel build ...)
+  (cd $BASEDIR/auth; bazel build ...)
 
 }
 
@@ -65,14 +68,14 @@ function istio_build_docker() {
   local TAG=${1:-$(whoami)}
   # Will create a local docker image gcr.io/istio-testing/envoy-debug:USERNAME
 
-  (cd $GOPATH/src/istio.io/proxy; TAG=$TAG ./scripts/release-docker debug)
+  (cd $BASEDIR/proxy; TAG=$TAG ./scripts/release-docker debug)
   gcloud docker -- push gcr.io/istio-testing/envoy-debug:$TAG
 
-  (cd $GOPATH/src/istio.io/pilot; ./bin/push-docker -tag $TAG)
+  (cd $BASEDIR/pilot; ./bin/push-docker -tag $TAG)
 
-  (cd $GOPATH/src/istio.io/auth; ./bin/push-docker.sh -t $TAG -h gcr.io/istio-testing)
+  (cd $BASEDIR/auth; ./bin/push-docker.sh -t $TAG -h gcr.io/istio-testing)
 
-  (cd $GOPATH/src/istio.io/mixer; ./bin/publish-docker-images.sh -h gcr.io/istio-testing -t $TAG)
+  (cd $BASEDIR/mixer; ./bin/publish-docker-images.sh -h gcr.io/istio-testing -t $TAG)
 
 }
 
@@ -88,11 +91,11 @@ function istio_k8s_update() {
 
 # Show the branch and status of each istio repo
 function istio_status() {
-  cd $GOPATH/src/istio.io
+  cd $BASEDIR
 
   for sub in pilot istio mixer auth proxy; do
      echo -e "\n\n$sub\n"
-     (cd $GOPATH/src/istio.io/$sub; git branch; git status)
+     (cd $BASEDIR/$sub; git branch; git status)
   done
 }
 
