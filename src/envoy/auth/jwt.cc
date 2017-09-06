@@ -199,7 +199,7 @@ class EvpPkeyGetter : public WithStatus {
 
 }  // namespace
 
-JwtVerifier::JwtVerifier(const std::string &jwt) {
+Jwt::Jwt(const std::string &jwt) {
   // jwt must have exactly 2 dots
   if (std::count(jwt.begin(), jwt.end(), '.') != 2) {
     UpdateStatus(Status::JWT_BAD_FORMAT);
@@ -274,31 +274,28 @@ JwtVerifier::JwtVerifier(const std::string &jwt) {
   }
 }
 
-bool JwtVerifier::VerifySignature(EVP_PKEY *key, const uint8_t *signature,
-                                  size_t signature_len,
-                                  const uint8_t *signed_data,
-                                  size_t signed_data_len) {
+bool Verifier::VerifySignature(EVP_PKEY *key, const EVP_MD *md,
+                               const uint8_t *signature, size_t signature_len,
+                               const uint8_t *signed_data,
+                               size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
 
-  EVP_DigestVerifyInit(md_ctx.get(), nullptr, md_, nullptr, key);
+  EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
   EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
   return (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) == 1);
 }
 
-bool JwtVerifier::VerifySignature(EVP_PKEY *key, const std::string &signature,
-                                  const std::string &signed_data) {
-  return VerifySignature(key, CastToUChar(signature), signature.length(),
+bool Verifier::VerifySignature(EVP_PKEY *key, const EVP_MD *md,
+                               const std::string &signature,
+                               const std::string &signed_data) {
+  return VerifySignature(key, md, CastToUChar(signature), signature.length(),
                          CastToUChar(signed_data), signed_data.length());
 }
 
-bool JwtVerifier::VerifySignature(EVP_PKEY *key) {
-  std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
-  return VerifySignature(key, signature_, signed_data);
-}
-
-bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
-  // If setup is not successfully done, return false.
-  if (GetStatus() != Status::OK) {
+bool Verifier::Verify(const Jwt &jwt, const Pubkeys &pubkeys) {
+  // If JWT status is not OK, inherits its status and return false.
+  if (jwt.GetStatus() != Status::OK) {
+    UpdateStatus(jwt.GetStatus());
     return false;
   }
 
@@ -308,23 +305,24 @@ bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
     return false;
   }
 
-  std::string kid_jwt = Kid();
+  std::string signed_data = jwt.jwt_split[0] + '.' + jwt.jwt_split[1];
   bool kid_alg_matched = false;
   for (auto &pubkey : pubkeys.keys_) {
     // If kid is specified in JWT, JWK with the same kid is used for
     // verification.
     // If kid is not specified in JWT, try all JWK.
-    if (kid_jwt != "" && pubkey->kid_ != kid_jwt) {
+    if (jwt.kid_ != "" && pubkey->kid_ != jwt.kid_) {
       continue;
     }
 
     // The same alg must be used.
-    if (pubkey->alg_specified_ && pubkey->alg_ != Alg()) {
+    if (pubkey->alg_specified_ && pubkey->alg_ != jwt.alg_) {
       continue;
     }
     kid_alg_matched = true;
 
-    if (VerifySignature(pubkey->key_.get())) {
+    if (VerifySignature(pubkey->key_.get(), jwt.md_, jwt.signature_,
+                        signed_data)) {
       // Verification succeeded.
       return true;
     }
@@ -340,24 +338,20 @@ bool JwtVerifier::Verify(const Pubkeys &pubkeys) {
 }
 
 // Returns the parsed header.
-Json::ObjectSharedPtr JwtVerifier::Header() { return header_; }
+Json::ObjectSharedPtr Jwt::Header() { return header_; }
 
-const std::string &JwtVerifier::HeaderStr() { return header_str_; }
-const std::string &JwtVerifier::HeaderStrBase64Url() {
-  return header_str_base64url_;
-}
-const std::string &JwtVerifier::Alg() { return alg_; }
-const std::string &JwtVerifier::Kid() { return kid_; }
+const std::string &Jwt::HeaderStr() { return header_str_; }
+const std::string &Jwt::HeaderStrBase64Url() { return header_str_base64url_; }
+const std::string &Jwt::Alg() { return alg_; }
+const std::string &Jwt::Kid() { return kid_; }
 
 // Returns payload JSON.
-Json::ObjectSharedPtr JwtVerifier::Payload() { return payload_; }
+Json::ObjectSharedPtr Jwt::Payload() { return payload_; }
 
-const std::string &JwtVerifier::PayloadStr() { return payload_str_; }
-const std::string &JwtVerifier::PayloadStrBase64Url() {
-  return payload_str_base64url_;
-}
-const std::string &JwtVerifier::Iss() { return iss_; }
-int64_t JwtVerifier::Exp() { return exp_; }
+const std::string &Jwt::PayloadStr() { return payload_str_; }
+const std::string &Jwt::PayloadStrBase64Url() { return payload_str_base64url_; }
+const std::string &Jwt::Iss() { return iss_; }
+int64_t Jwt::Exp() { return exp_; }
 
 void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   keys_.clear();
