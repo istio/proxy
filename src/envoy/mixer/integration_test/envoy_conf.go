@@ -33,15 +33,16 @@ const (
 )
 
 type ConfParam struct {
-	ClientPort   int
-	ServerPort   int
-	TcpProxyPort int
-	AdminPort    int
-	MixerServer  string
-	Backend      string
-	ClientConfig string
-	ServerConfig string
-	AccessLog    string
+	ClientPort      int
+	ServerPort      int
+	TcpProxyPort    int
+	AdminPort       int
+	MixerServer     string
+	Backend         string
+	ClientConfig    string
+	ServerConfig    string
+	AccessLog       string
+	MixerRouteFlags string
 }
 
 // A basic config
@@ -58,18 +59,29 @@ const quotaConfig = `
                   "quota_amount": "5"
 `
 
-// A quota config with cache
+// A quota cache is on by default
 const quotaCacheConfig = `
                   "quota_name": "RequestCount"
 `
 
-// A config with check cache keys
-const checkCacheConfig = `
-                  "check_cache_keys": [
-                      "request.host",
-                      "request.path",
-                      "origin.user"
-                  ]
+// A config to disable all check calls for Tcp proxy
+const disableTcpCheckCalls = `
+                  "disable_tcp_check_calls": true
+`
+
+// A config to disable check cache
+const disableCheckCache = `
+                  "disable_check_cache": true
+`
+
+// A config to disable quota cache
+const disableQuotaCache = `
+                  "disable_quota_cache": true
+`
+
+// A config to disable report batch
+const disableReportBatch = `
+                  "disable_report_batch": true
 `
 
 // A config with network fail close policy
@@ -83,6 +95,10 @@ const defaultClientMixerConfig = `
                       "source.uid": "POD11",
                       "source.namespace": "XYZ11"
                    }
+`
+
+const defaultMixerRouteFlags = `
+                   "mixer_control": "on",
 `
 
 // The envoy config template
@@ -110,7 +126,7 @@ const envoyConfTempl = `
                       "prefix": "/",
                       "cluster": "service1",
                       "opaque_config": {
-                        "mixer_control": "on",
+{{.MixerRouteFlags}}
                         "mixer_forward": "off",
                         "mixer_attributes.target.user": "target-user",
                         "mixer_attributes.target.name": "target-name"
@@ -301,9 +317,13 @@ func getConf() ConfParam {
 	}
 }
 
-func CreateEnvoyConf(path string, conf string, stress bool) error {
+func CreateEnvoyConf(path, conf, flags string, stress bool) error {
 	c := getConf()
 	c.ServerConfig = conf
+	c.MixerRouteFlags = defaultMixerRouteFlags
+	if flags != "" {
+		c.MixerRouteFlags = flags
+	}
 	if stress {
 		c.AccessLog = "/dev/null"
 	}

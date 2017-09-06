@@ -15,7 +15,6 @@
 package test
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -25,11 +24,8 @@ import (
 	"google.golang.org/grpc"
 
 	mixerpb "istio.io/api/mixer/v1"
-	"istio.io/mixer/pkg/adapterManager"
-	"istio.io/mixer/pkg/api"
-	"istio.io/mixer/pkg/aspect"
 	"istio.io/mixer/pkg/attribute"
-	"istio.io/mixer/pkg/pool"
+	"istio.io/mixer/test"
 )
 
 type Handler struct {
@@ -51,7 +47,7 @@ func newHandler(stress bool) *Handler {
 	return h
 }
 
-func (h *Handler) run(bag *attribute.MutableBag) rpc.Status {
+func (h *Handler) run(bag attribute.Bag) rpc.Status {
 	if !h.stress {
 		h.ch <- attribute.CopyBag(bag)
 	}
@@ -60,40 +56,40 @@ func (h *Handler) run(bag *attribute.MutableBag) rpc.Status {
 }
 
 type MixerServer struct {
-	adapterManager.AspectDispatcher
+	test.AttributesHandler
 
 	lis net.Listener
 	gs  *grpc.Server
-	gp  *pool.GoroutinePool
-	s   mixerpb.MixerServer
 
 	check  *Handler
 	report *Handler
 	quota  *Handler
 
-	qma          *aspect.QuotaMethodArgs
+	qma          test.QuotaArgs
 	quota_amount int64
 	quota_limit  int64
+
+	check_referenced *mixerpb.ReferencedAttributes
+	quota_referenced *mixerpb.ReferencedAttributes
 }
 
-func (ts *MixerServer) Preprocess(ctx context.Context, bag, output *attribute.MutableBag) rpc.Status {
-	return rpc.Status{Code: int32(rpc.OK)}
+func (ts *MixerServer) Check(bag attribute.Bag, output *attribute.MutableBag) (test.CheckResponse, rpc.Status) {
+	result := test.CheckResponse{
+		ValidDuration: test.DefaultValidDuration,
+		ValidUseCount: test.DefaultValidUseCount,
+		Referenced:    ts.check_referenced,
+	}
+	return result, ts.check.run(bag)
 }
 
-func (ts *MixerServer) Check(ctx context.Context, bag *attribute.MutableBag,
-	output *attribute.MutableBag) rpc.Status {
-	return ts.check.run(bag)
-}
-
-func (ts *MixerServer) Report(ctx context.Context, bag *attribute.MutableBag) rpc.Status {
+func (ts *MixerServer) Report(bag attribute.Bag) rpc.Status {
 	return ts.report.run(bag)
 }
 
-func (ts *MixerServer) Quota(ctx context.Context, bag *attribute.MutableBag,
-	qma *aspect.QuotaMethodArgs) (*aspect.QuotaMethodResp, rpc.Status) {
-	*ts.qma = *qma
+func (ts *MixerServer) Quota(bag attribute.Bag, qma test.QuotaArgs) (test.QuotaResponse, rpc.Status) {
+	ts.qma = qma
 	status := ts.quota.run(bag)
-	qmr := &aspect.QuotaMethodResp{}
+	qmr := test.QuotaResponse{}
 	if status.Code == 0 {
 		if ts.quota_limit == 0 {
 			qmr.Amount = qma.Amount
@@ -110,6 +106,7 @@ func (ts *MixerServer) Quota(ctx context.Context, bag *attribute.MutableBag,
 		}
 		qmr.Expiration = time.Minute
 	}
+	qmr.Referenced = ts.quota_referenced
 	return qmr, status
 }
 
@@ -119,7 +116,7 @@ func NewMixerServer(port uint16, stress bool) (*MixerServer, error) {
 		check:  newHandler(stress),
 		report: newHandler(stress),
 		quota:  newHandler(stress),
-		qma:    &aspect.QuotaMethodArgs{},
+		qma:    test.QuotaArgs{},
 	}
 
 	var err error
@@ -129,16 +126,8 @@ func NewMixerServer(port uint16, stress bool) (*MixerServer, error) {
 		return nil, err
 	}
 
-	var opts []grpc.ServerOption
-	opts = append(opts, grpc.MaxConcurrentStreams(32))
-	opts = append(opts, grpc.MaxMsgSize(1024*1024))
-	s.gs = grpc.NewServer(opts...)
-
-	s.gp = pool.NewGoroutinePool(128, false)
-	s.gp.AddWorkers(32)
-
-	s.s = api.NewGRPCServer(s, s.gp)
-	mixerpb.RegisterMixerServer(s.gs, s.s)
+	attrSrv := test.NewAttributesServer(s)
+	s.gs = test.NewMixerServer(attrSrv)
 	return s, nil
 }
 
