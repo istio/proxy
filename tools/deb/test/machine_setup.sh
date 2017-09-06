@@ -98,6 +98,9 @@ function istioInstallBookinfo() {
   systemctl start mariadb
 
   # Start bookinfo components
+  if [[ -r details.pid ]] ; then
+     kill -9 $(cat details.pid)
+  fi
   ruby details/details.rb 9080 &
   echo $! > details.pid
 
@@ -109,21 +112,43 @@ function istioInstallBookinfo() {
   echo $! > ratings.pid
 }
 
+function istioRestart() {
+    # Start or restart istio
+    systemctl status istio > /dev/null
+    if [[ $? = 0 ]]; then
+      systemctl restart istio
+    else
+      systemctl start istio
+    fi
+}
 
+echo "Initializing VM " $(*)
 
-
-istioNetworkInit
-
-istioInstall
-
-istioInstallTestHelpers
-
-istioInstallBookinfo
-
-# Start or restart istio
-systemctl status istio > /dev/null
-if [[ $? = 0 ]]; then
-  systemctl restart istio
+if [[ ${1:-} == "initNetwork" ]] ; then
+  istioNetworkInit
+elif [[ ${1:-} == "istioInstall" ]] ; then
+  istioInstall
+  istioRestart
+elif [[ ${1:-} == "istioInstallTest" ]] ; then
+  istioInstallTestHelpers
+  istioInstallBookinfo
+elif [[ ${1:-} == "env" ]] ; then
+  echo "Istio functions loaded"
+elif [[ ${1:-} == "help" ]] ; then
+  echo "$0 init: provision an existing VM using the current build"
+  echo "$0 env: load the istio functions"
+  echo "$0 : run all steps"
 else
-  systemctl start istio
+    istioNetworkInit
+
+    istioInstall
+
+    istioInstallTestHelpers
+
+    istioInstallBookinfo
+
+    istioRestart
 fi
+
+
+exit 0
