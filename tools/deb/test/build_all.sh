@@ -16,40 +16,32 @@
 #
 ################################################################################
 
-# For e2e tests, build pilot, mixer, istio from head.
-
 # Build debian and binaries for all components we'll test on the VM
-# Will checkout mixer, pilot and proxy in the expected locations/
+# Will checkout or update from master, in the typical layout.
 function build_all() {
   mkdir -p $GOPATH/src/istio.io
 
+  for sub in pilot istio mixer auth proxy; do
+    if [[ -d $GOPATH/src/istio.io/$sub ]]; then
+      (cd $GOPATH/src/istio.io/$sub; git pull origin master)
+    else
+      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub)
+    fi
+  done
 
-  if [[ -d $GOPATH/src/istio.io/pilot ]]; then
-    (cd $GOPATH/src/istio.io/pilot; git pull origin master)
-  else
-    #(cd $GOPATH/src/istio.io; git clone https://github.com/istio/pilot)
-    (cd $GOPATH/src/istio.io; git clone https://github.com/costinm/pilot -b deb)
-  fi
-
-  if [[ -d $GOPATH/src/istio.io/istio ]]; then
-    (cd $GOPATH/src/istio.io/istio; git pull origin master)
-  else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/costinm/istio)
-  fi
-
-  if [[ -d $GOPATH/src/istio.io/mixer ]]; then
-    (cd $GOPATH/src/istio.io/mixer; git pull origin master)
-  else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/mixer)
-  fi
-
+  # Note: components may still use old SHA - but the test will build the binaries from master
+  # from each component, to make sure we don't test old code.
   pushd $GOPATH/src/istio.io/pilot
   bazel build ...
   ./bin/init.sh
   popd
 
   (cd $GOPATH/src/istio.io/mixer; bazel build ...)
-  bazel build tools/deb/...
+
+  (cd $GOPATH/src/istio.io/proxy; bazel build tools/deb/...)
+
+  (cd $GOPATH/src/istio.io/auth; bazel build ...)
+
 
 }
 
