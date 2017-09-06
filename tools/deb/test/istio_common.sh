@@ -20,7 +20,7 @@
 # Can be sourced from a shell, and each function used independently
 if [ -z $GOPATH ]; then
   echo "GOPATH env not set, will use ~/go"
-  GOPATH=~/go
+  export GOPATH=~/go
 fi
 
 if [ -z $BRANCH ]; then
@@ -45,8 +45,7 @@ function istio_build_all() {
   # Note: components may still use old SHA - but the test will build the binaries from master
   # from each component, to make sure we don't test old code.
   pushd $GOPATH/src/istio.io/pilot
-  make setup
-  make build
+  make setup build
   popd
 
   (cd $GOPATH/src/istio.io/mixer; bazel build ...)
