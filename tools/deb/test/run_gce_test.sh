@@ -19,20 +19,20 @@
 # run tests.
 
 # To run the script, needs to override the following env with the current user.
-export PROJECT=${PROJECT:-costin-istio}
+export PROJECT=${PROJECT:-$(whoami)-raw}
 
-export ISTIO_ZONE=${ISTIO_ZONE:-us-west1-c}
+export ISTIO_ZONE=${ISTIO_ZONE:-us-central1-a}
 
 # Name of the k8s cluster running istio control plane. Used to find the service CIDR
-K8SCLUSTER=${K8SCLUSTER:-istio-auth}
+K8SCLUSTER=${K8SCLUSTER:-raw}
 
 TESTVM=${TESTVM:-testvm}
 
 # Assuming the script is started from the proxy dir, under istio.io
-ISTIO_IO=${ISTIO_IO:-$(pwd)/..}
+ISTIO_IO=${ISTIO_IO:-${GOPATH}/src/istio.io}
 PROXY_DIR=${ISTIO_IO}/proxy
 
-# Used by functions that setup istio
+# Used by functions that setup istio. Override if using a different hub in the build scripts.
 TAG=${TAG:-$(whoami)}
 HUB=${ISTIO_HUB:-gcr.io/istio-testing}
 
@@ -40,7 +40,6 @@ HUB=${ISTIO_HUB:-gcr.io/istio-testing}
 # TODO: extend the script to use Vagrant+minikube or other ways to create the VM. The main
 # issue is that we need the k8s and VM to be on same VPC - unless we run kubeapiserver+etcd
 # standalone.
-set -x
 
 # Run a command in a VM.
 function istioRun() {
@@ -92,6 +91,9 @@ function istioVMInit() {
      --boot-disk-type "pd-standard" \
      --boot-disk-device-name "debtest"
 
+  # Allow access to the VM on port 80 and 9411 (where we run services)
+  gcloud compute  --project $PROJECT firewall-rules create allow-external  --allow tcp:22,tcp:80,tcp:443,tcp:9411,udp:5228,icmp  --source-ranges 0.0.0.0/0
+
 
   # Wait for machine to start up ssh
   for i in {1..10}
@@ -104,9 +106,6 @@ function istioVMInit() {
         break
     fi
   done
-
-  # Allow access to the VM on port 80 and 9411 (where we run services)
-  gcloud compute  --project $PROJECT firewall-rules create allow-external  --allow tcp:22,tcp:80,tcp:443,tcp:9411,udp:5228,icmp  --source-ranges 0.0.0.0/0
 
 }
 
@@ -406,10 +405,9 @@ EOF
 }
 
 
-function istioProvisionTestWorker() {
+function istioProvisionVM() {
  NAME=${1:-$TESTVM}
 
- istioPrepareCluster
  local SA=${2:-istio.default}
 
   kubectl get secret $SA -o jsonpath='{.data.cert-chain\.pem}' |base64 -d  > cert-chain.pem
@@ -489,23 +487,31 @@ function tearDown() {
   istioVMDelete ${TESTVM}
 }
 
-if [[ ${1:-} == "init" ]] ; then
-  istioProvisionTestWorker ${TESTVM}
-elif [[ ${1:-} == "env" ]] ; then
-  echo "test environment variables enabled"
+if [[ ${1:-} == "setup" ]] ; then
+  istioProvisionVM ${TESTVM}
+elif [[ ${1:-} == "initVM" ]] ; then
+  istioVMInit ${TESTVM}
+elif [[ ${1:-} == "build" ]] ; then
+  (cd $ISTIO_IO/proxy; tools/deb/test/build_all.sh)
+elif [[ ${1:-} == "prepareCluster" ]] ; then
+  istioPrepareCluster
 elif [[ ${1:-} == "test" ]] ; then
   setUp
   test
 elif [[ ${1:-} == "help" ]] ; then
-  echo "$0 init: provision an existing VM using the current build"
+  echo "$0 prepareCluster: provision an existing VM using the current build"
+  echo "$0 initVM: create a test VM"
+  echo "$0 setup: provision an existing VM using the current build"
   echo "$0 test: run tests"
   echo "$0 : create or reset VM, provision and run tests"
+elif [[ ${1:-} == "env" ]] ; then
+  echo "test environment variables enabled"
 else
   # By default reset or create the VM, and do all steps. The VM will be left around until
   # next run, for debugging or other tests - next run will reset it (faster than create).
-  tools/deb/test/build_all.sh
   istioVMInit ${TESTVM}
-  istioProvisionTestWorker ${TESTVM}
+  istioPrepareCluster
+  istioProvisionVM ${TESTVM}
   setUp
   test
 fi
