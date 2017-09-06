@@ -39,7 +39,7 @@
                   "issuers": [
                     {
                       "name": "https://example.com",
-                      "audience": [
+                      "audiences": [
                         "example_service"
                       ],
                       "pubkey": {

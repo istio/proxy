@@ -101,7 +101,7 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
   // Check "audience". It will be an empty array if the key "audience" does not
   // exist
   try {
-    audiences_ = json->getStringArray("audience", true);
+    audiences_ = json->getStringArray("audiences", true);
   } catch (...) {
     ENVOY_LOG(debug, "IssuerInfo [name = {}]: Bad audiences", name_);
     failed_ = true;
