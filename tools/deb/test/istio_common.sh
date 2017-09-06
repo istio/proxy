@@ -21,6 +21,7 @@
 if [ -z $GOPATH ]; then
   echo "GOPATH env not set, will use ~/go"
   export GOPATH=~/go
+  export PATH=$PATH:$GOPATH/bin
 fi
 
 if [ -z $BRANCH ]; then
