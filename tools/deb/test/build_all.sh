@@ -28,42 +28,31 @@ if [ -z $BRANCH ]; then
 fi
 
 # Build debian and binaries for all components we'll test on the VM
-# Will checkout mixer, pilot and proxy in the expected locations/
+# Will checkout or update BRANCH, in the typical layout.
 function build_all() {
   mkdir -p $GOPATH/src/istio.io
 
+  for sub in pilot istio mixer auth proxy; do
+   if [[ -d $GOPATH/src/istio.io/$sub ]]; then
+      (cd $GOPATH/src/istio.io/$sub; git pull) # stay on whichever branch
+    else
+      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub -b $BRANCH)
+    fi
+  done
 
-  if [[ -d $GOPATH/src/istio.io/pilot ]]; then
-    (cd $GOPATH/src/istio.io/pilot; git pull)
-  else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/pilot -b $BRANCH)
-  fi
-
-  if [[ -d $GOPATH/src/istio.io/istio ]]; then
-    (cd $GOPATH/src/istio.io/istio; git pull)
-  else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/istio -b $BRANCH)
-  fi
-
-  if [[ -d $GOPATH/src/istio.io/mixer ]]; then
-    (cd $GOPATH/src/istio.io/mixer; git pull)
-  else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/mixer -b $BRANCH)
-  fi
-
-  if [[ -d $GOPATH/src/istio.io/proxy ]]; then
-    (cd $GOPATH/src/istio.io/proxy; git pull)
-  else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/proxy -b $BRANCH)
-  fi
-
+  # Note: components may still use old SHA - but the test will build the binaries from master
+  # from each component, to make sure we don't test old code.
   pushd $GOPATH/src/istio.io/pilot
   bazel build ...
   ./bin/init.sh
   popd
 
   (cd $GOPATH/src/istio.io/mixer; bazel build ...)
-  bazel build tools/deb/...
+
+  (cd $GOPATH/src/istio.io/proxy; bazel build tools/deb/...)
+
+  (cd $GOPATH/src/istio.io/auth; bazel build ...)
+
 
 }
 
