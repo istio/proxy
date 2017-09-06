@@ -113,7 +113,7 @@ function istioVMInit() {
 
 function istioVMDelete() {
   local NAME=${1:-$TESTVM}
-  gcloud compute -q  instances delete $NAME --zone $ISTIO_ZONE --project $PROJECT 
+  gcloud compute -q  instances delete $NAME --zone $ISTIO_ZONE --project $PROJECT
 }
 
 # Helper to get the external IP of a raw VM
