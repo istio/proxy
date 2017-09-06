@@ -34,9 +34,6 @@ namespace Http {
 namespace Auth {
 
 void AsyncClientCallbacks::onSuccess(MessagePtr &&response) {
-  if (cancelled_) {
-    return;
-  }
   std::string status = response->headers().Status()->value().c_str();
   if (status == "200") {
     ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: success",
@@ -59,9 +56,6 @@ void AsyncClientCallbacks::onSuccess(MessagePtr &&response) {
   }
 }
 void AsyncClientCallbacks::onFailure(AsyncClient::FailureReason) {
-  if (cancelled_) {
-    return;
-  }
   ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: failed",
             cluster_->name());
   cb_(false, "");
@@ -89,9 +83,11 @@ void AsyncClientCallbacks::Call(const std::string &uri) {
   message->headers().insertPath().value(path);
   message->headers().insertHost().value(host);
 
-  cm_.httpAsyncClientForCluster(cluster_->name())
-      .send(std::move(message), *this, timeout_);
+  request_ = cm_.httpAsyncClientForCluster(cluster_->name())
+                 .send(std::move(message), *this, timeout_);
 }
+
+void AsyncClientCallbacks::Cancel() { request_->cancel(); }
 
 IssuerInfo::IssuerInfo(Json::Object *json) {
   ENVOY_LOG(debug, "IssuerInfo: {}", __func__);

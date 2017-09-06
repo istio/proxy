@@ -58,10 +58,11 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   std::function<void(void)> cancel_verification_;
 
   // Key: name of issuer the public key of which is being fetched
-  // Value: (IssuerInfo object with that name, function to cancel the request
-  // for public key)
-  std::map<std::string, std::pair<std::shared_ptr<Auth::IssuerInfo>,
-                                  std::function<void(void)> > >
+  // Value: (IssuerInfo object with that name, AsyncClientCallbacks object to
+  // make the request for public key)
+  std::map<std::string,
+           std::pair<std::shared_ptr<Auth::IssuerInfo>,
+                     std::unique_ptr<Auth::AsyncClientCallbacks> > >
       calling_issuers_;
 
   void ReceivePubkey(HeaderMap& headers, std::string issuer_name, bool succeed,

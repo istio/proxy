@@ -38,25 +38,23 @@ class AsyncClientCallbacks : public AsyncClient::Callbacks,
  public:
   AsyncClientCallbacks(Upstream::ClusterManager &cm, const std::string &cluster,
                        std::function<void(bool, const std::string &)> cb)
-      : cancel_([this]() { cancelled_ = true; }),
-        cm_(cm),
+      : cm_(cm),
         cluster_(cm.get(cluster)->info()),
         timeout_(Optional<std::chrono::milliseconds>()),
-        cb_(cb),
-        cancelled_(false) {}
+        cb_(cb) {}
+  // AsyncClient::Callbacks
   void onSuccess(MessagePtr &&response);
-
   void onFailure(AsyncClient::FailureReason);
 
   void Call(const std::string &uri);
-  std::function<void(void)> cancel_;
+  void Cancel();
 
  private:
   Upstream::ClusterManager &cm_;
   Upstream::ClusterInfoConstSharedPtr cluster_;
   Optional<std::chrono::milliseconds> timeout_;
   std::function<void(bool, const std::string &)> cb_;
-  bool cancelled_;
+  AsyncClient::Request *request_;
 };
 
 // Struct to hold an issuer's information.
@@ -78,11 +76,6 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   std::string name_;       // e.g. "https://accounts.example.com"
   std::string pkey_type_;  // Format of public key. "jwks" or "pem"
   std::string pkey_;       // Public key
-
-  /*
-   * TODO: move to appropriate place
-   */
-  std::unique_ptr<AsyncClientCallbacks> async_client_cb_;
 };
 
 // A config for Jwt auth filter
