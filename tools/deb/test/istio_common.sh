@@ -68,7 +68,8 @@ function istio_build_docker() {
   local TAG=${1:-$(whoami)}
   # Will create a local docker image gcr.io/istio-testing/envoy-debug:USERNAME
 
-  (cd $BASEDIR/proxy; TAG=$TAG ./scripts/release-docker debug)
+  echo "Will build with tag $TAG"
+  (cd $BASEDIR/proxy; TAG=$TAG ./script/release-docker debug)
   gcloud docker -- push gcr.io/istio-testing/envoy-debug:$TAG
 
   (cd $BASEDIR/pilot; ./bin/push-docker -tag $TAG)
