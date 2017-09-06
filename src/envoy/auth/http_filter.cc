@@ -176,6 +176,9 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
 
     if (jwt.Verify(*iss->pkey_)) {
       // verification succeeded
+      /*
+       * TODO: change what to add according to config_->user_info_type_
+       */
       headers.addReferenceKey(AuthorizedHeaderKey(), jwt.PayloadStr());
 
       // Remove JWT from headers.
