@@ -233,6 +233,17 @@ JwtVerifier::JwtVerifier(const std::string &jwt) {
     return;
   }
 
+  // Prepare EVP_MD object.
+  if (alg_ == "RS256") {
+    // may use
+    // EVP_sha384() if alg == "RS384" and
+    // EVP_sha512() if alg == "RS512"
+    md_ = EVP_sha256();
+  } else {
+    UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
+    return;
+  }
+
   // Header may contain "kid", which should be a string if exists.
   try {
     kid_ = header_->getString("kid", "");
@@ -263,44 +274,26 @@ JwtVerifier::JwtVerifier(const std::string &jwt) {
   }
 }
 
-const EVP_MD *JwtVerifier::EvpMdFromAlg(const std::string &alg) {
-  // may use
-  // EVP_sha384() if alg == "RS384" and
-  // EVP_sha512() if alg == "RS512"
-  if (alg == "RS256") {
-    return EVP_sha256();
-  } else {
-    return nullptr;
-  }
-}
-
-bool JwtVerifier::VerifySignature(EVP_PKEY *key, const std::string &alg,
-                                  const uint8_t *signature,
+bool JwtVerifier::VerifySignature(EVP_PKEY *key, const uint8_t *signature,
                                   size_t signature_len,
                                   const uint8_t *signed_data,
                                   size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
-  const EVP_MD *md = EvpMdFromAlg(alg);
 
-  if (!md) {
-    UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
-    return false;
-  }
-  EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
+  EVP_DigestVerifyInit(md_ctx.get(), nullptr, md_, nullptr, key);
   EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
   return (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) == 1);
 }
 
-bool JwtVerifier::VerifySignature(EVP_PKEY *key, const std::string &alg,
-                                  const std::string &signature,
+bool JwtVerifier::VerifySignature(EVP_PKEY *key, const std::string &signature,
                                   const std::string &signed_data) {
-  return VerifySignature(key, alg, CastToUChar(signature), signature.length(),
+  return VerifySignature(key, CastToUChar(signature), signature.length(),
                          CastToUChar(signed_data), signed_data.length());
 }
 
 bool JwtVerifier::VerifySignature(EVP_PKEY *key) {
   std::string signed_data = jwt_split[0] + '.' + jwt_split[1];
-  return VerifySignature(key, alg_, signature_, signed_data);
+  return VerifySignature(key, signature_, signed_data);
 }
 
 bool JwtVerifier::Verify(const Pubkeys &pubkeys) {

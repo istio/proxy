@@ -169,18 +169,16 @@ class JwtVerifier : public WithStatus {
   int64_t Exp();
 
  private:
-  const EVP_MD* EvpMdFromAlg(const std::string& alg);
+  const EVP_MD* md_;
 
   // Functions to verify with single public key.
   // (Note: Pubkeys object passed to Verify() may contains multiple public keys)
-  // When verification fails, UpdateStatus(Status::JWT_INVALID_SIGNATURE) is NOT
-  // called.
+  // When verification fails, UpdateStatus() is NOT called.
   bool VerifySignature(EVP_PKEY* key);
-  bool VerifySignature(EVP_PKEY* key, const std::string& alg,
-                       const uint8_t* signature, size_t signature_len,
-                       const uint8_t* signed_data, size_t signed_data_len);
-  bool VerifySignature(EVP_PKEY* key, const std::string& alg,
-                       const std::string& signature,
+  bool VerifySignature(EVP_PKEY* key, const uint8_t* signature,
+                       size_t signature_len, const uint8_t* signed_data,
+                       size_t signed_data_len);
+  bool VerifySignature(EVP_PKEY* key, const std::string& signature,
                        const std::string& signed_data);
 
   std::vector<std::string> jwt_split;
