@@ -152,8 +152,7 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
               kAuthorizationHeaderTokenPrefix.length()) != 0) {
     return "AUTHORIZATION_HEADER_BAD_FORMAT";
   }
-  Auth::JwtVerifier jwt(value.c_str() +
-                        kAuthorizationHeaderTokenPrefix.length());
+  Auth::Jwt jwt(value.c_str() + kAuthorizationHeaderTokenPrefix.length());
   if (jwt.GetStatus() != Auth::Status::OK) {
     // Invalid JWT
     return Auth::StatusToString(jwt.GetStatus());
@@ -162,6 +161,8 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
    * TODO: check exp claim
    */
 
+  bool iss_aud_matched = false;
+  Auth::Verifier v;
   for (const auto& iss : config_->issuers_) {
     if (iss->failed_ || iss->pkey_->GetStatus() != Auth::Status::OK) {
       continue;
@@ -174,7 +175,8 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
      * TODO: check aud claim
      */
 
-    if (jwt.Verify(*iss->pkey_)) {
+    iss_aud_matched = true;
+    if (v.Verify(jwt, *iss->pkey_)) {
       // verification succeeded
       /*
        * TODO: change what to add according to config_->user_info_type_
@@ -186,7 +188,8 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
       return "OK";
     }
   }
-  return "INVALID_SIGNATURE";
+  return iss_aud_matched ? Auth::StatusToString(v.GetStatus())
+                         : "ISS_AUD_UNMATCH";
 }
 
 void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
