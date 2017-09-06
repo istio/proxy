@@ -19,15 +19,14 @@
 # run tests.
 
 # To run the script, needs to override the following env with the current user.
-export PROJECT=${PROJECT:-costin-istio}
+export PROJECT=${PROJECT:-istio-demo-0-2}
 
 # Must have iam.serviceAccountActor or owner permissions to the project. Use IAM settings.
 export ACCOUNT=${ACCOUNT:-291514510799-compute@developer.gserviceaccount.com}
-export ISTIO_REGION=${ISTIO_REGION:-us-west1}
-export ISTIO_ZONE=${ISTIO_ZONE:-us-west1-c}
+export ISTIO_ZONE=${ISTIO_ZONE:-us-west1-b}
 
 # Name of the k8s cluster running istio control plane. Used to find the service CIDR
-K8SCLUSTER=${K8SCLUSTER:-istio-auth}
+K8SCLUSTER=${K8SCLUSTER:-demo-1}
 
 TESTVM=${TESTVM:-testvm}
 
@@ -82,7 +81,6 @@ function istioVMInit() {
      --machine-type "n1-standard-1" \
      --subnet default \
      --can-ip-forward \
-     --service-account $ACCOUNT \
      --scopes "https://www.googleapis.com/auth/cloud-platform" \
      --tags "http-server","https-server" \
      --image $IMAGE \
@@ -360,6 +358,8 @@ if [[ ${1:-} == "init" ]] ; then
 elif [[ ${1:-} == "test" ]] ; then
   setUp
   test
+elif [[ ${1:-} == "createvm" ]] ; then
+  istioVMInit ${TESTVM}
 elif [[ ${1:-} == "help" ]] ; then
   echo "$0 init: provision an existing VM using the current build"
   echo "$0 test: run tests"
@@ -373,4 +373,3 @@ else
   setUp
   test
 fi
-

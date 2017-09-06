@@ -22,6 +22,11 @@ if [ -z $GOPATH ]; then
   GOPATH=~/go
 fi
 
+if [ -z $BRANCH ]; then
+  BRANCH=rawvm-demo-0-2-2
+  echo "BRANCH not set will use $BRANCH for new clone, unchanged for pull"
+fi
+
 # Build debian and binaries for all components we'll test on the VM
 # Will checkout mixer, pilot and proxy in the expected locations/
 function build_all() {
@@ -29,21 +34,27 @@ function build_all() {
 
 
   if [[ -d $GOPATH/src/istio.io/pilot ]]; then
-    (cd $GOPATH/src/istio.io/pilot; git pull origin master)
+    (cd $GOPATH/src/istio.io/pilot; git pull)
   else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/pilot)
+    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/pilot -b $BRANCH)
   fi
 
   if [[ -d $GOPATH/src/istio.io/istio ]]; then
-    (cd $GOPATH/src/istio.io/istio; git pull origin master)
+    (cd $GOPATH/src/istio.io/istio; git pull)
   else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/istio)
+    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/istio -b $BRANCH)
   fi
 
   if [[ -d $GOPATH/src/istio.io/mixer ]]; then
-    (cd $GOPATH/src/istio.io/mixer; git pull origin master)
+    (cd $GOPATH/src/istio.io/mixer; git pull)
   else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/mixer)
+    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/mixer -b $BRANCH)
+  fi
+
+  if [[ -d $GOPATH/src/istio.io/proxy ]]; then
+    (cd $GOPATH/src/istio.io/proxy; git pull)
+  else
+    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/proxy -b $BRANCH)
   fi
 
   pushd $GOPATH/src/istio.io/pilot
