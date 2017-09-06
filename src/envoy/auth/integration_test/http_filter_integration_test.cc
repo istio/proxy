@@ -56,7 +56,7 @@ class JwtVerificationFilterIntegrationTest
 
   Http::TestHeaderMapImpl createHeaders(const std::string& token) {
     auto headers = BaseRequestHeaders();
-    headers.addViaCopy("Authorization", "Bearer " + token);
+    headers.addCopy("Authorization", "Bearer " + token);
     return headers;
   }
 
@@ -222,10 +222,10 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Success1) {
       "EX_pmQAHA5ZjPVCAw";
 
   auto expected_headers = BaseRequestHeaders();
-  expected_headers.addViaCopy("Istio-Auth-UserInfo",
-                              "{\"iss\":\"https://"
-                              "example.com\",\"sub\":\"test@example.com\","
-                              "\"exp\":1501281058}");
+  expected_headers.addCopy("Istio-Auth-UserInfo",
+                           "{\"iss\":\"https://"
+                           "example.com\",\"sub\":\"test@example.com\","
+                           "\"exp\":1501281058}");
 
   TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(),
                    kPublicKey, true, expected_headers, "");

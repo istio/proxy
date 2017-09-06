@@ -73,9 +73,9 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   std::string uri_;      // URI for public key
   std::string cluster_;  // Envoy cluster name for public key
 
-  std::string name_;       // e.g. "https://accounts.example.com"
-  std::string pkey_type_;  // Format of public key. "jwks" or "pem"
-  std::string pkey_;       // Public key
+  std::string name_;               // e.g. "https://accounts.example.com"
+  std::string pkey_type_;          // Format of public key. "jwks" or "pem"
+  std::unique_ptr<Pubkeys> pkey_;  // Public key
 };
 
 // A config for Jwt auth filter

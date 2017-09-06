@@ -22,24 +22,10 @@
 #include "envoy/http/async_client.h"
 #include "server/config/network/http_connection_manager.h"
 
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-
 #include <string>
 
 namespace Envoy {
 namespace Http {
-
-namespace {
-
-std::string JsonToString(rapidjson::Document* d) {
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  d->Accept(writer);
-  return buffer.GetString();
-}
-
-}  // namespace
 
 const LowerCaseString& JwtVerificationFilter::AuthorizedHeaderKey() {
   static LowerCaseString* key = new LowerCaseString("Istio-Auth-UserInfo");
@@ -138,7 +124,11 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   auto& iss = iss_it->second.first;
   iss->failed_ = !succeed;
   if (succeed) {
-    iss->pkey_ = pubkey;
+    if (iss->pkey_type_ == "pem") {
+      iss->pkey_ = Auth::Pubkeys::CreateFromPem(pubkey);
+    } else if (iss->pkey_type_ == "jwks") {
+      iss->pkey_ = Auth::Pubkeys::CreateFromJwks(pubkey);
+    }
   }
   iss->loaded_ = true;
   calling_issuers_.erase(iss_it);
@@ -162,44 +152,35 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
               kAuthorizationHeaderTokenPrefix.length()) != 0) {
     return "AUTHORIZATION_HEADER_BAD_FORMAT";
   }
-  std::string jwt(value.c_str() + kAuthorizationHeaderTokenPrefix.length());
+  Auth::JwtVerifier jwt(value.c_str() +
+                        kAuthorizationHeaderTokenPrefix.length());
+  if (jwt.GetStatus() != Auth::Status::OK) {
+    // Invalid JWT
+    return Auth::StatusToString(jwt.GetStatus());
+  }
+  /*
+   * TODO: check exp claim
+   */
 
   for (const auto& iss : config_->issuers_) {
-    if (iss->failed_) {
+    if (iss->failed_ || iss->pkey_->GetStatus() != Auth::Status::OK) {
       continue;
     }
-
-    /*
-     * TODO: update according to change of JWT lib interface
-     */
-    // verifying and decoding JWT
-    std::unique_ptr<rapidjson::Document> payload;
-    if (iss->pkey_type_ == "pem") {
-      payload = Auth::Jwt::Decode(jwt, iss->pkey_);
-    } else if (iss->pkey_type_ == "jwks") {
-      payload = Auth::Jwt::DecodeWithJwk(jwt, iss->pkey_);
+    // Check "iss" claim.
+    if (jwt.Iss() != iss->name_) {
+      continue;
     }
+    /*
+     * TODO: check aud claim
+     */
 
-    if (payload) {
+    if (jwt.Verify(*iss->pkey_)) {
       // verification succeeded
-      auto payload_str = JsonToString(payload.get());
+      headers.addReferenceKey(AuthorizedHeaderKey(), jwt.PayloadStr());
 
-      // Check the issuer's name.
-      if (payload->HasMember("iss") && (*payload)["iss"].IsString() &&
-          (*payload)["iss"].GetString() == iss->name_) {
-        /*
-         * TODO: check exp claim
-         */
-
-        /*
-         * TODO: replace appropriately
-         */
-        headers.addReferenceKey(AuthorizedHeaderKey(), payload_str);
-
-        // Remove JWT from headers.
-        headers.remove(kAuthorizationHeaderKey);
-        return "OK";
-      }
+      // Remove JWT from headers.
+      headers.remove(kAuthorizationHeaderKey);
+      return "OK";
     }
   }
   return "INVALID_SIGNATURE";
