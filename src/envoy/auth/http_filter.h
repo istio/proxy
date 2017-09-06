@@ -52,11 +52,18 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   StreamDecoderFilterCallbacks* decoder_callbacks_;
   std::shared_ptr<Auth::JwtAuthConfig> config_;
 
-  enum State { Calling, Complete };
+  enum State { Calling, Responded, Complete };
   State state_;
   bool stopped_;
+  std::function<void(void)> cancel_verification_;
 
-  std::map<std::string, std::shared_ptr<Auth::IssuerInfo> > calling_issuers_;
+  // Key: name of issuer the public key of which is being fetched
+  // Value: (IssuerInfo object with that name, function to cancel the request
+  // for public key)
+  std::map<std::string, std::pair<std::shared_ptr<Auth::IssuerInfo>,
+                                  std::function<void(void)> > >
+      calling_issuers_;
+
   void ReceivePubkey(HeaderMap& headers, std::string issuer_name, bool succeed,
                      const std::string& pubkey);
   void LoadPubkeys(HeaderMap& headers);

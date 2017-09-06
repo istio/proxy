@@ -34,6 +34,9 @@ namespace Http {
 namespace Auth {
 
 void AsyncClientCallbacks::onSuccess(MessagePtr &&response) {
+  if (cancelled_) {
+    return;
+  }
   std::string status = response->headers().Status()->value().c_str();
   if (status == "200") {
     ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: success",
@@ -56,6 +59,9 @@ void AsyncClientCallbacks::onSuccess(MessagePtr &&response) {
   }
 }
 void AsyncClientCallbacks::onFailure(AsyncClient::FailureReason) {
+  if (cancelled_) {
+    return;
+  }
   ENVOY_LOG(debug, "AsyncClientCallbacks [cluster = {}]: failed",
             cluster_->name());
   cb_(false, "");

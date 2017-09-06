@@ -38,21 +38,25 @@ class AsyncClientCallbacks : public AsyncClient::Callbacks,
  public:
   AsyncClientCallbacks(Upstream::ClusterManager &cm, const std::string &cluster,
                        std::function<void(bool, const std::string &)> cb)
-      : cm_(cm),
+      : cancel_([this]() { cancelled_ = true; }),
+        cm_(cm),
         cluster_(cm.get(cluster)->info()),
         timeout_(Optional<std::chrono::milliseconds>()),
-        cb_(cb) {}
+        cb_(cb),
+        cancelled_(false) {}
   void onSuccess(MessagePtr &&response);
 
   void onFailure(AsyncClient::FailureReason);
 
   void Call(const std::string &uri);
+  std::function<void(void)> cancel_;
 
  private:
   Upstream::ClusterManager &cm_;
   Upstream::ClusterInfoConstSharedPtr cluster_;
   Optional<std::chrono::milliseconds> timeout_;
   std::function<void(bool, const std::string &)> cb_;
+  bool cancelled_;
 };
 
 // Struct to hold an issuer's information.

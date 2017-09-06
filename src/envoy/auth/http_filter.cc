@@ -54,6 +54,11 @@ JwtVerificationFilter::~JwtVerificationFilter() {}
 
 void JwtVerificationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
+  state_ = Responded;
+  // Cancelling all request for public keys
+  for (const auto& iss_kv : calling_issuers_) {
+    iss_kv.second.second();
+  }
 }
 
 FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
@@ -69,7 +74,7 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
   // list up issuers whose public key should be fetched
   for (const auto& iss : config_->issuers_) {
     if (!iss->failed_ && !iss->loaded_) {
-      calling_issuers_[iss->name_] = iss;
+      calling_issuers_[iss->name_] = std::make_pair(iss, nullptr);
     }
   }
   // send HTTP requests to fetch public keys
@@ -85,6 +90,7 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
                 this->ReceivePubkey(headers, iss->name_, succeed, pubkey);
               }));
 
+      calling_issuers_[iss->name_].second = iss->async_client_cb_->cancel_;
       iss->async_client_cb_->Call(iss->uri_);
     }
   } else {
@@ -131,7 +137,7 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
    * TODO: handle async call timeout
    */
   auto iss_it = calling_issuers_.find(issuer_name);
-  auto& iss = iss_it->second;
+  auto& iss = iss_it->second.first;
   iss->failed_ = !succeed;
   if (succeed) {
     iss->pkey_ = pubkey;
@@ -206,6 +212,10 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
 
 void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
   ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
+  if (state_ == Responded) {
+    // This stream has been reset, abort the callback.
+    return;
+  }
   std::string status = Verify(headers);
   ENVOY_LOG(debug, "Verification status = {}", status);
   if (status != "OK") {
