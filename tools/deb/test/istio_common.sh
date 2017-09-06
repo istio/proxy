@@ -46,6 +46,9 @@ function istio_build_all() {
   # Note: components may still use old SHA - but the test will build the binaries from master
   # from each component, to make sure we don't test old code.
   pushd $GOPATH/src/istio.io/pilot
+  if [ ! -r ~/.kube/config ]; then
+    touch platform/kube/config
+  fi
   make setup build
   popd
 
