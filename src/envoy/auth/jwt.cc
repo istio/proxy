@@ -15,6 +15,7 @@
 
 #include "jwt.h"
 
+#include "common/common/assert.h"
 #include "common/common/base64.h"
 #include "common/common/utility.h"
 #include "common/json/json_loader.h"
@@ -377,12 +378,6 @@ void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   }
 }
 
-std::unique_ptr<Pubkeys> Pubkeys::CreateFromPem(const std::string &pkey_pem) {
-  std::unique_ptr<Pubkeys> keys(new Pubkeys());
-  keys->CreateFromPemCore(pkey_pem);
-  return keys;
-}
-
 void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
   keys_.clear();
 
@@ -427,22 +422,20 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
   }
 }
 
-std::unique_ptr<Pubkeys> Pubkeys::CreateFromJwks(const std::string &pkey_jwks) {
-  std::unique_ptr<Pubkeys> keys(new Pubkeys());
-  keys->CreateFromJwksCore(pkey_jwks);
-  return keys;
-}
-
 std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,
                                              Type type) {
+  std::unique_ptr<Pubkeys> keys(new Pubkeys());
   switch (type) {
     case Type::JWKS:
-      return CreateFromJwks(pkey);
+      keys->CreateFromJwksCore(pkey);
+      break;
     case Type::PEM:
-      return CreateFromPem(pkey);
+      keys->CreateFromPemCore(pkey);
+      break;
     default:
-      abort();
+      PANIC("can not reach here");
   }
+  return keys;
 }
 
 }  // Auth

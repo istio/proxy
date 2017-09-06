@@ -209,8 +209,6 @@ class Pubkeys : public WithStatus {
   enum Type { PEM, JWKS };
 
   Pubkeys(){};
-  static std::unique_ptr<Pubkeys> CreateFromPem(const std::string& pkey_pem);
-  static std::unique_ptr<Pubkeys> CreateFromJwks(const std::string& pkey_jwks);
   static std::unique_ptr<Pubkeys> CreateFrom(const std::string& pkey,
                                              Type type);
 
