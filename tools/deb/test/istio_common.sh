@@ -45,8 +45,8 @@ function istio_build_all() {
   # Note: components may still use old SHA - but the test will build the binaries from master
   # from each component, to make sure we don't test old code.
   pushd $GOPATH/src/istio.io/pilot
-  bazel build ...
-  ./bin/init.sh
+  make setup
+  make build
   popd
 
   (cd $GOPATH/src/istio.io/mixer; bazel build ...)

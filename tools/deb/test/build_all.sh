@@ -15,45 +15,6 @@
 # limitations under the License.
 #
 ################################################################################
-
-# For e2e tests, build pilot, mixer, istio from head.
-if [ -z $GOPATH ]; then
-  echo "GOPATH env not set, will use ~/go"
-  GOPATH=~/go
-fi
-
-if [ -z $BRANCH ]; then
-  BRANCH=rawvm-demo-0-2-2
-  echo "BRANCH not set will use $BRANCH for new clone, unchanged for pull"
-fi
-
-# Build debian and binaries for all components we'll test on the VM
-# Will checkout or update BRANCH, in the typical layout.
-function build_all() {
-  mkdir -p $GOPATH/src/istio.io
-
-  for sub in pilot istio mixer auth proxy; do
-   if [[ -d $GOPATH/src/istio.io/$sub ]]; then
-      (cd $GOPATH/src/istio.io/$sub; git pull) # stay on whichever branch
-    else
-      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub -b $BRANCH)
-    fi
-  done
-
-  # Note: components may still use old SHA - but the test will build the binaries from master
-  # from each component, to make sure we don't test old code.
-  pushd $GOPATH/src/istio.io/pilot
-  bazel build ...
-  ./bin/init.sh
-  popd
-
-  (cd $GOPATH/src/istio.io/mixer; bazel build ...)
-
-  (cd $GOPATH/src/istio.io/proxy; bazel build tools/deb/...)
-
-  (cd $GOPATH/src/istio.io/auth; bazel build ...)
-
-
-}
-
-build_all
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/istio_common.sh
+istio_build_all
