@@ -18,7 +18,15 @@
 
 # Function useful for setting up and testing istio on raw VM.
 # Can be sourced from a shell, and each function used independently
-# Requires GOPATH to be set to the working root istio directory.
+if [ -z $GOPATH ]; then
+  echo "GOPATH env not set, will use ~/go"
+  GOPATH=~/go
+fi
+
+if [ -z $BRANCH ]; then
+  BRANCH=rawvm-demo-0-2-2
+  echo "BRANCH not set will use $BRANCH for new clone, unchanged for pull"
+fi
 
 
 # Build debian and binaries for all components we'll test on the VM
@@ -28,9 +36,9 @@ function istio_build_all() {
 
   for sub in pilot istio mixer auth proxy; do
     if [[ -d $GOPATH/src/istio.io/$sub ]]; then
-      (cd $GOPATH/src/istio.io/$sub; git pull origin master)
+      (cd $GOPATH/src/istio.io/$sub; git pull) # stay on whichever branch
     else
-      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub)
+      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub -b $BRANCH)
     fi
   done
 
