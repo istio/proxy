@@ -98,6 +98,15 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
     failed_ = true;
     return;
   }
+  // Check "audience". It will be an empty array if the key "audience" does not
+  // exist
+  try {
+    audiences_ = json->getStringArray("audience", true);
+  } catch (...) {
+    ENVOY_LOG(debug, "IssuerInfo [name = {}]: Bad audiences", name_);
+    failed_ = true;
+    return;
+  }
   // Check "pubkey"
   Json::ObjectSharedPtr json_pubkey;
   try {
@@ -158,6 +167,18 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
   failed_ = true;
 }
 
+bool IssuerInfo::IsValidAudience(const std::string &aud) {
+  if (audiences_.empty()) {
+    return true;
+  }
+  for (auto &a : audiences_) {
+    if (a == aud) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /*
  * TODO: add test for config loading
  */
@@ -177,16 +198,6 @@ JwtAuthConfig::JwtAuthConfig(const Json::Object &config,
 
   pubkey_cache_expiration_sec_ =
       config.getInteger("pubkey_cache_expiration_sec", 600);
-
-  /*
-   * TODO: audiences should be able to be specified for each issuer
-   */
-  // Empty array if key "audience" does not exist
-  try {
-    audiences_ = config.getStringArray("audience", true);
-  } catch (...) {
-    ENVOY_LOG(debug, "JwtAuthConfig: {}, Bad audiences", __func__);
-  }
 
   // Load the issuers
   issuers_.clear();
