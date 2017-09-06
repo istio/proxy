@@ -31,14 +31,16 @@
 # the sidecar image using the .deb file created by proxy.
 
 function usage() {
-  echo "${0} -p PORT -u UID [-h]"
+  echo "${0} [-p PORT -u UID -i] [clean]"
   echo ''
+  echo ' K8s proxy init mode: if -p or -u options are set, the script will be backward compatible with the pod initializer mode.'
   echo '  -p: Specify the envoy port to which redirect all TCP traffic (default $ENVOY_PORT = 150001)'
   echo '  -u: Specify the UID of the user for which the redirection is not'
   echo '      applied. Typically, this is the UID of the proxy container (default to uid of $ENVOY_USER, uid of istio_proxy, or 1337)'
   echo '  -i: Comma separated list of IP ranges in CIDR form to redirect to envoy (optional)'
   echo ''
-  echo 'Using environment variables in $ISTIO_SIDECAR_CONFIG (default: /var/lib/istio/envoy/sidecar.env)'
+  echo ' If called without arguments, will apply settings from config file - in $ISTIO_SIDECAR_CONFIG and $ISTIO_CLUSTER_CONFIG'
+  echo ' Only defined inbound ports and defined outbound ranges will be intercepted.'
 }
 
 set -o nounset
@@ -62,17 +64,22 @@ fi
 # Ideally we should generate ufw (and similar) configs as well, in case user already has an iptables solution.
 
 IP_RANGES_INCLUDE=${ISTIO_SERVICE_CIDR:-}
+# Set to 1 if started with the proxy-init kubernetes options.
+K8S_MODE=0
 
 while getopts ":p:u:e:i:h" opt; do
   case ${opt} in
     p)
       ENVOY_PORT=${OPTARG}
+      K8S_MODE=1
       ;;
     u)
       ENVOY_UID=${OPTARG}
+      K8S_MODE=1
       ;;
     i)
       IP_RANGES_INCLUDE=${OPTARG}
+      K8S_MODE=1
       ;;
     h)
       usage
@@ -143,6 +150,13 @@ if [ -n "${ISTIO_INBOUND_PORTS:-}" ]; then
           iptables -t nat -A ISTIO_INBOUND -p tcp --dport ${port} -j ISTIO_REDIRECT
       done
   fi
+else
+  # ISTIO_INBOUND_PORTS not set, but script called in k8s backward compatibility mode via args
+  if [ "${K8S_MODE}" == "1" ]; then
+    iptables -t nat -N ISTIO_INBOUND
+    iptables -t nat -A PREROUTING -p tcp -j ISTIO_INBOUND
+    iptables -t nat -A ISTIO_INBOUND -p tcp -j ISTIO_REDIRECT
+  fi
 fi
 
 # TODO: change the default behavior to not intercept any output - user may use http_proxy or another
@@ -158,6 +172,7 @@ iptables -t nat -A OUTPUT -p tcp -j ISTIO_OUTPUT
 # address, e.g. appN => Envoy (client) => Envoy (server) => appN.
 iptables -t nat -A ISTIO_OUTPUT -o lo ! -d 127.0.0.1/32 -j ISTIO_REDIRECT
 
+# If started in k8s, ENVOY_UID is set via arg to the user (root not excluded)
 for uid in ${ENVOY_UID}; do
   # Avoid infinite loops. Don't redirect Envoy traffic directly back to
   # Envoy for non-loopback traffic.
@@ -176,6 +191,9 @@ if [ -n "${IP_RANGES_INCLUDE:-}" ]; then
     done
     iptables -t nat -A ISTIO_OUTPUT -j RETURN
 else
-    iptables -t nat -A ISTIO_OUTPUT -j ISTIO_REDIRECT
+    if [ "${K8S_MODE}" == "1" ]; then
+       iptables -t nat -A ISTIO_OUTPUT -j ISTIO_REDIRECT
+    fi
+    # Else: don't intercept anything, to avoid breaking the VM in case Istio is not configured properly
 fi
 

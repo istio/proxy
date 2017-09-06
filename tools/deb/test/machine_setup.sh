@@ -17,48 +17,113 @@
 ################################################################################
 set -x
 
-NAME=${1-istiotestrawvm}
+# Script run on the test VM, to install istio components and test fixtures.
+# The machine needs to be re-imaged to test 'clean' installs, or reused to test
+# 'upgrade' use cases - the script should work for both cases.
 
-# Script to run on a machine to init DNS and other packages.
-# Used for automated testing of raw VM setup
+NAME=${1-$(hostname)}
 
-apt-get update
-sudo apt-get -y install dnsutils dnsmasq tcpdump netcat nginx
 
-# Copy config files for DNS
-chmod go+r kubedns
-cp kubedns /etc/dnsmasq.d
-systemctl restart dnsmasq
+# Configure DHCP server to use DNSMasq, configure dnsmasq.
+function istioNetworkInit() {
+  apt-get update
+  # Packages required for istio DNS
+  sudo apt-get -y install dnsutils dnsmasq
 
-# Cluster settings - the CIDR in particular.
-cp cluster.env /var/lib/istio/envoy
+  # Cluster settings - the CIDR in particular.
+  cp cluster.env /var/lib/istio/envoy
 
-echo "ISTIO_INBOUND_PORTS=80" > /var/lib/istio/envoy/sidecar.env
+  # Copy config files for DNS
+  chmod go+r kubedns
+  cp kubedns /etc/dnsmasq.d
+  systemctl restart dnsmasq
 
-# Update DHCP - if needed
-grep "^prepend domain-name-servers 127.0.0.1;" /etc/dhcp/dhclient.conf > /dev/null
-if [[ $? != 0 ]]; then
-  echo 'prepend domain-name-servers 127.0.0.1;' >> /etc/dhcp/dhclient.conf
-  # TODO: find a better way to re-trigger dhclient
-  dhclient -v -1
-fi
+  # Update DHCP - if needed
+  grep "^prepend domain-name-servers 127.0.0.1;" /etc/dhcp/dhclient.conf > /dev/null
+  if [[ $? != 0 ]]; then
+    echo 'prepend domain-name-servers 127.0.0.1;' >> /etc/dhcp/dhclient.conf
+    # TODO: find a better way to re-trigger dhclient
+    dhclient -v -1
+  fi
 
-# Install istio binaries
-dpkg -i istio-*.deb;
+  chown -R istio-proxy /var/lib/istio/envoy
+}
 
-mkdir /var/www/html/$NAME
-echo "VM $NAME" > /var/www/html/$NAME/index.html
+# Install istio components and certificates. The admin (directly or using tools like ansible)
+# will generate and copy the files and install the packages on each machine.
+function istioInstall() {
+  mkdir -p /etc/certs
+  cp *.pem /etc/certs
+  chown -R istio-proxy /etc/certs
+  # Install istio binaries
+  dpkg -i istio-proxy-envoy.deb
+  dpkg -i istio-agent.deb
+  dpkg -i istio-node-agent.deb
 
-cat <<EOF > /etc/nginx/conf.d/zipkin.conf
-server {
-      listen 9411;
-      location / {
-        proxy_pass http://zipkin.default.svc.cluster.local:9411/;
-        proxy_http_version 1.1;
+  echo "ISTIO_INBOUND_PORTS=80,9080,3306,27017" > /var/lib/istio/envoy/sidecar.env
+  chown istio-proxy /var/lib/istio/envoy/sidecar.env
+}
+
+# Install a web server and helper packages to help testing and debugging
+# We use a web server to verify HTTP requests can be made from K8S to raw VM and from
+# raw VM to K8S services (zipkin in this test)
+function istioInstallTestHelpers() {
+
+  sudo apt-get -y install nginx tcpdump netcat tmux
+
+  mkdir /var/www/html/$NAME
+  echo "VM $NAME" > /var/www/html/$NAME/index.html
+
+  cat <<EOF > /etc/nginx/conf.d/zipkin.conf
+  server {
+        listen 9411;
+        location / {
+          proxy_pass http://zipkin.default.svc.cluster.local:9411/;
+          proxy_http_version 1.1;
+        }
       }
-    }
 EOF
 
-# Start istio
-systemctl start istio
 
+  systemctl restart nginx
+}
+
+function istioInstallBookinfo() {
+  # Install nodejs. Version in debian is old
+  curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+  sudo apt-get install -y nodejs ruby  python-pip mariadb-server mongodb
+  (cd productpage; sudo pip install -r requirements.txt)
+  (cd ratings; npm install)
+
+  systemctl start mariadb
+
+  # Start bookinfo components
+  ruby details/details.rb 9080 &
+  echo $! > details.pid
+
+  # Note that we run productpage on a different port - 9080 is taken
+  (cd productpage ; python productpage.py 9081 &)
+  echo $! > productpage.pid
+
+  (cd ratings ; node ratings.js 9082 &)
+  echo $! > ratings.pid
+}
+
+
+
+
+istioNetworkInit
+
+istioInstall
+
+istioInstallTestHelpers
+
+istioInstallBookinfo
+
+# Start or restart istio
+systemctl status istio > /dev/null
+if [[ $? = 0 ]]; then
+  systemctl restart istio
+else
+  systemctl start istio
+fi

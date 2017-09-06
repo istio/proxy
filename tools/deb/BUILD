@@ -42,14 +42,14 @@ pkg_tar(
 )
 
 pkg_deb(
-    name = "istio-proxy",
+    name = "istio-proxy-envoy",
     architecture = "amd64",
     built_using = "bazel",
     data = ":debian-data",
     description_file = "description",
     homepage = "http://istio.io",
     maintainer = "The Istio Authors <istio-dev@googlegroups.com>",
-    package = "istio-proxy",
+    package = "istio-proxy-envoy",
     postinst = "postinst.sh",
     version = "0.2.1",
 )
