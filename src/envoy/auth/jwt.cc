@@ -433,6 +433,18 @@ std::unique_ptr<Pubkeys> Pubkeys::CreateFromJwks(const std::string &pkey_jwks) {
   return keys;
 }
 
+std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,
+                                             Type type) {
+  switch (type) {
+    case Type::JWKS:
+      return CreateFromJwks(pkey);
+    case Type::PEM:
+      return CreateFromPem(pkey);
+    default:
+      abort();
+  }
+}
+
 }  // Auth
 }  // Http
 }  // Envoy
