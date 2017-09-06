@@ -148,7 +148,7 @@ else
     istioInstallBookinfo
 
     istioRestart
+    exit 0
 fi
 
 
-exit 0

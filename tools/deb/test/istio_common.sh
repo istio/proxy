@@ -126,6 +126,119 @@ function istioVMCopy() {
   gcloud compute scp  --zone $ISTIO_ZONE --recurse $FILES ${NAME}:
 }
 
+# Install required files on a VM and run the setup script.
+function istioProvisionVM() {
+ NAME=${1:-$TESTVM}
+
+ local SA=${2:-istio.default}
+
+  kubectl get secret $SA -o jsonpath='{.data.cert-chain\.pem}' |base64 -d  > cert-chain.pem
+  kubectl get secret $SA -o jsonpath='{.data.root-cert\.pem}' |base64 -d  > root-cert.pem
+  kubectl get secret $SA -o jsonpath='{.data.key\.pem}' |base64 -d  > key.pem
+
+  istioRun $NAME "sudo rm -f istio-*.deb machine_setup.sh"
+
+ # Copy deb, helper and config files
+ # Reviews not copied - VMs don't support labels yet.
+ istioCopy $NAME \
+   kubedns \
+   *.pem \
+   cluster.env \
+   tools/deb/test/machine_setup.sh \
+   $ISTIO_IO/proxy/bazel-bin/tools/deb/istio-proxy-envoy.deb \
+   $ISTIO_IO/pilot/bazel-bin/tools/deb/istio-agent.deb \
+   $ISTIO_IO/auth/bazel-bin/tools/deb/istio-auth-node-agent.deb \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/details \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/mysql \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/productpage \
+   $ISTIO_IO/istio/samples/apps/bookinfo/src/ratings
+
+
+ istioRun $NAME "sudo bash -c -x ./machine_setup.sh $NAME"
+
+}
+
+
+function ingressIP() {
+  kubectl get service istio-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+}
+
+# Copy files to the VM
+function istioCopy() {
+  # TODO: based on some env variable, use different commands for other clusters or for testing with
+  # bare-metal machines.
+  local NAME=$1
+  shift
+  local FILES=$*
+
+  gcloud compute scp --recurse --project $PROJECT --zone $ISTIO_ZONE $FILES ${NAME}:
+}
+
+
+# Create the raw VM.
+function istioVMInit() {
+  # TODO: check if it exists and do "reset", to speed up the script.
+  local NAME=$1
+  local IMAGE=${2:-debian-9-stretch-v20170816}
+  local IMAGE_PROJECT=${3:-debian-cloud}
+
+  gcloud compute --project $PROJECT instances  describe $NAME  --zone ${ISTIO_ZONE} >/dev/null 2>/dev/null
+  if [[ $? == 0 ]] ; then
+
+    gcloud compute --project $PROJECT \
+     instances delete $NAME \
+     --zone $ISTIO_ZONE \
+
+  fi
+
+  gcloud compute --project $PROJECT \
+     instances create $NAME \
+     --zone $ISTIO_ZONE \
+     --machine-type "n1-standard-1" \
+     --subnet default \
+     --can-ip-forward \
+     --scopes "https://www.googleapis.com/auth/cloud-platform" \
+     --tags "http-server","https-server" \
+     --image $IMAGE \
+     --image-project $IMAGE_PROJECT \
+     --boot-disk-size "10" \
+     --boot-disk-type "pd-standard" \
+     --boot-disk-device-name "debtest"
+
+  # Allow access to the VM on port 80 and 9411 (where we run services)
+  gcloud compute  --project $PROJECT firewall-rules create allow-external  --allow tcp:22,tcp:80,tcp:443,tcp:9411,udp:5228,icmp  --source-ranges 0.0.0.0/0
+
+
+  # Wait for machine to start up ssh
+  for i in {1..10}
+  do
+    istioRun $NAME 'echo hi' >/dev/null 2>/dev/null
+    if [[ $? -ne 0 ]] ; then
+        echo Waiting for startup $?
+        sleep 5
+    else
+        break
+    fi
+  done
+
+}
+
+function istioVMDelete() {
+  local NAME=${1:-$TESTVM}
+  gcloud compute -q  instances delete $NAME --zone $ISTIO_ZONE --project $PROJECT
+}
+
+
+
+# Run a command in a VM.
+function istioRun() {
+  local NAME=$1
+  local CMD=$2
+
+  gcloud compute ssh --project $PROJECT --zone $ISTIO_ZONE $NAME --command "$CMD"
+}
+
+
 # Helper to use the raw istio config templates directly.
 function istioTmpl() {
   local FILE=$1
