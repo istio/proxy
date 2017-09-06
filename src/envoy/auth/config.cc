@@ -22,6 +22,7 @@
 
 #include "rapidjson/document.h"
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -167,16 +168,9 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
   failed_ = true;
 }
 
-bool IssuerInfo::IsValidAudience(const std::string &aud) {
-  if (audiences_.empty()) {
-    return true;
-  }
-  for (auto &a : audiences_) {
-    if (a == aud) {
-      return true;
-    }
-  }
-  return false;
+bool IssuerInfo::IsAudienceAllowed(const std::string &aud) {
+  return audiences_.empty() || (std::find(audiences_.begin(), audiences_.end(),
+                                          aud) != audiences_.end());
 }
 
 /*

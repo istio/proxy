@@ -80,7 +80,7 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   // If audiences is an empty array or not specified, any "aud" claim will be
   // accepted.
   std::vector<std::string> audiences_;
-  bool IsValidAudience(const std::string &aud);
+  bool IsAudienceAllowed(const std::string &aud);
 };
 
 // A config for Jwt auth filter
