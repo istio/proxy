@@ -116,14 +116,14 @@ Format of `<config>`:
 {
  "userinfo_type": <type of user info>,
  "pubkey_cache_expiration_sec": <time in seconds to expire a cached public key>
- "audience": [
-   <audience A>,
-   <audience B>,
-   ...
- ],
  “issuers”:[
    {
      “name”: <issuer name>,
+     "audiences": [
+       <audience A>,
+       <audience B>,
+       ...
+     ],
      “pubkey”: {
         “type”: <type>, 
         “uri”: <uri>, 
@@ -154,11 +154,6 @@ It specifies how long a cached public key will be kept (in seconds).
 
 If not specified, the default value is `600`.
 
-#### audience (array of string, optional)
-
-It specifies the set of acceptable audiences.
-If it is specified, JWT must have `aud` claim specified in this list.
-
 #### issuers (array of object, required)
 
 It specifies the issuers and their public keys.
@@ -168,6 +163,10 @@ every JWT will be considered to be valid if it's verified with one of these issu
 
 For each issuer, the following informations are required:
 - __name__  (string, required): issuer's name. It should be the same as the value of the `iss` claim of a JWT.
+- __audiences__ (array of string, optional): 
+It specifies the set of acceptable audiences.
+If it is specified, JWT must have `aud` claim specified in this list.
+
 - __pubkey__ (object, required): information about public key.
   `type` and (`value` or `file` or (`uri` and `cluster`)) are required.
   - __type__ (string, required): the format of public key. It should be one of {`"jwks"`, `"pem"`}.
