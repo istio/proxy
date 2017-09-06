@@ -24,15 +24,6 @@
 # Build debian and binaries for all components we'll test on the VM
 # Will checkout or update from master, in the typical layout.
 function istio_build_all() {
-  mkdir -p $GOPATH/src/istio.io
-
-  for sub in pilot istio mixer auth proxy; do
-    if [[ -d $GOPATH/src/istio.io/$sub ]]; then
-      (cd $GOPATH/src/istio.io/$sub; git pull origin master)
-    else
-      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub)
-    fi
-  done
 
   # Note: components may still use old SHA - but the test will build the binaries from master
   # from each component, to make sure we don't test old code.
@@ -49,7 +40,21 @@ function istio_build_all() {
 
 }
 
+# Git sync
+function istio_sync() {
+  # TODO: use repo sync instead
+  local BRANCH=${1-master}
+  mkdir -p $GOPATH/src/istio.io
 
+  for sub in pilot istio mixer auth proxy; do
+    if [[ -d $GOPATH/src/istio.io/$sub ]]; then
+      (cd $GOPATH/src/istio.io/$sub; git pull origin $BRANCH)
+    else
+      (cd $GOPATH/src/istio.io; git clone https://github.com/istio/$sub; )
+    fi
+  done
+
+}
 
 # Build docker images for istio. Intended to test backward compat.
 function istio_build_docker() {
@@ -263,3 +268,8 @@ EOF
 
 }
 
+function istioSSHVM() {
+  local NAME=${1:-testvm}
+
+  gcloud compute ssh --project $PROJECT --zone $ISTIO_ZONE $NAME
+}
