@@ -263,6 +263,7 @@ Jwt::Jwt(const std::string &jwt) {
   }
 
   iss_ = payload_->getString("iss", "");
+  aud_ = payload_->getString("aud", "");
   exp_ = payload_->getInteger("exp", 0);
 
   // Set up signature
@@ -351,6 +352,7 @@ Json::ObjectSharedPtr Jwt::Payload() { return payload_; }
 const std::string &Jwt::PayloadStr() { return payload_str_; }
 const std::string &Jwt::PayloadStrBase64Url() { return payload_str_base64url_; }
 const std::string &Jwt::Iss() { return iss_; }
+const std::string &Jwt::Aud() { return aud_; }
 int64_t Jwt::Exp() { return exp_; }
 
 void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {

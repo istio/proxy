@@ -187,6 +187,10 @@ class Jwt : public WithStatus {
   // "iss" claim does not exist.
   const std::string& Iss();
 
+  // It returns the "aud" claim value of the given JWT, or an empty string if
+  // "aud" claim does not exist.
+  const std::string& Aud();
+
   // It returns the "exp" claim value of the given JWT, or 0 if "exp" claim does
   // not exist.
   int64_t Exp();
@@ -205,6 +209,7 @@ class Jwt : public WithStatus {
   std::string alg_;
   std::string kid_;
   std::string iss_;
+  std::string aud_;
   int64_t exp_;
 
   friend bool Verifier::Verify(const Jwt& jwt, const Pubkeys& pubkeys);
