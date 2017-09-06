@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "src/envoy/mixer/grpc_transport.h"
-#include "src/envoy/mixer/thread_dispatcher.h"
 
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
@@ -36,6 +35,9 @@ const LowerCaseString kB3Sampled("x-b3-sampled");
 const LowerCaseString kB3Flags("x-b3-flags");
 const LowerCaseString kOtSpanContext("x-ot-span-context");
 
+// The name for the mixer server cluster.
+const char* kMixerServerClusterName = "mixer_server";
+
 inline void CopyHeaderEntry(const HeaderEntry* entry,
                             const LowerCaseString& key,
                             Http::HeaderMap& headers) {
@@ -48,12 +50,19 @@ inline void CopyHeaderEntry(const HeaderEntry* entry,
 }  // namespace
 
 template <class RequestType, class ResponseType>
-void GrpcTransport<RequestType, ResponseType>::Call(
-    AsyncClient& async_client, const RequestType& request) {
-  ENVOY_LOG(debug, "Call {}: {}", descriptor_.name(), request.DebugString());
-  request_ = async_client.send(
-      descriptor_, request, *this,
-      Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs));
+GrpcTransport<RequestType, ResponseType>::GrpcTransport(
+    AsyncClientPtr async_client, const RequestType& request,
+    const HeaderMap* headers, ResponseType* response,
+    istio::mixer_client::DoneFunc on_done)
+    : async_client_(std::move(async_client)),
+      headers_(headers),
+      response_(response),
+      on_done_(on_done),
+      request_(async_client_->send(
+          descriptor(), request, *this,
+          Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
+  ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
+            request.DebugString());
 }
 
 template <class RequestType, class ResponseType>
@@ -75,7 +84,7 @@ void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
 template <class RequestType, class ResponseType>
 void GrpcTransport<RequestType, ResponseType>::onSuccess(
     std::unique_ptr<ResponseType>&& response) {
-  ENVOY_LOG(debug, "{} response: {}", descriptor_.name(),
+  ENVOY_LOG(debug, "{} response: {}", descriptor().name(),
             response->DebugString());
   response->Swap(response_);
   on_done_(Status::OK);
@@ -84,43 +93,52 @@ void GrpcTransport<RequestType, ResponseType>::onSuccess(
 
 template <class RequestType, class ResponseType>
 void GrpcTransport<RequestType, ResponseType>::onFailure(
-    Grpc::Status::GrpcStatus status) {
-  ENVOY_LOG(debug, "{} failed with code: {}", descriptor_.name(), status);
-  on_done_(Status(static_cast<StatusCode>(status), ""));
+    Grpc::Status::GrpcStatus status, const std::string& message) {
+  ENVOY_LOG(debug, "{} failed with code: {}, {}", descriptor().name(), status,
+            message);
+  on_done_(Status(static_cast<StatusCode>(status), message));
   delete this;
 }
 
+template <class RequestType, class ResponseType>
+typename GrpcTransport<RequestType, ResponseType>::Func
+GrpcTransport<RequestType, ResponseType>::GetFunc(Upstream::ClusterManager& cm,
+                                                  const HeaderMap* headers) {
+  return [&cm, headers](const RequestType& request, ResponseType* response,
+                        istio::mixer_client::DoneFunc
+                            on_done) -> istio::mixer_client::CancelFunc {
+    auto transport = new GrpcTransport<RequestType, ResponseType>(
+        typename GrpcTransport<RequestType, ResponseType>::AsyncClientPtr(
+            new Grpc::AsyncClientImpl<RequestType, ResponseType>(
+                cm, kMixerServerClusterName)),
+        request, headers, response, on_done);
+    return [transport]() { transport->request_->cancel(); };
+  };
+}
+
 template <>
-CheckTransport::Func CheckTransport::GetFunc(AsyncClient& async_client,
-                                             const HeaderMap* headers) {
+const google::protobuf::MethodDescriptor& CheckTransport::descriptor() {
   static const google::protobuf::MethodDescriptor* check_descriptor =
       istio::mixer::v1::Mixer::descriptor()->FindMethodByName("Check");
   ASSERT(check_descriptor);
 
-  return [&async_client, headers](const istio::mixer::v1::CheckRequest& request,
-                                  istio::mixer::v1::CheckResponse* response,
-                                  istio::mixer_client::DoneFunc on_done) {
-    auto transport =
-        new CheckTransport(*check_descriptor, headers, response, on_done);
-    transport->Call(async_client, request);
-  };
+  return *check_descriptor;
 }
 
 template <>
-ReportTransport::Func ReportTransport::GetFunc(AsyncClient& async_client,
-                                               const HeaderMap*) {
+const google::protobuf::MethodDescriptor& ReportTransport::descriptor() {
   static const google::protobuf::MethodDescriptor* report_descriptor =
       istio::mixer::v1::Mixer::descriptor()->FindMethodByName("Report");
   ASSERT(report_descriptor);
 
-  return [&async_client](const istio::mixer::v1::ReportRequest& request,
-                         istio::mixer::v1::ReportResponse* response,
-                         istio::mixer_client::DoneFunc on_done) {
-    auto transport =
-        new ReportTransport(*report_descriptor, nullptr, response, on_done);
-    transport->Call(async_client, request);
-  };
+  return *report_descriptor;
 }
+
+// explicitly instantiate CheckTransport and ReportTransport
+template CheckTransport::Func CheckTransport::GetFunc(
+    Upstream::ClusterManager& cm, const HeaderMap* headers);
+template ReportTransport::Func ReportTransport::GetFunc(
+    Upstream::ClusterManager& cm, const HeaderMap* headers);
 
 }  // namespace Mixer
 }  // namespace Http

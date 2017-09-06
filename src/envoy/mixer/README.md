@@ -100,12 +100,7 @@ This filter will intercept all HTTP requests and call Mixer. Here is its config:
             "attribute_name2": "attribute_value2"
          },
          "quota_name": "RequestCount",
-         "quota_amount": "1",
-         "check_cache_keys": [
-              "request.host",
-              "request.path",
-              "origin.user"
-         ]
+         "quota_amount": "1"
     }
 ```
 
@@ -113,7 +108,6 @@ Notes:
 * mixer_attributes: these attributes will be sent to the mixer in both Check and Report calls.
 * forward_attributes: these attributes will be forwarded to the upstream istio/proxy. It will send them to mixer in Check and Report calls.
 * quota_name, quota_amount are used for making quota call. quota_amount defaults to 1.
-* check_cache_keys is to cache check calls. If missing or empty, check calls are not cached.
 
 ## HTTP Route opaque config
 By default, the mixer filter only forwards attributes and does not call mixer server. This behavior can be changed per HTTP route by supplying an opaque config:
@@ -125,11 +119,18 @@ By default, the mixer filter only forwards attributes and does not call mixer se
      "prefix": "/",
      "cluster": "service1",
      "opaque_config": {
-      "mixer_control": "on",
-      "mixer_forward": "off"
+        "mixer_control": "off",
+        "mixer_check": "on",
+        "mixer_report": "off",
+        "mixer_forward": "off"
      }
    }
 ```
+Notes:
+* mixer_forward: turn on/off attribute forwarding feature. If on, it will forward attributes specified in "forward_attributes" in mixer filter config and "mixer_forward_attributes." prefixed attributes in route opaque data.  Default is on.
+* mixer_check: if on, call Mixer Check. Default is off.
+* mixer_report: if on, call Mixer Report. Default is off.
+* mixer_control: if on, call both Mixer Check and Report. Default is off. If "mixer_check" or "mixer_report" is specified, its value will override this.
 
 Above route opaque config reverts the behavior by sending requests to mixer server but not forwarding any attributes.
 
@@ -142,8 +143,8 @@ Mixer attributes and forward attributes can be set per-route in the route opaque
      "prefix": "/",
      "cluster": "service1",
      "opaque_config": {
-      "mixer_attributes.key1": "value1",
-      "mixer_forward_attributes.key2": "value2"
+        "mixer_attributes.key1": "value1",
+        "mixer_forward_attributes.key2": "value2"
      }
    }
 ```
@@ -157,7 +158,7 @@ Quota (rate limiting) is enforced by the mixer. Mixer needs to be configured wit
 
 Mixer client can be configured to make Quota call for all requests.  If "quota_name" is specified in the mixer filter config, mixer client will call Quota with the specified quota name.  If "quota_amount" is specified, it will call with that amount, otherwise the used amount is 1.
 
-Following config will enable rate limiting with cache:
+Following config will enable rate limiting with Mixer:
 
 ```
          "quota_name": "RequestCount",
@@ -170,28 +171,28 @@ Following config will enable rate limiting with cache:
 Usually client proxy is not configured to call mixer (it can be enabled in the route opaque_config). Client proxy can pass some attributes to mixer by using "forward_attributes" field.  Its attributes will be sent to the upstream proxy (the server proxy). If the server proxy is calling mixer, these attributes will be sent to the mixer.
 
 
-## How to enable cache for Check calls
+## How to disable cache for Check calls
 
-Check calls can be cached. By default, it is not enabled. It can be enabled by supplying non-empty "check_cache_keys" string list in the mixer filter config. Only these attributes in the Check request, their keys and values, are used to calculate the key for the cache lookup. If it is a cache hit, the cached response will be used. The mixer will control the cache expiration.
+Check calls can be cached. By default, it is enabled. Mixer server controls which attributes to use for cache keys. It also controls the cache expiration.
 
-Following is a sample mixer filter config to enable the Check call cache:
+Check cache can be disabled with following config:
 ```
-         "check_cache_keys": [
-              "request.host",
-              "request.path",
-              "source.labels",
-              "request.headers/:method",
-              "origin.user"
-         ]
+         "disable_check_cache": true,
 ```
 
-For the string map attributes in the above example:
-1) "request.headers" attribute is a string map, "request.headers/:method" cache key means only its ":method" key and value are used for cache key.
-2) "source.labels" attribute is a string map, "source.labels" cache key means all key value pairs for the string map will be used.
+## How to disable cache for Quota calls
 
-## How to enable cache for Quota calls
+Quota cache is tied to Check cache. It is enabled automatically if Check cache is enabled.  It can be disabled with following config:
+```
+         "disable_quota_cache": true,
+```
 
-Quota cache is tied to Check cache. It is enabled automatically if Check cache is enabled (it is using quota name as cache key).
+## How to disable batch for Report calls
+
+Reports are batched up to 1 second or up to 1000 records. It is enabled by default.  It can be disabled with following config:
+```
+         "disable_report_batch": true,
+```
 
 ## How to change network failure policy
 
@@ -226,4 +227,6 @@ Here is its sample config:
 This filter will intercept a tcp connection:
 * Call Check at connection creation and call Report at connection close.
 * All mixer settings described above can be used here.
+* disable_tcp_check_calls is a tcp filter specific config to disable check for tcp connection.
+
 
