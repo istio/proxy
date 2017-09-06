@@ -69,6 +69,8 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
 
   /*
    * TODO: update cached public key regularly
+   * TODO: handle the case that the next request comes before fetching public
+   * key completed
    */
 
   // list up issuers whose public key should be fetched
@@ -142,9 +144,6 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   calling_issuers_.erase(iss_it);
 
   // if receive all responses, proceed to verification
-  /*
-   * TODO: is it ok?
-   */
   if (calling_issuers_.empty()) {
     CompleteVerification(headers);
   }
