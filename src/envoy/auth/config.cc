@@ -23,9 +23,11 @@
 #include "rapidjson/document.h"
 
 #include <chrono>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -89,7 +91,48 @@ void AsyncClientCallbacks::Call(const std::string &uri) {
 
 void AsyncClientCallbacks::Cancel() { request_->cancel(); }
 
-IssuerInfo::IssuerInfo(Json::Object *json) {
+IssuerInfo::Pubkey::Pubkey() : update_needed_(false) {}
+
+IssuerInfo::Pubkey::Pubkey(std::chrono::duration<int> valid_period)
+    : valid_period_(valid_period), update_needed_(true) {}
+
+bool IssuerInfo::Pubkey::IsNotExpired() {
+  if (update_needed_) {
+    mutex_pkey_.lock();
+    if (std::chrono::system_clock::now() < expiration_) {
+      // If fetched key is not expired, unlock mutex.
+      mutex_pkey_.unlock();
+      return true;
+    } else {
+      // If fetched key is expired, mutex is kept locked and should be unlocked
+      // by calling Update().
+      return false;
+    }
+  } else {
+    return true;
+  }
+}
+
+void IssuerInfo::Pubkey::Update(Pubkeys *pkey) {
+  if (update_needed_) {
+    pkey_ = std::shared_ptr<Pubkeys>(pkey);
+    expiration_ = std::chrono::system_clock::now() + valid_period_;
+    mutex_pkey_.unlock();
+  } else {
+    pkey_ = std::shared_ptr<Pubkeys>(pkey);
+  }
+}
+
+std::shared_ptr<Pubkeys> IssuerInfo::Pubkey::Get() {
+  if (update_needed_) {
+    std::lock_guard<std::mutex> guard(mutex_pkey_);
+    return pkey_;
+  } else {
+    return pkey_;
+  }
+}
+
+IssuerInfo::IssuerInfo(Json::Object *json, const JwtAuthConfig &parent) {
   ENVOY_LOG(debug, "IssuerInfo: {}", __func__);
   // Check "name"
   name_ = json->getString("name", "");
@@ -122,25 +165,27 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
   // Check "value"
   std::string value = json_pubkey->getString("value", "");
   if (value != "") {
+    pkey_ = std::unique_ptr<Pubkey>(new Pubkey());
     // Public key is written in this JSON.
     if (pkey_type_ == "pem") {
-      pkey_ = Pubkeys::CreateFromPem(value);
+      pkey_->Update(Pubkeys::CreateFromPem(value).release());
     } else if (pkey_type_ == "jwks") {
-      pkey_ = Pubkeys::CreateFromJwks(value);
+      pkey_->Update(Pubkeys::CreateFromJwks(value).release());
     }
-    loaded_ = true;
     return;
   }
   // Check "file"
   std::string path = json_pubkey->getString("file", "");
   if (path != "") {
     // Public key is loaded from the specified file.
+    pkey_ = std::unique_ptr<Pubkey>(new Pubkey());
     if (pkey_type_ == "pem") {
-      pkey_ = Pubkeys::CreateFromPem(Filesystem::fileReadToEnd(path));
+      pkey_->Update(
+          Pubkeys::CreateFromPem(Filesystem::fileReadToEnd(path)).release());
     } else if (pkey_type_ == "jwks") {
-      pkey_ = Pubkeys::CreateFromJwks(Filesystem::fileReadToEnd(path));
+      pkey_->Update(
+          Pubkeys::CreateFromJwks(Filesystem::fileReadToEnd(path)).release());
     }
-    loaded_ = true;
     return;
   }
   // Check "uri" and "cluster"
@@ -150,6 +195,8 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
     // Public key will be loaded from the specified URI.
     uri_ = uri;
     cluster_ = cluster;
+    pkey_ = std::unique_ptr<Pubkey>(
+        new Pubkey(std::chrono::seconds(parent.pubkey_cache_expiration_sec_)));
     return;
   }
 
@@ -198,8 +245,12 @@ JwtAuthConfig::JwtAuthConfig(const Json::Object &config,
     abort();
   }
   for (auto issuer_json : issuer_jsons) {
-    auto issuer = std::make_shared<IssuerInfo>(issuer_json.get());
-    issuers_.push_back(issuer);
+    auto issuer = std::make_shared<IssuerInfo>(issuer_json.get(), *this);
+    // If some error happened while loading in the constructor, this issuer will
+    // be just skipped.
+    if (!issuer->failed_) {
+      issuers_.push_back(issuer);
+    }
   }
 }
 
