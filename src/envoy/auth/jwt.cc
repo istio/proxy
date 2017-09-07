@@ -253,6 +253,7 @@ JwtVerifier::JwtVerifier(const std::string &jwt) {
   }
 
   iss_ = payload_->getString("iss", "");
+  aud_ = payload_->getString("aud", "");
   exp_ = payload_->getInteger("exp", 0);
 
   // Set up signature
@@ -365,6 +366,7 @@ const std::string &JwtVerifier::PayloadStrBase64Url() {
   return payload_str_base64url_;
 }
 const std::string &JwtVerifier::Iss() { return iss_; }
+const std::string &JwtVerifier::Aud() { return aud_; }
 int64_t JwtVerifier::Exp() { return exp_; }
 
 void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
