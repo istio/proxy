@@ -112,13 +112,13 @@ bool IssuerInfo::Pubkey::IsNotExpired() {
   }
 }
 
-void IssuerInfo::Pubkey::Update(Pubkeys *pkey) {
+void IssuerInfo::Pubkey::Update(std::unique_ptr<Pubkeys> pkey) {
   if (update_needed_) {
-    pkey_ = std::shared_ptr<Pubkeys>(pkey);
+    pkey_ = std::move(pkey);
     expiration_ = std::chrono::system_clock::now() + valid_period_;
     mutex_pkey_.unlock();
   } else {
-    pkey_ = std::shared_ptr<Pubkeys>(pkey);
+    pkey_ = std::move(pkey);
   }
 }
 
@@ -167,9 +167,9 @@ IssuerInfo::IssuerInfo(Json::Object *json, const JwtAuthConfig &parent) {
     pkey_ = std::unique_ptr<Pubkey>(new Pubkey());
     // Public key is written in this JSON.
     if (pkey_type_ == "pem") {
-      pkey_->Update(Pubkeys::CreateFromPem(value).release());
+      pkey_->Update(Pubkeys::CreateFromPem(value));
     } else if (pkey_type_ == "jwks") {
-      pkey_->Update(Pubkeys::CreateFromJwks(value).release());
+      pkey_->Update(Pubkeys::CreateFromJwks(value));
     }
     return;
   }
@@ -179,11 +179,9 @@ IssuerInfo::IssuerInfo(Json::Object *json, const JwtAuthConfig &parent) {
     // Public key is loaded from the specified file.
     pkey_ = std::unique_ptr<Pubkey>(new Pubkey());
     if (pkey_type_ == "pem") {
-      pkey_->Update(
-          Pubkeys::CreateFromPem(Filesystem::fileReadToEnd(path)).release());
+      pkey_->Update(Pubkeys::CreateFromPem(Filesystem::fileReadToEnd(path)));
     } else if (pkey_type_ == "jwks") {
-      pkey_->Update(
-          Pubkeys::CreateFromJwks(Filesystem::fileReadToEnd(path)).release());
+      pkey_->Update(Pubkeys::CreateFromJwks(Filesystem::fileReadToEnd(path)));
     }
     return;
   }

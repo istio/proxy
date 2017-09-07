@@ -120,9 +120,9 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   // Update the public key.
   if (succeed) {
     if (iss->pkey_type_ == "pem") {
-      iss->pkey_->Update(Auth::Pubkeys::CreateFromPem(pubkey).release());
+      iss->pkey_->Update(Auth::Pubkeys::CreateFromPem(pubkey));
     } else if (iss->pkey_type_ == "jwks") {
-      iss->pkey_->Update(Auth::Pubkeys::CreateFromJwks(pubkey).release());
+      iss->pkey_->Update(Auth::Pubkeys::CreateFromJwks(pubkey));
     } else {
       PANIC("should not reach here");
     }

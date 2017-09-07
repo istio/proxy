@@ -102,7 +102,7 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
     // and updates the expiration time.
     // It should also be called in the case (1) to initialize the public key in
     // config loading.
-    void Update(Pubkeys *pkey);
+    void Update(std::unique_ptr<Pubkeys> pkey);
 
     // It returns the public key. It might returns nullptr (when fetching
     // failed).
