@@ -235,8 +235,6 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Success1) {
 }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
-  // Payload:
-  // {"iss":"https://example.com","sub":"test@example.com","aud":"invalid_service","exp":2001001001}
   const std::string kJwtNoKid =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
@@ -254,6 +252,8 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
 }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, AudInvalid) {
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","aud":"invalid_service","exp":2001001001}
   const std::string jwt =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
