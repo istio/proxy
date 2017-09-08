@@ -28,7 +28,7 @@ namespace Envoy {
 namespace Http {
 
 const LowerCaseString& JwtVerificationFilter::AuthorizedHeaderKey() {
-  static LowerCaseString* key = new LowerCaseString("Istio-Auth-UserInfo");
+  static LowerCaseString* key = new LowerCaseString("sec-istio-auth-userinfo");
   return *key;
 }
 
@@ -119,13 +119,7 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   auto& iss = iss_it->second.iss_;
   // Update the public key.
   if (succeed) {
-    if (iss->pkey_type_ == "pem") {
-      iss->pkey_->Update(Auth::Pubkeys::CreateFromPem(pubkey));
-    } else if (iss->pkey_type_ == "jwks") {
-      iss->pkey_->Update(Auth::Pubkeys::CreateFromJwks(pubkey));
-    } else {
-      PANIC("should not reach here");
-    }
+    iss->pkey_->Update(Auth::Pubkeys::CreateFrom(pubkey, iss->pkey_type_));
   } else {
     // Even when fetching public key is failed, we should call Update() to
     // unlock mutex.

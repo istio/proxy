@@ -75,8 +75,8 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   std::string uri_;      // URI for public key
   std::string cluster_;  // Envoy cluster name for public key
 
-  std::string name_;       // e.g. "https://accounts.example.com"
-  std::string pkey_type_;  // Format of public key. "jwks" or "pem"
+  std::string name_;         // e.g. "https://accounts.example.com"
+  Pubkeys::Type pkey_type_;  // Format of public key.
 
   // Class to hold public key.
   // (1) If regular update is not needed (the case public key is given directly
