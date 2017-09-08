@@ -201,11 +201,9 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
   ENVOY_LOG(debug, "Verification status = {}", status);
   if (status != "OK") {
     // verification failed
-    /*
-     * TODO: detailed information on message body
-     */
     Code code = Code(401);  // Unauthorized
-    std::string message_body = "Verification Failed";
+    // return failure reason as message body
+    std::string message_body = status;
     Utility::sendLocalReply(*decoder_callbacks_, false, code, message_body);
     return;
   }

@@ -246,9 +246,9 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
       "qS7Wwf8C0V9o2KZu0KDV0j0c9nZPWTv3IMlaGZAtQgJUeyemzRDtf4g2yG3xBZrLm3AzDUj_"
       "EX_pmQAHA5ZjPVCAw";
 
-  TestVerification(
-      createHeaders(kJwtNoKid), "", createIssuerHeaders(), kPublicKey, false,
-      Http::TestHeaderMapImpl{{":status", "401"}}, "Verification Failed");
+  TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(),
+                   kPublicKey, false,
+                   Http::TestHeaderMapImpl{{":status", "401"}}, "JWT_EXPIRED");
 }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
@@ -256,7 +256,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
   std::string pubkey = "weirdKey";
   TestVerification(createHeaders(token), "", createIssuerHeaders(), pubkey,
                    false, Http::TestHeaderMapImpl{{":status", "401"}},
-                   "Verification Failed");
+                   "JWT_BAD_FORMAT");
 }
 
 /*
