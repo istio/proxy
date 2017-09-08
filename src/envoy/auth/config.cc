@@ -165,7 +165,7 @@ IssuerInfo::IssuerInfo(Json::Object *json, const JwtAuthConfig &parent) {
   // Check "value"
   std::string value = json_pubkey->getString("value", "");
   if (value != "") {
-    pkey_ = std::unique_ptr<Pubkey>(new Pubkey());
+    pkey_.reset(new Pubkey());
     // Public key is written in this JSON.
     pkey_->Update(Pubkeys::CreateFrom(value, pkey_type_));
     return;
@@ -174,7 +174,7 @@ IssuerInfo::IssuerInfo(Json::Object *json, const JwtAuthConfig &parent) {
   std::string path = json_pubkey->getString("file", "");
   if (path != "") {
     // Public key is loaded from the specified file.
-    pkey_ = std::unique_ptr<Pubkey>(new Pubkey());
+    pkey_.reset(new Pubkey());
     pkey_->Update(
         Pubkeys::CreateFrom(Filesystem::fileReadToEnd(path), pkey_type_));
     return;
@@ -186,7 +186,7 @@ IssuerInfo::IssuerInfo(Json::Object *json, const JwtAuthConfig &parent) {
     // Public key will be loaded from the specified URI.
     uri_ = uri;
     cluster_ = cluster;
-    pkey_ = std::unique_ptr<Pubkey>(
+    pkey_.reset(
         new Pubkey(std::chrono::seconds(parent.pubkey_cache_expiration_sec_)));
     return;
   }
