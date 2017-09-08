@@ -15,6 +15,7 @@
 
 #include "jwt.h"
 
+#include "common/common/assert.h"
 #include "common/common/base64.h"
 #include "common/common/utility.h"
 #include "common/json/json_loader.h"
@@ -252,6 +253,7 @@ JwtVerifier::JwtVerifier(const std::string &jwt) {
   }
 
   iss_ = payload_->getString("iss", "");
+  aud_ = payload_->getString("aud", "");
   exp_ = payload_->getInteger("exp", 0);
 
   // Set up signature
@@ -364,6 +366,7 @@ const std::string &JwtVerifier::PayloadStrBase64Url() {
   return payload_str_base64url_;
 }
 const std::string &JwtVerifier::Iss() { return iss_; }
+const std::string &JwtVerifier::Aud() { return aud_; }
 int64_t JwtVerifier::Exp() { return exp_; }
 
 void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
@@ -375,12 +378,6 @@ void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   if (e.GetStatus() == Status::OK) {
     keys_.push_back(std::move(key_ptr));
   }
-}
-
-std::unique_ptr<Pubkeys> Pubkeys::CreateFromPem(const std::string &pkey_pem) {
-  std::unique_ptr<Pubkeys> keys(new Pubkeys());
-  keys->CreateFromPemCore(pkey_pem);
-  return keys;
 }
 
 void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
@@ -427,9 +424,19 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
   }
 }
 
-std::unique_ptr<Pubkeys> Pubkeys::CreateFromJwks(const std::string &pkey_jwks) {
+std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,
+                                             Type type) {
   std::unique_ptr<Pubkeys> keys(new Pubkeys());
-  keys->CreateFromJwksCore(pkey_jwks);
+  switch (type) {
+    case Type::JWKS:
+      keys->CreateFromJwksCore(pkey);
+      break;
+    case Type::PEM:
+      keys->CreateFromPemCore(pkey);
+      break;
+    default:
+      PANIC("can not reach here");
+  }
   return keys;
 }
 

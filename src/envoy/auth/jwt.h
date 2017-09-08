@@ -164,6 +164,10 @@ class JwtVerifier : public WithStatus {
   // "iss" claim does not exist.
   const std::string& Iss();
 
+  // It returns the "aud" claim value of the given JWT, or an empty string if
+  // "aud" claim does not exist.
+  const std::string& Aud();
+
   // It returns the "exp" claim value of the given JWT, or 0 if "exp" claim does
   // not exist.
   int64_t Exp();
@@ -194,6 +198,7 @@ class JwtVerifier : public WithStatus {
   std::string alg_;
   std::string kid_;
   std::string iss_;
+  std::string aud_;
   int64_t exp_;
 };
 
@@ -205,9 +210,12 @@ class JwtVerifier : public WithStatus {
 //   if(keys->GetStatus() == Status::OK) { ... }
 class Pubkeys : public WithStatus {
  public:
+  // Format of public key.
+  enum Type { PEM, JWKS };
+
   Pubkeys(){};
-  static std::unique_ptr<Pubkeys> CreateFromPem(const std::string& pkey_pem);
-  static std::unique_ptr<Pubkeys> CreateFromJwks(const std::string& pkey_jwks);
+  static std::unique_ptr<Pubkeys> CreateFrom(const std::string& pkey,
+                                             Type type);
 
  private:
   void CreateFromPemCore(const std::string& pkey_pem);
