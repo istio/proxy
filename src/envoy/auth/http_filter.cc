@@ -158,7 +158,9 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
   }
 
   // Check "exp" claim.
-  auto unix_timestamp = std::chrono::seconds(std::time(NULL)).count();
+  auto unix_timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
   if (jwt.Exp() < unix_timestamp) {
     return "JWT_EXPIRED";
   }
