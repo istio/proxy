@@ -34,4 +34,3 @@ RUN useradd -m --uid 1337 istio-proxy && \
     echo "istio-proxy ALL=NOPASSWD: ALL" >> /etc/sudoers && \
     chown -R istio-proxy /var/lib/istio
 
-ENTRYPOINT /usr/local/bin/istio-start.sh
