@@ -83,7 +83,7 @@ Every HTTP request should contain a JWT in the HTTP Authorization header:
 - If verification succeeds, the request will be passed to the backend, together with an additional HTTP header:
   
   ```
-  Istio-Auth-UserInfo: <UserInfo>
+  sec-istio-auth-userinfo: <UserInfo>
   ```
   
   Here, `<UserInfo>` is one of the following, which you can configure in Envoy config:
