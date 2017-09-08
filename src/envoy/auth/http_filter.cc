@@ -22,6 +22,7 @@
 #include "envoy/http/async_client.h"
 #include "server/config/network/http_connection_manager.h"
 
+#include <chrono>
 #include <string>
 
 namespace Envoy {
@@ -124,11 +125,7 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   auto& iss = iss_it->second.first;
   iss->failed_ = !succeed;
   if (succeed) {
-    if (iss->pkey_type_ == "pem") {
-      iss->pkey_ = Auth::Pubkeys::CreateFromPem(pubkey);
-    } else if (iss->pkey_type_ == "jwks") {
-      iss->pkey_ = Auth::Pubkeys::CreateFromJwks(pubkey);
-    }
+    iss->pkey_ = Auth::Pubkeys::CreateFrom(pubkey, iss->pkey_type_);
   }
   iss->loaded_ = true;
   calling_issuers_.erase(iss_it);
@@ -158,10 +155,16 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     // Invalid JWT
     return Auth::StatusToString(jwt.GetStatus());
   }
-  /*
-   * TODO: check exp claim
-   */
 
+  // Check "exp" claim.
+  auto unix_timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+  if (jwt.Exp() < unix_timestamp) {
+    return "JWT_EXPIRED";
+  }
+
+  bool iss_aud_matched = false;
   for (const auto& iss : config_->issuers_) {
     if (iss->failed_ || iss->pkey_->GetStatus() != Auth::Status::OK) {
       continue;
@@ -170,23 +173,33 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     if (jwt.Iss() != iss->name_) {
       continue;
     }
-    /*
-     * TODO: check aud claim
-     */
+    if (!iss->IsAudienceAllowed(jwt.Aud())) {
+      continue;
+    }
+    iss_aud_matched = true;
 
     if (jwt.Verify(*iss->pkey_)) {
       // verification succeeded
-      /*
-       * TODO: change what to add according to config_->user_info_type_
-       */
-      headers.addReferenceKey(AuthorizedHeaderKey(), jwt.PayloadStr());
+      std::string str_to_add;
+      switch (config_->user_info_type_) {
+        case Auth::JwtAuthConfig::UserInfoType::kPayload:
+          str_to_add = jwt.PayloadStr();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kPayloadBase64Url:
+          str_to_add = jwt.PayloadStrBase64Url();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kHeaderPayloadBase64Url:
+          str_to_add =
+              jwt.HeaderStrBase64Url() + "." + jwt.PayloadStrBase64Url();
+      }
+      headers.addReferenceKey(AuthorizedHeaderKey(), str_to_add);
 
       // Remove JWT from headers.
       headers.remove(kAuthorizationHeaderKey);
       return "OK";
     }
   }
-  return "INVALID_SIGNATURE";
+  return iss_aud_matched ? "INVALID_SIGNATURE" : "ISS_AUD_UNMATCH";
 }
 
 void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
