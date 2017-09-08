@@ -139,7 +139,7 @@ Format of `<config>`:
 
 #### userinfo_type (string, optional)
 
-It specifies what will be added in `Istio-Auth-UserInfo` HTTP header.
+It specifies what will be added in `sec-istio-auth-userinfo` HTTP header.
 It should be one of the following:
 
 - `payload` : payload JSON
@@ -148,7 +148,7 @@ It should be one of the following:
 
 If not specified, the default value is `payload_base64url`.
 
-#### pubkey_cache_expiration_sec (number, optional)
+#### [WARNING, This feature is under construction ([issue](https://github.com/istio/proxy/issues/468))] pubkey_cache_expiration_sec (number, optional)
 
 It specifies how long a cached public key will be kept (in seconds).
 
@@ -174,6 +174,9 @@ If it is specified, JWT must have `aud` claim specified in this list.
   - __file__ (string, optional): path of the plain text file of the public key.
   - __uri__ (string, optional): URI of the public key. Note that in this case you should register the issuer as a cluster (as described below), and specify the name of the cluster.
   - __cluster__ (string, optional): cluster name of the issuer.
+  
+  __(WARNING:This feature is under construction ([issue](https://github.com/istio/proxy/issues/468)))__ When `uri` and `cluster` are given, this proxy fetches the public key and 
+  updates every `pubkey_cache_expiration_sec` second. 
 
 
 ### Clusters
