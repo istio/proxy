@@ -267,7 +267,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, AudInvalid) {
 
   TestVerification(createHeaders(jwt), "", createIssuerHeaders(), kPublicKey,
                    false, Http::TestHeaderMapImpl{{":status", "401"}},
-                   "Verification Failed");
+                   "ISS_AUD_UNMATCH");
 }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {

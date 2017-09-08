@@ -214,8 +214,7 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
     // verification failed
     Code code = Code(401);  // Unauthorized
     // return failure reason as message body
-    std::string message_body = status;
-    Utility::sendLocalReply(*decoder_callbacks_, false, code, message_body);
+    Utility::sendLocalReply(*decoder_callbacks_, false, code, status);
     return;
   }
 
