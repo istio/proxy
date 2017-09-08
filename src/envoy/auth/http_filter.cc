@@ -23,7 +23,6 @@
 #include "server/config/network/http_connection_manager.h"
 
 #include <chrono>
-#include <ctime>
 #include <string>
 
 namespace Envoy {
