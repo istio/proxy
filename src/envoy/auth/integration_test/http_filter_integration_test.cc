@@ -246,9 +246,28 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
       "qS7Wwf8C0V9o2KZu0KDV0j0c9nZPWTv3IMlaGZAtQgJUeyemzRDtf4g2yG3xBZrLm3AzDUj_"
       "EX_pmQAHA5ZjPVCAw";
 
-  TestVerification(
-      createHeaders(kJwtNoKid), "", createIssuerHeaders(), kPublicKey, false,
-      Http::TestHeaderMapImpl{{":status", "401"}}, "Verification Failed");
+  TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(),
+                   kPublicKey, false,
+                   Http::TestHeaderMapImpl{{":status", "401"}}, "JWT_EXPIRED");
+}
+
+TEST_P(JwtVerificationFilterIntegrationTestWithJwks, AudInvalid) {
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","aud":"invalid_service","exp":2001001001}
+  const std::string jwt =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImF1ZCI6ImludmFsaWRfc2VydmljZSIsImV4cCI6MjAwMTAwMTAwMX0."
+      "gEWnuqtEdVzC94lVbuClaVLoxs-w-_uKJRbAYwAKRulE-"
+      "ZhxG9VtKCd8i90xEuk9txB3tT8VGjdZKs5Hf5LjF4ebobV3M9ya6mZvq1MdcUHYiUtQhJe3M"
+      "t_2sxRmogK-QZ7HcuA9hpFO4HHVypnMDr4WHgxx2op1vhKU7NDlL-"
+      "38Dpf6uKEevxi0Xpids9pSST4YEQjReTXJDJECT5dhk8ZQ_lcS-pujgn7kiY99bTf6j4U-"
+      "ajIcWwtQtogYx4bcmHBUvEjcYOC86TRrnArZSk1mnO7OGq4KrSrqhXnvqDmc14LfldyWqEks"
+      "X5FkM94prXPK0iN-pPVhRjNZ4xvR-w";
+
+  TestVerification(createHeaders(jwt), "", createIssuerHeaders(), kPublicKey,
+                   false, Http::TestHeaderMapImpl{{":status", "401"}},
+                   "ISS_AUD_UNMATCH");
 }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
@@ -256,7 +275,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
   std::string pubkey = "weirdKey";
   TestVerification(createHeaders(token), "", createIssuerHeaders(), pubkey,
                    false, Http::TestHeaderMapImpl{{":status", "401"}},
-                   "Verification Failed");
+                   "JWT_BAD_FORMAT");
 }
 
 /*
