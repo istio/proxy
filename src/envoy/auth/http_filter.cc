@@ -164,6 +164,7 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     return "JWT_EXPIRED";
   }
 
+  bool iss_aud_matched = false;
   for (const auto& iss : config_->issuers_) {
     if (iss->failed_ || iss->pkey_->GetStatus() != Auth::Status::OK) {
       continue;
@@ -172,23 +173,33 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     if (jwt.Iss() != iss->name_) {
       continue;
     }
-    /*
-     * TODO: check aud claim
-     */
+    if (!iss->IsAudienceAllowed(jwt.Aud())) {
+      continue;
+    }
+    iss_aud_matched = true;
 
     if (jwt.Verify(*iss->pkey_)) {
       // verification succeeded
-      /*
-       * TODO: change what to add according to config_->user_info_type_
-       */
-      headers.addReferenceKey(AuthorizedHeaderKey(), jwt.PayloadStr());
+      std::string str_to_add;
+      switch (config_->user_info_type_) {
+        case Auth::JwtAuthConfig::UserInfoType::kPayload:
+          str_to_add = jwt.PayloadStr();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kPayloadBase64Url:
+          str_to_add = jwt.PayloadStrBase64Url();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kHeaderPayloadBase64Url:
+          str_to_add =
+              jwt.HeaderStrBase64Url() + "." + jwt.PayloadStrBase64Url();
+      }
+      headers.addReferenceKey(AuthorizedHeaderKey(), str_to_add);
 
       // Remove JWT from headers.
       headers.remove(kAuthorizationHeaderKey);
       return "OK";
     }
   }
-  return "INVALID_SIGNATURE";
+  return iss_aud_matched ? "INVALID_SIGNATURE" : "ISS_AUD_UNMATCH";
 }
 
 void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
