@@ -26,6 +26,8 @@
 #include "envoy/upstream/cluster_manager.h"
 #include "server/config/network/http_connection_manager.h"
 
+#include <chrono>
+#include <mutex>
 #include <vector>
 
 namespace Envoy {
@@ -57,30 +59,74 @@ class AsyncClientCallbacks : public AsyncClient::Callbacks,
   AsyncClient::Request *request_;
 };
 
+struct JwtAuthConfig;
+
 // Struct to hold an issuer's information.
 struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   // This constructor loads config from JSON. When public key is given via URI,
   // it just keeps URI and cluster name, and public key will be fetched later,
   // namely in decodeHeaders() of the filter class.
-  IssuerInfo(Json::Object *json);
+  IssuerInfo(Json::Object *json, const JwtAuthConfig &parent);
 
-  // True if the config loading in the constructor or fetching public key failed
+  // True if the config loading failed in the constructor.
+  // If this is true, this issuer will be ignored.
   bool failed_ = false;
-
-  // True if the public key is loaded
-  bool loaded_ = false;
 
   std::string uri_;      // URI for public key
   std::string cluster_;  // Envoy cluster name for public key
 
-  std::string name_;               // e.g. "https://accounts.example.com"
-  Pubkeys::Type pkey_type_;        // Format of public key.
-  std::unique_ptr<Pubkeys> pkey_;  // Public key
+  std::string name_;         // e.g. "https://accounts.example.com"
+  Pubkeys::Type pkey_type_;  // Format of public key.
 
   // If audiences is an empty array or not specified, any "aud" claim will be
   // accepted.
   std::vector<std::string> audiences_;
   bool IsAudienceAllowed(const std::string &aud);
+
+  // Class to hold public key.
+  // (1) If regular update is not needed (the case public key is given directly
+  // in config file or by giving local file path), the constructor Pubkey()
+  // should be called.
+  // (2) If regular update is needed (the case only url and cluster are given
+  // and public key should be fetched), the constructor Pubkey(valid_period)
+  // should be called.
+  class Pubkey {
+   public:
+    Pubkey();                                         // Without update version
+    Pubkey(std::chrono::duration<int> valid_period);  // With update version
+
+    // IsNotExpired() checks if public key should be updated.
+    // If public key has not been set yet, it returns false.
+    // If regular update is not needed (the case (1)), it always returns true.
+    // When it returns false, mutex_pkey_ is locked and should be unlocked by
+    // calling Update().
+    bool IsNotExpired();
+
+    // It updates the public key.
+    // If regular updated is needed (the case (2)), it also unlocks mutex_pkey_
+    // and updates the expiration time.
+    // It should also be called in the case (1) to initialize the public key in
+    // config loading.
+    void Update(std::unique_ptr<Pubkeys> pkey);
+
+    // It returns the public key. It might returns nullptr (when fetching
+    // failed).
+    // If someone is locking mutex_pkey_ to update it, it waits until the
+    // updating finishes.
+    std::shared_ptr<Pubkeys> Get();
+
+   private:
+    std::shared_ptr<Pubkeys> pkey_;
+    std::mutex mutex_pkey_;
+    std::chrono::time_point<std::chrono::system_clock> expiration_;
+
+    // Updating frequency.
+    std::chrono::duration<int> valid_period_;
+
+    // False for the case (1). True for the case (2).
+    bool update_needed_;
+  };
+  std::unique_ptr<Pubkey> pkey_;  // Public key
 };
 
 // A config for Jwt auth filter

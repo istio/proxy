@@ -57,13 +57,18 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   bool stopped_;
   std::function<void(void)> cancel_verification_;
 
-  // Key: name of issuer the public key of which is being fetched
-  // Value: (IssuerInfo object with that name, AsyncClientCallbacks object to
-  // make the request for public key)
-  std::map<std::string,
-           std::pair<std::shared_ptr<Auth::IssuerInfo>,
-                     std::unique_ptr<Auth::AsyncClientCallbacks> > >
-      calling_issuers_;
+  // Struct to hold an issuer whose public key is being fetched, together with
+  // the client making the request for its public key.
+  struct CallingIssuerInfo {
+    std::shared_ptr<Auth::IssuerInfo> iss_;
+    std::unique_ptr<Auth::AsyncClientCallbacks> async_cb_;
+  };
+
+  // Map to keep the set of issuers whose public key is being fetched.
+  // Key: Issuer's name
+  std::map<std::string, CallingIssuerInfo> calling_issuers_;
+  // Flag to check if expirations of all public keys are checked.
+  bool all_issuers_pubkey_expiration_checked_;
 
   void ReceivePubkey(HeaderMap& headers, std::string issuer_name, bool succeed,
                      const std::string& pubkey);
