@@ -6,7 +6,7 @@ FROM ubuntu:xenial
 # sudo /usr/local/bin/proxy-redirection-restore
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-    curl \
+      curl \
       iptables \
       iproute2 \
       iputils-ping \
