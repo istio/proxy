@@ -212,6 +212,9 @@ class Jwt : public WithStatus {
   std::string aud_;
   int64_t exp_;
 
+  /*
+   * TODO: try not to use friend function
+   */
   friend bool Verifier::Verify(const Jwt& jwt, const Pubkeys& pubkeys);
 };
 
@@ -244,6 +247,9 @@ class Pubkeys : public WithStatus {
   };
   std::vector<std::unique_ptr<Pubkey> > keys_;
 
+  /*
+   * TODO: try not to use friend function
+   */
   friend bool Verifier::Verify(const Jwt& jwt, const Pubkeys& pubkeys);
 };
 
