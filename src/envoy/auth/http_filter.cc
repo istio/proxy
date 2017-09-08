@@ -150,8 +150,7 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
               kAuthorizationHeaderTokenPrefix.length()) != 0) {
     return "AUTHORIZATION_HEADER_BAD_FORMAT";
   }
-  Auth::JwtVerifier jwt(value.c_str() +
-                        kAuthorizationHeaderTokenPrefix.length());
+  Auth::Jwt jwt(value.c_str() + kAuthorizationHeaderTokenPrefix.length());
   if (jwt.GetStatus() != Auth::Status::OK) {
     // Invalid JWT
     return Auth::StatusToString(jwt.GetStatus());
@@ -165,6 +164,8 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     return "JWT_EXPIRED";
   }
 
+  bool iss_aud_matched = false;
+  Auth::Verifier v;
   for (const auto& iss : config_->issuers_) {
     std::shared_ptr<Auth::Pubkeys> pkey = iss->pkey_->Get();
     if (!pkey || pkey->GetStatus() != Auth::Status::OK) {
@@ -174,23 +175,34 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     if (jwt.Iss() != iss->name_) {
       continue;
     }
-    /*
-     * TODO: check aud claim
-     */
+    if (!iss->IsAudienceAllowed(jwt.Aud())) {
+      continue;
+    }
+    iss_aud_matched = true;
 
-    if (jwt.Verify(*pkey)) {
+    if (v.Verify(jwt, *pkey)) {
       // verification succeeded
-      /*
-       * TODO: change what to add according to config_->user_info_type_
-       */
-      headers.addReferenceKey(AuthorizedHeaderKey(), jwt.PayloadStr());
+      std::string str_to_add;
+      switch (config_->user_info_type_) {
+        case Auth::JwtAuthConfig::UserInfoType::kPayload:
+          str_to_add = jwt.PayloadStr();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kPayloadBase64Url:
+          str_to_add = jwt.PayloadStrBase64Url();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kHeaderPayloadBase64Url:
+          str_to_add =
+              jwt.HeaderStrBase64Url() + "." + jwt.PayloadStrBase64Url();
+      }
+      headers.addReferenceKey(AuthorizedHeaderKey(), str_to_add);
 
       // Remove JWT from headers.
       headers.remove(kAuthorizationHeaderKey);
       return "OK";
     }
   }
-  return "INVALID_SIGNATURE";
+  return iss_aud_matched ? Auth::StatusToString(v.GetStatus())
+                         : "ISS_AUD_UNMATCH";
 }
 
 void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
@@ -203,12 +215,9 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
   ENVOY_LOG(debug, "Verification status = {}", status);
   if (status != "OK") {
     // verification failed
-    /*
-     * TODO: detailed information on message body
-     */
     Code code = Code(401);  // Unauthorized
-    std::string message_body = "Verification Failed";
-    Utility::sendLocalReply(*decoder_callbacks_, false, code, message_body);
+    // return failure reason as message body
+    Utility::sendLocalReply(*decoder_callbacks_, false, code, status);
     return;
   }
 
