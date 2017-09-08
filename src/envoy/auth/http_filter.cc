@@ -22,6 +22,7 @@
 #include "envoy/http/async_client.h"
 #include "server/config/network/http_connection_manager.h"
 
+#include <chrono>
 #include <string>
 
 namespace Envoy {
@@ -124,11 +125,7 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   auto& iss = iss_it->second.first;
   iss->failed_ = !succeed;
   if (succeed) {
-    if (iss->pkey_type_ == "pem") {
-      iss->pkey_ = Auth::Pubkeys::CreateFromPem(pubkey);
-    } else if (iss->pkey_type_ == "jwks") {
-      iss->pkey_ = Auth::Pubkeys::CreateFromJwks(pubkey);
-    }
+    iss->pkey_ = Auth::Pubkeys::CreateFrom(pubkey, iss->pkey_type_);
   }
   iss->loaded_ = true;
   calling_issuers_.erase(iss_it);
@@ -157,9 +154,14 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     // Invalid JWT
     return Auth::StatusToString(jwt.GetStatus());
   }
-  /*
-   * TODO: check exp claim
-   */
+
+  // Check "exp" claim.
+  auto unix_timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+  if (jwt.Exp() < unix_timestamp) {
+    return "JWT_EXPIRED";
+  }
 
   bool iss_aud_matched = false;
   Auth::Verifier v;
