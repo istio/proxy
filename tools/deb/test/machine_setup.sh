@@ -21,8 +21,6 @@ set -x
 # The machine needs to be re-imaged to test 'clean' installs, or reused to test
 # 'upgrade' use cases - the script should work for both cases.
 
-NAME=${1-$(hostname)}
-
 
 # Configure DHCP server to use DNSMasq, configure dnsmasq.
 function istioNetworkInit() {
@@ -64,10 +62,24 @@ function istioInstall() {
   chown istio-proxy /var/lib/istio/envoy/sidecar.env
 }
 
+function istioRestart() {
+    # Start or restart istio
+    systemctl status istio > /dev/null
+    if [[ $? = 0 ]]; then
+      systemctl restart istio
+    else
+      systemctl start istio
+    fi
+}
+
+
+## Test helpers
+
 # Install a web server and helper packages to help testing and debugging
 # We use a web server to verify HTTP requests can be made from K8S to raw VM and from
 # raw VM to K8S services (zipkin in this test)
 function istioInstallTestHelpers() {
+  NAME=${1-$(hostname)}
 
   sudo apt-get -y install nginx tcpdump netcat tmux
 
@@ -88,6 +100,28 @@ EOF
   systemctl restart nginx
 }
 
+function istioMysql() {
+  # The ratings script is using root/password by default.
+
+  cat <<EOF | sudo mysql
+GRANT ALL PRIVILEGES on *.* to 'root'@'localhost' IDENTIFIED BY 'password';
+FLUSH PRIVILEGES;
+CREATE DATABASE test;
+EOF
+
+  # Create the tables
+  mysql -u root -ppassword < mysql/mysqldb-init.sql
+}
+
+function istioUpdateRatings() {
+  local RATING=${1-2}
+
+  cat <<EOF | mysql -u root -ppassword
+  USE test;
+  update ratings set rating=$RATING where reviewid=1;
+EOF
+}
+
 function istioInstallBookinfo() {
   # Install nodejs. Version in debian is old
   curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
@@ -96,33 +130,24 @@ function istioInstallBookinfo() {
   (cd ratings; npm install)
 
   systemctl start mariadb
+  istioMysql
 
   # Start bookinfo components
   if [[ -r details.pid ]] ; then
      kill -9 $(cat details.pid)
   fi
-  ruby details/details.rb 9080 &
+  ruby details/details.rb 9080  > details.log 2>&1 &
   echo $! > details.pid
 
   # Note that we run productpage on a different port - 9080 is taken
-  (cd productpage ; python productpage.py 9081 &)
-  echo $! > productpage.pid
+  #(cd productpage ; python productpage.py 9081 &)
+  #echo $! > productpage.pid
 
-  (cd ratings ; node ratings.js 9082 &)
-  echo $! > ratings.pid
+  #(cd ratings ; node ratings.js 9082 &)
+  #echo $! > ratings.pid
 }
 
-function istioRestart() {
-    # Start or restart istio
-    systemctl status istio > /dev/null
-    if [[ $? = 0 ]]; then
-      systemctl restart istio
-    else
-      systemctl start istio
-    fi
-}
-
-echo "Initializing VM " $(*)
+echo "Initializing VM ${@}"
 
 if [[ ${1:-} == "initNetwork" ]] ; then
   istioNetworkInit
