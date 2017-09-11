@@ -123,7 +123,9 @@ function istio_build_all() {
 
 }
 
+# Git sync
 function istio_sync() {
+  # TODO: use repo sync instead
   local BRANCH=${1-master}
   mkdir -p $GOPATH/src/istio.io
 
@@ -172,26 +174,6 @@ function istio_k8s_update() {
   done
 }
 
-
-# Show the branch and status of each istio repo
-function istio_status() {
-  cd $GOPATH/src/istio.io
-
-  for sub in pilot istio mixer auth proxy; do
-     echo -e "\n\n$sub\n"
-     (cd $GOPATH/src/istio.io/$sub; git branch; git status)
-  done
-}
-
-# Get an istio service account secret, extract it to files to be provisioned on a raw VM
-function istio_provision_certs() {
-  local SA=${1:-istio.default}
-
-  kubectl get secret $SA -o jsonpath='{.data.cert-chain\.pem}' |base64 -d  > cert-chain.pem
-  kubectl get secret $SA -o jsonpath='{.data.root-cert\.pem}' |base64 -d  > root-cert.pem
-  kubectl get secret $SA -o jsonpath='{.data.key\.pem}' |base64 -d  > key.pem
-
-}
 
 # Copy files to the VM
 function istioVMCopy() {
