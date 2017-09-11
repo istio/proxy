@@ -275,7 +275,6 @@ EOF
 
 
 function istioTestSetUp() {
->>>>>>> 26ab13f903004e410cb8d274a4eaa7d7a41215c1
 
  LOCAL_IP=$(istioVMInternalIP $VMNAME)
 
@@ -322,17 +321,10 @@ function tearDown() {
   istioVMDelete ${VMNAME}
 }
 
-<<<<<<< HEAD
 if [[ ${1:-} == "setupVM" ]] ; then
   istioProvisionVM ${VMNAME}
 elif [[ ${1:-} == "initVM" ]] ; then
   istioVMInit ${VMNAME}
-=======
-if [[ ${1:-} == "setup" ]] ; then
-  istioProvisionVM ${TESTVM}
-elif [[ ${1:-} == "initVM" ]] ; then
-  istioVMInit ${TESTVM}
->>>>>>> 26ab13f903004e410cb8d274a4eaa7d7a41215c1
 elif [[ ${1:-} == "build" ]] ; then
   (cd $ISTIO_IO/proxy; tools/deb/test/build_all.sh)
 elif [[ ${1:-} == "prepareCluster" ]] ; then
@@ -341,15 +333,9 @@ elif [[ ${1:-} == "test" ]] ; then
   istioTestSetUp
   istioTest
 elif [[ ${1:-} == "help" ]] ; then
-<<<<<<< HEAD
-  echo "$0 prepareCluster: provision an existing Istio cluster for VM use"
-  echo "$0 initVM: create a test VM"
-  echo "$0 setupVM: provision an existing VM using the current build"
-=======
   echo "$0 prepareCluster: provision an existing VM using the current build"
   echo "$0 initVM: create a test VM"
   echo "$0 setup: provision an existing VM using the current build"
->>>>>>> 26ab13f903004e410cb8d274a4eaa7d7a41215c1
   echo "$0 test: run tests"
   echo "$0 : create or reset VM, provision and run tests"
 elif [[ ${1:-} == "env" ]] ; then
@@ -357,19 +343,11 @@ elif [[ ${1:-} == "env" ]] ; then
 else
   # By default reset or create the VM, and do all steps. The VM will be left around until
   # next run, for debugging or other tests - next run will reset it (faster than create).
-<<<<<<< HEAD
-  istioVMInit ${VMNAME}
-
-  istioPrepareCluster
-  istioProvisionVM ${VMNAME}
-  istioProvisionTestWorker ${VMNAME}
-=======
   istioVMInit ${TESTVM}
 
   istioPrepareCluster
   istioProvisionVM ${TESTVM}
   istioProvisionTestWorker ${TESTVM}
->>>>>>> 26ab13f903004e410cb8d274a4eaa7d7a41215c1
   istioTestSetUp
   istioTest
 
