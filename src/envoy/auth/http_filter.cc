@@ -22,13 +22,14 @@
 #include "envoy/http/async_client.h"
 #include "server/config/network/http_connection_manager.h"
 
+#include <chrono>
 #include <string>
 
 namespace Envoy {
 namespace Http {
 
 const LowerCaseString& JwtVerificationFilter::AuthorizedHeaderKey() {
-  static LowerCaseString* key = new LowerCaseString("Istio-Auth-UserInfo");
+  static LowerCaseString* key = new LowerCaseString("sec-istio-auth-userinfo");
   return *key;
 }
 
@@ -124,11 +125,7 @@ void JwtVerificationFilter::ReceivePubkey(HeaderMap& headers,
   auto& iss = iss_it->second.first;
   iss->failed_ = !succeed;
   if (succeed) {
-    if (iss->pkey_type_ == "pem") {
-      iss->pkey_ = Auth::Pubkeys::CreateFromPem(pubkey);
-    } else if (iss->pkey_type_ == "jwks") {
-      iss->pkey_ = Auth::Pubkeys::CreateFromJwks(pubkey);
-    }
+    iss->pkey_ = Auth::Pubkeys::CreateFrom(pubkey, iss->pkey_type_);
   }
   iss->loaded_ = true;
   calling_issuers_.erase(iss_it);
@@ -152,16 +149,22 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
               kAuthorizationHeaderTokenPrefix.length()) != 0) {
     return "AUTHORIZATION_HEADER_BAD_FORMAT";
   }
-  Auth::JwtVerifier jwt(value.c_str() +
-                        kAuthorizationHeaderTokenPrefix.length());
+  Auth::Jwt jwt(value.c_str() + kAuthorizationHeaderTokenPrefix.length());
   if (jwt.GetStatus() != Auth::Status::OK) {
     // Invalid JWT
     return Auth::StatusToString(jwt.GetStatus());
   }
-  /*
-   * TODO: check exp claim
-   */
 
+  // Check "exp" claim.
+  auto unix_timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+  if (jwt.Exp() < unix_timestamp) {
+    return "JWT_EXPIRED";
+  }
+
+  bool iss_aud_matched = false;
+  Auth::Verifier v;
   for (const auto& iss : config_->issuers_) {
     if (iss->failed_ || iss->pkey_->GetStatus() != Auth::Status::OK) {
       continue;
@@ -170,23 +173,35 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
     if (jwt.Iss() != iss->name_) {
       continue;
     }
-    /*
-     * TODO: check aud claim
-     */
+    if (!iss->IsAudienceAllowed(jwt.Aud())) {
+      continue;
+    }
+    iss_aud_matched = true;
 
-    if (jwt.Verify(*iss->pkey_)) {
+    iss_aud_matched = true;
+    if (v.Verify(jwt, *iss->pkey_)) {
       // verification succeeded
-      /*
-       * TODO: change what to add according to config_->user_info_type_
-       */
-      headers.addReferenceKey(AuthorizedHeaderKey(), jwt.PayloadStr());
+      std::string str_to_add;
+      switch (config_->user_info_type_) {
+        case Auth::JwtAuthConfig::UserInfoType::kPayload:
+          str_to_add = jwt.PayloadStr();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kPayloadBase64Url:
+          str_to_add = jwt.PayloadStrBase64Url();
+          break;
+        case Auth::JwtAuthConfig::UserInfoType::kHeaderPayloadBase64Url:
+          str_to_add =
+              jwt.HeaderStrBase64Url() + "." + jwt.PayloadStrBase64Url();
+      }
+      headers.addReferenceKey(AuthorizedHeaderKey(), str_to_add);
 
       // Remove JWT from headers.
       headers.remove(kAuthorizationHeaderKey);
       return "OK";
     }
   }
-  return "INVALID_SIGNATURE";
+  return iss_aud_matched ? Auth::StatusToString(v.GetStatus())
+                         : "ISS_AUD_UNMATCH";
 }
 
 void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
@@ -199,12 +214,9 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
   ENVOY_LOG(debug, "Verification status = {}", status);
   if (status != "OK") {
     // verification failed
-    /*
-     * TODO: detailed information on message body
-     */
     Code code = Code(401);  // Unauthorized
-    std::string message_body = "Verification Failed";
-    Utility::sendLocalReply(*decoder_callbacks_, false, code, message_body);
+    // return failure reason as message body
+    Utility::sendLocalReply(*decoder_callbacks_, false, code, status);
     return;
   }
 

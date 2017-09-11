@@ -22,6 +22,7 @@
 
 #include "rapidjson/document.h"
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -98,6 +99,15 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
     failed_ = true;
     return;
   }
+  // Check "audience". It will be an empty array if the key "audience" does not
+  // exist
+  try {
+    audiences_ = json->getStringArray("audiences", true);
+  } catch (...) {
+    ENVOY_LOG(debug, "IssuerInfo [name = {}]: Bad audiences", name_);
+    failed_ = true;
+    return;
+  }
   // Check "pubkey"
   Json::ObjectSharedPtr json_pubkey;
   try {
@@ -108,14 +118,15 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
     return;
   }
   // Check "type"
-  pkey_type_ = json_pubkey->getString("type", "");
-  if (pkey_type_ == "") {
-    ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key type missing", name_);
-    failed_ = true;
-    return;
-  }
-  if (pkey_type_ != "pem" && pkey_type_ != "jwks") {
-    ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key type invalid", name_);
+  std::string pkey_type_str = json_pubkey->getString("type", "");
+  if (pkey_type_str == "pem") {
+    pkey_type_ = Pubkeys::PEM;
+  } else if (pkey_type_str == "jwks") {
+    pkey_type_ = Pubkeys::JWKS;
+  } else {
+    ENVOY_LOG(debug,
+              "IssuerInfo [name = {}]: Public key type missing or invalid",
+              name_);
     failed_ = true;
     return;
   }
@@ -123,11 +134,7 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
   std::string value = json_pubkey->getString("value", "");
   if (value != "") {
     // Public key is written in this JSON.
-    if (pkey_type_ == "pem") {
-      pkey_ = Pubkeys::CreateFromPem(value);
-    } else if (pkey_type_ == "jwks") {
-      pkey_ = Pubkeys::CreateFromJwks(value);
-    }
+    pkey_ = Pubkeys::CreateFrom(value, pkey_type_);
     loaded_ = true;
     return;
   }
@@ -135,11 +142,7 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
   std::string path = json_pubkey->getString("file", "");
   if (path != "") {
     // Public key is loaded from the specified file.
-    if (pkey_type_ == "pem") {
-      pkey_ = Pubkeys::CreateFromPem(Filesystem::fileReadToEnd(path));
-    } else if (pkey_type_ == "jwks") {
-      pkey_ = Pubkeys::CreateFromJwks(Filesystem::fileReadToEnd(path));
-    }
+    pkey_ = Pubkeys::CreateFrom(Filesystem::fileReadToEnd(path), pkey_type_);
     loaded_ = true;
     return;
   }
@@ -156,6 +159,11 @@ IssuerInfo::IssuerInfo(Json::Object *json) {
   // Public key not found
   ENVOY_LOG(debug, "IssuerInfo [name = {}]: Public key source missing", name_);
   failed_ = true;
+}
+
+bool IssuerInfo::IsAudienceAllowed(const std::string &aud) {
+  return audiences_.empty() || (std::find(audiences_.begin(), audiences_.end(),
+                                          aud) != audiences_.end());
 }
 
 /*
@@ -177,16 +185,6 @@ JwtAuthConfig::JwtAuthConfig(const Json::Object &config,
 
   pubkey_cache_expiration_sec_ =
       config.getInteger("pubkey_cache_expiration_sec", 600);
-
-  /*
-   * TODO: audiences should be able to be specified for each issuer
-   */
-  // Empty array if key "audience" does not exist
-  try {
-    audiences_ = config.getStringArray("audience", true);
-  } catch (...) {
-    ENVOY_LOG(debug, "JwtAuthConfig: {}, Bad audiences", __func__);
-  }
 
   // Load the issuers
   issuers_.clear();
