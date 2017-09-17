@@ -20,7 +20,7 @@ namespace Envoy {
 
 // Base class JWT filter integration tests.
 class JwtVerificationFilterIntegrationTest
-    : public BaseIntegrationTest,
+    : public HttpIntegrationTest,
       public testing::TestWithParam<Network::Address::IpVersion> {
  public:
   JwtVerificationFilterIntegrationTest() : BaseIntegrationTest(GetParam()) {}
