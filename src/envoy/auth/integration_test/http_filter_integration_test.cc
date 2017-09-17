@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "test/integration/integration.h"
+#include "test/integration/http_integration.h"
 #include "test/integration/utility.h"
 
 namespace Envoy {
