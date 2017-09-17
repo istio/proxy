@@ -23,7 +23,7 @@ class JwtVerificationFilterIntegrationTest
     : public HttpIntegrationTest,
       public testing::TestWithParam<Network::Address::IpVersion> {
  public:
-  JwtVerificationFilterIntegrationTest() : BaseIntegrationTest(GetParam()) {}
+  JwtVerificationFilterIntegrationTest() : HttpIntegrationTest(GetParam()) {}
   virtual ~JwtVerificationFilterIntegrationTest() {}
   /**
    * Initializer for an individual integration test.
