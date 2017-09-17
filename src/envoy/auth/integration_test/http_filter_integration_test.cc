@@ -107,8 +107,7 @@ class JwtVerificationFilterIntegrationTest
     FakeStreamPtr request_stream_issuer;
     FakeStreamPtr request_stream_backend;
 
-    codec_client =
-        makeHttpConnection(lookupPort("http"), Http::CodecClient::Type::HTTP1);
+    codec_client = makeHttpConnection(lookupPort("http"));
 
     // Send a request to Envoy.
     if (!request_body.empty()) {
