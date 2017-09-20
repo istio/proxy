@@ -42,7 +42,7 @@ pkg_tar(
 )
 
 pkg_deb(
-    name = "istio-proxy",
+    name = "istio-proxy-envoy",
     architecture = "amd64",
     built_using = "bazel",
     data = ":debian-data",
