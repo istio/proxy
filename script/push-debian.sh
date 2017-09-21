@@ -13,7 +13,10 @@ BAZEL_ARGS=()
 BAZEL_TARGET='//tools/deb:istio-proxy'
 BAZEL_BINARY="${ROOT}/bazel-bin/tools/deb/istio-proxy"
 
-set -ex
+set -o errexit
+set -o nounset
+set -o pipefail
+set -x
 
 function usage() {
   echo "$0 \
