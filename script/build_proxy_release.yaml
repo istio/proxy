@@ -2,7 +2,7 @@
 #   \d+\.\d+\.\d+
 
 steps:
-- name: 'gcr.io/istio-io/istio-builder'
+- name: 'gcr.io/istio-io/istio-builder:0.1'
   args: [ './script/cloud_builder.sh', '-t', '$TAG_NAME' ]
 options:
   machineType: 'N1_STANDARD_8'
