@@ -25,7 +25,11 @@ gcloud kms decrypt \
   --key=DockerHub \
   --verbosity=info
 
-echo "Changing ${WORKSPACE} ownership to releng"
-chown -R releng -R "${WORKSPACE}"
+echo 'Setting bazel.rc'
+cp tools/bazel.rc.cloudbuilder "${HOME}/.bazelrc"
 
-su releng -c "./script/release.sh $*"
+#echo "Changing ${WORKSPACE} ownership to releng"
+#chown -R releng -R "${WORKSPACE}"
+
+#su releng -c "./
+script/release.sh ${@}
