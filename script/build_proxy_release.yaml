@@ -4,5 +4,6 @@
 steps:
 - name: 'gcr.io/istio-io/istio-builder'
   args: [ './script/cloud_builder.sh', '-t', '$TAG_NAME' ]
-
+options:
+  machineType: 'N1_STANDARD_8'
 timeout: 1800s

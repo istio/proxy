@@ -28,8 +28,4 @@ gcloud kms decrypt \
 echo 'Setting bazel.rc'
 cp tools/bazel.rc.cloudbuilder "${HOME}/.bazelrc"
 
-#echo "Changing ${WORKSPACE} ownership to releng"
-#chown -R releng -R "${WORKSPACE}"
-
-#su releng -c "./
 script/release.sh ${@}
