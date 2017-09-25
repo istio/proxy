@@ -18,6 +18,8 @@
 #include "common/common/base64.h"
 #include "common/common/utility.h"
 
+#include <arpa/inet.h>
+
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
 using ::istio::mixer_client::Attributes;
@@ -64,6 +66,9 @@ const std::string kConnectionReceviedTotalBytes =
 const std::string kConnectionSendBytes = "connection.sent.bytes";
 const std::string kConnectionSendTotalBytes = "connection.sent.bytes_total";
 const std::string kConnectionDuration = "connection.duration";
+
+// As a back, attributes with this suffix will be treated as ipv4.
+const std::string kIPSuffix = ".ip";
 
 // Context attributes
 const std::string kContextProtocol = "context.protocol";
@@ -277,11 +282,11 @@ void MixerControl::BuildHttpCheck(
     const std::string& source_user, const Utils::StringMap& route_attributes,
     const Network::Connection* connection) const {
   for (const auto& it : map_pb.map()) {
-    SetStringAttribute(it.first, it.second, &request_data->attributes);
+    SetMeshAttribute(it.first, it.second, &request_data->attributes);
   }
   for (const auto& attribute : route_attributes) {
-    SetStringAttribute(attribute.first, attribute.second,
-                       &request_data->attributes);
+    SetMeshAttribute(attribute.first, attribute.second,
+                     &request_data->attributes);
   }
   FillRequestHeaderAttributes(headers, &request_data->attributes);
 
@@ -304,8 +309,8 @@ void MixerControl::BuildHttpCheck(
     request_data->attributes.attributes[attribute.first] = attribute.second;
   }
   for (const auto& attribute : mixer_config_.mixer_attributes) {
-    SetStringAttribute(attribute.first, attribute.second,
-                       &request_data->attributes);
+    SetMeshAttribute(attribute.first, attribute.second,
+                     &request_data->attributes);
   }
 }
 
@@ -344,8 +349,8 @@ void MixerControl::BuildTcpCheck(HttpRequestDataPtr request_data,
     request_data->attributes.attributes[attribute.first] = attribute.second;
   }
   for (const auto& attribute : mixer_config_.mixer_attributes) {
-    SetStringAttribute(attribute.first, attribute.second,
-                       &request_data->attributes);
+    SetMeshAttribute(attribute.first, attribute.second,
+                     &request_data->attributes);
   }
 }
 
@@ -380,6 +385,32 @@ void MixerControl::BuildTcpReport(
 
   request_data->attributes.attributes[kContextTime] =
       Attributes::TimeValue(std::chrono::system_clock::now());
+}
+
+// Mesh attributes from Pilot are all string type for now.
+// As a hack for 0.2, any attributes with ".ip" suffix will be treated
+// as ipv4 and converted to BYTES.
+void MixerControl::SetMeshAttribute(const std::string& name,
+                                    const std::string& value,
+                                    Attributes* attr) const {
+  // Check with ".ip" suffix,
+  if (name.length() < kIPSuffix.length() ||
+      name.compare(name.length() - kIPSuffix.length(), kIPSuffix.length(),
+                   kIPSuffix) != 0) {
+    attr->attributes[name] = Attributes::StringValue(value);
+    return;
+  }
+
+  in_addr ipv4_bytes;
+  // Only IPV4 is supported in this hack.
+  if (inet_pton(AF_INET, value.c_str(), &ipv4_bytes) != 1) {
+    ENVOY_LOG(warn, "Could not convert to ipv4: attribute {}, value: {}", name,
+              value);
+    attr->attributes[name] = Attributes::StringValue(value);
+  } else {
+    attr->attributes[name] = Attributes::BytesValue(std::string(
+        reinterpret_cast<const char*>(&ipv4_bytes), sizeof(ipv4_bytes)));
+  }
 }
 
 }  // namespace Mixer
