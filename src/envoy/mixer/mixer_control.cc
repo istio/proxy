@@ -67,7 +67,8 @@ const std::string kConnectionSendBytes = "connection.sent.bytes";
 const std::string kConnectionSendTotalBytes = "connection.sent.bytes_total";
 const std::string kConnectionDuration = "connection.duration";
 
-// As a back, attributes with this suffix will be treated as ipv4.
+// Pilot mesh attributes with the suffix will be treated as ipv4.
+// They will use BYTES attribute type.
 const std::string kIPSuffix = ".ip";
 
 // Context attributes
@@ -387,9 +388,9 @@ void MixerControl::BuildTcpReport(
       Attributes::TimeValue(std::chrono::system_clock::now());
 }
 
-// Mesh attributes from Pilot are all string type for now.
-// As a hack for 0.2, any attributes with ".ip" suffix will be treated
-// as ipv4 and converted to BYTES.
+// Mesh attributes from Pilot are all string type.
+// The attributes with ".ip" suffix will be treated
+// as ipv4 and use BYTES attribute type.
 void MixerControl::SetMeshAttribute(const std::string& name,
                                     const std::string& value,
                                     Attributes* attr) const {
@@ -402,7 +403,7 @@ void MixerControl::SetMeshAttribute(const std::string& name,
   }
 
   in_addr ipv4_bytes;
-  // Only IPV4 is supported in this hack.
+  // Only IPV4 is supported for now.
   if (inet_pton(AF_INET, value.c_str(), &ipv4_bytes) != 1) {
     ENVOY_LOG(warn, "Could not convert to ipv4: attribute {}, value: {}", name,
               value);
