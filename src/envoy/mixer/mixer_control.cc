@@ -395,7 +395,7 @@ void MixerControl::SetMeshAttribute(const std::string& name,
                                     const std::string& value,
                                     Attributes* attr) const {
   // Check with ".ip" suffix,
-  if (name.length() < kIPSuffix.length() ||
+  if (name.length() <= kIPSuffix.length() ||
       name.compare(name.length() - kIPSuffix.length(), kIPSuffix.length(),
                    kIPSuffix) != 0) {
     attr->attributes[name] = Attributes::StringValue(value);
