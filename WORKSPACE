@@ -29,6 +29,7 @@ load(
 )
 
 googleapis_repositories()
+
 mixerapi_repositories()
 
 bind(
@@ -40,8 +41,8 @@ ENVOY_SHA = "b02d8a9b5033a61a7b13d98999f5f00c4b85b6a4"  # Sep 26, 2017 (use gith
 
 http_archive(
     name = "envoy",
-    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".zip",
     strip_prefix = "envoy-" + ENVOY_SHA,
+    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".zip",
 )
 
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
@@ -69,11 +70,14 @@ git_repository(
     remote = "https://github.com/pubref/rules_protobuf",
 )
 
+MIXER = "535eb564667cef6aed334cb4f5e967a104768387"
+
 git_repository(
     name = "com_github_istio_mixer",
-    commit = "535eb564667cef6aed334cb4f5e967a104768387",  # Sep 26, 2017
+    commit = MIXER,
     remote = "https://github.com/istio/mixer",
 )
 
 load("@com_github_istio_mixer//test:repositories.bzl", "mixer_test_repositories")
+
 mixer_test_repositories()
