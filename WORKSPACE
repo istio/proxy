@@ -70,7 +70,7 @@ git_repository(
     remote = "https://github.com/pubref/rules_protobuf",
 )
 
-MIXER = "535eb564667cef6aed334cb4f5e967a104768387"
+MIXER = "c2c6b0a9e8217f675cfd916bb87ca5e5d4fab2c8"
 
 git_repository(
     name = "com_github_istio_mixer",
