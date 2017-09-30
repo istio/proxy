@@ -21,8 +21,8 @@ import (
 
 func TestFailOpen(t *testing.T) {
 	s := &TestSetup{
-		t:    t,
-		conf: basicConfig,
+		t:        t,
+		conf:     basicConfig,
 		no_mixer: true,
 	}
 	if err := s.SetUp(); err != nil {

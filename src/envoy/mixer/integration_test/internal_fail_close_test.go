@@ -17,13 +17,14 @@ package test
 import (
 	"fmt"
 	"testing"
+
+	rpc "github.com/googleapis/googleapis/google/rpc"
 )
 
-func TestFailClose(t *testing.T) {
+func TestFailCloseForMixerInternal(t *testing.T) {
 	s := &TestSetup{
-		t:        t,
-		conf:     basicConfig + "," + networkFailClose,
-		no_mixer: true,
+		t:    t,
+		conf: basicConfig + "," + networkFailClose,
 	}
 	if err := s.SetUp(); err != nil {
 		t.Fatalf("Failed to setup test: %v", err)
@@ -32,13 +33,16 @@ func TestFailClose(t *testing.T) {
 
 	url := fmt.Sprintf("http://localhost:%d/echo", ClientProxyPort)
 
-	tag := "Fail-CLOSE"
+	tag := "Fail-Close"
 	// Use fail close policy.
+	s.mixer.check.r_status = rpc.Status{
+		Code: int32(rpc.INTERNAL),
+	}
 	code, _, err := HTTPGet(url)
 	if err != nil {
 		t.Errorf("Failed in request %s: %v", tag, err)
 	}
-	if code != 503 {
-		t.Errorf("Status code 503 is expected, got %d.", code)
+	if code != 500 {
+		t.Errorf("Status code 500 is expected, got %d.", code)
 	}
 }
