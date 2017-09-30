@@ -34,7 +34,7 @@ func TestFailOpenForMixerInternal(t *testing.T) {
 	url := fmt.Sprintf("http://localhost:%d/echo", ClientProxyPort)
 
 	tag := "Fail-Open"
-	// Use fail close policy.
+	// Mixer to return INTERNAL error.
 	s.mixer.check.r_status = rpc.Status{
 		Code: int32(rpc.INTERNAL),
 	}
@@ -42,6 +42,7 @@ func TestFailOpenForMixerInternal(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed in request %s: %v", tag, err)
 	}
+	// Since fail_open policy by default, expect 200.
 	if code != 200 {
 		t.Errorf("Status code 200 is expected, got %d.", code)
 	}
