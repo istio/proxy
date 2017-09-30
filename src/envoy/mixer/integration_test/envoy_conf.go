@@ -107,14 +107,14 @@ const defaultMixerRouteFlags = `
 const allAbortFaultFilter = `
                {
                    "type": "decoder",
-	           "name": "fault",
-	           "config": {
-	               "abort": {
-	                   "abort_percent": 100,
-		           "http_status": 503
-	                }
-	           }
-	       },
+                   "name": "fault",
+                   "config": {
+                       "abort": {
+                           "abort_percent": 100,
+                           "http_status": 503
+                       }
+                   }
+               },
 `
 
 // The envoy config template
