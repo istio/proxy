@@ -335,7 +335,7 @@ func getConf() ConfParam {
 	}
 }
 
-func CreateEnvoyConf(path, conf, flags string, stress, fault_inject bool) error {
+func CreateEnvoyConf(path, conf, flags string, stress, faultInject bool) error {
 	c := getConf()
 	c.ServerConfig = conf
 	c.MixerRouteFlags = defaultMixerRouteFlags
@@ -345,7 +345,7 @@ func CreateEnvoyConf(path, conf, flags string, stress, fault_inject bool) error 
 	if stress {
 		c.AccessLog = "/dev/null"
 	}
-	if fault_inject {
+	if faultInject {
 		c.FaultFilter = allAbortFaultFilter
 	}
 	return c.write(path)

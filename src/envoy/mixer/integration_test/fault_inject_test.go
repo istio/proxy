@@ -101,9 +101,9 @@ const reportAttributes = `
 
 func TestFaultInject(t *testing.T) {
 	s := &TestSetup{
-		t:            t,
-		conf:         basicConfig,
-		fault_inject: true,
+		t:           t,
+		conf:        basicConfig,
+		faultInject: true,
 	}
 	if err := s.SetUp(); err != nil {
 		t.Fatalf("Failed to setup test: %v", err)

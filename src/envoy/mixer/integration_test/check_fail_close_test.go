@@ -21,9 +21,9 @@ import (
 
 func TestFailClose(t *testing.T) {
 	s := &TestSetup{
-		t:        t,
-		conf:     basicConfig + "," + networkFailClose,
-		no_mixer: true,
+		t:       t,
+		conf:    basicConfig + "," + networkFailClose,
+		noMixer: true,
 	}
 	if err := s.SetUp(); err != nil {
 		t.Fatalf("Failed to setup test: %v", err)
@@ -32,7 +32,7 @@ func TestFailClose(t *testing.T) {
 
 	url := fmt.Sprintf("http://localhost:%d/echo", ClientProxyPort)
 
-	tag := "Fail-CLOSE"
+	tag := "Fail-Close"
 	// Use fail close policy.
 	code, _, err := HTTPGet(url)
 	if err != nil {
