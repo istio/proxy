@@ -1,0 +1,54 @@
+set(YAML_SOURCE
+        src/
+        src/cares/cares/ares__get_hostent.c
+        src/cares/cares/ares__read_line.c
+        src/cares/cares/ares__timeval.c
+        src/cares/cares/ares_cancel.c
+        src/cares/cares/ares_create_query.c
+        src/cares/cares/ares_data.c
+        src/cares/cares/ares_destroy.c
+        src/cares/cares/ares_expand_name.c
+        src/cares/cares/ares_expand_string.c
+        src/cares/cares/ares_fds.c
+        src/cares/cares/ares_free_hostent.c
+        src/cares/cares/ares_free_string.c
+        src/cares/cares/ares_getenv.c
+        src/cares/cares/ares_gethostbyaddr.c
+        src/cares/cares/ares_gethostbyname.c
+        src/cares/cares/ares_getnameinfo.c
+        src/cares/cares/ares_getopt.c
+        src/cares/cares/ares_getsock.c
+        src/cares/cares/ares_init.c
+        src/cares/cares/ares_library_init.c
+        src/cares/cares/ares_llist.c
+        src/cares/cares/ares_mkquery.c
+        src/cares/cares/ares_nowarn.c
+        src/cares/cares/ares_options.c
+        src/cares/cares/ares_parse_a_reply.c
+        src/cares/cares/ares_parse_aaaa_reply.c
+        src/cares/cares/ares_parse_mx_reply.c
+        src/cares/cares/ares_parse_naptr_reply.c
+        src/cares/cares/ares_parse_ns_reply.c
+        src/cares/cares/ares_parse_ptr_reply.c
+        src/cares/cares/ares_parse_soa_reply.c
+        src/cares/cares/ares_parse_srv_reply.c
+        src/cares/cares/ares_parse_txt_reply.c
+        src/cares/cares/ares_platform.c
+        src/cares/cares/ares_process.c
+        src/cares/cares/ares_query.c
+        src/cares/cares/ares_search.c
+        src/cares/cares/ares_send.c
+        src/cares/cares/ares_strcasecmp.c
+        src/cares/cares/ares_strdup.c
+        src/cares/cares/ares_strerror.c
+        src/cares/cares/ares_timeout.c
+        src/cares/cares/ares_version.c
+        src/cares/cares/ares_writev.c
+        src/cares/cares/bitncmp.c
+        src/cares/cares/inet_net_pton.c
+        src/cares/cares/inet_ntop.c
+        src/cares/cares/windows_port.c
+        )
+
+add_library(cares STATIC ${CARES_SOURCE})
+set_target_properties(cares PROPERTIES COMPILE_FLAGS -DHAVE_CONFIG_H=1)

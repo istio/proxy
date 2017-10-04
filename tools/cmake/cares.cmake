@@ -1,0 +1,59 @@
+include_directories(
+        genfiles/cares/config_linux
+        genfiles/cares/
+)
+
+set(CARES_SOURCE
+        vendor/cares/cares/ares__close_sockets.c
+        vendor/cares/cares/ares__get_hostent.c
+        vendor/cares/cares/ares__read_line.c
+        vendor/cares/cares/ares__timeval.c
+        vendor/cares/cares/ares_cancel.c
+        vendor/cares/cares/ares_create_query.c
+        vendor/cares/cares/ares_data.c
+        vendor/cares/cares/ares_destroy.c
+        vendor/cares/cares/ares_expand_name.c
+        vendor/cares/cares/ares_expand_string.c
+        vendor/cares/cares/ares_fds.c
+        vendor/cares/cares/ares_free_hostent.c
+        vendor/cares/cares/ares_free_string.c
+        vendor/cares/cares/ares_getenv.c
+        vendor/cares/cares/ares_gethostbyaddr.c
+        vendor/cares/cares/ares_gethostbyname.c
+        vendor/cares/cares/ares_getnameinfo.c
+        vendor/cares/cares/ares_getopt.c
+        vendor/cares/cares/ares_getsock.c
+        vendor/cares/cares/ares_init.c
+        vendor/cares/cares/ares_library_init.c
+        vendor/cares/cares/ares_llist.c
+        vendor/cares/cares/ares_mkquery.c
+        vendor/cares/cares/ares_nowarn.c
+        vendor/cares/cares/ares_options.c
+        vendor/cares/cares/ares_parse_a_reply.c
+        vendor/cares/cares/ares_parse_aaaa_reply.c
+        vendor/cares/cares/ares_parse_mx_reply.c
+        vendor/cares/cares/ares_parse_naptr_reply.c
+        vendor/cares/cares/ares_parse_ns_reply.c
+        vendor/cares/cares/ares_parse_ptr_reply.c
+        vendor/cares/cares/ares_parse_soa_reply.c
+        vendor/cares/cares/ares_parse_srv_reply.c
+        vendor/cares/cares/ares_parse_txt_reply.c
+        vendor/cares/cares/ares_platform.c
+        vendor/cares/cares/ares_process.c
+        vendor/cares/cares/ares_query.c
+        vendor/cares/cares/ares_search.c
+        vendor/cares/cares/ares_send.c
+        vendor/cares/cares/ares_strcasecmp.c
+        vendor/cares/cares/ares_strdup.c
+        vendor/cares/cares/ares_strerror.c
+        vendor/cares/cares/ares_timeout.c
+        vendor/cares/cares/ares_version.c
+        vendor/cares/cares/ares_writev.c
+        vendor/cares/cares/bitncmp.c
+        vendor/cares/cares/inet_net_pton.c
+        vendor/cares/cares/inet_ntop.c
+        vendor/cares/cares/windows_port.c
+        )
+
+add_library(cares STATIC ${CARES_SOURCE})
+set_target_properties(cares PROPERTIES COMPILE_FLAGS -DHAVE_CONFIG_H=1)
