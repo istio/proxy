@@ -37,7 +37,7 @@ bind(
     actual = "//external:ssl",
 )
 
-ENVOY_SHA = "b02d8a9b5033a61a7b13d98999f5f00c4b85b6a4"  # Sep 26, 2017 (use github to download tclap instead of sourceforge)
+ENVOY_SHA = "13e4bb8b8149650a042618ce03bf1214dfca069e" # Oct 4, 2017 (do not reject http1 req on websocket routes)
 
 http_archive(
     name = "envoy",
