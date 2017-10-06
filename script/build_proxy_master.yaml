@@ -12,4 +12,6 @@ images:
 -  'gcr.io/$PROJECT_ID/envoy-debug'
 tags:
 - "latest"
+options:
+  machineType: 'N1_STANDARD_8'
 timeout: 1800s
