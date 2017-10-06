@@ -19,7 +19,7 @@ function init_repo() {
     fi
 
     if [ ! -f .repo ]; then
-      bin/repo init -u http://github.com/costinm/istio-proxy-repo
+      echo y | bin/repo init -u http://github.com/costinm/istio-proxy-repo
     fi
 
     bin/repo sync -c
@@ -29,3 +29,9 @@ function init_repo() {
 
 
 init_repo
+
+
+bazel build src/envoy/mixer:envoy
+bazel build tools/deb:istio-proxy
+
+./script/release-docker debug
