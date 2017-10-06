@@ -4,11 +4,12 @@ steps:
 - name: 'gcr.io/istio-io/istio-builder:0.1'
   args: ['./script/build_repo.sh']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/envoy-debug', 'bazel-bin' ]
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/envoy-debug', 'bazel-bin/src/envoy/mixer' ]
+- name: 'gcr.io/cloud-builders/gsutil'
+  args: ['cp', 'bazel-bin/tools/deb/istio-proxy.deb', 'gs://istio/istio-proxy.deb']
+
 images:
 -  'gcr.io/$PROJECT_ID/envoy-debug'
 tags:
 - "latest"
-options:
-  machineType: 'N1_STANDARD_8'
 timeout: 1800s
