@@ -14,37 +14,64 @@
 #
 ################################################################################
 #
-
-load(
-    "//src/envoy/mixer:repositories.bzl",
-    "mixer_client_repositories",
+local_repository(
+    name = "mixerclient_git",
+    path = "vendor/mixerclient",
 )
 
-mixer_client_repositories()
+bind(
+            name = "mixer_client_lib",
+            actual = "@mixerclient_git//:mixer_client_lib",
+)
+
+
+new_local_repository(
+    name = "gogoproto_git",
+    path = "vendor/gogoproto",
+    build_file = "tools/gogo.BUILD",
+)
+
+bind(
+            name = "cc_gogoproto",
+            actual = "@gogoproto_git//:cc_gogoproto",
+        )
+
+bind(
+            name = "cc_gogoproto_genproto",
+            actual = "@gogoproto_git//:cc_gogoproto_genproto",
+)
+
+# TODO: check in the BUILD file, part of the proxy BUILD
+new_local_repository(
+    name = "mixerapi_git",
+    path = "vendor/mixerapi",
+    build_file = "tools/mixerapi.BUILD",
+)
+
+bind(
+            name = "mixer_api_cc_proto",
+            actual = "@mixerapi_git//:mixer_api_cc_proto",
+)
 
 load(
     "@mixerclient_git//:repositories.bzl",
     "googleapis_repositories",
-    "mixerapi_repositories",
 )
 
 googleapis_repositories()
 
-mixerapi_repositories()
 
 bind(
     name = "boringssl_crypto",
     actual = "//external:ssl",
 )
 
-ENVOY_SHA = "b02d8a9b5033a61a7b13d98999f5f00c4b85b6a4"  # Sep 26, 2017 (use github to download tclap instead of sourceforge)
-
-http_archive(
+local_repository(
     name = "envoy",
-    strip_prefix = "envoy-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".zip",
+    path = "envoy",
 )
 
+# TODO: replace with local_repository to use those picked by repo
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
 envoy_dependencies()
