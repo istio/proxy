@@ -28,6 +28,17 @@ function init_repo() {
     popd
 }
 
+function build() {
+    bazel build src/envoy/mixer:envoy
+    bazel build tools/deb:istio-proxy
+
+    (cd go/src/istio.io/pilot; bazel build cmd/pilot-agent:pilot-agent tools/deb/...)
+
+    # Docker images will be build by separate script or cloud builder
+    # This just copies files
+    prepare_docker
+}
+
 # Copy the docker files, preparing for docker build
 function prepare_docker() {
   BAZEL_TARGET_DIR="bazel-bin/src/envoy/mixer"
@@ -36,13 +47,13 @@ function prepare_docker() {
   cp tools/deb/istio-start.sh ${BAZEL_TARGET_DIR}
   cp tools/deb/envoy.json ${BAZEL_TARGET_DIR}
   cp docker/proxy-* ${BAZEL_TARGET_DIR}
-  cp docker/Dockerfile.debug ${BAZEL_TARGET_DIR}/Dockerfile
+  cp docker/Dockerfile.* ${BAZEL_TARGET_DIR}/
 }
 
-init_repo
 
-bazel build src/envoy/mixer:envoy
-bazel build tools/deb:istio-proxy
+if [[ ${1:-} == "sync" ]] ; then
+   init_repo
 
-prepare_docker
-
+elif [[ ${1:-} == "build" ]] ; then
+   build
+fi
