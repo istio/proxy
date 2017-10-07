@@ -218,7 +218,8 @@ set(ENVOY_SOURCE_FILES
 if (NOT DEFINED ANDROID_TOOLCHAIN AND NOT DEFINED USE_MUSL)
    set(ENVOY_SOURCE_FILES
            ${ENVOY_SOURCE_FILES}
-           envoy/source/common/api/os_sys_calls_impl.cc
+           # We are pinned to older version due to bazel upgrade issues
+           #envoy/source/common/api/os_sys_calls_impl.cc
            envoy/source/common/mongo/bson_impl.cc
            envoy/source/common/mongo/codec_impl.cc
            envoy/source/common/mongo/proxy.cc
