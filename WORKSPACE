@@ -20,8 +20,8 @@ local_repository(
 )
 
 bind(
-            name = "mixer_client_lib",
-            actual = "@mixerclient_git//:mixer_client_lib",
+    name = "mixer_client_lib",
+    actual = "@mixerclient_git//:mixer_client_lib",
 )
 
 
@@ -32,13 +32,13 @@ new_local_repository(
 )
 
 bind(
-            name = "cc_gogoproto",
-            actual = "@gogoproto_git//:cc_gogoproto",
-        )
+    name = "cc_gogoproto",
+    actual = "@gogoproto_git//:cc_gogoproto",
+)
 
 bind(
-            name = "cc_gogoproto_genproto",
-            actual = "@gogoproto_git//:cc_gogoproto_genproto",
+    name = "cc_gogoproto_genproto",
+    actual = "@gogoproto_git//:cc_gogoproto_genproto",
 )
 
 # TODO: check in the BUILD file, part of the proxy BUILD
@@ -49,8 +49,8 @@ new_local_repository(
 )
 
 bind(
-            name = "mixer_api_cc_proto",
-            actual = "@mixerapi_git//:mixer_api_cc_proto",
+    name = "mixer_api_cc_proto",
+    actual = "@mixerapi_git//:mixer_api_cc_proto",
 )
 
 load(
@@ -97,14 +97,12 @@ git_repository(
     remote = "https://github.com/pubref/rules_protobuf",
 )
 
-MIXER = "535eb564667cef6aed334cb4f5e967a104768387"
-
-git_repository(
+local_repository(
     name = "com_github_istio_mixer",
-    commit = MIXER,
-    remote = "https://github.com/istio/mixer",
+    path = "go/src/istio.io/mixer"
 )
 
 load("@com_github_istio_mixer//test:repositories.bzl", "mixer_test_repositories")
 
 mixer_test_repositories()
+
