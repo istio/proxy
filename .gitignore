@@ -7,3 +7,4 @@ genfiles
 go
 cmake-*
 vendor
+.repo

@@ -11,7 +11,7 @@ steps:
 
 # Build the docker images - images will upload them
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/proxy_debug', '-f', 'Dockerfile.debug', 'bazel-bin/src/envoy/mixer' ]
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/proxy_debug', '-f', 'bazel-bin/src/envoy/mixer/Dockerfile.debug', 'bazel-bin/src/envoy/mixer' ]
 
 # Build other artifacts ( deb files )
 - name: 'gcr.io/cloud-builders/gsutil'
