@@ -71,12 +71,12 @@ go_register_toolchains()
 load("@io_bazel_rules_go//proto:def.bzl", "proto_register_toolchains")
 proto_register_toolchains()
 
-MIXER = "dadb025561a8c11720e6d6ccf54bbdbb29c6bf96"
+MIXER = "ba8ad5ca8ae77b946366e423d28b47cf3c8e1550"
 
 git_repository(
     name = "com_github_istio_mixer",
     commit = MIXER,
-    remote = "https://github.com/lizan/mixer",
+    remote = "https://github.com/istio/mixer",
 )
 
 load("@com_github_istio_mixer//test:repositories.bzl", "mixer_test_repositories")
