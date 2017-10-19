@@ -27,7 +27,7 @@ namespace Http {
 namespace Mixer {
 namespace {
 
-const char kQuotaNotMatch[] = R"(
+const char kQuotaEmptyMatch[] = R"(
 rules {
   quotas {
     quota: "quota1"
@@ -78,12 +78,13 @@ class QuotaConfigTest : public ::testing::Test {
   void SetUp() {}
 };
 
-TEST_F(QuotaConfigTest, TestNotMatch) {
+TEST_F(QuotaConfigTest, TestEmptyMatch) {
   QuotaSpec quota_spec;
-  ASSERT_TRUE(TextFormat::ParseFromString(kQuotaNotMatch, &quota_spec));
+  ASSERT_TRUE(TextFormat::ParseFromString(kQuotaEmptyMatch, &quota_spec));
   QuotaConfig config(quota_spec);
 
   Attributes attributes;
+  // If match clause is empty, it matches all requests.
   ASSERT_EQ(config.Check(attributes),
             QuotaVector({{"quota1", 1}, {"quota2", 2}}));
 }
