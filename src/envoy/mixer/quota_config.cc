@@ -52,10 +52,10 @@ bool MatchAttributes(const AttributeMatch& match,
         }
         break;
       case ::istio::proxy::v1::config::StringMatch::kRegex:
-        // TODO: support regex
-        return false;
+        // TODO: support regex. For now, it is ignored.
         break;
       default:
+        // This is match_type not set case, ignore it.
         break;
     }
   }
