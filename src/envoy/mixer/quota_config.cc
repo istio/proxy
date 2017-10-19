@@ -56,6 +56,7 @@ bool MatchAttributes(const AttributeMatch& match,
         return false;
         break;
       default:
+        return false;
         break;
     }
   }
