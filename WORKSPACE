@@ -37,12 +37,14 @@ bind(
     actual = "//external:ssl",
 )
 
-ENVOY_SHA = "b02d8a9b5033a61a7b13d98999f5f00c4b85b6a4"  # Sep 26, 2017 (use github to download tclap instead of sourceforge)
 
-http_archive(
+ENVOY_SHA = "577410987eddf1d8f47439475c8569dcd68eeb04"  # Cherry-pick Oct 20
+# Branched from "b02d8a9b5033a61a7b13d98999f5f00c4b85b6a4"  # Sep 26, 2017 (use github to download tclap instead of sourceforge)
+
+git_repository(
     name = "envoy",
-    strip_prefix = "envoy-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".zip",
+    commit = ENVOY_SHA,
+    remote = "https://github.com/istio/envoy",
 )
 
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
