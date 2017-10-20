@@ -71,6 +71,23 @@ rules {
 }
 )";
 
+const char kQuotaRegexMatch[] = R"(
+rules {
+  match {
+    clause {
+      key: "request.path"
+      value {
+        regex: "/shelves/.*/books"
+      }
+    }
+  }
+  quotas {
+    quota: "quota-name"
+    charge: 1
+  }
+}
+)";
+
 using QuotaVector = std::vector<QuotaConfig::Quota>;
 
 class QuotaConfigTest : public ::testing::Test {
@@ -115,6 +132,23 @@ TEST_F(QuotaConfigTest, TestMatch) {
 
   // Matched
   attributes.attributes["api.operation"] = Attributes::StringValue("get_books");
+  ASSERT_EQ(config.Check(attributes), QuotaVector({{"quota-name", 1}}));
+}
+
+TEST_F(QuotaConfigTest, TestRegexMatch) {
+  QuotaSpec quota_spec;
+  ASSERT_TRUE(TextFormat::ParseFromString(kQuotaRegexMatch, &quota_spec));
+  QuotaConfig config(quota_spec);
+
+  Attributes attributes;
+  // Not match
+  attributes.attributes["request.path"] =
+      Attributes::StringValue("/shelves/1/bar");
+  ASSERT_EQ(config.Check(attributes), QuotaVector());
+
+  // match
+  attributes.attributes["request.path"] =
+      Attributes::StringValue("/shelves/10/books");
   ASSERT_EQ(config.Check(attributes), QuotaVector({{"quota-name", 1}}));
 }
 

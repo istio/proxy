@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/mixer/quota_config.h"
+#include <regex>
 
 using ::istio::mixer_client::Attributes;
 using ::istio::mixer::v1::config::client::AttributeMatch;
@@ -52,7 +53,10 @@ bool MatchAttributes(const AttributeMatch& match,
         }
         break;
       case ::istio::proxy::v1::config::StringMatch::kRegex:
-        // TODO: support regex. For now, it is ignored.
+        // TODO: re-use std::regex object for optimization
+        if (!std::regex_match(value, std::regex(match.regex()))) {
+          return false;
+        }
         break;
       default:
         // This is match_type not set case, ignore it.
