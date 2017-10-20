@@ -59,7 +59,7 @@ bool MatchAttributes(const AttributeMatch& match,
         }
         break;
       default:
-        // This is match_type not set case, ignore it.
+        // match_type not set case, an empty StringMatch, ignore it.
         break;
     }
   }
