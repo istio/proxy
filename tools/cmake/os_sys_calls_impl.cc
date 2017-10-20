@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <netinet/in.h>
 
 namespace Envoy {
 namespace Api {
