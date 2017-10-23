@@ -37,7 +37,7 @@ bind(
     actual = "//external:ssl",
 )
 
-ENVOY_SHA = "6cb0983a1ce74c55aaf0124bd2227be8f9efa2de"  # Sep 26, 2017 (use github to download tclap instead of sourceforge)
+ENVOY_SHA = "e366bcfd8dee9d4f2eb3956e77a77f17bd7a5244"  # Oct 19, 2017 (set cluster/route/listener/vhost name len based on CLI opt)
 
 http_archive(
     name = "envoy",
