@@ -37,7 +37,7 @@ bind(
     actual = "//external:ssl",
 )
 
-ENVOY_SHA = "6cb0983a1ce74c55aaf0124bd2227be8f9efa2de"  # Sep 26, 2017 (use github to download tclap instead of sourceforge)
+ENVOY_SHA = "c2e27639148e8080fc5c8dca13740b11c4f86707"  # Oct 22, 2017
 
 http_archive(
     name = "envoy",
