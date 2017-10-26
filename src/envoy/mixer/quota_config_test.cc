@@ -114,7 +114,7 @@ TEST_F(QuotaConfigTest, TestMatch) {
   QuotaConfig config(quota_spec);
 
   Attributes attributes;
-  AttributesBuilder builder(attributes);
+  AttributesBuilder builder(&attributes);
   ASSERT_EQ(config.Check(attributes), QuotaVector());
 
   // Wrong http_method
@@ -142,7 +142,7 @@ TEST_F(QuotaConfigTest, TestRegexMatch) {
   QuotaConfig config(quota_spec);
 
   Attributes attributes;
-  AttributesBuilder builder(attributes);
+  AttributesBuilder builder(&attributes);
   // Not match
   builder.AddString("request.path", "/shelves/1/bar");
   ASSERT_EQ(config.Check(attributes), QuotaVector());

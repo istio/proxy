@@ -86,7 +86,7 @@ void MixerConfig::ExtractQuotaAttributes(Attributes* attr) const {
       amount = std::stoi(quota_amount);
     }
 
-    AttributesBuilder builder(*attr);
+    AttributesBuilder builder(attr);
     builder.AddString("quota.name", quota_name)
         .AddInt64("quota.amount", amount);
   }

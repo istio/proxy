@@ -115,13 +115,13 @@ ReportOptions GetReportOptions(const MixerConfig& config) {
 void SetStringAttribute(const std::string& name, const std::string& value,
                         Attributes* attr) {
   if (!value.empty()) {
-    AttributesBuilder(*attr).AddString(name, value);
+    AttributesBuilder(attr).AddString(name, value);
   }
 }
 
 void SetInt64Attribute(const std::string& name, uint64_t value,
                        Attributes* attr) {
-  AttributesBuilder(*attr).AddInt64(name, value);
+  AttributesBuilder(attr).AddInt64(name, value);
 }
 
 std::map<std::string, std::string> ExtractHeaders(const HeaderMap& header_map) {
@@ -164,21 +164,21 @@ void FillRequestHeaderAttributes(const HeaderMap& header_map,
     SetStringAttribute(kRequestReferer, val, attr);
   }
 
-  AttributesBuilder(*attr).AddStringMap(kRequestHeaders,
+  AttributesBuilder(attr).AddStringMap(kRequestHeaders,
                                         ExtractHeaders(header_map));
 }
 
 void FillResponseHeaderAttributes(const HeaderMap* header_map,
                                   Attributes* attr) {
   if (header_map) {
-    AttributesBuilder(*attr).AddStringMap(kResponseHeaders,
+    AttributesBuilder(attr).AddStringMap(kResponseHeaders,
                                           ExtractHeaders(*header_map));
   }
 }
 
 void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
                                int check_status_code, Attributes* attr) {
-  AttributesBuilder builder(*attr);
+  AttributesBuilder builder(attr);
   builder.AddInt64(kRequestSize, info.bytesReceived())
       .AddInt64(kResponseSize, info.bytesSent())
       .AddDuration(kResponseDuration,
@@ -194,7 +194,7 @@ void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
 
 void SetIPAttribute(const std::string& name, const Network::Address::Ip& ip,
                     Attributes* attr) {
-  AttributesBuilder builder(*attr);
+  AttributesBuilder builder(attr);
   if (ip.ipv4()) {
     uint32_t ipv4 = ip.ipv4()->address();
     builder.AddBytes(
@@ -306,7 +306,7 @@ void MixerControl::BuildHttpCheck(
 
   SetStringAttribute(kSourceUser, source_user, &request_data->attributes);
 
-  AttributesBuilder(request_data->attributes)
+  AttributesBuilder(&request_data->attributes)
       .AddTimestamp(kRequestTime, std::chrono::system_clock::now());
   SetStringAttribute(kContextProtocol, "http", &request_data->attributes);
 
@@ -328,7 +328,7 @@ void MixerControl::BuildHttpReport(HttpRequestDataPtr request_data,
   FillRequestInfoAttributes(request_info, check_status,
                             &request_data->attributes);
 
-  AttributesBuilder(request_data->attributes)
+  AttributesBuilder(&request_data->attributes)
       .AddTimestamp(kResponseTime, std::chrono::system_clock::now());
 }
 
@@ -344,7 +344,7 @@ void MixerControl::BuildTcpCheck(HttpRequestDataPtr request_data,
                       &request_data->attributes);
   }
 
-  AttributesBuilder(request_data->attributes)
+  AttributesBuilder(&request_data->attributes)
       .AddTimestamp(kContextTime, std::chrono::system_clock::now());
   SetStringAttribute(kContextProtocol, "tcp", &request_data->attributes);
 
@@ -360,7 +360,7 @@ void MixerControl::BuildTcpReport(
     uint64_t send_bytes, int check_status_code,
     std::chrono::nanoseconds duration,
     Upstream::HostDescriptionConstSharedPtr upstreamHost) const {
-  AttributesBuilder builder(request_data->attributes);
+  AttributesBuilder builder(&request_data->attributes);
   builder.AddInt64(kConnectionReceviedBytes, received_bytes)
       .AddInt64(kConnectionReceviedTotalBytes, received_bytes)
       .AddInt64(kConnectionSendBytes, send_bytes)
@@ -378,7 +378,7 @@ void MixerControl::BuildTcpReport(
     }
   }
 
-  AttributesBuilder(request_data->attributes)
+  AttributesBuilder(&request_data->attributes)
       .AddTimestamp(kContextTime, std::chrono::system_clock::now());
 }
 
@@ -392,13 +392,13 @@ void MixerControl::SetMeshAttribute(const std::string& name,
   if (name.length() <= kIPSuffix.length() ||
       name.compare(name.length() - kIPSuffix.length(), kIPSuffix.length(),
                    kIPSuffix) != 0) {
-    AttributesBuilder(*attr).AddString(name, value);
+    AttributesBuilder(attr).AddString(name, value);
     return;
   }
 
   in_addr ipv4_bytes;
   if (inet_pton(AF_INET, value.c_str(), &ipv4_bytes) == 1) {
-    AttributesBuilder(*attr).AddBytes(
+    AttributesBuilder(attr).AddBytes(
         name, std::string(reinterpret_cast<const char*>(&ipv4_bytes),
                           sizeof(ipv4_bytes)));
     return;
@@ -406,14 +406,14 @@ void MixerControl::SetMeshAttribute(const std::string& name,
 
   in6_addr ipv6_bytes;
   if (inet_pton(AF_INET6, value.c_str(), &ipv6_bytes) == 1) {
-    AttributesBuilder(*attr).AddBytes(
+    AttributesBuilder(attr).AddBytes(
         name, std::string(reinterpret_cast<const char*>(&ipv6_bytes),
                           sizeof(ipv6_bytes)));
     return;
   }
 
   ENVOY_LOG(warn, "Could not convert to ip: {}: {}", name, value);
-  AttributesBuilder(*attr).AddString(name, value);
+  AttributesBuilder(attr).AddString(name, value);
 }
 
 }  // namespace Mixer
