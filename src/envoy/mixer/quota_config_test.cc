@@ -118,8 +118,8 @@ TEST_F(QuotaConfigTest, TestMatch) {
   ASSERT_EQ(config.Check(attributes), QuotaVector());
 
   // Wrong http_method
-  builder.AddString("request.http_method", "POST")
-      .AddString("request.path", "/books/1");
+  builder.AddString("request.http_method", "POST");
+  builder.AddString("request.path", "/books/1");
   ASSERT_EQ(config.Check(attributes), QuotaVector());
 
   // Matched

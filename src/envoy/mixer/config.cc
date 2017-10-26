@@ -87,8 +87,8 @@ void MixerConfig::ExtractQuotaAttributes(Attributes* attr) const {
     }
 
     AttributesBuilder builder(attr);
-    builder.AddString("quota.name", quota_name)
-        .AddInt64("quota.amount", amount);
+    builder.AddString("quota.name", quota_name);
+    builder.AddInt64("quota.amount", amount);
   }
 }
 

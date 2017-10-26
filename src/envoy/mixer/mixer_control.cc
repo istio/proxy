@@ -165,25 +165,25 @@ void FillRequestHeaderAttributes(const HeaderMap& header_map,
   }
 
   AttributesBuilder(attr).AddStringMap(kRequestHeaders,
-                                        ExtractHeaders(header_map));
+                                       ExtractHeaders(header_map));
 }
 
 void FillResponseHeaderAttributes(const HeaderMap* header_map,
                                   Attributes* attr) {
   if (header_map) {
     AttributesBuilder(attr).AddStringMap(kResponseHeaders,
-                                          ExtractHeaders(*header_map));
+                                         ExtractHeaders(*header_map));
   }
 }
 
 void FillRequestInfoAttributes(const AccessLog::RequestInfo& info,
                                int check_status_code, Attributes* attr) {
   AttributesBuilder builder(attr);
-  builder.AddInt64(kRequestSize, info.bytesReceived())
-      .AddInt64(kResponseSize, info.bytesSent())
-      .AddDuration(kResponseDuration,
-                   std::chrono::duration_cast<std::chrono::nanoseconds>(
-                       info.duration()));
+  builder.AddInt64(kRequestSize, info.bytesReceived());
+  builder.AddInt64(kResponseSize, info.bytesSent());
+  builder.AddDuration(
+      kResponseDuration,
+      std::chrono::duration_cast<std::chrono::nanoseconds>(info.duration()));
 
   if (info.responseCode().valid()) {
     builder.AddInt64(kResponseCode, info.responseCode().value());
@@ -361,12 +361,12 @@ void MixerControl::BuildTcpReport(
     std::chrono::nanoseconds duration,
     Upstream::HostDescriptionConstSharedPtr upstreamHost) const {
   AttributesBuilder builder(&request_data->attributes);
-  builder.AddInt64(kConnectionReceviedBytes, received_bytes)
-      .AddInt64(kConnectionReceviedTotalBytes, received_bytes)
-      .AddInt64(kConnectionSendBytes, send_bytes)
-      .AddInt64(kConnectionSendTotalBytes, send_bytes)
-      .AddDuration(kConnectionDuration, duration)
-      .AddInt64(kCheckStatusCode, check_status_code);
+  builder.AddInt64(kConnectionReceviedBytes, received_bytes);
+  builder.AddInt64(kConnectionReceviedTotalBytes, received_bytes);
+  builder.AddInt64(kConnectionSendBytes, send_bytes);
+  builder.AddInt64(kConnectionSendTotalBytes, send_bytes);
+  builder.AddDuration(kConnectionDuration, duration);
+  builder.AddInt64(kCheckStatusCode, check_status_code);
 
   if (upstreamHost && upstreamHost->address()) {
     const Network::Address::Ip* destination_ip = upstreamHost->address()->ip();
@@ -378,8 +378,7 @@ void MixerControl::BuildTcpReport(
     }
   }
 
-  AttributesBuilder(&request_data->attributes)
-      .AddTimestamp(kContextTime, std::chrono::system_clock::now());
+  builder.AddTimestamp(kContextTime, std::chrono::system_clock::now());
 }
 
 // Mesh attributes from Pilot are all string type.
