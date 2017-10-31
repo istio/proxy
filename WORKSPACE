@@ -47,7 +47,7 @@ http_archive(
 
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
-envoy_dependencies(repository="@envoy")
+envoy_dependencies(repository="@envoy", skip_targets=["io_bazel_rules_go"])
 
 bind(
     name = "cc_wkt_protos",
