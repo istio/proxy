@@ -37,7 +37,7 @@ bind(
     actual = "//external:ssl",
 )
 
-ENVOY_SHA = "6cb0983a1ce74c55aaf0124bd2227be8f9efa2de"  # Sep 26, 2017 (use github to download tclap instead of sourceforge)
+ENVOY_SHA = "e593fedc3232fbb694f3ec985567a2c7dff05212"  # Oct 31, 2017
 
 http_archive(
     name = "envoy",
@@ -47,7 +47,17 @@ http_archive(
 
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
-envoy_dependencies()
+envoy_dependencies(repository="@envoy", skip_targets=["io_bazel_rules_go"])
+
+bind(
+    name = "cc_wkt_protos",
+    actual = "@com_google_protobuf_cc//:cc_wkt_protos",
+)
+
+bind(
+    name = "cc_wkt_protos_genproto",
+    actual = "@com_google_protobuf_cc//:cc_wkt_protos_genproto",
+)
 
 load("@envoy//bazel:cc_configure.bzl", "cc_configure")
 
