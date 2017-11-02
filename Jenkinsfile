@@ -17,6 +17,8 @@ mainFlow(utils) {
     // Proxy does build work correctly with Hazelcast.
     // Must use .bazelrc.jenkins
     bazel.setVars('', '')
+    env.HUB = 'gcr.io/istio-testing'
+    env.ARTIFACTS_DIR = "gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs"
   }
   if (utils.runStage('PRESUBMIT')) {
     presubmit(gitUtils, bazel)
@@ -42,8 +44,6 @@ def presubmit(gitUtils, bazel) {
       sh('script/release-binary')
       sh('script/release-docker')
       sh('make artifacts')
-      sh("HUB=gcr.io/istio-testing ARTIFACTS_DIR=gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs make push")
-    }
   }
 }
 
@@ -54,7 +54,6 @@ def postsubmit(gitUtils, bazel, utils) {
       sh('script/release-binary')
       sh('script/release-docker')
       sh('make artifacts')
-      sh("HUB=gcr.io/istio-testing ARTIFACTS_DIR=gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs make push")
     }
   }
 }

@@ -20,16 +20,12 @@ BAZEL_BUILD_ARGS ?=
 BAZEL_TEST_ARGS ?=
 HUB ?=
 TAG ?=
-BAZEL_BIN := $(shell bazel info bin)
-
-mkdir -p $(ARTIFACTS_DIR)
 
 build:
 	@bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //...
 
 clean:
 	@bazel clean
-	rm -rf $(LOCAL_ARTIFACTS_DIR)
 
 test:
 	@bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
@@ -39,6 +35,6 @@ check:
 	@script/check-style
 
 artifacts: build
-	mkdir -p $(LOCAL_ARTIFACTS_DIR)/{deb,bin,tar}
+	@script/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
 
-.PHONY: build clean test check artifacts push
+.PHONY: build clean test check artifacts
