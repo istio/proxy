@@ -44,6 +44,7 @@ def presubmit(gitUtils, bazel) {
       sh('script/release-binary')
       sh('script/release-docker')
       sh('make artifacts')
+    }
   }
 }
 
