@@ -28,6 +28,7 @@ BAZEL_ARGS=""
 BAZEL_TARGET='//tools/deb:istio-proxy'
 BAZEL_BINARY="${ROOT}/bazel-bin/tools/deb/istio-proxy"
 ISTIO_VERSION=''
+GCS_PATH=""
 OUTPUT_DIR=""
 
 set -o errexit
