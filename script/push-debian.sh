@@ -38,16 +38,16 @@ set -x
 function usage() {
   echo "$0 \
     -c <bazel config to use> \
-    -d directory to copy files \
+    -o directory to copy files \
     -p <GCS path, e.g. gs://istio-release/release/0.2.1/deb> \
     -v <istio version number>"
   exit 1
 }
 
-while getopts ":c:d:p:v:" arg; do
+while getopts ":c:o:p:v:" arg; do
   case ${arg} in
     c) BAZEL_ARGS+=" -c ${OPTARG}";;
-    d) OUTPUT_DIR="${OPTARG}";;
+    o) OUTPUT_DIR="${OPTARG}";;
     p) GCS_PATH="${OPTARG}";;
     v) ISTIO_VERSION="${OPTARG}";;
     *) usage;;
