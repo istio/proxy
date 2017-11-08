@@ -19,6 +19,7 @@
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::mixer::v1::config::client::AttributeMatch;
+using ::istio::mixer::v1::config::client::StringMatch;
 using ::istio::mixer::v1::config::client::QuotaSpec;
 
 namespace Envoy {
@@ -43,18 +44,18 @@ bool MatchAttributes(const AttributeMatch& match,
     const std::string& value = it->second.string_value();
 
     switch (match.match_type_case()) {
-      case ::istio::proxy::v1::config::StringMatch::kExact:
+      case StringMatch::kExact:
         if (value != match.exact()) {
           return false;
         }
         break;
-      case ::istio::proxy::v1::config::StringMatch::kPrefix:
+      case StringMatch::kPrefix:
         if (value.length() < match.prefix().length() ||
             value.compare(0, match.prefix().length(), match.prefix()) != 0) {
           return false;
         }
         break;
-      case ::istio::proxy::v1::config::StringMatch::kRegex:
+      case StringMatch::kRegex:
         // TODO: re-use std::regex object for optimization
         if (!std::regex_match(value, std::regex(match.regex()))) {
           return false;

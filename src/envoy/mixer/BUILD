@@ -65,7 +65,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        "//external:mixer_client_lib",
+        "//external:mixer_control_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
