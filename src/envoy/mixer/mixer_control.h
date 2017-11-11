@@ -15,7 +15,8 @@
 
 #pragma once
 
-#include "control/include/controller.h"
+#include "control/include/http/controller.h"
+#include "control/include/tcp/controller.h"
 #include "envoy/event/dispatcher.h"
 #include "envoy/runtime/runtime.h"
 #include "envoy/thread_local/thread_local.h"
@@ -26,21 +27,40 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
-class MixerControl final : public ThreadLocal::ThreadLocalObject {
+class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
-  MixerControl(const MixerConfig& mixer_config, Upstream::ClusterManager& cm,
-               Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random);
+  HttpMixerControl(const MixerConfig& mixer_config,
+                   Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
+                   Runtime::RandomGenerator& random);
 
   Upstream::ClusterManager& cm() { return cm_; }
 
-  ::istio::mixer_control::Controller* controller() { return controller_.get(); }
+  ::istio::mixer_control::http::Controller* controller() {
+    return controller_.get();
+  }
 
  private:
   // Envoy cluster manager for making gRPC calls.
   Upstream::ClusterManager& cm_;
   // The mixer control
-  std::unique_ptr<::istio::mixer_control::Controller> controller_;
+  std::unique_ptr<::istio::mixer_control::http::Controller> controller_;
+};
+
+class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
+ public:
+  // The constructor.
+  TcpMixerControl(const MixerConfig& mixer_config, Upstream::ClusterManager& cm,
+                  Event::Dispatcher& dispatcher,
+                  Runtime::RandomGenerator& random);
+
+  ::istio::mixer_control::tcp::Controller* controller() {
+    return controller_.get();
+  }
+
+ private:
+  // The mixer control
+  std::unique_ptr<::istio::mixer_control::tcp::Controller> controller_;
 };
 
 }  // namespace Mixer

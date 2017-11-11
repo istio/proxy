@@ -48,26 +48,26 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
         [this, &random](Event::Dispatcher& dispatcher)
             -> ThreadLocal::ThreadLocalObjectSharedPtr {
               return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new MixerControl(mixer_config_, cm_, dispatcher, random));
+                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random));
             });
   }
 
-  MixerControl& mixer_control() { return tls_->getTyped<MixerControl>(); }
+  TcpMixerControl& mixer_control() { return tls_->getTyped<TcpMixerControl>(); }
 };
 
 typedef std::shared_ptr<TcpConfig> TcpConfigPtr;
 
 class TcpInstance : public Network::Filter,
                     public Network::ConnectionCallbacks,
-                    public ::istio::mixer_control::TcpCheckData,
-                    public ::istio::mixer_control::TcpReportData,
+                    public ::istio::mixer_control::tcp::CheckData,
+                    public ::istio::mixer_control::tcp::ReportData,
                     public Logger::Loggable<Logger::Id::filter> {
  private:
   enum class State { NotStarted, Calling, Completed, Closed };
 
   istio::mixer_client::CancelFunc cancel_check_;
-  MixerControl& mixer_control_;
-  std::unique_ptr<::istio::mixer_control::TcpRequestHandler> handler_;
+  TcpMixerControl& mixer_control_;
+  std::unique_ptr<::istio::mixer_control::tcp::RequestHandler> handler_;
   Network::ReadFilterCallbacks* filter_callbacks_{};
   State state_{State::NotStarted};
   bool calling_check_{};
@@ -129,7 +129,7 @@ class TcpInstance : public Network::Filter,
                    filter_callbacks_->connection().remoteAddress().asString(),
                    filter_callbacks_->connection().localAddress().asString());
 
-    handler_ = mixer_control_.controller()->CreateTcpRequestHandler();
+    handler_ = mixer_control_.controller()->CreateRequestHandler();
     if (state_ == State::NotStarted) {
       state_ = State::Calling;
       filter_callbacks_->connection().readDisable(true);
@@ -200,7 +200,7 @@ class TcpInstance : public Network::Filter,
     return false;
   }
   void GetReportInfo(
-      ::istio::mixer_control::TcpReportData::ReportInfo* data) const {
+      ::istio::mixer_control::tcp::ReportData::ReportInfo* data) const {
     data->received_bytes = received_bytes_;
     data->send_bytes = send_bytes_;
     data->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(

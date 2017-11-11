@@ -18,8 +18,8 @@
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer_client::AttributesBuilder;
-using ::istio::mixer::v1::config::client::MixerControlConfig;
-using ::istio::mixer::v1::config::client::MixerFilterConfig;
+using ::istio::mixer::v1::config::client::ServiceConfig;
+using ::istio::mixer::v1::config::client::TransportConfig;
 
 namespace Envoy {
 namespace Http {
@@ -59,40 +59,48 @@ void ReadStringMap(const Json::Object& json, const std::string& name,
 }  // namespace
 
 void MixerConfig::Load(const Json::Object& json) {
-  ReadStringMap(json, kMixerAttributes,
-                filter_config.mutable_mixer_attributes());
+  ReadStringMap(json, kMixerAttributes, http_config.mutable_mixer_attributes());
   ReadStringMap(json, kForwardAttributes,
-                filter_config.mutable_forward_attributes());
+                http_config.mutable_forward_attributes());
 
-  // Default is open, unless it specifically set to "close"
-  filter_config.set_network_fail_policy(MixerFilterConfig::FAIL_OPEN);
-  if (json.hasObject(kNetworkFailPolicy) &&
-      json.getString(kNetworkFailPolicy) == "close") {
-    filter_config.set_network_fail_policy(MixerFilterConfig::FAIL_CLOSE);
-  }
-
-  filter_config.set_disable_check_cache(
-      json.getBoolean(kDisableCheckCache, false));
-  filter_config.set_disable_quota_cache(
-      json.getBoolean(kDisableQuotaCache, false));
-  filter_config.set_disable_report_batch(
-      json.getBoolean(kDisableReportBatch, false));
-  filter_config.set_disable_tcp_check_calls(
-      json.getBoolean(kDisableTcpCheckCalls, false));
-
-  AttributesBuilder builder(filter_config.mutable_mixer_attributes());
+  AttributesBuilder builder(http_config.mutable_mixer_attributes());
   if (json.hasObject(kQuotaName)) {
     builder.AddString("quota.name", json.getString(kQuotaName));
   }
   if (json.hasObject(kQuotaAmount)) {
     builder.AddInt64("quota.amount", std::stoi(json.getString(kQuotaAmount)));
   }
+
+  // Copy mixer_attributes to TCP config.
+  *tcp_config.mutable_mixer_attributes() = http_config.mixer_attributes();
+
+  TransportConfig trans_config;
+  // Default is open, unless it specifically set to "close"
+  trans_config.set_network_fail_policy(TransportConfig::FAIL_OPEN);
+  if (json.hasObject(kNetworkFailPolicy) &&
+      json.getString(kNetworkFailPolicy) == "close") {
+    trans_config.set_network_fail_policy(TransportConfig::FAIL_CLOSE);
+  }
+
+  trans_config.set_disable_check_cache(
+      json.getBoolean(kDisableCheckCache, false));
+  trans_config.set_disable_quota_cache(
+      json.getBoolean(kDisableQuotaCache, false));
+  trans_config.set_disable_report_batch(
+      json.getBoolean(kDisableReportBatch, false));
+
+  // Copy to http and tcp
+  *http_config.mutable_transport() = trans_config;
+  *tcp_config.mutable_transport() = trans_config;
+
+  tcp_config.set_disable_check_calls(
+      json.getBoolean(kDisableTcpCheckCalls, false));
 }
 
 void MixerConfig::CreateLegacyConfig(
     bool disable_check, bool disable_report,
     const std::map<std::string, std::string>& attributes,
-    MixerControlConfig* config) {
+    ServiceConfig* config) {
   config->set_enable_mixer_check(!disable_check);
   config->set_enable_mixer_report(!disable_report);
 

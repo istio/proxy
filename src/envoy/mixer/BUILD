@@ -34,7 +34,7 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         "//external:mixer_client_lib",
-	"@mixerapi_git//:mixer_client_config_cc_proto",
+        "@mixerapi_git//:mixer_client_config_cc_proto",
     ],
 )
 
@@ -65,7 +65,8 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        "//external:mixer_control_lib",
+        "//external:mixer_http_control_lib",
+        "//external:mixer_tcp_control_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )

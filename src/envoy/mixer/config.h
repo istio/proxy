@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "envoy/json/json_object.h"
-#include "mixer/v1/config/client/mixer_filter_config.pb.h"
+#include "mixer/v1/config/client/client_config.pb.h"
 
 namespace Envoy {
 namespace Http {
@@ -28,17 +28,20 @@ namespace Mixer {
 
 // A config for mixer filter
 struct MixerConfig {
-  // The mixer filter config.
-  ::istio::mixer::v1::config::client::MixerFilterConfig filter_config;
-
   // Load the config from envoy config.
+  // it will fill both http_config and tcp_config
   void Load(const Json::Object& json);
+
+  // The Http client config.
+  ::istio::mixer::v1::config::client::HttpClientConfig http_config;
+  // The Tcp client config.
+  ::istio::mixer::v1::config::client::TcpClientConfig tcp_config;
 
   // Create per route legacy config.
   static void CreateLegacyConfig(
       bool disable_check, bool disable_report,
       const std::map<std::string, std::string>& attributes,
-      ::istio::mixer::v1::config::client::MixerControlConfig* config);
+      ::istio::mixer::v1::config::client::ServiceConfig* config);
 };
 
 }  // namespace Mixer

@@ -32,9 +32,9 @@
 #include <thread>
 
 using ::google::protobuf::util::Status;
-using ::istio::mixer_control::HttpCheckData;
-using ::istio::mixer_control::HttpReportData;
-using ::istio::mixer::v1::config::client::MixerControlConfig;
+using HttpCheckData = ::istio::mixer_control::http::CheckData;
+using HttpReportData = ::istio::mixer_control::http::ReportData;
+using ::istio::mixer::v1::config::client::ServiceConfig;
 
 namespace Envoy {
 namespace Http {
@@ -80,11 +80,13 @@ class Config {
         [this, &random](Event::Dispatcher& dispatcher)
             -> ThreadLocal::ThreadLocalObjectSharedPtr {
               return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new MixerControl(mixer_config_, cm_, dispatcher, random));
+                  new HttpMixerControl(mixer_config_, cm_, dispatcher, random));
             });
   }
 
-  MixerControl& mixer_control() { return tls_->getTyped<MixerControl>(); }
+  HttpMixerControl& mixer_control() {
+    return tls_->getTyped<HttpMixerControl>();
+  }
 };
 
 typedef std::shared_ptr<Config> ConfigPtr;
@@ -214,8 +216,8 @@ class Instance : public Http::StreamDecoderFilter,
                  public Http::AccessLog::Instance,
                  public Logger::Loggable<Logger::Id::http> {
  private:
-  MixerControl& mixer_control_;
-  std::unique_ptr<::istio::mixer_control::HttpRequestHandler> handler_;
+  HttpMixerControl& mixer_control_;
+  std::unique_ptr<::istio::mixer_control::http::RequestHandler> handler_;
   istio::mixer_client::CancelFunc cancel_check_;
 
   enum State { NotStarted, Calling, Complete, Responded };
@@ -292,13 +294,13 @@ class Instance : public Http::StreamDecoderFilter,
 
     check_mixer_route_flags();
 
-    MixerControlConfig legacy_config;
+    ServiceConfig legacy_config;
     MixerConfig::CreateLegacyConfig(
         mixer_check_disabled_, mixer_report_disabled_,
         GetRouteStringMap(kPrefixMixerAttributes), &legacy_config);
-    ::istio::mixer_control::Controller::PerRouteConfig config;
+    ::istio::mixer_control::http::Controller::PerRouteConfig config;
     config.legacy_config = &legacy_config;
-    handler_ = mixer_control_.controller()->CreateHttpRequestHandler(config);
+    handler_ = mixer_control_.controller()->CreateRequestHandler(config);
 
     state_ = Calling;
     initiating_call_ = true;

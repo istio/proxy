@@ -31,6 +31,10 @@ def mixer_client_repositories(bind=True):
             actual = "@mixerclient_git//:mixer_client_lib",
         )
         native.bind(
-            name = "mixer_control_lib",
-            actual = "@mixerclient_git//control:mixer_control_lib",
+            name = "mixer_http_control_lib",
+            actual = "@mixerclient_git//control:http_control_lib",
+        )
+        native.bind(
+            name = "mixer_tcp_control_lib",
+            actual = "@mixerclient_git//control:tcp_control_lib",
         )

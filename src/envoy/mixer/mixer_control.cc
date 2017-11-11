@@ -35,30 +35,50 @@ class EnvoyTimer : public ::istio::mixer_client::Timer {
   Event::TimerPtr timer_;
 };
 
-}  // namespace
+// Create all environment functions.
+void CreateEnvironment(Upstream::ClusterManager& cm,
+                       Event::Dispatcher& dispatcher,
+                       Runtime::RandomGenerator& random,
+                       ::istio::mixer_client::Environment* env) {
+  env->check_transport = CheckTransport::GetFunc(cm, nullptr);
+  env->report_transport = ReportTransport::GetFunc(cm);
 
-MixerControl::MixerControl(const MixerConfig& mixer_config,
-                           Upstream::ClusterManager& cm,
-                           Event::Dispatcher& dispatcher,
-                           Runtime::RandomGenerator& random)
-    : cm_(cm) {
-  ::istio::mixer_control::Controller::Options options(
-      mixer_config.filter_config);
-
-  options.check_transport = CheckTransport::GetFunc(cm, nullptr);
-  options.report_transport = ReportTransport::GetFunc(cm);
-
-  options.timer_create_func = [&dispatcher](std::function<void()> timer_cb)
+  env->timer_create_func = [&dispatcher](std::function<void()> timer_cb)
       -> std::unique_ptr<::istio::mixer_client::Timer> {
         return std::unique_ptr<::istio::mixer_client::Timer>(
             new EnvoyTimer(dispatcher.createTimer(timer_cb)));
       };
 
-  options.uuid_generate_func = [&random]() -> std::string {
+  env->uuid_generate_func = [&random]() -> std::string {
     return random.uuid();
   };
+}
 
-  controller_ = ::istio::mixer_control::Controller::Create(options);
+}  // namespace
+
+HttpMixerControl::HttpMixerControl(const MixerConfig& mixer_config,
+                                   Upstream::ClusterManager& cm,
+                                   Event::Dispatcher& dispatcher,
+                                   Runtime::RandomGenerator& random)
+    : cm_(cm) {
+  ::istio::mixer_control::http::Controller::Options options(
+      mixer_config.http_config);
+
+  CreateEnvironment(cm, dispatcher, random, &options.env);
+
+  controller_ = ::istio::mixer_control::http::Controller::Create(options);
+}
+
+TcpMixerControl::TcpMixerControl(const MixerConfig& mixer_config,
+                                 Upstream::ClusterManager& cm,
+                                 Event::Dispatcher& dispatcher,
+                                 Runtime::RandomGenerator& random) {
+  ::istio::mixer_control::tcp::Controller::Options options(
+      mixer_config.tcp_config);
+
+  CreateEnvironment(cm, dispatcher, random, &options.env);
+
+  controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
 }
 
 }  // namespace Mixer
