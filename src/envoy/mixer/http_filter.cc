@@ -295,7 +295,7 @@ class Instance : public Http::StreamDecoderFilter,
     check_mixer_route_flags();
 
     ServiceConfig legacy_config;
-    MixerConfig::CreateLegacyConfig(
+    MixerConfig::CreateLegacyRouteConfig(
         mixer_check_disabled_, mixer_report_disabled_,
         GetRouteStringMap(kPrefixMixerAttributes), &legacy_config);
     ::istio::mixer_control::http::Controller::PerRouteConfig config;

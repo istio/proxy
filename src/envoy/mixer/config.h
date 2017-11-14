@@ -38,7 +38,7 @@ struct MixerConfig {
   ::istio::mixer::v1::config::client::TcpClientConfig tcp_config;
 
   // Create per route legacy config.
-  static void CreateLegacyConfig(
+  static void CreateLegacyRouteConfig(
       bool disable_check, bool disable_report,
       const std::map<std::string, std::string>& attributes,
       ::istio::mixer::v1::config::client::ServiceConfig* config);

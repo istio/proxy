@@ -97,7 +97,7 @@ void MixerConfig::Load(const Json::Object& json) {
       json.getBoolean(kDisableTcpCheckCalls, false));
 }
 
-void MixerConfig::CreateLegacyConfig(
+void MixerConfig::CreateLegacyRouteConfig(
     bool disable_check, bool disable_report,
     const std::map<std::string, std::string>& attributes,
     ServiceConfig* config) {
