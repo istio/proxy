@@ -15,14 +15,13 @@
 ################################################################################
 #
 
-MIXER_CLIENT = "1dd5854013724cb0421b04fb4345062f9e77eb89"
+MIXER_CLIENT = "aa16c9e942b12fd4d4c6ec76f578798ec18b8681"
 
 def mixer_client_repositories(bind=True):
-    native.local_repository(
+    native.git_repository(
         name = "mixerclient_git",
-#        commit = MIXER_CLIENT,
-#        remote = "https://github.com/istio/mixerclient.git",
-        path = "../mixerclient",
+        commit = MIXER_CLIENT,
+        remote = "https://github.com/istio/mixerclient.git",
     )
 
     if bind:
@@ -32,9 +31,9 @@ def mixer_client_repositories(bind=True):
         )
         native.bind(
             name = "mixer_http_control_lib",
-            actual = "@mixerclient_git//control:http_control_lib",
+            actual = "@mixerclient_git//control/src/http:control_lib",
         )
         native.bind(
             name = "mixer_tcp_control_lib",
-            actual = "@mixerclient_git//control:tcp_control_lib",
+            actual = "@mixerclient_git//control/src/tcp:control_lib",
         )
