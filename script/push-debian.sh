@@ -66,10 +66,10 @@ fi
 
 bazel build ${BAZEL_ARGS} ${BAZEL_TARGET}
 
-if [[ "${GCS_PATH}" != "" ]]; then
+if [[ -n "${GCS_PATH}" ]]; then
   gsutil -m cp -r "${BAZEL_BINARY}.deb" ${GCS_PATH}/
 fi
 
-if [[ "${OUTPUT_DIR}" != "" ]]; then
+if [[ -n "${OUTPUT_DIR}" ]]; then
   cp "${BAZEL_BINARY}.deb" "${OUTPUT_DIR}/"
 fi
