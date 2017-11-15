@@ -46,35 +46,6 @@ load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
 envoy_dependencies(repository="@envoy", skip_targets=["io_bazel_rules_go"])
 
-bind(
-    name = "protoc",
-    actual = "@com_google_protobuf_cc//:protoc",
-)
-bind(
-    name = "protocol_compiler",
-    actual = "@com_google_protobuf_cc//:protoc",
-)
-bind(
-    name = "protobuf",
-    actual = "@com_google_protobuf_cc//:protobuf",
-)
-bind(
-    name = "cc_wkt_protos",
-    actual = "@com_google_protobuf_cc//:cc_wkt_protos",
-)
-bind(
-    name = "cc_wkt_protos_genproto",
-    actual = "@com_google_protobuf_cc//:cc_wkt_protos_genproto",
-)
-bind(
-    name = "protobuf_compiler",
-    actual = "@com_google_protobuf_cc//:protoc_lib",
-)
-bind(
-    name = "protobuf_clib",
-    actual = "@com_google_protobuf_cc//:protoc_lib",
-)
-
 load("@envoy//bazel:cc_configure.bzl", "cc_configure")
 
 cc_configure()
