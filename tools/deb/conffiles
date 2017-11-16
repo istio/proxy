@@ -1,0 +1,3 @@
+/var/lib/istio/envoy/xsidecar.env
+/var/lib/istio/envoy/cluster.env
+
