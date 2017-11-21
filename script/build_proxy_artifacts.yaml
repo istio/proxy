@@ -1,7 +1,6 @@
 # Used for automated builds triggered on git commit
 
 steps:
-
 - name: gcr.io/istio-io/istio-builder:0.4.4
   args:
   - "-c"
@@ -9,5 +8,6 @@ steps:
   entrypoint: bash
 - name: gcr.io/istio-io/istio-builder:0.4.4
   args: ['./script/release-docker' ]
-  
+options:
+  substitutionOption: ALLOW_LOOSE
 timeout: 1800s
