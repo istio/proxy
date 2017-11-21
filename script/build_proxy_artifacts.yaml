@@ -1,6 +1,13 @@
 # Used for automated builds triggered on git commit
 
 steps:
+
+- name: 'gcr.io/istio-io/istio-builder:0.4.4'
+  args: ['apt-get install libtoolize' ]
+- name: 'gcr.io/istio-io/istio-builder:0.4.4'
+  args: ['apt-get install cmake' ]
+- name: 'gcr.io/istio-io/istio-builder:0.4.4'
+  args: ['apt-get install realpath' ]
 - name: 'gcr.io/istio-io/istio-builder:0.4.4'
   args: ['./script/release-binary' ]
 - name: 'gcr.io/istio-io/istio-builder:0.4.4'
