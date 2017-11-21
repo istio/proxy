@@ -1,13 +1,13 @@
 # Used for automated builds triggered on git commit
 
 steps:
-- name: gcr.io/istio-io/istio-builder:0.4.4
+- name: gcr.io/istio-testing/ubuntu-16-04-slave:latest
   args:
   - "-c"
   - "./script/release-binary && for FILE in $(find /builder/home/.cache/bazel/* | grep -i dep | grep -i log); do cat $$FILE; done"
   entrypoint: bash
-- name: gcr.io/istio-io/istio-builder:0.4.4
+- name: gcr.io/istio-testing/ubuntu-16-04-slave:latest
   args: ['./script/release-docker' ]
 options:
   substitutionOption: ALLOW_LOOSE
-timeout: 1800s
+timeout: 3600s
