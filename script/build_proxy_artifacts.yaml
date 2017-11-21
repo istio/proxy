@@ -3,8 +3,6 @@
 steps:
 - name: 'gcr.io/istio-io/istio-builder:0.4.4'
   args: ['./script/release-binary' ]
-
-steps:
 - name: 'gcr.io/istio-io/istio-builder:0.4.4'
   args: ['./script/release-docker' ]
   
