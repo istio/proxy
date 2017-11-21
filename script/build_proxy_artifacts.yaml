@@ -2,12 +2,12 @@
 
 steps:
 
-- name: gcr.io/istio-testing/prowbazel:0.3.2
+- name: gcr.io/istio-io/istio-builder:0.4.4
   args:
   - "-c"
   - "./script/release-binary && for FILE in $(find /builder/home/.cache/bazel/* | grep -i dep | grep -i log); do cat $FILE; done"
   entrypoint: bash
-- name: gcr.io/istio-testing/prowbazel:0.3.2
+- name: gcr.io/istio-io/istio-builder:0.4.4
   args: ['./script/release-docker' ]
   
 timeout: 1800s
