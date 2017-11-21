@@ -2,15 +2,9 @@
 
 steps:
 
-- name: 'gcr.io/istio-io/istio-builder:0.4.4'
-  args: ['apt-get install libtoolize' ]
-- name: 'gcr.io/istio-io/istio-builder:0.4.4'
-  args: ['apt-get install cmake' ]
-- name: 'gcr.io/istio-io/istio-builder:0.4.4'
-  args: ['apt-get install realpath' ]
-- name: 'gcr.io/istio-io/istio-builder:0.4.4'
+- name: 'gcr.io/istio-testing/prowbazel:0.3.2'
   args: ['./script/release-binary' ]
-- name: 'gcr.io/istio-io/istio-builder:0.4.4'
+- name: 'gcr.io/istio-testing/prowbazel:0.3.2'
   args: ['./script/release-docker' ]
   
 timeout: 1800s
