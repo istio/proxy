@@ -10,4 +10,5 @@ steps:
   args: ['./script/release-docker' ]
 options:
   substitutionOption: ALLOW_LOOSE
+  machineType: N1_HIGHCPU_32
 timeout: 3600s
