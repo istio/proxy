@@ -9,6 +9,5 @@ steps:
 - name: gcr.io/istio-io/istio-builder:0.4.4
   args: ['./script/release-docker' ]
 options:
-  substitutionOption: ALLOW_LOOSE
   machineType: N1_HIGHCPU_32
-timeout: 3600s
+timeout: 1800s
