@@ -53,8 +53,3 @@ make build
 
 echo 'Bazel Tests'
 make test
-
-echo 'Create and push artifacts'
-script/release-binary
-script/release-docker
-make artifacts
