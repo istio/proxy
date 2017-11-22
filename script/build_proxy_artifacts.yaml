@@ -4,7 +4,7 @@ steps:
 - name: gcr.io/istio-io/istio-builder:0.4.4
   args:
   - "-c"
-  - "./script/release-binary || for FILE in $(find /builder/home/.cache/bazel/* | grep -i build | grep -i log); do cat $$FILE; done"
+  - "./script/release-binary || for FILE in $(find /builder/home/.cache/bazel/* | grep -i \"build\\.log\"); do gsutil cp $$FILE gs://delco-experimental/ ; done"
   entrypoint: bash
 - name: gcr.io/istio-io/istio-builder:0.4.4
   args: ['./script/release-docker' ]
