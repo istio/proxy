@@ -4,10 +4,8 @@ steps:
 - name: gcr.io/istio-io/istio-builder:0.4.4
   args:
   - "-c"
-  - "cp tools/bazel.rc.cloudbuilder \"$${HOME}/.bazelrc\" ; ./script/release-binary || for FILE in $(find /builder/home/.cache/bazel/* | grep -i \"build\\.log\"); do gsutil cp $$FILE gs://delco-experimental/ ; done"
+  - "cp tools/bazel.rc.cloudbuilder \"$${HOME}/.bazelrc\" && ./script/release-binary && ./script/release-docker"
   entrypoint: bash
-- name: gcr.io/istio-io/istio-builder:0.4.4
-  args: ['./script/release-docker' ]
 options:
   substitutionOption: ALLOW_LOOSE
   machineType: N1_HIGHCPU_32
