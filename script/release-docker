@@ -31,8 +31,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-#PROJECT=${PROJECT:-istio-testing}
-PROJECT=${PROJECT:-delco-experimental}
+PROJECT=${PROJECT:-istio-testing}
 
 SHA=$(git rev-parse HEAD)
 
