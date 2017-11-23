@@ -40,7 +40,7 @@ if [ "${CI:-}" == 'bootstrap' ]; then
   #GIT_SHA="${PULL_PULL_SHA}"
 else
   # Use the current commit.
-  #GIT_SHA="$(git rev-parse --verify HEAD)"
+  GIT_SHA="$(git rev-parse --verify HEAD)"
 fi
 
 GIT_SHA="$(git rev-parse --verify HEAD)"
