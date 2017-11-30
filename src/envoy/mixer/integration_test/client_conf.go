@@ -93,13 +93,20 @@ func GetDefaultTcpServerConf() *mccpb.TcpClientConfig {
 	return v2
 }
 
-func SetNetworPolicy(c *mccpb.HttpClientConfig, open bool) {
-	if c.Transport == nil {
-		c.Transport = &mccpb.TransportConfig{}
+func SetNetworPolicy(v2 *mccpb.HttpClientConfig, open bool) {
+	if v2.Transport == nil {
+		v2.Transport = &mccpb.TransportConfig{}
 	}
 	if open {
-		c.Transport.NetworkFailPolicy = mccpb.FAIL_OPEN
+		v2.Transport.NetworkFailPolicy = mccpb.FAIL_OPEN
 	} else {
-		c.Transport.NetworkFailPolicy = mccpb.FAIL_CLOSE
+		v2.Transport.NetworkFailPolicy = mccpb.FAIL_CLOSE
+	}
+}
+
+func DisableCheckReport(v2 *mccpb.HttpClientConfig, disable_check, disable_report bool) {
+	for _, s := range v2.ServiceConfigs {
+		s.DisableCheckCalls = disable_check
+		s.DisableReportCalls = disable_report
 	}
 }
