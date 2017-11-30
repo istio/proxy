@@ -23,6 +23,7 @@ go_library(
     testonly = 1,
     srcs = [
         "attributes.go",
+        "client_conf.go",
         "envoy.go",
         "envoy_conf.go",
         "http_client.go",
