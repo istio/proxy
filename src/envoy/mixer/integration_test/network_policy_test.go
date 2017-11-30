@@ -19,7 +19,8 @@ import (
 	"testing"
 )
 
-func TestFailOpen(t *testing.T) {
+// Mixer server not running.
+func TestNetworkFailure(t *testing.T) {
 	s := &TestSetup{
 		t:       t,
 		conf:    basicConfig,
