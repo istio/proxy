@@ -61,8 +61,6 @@ go_test_suite(
     ],
     tests = [
         "check_cache_test.go",
-        "check_fail_close_test.go",
-        "check_fail_open_test.go",
         "check_report_test.go",
         "check_report_disable_test.go",
         "disable_check_cache_test.go",
@@ -70,6 +68,7 @@ go_test_suite(
         "fault_inject_test.go",
         "internal_fail_close_test.go",
         "internal_fail_open_test.go",
+        "network_policy_test.go",
         "quota_cache_test.go",
         "quota_test.go",
         "report_batch_test.go",

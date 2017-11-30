@@ -16,7 +16,6 @@
 package test
 
 import (
-	"github.com/golang/protobuf/proto"
 	mpb "istio.io/api/mixer/v1"
 	mccpb "istio.io/api/mixer/v1/config/client"
 )
@@ -28,12 +27,20 @@ var (
 )
 
 type V2Conf struct {
-	HttpServerConf proto.Message
-	HttpClientConf proto.Message
-	TcpServerConf  proto.Message
+	HttpServerConf *mccpb.HttpClientConfig
+	HttpClientConf *mccpb.HttpClientConfig
+	TcpServerConf  *mccpb.TcpClientConfig
 }
 
-func GetDefaultHttpServerConf() proto.Message {
+func GetDefaultV2Conf() *V2Conf {
+	return &V2Conf{
+		HttpServerConf: GetDefaultHttpServerConf(),
+		HttpClientConf: GetDefaultHttpClientConf(),
+		TcpServerConf:  GetDefaultTcpServerConf(),
+	}
+}
+
+func GetDefaultHttpServerConf() *mccpb.HttpClientConfig {
 	v2 := &mccpb.HttpClientConfig{
 		MixerAttributes: &mpb.Attributes{
 			Attributes: map[string]*mpb.Attributes_AttributeValue{
@@ -59,7 +66,7 @@ func GetDefaultHttpServerConf() proto.Message {
 	return v2
 }
 
-func GetDefaultHttpClientConf() proto.Message {
+func GetDefaultHttpClientConf() *mccpb.HttpClientConfig {
 	v2 := &mccpb.HttpClientConfig{
 		ForwardAttributes: &mpb.Attributes{
 			Attributes: map[string]*mpb.Attributes_AttributeValue{
@@ -73,7 +80,7 @@ func GetDefaultHttpClientConf() proto.Message {
 	return v2
 }
 
-func GetDefaultTcpServerConf() proto.Message {
+func GetDefaultTcpServerConf() *mccpb.TcpClientConfig {
 	v2 := &mccpb.TcpClientConfig{
 		MixerAttributes: &mpb.Attributes{
 			Attributes: map[string]*mpb.Attributes_AttributeValue{
@@ -84,4 +91,15 @@ func GetDefaultTcpServerConf() proto.Message {
 		},
 	}
 	return v2
+}
+
+func SetNetworPolicy(c *mccpb.HttpClientConfig, open bool) {
+	if c.Transport == nil {
+		c.Transport = &mccpb.TransportConfig{}
+	}
+	if open {
+		c.Transport.NetworkFailPolicy = mccpb.FAIL_OPEN
+	} else {
+		c.Transport.NetworkFailPolicy = mccpb.FAIL_CLOSE
+	}
 }

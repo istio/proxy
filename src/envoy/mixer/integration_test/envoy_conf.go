@@ -355,23 +355,9 @@ func CreateEnvoyConf(path, conf, flags string, stress, faultInject bool, v2 *V2C
 	}
 
 	if v2 != nil {
-		cf := v2.HttpServerConf
-		if cf == nil {
-			cf = GetDefaultHttpServerConf()
-		}
-		c.ServerConfig = getV2Config(cf)
-
-		cf = v2.HttpClientConf
-		if cf == nil {
-			cf = GetDefaultHttpClientConf()
-		}
-		c.ClientConfig = getV2Config(cf)
-
-		cf = v2.TcpServerConf
-		if cf == nil {
-			cf = GetDefaultTcpServerConf()
-		}
-		c.TcpServerConfig = getV2Config(cf)
+		c.ServerConfig = getV2Config(v2.HttpServerConf)
+		c.ClientConfig = getV2Config(v2.HttpClientConf)
+		c.TcpServerConfig = getV2Config(v2.TcpServerConf)
 	}
 	return c.write(path)
 }
