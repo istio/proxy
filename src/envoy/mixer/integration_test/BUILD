@@ -23,13 +23,13 @@ go_library(
     testonly = 1,
     srcs = [
         "attributes.go",
-        "client_conf.go",
         "envoy.go",
         "envoy_conf.go",
         "http_client.go",
         "http_server.go",
         "mixer_server.go",
         "setup.go",
+        "v2_config.go",
     ],
     deps = [
         "@com_github_golang_protobuf//jsonpb:go_default_library",

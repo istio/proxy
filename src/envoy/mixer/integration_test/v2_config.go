@@ -120,6 +120,24 @@ func DisableHttpCheckReport(v2 *mccpb.HttpClientConfig, disable_check, disable_r
 	}
 }
 
+func AddHttpQuota(v2 *mccpb.HttpClientConfig, quota string, charge int64) {
+	q := &mccpb.QuotaSpec{
+		Rules: make([]*mccpb.QuotaRule, 1),
+	}
+	q.Rules[0] = &mccpb.QuotaRule{
+		Quotas: make([]*mccpb.Quota, 1),
+	}
+	q.Rules[0].Quotas[0] = &mccpb.Quota{
+		Quota:  quota,
+		Charge: charge,
+	}
+
+	for _, s := range v2.ServiceConfigs {
+		s.QuotaSpec = make([]*mccpb.QuotaSpec, 1)
+		s.QuotaSpec[0] = q
+	}
+}
+
 func DisableTcpCheckReport(v2 *mccpb.TcpClientConfig, disable_check, disable_report bool) {
 	v2.DisableCheckCalls = disable_check
 	v2.DisableReportCalls = disable_report
