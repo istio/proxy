@@ -85,9 +85,11 @@ func TestCheckReportDisable(t *testing.T) {
 	//
 
 	s.v2 = GetDefaultV2Conf()
+	// Disable all cache.
+	DisableClientCache(s.v2.HttpServerConf, true, true, true)
 	s.ReStartEnvoy()
 
-	tag := "Both Check and Report"
+	tag = "Both Check and Report"
 	if _, _, err := HTTPGet(url); err != nil {
 		t.Errorf("Failed in request %s: %v", tag, err)
 	}
@@ -100,7 +102,7 @@ func TestCheckReportDisable(t *testing.T) {
 
 	// stop and start a new envoy config
 	// Check enabled, Report disabled
-	DisableCheckReport(s.v2.HttpServerConf, false, true)
+	DisableHttpCheckReport(s.v2.HttpServerConf, false, true)
 	s.ReStartEnvoy()
 
 	tag = "Check Only"
@@ -114,7 +116,7 @@ func TestCheckReportDisable(t *testing.T) {
 	s.VerifyReportCount(tag, 3)
 
 	// Check disabled, Report enabled
-	DisableCheckReport(s.v2.HttpServerConf, true, false)
+	DisableHttpCheckReport(s.v2.HttpServerConf, true, false)
 	s.ReStartEnvoy()
 
 	tag = "Report Only"

@@ -24,7 +24,7 @@ import (
 
 const (
 	concurrent         = 10
-	duration_in_second = 30
+	duration_in_second = 15
 )
 
 func TestStressEnvoy(t *testing.T) {

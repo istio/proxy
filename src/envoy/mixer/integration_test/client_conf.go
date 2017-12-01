@@ -104,9 +104,23 @@ func SetNetworPolicy(v2 *mccpb.HttpClientConfig, open bool) {
 	}
 }
 
-func DisableCheckReport(v2 *mccpb.HttpClientConfig, disable_check, disable_report bool) {
+func DisableClientCache(v2 *mccpb.HttpClientConfig, check_cache, quota_cache, report_batch bool) {
+	if v2.Transport == nil {
+		v2.Transport = &mccpb.TransportConfig{}
+	}
+	v2.Transport.DisableCheckCache = check_cache
+	v2.Transport.DisableQuotaCache = quota_cache
+	v2.Transport.DisableReportBatch = report_batch
+}
+
+func DisableHttpCheckReport(v2 *mccpb.HttpClientConfig, disable_check, disable_report bool) {
 	for _, s := range v2.ServiceConfigs {
 		s.DisableCheckCalls = disable_check
 		s.DisableReportCalls = disable_report
 	}
+}
+
+func DisableTcpCheckReport(v2 *mccpb.TcpClientConfig, disable_check, disable_report bool) {
+	v2.DisableCheckCalls = disable_check
+	v2.DisableReportCalls = disable_report
 }
