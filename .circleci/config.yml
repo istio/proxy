@@ -6,8 +6,6 @@ jobs:
     environment:
     docker:
       - image: costinm/proxy-builder:0.4.4
-    resource_class: xlarge
-
     steps:
       - checkout
       - restore_cache:
@@ -18,7 +16,7 @@ jobs:
             - repo-cache-{{ checksum "WORKSPACE" }}
       # To build docker containers or run tests in a docker
       - setup_remote_docker
-      - run: make deb BAZEL_OPTS="-j 7"
+      - run: make deb BAZEL_OPTS="-j 4"
       - run: make test_envoy
       - save_cache:
           key: repo-cache-{{ checksum "WORKSPACE" }}

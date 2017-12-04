@@ -4,8 +4,6 @@ clone:
 pipeline:
   build:
     image: costinm/proxy-builder:0.4.4
-    env:
-        HOME: /home/circleci
     commands:
       - id
       - env
@@ -13,8 +11,6 @@ pipeline:
       - HOME=/drone/src make build_envoy
   test:
     image: costinm/proxy-builder:0.4.4
-    env:
-        HOME: /home/circleci
     commands:
       - id
       - env
