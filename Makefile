@@ -47,7 +47,7 @@ artifacts: build
 	@script/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
 
 deb:
-	bazel build tools/deb:istio-proxy
+	bazel build tools/deb:istio-proxy  ${BAZEL_BUILD_ARGS}
 
 
 .PHONY: build clean test check artifacts
