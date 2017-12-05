@@ -27,7 +27,11 @@ jobs:
           paths:
             - /home/circleci/.cache/bazel
       - store_artifacts:
-          path: /home/circleci/project/bazel-bin/tools/deb
+          path: /home/circleci/project/bazel-bin/tools/deb/istio-proxy.deb
+          destination: /
+      - store_artifacts:
+          path: /home/circleci/project/bazel-bin/src/envoy/mixer/envoy
+          destination: /
 
 
 
