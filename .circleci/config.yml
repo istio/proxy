@@ -2,7 +2,6 @@ version: 2
 
 jobs:
   build:
-    working_directory: src/proxy
     environment:
     docker:
       - image: istio/ci:go1.9-bazel0.8
