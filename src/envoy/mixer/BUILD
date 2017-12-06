@@ -15,23 +15,10 @@
 ################################################################################
 #
 
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
-load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
 load(
     "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_proto_library",
     "envoy_cc_library",
     "envoy_cc_binary",
-    "envoy_linkopts",
-)
-
-cc_proto_library(
-    name = "string_map_proto",
-    srcs = ["string_map.proto"],
-    default_runtime = "//external:protobuf",
-    linkstatic = 1,
-    protoc = "//external:protoc",
-    visibility = ["//visibility:public"],
 )
 
 envoy_cc_library(
@@ -49,10 +36,10 @@ envoy_cc_library(
         "utils.h",
     ],
     repository = "@envoy",
+    visibility = ["//visibility:public"],
     deps = [
-        ":string_map_proto",
-        "//external:mixer_client_lib",
-        "@envoy//source/common/grpc:rpc_channel_lib",
+        "//external:mixer_http_control_lib",
+        "//external:mixer_tcp_control_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -65,29 +52,4 @@ envoy_cc_binary(
         ":filter_lib",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
-)
-
-pkg_tar(
-    name = "envoy_tar",
-    extension = "tar.gz",
-    files = [":envoy"],
-    mode = "0755",
-    package_dir = "/usr/local/bin/",
-)
-
-pkg_tar(
-    name = "start_envoy_tar",
-    extension = "tar.gz",
-    files = ["start_envoy"],
-    mode = "0755",
-    package_dir = "/usr/local/bin/",
-)
-
-pkg_tar(
-    name = "config_tar",
-    extension = "tar.gz",
-    files = ["envoy.conf.template"],
-    mode = "0666",
-    package_dir = "/etc/opt/proxy",
-    tags = ["manual"],
 )

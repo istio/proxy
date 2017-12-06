@@ -14,67 +14,37 @@
 #
 ################################################################################
 #
-local_repository(
-    name = "mixerclient_git",
-    path = "vendor/mixerclient",
+
+load(
+    "//src/envoy/mixer:repositories.bzl",
+    "mixer_client_repositories",
 )
 
-bind(
-    name = "mixer_client_lib",
-    actual = "@mixerclient_git//:mixer_client_lib",
-)
-
-
-new_local_repository(
-    name = "gogoproto_git",
-    path = "vendor/gogoproto",
-    build_file = "tools/gogo.BUILD",
-)
-
-bind(
-    name = "cc_gogoproto",
-    actual = "@gogoproto_git//:cc_gogoproto",
-)
-
-bind(
-    name = "cc_gogoproto_genproto",
-    actual = "@gogoproto_git//:cc_gogoproto_genproto",
-)
-
-# TODO: check in the BUILD file, part of the proxy BUILD
-new_local_repository(
-    name = "mixerapi_git",
-    path = "vendor/mixerapi",
-    build_file = "tools/mixerapi.BUILD",
-)
-
-bind(
-    name = "mixer_api_cc_proto",
-    actual = "@mixerapi_git//:mixer_api_cc_proto",
-)
+mixer_client_repositories()
 
 load(
     "@mixerclient_git//:repositories.bzl",
-    "googleapis_repositories",
+    "mixerapi_repositories",
 )
 
-googleapis_repositories()
-
+mixerapi_repositories()
 
 bind(
     name = "boringssl_crypto",
     actual = "//external:ssl",
 )
 
-local_repository(
+ENVOY_SHA = "e593fedc3232fbb694f3ec985567a2c7dff05212"  # Oct 31, 2017
+
+http_archive(
     name = "envoy",
-    path = "envoy",
+    strip_prefix = "envoy-" + ENVOY_SHA,
+    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".zip",
 )
 
-# TODO: replace with local_repository to use those picked by repo
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
-envoy_dependencies()
+envoy_dependencies(repository="@envoy", skip_targets=["io_bazel_rules_go"])
 
 load("@envoy//bazel:cc_configure.bzl", "cc_configure")
 
@@ -84,26 +54,22 @@ load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 
 api_dependencies()
 
-# Following go repositories are for building go integration test for mixer filter.
 git_repository(
     name = "io_bazel_rules_go",
     commit = "9cf23e2aab101f86e4f51d8c5e0f14c012c2161c",  # Oct 12, 2017 (Add `build_external` option to `go_repository`)
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
-load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
-go_rules_dependencies()
-go_register_toolchains()
+load("@mixerapi_git//:api_dependencies.bzl", "mixer_api_for_proxy_dependencies")
+mixer_api_for_proxy_dependencies()
 
-load("@io_bazel_rules_go//proto:def.bzl", "proto_register_toolchains")
-proto_register_toolchains()
+ISTIO_SHA = "9386e6c1cc95f2f405383c547b9d8329e557397b"
 
-local_repository(
-    name = "com_github_istio_mixer",
-    path = "go/src/istio.io/mixer"
+git_repository(
+    name = "io_istio_istio",
+    commit = ISTIO_SHA,
+    remote = "https://github.com/istio/istio",
 )
 
-load("@com_github_istio_mixer//test:repositories.bzl", "mixer_test_repositories")
-
+load("//src/envoy/mixer/integration_test:repositories.bzl", "mixer_test_repositories")
 mixer_test_repositories()
-

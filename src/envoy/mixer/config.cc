@@ -14,8 +14,16 @@
  */
 
 #include "src/envoy/mixer/config.h"
+#include "google/protobuf/stubs/status.h"
+#include "google/protobuf/util/json_util.h"
+#include "include/attributes_builder.h"
 
-using ::istio::mixer_client::Attributes;
+using ::google::protobuf::Message;
+using ::google::protobuf::util::Status;
+using ::istio::mixer::v1::Attributes;
+using ::istio::mixer_client::AttributesBuilder;
+using ::istio::mixer::v1::config::client::ServiceConfig;
+using ::istio::mixer::v1::config::client::TransportConfig;
 
 namespace Envoy {
 namespace Http {
@@ -41,53 +49,94 @@ const std::string kDisableReportBatch("disable_report_batch");
 const std::string kNetworkFailPolicy("network_fail_policy");
 const std::string kDisableTcpCheckCalls("disable_tcp_check_calls");
 
-void ReadString(const Json::Object& json, const std::string& name,
-                std::string* value) {
-  if (json.hasObject(name)) {
-    *value = json.getString(name);
-  }
-}
+const std::string kV2Config("v2");
 
 void ReadStringMap(const Json::Object& json, const std::string& name,
-                   std::map<std::string, std::string>* map) {
+                   Attributes* attributes) {
   if (json.hasObject(name)) {
     json.getObject(name)->iterate(
-        [map](const std::string& key, const Json::Object& obj) -> bool {
-          (*map)[key] = obj.asString();
+        [attributes](const std::string& key, const Json::Object& obj) -> bool {
+          AttributesBuilder(attributes).AddIpOrString(key, obj.asString());
           return true;
         });
   }
 }
 
-}  // namespace
+void ReadTransportConfig(const Json::Object& json, TransportConfig* config) {
+  // Default is open, unless it specifically set to "close"
+  config->set_network_fail_policy(TransportConfig::FAIL_OPEN);
+  if (json.hasObject(kNetworkFailPolicy) &&
+      json.getString(kNetworkFailPolicy) == "close") {
+    config->set_network_fail_policy(TransportConfig::FAIL_CLOSE);
+  }
 
-void MixerConfig::Load(const Json::Object& json) {
-  ReadStringMap(json, kMixerAttributes, &mixer_attributes);
-  ReadStringMap(json, kForwardAttributes, &forward_attributes);
-
-  ReadString(json, kQuotaName, &quota_name);
-  ReadString(json, kQuotaAmount, &quota_amount);
-
-  ReadString(json, kNetworkFailPolicy, &network_fail_policy);
-
-  disable_check_cache = json.getBoolean(kDisableCheckCache, false);
-  disable_quota_cache = json.getBoolean(kDisableQuotaCache, false);
-  disable_report_batch = json.getBoolean(kDisableReportBatch, false);
-
-  disable_tcp_check_calls = json.getBoolean(kDisableTcpCheckCalls, false);
+  config->set_disable_check_cache(json.getBoolean(kDisableCheckCache, false));
+  config->set_disable_quota_cache(json.getBoolean(kDisableQuotaCache, false));
+  config->set_disable_report_batch(json.getBoolean(kDisableReportBatch, false));
 }
 
-void MixerConfig::ExtractQuotaAttributes(Attributes* attr) const {
-  if (!quota_name.empty()) {
-    attr->attributes[Attributes::kQuotaName] =
-        Attributes::StringValue(quota_name);
-
-    int64_t amount = 1;  // default amount to 1.
-    if (!quota_amount.empty()) {
-      amount = std::stoi(quota_amount);
-    }
-    attr->attributes[Attributes::kQuotaAmount] = Attributes::Int64Value(amount);
+bool ReadV2Config(const Json::Object& json, Message* message) {
+  if (!json.hasObject(kV2Config)) {
+    return false;
   }
+  std::string v2_str = json.getObject(kV2Config)->asJsonString();
+  Status status =
+      ::google::protobuf::util::JsonStringToMessage(v2_str, message);
+  auto& logger = Logger::Registry::getLog(Logger::Id::config);
+  if (status.ok()) {
+    ENVOY_LOG_TO_LOGGER(logger, info, "V2 mixer client config: {}",
+                        message->DebugString());
+    return true;
+  }
+  ENVOY_LOG_TO_LOGGER(
+      logger, error,
+      "Failed to convert mixer V2 client config, error: {}, data: {}",
+      status.ToString(), v2_str);
+  return false;
+}
+
+}  // namespace
+
+void HttpMixerConfig::Load(const Json::Object& json) {
+  ReadStringMap(json, kMixerAttributes, http_config.mutable_mixer_attributes());
+  ReadStringMap(json, kForwardAttributes,
+                http_config.mutable_forward_attributes());
+
+  if (json.hasObject(kQuotaName)) {
+    int64_t amount = 1;
+    if (json.hasObject(kQuotaAmount)) {
+      amount = std::stoi(json.getString(kQuotaAmount));
+    }
+    legacy_quotas.push_back({json.getString(kQuotaName), amount});
+  }
+
+  ReadTransportConfig(json, http_config.mutable_transport());
+
+  has_v2_config = ReadV2Config(json, &http_config);
+}
+
+void HttpMixerConfig::CreateLegacyRouteConfig(
+    bool disable_check, bool disable_report,
+    const std::map<std::string, std::string>& attributes,
+    ServiceConfig* config) {
+  config->set_disable_check_calls(disable_check);
+  config->set_disable_report_calls(disable_report);
+
+  AttributesBuilder builder(config->mutable_mixer_attributes());
+  for (const auto& it : attributes) {
+    builder.AddIpOrString(it.first, it.second);
+  }
+}
+
+void TcpMixerConfig::Load(const Json::Object& json) {
+  ReadStringMap(json, kMixerAttributes, tcp_config.mutable_mixer_attributes());
+
+  ReadTransportConfig(json, tcp_config.mutable_transport());
+
+  tcp_config.set_disable_check_calls(
+      json.getBoolean(kDisableTcpCheckCalls, false));
+
+  ReadV2Config(json, &tcp_config);
 }
 
 }  // namespace Mixer

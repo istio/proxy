@@ -19,42 +19,41 @@
 #include <string>
 #include <vector>
 
+#include "common/common/logger.h"
 #include "envoy/json/json_object.h"
-#include "include/attribute.h"
+#include "mixer/v1/config/client/client_config.pb.h"
+#include "quota/include/requirement.h"
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
 
-// A config for mixer filter
-struct MixerConfig {
-  // These static attributes will be send to mixer in both
-  // Check and Report.
-  std::map<std::string, std::string> mixer_attributes;
-
-  // These attributes will be forwarded to upstream.
-  std::map<std::string, std::string> forward_attributes;
-
-  // Quota attributes.
-  std::string quota_name;
-  std::string quota_amount;
-
-  // boo flags to disable check cache, quota cache, and report batch.
-  bool disable_check_cache;
-  bool disable_quota_cache;
-  bool disable_report_batch;
-
-  // valid values are: [open|close]
-  std::string network_fail_policy;
-
-  // if value is 1 or true, disable check/quota calls.
-  bool disable_tcp_check_calls;
-
-  // Load the config from envoy config.
+// Config for http filter.
+struct HttpMixerConfig {
+  // Load from envoy filter config in JSON format.
   void Load(const Json::Object& json);
 
-  // Extract quota attributes.
-  void ExtractQuotaAttributes(::istio::mixer_client::Attributes* attr) const;
+  // The Http client config.
+  ::istio::mixer::v1::config::client::HttpClientConfig http_config;
+  // legacy quota requirment
+  std::vector<::istio::quota::Requirement> legacy_quotas;
+  // If true, v2 config is valid.
+  bool has_v2_config;
+
+  // Create per route legacy config.
+  static void CreateLegacyRouteConfig(
+      bool disable_check, bool disable_report,
+      const std::map<std::string, std::string>& attributes,
+      ::istio::mixer::v1::config::client::ServiceConfig* config);
+};
+
+// Config for tcp filter.
+struct TcpMixerConfig {
+  // Load from envoy filter config in JSON format.
+  void Load(const Json::Object& json);
+
+  // The Tcp client config.
+  ::istio::mixer::v1::config::client::TcpClientConfig tcp_config;
 };
 
 }  // namespace Mixer

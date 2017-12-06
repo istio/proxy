@@ -1,4 +1,4 @@
-# Copyright 2017 Istio Authors. All Rights Reserved.
+# Copyright 2016 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
 #
 ################################################################################
 #
-licenses(["notice"])
 
-load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
+MIXER_CLIENT = "d323e6ff01ea6b36c2804635b9857b5c26f059f2"
 
-exports_files(["mixer/v1/global_dictionary.yaml"])
+def mixer_client_repositories(bind=True):
+    native.git_repository(
+        name = "mixerclient_git",
+        commit = MIXER_CLIENT,
+        remote = "https://github.com/istio/mixerclient.git",
+    )
 
-cc_proto_library(
-    name = "mixer_api_cc_proto",
-    srcs = glob(
-        ["mixer/v1/*.proto"],
-    ),
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//external:cc_wkt_protos",
-        "//external:cc_gogoproto",
-        "//external:servicecontrol",
-    ],
-)
+    if bind:
+        native.bind(
+            name = "mixer_client_lib",
+            actual = "@mixerclient_git//:mixer_client_lib",
+        )
+        native.bind(
+            name = "mixer_http_control_lib",
+            actual = "@mixerclient_git//control/src/http:control_lib",
+        )
+        native.bind(
+            name = "mixer_tcp_control_lib",
+            actual = "@mixerclient_git//control/src/tcp:control_lib",
+        )
