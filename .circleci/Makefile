@@ -1,21 +1,21 @@
-#PROJECT ?= istio-testing
-VERSION ?= 0.4.4
-#HUB ?= gcr.io/
-
-PROJECT ?= costinm
 HUB ?=
+PROJECT ?= istio
 
-# Note: The build directory is the root of the istio/test-infra repository, not ./
+# Using same naming convention as istio/istio
+VERSION ?= go1.9-bazel0.8
+IMG ?= ci
+
+# Build a local image, can be used for testing with circleci command line.
 image:
-	docker build -t ${HUB}$(PROJECT)/proxy-builder:$(VERSION) -f Dockerfile .
+	docker build -t ${HUB}$(PROJECT)/${IMG}:$(VERSION) -f Dockerfile .
 
-
+# Push the image to docker
 push:
-	gcloud docker -- push "${HUB}$(PROJECT)/proxy-builder:$(VERSION)"
+	docker push "${HUB}$(PROJECT)/${IMG}:$(VERSION)"
 
-latest:
-	docker tag ${HUB}$(PROJECT)/proxy-builder:$(VERSION) ${HUB}$(PROJECT)/proxy-builder:latest
-	gcloud docker -- push "${HUB}$(PROJECT)/proxy-builder:latest"
-
+# Run the image locally, as current user, for debug.
+run:
+	cd $TOP && docker run -it --rm -u $(id -u) -it \
+       -v $PWD:$TOP -w $TOP -e USER=$USER ${HUB}$(PROJECT)/${IMG}:$(VERSION) /bin/bash
 
 .PHONY: image push latest
