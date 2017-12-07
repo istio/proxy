@@ -4,7 +4,7 @@ jobs:
   build:
     environment:
     docker:
-      - image: istio/ci:go1.9-bazel0.8
+      - image: istio/ci:go1.9-bazel0.7
     resource_class: xlarge
     steps:
       - checkout
