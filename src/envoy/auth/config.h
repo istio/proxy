@@ -64,7 +64,14 @@ struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
   // namely in decodeHeaders() of the filter class.
   IssuerInfo(Json::Object *json);
   // Allow default construct.
-  IssuerInfo() {}
+  IssuerInfo(const std::string &name, const std::string &uri,
+             const std::string &cluster, Pubkeys::Type pkey_type,
+             std::vector<std::string> &&audiences)
+      : uri_(uri),
+        cluster_(cluster),
+        name_(name),
+        pkey_type_(pkey_type),
+        audiences_(std::move(audiences)) {}
 
   // True if the config loading in the constructor or fetching public key failed
   bool failed_ = false;

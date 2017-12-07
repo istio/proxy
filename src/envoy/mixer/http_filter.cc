@@ -68,15 +68,13 @@ const LowerCaseString kIstioAttributeHeader("x-istio-attributes");
 const LowerCaseString kRefererHeaderKey("referer");
 
 std::shared_ptr<Auth::IssuerInfo> CreateIssuer(const JWT& jwt) {
-  auto issuer = std::make_shared<Auth::IssuerInfo>();
-  issuer->name_ = jwt.issuer();
-  issuer->pkey_type_ = Auth::Pubkeys::JWKS;
-  issuer->uri_ = jwt.jwks_uri();
+  std::vector<std::string> audiences;
   for (const auto& audience : jwt.audiences()) {
-    issuer->audiences_.push_back(audience);
+    audiences.push_back(audience);
   }
-  issuer->cluster_ = jwt.jwks_uri_envoy_cluster();
-  return issuer;
+  return std::make_shared<Auth::IssuerInfo>(
+      jwt.issuer(), jwt.jwks_uri(), jwt.jwks_uri_envoy_cluster(),
+      Auth::Pubkeys::JWKS, std::move(audiences));
 }
 
 void CreateAuthIssuers(
