@@ -276,6 +276,12 @@ Jwt::Jwt(const std::string &jwt) {
   }
 }
 
+Json::ObjectSharedPtr Jwt::LoadFromBase64UrlEncodedPayload(
+    const std::string &encoded_payload) {
+  std::string payload_str = Base64UrlDecode(encoded_payload);
+  return Json::Factory::loadFromString(payload_str);
+}
+
 bool Verifier::VerifySignature(EVP_PKEY *key, const EVP_MD *md,
                                const uint8_t *signature, size_t signature_len,
                                const uint8_t *signed_data,
@@ -427,6 +433,6 @@ std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,
   return keys;
 }
 
-}  // Auth
-}  // Http
-}  // Envoy
+}  // namespace Auth
+}  // namespace Http
+}  // namespace Envoy

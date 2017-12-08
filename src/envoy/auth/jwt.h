@@ -195,6 +195,11 @@ class Jwt : public WithStatus {
   // not exist.
   int64_t Exp();
 
+  // It decodes base64url-encoded |payload|, and returns a pointer to a JSON
+  // object of the payload. When decoding fails, it returns nullptr.
+  static Json::ObjectSharedPtr LoadFromBase64UrlEncodedPayload(
+      const std::string& encoded_payload);
+
  private:
   const EVP_MD* md_;
 

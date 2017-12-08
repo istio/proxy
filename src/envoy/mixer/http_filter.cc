@@ -24,6 +24,7 @@
 #include "envoy/thread_local/thread_local.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/auth/config.h"
+#include "src/envoy/auth/jwt.h"
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/mixer_control.h"
@@ -254,6 +255,37 @@ class CheckData : public HttpCheckData,
     if (cookie != "") {
       *value = cookie;
       return true;
+    }
+    return false;
+  }
+
+  bool GetJWTPayload(
+      std::map<std::string, std::string>* payload) const override {
+    if (payload == nullptr) {
+      return false;
+    }
+    const LowerCaseString kSecIstioAuthUserinfo("sec-istio-auth-userinfo");
+    std::string sec_istio_auth_userinfo;
+    // Currently the value in "sec-istio-auth-userinfo" header is a string of
+    // base64url-encoded payload JSON. Decode payload to populate auth
+    // attributes.
+    // TODO: Support extracting auth attributes from all types of contents in
+    // "sec-istio-auth-userinfo" header.
+    if (FindHeaderByName(kSecIstioAuthUserinfo, &sec_istio_auth_userinfo)) {
+      Json::ObjectSharedPtr json_object =
+          Jwt::LoadFromBase64UrlEncodedPayload(sec_istio_auth_userinfo);
+      if (json_object != nullptr) {
+        (*payload)["iss"] = json_object->getString("iss", "");
+        (*payload)["sub"] = json_object->getString("sub", "");
+        (*payload)["aud"] = json_object->getString("aud", "");
+        (*payload)["azp"] = json_object->getString("azp", "");
+        (*payload)["email"] = json_object->getString("email", "");
+        (*payload)["iat"] = json_object->getString("iat", 0);
+        (*payload)["exp"] = json_object->getString("exp", 0);
+        return true;
+      } else {
+        return false;
+      }
     }
     return false;
   }
