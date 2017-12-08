@@ -264,7 +264,7 @@ class CheckData : public HttpCheckData,
     if (payload == nullptr) {
       return false;
     }
-    const LowerCaseString kSecIstioAuthUserinfo("sec-istio-auth-userinfo");
+    const std::string kSecIstioAuthUserinfo("sec-istio-auth-userinfo");
     std::string sec_istio_auth_userinfo;
     // Currently the value in "sec-istio-auth-userinfo" header is a string of
     // base64url-encoded payload JSON. Decode payload to populate auth
@@ -273,7 +273,7 @@ class CheckData : public HttpCheckData,
     // "sec-istio-auth-userinfo" header.
     if (FindHeaderByName(kSecIstioAuthUserinfo, &sec_istio_auth_userinfo)) {
       Json::ObjectSharedPtr json_object =
-          Jwt::LoadFromBase64UrlEncodedPayload(sec_istio_auth_userinfo);
+          Auth::Jwt::LoadFromBase64UrlEncodedPayload(sec_istio_auth_userinfo);
       if (json_object != nullptr) {
         (*payload)["iss"] = json_object->getString("iss", "");
         (*payload)["sub"] = json_object->getString("sub", "");
