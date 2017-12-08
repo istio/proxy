@@ -1,31 +1,33 @@
-#add_definitions(-DBUILDING_NGHTTP2)
-include_directories(
-    vendor/nghttp2/src/lib/includes
+add_library(nghttp2 STATIC
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_pq.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_map.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_queue.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_frame.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_buf.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_stream.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_outbound_item.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_session.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_submit.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_helper.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_npn.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_hd.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_hd_huffman.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_hd_huffman_data.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_version.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_priority_spec.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_option.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_callbacks.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_mem.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_http.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_rcbuf.c
+        ${ISTIO_NATIVE}/nghttp2/lib/nghttp2_debug.c
+        )
+
+set_target_properties(nghttp2 PROPERTIES COMPILE_FLAGS -DBUILDING_NGHTTP2)
+
+target_include_directories(nghttp2 PRIVATE
+        ${ISTIO_NATIVE}/nghttp2/lib/includes
+        ${ISTIO_DEP_GENFILES}/
 )
 
-set(NGHTTP2_SOURCES
-        vendor/nghttp2/src/lib/nghttp2_pq.c
-        vendor/nghttp2/src/lib/nghttp2_map.c
-        vendor/nghttp2/src/lib/nghttp2_queue.c
-        vendor/nghttp2/src/lib/nghttp2_frame.c
-        vendor/nghttp2/src/lib/nghttp2_buf.c
-        vendor/nghttp2/src/lib/nghttp2_stream.c
-        vendor/nghttp2/src/lib/nghttp2_outbound_item.c
-        vendor/nghttp2/src/lib/nghttp2_session.c
-        vendor/nghttp2/src/lib/nghttp2_submit.c
-        vendor/nghttp2/src/lib/nghttp2_helper.c
-        vendor/nghttp2/src/lib/nghttp2_npn.c
-        vendor/nghttp2/src/lib/nghttp2_hd.c
-        vendor/nghttp2/src/lib/nghttp2_hd_huffman.c
-        vendor/nghttp2/src/lib/nghttp2_hd_huffman_data.c
-        vendor/nghttp2/src/lib/nghttp2_version.c
-        vendor/nghttp2/src/lib/nghttp2_priority_spec.c
-        vendor/nghttp2/src/lib/nghttp2_option.c
-        vendor/nghttp2/src/lib/nghttp2_callbacks.c
-        vendor/nghttp2/src/lib/nghttp2_mem.c
-        vendor/nghttp2/src/lib/nghttp2_http.c
-        vendor/nghttp2/src/lib/nghttp2_rcbuf.c
-        vendor/nghttp2/src/lib/nghttp2_debug.c
-        )
-add_library(nghttp2 STATIC ${NGHTTP2_SOURCES})
-set_target_properties(nghttp2 PROPERTIES COMPILE_FLAGS -DBUILDING_NGHTTP2)
+

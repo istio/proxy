@@ -1,1 +1,1 @@
-add_library(http-parser STATIC vendor/http-parser/src/http_parser.c)
+add_library(http-parser STATIC ${ISTIO_NATIVE}/http-parser/http_parser.c)
