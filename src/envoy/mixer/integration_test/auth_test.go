@@ -113,7 +113,7 @@ const reportAttributes = `
 }
 `
 
-func TestFailedRequest(t *testing.T) {
+func TestJWTAuth(t *testing.T) {
 	s := &TestSetup{
 		t:  t,
 		v2: GetDefaultV2Conf(),
