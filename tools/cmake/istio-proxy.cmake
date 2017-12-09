@@ -23,6 +23,8 @@ target_include_directories(istioproxy
         ${ISTIO_PROXY}
         ${ISTIO_GENFILES}/external/mixerapi_git
         ${ISTIO_GENFILES}/external/googleapis_git
+        ${ISTIO_GENFILES}/external/googleapis
+        ${ISTIO_GENFILES}/external/com_github_googleapis_googleapis
         ${ISTIO_GENFILES}/external/gogoproto_git
         ${ISTIO_GENFILES}
         ${ISTIO_NATIVE}/boringssl/src/include

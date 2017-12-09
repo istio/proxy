@@ -34,7 +34,6 @@ set(ISTIOMIXER_SOURCES
         ${ISTIO_GENFILES}/external/gogoproto_git/gogoproto/gogo.pb.cc
 
         ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/config/client/api_spec.pb.cc
-        ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/config/client/auth.pb.cc
         ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/config/client/client_config.pb.cc
         ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/config/client/quota.pb.cc
         ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/config/client/service.pb.cc
@@ -42,7 +41,7 @@ set(ISTIOMIXER_SOURCES
         ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/check.pb.cc
         ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/report.pb.cc
         ${ISTIO_GENFILES}/external/mixerapi_git/mixer/v1/service.pb.cc
-        ${ISTIO_GENFILES}/external/googleapis_git/google/rpc/status.pb.cc
+        #${ISTIO_GENFILES}/external/googleapis_git/google/rpc/status.pb.cc
         #${ISTIO_GENFILES}/src/envoy/mixer/string_map.pb.cc
         ${ISTIO_GENFILES}/external/mixerclient_git/src/global_dictionary.cc
         )
