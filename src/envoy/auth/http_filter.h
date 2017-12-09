@@ -46,15 +46,15 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   const LowerCaseString kAuthorizationHeaderKey =
       LowerCaseString("Authorization");
   const std::string kAuthorizationHeaderTokenPrefix = "Bearer ";
-  const LowerCaseString& AuthorizedHeaderKey();
+  static const LowerCaseString& AuthorizedHeaderKey();
 
  private:
   StreamDecoderFilterCallbacks* decoder_callbacks_;
   std::shared_ptr<Auth::JwtAuthConfig> config_;
 
-  enum State { Calling, Responded, Complete };
-  State state_;
-  bool stopped_;
+  enum State { Init, Calling, Responded, Complete };
+  State state_ = Init;
+  bool stopped_ = false;
   std::function<void(void)> cancel_verification_;
 
   // Key: name of issuer the public key of which is being fetched
