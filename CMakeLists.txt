@@ -11,9 +11,9 @@ set(ISTIO_CMAKE "tools/cmake" CACHE string "Custom CMake files" FORCE)
 set(YAML_CPP_BUILD_TESTS OFF CACHE bool "disable yaml gtest dup" FORCE)
 set(ABSL_NO_TEST TRUE)
 
-set(ISTIO_GENFILES "../genfiles/bazel" CACHE string "Location of generated files" FORCE)
+set(ISTIO_GENFILES "vendor/genfiles/bazel" CACHE string "Location of generated files" FORCE)
 # TODO: convince envoy to preserve genfiles.
-set(ISTIO_DEP_GENFILES "../genfiles" CACHE string "Location of dependency genfiles. Envoy doesn't preserve them.")
+set(ISTIO_DEP_GENFILES "vendor/genfiles" CACHE string "Location of dependency genfiles. Envoy doesn't preserve them.")
 
 # No effect on trusty - must set cxx flag
 set(CMAKE_CXX_STANDARD 14)
