@@ -14,9 +14,7 @@ jobs:
       - restore_cache:
           keys:
             - repo-cache-{{ checksum "WORKSPACE" }}
-      # To build docker containers or run tests in a docker
-      - setup_remote_docker
-      # Fetch envoy dependencies and other istio components
+      # Fetch envoy dependencies and other istio components. ~30 sec first time.
       - run: make repo-sync
 
       # Build using bazel, will generate envoy and the .deb file
@@ -24,6 +22,9 @@ jobs:
 
       # Build using cmake
       - run: make cmake-x86
+
+      # To build docker containers or run tests in a docker
+      - setup_remote_docker
 
       # Test
       - run: make test_envoy

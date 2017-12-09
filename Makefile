@@ -59,7 +59,7 @@ repo-sync: ../.repo/manifest.xml
 
 cmake-x86:
 	mkdir -p ../cmake-build-debug
-	(cd ../cmake-build-debug; cmake $TOP)
+	(cd ../cmake-build-debug; cmake ${TOP})
 	(cd ../cmake-build-debug; make envoy ${CMAKE_MAKE_OPT})
 
 
