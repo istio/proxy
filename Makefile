@@ -49,5 +49,19 @@ artifacts: build
 deb:
 	bazel build tools/deb:istio-proxy  ${BAZEL_BUILD_ARGS}
 
+../.repo/manifest.xml:
+	(cd ..; echo y | repo init -u http://github.com/costinm/istio-repo)
 
-.PHONY: build clean test check artifacts
+# Update Istio-proxy dependencies, using 'repo' tool and manifest
+repo-sync: ../.repo/manifest.xml
+	repo sync -c
+
+
+cmake-x86:
+	mkdir -p ../cmake-build-debug
+	(cd ../cmake-build-debug; cmake $TOP)
+	(cd ../cmake-build-debug; make envoy ${CMAKE_MAKE_OPT})
+
+
+
+.PHONY: build clean test check artifacts repo-sync pi

@@ -7,29 +7,6 @@ WS=${PROXY_SRC:-`pwd`}
 PROXY=.
 DEPS=./vendor
 
-# Download the dependencies, using the repo manifest
-function init_repo() {
-    BASE=${ISTIO_REPO:-https://github.com/istio/proxy.git}
-
-    pushd $WS
-    if [ ! -f $WS/build.sh ]; then
-       git clone $BASE .
-    fi
-
-    if [ ! -f bin/repo ]; then
-      mkdir -p bin
-      curl https://storage.googleapis.com/git-repo-downloads/repo > bin/repo
-      chmod a+x bin/repo
-    fi
-
-    if [ ! -f .repo ]; then
-      echo y | bin/repo init -u http://github.com/costinm/istio-proxy-repo
-    fi
-
-    bin/repo sync -c
-    popd
-}
-
 function build() {
     bazel build src/envoy/mixer:envoy
     bazel build tools/deb:istio-proxy
@@ -121,15 +98,16 @@ function cmakeDeb() {
 
 }
 
-if [[ ${1:-} == "sync" ]] ; then
-   init_repo
+if [[ ${1:-} == "gen" ]] ; then
 
-elif [[ ${1:-} == "gen" ]] ; then
   genUpdate
 
 elif [[ ${1:-} == "cmake" ]] ; then
+
    cmakeDeb
 
 elif [[ ${1:-} == "build" ]] ; then
+
    build
+
 fi

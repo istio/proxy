@@ -16,8 +16,18 @@ jobs:
             - repo-cache-{{ checksum "WORKSPACE" }}
       # To build docker containers or run tests in a docker
       - setup_remote_docker
+      # Fetch envoy dependencies and other istio components
+      - run: make repo-sync
+
+      # Build using bazel, will generate envoy and the .deb file
       - run: make deb BAZEL_BUILD_ARGS="-j 4"
+
+      # Build using cmake
+      - run: make cmake-x86
+
+      # Test
       - run: make test_envoy
+
       - save_cache:
           key: repo-cache-{{ checksum "WORKSPACE" }}
           paths:
