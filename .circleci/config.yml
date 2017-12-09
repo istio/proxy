@@ -8,20 +8,23 @@ jobs:
     resource_class: xlarge
     steps:
       - checkout
+
       - restore_cache:
           keys:
             - bazel-cache-{{ checksum "WORKSPACE" }}
+      # Repo includes git trees, will pull new versions.
       - restore_cache:
           keys:
-            - repo-cache-{{ checksum "WORKSPACE" }}
+            - repo-cache
+
       # Fetch envoy dependencies and other istio components. ~30 sec first time.
       - run: make repo-sync
 
-      # Build using bazel, will generate envoy and the .deb file
-      - run: make deb BAZEL_BUILD_ARGS="-j 4"
-
       # Build using cmake
       - run: make cmake-x86
+
+      # Build using bazel, will generate envoy and the .deb file. ~40 sec
+      - run: make deb BAZEL_BUILD_ARGS="-j 4"
 
       # To build docker containers or run tests in a docker
       - setup_remote_docker
@@ -32,11 +35,12 @@ jobs:
       - save_cache:
           key: repo-cache-{{ checksum "WORKSPACE" }}
           paths:
-            - /home/circleci/.repo
+            - /home/circleci/project/vendor/.repo
       - save_cache:
           key: bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+
       - store_artifacts:
           path: /home/circleci/project/bazel-bin/tools/deb/istio-proxy.deb
           destination: /proxy/deb

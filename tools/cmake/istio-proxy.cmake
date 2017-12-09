@@ -1,10 +1,10 @@
 set(ISTIOPROXY_SOURCES
-        ${ISTIO_NATIVE}/proxy/src/envoy/mixer/http_filter.cc
-        ${ISTIO_NATIVE}/proxy/src/envoy/mixer/utils.cc
-        ${ISTIO_NATIVE}/proxy/src/envoy/mixer/tcp_filter.cc
-        ${ISTIO_NATIVE}/proxy/src/envoy/mixer/mixer_control.cc
-        ${ISTIO_NATIVE}/proxy/src/envoy/mixer/config.cc
-        ${ISTIO_NATIVE}/proxy/src/envoy/mixer/grpc_transport.cc
+        ${ISTIO_PROXY}/src/envoy/mixer/http_filter.cc
+        ${ISTIO_PROXY}/src/envoy/mixer/utils.cc
+        ${ISTIO_PROXY}/src/envoy/mixer/tcp_filter.cc
+        ${ISTIO_PROXY}/src/envoy/mixer/mixer_control.cc
+        ${ISTIO_PROXY}/src/envoy/mixer/config.cc
+        ${ISTIO_PROXY}/src/envoy/mixer/grpc_transport.cc
         )
 
 
@@ -20,6 +20,7 @@ target_include_directories(istioproxy
         ${ISTIO_NATIVE}/api
         ${ISTIO_NATIVE}/envoy/include
         ${ISTIO_NATIVE}/proxy
+        ${ISTIO_PROXY}
         ${ISTIO_GENFILES}/external/mixerapi_git
         ${ISTIO_GENFILES}/external/googleapis_git
         ${ISTIO_GENFILES}/external/gogoproto_git

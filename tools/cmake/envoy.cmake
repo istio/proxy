@@ -53,8 +53,10 @@ set(ENVOY_SOURCE_FILES
         ${ISTIO_NATIVE}/envoy/source/common/grpc/grpc_web_filter.cc
         ${ISTIO_NATIVE}/envoy/source/common/grpc/json_transcoder_filter.cc
         ${ISTIO_NATIVE}/envoy/source/common/grpc/transcoder_input_stream_impl.cc
-        ${ISTIO_NATIVE}/envoy/source/common/access_log/access_log_formatter.cc
-        ${ISTIO_NATIVE}/envoy/source/common/access_log/access_log_impl.cc
+        ${ISTIO_NATIVE}/envoy/source/common/http/access_log/access_log_formatter.cc
+        ${ISTIO_NATIVE}/envoy/source/common/http/access_log/access_log_impl.cc
+        #${ISTIO_NATIVE}/envoy/source/common/access_log/access_log_formatter.cc
+        #${ISTIO_NATIVE}/envoy/source/common/access_log/access_log_impl.cc
         ${ISTIO_NATIVE}/envoy/source/common/http/filter/buffer_filter.cc
         ${ISTIO_NATIVE}/envoy/source/common/http/filter/fault_filter.cc
         ${ISTIO_NATIVE}/envoy/source/common/http/filter/ip_tagging_filter.cc
@@ -98,7 +100,7 @@ set(ENVOY_SOURCE_FILES
         ${ISTIO_NATIVE}/envoy/source/common/router/config_impl.cc
         ${ISTIO_NATIVE}/envoy/source/common/router/config_utility.cc
         ${ISTIO_NATIVE}/envoy/source/common/router/rds_impl.cc
-        ${ISTIO_NATIVE}/envoy/source/common/router/resp_header_parser.cc
+        #${ISTIO_NATIVE}/envoy/source/common/router/resp_header_parser.cc
         ${ISTIO_NATIVE}/envoy/source/common/router/rds_subscription.cc
         ${ISTIO_NATIVE}/envoy/source/common/router/req_header_formatter.cc
         ${ISTIO_NATIVE}/envoy/source/common/router/retry_state_impl.cc
@@ -215,6 +217,8 @@ set(ENVOY_SOURCE_FILES
 
         ${ISTIO_GENFILES}/external/googleapis_git/google/api/annotations.pb.cc
         ${ISTIO_GENFILES}/external/googleapis_git/google/api/http.pb.cc
+
+        # TODO: move to separate cmake - the abseil cmake doesn't seem to work on ARM
         ${ISTIO_NATIVE}/abseil-cpp/absl/base/internal/spinlock_wait.cc
         )
 
