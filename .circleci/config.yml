@@ -116,7 +116,7 @@ workflows:
       - build
       - build-contrib
       - build-pi
-      - build-android
+      - build-android:
          requires:
             - build-pi
 
