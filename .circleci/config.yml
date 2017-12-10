@@ -34,7 +34,7 @@ jobs:
           destination: /proxy/bin
 
 
-  build-contrib:
+  build-cmake-x86:
     environment:
     docker:
       - image: istio/ci:go1.9-bazel0.7
@@ -122,10 +122,10 @@ workflows:
   all:
     jobs:
       - build
-      - build-contrib
+      - build-cmake-x86
       - build-pi:
           requires:
-            - build-contrib
+            - build-cmake-x86
       - build-android:
          requires:
             - build-pi
