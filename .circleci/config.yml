@@ -107,6 +107,7 @@ jobs:
           keys:
             - repo-cache
             - cmake-android-cache
+      - run: make repo-sync
       - run: make android CMAKE_MAKE_OPT="-j 8"
       - save_cache:
           key: cmake-android-cache
