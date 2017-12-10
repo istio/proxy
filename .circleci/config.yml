@@ -28,10 +28,10 @@ jobs:
 
       - store_artifacts:
           path: /home/circleci/project/bazel-bin/tools/deb/istio-proxy.deb
-          destination: /proxy/deb
+          destination: /proxy/x86/istio-proxy.deb
       - store_artifacts:
           path: /home/circleci/project/bazel-bin/src/envoy/mixer/envoy
-          destination: /proxy/bin
+          destination: /proxy/x86/envoy
 
 
   build-cmake-x86:
@@ -52,7 +52,7 @@ jobs:
       - run: make repo-sync
 
       # Build using cmake
-      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 64"
+      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 32"
 
       - save_cache:
           key: repo-cache
@@ -94,7 +94,7 @@ jobs:
 
       - store_artifacts:
           path: /home/circleci/cmake-pi-debug/envoy
-          destination: /proxy/pi/
+          destination: /proxy/pi/envoy
 
   build-android:
     environment:
@@ -115,7 +115,7 @@ jobs:
             - /home/circleci/cmake-android-debug
       - store_artifacts:
           path: /home/circleci/cmake-android-debug/envoy
-          destination: /proxy/android/
+          destination: /proxy/android/envoy
 
 workflows:
   version: 2
