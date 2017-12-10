@@ -92,6 +92,22 @@ jobs:
           paths:
             - /home/circleci/cmake-pi-debug
 
+  build-android:
+    environment:
+    docker:
+      - image: costinm/istio-android-build
+    resource_class: xlarge
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - repo-cache
+            - cmake-android-cache
+      - run: make android CMAKE_MAKE_OPT="-j 8"
+      - save_cache:
+          key: cmake-android-cache
+          paths:
+            - /home/circleci/cmake-android-debug
 
 workflows:
   version: 2
@@ -100,4 +116,7 @@ workflows:
       - build
       - build-contrib
       - build-pi
+      - build-android
+         requires:
+            - build-pi
 

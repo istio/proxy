@@ -61,9 +61,31 @@ cmake-x86:
 	(cd ../cmake-build-debug; cmake ..)
 	(cd ../cmake-build-debug; make envoy ${CMAKE_MAKE_OPT})
 
+# Must be run in a container including the cross toolchain, or requires the
+# toolchain to be installed on the host.
 pi:
 	mkdir -p ../cmake-pi-debug
 	(cd ../cmake-pi-debug; cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/contrib/cmake/pi.toolchain.cmake )
 	(cd ../cmake-pi-debug; make envoy ${CMAKE_MAKE_OPT})
+
+export ANDROID_SDK ?= /opt/android-sdk
+export NDK ?= ${ANDROID_SDK}/ndk-bundle
+ANDROID_CMAKE_VERSION ?= 3.6.4111459
+
+android:
+	mkdir -p ../cmake-android-debug; \
+	cd ../cmake-android-debug; \
+	${ANDROID_SDK}/cmake/${ANDROID_CMAKE_VERSION}/bin/cmake \
+     -DANDROID_CPP_FEATURES=rtti \
+     -DANDROID_STL=c++_static \
+     -DANDROID_TOOLCHAIN=clang \
+     -DANDROID_PLATFORM=android-26  \
+     -DANDROID_NDK=/opt/android-sdk/ndk-bundle \
+     -DCMAKE_TOOLCHAIN_FILE=${NDK}/build/cmake/android.toolchain.cmake \
+     .. && \
+    make ${MFLAGS} envoy && \
+    cp envoy envoy-debug && \
+    ${NDK}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-strip envoy
+
 
 .PHONY: build clean test check artifacts repo-sync pi
