@@ -92,6 +92,10 @@ jobs:
           paths:
             - /home/circleci/cmake-pi-debug
 
+      - store_artifacts:
+          path: /home/circleci/cmake-pi-debug/envoy
+          destination: /proxy/pi/
+
   build-android:
     environment:
     docker:
@@ -108,6 +112,9 @@ jobs:
           key: cmake-android-cache
           paths:
             - /home/circleci/cmake-android-debug
+      - store_artifacts:
+          path: /home/circleci/cmake-android-debug/envoy
+          destination: /proxy/android/
 
 workflows:
   version: 2
@@ -115,7 +122,9 @@ workflows:
     jobs:
       - build
       - build-contrib
-      - build-pi
+      - build-pi:
+          requires:
+            - build-contrib
       - build-android:
          requires:
             - build-pi
