@@ -52,7 +52,7 @@ jobs:
       - run: make repo-sync
 
       # Build using cmake
-      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 16"
+      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 8"
 
       - save_cache:
           key: repo-cache
