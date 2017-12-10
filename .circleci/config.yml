@@ -52,7 +52,7 @@ jobs:
       - run: make repo-sync
 
       # Build using cmake
-      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 32"
+      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 64"
 
       - save_cache:
           key: repo-cache
@@ -81,7 +81,7 @@ jobs:
       - run: make repo-sync
 
       # Build using cmake
-      - run: make pi CMAKE_MAKE_OPT="-j 8"
+      - run: make pi CMAKE_MAKE_OPT="-j 32"
 
       - save_cache:
           key: repo-cache
@@ -108,7 +108,7 @@ jobs:
             - repo-cache
             - cmake-android-cache
       - run: make repo-sync
-      - run: make android CMAKE_MAKE_OPT="-j 8"
+      - run: make android CMAKE_MAKE_OPT="-j 32"
       - save_cache:
           key: cmake-android-cache
           paths:
