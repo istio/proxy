@@ -63,6 +63,34 @@ jobs:
           paths:
             - /home/circleci/cmake-build-debug
 
+  build-pi:
+    environment:
+    docker:
+      - image: costinm/istio-pi-build
+    resource_class: xlarge
+    steps:
+      - checkout
+
+      # Repo includes git trees, will pull new versions.
+      - restore_cache:
+          keys:
+            - repo-cache
+            - cmake-pi-cache
+
+      # Fetch envoy dependencies and other istio components. ~30 sec first time.
+      - run: make repo-sync
+
+      # Build using cmake
+      - run: make pi CMAKE_MAKE_OPT="-j 8"
+
+      - save_cache:
+          key: repo-cache
+          paths:
+            - /home/circleci/.repo
+      - save_cache:
+          key: cmake-pi-cache
+          paths:
+            - /home/circleci/cmake-pi-debug
 
 
 workflows:
@@ -71,4 +99,5 @@ workflows:
     jobs:
       - build
       - build-contrib
+      - build-pi
 

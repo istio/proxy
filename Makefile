@@ -61,4 +61,9 @@ cmake-x86:
 	(cd ../cmake-build-debug; cmake ..)
 	(cd ../cmake-build-debug; make envoy ${CMAKE_MAKE_OPT})
 
+pi:
+	mkdir -p ../cmake-pi-debug
+	(cd ../cmake-pi-debug; cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/contrib/cmake/pi.toolchain.cmake )
+	(cd ../cmake-pi-debug; make envoy ${CMAKE_MAKE_OPT})
+
 .PHONY: build clean test check artifacts repo-sync pi
