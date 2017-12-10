@@ -46,17 +46,22 @@ jobs:
       - restore_cache:
           keys:
             - repo-cache
+            - cmake-cache
 
       # Fetch envoy dependencies and other istio components. ~30 sec first time.
       - run: make repo-sync
 
       # Build using cmake
-      - run: make cmake-x86
+      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 16"
 
       - save_cache:
           key: repo-cache
           paths:
             - /home/circleci/.repo
+      - save_cache:
+          key: cmake-cache
+          paths:
+            - /home/circleci/cmake-build-debug
 
 
 
