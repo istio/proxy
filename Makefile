@@ -78,7 +78,7 @@ ANDROID_CMAKE_VERSION ?= 3.6.4111459
 
 android: ../cmake-android-debug/Makefile
 	cd ../cmake-android-debug && \
-    make ${MFLAGS} envoy && \
+    make ${MFLAGS} envoy ${CMAKE_MAKE_OPT} && \
     cp envoy envoy-debug && \
     ${NDK}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-strip envoy
 
