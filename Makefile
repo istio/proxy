@@ -49,6 +49,8 @@ artifacts: build
 deb:
 	bazel build tools/deb:istio-proxy  ${BAZEL_BUILD_ARGS}
 
+# Experimental/contributed/unofficial targets
+#
 ../.repo/manifest.xml:
 	(cd ..; echo y | repo init -u http://github.com/costinm/istio-repo)
 

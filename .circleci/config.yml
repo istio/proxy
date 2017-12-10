@@ -13,7 +13,7 @@ jobs:
             - bazel-cache-{{ checksum "WORKSPACE" }}
 
       # Build using bazel, will generate envoy and the .deb file. ~40 sec
-      - run: make deb BAZEL_BUILD_ARGS="-j 4"
+      - run: make deb 
 
       # To build docker containers or run tests in a docker
       - setup_remote_docker
@@ -52,7 +52,7 @@ jobs:
       - run: make repo-sync
 
       # Build using cmake
-      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 8"
+      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 32"
 
       - save_cache:
           key: repo-cache
