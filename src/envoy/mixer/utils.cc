@@ -20,6 +20,12 @@ namespace Envoy {
 namespace Http {
 namespace Utils {
 
+namespace {
+
+const std::string kSPIFFEPrefix("spiffe://");
+
+}  // namespace
+
 std::map<std::string, std::string> ExtractHeaders(const HeaderMap& header_map) {
   std::map<std::string, std::string> headers;
   header_map.iterate(
@@ -55,11 +61,10 @@ bool GetSourceUser(const Network::Connection* connection, std::string* user) {
     Ssl::Connection* ssl = const_cast<Ssl::Connection*>(connection->ssl());
     if (ssl != nullptr) {
       std::string result = ssl->uriSanPeerCertificate();
-      std::string prefix = "spiffe://";
-      // Strip out the prefix "spiffe://" in the identity.
-      std::size_t found = result.find(prefix);
-      if (found == 0) {
-        *user = result.substr(prefix.size());
+      if (result.length() >= kSPIFFEPrefix.length() &&
+          result.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0) {
+        // Strip out the prefix "spiffe://" in the identity.
+        *user = result.substr(kSPIFFEPrefix.size());
         return true;
       }
     }
