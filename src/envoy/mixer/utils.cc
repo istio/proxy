@@ -54,8 +54,14 @@ bool GetSourceUser(const Network::Connection* connection, std::string* user) {
   if (connection) {
     Ssl::Connection* ssl = const_cast<Ssl::Connection*>(connection->ssl());
     if (ssl != nullptr) {
-      *user = ssl->uriSanPeerCertificate();
-      return true;
+      std::string result = ssl->uriSanPeerCertificate();
+      std::string prefix = "spiffe://";
+      // Strip out the prefix "spiffe://" in the identity.
+      std::size_t found = result.find(prefix);
+      if (found == 0) {
+        *user = result.substr(prefix.size());
+        return true;
+      }
     }
   }
   return false;
