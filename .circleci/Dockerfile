@@ -32,3 +32,6 @@ RUN bazel version
 
 # For circleci unit test integration, "go test -v 2>&1 | go-junit-report > report.xml"
 RUN go get -u github.com/jstemmer/go-junit-report
+
+RUN curl -Lo /tmp/repo https://storage.googleapis.com/git-repo-downloads/repo &&\
+    chmod a+x /tmp/repo && sudo mv /tmp/repo /usr/local/bin
