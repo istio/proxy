@@ -23,7 +23,7 @@ UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
 [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'must run on Ubuntu Xenial'; exit 1; }
 
 # The bucket name to store proxy binary
-DST="gs://delco-experimental/proxy"
+DST="gs://istio-build/proxy"
 
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"
