@@ -47,7 +47,6 @@ gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 
 BINARY_NAME="istio-proxy-${SHA}.deb"
 SHA256_NAME="istio-proxy-${SHA}.sha256"
-
 bazel build --config=release //tools/deb:istio-proxy
 BAZEL_TARGET="bazel-bin/tools/deb/istio-proxy__amd64.deb"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
