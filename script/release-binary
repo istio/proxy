@@ -35,6 +35,11 @@ gsutil stat "${DST}/${BINARY_NAME}" \
   && { echo 'Binary already exists'; exit 0; } \
   || echo 'Building a new binary.'
 
+# Generate the version file
+bazel build :deb_version
+ls -ld bazel-genfiles/deb_version.txt
+cat bazel-genfiles/deb_version.txt
+
 # Build the release binary
 bazel build --config=release //src/envoy:envoy_tar
 BAZEL_TARGET="bazel-bin/src/envoy/envoy_tar.tar.gz"
