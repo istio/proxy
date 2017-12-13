@@ -23,7 +23,7 @@ UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
 [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'must run on Ubuntu Xenial'; exit 1; }
 
 # The bucket name to store proxy binary
-DST="gs://delco-experimental/proxy"
+DST="gs://istio-build/proxy"
 
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"
@@ -35,26 +35,21 @@ gsutil stat "${DST}/${BINARY_NAME}" \
   && { echo 'Binary already exists'; exit 0; } \
   || echo 'Building a new binary.'
 
-# Generate the version file
-#bazel build :deb_version
-#ls -ld bazel-genfiles/deb_version.txt
-#cat bazel-genfiles/deb_version.txt
-
 # Build the release binary
-#bazel build --config=release //src/envoy:envoy_tar
-#BAZEL_TARGET="bazel-bin/src/envoy/envoy_tar.tar.gz"
-#cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-#sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
+bazel build --config=release //src/envoy:envoy_tar
+BAZEL_TARGET="bazel-bin/src/envoy/envoy_tar.tar.gz"
+cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
+sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 
 # Copy it to the bucket.
-#echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-#gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
+gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 
 BINARY_NAME="istio-proxy-${SHA}.deb"
 SHA256_NAME="istio-proxy-${SHA}.sha256"
 
-bazel build --config=release //:deb_version //tools/deb:istio-proxy || cat bazel-genfiles/deb_version.txt
-BAZEL_TARGET="bazel-bin/tools/deb/istio-proxy_0.3-dev_amd64.deb"
+bazel build --config=release //tools/deb:istio-proxy
+BAZEL_TARGET="bazel-bin/tools/deb/istio-proxy__amd64.deb"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 
@@ -78,7 +73,7 @@ gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 BINARY_NAME="istio-proxy-debug-${SHA}.deb"
 SHA256_NAME="istio-proxy-debug${SHA}.sha256"
 bazel build -c dbg //:deb_version //tools/deb:istio-proxy
-BAZEL_TARGET="bazel-bin/tools/deb/istio-proxy_0.3-dev_amd64.deb"
+BAZEL_TARGET="bazel-bin/tools/deb/istio-proxy__amd64.deb"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 
