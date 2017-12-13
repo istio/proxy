@@ -65,8 +65,10 @@ bool GetSourceUser(const Network::Connection* connection, std::string* user) {
           result.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0) {
         // Strip out the prefix "spiffe://" in the identity.
         *user = result.substr(kSPIFFEPrefix.size());
-        return true;
+      } else {
+        *user = result;
       }
+      return true;
     }
   }
   return false;
