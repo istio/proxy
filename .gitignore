@@ -2,3 +2,9 @@
 .idea/*
 docker/envoy
 *.iml
+envoy
+genfiles
+go
+cmake-*
+vendor
+.repo

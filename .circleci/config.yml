@@ -11,33 +11,122 @@ jobs:
       - restore_cache:
           keys:
             - bazel-cache-{{ checksum "WORKSPACE" }}
-      - restore_cache:
-          keys:
-            - repo-cache-{{ checksum "WORKSPACE" }}
+
+      # Build using bazel, will generate envoy and the .deb file. ~40 sec
+      - run: make deb 
+
       # To build docker containers or run tests in a docker
       - setup_remote_docker
-      - run: make deb BAZEL_BUILD_ARGS="-j 4"
+
+      # Test
       - run: make test_envoy
-      - save_cache:
-          key: repo-cache-{{ checksum "WORKSPACE" }}
-          paths:
-            - /home/circleci/.repo
+
       - save_cache:
           key: bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+
       - store_artifacts:
           path: /home/circleci/project/bazel-bin/tools/deb/istio-proxy.deb
-          destination: /proxy/deb
+          destination: /proxy/x86/istio-proxy.deb
       - store_artifacts:
           path: /home/circleci/project/bazel-bin/src/envoy/mixer/envoy
-          destination: /proxy/bin
+          destination: /proxy/x86/envoy
 
 
+  build-cmake-x86:
+    environment:
+    docker:
+      - image: istio/ci:go1.9-bazel0.7
+    resource_class: xlarge
+    steps:
+      - checkout
 
+      # Repo includes git trees, will pull new versions.
+      - restore_cache:
+          keys:
+            - repo-cache
+            - cmake-cache
+
+      # Fetch envoy dependencies and other istio components. ~30 sec first time.
+      - run: make repo-sync
+
+      # Build using cmake
+      - run: make cmake-x86 CMAKE_MAKE_OPT="-j 32"
+
+      - save_cache:
+          key: repo-cache
+          paths:
+            - /home/circleci/.repo
+      - save_cache:
+          key: cmake-cache
+          paths:
+            - /home/circleci/cmake-build-debug
+
+  build-pi:
+    environment:
+    docker:
+      - image: costinm/istio-pi-build
+    resource_class: xlarge
+    steps:
+      - checkout
+
+      # Repo includes git trees, will pull new versions.
+      - restore_cache:
+          keys:
+            - repo-cache
+            - cmake-pi-cache
+
+      # Fetch envoy dependencies and other istio components. ~30 sec first time.
+      - run: make repo-sync
+
+      # Build using cmake
+      - run: make pi CMAKE_MAKE_OPT="-j 32"
+
+      - save_cache:
+          key: repo-cache
+          paths:
+            - /home/circleci/.repo
+      - save_cache:
+          key: cmake-pi-cache
+          paths:
+            - /home/circleci/cmake-pi-debug
+
+      - store_artifacts:
+          path: /home/circleci/cmake-pi-debug/envoy
+          destination: /proxy/pi/envoy
+
+  build-android:
+    environment:
+    docker:
+      - image: costinm/istio-android-build
+    resource_class: xlarge
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - repo-cache
+            - cmake-android-cache
+      - run: make repo-sync
+      - run: make android CMAKE_MAKE_OPT="-j 32"
+      - save_cache:
+          key: cmake-android-cache
+          paths:
+            - /home/circleci/cmake-android-debug
+      - store_artifacts:
+          path: /home/circleci/cmake-android-debug/envoy
+          destination: /proxy/android/envoy
 
 workflows:
   version: 2
   all:
     jobs:
       - build
+      - build-cmake-x86
+      - build-pi:
+          requires:
+            - build-cmake-x86
+      - build-android:
+         requires:
+            - build-pi
+
