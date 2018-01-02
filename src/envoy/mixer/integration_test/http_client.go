@@ -133,7 +133,7 @@ func WaitForHttpServer(url string) {
 	log.Println("Give up the wait, continue the test...")
 }
 
-func WaitForAPort(port int) {
+func WaitForPort(port int) {
 	server_port := fmt.Sprintf("localhost:%v", port)
 	for i := 0; i < maxAttempts; i++ {
 		log.Println("Pinging port: ", server_port)

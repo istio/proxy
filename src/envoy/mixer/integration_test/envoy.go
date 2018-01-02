@@ -87,8 +87,8 @@ func (s *Envoy) Start() error {
 	if err == nil {
 		url := fmt.Sprintf("http://localhost:%v/server_info", AdminPort)
 		WaitForHttpServer(url)
-		WaitForAPort(ClientProxyPort)
-		WaitForAPort(ServerProxyPort)
+		WaitForPort(ClientProxyPort)
+		WaitForPort(ServerProxyPort)
 	}
 	return err
 }
