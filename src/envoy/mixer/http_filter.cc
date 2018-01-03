@@ -289,7 +289,7 @@ class CheckData : public HttpCheckData,
     }
     std::string value(entry->value().c_str(), entry->value().size());
     std::string payload_str = Auth::Base64UrlDecode(value);
-    // Return is an empty string if Base64 decode fails.
+    // Return an empty string if Base64 decode fails.
     if (payload_str.empty()) {
       ENVOY_LOG(error, "Invalid {} header, invalid base64: {}",
                 Http::JwtVerificationFilter::AuthorizedHeaderKey().get(),
