@@ -47,13 +47,12 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
-    tls_->set(
-        [this, &random, &scope](Event::Dispatcher& dispatcher)
-            -> ThreadLocal::ThreadLocalObjectSharedPtr {
-              return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random,
-                                      kStatsPrefix, scope));
-            });
+    tls_->set([this, &random, &scope](Event::Dispatcher& dispatcher)
+                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
+                    return ThreadLocal::ThreadLocalObjectSharedPtr(
+                        new TcpMixerControl(mixer_config_, cm_, dispatcher,
+                                            random, kStatsPrefix, scope));
+                  });
   }
 
   TcpMixerControl& mixer_control() { return tls_->getTyped<TcpMixerControl>(); }

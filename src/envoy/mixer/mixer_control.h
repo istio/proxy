@@ -32,8 +32,7 @@ namespace Mixer {
 class MixerControlBase : public ThreadLocal::ThreadLocalObject {
  public:
   MixerControlBase(Event::Dispatcher& dispatcher,
-                   const std::string& stats_prefix,
-                   Stats::Scope& scope);
+                   const std::string& stats_prefix, Stats::Scope& scope);
 
   void StatsUpdateCallback();
   void SetUpStatsTimer();
@@ -53,8 +52,7 @@ class HttpMixerControl final : public MixerControlBase {
   HttpMixerControl(const HttpMixerConfig& mixer_config,
                    Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
                    Runtime::RandomGenerator& random,
-                   const std::string& stats_prefix,
-                   Stats::Scope& scope);
+                   const std::string& stats_prefix, Stats::Scope& scope);
 
   Upstream::ClusterManager& cm() { return cm_; }
 
@@ -79,8 +77,7 @@ class TcpMixerControl final : public MixerControlBase {
   TcpMixerControl(const TcpMixerConfig& mixer_config,
                   Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
                   Runtime::RandomGenerator& random,
-                  const std::string& stats_prefix,
-                  Stats::Scope& scope);
+                  const std::string& stats_prefix, Stats::Scope& scope);
 
   ::istio::mixer_control::tcp::Controller* controller() {
     return controller_.get();

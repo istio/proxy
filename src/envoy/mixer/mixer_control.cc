@@ -16,8 +16,8 @@
 #include <chrono>
 #include <memory>
 
-#include "src/envoy/mixer/mixer_control.h"
 #include "src/envoy/mixer/grpc_transport.h"
+#include "src/envoy/mixer/mixer_control.h"
 #include "src/envoy/mixer/stats.h"
 
 namespace Envoy {
@@ -67,14 +67,16 @@ MixerControlBase::MixerControlBase(Event::Dispatcher& dispatcher,
 
 void MixerControlBase::SetUpStatsTimer() {
   timer_ = dispatcher_.createTimer([this]() -> void { StatsUpdateCallback(); });
-  timer_->enableTimer(std::chrono::milliseconds(MixerStatsObject::kStatsUpdateIntervalInMs));
+  timer_->enableTimer(
+      std::chrono::milliseconds(MixerStatsObject::kStatsUpdateIntervalInMs));
 }
 
 void MixerControlBase::StatsUpdateCallback() {
   ::istio::mixer_client::Statistics new_stats;
   stats_.GetStatistics(&new_stats);
   stats_.CheckAndUpdateStats(new_stats);
-  timer_->enableTimer(std::chrono::milliseconds(MixerStatsObject::kStatsUpdateIntervalInMs));
+  timer_->enableTimer(
+      std::chrono::milliseconds(MixerStatsObject::kStatsUpdateIntervalInMs));
 }
 
 HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
@@ -84,7 +86,9 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
                                    const std::string& stats_prefix,
                                    Stats::Scope& scope)
     : MixerControlBase(dispatcher, stats_prefix, scope), cm_(cm) {
-  stats_.InitGetStatisticsFunc(std::bind(&::istio::mixer_control::http::Controller::GetStatistics, controller(), std::placeholders::_1));
+  stats_.InitGetStatisticsFunc(
+      std::bind(&::istio::mixer_control::http::Controller::GetStatistics,
+                controller(), std::placeholders::_1));
   // Initialize old_stats for envoy stats update.
   stats_.GetStatistics(stats_.mutate_old_stats());
   SetUpStatsTimer();
@@ -106,7 +110,9 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
                                  const std::string& stats_prefix,
                                  Stats::Scope& scope)
     : MixerControlBase(dispatcher, stats_prefix, scope) {
-  stats_.InitGetStatisticsFunc(std::bind(&::istio::mixer_control::tcp::Controller::GetStatistics, controller(), std::placeholders::_1));
+  stats_.InitGetStatisticsFunc(
+      std::bind(&::istio::mixer_control::tcp::Controller::GetStatistics,
+                controller(), std::placeholders::_1));
   // Initialize old_stats for envoy stats update.
   stats_.GetStatistics(stats_.mutate_old_stats());
   SetUpStatsTimer();

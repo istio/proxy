@@ -24,10 +24,10 @@ namespace Http {
 namespace Mixer {
 
 /**
- * All http mixer filter stats. @see stats_macros.h
+ * All mixer filter stats. @see stats_macros.h
  */
 // clang-format off
-#define ALL_HTTP_MIXER_FILTER_STATS(COUNTER)                                  \
+#define ALL_MIXER_FILTER_STATS(COUNTER)                                  \
   COUNTER(total_check_calls)                                                  \
   COUNTER(total_remote_check_calls)                                           \
   COUNTER(total_blocking_remote_check_calls)                                  \
@@ -42,7 +42,7 @@ namespace Mixer {
  * Struct definition for all mixer filter stats. @see stats_macros.h
  */
 struct MixerFilterStats {
-  ALL_HTTP_MIXER_FILTER_STATS(GENERATE_COUNTER_STRUCT)
+  ALL_MIXER_FILTER_STATS(GENERATE_COUNTER_STRUCT)
 };
 
 typedef std::function<void(::istio::mixer_client::Statistics* s)> GetStatsFunc;
