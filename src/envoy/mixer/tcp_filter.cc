@@ -31,6 +31,8 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
+const std::string kStatsPrefix("tcp_mixer_filter.");
+
 class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
  private:
   Upstream::ClusterManager& cm_;
@@ -44,11 +46,13 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
         tls_(context.threadLocal().allocateSlot()) {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
+    Stats::Scope& scope = context.scope();
     tls_->set(
-        [this, &random](Event::Dispatcher& dispatcher)
+        [this, &random, &scope](Event::Dispatcher& dispatcher)
             -> ThreadLocal::ThreadLocalObjectSharedPtr {
               return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random));
+                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random,
+                                      kStatsPrefix, scope));
             });
   }
 

@@ -15,7 +15,9 @@
 
 #pragma once
 
+#include "common/common/logger.h"
 #include "envoy/stats/stats_macros.h"
+#include "include/client.h"
 
 namespace Envoy {
 namespace Http {
@@ -39,8 +41,34 @@ namespace Mixer {
 /**
  * Struct definition for all mixer filter stats. @see stats_macros.h
  */
-struct InstanceStats {
+struct MixerFilterStats {
   ALL_HTTP_MIXER_FILTER_STATS(GENERATE_COUNTER_STRUCT)
+};
+
+typedef std::function<void(::istio::mixer_client::Statistics* s)> GetStatsFunc;
+
+// MixerStatsObject maintains statistics for number of check, quota and report
+// calls issued by a mixer filter.
+class MixerStatsObject {
+ public:
+  static const int kStatsUpdateIntervalInMs;
+
+  MixerStatsObject(const std::string& name, Stats::Scope& scope);
+
+  void CheckAndUpdateStats(const ::istio::mixer_client::Statistics& new_stats);
+
+  ::istio::mixer_client::Statistics* mutate_old_stats();
+
+  void InitGetStatisticsFunc(GetStatsFunc get_stats);
+
+  void GetStatistics(::istio::mixer_client::Statistics* stats);
+
+ private:
+  MixerFilterStats stats_;
+  GetStatsFunc get_statistics_;
+  // stats from last call to MixerClient::GetStatistics(). This is needed to
+  // calculate the variances of stats and update envoy stats.
+  ::istio::mixer_client::Statistics old_stats_;
 };
 
 }  // namespace Mixer
