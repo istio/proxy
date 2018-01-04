@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#include "src/envoy/mixer/mixer_control.h"
+#include <memory>
+
 #include "src/envoy/mixer/grpc_transport.h"
+#include "src/envoy/mixer/mixer_control.h"
 
 namespace Envoy {
 namespace Http {
@@ -59,8 +61,10 @@ void CreateEnvironment(Upstream::ClusterManager& cm,
 HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
                                    Upstream::ClusterManager& cm,
                                    Event::Dispatcher& dispatcher,
-                                   Runtime::RandomGenerator& random)
-    : cm_(cm) {
+                                   Runtime::RandomGenerator& random,
+                                   const std::string& stats_prefix,
+                                   Stats::Scope& scope)
+    : cm_(cm), stats_(stats_prefix, scope) {
   ::istio::mixer_control::http::Controller::Options options(
       mixer_config.http_config, mixer_config.legacy_quotas);
 
@@ -69,6 +73,20 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
   controller_ = ::istio::mixer_control::http::Controller::Create(options);
 
   has_v2_config_ = mixer_config.has_v2_config;
+
+  // Initialize old_stats for envoy stats update.
+  controller_->GetStatistics(stats_.mutate_old_stats());
+  // Start timer for updating envoy stats periodically.
+  timer_.reset(new EnvoyTimer(
+      dispatcher.createTimer([this]() { StatsUpdateCallback(); })));
+  timer_->Start(MixerStatsObject::kStatsUpdateIntervalInMs);
+}
+
+void HttpMixerControl::StatsUpdateCallback() {
+  ::istio::mixer_client::Statistics new_stats;
+  controller_->GetStatistics(&new_stats);
+  stats_.CheckAndUpdateStats(new_stats);
+  timer_->Start(MixerStatsObject::kStatsUpdateIntervalInMs);
 }
 
 TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
@@ -81,6 +99,61 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
   CreateEnvironment(cm, dispatcher, random, &options.env);
 
   controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
+}
+
+void MixerStatsObject::CheckAndUpdateStats(
+    const ::istio::mixer_client::Statistics& new_stats) {
+  if (new_stats.total_check_calls > old_stats_.total_check_calls) {
+    stats_.total_check_calls_.add(new_stats.total_check_calls -
+                                  old_stats_.total_check_calls);
+  }
+  if (new_stats.total_remote_check_calls >
+      old_stats_.total_remote_check_calls) {
+    stats_.total_remote_check_calls_.add(new_stats.total_remote_check_calls -
+                                         old_stats_.total_remote_check_calls);
+  }
+  if (new_stats.total_blocking_remote_check_calls >
+      old_stats_.total_blocking_remote_check_calls) {
+    stats_.total_blocking_remote_check_calls_.add(
+        new_stats.total_blocking_remote_check_calls -
+        old_stats_.total_blocking_remote_check_calls);
+  }
+  if (new_stats.total_quota_calls > old_stats_.total_quota_calls) {
+    stats_.total_quota_calls_.add(new_stats.total_quota_calls -
+                                  old_stats_.total_quota_calls);
+  }
+  if (new_stats.total_remote_quota_calls >
+      old_stats_.total_remote_quota_calls) {
+    stats_.total_remote_quota_calls_.add(new_stats.total_remote_quota_calls -
+                                         old_stats_.total_remote_quota_calls);
+  }
+  if (new_stats.total_blocking_remote_quota_calls >
+      old_stats_.total_blocking_remote_quota_calls) {
+    stats_.total_blocking_remote_quota_calls_.add(
+        new_stats.total_blocking_remote_quota_calls -
+        old_stats_.total_blocking_remote_quota_calls);
+  }
+  if (new_stats.total_report_calls > old_stats_.total_report_calls) {
+    stats_.total_report_calls_.add(new_stats.total_report_calls -
+                                   old_stats_.total_report_calls);
+  }
+  if (new_stats.total_remote_report_calls >
+      old_stats_.total_remote_report_calls) {
+    stats_.total_remote_report_calls_.add(new_stats.total_remote_report_calls -
+                                          old_stats_.total_remote_report_calls);
+  }
+
+  // Copy new_stats to old_stats_ for next stats update.
+  old_stats_.total_check_calls = new_stats.total_check_calls;
+  old_stats_.total_remote_check_calls = new_stats.total_remote_check_calls;
+  old_stats_.total_blocking_remote_check_calls =
+      new_stats.total_blocking_remote_check_calls;
+  old_stats_.total_quota_calls = new_stats.total_quota_calls;
+  old_stats_.total_remote_quota_calls = new_stats.total_remote_quota_calls;
+  old_stats_.total_blocking_remote_quota_calls =
+      new_stats.total_blocking_remote_quota_calls;
+  old_stats_.total_report_calls = new_stats.total_report_calls;
+  old_stats_.total_remote_report_calls = new_stats.total_remote_report_calls;
 }
 
 }  // namespace Mixer

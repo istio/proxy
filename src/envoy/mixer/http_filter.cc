@@ -21,7 +21,6 @@
 #include "control/include/utils/status.h"
 #include "envoy/registry/registry.h"
 #include "envoy/ssl/connection.h"
-#include "envoy/stats/stats_macros.h"
 #include "envoy/thread_local/thread_local.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/auth/config.h"
@@ -75,7 +74,7 @@ const std::set<std::string> RequestHeaderExclusives = {
     kIstioAttributeHeader.get(),
 };
 
-const std::string kStatsPrefix("http_mixer_filter");
+const std::string kStatsPrefix("http_mixer_filter.");
 
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
@@ -104,54 +103,27 @@ void CreateAuthIssuers(
 
 }  // namespace
 
-/**
- * All http mixer filter stats. @see stats_macros.h
- */
-// clang-format off
-#define ALL_HTTP_MIXER_FILTER_STATS(COUNTER, GAUGE)                           \
-  COUNTER(total_check_calls)                                                  \
-  COUNTER(total_remote_check_calls)                                           \
-  COUNTER(total_blocking_remote_check_calls)                                  \
-  COUNTER(total_quota_calls)                                                  \
-  COUNTER(total_remote_quota_calls)                                           \
-  COUNTER(total_blocking_remote_quota_calls)                                  \
-  COUNTER(total_report_calls)                                                 \
-  COUNTER(total_remote_report_calls)                                          \
-// clang-format on
-
-/**
- * Struct definition for all mixer filter stats. @see stats_macros.h
- */
-struct InstanceStats {
-  ALL_HTTP_MIXER_FILTER_STATS(GENERATE_COUNTER_STRUCT)
-};
-
 class Config {
  private:
-  InstanceStats generateStats(const std::string& name, Stats::Scope& scope) {
-    return {ALL_TCP_RATE_LIMIT_STATS(POOL_COUNTER_PREFIX(scope, name))};
-  }
-
   Upstream::ClusterManager& cm_;
   HttpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
   std::shared_ptr<Auth::JwtAuthConfig> auth_config_;
-  const InstanceStats stats_;
 
  public:
   Config(const Json::Object& config,
          Server::Configuration::FactoryContext& context)
       : cm_(context.clusterManager()),
-        tls_(context.threadLocal().allocateSlot()),
-        stats_(generateStats(kStatsPrefix, context.scope())) {
+        tls_(context.threadLocal().allocateSlot()) {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
-    tls_->set(
-        [this, &random](Event::Dispatcher& dispatcher)
-            -> ThreadLocal::ThreadLocalObjectSharedPtr {
-              return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new HttpMixerControl(mixer_config_, cm_, dispatcher, random));
-            });
+    tls_->set([this, &random, &context](Event::Dispatcher& dispatcher)
+                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
+                    return ThreadLocal::ThreadLocalObjectSharedPtr(
+                        new HttpMixerControl(mixer_config_, cm_, dispatcher,
+                                             random, kStatsPrefix,
+                                             context.scope()));
+                  });
 
     std::vector<std::shared_ptr<Auth::IssuerInfo>> issuers;
     CreateAuthIssuers(mixer_config_, &issuers);
@@ -166,8 +138,6 @@ class Config {
   }
 
   std::shared_ptr<Auth::JwtAuthConfig> auth_config() { return auth_config_; }
-
-  const InstanceStats& stats() { return stats_; }
 };
 
 typedef std::shared_ptr<Config> ConfigPtr;
@@ -391,8 +361,6 @@ class Instance : public Http::StreamDecoderFilter,
 
   bool initiating_call_;
 
-  const InstanceStats& stats_;
-
   // check mixer on/off flags in route opaque data
   void check_mixer_route_flags(bool* check_disabled, bool* report_disabled) {
     // Both check and report are disabled by default.
@@ -460,64 +428,11 @@ class Instance : public Http::StreamDecoderFilter,
     return false;
   }
 
-  CheckAndUpdateStats(const ::istio::mixer_client::Statistics& old_stats) {
-    ::istio::mixer_client::Statistics new_stats;
-    mixer_control_.controller()->GetStatistics(&new_stats);
-    uint64_t delta_total_check_calls = new_stats.total_check_calls -
-        old_stats.total_check_calls;
-    uint64_t delta_total_remote_check_calls =
-        new_stats.total_remote_check_calls - old_stats.total_remote_check_calls;
-    uint64_t delta_total_blocking_remote_check_calls =
-        new_stats.total_blocking_remote_check_calls -
-            old_stats.total_blocking_remote_check_calls;
-    uint64_t delta_total_quota_calls = new_stats.total_quota_calls -
-        old_stats.total_quota_calls;
-    uint64_t delta_total_remote_quota_calls =
-        new_stats.total_remote_quota_calls - old_stats.total_remote_quota_calls;
-    uint64_t delta_total_blocking_remote_quota_calls =
-        new_stats.total_blocking_remote_quota_calls -
-            old_stats.total_blocking_remote_quota_calls;
-    uint64_t delta_total_report_calls = new_stats.total_report_calls -
-        old_stats.total_report_calls;
-    uint64_t delta_total_remote_report_calls =
-        new_stats.total_remote_report_calls -
-            old_stats.total_remote_report_calls;
-
-    // Only update stats that are changed.
-    if (delta_total_check_calls > 0) {
-      stats_.total_check_calls_.add(delta_total_check_calls);
-    }
-    if (delta_total_remote_check_calls > 0) {
-      stats_.total_remote_check_calls_.add(delta_total_remote_check_calls);
-    }
-    if (delta_total_blocking_remote_check_calls > 0) {
-      stats_.total_blocking_remote_check_calls_.add(
-          delta_total_blocking_remote_check_calls);
-    }
-    if (delta_total_quota_calls > 0) {
-      stats_.total_quota_calls_.add(delta_total_quota_calls);
-    }
-    if (delta_total_remote_quota_calls > 0) {
-      stats_.total_remote_quota_calls_.add(delta_total_remote_quota_calls);
-    }
-    if (delta_total_blocking_remote_quota_calls > 0) {
-      stats_.total_blocking_remote_quota_calls_.add(
-          delta_total_blocking_remote_quota_calls);
-    }
-    if (delta_total_report_calls > 0) {
-      stats_.total_report_calls_.add(delta_total_report_calls);
-    }
-    if (delta_total_remote_report_calls > 0) {
-      stats_.total_remote_report_calls_.add(delta_total_remote_report_calls);
-    }
-  }
-
  public:
   Instance(ConfigPtr config)
       : mixer_control_(config->mixer_control()),
         state_(NotStarted),
-        initiating_call_(false),
-        stats_(config->stats()) {
+        initiating_call_(false) {
     ENVOY_LOG(debug, "Called Mixer::Instance : {}", __func__);
   }
 
@@ -542,18 +457,12 @@ class Instance : public Http::StreamDecoderFilter,
 
     state_ = Calling;
     initiating_call_ = true;
-    // Make a copy of stats before the check call, so that we can update envoy
-    // stats by checking the change of each stat element. Because handler_ is
-    // newly created, all stats elements are zero.
-    ::istio::mixer_client::Statistics old_stats = {0, 0, 0, 0, 0, 0, 0, 0};
-
     CheckData check_data(headers, decoder_callbacks_->connection());
     HeaderUpdate header_update(&headers);
     cancel_check_ = handler_->Check(
         &check_data, &header_update,
         CheckTransport::GetFunc(mixer_control_.cm(), &headers),
         [this](const Status& status) { completeCheck(status); });
-    CheckAndUpdateStats(old_stats);
     initiating_call_ = false;
 
     if (state_ == Complete) {
@@ -643,12 +552,7 @@ class Instance : public Http::StreamDecoderFilter,
       handler_->ExtractRequestAttributes(&check_data);
     }
     ReportData report_data(response_headers, request_info);
-    // Get a copy of stats from mixer_control_ before report call. This is
-    // needed for updating envoy stats after the report call returns.
-    ::istio::mixer_client::Statistics old_stats;
-    mixer_control_.controller()->GetStatistics(&old_stats);
     handler_->Report(&report_data);
-    CheckAndUpdateStats(old_stats);
   }
 };
 

@@ -22,17 +22,41 @@
 #include "envoy/thread_local/thread_local.h"
 #include "envoy/upstream/cluster_manager.h"
 #include "src/envoy/mixer/config.h"
+#include "src/envoy/mixer/stats.h"
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
+
+// MixerStatsObject maintains statistics for number of check, quota and report
+// calls issued by a mixer filter.
+class MixerStatsObject {
+ public:
+  static const int kStatsUpdateIntervalInMs = 10000;
+
+  MixerStatsObject(const std::string& name, Stats::Scope& scope)
+      : stats_{ALL_HTTP_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))} {}
+
+  const InstanceStats& stats() { return stats_; }
+
+  void CheckAndUpdateStats(const ::istio::mixer_client::Statistics& new_stats);
+
+  ::istio::mixer_client::Statistics* mutate_old_stats() { return &old_stats_; }
+
+ private:
+  InstanceStats stats_;
+  // stats from last call to MixerClient::GetStatistics(). This is needed to
+  // calculate the variances of stats and update envoy stats.
+  ::istio::mixer_client::Statistics old_stats_;
+};
 
 class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
   HttpMixerControl(const HttpMixerConfig& mixer_config,
                    Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
-                   Runtime::RandomGenerator& random);
+                   Runtime::RandomGenerator& random,
+                   const std::string& stats_prefix, Stats::Scope& scope);
 
   Upstream::ClusterManager& cm() { return cm_; }
 
@@ -42,6 +66,8 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
 
   bool has_v2_config() const { return has_v2_config_; }
 
+  void StatsUpdateCallback();
+
  private:
   // Envoy cluster manager for making gRPC calls.
   Upstream::ClusterManager& cm_;
@@ -49,6 +75,10 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
   std::unique_ptr<::istio::mixer_control::http::Controller> controller_;
   // has v2 config;
   bool has_v2_config_;
+
+  // These members are needed to update envoy stats periodically.
+  MixerStatsObject stats_;
+  std::unique_ptr<::istio::mixer_client::Timer> timer_;
 };
 
 class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
