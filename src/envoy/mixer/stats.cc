@@ -53,43 +53,42 @@ void MixerStatsObject::CheckAndUpdateStats(
     const ::istio::mixer_client::Statistics& new_stats) {
   if (new_stats.total_check_calls > old_stats_.total_check_calls) {
     stats_.total_check_calls_.add(new_stats.total_check_calls -
-        old_stats_.total_check_calls);
+                                  old_stats_.total_check_calls);
   }
   if (new_stats.total_remote_check_calls >
       old_stats_.total_remote_check_calls) {
     stats_.total_remote_check_calls_.add(new_stats.total_remote_check_calls -
-        old_stats_.total_remote_check_calls);
+                                         old_stats_.total_remote_check_calls);
   }
   if (new_stats.total_blocking_remote_check_calls >
       old_stats_.total_blocking_remote_check_calls) {
     stats_.total_blocking_remote_check_calls_.add(
         new_stats.total_blocking_remote_check_calls -
-            old_stats_.total_blocking_remote_check_calls);
+        old_stats_.total_blocking_remote_check_calls);
   }
   if (new_stats.total_quota_calls > old_stats_.total_quota_calls) {
     stats_.total_quota_calls_.add(new_stats.total_quota_calls -
-        old_stats_.total_quota_calls);
+                                  old_stats_.total_quota_calls);
   }
   if (new_stats.total_remote_quota_calls >
       old_stats_.total_remote_quota_calls) {
     stats_.total_remote_quota_calls_.add(new_stats.total_remote_quota_calls -
-        old_stats_.total_remote_quota_calls);
+                                         old_stats_.total_remote_quota_calls);
   }
   if (new_stats.total_blocking_remote_quota_calls >
       old_stats_.total_blocking_remote_quota_calls) {
     stats_.total_blocking_remote_quota_calls_.add(
         new_stats.total_blocking_remote_quota_calls -
-            old_stats_.total_blocking_remote_quota_calls);
+        old_stats_.total_blocking_remote_quota_calls);
   }
   if (new_stats.total_report_calls > old_stats_.total_report_calls) {
     stats_.total_report_calls_.add(new_stats.total_report_calls -
-        old_stats_.total_report_calls);
+                                   old_stats_.total_report_calls);
   }
   if (new_stats.total_remote_report_calls >
       old_stats_.total_remote_report_calls) {
-    stats_.total_remote_report_calls_.add(
-        new_stats.total_remote_report_calls -
-            old_stats_.total_remote_report_calls);
+    stats_.total_remote_report_calls_.add(new_stats.total_remote_report_calls -
+                                          old_stats_.total_remote_report_calls);
   }
 
   // Copy new_stats to old_stats_ for next stats update.
