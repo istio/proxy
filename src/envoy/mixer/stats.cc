@@ -14,28 +14,54 @@
  */
 
 #include "src/envoy/mixer/stats.h"
+#include "common/common/logger.h"
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
+namespace {
 
-const int MixerStatsObject::kStatsUpdateIntervalInMs = 10000;
+const int kStatsUpdateIntervalInMs = 10000;
 
-MixerStatsObject::MixerStatsObject(const std::string& name, Stats::Scope& scope)
-    : stats_{ALL_HTTP_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))} {}
+}  // namespace
+
+MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
+                                   const std::string& name, Stats::Scope& scope)
+    : stats_{ALL_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))},
+      dispatcher_(dispatcher) {}
 
 ::istio::mixer_client::Statistics* MixerStatsObject::mutate_old_stats() {
   return &old_stats_;
 }
 
 void MixerStatsObject::InitGetStatisticsFunc(GetStatsFunc get_stats) {
-  get_statistics_ = get_stats;
+  if (get_stats) {
+    get_stats_func_ = get_stats;
+  } else {
+    auto& logger = Logger::Registry::getLog(Logger::Id::config);
+    ENVOY_LOG_TO_LOGGER(logger, error, "get_stats is empty");
+  }
 }
 
 void MixerStatsObject::GetStatistics(::istio::mixer_client::Statistics* stats) {
-  if (get_statistics_) {
-    get_statistics_(stats);
+  if (get_stats_func_) {
+    get_stats_func_(stats);
+  } else {
+    auto& logger = Logger::Registry::getLog(Logger::Id::config);
+    ENVOY_LOG_TO_LOGGER(logger, error, "get_stats_func_ is empty");
   }
+}
+
+void MixerStatsObject::SetUpStatsTimer() {
+  timer_ = dispatcher_.createTimer([this]() -> void { OnTimer(); });
+  timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
+}
+
+void MixerStatsObject::OnTimer() {
+  ::istio::mixer_client::Statistics new_stats;
+  GetStatistics(&new_stats);
+  CheckAndUpdateStats(new_stats);
+  timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
 }
 
 void MixerStatsObject::CheckAndUpdateStats(

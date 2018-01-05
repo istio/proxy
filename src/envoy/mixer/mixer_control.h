@@ -29,24 +29,7 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
-class MixerControlBase : public ThreadLocal::ThreadLocalObject {
- public:
-  MixerControlBase(Event::Dispatcher& dispatcher,
-                   const std::string& stats_prefix, Stats::Scope& scope);
-
-  void StatsUpdateCallback();
-  void SetUpStatsTimer();
-
- protected:
-  // These members are needed to update envoy stats periodically.
-  MixerStatsObject stats_;
-
- private:
-  Event::Dispatcher& dispatcher_;
-  ::Envoy::Event::TimerPtr timer_;
-};
-
-class HttpMixerControl final : public MixerControlBase {
+class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
   HttpMixerControl(const HttpMixerConfig& mixer_config,
@@ -69,9 +52,11 @@ class HttpMixerControl final : public MixerControlBase {
   std::unique_ptr<::istio::mixer_control::http::Controller> controller_;
   // has v2 config;
   bool has_v2_config_;
+
+  MixerStatsObject stats_obj_;
 };
 
-class TcpMixerControl final : public MixerControlBase {
+class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
   TcpMixerControl(const TcpMixerConfig& mixer_config,
@@ -86,6 +71,8 @@ class TcpMixerControl final : public MixerControlBase {
  private:
   // The mixer control
   std::unique_ptr<::istio::mixer_control::tcp::Controller> controller_;
+
+  MixerStatsObject stats_obj_;
 };
 
 }  // namespace Mixer

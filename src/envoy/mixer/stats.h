@@ -15,7 +15,8 @@
 
 #pragma once
 
-#include "common/common/logger.h"
+#include "envoy/event/dispatcher.h"
+#include "envoy/event/timer.h"
 #include "envoy/stats/stats_macros.h"
 #include "include/client.h"
 
@@ -27,7 +28,7 @@ namespace Mixer {
  * All mixer filter stats. @see stats_macros.h
  */
 // clang-format off
-#define ALL_MIXER_FILTER_STATS(COUNTER)                                  \
+#define ALL_MIXER_FILTER_STATS(COUNTER)                                       \
   COUNTER(total_check_calls)                                                  \
   COUNTER(total_remote_check_calls)                                           \
   COUNTER(total_blocking_remote_check_calls)                                  \
@@ -51,24 +52,40 @@ typedef std::function<void(::istio::mixer_client::Statistics* s)> GetStatsFunc;
 // calls issued by a mixer filter.
 class MixerStatsObject {
  public:
-  static const int kStatsUpdateIntervalInMs;
-
-  MixerStatsObject(const std::string& name, Stats::Scope& scope);
-
-  void CheckAndUpdateStats(const ::istio::mixer_client::Statistics& new_stats);
+  MixerStatsObject(Event::Dispatcher& dispatcher, const std::string& name,
+                   Stats::Scope& scope);
 
   ::istio::mixer_client::Statistics* mutate_old_stats();
 
+  // Initializes function get_statistics_ by |get_stats|. get_statistics_ is
+  // used to get statistics when GetStatistics() is called.
   void InitGetStatisticsFunc(GetStatsFunc get_stats);
 
+  // Get statistics from mixer controller.
   void GetStatistics(::istio::mixer_client::Statistics* stats);
 
+  void SetUpStatsTimer();
+
+  // This function is invoked when timer event fires.
+  void OnTimer();
+
+  // Compares old stats with new stats and updates envoy stats.
+  void CheckAndUpdateStats(const ::istio::mixer_client::Statistics& new_stats);
+
  private:
+  // A set of Envoy stats for the number of check, quota and report calls.
   MixerFilterStats stats_;
-  GetStatsFunc get_statistics_;
-  // stats from last call to MixerClient::GetStatistics(). This is needed to
-  // calculate the variances of stats and update envoy stats.
+  // Stores a function which gets statistics from mixer controller.
+  GetStatsFunc get_stats_func_;
+
+  // stats from last call to get_stats_func_. This is needed to calculate the
+  // variances of stats and update envoy stats.
   ::istio::mixer_client::Statistics old_stats_;
+
+  // These members are used for creating a timer which update Envoy stats
+  // periodically.
+  ::Envoy::Event::TimerPtr timer_;
+  ::Envoy::Event::Dispatcher& dispatcher_;
 };
 
 }  // namespace Mixer

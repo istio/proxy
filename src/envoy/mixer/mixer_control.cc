@@ -60,45 +60,27 @@ void CreateEnvironment(Upstream::ClusterManager& cm,
 
 }  // namespace
 
-MixerControlBase::MixerControlBase(Event::Dispatcher& dispatcher,
-                                   const std::string& stats_prefix,
-                                   Stats::Scope& scope)
-    : stats_(stats_prefix, scope), dispatcher_(dispatcher) {}
-
-void MixerControlBase::SetUpStatsTimer() {
-  timer_ = dispatcher_.createTimer([this]() -> void { StatsUpdateCallback(); });
-  timer_->enableTimer(
-      std::chrono::milliseconds(MixerStatsObject::kStatsUpdateIntervalInMs));
-}
-
-void MixerControlBase::StatsUpdateCallback() {
-  ::istio::mixer_client::Statistics new_stats;
-  stats_.GetStatistics(&new_stats);
-  stats_.CheckAndUpdateStats(new_stats);
-  timer_->enableTimer(
-      std::chrono::milliseconds(MixerStatsObject::kStatsUpdateIntervalInMs));
-}
-
 HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
                                    Upstream::ClusterManager& cm,
                                    Event::Dispatcher& dispatcher,
                                    Runtime::RandomGenerator& random,
                                    const std::string& stats_prefix,
                                    Stats::Scope& scope)
-    : MixerControlBase(dispatcher, stats_prefix, scope), cm_(cm) {
-  stats_.InitGetStatisticsFunc(
-      std::bind(&::istio::mixer_control::http::Controller::GetStatistics,
-                controller(), std::placeholders::_1));
-  // Initialize old_stats for envoy stats update.
-  stats_.GetStatistics(stats_.mutate_old_stats());
-  SetUpStatsTimer();
-
+    : cm_(cm), stats_obj_(dispatcher, stats_prefix, scope) {
   ::istio::mixer_control::http::Controller::Options options(
       mixer_config.http_config, mixer_config.legacy_quotas);
 
   CreateEnvironment(cm, dispatcher, random, &options.env);
 
   controller_ = ::istio::mixer_control::http::Controller::Create(options);
+
+  stats_obj_.InitGetStatisticsFunc(
+      std::bind(&::istio::mixer_control::http::Controller::GetStatistics,
+                controller(), std::placeholders::_1));
+
+  // Initialize old_stats for envoy stats update.
+  stats_obj_.GetStatistics(stats_obj_.mutate_old_stats());
+  stats_obj_.SetUpStatsTimer();
 
   has_v2_config_ = mixer_config.has_v2_config;
 }
@@ -109,20 +91,21 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
                                  Runtime::RandomGenerator& random,
                                  const std::string& stats_prefix,
                                  Stats::Scope& scope)
-    : MixerControlBase(dispatcher, stats_prefix, scope) {
-  stats_.InitGetStatisticsFunc(
-      std::bind(&::istio::mixer_control::tcp::Controller::GetStatistics,
-                controller(), std::placeholders::_1));
-  // Initialize old_stats for envoy stats update.
-  stats_.GetStatistics(stats_.mutate_old_stats());
-  SetUpStatsTimer();
-
+    : stats_obj_(dispatcher, stats_prefix, scope) {
   ::istio::mixer_control::tcp::Controller::Options options(
       mixer_config.tcp_config);
 
   CreateEnvironment(cm, dispatcher, random, &options.env);
 
   controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
+
+  stats_obj_.InitGetStatisticsFunc(
+      std::bind(&::istio::mixer_control::tcp::Controller::GetStatistics,
+                controller(), std::placeholders::_1));
+
+  // Initialize old_stats for envoy stats update.
+  stats_obj_.GetStatistics(stats_obj_.mutate_old_stats());
+  stats_obj_.SetUpStatsTimer();
 }
 
 }  // namespace Mixer
