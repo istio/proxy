@@ -46,33 +46,22 @@ struct MixerFilterStats {
   ALL_MIXER_FILTER_STATS(GENERATE_COUNTER_STRUCT)
 };
 
-typedef std::function<void(::istio::mixer_client::Statistics* s)> GetStatsFunc;
+typedef std::function<bool(::istio::mixer_client::Statistics* s)> GetStatsFunc;
 
 // MixerStatsObject maintains statistics for number of check, quota and report
 // calls issued by a mixer filter.
 class MixerStatsObject {
  public:
   MixerStatsObject(Event::Dispatcher& dispatcher, const std::string& name,
-                   Stats::Scope& scope);
+                   Stats::Scope& scope, GetStatsFunc func);
 
-  ::istio::mixer_client::Statistics* mutate_old_stats();
-
-  // Initializes function get_statistics_ by |get_stats|. get_statistics_ is
-  // used to get statistics when GetStatistics() is called.
-  void InitGetStatisticsFunc(GetStatsFunc get_stats);
-
-  // Get statistics from mixer controller.
-  void GetStatistics(::istio::mixer_client::Statistics* stats);
-
-  void SetUpStatsTimer();
-
+ private:
   // This function is invoked when timer event fires.
   void OnTimer();
 
   // Compares old stats with new stats and updates envoy stats.
   void CheckAndUpdateStats(const ::istio::mixer_client::Statistics& new_stats);
 
- private:
   // A set of Envoy stats for the number of check, quota and report calls.
   MixerFilterStats stats_;
   // Stores a function which gets statistics from mixer controller.
@@ -85,7 +74,6 @@ class MixerStatsObject {
   // These members are used for creating a timer which update Envoy stats
   // periodically.
   ::Envoy::Event::TimerPtr timer_;
-  ::Envoy::Event::Dispatcher& dispatcher_;
 };
 
 }  // namespace Mixer

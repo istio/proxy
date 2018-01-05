@@ -26,42 +26,29 @@ const int kStatsUpdateIntervalInMs = 10000;
 }  // namespace
 
 MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
-                                   const std::string& name, Stats::Scope& scope)
+                                   const std::string& name, Stats::Scope& scope,
+                                   GetStatsFunc func)
     : stats_{ALL_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))},
-      dispatcher_(dispatcher) {}
+      get_stats_func_(func) {
+  memset(&old_stats_, 0, sizeof(old_stats_));
 
-::istio::mixer_client::Statistics* MixerStatsObject::mutate_old_stats() {
-  return &old_stats_;
-}
-
-void MixerStatsObject::InitGetStatisticsFunc(GetStatsFunc get_stats) {
-  if (get_stats) {
-    get_stats_func_ = get_stats;
-  } else {
-    auto& logger = Logger::Registry::getLog(Logger::Id::config);
-    ENVOY_LOG_TO_LOGGER(logger, error, "get_stats is empty");
-  }
-}
-
-void MixerStatsObject::GetStatistics(::istio::mixer_client::Statistics* stats) {
   if (get_stats_func_) {
-    get_stats_func_(stats);
-  } else {
-    auto& logger = Logger::Registry::getLog(Logger::Id::config);
-    ENVOY_LOG_TO_LOGGER(logger, error, "get_stats_func_ is empty");
+    timer_ = dispatcher.createTimer([this]() -> void { OnTimer(); });
+    timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
   }
-}
-
-void MixerStatsObject::SetUpStatsTimer() {
-  timer_ = dispatcher_.createTimer([this]() -> void { OnTimer(); });
-  timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
 }
 
 void MixerStatsObject::OnTimer() {
   ::istio::mixer_client::Statistics new_stats;
-  GetStatistics(&new_stats);
-  CheckAndUpdateStats(new_stats);
-  timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
+  bool get_stats = get_stats_func_(&new_stats);
+  if (get_stats) {
+    CheckAndUpdateStats(new_stats);
+    timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
+  } else {
+    auto& logger = Logger::Registry::getLog(Logger::Id::config);
+    ENVOY_LOG_TO_LOGGER(logger, error,
+                        "call to get_stats_func_ failed. Do not set timer.");
+  }
 }
 
 void MixerStatsObject::CheckAndUpdateStats(

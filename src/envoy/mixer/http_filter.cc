@@ -74,8 +74,6 @@ const std::set<std::string> RequestHeaderExclusives = {
     kIstioAttributeHeader.get(),
 };
 
-const std::string kStatsPrefix("http_mixer_filter.");
-
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
 
@@ -122,7 +120,7 @@ class Config {
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
                     return ThreadLocal::ThreadLocalObjectSharedPtr(
                         new HttpMixerControl(mixer_config_, cm_, dispatcher,
-                                             random, kStatsPrefix, scope));
+                                             random, scope));
                   });
 
     std::vector<std::shared_ptr<Auth::IssuerInfo>> issuers;

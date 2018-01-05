@@ -34,8 +34,7 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
   // The constructor.
   HttpMixerControl(const HttpMixerConfig& mixer_config,
                    Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
-                   Runtime::RandomGenerator& random,
-                   const std::string& stats_prefix, Stats::Scope& scope);
+                   Runtime::RandomGenerator& random, Stats::Scope& scope);
 
   Upstream::ClusterManager& cm() { return cm_; }
 
@@ -61,8 +60,7 @@ class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
   // The constructor.
   TcpMixerControl(const TcpMixerConfig& mixer_config,
                   Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
-                  Runtime::RandomGenerator& random,
-                  const std::string& stats_prefix, Stats::Scope& scope);
+                  Runtime::RandomGenerator& random, Stats::Scope& scope);
 
   ::istio::mixer_control::tcp::Controller* controller() {
     return controller_.get();
