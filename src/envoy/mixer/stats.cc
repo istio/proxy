@@ -45,8 +45,8 @@ void MixerStatsObject::OnTimer() {
   bool get_stats = get_stats_func_(&new_stats);
   if (get_stats) {
     CheckAndUpdateStats(new_stats);
-    timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
   }
+  timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
 }
 
 void MixerStatsObject::CheckAndUpdateStats(
