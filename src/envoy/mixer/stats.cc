@@ -35,7 +35,7 @@ MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
   memset(&old_stats_, 0, sizeof(old_stats_));
 
   if (get_stats_func_) {
-    timer_ = dispatcher.createTimer([this] { OnTimer(); });
+    timer_ = dispatcher.createTimer([this]() { OnTimer(); });
     timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
   }
 }
