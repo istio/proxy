@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 
+#include <chrono>
+
 #include "src/envoy/mixer/stats.h"
-#include "common/common/logger.h"
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
 namespace {
 
+// The time interval for envoy stats update.
 const int kStatsUpdateIntervalInMs = 10000;
 
 }  // namespace
@@ -33,7 +35,7 @@ MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
   memset(&old_stats_, 0, sizeof(old_stats_));
 
   if (get_stats_func_) {
-    timer_ = dispatcher.createTimer([this]() -> void { OnTimer(); });
+    timer_ = dispatcher.createTimer([this] { OnTimer(); });
     timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
   }
 }
@@ -44,10 +46,6 @@ void MixerStatsObject::OnTimer() {
   if (get_stats) {
     CheckAndUpdateStats(new_stats);
     timer_->enableTimer(std::chrono::milliseconds(kStatsUpdateIntervalInMs));
-  } else {
-    auto& logger = Logger::Registry::getLog(Logger::Id::config);
-    ENVOY_LOG_TO_LOGGER(logger, error,
-                        "call to get_stats_func_ failed. Do not set timer.");
   }
 }
 
@@ -55,42 +53,43 @@ void MixerStatsObject::CheckAndUpdateStats(
     const ::istio::mixer_client::Statistics& new_stats) {
   if (new_stats.total_check_calls > old_stats_.total_check_calls) {
     stats_.total_check_calls_.add(new_stats.total_check_calls -
-                                  old_stats_.total_check_calls);
+        old_stats_.total_check_calls);
   }
   if (new_stats.total_remote_check_calls >
       old_stats_.total_remote_check_calls) {
     stats_.total_remote_check_calls_.add(new_stats.total_remote_check_calls -
-                                         old_stats_.total_remote_check_calls);
+        old_stats_.total_remote_check_calls);
   }
   if (new_stats.total_blocking_remote_check_calls >
       old_stats_.total_blocking_remote_check_calls) {
     stats_.total_blocking_remote_check_calls_.add(
         new_stats.total_blocking_remote_check_calls -
-        old_stats_.total_blocking_remote_check_calls);
+            old_stats_.total_blocking_remote_check_calls);
   }
   if (new_stats.total_quota_calls > old_stats_.total_quota_calls) {
     stats_.total_quota_calls_.add(new_stats.total_quota_calls -
-                                  old_stats_.total_quota_calls);
+        old_stats_.total_quota_calls);
   }
   if (new_stats.total_remote_quota_calls >
       old_stats_.total_remote_quota_calls) {
     stats_.total_remote_quota_calls_.add(new_stats.total_remote_quota_calls -
-                                         old_stats_.total_remote_quota_calls);
+        old_stats_.total_remote_quota_calls);
   }
   if (new_stats.total_blocking_remote_quota_calls >
       old_stats_.total_blocking_remote_quota_calls) {
     stats_.total_blocking_remote_quota_calls_.add(
         new_stats.total_blocking_remote_quota_calls -
-        old_stats_.total_blocking_remote_quota_calls);
+            old_stats_.total_blocking_remote_quota_calls);
   }
   if (new_stats.total_report_calls > old_stats_.total_report_calls) {
     stats_.total_report_calls_.add(new_stats.total_report_calls -
-                                   old_stats_.total_report_calls);
+        old_stats_.total_report_calls);
   }
   if (new_stats.total_remote_report_calls >
       old_stats_.total_remote_report_calls) {
-    stats_.total_remote_report_calls_.add(new_stats.total_remote_report_calls -
-                                          old_stats_.total_remote_report_calls);
+    stats_.total_remote_report_calls_.add(
+        new_stats.total_remote_report_calls -
+            old_stats_.total_remote_report_calls);
   }
 
   // Copy new_stats to old_stats_ for next stats update.

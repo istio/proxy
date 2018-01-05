@@ -18,7 +18,6 @@
 #include "control/include/http/controller.h"
 #include "control/include/tcp/controller.h"
 #include "envoy/event/dispatcher.h"
-#include "envoy/event/timer.h"
 #include "envoy/runtime/runtime.h"
 #include "envoy/thread_local/thread_local.h"
 #include "envoy/upstream/cluster_manager.h"

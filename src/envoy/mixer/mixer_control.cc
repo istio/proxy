@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
-#include <chrono>
-#include <memory>
-
-#include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/mixer_control.h"
+#include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/stats.h"
 
 using ::istio::mixer_client::Statistics;
