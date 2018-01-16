@@ -577,8 +577,7 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
               std::make_shared<Http::Mixer::Instance>(mixer_config);
           callbacks.addStreamDecoderFilter(
               Http::StreamDecoderFilterSharedPtr(instance));
-          callbacks.addAccessLogHandler(
-              AccessLog::InstanceSharedPtr(instance));
+          callbacks.addAccessLogHandler(AccessLog::InstanceSharedPtr(instance));
         };
   }
   std::string name() override { return "mixer"; }
