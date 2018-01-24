@@ -34,7 +34,7 @@ MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
       get_stats_func_(func) {
   memset(&old_stats_, 0, sizeof(old_stats_));
 
-  // If stats update interval in config is 0, set interval to 10 seconds.
+  // If stats update interval from config is 0, then set interval to 10 seconds.
   int stats_update_interval =
       update_interval_ms > 0 ? update_interval_ms : kStatsUpdateIntervalInMs;
   if (get_stats_func_) {
