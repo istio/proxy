@@ -13,18 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef PROXY_CONFIG_H
-#define PROXY_CONFIG_H
-
-#include "jwt.h"
+#ifndef AUTH_CONFIG_H
+#define AUTH_CONFIG_H
 
 #include "common/common/logger.h"
-#include "common/http/message_impl.h"
-#include "envoy/http/async_client.h"
 #include "envoy/json/json_object.h"
-#include "envoy/json/json_object.h"
-#include "envoy/upstream/cluster_manager.h"
-#include "server/config/network/http_connection_manager.h"
+
+#include "jwt.h"
 
 #include <vector>
 
@@ -32,96 +27,63 @@ namespace Envoy {
 namespace Http {
 namespace Auth {
 
-// Callback class for AsyncClient.
-class AsyncClientCallbacks : public AsyncClient::Callbacks,
-                             public Logger::Loggable<Logger::Id::http> {
- public:
-  AsyncClientCallbacks(Upstream::ClusterManager &cm, const std::string &cluster,
-                       std::function<void(bool, const std::string &)> cb)
-      : cm_(cm),
-        cluster_(cm.get(cluster)->info()),
-        timeout_(Optional<std::chrono::milliseconds>()),
-        cb_(cb) {}
-  // AsyncClient::Callbacks
-  void onSuccess(MessagePtr &&response);
-  void onFailure(AsyncClient::FailureReason);
+// Struct to hold an issuer's config.
+struct IssuerInfo {
+  // URI for public key server
+  std::string uri;
+  // Envoy cluster name for public key server
+  std::string cluster;
 
-  void Call(const std::string &uri);
-  void Cancel();
+  // Issuer name. e.g. "https://accounts.example.com"
+  std::string name;
 
- private:
-  Upstream::ClusterManager &cm_;
-  Upstream::ClusterInfoConstSharedPtr cluster_;
-  Optional<std::chrono::milliseconds> timeout_;
-  std::function<void(bool, const std::string &)> cb_;
-  AsyncClient::Request *request_;
-};
-
-// Struct to hold an issuer's information.
-struct IssuerInfo : public Logger::Loggable<Logger::Id::http> {
-  // This constructor loads config from JSON. When public key is given via URI,
-  // it just keeps URI and cluster name, and public key will be fetched later,
-  // namely in decodeHeaders() of the filter class.
-  IssuerInfo(Json::Object *json);
-  // Allow default construct.
-  IssuerInfo(const std::string &name, const std::string &uri,
-             const std::string &cluster, Pubkeys::Type pkey_type,
-             std::vector<std::string> &&audiences)
-      : uri_(uri),
-        cluster_(cluster),
-        name_(name),
-        pkey_type_(pkey_type),
-        audiences_(std::move(audiences)) {}
-
-  // True if the config loading in the constructor or fetching public key failed
-  bool failed_ = false;
-
-  // True if the public key is loaded
-  bool loaded_ = false;
-
-  std::string uri_;      // URI for public key
-  std::string cluster_;  // Envoy cluster name for public key
-
-  std::string name_;               // e.g. "https://accounts.example.com"
-  Pubkeys::Type pkey_type_;        // Format of public key.
-  std::unique_ptr<Pubkeys> pkey_;  // Public key
-
-  // If audiences is an empty array or not specified, any "aud" claim will be
-  // accepted.
-  std::vector<std::string> audiences_;
-  bool IsAudienceAllowed(const std::string &aud);
-};
-
-// A config for Jwt auth filter
-struct JwtAuthConfig : public Logger::Loggable<Logger::Id::http> {
-  // Load the config from envoy config.
-  // It will abort when "issuers" is missing or bad-formatted.
-  JwtAuthConfig(const Json::Object &config,
-                Server::Configuration::FactoryContext &context);
-  // Constructed by IssuerInfo directly.
-  JwtAuthConfig(std::vector<std::shared_ptr<IssuerInfo> > &&issuers,
-                Server::Configuration::FactoryContext &context);
-
-  // It specify which information will be included in the HTTP header of an
-  // authenticated request.
-  enum UserInfoType {
-    kPayload,                // Payload JSON
-    kPayloadBase64Url,       // base64url-encoded Payload JSON
-    kHeaderPayloadBase64Url  // JWT with signature
-  };
-  UserInfoType user_info_type_;
+  // Format of public key.
+  Pubkeys::Type pubkey_type;
+  // public key value. Public key can be specified in the Envoy config.
+  std::string pubkey_value;
 
   // Time to expire a cached public key (sec).
-  int64_t pubkey_cache_expiration_sec_;
+  // 0 means never expired.
+  int64_t pubkey_cache_expiration_sec{};
 
-  // Each element corresponds to an issuer
-  std::vector<std::shared_ptr<IssuerInfo> > issuers_;
+  // The audiences should be matched from JWT.
+  std::set<std::string> audiences;
 
-  Upstream::ClusterManager &cm_;
+  // Check if an audience is allowed.
+  // If audiences is an empty array or not specified, any "aud" claim will be
+  // accepted.
+  bool IsAudienceAllowed(const std::string &aud) const {
+    return audiences.empty() || audiences.find(aud) != audiences.end();
+  }
+
+  // Validate the issuer config.
+  // Return error message if invalid, otherwise return empty string.
+  std::string Validate() const;
+};
+
+// A config for jwt-auth filter
+class Config : public Logger::Loggable<Logger::Id::http> {
+ public:
+  // Load the config from envoy config JSON object.
+  // It will abort when "issuers" is missing or bad-formatted.
+  Config(const Json::Object &config);
+
+  // Constructed by vector of IssuerInfo directly. Used by Mixer filter.
+  Config(std::vector<IssuerInfo> &&issuers);
+
+  // Get the list of issuers.
+  const std::vector<IssuerInfo> &issuers() const { return issuers_; }
+
+ private:
+  // Load one issuer config from JSON object.
+  bool LoadIssuerInfo(const Json::Object &json, IssuerInfo *issuer);
+
+  // A list of configured issuers.
+  std::vector<IssuerInfo> issuers_;
 };
 
 }  // namespace Auth
 }  // namespace Http
 }  // namespace Envoy
 
-#endif  // PROXY_CONFIG_H
+#endif  // AUTH_CONFIG_H
