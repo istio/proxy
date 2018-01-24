@@ -295,8 +295,7 @@ class CheckData : public HttpCheckData,
 
   bool GetJWTPayload(
       std::map<std::string, std::string>* payload) const override {
-    const HeaderEntry* entry =
-        headers_.get(Auth::Controller::JwtPayloadKey());
+    const HeaderEntry* entry = headers_.get(Auth::Controller::JwtPayloadKey());
     if (!entry) {
       return false;
     }
