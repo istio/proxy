@@ -36,7 +36,7 @@ MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
 
   // If stats update interval in config is 0, set interval to 10 seconds.
   int stats_update_interval =
-      update_interval > 0 ? update_interval : kStatsUpdateIntervalInMs;
+      update_interval_ms > 0 ? update_interval_ms : kStatsUpdateIntervalInMs;
   if (get_stats_func_) {
     timer_ = dispatcher.createTimer([this]() { OnTimer(); });
     timer_->enableTimer(std::chrono::milliseconds(stats_update_interval));
