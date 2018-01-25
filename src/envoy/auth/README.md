@@ -80,7 +80,7 @@ curl --header "Authorization: Bearer $token" http://localhost:9090/echo -d "hell
 
 If a HTTP request contains a JWT in the HTTP Authorization header:
 - `Authorization: Bearer <JWT>` 
-Envoy proxy will try to verified it with configured issuers.
+Envoy proxy will try to verify it with configured issuers.
 
 ### Behavior after verification
 
