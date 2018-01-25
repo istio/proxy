@@ -25,6 +25,46 @@ namespace {
 // Default public key cache cache duration: 5 minutes.
 const int64_t kPubKeyCacheExpirationSec = 600;
 
+// Load issuer config from JSON.
+void LoadIssuerInfo(const Json::Object& json, IssuerInfo* issuer) {
+  // Check "name"
+  issuer->name = json.getString("name", "");
+  if (issuer->name == "") {
+    throw EnvoyException("Issuer name missing");
+  }
+
+  // Check "audience".
+  // It will be an empty array if the key "audience" does not exist.
+  auto audiences = json.getStringArray("audiences", true);
+  issuer->audiences.insert(audiences.begin(), audiences.end());
+
+  // Check "pubkey"
+  auto json_pubkey = json.getObject("pubkey");
+
+  // Check "type"
+  std::string pubkey_type_str = json_pubkey->getString("type", "");
+  if (pubkey_type_str == "pem") {
+    issuer->pubkey_type = Pubkeys::PEM;
+  } else if (pubkey_type_str == "jwks") {
+    issuer->pubkey_type = Pubkeys::JWKS;
+  } else {
+    throw EnvoyException(
+        fmt::format("Issuer [name = {}]: Public key type missing or invalid",
+                    issuer->name));
+  }
+
+  // Check "value"
+  issuer->pubkey_value = json_pubkey->getString("value", "");
+
+  // Check "uri" and "cluster"
+  issuer->uri = json_pubkey->getString("uri", "");
+  issuer->cluster = json_pubkey->getString("cluster", "");
+
+  // Check "cache_expiration_sec".
+  issuer->pubkey_cache_expiration_sec = json_pubkey->getInteger(
+      "cache_expiration_sec", kPubKeyCacheExpirationSec);
+}
+
 }  // namespace
 
 std::string IssuerInfo::Validate() const {
@@ -53,81 +93,18 @@ Config::Config(const Json::Object& config) {
   ENVOY_LOG(debug, "Config: {}", __func__);
 
   // Load the issuers as JSON array.
-  std::vector<Json::ObjectSharedPtr> issuer_jsons;
-  try {
-    issuer_jsons = config.getObjectArray("issuers");
-  } catch (...) {
-    ENVOY_LOG(error, "Config: issuers should be array type");
-    return;
-  }
-
+  auto issuer_jsons = config.getObjectArray("issuers");
   for (auto issuer_json : issuer_jsons) {
     IssuerInfo issuer;
-    if (LoadIssuerInfo(*issuer_json, &issuer)) {
-      std::string err = issuer.Validate();
-      if (err.empty()) {
-        issuers_.push_back(issuer);
-      } else {
-        ENVOY_LOG(error, "Issuer [name = {}]: {}", issuer.name, err);
-      }
+    LoadIssuerInfo(*issuer_json, &issuer);
+    std::string err = issuer.Validate();
+    if (err.empty()) {
+      issuers_.push_back(issuer);
+    } else {
+      throw EnvoyException(
+          fmt::format("Issuer [name = {}]: {}", issuer.name, err));
     }
   }
-}
-
-bool Config::LoadIssuerInfo(const Json::Object& json, IssuerInfo* issuer) {
-  // Check "name"
-  issuer->name = json.getString("name", "");
-  if (issuer->name == "") {
-    ENVOY_LOG(error, "Issuer: Issuer name missing");
-    return false;
-  }
-
-  // Check "audience".
-  // It will be an empty array if the key "audience" does not exist.
-  try {
-    auto audiences = json.getStringArray("audiences", true);
-    issuer->audiences.insert(audiences.begin(), audiences.end());
-  } catch (...) {
-    ENVOY_LOG(error, "Issuer [name = {}]: Bad audiences", issuer->name);
-    return false;
-  }
-
-  // Check "pubkey"
-  Json::ObjectSharedPtr json_pubkey;
-  try {
-    json_pubkey = json.getObject("pubkey");
-  } catch (...) {
-    ENVOY_LOG(error, "Issuer [name = {}]: Public key missing", issuer->name);
-    return false;
-  }
-
-  // Check "type"
-  std::string pubkey_type_str = json_pubkey->getString("type", "");
-  if (pubkey_type_str == "pem") {
-    issuer->pubkey_type = Pubkeys::PEM;
-  } else if (pubkey_type_str == "jwks") {
-    issuer->pubkey_type = Pubkeys::JWKS;
-  } else {
-    ENVOY_LOG(error, "Issuer [name = {}]: Public key type missing or invalid",
-              issuer->name);
-    return false;
-  }
-
-  // Check "value"
-  issuer->pubkey_value = json_pubkey->getString("value", "");
-  // If pubkey_value is not empty, not need for "uri" and "cluster"
-  if (issuer->pubkey_value != "") {
-    return true;
-  }
-
-  // Check "uri" and "cluster"
-  issuer->uri = json_pubkey->getString("uri", "");
-  issuer->cluster = json_pubkey->getString("cluster", "");
-
-  // Check "cache_expiration_sec".
-  issuer->pubkey_cache_expiration_sec = json_pubkey->getInteger(
-      "cache_expiration_sec", kPubKeyCacheExpirationSec);
-  return true;
 }
 
 }  // namespace Auth

@@ -91,6 +91,16 @@ TEST(ConfigTest, GoodTwoIssuers) {
   TestIssuerInfo(config.issuers()[1], expected_issuer2);
 }
 
+void TestNegativeConfig(const std::string& config_str,
+                        const std::string& expected_err) {
+  auto json_obj = Json::Factory::loadFromString(config_str);
+  try {
+    Config config(*json_obj);
+  } catch (EnvoyException& e) {
+    EXPECT_EQ(std::string(e.what()), expected_err);
+  }
+}
+
 TEST(ConfigTest, WrongPubkeyValue) {
   const char config_json_str[] = R"(
 {
@@ -107,11 +117,9 @@ TEST(ConfigTest, WrongPubkeyValue) {
 }
 )";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
-  Config config(*json_obj);
-
-  auto issuers = config.issuers();
-  ASSERT_EQ(issuers.size(), 0);
+  TestNegativeConfig(
+      config_json_str,
+      "Issuer [name = issuer_name]: Invalid public key value: invalid-pubkey");
 }
 
 TEST(ConfigTest, EmptyIssuer) {
@@ -131,11 +139,7 @@ TEST(ConfigTest, EmptyIssuer) {
 }
 )";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
-  Config config(*json_obj);
-
-  auto issuers = config.issuers();
-  ASSERT_EQ(issuers.size(), 0);
+  TestNegativeConfig(config_json_str, "Issuer name missing");
 }
 
 TEST(ConfigTest, WrongAudienceType) {
@@ -150,11 +154,8 @@ TEST(ConfigTest, WrongAudienceType) {
 }
 )";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
-  Config config(*json_obj);
-
-  auto issuers = config.issuers();
-  ASSERT_EQ(issuers.size(), 0);
+  TestNegativeConfig(config_json_str,
+                     "key 'audiences' missing or not an array from lines 4-7");
 }
 
 TEST(ConfigTest, MissPubkey) {
@@ -169,11 +170,7 @@ TEST(ConfigTest, MissPubkey) {
 }
 )";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
-  Config config(*json_obj);
-
-  auto issuers = config.issuers();
-  ASSERT_EQ(issuers.size(), 0);
+  TestNegativeConfig(config_json_str, "key 'pubkey' missing from lines 4-7");
 }
 
 TEST(ConfigTest, WrongPubkeyType) {
@@ -191,11 +188,9 @@ TEST(ConfigTest, WrongPubkeyType) {
 }
 )";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
-  Config config(*json_obj);
-
-  auto issuers = config.issuers();
-  ASSERT_EQ(issuers.size(), 0);
+  TestNegativeConfig(
+      config_json_str,
+      "Issuer [name = issuer]: Public key type missing or invalid");
 }
 
 TEST(ConfigTest, MissingPubkeyUri) {
@@ -214,11 +209,8 @@ TEST(ConfigTest, MissingPubkeyUri) {
 }
 )";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
-  Config config(*json_obj);
-
-  auto issuers = config.issuers();
-  ASSERT_EQ(issuers.size(), 0);
+  TestNegativeConfig(config_json_str,
+                     "Issuer [name = issuer]: Missing public key server uri");
 }
 
 TEST(ConfigTest, MissingPubkeyCluster) {
@@ -237,11 +229,9 @@ TEST(ConfigTest, MissingPubkeyCluster) {
 }
 )";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
-  Config config(*json_obj);
-
-  auto issuers = config.issuers();
-  ASSERT_EQ(issuers.size(), 0);
+  TestNegativeConfig(
+      config_json_str,
+      "Issuer [name = issuer]: Missing public key server cluster");
 }
 
 }  // namespace Auth

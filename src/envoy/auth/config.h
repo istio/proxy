@@ -75,9 +75,6 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   const std::vector<IssuerInfo> &issuers() const { return issuers_; }
 
  private:
-  // Load one issuer config from JSON object.
-  bool LoadIssuerInfo(const Json::Object &json, IssuerInfo *issuer);
-
   // A list of configured issuers.
   std::vector<IssuerInfo> issuers_;
 };
