@@ -7,18 +7,18 @@ jobs:
       - image: istio/ci:go1.9-bazel0.7
     resource_class: xlarge
     steps:
-     machine: true
-     steps:
-     - checkout
-     - run:
-         name: enable ipv6
-         command: |
-           cat <<'EOF' | sudo tee /etc/docker/daemon.json
-           {
-             "ipv6": true,
-             "fixed-cidr-v6": "2001:db8:1::/64"
-           }
-           EOF
+      machine: true
+      steps:
+      - checkout
+      - run:
+          name: enable ipv6
+          command: |
+            cat <<'EOF' | sudo tee /etc/docker/daemon.json
+            {
+              "ipv6": true,
+              "fixed-cidr-v6": "2001:db8:1::/64"
+            }
+            EOF
       - restore_cache:
           keys:
             - bazel-cache-{{ checksum "WORKSPACE" }}
