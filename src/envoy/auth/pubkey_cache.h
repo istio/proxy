@@ -37,7 +37,7 @@ class PubkeyCacheItem {
   // Return true if cached pubkey is expired.
   bool Expired() const {
     return config_.pubkey_cache_expiration_sec > 0 &&
-           std::chrono::system_clock::now() >= expiration_time_;
+           std::chrono::steady_clock::now() >= expiration_time_;
   }
 
   // Get the issuer config.
@@ -56,7 +56,7 @@ class PubkeyCacheItem {
 
     if (config_.pubkey_cache_expiration_sec > 0) {
       expiration_time_ =
-          std::chrono::system_clock::now() +
+          std::chrono::steady_clock::now() +
           std::chrono::seconds(config_.pubkey_cache_expiration_sec);
     }
     return Status::OK;
@@ -68,7 +68,7 @@ class PubkeyCacheItem {
   // The generated pubkey object.
   std::unique_ptr<Pubkeys> pubkey_;
   // The pubkey expiration time.
-  std::chrono::system_clock::time_point expiration_time_;
+  std::chrono::steady_clock::time_point expiration_time_;
 };
 
 // Pubkey cache
