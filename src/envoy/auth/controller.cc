@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "controller.h"
+#include "src/envoy/auth/controller.h"
 
 namespace Envoy {
 namespace Http {

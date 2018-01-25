@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "controller.h"
+#include "src/envoy/auth/controller.h"
 
 #include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"

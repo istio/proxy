@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "config.h"
+#include "src/envoy/auth/config.h"
 
 #include <chrono>
 

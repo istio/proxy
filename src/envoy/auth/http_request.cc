@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "http_request.h"
+#include "src/envoy/auth/http_request.h"
 
 #include "common/common/logger.h"
 #include "common/http/message_impl.h"

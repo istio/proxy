@@ -19,7 +19,7 @@
 #include <chrono>
 #include <unordered_map>
 
-#include "config.h"
+#include "src/envoy/auth/config.h"
 
 namespace Envoy {
 namespace Http {

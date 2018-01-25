@@ -19,9 +19,9 @@
 #include "envoy/server/filter_config.h"
 #include "envoy/thread_local/thread_local.h"
 
-#include "config.h"
-#include "http_request.h"
-#include "pubkey_cache.h"
+#include "src/envoy/auth/config.h"
+#include "src/envoy/auth/http_request.h"
+#include "src/envoy/auth/pubkey_cache.h"
 
 namespace Envoy {
 namespace Http {

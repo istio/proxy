@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "http_filter.h"
+#include "src/envoy/auth/http_filter.h"
 
 #include "envoy/registry/registry.h"
 

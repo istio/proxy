@@ -19,7 +19,7 @@
 #include "common/common/logger.h"
 #include "envoy/json/json_object.h"
 
-#include "jwt.h"
+#include "src/envoy/auth/jwt.h"
 
 #include <vector>
 
