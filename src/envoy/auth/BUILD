@@ -28,7 +28,7 @@ envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
     deps = [
-        ":http_filter_config",
+        ":http_filter_factory",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )
@@ -46,6 +46,24 @@ envoy_cc_library(
 )
 
 envoy_cc_library(
+    name = "authenticator_lib",
+    srcs = [
+        "authenticator.cc",
+    ],
+    hdrs = [
+        "auth_store.h",
+        "authenticator.h",
+        "pubkey_cache.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":config_lib",
+        ":jwt_lib",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_library(
     name = "http_filter_lib",
     srcs = [
         "http_filter.cc",
@@ -55,15 +73,14 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":jwt_lib",
-        ":config_lib",
+        ":authenticator_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
 
 envoy_cc_library(
-    name = "http_filter_config",
-    srcs = ["http_filter_config.cc"],
+    name = "http_filter_factory",
+    srcs = ["http_filter_factory.cc"],
     repository = "@envoy",
     deps = [
         ":http_filter_lib",
@@ -79,7 +96,7 @@ envoy_cc_test(
     ],
     repository = "@envoy",
     deps = [
-        ":http_filter_config",
+        ":http_filter_factory",
         ":jwt_lib",
         "@envoy//test/integration:http_integration_lib",
         "@envoy//test/integration:integration_lib",
@@ -112,5 +129,34 @@ envoy_cc_library(
     deps = [
         ":jwt_lib",
         "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "config_test",
+    srcs = [
+        ":config_test.cc",
+    ],
+    data = [],
+    repository = "@envoy",
+    deps = [
+        ":config_lib",
+        "@envoy//source/exe:envoy_common_lib",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "authenticator_test",
+    srcs = [
+        ":authenticator_test.cc",
+    ],
+    data = [],
+    repository = "@envoy",
+    deps = [
+        ":authenticator_lib",
+        "@envoy//source/exe:envoy_common_lib",
+        "@envoy//test/mocks/upstream:upstream_mocks",
+        "@envoy//test/test_common:utility_lib",
     ],
 )

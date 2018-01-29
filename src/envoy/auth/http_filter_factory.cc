@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 
-#include "http_filter.h"
-#include "config.h"
+#include "src/envoy/auth/http_filter.h"
+#include "src/envoy/auth/auth_store.h"
+#include "src/envoy/auth/config.h"
 
 #include "envoy/registry/registry.h"
-
-#include <string>
 
 namespace Envoy {
 namespace Server {
@@ -29,12 +28,16 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
   HttpFilterFactoryCb createFilterFactory(const Json::Object& config,
                                           const std::string&,
                                           FactoryContext& context) override {
-    std::shared_ptr<Http::Auth::JwtAuthConfig> auth_config(
-        new Http::Auth::JwtAuthConfig(config, context));
-    return [auth_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-      callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterSharedPtr{
-          new Http::JwtVerificationFilter(auth_config)});
-    };
+    std::unique_ptr<Http::Auth::JwtAuthConfig> auth_config(
+        new Http::Auth::JwtAuthConfig(config));
+    auto factory = std::make_shared<Http::Auth::JwtAuthStoreFactory>(
+        std::move(auth_config), context);
+    Upstream::ClusterManager& cm = context.clusterManager();
+    return
+        [&cm, factory](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+          callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterSharedPtr{
+              new Http::JwtVerificationFilter(cm, factory->store())});
+        };
   }
   std::string name() override { return "jwt-auth"; }
 };
