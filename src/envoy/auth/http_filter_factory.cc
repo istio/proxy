@@ -13,12 +13,9 @@
  * limitations under the License.
  */
 
-#include "http_filter.h"
-#include "config.h"
+#include "src/envoy/auth/http_filter.h"
 
 #include "envoy/registry/registry.h"
-
-#include <string>
 
 namespace Envoy {
 namespace Server {
@@ -29,11 +26,14 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
   HttpFilterFactoryCb createFilterFactory(const Json::Object& config,
                                           const std::string&,
                                           FactoryContext& context) override {
-    std::shared_ptr<Http::Auth::JwtAuthConfig> auth_config(
-        new Http::Auth::JwtAuthConfig(config, context));
-    return [auth_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+    std::unique_ptr<Http::Auth::Config> auth_config(
+        new Http::Auth::Config(config));
+    auto controller_factory = std::make_shared<Http::Auth::ControllerFactory>(
+        std::move(auth_config), context);
+    return [controller_factory](
+               Http::FilterChainFactoryCallbacks& callbacks) -> void {
       callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterSharedPtr{
-          new Http::JwtVerificationFilter(auth_config)});
+          new Http::JwtVerificationFilter(controller_factory)});
     };
   }
   std::string name() override { return "jwt-auth"; }

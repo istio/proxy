@@ -34,8 +34,6 @@
                 "type": "decoder",
                 "name": "jwt-auth",
                 "config": {
-                  "userinfo_type": "payload",
-                  "pubkey_cache_expiration_sec": 100,
                   "issuers": [
                     {
                       "name": "https://example.com",
@@ -44,6 +42,7 @@
                       ],
                       "pubkey": {
                         "type": "jwks",
+                        "cache_expiration_sec": 100,
                         "uri": "http://example.com/foobar_cert",
                         "cluster": "example_issuer"
                       }
