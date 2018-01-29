@@ -27,8 +27,8 @@ namespace Http {
 namespace Auth {
 
 // The JWT auth store object to store config and caches.
-// For now it only has pubkey_cache. In the future it will have token cache.
-// Tt is pre-thread and stored in thread local.
+// It only has pubkey_cache for now. In the future it will have token cache.
+// It is per-thread and stored in thread local.
 class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
  public:
   // Load the config from envoy config.
@@ -48,7 +48,7 @@ class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
   PubkeyCache pubkey_cache_;
 };
 
-// The factory to create per-thread auth controller object.
+// The factory to create per-thread auth store object.
 class JwtAuthStoreFactory {
  public:
   JwtAuthStoreFactory(std::unique_ptr<JwtAuthConfig> config,
@@ -62,13 +62,13 @@ class JwtAuthStoreFactory {
                   });
   }
 
-  // Get per-thread auth controller object.
+  // Get per-thread auth store object.
   JwtAuthStore& store() { return tls_->getTyped<JwtAuthStore>(); }
 
  private:
   // The auth config and own the object.
   std::unique_ptr<JwtAuthConfig> config_;
-  // Thread local slot to store per-thread auth controller
+  // Thread local slot to store per-thread auth store
   ThreadLocal::SlotPtr tls_;
 };
 

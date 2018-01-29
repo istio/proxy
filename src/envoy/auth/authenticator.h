@@ -33,6 +33,7 @@ class Authenticator : public Logger::Loggable<Logger::Id::http>,
  public:
   Authenticator(Upstream::ClusterManager& cm, JwtAuthStore& store);
 
+  // The callback interface to notify the completion event.
   class Callbacks {
    public:
     virtual ~Callbacks() {}
