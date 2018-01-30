@@ -67,16 +67,14 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
                                    Runtime::RandomGenerator& random,
                                    Stats::Scope& scope)
     : cm_(cm),
-      stats_obj_(
-          dispatcher, kHttpStatsPrefix, scope,
-          mixer_config.http_config.transport().stats_update_interval_ms(),
-          [this](Statistics* stat) -> bool {
-            if (!controller_) {
-              return false;
-            }
-            controller_->GetStatistics(stat);
-            return true;
-          }) {
+      stats_obj_(dispatcher, kHttpStatsPrefix, scope,
+                 [this](Statistics* stat) -> bool {
+                   if (!controller_) {
+                     return false;
+                   }
+                   controller_->GetStatistics(stat);
+                   return true;
+                 }) {
   ::istio::mixer_control::http::Controller::Options options(
       mixer_config.http_config, mixer_config.legacy_quotas);
 
@@ -93,7 +91,6 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
                                  Runtime::RandomGenerator& random,
                                  Stats::Scope& scope)
     : stats_obj_(dispatcher, kTcpStatsPrefix, scope,
-                 mixer_config.tcp_config.transport().stats_update_interval_ms(),
                  [this](Statistics* stat) -> bool {
                    if (!controller_) {
                      return false;
