@@ -4,13 +4,13 @@
 		"repoName": "mixerclient",
 		"prodBranch": "master",
 		"file": "src/envoy/mixer/repositories.bzl",
-		"lastStableSHA": "dcdff79fd9d96e988ff01b94698fec4bc38ae77d"
+		"lastStableSHA": "1ba9a5a3aadf251d7712691e3afbbcbb360b273a"
 	},
 	{
 		"name": "ENVOY_SHA",
 		"repoName": "envoyproxy/envoy",
 		"prodBranch": "master",
 		"file": "WORKSPACE",
-		"lastStableSHA": "e6f7b7580ea58397e52f731440533eb6b755fd0c"
+		"lastStableSHA": "a14101c89b903bd6037506418550b5d2420e0840"
 	}
 ]
