@@ -41,6 +41,7 @@ class DatasetPem {
       "N09hdvlCtAF87Fu1qqfwEQ93A-J7m08bZJoyIPcNmTcYGHwfMR4-lcI5cC_93C_"
       "5BGE1FHPLOHpNghLuM6-rhOtgwZc9ywupn_bBK3QzuAoDnYwpqQhgQL_CdUD_bSHcmWFkw";
 
+  const std::string kJwtSub = "test@example.com";
   const std::string kJwtHeaderEncoded = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
   const std::string kJwtPayloadEncoded =
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
@@ -363,6 +364,18 @@ class JwtTest : public testing::Test {
       EXPECT_TRUE(EqJson(payload, jwt.Payload()));
     }
   }
+
+  //Test whether the sub field in the JWT is as expected
+  void DoJwtSubEqualTest(std::string jwt_str, std::string sub_expected,
+          bool expect_equal) {
+    Jwt jwt(jwt_str);
+    std::string sub = jwt.Sub();
+    if(expect_equal) {
+      EXPECT_EQ(sub, sub_expected);
+    } else {
+      EXPECT_NE(sub, sub_expected);
+    }
+  }
 };
 
 // Test cases w/ PEM-formatted public key
@@ -457,6 +470,22 @@ TEST_F(JwtTestPem, AlgIsNotString) {
 TEST_F(JwtTestPem, InvalidAlg) {
   DoTest(ds.kJwtWithInvalidAlg, ds.kPublicKey, "pem", false,
          Status::ALG_NOT_IMPLEMENTED, nullptr);
+}
+
+TEST_F(JwtTestPem, NonEmptyJwtSubEqual) {
+  DoJwtSubEqualTest(ds.kJwt, ds.kJwtSub, true);
+}
+
+TEST_F(JwtTestPem, NonEmptyJwtSubNotEqual) {
+  DoJwtSubEqualTest(ds.kJwt, "", false);
+}
+
+TEST_F(JwtTestPem, EmptyJwtSubEqual) {
+  DoJwtSubEqualTest("", "", true);
+}
+
+TEST_F(JwtTestPem, EmptyJwtSubNotEqual) {
+  DoJwtSubEqualTest("", ds.kJwtSub, false);
 }
 
 // Test cases w/ JWKs-formatted public key
