@@ -77,14 +77,11 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
 TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
                                  Upstream::ClusterManager& cm,
                                  Event::Dispatcher& dispatcher,
-                                 Runtime::RandomGenerator& random) {
-  ::istio::mixer_control::tcp::Controller::Options options(
-      mixer_config.tcp_config);
+                                 Runtime::RandomGenerator& random)
+    : options_(mixer_config.tcp_config) {
+  CreateEnvironment(cm, dispatcher, random, &options_.env);
 
-  CreateEnvironment(cm, dispatcher, random, &options.env);
-  env_ = &options.env;
-
-  controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
+  controller_ = ::istio::mixer_control::tcp::Controller::Create(options_);
 
   if (mixer_config.tcp_config.report_interval().seconds() < 0 ||
       mixer_config.tcp_config.report_interval().nanos() < 0 ||

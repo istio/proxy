@@ -168,7 +168,7 @@ class TcpInstance : public Network::Filter,
       if (!calling_check_) {
         filter_callbacks_->continueReading();
       }
-      report_timer_ = mixer_control_.environment()->timer_create_func(
+      report_timer_ = mixer_control_.options().env.timer_create_func(
           [this]() { OnTimer(); });
       report_timer_->Start(mixer_control_.report_interval_ms());
     }

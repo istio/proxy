@@ -65,7 +65,9 @@ class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
 
   int report_interval_ms() const { return report_interval_ms_; }
 
-  const ::istio::mixer_client::Environment* environment() const { return env_; }
+  const ::istio::mixer_control::tcp::Controller::Options& options() const {
+    return options_;
+  }
 
  private:
   // The mixer control
@@ -74,7 +76,7 @@ class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
   // Time interval in milliseconds for sending periodical delta reports.
   int report_interval_ms_;
 
-  const ::istio::mixer_client::Environment* env_;
+  ::istio::mixer_control::tcp::Controller::Options options_;
 };
 
 }  // namespace Mixer
