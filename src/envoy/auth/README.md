@@ -113,50 +113,32 @@ In Envoy config,
 
 ### Config format
 
-Format of `<config>`:
+Format of `<config>` is defined in AuthFilterConfig message in config.proto file. It can be specified in JSON format as following examples
 ```
 {
- “issuers”:[
-   {
-     “name”: <issuer name>,
-     "audiences": [
-       <audience A>,
-       <audience B>,
-       ...
-     ],
-     “pubkey”: {
-        “type”: <type>, 
-        “uri”: <uri>, 
-        "cluster": <name of cluster>,
-        “value”: <raw string of public key>,
-        "cache_expiration_sec": <time in seconds to expire a cached public key>
-     }, 
-   },
-   ...
- ]
+   "jwts": [
+      {
+         "issuer": "issuer1_name",
+         "audiences": [
+            "audience1",
+            "audience2"
+          ],
+         "jwks_uri": "http://server1/path1",
+         "jwks_uri_envoy_cluster": "issuer1_cluster"
+      },
+      {
+         "issuer": "issuer2_name",
+         "audiences": [],
+         "jwks_uri": "server2",
+         "jwks_uri_envoy_cluster": "issuer2_cluster",
+         "public_key_cache_duration": {
+             "seconds": 600,
+             "nanos": 1000
+          }
+      }
+  ]
 }
 ```
-
-#### issuers (array of object, required)
-
-It specifies the issuers and their public keys.
-You can register multiple issuers.
-
-
-For each issuer, the following informations are required:
-- __name__  (string, required): issuer's name. It should be the same as the value of the `iss` claim of a JWT.
-- __audiences__ (array of string, optional): 
-It specifies the set of acceptable audiences.
-If it is specified, JWT must have `aud` claim specified in this list.
-
-- __pubkey__ (object, required): information about public key.
-  `type` and (`value` or (`uri` and `cluster`)) are required.
-  - __type__ (string, required): the format of public key. It should be one of {`"jwks"`, `"pem"`}.
-  - __value__ (string, optional): string of public key.
-  - __uri__ (string, optional): URI of the public key server.
-  - __cluster__ (string, optional): cluster name of the issuer.  Public key server should be listed in the "clusters" section of the Envoy config. This field refers to its "name" field.
-  - __cache_expiration_sec__ (integer, optional): time in seconds to expire a cached public key. If not specified, default is 600 seconds.  Public keys specified in the config "value" field never expire.
-  
 
 ### Clusters
 

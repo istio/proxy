@@ -44,10 +44,10 @@ const char kJSONConfig[] = R"(
          "audiences": [],
          "jwks_uri": "server2",
          "jwks_uri_envoy_cluster": "issuer2_cluster",
-	 "public_key_cache_duration": {
-	     "seconds": 600,
-	     "nanos": 1000
-	 }
+         "public_key_cache_duration": {
+             "seconds": 600,
+             "nanos": 1000
+         }
       }
   ]
 }
