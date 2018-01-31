@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUTHENTICATOR_H
-#define AUTHENTICATOR_H
+#ifndef JWT_AUTHENTICATOR_H
+#define JWT_AUTHENTICATOR_H
 
 #include "common/common/logger.h"
 #include "envoy/http/async_client.h"
@@ -28,10 +28,10 @@ namespace Auth {
 
 // A per-request JWT authenticator to handle all JWT authentication:
 // * fetch remote public keys and cache them.
-class Authenticator : public Logger::Loggable<Logger::Id::http>,
-                      public AsyncClient::Callbacks {
+class JwtAuthenticator : public Logger::Loggable<Logger::Id::http>,
+                         public AsyncClient::Callbacks {
  public:
-  Authenticator(Upstream::ClusterManager& cm, JwtAuthStore& store);
+  JwtAuthenticator(Upstream::ClusterManager& cm, JwtAuthStore& store);
 
   // The callback interface to notify the completion event.
   class Callbacks {
@@ -70,7 +70,7 @@ class Authenticator : public Logger::Loggable<Logger::Id::http>,
   // The HTTP request headers
   HeaderMap* headers_{};
   // The on_done function.
-  Callbacks* cb_{};
+  Callbacks* callback_{};
 
   // The pending uri_, only used for logging.
   std::string uri_;
@@ -82,4 +82,4 @@ class Authenticator : public Logger::Loggable<Logger::Id::http>,
 }  // namespace Http
 }  // namespace Envoy
 
-#endif  // AUTHENTICATOR_H
+#endif  // JWT_AUTHENTICATOR_H

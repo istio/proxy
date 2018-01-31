@@ -38,7 +38,7 @@ using ::google::protobuf::util::Status;
 using HttpCheckData = ::istio::mixer_control::http::CheckData;
 using HttpHeaderUpdate = ::istio::mixer_control::http::HeaderUpdate;
 using HttpReportData = ::istio::mixer_control::http::ReportData;
-using ::istio::mixer::v1::config::client::JWT;
+using ::istio::mixer::v1::config::client::EndUserAuthenticationPolicySpec;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 
 namespace Envoy {
@@ -77,21 +77,6 @@ const std::set<std::string> RequestHeaderExclusives = {
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
 
-// Fill IssuerConfig from JWT proto
-void FillIssuerConfig(const JWT& jwt, Auth::IssuerConfig* issuer) {
-  for (const auto& audience : jwt.audiences()) {
-    issuer->audiences.insert(audience);
-  }
-  issuer->name = jwt.issuer();
-  issuer->pubkey_type = Auth::Pubkeys::JWKS;
-  issuer->uri = jwt.jwks_uri();
-  issuer->cluster = jwt.jwks_uri_envoy_cluster();
-  if (jwt.has_public_key_cache_duration()) {
-    issuer->pubkey_cache_expiration_sec =
-        jwt.public_key_cache_duration().seconds();
-  }
-}
-
 }  // namespace
 
 class Config : public Logger::Loggable<Logger::Id::http> {
@@ -101,20 +86,10 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   ThreadLocal::SlotPtr tls_;
 
   // Extract Auth config from all service configs
-  void ExtractAuthConfig(std::vector<Auth::IssuerConfig>* issuers) {
+  void ExtractAuthSpec(EndUserAuthenticationPolicySpec* spec) {
     for (const auto& it : mixer_config_.http_config.service_configs()) {
       if (it.second.has_end_user_authn_spec()) {
-        for (const auto& jwt : it.second.end_user_authn_spec().jwts()) {
-          Auth::IssuerConfig issuer;
-          FillIssuerConfig(jwt, &issuer);
-          std::string err = issuer.Validate();
-          if (err.empty()) {
-            issuers->push_back(issuer);
-          } else {
-            ENVOY_LOG(error, "Invalid auth issuer config for {}: {}",
-                      issuer.name, err);
-          }
-        }
+        spec->MergeFrom(it.second.end_user_authn_spec());
       }
     }
   }
@@ -139,11 +114,11 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   }
 
   std::unique_ptr<Auth::JwtAuthConfig> auth_config() {
-    std::vector<Auth::IssuerConfig> issuers;
-    ExtractAuthConfig(&issuers);
-    if (issuers.size() > 0) {
+    EndUserAuthenticationPolicySpec spec;
+    ExtractAuthSpec(&spec);
+    if (spec.jwts_size() > 0) {
       return std::unique_ptr<Auth::JwtAuthConfig>(
-          new Auth::JwtAuthConfig(std::move(issuers)));
+          new Auth::JwtAuthConfig(spec.SerializeAsString()));
     }
     return std::unique_ptr<Auth::JwtAuthConfig>();
   }
@@ -295,7 +270,7 @@ class CheckData : public HttpCheckData,
   bool GetJWTPayload(
       std::map<std::string, std::string>* payload) const override {
     const HeaderEntry* entry =
-        headers_.get(Auth::Authenticator::JwtPayloadKey());
+        headers_.get(Auth::JwtAuthenticator::JwtPayloadKey());
     if (!entry) {
       return false;
     }
@@ -304,7 +279,7 @@ class CheckData : public HttpCheckData,
     // Return an empty string if Base64 decode fails.
     if (payload_str.empty()) {
       ENVOY_LOG(error, "Invalid {} header, invalid base64: {}",
-                Auth::Authenticator::JwtPayloadKey().get(), value);
+                Auth::JwtAuthenticator::JwtPayloadKey().get(), value);
       return false;
     }
     try {
@@ -320,7 +295,7 @@ class CheckData : public HttpCheckData,
           });
     } catch (...) {
       ENVOY_LOG(error, "Invalid {} header, invalid json: {}",
-                Auth::Authenticator::JwtPayloadKey().get(), payload_str);
+                Auth::JwtAuthenticator::JwtPayloadKey().get(), payload_str);
       return false;
     }
     return true;

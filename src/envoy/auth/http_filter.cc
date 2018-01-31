@@ -28,13 +28,13 @@ namespace Http {
 
 JwtVerificationFilter::JwtVerificationFilter(Upstream::ClusterManager& cm,
                                              Auth::JwtAuthStore& store)
-    : authenticator_(cm, store) {}
+    : jwt_auth_(cm, store) {}
 
 JwtVerificationFilter::~JwtVerificationFilter() {}
 
 void JwtVerificationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
-  authenticator_.onDestroy();
+  jwt_auth_.onDestroy();
 }
 
 FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
@@ -44,7 +44,7 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
   stopped_ = false;
 
   // Verify the JWT token, onDone() will be called when completed.
-  authenticator_.Verify(headers, this);
+  jwt_auth_.Verify(headers, this);
 
   if (state_ == Complete) {
     return FilterHeadersStatus::Continue;

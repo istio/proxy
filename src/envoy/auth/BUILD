@@ -24,6 +24,11 @@ load(
     "envoy_cc_test",
 )
 
+load(
+    "@envoy_api//bazel:api_build_system.bzl",
+    "api_proto_library",
+)
+
 envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
@@ -46,13 +51,13 @@ envoy_cc_library(
 )
 
 envoy_cc_library(
-    name = "authenticator_lib",
+    name = "jwt_authenticator_lib",
     srcs = [
-        "authenticator.cc",
+        "jwt_authenticator.cc",
     ],
     hdrs = [
         "auth_store.h",
-        "authenticator.h",
+        "jwt_authenticator.h",
         "pubkey_cache.h",
     ],
     repository = "@envoy",
@@ -73,7 +78,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":authenticator_lib",
+        ":jwt_authenticator_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -117,6 +122,12 @@ envoy_cc_test(
     ],
 )
 
+api_proto_library(
+    name = "config_proto",
+    srcs = [":config.proto"],
+    require_py = 0,
+)
+
 envoy_cc_library(
     name = "config_lib",
     srcs = [
@@ -127,7 +138,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":jwt_lib",
+        ":config_proto_cc",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -147,14 +158,14 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
-    name = "authenticator_test",
+    name = "jwt_authenticator_test",
     srcs = [
-        ":authenticator_test.cc",
+        ":jwt_authenticator_test.cc",
     ],
     data = [],
     repository = "@envoy",
     deps = [
-        ":authenticator_lib",
+        ":jwt_authenticator_lib",
         "@envoy//source/exe:envoy_common_lib",
         "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",

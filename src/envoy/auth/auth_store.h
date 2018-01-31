@@ -57,8 +57,7 @@ class JwtAuthStoreFactory {
     const JwtAuthConfig& config_ref = *config_;
     tls_->set([&config_ref](Event::Dispatcher&)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-                    return ThreadLocal::ThreadLocalObjectSharedPtr(
-                        new JwtAuthStore(config_ref));
+                    return std::make_shared<JwtAuthStore>(config_ref);
                   });
   }
 

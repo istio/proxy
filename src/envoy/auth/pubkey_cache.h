@@ -20,52 +20,66 @@
 #include <unordered_map>
 
 #include "src/envoy/auth/config.h"
+#include "src/envoy/auth/jwt.h"
 
 namespace Envoy {
 namespace Http {
 namespace Auth {
+namespace {
+// Default cache expiration time in 5 minutes.
+const int kPubkeyCacheExpirationSec = 600;
+}  // namespace
 
 // Struct to hold an issuer cache item.
 class PubkeyCacheItem {
  public:
-  PubkeyCacheItem(const IssuerConfig& issuer_config)
-      : issuer_config_(issuer_config) {
-    if (!issuer_config_.pubkey_value.empty()) {
-      SetKey(issuer_config_.pubkey_value);
+  PubkeyCacheItem(const Config::JWT& jwt_config) : jwt_config_(jwt_config) {
+    // Convert proto repeated fields to std::set.
+    for (const auto& aud : jwt_config_.audiences()) {
+      audiences_.insert(aud);
     }
   }
 
   // Return true if cached pubkey is expired.
   bool Expired() const {
-    return issuer_config_.pubkey_cache_expiration_sec > 0 &&
-           std::chrono::steady_clock::now() >= expiration_time_;
+    return std::chrono::steady_clock::now() >= expiration_time_;
   }
 
-  // Get the issuer info.
-  const IssuerConfig& issuer_config() const { return issuer_config_; }
+  // Get the JWT config.
+  const Config::JWT& jwt_config() const { return jwt_config_; }
 
   // Get the pubkey object.
   const Pubkeys* pubkey() const { return pubkey_.get(); }
 
+  // Check if an audience is allowed.
+  bool IsAudienceAllowed(const std::string& aud) {
+    return audiences_.empty() || audiences_.find(aud) != audiences_.end();
+  }
+
   // Set a pubkey as string.
   Status SetKey(const std::string& pubkey_str) {
-    auto pubkey = Pubkeys::CreateFrom(pubkey_str, issuer_config_.pubkey_type);
+    auto pubkey = Pubkeys::CreateFrom(pubkey_str, Pubkeys::JWKS);
     if (pubkey->GetStatus() != Status::OK) {
       return pubkey->GetStatus();
     }
     pubkey_ = std::move(pubkey);
 
-    if (issuer_config_.pubkey_cache_expiration_sec > 0) {
-      expiration_time_ =
-          std::chrono::steady_clock::now() +
-          std::chrono::seconds(issuer_config_.pubkey_cache_expiration_sec);
+    expiration_time_ = std::chrono::steady_clock::now();
+    if (jwt_config_.has_public_key_cache_duration()) {
+      const auto& duration = jwt_config_.public_key_cache_duration();
+      expiration_time_ += std::chrono::seconds(duration.seconds()) +
+                          std::chrono::nanoseconds(duration.nanos());
+    } else {
+      expiration_time_ += std::chrono::seconds(kPubkeyCacheExpirationSec);
     }
     return Status::OK;
   }
 
  private:
   // The issuer config
-  const IssuerConfig& issuer_config_;
+  const Config::JWT& jwt_config_;
+  // Use set for fast lookup
+  std::set<std::string> audiences_;
   // The generated pubkey object.
   std::unique_ptr<Pubkeys> pubkey_;
   // The pubkey expiration time.
@@ -77,8 +91,8 @@ class PubkeyCache {
  public:
   // Load the config from envoy config.
   PubkeyCache(const JwtAuthConfig& config) {
-    for (const auto& issuer : config.issuers()) {
-      pubkey_cache_map_.emplace(issuer.name, issuer);
+    for (const auto& jwt : config.config().jwts()) {
+      pubkey_cache_map_.emplace(jwt.issuer(), jwt);
     }
   }
 

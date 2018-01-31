@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "src/envoy/auth/authenticator.h"
+#include "src/envoy/auth/jwt_authenticator.h"
 
 #include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"
@@ -25,7 +25,7 @@ namespace Http {
 
 // The Envoy filter to process JWT auth.
 class JwtVerificationFilter : public StreamDecoderFilter,
-                              public Auth::Authenticator::Callbacks,
+                              public Auth::JwtAuthenticator::Callbacks,
                               public Logger::Loggable<Logger::Id::http> {
  public:
   JwtVerificationFilter(Upstream::ClusterManager& cm,
@@ -50,7 +50,7 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   // The callback funcion.
   StreamDecoderFilterCallbacks* decoder_callbacks_;
   // The auth object.
-  Auth::Authenticator authenticator_;
+  Auth::JwtAuthenticator jwt_auth_;
 
   // The state of the request
   enum State { Init, Calling, Responded, Complete };

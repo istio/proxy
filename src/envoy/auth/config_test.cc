@@ -15,222 +15,82 @@
 
 #include "src/envoy/auth/config.h"
 #include "common/json/json_loader.h"
+#include "google/protobuf/text_format.h"
+#include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
+
+using ::google::protobuf::TextFormat;
+using ::google::protobuf::util::MessageDifferencer;
 
 namespace Envoy {
 namespace Http {
 namespace Auth {
 
-void TestIssuerConfig(const IssuerConfig& a, const IssuerConfig& b) {
-  EXPECT_EQ(a.uri, b.uri);
-  EXPECT_EQ(a.cluster, b.cluster);
-  EXPECT_EQ(a.name, b.name);
-  EXPECT_EQ(a.pubkey_type, b.pubkey_type);
-  EXPECT_EQ(a.pubkey_cache_expiration_sec, b.pubkey_cache_expiration_sec);
-  EXPECT_EQ(a.audiences, b.audiences);
-}
-
-TEST(ConfigTest, GoodTwoIssuers) {
-  const char config_json_str[] = R"(
+// Config in JSON format
+const char kJSONConfig[] = R"(
 {
-   "issuers": [
+   "jwts": [
       {
-         "name": "issuer1_name",
+         "issuer": "issuer1_name",
          "audiences": [
             "audience1",
             "audience2"
           ],
-          "pubkey": {
-             "type": "jwks",
-             "cache_expiration_sec": 100,
-             "uri": "issuer1_uri",
-             "cluster": "issuer1_cluster"
-          }
+         "jwks_uri": "http://server1/path1",
+         "jwks_uri_envoy_cluster": "issuer1_cluster"
       },
       {
-         "name": "issuer2_name",
+         "issuer": "issuer2_name",
          "audiences": [],
-          "pubkey": {
-             "type": "pem",
-             "uri": "issuer2_uri",
-             "cluster": "issuer2_cluster"
-          }
+         "jwks_uri": "server2",
+         "jwks_uri_envoy_cluster": "issuer2_cluster",
+	 "public_key_cache_duration": {
+	     "seconds": 600,
+	     "nanos": 1000
+	 }
       }
   ]
 }
 )";
 
-  IssuerConfig expected_issuer1 = {
-      "issuer1_uri",      // std::string uri;
-      "issuer1_cluster",  // std::string cluster;
-      "issuer1_name",     // std::string name;
-      Pubkeys::JWKS,      //  pubkey_type;
-      "",                 //  std::string pubkey_value;
-      100,                //  int64_t pubkey_cache_expiration_sec;
-      {
-          // std::set<std::string> audiences;
-          "audience1", "audience2",
-      },
-  };
-  IssuerConfig expected_issuer2 = {
-      "issuer2_uri",      // std::string uri;
-      "issuer2_cluster",  // std::string cluster;
-      "issuer2_name",     // std::string name;
-      Pubkeys::PEM,       //  pubkey_type;
-      "",                 //  std::string pubkey_value;
-      600,                //  int64_t pubkey_cache_expiration_sec;
-      {},                 // std::set<std::string> audiences;
-  };
+const char kProtoText[] = R"(
+jwts {
+  issuer: "issuer1_name"
+  audiences: "audience1"
+  audiences: "audience2"
+  jwks_uri: "http://server1/path1"
+  jwks_uri_envoy_cluster: "issuer1_cluster"
+}
+jwts {
+  issuer: "issuer2_name"
+  jwks_uri: "server2"
+  public_key_cache_duration {
+    seconds: 600
+    nanos: 1000
+  }
+  jwks_uri_envoy_cluster: "issuer2_cluster"
+}
+)";
 
-  auto json_obj = Json::Factory::loadFromString(config_json_str);
+TEST(ConfigTest, LoadFromJSON) {
+  auto json_obj = Json::Factory::loadFromString(kJSONConfig);
   JwtAuthConfig config(*json_obj);
 
-  ASSERT_EQ(config.issuers().size(), 2);
-  TestIssuerConfig(config.issuers()[0], expected_issuer1);
-  TestIssuerConfig(config.issuers()[1], expected_issuer2);
+  std::string out_str;
+  TextFormat::PrintToString(config.config(), &out_str);
+  GOOGLE_LOG(INFO) << "===" << out_str << "===";
+
+  Config::AuthFilterConfig expected;
+  ASSERT_TRUE(TextFormat::ParseFromString(kProtoText, &expected));
+  EXPECT_TRUE(MessageDifferencer::Equals(config.config(), expected));
 }
 
-void TestNegativeConfig(const std::string& config_str,
-                        const std::string& expected_err) {
-  auto json_obj = Json::Factory::loadFromString(config_str);
-  try {
-    JwtAuthConfig config(*json_obj);
-  } catch (EnvoyException& e) {
-    EXPECT_EQ(std::string(e.what()), expected_err);
-  }
-}
+TEST(ConfigTest, LoadFromPBStr) {
+  Config::AuthFilterConfig expected;
+  ASSERT_TRUE(TextFormat::ParseFromString(kProtoText, &expected));
 
-TEST(ConfigTest, WrongPubkeyValue) {
-  const char config_json_str[] = R"(
-{
-   "issuers": [
-      {
-         "name": "issuer_name",
-         "audiences": [],
-          "pubkey": {
-             "type": "pem",
-             "value": "invalid-pubkey"
-          }
-      }
-   ]
-}
-)";
-
-  TestNegativeConfig(
-      config_json_str,
-      "Issuer [name = issuer_name]: Invalid public key value: invalid-pubkey");
-}
-
-TEST(ConfigTest, EmptyIssuer) {
-  const char config_json_str[] = R"(
-{
-   "issuers": [
-      {
-         "name": "",
-         "audiences": [],
-          "pubkey": {
-             "type": "jwks",
-             "uri": "issuer1_uri",
-             "cluster": "issuer1_cluster"
-          }
-      }
-   ]
-}
-)";
-
-  TestNegativeConfig(config_json_str, "Issuer name missing");
-}
-
-TEST(ConfigTest, WrongAudienceType) {
-  const char config_json_str[] = R"(
-{
-   "issuers": [
-      {
-         "name": "issuer",
-         "audiences": {}
-      }
-   ]
-}
-)";
-
-  TestNegativeConfig(config_json_str,
-                     "key 'audiences' missing or not an array from lines 4-7");
-}
-
-TEST(ConfigTest, MissPubkey) {
-  const char config_json_str[] = R"(
-{
-   "issuers": [
-      {
-         "name": "issuer",
-         "audiences": []
-      }
-   ]
-}
-)";
-
-  TestNegativeConfig(config_json_str, "key 'pubkey' missing from lines 4-7");
-}
-
-TEST(ConfigTest, WrongPubkeyType) {
-  const char config_json_str[] = R"(
-{
-   "issuers": [
-      {
-         "name": "issuer",
-         "audiences": [],
-         "pubkey": {
-             "type": "wrong-type"
-         }
-      }
-   ]
-}
-)";
-
-  TestNegativeConfig(
-      config_json_str,
-      "Issuer [name = issuer]: Public key type missing or invalid");
-}
-
-TEST(ConfigTest, MissingPubkeyUri) {
-  const char config_json_str[] = R"(
-{
-   "issuers": [
-      {
-         "name": "issuer",
-         "audiences": [],
-         "pubkey": {
-             "type": "jwks",
-             "cluster": "issuer1_cluster"
-         }
-      }
-   ]
-}
-)";
-
-  TestNegativeConfig(config_json_str,
-                     "Issuer [name = issuer]: Missing public key server uri");
-}
-
-TEST(ConfigTest, MissingPubkeyCluster) {
-  const char config_json_str[] = R"(
-{
-   "issuers": [
-      {
-         "name": "issuer",
-         "audiences": [],
-         "pubkey": {
-             "type": "jwks",
-             "uri": "issuer1_uri"
-         }
-      }
-   ]
-}
-)";
-
-  TestNegativeConfig(
-      config_json_str,
-      "Issuer [name = issuer]: Missing public key server cluster");
+  JwtAuthConfig config(expected.SerializeAsString());
+  EXPECT_TRUE(MessageDifferencer::Equals(config.config(), expected));
 }
 
 }  // namespace Auth

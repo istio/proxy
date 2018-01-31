@@ -16,67 +16,29 @@
 #ifndef AUTH_CONFIG_H
 #define AUTH_CONFIG_H
 
-#include "common/common/logger.h"
 #include "envoy/json/json_object.h"
-
-#include "src/envoy/auth/jwt.h"
-
-#include <vector>
+#include "src/envoy/auth/config.pb.h"
 
 namespace Envoy {
 namespace Http {
 namespace Auth {
 
-// Struct to hold an issuer's config.
-struct IssuerConfig {
-  // URI for public key server
-  std::string uri;
-  // Envoy cluster name for public key server
-  std::string cluster;
-
-  // Issuer name. e.g. "https://accounts.example.com"
-  std::string name;
-
-  // Format of public key.
-  Pubkeys::Type pubkey_type;
-  // public key value. Public key can be specified in the Envoy config.
-  std::string pubkey_value;
-
-  // Time to expire a cached public key (sec).
-  // 0 means never expired.
-  int64_t pubkey_cache_expiration_sec{};
-
-  // The audiences should be matched from JWT.
-  std::set<std::string> audiences;
-
-  // Check if an audience is allowed.
-  // If audiences is an empty array or not specified, any "aud" claim will be
-  // accepted.
-  bool IsAudienceAllowed(const std::string &aud) const {
-    return audiences.empty() || audiences.find(aud) != audiences.end();
-  }
-
-  // Validate the issuer config.
-  // Return error message if invalid, otherwise return empty string.
-  std::string Validate() const;
-};
-
 // A config for jwt-auth filter
-class JwtAuthConfig : public Logger::Loggable<Logger::Id::http> {
+class JwtAuthConfig {
  public:
   // Load the config from envoy config JSON object.
-  // It will abort when "issuers" is missing or bad-formatted.
-  JwtAuthConfig(const Json::Object &config);
+  JwtAuthConfig(const Json::Object& config);
 
-  // Constructed by vector of IssuerConfig directly. Used by Mixer filter.
-  JwtAuthConfig(std::vector<IssuerConfig> &&issuers);
+  // Load config from proto serialized string.
+  // Used to load config defined in:
+  // https://github.com/istio/api/blob/master/mixer/v1/config/client/auth.proto
+  JwtAuthConfig(const std::string& pb_str);
 
-  // Get the list of issuers.
-  const std::vector<IssuerConfig> &issuers() const { return issuers_; }
+  // Get the config.
+  const Config::AuthFilterConfig& config() const { return config_pb_; }
 
  private:
-  // A list of configured issuers.
-  std::vector<IssuerConfig> issuers_;
+  Config::AuthFilterConfig config_pb_;
 };
 
 }  // namespace Auth

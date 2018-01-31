@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#include "src/envoy/auth/authenticator.h"
+#include "src/envoy/auth/jwt_authenticator.h"
 #include "common/http/message_impl.h"
+#include "common/json/json_loader.h"
 #include "gtest/gtest.h"
 #include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"
@@ -50,29 +51,37 @@ const std::string kPublicKey =
     "ZDtLd1i24STUw39KH0pcSdfFbL2NtEZdNeam1DDdk0iUtJSPZliUHJBI_pj8M-2Mn_"
     "oA8jBuI8YKwBqYkZCN1I95Q\",\"e\": \"AQAB\"}]}";
 
-// Issuer config
-const IssuerConfig kExampleIssuer = {
-    "https://pubkey_server/pubkey_path",  // std::string uri;
-    "pubkey_cluster",                     // std::string cluster;
-    "https://example.com",                // std::string name;
-    Pubkeys::JWKS,                        //  pubkey_type;
-    "",                                   //  std::string pubkey_value;
-    600,  //  int64_t pubkey_cache_expiration_sec;
-    {
-        // std::set<std::string> audiences;
-        "example_service",
-    },
-};
+// A good JSON config.
+const char kExampleConfig[] = R"(
+{
+   "jwts": [
+      {
+         "issuer": "https://example.com",
+         "audiences": [
+            "example_service"
+          ],
+         "jwks_uri": "https://pubkey_server/pubkey_path",
+         "jwks_uri_envoy_cluster": "pubkey_cluster",
+	 "public_key_cache_duration": {
+	     "seconds": 600
+         }
+      }
+   ]
+}
+)";
 
-const IssuerConfig kOtherIssuer = {
-    "https://pubkey_server/pubkey_path",  // std::string uri;
-    "pubkey_cluster",                     // std::string cluster;
-    "other_issuer",                       // std::string name;
-    Pubkeys::JWKS,                        //  pubkey_type;
-    "",                                   //  std::string pubkey_value;
-    600,  //  int64_t pubkey_cache_expiration_sec;
-    {},   // std::set<std::string> audiences;
-};
+// A JSON config for "other_issuer"
+const char kOtherIssuerConfig[] = R"(
+{
+   "jwts": [
+      {
+         "issuer": "other_issuer",
+         "jwks_uri": "https://pubkey_server/pubkey_path",
+         "jwks_uri_envoy_cluster": "pubkey_cluster"
+      }
+   ]
+}
+)";
 
 // expired token
 const std::string kExpiredToken =
@@ -116,29 +125,30 @@ const std::string kGoodToken =
 
 }  // namespace
 
-class MockAuthenticatorCallbacks : public Authenticator::Callbacks {
+class MockJwtAuthenticatorCallbacks : public JwtAuthenticator::Callbacks {
  public:
   MOCK_METHOD1(onDone, void(const Status& status));
 };
 
-class AuthenticatorTest : public ::testing::Test {
+class JwtAuthenticatorTest : public ::testing::Test {
  public:
-  void SetUp() { SetupConfig(kExampleIssuer); }
+  void SetUp() { SetupConfig(kExampleConfig); }
 
-  void SetupConfig(const IssuerConfig& issuer_config) {
-    config_.reset(new JwtAuthConfig({issuer_config}));
+  void SetupConfig(const std::string& json_str) {
+    auto json_obj = Json::Factory::loadFromString(json_str);
+    config_.reset(new JwtAuthConfig(*json_obj));
     store_.reset(new JwtAuthStore(*config_));
-    auth_.reset(new Authenticator(mock_cm_, *store_));
+    auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
   }
 
   std::unique_ptr<JwtAuthConfig> config_;
   std::unique_ptr<JwtAuthStore> store_;
-  std::unique_ptr<Authenticator> auth_;
+  std::unique_ptr<JwtAuthenticator> auth_;
   NiceMock<Upstream::MockClusterManager> mock_cm_;
-  MockAuthenticatorCallbacks mock_cb_;
+  MockJwtAuthenticatorCallbacks mock_cb_;
 };
 
-TEST_F(AuthenticatorTest, TestOkJWT) {
+TEST_F(JwtAuthenticatorTest, TestOkJWT) {
   NiceMock<Http::MockAsyncClient> async_client;
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_))
       .WillOnce(Invoke([&](const std::string& cluster) -> Http::AsyncClient& {
@@ -166,7 +176,7 @@ TEST_F(AuthenticatorTest, TestOkJWT) {
   for (int i = 0; i < 10; i++) {
     auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
 
-    MockAuthenticatorCallbacks mock_cb;
+    MockJwtAuthenticatorCallbacks mock_cb;
     EXPECT_CALL(mock_cb, onDone(_))
         .WillOnce(Invoke(
             [](const Status& status) { ASSERT_EQ(status, Status::OK); }));
@@ -187,7 +197,7 @@ TEST_F(AuthenticatorTest, TestOkJWT) {
   }
 }
 
-TEST_F(AuthenticatorTest, TestMissedJWT) {
+TEST_F(JwtAuthenticatorTest, TestMissedJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
       .WillOnce(Invoke(
@@ -198,7 +208,7 @@ TEST_F(AuthenticatorTest, TestMissedJWT) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-TEST_F(AuthenticatorTest, TestInvalidJWT) {
+TEST_F(JwtAuthenticatorTest, TestInvalidJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
       .WillOnce(Invoke([](const Status& status) {
@@ -210,7 +220,7 @@ TEST_F(AuthenticatorTest, TestInvalidJWT) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-TEST_F(AuthenticatorTest, TestInvalidPrefix) {
+TEST_F(JwtAuthenticatorTest, TestInvalidPrefix) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
       .WillOnce(Invoke([](const Status& status) {
@@ -221,7 +231,7 @@ TEST_F(AuthenticatorTest, TestInvalidPrefix) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-TEST_F(AuthenticatorTest, TestExpiredJWT) {
+TEST_F(JwtAuthenticatorTest, TestExpiredJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
       .WillOnce(Invoke([](const Status& status) {
@@ -233,7 +243,7 @@ TEST_F(AuthenticatorTest, TestExpiredJWT) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-TEST_F(AuthenticatorTest, TestNonMatchAudJWT) {
+TEST_F(JwtAuthenticatorTest, TestNonMatchAudJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
       .WillOnce(Invoke([](const Status& status) {
@@ -245,9 +255,9 @@ TEST_F(AuthenticatorTest, TestNonMatchAudJWT) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-TEST_F(AuthenticatorTest, TestIssuerNotFound) {
+TEST_F(JwtAuthenticatorTest, TestIssuerNotFound) {
   // Create a config with an other issuer.
-  SetupConfig(kOtherIssuer);
+  SetupConfig(kOtherIssuerConfig);
 
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
@@ -259,7 +269,7 @@ TEST_F(AuthenticatorTest, TestIssuerNotFound) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-TEST_F(AuthenticatorTest, TestPubkeyFetchFail) {
+TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
   NiceMock<Http::MockAsyncClient> async_client;
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_))
       .WillOnce(Invoke([&](const std::string& cluster) -> Http::AsyncClient& {
@@ -296,7 +306,7 @@ TEST_F(AuthenticatorTest, TestPubkeyFetchFail) {
   callbacks->onSuccess(std::move(response_message));
 }
 
-TEST_F(AuthenticatorTest, TestInvalidPubkey) {
+TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
   NiceMock<Http::MockAsyncClient> async_client;
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_))
       .WillOnce(Invoke([&](const std::string& cluster) -> Http::AsyncClient& {
@@ -334,7 +344,7 @@ TEST_F(AuthenticatorTest, TestInvalidPubkey) {
   callbacks->onSuccess(std::move(response_message));
 }
 
-TEST_F(AuthenticatorTest, TestOnDestroy) {
+TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
   NiceMock<Http::MockAsyncClient> async_client;
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_))
       .WillOnce(Invoke([&](const std::string& cluster) -> Http::AsyncClient& {
