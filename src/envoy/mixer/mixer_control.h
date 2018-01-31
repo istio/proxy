@@ -21,6 +21,7 @@
 #include "envoy/runtime/runtime.h"
 #include "envoy/thread_local/thread_local.h"
 #include "envoy/upstream/cluster_manager.h"
+#include "include/environment.h"
 #include "src/envoy/mixer/config.h"
 
 namespace Envoy {
@@ -62,9 +63,18 @@ class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
     return controller_.get();
   }
 
+  int report_interval_ms() const { return report_interval_ms_; }
+
+  const ::istio::mixer_client::Environment* environment() const { return env_; }
+
  private:
   // The mixer control
   std::unique_ptr<::istio::mixer_control::tcp::Controller> controller_;
+
+  // Time interval in milliseconds for sending periodical delta reports.
+  int report_interval_ms_;
+
+  const ::istio::mixer_client::Environment* env_;
 };
 
 }  // namespace Mixer

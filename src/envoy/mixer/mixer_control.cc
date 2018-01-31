@@ -21,6 +21,9 @@ namespace Http {
 namespace Mixer {
 namespace {
 
+// Default time interval for periodical report is 10 seconds.
+const int kDefaultReportIntervalMs = 10000;
+
 // A class to wrap envoy timer for mixer client timer.
 class EnvoyTimer : public ::istio::mixer_client::Timer {
  public:
@@ -45,9 +48,9 @@ void CreateEnvironment(Upstream::ClusterManager& cm,
 
   env->timer_create_func = [&dispatcher](std::function<void()> timer_cb)
       -> std::unique_ptr<::istio::mixer_client::Timer> {
-        return std::unique_ptr<::istio::mixer_client::Timer>(
-            new EnvoyTimer(dispatcher.createTimer(timer_cb)));
-      };
+    return std::unique_ptr<::istio::mixer_client::Timer>(
+        new EnvoyTimer(dispatcher.createTimer(timer_cb)));
+  };
 
   env->uuid_generate_func = [&random]() -> std::string {
     return random.uuid();
@@ -79,8 +82,20 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
       mixer_config.tcp_config);
 
   CreateEnvironment(cm, dispatcher, random, &options.env);
+  env_ = &options.env;
 
   controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
+
+  if (mixer_config.tcp_config.report_interval().seconds() < 0 ||
+      mixer_config.tcp_config.report_interval().nanos() < 0 ||
+      (mixer_config.tcp_config.report_interval().seconds() == 0 &&
+       mixer_config.tcp_config.report_interval().nanos() == 0)) {
+    report_interval_ms_ = kDefaultReportIntervalMs;
+  } else {
+    report_interval_ms_ =
+        mixer_config.tcp_config.report_interval().seconds() * 1000 +
+        mixer_config.tcp_config.report_interval().nanos() / 1000000;
+  }
 }
 
 }  // namespace Mixer
