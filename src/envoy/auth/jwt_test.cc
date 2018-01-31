@@ -466,22 +466,10 @@ TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldEqual) {
   EXPECT_EQ(jwt.Sub(), ds.kJwtSub);
 }
 
-TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldNotEqual) {
-  DatasetPem ds;
-  Jwt jwt(ds.kJwt);
-  EXPECT_NE(jwt.Sub(), "");
-}
-
 TEST(JwtSubExtractionTest, EmptyJwtSubShouldEqual) {
   DatasetPem ds;
   Jwt jwt("");
   EXPECT_EQ(jwt.Sub(), "");
-}
-
-TEST(JwtSubExtractionTest, EmptyJwtSubShouldNotEqual) {
-  DatasetPem ds;
-  Jwt jwt("");
-  EXPECT_NE(jwt.Sub(), ds.kJwtSub);
 }
 
 // Test cases w/ JWKs-formatted public key
