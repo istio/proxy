@@ -259,8 +259,8 @@ class Pubkeys : public WithStatus {
   friend bool Verifier::Verify(const Jwt& jwt, const Pubkeys& pubkeys);
 };
 
-}  // Auth
-}  // Http
-}  // Envoy
+}  // namespace Auth
+}  // namespace Http
+}  // namespace Envoy
 
 #endif  // PROXY_JWT_H

@@ -341,7 +341,7 @@ namespace {
 bool EqJson(Json::ObjectSharedPtr p1, Json::ObjectSharedPtr p2) {
   return p1->asJsonString() == p2->asJsonString();
 }
-}
+}  // namespace
 
 class JwtTest : public testing::Test {
  protected:
@@ -362,18 +362,6 @@ class JwtTest : public testing::Test {
     if (verified) {
       ASSERT_TRUE(jwt.Payload());
       EXPECT_TRUE(EqJson(payload, jwt.Payload()));
-    }
-  }
-
-  //Test whether the sub field in the JWT is as expected
-  void DoJwtSubEqualTest(std::string jwt_str, std::string sub_expected,
-          bool expect_equal) {
-    Jwt jwt(jwt_str);
-    std::string sub = jwt.Sub();
-    if(expect_equal) {
-      EXPECT_EQ(sub, sub_expected);
-    } else {
-      EXPECT_NE(sub, sub_expected);
     }
   }
 };
@@ -472,20 +460,28 @@ TEST_F(JwtTestPem, InvalidAlg) {
          Status::ALG_NOT_IMPLEMENTED, nullptr);
 }
 
-TEST_F(JwtTestPem, NonEmptyJwtSubEqual) {
-  DoJwtSubEqualTest(ds.kJwt, ds.kJwtSub, true);
+TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldEqual) {
+  DatasetPem ds;
+  Jwt jwt(ds.kJwt);
+  EXPECT_EQ(jwt.Sub(), ds.kJwtSub);
 }
 
-TEST_F(JwtTestPem, NonEmptyJwtSubNotEqual) {
-  DoJwtSubEqualTest(ds.kJwt, "", false);
+TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldNotEqual) {
+  DatasetPem ds;
+  Jwt jwt(ds.kJwt);
+  EXPECT_NE(jwt.Sub(), "");
 }
 
-TEST_F(JwtTestPem, EmptyJwtSubEqual) {
-  DoJwtSubEqualTest("", "", true);
+TEST(JwtSubExtractionTest, EmptyJwtSubShouldEqual) {
+  DatasetPem ds;
+  Jwt jwt("");
+  EXPECT_EQ(jwt.Sub(), "");
 }
 
-TEST_F(JwtTestPem, EmptyJwtSubNotEqual) {
-  DoJwtSubEqualTest("", ds.kJwtSub, false);
+TEST(JwtSubExtractionTest, EmptyJwtSubShouldNotEqual) {
+  DatasetPem ds;
+  Jwt jwt("");
+  EXPECT_NE(jwt.Sub(), ds.kJwtSub);
 }
 
 // Test cases w/ JWKs-formatted public key
