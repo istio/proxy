@@ -44,12 +44,11 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
         tls_(context.threadLocal().allocateSlot()) {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
-    tls_->set(
-        [this, &random](Event::Dispatcher& dispatcher)
-            -> ThreadLocal::ThreadLocalObjectSharedPtr {
-              return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random));
-            });
+    tls_->set([this, &random](Event::Dispatcher& dispatcher)
+                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
+      return ThreadLocal::ThreadLocalObjectSharedPtr(
+          new TcpMixerControl(mixer_config_, cm_, dispatcher, random));
+    });
   }
 
   TcpMixerControl& mixer_control() { return tls_->getTyped<TcpMixerControl>(); }
@@ -69,7 +68,7 @@ class TcpInstance : public Network::Filter,
   // reports.
   void OnTimer() {
     handler_->Report(this, /* is_final_report */ false);
-    report_timer_->Start(mixer_control_.report_interval_ms());
+    report_timer_->enableTimer(mixer_control_.report_interval_ms());
   }
 
   istio::mixer_client::CancelFunc cancel_check_;
@@ -84,7 +83,7 @@ class TcpInstance : public Network::Filter,
   std::chrono::time_point<std::chrono::system_clock> start_time_;
 
   // Timer that periodically sends reports.
-  std::unique_ptr<::istio::mixer_client::Timer> report_timer_;
+  Event::TimerPtr report_timer_;
 
  public:
   TcpInstance(TcpConfigPtr config) : mixer_control_(config->mixer_control()) {
@@ -169,9 +168,9 @@ class TcpInstance : public Network::Filter,
       if (!calling_check_) {
         filter_callbacks_->continueReading();
       }
-      report_timer_ = mixer_control_.options().env.timer_create_func(
-          [this]() { OnTimer(); });
-      report_timer_->Start(mixer_control_.report_interval_ms());
+      report_timer_ =
+          mixer_control_.dispatcher().createTimer([this]() { OnTimer(); });
+      report_timer_->enableTimer(mixer_control_.report_interval_ms());
     }
   }
 
@@ -188,7 +187,9 @@ class TcpInstance : public Network::Filter,
     if (event == Network::ConnectionEvent::RemoteClose ||
         event == Network::ConnectionEvent::LocalClose) {
       if (state_ != State::Closed && handler_) {
-        report_timer_->Stop();
+        if (report_timer_) {
+          report_timer_->disableTimer();
+        }
         handler_->Report(this, /* is_final_report */ true);
       }
       cancelCheck();

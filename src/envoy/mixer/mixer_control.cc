@@ -48,9 +48,9 @@ void CreateEnvironment(Upstream::ClusterManager& cm,
 
   env->timer_create_func = [&dispatcher](std::function<void()> timer_cb)
       -> std::unique_ptr<::istio::mixer_client::Timer> {
-        return std::unique_ptr<::istio::mixer_client::Timer>(
-            new EnvoyTimer(dispatcher.createTimer(timer_cb)));
-      };
+    return std::unique_ptr<::istio::mixer_client::Timer>(
+        new EnvoyTimer(dispatcher.createTimer(timer_cb)));
+  };
 
   env->uuid_generate_func = [&random]() -> std::string {
     return random.uuid();
@@ -78,20 +78,27 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
                                  Upstream::ClusterManager& cm,
                                  Event::Dispatcher& dispatcher,
                                  Runtime::RandomGenerator& random)
-    : options_(mixer_config.tcp_config) {
-  CreateEnvironment(cm, dispatcher, random, &options_.env);
+    : dispatcher_(dispatcher) {
+  ::istio::mixer_control::tcp::Controller::Options options(
+      mixer_config.tcp_config);
 
-  controller_ = ::istio::mixer_control::tcp::Controller::Create(options_);
+  CreateEnvironment(cm, dispatcher, random, &options.env);
 
-  if (mixer_config.tcp_config.report_interval().seconds() < 0 ||
-      mixer_config.tcp_config.report_interval().nanos() < 0 ||
-      (mixer_config.tcp_config.report_interval().seconds() == 0 &&
-       mixer_config.tcp_config.report_interval().nanos() == 0)) {
-    report_interval_ms_ = kDefaultReportIntervalMs;
-  } else {
-    report_interval_ms_ =
+  controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
+
+  if (mixer_config.tcp_config.has_report_interval() &&
+      mixer_config.tcp_config.report_interval().seconds() >= 0 &&
+      mixer_config.tcp_config.report_interval().nanos() >= 0) {
+    report_interval_ms_ = std::chrono::milliseconds(
         mixer_config.tcp_config.report_interval().seconds() * 1000 +
-        mixer_config.tcp_config.report_interval().nanos() / 1000000;
+        mixer_config.tcp_config.report_interval().nanos() / 1000000);
+    // If configured time interval is less than 1 millisecond, then set report
+    // interval to default value.
+    if (report_interval_ms_ == std::chrono::milliseconds::zero()) {
+      report_interval_ms_ = std::chrono::milliseconds(kDefaultReportIntervalMs);
+    }
+  } else {
+    report_interval_ms_ = std::chrono::milliseconds(kDefaultReportIntervalMs);
   }
 }
 
