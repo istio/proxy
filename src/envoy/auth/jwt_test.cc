@@ -467,7 +467,6 @@ TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldEqual) {
 }
 
 TEST(JwtSubExtractionTest, EmptyJwtSubShouldEqual) {
-  DatasetPem ds;
   Jwt jwt("");
   EXPECT_EQ(jwt.Sub(), "");
 }
