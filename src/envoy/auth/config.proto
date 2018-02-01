@@ -17,6 +17,7 @@ syntax = "proto3";
 package Envoy.Http.Auth.Config;
 
 import "google/protobuf/duration.proto";
+import "validate/validate.proto";
 
 // This proto file is copied from:
 // https://github.com/istio/api/blob/master/mixer/v1/config/client/auth.proto

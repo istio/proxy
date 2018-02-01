@@ -17,6 +17,7 @@
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
 #include "src/envoy/auth/auth_store.h"
+#include "src/envoy/auth/config.pb.validate.h"
 
 namespace Envoy {
 namespace Server {
@@ -36,7 +37,8 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
       const Protobuf::Message& proto_config, const std::string&,
       FactoryContext& context) override {
     return createFilter(
-        dynamic_cast<const Http::Auth::Config::AuthFilterConfig&>(proto_config),
+        MessageUtil::downcastAndValidate<
+            const Http::Auth::Config::AuthFilterConfig&>(proto_config),
         context);
   }
 
