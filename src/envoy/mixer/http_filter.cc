@@ -15,6 +15,7 @@
 
 #include "common/common/base64.h"
 #include "common/common/logger.h"
+#include "common/config/utility.h"
 #include "common/http/headers.h"
 #include "common/http/utility.h"
 #include "control/include/utils/status.h"
@@ -547,25 +548,15 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
         new Http::Mixer::Config(config, context));
 
     HttpFilterFactoryCb auth_filter_cb;
-    auto auth_factory =
-        Registry::FactoryRegistry<NamedHttpFilterConfigFactory>::getFactory(
-            "jwt-auth");
-    if (auth_factory) {
-      auto auth_config = mixer_config->auth_config();
-      if (auth_config) {
-        auto proto_config = auth_factory->createEmptyConfigProto();
-        // AuthFilterConfig should be compatible with
-        // EndUserAuthenticationPolicySpec
-        if (proto_config->ParseFromString(auth_config->SerializeAsString())) {
-          auth_filter_cb = auth_factory->createFilterFactoryFromProto(
-              *proto_config, "", context);
-        } else {
-          throw EnvoyException(fmt::format(
-              "Failed to convert proto from "
-              "EndUserAuthenticationPolicySpec to AuthFilterConfig: {}",
-              auth_config->DebugString()));
-        }
-      }
+    auto auth_config = mixer_config->auth_config();
+    if (auth_config) {
+      auto& auth_factory =
+          Config::Utility::getAndCheckFactory<NamedHttpFilterConfigFactory>(
+              std::string("jwt-auth"));
+      auto proto_config = auth_factory.createEmptyConfigProto();
+      MessageUtil::jsonConvert(*auth_config, *proto_config);
+      auth_filter_cb =
+          auth_factory.createFilterFactoryFromProto(*proto_config, "", context);
     }
     return [mixer_config, auth_filter_cb](
                Http::FilterChainFactoryCallbacks& callbacks) -> void {
