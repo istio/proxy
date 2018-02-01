@@ -173,6 +173,7 @@ JwtAuthConfig::JwtAuthConfig(
   // TODO: public key expiration should be per issuer.
   pubkey_cache_expiration_sec_ = 600;
   user_info_type_ = UserInfoType::kPayloadBase64Url;
+  authn_output_jwt_sub_ = false;
 }
 
 /*
@@ -191,6 +192,8 @@ JwtAuthConfig::JwtAuthConfig(const Json::Object &config,
   } else {
     user_info_type_ = UserInfoType::kPayloadBase64Url;
   }
+  // By default, the subject field of a JWT is not outputted
+  authn_output_jwt_sub_ = config.getBoolean("authn_output_jwt_sub", false);
 
   pubkey_cache_expiration_sec_ =
       config.getInteger("pubkey_cache_expiration_sec", 600);

@@ -232,6 +232,8 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Success1) {
                            "{\"iss\":\"https://"
                            "example.com\",\"sub\":\"test@example.com\",\"aud\":"
                            "\"example_service\",\"exp\":2001001001}");
+  expected_headers.addCopy("sec-istio-authentication-jwt-sub",
+                           "test@example.com");
 
   TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(),
                    kPublicKey, true, expected_headers, "");
@@ -285,4 +287,4 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
  * TODO: add tests
  */
 
-}  // Envoy
+}  // namespace Envoy
