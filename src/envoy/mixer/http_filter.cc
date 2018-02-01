@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "src/envoy/auth/http_filter.h"
 #include "common/common/base64.h"
 #include "common/common/logger.h"
 #include "common/http/headers.h"
@@ -23,8 +22,8 @@
 #include "envoy/ssl/connection.h"
 #include "envoy/thread_local/thread_local.h"
 #include "server/config/network/http_connection_manager.h"
-#include "src/envoy/auth/config.h"
 #include "src/envoy/auth/jwt.h"
+#include "src/envoy/auth/jwt_authenticator.h"
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/mixer_control.h"
@@ -85,15 +84,6 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   HttpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
 
-  // Extract Auth config from all service configs
-  void ExtractAuthSpec(EndUserAuthenticationPolicySpec* spec) {
-    for (const auto& it : mixer_config_.http_config.service_configs()) {
-      if (it.second.has_end_user_authn_spec()) {
-        spec->MergeFrom(it.second.end_user_authn_spec());
-      }
-    }
-  }
-
  public:
   Config(const Json::Object& config,
          Server::Configuration::FactoryContext& context)
@@ -113,14 +103,18 @@ class Config : public Logger::Loggable<Logger::Id::http> {
     return tls_->getTyped<HttpMixerControl>();
   }
 
-  std::unique_ptr<Auth::JwtAuthConfig> auth_config() {
-    EndUserAuthenticationPolicySpec spec;
-    ExtractAuthSpec(&spec);
-    if (spec.jwts_size() > 0) {
-      return std::unique_ptr<Auth::JwtAuthConfig>(
-          new Auth::JwtAuthConfig(spec.SerializeAsString()));
+  std::unique_ptr<EndUserAuthenticationPolicySpec> auth_config() {
+    auto spec = std::unique_ptr<EndUserAuthenticationPolicySpec>(
+        new EndUserAuthenticationPolicySpec);
+    for (const auto& it : mixer_config_.http_config.service_configs()) {
+      if (it.second.has_end_user_authn_spec()) {
+        spec->MergeFrom(it.second.end_user_authn_spec());
+      }
     }
-    return std::unique_ptr<Auth::JwtAuthConfig>();
+    if (spec->jwts_size() == 0) {
+      spec.reset();
+    }
+    return spec;
   }
 };
 
@@ -551,18 +545,32 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
                                           FactoryContext& context) override {
     Http::Mixer::ConfigPtr mixer_config(
         new Http::Mixer::Config(config, context));
-    std::shared_ptr<Http::Auth::JwtAuthStoreFactory> auth_factory;
-    auto auth_config = mixer_config->auth_config();
-    if (auth_config) {
-      auth_factory = std::make_shared<Http::Auth::JwtAuthStoreFactory>(
-          std::move(auth_config), context);
+
+    HttpFilterFactoryCb auth_filter_cb;
+    auto auth_factory =
+        Registry::FactoryRegistry<NamedHttpFilterConfigFactory>::getFactory(
+            "jwt-auth");
+    if (auth_factory) {
+      auto auth_config = mixer_config->auth_config();
+      if (auth_config) {
+        auto proto_config = auth_factory->createEmptyConfigProto();
+        // AuthFilterConfig should be compatible with
+        // EndUserAuthenticationPolicySpec
+        if (proto_config->ParseFromString(auth_config->SerializeAsString())) {
+          auth_filter_cb = auth_factory->createFilterFactoryFromProto(
+              *proto_config, "", context);
+        } else {
+          throw EnvoyException(fmt::format(
+              "Failed to convert proto from "
+              "EndUserAuthenticationPolicySpec to AuthFilterConfig: {}",
+              auth_config->DebugString()));
+        }
+      }
     }
-    Upstream::ClusterManager& cm = context.clusterManager();
-    return [&cm, mixer_config, auth_factory](
+    return [mixer_config, auth_filter_cb](
                Http::FilterChainFactoryCallbacks& callbacks) -> void {
-      if (auth_factory) {
-        callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterSharedPtr{
-            new Http::JwtVerificationFilter(cm, auth_factory->store())});
+      if (auth_filter_cb) {
+        auth_filter_cb(callbacks);
       }
       std::shared_ptr<Http::Mixer::Instance> instance =
           std::make_shared<Http::Mixer::Instance>(mixer_config);

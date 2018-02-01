@@ -29,13 +29,10 @@ load(
     "api_proto_library",
 )
 
-envoy_cc_binary(
-    name = "envoy",
-    repository = "@envoy",
-    deps = [
-        ":http_filter_factory",
-        "@envoy//source/exe:envoy_main_entry_lib",
-    ],
+api_proto_library(
+    name = "config_proto",
+    srcs = [":config.proto"],
+    require_py = 0,
 )
 
 envoy_cc_library(
@@ -62,7 +59,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":config_lib",
+        ":config_proto_cc",
         ":jwt_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
@@ -117,41 +114,6 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":jwt_lib",
-        "@envoy//source/exe:envoy_common_lib",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-api_proto_library(
-    name = "config_proto",
-    srcs = [":config.proto"],
-    require_py = 0,
-)
-
-envoy_cc_library(
-    name = "config_lib",
-    srcs = [
-        "config.cc",
-    ],
-    hdrs = [
-        "config.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":config_proto_cc",
-        "@envoy//source/exe:envoy_common_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "config_test",
-    srcs = [
-        ":config_test.cc",
-    ],
-    data = [],
-    repository = "@envoy",
-    deps = [
-        ":config_lib",
         "@envoy//source/exe:envoy_common_lib",
         "@envoy//test/test_common:utility_lib",
     ],

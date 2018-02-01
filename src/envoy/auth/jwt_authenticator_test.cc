@@ -135,13 +135,14 @@ class JwtAuthenticatorTest : public ::testing::Test {
   void SetUp() { SetupConfig(kExampleConfig); }
 
   void SetupConfig(const std::string& json_str) {
-    auto json_obj = Json::Factory::loadFromString(json_str);
-    config_.reset(new JwtAuthConfig(*json_obj));
-    store_.reset(new JwtAuthStore(*config_));
+    google::protobuf::util::Status status =
+        ::google::protobuf::util::JsonStringToMessage(json_str, &config_);
+    ASSERT_TRUE(status.ok());
+    store_.reset(new JwtAuthStore(config_));
     auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
   }
 
-  std::unique_ptr<JwtAuthConfig> config_;
+  Config::AuthFilterConfig config_;
   std::unique_ptr<JwtAuthStore> store_;
   std::unique_ptr<JwtAuthenticator> auth_;
   NiceMock<Upstream::MockClusterManager> mock_cm_;

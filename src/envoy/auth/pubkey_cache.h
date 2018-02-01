@@ -19,7 +19,7 @@
 #include <chrono>
 #include <unordered_map>
 
-#include "src/envoy/auth/config.h"
+#include "src/envoy/auth/config.pb.h"
 #include "src/envoy/auth/jwt.h"
 
 namespace Envoy {
@@ -90,8 +90,8 @@ class PubkeyCacheItem {
 class PubkeyCache {
  public:
   // Load the config from envoy config.
-  PubkeyCache(const JwtAuthConfig& config) {
-    for (const auto& jwt : config.config().jwts()) {
+  PubkeyCache(const Config::AuthFilterConfig& config) {
+    for (const auto& jwt : config.jwts()) {
       pubkey_cache_map_.emplace(jwt.issuer(), jwt);
     }
   }
