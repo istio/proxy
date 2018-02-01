@@ -14,7 +14,6 @@
  */
 
 #include "src/envoy/auth/http_filter.h"
-#include "common/common/logger.h"
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
 #include "src/envoy/auth/auth_store.h"
@@ -29,13 +28,7 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
                                           const std::string&,
                                           FactoryContext& context) override {
     Http::Auth::Config::AuthFilterConfig proto_config;
-    std::string pb_str = config.asJsonString();
-    google::protobuf::util::Status status =
-        ::google::protobuf::util::JsonStringToMessage(pb_str, &proto_config);
-    if (!status.ok()) {
-      throw EnvoyException(
-          fmt::format("Failed to parse JSON config to proto: {}", pb_str));
-    }
+    MessageUtil::loadFromJson(config.asJsonString(), proto_config);
     return createFilter(proto_config, context);
   }
 
@@ -57,16 +50,14 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
   HttpFilterFactoryCb createFilter(
       const Http::Auth::Config::AuthFilterConfig& proto_config,
       FactoryContext& context) {
-    auto& logger = Logger::Registry::getLog(Logger::Id::config);
-    ENVOY_LOG_TO_LOGGER(logger, info, "Loaded JwtAuthConfig: {}",
-                        proto_config.DebugString());
     auto store_factory = std::make_shared<Http::Auth::JwtAuthStoreFactory>(
         proto_config, context);
     Upstream::ClusterManager& cm = context.clusterManager();
     return [&cm, store_factory](
                Http::FilterChainFactoryCallbacks& callbacks) -> void {
-      callbacks.addStreamDecoderFilter(Http::StreamDecoderFilterSharedPtr{
-          new Http::JwtVerificationFilter(cm, store_factory->store())});
+      callbacks.addStreamDecoderFilter(
+          std::make_shared<Http::JwtVerificationFilter>(
+              cm, store_factory->store()));
     };
   }
 };

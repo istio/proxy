@@ -16,9 +16,9 @@
 #ifndef AUTH_STORE_H
 #define AUTH_STORE_H
 
+#include "common/common/logger.h"
 #include "envoy/server/filter_config.h"
 #include "envoy/thread_local/thread_local.h"
-
 #include "src/envoy/auth/config.pb.h"
 #include "src/envoy/auth/pubkey_cache.h"
 
@@ -53,12 +53,14 @@ class JwtAuthStoreFactory {
  public:
   JwtAuthStoreFactory(const Config::AuthFilterConfig& config,
                       Server::Configuration::FactoryContext& context)
-      : config_copy_(config), tls_(context.threadLocal().allocateSlot()) {
-    const Config::AuthFilterConfig& config_copy = config_copy_;
-    tls_->set([&config_copy](Event::Dispatcher&)
-                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
-                    return std::make_shared<JwtAuthStore>(config_copy);
-                  });
+      : config_(config), tls_(context.threadLocal().allocateSlot()) {
+    tls_->set(
+        [this](Event::Dispatcher&) -> ThreadLocal::ThreadLocalObjectSharedPtr {
+          return std::make_shared<JwtAuthStore>(config_);
+        });
+    auto& logger = Logger::Registry::getLog(Logger::Id::config);
+    ENVOY_LOG_TO_LOGGER(logger, info, "Loaded JwtAuthConfig: {}",
+                        config_.DebugString());
   }
 
   // Get per-thread auth store object.
@@ -66,7 +68,7 @@ class JwtAuthStoreFactory {
 
  private:
   // The auth config.
-  Config::AuthFilterConfig config_copy_;
+  Config::AuthFilterConfig config_;
   // Thread local slot to store per-thread auth store
   ThreadLocal::SlotPtr tls_;
 };
