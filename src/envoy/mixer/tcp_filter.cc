@@ -199,8 +199,8 @@ class TcpInstance : public Network::Filter,
     }
     return false;
   }
-  void GetReportInfo(
-      ::istio::mixer_control::tcp::ReportData::ReportInfo* data) const override {
+  void GetReportInfo(::istio::mixer_control::tcp::ReportData::ReportInfo* data)
+      const override {
     data->received_bytes = received_bytes_;
     data->send_bytes = send_bytes_;
     data->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
