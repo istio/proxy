@@ -22,7 +22,6 @@
 #include "common/http/message_impl.h"
 #include "envoy/http/async_client.h"
 #include "envoy/json/json_object.h"
-#include "envoy/json/json_object.h"
 #include "envoy/upstream/cluster_manager.h"
 #include "server/config/network/http_connection_manager.h"
 
@@ -110,6 +109,7 @@ struct JwtAuthConfig : public Logger::Loggable<Logger::Id::http> {
     kHeaderPayloadBase64Url  // JWT with signature
   };
   UserInfoType user_info_type_;
+  bool authn_output_jwt_sub_;  // whether output the subject of a JWT
 
   // Time to expire a cached public key (sec).
   int64_t pubkey_cache_expiration_sec_;

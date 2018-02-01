@@ -35,6 +35,7 @@
                 "name": "jwt-auth",
                 "config": {
                   "userinfo_type": "payload",
+                  "authn_output_jwt_sub": true,
                   "pubkey_cache_expiration_sec": 100,
                   "issuers": [
                     {

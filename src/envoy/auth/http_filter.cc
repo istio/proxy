@@ -33,6 +33,12 @@ const LowerCaseString& JwtVerificationFilter::AuthorizedHeaderKey() {
   return *key;
 }
 
+const LowerCaseString& JwtVerificationFilter::AuthnJwtSubHeaderKey() {
+  static LowerCaseString* key =
+      new LowerCaseString("sec-istio-authentication-jwt-sub");
+  return *key;
+}
+
 JwtVerificationFilter::JwtVerificationFilter(
     std::shared_ptr<Auth::JwtAuthConfig> config)
     : config_(config) {}
@@ -198,6 +204,11 @@ std::string JwtVerificationFilter::Verify(HeaderMap& headers) {
               jwt.HeaderStrBase64Url() + "." + jwt.PayloadStrBase64Url();
       }
       headers.addReferenceKey(AuthorizedHeaderKey(), str_to_add);
+      if (config_->authn_output_jwt_sub_) {
+        // Add the sub attribute of the JWT to the header for the authentication
+        // purpose
+        headers.addReferenceKey(AuthnJwtSubHeaderKey(), jwt.Sub());
+      }
 
       // Remove JWT from headers.
       headers.remove(kAuthorizationHeaderKey);
@@ -230,5 +241,5 @@ void JwtVerificationFilter::CompleteVerification(HeaderMap& headers) {
   }
 }
 
-}  // Http
-}  // Envoy
+}  // namespace Http
+}  // namespace Envoy
