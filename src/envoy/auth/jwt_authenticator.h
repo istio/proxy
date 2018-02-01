@@ -60,6 +60,9 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::http>,
   // Handle the public key fetch done event.
   void OnFetchPubkeyDone(const std::string& pubkey);
 
+  // Calls the callback with status.
+  void DoneWithStatus(const Status& status);
+
   // The cluster manager object to make HTTP call.
   Upstream::ClusterManager& cm_;
   // The cache object.

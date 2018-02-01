@@ -62,24 +62,25 @@ void JwtAuthenticator::Verify(HeaderMap& headers,
   headers_ = &headers;
   callback_ = callback;
 
+  ENVOY_LOG(debug, "Jwt authentication starts");
   const HeaderEntry* entry = headers_->Authorization();
   if (!entry) {
     // TODO: excludes some health checking paths
-    callback_->onDone(Status::JWT_MISSED);
+    DoneWithStatus(Status::JWT_MISSED);
     return;
   }
 
   // Extract token from header.
   const HeaderString& value = entry->value();
   if (!StringUtil::startsWith(value.c_str(), kBearerPrefix, true)) {
-    callback_->onDone(Status::BEARER_PREFIX_MISMATCH);
+    DoneWithStatus(Status::BEARER_PREFIX_MISMATCH);
     return;
   }
 
   // Parse JWT token
   jwt_.reset(new Jwt(value.c_str() + kBearerPrefix.length()));
   if (jwt_->GetStatus() != Status::OK) {
-    callback_->onDone(jwt_->GetStatus());
+    DoneWithStatus(jwt_->GetStatus());
     return;
   }
 
@@ -89,20 +90,20 @@ void JwtAuthenticator::Verify(HeaderMap& headers,
           std::chrono::system_clock::now().time_since_epoch())
           .count();
   if (jwt_->Exp() < unix_timestamp) {
-    callback_->onDone(Status::JWT_EXPIRED);
+    DoneWithStatus(Status::JWT_EXPIRED);
     return;
   }
 
   // Check the issuer is configured or not.
   auto issuer = store_.pubkey_cache().LookupByIssuer(jwt_->Iss());
   if (!issuer) {
-    callback_->onDone(Status::JWT_UNKNOWN_ISSUER);
+    DoneWithStatus(Status::JWT_UNKNOWN_ISSUER);
     return;
   }
 
   // Check if audience is allowed
   if (!issuer->IsAudienceAllowed(jwt_->Aud())) {
-    callback_->onDone(Status::AUDIENCE_NOT_ALLOWED);
+    DoneWithStatus(Status::AUDIENCE_NOT_ALLOWED);
     return;
   }
 
@@ -129,40 +130,41 @@ void JwtAuthenticator::FetchPubkey(PubkeyCacheItem* issuer) {
                     issuer->jwt_config().jwks_uri_envoy_cluster())
                  .send(std::move(message), *this,
                        Optional<std::chrono::milliseconds>());
+  ENVOY_LOG(debug, "fetch pubkey from [uri = {}]: start", uri_);
 }
 
 void JwtAuthenticator::onSuccess(MessagePtr&& response) {
   request_ = nullptr;
   uint64_t status_code = Http::Utility::getResponseStatus(response->headers());
   if (status_code == 200) {
-    ENVOY_LOG(debug, "JwtAuthenticator [uri = {}]: success", uri_);
+    ENVOY_LOG(debug, "fetch pubkey [uri = {}]: success", uri_);
     std::string body;
     if (response->body()) {
       auto len = response->body()->length();
       body = std::string(static_cast<char*>(response->body()->linearize(len)),
                          len);
     } else {
-      ENVOY_LOG(debug, "JwtAuthenticator [uri = {}]: body is empty", uri_);
+      ENVOY_LOG(debug, "fetch pubkey [uri = {}]: body is empty", uri_);
     }
     OnFetchPubkeyDone(body);
   } else {
-    ENVOY_LOG(debug, "JwtAuthenticator [uri = {}]: response status code {}",
-              uri_, status_code);
-    callback_->onDone(Status::FAILED_FETCH_PUBKEY);
+    ENVOY_LOG(debug, "fetch pubkey [uri = {}]: response status code {}", uri_,
+              status_code);
+    DoneWithStatus(Status::FAILED_FETCH_PUBKEY);
   }
 }
 
 void JwtAuthenticator::onFailure(AsyncClient::FailureReason) {
   request_ = nullptr;
-  ENVOY_LOG(debug, "JwtAuthenticator [uri = {}]: failed", uri_);
-  callback_->onDone(Status::FAILED_FETCH_PUBKEY);
+  ENVOY_LOG(debug, "fetch pubkey [uri = {}]: failed", uri_);
+  DoneWithStatus(Status::FAILED_FETCH_PUBKEY);
 }
 
 void JwtAuthenticator::onDestroy() {
-  ENVOY_LOG(debug, "JwtAuthenticator [uri = {}]: canceled", uri_);
   if (request_) {
     request_->cancel();
     request_ = nullptr;
+    ENVOY_LOG(debug, "fetch pubkey [uri = {}]: canceled", uri_);
   }
 }
 
@@ -171,7 +173,7 @@ void JwtAuthenticator::OnFetchPubkeyDone(const std::string& pubkey) {
   auto issuer = store_.pubkey_cache().LookupByIssuer(jwt_->Iss());
   Status status = issuer->SetKey(pubkey);
   if (status != Status::OK) {
-    callback_->onDone(status);
+    DoneWithStatus(status);
   } else {
     VerifyKey(*issuer->pubkey());
   }
@@ -181,7 +183,7 @@ void JwtAuthenticator::OnFetchPubkeyDone(const std::string& pubkey) {
 void JwtAuthenticator::VerifyKey(const Auth::Pubkeys& pubkey) {
   Auth::Verifier v;
   if (!v.Verify(*jwt_, pubkey)) {
-    callback_->onDone(v.GetStatus());
+    DoneWithStatus(v.GetStatus());
     return;
   }
 
@@ -189,7 +191,14 @@ void JwtAuthenticator::VerifyKey(const Auth::Pubkeys& pubkey) {
 
   // Remove JWT from headers.
   headers_->removeAuthorization();
-  callback_->onDone(Status::OK);
+  DoneWithStatus(Status::OK);
+}
+
+void JwtAuthenticator::DoneWithStatus(const Status& status) {
+  callback_->onDone(status);
+  callback_ = nullptr;
+  ENVOY_LOG(debug, "Jwt authentication completed with: {}",
+            Auth::StatusToString(status));
 }
 
 const LowerCaseString& JwtAuthenticator::JwtPayloadKey() {

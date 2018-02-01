@@ -49,7 +49,7 @@ class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
 };
 
 // The factory to create per-thread auth store object.
-class JwtAuthStoreFactory {
+class JwtAuthStoreFactory : public Logger::Loggable<Logger::Id::config> {
  public:
   JwtAuthStoreFactory(const Config::AuthFilterConfig& config,
                       Server::Configuration::FactoryContext& context)
@@ -58,9 +58,7 @@ class JwtAuthStoreFactory {
         [this](Event::Dispatcher&) -> ThreadLocal::ThreadLocalObjectSharedPtr {
           return std::make_shared<JwtAuthStore>(config_);
         });
-    auto& logger = Logger::Registry::getLog(Logger::Id::config);
-    ENVOY_LOG_TO_LOGGER(logger, info, "Loaded JwtAuthConfig: {}",
-                        config_.DebugString());
+    ENVOY_LOG(info, "Loaded JwtAuthConfig: {}", config_.DebugString());
   }
 
   // Get per-thread auth store object.
