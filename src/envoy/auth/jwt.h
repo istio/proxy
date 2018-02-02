@@ -99,6 +99,9 @@ enum class Status {
 
   // Failed to fetch public key
   FAILED_FETCH_PUBKEY,
+
+  // jwks_uri_envoy_cluster is not in the cluster manager.
+  WRONG_JWKS_URI_ENVOY_CLUSTER,
 };
 
 std::string StatusToString(Status status);
