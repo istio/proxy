@@ -62,8 +62,6 @@ std::string StatusToString(Status status) {
       {Status::JWK_PUBKEY_PARSE_ERROR, "JWK_PUBKEY_PARSE_ERROR"},
       {Status::AUDIENCE_NOT_ALLOWED, "Audience doesn't match"},
       {Status::FAILED_FETCH_PUBKEY, "Failed to fetch public key"},
-      {Status::WRONG_JWKS_URI_ENVOY_CLUSTER,
-       "jwks_uri_envoy_cluster not in clusters"},
   };
   return table[status];
 }

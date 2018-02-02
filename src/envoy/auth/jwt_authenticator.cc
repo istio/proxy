@@ -128,7 +128,7 @@ void JwtAuthenticator::FetchPubkey(PubkeyCacheItem* issuer) {
 
   const auto& cluster = issuer->jwt_config().jwks_uri_envoy_cluster();
   if (cm_.get(cluster) == nullptr) {
-    DoneWithStatus(Status::WRONG_JWKS_URI_ENVOY_CLUSTER);
+    DoneWithStatus(Status::FAILED_FETCH_PUBKEY);
     return;
   }
 

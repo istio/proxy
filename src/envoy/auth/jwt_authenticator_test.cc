@@ -268,7 +268,7 @@ TEST_F(JwtAuthenticatorTest, TestWrongCluster) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
       .WillOnce(Invoke([](const Status& status) {
-        ASSERT_EQ(status, Status::WRONG_JWKS_URI_ENVOY_CLUSTER);
+        ASSERT_EQ(status, Status::FAILED_FETCH_PUBKEY);
       }));
 
   auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
