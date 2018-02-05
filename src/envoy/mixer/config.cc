@@ -51,6 +51,12 @@ const std::string kDisableTcpCheckCalls("disable_tcp_check_calls");
 
 const std::string kV2Config("v2");
 
+// The name for the mixer server cluster.
+const std::string kDefaultMixerClusterName("mixer_server");
+// The Json object name for check_cluster and report_cluster
+const std::string kCheckCluster("check_cluster");
+const std::string kReportCluster("report_cluster");
+
 void ReadStringMap(const Json::Object& json, const std::string& name,
                    Attributes* attributes) {
   if (json.hasObject(name)) {
@@ -73,6 +79,9 @@ void ReadTransportConfig(const Json::Object& json, TransportConfig* config) {
   config->set_disable_check_cache(json.getBoolean(kDisableCheckCache, false));
   config->set_disable_quota_cache(json.getBoolean(kDisableQuotaCache, false));
   config->set_disable_report_batch(json.getBoolean(kDisableReportBatch, false));
+
+  config->set_check_cluster(json.getString(kCheckCluster, kDefaultMixerClusterName));
+  config->set_report_cluster(json.getString(kReportCluster, kDefaultMixerClusterName));
 }
 
 bool ReadV2Config(const Json::Object& json, Message* message) {
