@@ -25,6 +25,9 @@ using ::istio::mixer_client::AttributesBuilder;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::mixer::v1::config::client::TransportConfig;
 
+#define PROTOBUF_GET_STRING_OR_DEFAULT(message, field_name, default_value)                        \
+  ((message).has_##field_name() ? (message).field_name() : (default_value))
+
 namespace Envoy {
 namespace Http {
 namespace Mixer {
@@ -53,9 +56,6 @@ const std::string kV2Config("v2");
 
 // The name for the mixer server cluster.
 const std::string kDefaultMixerClusterName("mixer_server");
-// The Json object name for check_cluster and report_cluster
-const std::string kCheckCluster("check_cluster");
-const std::string kReportCluster("report_cluster");
 
 void ReadStringMap(const Json::Object& json, const std::string& name,
                    Attributes* attributes) {
@@ -126,10 +126,8 @@ void HttpMixerConfig::Load(const Json::Object& json) {
     legacy_quotas.clear();
   }
 
-  transport_config->set_check_cluster(
-      json.getString(kCheckCluster, kDefaultMixerClusterName));
-  transport_config->set_report_cluster(
-      json.getString(kReportCluster, kDefaultMixerClusterName));
+  check_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, check_cluster, kDefaultMixerClusterName);
+  report_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, report_cluster, kDefaultMixerClusterName);
 }
 
 void HttpMixerConfig::CreateLegacyRouteConfig(
@@ -155,10 +153,8 @@ void TcpMixerConfig::Load(const Json::Object& json) {
       json.getBoolean(kDisableTcpCheckCalls, false));
 
   ReadV2Config(json, &tcp_config);
-  transport_config->set_check_cluster(
-      json.getString(kCheckCluster, kDefaultMixerClusterName));
-  transport_config->set_report_cluster(
-      json.getString(kReportCluster, kDefaultMixerClusterName));
+  check_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, check_cluster, kDefaultMixerClusterName);
+  report_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, report_cluster, kDefaultMixerClusterName);
 }
 
 }  // namespace Mixer
