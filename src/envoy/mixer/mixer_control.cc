@@ -72,14 +72,14 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
   ::istio::mixer_control::http::Controller::Options options(
       mixer_config.http_config, mixer_config.legacy_quotas);
 
-  check_cluster_  = mixer_config.check_cluster;
+  check_cluster_ = mixer_config.check_cluster;
   report_cluster_ = mixer_config.report_cluster;
 
-  CreateEnvironment(cm, dispatcher, random,
-                    check_cluster_, report_cluster_, &options.env);
+  CreateEnvironment(cm, dispatcher, random, check_cluster_, report_cluster_,
+                    &options.env);
 
   controller_ = ::istio::mixer_control::http::Controller::Create(options);
-  has_v2_config_  = mixer_config.has_v2_config;
+  has_v2_config_ = mixer_config.has_v2_config;
 }
 
 TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
@@ -90,11 +90,11 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
   ::istio::mixer_control::tcp::Controller::Options options(
       mixer_config.tcp_config);
 
-  check_cluster_  = mixer_config.check_cluster;
+  check_cluster_ = mixer_config.check_cluster;
   report_cluster_ = mixer_config.report_cluster;
 
-  CreateEnvironment(cm, dispatcher, random,
-                    check_cluster_, report_cluster_, &options.env);
+  CreateEnvironment(cm, dispatcher, random, check_cluster_, report_cluster_,
+                    &options.env);
 
   controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
 

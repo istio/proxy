@@ -123,10 +123,12 @@ void HttpMixerConfig::Load(const Json::Object& json) {
     legacy_quotas.clear();
   }
 
-  check_cluster = transport_config->check_cluster().empty() ? kDefaultMixerClusterName :
-                  transport_config->check_cluster();
-  report_cluster = transport_config->report_cluster().empty() ? kDefaultMixerClusterName :
-                   transport_config->report_cluster();
+  check_cluster = transport_config->check_cluster().empty()
+                      ? kDefaultMixerClusterName
+                      : transport_config->check_cluster();
+  report_cluster = transport_config->report_cluster().empty()
+                       ? kDefaultMixerClusterName
+                       : transport_config->report_cluster();
 }
 
 void HttpMixerConfig::CreateLegacyRouteConfig(
@@ -153,10 +155,12 @@ void TcpMixerConfig::Load(const Json::Object& json) {
 
   ReadV2Config(json, &tcp_config);
 
-  check_cluster = transport_config->check_cluster().empty() ? kDefaultMixerClusterName :
-                  transport_config->check_cluster();
-  report_cluster = transport_config->report_cluster().empty() ? kDefaultMixerClusterName :
-                   transport_config->report_cluster();
+  check_cluster = transport_config->check_cluster().empty()
+                      ? kDefaultMixerClusterName
+                      : transport_config->check_cluster();
+  report_cluster = transport_config->report_cluster().empty()
+                       ? kDefaultMixerClusterName
+                       : transport_config->report_cluster();
 }
 
 }  // namespace Mixer
