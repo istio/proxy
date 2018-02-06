@@ -277,9 +277,23 @@ Jwt::Jwt(const std::string &jwt) {
   }
 
   iss_ = payload_->getString("iss", "");
-  aud_ = payload_->getString("aud", "");
   sub_ = payload_->getString("sub", "");
   exp_ = payload_->getInteger("exp", 0);
+
+  // "aud" can be either string array or string.
+  // Try as string array, read it as empty array if doesn't exist.
+  try {
+    aud_ = payload_->getStringArray("aud", true);
+  } catch (...) {
+    // Try as string
+    try {
+      auto audience = payload_->getString("aud");
+      aud_.push_back(audience);
+    } catch (...) {
+      UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
+      return;
+    }
+  }
 
   // Set up signature
   signature_ =
@@ -369,7 +383,7 @@ Json::ObjectSharedPtr Jwt::Payload() { return payload_; }
 const std::string &Jwt::PayloadStr() { return payload_str_; }
 const std::string &Jwt::PayloadStrBase64Url() { return payload_str_base64url_; }
 const std::string &Jwt::Iss() { return iss_; }
-const std::string &Jwt::Aud() { return aud_; }
+const std::vector<std::string> &Jwt::Aud() { return aud_; }
 const std::string &Jwt::Sub() { return sub_; }
 int64_t Jwt::Exp() { return exp_; }
 
