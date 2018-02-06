@@ -60,8 +60,14 @@ const std::string kJsonNameMixerReport("mixer_report");
 // a sub string map of mixer attributes passed to mixer for the route.
 const std::string kPrefixMixerAttributes("mixer_attributes.");
 
-// Per route attribute "destination.service".
-const std::string kJsonNameDestinationService("destination.service");
+// Per route opaque data for "destination.service".
+const std::string kPerRouteDestinationService("destination.service");
+// Per route opaque data name "mixer" is
+// base64(proto.SerailizeToString(ServiceConfig))
+const std::string kPerRouteMixer("mixer");
+// Per route opaque data name "mixer_sha" is
+// SHA(proto.SerailizeToString(ServiceConfig))
+const std::string kPerRouteMixerSha("mixer_sha");
 
 // The HTTP header to forward Istio attributes.
 const LowerCaseString kIstioAttributeHeader("x-istio-attributes");
@@ -429,8 +435,28 @@ class Instance : public Http::StreamDecoderFilter,
     ::istio::mixer_control::http::Controller::PerRouteConfig config;
     ServiceConfig legacy_config;
     if (mixer_control_.has_v2_config()) {
-      GetRouteStringAttribute(kJsonNameDestinationService,
+      GetRouteStringAttribute(kPerRouteDestinationService,
                               &config.destination_service);
+      std::string config_id;
+      GetRouteStringAttribute(kPerRouteMixerSha, &config_id);
+      if (!config_id.empty() &&
+          !mixer_control_.controller()->LookupServiceConfig(config_id)) {
+        std::string config_base64;
+        GetRouteStringAttribute(kPerRouteMixer, &config_base64);
+        if (!config_base64.empty()) {
+          std::string config_data = Base64::decode(config_base64);
+          if (!config_data.empty()) {
+            ServiceConfig config_pb;
+            if (config_pb.ParseFromString(config_data)) {
+              mixer_control_.controller()->AddServiceConfig(config_id,
+                                                            config_pb);
+              config.service_config_id = config_id;
+              ENVOY_LOG(info, "Per route service {} config: {}",
+                        config.destination_service, config_pb.DebugString());
+            }
+          }
+        }
+      }
     } else {
       bool check_disabled, report_disabled;
       check_mixer_route_flags(&check_disabled, &report_disabled);
