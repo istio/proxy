@@ -109,7 +109,7 @@ typename GrpcTransport<RequestType, ResponseType>::Func
 GrpcTransport<RequestType, ResponseType>::GetFunc(Upstream::ClusterManager& cm,
                                                   const std::string& cluster_name,
                                                   const HeaderMap* headers) {
-  return [&cm, &cluster_name, headers](const RequestType& request, ResponseType* response,
+  return [&cm, cluster_name, headers](const RequestType& request, ResponseType* response,
                         istio::mixer_client::DoneFunc on_done)
              -> istio::mixer_client::CancelFunc {
                auto transport = new GrpcTransport<RequestType, ResponseType>(
