@@ -106,11 +106,12 @@ void GrpcTransport<RequestType, ResponseType>::Cancel() {
 
 template <class RequestType, class ResponseType>
 typename GrpcTransport<RequestType, ResponseType>::Func
-GrpcTransport<RequestType, ResponseType>::GetFunc(Upstream::ClusterManager& cm,
-                                                  const std::string& cluster_name,
-                                                  const HeaderMap* headers) {
-  return [&cm, cluster_name, headers](const RequestType& request, ResponseType* response,
-                        istio::mixer_client::DoneFunc on_done)
+GrpcTransport<RequestType, ResponseType>::GetFunc(
+    Upstream::ClusterManager& cm, const std::string& cluster_name,
+    const HeaderMap* headers) {
+  return [&cm, cluster_name, headers](const RequestType& request,
+                                      ResponseType* response,
+                                      istio::mixer_client::DoneFunc on_done)
              -> istio::mixer_client::CancelFunc {
                auto transport = new GrpcTransport<RequestType, ResponseType>(
                    Grpc::AsyncClientPtr(
@@ -140,9 +141,11 @@ const google::protobuf::MethodDescriptor& ReportTransport::descriptor() {
 
 // explicitly instantiate CheckTransport and ReportTransport
 template CheckTransport::Func CheckTransport::GetFunc(
-    Upstream::ClusterManager& cm, const std::string& cluster_name, const HeaderMap* headers);
+    Upstream::ClusterManager& cm, const std::string& cluster_name,
+    const HeaderMap* headers);
 template ReportTransport::Func ReportTransport::GetFunc(
-    Upstream::ClusterManager& cm, const std::string& cluster_name, const HeaderMap* headers);
+    Upstream::ClusterManager& cm, const std::string& cluster_name,
+    const HeaderMap* headers);
 
 }  // namespace Mixer
 }  // namespace Http

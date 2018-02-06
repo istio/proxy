@@ -68,7 +68,8 @@ void ReadStringMap(const Json::Object& json, const std::string& name,
   }
 }
 
-void ReadLegacyTransportConfig(const Json::Object& json, TransportConfig* config) {
+void ReadLegacyTransportConfig(const Json::Object& json,
+                               TransportConfig* config) {
   // Default is open, unless it specifically set to "close"
   config->set_network_fail_policy(TransportConfig::FAIL_OPEN);
   if (json.hasObject(kNetworkFailPolicy) &&
@@ -125,8 +126,10 @@ void HttpMixerConfig::Load(const Json::Object& json) {
     legacy_quotas.clear();
   }
 
-  transport_config->set_check_cluster(json.getString(kCheckCluster, kDefaultMixerClusterName));
-  transport_config->set_report_cluster(json.getString(kReportCluster, kDefaultMixerClusterName));
+  transport_config->set_check_cluster(
+      json.getString(kCheckCluster, kDefaultMixerClusterName));
+  transport_config->set_report_cluster(
+      json.getString(kReportCluster, kDefaultMixerClusterName));
 }
 
 void HttpMixerConfig::CreateLegacyRouteConfig(
@@ -145,15 +148,17 @@ void HttpMixerConfig::CreateLegacyRouteConfig(
 void TcpMixerConfig::Load(const Json::Object& json) {
   ReadStringMap(json, kMixerAttributes, tcp_config.mutable_mixer_attributes());
 
-  TransportConfig *transport_config = tcp_config.mutable_transport();  
+  TransportConfig* transport_config = tcp_config.mutable_transport();
   ReadLegacyTransportConfig(json, transport_config);
 
   tcp_config.set_disable_check_calls(
       json.getBoolean(kDisableTcpCheckCalls, false));
 
   ReadV2Config(json, &tcp_config);
-  transport_config->set_check_cluster(json.getString(kCheckCluster, kDefaultMixerClusterName));
-  transport_config->set_report_cluster(json.getString(kReportCluster, kDefaultMixerClusterName));  
+  transport_config->set_check_cluster(
+      json.getString(kCheckCluster, kDefaultMixerClusterName));
+  transport_config->set_report_cluster(
+      json.getString(kReportCluster, kDefaultMixerClusterName));
 }
 
 }  // namespace Mixer

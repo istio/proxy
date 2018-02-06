@@ -74,8 +74,7 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
 
   CreateEnvironment(cm, dispatcher, random,
                     mixer_config.transport().check_cluster(),
-                    mixer_config.transport().report_cluster(),
-                    &options.env);
+                    mixer_config.transport().report_cluster(), &options.env);
 
   controller_ = ::istio::mixer_control::http::Controller::Create(options);
 
@@ -92,8 +91,7 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
 
   CreateEnvironment(cm, dispatcher, random,
                     mixer_config.transport().check_cluster(),
-                    mixer_config.transport().report_cluster(),
-                    &options.env);
+                    mixer_config.transport().report_cluster(), &options.env);
 
   controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
 
