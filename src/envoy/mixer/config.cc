@@ -25,9 +25,6 @@ using ::istio::mixer_client::AttributesBuilder;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::mixer::v1::config::client::TransportConfig;
 
-#define PROTOBUF_GET_STRING_OR_DEFAULT(message, field_name, default_value)                        \
-  ((message).has_##field_name() ? (message).field_name() : (default_value))
-
 namespace Envoy {
 namespace Http {
 namespace Mixer {
@@ -126,8 +123,10 @@ void HttpMixerConfig::Load(const Json::Object& json) {
     legacy_quotas.clear();
   }
 
-  check_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, check_cluster, kDefaultMixerClusterName);
-  report_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, report_cluster, kDefaultMixerClusterName);
+  check_cluster = transport_config->check_cluster().empty() ? kDefaultMixerClusterName :
+                  transport_config->check_cluster();
+  report_cluster = transport_config->report_cluster().empty() ? kDefaultMixerClusterName :
+                   transport_config->report_cluster();
 }
 
 void HttpMixerConfig::CreateLegacyRouteConfig(
@@ -153,8 +152,11 @@ void TcpMixerConfig::Load(const Json::Object& json) {
       json.getBoolean(kDisableTcpCheckCalls, false));
 
   ReadV2Config(json, &tcp_config);
-  check_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, check_cluster, kDefaultMixerClusterName);
-  report_cluster = PROTOBUF_GET_STRING_OR_DEFAULT(transport_config, report_cluster, kDefaultMixerClusterName);
+
+  check_cluster = transport_config->check_cluster().empty() ? kDefaultMixerClusterName :
+                  transport_config->check_cluster();
+  report_cluster = transport_config->report_cluster().empty() ? kDefaultMixerClusterName :
+                   transport_config->report_cluster();
 }
 
 }  // namespace Mixer

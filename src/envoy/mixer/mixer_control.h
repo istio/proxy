@@ -36,11 +36,11 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
 
   Upstream::ClusterManager& cm() { return cm_; }
 
-  std::string& check_cluster() const {
+  const std::string& check_cluster() const {
     return check_cluster_;
   }
 
-  std::string& report_cluster() const {
+  const std::string& report_cluster() const {
     return report_cluster_;
   }
 
@@ -78,11 +78,11 @@ class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
     return report_interval_ms_;
   }
 
-  std::string& check_cluster() const {
+  const std::string& check_cluster() const {
     return check_cluster_;
   }
 
-  std::string& report_cluster() const {
+  const std::string& report_cluster() const {
     return report_cluster_;
   }
 
