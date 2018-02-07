@@ -44,7 +44,7 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
   bool has_v2_config() const { return has_v2_config_; }
 
   CheckTransport::Func GetCheckTransport(const HeaderMap* headers) {
-    return CheckTransport::GetFunc(cm_, config_.check_cluster, headers);
+    return CheckTransport::GetFunc(cm_, config_.check_cluster(), headers);
   }
 
  private:

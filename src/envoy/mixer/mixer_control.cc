@@ -71,8 +71,8 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
   ::istio::mixer_control::http::Controller::Options options(
       mixer_config.http_config, mixer_config.legacy_quotas);
 
-  CreateEnvironment(cm, dispatcher, random, config_.check_cluster,
-                    config_.report_cluster, &options.env);
+  CreateEnvironment(cm, dispatcher, random, config_.check_cluster(),
+                    config_.report_cluster(), &options.env);
 
   controller_ = ::istio::mixer_control::http::Controller::Create(options);
   has_v2_config_ = mixer_config.has_v2_config;
@@ -86,8 +86,8 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
   ::istio::mixer_control::tcp::Controller::Options options(
       mixer_config.tcp_config);
 
-  CreateEnvironment(cm, dispatcher, random, config_.check_cluster,
-                    config_.report_cluster, &options.env);
+  CreateEnvironment(cm, dispatcher, random, config_.check_cluster(),
+                    config_.report_cluster(), &options.env);
 
   controller_ = ::istio::mixer_control::tcp::Controller::Create(options);
 
