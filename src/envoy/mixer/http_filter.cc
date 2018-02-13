@@ -26,6 +26,7 @@
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/auth/jwt.h"
 #include "src/envoy/auth/jwt_authenticator.h"
+#include "src/envoy/common/per_route_http_filter.h"
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/mixer_control.h"
@@ -341,79 +342,12 @@ class ReportData : public HttpReportData {
   }
 };
 
-class Instance : public Http::StreamDecoderFilter,
-                 public AccessLog::Instance,
-                 public Logger::Loggable<Logger::Id::http> {
- private:
-  HttpMixerControl& mixer_control_;
-  std::unique_ptr<::istio::mixer_control::http::RequestHandler> handler_;
-  istio::mixer_client::CancelFunc cancel_check_;
-
-  enum State { NotStarted, Calling, Complete, Responded };
-  State state_;
-
-  StreamDecoderFilterCallbacks* decoder_callbacks_;
-
-  bool initiating_call_;
-
-  // check mixer on/off flags in route opaque data
-  void check_mixer_route_flags(bool* check_disabled, bool* report_disabled) {
-    // Both check and report are disabled by default.
-    *check_disabled = true;
-    *report_disabled = true;
-    auto route = decoder_callbacks_->route();
-    if (route != nullptr) {
-      auto entry = route->routeEntry();
-      if (entry != nullptr) {
-        auto control_key = entry->opaqueConfig().find(kJsonNameMixerControl);
-        if (control_key != entry->opaqueConfig().end() &&
-            control_key->second == "on") {
-          *check_disabled = false;
-          *report_disabled = false;
-        }
-        auto check_key = entry->opaqueConfig().find(kJsonNameMixerCheck);
-        if (check_key != entry->opaqueConfig().end() &&
-            check_key->second == "on") {
-          *check_disabled = false;
-        }
-        auto report_key = entry->opaqueConfig().find(kJsonNameMixerReport);
-        if (report_key != entry->opaqueConfig().end() &&
-            report_key->second == "on") {
-          *report_disabled = false;
-        }
-      }
-    }
-  }
-
-  // Extract a prefixed string map from route opaque config.
-  // Route opaque config only supports flat name value pair, have to use
-  // prefix to create a sub string map. such as:
-  //    prefix.key1 = value1
-  std::map<std::string, std::string> GetRouteStringMap(
-      const std::string& prefix) {
-    std::map<std::string, std::string> attrs;
-    auto route = decoder_callbacks_->route();
-    if (route != nullptr) {
-      auto entry = route->routeEntry();
-      if (entry != nullptr) {
-        for (const auto& it : entry->opaqueConfig()) {
-          if (it.first.substr(0, prefix.size()) == prefix) {
-            attrs[it.first.substr(prefix.size(), std::string::npos)] =
-                it.second;
-          }
-        }
-      }
-    }
-    return attrs;
-  }
-
-  void ReadPerRouteConfig(
+class RouteUtil : public Logger::Loggable<Logger::Id::config> {
+ public:
+  static void ReadPerRouteConfig(
+      const Router::RouteEntry* entry,
+      ::istio::mixer_control::http::Controller& controller,
       ::istio::mixer_control::http::Controller::PerRouteConfig* config) {
-    auto route = decoder_callbacks_->route();
-    if (route == nullptr) {
-      return;
-    }
-    auto entry = route->routeEntry();
     if (entry == nullptr) {
       return;
     }
@@ -428,8 +362,7 @@ class Instance : public Http::StreamDecoderFilter,
       return;
     }
 
-    if (mixer_control_.controller()->LookupServiceConfig(
-            config->service_config_id)) {
+    if (controller.LookupServiceConfig(config->service_config_id)) {
       return;
     }
 
@@ -455,42 +388,88 @@ class Instance : public Http::StreamDecoderFilter,
           config->destination_service, status.ToString());
       return;
     }
-    mixer_control_.controller()->AddServiceConfig(config->service_config_id,
-                                                  config_pb);
+    controller.AddServiceConfig(config->service_config_id, config_pb);
     ENVOY_LOG(info, "Service {}, config_id {}, config: {}",
               config->destination_service, config->service_config_id,
               config_pb.DebugString());
   }
 
+  // check mixer on/off flags in route opaque data
+  static void MixerRouteFlags(const Router::RouteEntry* entry,
+                              bool* check_disabled, bool* report_disabled) {
+    // Both check and report are disabled by default.
+    *check_disabled = true;
+    *report_disabled = true;
+    if (entry != nullptr) {
+      auto control_key = entry->opaqueConfig().find(kJsonNameMixerControl);
+      if (control_key != entry->opaqueConfig().end() &&
+          control_key->second == "on") {
+        *check_disabled = false;
+        *report_disabled = false;
+      }
+      auto check_key = entry->opaqueConfig().find(kJsonNameMixerCheck);
+      if (check_key != entry->opaqueConfig().end() &&
+          check_key->second == "on") {
+        *check_disabled = false;
+      }
+      auto report_key = entry->opaqueConfig().find(kJsonNameMixerReport);
+      if (report_key != entry->opaqueConfig().end() &&
+          report_key->second == "on") {
+        *report_disabled = false;
+      }
+    }
+  }
+
+  // Extract a prefixed string map from route opaque config.
+  // Route opaque config only supports flat name value pair, have to use
+  // prefix to create a sub string map. such as:
+  //    prefix.key1 = value1
+  static std::map<std::string, std::string> GetRouteStringMap(
+      const Router::RouteEntry* entry, const std::string& prefix) {
+    std::map<std::string, std::string> attrs;
+    if (entry != nullptr) {
+      for (const auto& it : entry->opaqueConfig()) {
+        if (it.first.substr(0, prefix.size()) == prefix) {
+          attrs[it.first.substr(prefix.size(), std::string::npos)] = it.second;
+        }
+      }
+    }
+    return attrs;
+  }
+};
+
+class Instance : public Http::StreamDecoderFilter,
+                 public AccessLog::Instance,
+                 public Logger::Loggable<Logger::Id::http> {
+ private:
+  HttpMixerControl& mixer_control_;
+  std::unique_ptr<::istio::mixer_control::http::RequestHandler> handler_;
+  istio::mixer_client::CancelFunc cancel_check_;
+
+  enum State { NotStarted, Calling, Complete, Responded };
+  State state_{NotStarted};
+
+  StreamDecoderFilterCallbacks* decoder_callbacks_;
+
+  bool initiating_call_{false};
+  bool check_data_extracted_{false};
+
  public:
-  Instance(ConfigPtr config)
-      : mixer_control_(config->mixer_control()),
-        state_(NotStarted),
-        initiating_call_(false) {
-    ENVOY_LOG(debug, "Called Mixer::Instance : {}", __func__);
+  Instance(
+      HttpMixerControl& mixer_control,
+      std::unique_ptr<::istio::mixer_control::http::RequestHandler> handler)
+      : mixer_control_(mixer_control), handler_(std::move(handler)) {
+    ENVOY_LOG(debug, "Called Mixer::Instance per route constructor: {}",
+              __func__);
   }
 
   FilterHeadersStatus decodeHeaders(HeaderMap& headers, bool) override {
     ENVOY_LOG(debug, "Called Mixer::Instance : {}", __func__);
 
-    ::istio::mixer_control::http::Controller::PerRouteConfig config;
-    ServiceConfig legacy_config;
-    if (mixer_control_.has_v2_config()) {
-      ReadPerRouteConfig(&config);
-    } else {
-      bool check_disabled, report_disabled;
-      check_mixer_route_flags(&check_disabled, &report_disabled);
-
-      HttpMixerConfig::CreateLegacyRouteConfig(
-          check_disabled, report_disabled,
-          GetRouteStringMap(kPrefixMixerAttributes), &legacy_config);
-      config.legacy_config = &legacy_config;
-    }
-    handler_ = mixer_control_.controller()->CreateRequestHandler(config);
-
     state_ = Calling;
     initiating_call_ = true;
     CheckData check_data(headers, decoder_callbacks_->connection());
+    check_data_extracted_ = true;
     HeaderUpdate header_update(&headers);
     cancel_check_ = handler_->Check(
         &check_data, &header_update, mixer_control_.GetCheckTransport(&headers),
@@ -567,7 +546,7 @@ class Instance : public Http::StreamDecoderFilter,
                    const HeaderMap* response_headers,
                    const RequestInfo::RequestInfo& request_info) override {
     ENVOY_LOG(debug, "Called Mixer::Instance : {}", __func__);
-    if (!handler_) {
+    if (!check_data_extracted_) {
       if (request_headers == nullptr) {
         return;
       }
@@ -577,9 +556,6 @@ class Instance : public Http::StreamDecoderFilter,
       // But at this stage, not sure if callback_->connection is safe to call.
       // Similarly, it is better to get per-route attributes, but not sure if
       // it is safe to call callback_->route().
-      ::istio::mixer_control::http::Controller::PerRouteConfig config;
-      handler_ = mixer_control_.controller()->CreateRequestHandler(config);
-
       CheckData check_data(*request_headers, nullptr);
       handler_->ExtractRequestAttributes(&check_data);
     }
@@ -618,8 +594,36 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
       if (auth_filter_cb) {
         auth_filter_cb(callbacks);
       }
-      std::shared_ptr<Http::Mixer::Instance> instance =
-          std::make_shared<Http::Mixer::Instance>(mixer_config);
+
+      std::shared_ptr<Http::PerRouteFilter<Http::Mixer::Instance>> instance{
+          new Http::PerRouteFilter<Http::Mixer::Instance>(
+              [mixer_config](
+                  const Router::RouteEntry*
+                      entry) -> std::unique_ptr<Http::Mixer::Instance> {
+                ::istio::mixer_control::http::Controller::PerRouteConfig config;
+                ServiceConfig legacy_config;
+                auto& control = mixer_config->mixer_control();
+                if (control.has_v2_config()) {
+                  Http::Mixer::RouteUtil::ReadPerRouteConfig(
+                      entry, *control.controller(), &config);
+                } else {
+                  bool check_disabled, report_disabled;
+                  Http::Mixer::RouteUtil::MixerRouteFlags(
+                      entry, &check_disabled, &report_disabled);
+
+                  Http::Mixer::HttpMixerConfig::CreateLegacyRouteConfig(
+                      check_disabled, report_disabled,
+                      Http::Mixer::RouteUtil::GetRouteStringMap(
+                          entry, Http::Mixer::kPrefixMixerAttributes),
+                      &legacy_config);
+                  config.legacy_config = &legacy_config;
+                }
+
+                return std::unique_ptr<Http::Mixer::Instance>{
+                    new Http::Mixer::Instance(
+                        control,
+                        control.controller()->CreateRequestHandler(config))};
+              })};
       callbacks.addStreamDecoderFilter(
           Http::StreamDecoderFilterSharedPtr(instance));
       callbacks.addAccessLogHandler(AccessLog::InstanceSharedPtr(instance));

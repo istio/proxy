@@ -21,26 +21,13 @@ load(
 )
 
 envoy_cc_library(
-    name = "filter_lib",
+    name = "per_route_filter_lib",
     srcs = [
-        "config.cc",
-        "config.h",
-        "grpc_transport.cc",
-        "grpc_transport.h",
-        "http_filter.cc",
-        "mixer_control.cc",
-        "mixer_control.h",
-        "tcp_filter.cc",
-        "utils.cc",
-        "utils.h",
+        "per_route_http_filter.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "//external:mixer_http_control_lib",
-        "//external:mixer_tcp_control_lib",
-        "//src/envoy/auth:http_filter_lib",
-        "//src/envoy/common:per_route_filter_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
