@@ -54,12 +54,12 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
-    tls_->set([this, &random, &scope](Event::Dispatcher& dispatcher)
-                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
-                    return ThreadLocal::ThreadLocalObjectSharedPtr(
-                        new TcpMixerControl(mixer_config_, cm_, dispatcher,
-                                            random));
-                  });
+    tls_->set(
+        [this, &random, &scope](Event::Dispatcher& dispatcher)
+            -> ThreadLocal::ThreadLocalObjectSharedPtr {
+              return ThreadLocal::ThreadLocalObjectSharedPtr(
+                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random));
+            });
     stats_obj_ = std::unique_ptr<MixerStatsObject>(new MixerStatsObject(
         context.dispatcher(), kTcpStatsPrefix, context.scope(),
         mixer_config_.tcp_config.transport().stats_update_interval(),

@@ -33,8 +33,8 @@ MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
                                    GetStatsFunc func)
     : stats_{ALL_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))},
       get_stats_func_(func) {
-  stats_update_interval_ = update_interval.seconds() * 1000 +
-      update_interval.nanos() / 1000000;
+  stats_update_interval_ =
+      update_interval.seconds() * 1000 + update_interval.nanos() / 1000000;
   if (stats_update_interval_ <= 0) {
     stats_update_interval_ = kStatsUpdateIntervalInMs;
   }
