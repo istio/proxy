@@ -22,20 +22,29 @@
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/mixer_control.h"
+#include "src/envoy/mixer/stats.h"
 #include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
+using ::istio::mixer_client::Statistics;
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
+namespace {
+
+// Envoy stats perfix for TCP filter stats.
+const std::string kTcpStatsPrefix("tcp_mixer_filter.");
+
+}  // namespace
 
 class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
  private:
   Upstream::ClusterManager& cm_;
   TcpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
+  std::unique_ptr<MixerStatsObject> stats_obj_;
 
  public:
   TcpConfig(const Json::Object& config,
@@ -44,12 +53,23 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
         tls_(context.threadLocal().allocateSlot()) {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
-    tls_->set(
-        [this, &random](Event::Dispatcher& dispatcher)
-            -> ThreadLocal::ThreadLocalObjectSharedPtr {
-              return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random));
-            });
+    Stats::Scope& scope = context.scope();
+    tls_->set([this, &random, &scope](Event::Dispatcher& dispatcher)
+                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
+                    return ThreadLocal::ThreadLocalObjectSharedPtr(
+                        new TcpMixerControl(mixer_config_, cm_, dispatcher,
+                                            random));
+                  });
+    stats_obj_ = std::unique_ptr<MixerStatsObject>(new MixerStatsObject(
+        context.dispatcher(), kTcpStatsPrefix, context.scope(),
+        mixer_config_.tcp_config.transport().stats_update_interval(),
+        [this](Statistics* stat) -> bool {
+          if (!mixer_control().controller()) {
+            return false;
+          }
+          mixer_control().controller()->GetStatistics(stat);
+          return true;
+        }));
   }
 
   TcpMixerControl& mixer_control() { return tls_->getTyped<TcpMixerControl>(); }

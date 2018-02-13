@@ -29,6 +29,7 @@
 #include "src/envoy/mixer/config.h"
 #include "src/envoy/mixer/grpc_transport.h"
 #include "src/envoy/mixer/mixer_control.h"
+#include "src/envoy/mixer/stats.h"
 #include "src/envoy/mixer/utils.h"
 
 #include <map>
@@ -36,6 +37,7 @@
 #include <thread>
 
 using ::google::protobuf::util::Status;
+using ::istio::mixer_client::Statistics;
 using HttpCheckData = ::istio::mixer_control::http::CheckData;
 using HttpHeaderUpdate = ::istio::mixer_control::http::HeaderUpdate;
 using HttpReportData = ::istio::mixer_control::http::ReportData;
@@ -53,6 +55,9 @@ const std::string kPerRouteDestinationService("destination.service");
 const std::string kPerRouteMixer("mixer");
 // Per route opaque data name "mixer_sha" is SHA(JSON(ServiceConfig))
 const std::string kPerRouteMixerSha("mixer_sha");
+
+// Envoy stats perfix for HTTP filter stats.
+const std::string kHttpStatsPrefix("http_mixer_filter.");
 
 // The HTTP header to forward Istio attributes.
 const LowerCaseString kIstioAttributeHeader("x-istio-attributes");
@@ -86,6 +91,7 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   Upstream::ClusterManager& cm_;
   HttpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
+  std::unique_ptr<MixerStatsObject> stats_obj_;
 
  public:
   Config(const Json::Object& config,
@@ -100,6 +106,16 @@ class Config : public Logger::Loggable<Logger::Id::http> {
               return ThreadLocal::ThreadLocalObjectSharedPtr(
                   new HttpMixerControl(mixer_config_, cm_, dispatcher, random));
             });
+    stats_obj_ = std::unique_ptr<MixerStatsObject>(new MixerStatsObject(
+        context.dispatcher(), kHttpStatsPrefix, context.scope(),
+        mixer_config_.http_config.transport().stats_update_interval(),
+        [this](Statistics* stat) -> bool {
+          if (!mixer_control().controller()) {
+            return false;
+          }
+          mixer_control().controller()->GetStatistics(stat);
+          return true;
+        }));
   }
 
   HttpMixerControl& mixer_control() {
