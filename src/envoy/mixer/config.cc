@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
-#include "src/envoy/mixer/config.h"
 #include "google/protobuf/stubs/status.h"
 #include "google/protobuf/util/json_util.h"
+#include "include/attributes_builder.h"
+#include "src/envoy/mixer/config.h"
+#include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::Message;
 using ::google::protobuf::util::Status;
@@ -45,8 +47,7 @@ bool ReadV2Config(const Json::Object& json, Message* message) {
     return false;
   }
   std::string v2_str = json.getObject(kV2Config)->asJsonString();
-  Status status =
-      ::google::protobuf::util::JsonStringToMessage(v2_str, message);
+  Status status = Utils::ParseJsonMessage(v2_str, message);
   auto& logger = Logger::Registry::getLog(Logger::Id::config);
   if (status.ok()) {
     ENVOY_LOG_TO_LOGGER(logger, info, "V2 mixer client config: {}",
