@@ -45,6 +45,8 @@ fi
 
 cd $ROOT
 
+export BAZEL_TEST_ARGS="--test_output=errors"
+
 echo 'Code Check'
 make check
 
