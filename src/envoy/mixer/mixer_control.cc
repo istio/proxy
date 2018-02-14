@@ -54,9 +54,9 @@ void CreateEnvironment(Upstream::ClusterManager& cm,
 
   env->timer_create_func = [&dispatcher](std::function<void()> timer_cb)
       -> std::unique_ptr<::istio::mixer_client::Timer> {
-    return std::unique_ptr<::istio::mixer_client::Timer>(
-        new EnvoyTimer(dispatcher.createTimer(timer_cb)));
-  };
+        return std::unique_ptr<::istio::mixer_client::Timer>(
+            new EnvoyTimer(dispatcher.createTimer(timer_cb)));
+      };
 
   env->uuid_generate_func = [&random]() -> std::string {
     return random.uuid();
