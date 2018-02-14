@@ -54,9 +54,9 @@ void CreateEnvironment(Upstream::ClusterManager& cm,
 
   env->timer_create_func = [&dispatcher](std::function<void()> timer_cb)
       -> std::unique_ptr<::istio::mixer_client::Timer> {
-        return std::unique_ptr<::istio::mixer_client::Timer>(
-            new EnvoyTimer(dispatcher.createTimer(timer_cb)));
-      };
+    return std::unique_ptr<::istio::mixer_client::Timer>(
+        new EnvoyTimer(dispatcher.createTimer(timer_cb)));
+  };
 
   env->uuid_generate_func = [&random]() -> std::string {
     return random.uuid();
@@ -72,7 +72,7 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
                                    MixerFilterStats& stats)
     : config_(mixer_config),
       cm_(cm),
-      stats_obj_(dispatcher,
+      stats_obj_(dispatcher, stats,
                  mixer_config.http_config.transport().stats_update_interval(),
                  [this](Statistics* stat) -> bool {
                    if (!controller_) {
@@ -80,8 +80,7 @@ HttpMixerControl::HttpMixerControl(const HttpMixerConfig& mixer_config,
                    }
                    controller_->GetStatistics(stat);
                    return true;
-                 },
-                 stats) {
+                 }) {
   ::istio::mixer_control::http::Controller::Options options(
       mixer_config.http_config);
 
@@ -98,7 +97,7 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
                                  MixerFilterStats& stats)
     : config_(mixer_config),
       dispatcher_(dispatcher),
-      stats_obj_(dispatcher,
+      stats_obj_(dispatcher, stats,
                  mixer_config.tcp_config.transport().stats_update_interval(),
                  [this](Statistics* stat) -> bool {
                    if (!controller_) {
@@ -106,8 +105,7 @@ TcpMixerControl::TcpMixerControl(const TcpMixerConfig& mixer_config,
                    }
                    controller_->GetStatistics(stat);
                    return true;
-                 },
-                 stats) {
+                 }) {
   ::istio::mixer_control::tcp::Controller::Options options(
       mixer_config.tcp_config);
 

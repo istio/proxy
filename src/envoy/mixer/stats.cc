@@ -28,8 +28,9 @@ const int kStatsUpdateIntervalInMs = 10000;
 }  // namespace
 
 MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
+                                   MixerFilterStats& stats,
                                    ::google::protobuf::Duration update_interval,
-                                   GetStatsFunc func, MixerFilterStats& stats)
+                                   GetStatsFunc func)
     : stats_(stats), get_stats_func_(func) {
   stats_update_interval_ =
       update_interval.seconds() * 1000 + update_interval.nanos() / 1000000;

@@ -52,9 +52,9 @@ typedef std::function<bool(::istio::mixer_client::Statistics* s)> GetStatsFunc;
 // calls issued by a mixer filter.
 class MixerStatsObject {
  public:
-  MixerStatsObject(Event::Dispatcher& dispatcher,
+  MixerStatsObject(Event::Dispatcher& dispatcher, MixerFilterStats& stats,
                    ::google::protobuf::Duration update_interval,
-                   GetStatsFunc func, MixerFilterStats& stats);
+                   GetStatsFunc func);
 
  private:
   // This function is invoked when timer event fires.
