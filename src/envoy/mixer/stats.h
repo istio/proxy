@@ -64,7 +64,7 @@ class MixerStatsObject {
   void CheckAndUpdateStats(const ::istio::mixer_client::Statistics& new_stats);
 
   // A set of Envoy stats for the number of check, quota and report calls.
-  MixerFilterStats stats_;
+  MixerFilterStats& stats_;
   // Stores a function which gets statistics from mixer controller.
   GetStatsFunc get_stats_func_;
 
