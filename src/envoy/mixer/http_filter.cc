@@ -56,14 +56,14 @@ const std::string kPerRouteMixer("mixer");
 // Per route opaque data name "mixer_sha" is SHA(JSON(ServiceConfig))
 const std::string kPerRouteMixerSha("mixer_sha");
 
-// Envoy stats perfix for HTTP filter stats.
-const std::string kHttpStatsPrefix("http_mixer_filter.");
-
 // The HTTP header to forward Istio attributes.
 const LowerCaseString kIstioAttributeHeader("x-istio-attributes");
 
 // Referer header
 const LowerCaseString kRefererHeaderKey("referer");
+
+// Envoy stats perfix for HTTP filter stats.
+const std::string kHttpStatsPrefix("http_mixer_filter.");
 
 // Set of headers excluded from request.headers attribute.
 const std::set<std::string> RequestHeaderExclusives = {
@@ -91,31 +91,23 @@ class Config : public Logger::Loggable<Logger::Id::http> {
   Upstream::ClusterManager& cm_;
   HttpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
-  std::unique_ptr<MixerStatsObject> stats_obj_;
+  MixerFilterStats stats_;
 
  public:
   Config(const Json::Object& config,
          Server::Configuration::FactoryContext& context)
       : cm_(context.clusterManager()),
-        tls_(context.threadLocal().allocateSlot()) {
+        tls_(context.threadLocal().allocateSlot()),
+        stats_{ALL_MIXER_FILTER_STATS(
+            POOL_COUNTER_PREFIX(context.scope(), kHttpStatsPrefix))} {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
-    tls_->set(
-        [this, &random](Event::Dispatcher& dispatcher)
-            -> ThreadLocal::ThreadLocalObjectSharedPtr {
-              return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new HttpMixerControl(mixer_config_, cm_, dispatcher, random));
-            });
-    stats_obj_ = std::unique_ptr<MixerStatsObject>(new MixerStatsObject(
-        context.dispatcher(), kHttpStatsPrefix, context.scope(),
-        mixer_config_.http_config.transport().stats_update_interval(),
-        [this](Statistics* stat) -> bool {
-          if (!mixer_control().controller()) {
-            return false;
-          }
-          mixer_control().controller()->GetStatistics(stat);
-          return true;
-        }));
+    tls_->set([this, &random](Event::Dispatcher& dispatcher)
+                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
+                    return ThreadLocal::ThreadLocalObjectSharedPtr(
+                        new HttpMixerControl(mixer_config_, cm_, dispatcher,
+                                             random, stats_));
+                  });
   }
 
   HttpMixerControl& mixer_control() {

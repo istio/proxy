@@ -28,11 +28,9 @@ const int kStatsUpdateIntervalInMs = 10000;
 }  // namespace
 
 MixerStatsObject::MixerStatsObject(Event::Dispatcher& dispatcher,
-                                   const std::string& name, Stats::Scope& scope,
                                    ::google::protobuf::Duration update_interval,
-                                   GetStatsFunc func)
-    : stats_{ALL_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))},
-      get_stats_func_(func) {
+                                   GetStatsFunc func, MixerFilterStats& stats)
+    : stats_(stats), get_stats_func_(func) {
   stats_update_interval_ =
       update_interval.seconds() * 1000 + update_interval.nanos() / 1000000;
   if (stats_update_interval_ <= 0) {

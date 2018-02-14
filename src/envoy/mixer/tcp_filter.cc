@@ -44,32 +44,23 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
   Upstream::ClusterManager& cm_;
   TcpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
-  std::unique_ptr<MixerStatsObject> stats_obj_;
+  MixerFilterStats stats_;
 
  public:
   TcpConfig(const Json::Object& config,
             Server::Configuration::FactoryContext& context)
       : cm_(context.clusterManager()),
-        tls_(context.threadLocal().allocateSlot()) {
+        tls_(context.threadLocal().allocateSlot()),
+        stats_{ALL_MIXER_FILTER_STATS(
+            POOL_COUNTER_PREFIX(context.scope(), kTcpStatsPrefix))} {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
-    Stats::Scope& scope = context.scope();
-    tls_->set(
-        [this, &random, &scope](Event::Dispatcher& dispatcher)
-            -> ThreadLocal::ThreadLocalObjectSharedPtr {
-              return ThreadLocal::ThreadLocalObjectSharedPtr(
-                  new TcpMixerControl(mixer_config_, cm_, dispatcher, random));
-            });
-    stats_obj_ = std::unique_ptr<MixerStatsObject>(new MixerStatsObject(
-        context.dispatcher(), kTcpStatsPrefix, context.scope(),
-        mixer_config_.tcp_config.transport().stats_update_interval(),
-        [this](Statistics* stat) -> bool {
-          if (!mixer_control().controller()) {
-            return false;
-          }
-          mixer_control().controller()->GetStatistics(stat);
-          return true;
-        }));
+    tls_->set([this, &random](Event::Dispatcher& dispatcher)
+                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
+                    return ThreadLocal::ThreadLocalObjectSharedPtr(
+                        new TcpMixerControl(mixer_config_, cm_, dispatcher,
+                                            random, stats_));
+                  });
   }
 
   TcpMixerControl& mixer_control() { return tls_->getTyped<TcpMixerControl>(); }
