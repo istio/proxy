@@ -29,6 +29,7 @@ envoy_cc_binary(
         "//src/envoy/http/authn:filter_lib",
         "//src/envoy/http/mixer:filter_lib",
         "//src/envoy/tcp/mixer:filter_lib",
+        "//src/envoy/alts:alts_socket_factory",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )
