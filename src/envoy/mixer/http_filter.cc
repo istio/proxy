@@ -104,9 +104,10 @@ class Config : public Logger::Loggable<Logger::Id::http> {
     Runtime::RandomGenerator& random = context.random();
     tls_->set([this, &random](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return ThreadLocal::ThreadLocalObjectSharedPtr(
-          new HttpMixerControl(mixer_config_, cm_, dispatcher, random, stats_));
-    });
+                    return ThreadLocal::ThreadLocalObjectSharedPtr(
+                        new HttpMixerControl(mixer_config_, cm_, dispatcher,
+                                             random, stats_));
+                  });
   }
 
   HttpMixerControl& mixer_control() {
