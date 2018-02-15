@@ -1,5 +1,12 @@
 [
 	{
+		"name": "ISTIO_API",
+		"repoName": "api",
+		"prodBranch": "master",
+		"file": "mixerclient/repositories.bzl",
+		"lastStableSHA": "145be4868f169e496d90e258b45b34a1755dabe1"
+	},
+	{
 		"name": "ENVOY_SHA",
 		"repoName": "envoyproxy/envoy",
 		"prodBranch": "master",
