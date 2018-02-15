@@ -104,10 +104,9 @@ class Config : public Logger::Loggable<Logger::Id::http> {
     Runtime::RandomGenerator& random = context.random();
     tls_->set([this, &random](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-                    return ThreadLocal::ThreadLocalObjectSharedPtr(
-                        new HttpMixerControl(mixer_config_, cm_, dispatcher,
-                                             random, stats_));
-                  });
+      return ThreadLocal::ThreadLocalObjectSharedPtr(
+          new HttpMixerControl(mixer_config_, cm_, dispatcher, random, stats_));
+    });
   }
 
   HttpMixerControl& mixer_control() {
@@ -329,6 +328,7 @@ class ReportData : public HttpReportData {
     data->send_bytes = info_.bytesSent();
     data->duration =
         std::chrono::duration_cast<std::chrono::nanoseconds>(info_.duration());
+    data->response_code = 500;
     if (info_.responseCode().valid()) {
       data->response_code = info_.responseCode().value();
     }
