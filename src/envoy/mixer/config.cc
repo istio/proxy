@@ -60,7 +60,7 @@ bool ReadV2Config(const Json::Object &json, Message *message) {
   return false;
 }
 
-} // namespace
+}  // namespace
 
 void HttpMixerConfig::Load(const Json::Object &json) {
   ReadV2Config(json, &http_config);
@@ -74,6 +74,6 @@ void TcpMixerConfig::Load(const Json::Object &json) {
   SetDefaultMixerClusters(tcp_config.mutable_transport());
 }
 
-} // namespace Mixer
-} // namespace Http
-} // namespace Envoy
+}  // namespace Mixer
+}  // namespace Http
+}  // namespace Envoy
