@@ -16,17 +16,18 @@
 #
 
 load(
-    "//src/envoy/mixer:repositories.bzl",
-    "mixer_client_repositories",
-)
+     "//mixerclient:rrr.bzl",
+     "googletest_repositories",
+     )
 
-mixer_client_repositories()
 
-load(
-    "@mixerclient_git//:repositories.bzl",
-    "mixerapi_dependencies",
-)
+#load(
+#     "//mixerclient:repositories.bzl",
+#     "googletest_repositories",
+#     "mixerapi_dependencies",
+#)
 
+googletest_repositories()
 mixerapi_dependencies()
 
 bind(
