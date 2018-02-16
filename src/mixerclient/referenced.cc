@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "referenced.h"
+#include "src/mixerclient/referenced.h"
 
 #include "global_dictionary.h"
 
@@ -63,7 +63,7 @@ bool Decode(int idx, const std::vector<std::string> &global_words,
 
 // Updates hasher with keys
 void Referenced::UpdateHash(const std::vector<AttributeRef> &keys,
-                            MD5 *hasher) {
+                            utils::MD5 *hasher) {
   // keys are already sorted during Fill
   for (const AttributeRef &key : keys) {
     hasher->Update(key.name);
@@ -153,7 +153,7 @@ bool Referenced::Signature(const Attributes &attributes,
     } while (true);
   }
 
-  MD5 hasher;
+  utils::MD5 hasher;
 
   for (std::size_t i = 0; i < exact_keys_.size(); ++i) {
     const auto &key = exact_keys_[i];
@@ -238,7 +238,7 @@ bool Referenced::Signature(const Attributes &attributes,
 }
 
 std::string Referenced::Hash() const {
-  MD5 hasher;
+  utils::MD5 hasher;
 
   // keys are sorted during Fill
   UpdateHash(absence_keys_, &hasher);

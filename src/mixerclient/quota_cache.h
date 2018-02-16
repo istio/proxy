@@ -26,7 +26,7 @@
 #include "include/prefetch/quota_prefetch.h"
 #include "include/utils/simple_lru_cache.h"
 #include "include/utils/simple_lru_cache_inl.h"
-#include "referenced.h"
+#include "src/mixerclient/referenced.h"
 
 namespace istio {
 namespace mixerclient {
@@ -93,7 +93,7 @@ class QuotaCache {
 
   // Check quota cache for a request, result will be stored in CacaheResult.
   void Check(const ::istio::mixer::v1::Attributes& request,
-             const std::vector<::istio::quota::Requirement>& quotas,
+             const std::vector<::istio::quota_config::Requirement>& quotas,
              bool use_cache, CheckResult* result);
 
  private:
@@ -122,7 +122,7 @@ class QuotaCache {
 
    private:
     // The quota allocation call.
-    void Alloc(int amount, QuotaPrefetch::DoneFunc fn);
+    void Alloc(int amount, prefetch::QuotaPrefetch::DoneFunc fn);
 
     std::string name_;
 
@@ -130,7 +130,7 @@ class QuotaCache {
     CheckResult::Quota* quota_;
 
     // The prefetch object.
-    std::unique_ptr<QuotaPrefetch> prefetch_;
+    std::unique_ptr<prefetch::QuotaPrefetch> prefetch_;
   };
 
   // Per quota Referenced data.
@@ -154,7 +154,7 @@ class QuotaCache {
 
   // Key is the signature of the Attributes. Value is the CacheElem.
   // It is a LRU cache with MaxIdelTime as response_expiration_time.
-  using QuotaLRUCache = SimpleLRUCache<std::string, CacheElem>;
+  using QuotaLRUCache = utils::SimpleLRUCache<std::string, CacheElem>;
 
   // The quota options.
   QuotaOptions options_;

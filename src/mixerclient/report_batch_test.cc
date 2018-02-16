@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "report_batch.h"
+#include "src/mixerclient/report_batch.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "mixerclient/include/attributes_builder.h"
+#include "include/utils/attributes_builder.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::ReportRequest;
@@ -116,7 +116,7 @@ TEST_F(ReportBatchTest, TestNoDeltaUpdate) {
       }));
 
   Attributes report;
-  AttributesBuilder(&report).AddString("key", "value");
+  utils::AttributesBuilder(&report).AddString("key", "value");
   batch_->Report(report);
   EXPECT_EQ(report_call_count, 0);
 

@@ -14,8 +14,6 @@
 
 licenses(["notice"])
 
-load("@com_google_protobuf//:protobuf.bzl", "cc_proto_library")
-
 py_binary(
    name = "create_global_dictionary",
    srcs = ["create_global_dictionary.py"],
@@ -36,7 +34,7 @@ genrule(
 )
 
 cc_library(
-    name = "mixer_client_lib",
+    name = "mixerclient_lib",
     srcs = [
         "attribute_compressor.cc",
         "attribute_compressor.h",
@@ -59,10 +57,19 @@ cc_library(
         "//external:mixer_api_cc_proto",
         "//include/mixerclient:headers_lib",
         "//include/quota_config:requirement_header",
+        "//include/utils:simple_lru_cache",
         "//src/prefetch:quota_prefetch_lib",
         "//src/utils:md5_lib",
-        "//src/utils:simple_lru_cache",
+        "//src/utils:utils_lib",
     ],
+)
+
+cc_library(
+    name = "status_test_util_lib",
+    hdrs = [
+        "status_test_util.h",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 cc_test(
@@ -71,7 +78,7 @@ cc_test(
     srcs = ["attribute_compressor_test.cc"],
     linkstatic = 1,
     deps = [
-        ":mixer_client_lib",
+        ":mixerclient_lib",
         "//external:googletest_main",
     ],
 )
@@ -82,7 +89,8 @@ cc_test(
     srcs = ["check_cache_test.cc"],
     linkstatic = 1,
     deps = [
-        ":mixer_client_lib",
+        ":mixerclient_lib",
+        ":status_test_util_lib",
         "//external:googletest_main",
     ],
 )
@@ -93,7 +101,7 @@ cc_test(
     srcs = ["delta_update_test.cc"],
     linkstatic = 1,
     deps = [
-        ":mixer_client_lib",
+        ":mixerclient_lib",
         "//external:googletest_main",
     ],
 )
@@ -104,7 +112,7 @@ cc_test(
     srcs = ["report_batch_test.cc"],
     linkstatic = 1,
     deps = [
-        ":mixer_client_lib",
+        ":mixerclient_lib",
         "//external:googletest_main",
     ],
 )
@@ -115,7 +123,8 @@ cc_test(
     srcs = ["quota_cache_test.cc"],
     linkstatic = 1,
     deps = [
-        ":mixer_client_lib",
+        ":mixerclient_lib",
+        ":status_test_util_lib",
         "//external:googletest_main",
     ],
 )
@@ -126,7 +135,7 @@ cc_test(
     srcs = ["referenced_test.cc"],
     linkstatic = 1,
     deps = [
-        ":mixer_client_lib",
+        ":mixerclient_lib",
         "//external:googletest_main",
     ],
 )
@@ -142,7 +151,8 @@ cc_test(
     ],
     linkstatic = 1,
     deps = [
-        ":mixer_client_lib",
+        ":mixerclient_lib",
+        ":status_test_util_lib",
         "//external:googletest_main",
     ],
 )

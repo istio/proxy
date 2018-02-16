@@ -13,18 +13,18 @@
  * limitations under the License.
  */
 
-#include "quota_cache.h"
+#include "src/mixerclient/quota_cache.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "mixerclient/include/attributes_builder.h"
-#include "mixerclient/utils/status_test_util.h"
+#include "include/utils/attributes_builder.h"
+#include "src/mixerclient/status_test_util.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::CheckRequest;
 using ::istio::mixer::v1::CheckResponse;
 using ::istio::mixer::v1::ReferencedAttributes;
-using ::istio::quota::Requirement;
+using ::istio::quota_config::Requirement;
 using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 using ::testing::Invoke;
@@ -196,7 +196,7 @@ TEST_F(QuotaCacheTest, TestInvalidQuotaReferenced) {
   (*response.mutable_quotas())[kQuotaName] = quota_result;
 
   Attributes attr(request_);
-  AttributesBuilder builder(&attr);
+  utils::AttributesBuilder builder(&attr);
   builder.AddString("source.name", "user1");
   // response has invalid referenced, cache item still in pending.
   TestRequest(attr, true, response);
@@ -223,7 +223,7 @@ TEST_F(QuotaCacheTest, TestMismatchedReferenced) {
   (*response.mutable_quotas())[kQuotaName] = quota_result;
 
   Attributes attr(request_);
-  AttributesBuilder builder(&attr);
+  utils::AttributesBuilder builder(&attr);
   builder.AddString("source.name", "user1");
   // Since respones has mismatched Referenced, cache item still in pending.
   // Prefetch always allow the first call.
@@ -250,9 +250,9 @@ TEST_F(QuotaCacheTest, TestOneReferencedWithTwoKeys) {
   (*response.mutable_quotas())[kQuotaName] = quota_result;
 
   Attributes attr1(request_);
-  AttributesBuilder(&attr1).AddString("source.name", "user1");
+  utils::AttributesBuilder(&attr1).AddString("source.name", "user1");
   Attributes attr2(request_);
-  AttributesBuilder(&attr2).AddString("source.name", "user2");
+  utils::AttributesBuilder(&attr2).AddString("source.name", "user2");
 
   // cache item is updated with 0 token in the pool.
   // it will be saved into cache key with user1.
@@ -291,9 +291,9 @@ TEST_F(QuotaCacheTest, TestTwoReferencedWith) {
   (*response2.mutable_quotas())[kQuotaName] = quota_result2;
 
   Attributes attr1(request_);
-  AttributesBuilder(&attr1).AddString("source.name", "name");
+  utils::AttributesBuilder(&attr1).AddString("source.name", "name");
   Attributes attr2(request_);
-  AttributesBuilder(&attr2).AddString("source.uid", "uid");
+  utils::AttributesBuilder(&attr2).AddString("source.uid", "uid");
 
   // name request with 0 granted response
   TestRequest(attr1, true, response1);

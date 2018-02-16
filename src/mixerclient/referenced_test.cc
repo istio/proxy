@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "referenced.h"
+#include "src/mixerclient/referenced.h"
 
-#include "mixerclient/include/attributes_builder.h"
-#include "mixerclient/utils/md5.h"
+#include "include/utils/attributes_builder.h"
+#include "include/utils/md5.h"
 
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
@@ -139,7 +139,7 @@ TEST(ReferencedTest, FillSuccessTest) {
             "duration-key, int-key, string-key, string-map-key[If-Match], "
             "time-key, ");
 
-  EXPECT_EQ(MD5::DebugString(referenced.Hash()),
+  EXPECT_EQ(utils::MD5::DebugString(referenced.Hash()),
             "602d5bbd45b623c3560d2bdb6104f3ab");
 }
 
@@ -173,12 +173,12 @@ TEST(ReferencedTest, NegativeSignature1Test) {
 
   Attributes attributes1;
   // "target.service" should be absence.
-  AttributesBuilder(&attributes1).AddString("target.service", "foo");
+  utils::AttributesBuilder(&attributes1).AddString("target.service", "foo");
   EXPECT_FALSE(referenced.Signature(attributes1, "", &signature));
 
   Attributes attributes2;
   // many keys should exist.
-  AttributesBuilder(&attributes2).AddString("bytes-key", "foo");
+  utils::AttributesBuilder(&attributes2).AddString("bytes-key", "foo");
   EXPECT_FALSE(referenced.Signature(attributes2, "", &signature));
 }
 
@@ -187,7 +187,7 @@ TEST(ReferencedTest, OKSignature1Test) {
   ASSERT_TRUE(TextFormat::ParseFromString(kReferencedText, &pb));
 
   Attributes attributes;
-  AttributesBuilder builder(&attributes);
+  utils::AttributesBuilder builder(&attributes);
   builder.AddString("string-key", "this is a string value");
   builder.AddBytes("bytes-key", "this is a bytes value");
   builder.AddDouble("double-key", 99.9);
@@ -211,7 +211,8 @@ TEST(ReferencedTest, OKSignature1Test) {
   std::string signature;
   EXPECT_TRUE(referenced.Signature(attributes, "extra", &signature));
 
-  EXPECT_EQ(MD5::DebugString(signature), "751b028b2e2c230ef9c4e59ac556ca04");
+  EXPECT_EQ(utils::MD5::DebugString(signature),
+            "751b028b2e2c230ef9c4e59ac556ca04");
 }
 
 }  // namespace

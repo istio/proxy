@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "path_matcher.h"
+#include "src/api_spec/path_matcher.h"
 
 #include <memory>
 #include <ostream>

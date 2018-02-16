@@ -17,12 +17,12 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/utils/attributes_builder.h"
-#include "src/utils/status_test_util.h"
+#include "src/mixerclient/status_test_util.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::CheckRequest;
 using ::istio::mixer::v1::CheckResponse;
-using ::istio::quota::Requirement;
+using ::istio::quota_config::Requirement;
 using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 using ::testing::Invoke;

@@ -13,15 +13,16 @@
  * limitations under the License.
  */
 
-#include "quota_cache.h"
-#include "mixerclient/utils/protobuf.h"
+#include "src/mixerclient/quota_cache.h"
+#include "include/utils/protobuf.h"
 
 using namespace std::chrono;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::mixer::v1::CheckRequest;
 using ::istio::mixer::v1::CheckResponse;
-using ::istio::quota::Requirement;
+using ::istio::prefetch::QuotaPrefetch;
+using ::istio::quota_config::Requirement;
 using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 
@@ -46,7 +47,7 @@ void QuotaCache::CacheElem::Alloc(int amount, QuotaPrefetch::DoneFunc fn) {
     if (result != nullptr) {
       amount = result->granted_amount();
       if (result->has_valid_duration()) {
-        expire = ToMilliseonds(result->valid_duration());
+        expire = utils::ToMilliseonds(result->valid_duration());
       }
     }
     fn(amount, expire, system_clock::now());

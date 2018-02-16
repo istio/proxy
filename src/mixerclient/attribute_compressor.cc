@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "attribute_compressor.h"
-#include "delta_update.h"
-#include "global_dictionary.h"
+#include "src/mixerclient/attribute_compressor.h"
 #include "include/utils/protobuf.h"
+#include "src/mixerclient/delta_update.h"
+#include "src/mixerclient/global_dictionary.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_AttributeValue;

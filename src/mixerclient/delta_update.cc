@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "delta_update.h"
+#include "src/mixerclient/delta_update.h"
 
 #include "google/protobuf/util/message_differencer.h"
 

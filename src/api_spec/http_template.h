@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef API_SPEC_HTTP_TEMPLATE_H_
-#define API_SPEC_HTTP_TEMPLATE_H_
+#ifndef ISTIO_API_SPEC_HTTP_TEMPLATE_H_
+#define ISTIO_API_SPEC_HTTP_TEMPLATE_H_
 
 #include <memory>
 #include <string>
@@ -69,4 +69,4 @@ class HttpTemplate {
 }  // namespace api_spec
 }  // namespace istio
 
-#endif  // API_SPEC_HTTP_TEMPLATE_H_
+#endif  // ISTIO_API_SPEC_HTTP_TEMPLATE_H_

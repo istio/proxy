@@ -17,10 +17,10 @@
 #define ISTIO_MIXERCLIENT_CLIENT_IMPL_H
 
 #include "include/mixerclient/client.h"
-#include "attribute_compressor.h"
-#include "check_cache.h"
-#include "quota_cache.h"
-#include "report_batch.h"
+#include "src/mixerclient/attribute_compressor.h"
+#include "src/mixerclient/check_cache.h"
+#include "src/mixerclient/quota_cache.h"
+#include "src/mixerclient/report_batch.h"
 
 #include <atomic>
 
@@ -35,9 +35,10 @@ class MixerClientImpl : public MixerClient {
   // Destructor
   virtual ~MixerClientImpl();
 
-  CancelFunc Check(const ::istio::mixer::v1::Attributes& attributes,
-                   const std::vector<::istio::quota::Requirement>& quotas,
-                   TransportCheckFunc transport, DoneFunc on_done) override;
+  CancelFunc Check(
+      const ::istio::mixer::v1::Attributes& attributes,
+      const std::vector<::istio::quota_config::Requirement>& quotas,
+      TransportCheckFunc transport, DoneFunc on_done) override;
   void Report(const ::istio::mixer::v1::Attributes& attributes) override;
 
   void GetStatistics(Statistics* stat) const override;

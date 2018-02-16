@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "http_template.h"
+#include "src/api_spec/http_template.h"
 #include "gtest/gtest.h"
 
 #include <ostream>

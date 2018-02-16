@@ -74,7 +74,8 @@ class Referenced {
   std::vector<AttributeRef> exact_keys_;
 
   // Updates hasher with keys
-  static void UpdateHash(const std::vector<AttributeRef> &keys, utils::MD5 *hasher);
+  static void UpdateHash(const std::vector<AttributeRef> &keys,
+                         utils::MD5 *hasher);
 };
 
 }  // namespace mixerclient

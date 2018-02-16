@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "path_matcher_node.h"
-#include "http_template.h"
+#include "src/api_spec/path_matcher_node.h"
+#include "src/api_spec/http_template.h"
 
 namespace istio {
 namespace api_spec {

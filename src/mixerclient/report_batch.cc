@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "report_batch.h"
-#include "mixerclient/utils/protobuf.h"
+#include "src/mixerclient/report_batch.h"
+#include "include/utils/protobuf.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::ReportRequest;
@@ -81,7 +81,7 @@ void ReportBatch::FlushWithLock() {
     delete response;
     if (!status.ok()) {
       GOOGLE_LOG(ERROR) << "Mixer Report failed with: " << status.ToString();
-      if (InvalidDictionaryStatus(status)) {
+      if (utils::InvalidDictionaryStatus(status)) {
         compressor_.ShrinkGlobalDictionary();
       }
     }

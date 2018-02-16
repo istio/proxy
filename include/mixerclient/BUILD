@@ -17,11 +17,13 @@ licenses(["notice"])
 cc_library(
     name = "headers_lib",
     hdrs = [
-        "attributes_builder.h",
         "client.h",
         "environment.h",
         "options.h",
         "timer.h",
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//include/quota_config:requirement_header",
+    ],
 )

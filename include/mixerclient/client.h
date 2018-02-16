@@ -17,7 +17,7 @@
 #define ISTIO_MIXERCLIENT_CLIENT_H
 
 #include "environment.h"
-#include "mixerclient/quota/include/requirement.h"
+#include "include/quota_config/requirement.h"
 #include "options.h"
 
 #include <vector>
@@ -86,7 +86,7 @@ class MixerClient {
   // A check call.
   virtual CancelFunc Check(
       const ::istio::mixer::v1::Attributes& attributes,
-      const std::vector<::istio::quota::Requirement>& quotas,
+      const std::vector<::istio::quota_config::Requirement>& quotas,
       TransportCheckFunc transport, DoneFunc on_done) = 0;
 
   // A report call.

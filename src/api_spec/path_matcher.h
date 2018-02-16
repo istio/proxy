@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef API_SPEC_PATH_MATCHER_H_
-#define API_SPEC_PATH_MATCHER_H_
+#ifndef ISTIO_API_SPEC_PATH_MATCHER_H_
+#define ISTIO_API_SPEC_PATH_MATCHER_H_
 
 #include <cstddef>
 #include <memory>
@@ -23,8 +23,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "http_template.h"
-#include "path_matcher_node.h"
+#include "src/api_spec/http_template.h"
+#include "src/api_spec/path_matcher_node.h"
 
 namespace istio {
 namespace api_spec {
@@ -495,4 +495,4 @@ bool PathMatcherBuilder<Method>::Register(std::string http_method,
 }  // namespace api_spec
 }  // namespace istio
 
-#endif  // API_SPEC_PATH_MATCHER_H_
+#endif  // ISTIO_API_SPEC_PATH_MATCHER_H_

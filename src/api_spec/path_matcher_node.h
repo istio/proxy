@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef API_SPEC_PATH_MATCHER_NODE_H_
-#define API_SPEC_PATH_MATCHER_NODE_H_
+#ifndef ISTIO_API_SPEC_PATH_MATCHER_NODE_H_
+#define ISTIO_API_SPEC_PATH_MATCHER_NODE_H_
 
 #include <map>
 #include <memory>
@@ -191,4 +191,4 @@ class PathMatcherNode {
 }  // namespace api_spec
 }  // namespace istio
 
-#endif  // API_SPEC_PATH_MATCHER_NODE_H_
+#endif  // ISTIO_API_SPEC_PATH_MATCHER_NODE_H_

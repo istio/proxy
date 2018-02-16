@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef API_SPEC_HTTP_API_SPEC_PARSER_IMPL_H_
-#define API_SPEC_HTTP_API_SPEC_PARSER_IMPL_H_
+#ifndef ISTIO_API_SPEC_HTTP_ISTIO_API_SPEC_PARSER_IMPL_H_
+#define ISTIO_API_SPEC_HTTP_ISTIO_API_SPEC_PARSER_IMPL_H_
 
-#include "mixerclient/api_spec/include/http_api_spec_parser.h"
-#include "path_matcher.h"
+#include "include/api_spec/http_api_spec_parser.h"
+#include "src/api_spec/path_matcher.h"
 
 #include <regex>
 #include <vector>
@@ -66,4 +66,4 @@ class HttpApiSpecParserImpl : public HttpApiSpecParser {
 }  // namespace api_spec
 }  // namespace istio
 
-#endif  // API_SPEC_HTTP_API_SPEC_PARSER_IMPL_H_
+#endif  // ISTIO_API_SPEC_HTTP_ISTIO_API_SPEC_PARSER_IMPL_H_

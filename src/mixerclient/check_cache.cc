@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "check_cache.h"
+#include "src/mixerclient/check_cache.h"
 #include "include/utils/protobuf.h"
 
 using namespace std::chrono;
@@ -31,8 +31,8 @@ void CheckCache::CacheElem::CacheElem::SetResponse(
     status_ = parent_.ConvertRpcStatus(response.precondition().status());
 
     if (response.precondition().has_valid_duration()) {
-      expire_time_ =
-          time_now + ToMilliseonds(response.precondition().valid_duration());
+      expire_time_ = time_now + utils::ToMilliseonds(
+                                    response.precondition().valid_duration());
     } else {
       // never expired.
       expire_time_ = time_point<system_clock>::max();

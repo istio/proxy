@@ -19,9 +19,9 @@
 #include <memory>
 #include <vector>
 
+#include "include/quota_config/requirement.h"
 #include "mixer/v1/attributes.pb.h"
 #include "mixer/v1/config/client/quota.pb.h"
-#include "requirement.h"
 
 namespace istio {
 namespace quota_config {

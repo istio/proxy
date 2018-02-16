@@ -16,8 +16,8 @@
 #ifndef ISTIO_MIXERCLIENT_REPORT_BATCH_H
 #define ISTIO_MIXERCLIENT_REPORT_BATCH_H
 
-#include "attribute_compressor.h"
-#include "mixerclient/include/client.h"
+#include "include/mixerclient/client.h"
+#include "src/mixerclient/attribute_compressor.h"
 
 #include <atomic>
 #include <mutex>

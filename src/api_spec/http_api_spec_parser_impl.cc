@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "http_api_spec_parser_impl.h"
+#include "src/api_spec/http_api_spec_parser_impl.h"
 #include "google/protobuf/stubs/logging.h"
 
 #include <algorithm>

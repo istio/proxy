@@ -29,7 +29,7 @@
 #include "include/mixerclient/options.h"
 #include "include/utils/simple_lru_cache.h"
 #include "include/utils/simple_lru_cache_inl.h"
-#include "referenced.h"
+#include "src/mixerclient/referenced.h"
 
 namespace istio {
 namespace mixerclient {
@@ -137,7 +137,7 @@ class CheckCache {
   // Key is the signature of the Attributes. Value is the CacheElem.
   // It is a LRU cache with maximum size.
   // When the maximum size is reached, oldest idle items will be removed.
-  using CheckLRUCache = SimpleLRUCache<std::string, CacheElem>;
+  using CheckLRUCache = utils::SimpleLRUCache<std::string, CacheElem>;
 
   // The check options.
   CheckOptions options_;

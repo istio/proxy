@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "client_impl.h"
-#include "src/utils/protobuf.h"
+#include "src/mixerclient/client_impl.h"
+#include "include/utils/protobuf.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::CheckRequest;
@@ -52,7 +52,7 @@ MixerClientImpl::~MixerClientImpl() {}
 
 CancelFunc MixerClientImpl::Check(
     const Attributes &attributes,
-    const std::vector<::istio::quota::Requirement> &quotas,
+    const std::vector<::istio::quota_config::Requirement> &quotas,
     TransportCheckFunc transport, DoneFunc on_done) {
   ++total_check_calls_;
 
@@ -128,7 +128,7 @@ CancelFunc MixerClientImpl::Check(
         delete request_copy;
         delete response;
 
-        if (InvalidDictionaryStatus(status)) {
+        if (utils::InvalidDictionaryStatus(status)) {
           compressor_.ShrinkGlobalDictionary();
         }
       });

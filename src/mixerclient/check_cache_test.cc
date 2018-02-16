@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "check_cache.h"
+#include "src/mixerclient/check_cache.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/utils/attributes_builder.h"
 #include "include/utils/protobuf.h"
-#include "include/utils/status_test_util.h"
+#include "src/mixerclient/status_test_util.h"
 
 using namespace std::chrono;
 using ::istio::mixer::v1::Attributes;
@@ -41,7 +41,7 @@ class CheckCacheTest : public ::testing::Test {
     cache_ = std::unique_ptr<CheckCache>(new CheckCache(options));
     ASSERT_TRUE((bool)(cache_));
 
-    AttributesBuilder(&attributes_)
+    utils::AttributesBuilder(&attributes_)
         .AddString("target.service", "this-is-a-string-value");
   }
 
@@ -114,7 +114,7 @@ TEST_F(CheckCacheTest, TestExpiredByDuration) {
   ok_response.mutable_precondition()->set_valid_use_count(1000);
   // expired in 10 milliseconds.
   *ok_response.mutable_precondition()->mutable_valid_duration() =
-      CreateDuration(duration_cast<nanoseconds>(milliseconds(10)));
+      utils::CreateDuration(duration_cast<nanoseconds>(milliseconds(10)));
   EXPECT_OK(CacheResponse(attributes_, ok_response, FakeTime(0)));
 
   // OK, In 1 milliseconds.
@@ -251,7 +251,7 @@ TEST_F(CheckCacheTest, TestTwoCacheKeys) {
   EXPECT_TRUE(result1.IsCacheHit());
 
   Attributes attributes1;
-  AttributesBuilder(&attributes1)
+  utils::AttributesBuilder(&attributes1)
       .AddString("target.service", "different target service");
 
   // Not in the cache since it has different value
@@ -289,7 +289,8 @@ TEST_F(CheckCacheTest, TestTwoReferenced) {
   result.SetResponse(Status::OK, attributes_, ok_response);
 
   Attributes attributes1;
-  AttributesBuilder(&attributes1).AddString("target.name", "target name");
+  utils::AttributesBuilder(&attributes1)
+      .AddString("target.name", "target name");
 
   // Not in the cache since it has different value
   CheckCache::CheckResult result1;

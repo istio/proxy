@@ -14,8 +14,8 @@
  */
 
 #include "include/prefetch/quota_prefetch.h"
-#include "circular_queue.h"
-#include "time_based_counter.h"
+#include "src/prefetch/circular_queue.h"
+#include "src/prefetch/time_based_counter.h"
 
 #include <mutex>
 
