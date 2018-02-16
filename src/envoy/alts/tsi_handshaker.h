@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "envoy/buffer/buffer.h"
+
 #include "src/core/tsi/transport_security_interface.h"
 
 namespace Envoy {

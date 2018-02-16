@@ -70,5 +70,18 @@ class TsiSocket : public Network::TransportSocket,
   bool handshake_complete_;
   size_t max_output_protected_frame_size_;
 };
+
+class TsiSocketFactory : public Network::TransportSocketFactory {
+ public:
+  typedef std::function<TsiHandshakerPtr()> HandshakerFactoryCb;
+
+  explicit TsiSocketFactory(HandshakerFactoryCb handshaker_factory);
+
+  bool implementsSecureTransport() const override;
+  Network::TransportSocketPtr createTransportSocket() const override;
+
+ private:
+  HandshakerFactoryCb handshaker_factory_;
+};
 }
 }

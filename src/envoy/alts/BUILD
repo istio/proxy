@@ -64,6 +64,7 @@ envoy_cc_library(
         "alts_socket_factory.h",
     ],
     deps = [
+        ":tsi_transport_socket",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )

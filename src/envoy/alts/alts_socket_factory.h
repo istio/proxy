@@ -12,3 +12,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "envoy/server/transport_socket_config.h"
+
+namespace Envoy {
+namespace Server {
+namespace Configuration {
+
+class AltsTransportSocketConfigFactory
+    : public virtual TransportSocketConfigFactory {
+ public:
+  ProtobufTypes::MessagePtr createEmptyConfigProto() override;
+  std::string name() const override;
+};
+
+class UpstreamAltsTransportSocketConfigFactory
+    : public AltsTransportSocketConfigFactory,
+      public UpstreamTransportSocketConfigFactory {
+ public:
+  Network::TransportSocketFactoryPtr createTransportSocketFactory(
+      const Protobuf::Message &, TransportSocketFactoryContext &) override;
+};
+
+class DownstreamAltsTransportSocketConfigFactory
+    : public AltsTransportSocketConfigFactory,
+      public DownstreamTransportSocketConfigFactory {
+ public:
+  Network::TransportSocketFactoryPtr createTransportSocketFactory(
+      const std::string &, const std::vector<std::string> &, bool,
+      const Protobuf::Message &, TransportSocketFactoryContext &) override;
+};
+}
+}
+}

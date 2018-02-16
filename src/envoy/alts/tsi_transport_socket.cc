@@ -219,5 +219,14 @@ Network::IoResult TsiSocket::doWrite(Buffer::Instance &buffer,
 void TsiSocket::closeSocket(Network::ConnectionEvent) {}
 
 void TsiSocket::onConnected() { ASSERT(!handshake_complete_); }
+
+TsiSocketFactory::TsiSocketFactory(HandshakerFactoryCb handshaker_factory)
+    : handshaker_factory_(handshaker_factory) {}
+
+bool TsiSocketFactory::implementsSecureTransport() const { return true; }
+
+Network::TransportSocketPtr TsiSocketFactory::createTransportSocket() const {
+  return std::make_unique<TsiSocket>(handshaker_factory_());
+}
 }
 }
