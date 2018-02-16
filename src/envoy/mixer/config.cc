@@ -16,6 +16,7 @@
 #include "src/envoy/mixer/config.h"
 #include "google/protobuf/stubs/status.h"
 #include "google/protobuf/util/json_util.h"
+#include "src/envoy/mixer/utils.h"
 
 using ::google::protobuf::Message;
 using ::google::protobuf::util::Status;
@@ -31,7 +32,7 @@ const std::string kV2Config("v2");
 // The name for the mixer server cluster.
 const std::string kDefaultMixerClusterName("mixer_server");
 
-void SetDefaultMixerClusters(TransportConfig* config) {
+void SetDefaultMixerClusters(TransportConfig *config) {
   if (config->check_cluster().empty()) {
     config->set_check_cluster(kDefaultMixerClusterName);
   }
@@ -40,14 +41,13 @@ void SetDefaultMixerClusters(TransportConfig* config) {
   }
 }
 
-bool ReadV2Config(const Json::Object& json, Message* message) {
+bool ReadV2Config(const Json::Object &json, Message *message) {
   if (!json.hasObject(kV2Config)) {
     return false;
   }
   std::string v2_str = json.getObject(kV2Config)->asJsonString();
-  Status status =
-      ::google::protobuf::util::JsonStringToMessage(v2_str, message);
-  auto& logger = Logger::Registry::getLog(Logger::Id::config);
+  Status status = Utils::ParseJsonMessage(v2_str, message);
+  auto &logger = Logger::Registry::getLog(Logger::Id::config);
   if (status.ok()) {
     ENVOY_LOG_TO_LOGGER(logger, info, "V2 mixer client config: {}",
                         message->DebugString());
@@ -62,13 +62,13 @@ bool ReadV2Config(const Json::Object& json, Message* message) {
 
 }  // namespace
 
-void HttpMixerConfig::Load(const Json::Object& json) {
+void HttpMixerConfig::Load(const Json::Object &json) {
   ReadV2Config(json, &http_config);
 
   SetDefaultMixerClusters(http_config.mutable_transport());
 }
 
-void TcpMixerConfig::Load(const Json::Object& json) {
+void TcpMixerConfig::Load(const Json::Object &json) {
   ReadV2Config(json, &tcp_config);
 
   SetDefaultMixerClusters(tcp_config.mutable_transport());
