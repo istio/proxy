@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "md5.h"
+#include "include/utils/md5.h"
 #include "gtest/gtest.h"
 
 namespace istio {

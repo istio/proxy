@@ -23,7 +23,7 @@ using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 ReportBatch::ReportBatch(const ReportOptions& options,
                          TransportReportFunc transport,
@@ -93,5 +93,5 @@ void ReportBatch::Flush() {
   FlushWithLock();
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

@@ -23,7 +23,7 @@ using ::istio::mixer::v1::config::client::QuotaRule;
 using ::istio::mixer::v1::config::client::QuotaSpec;
 
 namespace istio {
-namespace quota {
+namespace quota_config {
 
 ConfigParserImpl::ConfigParserImpl(const QuotaSpec& spec_pb)
     : spec_pb_(spec_pb) {
@@ -108,5 +108,5 @@ std::unique_ptr<ConfigParser> ConfigParser::Create(
   return std::unique_ptr<ConfigParser>(new ConfigParserImpl(spec_pb));
 }
 
-}  // namespace quota
+}  // namespace quota_config
 }  // namespace istio

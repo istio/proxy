@@ -27,7 +27,7 @@ using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::mixer::v1::ReferencedAttributes;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 const char kDelimiter[] = "\0";
 const int kDelimiterLength = 1;
@@ -269,5 +269,5 @@ std::string Referenced::DebugString() const {
   return ss.str();
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

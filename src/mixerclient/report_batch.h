@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_REPORT_BATCH_H
-#define MIXERCLIENT_REPORT_BATCH_H
+#ifndef ISTIO_MIXERCLIENT_REPORT_BATCH_H
+#define ISTIO_MIXERCLIENT_REPORT_BATCH_H
 
 #include "attribute_compressor.h"
 #include "mixerclient/include/client.h"
@@ -23,7 +23,7 @@
 #include <mutex>
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Report batch, this interface is thread safe.
 class ReportBatch {
@@ -74,7 +74,7 @@ class ReportBatch {
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ReportBatch);
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_REPORT_BATCH_H
+#endif  // ISTIO_MIXERCLIENT_REPORT_BATCH_H

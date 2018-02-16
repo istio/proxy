@@ -25,7 +25,7 @@ using ::istio::mixer::v1::Attributes;
 using ::google::protobuf::TextFormat;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 
 const char kReferencedText[] = R"(
@@ -215,5 +215,5 @@ TEST(ReferencedTest, OKSignature1Test) {
 }
 
 }  // namespace
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

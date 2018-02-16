@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef MIXER_CLIENT_REFERENCED_H_
-#define MIXER_CLIENT_REFERENCED_H_
+#ifndef ISTIO_MIXERCLIENT_REFERENCED_H_
+#define ISTIO_MIXERCLIENT_REFERENCED_H_
 
 #include <vector>
 
+#include "include/utils/md5.h"
 #include "mixer/v1/check.pb.h"
-#include "mixerclient/utils/md5.h"
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // The object to store referenced attributes used by Mixer server.
 // Mixer client cache should only use referenced attributes
@@ -74,10 +74,10 @@ class Referenced {
   std::vector<AttributeRef> exact_keys_;
 
   // Updates hasher with keys
-  static void UpdateHash(const std::vector<AttributeRef> &keys, MD5 *hasher);
+  static void UpdateHash(const std::vector<AttributeRef> &keys, utils::MD5 *hasher);
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXER_CLIENT_REFERENCED_H_
+#endif  // ISTIO_MIXERCLIENT_REFERENCED_H_

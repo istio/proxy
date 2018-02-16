@@ -16,7 +16,7 @@
 #include "attribute_compressor.h"
 #include "delta_update.h"
 #include "global_dictionary.h"
-#include "mixerclient/utils/protobuf.h"
+#include "include/utils/protobuf.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_AttributeValue;
@@ -24,7 +24,7 @@ using ::istio::mixer::v1::Attributes_StringMap;
 using ::istio::mixer::v1::CompressedAttributes;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 
 // The size of first version of global dictionary.
@@ -209,5 +209,5 @@ std::unique_ptr<BatchCompressor> AttributeCompressor::CreateBatchCompressor()
       new BatchCompressorImpl(global_dict_));
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

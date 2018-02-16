@@ -22,7 +22,7 @@ using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::google::protobuf::util::MessageDifferencer;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 
 class DeltaUpdateImpl : public DeltaUpdate {
@@ -82,5 +82,5 @@ std::unique_ptr<DeltaUpdate> DeltaUpdate::CreateNoOp() {
   return std::unique_ptr<DeltaUpdate>(new DeltaUpdateNoOpImpl);
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

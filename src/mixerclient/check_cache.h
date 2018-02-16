@@ -15,8 +15,8 @@
 
 // Caches check attributes.
 
-#ifndef MIXERCLIENT_CHECK_CACHE_H
-#define MIXERCLIENT_CHECK_CACHE_H
+#ifndef ISTIO_MIXERCLIENT_CHECK_CACHE_H
+#define ISTIO_MIXERCLIENT_CHECK_CACHE_H
 
 #include <chrono>
 #include <mutex>
@@ -25,14 +25,14 @@
 #include <utility>
 
 #include "google/protobuf/stubs/status.h"
-#include "mixerclient/include/client.h"
-#include "mixerclient/include/options.h"
-#include "mixerclient/src/referenced.h"
-#include "mixerclient/utils/simple_lru_cache.h"
-#include "mixerclient/utils/simple_lru_cache_inl.h"
+#include "include/mixerclient/client.h"
+#include "include/mixerclient/options.h"
+#include "include/utils/simple_lru_cache.h"
+#include "include/utils/simple_lru_cache_inl.h"
+#include "referenced.h"
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Cache Mixer Check call result.
 // This interface is thread safe.
@@ -157,7 +157,7 @@ class CheckCache {
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(CheckCache);
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_CHECK_CACHE_H
+#endif  // ISTIO_MIXERCLIENT_CHECK_CACHE_H

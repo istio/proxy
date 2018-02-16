@@ -18,20 +18,10 @@ cc_library(
     name = "headers_lib",
     hdrs = [
         "attributes_builder.h",
-        "md5.h",
-        "protobuf.h",
-        "status.h",
+        "client.h",
+        "environment.h",
+        "options.h",
+        "timer.h",
     ],
     visibility = ["//visibility:public"],
 )
-
-cc_library(
-    name = "simple_lru_cache",
-    srcs = ["google_macros.h"],
-    hdrs = [
-        "simple_lru_cache.h",
-        "simple_lru_cache_inl.h",
-    ],
-    visibility = ["//visibility:public"],
-)
-

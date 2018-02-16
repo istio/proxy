@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_ATTRIBUTE_COMPRESSOR_H
-#define MIXERCLIENT_ATTRIBUTE_COMPRESSOR_H
+#ifndef ISTIO_MIXERCLIENT_ATTRIBUTE_COMPRESSOR_H
+#define ISTIO_MIXERCLIENT_ATTRIBUTE_COMPRESSOR_H
 
 #include <unordered_map>
 
@@ -22,7 +22,7 @@
 #include "mixer/v1/report.pb.h"
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // A class to store global dictionary
 class GlobalDictionary {
@@ -78,7 +78,7 @@ class AttributeCompressor {
   GlobalDictionary global_dict_;
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_ATTRIBUTE_COMPRESSOR_H
+#endif  // ISTIO_MIXERCLIENT_ATTRIBUTE_COMPRESSOR_H

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "protobuf.h"
+#include "include/utils/protobuf.h"
 
 using namespace std::chrono;
 

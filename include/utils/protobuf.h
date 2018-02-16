@@ -19,7 +19,6 @@
 #include "google/protobuf/duration.pb.h"
 #include "google/protobuf/stubs/status.h"
 #include "google/protobuf/timestamp.pb.h"
-#include "mixer/v1/service.pb.h"
 
 #include <chrono>
 

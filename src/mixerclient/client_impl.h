@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_CLIENT_IMPL_H
-#define MIXERCLIENT_CLIENT_IMPL_H
+#ifndef ISTIO_MIXERCLIENT_CLIENT_IMPL_H
+#define ISTIO_MIXERCLIENT_CLIENT_IMPL_H
 
-#include "mixerclient/include/client.h"
-#include "mixerclient/src/attribute_compressor.h"
-#include "mixerclient/src/check_cache.h"
-#include "mixerclient/src/quota_cache.h"
-#include "mixerclient/src/report_batch.h"
+#include "include/mixerclient/client.h"
+#include "attribute_compressor.h"
+#include "check_cache.h"
+#include "quota_cache.h"
+#include "report_batch.h"
 
 #include <atomic>
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 class MixerClientImpl : public MixerClient {
  public:
@@ -75,7 +75,7 @@ class MixerClientImpl : public MixerClient {
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MixerClientImpl);
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_CLIENT_IMPL_H
+#endif  // ISTIO_MIXERCLIENT_CLIENT_IMPL_H

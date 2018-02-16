@@ -16,8 +16,8 @@
 //
 // Tests of SimpleLRUCache
 
-#include "simple_lru_cache.h"
-#include "simple_lru_cache_inl.h"
+#include "include/utils/simple_lru_cache.h"
+#include "include/utils/simple_lru_cache_inl.h"
 
 #include <math.h>
 #include <unistd.h>

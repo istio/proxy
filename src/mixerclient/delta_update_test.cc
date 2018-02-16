@@ -19,7 +19,7 @@
 using ::istio::mixer::v1::Attributes_AttributeValue;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 class DeltaUpdateTest : public ::testing::Test {
  public:
@@ -98,5 +98,5 @@ TEST_F(DeltaUpdateTest, TestDifferentType) {
   EXPECT_FALSE(update_->Check(1, StringValue("")));
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

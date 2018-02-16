@@ -17,21 +17,16 @@ licenses(["notice"])
 cc_library(
     name = "headers_lib",
     hdrs = [
-        "attributes_builder.h",
-        "md5.h",
-        "protobuf.h",
-        "status.h",
+        "config_parser.h",
+        "requirement.h",
     ],
     visibility = ["//visibility:public"],
 )
 
 cc_library(
-    name = "simple_lru_cache",
-    srcs = ["google_macros.h"],
+    name = "requirement_header",
     hdrs = [
-        "simple_lru_cache.h",
-        "simple_lru_cache_inl.h",
+        "requirement.h",
     ],
     visibility = ["//visibility:public"],
 )
-

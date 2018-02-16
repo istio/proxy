@@ -26,7 +26,7 @@ using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 QuotaCache::CacheElem::CacheElem(const std::string& name) : name_(name) {
   prefetch_ = QuotaPrefetch::Create(
@@ -272,5 +272,5 @@ Status QuotaCache::FlushAll() {
   return Status::OK;
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

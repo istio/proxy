@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef QUOTA_REQUIREMENT_H_
-#define QUOTA_REQUIREMENT_H_
+#ifndef ISTIO_QUOTA_CONFIG_REQUIREMENT_H_
+#define ISTIO_QUOTA_CONFIG_REQUIREMENT_H_
 
 #include <string>
 
 namespace istio {
-namespace quota {
+namespace quota_config {
 
 // A struct to represent one quota requirement.
 struct Requirement {
@@ -29,7 +29,7 @@ struct Requirement {
   int64_t charge;
 };
 
-}  // namespace quota
+}  // namespace quota_config
 }  // namespace istio
 
-#endif  // QUOTA_REQUIREMENT_H_
+#endif  // ISTIO_QUOTA_CONFIG_REQUIREMENT_H_

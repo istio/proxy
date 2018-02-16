@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_TIMER_H
-#define MIXERCLIENT_TIMER_H
+#ifndef ISTIO_MIXERCLIENT_TIMER_H
+#define ISTIO_MIXERCLIENT_TIMER_H
 
 #include <functional>
 #include <memory>
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Represent a timer created by caller's environment.
 class Timer {
@@ -42,7 +42,7 @@ class Timer {
 using TimerCreateFunc =
     std::function<std::unique_ptr<Timer>(std::function<void()> timer_func)>;
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_TIMER_H
+#endif  // ISTIO_MIXERCLIENT_TIMER_H

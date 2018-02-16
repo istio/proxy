@@ -27,7 +27,7 @@ genrule(
        "@mixerapi_git//:global_dictionary_file",
    ],
    outs = [
-       "src/global_dictionary.cc",
+       "global_dictionary.cc",
    ],
    cmd = "$(location :create_global_dictionary) $(location @mixerapi_git//:global_dictionary_file) > $@",
    tools = [
@@ -38,50 +38,37 @@ genrule(
 cc_library(
     name = "mixer_client_lib",
     srcs = [
-        "src/attribute_compressor.cc",
-        "src/attribute_compressor.h",
-        "src/attributes_builder.cc",
-        "src/check_cache.cc",
-        "src/check_cache.h",
-        "src/client_impl.cc",
-        "src/client_impl.h",
-        "src/delta_update.cc",
-        "src/delta_update.h",
-        "src/global_dictionary.cc",
-        "src/global_dictionary.h",
-        "src/report_batch.cc",
-        "src/report_batch.h",
-        "src/referenced.cc",
-        "src/referenced.h",
-        "src/quota_cache.cc",
-        "src/quota_cache.h",
-        "utils/md5.cc",
-        "utils/md5.h",
-        "utils/protobuf.cc",
-        "utils/protobuf.h",
-        "utils/status_test_util.h",
+        "attribute_compressor.cc",
+        "attribute_compressor.h",
+        "check_cache.cc",
+        "check_cache.h",
+        "client_impl.cc",
+        "client_impl.h",
+        "delta_update.cc",
+        "delta_update.h",
+        "global_dictionary.cc",
+        "global_dictionary.h",
+        "report_batch.cc",
+        "report_batch.h",
+        "referenced.cc",
+        "referenced.h",
+        "quota_cache.cc",
+        "quota_cache.h",
     ],
-    hdrs = [
-        "include/attributes_builder.h",
-        "include/client.h",
-        "include/environment.h",
-        "include/options.h",
-        "include/timer.h",
-    ],
-    visibility = ["//visibility:public"],
     deps = [
-        ":simple_lru_cache",
-        "//external:boringssl_crypto",
         "//external:mixer_api_cc_proto",
-        "//mixerclient/prefetch:quota_prefetch_lib",
-        "//mixerclient/quota:requirement_header",
+        "//include/mixerclient:headers_lib",
+        "//include/quota_config:requirement_header",
+        "//src/prefetch:quota_prefetch_lib",
+        "//src/utils:md5_lib",
+        "//src/utils:simple_lru_cache",
     ],
 )
 
 cc_test(
     name = "attribute_compressor_test",
     size = "small",
-    srcs = ["src/attribute_compressor_test.cc"],
+    srcs = ["attribute_compressor_test.cc"],
     linkstatic = 1,
     deps = [
         ":mixer_client_lib",
@@ -92,7 +79,7 @@ cc_test(
 cc_test(
     name = "check_cache_test",
     size = "small",
-    srcs = ["src/check_cache_test.cc"],
+    srcs = ["check_cache_test.cc"],
     linkstatic = 1,
     deps = [
         ":mixer_client_lib",
@@ -103,7 +90,7 @@ cc_test(
 cc_test(
     name = "delta_update_test",
     size = "small",
-    srcs = ["src/delta_update_test.cc"],
+    srcs = ["delta_update_test.cc"],
     linkstatic = 1,
     deps = [
         ":mixer_client_lib",
@@ -114,7 +101,7 @@ cc_test(
 cc_test(
     name = "report_batch_test",
     size = "small",
-    srcs = ["src/report_batch_test.cc"],
+    srcs = ["report_batch_test.cc"],
     linkstatic = 1,
     deps = [
         ":mixer_client_lib",
@@ -125,7 +112,7 @@ cc_test(
 cc_test(
     name = "quota_cache_test",
     size = "small",
-    srcs = ["src/quota_cache_test.cc"],
+    srcs = ["quota_cache_test.cc"],
     linkstatic = 1,
     deps = [
         ":mixer_client_lib",
@@ -136,7 +123,7 @@ cc_test(
 cc_test(
     name = "referenced_test",
     size = "small",
-    srcs = ["src/referenced_test.cc"],
+    srcs = ["referenced_test.cc"],
     linkstatic = 1,
     deps = [
         ":mixer_client_lib",
@@ -147,7 +134,7 @@ cc_test(
 cc_test(
     name = "client_impl_test",
     size = "small",
-    srcs = ["src/client_impl_test.cc"],
+    srcs = ["client_impl_test.cc"],
     linkopts = [
         "-lm",
         "-lpthread",

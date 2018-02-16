@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef QUOTA_CONFIG_PARSER_H_
-#define QUOTA_CONFIG_PARSER_H_
+#ifndef ISTIO_QUOTA_CONFIG_CONFIG_PARSER_H_
+#define ISTIO_QUOTA_CONFIG_CONFIG_PARSER_H_
 
 #include <memory>
 #include <vector>
@@ -24,7 +24,7 @@
 #include "requirement.h"
 
 namespace istio {
-namespace quota {
+namespace quota_config {
 
 // An object to parse quota config to generate quota requirements.
 class ConfigParser {
@@ -40,7 +40,7 @@ class ConfigParser {
       const ::istio::mixer::v1::config::client::QuotaSpec& spec_pb);
 };
 
-}  // namespace quota
+}  // namespace quota_config
 }  // namespace istio
 
-#endif  // QUOTA_CONFIG_PARSER_H_
+#endif  // ISTIO_QUOTA_CONFIG_CONFIG_PARSER_H_

@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_ENVIRONMENT_H
-#define MIXERCLIENT_ENVIRONMENT_H
+#ifndef ISTIO_MIXERCLIENT_ENVIRONMENT_H
+#define ISTIO_MIXERCLIENT_ENVIRONMENT_H
 
 #include "google/protobuf/stubs/status.h"
 #include "mixer/v1/service.pb.h"
 #include "timer.h"
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Defines a function prototype used when an asynchronous transport call
 // is completed.
@@ -64,7 +64,7 @@ struct Environment {
   // TODO: Add logging function here.
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_ENVIRONMENT_H
+#endif  // ISTIO_MIXERCLIENT_ENVIRONMENT_H

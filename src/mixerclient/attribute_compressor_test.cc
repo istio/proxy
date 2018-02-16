@@ -14,7 +14,7 @@
  */
 
 #include "attribute_compressor.h"
-#include "mixerclient/include/attributes_builder.h"
+#include "include/utils/attributes_builder.h"
 
 #include <time.h>
 #include "google/protobuf/text_format.h"
@@ -31,7 +31,7 @@ using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 
 const char kAttributes[] = R"(
@@ -267,5 +267,5 @@ TEST_F(AttributeCompressorTest, BatchCompressTest) {
 }
 
 }  // namespace
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

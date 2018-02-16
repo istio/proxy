@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_DELTA_UPDATE_H
-#define MIXERCLIENT_DELTA_UPDATE_H
+#ifndef ISTIO_MIXERCLIENT_DELTA_UPDATE_H
+#define ISTIO_MIXERCLIENT_DELTA_UPDATE_H
 
 #include "mixer/v1/attributes.pb.h"
 
 #include <memory>
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // A class to support attribute delta update.
 // It has previous attribute values and check
@@ -53,7 +53,7 @@ class DeltaUpdate {
   static std::unique_ptr<DeltaUpdate> CreateNoOp();
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_DELTA_UPDATE_H
+#endif  // ISTIO_MIXERCLIENT_DELTA_UPDATE_H

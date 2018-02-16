@@ -31,7 +31,7 @@ using ::testing::Invoke;
 using ::testing::_;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 
 const std::string kQuotaName = "RequestCount";
@@ -309,5 +309,5 @@ TEST_F(QuotaCacheTest, TestTwoReferencedWith) {
 }
 
 }  // namespace
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

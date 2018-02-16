@@ -31,10 +31,10 @@ TOP = r"""/* Copyright 2017 Istio Authors. All Rights Reserved.
  * limitations under the License.
  */
 
-#include "mixerclient/src/global_dictionary.h"
+#include "src/mixerclient/global_dictionary.h"
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 
 /*
@@ -55,7 +55,7 @@ BOTTOM = r"""};
 
 const std::vector<std::string>& GetGlobalWords() { return kGlobalWords; }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio"""
 
 all_words = ''

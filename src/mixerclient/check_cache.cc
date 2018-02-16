@@ -14,7 +14,7 @@
  */
 
 #include "check_cache.h"
-#include "mixerclient/utils/protobuf.h"
+#include "include/utils/protobuf.h"
 
 using namespace std::chrono;
 using ::istio::mixer::v1::Attributes;
@@ -23,7 +23,7 @@ using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 void CheckCache::CacheElem::CacheElem::SetResponse(
     const CheckResponse &response, Tick time_now) {
@@ -187,5 +187,5 @@ Status CheckCache::ConvertRpcStatus(const ::google::rpc::Status &status) const {
   }
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

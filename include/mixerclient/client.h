@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_CLIENT_H
-#define MIXERCLIENT_CLIENT_H
+#ifndef ISTIO_MIXERCLIENT_CLIENT_H
+#define ISTIO_MIXERCLIENT_CLIENT_H
 
 #include "environment.h"
 #include "mixerclient/quota/include/requirement.h"
@@ -23,7 +23,7 @@
 #include <vector>
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Defines the options to create an instance of MixerClient interface.
 struct MixerClientOptions {
@@ -100,7 +100,7 @@ class MixerClient {
 std::unique_ptr<MixerClient> CreateMixerClient(
     const MixerClientOptions& options);
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_CLIENT_H
+#endif  // ISTIO_MIXERCLIENT_CLIENT_H

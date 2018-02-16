@@ -15,21 +15,21 @@
 
 // Caches quota calls.
 
-#ifndef MIXERCLIENT_QUOTA_CACHE_H
-#define MIXERCLIENT_QUOTA_CACHE_H
+#ifndef ISTIO_MIXERCLIENT_QUOTA_CACHE_H
+#define ISTIO_MIXERCLIENT_QUOTA_CACHE_H
 
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
-#include "mixerclient/include/client.h"
-#include "mixerclient/prefetch/quota_prefetch.h"
-#include "mixerclient/src/referenced.h"
-#include "mixerclient/utils/simple_lru_cache.h"
-#include "mixerclient/utils/simple_lru_cache_inl.h"
+#include "include/mixerclient/client.h"
+#include "include/prefetch/quota_prefetch.h"
+#include "include/utils/simple_lru_cache.h"
+#include "include/utils/simple_lru_cache_inl.h"
+#include "referenced.h"
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Cache Mixer Quota Attributes.
 // This interface is thread safe.
@@ -168,7 +168,7 @@ class QuotaCache {
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(QuotaCache);
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_QUOTA_CACHE_H
+#endif  // ISTIO_MIXERCLIENT_QUOTA_CACHE_H

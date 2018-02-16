@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_GLOBAL_DICTIONARY_H
-#define MIXERCLIENT_GLOBAL_DICTIONARY_H
+#ifndef ISTIO_MIXERCLIENT_GLOBAL_DICTIONARY_H
+#define ISTIO_MIXERCLIENT_GLOBAL_DICTIONARY_H
 
 #include <string>
 #include <vector>
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Get automatically generated global words.
 const std::vector<std::string>& GetGlobalWords();
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_GLOBAL_DICTIONARY_H
+#endif  // ISTIO_MIXERCLIENT_GLOBAL_DICTIONARY_H

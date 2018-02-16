@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "mixerclient/include/client.h"
+#include "include/mixerclient/client.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "mixerclient/include/attributes_builder.h"
-#include "mixerclient/utils/status_test_util.h"
+#include "include/utils/attributes_builder.h"
+#include "src/utils/status_test_util.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::CheckRequest;
@@ -29,7 +29,7 @@ using ::testing::Invoke;
 using ::testing::_;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 namespace {
 
 const std::string kRequestCount = "RequestCount";
@@ -307,5 +307,5 @@ TEST_F(MixerClientImplTest, TestFailedCheckAndQuota) {
 }
 
 }  // namespace
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

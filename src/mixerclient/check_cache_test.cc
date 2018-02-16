@@ -16,9 +16,9 @@
 #include "check_cache.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "mixerclient/include/attributes_builder.h"
-#include "mixerclient/utils/protobuf.h"
-#include "mixerclient/utils/status_test_util.h"
+#include "include/utils/attributes_builder.h"
+#include "include/utils/protobuf.h"
+#include "include/utils/status_test_util.h"
 
 using namespace std::chrono;
 using ::istio::mixer::v1::Attributes;
@@ -28,7 +28,7 @@ using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 time_point<system_clock> FakeTime(int t) {
   return time_point<system_clock>(milliseconds(t));
@@ -316,5 +316,5 @@ TEST_F(CheckCacheTest, TestTwoReferenced) {
   EXPECT_TRUE(result3.IsCacheHit());
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

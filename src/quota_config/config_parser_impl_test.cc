@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
-#include "mixerclient/quota/include/config_parser.h"
+#include "include/quota_config/config_parser.h"
+#include "include/utils/attributes_builder.h"
 
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "mixerclient/include/attributes_builder.h"
 
 using ::istio::mixer::v1::Attributes;
-using ::istio::mixer_client::AttributesBuilder;
+using ::istio::utils::AttributesBuilder;
 using ::google::protobuf::TextFormat;
 using ::istio::mixer::v1::config::client::QuotaSpec;
 
 namespace istio {
-namespace quota {
+namespace quota_config {
 namespace {
 
 const char kQuotaEmptyMatch[] = R"(
@@ -172,5 +172,5 @@ TEST(ConfigParserTest, TestRegexMatch) {
 }
 
 }  // namespace
-}  // namespace quota
+}  // namespace quota_config
 }  // namespace istio

@@ -27,7 +27,7 @@ using ::testing::Invoke;
 using ::testing::_;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // A mocking class to mock ReportTransport interface.
 class MockReportTransport {
@@ -151,5 +151,5 @@ TEST_F(ReportBatchTest, TestBatchReportWithTimeout) {
   EXPECT_EQ(report_call_count, 1);
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

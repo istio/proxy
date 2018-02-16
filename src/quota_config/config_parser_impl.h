@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef QUOTA_CONFIG_PARSER_IMPL_H_
-#define QUOTA_CONFIG_PARSER_IMPL_H_
+#ifndef ISTIO_QUOTA_CONFIG_CONFIG_PARSER_IMPL_H_
+#define ISTIO_QUOTA_CONFIG_CONFIG_PARSER_IMPL_H_
 
-#include "mixerclient/quota/include/config_parser.h"
+#include "include/quota_config/config_parser.h"
 
 #include <regex>
 #include <unordered_map>
 
 namespace istio {
-namespace quota {
+namespace quota_config {
 
 // An object to implement ConfigParser interface.
 class ConfigParserImpl : public ConfigParser {
@@ -46,7 +46,7 @@ class ConfigParserImpl : public ConfigParser {
   std::unordered_map<std::string, std::regex> regex_map_;
 };
 
-}  // namespace quota
+}  // namespace quota_config
 }  // namespace istio
 
-#endif  // QUOTA_CONFIG_PARSER_IMPL_H_
+#endif  // ISTIO_QUOTA_CONFIG_CONFIG_PARSER_IMPL_H_

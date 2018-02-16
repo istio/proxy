@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_OPTIONS_H
-#define MIXERCLIENT_OPTIONS_H
+#ifndef ISTIO_MIXERCLIENT_OPTIONS_H
+#define ISTIO_MIXERCLIENT_OPTIONS_H
 
 #include <memory>
 #include <set>
 #include <vector>
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 // Options controlling check behavior.
 struct CheckOptions {
@@ -80,7 +80,7 @@ struct QuotaOptions {
   const int expiration_ms;
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_OPTIONS_H
+#endif  // ISTIO_MIXERCLIENT_OPTIONS_H

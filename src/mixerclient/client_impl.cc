@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "client_impl.h"
-#include "mixerclient/utils/protobuf.h"
+#include "src/utils/protobuf.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::CheckRequest;
@@ -24,7 +24,7 @@ using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
 
 namespace istio {
-namespace mixer_client {
+namespace mixerclient {
 
 MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
     : options_(options) {
@@ -155,5 +155,5 @@ std::unique_ptr<MixerClient> CreateMixerClient(
   return std::unique_ptr<MixerClient>(new MixerClientImpl(options));
 }
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio

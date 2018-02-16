@@ -15,25 +15,14 @@
 licenses(["notice"])
 
 cc_library(
-    name = "requirement_header",
-    hdrs = [
-        "include/requirement.h",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "config_parser_lib",
     srcs = [
-        "src/config_parser_impl.cc",
-        "src/config_parser_impl.h",
-    ],
-    hdrs = [
-        "include/config_parser.h",
+        "config_parser_impl.cc",
+        "config_parser_impl.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":requirement_header",
+        "//include/quota_config:headers_lib",
         "//external:mixer_client_config_cc_proto",
     ],
 )
@@ -41,7 +30,7 @@ cc_library(
 cc_test(
     name = "config_parser_impl_test",
     size = "small",
-    srcs = ["src/config_parser_impl_test.cc"],
+    srcs = ["config_parser_impl_test.cc"],
     linkopts = [
         "-lm",
         "-lpthread",
@@ -49,7 +38,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":config_parser_lib",
-        "//mixerclient:mixer_client_lib",
+        "//include/utils:headers_lib",
         "//external:googletest_main",
     ],
 )

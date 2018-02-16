@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCLIENT_ATTRIBUTES_BUILDER_H
-#define MIXERCLIENT_ATTRIBUTES_BUILDER_H
+#ifndef ISTIO_UTILS_ATTRIBUTES_BUILDER_H
+#define ISTIO_UTILS_ATTRIBUTES_BUILDER_H
 
 #include <chrono>
 #include <map>
@@ -23,7 +23,7 @@
 #include "mixer/v1/attributes.pb.h"
 
 namespace istio {
-namespace mixer_client {
+namespace utils {
 
 // Builder class to add attribute to protobuf Attributes.
 // Its usage:
@@ -88,18 +88,11 @@ class AttributesBuilder {
     }
   }
 
-  // If key suffixed with ".ip", try to convert its value to ipv4 or ipv6.
-  // If success, add it as bytes, otherwise add it as string.
-  // This is only used for legacy mixerclient config using string to pass
-  // attribute values. The new mixerclient attribute format is strongly typed,
-  // IP attribute values are already passed as bytes types.
-  void AddIpOrString(const std::string& key, const std::string& str);
-
  private:
   ::istio::mixer::v1::Attributes* attributes_;
 };
 
-}  // namespace mixer_client
+}  // namespace mixerclient
 }  // namespace istio
 
-#endif  // MIXERCLIENT_ATTRIBUTES_BUILDER_H
+#endif  // ISTIO_MIXERCLIENT_ATTRIBUTES_BUILDER_H

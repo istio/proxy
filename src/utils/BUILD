@@ -18,10 +18,9 @@ cc_library(
     name = "utils_lib",
     srcs = [
         "status.cc",
+        "protobuf.cc",
     ],
-    visibility = [
-        "//src/control:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//external:protobuf",
         "//include/utils:headers_lib",
@@ -29,22 +28,12 @@ cc_library(
 )
 
 cc_library(
-    name = "simple_lru_cache",
-    srcs = ["google_macros.h"],
-    hdrs = [
-        "simple_lru_cache.h",
-        "simple_lru_cache_inl.h",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "md5_lib",
     srcs = ["md5.cc"],
-    hdrs = ["md5.h" ],
     visibility = ["//visibility:public"],
     deps = [
         "//external:boringssl_crypto",
+        "//include/utils:headers_lib",
     ],
 )
 
@@ -58,8 +47,8 @@ cc_test(
     ],
     linkstatic = 1,
     deps = [
-        ":simple_lru_cache",
         "//external:googletest_main",
+        "//include/utils:simple_lru_cache",
     ],
 )
 
