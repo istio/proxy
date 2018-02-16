@@ -15,17 +15,17 @@
 ################################################################################
 #
 
-load(
-     "//mixerclient:rrr.bzl",
-     "googletest_repositories",
-     )
-
-
 #load(
-#     "//mixerclient:repositories.bzl",
+#     "//src:rrr.bzl",
 #     "googletest_repositories",
-#     "mixerapi_dependencies",
 #)
+
+
+load(
+     "//:repositories.bzl",
+     "googletest_repositories",
+     "mixerapi_dependencies",
+)
 
 googletest_repositories()
 mixerapi_dependencies()
