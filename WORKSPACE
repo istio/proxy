@@ -15,12 +15,6 @@
 ################################################################################
 #
 
-#load(
-#     "//src:rrr.bzl",
-#     "googletest_repositories",
-#)
-
-
 load(
      "//:repositories.bzl",
      "googletest_repositories",
