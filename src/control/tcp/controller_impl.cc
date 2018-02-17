@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include "controller_impl.h"
-#include "request_handler_impl.h"
+#include "src/control/tcp/controller_impl.h"
+#include "src/control/tcp/request_handler_impl.h"
 
 using ::istio::mixer::v1::config::client::TcpClientConfig;
-using ::istio::mixer_client::Statistics;
+using ::istio::mixerclient::Statistics;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 ControllerImpl::ControllerImpl(const Options& data) {
@@ -41,5 +41,5 @@ void ControllerImpl::GetStatistics(Statistics* stat) const {
 }
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

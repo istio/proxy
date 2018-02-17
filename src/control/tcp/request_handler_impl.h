@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_REQUEST_HANDLER_IMPL_H
-#define MIXERCONTROL_TCP_REQUEST_HANDLER_IMPL_H
+#ifndef ISTIO_CONTROL_TCP_REQUEST_HANDLER_IMPL_H
+#define ISTIO_CONTROL_TCP_REQUEST_HANDLER_IMPL_H
 
-#include "client_context.h"
-#include "mixerclient/control/include/tcp/request_handler.h"
-#include "mixerclient/control/src/request_context.h"
+#include "include/control/tcp/request_handler.h"
+#include "src/control/request_context.h"
+#include "src/control/tcp/client_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The class to implement RequestHandler interface.
@@ -30,8 +30,8 @@ class RequestHandlerImpl : public RequestHandler {
   RequestHandlerImpl(std::shared_ptr<ClientContext> client_context);
 
   // Make a Check call.
-  ::istio::mixer_client::CancelFunc Check(
-      CheckData* check_data, ::istio::mixer_client::DoneFunc on_done) override;
+  ::istio::mixerclient::CancelFunc Check(
+      CheckData* check_data, ::istio::mixerclient::DoneFunc on_done) override;
 
   // Make a Report call.
   // TODO(JimmyCYJ): Let TCP filter use
@@ -58,7 +58,7 @@ class RequestHandlerImpl : public RequestHandler {
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_REQUEST_HANDLER_IMPL_H
+#endif  // ISTIO_CONTROL_TCP_REQUEST_HANDLER_IMPL_H

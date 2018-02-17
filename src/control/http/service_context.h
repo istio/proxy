@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_SERVICE_CONTEXT_H
-#define MIXERCONTROL_HTTP_SERVICE_CONTEXT_H
+#ifndef ISTIO_CONTROL_HTTP_SERVICE_CONTEXT_H
+#define ISTIO_CONTROL_HTTP_SERVICE_CONTEXT_H
 
-#include "client_context.h"
 #include "google/protobuf/stubs/status.h"
+#include "include/api_spec/http_api_spec_parser.h"
+#include "include/quota_config/config_parser.h"
 #include "mixer/v1/attributes.pb.h"
-#include "mixerclient/api_spec/include/http_api_spec_parser.h"
-#include "mixerclient/quota/include/config_parser.h"
+#include "src/control/http/client_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The context to hold service config for both HTTP and TCP.
@@ -66,7 +66,8 @@ class ServiceContext {
   std::unique_ptr<::istio::api_spec::HttpApiSpecParser> api_spec_parser_;
 
   // The quota parsers for each quota config.
-  std::vector<std::unique_ptr<::istio::quota::ConfigParser>> quota_parsers_;
+  std::vector<std::unique_ptr<::istio::quota_config::ConfigParser>>
+      quota_parsers_;
 
   // The service config.
   std::unique_ptr<::istio::mixer::v1::config::client::ServiceConfig>
@@ -74,7 +75,7 @@ class ServiceContext {
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_SERVICE_CONTEXT_H
+#endif  // ISTIO_CONTROL_HTTP_SERVICE_CONTEXT_H

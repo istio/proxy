@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_CHECK_DATA_H
-#define MIXERCONTROL_TCP_CHECK_DATA_H
+#ifndef ISTIO_CONTROL_TCP_CHECK_DATA_H
+#define ISTIO_CONTROL_TCP_CHECK_DATA_H
 
 #include <string>
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The interface to extract TCP data for Mixer check call.
@@ -39,7 +39,7 @@ class CheckData {
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_CHECK_DATA_H
+#endif  // ISTIO_CONTROL_TCP_CHECK_DATA_H

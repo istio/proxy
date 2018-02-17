@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <cctype>
 
-using ::istio::mixer_control::http::CheckData;
+using ::istio::control::http::CheckData;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::APIKey;
 using ::istio::mixer::v1::config::client::HTTPAPISpec;

@@ -14,12 +14,12 @@
  */
 
 #include "service_context.h"
-#include "mixerclient/control/src/attribute_names.h"
+#include "src/control/attribute_names.h"
 
 using ::istio::mixer::v1::config::client::ServiceConfig;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 ServiceContext::ServiceContext(std::shared_ptr<ClientContext> client_context,
@@ -44,7 +44,7 @@ void ServiceContext::BuildParsers() {
   // Build quota parser
   for (const auto& quota : service_config_->quota_spec()) {
     quota_parsers_.push_back(
-        std::move(::istio::quota::ConfigParser::Create(quota)));
+        std::move(::istio::quota_config::ConfigParser::Create(quota)));
   }
 }
 
@@ -85,5 +85,5 @@ void ServiceContext::AddQuotas(RequestContext* request) const {
 }
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_MOCK_REPORT_DATA_H
-#define MIXERCONTROL_HTTP_MOCK_REPORT_DATA_H
+#ifndef ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
+#define ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
 
 #include "gmock/gmock.h"
-#include "mixerclient/control/include/http/report_data.h"
+#include "include/control/http/report_data.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The mock object for ReportData interface.
@@ -31,7 +31,7 @@ class MockReportData : public ReportData {
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_MOCK_REPORT_DATA_H
+#endif  // ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H

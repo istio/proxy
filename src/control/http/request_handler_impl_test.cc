@@ -13,31 +13,31 @@
  * limitations under the License.
  */
 
-#include "client_context.h"
-#include "controller_impl.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "mixerclient/control/src/attribute_names.h"
-#include "mixerclient/control/src/mock_mixer_client.h"
-#include "mock_check_data.h"
-#include "mock_report_data.h"
+#include "src/control/attribute_names.h"
+#include "src/control/http/client_context.h"
+#include "src/control/http/controller_impl.h"
+#include "src/control/http/mock_check_data.h"
+#include "src/control/http/mock_report_data.h"
+#include "src/control/mock_mixer_client.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::mixer::v1::config::client::HttpClientConfig;
-using ::istio::mixer_client::CancelFunc;
-using ::istio::mixer_client::TransportCheckFunc;
-using ::istio::mixer_client::DoneFunc;
-using ::istio::mixer_client::MixerClient;
-using ::istio::quota::Requirement;
+using ::istio::mixerclient::CancelFunc;
+using ::istio::mixerclient::TransportCheckFunc;
+using ::istio::mixerclient::DoneFunc;
+using ::istio::mixerclient::MixerClient;
+using ::istio::quota_config::Requirement;
 
 using ::testing::_;
 using ::testing::Invoke;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The default client config
@@ -443,5 +443,5 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
 }
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

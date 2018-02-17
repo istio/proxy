@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_CLIENT_CONTEXT_BASE_H
-#define MIXERCONTROL_CLIENT_CONTEXT_BASE_H
+#ifndef ISTIO_CONTROL_CLIENT_CONTEXT_BASE_H
+#define ISTIO_CONTROL_CLIENT_CONTEXT_BASE_H
 
+#include "include/mixerclient/client.h"
 #include "mixer/v1/config/client/client_config.pb.h"
-#include "mixerclient/include/client.h"
 #include "request_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 
 // The global context object to hold the mixer client object
 // to call Check/Report with cache.
@@ -29,32 +29,32 @@ class ClientContextBase {
  public:
   ClientContextBase(
       const ::istio::mixer::v1::config::client::TransportConfig& config,
-      const ::istio::mixer_client::Environment& env);
+      const ::istio::mixerclient::Environment& env);
 
   // A constructor for unit-test to pass in a mock mixer_client
   ClientContextBase(
-      std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client)
+      std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client)
       : mixer_client_(std::move(mixer_client)) {}
   // virtual destrutor
   virtual ~ClientContextBase() {}
 
   // Use mixer client object to make a Check call.
-  ::istio::mixer_client::CancelFunc SendCheck(
-      ::istio::mixer_client::TransportCheckFunc transport,
-      ::istio::mixer_client::DoneFunc on_done, RequestContext* request);
+  ::istio::mixerclient::CancelFunc SendCheck(
+      ::istio::mixerclient::TransportCheckFunc transport,
+      ::istio::mixerclient::DoneFunc on_done, RequestContext* request);
 
   // Use mixer client object to make a Report call.
   void SendReport(const RequestContext& request);
 
   // Get statistics.
-  void GetStatistics(::istio::mixer_client::Statistics* stat) const;
+  void GetStatistics(::istio::mixerclient::Statistics* stat) const;
 
  private:
   // The mixer client object with check cache and report batch features.
-  std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client_;
+  std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client_;
 };
 
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_CLIENT_CONTEXT_BASE_H
+#endif  // ISTIO_CONTROL_CLIENT_CONTEXT_BASE_H

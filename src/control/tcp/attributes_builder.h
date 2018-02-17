@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_ATTRIBUTES_BUILDER_H
-#define MIXERCONTROL_TCP_ATTRIBUTES_BUILDER_H
+#ifndef ISTIO_CONTROL_TCP_ATTRIBUTES_BUILDER_H
+#define ISTIO_CONTROL_TCP_ATTRIBUTES_BUILDER_H
 
-#include "mixerclient/control/include/tcp/check_data.h"
-#include "mixerclient/control/include/tcp/report_data.h"
-#include "mixerclient/control/src/request_context.h"
+#include "include/control/tcp/check_data.h"
+#include "include/control/tcp/report_data.h"
+#include "src/control/request_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The builder class to add TCP attributes.
@@ -41,7 +41,7 @@ class AttributesBuilder {
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_ATTRIBUTES_BUILDER_H
+#endif  // ISTIO_CONTROL_TCP_ATTRIBUTES_BUILDER_H

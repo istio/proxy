@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_REQUEST_HANDLER_H
-#define MIXERCONTROL_HTTP_REQUEST_HANDLER_H
+#ifndef ISTIO_CONTROL_HTTP_REQUEST_HANDLER_H
+#define ISTIO_CONTROL_HTTP_REQUEST_HANDLER_H
 
-#include "check_data.h"
-#include "mixerclient/include/client.h"
-#include "report_data.h"
+#include "include/control/http/check_data.h"
+#include "include/control/http/report_data.h"
+#include "include/mixerclient/client.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The interface to handle a HTTP request.
@@ -35,10 +35,10 @@ class RequestHandler {
   // * extract attributes from the config.
   // * if necessary, forward some attributes to downstream
   // * make a Check call.
-  virtual ::istio::mixer_client::CancelFunc Check(
+  virtual ::istio::mixerclient::CancelFunc Check(
       CheckData* check_data, HeaderUpdate* header_update,
-      ::istio::mixer_client::TransportCheckFunc transport,
-      ::istio::mixer_client::DoneFunc on_done) = 0;
+      ::istio::mixerclient::TransportCheckFunc transport,
+      ::istio::mixerclient::DoneFunc on_done) = 0;
 
   // Make a Report call. It will:
   // * check service config to see if Report is required
@@ -63,7 +63,7 @@ class RequestHandler {
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_REQUEST_HANDLER_H
+#endif  // ISTIO_CONTROL_HTTP_REQUEST_HANDLER_H

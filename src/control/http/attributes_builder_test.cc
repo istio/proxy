@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#include "attributes_builder.h"
+#include "src/control/http/attributes_builder.h"
 
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
-#include "mixerclient/control/src/attribute_names.h"
-#include "mixerclient/include/attributes_builder.h"
-#include "mock_check_data.h"
-#include "mock_report_data.h"
+#include "include/utils/attributes_builder.h"
+#include "src/control/attribute_names.h"
+#include "src/control/http/mock_check_data.h"
+#include "src/control/http/mock_report_data.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
@@ -32,7 +32,7 @@ using ::testing::_;
 using ::testing::Invoke;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 namespace {
 
@@ -215,32 +215,12 @@ attributes {
 
 void ClearContextTime(const std::string &name, RequestContext *request) {
   // Override timestamp with -
-  ::istio::mixer_client::AttributesBuilder builder(&request->attributes);
+  utils::AttributesBuilder builder(&request->attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
   builder.AddTimestamp(name, time0);
 }
 
-TEST(AttributesBuilderTest, TestExtractV1ForwardedAttributes) {
-  ::testing::NiceMock<MockCheckData> mock_data;
-  EXPECT_CALL(mock_data, ExtractIstioAttributes(_))
-      .WillOnce(Invoke([](std::string *data) -> bool {
-        // v1 format
-        Attributes_StringMap attr_map;
-        (*attr_map.mutable_entries())["test_key"] = "test_value";
-        attr_map.SerializeToString(data);
-        return true;
-      }));
-
-  RequestContext request;
-  AttributesBuilder builder(&request);
-  builder.ExtractForwardedAttributes(&mock_data);
-
-  Attributes attr;
-  (*attr.mutable_attributes())["test_key"].set_string_value("test_value");
-  EXPECT_TRUE(MessageDifferencer::Equals(request.attributes, attr));
-}
-
-TEST(AttributesBuilderTest, TestExtractV2ForwardedAttributes) {
+TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   Attributes attr;
   (*attr.mutable_attributes())["test_key"].set_string_value("test_value");
 
@@ -372,5 +352,5 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
 
 }  // namespace
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

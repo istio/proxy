@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_MOCK_CHECK_DATA_H
-#define MIXERCONTROL_TCP_MOCK_CHECK_DATA_H
+#ifndef ISTIO_CONTROL_TCP_MOCK_CHECK_DATA_H
+#define ISTIO_CONTROL_TCP_MOCK_CHECK_DATA_H
 
 #include "gmock/gmock.h"
-#include "mixerclient/control/include/tcp/check_data.h"
+#include "include/control/tcp/check_data.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The mock object for CheckData interface.
@@ -32,7 +32,7 @@ class MockCheckData : public CheckData {
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_MOCK_CHECK_DATA_H
+#endif  // ISTIO_CONTROL_TCP_MOCK_CHECK_DATA_H

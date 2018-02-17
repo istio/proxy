@@ -13,20 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_CONTROLLER_IMPL_H
-#define MIXERCONTROL_HTTP_CONTROLLER_IMPL_H
+#ifndef ISTIO_CONTROL_HTTP_CONTROLLER_IMPL_H
+#define ISTIO_CONTROL_HTTP_CONTROLLER_IMPL_H
 
 #include <memory>
 #include <unordered_map>
 
-#include "client_context.h"
-#include "mixerclient/control/include/http/controller.h"
-#include "mixerclient/utils/simple_lru_cache.h"
-#include "mixerclient/utils/simple_lru_cache_inl.h"
-#include "service_context.h"
+#include "include/control/http/controller.h"
+#include "include/utils/simple_lru_cache.h"
+#include "include/utils/simple_lru_cache_inl.h"
+#include "src/control/http/client_context.h"
+#include "src/control/http/service_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The class to implement Controller interface.
@@ -48,7 +48,7 @@ class ControllerImpl : public Controller {
       const PerRouteConfig& per_route_config) override;
 
   // Get statistics.
-  void GetStatistics(::istio::mixer_client::Statistics* stat) const override;
+  void GetStatistics(::istio::mixerclient::Statistics* stat) const override;
 
  private:
   // Create service config context for HTTP.
@@ -70,13 +70,12 @@ class ControllerImpl : public Controller {
   struct CacheElem {
     std::shared_ptr<ServiceContext> service_context;
   };
-  using LRUCache =
-      ::istio::mixer_client::SimpleLRUCache<std::string, CacheElem>;
+  using LRUCache = ::istio::utils::SimpleLRUCache<std::string, CacheElem>;
   std::unique_ptr<LRUCache> service_context_cache_;
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_CONTROLLER_IMPL_H
+#endif  // ISTIO_CONTROL_HTTP_CONTROLLER_IMPL_H

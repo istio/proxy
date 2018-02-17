@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_ATTRIBUTES_BUILDER_H
-#define MIXERCONTROL_HTTP_ATTRIBUTES_BUILDER_H
+#ifndef ISTIO_CONTROL_HTTP_ATTRIBUTES_BUILDER_H
+#define ISTIO_CONTROL_HTTP_ATTRIBUTES_BUILDER_H
 
-#include "mixerclient/control/include/http/check_data.h"
-#include "mixerclient/control/include/http/report_data.h"
-#include "mixerclient/control/src/request_context.h"
+#include "include/control/http/check_data.h"
+#include "include/control/http/report_data.h"
+#include "src/control/request_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The context for each HTTP request.
@@ -52,7 +52,7 @@ class AttributesBuilder {
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_ATTRIBUTES_BUILDER_H
+#endif  // ISTIO_CONTROL_HTTP_ATTRIBUTES_BUILDER_H

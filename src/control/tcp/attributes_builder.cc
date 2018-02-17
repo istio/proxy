@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
-#include "attributes_builder.h"
+#include "src/control/tcp/attributes_builder.h"
 
-#include "mixerclient/control/src/attribute_names.h"
-#include "mixerclient/include/attributes_builder.h"
+#include "include/utils/attributes_builder.h"
+#include "src/control/attribute_names.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
-  ::istio::mixer_client::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(&request_->attributes);
 
   std::string source_ip;
   int source_port;
@@ -46,7 +46,7 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
 void AttributesBuilder::ExtractReportAttributes(
     ReportData* report_data, bool is_final_report,
     ReportData::ReportInfo* last_report_info) {
-  ::istio::mixer_client::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(&request_->attributes);
 
   ReportData::ReportInfo info;
   report_data->GetReportInfo(&info);
@@ -83,5 +83,5 @@ void AttributesBuilder::ExtractReportAttributes(
 }
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

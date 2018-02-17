@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_REPORT_DATA_H
-#define MIXERCONTROL_TCP_REPORT_DATA_H
+#ifndef ISTIO_CONTROL_TCP_REPORT_DATA_H
+#define ISTIO_CONTROL_TCP_REPORT_DATA_H
 
 #include <chrono>
 #include <string>
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The interface to extract TCP data for Mixer report call.
@@ -42,7 +42,7 @@ class ReportData {
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_REPORT_DATA_H
+#endif  // ISTIO_CONTROL_TCP_REPORT_DATA_H

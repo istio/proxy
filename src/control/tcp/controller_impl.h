@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_CONTROLLER_IMPL_H
-#define MIXERCONTROL_TCP_CONTROLLER_IMPL_H
+#ifndef ISTIO_CONTROL_TCP_CONTROLLER_IMPL_H
+#define ISTIO_CONTROL_TCP_CONTROLLER_IMPL_H
 
 #include <memory>
 
-#include "client_context.h"
-#include "mixerclient/control/include/tcp/controller.h"
+#include "include/control/tcp/controller.h"
+#include "src/control/tcp/client_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The class to implement Controller interface.
@@ -37,7 +37,7 @@ class ControllerImpl : public Controller {
   std::unique_ptr<RequestHandler> CreateRequestHandler() override;
 
   // Get statistics.
-  void GetStatistics(::istio::mixer_client::Statistics* stat) const override;
+  void GetStatistics(::istio::mixerclient::Statistics* stat) const override;
 
  private:
   // The client context object to hold client config and client cache.
@@ -45,7 +45,7 @@ class ControllerImpl : public Controller {
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_CONTROLLER_IMPL_H
+#endif  // ISTIO_CONTROL_TCP_CONTROLLER_IMPL_H

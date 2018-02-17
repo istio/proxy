@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_ATTRIBUTE_NAMES_H
-#define MIXERCONTROL_ATTRIBUTE_NAMES_H
+#ifndef ISTIO_CONTROL_ATTRIBUTE_NAMES_H
+#define ISTIO_CONTROL_ATTRIBUTE_NAMES_H
 
 #include <string>
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 
 // Define attribute names
 struct AttributeName {
@@ -72,7 +72,7 @@ struct AttributeName {
   static const char kRequestAuthClaims[];
 };
 
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_ATTRIBUTE_NAMES_H
+#endif  // ISTIO_CONTROL_ATTRIBUTE_NAMES_H

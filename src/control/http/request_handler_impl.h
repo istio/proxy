@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_REQUEST_HANDLER_IMPL_H
-#define MIXERCONTROL_HTTP_REQUEST_HANDLER_IMPL_H
+#ifndef ISTIO_CONTROL_HTTP_REQUEST_HANDLER_IMPL_H
+#define ISTIO_CONTROL_HTTP_REQUEST_HANDLER_IMPL_H
 
-#include "client_context.h"
-#include "mixerclient/control/include/http/request_handler.h"
-#include "mixerclient/control/src/request_context.h"
-#include "service_context.h"
+#include "include/control/http/request_handler.h"
+#include "src/control/http/client_context.h"
+#include "src/control/http/service_context.h"
+#include "src/control/request_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The class to implement HTTPRequestHandler interface.
@@ -31,10 +31,10 @@ class RequestHandlerImpl : public RequestHandler {
   RequestHandlerImpl(std::shared_ptr<ServiceContext> service_context);
 
   // Makes a Check call.
-  ::istio::mixer_client::CancelFunc Check(
+  ::istio::mixerclient::CancelFunc Check(
       CheckData* check_data, HeaderUpdate* header_update,
-      ::istio::mixer_client::TransportCheckFunc transport,
-      ::istio::mixer_client::DoneFunc on_done) override;
+      ::istio::mixerclient::TransportCheckFunc transport,
+      ::istio::mixerclient::DoneFunc on_done) override;
 
   // Make a Report call.
   void Report(ReportData* report_data) override;
@@ -50,7 +50,7 @@ class RequestHandlerImpl : public RequestHandler {
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_REQUEST_HANDLER_IMPL_H
+#endif  // ISTIO_CONTROL_HTTP_REQUEST_HANDLER_IMPL_H

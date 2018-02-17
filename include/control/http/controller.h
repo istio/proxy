@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_CONTROLLER_H
-#define MIXERCONTROL_HTTP_CONTROLLER_H
+#ifndef ISTIO_CONTROL_HTTP_CONTROLLER_H
+#define ISTIO_CONTROL_HTTP_CONTROLLER_H
 
+#include "include/control/http/request_handler.h"
+#include "include/mixerclient/client.h"
 #include "mixer/v1/config/client/client_config.pb.h"
-#include "mixerclient/include/client.h"
-#include "request_handler.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // An interface to support Mixer control.
@@ -76,7 +76,7 @@ class Controller {
     const ::istio::mixer::v1::config::client::HttpClientConfig& config;
 
     // Some plaform functions for mixer client library.
-    ::istio::mixer_client::Environment env;
+    ::istio::mixerclient::Environment env;
 
     // The LRU cache size for service config.
     // If not set or is 0 default value, the cache size is 1000.
@@ -87,11 +87,11 @@ class Controller {
   static std::unique_ptr<Controller> Create(const Options& options);
 
   // Get statistics.
-  virtual void GetStatistics(::istio::mixer_client::Statistics* stat) const = 0;
+  virtual void GetStatistics(::istio::mixerclient::Statistics* stat) const = 0;
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_CONTROLLER_H
+#endif  // ISTIO_CONTROL_HTTP_CONTROLLER_H

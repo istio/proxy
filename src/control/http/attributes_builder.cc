@@ -13,21 +13,21 @@
  * limitations under the License.
  */
 
-#include "attributes_builder.h"
+#include "src/control/http/attributes_builder.h"
 
-#include "mixerclient/control/include/utils/status.h"
-#include "mixerclient/control/src/attribute_names.h"
-#include "mixerclient/include/attributes_builder.h"
+#include "include/utils/attributes_builder.h"
+#include "include/utils/status.h"
+#include "src/control/attribute_names.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_StringMap;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
-  ::istio::mixer_client::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(&request_->attributes);
   std::map<std::string, std::string> headers = check_data->GetRequestHeaders();
   builder.AddStringMap(AttributeName::kRequestHeaders, headers);
 
@@ -61,7 +61,7 @@ void AttributesBuilder::ExtractRequestAuthAttributes(CheckData *check_data) {
   std::map<std::string, std::string> payload;
   if (check_data->GetJWTPayload(&payload) && !payload.empty()) {
     // Populate auth attributes.
-    ::istio::mixer_client::AttributesBuilder builder(&request_->attributes);
+    utils::AttributesBuilder builder(&request_->attributes);
     if (payload.count("iss") > 0 && payload.count("sub") > 0) {
       builder.AddString(AttributeName::kRequestAuthPrincipal,
                         payload["iss"] + "/" + payload["sub"]);
@@ -86,22 +86,13 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
     request_->attributes.MergeFrom(v2_format);
     return;
   }
-
-  // Legacy format from old proxy.
-  Attributes_StringMap forwarded_attributes;
-  if (forwarded_attributes.ParseFromString(forwarded_data)) {
-    ::istio::mixer_client::AttributesBuilder builder(&request_->attributes);
-    for (const auto &it : forwarded_attributes.entries()) {
-      builder.AddIpOrString(it.first, it.second);
-    }
-  }
 }
 
 void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
   ExtractRequestHeaderAttributes(check_data);
   ExtractRequestAuthAttributes(check_data);
 
-  ::istio::mixer_client::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(&request_->attributes);
 
   std::string source_ip;
   int source_port;
@@ -128,7 +119,7 @@ void AttributesBuilder::ForwardAttributes(const Attributes &forward_attributes,
 }
 
 void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
-  ::istio::mixer_client::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(&request_->attributes);
 
   std::map<std::string, std::string> headers =
       report_data->GetResponseHeaders();
@@ -156,5 +147,5 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
 }
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

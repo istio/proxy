@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#include "attributes_builder.h"
+#include "src/control/tcp/attributes_builder.h"
 
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
-#include "mixerclient/control/src/attribute_names.h"
-#include "mixerclient/include/attributes_builder.h"
-#include "mock_check_data.h"
-#include "mock_report_data.h"
+#include "include/utils/attributes_builder.h"
+#include "src/control/attribute_names.h"
+#include "src/control/tcp/mock_check_data.h"
+#include "src/control/tcp/mock_report_data.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
@@ -30,7 +30,7 @@ using ::testing::_;
 using ::testing::Invoke;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 namespace {
 
@@ -234,7 +234,7 @@ attributes {
 
 void ClearContextTime(RequestContext* request) {
   // Override timestamp with -
-  ::istio::mixer_client::AttributesBuilder builder(&request->attributes);
+  utils::AttributesBuilder builder(&request->attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
   builder.AddTimestamp(AttributeName::kContextTime, time0);
 }
@@ -358,5 +358,5 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
 
 }  // namespace
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

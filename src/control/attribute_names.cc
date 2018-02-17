@@ -16,7 +16,7 @@
 #include "attribute_names.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 
 // Define attribute names
 const char AttributeName::kSourceUser[] = "source.user";
@@ -69,5 +69,5 @@ const char AttributeName::kRequestAuthAudiences[] = "request.auth.audiences";
 const char AttributeName::kRequestAuthPresenter[] = "request.auth.presenter";
 const char AttributeName::kRequestAuthClaims[] = "request.auth.claims";
 
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

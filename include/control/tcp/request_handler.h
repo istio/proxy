@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_REQUEST_HANDLER_H
-#define MIXERCONTROL_TCP_REQUEST_HANDLER_H
+#ifndef ISTIO_CONTROL_TCP_REQUEST_HANDLER_H
+#define ISTIO_CONTROL_TCP_REQUEST_HANDLER_H
 
-#include "check_data.h"
-#include "mixerclient/include/client.h"
-#include "report_data.h"
+#include "include/control/tcp/check_data.h"
+#include "include/control/tcp/report_data.h"
+#include "include/mixerclient/client.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The interface to handle a TCP request.
@@ -32,8 +32,8 @@ class RequestHandler {
   // Perform a Check call. It will:
   // * extract downstream tcp connection attributes
   // * check config, make a Check call if necessary.
-  virtual ::istio::mixer_client::CancelFunc Check(
-      CheckData* check_data, ::istio::mixer_client::DoneFunc on_done) = 0;
+  virtual ::istio::mixerclient::CancelFunc Check(
+      CheckData* check_data, ::istio::mixerclient::DoneFunc on_done) = 0;
 
   // Make report call.
   // This can be called multiple times for long connection.
@@ -49,7 +49,7 @@ class RequestHandler {
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_REQUEST_HANDLER_H
+#endif  // ISTIO_CONTROL_TCP_REQUEST_HANDLER_H

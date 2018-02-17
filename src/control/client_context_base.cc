@@ -17,18 +17,18 @@
 
 using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::config::client::TransportConfig;
-using ::istio::mixer_client::CancelFunc;
-using ::istio::mixer_client::CheckOptions;
-using ::istio::mixer_client::DoneFunc;
-using ::istio::mixer_client::Environment;
-using ::istio::mixer_client::MixerClientOptions;
-using ::istio::mixer_client::QuotaOptions;
-using ::istio::mixer_client::ReportOptions;
-using ::istio::mixer_client::Statistics;
-using ::istio::mixer_client::TransportCheckFunc;
+using ::istio::mixerclient::CancelFunc;
+using ::istio::mixerclient::CheckOptions;
+using ::istio::mixerclient::DoneFunc;
+using ::istio::mixerclient::Environment;
+using ::istio::mixerclient::MixerClientOptions;
+using ::istio::mixerclient::QuotaOptions;
+using ::istio::mixerclient::ReportOptions;
+using ::istio::mixerclient::Statistics;
+using ::istio::mixerclient::TransportCheckFunc;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace {
 
 CheckOptions GetJustCheckOptions(const TransportConfig& config) {
@@ -67,7 +67,7 @@ ClientContextBase::ClientContextBase(const TransportConfig& config,
   MixerClientOptions options(GetCheckOptions(config), GetReportOptions(config),
                              GetQuotaOptions(config));
   options.env = env;
-  mixer_client_ = ::istio::mixer_client::CreateMixerClient(options);
+  mixer_client_ = ::istio::mixerclient::CreateMixerClient(options);
 }
 
 CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
@@ -98,5 +98,5 @@ void ClientContextBase::GetStatistics(Statistics* stat) const {
   mixer_client_->GetStatistics(stat);
 }
 
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

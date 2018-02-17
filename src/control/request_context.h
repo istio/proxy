@@ -13,29 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_REQUEST_CONTEXT_H
-#define MIXERCONTROL_REQUEST_CONTEXT_H
+#ifndef ISTIO_CONTROL_REQUEST_CONTEXT_H
+#define ISTIO_CONTROL_REQUEST_CONTEXT_H
 
 #include "google/protobuf/stubs/status.h"
+#include "include/quota_config/requirement.h"
 #include "mixer/v1/attributes.pb.h"
-#include "mixerclient/quota/include/requirement.h"
 
 #include <vector>
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 
 // The context to hold request data for both HTTP and TCP.
 struct RequestContext {
   // The attributes for both Check and Report.
   ::istio::mixer::v1::Attributes attributes;
   // The quota requirements
-  std::vector<::istio::quota::Requirement> quotas;
+  std::vector<::istio::quota_config::Requirement> quotas;
   // The check status.
   ::google::protobuf::util::Status check_status;
 };
 
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_REQUEST_CONTEXT_H
+#endif  // ISTIO_CONTROL_REQUEST_CONTEXT_H

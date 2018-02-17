@@ -15,7 +15,7 @@
 licenses(["notice"])
 
 cc_library(
-    name = "headers_only",
+    name = "headers_lib",
     hdrs = [
         "check_data.h",
         "controller.h",

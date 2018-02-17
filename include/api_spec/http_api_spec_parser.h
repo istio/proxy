@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef API_SPEC_HTTP_API_SPEC_PARSER_H_
-#define API_SPEC_HTTP_API_SPEC_PARSER_H_
+#ifndef ISTIO_API_SPEC_HTTP_API_SPEC_PARSER_H_
+#define ISTIO_API_SPEC_HTTP_API_SPEC_PARSER_H_
 
 #include <string>
 
+#include "include/control/http/check_data.h"
 #include "mixer/v1/attributes.pb.h"
 #include "mixer/v1/config/client/api_spec.pb.h"
-#include "mixerclient/control/include/http/check_data.h"
 
 namespace istio {
 namespace api_spec {
@@ -37,9 +37,8 @@ class HttpApiSpecParser {
                              ::istio::mixer::v1::Attributes* attributes) = 0;
 
   // Extract api key, return true if api key is extracted.
-  virtual bool ExtractApiKey(
-      ::istio::mixer_control::http::CheckData* check_data,
-      std::string* api_key) = 0;
+  virtual bool ExtractApiKey(::istio::control::http::CheckData* check_data,
+                             std::string* api_key) = 0;
 
   // The factory function to create an instance.
   static std::unique_ptr<HttpApiSpecParser> Create(
@@ -49,4 +48,4 @@ class HttpApiSpecParser {
 }  // namespace api_spec
 }  // namespace istio
 
-#endif  // API_SPEC_HTTP_API_SPEC_PARSER_H_
+#endif  // ISTIO_API_SPEC_HTTP_API_SPEC_PARSER_H_

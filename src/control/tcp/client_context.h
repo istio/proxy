@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_CLIENT_CONTEXT_H
-#define MIXERCONTROL_TCP_CLIENT_CONTEXT_H
+#ifndef ISTIO_CONTROL_TCP_CLIENT_CONTEXT_H
+#define ISTIO_CONTROL_TCP_CLIENT_CONTEXT_H
 
-#include "mixerclient/control/include/tcp/controller.h"
-#include "mixerclient/control/src/client_context_base.h"
-#include "mixerclient/control/src/request_context.h"
-#include "mixerclient/quota/include/config_parser.h"
+#include "include/control/tcp/controller.h"
+#include "include/quota_config/config_parser.h"
+#include "src/control/client_context_base.h"
+#include "src/control/request_context.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // The global context object to hold:
@@ -38,7 +38,7 @@ class ClientContext : public ClientContextBase {
 
   // A constructor for unit-test to pass in a mock mixer_client
   ClientContext(
-      std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client,
+      std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
       const ::istio::mixer::v1::config::client::TcpClientConfig& config)
       : ClientContextBase(std::move(mixer_client)), config_(config) {
     BuildQuotaParser();
@@ -65,19 +65,19 @@ class ClientContext : public ClientContextBase {
   // If there is quota config, build quota parser.
   void BuildQuotaParser() {
     if (config_.has_connection_quota_spec()) {
-      quota_parser_ =
-          ::istio::quota::ConfigParser::Create(config_.connection_quota_spec());
+      quota_parser_ = ::istio::quota_config::ConfigParser::Create(
+          config_.connection_quota_spec());
     }
   }
   // The mixer client config.
   const ::istio::mixer::v1::config::client::TcpClientConfig& config_;
 
   // The quota parser.
-  std::unique_ptr<::istio::quota::ConfigParser> quota_parser_;
+  std::unique_ptr<::istio::quota_config::ConfigParser> quota_parser_;
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_CLIENT_CONTEXT_H
+#endif  // ISTIO_CONTROL_TCP_CLIENT_CONTEXT_H

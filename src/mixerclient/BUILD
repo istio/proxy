@@ -53,6 +53,7 @@ cc_library(
         "quota_cache.cc",
         "quota_cache.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "//external:mixer_api_cc_proto",
         "//include/mixerclient:headers_lib",

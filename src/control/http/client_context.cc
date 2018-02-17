@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "client_context.h"
+#include "src/control/http/client_context.h"
 
 using ::istio::mixer::v1::config::client::ServiceConfig;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 ClientContext::ClientContext(const Controller::Options& data)
@@ -27,7 +27,7 @@ ClientContext::ClientContext(const Controller::Options& data)
       service_config_cache_size_(data.service_config_cache_size) {}
 
 ClientContext::ClientContext(
-    std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client,
+    std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
     const ::istio::mixer::v1::config::client::HttpClientConfig& config,
     int service_config_cache_size)
     : ClientContextBase(std::move(mixer_client)),
@@ -59,5 +59,5 @@ const ServiceConfig* ClientContext::GetServiceConfig(
 }
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

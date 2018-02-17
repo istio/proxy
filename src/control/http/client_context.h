@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_CLIENT_CONTEXT_H
-#define MIXERCONTROL_HTTP_CLIENT_CONTEXT_H
+#ifndef ISTIO_CONTROL_HTTP_CLIENT_CONTEXT_H
+#define ISTIO_CONTROL_HTTP_CLIENT_CONTEXT_H
 
-#include "mixerclient/control/include/http/controller.h"
-#include "mixerclient/control/src/client_context_base.h"
+#include "include/control/http/controller.h"
+#include "src/control/client_context_base.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The global context object to hold:
@@ -31,7 +31,7 @@ class ClientContext : public ClientContextBase {
   ClientContext(const Controller::Options& data);
   // A constructor for unit-test to pass in a mock mixer_client
   ClientContext(
-      std::unique_ptr<::istio::mixer_client::MixerClient> mixer_client,
+      std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
       const ::istio::mixer::v1::config::client::HttpClientConfig& config,
       int service_config_cache_size);
 
@@ -61,7 +61,7 @@ class ClientContext : public ClientContextBase {
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_CLIENT_CONTEXT_H
+#endif  // ISTIO_CONTROL_HTTP_CLIENT_CONTEXT_H

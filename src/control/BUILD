@@ -27,8 +27,8 @@ cc_library(
     ],
     visibility = [":__subpackages__"],
     deps = [
-        "//mixerclient:mixer_client_lib",
-        "//mixerclient/quota:config_parser_lib",
+        "//src/mixerclient:mixerclient_lib",
+        "//src/quota_config:config_parser_lib",
         "//external:mixer_client_config_cc_proto",
     ],
 )
@@ -40,6 +40,6 @@ cc_library(
     ],
     visibility = [":__subpackages__"],
     deps = [
-        "//mixerclient:mixer_client_lib",
+        "//src/mixerclient:mixerclient_lib",
     ],
 )

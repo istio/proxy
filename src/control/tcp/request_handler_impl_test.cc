@@ -13,27 +13,27 @@
  * limitations under the License.
  */
 
-#include "client_context.h"
-#include "controller_impl.h"
 #include "gtest/gtest.h"
-#include "mixerclient/control/src/mock_mixer_client.h"
-#include "mock_check_data.h"
-#include "mock_report_data.h"
+#include "src/control/mock_mixer_client.h"
+#include "src/control/tcp/client_context.h"
+#include "src/control/tcp/controller_impl.h"
+#include "src/control/tcp/mock_check_data.h"
+#include "src/control/tcp/mock_report_data.h"
 
 using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::TcpClientConfig;
-using ::istio::mixer_client::CancelFunc;
-using ::istio::mixer_client::TransportCheckFunc;
-using ::istio::mixer_client::DoneFunc;
-using ::istio::mixer_client::MixerClient;
-using ::istio::quota::Requirement;
+using ::istio::mixerclient::CancelFunc;
+using ::istio::mixerclient::TransportCheckFunc;
+using ::istio::mixerclient::DoneFunc;
+using ::istio::mixerclient::MixerClient;
+using ::istio::quota_config::Requirement;
 
 using ::testing::_;
 using ::testing::Invoke;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 class RequestHandlerImplTest : public ::testing::Test {
@@ -111,5 +111,5 @@ TEST_F(RequestHandlerImplTest, TestHandlerReport) {
 }
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

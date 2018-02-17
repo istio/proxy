@@ -17,14 +17,12 @@
 #define MIXERCONTROL_UTILS_STATUS_H
 
 namespace istio {
-namespace mixer_control {
 namespace utils {
 
 // Convert Status::code to HTTP code
 int StatusHttpCode(int code);
 
 }  // utils
-}  // namespace mixer_control
 }  // namespace istio
 
 #endif  // MIXERCONTROL_UTILS_STATUS_H

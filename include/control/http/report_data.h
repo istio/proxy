@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_HTTP_REPORT_DATA_H
-#define MIXERCONTROL_HTTP_REPORT_DATA_H
+#ifndef ISTIO_CONTROL_HTTP_REPORT_DATA_H
+#define ISTIO_CONTROL_HTTP_REPORT_DATA_H
 
 #include <chrono>
 #include <map>
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 // The interface to extract HTTP data for Mixer report.
@@ -43,7 +43,7 @@ class ReportData {
 };
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_HTTP_REPORT_DATA_H
+#endif  // ISTIO_CONTROL_HTTP_REPORT_DATA_H

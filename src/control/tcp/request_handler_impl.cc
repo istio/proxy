@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#include "request_handler_impl.h"
-#include "attributes_builder.h"
+#include "src/control/tcp/request_handler_impl.h"
+#include "src/control/tcp/attributes_builder.h"
 
 using ::google::protobuf::util::Status;
-using ::istio::mixer_client::CancelFunc;
-using ::istio::mixer_client::DoneFunc;
-using ::istio::quota::Requirement;
+using ::istio::mixerclient::CancelFunc;
+using ::istio::mixerclient::DoneFunc;
+using ::istio::quota_config::Requirement;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 RequestHandlerImpl::RequestHandlerImpl(
@@ -67,5 +67,5 @@ void RequestHandlerImpl::Report(ReportData* report_data, bool is_final_report) {
 }
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio

@@ -14,16 +14,16 @@
  */
 
 #include "include/api_spec/http_api_spec_parser.h"
-#include "include/utils/attributes_builder.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
+#include "include/utils/attributes_builder.h"
 #include "src/control/http/mock_check_data.h"
 
 using ::istio::mixer::v1::Attributes;
-using ::istio::mixer_client::AttributesBuilder;
-using ::istio::mixer_control::http::MockCheckData;
 using ::istio::mixer::v1::config::client::HTTPAPISpec;
+using ::istio::control::http::MockCheckData;
+using ::istio::utils::AttributesBuilder;
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
 

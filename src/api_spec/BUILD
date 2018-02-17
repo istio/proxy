@@ -17,20 +17,18 @@ licenses(["notice"])
 cc_library(
     name = "api_spec_lib",
     srcs = [
-        "src/http_api_spec_parser_impl.cc",
-        "src/http_api_spec_parser_impl.h",
-        "src/http_template.cc",
-        "src/http_template.h",
-        "src/path_matcher.h",
-        "src/path_matcher_node.cc",
-        "src/path_matcher_node.h",
-    ],
-    hdrs = [
-        "include/http_api_spec_parser.h",
+        "http_api_spec_parser_impl.cc",
+        "http_api_spec_parser_impl.h",
+        "http_template.cc",
+        "http_template.h",
+        "path_matcher.h",
+        "path_matcher_node.cc",
+        "path_matcher_node.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//mixerclient/control/include/http:headers_only",
+        "//include/api_spec:headers_lib",
+        "//include/control/http:headers_lib",
         "//external:mixer_client_config_cc_proto",
     ],
 )
@@ -38,7 +36,7 @@ cc_library(
 cc_test(
     name = "path_matcher_test",
     size = "small",
-    srcs = ["src/path_matcher_test.cc"],
+    srcs = ["path_matcher_test.cc"],
     linkopts = [
         "-lm",
         "-lpthread",
@@ -53,7 +51,7 @@ cc_test(
 cc_test(
     name = "http_template_test",
     size = "small",
-    srcs = ["src/http_template_test.cc"],
+    srcs = ["http_template_test.cc"],
     linkopts = [
         "-lm",
         "-lpthread",
@@ -68,7 +66,7 @@ cc_test(
 cc_test(
     name = "http_api_spec_parser_test",
     size = "small",
-    srcs = ["src/http_api_spec_parser_test.cc"],
+    srcs = ["http_api_spec_parser_test.cc"],
     linkopts = [
         "-lm",
         "-lpthread",
@@ -76,8 +74,8 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":api_spec_lib",
-        "//mixerclient/control/src/http:mock_headers",
-        "//mixerclient:mixer_client_lib",
+        "//src/control/http:mock_headers",
+        "//src/mixerclient:mixerclient_lib",
         "//external:googletest_main",
     ],
 )

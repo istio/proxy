@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_TCP_CONTROLLER_H
-#define MIXERCONTROL_TCP_CONTROLLER_H
+#ifndef ISTIO_CONTROL_TCP_CONTROLLER_H
+#define ISTIO_CONTROL_TCP_CONTROLLER_H
 
+#include "include/control/tcp/request_handler.h"
+#include "include/mixerclient/client.h"
 #include "mixer/v1/config/client/client_config.pb.h"
-#include "mixerclient/include/client.h"
-#include "request_handler.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace tcp {
 
 // An interface to support Mixer control.
@@ -46,18 +46,18 @@ class Controller {
     const ::istio::mixer::v1::config::client::TcpClientConfig& config;
 
     // Some plaform functions for mixer client library.
-    ::istio::mixer_client::Environment env;
+    ::istio::mixerclient::Environment env;
   };
 
   // The factory function to create a new instance of the controller.
   static std::unique_ptr<Controller> Create(const Options& options);
 
   // Get statistics.
-  virtual void GetStatistics(::istio::mixer_client::Statistics* stat) const = 0;
+  virtual void GetStatistics(::istio::mixerclient::Statistics* stat) const = 0;
 };
 
 }  // namespace tcp
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_TCP_CONTROLLER_H
+#endif  // ISTIO_CONTROL_TCP_CONTROLLER_H

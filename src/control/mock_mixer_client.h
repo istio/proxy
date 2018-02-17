@@ -13,30 +13,30 @@
  * limitations under the License.
  */
 
-#ifndef MIXERCONTROL_MOCK_MIXER_CLIENT_H
-#define MIXERCONTROL_MOCK_MIXER_CLIENT_H
+#ifndef ISTIO_CONTROL_MOCK_MIXER_CLIENT_H
+#define ISTIO_CONTROL_MOCK_MIXER_CLIENT_H
 
 #include "gmock/gmock.h"
-#include "mixerclient/include/client.h"
+#include "include/mixerclient/client.h"
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 
 // The mock object for MixerClient interface.
-class MockMixerClient : public ::istio::mixer_client::MixerClient {
+class MockMixerClient : public ::istio::mixerclient::MixerClient {
  public:
-  MOCK_METHOD4(Check,
-               ::istio::mixer_client::CancelFunc(
-                   const ::istio::mixer::v1::Attributes& attributes,
-                   const std::vector<::istio::quota::Requirement>& quotas,
-                   ::istio::mixer_client::TransportCheckFunc transport,
-                   ::istio::mixer_client::DoneFunc on_done));
+  MOCK_METHOD4(
+      Check, ::istio::mixerclient::CancelFunc(
+                 const ::istio::mixer::v1::Attributes& attributes,
+                 const std::vector<::istio::quota_config::Requirement>& quotas,
+                 ::istio::mixerclient::TransportCheckFunc transport,
+                 ::istio::mixerclient::DoneFunc on_done));
   MOCK_METHOD1(Report, void(const ::istio::mixer::v1::Attributes& attributes));
   MOCK_CONST_METHOD1(GetStatistics,
-                     void(::istio::mixer_client::Statistics* stat));
+                     void(::istio::mixerclient::Statistics* stat));
 };
 
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
 
-#endif  // MIXERCONTROL_MOCK_MIXER_CLIENT_H
+#endif  // ISTIO_CONTROL_MOCK_MIXER_CLIENT_H

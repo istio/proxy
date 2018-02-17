@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include "controller_impl.h"
-#include "request_handler_impl.h"
+#include "src/control/http/controller_impl.h"
+#include "src/control/http/request_handler_impl.h"
 
 using ::istio::mixer::v1::config::client::ServiceConfig;
-using ::istio::mixer_client::Statistics;
+using ::istio::mixerclient::Statistics;
 
 namespace istio {
-namespace mixer_control {
+namespace control {
 namespace http {
 
 namespace {
@@ -100,5 +100,5 @@ std::unique_ptr<Controller> Controller::Create(const Options& data) {
 }
 
 }  // namespace http
-}  // namespace mixer_control
+}  // namespace control
 }  // namespace istio
