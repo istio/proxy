@@ -15,6 +15,11 @@
 
 #pragma once
 
+#include <map>
+#include <string>
+#include <vector>
+
+#include "common/common/logger.h"
 #include "envoy/json/json_object.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 
@@ -37,6 +42,24 @@ struct HttpMixerConfig {
   // report cluster
   const std::string& report_cluster() const {
     return http_config.transport().report_cluster();
+  }
+};
+
+// Config for tcp filter.
+struct TcpMixerConfig {
+  // Load from envoy filter config in JSON format.
+  void Load(const Json::Object& json);
+
+  // The Tcp client config.
+  ::istio::mixer::v1::config::client::TcpClientConfig tcp_config;
+
+  // check cluster
+  const std::string& check_cluster() const {
+    return tcp_config.transport().check_cluster();
+  }
+  // report cluster
+  const std::string& report_cluster() const {
+    return tcp_config.transport().report_cluster();
   }
 };
 

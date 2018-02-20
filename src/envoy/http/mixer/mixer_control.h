@@ -21,9 +21,9 @@
 #include "envoy/upstream/cluster_manager.h"
 #include "include/control/http/controller.h"
 #include "include/control/tcp/controller.h"
-#include "src/envoy/http/mixer/config.h"
-#include "src/envoy/utils/grpc_transport.h"
-#include "src/envoy/utils/stats.h"
+#include "src/envoy/mixer/config.h"
+#include "src/envoy/mixer/grpc_transport.h"
+#include "src/envoy/mixer/stats.h"
 
 namespace Envoy {
 namespace Http {
@@ -49,6 +49,35 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
   Upstream::ClusterManager& cm_;
   // The mixer control
   std::unique_ptr<::istio::control::http::Controller> controller_;
+
+  MixerStatsObject stats_obj_;
+};
+
+class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
+ public:
+  // The constructor.
+  TcpMixerControl(const TcpMixerConfig& mixer_config,
+                  Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
+                  Runtime::RandomGenerator& random, MixerFilterStats& stats);
+
+  ::istio::control::tcp::Controller* controller() { return controller_.get(); }
+
+  std::chrono::milliseconds report_interval_ms() const {
+    return report_interval_ms_;
+  }
+
+  Event::Dispatcher& dispatcher() { return dispatcher_; }
+
+ private:
+  // The mixer config.
+  const TcpMixerConfig& config_;
+  // The mixer control
+  std::unique_ptr<::istio::control::tcp::Controller> controller_;
+
+  // Time interval in milliseconds for sending periodical delta reports.
+  std::chrono::milliseconds report_interval_ms_;
+
+  Event::Dispatcher& dispatcher_;
 
   MixerStatsObject stats_obj_;
 };
