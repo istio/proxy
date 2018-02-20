@@ -13,65 +13,17 @@
  * limitations under the License.
  */
 
-#include "src/envoy/mixer/config.h"
-#include "google/protobuf/stubs/status.h"
-#include "google/protobuf/util/json_util.h"
-#include "src/envoy/mixer/utils.h"
-
-using ::google::protobuf::Message;
-using ::google::protobuf::util::Status;
-using ::istio::mixer::v1::config::client::TransportConfig;
+#include "src/envoy/http/mixer/config.h"
+#include "src/envoy/utils/config.h"
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
-namespace {
-
-const std::string kV2Config("v2");
-
-// The name for the mixer server cluster.
-const std::string kDefaultMixerClusterName("mixer_server");
-
-void SetDefaultMixerClusters(TransportConfig *config) {
-  if (config->check_cluster().empty()) {
-    config->set_check_cluster(kDefaultMixerClusterName);
-  }
-  if (config->report_cluster().empty()) {
-    config->set_report_cluster(kDefaultMixerClusterName);
-  }
-}
-
-bool ReadV2Config(const Json::Object &json, Message *message) {
-  if (!json.hasObject(kV2Config)) {
-    return false;
-  }
-  std::string v2_str = json.getObject(kV2Config)->asJsonString();
-  Status status = Utils::ParseJsonMessage(v2_str, message);
-  auto &logger = Logger::Registry::getLog(Logger::Id::config);
-  if (status.ok()) {
-    ENVOY_LOG_TO_LOGGER(logger, info, "V2 mixer client config: {}",
-                        message->DebugString());
-    return true;
-  }
-  ENVOY_LOG_TO_LOGGER(
-      logger, error,
-      "Failed to convert mixer V2 client config, error: {}, data: {}",
-      status.ToString(), v2_str);
-  return false;
-}
-
-}  // namespace
 
 void HttpMixerConfig::Load(const Json::Object &json) {
-  ReadV2Config(json, &http_config);
+  Istio::Utils::ReadV2Config(json, &http_config);
 
-  SetDefaultMixerClusters(http_config.mutable_transport());
-}
-
-void TcpMixerConfig::Load(const Json::Object &json) {
-  ReadV2Config(json, &tcp_config);
-
-  SetDefaultMixerClusters(tcp_config.mutable_transport());
+  stio::Utils::SetDefaultMixerClusters(http_config.mutable_transport());
 }
 
 }  // namespace Mixer
