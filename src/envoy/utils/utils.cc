@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/mixer/utils.h"
+#include "src/envoy/utils/utils.h"
 #include "mixer/v1/attributes.pb.h"
 
 using ::google::protobuf::Message;
 using ::google::protobuf::util::Status;
 
 namespace Envoy {
-namespace Http {
 namespace Utils {
 
 namespace {
@@ -30,7 +29,7 @@ const std::string kSPIFFEPrefix("spiffe://");
 }  // namespace
 
 std::map<std::string, std::string> ExtractHeaders(
-    const HeaderMap& header_map, const std::set<std::string>& exclusives) {
+						  const Http::HeaderMap& header_map, const std::set<std::string>& exclusives) {
   std::map<std::string, std::string> headers;
   struct Context {
     Context(const std::set<std::string>& exclusives,
@@ -99,5 +98,4 @@ Status ParseJsonMessage(const std::string& json, Message* output) {
 }
 
 }  // namespace Utils
-}  // namespace Http
 }  // namespace Envoy

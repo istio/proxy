@@ -26,8 +26,7 @@
 #include "include/mixerclient/client.h"
 
 namespace Envoy {
-namespace Http {
-namespace Mixer {
+namespace Utils {
 
 // An object to use Envoy::Grpc::AsyncClient to make grpc call.
 template <class RequestType, class ResponseType>
@@ -75,6 +74,5 @@ typedef GrpcTransport<istio::mixer::v1::ReportRequest,
                       istio::mixer::v1::ReportResponse>
     ReportTransport;
 
-}  // namespace Mixer
-}  // namespace Http
+}  // namespace Utils
 }  // namespace Envoy

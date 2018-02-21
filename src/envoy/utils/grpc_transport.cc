@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "src/envoy/http/mixer/grpc_transport.h"
+#include "src/envoy/utils/grpc_transport.h"
 
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
 
 namespace Envoy {
-namespace Http {
-namespace Mixer {
+namespace Utils {
 namespace {
 
 // gRPC request timeout
@@ -147,6 +146,5 @@ template ReportTransport::Func ReportTransport::GetFunc(
     Upstream::ClusterManager& cm, const std::string& cluster_name,
     const HeaderMap* headers);
 
-}  // namespace Mixer
-}  // namespace Http
+}  // namespace Utils
 }  // namespace Envoy
