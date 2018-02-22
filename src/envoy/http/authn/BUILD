@@ -14,29 +14,51 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+
+package(default_visibility = ["//visibility:public"])
+
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_binary",
+    "envoy_cc_library",
+    "envoy_cc_test",
 )
 
-envoy_cc_binary(
-    name = "envoy",
-    repository = "@envoy",
+load(
+    "@envoy_api//bazel:api_build_system.bzl",
+    "api_proto_library",
+)
+
+api_proto_library(
+    name = "policy_proto",
+    srcs = [":policy.proto"],
     visibility = ["//visibility:public"],
+    require_py = 0,
+)
+
+envoy_cc_library(
+    name = "http_filter_lib",
+    srcs = [
+        "http_filter.cc",
+    ],
+    hdrs = [
+        "http_filter.h",
+        "authn_store.h",
+    ],
+    repository = "@envoy",
     deps = [
-        "//src/envoy/http/jwt_auth:http_filter_factory",
-        "//src/envoy/http/authn:http_filter_factory",
-        "//src/envoy/http/mixer:filter_lib",
-        "//src/envoy/tcp/mixer:filter_lib",
-        "@envoy//source/exe:envoy_main_entry_lib",
+        "@envoy//source/exe:envoy_common_lib",
+        ":policy_proto_cc",
     ],
 )
 
-pkg_tar(
-    name = "envoy_tar",
-    extension = "tar.gz",
-    files = [":envoy"],
-    mode = "0755",
-    package_dir = "/usr/local/bin/",
+envoy_cc_library(
+    name = "http_filter_factory",
+    srcs = ["http_filter_factory.cc"],
+    repository = "@envoy",
+    deps = [
+        ":http_filter_lib",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
 )
+
