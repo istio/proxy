@@ -28,6 +28,7 @@ using ::google::protobuf::util::MessageDifferencer;
 
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::Return;
 
 namespace istio {
 namespace control {
@@ -141,7 +142,7 @@ attributes {
 attributes {
   key: "connection.id"
   value {
-    bytes_value: "1234-5"
+    string_value: "1234-5"
   }
 }
 )";
@@ -193,7 +194,7 @@ attributes {
 attributes {
   key: "connection.id"
   value {
-    bytes_value: "1234-5"
+    string_value: "1234-5"
   }
 }
 )";
@@ -245,7 +246,7 @@ attributes {
 attributes {
   key: "connection.id"
   value {
-    bytes_value: "1234-5"
+    string_value: "1234-5"
   }
 }
 )";

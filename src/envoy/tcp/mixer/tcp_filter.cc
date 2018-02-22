@@ -15,6 +15,7 @@
 
 #include "common/common/enum_to_int.h"
 #include "common/common/logger.h"
+#include "common/common/utility.h"
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
 #include "envoy/registry/registry.h"
@@ -50,13 +51,15 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
   TcpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
   Utils::MixerFilterStats stats_;
+  const std::string uuid_;
 
  public:
   TcpConfig(const Json::Object& config,
             Server::Configuration::FactoryContext& context)
       : cm_(context.clusterManager()),
         tls_(context.threadLocal().allocateSlot()),
-        stats_(generateStats(kTcpStatsPrefix, context.scope())) {
+        stats_(generateStats(kTcpStatsPrefix, context.scope())),
+        uuid_(context.random().uuid()) {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
     tls_->set([this, &random](Event::Dispatcher& dispatcher)
@@ -68,6 +71,8 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
   }
 
   TcpMixerControl& mixer_control() { return tls_->getTyped<TcpMixerControl>(); }
+
+  const std::string uuid() { return uuid_; }
 };
 
 typedef std::shared_ptr<TcpConfig> TcpConfigPtr;
@@ -89,6 +94,7 @@ class TcpInstance : public Network::Filter,
 
   istio::mixerclient::CancelFunc cancel_check_;
   TcpMixerControl& mixer_control_;
+  const std::string uuid_;
   std::unique_ptr<::istio::control::tcp::RequestHandler> handler_;
   Network::ReadFilterCallbacks* filter_callbacks_{};
   State state_{State::NotStarted};
@@ -102,7 +108,8 @@ class TcpInstance : public Network::Filter,
   Event::TimerPtr report_timer_;
 
  public:
-  TcpInstance(TcpConfigPtr config) : mixer_control_(config->mixer_control()) {
+  TcpInstance(TcpConfigPtr config)
+      : mixer_control_(config->mixer_control()), uuid_(config->uuid()) {
     ENVOY_LOG(debug, "Called TcpInstance: {}", __func__);
   }
 
@@ -254,10 +261,14 @@ class TcpInstance : public Network::Filter,
         std::chrono::system_clock::now() - start_time_);
   }
 
-  string GetConnectionId() const override {
-    uint64_t connection_id = filter_callbacks_->connection().id();
-    string connection_id_str;
-    StringUtil::itoa(&connection_id_str, )
+  std::string GetConnectionId() const override {
+    char connection_id_str[32];
+    memset(connection_id_str, 0, sizeof(connection_id_str));
+    StringUtil::itoa(connection_id_str, 32,
+                     filter_callbacks_->connection().id());
+    std::string uuid_connection_id = uuid_ + "-";
+    uuid_connection_id.append(connection_id_str);
+    return uuid_connection_id;
   }
 };
 
