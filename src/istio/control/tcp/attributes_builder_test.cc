@@ -138,6 +138,12 @@ attributes {
     int64_value: 8080
   }
 }
+attributes {
+  key: "connection.id"
+  value {
+    bytes_value: "1234-5"
+  }
+}
 )";
 
 const char kDeltaOneReportAttributes[] = R"(
@@ -184,6 +190,12 @@ attributes {
     int64_value: 8080
   }
 }
+attributes {
+  key: "connection.id"
+  value {
+    bytes_value: "1234-5"
+  }
+}
 )";
 
 const char kDeltaTwoReportAttributes[] = R"(
@@ -228,6 +240,12 @@ attributes {
   key: "destination.port"
   value {
     int64_value: 8080
+  }
+}
+attributes {
+  key: "connection.id"
+  value {
+    bytes_value: "1234-5"
   }
 }
 )";
@@ -298,6 +316,9 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         info->send_bytes = 678;
         info->duration = std::chrono::nanoseconds(3);
       }));
+  EXPECT_CALL(mock_data, GetConnectionId())
+      .Times(3)
+      .WillRepeatedly(Return("1234-5"));
 
   RequestContext request;
   request.check_status = ::google::protobuf::util::Status(

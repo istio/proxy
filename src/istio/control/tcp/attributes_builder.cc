@@ -78,6 +78,9 @@ void AttributesBuilder::ExtractReportAttributes(
     builder.AddInt64(AttributeName::kDestinationPort, dest_port);
   }
 
+  string connection_id = report_data->GetConnectionId();
+  builder.AddString(AttributeName::kConnectionId, connection_id);
+
   builder.AddTimestamp(AttributeName::kContextTime,
                        std::chrono::system_clock::now());
 }

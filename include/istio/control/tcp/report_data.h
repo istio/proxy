@@ -39,6 +39,9 @@ class ReportData {
     std::chrono::nanoseconds duration;
   };
   virtual void GetReportInfo(ReportInfo* info) const = 0;
+
+  // Get downstream tcp connection id.
+  virtual string GetConnectionId() const = 0;
 };
 
 }  // namespace tcp
