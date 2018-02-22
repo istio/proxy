@@ -253,6 +253,12 @@ class TcpInstance : public Network::Filter,
     data->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::system_clock::now() - start_time_);
   }
+
+  string GetConnectionId() const override {
+    uint64_t connection_id = filter_callbacks_->connection().id();
+    string connection_id_str;
+    StringUtil::itoa(&connection_id_str, )
+  }
 };
 
 }  // namespace Mixer
