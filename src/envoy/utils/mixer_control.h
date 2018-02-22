@@ -13,19 +13,24 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/mixer/config.h"
+#pragma once
+
+#include "envoy/event/dispatcher.h"
+#include "envoy/runtime/runtime.h"
+#include "envoy/upstream/cluster_manager.h"
+#include "include/mixerclient/client.h"
 #include "src/envoy/utils/config.h"
 
 namespace Envoy {
-namespace Http {
-namespace Mixer {
+namespace Utils {
 
-void HttpMixerConfig::Load(const Json::Object &json) {
-  Istio::Utils::ReadV2Config(json, &http_config);
+// Create all environment functions for mixerclient
+void CreateEnvironment(Upstream::ClusterManager& cm,
+                       Event::Dispatcher& dispatcher,
+                       Runtime::RandomGenerator& random,
+                       const std::string& check_cluster,
+                       const std::string& report_cluster,
+                       ::istio::mixerclient::Environment* env);
 
-  stio::Utils::SetDefaultMixerClusters(http_config.mutable_transport());
-}
-
-}  // namespace Mixer
-}  // namespace Http
+}  // namespace Utils
 }  // namespace Envoy

@@ -25,18 +25,23 @@ envoy_cc_library(
     name = "utils_lib",
     srcs = [
         "config.cc",
-        "config.h",
         "grpc_transport.cc",
-        "grpc_transport.h",
+        "mixer_control.cc",
         "stats.cc",
-        "stats.h",
         "utils.cc",
+    ],
+    hdrs = [
+        "config.h",
+        "grpc_transport.h",
+        "mixer_control.h",
+        "stats.h",
         "utils.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         "//src/mixerclient:mixerclient_lib",
+        "//external:mixer_client_config_cc_proto",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -47,7 +52,7 @@ envoy_cc_test(
         "utils_test.cc",
     ],
     deps = [
-        ":filter_lib",
+        ":utils_lib",
         "@envoy//test/test_common:utility_lib",
     ],
     repository = "@envoy",

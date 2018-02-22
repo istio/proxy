@@ -21,6 +21,7 @@
 #include "common/common/logger.h"
 #include "envoy/event/dispatcher.h"
 #include "envoy/grpc/async_client.h"
+#include "envoy/http/header_map.h"
 
 #include "envoy/upstream/cluster_manager.h"
 #include "include/mixerclient/client.h"
@@ -39,10 +40,10 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
 
   static Func GetFunc(Upstream::ClusterManager& cm,
                       const std::string& cluster_name,
-                      const HeaderMap* headers = nullptr);
+                      const Http::HeaderMap* headers = nullptr);
 
   GrpcTransport(Grpc::AsyncClientPtr async_client, const RequestType& request,
-                const HeaderMap* headers, ResponseType* response,
+                const Http::HeaderMap* headers, ResponseType* response,
                 istio::mixerclient::DoneFunc on_done);
 
   // Grpc::AsyncRequestCallbacks<ResponseType>
@@ -60,7 +61,7 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
   static const google::protobuf::MethodDescriptor& descriptor();
 
   Grpc::AsyncClientPtr async_client_;
-  const HeaderMap* headers_;
+  const Http::HeaderMap* headers_;
   ResponseType* response_;
   ::istio::mixerclient::DoneFunc on_done_;
   Grpc::AsyncRequest* request_{};
