@@ -51,6 +51,7 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
   TcpMixerConfig mixer_config_;
   ThreadLocal::SlotPtr tls_;
   Utils::MixerFilterStats stats_;
+  // UUID of the Envoy TCP mixer filter.
   const std::string uuid_;
 
  public:
@@ -66,13 +67,11 @@ class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
                     return ThreadLocal::ThreadLocalObjectSharedPtr(
                         new TcpMixerControl(mixer_config_, cm_, dispatcher,
-                                            random, stats_));
+                                            random, stats_, uuid_));
                   });
   }
 
   TcpMixerControl& mixer_control() { return tls_->getTyped<TcpMixerControl>(); }
-
-  const std::string uuid() { return uuid_; }
 };
 
 typedef std::shared_ptr<TcpConfig> TcpConfigPtr;
@@ -94,7 +93,6 @@ class TcpInstance : public Network::Filter,
 
   istio::mixerclient::CancelFunc cancel_check_;
   TcpMixerControl& mixer_control_;
-  const std::string uuid_;
   std::unique_ptr<::istio::control::tcp::RequestHandler> handler_;
   Network::ReadFilterCallbacks* filter_callbacks_{};
   State state_{State::NotStarted};
@@ -109,7 +107,7 @@ class TcpInstance : public Network::Filter,
 
  public:
   TcpInstance(TcpConfigPtr config)
-      : mixer_control_(config->mixer_control()), uuid_(config->uuid()) {
+      : mixer_control_(config->mixer_control()) {
     ENVOY_LOG(debug, "Called TcpInstance: {}", __func__);
   }
 
@@ -263,10 +261,9 @@ class TcpInstance : public Network::Filter,
 
   std::string GetConnectionId() const override {
     char connection_id_str[32];
-    memset(connection_id_str, 0, sizeof(connection_id_str));
     StringUtil::itoa(connection_id_str, 32,
                      filter_callbacks_->connection().id());
-    std::string uuid_connection_id = uuid_ + "-";
+    std::string uuid_connection_id = mixer_control_.uuid() + "-";
     uuid_connection_id.append(connection_id_str);
     return uuid_connection_id;
   }
