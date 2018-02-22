@@ -106,8 +106,7 @@ class TcpInstance : public Network::Filter,
   Event::TimerPtr report_timer_;
 
  public:
-  TcpInstance(TcpConfigPtr config)
-      : mixer_control_(config->mixer_control()) {
+  TcpInstance(TcpConfigPtr config) : mixer_control_(config->mixer_control()) {
     ENVOY_LOG(debug, "Called TcpInstance: {}", __func__);
   }
 
