@@ -41,8 +41,8 @@ const std::string kTcpStatsPrefix("tcp_mixer_filter.");
 
 class TcpConfig : public Logger::Loggable<Logger::Id::filter> {
  private:
-  static MixerFilterStats generateStats(const std::string& name,
-                                        Stats::Scope& scope) {
+  static Utils::MixerFilterStats generateStats(const std::string& name,
+                                               Stats::Scope& scope) {
     return {ALL_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))};
   }
 
