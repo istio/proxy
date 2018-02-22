@@ -14,16 +14,17 @@
 
 syntax = "proto3";
 
-//This file is copied from istio api repo: ./authentication/v1alpha1/policy.proto
+// This file is copied from istio api repo:
+// ./authentication/v1alpha1/policy.proto
 
-//import "routing/v1alpha2/route_rule.proto";
+// import "routing/v1alpha2/route_rule.proto";
 import "validate/validate.proto";
 
 // $title: Authentication Policy
 // $overview: Authentication policy for Istio services.
 
-// This package defines user-facing authentication policy as well as configs that
-// the sidecar proxy uses to perform authentication.
+// This package defines user-facing authentication policy as well as configs
+// that the sidecar proxy uses to perform authentication.
 package istio.authentication.v1alpha1;
 
 // Placeholder for None authentication params
@@ -94,7 +95,8 @@ message Jwt {
   //
   //     1) The Authorization header using the Bearer schema,
   //        e.g. Authorization: Bearer <token>. (see
-  //        [Authorization Request Header Field](https://tools.ietf.org/html/rfc6750#section-2.1))
+  //        [Authorization Request Header
+  //        Field](https://tools.ietf.org/html/rfc6750#section-2.1))
   //
   //     2) `access_token` query parameter (see
   //     [URI Query Parameter](https://tools.ietf.org/html/rfc6750#section-2.3))
@@ -130,7 +132,8 @@ message Mechanism {
   }
 }
 
-//copied from https://github.com/istio/api/blob/master/routing/v1alpha2/route_rule.proto#L298:3
+// copied from
+// https://github.com/istio/api/blob/master/routing/v1alpha2/route_rule.proto#L298:3
 // PortSelector specifies the name or number of a port to be used for
 // matching or selection for final routing.
 message PortSelector {
@@ -177,7 +180,6 @@ message Destination {
   // label>.
   PortSelector port = 3;
 }
-
 
 // Policy binds credentials to workload(s).
 // Authentication policy is composed of 2-part authentication:
