@@ -261,8 +261,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
         *user = "test_user";
         return true;
       }));
-  EXPECT_CALL(mock_data, GetConnectionId())
-      .WillOnce(Return("1234-5"));
+  EXPECT_CALL(mock_data, GetConnectionId()).WillOnce(Return("1234-5"));
 
   RequestContext request;
   AttributesBuilder builder(&request);
