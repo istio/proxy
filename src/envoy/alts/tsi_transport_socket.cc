@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "common/common/enum_to_int.h"
 #include "src/envoy/alts/tsi_transport_socket.h"
 #include "common/common/assert.h"
 
@@ -58,6 +59,7 @@ Network::PostIoAction TsiSocket::doHandshake() {
                       mu.unlock();
                     });
 
+  // TODO: make this async
   mu.lock();
   mu.unlock();
   ENVOY_CONN_LOG(
@@ -110,6 +112,8 @@ Network::PostIoAction TsiSocket::doHandshake() {
 
 Network::IoResult TsiSocket::doRead(Buffer::Instance &buffer) {
   Network::IoResult result = raw_buffer_socket_.doRead(raw_read_buffer_);
+  ENVOY_CONN_LOG(debug, "TSI: raw_read result action {} bytes {} end_stream {}",
+                 callbacks_->connection(), enumToInt(result.action_), result.bytes_processed_, result.end_stream_read_);
   if (result.action_ == Network::PostIoAction::Close &&
       result.bytes_processed_ == 0) {
     return result;
@@ -118,7 +122,7 @@ Network::IoResult TsiSocket::doRead(Buffer::Instance &buffer) {
   if (!handshake_complete_) {
     Network::PostIoAction action = doHandshake();
     if (action == Network::PostIoAction::Close || !handshake_complete_) {
-      return {action, 0, true};
+      return {action, 0, false};
     }
   }
 
@@ -212,6 +216,8 @@ Network::IoResult TsiSocket::doWrite(Buffer::Instance &buffer,
     ASSERT(result == TSI_OK);
   }
 
+  ENVOY_CONN_LOG(debug, "TSI: raw_write length {} end_stream {}",
+                 callbacks_->connection(), raw_write_buffer_.length(), end_stream);
   return raw_buffer_socket_.doWrite(raw_write_buffer_,
                                     end_stream && (buffer.length() == 0));
 }

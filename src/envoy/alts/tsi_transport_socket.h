@@ -58,17 +58,17 @@ class TsiSocket : public Network::TransportSocket,
 
   Network::PostIoAction doHandshake();
 
-  TsiHandshakerPtr handshaker_;
-  tsi_frame_protector* frame_protector_;
+  TsiHandshakerPtr handshaker_{};
+  tsi_frame_protector* frame_protector_{};
 
-  Envoy::Network::TransportSocketCallbacks* callbacks_;
+  Envoy::Network::TransportSocketCallbacks* callbacks_{};
   RawBufferCallbacks raw_buffer_callbacks_;
   Network::RawBufferSocket raw_buffer_socket_;
 
   Envoy::Buffer::OwnedImpl raw_read_buffer_;
   Envoy::Buffer::OwnedImpl raw_write_buffer_;
-  bool handshake_complete_;
-  size_t max_output_protected_frame_size_;
+  bool handshake_complete_{};
+  size_t max_output_protected_frame_size_{};
 };
 
 class TsiSocketFactory : public Network::TransportSocketFactory {
