@@ -38,7 +38,9 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
       return createFilter(policy_, context);
     } else {
       ENVOY_LOG(debug, "Utils::ParseJsonMessage() return value is NOT ok!");
-      return nullptr;
+      throw EnvoyException(
+          "In createFilterFactory(), Utils::ParseJsonMessage() return value is "
+          "NOT ok!");
     }
   }
 
