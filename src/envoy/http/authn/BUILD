@@ -43,7 +43,6 @@ envoy_cc_library(
     ],
     hdrs = [
         "http_filter.h",
-        "authn_store.h",
     ],
     repository = "@envoy",
     deps = [
@@ -58,6 +57,7 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":http_filter_lib",
+        "//src/envoy/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )

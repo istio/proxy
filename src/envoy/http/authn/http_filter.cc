@@ -18,57 +18,62 @@
 namespace Envoy {
 namespace Http {
 
-AuthnFilter::AuthnFilter(Upstream::ClusterManager& cm, Auth::AuthnStore& store)
-    : cm_(cm), store_(store) {}
+AuthenticationFilter::AuthenticationFilter(
+    Upstream::ClusterManager& cm,
+    std::shared_ptr<const istio::authentication::v1alpha1::Policy> config)
+    : cm_(cm), config_(config) {}
 
-AuthnFilter::~AuthnFilter() {}
+AuthenticationFilter::~AuthenticationFilter() {}
 
-void AuthnFilter::onDestroy() {
-  ENVOY_LOG(debug, "Called AuthnFilter : {}", __func__);
+void AuthenticationFilter::onDestroy() {
+  ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-FilterHeadersStatus AuthnFilter::decodeHeaders(HeaderMap&, bool) {
-  ENVOY_LOG(debug, "Called AuthnFilter : {}", __func__);
+FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
+  ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
   state_ = HandleHeaders;
 
-  const ::istio::authentication::v1alpha1::Policy& config = store_.config();
-  int peer_size = config.peers_size();
-  ENVOY_LOG(debug, "AuthnFilter: {} config.peers_size()={}", __func__,
+  int peer_size = config_->peers_size();
+  ENVOY_LOG(debug, "AuthenticationFilter: {} config.peers_size()={}", __func__,
             peer_size);
-  for (int i = 0; i < peer_size; i++) {
-    const ::istio::authentication::v1alpha1::Mechanism& m = config.peers()[i];
+  if (peer_size > 0) {
+    const ::istio::authentication::v1alpha1::Mechanism& m = config_->peers()[0];
     if (m.has_mtls()) {
-      ENVOY_LOG(debug, "AuthnFilter: {} this connection requires mTLS",
+      ENVOY_LOG(debug, "AuthenticationFilter: {} this connection requires mTLS",
                 __func__);
     } else {
-      ENVOY_LOG(debug, "AuthnFilter: {} this connection does not require mTLS",
-                __func__);
+      ENVOY_LOG(
+          debug,
+          "AuthenticationFilter: {} this connection does not require mTLS",
+          __func__);
     }
   }
 
-  ENVOY_LOG(debug,
-            "Called AuthnFilter : {}, return FilterHeadersStatus::Continue;",
-            __func__);
+  ENVOY_LOG(
+      debug,
+      "Called AuthenticationFilter : {}, return FilterHeadersStatus::Continue;",
+      __func__);
   return FilterHeadersStatus::Continue;
 }
 
-FilterDataStatus AuthnFilter::decodeData(Buffer::Instance&, bool) {
-  ENVOY_LOG(debug, "Called AuthnFilter : {}", __func__);
+FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
+  ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
   state_ = HandleData;
-  ENVOY_LOG(debug, "Called AuthnFilter : {} FilterDataStatus::Continue;",
+  ENVOY_LOG(debug,
+            "Called AuthenticationFilter : {} FilterDataStatus::Continue;",
             __FUNCTION__);
   return FilterDataStatus::Continue;
 }
 
-FilterTrailersStatus AuthnFilter::decodeTrailers(HeaderMap&) {
-  ENVOY_LOG(debug, "Called AuthnFilter : {}", __func__);
+FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
+  ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
   state_ = HandleTrailers;
   return FilterTrailersStatus::Continue;
 }
 
-void AuthnFilter::setDecoderFilterCallbacks(
+void AuthenticationFilter::setDecoderFilterCallbacks(
     StreamDecoderFilterCallbacks& callbacks) {
-  ENVOY_LOG(debug, "Called AuthnFilter : {}", __func__);
+  ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
   decoder_callbacks_ = &callbacks;
 }
 
