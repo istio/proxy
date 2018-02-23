@@ -42,7 +42,8 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     if (status.ok()) {
       return createFilter(policy_);
     } else {
-      PANIC("Utils::ParseJsonMessage() return value is: " + status.ToString());
+      ENVOY_LOG(critical, "Utils::ParseJsonMessage() return value is: " +
+                              status.ToString());
       throw EnvoyException(
           "In createFilterFactory(), Utils::ParseJsonMessage() return value "
           "is: " +
