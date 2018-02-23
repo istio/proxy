@@ -19,9 +19,9 @@ namespace Envoy {
 namespace Http {
 
 AuthenticationFilter::AuthenticationFilter(
-    Upstream::ClusterManager& cm,
-    std::shared_ptr<const istio::authentication::v1alpha1::Policy> config)
-    : cm_(cm), config_(config) {}
+    Upstream::ClusterManager&,
+    const istio::authentication::v1alpha1::Policy& config)
+    : config_(config) {}
 
 AuthenticationFilter::~AuthenticationFilter() {}
 
@@ -31,13 +31,12 @@ void AuthenticationFilter::onDestroy() {
 
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  state_ = HandleHeaders;
 
-  int peer_size = config_->peers_size();
+  int peer_size = config_.peers_size();
   ENVOY_LOG(debug, "AuthenticationFilter: {} config.peers_size()={}", __func__,
             peer_size);
   if (peer_size > 0) {
-    const ::istio::authentication::v1alpha1::Mechanism& m = config_->peers()[0];
+    const ::istio::authentication::v1alpha1::Mechanism& m = config_.peers()[0];
     if (m.has_mtls()) {
       ENVOY_LOG(debug, "AuthenticationFilter: {} this connection requires mTLS",
                 __func__);
@@ -58,7 +57,6 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
 
 FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  state_ = HandleData;
   ENVOY_LOG(debug,
             "Called AuthenticationFilter : {} FilterDataStatus::Continue;",
             __FUNCTION__);
@@ -67,14 +65,12 @@ FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
 
 FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  state_ = HandleTrailers;
   return FilterTrailersStatus::Continue;
 }
 
 void AuthenticationFilter::setDecoderFilterCallbacks(
-    StreamDecoderFilterCallbacks& callbacks) {
+    StreamDecoderFilterCallbacks&) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  decoder_callbacks_ = &callbacks;
 }
 
 }  // namespace Http

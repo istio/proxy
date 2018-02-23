@@ -26,9 +26,8 @@ namespace Http {
 class AuthenticationFilter : public StreamDecoderFilter,
                              public Logger::Loggable<Logger::Id::http> {
  public:
-  AuthenticationFilter(
-      Upstream::ClusterManager& cm,
-      std::shared_ptr<const istio::authentication::v1alpha1::Policy> config);
+  AuthenticationFilter(Upstream::ClusterManager& cm,
+                       const istio::authentication::v1alpha1::Policy& config);
   ~AuthenticationFilter();
 
   // Http::StreamFilterBase
@@ -42,15 +41,8 @@ class AuthenticationFilter : public StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override;
 
  private:
-  // The callback funcion.
-  StreamDecoderFilterCallbacks* decoder_callbacks_;
-  Upstream::ClusterManager& cm_;
   // Store the config.
-  std::shared_ptr<const istio::authentication::v1alpha1::Policy> config_;
-
-  // The state of the filter handling a HTTP request
-  enum State { Initial, HandleHeaders, HandleData, HandleTrailers };
-  State state_ = Initial;
+  const istio::authentication::v1alpha1::Policy& config_;
 };
 
 }  // namespace Http

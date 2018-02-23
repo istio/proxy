@@ -19,19 +19,13 @@ package(default_visibility = ["//visibility:public"])
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_binary",
     "envoy_cc_library",
-    "envoy_cc_test",
-)
-
-load(
-    "@envoy_api//bazel:api_build_system.bzl",
-    "api_proto_library",
 )
 
 envoy_cc_library(
-    name = "http_filter_lib",
+    name = "http_filter_factory",
     srcs = [
+        "http_filter_factory.cc",
         "http_filter.cc",
     ],
     hdrs = [
@@ -40,16 +34,6 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         "//external:authentication_policy_config_cc_proto",
-        "@envoy//source/exe:envoy_common_lib",
-    ],
-)
-
-envoy_cc_library(
-    name = "http_filter_factory",
-    srcs = ["http_filter_factory.cc"],
-    repository = "@envoy",
-    deps = [
-        ":http_filter_lib",
         "//src/envoy/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
