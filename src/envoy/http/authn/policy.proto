@@ -18,7 +18,6 @@ syntax = "proto3";
 // ./authentication/v1alpha1/policy.proto
 
 // import "routing/v1alpha2/route_rule.proto";
-import "validate/validate.proto";
 
 // $title: Authentication Policy
 // $overview: Authentication policy for Istio services.
