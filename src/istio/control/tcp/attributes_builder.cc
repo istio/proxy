@@ -41,6 +41,10 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
   builder.AddTimestamp(AttributeName::kContextTime,
                        std::chrono::system_clock::now());
   builder.AddString(AttributeName::kContextProtocol, "tcp");
+
+  // Get unique downstream connection ID, which is <uuid>-<connection id>.
+  std::string connection_id = check_data->GetConnectionId();
+  builder.AddString(AttributeName::kConnectionId, connection_id);
 }
 
 void AttributesBuilder::ExtractReportAttributes(
@@ -77,9 +81,6 @@ void AttributesBuilder::ExtractReportAttributes(
     builder.AddBytes(AttributeName::kDestinationIp, dest_ip);
     builder.AddInt64(AttributeName::kDestinationPort, dest_port);
   }
-
-  std::string connection_id = report_data->GetConnectionId();
-  builder.AddString(AttributeName::kConnectionId, connection_id);
 
   builder.AddTimestamp(AttributeName::kContextTime,
                        std::chrono::system_clock::now());

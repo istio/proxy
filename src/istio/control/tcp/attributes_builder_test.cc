@@ -73,6 +73,12 @@ attributes {
     string_value: "test_user"
   }
 }
+attributes {
+  key: "connection.id"
+  value {
+    string_value: "1234-5"
+  }
+}
 )";
 
 const char kReportAttributes[] = R"(
@@ -139,12 +145,6 @@ attributes {
     int64_value: 8080
   }
 }
-attributes {
-  key: "connection.id"
-  value {
-    string_value: "1234-5"
-  }
-}
 )";
 
 const char kDeltaOneReportAttributes[] = R"(
@@ -189,12 +189,6 @@ attributes {
   key: "destination.port"
   value {
     int64_value: 8080
-  }
-}
-attributes {
-  key: "connection.id"
-  value {
-    string_value: "1234-5"
   }
 }
 )";
@@ -243,12 +237,6 @@ attributes {
     int64_value: 8080
   }
 }
-attributes {
-  key: "connection.id"
-  value {
-    string_value: "1234-5"
-  }
-}
 )";
 
 void ClearContextTime(RequestContext* request) {
@@ -273,6 +261,8 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
         *user = "test_user";
         return true;
       }));
+  EXPECT_CALL(mock_data, GetConnectionId())
+      .WillOnce(Return("1234-5"));
 
   RequestContext request;
   AttributesBuilder builder(&request);
@@ -317,9 +307,6 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         info->send_bytes = 678;
         info->duration = std::chrono::nanoseconds(3);
       }));
-  EXPECT_CALL(mock_data, GetConnectionId())
-      .Times(3)
-      .WillRepeatedly(Return("1234-5"));
 
   RequestContext request;
   request.check_status = ::google::protobuf::util::Status(
