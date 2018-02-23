@@ -15,10 +15,6 @@ static_resources:
         address: 127.0.0.1
         port_value: 5005
     filter_chains:
-    - transport_socket:
-        name: alts
-        config:
-          handshaker_service: "127.0.0.1:8080"
       filters:
       - name: envoy.tcp_proxy
         config:
@@ -26,10 +22,6 @@ static_resources:
           cluster: tcp_backend
   clusters:
   - name: server_envoy
-    transport_socket:
-      name: alts
-      config:
-        handshaker_service: "127.0.0.1:8080"
     connect_timeout: 0.25s
     type: strict_dns
     lb_policy: round_robin

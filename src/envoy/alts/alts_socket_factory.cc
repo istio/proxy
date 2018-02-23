@@ -15,14 +15,17 @@
  */
 
 #include "src/envoy/alts/alts_socket_factory.h"
-#include <common/protobuf/protobuf.h>
-#include <envoy/server/transport_socket_config.h>
 #include "common/common/assert.h"
+#include "common/protobuf/protobuf.h"
+#include "common/protobuf/utility.h"
 #include "envoy/registry/registry.h"
+#include "envoy/server/transport_socket_config.h"
 #include "grpc/grpc_security.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+#include "src/envoy/alts/alts_socket.pb.h"
+#include "src/envoy/alts/alts_socket.pb.validate.h"
 #include "src/envoy/alts/tsi_handshaker.h"
-#include "tsi_transport_socket.h"
+#include "src/envoy/alts/tsi_transport_socket.h"
 
 namespace Envoy {
 namespace Server {
@@ -30,7 +33,7 @@ namespace Configuration {
 
 ProtobufTypes::MessagePtr
 AltsTransportSocketConfigFactory::createEmptyConfigProto() {
-  return std::make_unique<ProtobufWkt::Empty>();
+  return std::make_unique<envoy::security::v2::AltsSocket>();
 }
 
 std::string
@@ -40,15 +43,22 @@ Envoy::Server::Configuration::AltsTransportSocketConfigFactory::name() const {
 
 Network::TransportSocketFactoryPtr
 UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
-    const Protobuf::Message &, TransportSocketFactoryContext &) {
-  return std::make_unique<Security::TsiSocketFactory>([]() {
+    const Protobuf::Message &message, TransportSocketFactoryContext &) {
+  auto config =
+      MessageUtil::downcastAndValidate<const envoy::security::v2::AltsSocket &>(
+          message);
+
+  std::string handshaker_service = config.handshaker_service();
+
+  return std::make_unique<Security::TsiSocketFactory>([handshaker_service]() {
     grpc_alts_credentials_options *options =
         grpc_alts_credentials_client_options_create();
 
     tsi_handshaker *handshaker = nullptr;
 
-    alts_tsi_handshaker_create(options, "target_name", "localhost:8080",
-                               true /* is_client */, &handshaker);
+    alts_tsi_handshaker_create(options, "target_name",
+                               handshaker_service.c_str(), true /* is_client */,
+                               &handshaker);
 
     ASSERT(handshaker != nullptr);
 
@@ -61,14 +71,20 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
 Network::TransportSocketFactoryPtr
 DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
     const std::string &, const std::vector<std::string> &, bool,
-    const Protobuf::Message &, TransportSocketFactoryContext &) {
-  return std::make_unique<Security::TsiSocketFactory>([]() {
+    const Protobuf::Message &message, TransportSocketFactoryContext &) {
+  auto config =
+      MessageUtil::downcastAndValidate<const envoy::security::v2::AltsSocket &>(
+          message);
+
+  std::string handshaker_service = config.handshaker_service();
+
+  return std::make_unique<Security::TsiSocketFactory>([handshaker_service]() {
     grpc_alts_credentials_options *options =
         grpc_alts_credentials_server_options_create();
 
     tsi_handshaker *handshaker = nullptr;
 
-    alts_tsi_handshaker_create(options, nullptr, "localhost:8080",
+    alts_tsi_handshaker_create(options, nullptr, handshaker_service.c_str(),
                                false /* is_client */, &handshaker);
 
     ASSERT(handshaker != nullptr);

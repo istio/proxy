@@ -19,6 +19,19 @@ load(
     "envoy_cc_library",
 )
 
+load(
+    "@envoy_api//bazel:api_build_system.bzl",
+    "api_proto_library",
+)
+
+api_proto_library(
+    name = "alts_socket_proto",
+    srcs = [":alts_socket.proto"],
+    visibility = ["//visibility:public"],
+    require_py = 0,
+)
+
+
 envoy_cc_library(
     name = "tsi_handshaker",
     repository = "@envoy",
@@ -65,6 +78,7 @@ envoy_cc_library(
     ],
     deps = [
         ":tsi_transport_socket",
+        ":alts_socket_proto_cc",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
