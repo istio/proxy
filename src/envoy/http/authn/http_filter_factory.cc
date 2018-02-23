@@ -24,7 +24,7 @@ namespace Server {
 namespace Configuration {
 
 namespace {
-// The name for the mixer server cluster.
+// The name for the Istio authentication filter.
 const std::string kAuthnFactoryName("istio_authn");
 }  // namespace
 
@@ -42,7 +42,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     if (status.ok()) {
       return createFilter(policy_);
     } else {
-      ENVOY_LOG(debug, "Utils::ParseJsonMessage() return value is NOT ok!");
+      PANIC("Utils::ParseJsonMessage() return value is NOT ok!");
       throw EnvoyException(
           "In createFilterFactory(), Utils::ParseJsonMessage() return value is "
           "NOT ok!");
