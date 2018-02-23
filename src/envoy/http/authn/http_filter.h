@@ -26,8 +26,7 @@ namespace Http {
 class AuthenticationFilter : public StreamDecoderFilter,
                              public Logger::Loggable<Logger::Id::http> {
  public:
-  AuthenticationFilter(Upstream::ClusterManager& cm,
-                       const istio::authentication::v1alpha1::Policy& config);
+  AuthenticationFilter(const istio::authentication::v1alpha1::Policy& config);
   ~AuthenticationFilter();
 
   // Http::StreamFilterBase

@@ -19,7 +19,6 @@ namespace Envoy {
 namespace Http {
 
 AuthenticationFilter::AuthenticationFilter(
-    Upstream::ClusterManager&,
     const istio::authentication::v1alpha1::Policy& config)
     : config_(config) {}
 

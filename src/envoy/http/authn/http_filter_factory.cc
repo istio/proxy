@@ -23,19 +23,24 @@ namespace Envoy {
 namespace Server {
 namespace Configuration {
 
+namespace {
+// The name for the mixer server cluster.
+const std::string kAuthnFactoryName("istio_authn");
+}  // namespace
+
 class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                           public Logger::Loggable<Logger::Id::http> {
  public:
   HttpFilterFactoryCb createFilterFactory(const Json::Object& config,
                                           const std::string&,
-                                          FactoryContext& context) override {
+                                          FactoryContext&) override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
     google::protobuf::util::Status status =
         Utils::ParseJsonMessage(config.asJsonString(), &policy_);
     ENVOY_LOG(debug, "Called AuthnFilterConfig : Utils::ParseJsonMessage()");
     if (status.ok()) {
-      return createFilter(policy_, context);
+      return createFilter(policy_);
     } else {
       ENVOY_LOG(debug, "Utils::ParseJsonMessage() return value is NOT ok!");
       throw EnvoyException(
@@ -46,7 +51,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
   HttpFilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message& proto_config, const std::string&,
-      FactoryContext& context) override {
+      FactoryContext&) override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
     const istio::authentication::v1alpha1::Policy& policy =
@@ -55,7 +60,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
     policy_ = policy;
 
-    return createFilter(policy_, context);
+    return createFilter(policy_);
   }
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override {
@@ -64,24 +69,18 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
         new istio::authentication::v1alpha1::Policy};
   }
 
-  std::string name() override { return name_; }
+  std::string name() override { return kAuthnFactoryName; }
 
  private:
   HttpFilterFactoryCb createFilter(
-      const istio::authentication::v1alpha1::Policy& policy,
-      FactoryContext& context) {
+      const istio::authentication::v1alpha1::Policy& policy) {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
-    Upstream::ClusterManager& cm = context.clusterManager();
-
-    return
-        [&cm, &policy](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-          callbacks.addStreamDecoderFilter(
-              std::make_shared<Http::AuthenticationFilter>(cm, policy));
-        };
+    return [&policy](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+      callbacks.addStreamDecoderFilter(
+          std::make_shared<Http::AuthenticationFilter>(policy));
+    };
   }
-
-  const std::string name_ = "istio_authn";
 
   istio::authentication::v1alpha1::Policy policy_;
 };
