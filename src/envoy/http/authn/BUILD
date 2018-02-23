@@ -23,7 +23,7 @@ load(
 )
 
 envoy_cc_library(
-    name = "http_filter_factory",
+    name = "filter_lib",
     srcs = [
         "http_filter_factory.cc",
         "http_filter.cc",

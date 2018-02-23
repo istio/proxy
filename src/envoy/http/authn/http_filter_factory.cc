@@ -53,7 +53,9 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
         dynamic_cast<const istio::authentication::v1alpha1::Policy&>(
             proto_config);
 
-    return createFilter(policy, context);
+    policy_ = policy;
+
+    return createFilter(policy_, context);
   }
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override {
@@ -62,7 +64,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
         new istio::authentication::v1alpha1::Policy};
   }
 
-  std::string name() override { return std::string(name_); }
+  std::string name() override { return name_; }
 
  private:
   HttpFilterFactoryCb createFilter(
