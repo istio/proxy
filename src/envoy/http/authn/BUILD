@@ -29,13 +29,6 @@ load(
     "api_proto_library",
 )
 
-api_proto_library(
-    name = "policy_proto",
-    srcs = [":policy.proto"],
-    visibility = ["//visibility:public"],
-    require_py = 0,
-)
-
 envoy_cc_library(
     name = "http_filter_lib",
     srcs = [
@@ -46,8 +39,8 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
+        "//external:authentication_policy_config_cc_proto",
         "@envoy//source/exe:envoy_common_lib",
-        ":policy_proto_cc",
     ],
 )
 
@@ -61,4 +54,3 @@ envoy_cc_library(
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
-

@@ -14,9 +14,9 @@
  */
 
 #include "src/envoy/http/authn/http_filter.h"
+#include "authentication/v1alpha1/policy.pb.h"
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
-#include "src/envoy/http/authn/policy.pb.validate.h"
 #include "src/envoy/utils/utils.h"
 
 namespace Envoy {
@@ -50,8 +50,8 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
     const istio::authentication::v1alpha1::Policy& policy =
-        MessageUtil::downcastAndValidate<
-            const istio::authentication::v1alpha1::Policy&>(proto_config);
+        dynamic_cast<const istio::authentication::v1alpha1::Policy&>(
+            proto_config);
 
     return createFilter(&policy, context);
   }

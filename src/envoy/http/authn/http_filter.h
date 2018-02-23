@@ -15,9 +15,9 @@
 
 #pragma once
 
+#include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"
-#include "src/envoy/http/authn/policy.pb.validate.h"
 
 namespace Envoy {
 namespace Http {
