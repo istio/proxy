@@ -44,8 +44,9 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     } else {
       PANIC("Utils::ParseJsonMessage() return value is: " + status.ToString());
       throw EnvoyException(
-          "In createFilterFactory(), Utils::ParseJsonMessage() return value is "
-          "NOT ok!");
+          "In createFilterFactory(), Utils::ParseJsonMessage() return value "
+          "is: " +
+          status.ToString());
     }
   }
 
