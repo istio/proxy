@@ -62,10 +62,14 @@ class TsiSocket : public Network::TransportSocket,
   };
 
   Network::PostIoAction doHandshake();
+  void doHandshakeNext();
+  Network::PostIoAction doHandshakeNextDone();
 
   TsiHandshakerPtr handshaker_{};
-  std::mutex handshaker_in_flight_;
+  std::mutex handshaker_result_mu_;
   NextResult handshaker_result_;
+  bool handshaker_result_processed_{true};
+  bool handshaker_next_calling_{};
   tsi_frame_protector* frame_protector_{};
 
   Envoy::Network::TransportSocketCallbacks* callbacks_{};

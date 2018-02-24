@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 
 #include "envoy/buffer/buffer.h"
 
@@ -47,8 +48,14 @@ class TsiHandshaker {
   }
 
  private:
-  tsi_handshaker* handshaker_{};
-  TsiHandshakerCallbacks* callbacks_{};
+  static void TsiHandshakerOnNextDone(tsi_result status, void* user_data,
+                                      const unsigned char* bytes_to_send,
+                                      size_t bytes_to_send_size,
+                                      tsi_handshaker_result* handshaker_result);
+
+  tsi_handshaker* handshaker_{nullptr};
+  TsiHandshakerCallbacks* callbacks_{nullptr};
+  std::mutex mu_;
 };
 
 typedef std::unique_ptr<TsiHandshaker> TsiHandshakerPtr;

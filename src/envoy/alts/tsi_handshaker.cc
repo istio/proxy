@@ -19,28 +19,28 @@
 namespace Envoy {
 namespace Security {
 
-namespace {
+void TsiHandshaker::TsiHandshakerOnNextDone(
+    tsi_result status, void *user_data, const unsigned char *bytes_to_send,
+    size_t bytes_to_send_size, tsi_handshaker_result *handshaker_result) {
+  TsiHandshaker *handshaker = static_cast<TsiHandshaker *>(user_data);
+  std::lock_guard<std::mutex> lock(handshaker->mu_);
+  if (handshaker->callbacks_) {
+    Buffer::InstancePtr to_send = std::make_unique<Buffer::OwnedImpl>();
+    to_send->add(bytes_to_send, bytes_to_send_size);
 
-void TsiHandshakerOnNextDone(tsi_result status, void *user_data,
-                             const unsigned char *bytes_to_send,
-                             size_t bytes_to_send_size,
-                             tsi_handshaker_result *handshaker_result) {
-  TsiHandshakerCallbacks *callbacks =
-      reinterpret_cast<TsiHandshakerCallbacks *>(user_data);
-  ASSERT(callbacks);
-
-  Buffer::InstancePtr to_send = std::make_unique<Buffer::OwnedImpl>();
-  to_send->add(bytes_to_send, bytes_to_send_size);
-
-  callbacks->onNextDone({status, std::move(to_send), handshaker_result});
+    handshaker->callbacks_->onNextDone(
+        {status, std::move(to_send), handshaker_result});
+  } else {
+    ENVOY_LOG_MISC(debug, "No callbacks set, ignore next done: {}", status);
+  }
 }
-
-}  // namespace
 
 TsiHandshaker::TsiHandshaker(tsi_handshaker *handshaker)
     : handshaker_(handshaker) {}
 
 TsiHandshaker::~TsiHandshaker() {
+  std::lock_guard<std::mutex> lock(mu_);
+  callbacks_ = nullptr;
   tsi_handshaker_destroy(handshaker_);
   handshaker_ = nullptr;
 }
@@ -55,7 +55,7 @@ tsi_result TsiHandshaker::Next(Envoy::Buffer::Instance &received) {
       tsi_handshaker_next(handshaker_, reinterpret_cast<const unsigned char *>(
                                            received.linearize(received_size)),
                           received_size, &bytes_to_send, &bytes_to_send_size,
-                          &result, TsiHandshakerOnNextDone, callbacks_);
+                          &result, TsiHandshakerOnNextDone, this);
 
   if (status != TSI_ASYNC) {
     TsiHandshakerOnNextDone(status, callbacks_, bytes_to_send,
