@@ -40,7 +40,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
         Utils::ParseJsonMessage(config.asJsonString(), &policy_);
     ENVOY_LOG(debug, "Called AuthnFilterConfig : Utils::ParseJsonMessage()");
     if (status.ok()) {
-      return createFilter(policy_);
+      return createFilter();
     } else {
       ENVOY_LOG(critical, "Utils::ParseJsonMessage() return value is: " +
                               status.ToString());
@@ -62,7 +62,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
     policy_ = policy;
 
-    return createFilter(policy_);
+    return createFilter();
   }
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override {
@@ -74,13 +74,12 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
   std::string name() override { return kAuthnFactoryName; }
 
  private:
-  HttpFilterFactoryCb createFilter(
-      const istio::authentication::v1alpha1::Policy& policy) {
+  HttpFilterFactoryCb createFilter() {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
-    return [&policy](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+    return [&](Http::FilterChainFactoryCallbacks& callbacks) -> void {
       callbacks.addStreamDecoderFilter(
-          std::make_shared<Http::AuthenticationFilter>(policy));
+          std::make_shared<Http::AuthenticationFilter>(policy_));
     };
   }
 
