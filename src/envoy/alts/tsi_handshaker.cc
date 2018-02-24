@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "src/envoy/alts/tsi_handshaker.h"
+#include "common/buffer/buffer_impl.h"
+#include "common/common/assert.h"
 
 namespace Envoy {
 namespace Security {
@@ -23,12 +25,14 @@ void TsiHandshakerOnNextDone(tsi_result status, void *user_data,
                              const unsigned char *bytes_to_send,
                              size_t bytes_to_send_size,
                              tsi_handshaker_result *handshaker_result) {
-  TsiHandshaker::OnNextDoneCb *raw_cb =
-      reinterpret_cast<TsiHandshaker::OnNextDoneCb *>(user_data);
-  if (*raw_cb) {
-    (*raw_cb)(status, bytes_to_send, bytes_to_send_size, handshaker_result);
-  }
-  delete raw_cb;
+  TsiHandshakerCallbacks *callbacks =
+      reinterpret_cast<TsiHandshakerCallbacks *>(user_data);
+  ASSERT(callbacks);
+
+  Buffer::InstancePtr to_send = std::make_unique<Buffer::OwnedImpl>();
+  to_send->add(bytes_to_send, bytes_to_send_size);
+
+  callbacks->onNextDone({status, std::move(to_send), handshaker_result});
 }
 
 }  // namespace
@@ -41,23 +45,20 @@ TsiHandshaker::~TsiHandshaker() {
   handshaker_ = nullptr;
 }
 
-tsi_result TsiHandshaker::Next(Envoy::Buffer::Instance &received,
-                               TsiHandshaker::OnNextDoneCb cb) {
+tsi_result TsiHandshaker::Next(Envoy::Buffer::Instance &received) {
   uint64_t received_size = received.length();
 
   const unsigned char *bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result *result = nullptr;
-  OnNextDoneCb *cb_pointer = new OnNextDoneCb();
-  cb_pointer->swap(cb);
   tsi_result status =
       tsi_handshaker_next(handshaker_, reinterpret_cast<const unsigned char *>(
                                            received.linearize(received_size)),
                           received_size, &bytes_to_send, &bytes_to_send_size,
-                          &result, TsiHandshakerOnNextDone, cb_pointer);
+                          &result, TsiHandshakerOnNextDone, callbacks_);
 
   if (status != TSI_ASYNC) {
-    TsiHandshakerOnNextDone(status, cb_pointer, bytes_to_send,
+    TsiHandshakerOnNextDone(status, callbacks_, bytes_to_send,
                             bytes_to_send_size, result);
   }
   return status;

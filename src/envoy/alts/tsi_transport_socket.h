@@ -23,11 +23,13 @@ namespace Envoy {
 namespace Security {
 
 class TsiSocket : public Network::TransportSocket,
+                  public TsiHandshakerCallbacks,
                   public Logger::Loggable<Logger::Id::connection> {
  public:
   explicit TsiSocket(TsiHandshakerPtr&& handshaker);
   virtual ~TsiSocket();
 
+  // Network::TransportSocket
   void setTransportSocketCallbacks(
       Envoy::Network::TransportSocketCallbacks& callbacks) override;
   std::string protocol() const override;
@@ -38,6 +40,9 @@ class TsiSocket : public Network::TransportSocket,
   void closeSocket(Network::ConnectionEvent event) override;
   Network::IoResult doRead(Buffer::Instance& buffer) override;
   void onConnected() override;
+
+  // TsiHandshakerCallbacks
+  void onNextDone(NextResult&& result) override;
 
  private:
   class RawBufferCallbacks : public Network::TransportSocketCallbacks {
@@ -59,6 +64,8 @@ class TsiSocket : public Network::TransportSocket,
   Network::PostIoAction doHandshake();
 
   TsiHandshakerPtr handshaker_{};
+  std::mutex handshaker_in_flight_;
+  NextResult handshaker_result_;
   tsi_frame_protector* frame_protector_{};
 
   Envoy::Network::TransportSocketCallbacks* callbacks_{};

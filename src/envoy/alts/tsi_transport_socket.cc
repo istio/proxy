@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 #include "src/envoy/alts/tsi_transport_socket.h"
+
 #include "common/common/assert.h"
 #include "common/common/enum_to_int.h"
+#include "envoy/event/dispatcher.h"
 
 namespace Envoy {
 namespace Security {
@@ -22,6 +24,7 @@ namespace Security {
 TsiSocket::TsiSocket(TsiHandshakerPtr &&handshaker)
     : handshaker_(std::move(handshaker)), raw_buffer_callbacks_(*this) {
   raw_buffer_socket_.setTransportSocketCallbacks(raw_buffer_callbacks_);
+  handshaker_->setHandshakerCallbacks(*this);
 }
 
 TsiSocket::~TsiSocket() {
@@ -40,34 +43,21 @@ Network::PostIoAction TsiSocket::doHandshake() {
   ASSERT(!handshake_complete_);
   ENVOY_CONN_LOG(debug, "TSI: doHandshake", callbacks_->connection());
 
-  std::mutex mu;
-  mu.lock();
+  handshaker_in_flight_.lock();
 
-  tsi_result status = TSI_OK;
-  const unsigned char *bytes_to_send = nullptr;
-  size_t bytes_to_send_size = 0;
-  tsi_handshaker_result *handshaker_result = nullptr;
-
-  handshaker_->Next(raw_read_buffer_,
-                    [&](tsi_result _status, const unsigned char *_bytes_to_send,
-                        size_t _bytes_to_send_size,
-                        tsi_handshaker_result *_handshaker_result) {
-                      status = _status;
-                      bytes_to_send = _bytes_to_send;
-                      bytes_to_send_size = _bytes_to_send_size;
-                      handshaker_result = _handshaker_result;
-                      mu.unlock();
-                    });
+  ENVOY_CONN_LOG(debug, "TSI: doHandshake next: received: {}",
+                 callbacks_->connection(), raw_read_buffer_.length());
+  handshaker_->Next(raw_read_buffer_);
+  raw_read_buffer_.drain(raw_read_buffer_.length());
 
   // TODO: make this async
-  mu.lock();
-  mu.unlock();
-  ENVOY_CONN_LOG(
-      debug, "TSI: doHandshake next done: status: {} received: {} to_send: {}",
-      callbacks_->connection(), status, raw_read_buffer_.length(),
-      bytes_to_send_size);
-  raw_write_buffer_.add(bytes_to_send, bytes_to_send_size);
-  raw_read_buffer_.drain(raw_read_buffer_.length());
+  handshaker_in_flight_.lock();
+  handshaker_in_flight_.unlock();
+
+  tsi_result status = handshaker_result_.status_;
+  tsi_handshaker_result *handshaker_result = handshaker_result_.result_;
+
+  raw_write_buffer_.move(*handshaker_result_.to_send_);
 
   if (status == TSI_OK && handshaker_result != nullptr) {
     tsi_peer peer;
@@ -227,6 +217,15 @@ Network::IoResult TsiSocket::doWrite(Buffer::Instance &buffer,
 void TsiSocket::closeSocket(Network::ConnectionEvent) {}
 
 void TsiSocket::onConnected() { ASSERT(!handshake_complete_); }
+
+void TsiSocket::onNextDone(NextResult &&result) {
+  ENVOY_CONN_LOG(debug, "TSI: doHandshake next done: status: {} to_send: {}",
+                 callbacks_->connection(), result.status_,
+                 result.to_send_->length());
+
+  handshaker_result_ = std::move(result);
+  handshaker_in_flight_.unlock();
+}
 
 TsiSocketFactory::TsiSocketFactory(HandshakerFactoryCb handshaker_factory)
     : handshaker_factory_(handshaker_factory) {}

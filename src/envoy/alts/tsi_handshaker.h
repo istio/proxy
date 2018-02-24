@@ -23,20 +23,32 @@
 namespace Envoy {
 namespace Security {
 
+class TsiHandshakerCallbacks {
+ public:
+  virtual ~TsiHandshakerCallbacks() {}
+
+  struct NextResult {
+    tsi_result status_;
+    Buffer::InstancePtr to_send_;
+    tsi_handshaker_result* result_;
+  };
+
+  virtual void onNextDone(NextResult&& result) PURE;
+};
+
 class TsiHandshaker {
  public:
   explicit TsiHandshaker(tsi_handshaker* handshaker);
   virtual ~TsiHandshaker();
 
-  typedef std::function<void(
-      tsi_result status, const unsigned char* bytes_to_send,
-      size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result)>
-      OnNextDoneCb;
-
-  tsi_result Next(Buffer::Instance& received, OnNextDoneCb cb);
+  tsi_result Next(Buffer::Instance& received);
+  void setHandshakerCallbacks(TsiHandshakerCallbacks& callbacks) {
+    callbacks_ = &callbacks;
+  }
 
  private:
-  tsi_handshaker* handshaker_;
+  tsi_handshaker* handshaker_{};
+  TsiHandshakerCallbacks* callbacks_{};
 };
 
 typedef std::unique_ptr<TsiHandshaker> TsiHandshakerPtr;
