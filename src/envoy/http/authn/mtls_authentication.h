@@ -18,14 +18,20 @@
 namespace Envoy {
 namespace Http {
 
+// A class to handle mTLS authentication policy related operations.
 class MtlsAuthentication : public Logger::Loggable<Logger::Id::http> {
  public:
   MtlsAuthentication(const Network::Connection* connection);
-
+  // This function gets the source IP and port.
+  // The output is saved into the objects pointed by the ip and port pointers.
+  // Return false if there is an error. Otherwise, return true.
   bool GetSourceIpPort(std::string* ip, int* port) const;
-
+  // This function gets the source user (the SAN field of the peer certificate
+  // without the spiffe prefix).
+  // The output is saved into the object pointed by the user pointer.
+  // Return false if there is an error. Otherwise, return true.
   bool GetSourceUser(std::string* user) const;
-
+  // This function returns whether the connection is mTLS.
   bool IsMutualTLS() const;
 
  private:
