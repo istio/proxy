@@ -265,26 +265,17 @@ void TsiSocket::closeSocket(Network::ConnectionEvent) {}
 void TsiSocket::onConnected() { ASSERT(!handshake_complete_); }
 
 void TsiSocket::onNextDone(NextResultPtr &&result) {
-  {
-    std::lock_guard<std::mutex> lock(handshaker_result_mu_);
-    handshaker_result_ = std::move(result);
-  }
-  callbacks_->connection().dispatcher().post([this]() {
-    if (!callbacks_) {
-      return;
-    }
-    handshaker_next_calling_ = false;
+  handshaker_result_ = std::move(result);
 
-    {
-      std::lock_guard<std::mutex> lock(handshaker_result_mu_);
-      if (handshaker_result_) {
-        Network::PostIoAction action = doHandshakeNextDone();
-        if (action == Network::PostIoAction::Close) {
-          callbacks_->connection().close(Network::ConnectionCloseType::NoFlush);
-        }
-      }
-    }
-  });
+  if (!callbacks_) {
+    return;
+  }
+  handshaker_next_calling_ = false;
+
+  Network::PostIoAction action = doHandshakeNextDone();
+  if (action == Network::PostIoAction::Close) {
+    callbacks_->connection().close(Network::ConnectionCloseType::NoFlush);
+  }
 }
 
 TsiSocketFactory::TsiSocketFactory(HandshakerFactoryCb handshaker_factory)

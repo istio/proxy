@@ -24,17 +24,19 @@ void TsiHandshaker::onNextDone(tsi_result status, void *user_data,
                                size_t bytes_to_send_size,
                                tsi_handshaker_result *handshaker_result) {
   TsiHandshaker *handshaker = static_cast<TsiHandshaker *>(user_data);
-  std::lock_guard<std::mutex> lock(handshaker->mu_);
-  if (handshaker->callbacks_) {
-    Buffer::InstancePtr to_send = std::make_unique<Buffer::OwnedImpl>();
-    to_send->add(bytes_to_send, bytes_to_send_size);
 
-    handshaker->callbacks_->onNextDone(TsiHandshakerCallbacks::NextResultPtr(
-        new TsiHandshakerCallbacks::NextResult{status, std::move(to_send),
-                                               handshaker_result}));
-  } else {
-    ENVOY_LOG_MISC(debug, "No callbacks set, ignore next done: {}", status);
+  Buffer::InstancePtr to_send = std::make_unique<Buffer::OwnedImpl>();
+  if (bytes_to_send_size > 0) {
+    to_send->add(bytes_to_send, bytes_to_send_size);
   }
+
+  auto next_result = new TsiHandshakerCallbacks::NextResult{
+      status, std::move(to_send), handshaker_result};
+
+  handshaker->dispatcher_.post([handshaker, next_result]() {
+    handshaker->callbacks_->onNextDone(
+        TsiHandshakerCallbacks::NextResultPtr(next_result));
+  });
 }
 
 TsiHandshaker::TsiHandshaker(tsi_handshaker *handshaker,
