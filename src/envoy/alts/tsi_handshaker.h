@@ -34,7 +34,9 @@ class TsiHandshakerCallbacks {
     tsi_handshaker_result* result_;
   };
 
-  virtual void onNextDone(NextResult&& result) PURE;
+  typedef std::unique_ptr<NextResult> NextResultPtr;
+
+  virtual void onNextDone(NextResultPtr&& result) PURE;
 };
 
 class TsiHandshaker {
@@ -42,16 +44,16 @@ class TsiHandshaker {
   explicit TsiHandshaker(tsi_handshaker* handshaker);
   virtual ~TsiHandshaker();
 
-  tsi_result Next(Buffer::Instance& received);
+  tsi_result next(Buffer::Instance& received);
   void setHandshakerCallbacks(TsiHandshakerCallbacks& callbacks) {
     callbacks_ = &callbacks;
   }
 
  private:
-  static void TsiHandshakerOnNextDone(tsi_result status, void* user_data,
-                                      const unsigned char* bytes_to_send,
-                                      size_t bytes_to_send_size,
-                                      tsi_handshaker_result* handshaker_result);
+  static void onNextDone(tsi_result status, void* user_data,
+                         const unsigned char* bytes_to_send,
+                         size_t bytes_to_send_size,
+                         tsi_handshaker_result* handshaker_result);
 
   tsi_handshaker* handshaker_{nullptr};
   TsiHandshakerCallbacks* callbacks_{nullptr};

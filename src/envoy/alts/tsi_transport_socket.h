@@ -42,7 +42,7 @@ class TsiSocket : public Network::TransportSocket,
   void onConnected() override;
 
   // TsiHandshakerCallbacks
-  void onNextDone(NextResult&& result) override;
+  void onNextDone(NextResultPtr&& result) override;
 
  private:
   class RawBufferCallbacks : public Network::TransportSocketCallbacks {
@@ -67,8 +67,7 @@ class TsiSocket : public Network::TransportSocket,
 
   TsiHandshakerPtr handshaker_{};
   std::mutex handshaker_result_mu_;
-  NextResult handshaker_result_;
-  bool handshaker_result_processed_{true};
+  NextResultPtr handshaker_result_;
   bool handshaker_next_calling_{};
   tsi_frame_protector* frame_protector_{};
 

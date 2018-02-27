@@ -42,11 +42,13 @@ std::string TsiSocket::protocol() const { return ""; }
 Network::PostIoAction TsiSocket::doHandshake() {
   ASSERT(!handshake_complete_);
   ENVOY_CONN_LOG(debug, "TSI: doHandshake", callbacks_->connection());
-
-  if (!handshaker_result_processed_) {
-    Network::PostIoAction result = doHandshakeNextDone();
-    if (result == Network::PostIoAction::Close) {
-      return Network::PostIoAction::Close;
+  {
+    std::lock_guard<std::mutex> lock(handshaker_result_mu_);
+    if (handshaker_result_) {
+      Network::PostIoAction result = doHandshakeNextDone();
+      if (result == Network::PostIoAction::Close) {
+        return Network::PostIoAction::Close;
+      }
     }
   }
 
@@ -64,33 +66,35 @@ void TsiSocket::doHandshakeNext() {
   ENVOY_CONN_LOG(debug, "TSI: doHandshake next: received: {}",
                  callbacks_->connection(), raw_read_buffer_.length());
   handshaker_next_calling_ = true;
-  ASSERT(handshaker_result_processed_);
-  handshaker_->Next(raw_read_buffer_);
+  ASSERT(!handshaker_result_);
+  handshaker_->next(raw_read_buffer_);
   raw_read_buffer_.drain(raw_read_buffer_.length());
 }
 
 Network::PostIoAction TsiSocket::doHandshakeNextDone() {
-  ASSERT(!handshaker_result_processed_);
+  ASSERT(handshaker_result_);
+
+  ENVOY_CONN_LOG(debug, "TSI: doHandshake next done: status: {} to_send: {}",
+                 callbacks_->connection(), handshaker_result_->status_,
+                 handshaker_result_->to_send_->length());
 
   tsi_result status;
   tsi_handshaker_result *handshaker_result;
-  {
-    std::lock_guard<std::mutex> lock(handshaker_result_mu_);
-    handshaker_result_processed_ = true;
 
-    status = handshaker_result_.status_;
-    handshaker_result = handshaker_result_.result_;
+  status = handshaker_result_->status_;
+  handshaker_result = handshaker_result_->result_;
 
-    if (status != TSI_INCOMPLETE_DATA && status != TSI_OK) {
-      ENVOY_CONN_LOG(debug, "TSI: Handshake failed: status: {}",
-                     callbacks_->connection(), status);
-      return Network::PostIoAction::Close;
-    }
-
-    if (handshaker_result_.to_send_->length() > 0) {
-      raw_write_buffer_.move(*handshaker_result_.to_send_);
-    }
+  if (status != TSI_INCOMPLETE_DATA && status != TSI_OK) {
+    ENVOY_CONN_LOG(debug, "TSI: Handshake failed: status: {}",
+                   callbacks_->connection(), status);
+    return Network::PostIoAction::Close;
   }
+
+  if (handshaker_result_->to_send_->length() > 0) {
+    raw_write_buffer_.move(*handshaker_result_->to_send_);
+  }
+
+  handshaker_result_.reset();
 
   if (status == TSI_OK && handshaker_result != nullptr) {
     tsi_peer peer;
@@ -258,22 +262,25 @@ void TsiSocket::closeSocket(Network::ConnectionEvent) {}
 
 void TsiSocket::onConnected() { ASSERT(!handshake_complete_); }
 
-void TsiSocket::onNextDone(NextResult &&result) {
-  std::lock_guard<std::mutex> lock(handshaker_result_mu_);
-  handshaker_result_ = std::move(result);
+void TsiSocket::onNextDone(NextResultPtr &&result) {
+  {
+    std::lock_guard<std::mutex> lock(handshaker_result_mu_);
+    handshaker_result_ = std::move(result);
+  }
   callbacks_->connection().dispatcher().post([this]() {
     if (!callbacks_) {
       return;
     }
-    ENVOY_CONN_LOG(debug, "TSI: doHandshake next done: status: {} to_send: {}",
-                   callbacks_->connection(), handshaker_result_.status_,
-                   handshaker_result_.to_send_->length());
     handshaker_next_calling_ = false;
-    handshaker_result_processed_ = false;
 
-    Network::PostIoAction action = doHandshakeNextDone();
-    if (action == Network::PostIoAction::Close) {
-      callbacks_->connection().close(Network::ConnectionCloseType::NoFlush);
+    {
+      std::lock_guard<std::mutex> lock(handshaker_result_mu_);
+      if (handshaker_result_) {
+        Network::PostIoAction action = doHandshakeNextDone();
+        if (action == Network::PostIoAction::Close) {
+          callbacks_->connection().close(Network::ConnectionCloseType::NoFlush);
+        }
+      }
     }
   });
 }
