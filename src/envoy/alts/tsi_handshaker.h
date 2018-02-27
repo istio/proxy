@@ -40,7 +40,7 @@ class TsiHandshakerCallbacks {
   virtual void onNextDone(NextResultPtr&& result) PURE;
 };
 
-class TsiHandshaker {
+class TsiHandshaker : Event::DeferredDeletable {
  public:
   explicit TsiHandshaker(tsi_handshaker* handshaker,
                          Event::Dispatcher& dispatcher);
@@ -50,6 +50,7 @@ class TsiHandshaker {
   void setHandshakerCallbacks(TsiHandshakerCallbacks& callbacks) {
     callbacks_ = &callbacks;
   }
+  void deferredDelete();
 
  private:
   static void onNextDone(tsi_result status, void* user_data,
@@ -59,8 +60,9 @@ class TsiHandshaker {
 
   tsi_handshaker* handshaker_{nullptr};
   TsiHandshakerCallbacks* callbacks_{nullptr};
+  bool calling_{false};
+  bool delete_on_done_{false};
   Event::Dispatcher& dispatcher_;
-  std::mutex mu_;
 };
 
 typedef std::unique_ptr<TsiHandshaker> TsiHandshakerPtr;

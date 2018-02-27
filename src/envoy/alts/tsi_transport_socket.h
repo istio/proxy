@@ -65,12 +65,10 @@ class TsiSocket : public Network::TransportSocket,
 
   Network::PostIoAction doHandshake();
   void doHandshakeNext();
-  Network::PostIoAction doHandshakeNextDone();
+  Network::PostIoAction doHandshakeNextDone(NextResultPtr&& next_result);
 
   HandshakerFactoryCb handshaker_cb_;
   TsiHandshakerPtr handshaker_{};
-  std::mutex handshaker_result_mu_;
-  NextResultPtr handshaker_result_;
   bool handshaker_next_calling_{};
   tsi_frame_protector* frame_protector_{};
 

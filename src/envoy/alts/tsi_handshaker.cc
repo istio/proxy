@@ -34,6 +34,13 @@ void TsiHandshaker::onNextDone(tsi_result status, void *user_data,
       status, std::move(to_send), handshaker_result};
 
   handshaker->dispatcher_.post([handshaker, next_result]() {
+    ASSERT(handshaker->calling_);
+    handshaker->calling_ = false;
+    if (handshaker->delete_on_done_) {
+      handshaker->dispatcher_.deferredDelete(
+          Event::DeferredDeletablePtr{handshaker});
+      return;
+    }
     handshaker->callbacks_->onNextDone(
         TsiHandshakerCallbacks::NextResultPtr(next_result));
   });
@@ -44,15 +51,16 @@ TsiHandshaker::TsiHandshaker(tsi_handshaker *handshaker,
     : handshaker_(handshaker), dispatcher_(dispatcher) {}
 
 TsiHandshaker::~TsiHandshaker() {
-  std::lock_guard<std::mutex> lock(mu_);
-  callbacks_ = nullptr;
+  ASSERT(!calling_);
   tsi_handshaker_destroy(handshaker_);
   handshaker_ = nullptr;
 }
 
 tsi_result TsiHandshaker::next(Envoy::Buffer::Instance &received) {
-  uint64_t received_size = received.length();
+  ASSERT(!calling_);
+  calling_ = true;
 
+  uint64_t received_size = received.length();
   const unsigned char *bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result *result = nullptr;
@@ -66,6 +74,14 @@ tsi_result TsiHandshaker::next(Envoy::Buffer::Instance &received) {
     onNextDone(status, callbacks_, bytes_to_send, bytes_to_send_size, result);
   }
   return status;
+}
+
+void TsiHandshaker::deferredDelete() {
+  if (calling_) {
+    delete_on_done_ = true;
+  } else {
+    dispatcher_.deferredDelete(Event::DeferredDeletablePtr{this});
+  }
 }
 }
 }
