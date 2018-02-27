@@ -18,6 +18,7 @@
 #include <mutex>
 
 #include "envoy/buffer/buffer.h"
+#include "envoy/event/dispatcher.h"
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -41,7 +42,8 @@ class TsiHandshakerCallbacks {
 
 class TsiHandshaker {
  public:
-  explicit TsiHandshaker(tsi_handshaker* handshaker);
+  explicit TsiHandshaker(tsi_handshaker* handshaker,
+                         Event::Dispatcher& dispatcher);
   virtual ~TsiHandshaker();
 
   tsi_result next(Buffer::Instance& received);
@@ -57,6 +59,7 @@ class TsiHandshaker {
 
   tsi_handshaker* handshaker_{nullptr};
   TsiHandshakerCallbacks* callbacks_{nullptr};
+  Event::Dispatcher& dispatcher_;
   std::mutex mu_;
 };
 

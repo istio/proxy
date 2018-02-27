@@ -21,10 +21,9 @@
 namespace Envoy {
 namespace Security {
 
-TsiSocket::TsiSocket(TsiHandshakerPtr &&handshaker)
-    : handshaker_(std::move(handshaker)), raw_buffer_callbacks_(*this) {
+TsiSocket::TsiSocket(HandshakerFactoryCb handshaker_cb)
+    : handshaker_cb_(handshaker_cb), raw_buffer_callbacks_(*this) {
   raw_buffer_socket_.setTransportSocketCallbacks(raw_buffer_callbacks_);
-  handshaker_->setHandshakerCallbacks(*this);
 }
 
 TsiSocket::~TsiSocket() {
@@ -35,6 +34,9 @@ TsiSocket::~TsiSocket() {
 void TsiSocket::setTransportSocketCallbacks(
     Envoy::Network::TransportSocketCallbacks &callbacks) {
   callbacks_ = &callbacks;
+
+  handshaker_ = handshaker_cb_(callbacks.connection().dispatcher());
+  handshaker_->setHandshakerCallbacks(*this);
 }
 
 std::string TsiSocket::protocol() const { return ""; }
@@ -291,7 +293,7 @@ TsiSocketFactory::TsiSocketFactory(HandshakerFactoryCb handshaker_factory)
 bool TsiSocketFactory::implementsSecureTransport() const { return true; }
 
 Network::TransportSocketPtr TsiSocketFactory::createTransportSocket() const {
-  return std::make_unique<TsiSocket>(handshaker_factory_());
+  return std::make_unique<TsiSocket>(handshaker_factory_);
 }
 }
 }

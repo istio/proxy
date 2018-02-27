@@ -22,11 +22,13 @@
 namespace Envoy {
 namespace Security {
 
+typedef std::function<TsiHandshakerPtr(Event::Dispatcher&)> HandshakerFactoryCb;
+
 class TsiSocket : public Network::TransportSocket,
                   public TsiHandshakerCallbacks,
                   public Logger::Loggable<Logger::Id::connection> {
  public:
-  explicit TsiSocket(TsiHandshakerPtr&& handshaker);
+  explicit TsiSocket(HandshakerFactoryCb handshaker_cb_);
   virtual ~TsiSocket();
 
   // Network::TransportSocket
@@ -65,6 +67,7 @@ class TsiSocket : public Network::TransportSocket,
   void doHandshakeNext();
   Network::PostIoAction doHandshakeNextDone();
 
+  HandshakerFactoryCb handshaker_cb_;
   TsiHandshakerPtr handshaker_{};
   std::mutex handshaker_result_mu_;
   NextResultPtr handshaker_result_;
@@ -83,8 +86,6 @@ class TsiSocket : public Network::TransportSocket,
 
 class TsiSocketFactory : public Network::TransportSocketFactory {
  public:
-  typedef std::function<TsiHandshakerPtr()> HandshakerFactoryCb;
-
   explicit TsiSocketFactory(HandshakerFactoryCb handshaker_factory);
 
   bool implementsSecureTransport() const override;

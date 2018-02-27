@@ -37,8 +37,9 @@ void TsiHandshaker::onNextDone(tsi_result status, void *user_data,
   }
 }
 
-TsiHandshaker::TsiHandshaker(tsi_handshaker *handshaker)
-    : handshaker_(handshaker) {}
+TsiHandshaker::TsiHandshaker(tsi_handshaker *handshaker,
+                             Event::Dispatcher &dispatcher)
+    : handshaker_(handshaker), dispatcher_(dispatcher) {}
 
 TsiHandshaker::~TsiHandshaker() {
   std::lock_guard<std::mutex> lock(mu_);
