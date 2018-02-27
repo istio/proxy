@@ -132,7 +132,7 @@ def mixerapi_repositories(bind=True):
 #
 ################################################################################
 #
-load("@com_google_protobuf_cc//:protobuf.bzl", "cc_proto_library")
+load("@com_google_protobuf//:protobuf.bzl", "cc_proto_library")
 
 cc_proto_library(
     name = "mixer_api_cc_proto",
