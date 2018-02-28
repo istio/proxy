@@ -27,42 +27,40 @@ namespace Envoy {
 namespace Tcp {
 namespace Mixer {
 
-class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
+class Control final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
-  TcpMixerControl(const TcpMixerConfig& mixer_config,
-                  Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
-                  Runtime::RandomGenerator& random, Stats::Scope& scope,
-                  Utils::MixerFilterStats& stats, const std::string& uuid);
+  Control(const Config& config, Upstream::ClusterManager& cm,
+          Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random,
+          Stats::Scope& scope, Utils::MixerFilterStats& stats,
+          const std::string& uuid);
 
   ::istio::control::tcp::Controller* controller() { return controller_.get(); }
-
-  std::chrono::milliseconds report_interval_ms() const {
-    return report_interval_ms_;
-  }
 
   Event::Dispatcher& dispatcher() { return dispatcher_; }
 
   const std::string& uuid() const { return uuid_; }
 
+  const Config& config() const { return config_; }
+
  private:
+  // Call controller to get statistics.
+  bool GetStats(::istio::mixerclient::Statistics* stat);
+
   // The mixer config.
-  const TcpMixerConfig& config_;
-
-  // gRPC async client factories for check and report
-  Grpc::AsyncClientFactoryPtr check_client_factory_;
-  Grpc::AsyncClientFactoryPtr report_client_factory_;
-
+  const Config& config_;
   // The mixer control
   std::unique_ptr<::istio::control::tcp::Controller> controller_;
 
-  // Time interval in milliseconds for sending periodical delta reports.
-  std::chrono::milliseconds report_interval_ms_;
-
+  // dispatcher.
   Event::Dispatcher& dispatcher_;
 
-  Utils::MixerStatsObject stats_obj_;
+  // async client factories
+  Grpc::AsyncClientFactoryPtr check_client_factory_;
+  Grpc::AsyncClientFactoryPtr report_client_factory_;
 
+  // statistics
+  Utils::MixerStatsObject stats_obj_;
   // UUID of the Envoy TCP mixer filter.
   const std::string& uuid_;
 };

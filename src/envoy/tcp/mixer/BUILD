@@ -18,16 +18,18 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
-    "envoy_cc_binary",
 )
 
 envoy_cc_library(
     name = "filter_lib",
     srcs = [
         "config.h",
-        "mixer_control.cc",
-        "mixer_control.h",
-        "tcp_filter.cc",
+        "control.cc",
+        "control.h",
+        "control_factory.h",
+        "filter.cc",
+        "filter.h",
+        "filter_factory.cc",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],

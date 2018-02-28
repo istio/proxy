@@ -25,16 +25,15 @@ namespace Envoy {
 namespace Utils {
 
 // Create all environment functions for mixerclient
-void CreateEnvironment(Event::Dispatcher& dispatcher,
-                       Runtime::RandomGenerator& random,
-                       Grpc::AsyncClientFactory* check_client_factory,
-                       Grpc::AsyncClientFactory* report_client_factory,
-                       ::istio::mixerclient::Environment* env);
+void CreateEnvironment(Event::Dispatcher &dispatcher,
+                       Runtime::RandomGenerator &random,
+                       Grpc::AsyncClientFactory &check_client_factory,
+                       Grpc::AsyncClientFactory &report_client_factory,
+                       ::istio::mixerclient::Environment *env);
 
-// Create async client for cluster name
-Grpc::AsyncClientFactoryPtr asyncClientFactoryForCluster(
-    Upstream::ClusterManager& cm, const std::string& cluster_name,
-    Stats::Scope& scope);
+Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
+    const std::string &cluster_name, Upstream::ClusterManager &cm,
+    Stats::Scope &scope);
 
 }  // namespace Utils
 }  // namespace Envoy

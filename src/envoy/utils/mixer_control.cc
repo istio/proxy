@@ -39,11 +39,11 @@ class EnvoyTimer : public ::istio::mixerclient::Timer {
 }  // namespace
 
 // Create all environment functions for mixerclient
-void CreateEnvironment(Event::Dispatcher& dispatcher,
-                       Runtime::RandomGenerator& random,
-                       Grpc::AsyncClientFactory* check_client_factory,
-                       Grpc::AsyncClientFactory* report_client_factory,
-                       ::istio::mixerclient::Environment* env) {
+void CreateEnvironment(Event::Dispatcher &dispatcher,
+                       Runtime::RandomGenerator &random,
+                       Grpc::AsyncClientFactory &check_client_factory,
+                       Grpc::AsyncClientFactory &report_client_factory,
+                       ::istio::mixerclient::Environment *env) {
   env->check_transport = CheckTransport::GetFunc(check_client_factory, nullptr);
   env->report_transport = ReportTransport::GetFunc(report_client_factory);
 
@@ -58,11 +58,12 @@ void CreateEnvironment(Event::Dispatcher& dispatcher,
   };
 }
 
-Grpc::AsyncClientFactoryPtr asyncClientFactoryForCluster(
-    Upstream::ClusterManager& cm, const std::string& cluster_name,
-    Stats::Scope& scope) {
+Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
+    const std::string &cluster_name, Upstream::ClusterManager &cm,
+    Stats::Scope &scope) {
   envoy::api::v2::core::GrpcService service;
   service.mutable_envoy_grpc()->set_cluster_name(cluster_name);
+
   return cm.grpcAsyncClientManager().factoryForGrpcService(service, scope);
 }
 
