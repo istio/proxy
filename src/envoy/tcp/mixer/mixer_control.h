@@ -32,7 +32,7 @@ class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
   // The constructor.
   TcpMixerControl(const TcpMixerConfig& mixer_config,
                   Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
-                  Runtime::RandomGenerator& random,
+                  Runtime::RandomGenerator& random, Stats::Scope& scope,
                   Utils::MixerFilterStats& stats, const std::string& uuid);
 
   ::istio::control::tcp::Controller* controller() { return controller_.get(); }
@@ -48,6 +48,11 @@ class TcpMixerControl final : public ThreadLocal::ThreadLocalObject {
  private:
   // The mixer config.
   const TcpMixerConfig& config_;
+
+  // gRPC async client factories for check and report
+  Grpc::AsyncClientFactoryPtr check_client_factory_;
+  Grpc::AsyncClientFactoryPtr report_client_factory_;
+
   // The mixer control
   std::unique_ptr<::istio::control::tcp::Controller> controller_;
 

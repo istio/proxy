@@ -33,11 +33,15 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
   HttpMixerControl(const HttpMixerConfig& mixer_config,
-                   Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
+                   Upstream::ClusterManager& cm, Stats::Scope& scope,
+                   Event::Dispatcher& dispatcher,
                    Runtime::RandomGenerator& random,
                    Utils::MixerFilterStats& stats)
       : config_(mixer_config),
-        cm_(cm),
+        check_client_factory_(Utils::asyncClientFactoryForCluster(
+            cm, config_.check_cluster(), scope)),
+        report_client_factory_(Utils::asyncClientFactoryForCluster(
+            cm, config_.report_cluster(), scope)),
         stats_obj_(dispatcher, stats,
                    config_.http_config().transport().stats_update_interval(),
                    [this](::istio::mixerclient::Statistics* stat) -> bool {
@@ -45,8 +49,8 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
                    }) {
     ::istio::control::http::Controller::Options options(config_.http_config());
 
-    Utils::CreateEnvironment(cm, dispatcher, random, config_.check_cluster(),
-                             config_.report_cluster(), &options.env);
+    Utils::CreateEnvironment(dispatcher, random, check_client_factory_.get(),
+                             report_client_factory_.get(), &options.env);
 
     controller_ = ::istio::control::http::Controller::Create(options);
   }
@@ -54,8 +58,7 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
   ::istio::control::http::Controller* controller() { return controller_.get(); }
 
   Utils::CheckTransport::Func GetCheckTransport(const HeaderMap* headers) {
-    return Utils::CheckTransport::GetFunc(cm_, config_.check_cluster(),
-                                          headers);
+    return Utils::CheckTransport::GetFunc(check_client_factory_.get(), headers);
   }
 
  private:
@@ -70,8 +73,11 @@ class HttpMixerControl final : public ThreadLocal::ThreadLocalObject {
 
   // The mixer config.
   const HttpMixerConfig& config_;
-  // Envoy cluster manager for making gRPC calls.
-  Upstream::ClusterManager& cm_;
+
+  // gRPC async client factories for check and report
+  Grpc::AsyncClientFactoryPtr check_client_factory_;
+  Grpc::AsyncClientFactoryPtr report_client_factory_;
+
   // The mixer control
   std::unique_ptr<::istio::control::http::Controller> controller_;
   // The stats object.

@@ -100,11 +100,12 @@ class Config : public Logger::Loggable<Logger::Id::http> {
             POOL_COUNTER_PREFIX(context.scope(), kHttpStatsPrefix))} {
     mixer_config_.Load(config);
     Runtime::RandomGenerator& random = context.random();
-    tls_->set([this, &random](Event::Dispatcher& dispatcher)
+    Stats::Scope& scope = context.scope();
+    tls_->set([this, &random, &scope](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
                     return ThreadLocal::ThreadLocalObjectSharedPtr(
-                        new HttpMixerControl(mixer_config_, cm_, dispatcher,
-                                             random, stats_));
+                        new HttpMixerControl(mixer_config_, cm_, scope,
+                                             dispatcher, random, stats_));
                   });
   }
 
