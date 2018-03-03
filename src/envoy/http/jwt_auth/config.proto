@@ -148,20 +148,20 @@ message AuthFilterConfig {
   // include a JWT.
   repeated JWT jwts = 2;
 
- // This message defines a pattern to match a HTTP request.
- // A pattern is matched only if both http_method and path_match are matched.
+  // This message defines a pattern to match a HTTP request.
+  // A pattern is matched only if both http_method and path_match are matched.
   message HttpPattern {
-     // Define a HTTP method.
-     string http_method = 1;
+    // Define a HTTP method.
+    string http_method = 1;
 
-     // Defines a path match
-     oneof path_match {
-          // Defines an exact path match
-          string path_exact = 2;
+    // Defines a path match
+    oneof path_match {
+      // Defines an exact path match
+      string path_exact = 2;
 
-          // Defines an path prefix match
-          string path_prefix = 3;
-     }
+      // Defines an path prefix match
+      string path_prefix = 3;
+    }
   }
 
   // If a request doesn't have JWT, it will be rejected.
