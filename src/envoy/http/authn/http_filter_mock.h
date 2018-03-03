@@ -1,4 +1,4 @@
-/* Copyright 2017 Istio Authors. All Rights Reserved.
+/* Copyright 2018 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ class MockAuthenticationFilter : public AuthenticationFilter {
       : AuthenticationFilter(proto_config) {}
   ~MockAuthenticationFilter(){};
 
-  MOCK_CONST_METHOD3(ValidateX509,
+  MOCK_CONST_METHOD3(validateX509,
                      void(const HeaderMap& headers,
                           const iaapi::MutualTls& params,
                           const AuthenticateDoneCallback& done_callback));
-  MOCK_CONST_METHOD3(ValidateJwt,
+  MOCK_CONST_METHOD3(validateJwt,
                      void(const HeaderMap& headers, const iaapi::Jwt& params,
                           const AuthenticateDoneCallback& done_callback));
   const IstioAuthN::Context& context() { return context_; }

@@ -26,17 +26,11 @@ namespace Http {
 namespace iaapi = istio::authentication::v1alpha1;
 
 namespace IstioAuthN {
-// TODO: richer set of status, may be with embeded JWT status.
-enum Status {
-  SUCCESS = 0,
-  FAILED = 1,
-};
-
 enum State { INIT, PROCESSING, COMPLETE };
 }  // namespace IstioAuthN
 
 typedef std::function<void(std::unique_ptr<IstioAuthN::AuthenticatePayload>,
-                           const IstioAuthN::Status&)>
+                           bool)>
     AuthenticateDoneCallback;
 
 // The authentication filter.
@@ -63,17 +57,16 @@ class AuthenticationFilter : public StreamDecoderFilter,
                         const AuthenticateDoneCallback& done_callback);
 
   // Callback for authenticatePeer.
-  // If status is FAILED, this function will call the next authentication
-  // method defined in the policy, if available; otherwise, rejects the
-  // request (return 401).
-  // If status is SUCCESS, the source_user attribute will be set from the
-  // result payload. It then populates the list of applicable methods for
-  // origin authentication (which have at least one method) and then trigger
+  // If success is false (authn failed), this function will call the next
+  // authentication method defined in the policy, if available; otherwise,
+  // rejects the request (return 401).
+  // If success is true (authn success), the source_user attribute will be set
+  // from the result payload. It then populates the list of applicable methods
+  // for origin authentication (which have at least one method) and then trigger
   // the authenticateOrigin flow.
   void onAuthenticatePeerDone(
       HeaderMap* headers, int source_method_index,
-      std::unique_ptr<IstioAuthN::AuthenticatePayload> payload,
-      const IstioAuthN::Status& status);
+      std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success);
 
   // Authenticate origin using the given method.
   void authenticateOrigin(HeaderMap& headers,
@@ -81,28 +74,27 @@ class AuthenticationFilter : public StreamDecoderFilter,
                           const AuthenticateDoneCallback& done_callback);
 
   // Call back for authenticateOrigin.
-  // If status is FAILED, this function will call the next authentication
+  // If success is false, this function will call the next authentication
   // method defined in the policy, if available; otherwise, rejects the
   // request (return 401).
-  // If status is SUCCESS, the origin payload will be set from the
+  // If success is true, the origin payload will be set from the
   // result payload. Also, the principal is set from origin.user.
   void onAuthenticateOriginDone(
       HeaderMap* headers, const iaapi::CredentialRule* rule, int method_index,
-      std::unique_ptr<IstioAuthN::AuthenticatePayload> payload,
-      const IstioAuthN::Status& status);
+      std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success);
 
   // Validates x509 given the params (more or less, just check if x509 exists,
   // actual validation is not neccessary as it already done when the connection
   // establish), and extract authenticate attributes (just user/identity for
   // now). Calling callback with the extracted payload and corresponding status.
-  virtual void ValidateX509(
+  virtual void validateX509(
       const HeaderMap& headers, const iaapi::MutualTls& params,
       const AuthenticateDoneCallback& done_callback) const;
 
   // Validates JWT given the jwt params. If JWT is validated, it will call
   // the callback function with the extracted attributes and claims (JwtPayload)
   // and status SUCCESS. Otherwise, calling callback with status FAILED.
-  virtual void ValidateJwt(const HeaderMap& headers, const iaapi::Jwt& params,
+  virtual void validateJwt(const HeaderMap& headers, const iaapi::Jwt& params,
                            const AuthenticateDoneCallback& done_callback) const;
 
   // Convenient function to call decoder_callbacks_ only when stopped_ is true.
