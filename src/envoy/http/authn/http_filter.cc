@@ -20,9 +20,9 @@
 namespace Envoy {
 namespace Http {
 
-AuthenticationFilter::AuthenticationFilter(
-    const istio::authentication::v1alpha1::Policy& config)
-    : config_(config) {}
+AuthenticationFilter::AuthenticationFilter(Upstream::ClusterManager& cm,
+                                           IstioAuthN::JwtAuthnStore& store)
+    : config_(store.config()), jwt_auth_(cm, store) {}
 
 AuthenticationFilter::~AuthenticationFilter() {}
 
