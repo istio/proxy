@@ -386,7 +386,7 @@ class DatasetJwk {
       "44"
       "QTCNW3JnFn2c1jXugYwP7WAhC9kXfXNlDLMQedkXa48yawBZEIKo7677w";
 
-  const std::string kTokenECWrongKey =
+  const std::string kJwtWithNonExistKidEC =
       "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjN"
       "jIn0."
       "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MG"
@@ -629,7 +629,7 @@ TEST_F(JwtTestJwks, OkTokenJwkEC) {
 }
 
 TEST_F(JwtTestJwks, NonExistKidEC) {
-  DoTest(ds.kTokenECWrongKey, ds.kPublicKeyJwkEC, "jwks", false,
+  DoTest(ds.kJwtWithNonExistKidEC, ds.kPublicKeyJwkEC, "jwks", false,
          Status::KID_ALG_UNMATCH, nullptr);
 }
 
