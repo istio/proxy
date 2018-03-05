@@ -23,7 +23,7 @@
 namespace Envoy {
 namespace Http {
 namespace IstioAuthN {
-enum State { INIT, PROCESSING, COMPLETE };
+enum State { INIT, PROCESSING, COMPLETE, REJECTED };
 }  // namespace IstioAuthN
 
 typedef std::function<void(std::unique_ptr<IstioAuthN::AuthenticatePayload>,
@@ -49,9 +49,10 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
  protected:
   // Authenticate peer with the given method.
-  void authenticatePeer(HeaderMap& headers,
-                        const istio::authentication::v1alpha1::PeerAuthenticationMethod& method,
-                        const AuthenticateDoneCallback& done_callback);
+  void authenticatePeer(
+      HeaderMap& headers,
+      const istio::authentication::v1alpha1::PeerAuthenticationMethod& method,
+      const AuthenticateDoneCallback& done_callback);
 
   // Callback for authenticatePeer.
   // If success is false (authn failed), this function will call the next
@@ -66,9 +67,10 @@ class AuthenticationFilter : public StreamDecoderFilter,
       std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success);
 
   // Authenticate origin using the given method.
-  void authenticateOrigin(HeaderMap& headers,
-                          const istio::authentication::v1alpha1::OriginAuthenticationMethod& method,
-                          const AuthenticateDoneCallback& done_callback);
+  void authenticateOrigin(
+      HeaderMap& headers,
+      const istio::authentication::v1alpha1::OriginAuthenticationMethod& method,
+      const AuthenticateDoneCallback& done_callback);
 
   // Call back for authenticateOrigin.
   // If success is false, this function will call the next authentication
@@ -77,7 +79,9 @@ class AuthenticationFilter : public StreamDecoderFilter,
   // If success is true, the origin payload will be set from the
   // result payload. Also, the principal is set from origin.user.
   void onAuthenticateOriginDone(
-      HeaderMap* headers, const istio::authentication::v1alpha1::CredentialRule* rule, int method_index,
+      HeaderMap* headers,
+      const istio::authentication::v1alpha1::CredentialRule* rule,
+      int method_index,
       std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success);
 
   // Validates x509 given the params (more or less, just check if x509 exists,
@@ -85,13 +89,15 @@ class AuthenticationFilter : public StreamDecoderFilter,
   // establish), and extract authenticate attributes (just user/identity for
   // now). Calling callback with the extracted payload and corresponding status.
   virtual void validateX509(
-      const HeaderMap& headers, const istio::authentication::v1alpha1::MutualTls& params,
+      const HeaderMap& headers,
+      const istio::authentication::v1alpha1::MutualTls& params,
       const AuthenticateDoneCallback& done_callback) const;
 
   // Validates JWT given the jwt params. If JWT is validated, it will call
   // the callback function with the extracted attributes and claims (JwtPayload)
   // and status SUCCESS. Otherwise, calling callback with status FAILED.
-  virtual void validateJwt(const HeaderMap& headers, const istio::authentication::v1alpha1::Jwt& params,
+  virtual void validateJwt(const HeaderMap& headers,
+                           const istio::authentication::v1alpha1::Jwt& params,
                            const AuthenticateDoneCallback& done_callback) const;
 
   // Convenient function to call decoder_callbacks_ only when stopped_ is true.
@@ -121,7 +127,9 @@ class AuthenticationFilter : public StreamDecoderFilter,
   // This list is constructed at runtime, after source authentication success
   // (as it needs to know which credential rule to be applied, based on source
   // identity). The list, if constructed, should have at least one method.
-  std::vector<const istio::authentication::v1alpha1::OriginAuthenticationMethod*> active_origin_methods_;
+  std::vector<
+      const istio::authentication::v1alpha1::OriginAuthenticationMethod*>
+      active_origin_methods_;
 };
 
 }  // namespace Http

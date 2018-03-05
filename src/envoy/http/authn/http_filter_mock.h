@@ -32,12 +32,14 @@ class MockAuthenticationFilter : public AuthenticationFilter {
       : AuthenticationFilter(proto_config) {}
   ~MockAuthenticationFilter(){};
 
-  MOCK_CONST_METHOD3(validateX509,
-                     void(const HeaderMap& headers,
-                          const iaapi::MutualTls& params,
-                          const AuthenticateDoneCallback& done_callback));
+  MOCK_CONST_METHOD3(
+      validateX509,
+      void(const HeaderMap& headers,
+           const istio::authentication::v1alpha1::MutualTls& params,
+           const AuthenticateDoneCallback& done_callback));
   MOCK_CONST_METHOD3(validateJwt,
-                     void(const HeaderMap& headers, const iaapi::Jwt& params,
+                     void(const HeaderMap& headers,
+                          const istio::authentication::v1alpha1::Jwt& params,
                           const AuthenticateDoneCallback& done_callback));
   const IstioAuthN::Context& context() { return context_; }
 };

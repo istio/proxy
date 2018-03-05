@@ -215,6 +215,10 @@ void AuthenticationFilter::onAuthenticateOriginDone(
 }
 
 void AuthenticationFilter::continueDecoding() {
+  if (state_ != IstioAuthN::State::PROCESSING) {
+    ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
+    return;
+  }
   state_ = IstioAuthN::State::COMPLETE;
   if (stopped_) {
     decoder_callbacks_->continueDecoding();
@@ -222,6 +226,11 @@ void AuthenticationFilter::continueDecoding() {
 }
 
 void AuthenticationFilter::rejectRequest(const std::string& message) {
+  if (state_ != IstioAuthN::State::PROCESSING) {
+    ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
+    return;
+  }
+  state_ = IstioAuthN::State::REJECTED;
   Utility::sendLocalReply(*decoder_callbacks_, false, Http::Code::Unauthorized,
                           message);
 }
