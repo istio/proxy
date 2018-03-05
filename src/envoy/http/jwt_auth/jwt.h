@@ -16,6 +16,7 @@
 #pragma once
 
 #include "envoy/json/json_object.h"
+#include "openssl/ec.h"
 #include "openssl/evp.h"
 
 #include <string>
@@ -87,8 +88,17 @@ enum class Status {
   // A parse error on PEM formatted public key happened.
   PEM_PUBKEY_PARSE_ERROR,
 
-  // "n" or" "e" field of a JWK has a parse error or is missing.
-  JWK_PUBKEY_PARSE_ERROR,
+  // "n" or "e" field of a JWK has a parse error or is missing.
+  JWK_RSA_PUBKEY_PARSE_ERROR,
+
+  // Failed to create a EC_KEY object.
+  FAILED_CREATE_EC_KEY,
+
+  // "x" or "y" field of a JWK has a parse error or is missing.
+  JWK_EC_PUBKEY_PARSE_ERROR,
+
+  // Failed to create ECDSA_SIG object.
+  FAILED_CREATE_ECDSA_SIGNATURE,
 
   // Audience is not allowed.
   AUDIENCE_NOT_ALLOWED,
@@ -150,12 +160,17 @@ class Verifier : public WithStatus {
   // Functions to verify with single public key.
   // (Note: Pubkeys object passed to Verify() may contains multiple public keys)
   // When verification fails, UpdateStatus() is NOT called.
-  bool VerifySignature(EVP_PKEY* key, const EVP_MD* md,
-                       const uint8_t* signature, size_t signature_len,
-                       const uint8_t* signed_data, size_t signed_data_len);
-  bool VerifySignature(EVP_PKEY* key, const EVP_MD* md,
-                       const std::string& signature,
-                       const std::string& signed_data);
+  bool VerifySignatureRSA(EVP_PKEY* key, const EVP_MD* md,
+                          const uint8_t* signature, size_t signature_len,
+                          const uint8_t* signed_data, size_t signed_data_len);
+  bool VerifySignatureRSA(EVP_PKEY* key, const EVP_MD* md,
+                          const std::string& signature,
+                          const std::string& signed_data);
+  bool VerifySignatureEC(EC_KEY* key, const std::string& signature,
+                         const std::string& signed_data);
+  bool VerifySignatureEC(EC_KEY* key, const uint8_t* signature,
+                         size_t signature_len, const uint8_t* signed_data,
+                         size_t signed_data_len);
 };
 
 // Class to parse and a hold a JWT.
@@ -256,11 +271,16 @@ class Pubkeys : public WithStatus {
  private:
   void CreateFromPemCore(const std::string& pkey_pem);
   void CreateFromJwksCore(const std::string& pkey_jwks);
+  // Extracts the public key from a jwk key (jkey) and sets it to keys_;
+  void ExtractPubkeyFromJwk(Json::ObjectSharedPtr jwk_json);
+  void ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json);
+  void ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json);
 
   class Pubkey {
    public:
     Pubkey(){};
-    bssl::UniquePtr<EVP_PKEY> key_;
+    bssl::UniquePtr<EVP_PKEY> evp_pkey_;
+    bssl::UniquePtr<EC_KEY> ec_key_;
     std::string kid_;
     bool alg_specified_ = false;
     std::string alg_;
