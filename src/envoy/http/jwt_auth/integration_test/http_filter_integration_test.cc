@@ -189,7 +189,7 @@ class JwtVerificationFilterIntegrationTestWithJwks
   }
 
  protected:
-  const std::string kPublicKey =
+  const std::string kPublicKeyRSA =
       "{\"keys\": [{\"kty\": \"RSA\",\"alg\": \"RS256\",\"use\": "
       "\"sig\",\"kid\": \"62a93512c9ee4c7f8067b5a216dade2763d32a47\",\"n\": "
       "\"0YWnm_eplO9BFtXszMRQNL5UtZ8HJdTH2jK7vjs4XdLkPW7YBkkm_"
@@ -209,13 +209,25 @@ class JwtVerificationFilterIntegrationTestWithJwks
       "74kRBVZbk2wnmmb7IhP9OoLc1-7-9qU1uhpDxmE6JwBau0mDSwMnYDS4G_ML17dC-"
       "ZDtLd1i24STUw39KH0pcSdfFbL2NtEZdNeam1DDdk0iUtJSPZliUHJBI_pj8M-2Mn_"
       "oA8jBuI8YKwBqYkZCN1I95Q\",\"e\": \"AQAB\"}]}";
+
+  const std::string kPublicKeyEC =
+      "{\"keys\": [{\"kty\":\"EC\", \"alg\": \"ES256\","
+      "\"kid\": "
+      "\"1a\",\"crv\":\"P-256\",\"x\":\"UwQ1_lH4UaJ5K-pn9ofZ_unyGZLP-AU38"
+      "20_1vhIXNw\",\"y\":\"CtQozooILf8Llu9qfRDxuAE3YDvqyG1mJE6GKdjvzXI\"}, "
+      "{\"alg"
+      "\": \"ES256\", \"crv\": \"P-256\", \"kid\": \"2b\",\"kty\": \"EC\", "
+      "\"use\""
+      ": \"sig\", \"x\": \"C9_ya1G-mtcqJjMqGGk8Z-b2ALSHGWnMXHNvpqF5OBE\", "
+      "\"y\": "
+      "\"tldOXhHzLb6q0mi2VLlBU1t80TSOUwc9rfEc1w-OnRI\"}]}";
 };
 
 INSTANTIATE_TEST_CASE_P(
     IpVersions, JwtVerificationFilterIntegrationTestWithJwks,
     testing::ValuesIn(TestEnvironment::getIpVersionsForTest()));
 
-TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Success1) {
+TEST_P(JwtVerificationFilterIntegrationTestWithJwks, RSASuccess1) {
   const std::string kJwtNoKid =
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
@@ -236,8 +248,39 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Success1) {
       "ImV4cCI6MjAwMTAwMTAwMX0");
 
   TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(),
-                   kPublicKey, true, expected_headers, "");
+                   kPublicKeyRSA, true, expected_headers, "");
 }
+
+// TEST_P(JwtVerificationFilterIntegrationTestWithJwks, ES256Success1) {
+//   const std::string kJwtEC =
+//       "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFhIn0.ey"
+//       "Jpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZG"
+//       "V2"
+//       "Z"
+//       "WxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1M"
+//       "jN"
+//       "m"
+//       "NWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20i"
+//       "LC"
+//       "J"
+//       "hdWQiOiJodHRwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9.TFVipa_zF6OoR0tFgflcb_"
+//       "RwN3-"
+//       "44"
+//       "QTCNW3JnFn2c1jXugYwP7WAhC9kXfXNlDLMQedkXa48yawBZEIKo7677w";
+
+//   auto expected_headers = BaseRequestHeaders();
+//   expected_headers.addCopy("sec-istio-auth-userinfo",
+//                            "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ"
+//                            "4dWN2Njk4bGo3OHZ2MGxAZG"
+//                            "V2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2M"
+//                            "jg2NDU3NDE4ODEtbm9hYml1M"
+//                            "jNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdz"
+//                            "ZXJ2aWNlYWNjb3VudC5jb20i"
+//                            "LCJhdWQiOiJodHRwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9");
+
+//   TestVerification(createHeaders(kJwtEC), "", createIssuerHeaders(),
+//                    kPublicKeyEC, true, expected_headers, "");
+// }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
   const std::string kJwtNoKid =
