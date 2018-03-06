@@ -32,83 +32,83 @@ enum class Status {
   OK = 0,
 
   // JWT token is required.
-  JWT_MISSED,
+  JWT_MISSED = 1,
 
   // Authorization header value doesn't have Bearer prefix.
-  BEARER_PREFIX_MISMATCH,
+  BEARER_PREFIX_MISMATCH = 2,
 
   // Token expired.
-  JWT_EXPIRED,
+  JWT_EXPIRED = 3,
 
   // Given JWT is not in the form of Header.Payload.Signature
-  JWT_BAD_FORMAT,
+  JWT_BAD_FORMAT = 4,
 
   // Header is an invalid Base64url input or an invalid JSON.
-  JWT_HEADER_PARSE_ERROR,
+  JWT_HEADER_PARSE_ERROR = 5,
 
   // Header does not have "alg".
-  JWT_HEADER_NO_ALG,
+  JWT_HEADER_NO_ALG = 6,
 
   // "alg" in the header is not a string.
-  JWT_HEADER_BAD_ALG,
+  JWT_HEADER_BAD_ALG = 7,
 
   // Signature is an invalid Base64url input.
-  JWT_SIGNATURE_PARSE_ERROR,
+  JWT_SIGNATURE_PARSE_ERROR = 8,
 
   // Signature Verification failed (= Failed in DigestVerifyFinal())
-  JWT_INVALID_SIGNATURE,
+  JWT_INVALID_SIGNATURE = 9,
 
   // Signature is valid but payload is an invalid Base64url input or an invalid
   // JSON.
-  JWT_PAYLOAD_PARSE_ERROR,
+  JWT_PAYLOAD_PARSE_ERROR = 10,
 
   // "kid" in the JWT header is not a string.
-  JWT_HEADER_BAD_KID,
+  JWT_HEADER_BAD_KID = 11,
 
   // Issuer is not configured.
-  JWT_UNKNOWN_ISSUER,
+  JWT_UNKNOWN_ISSUER = 12,
 
   // JWK is an invalid JSON.
-  JWK_PARSE_ERROR,
+  JWK_PARSE_ERROR = 13,
 
   // JWK does not have "keys".
-  JWK_NO_KEYS,
+  JWK_NO_KEYS = 14,
 
   // "keys" in JWK is not an array.
-  JWK_BAD_KEYS,
+  JWK_BAD_KEYS = 15,
 
   // There are no valid public key in given JWKs.
-  JWK_NO_VALID_PUBKEY,
+  JWK_NO_VALID_PUBKEY = 16,
 
   // There is no key the kid and the alg of which match those of the given JWT.
-  KID_ALG_UNMATCH,
+  KID_ALG_UNMATCH = 17,
 
   // Value of "alg" in the header is invalid.
-  ALG_NOT_IMPLEMENTED,
+  ALG_NOT_IMPLEMENTED = 18,
 
   // Given PEM formatted public key is an invalid Base64 input.
-  PEM_PUBKEY_BAD_BASE64,
+  PEM_PUBKEY_BAD_BASE64 = 19,
 
   // A parse error on PEM formatted public key happened.
-  PEM_PUBKEY_PARSE_ERROR,
+  PEM_PUBKEY_PARSE_ERROR = 20,
 
   // "n" or "e" field of a JWK has a parse error or is missing.
-  JWK_RSA_PUBKEY_PARSE_ERROR,
+  JWK_RSA_PUBKEY_PARSE_ERROR = 21,
 
   // Failed to create a EC_KEY object.
-  FAILED_CREATE_EC_KEY,
+  FAILED_CREATE_EC_KEY = 22,
 
   // "x" or "y" field of a JWK has a parse error or is missing.
-  JWK_EC_PUBKEY_PARSE_ERROR,
+  JWK_EC_PUBKEY_PARSE_ERROR = 23,
 
   // Failed to create ECDSA_SIG object.
-  FAILED_CREATE_ECDSA_SIGNATURE,
+  FAILED_CREATE_ECDSA_SIGNATURE = 24,
 
   // Audience is not allowed.
-  AUDIENCE_NOT_ALLOWED,
+  AUDIENCE_NOT_ALLOWED = 25,
 
   // Failed to fetch public key
-  FAILED_FETCH_PUBKEY,
+  FAILED_FETCH_PUBKEY = 26,
 };
 
 std::string StatusToString(Status status);
