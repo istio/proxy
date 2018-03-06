@@ -51,8 +51,8 @@ message AuthenticatePayload {
   }
 }
 message Context {
-  // Principal is set according to policy credential rule, from the peer identity
-  // (peer_user) or origin identity (origin.user).
+  // Principal is set according to policy credential rule, from the peer
+  // identity (peer_user) or origin identity (origin.user).
   string principal = 1;
 
   // Peer identity, result from peer authentication (for now, peer
