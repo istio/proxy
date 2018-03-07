@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef PROXY_JWT_H
-#define PROXY_JWT_H
+#pragma once
 
 #include "envoy/json/json_object.h"
 #include "openssl/evp.h"
@@ -277,5 +276,3 @@ class Pubkeys : public WithStatus {
 }  // namespace JwtAuth
 }  // namespace Http
 }  // namespace Envoy
-
-#endif  // PROXY_JWT_H

@@ -1,4 +1,4 @@
-/* Copyright 2017 Istio Authors. All Rights Reserved.
+/* Copyright 2018 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef JWT_TOKEN_EXTRACTOR_H
-#define JWT_TOKEN_EXTRACTOR_H
+#pragma once
 
 #include "common/common/logger.h"
 #include "src/envoy/http/jwt_auth/config.pb.h"
@@ -100,5 +99,3 @@ class JwtTokenExtractor : public Logger::Loggable<Logger::Id::filter> {
 }  // namespace JwtAuth
 }  // namespace Http
 }  // namespace Envoy
-
-#endif  // JWT_TOKEN_EXTRACTOR_H

@@ -1,4 +1,4 @@
-/* Copyright 2017 Istio Authors. All Rights Reserved.
+/* Copyright 2018 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef JWT_AUTH_STORE_H
-#define JWT_AUTH_STORE_H
+#pragma once
 
 #include "common/common/logger.h"
 #include "envoy/server/filter_config.h"
@@ -80,5 +79,3 @@ class JwtAuthStoreFactory : public Logger::Loggable<Logger::Id::config> {
 }  // namespace JwtAuth
 }  // namespace Http
 }  // namespace Envoy
-
-#endif  // JWT_AUTH_STORE_H
