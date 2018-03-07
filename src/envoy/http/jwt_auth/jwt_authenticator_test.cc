@@ -83,6 +83,22 @@ const char kOtherIssuerConfig[] = R"(
 }
 )";
 
+// A config with bypass
+const char kBypassConfig[] = R"(
+{
+  "bypass_jwt": [
+     {
+       "http_method": "OPTIONS",
+       "path_prefix": "/"
+     },
+     {
+       "http_method": "GET",
+       "path_exact": "/healthz"
+     }
+  ]
+}
+)";
+
 // expired token
 const std::string kExpiredToken =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
@@ -195,6 +211,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWT) {
               "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVz"
               "dEBleGFtcGxlLmNvbSIsImF1ZCI6ImV4YW1wbGVfc2VydmljZSIs"
               "ImV4cCI6MjAwMTAwMTAwMX0");
+    // Verify the token is removed.
+    EXPECT_FALSE(headers.Authorization());
   }
 }
 
@@ -207,6 +225,36 @@ TEST_F(JwtAuthenticatorTest, TestMissedJWT) {
   // Empty headers.
   auto headers = TestHeaderMapImpl{};
   auth_->Verify(headers, &mock_cb_);
+}
+
+TEST_F(JwtAuthenticatorTest, TestBypassJWT) {
+  SetupConfig(kBypassConfig);
+
+  EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
+  EXPECT_CALL(mock_cb_, onDone(_))
+      .WillOnce(Invoke(
+          // Empty header, rejected.
+          [](const Status& status) { ASSERT_EQ(status, Status::JWT_MISSED); }))
+      .WillOnce(Invoke(
+          // CORS header, OK
+          [](const Status& status) { ASSERT_EQ(status, Status::OK); }))
+      .WillOnce(Invoke(
+          // healthz header, OK
+          [](const Status& status) { ASSERT_EQ(status, Status::OK); }));
+
+  // Empty headers.
+  auto empty_headers = TestHeaderMapImpl{};
+  auth_->Verify(empty_headers, &mock_cb_);
+
+  // CORS headers
+  auto cors_headers =
+      TestHeaderMapImpl{{":method", "OPTIONS"}, {":path", "/any/path"}};
+  auth_->Verify(cors_headers, &mock_cb_);
+
+  // healthz headers
+  auto healthz_headers =
+      TestHeaderMapImpl{{":method", "GET"}, {":path", "/healthz"}};
+  auth_->Verify(healthz_headers, &mock_cb_);
 }
 
 TEST_F(JwtAuthenticatorTest, TestInvalidJWT) {
@@ -224,9 +272,8 @@ TEST_F(JwtAuthenticatorTest, TestInvalidJWT) {
 TEST_F(JwtAuthenticatorTest, TestInvalidPrefix) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
-      .WillOnce(Invoke([](const Status& status) {
-        ASSERT_EQ(status, Status::BEARER_PREFIX_MISMATCH);
-      }));
+      .WillOnce(Invoke(
+          [](const Status& status) { ASSERT_EQ(status, Status::JWT_MISSED); }));
 
   auto headers = TestHeaderMapImpl{{"Authorization", "Bearer-invalid"}};
   auth_->Verify(headers, &mock_cb_);
