@@ -15,43 +15,18 @@
 
 #include "src/envoy/http/authn/http_filter.h"
 #include "common/http/utility.h"
-#include "src/envoy/http/authn/mtls_authentication.h"
+#include "src/envoy/http/authn/origin_authenticator.h"
+#include "src/envoy/http/authn/peer_authenticator.h"
 #include "src/envoy/utils/utils.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace {
-
-bool MatchCredentialRule(const std::string& peer_user,
-                         const iaapi::CredentialRule& rule) {
-  if (rule.matching_peers_size() == 0) {
-    return true;
-  }
-  for (const auto& allowed_id : rule.matching_peers()) {
-    if (peer_user == allowed_id) {
-      return true;
-    }
-  }
-  return false;
-}
-
-const iaapi::CredentialRule& GetCredentialRuleOrDefault(
-    const std::string& peer_user, const iaapi::Policy& config) {
-  for (const auto& rule : config.credential_rules()) {
-    if (MatchCredentialRule(peer_user, rule)) {
-      return rule;
-    }
-  }
-  return iaapi::CredentialRule::default_instance();
-}
-
-}  // namespace
 
 AuthenticationFilter::AuthenticationFilter(
-    const istio::authentication::v1alpha1::Policy& config)
-    : config_(config) {}
+    const istio::authentication::v1alpha1::Policy& policy)
+    : policy_(policy) {}
 
 AuthenticationFilter::~AuthenticationFilter() {}
 
@@ -63,15 +38,16 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
                                                         bool) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
   state_ = IstioAuthN::State::PROCESSING;
-  if (config_.peers_size() == 0) {
-    ENVOY_LOG(debug, "No method defined. Skip source authentication.");
-    onAuthenticatePeerDone(&headers, 0, nullptr, true);
-  } else {
-    authenticatePeer(
-        headers, config_.peers(0),
-        std::bind(&AuthenticationFilter::onAuthenticatePeerDone, this, &headers,
-                  0, std::placeholders::_1, std::placeholders::_2));
-  }
+
+  setHeaders(&headers);
+
+  authenticator_.reset(new PeerAuthenticator(
+      this,
+      std::bind(&AuthenticationFilter::onPeerAuthenticationDone, this,
+                std::placeholders::_1),
+      policy_));
+  authenticator_->run();
+
   if (state_ == IstioAuthN::State::COMPLETE) {
     return FilterHeadersStatus::Continue;
   }
@@ -80,195 +56,30 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
   return FilterHeadersStatus::StopIteration;
 }
 
-void AuthenticationFilter::authenticatePeer(
-    HeaderMap& headers, const iaapi::PeerAuthenticationMethod& method,
-    const AuthenticateDoneCallback& done_callback) {
-  switch (method.params_case()) {
-    case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
-      validateX509(headers, method.mtls(), done_callback);
-      break;
-    case iaapi::PeerAuthenticationMethod::ParamsCase::kJwt:
-      validateJwt(headers, method.jwt(), done_callback);
-      break;
-    case iaapi::PeerAuthenticationMethod::ParamsCase::kNone:
-      done_callback(nullptr, true);
-      break;
-    default:
-      ENVOY_LOG(error, "Unknown peer authentication param {}",
-                method.DebugString());
+const Network::Connection* AuthenticationFilter::connection() const {
+  return decoder_callbacks_->connection();
+}
+
+void AuthenticationFilter::onPeerAuthenticationDone(bool success) {
+  if (success) {
+    const auto& rule = findCredentialRuleOrDefault(
+        policy_, authenticationResult().peer_user());
+    authenticator_.reset(new OriginAuthenticator(
+        this,
+        std::bind(&AuthenticationFilter::onOriginAuthenticationDone, this,
+                  std::placeholders::_1),
+        rule));
+    authenticator_->run();
+  } else {
+    rejectRequest("Peer authentication failed.");
   }
 }
-
-void AuthenticationFilter::onAuthenticatePeerDone(
-    HeaderMap* headers, int peer_method_index,
-    std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success) {
-  if (!success) {
-    // Authentication fails, try next one if available.
-    peer_method_index++;
-    if (peer_method_index >= config_.peers_size()) {
-      // No more method left to try, reject request.
-      rejectRequest("Source authentication failed.");
-    } else {
-      // Try next one.
-      authenticatePeer(*headers, config_.peers(peer_method_index),
-                       std::bind(&AuthenticationFilter::onAuthenticatePeerDone,
-                                 this, headers, peer_method_index,
-                                 std::placeholders::_1, std::placeholders::_2));
-    }
-  } else {
-    // Source authentication success, continue for credetial / origin
-    // authentication.
-    if (payload != nullptr) {
-      if (payload->has_x509()) {
-        context_.set_peer_user(payload->x509().user());
-      } else if (payload->has_jwt()) {
-        context_.set_peer_user(payload->jwt().user());
-      } else {
-        ENVOY_LOG(warn,
-                  "Source authentiation payload doesn't contain x509 nor jwt "
-                  "payload.");
-      }
-    }
-
-    const auto& rule =
-        GetCredentialRuleOrDefault(context_.peer_user(), config_);
-    if (rule.origins_size() == 0) {
-      switch (rule.binding()) {
-        case iaapi::CredentialRule::USE_ORIGIN:
-          // Validation should reject policy that have rule to USE_ORIGIN but
-          // does not provide any origin method so this code should
-          // never reach. However, it's ok to treat it as authentication
-          // fails.
-          ENVOY_LOG(
-              warn,
-              "Principal is binded to origin, but not methods specified in "
-              "rule {}",
-              rule.DebugString());
-          onAuthenticateOriginDone(headers, &rule, 0, nullptr, false);
-          break;
-        case iaapi::CredentialRule::USE_PEER:
-          // On the other hand, it's ok to have no (origin) methods if
-          // rule USE_SOURCE
-          onAuthenticateOriginDone(headers, &rule, 0, nullptr, true);
-          break;
-        default:
-          // Should never come here.
-          ENVOY_LOG(error, "Invalid binding value for rule {}",
-                    rule.DebugString());
-          break;
-      }
-      return;
-    }
-    authenticateOrigin(
-        *headers, rule.origins(0),
-        std::bind(&AuthenticationFilter::onAuthenticateOriginDone, this,
-                  headers, &rule, 0, std::placeholders::_1,
-                  std::placeholders::_2));
-  }
-}
-
-void AuthenticationFilter::authenticateOrigin(
-    HeaderMap& headers, const iaapi::OriginAuthenticationMethod& method,
-    const AuthenticateDoneCallback& done_callback) {
-  validateJwt(headers, method.jwt(), done_callback);
-}
-
-void AuthenticationFilter::onAuthenticateOriginDone(
-    HeaderMap* headers, const iaapi::CredentialRule* rule, int method_index,
-    std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success) {
-  if (!success) {
-    // Authentication fail, try the next method, if available.
-    method_index++;
-    if (method_index < rule->origins_size()) {
-      authenticateOrigin(
-          *headers, rule->origins(method_index),
-          std::bind(&AuthenticationFilter::onAuthenticateOriginDone, this,
-                    headers, rule, method_index, std::placeholders::_1,
-                    std::placeholders::_2));
-    } else {
-      rejectRequest("Origin authentication failed.");
-    }
-  } else {
-    // Authentication pass, look at the return payload and store to the context
-    // output. Set filter to continueDecoding when done.
-    // At the moment, only JWT can be used for origin authentication, so
-    // it's ok just to check jwt payload.
-    if (payload != nullptr && payload->has_jwt()) {
-      *context_.mutable_origin() = payload->jwt();
-    }
-    switch (rule->binding()) {
-      case iaapi::CredentialRule::USE_PEER:
-        context_.set_principal(context_.peer_user());
-        break;
-      case iaapi::CredentialRule::USE_ORIGIN:
-        context_.set_principal(context_.origin().user());
-        break;
-      default:
-        // Should never come here.
-        ENVOY_LOG(error, "Invalid binding value for rule {}",
-                  rule->DebugString());
-        break;
-    }
-    // It's done. continueDecoding to accept request.
+void AuthenticationFilter::onOriginAuthenticationDone(bool success) {
+  if (success) {
     continueDecoding();
+  } else {
+    rejectRequest("Origin authentication failed.");
   }
-}
-
-void AuthenticationFilter::continueDecoding() {
-  if (state_ != IstioAuthN::State::PROCESSING) {
-    ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
-    return;
-  }
-  state_ = IstioAuthN::State::COMPLETE;
-  if (stopped_) {
-    decoder_callbacks_->continueDecoding();
-  }
-}
-
-void AuthenticationFilter::rejectRequest(const std::string& message) {
-  if (state_ != IstioAuthN::State::PROCESSING) {
-    ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
-    return;
-  }
-  state_ = IstioAuthN::State::REJECTED;
-  Utility::sendLocalReply(*decoder_callbacks_, false, Http::Code::Unauthorized,
-                          message);
-}
-void AuthenticationFilter::validateX509(
-    const HeaderMap&, const iaapi::MutualTls&,
-    const AuthenticateDoneCallback& done_callback) const {
-  // Boilerplate for x509 validation and extraction. This function should
-  // extract user from SAN field from the x509 certificate come with request.
-  // (validation might not be needed, as establisment of the connection by
-  // itself is validation).
-  // If x509 is missing (i.e connection is not on TLS) or SAN value is not
-  // legit, call callback with status FAILED.
-  ENVOY_LOG(debug, "AuthenticationFilter: {} this connection requires mTLS",
-            __func__);
-  MtlsAuthentication mtls_authn(decoder_callbacks_->connection());
-  if (mtls_authn.IsMutualTLS() == false) {
-    done_callback(nullptr, false);
-    return;
-  }
-
-  std::unique_ptr<IstioAuthN::AuthenticatePayload> payload(
-      new IstioAuthN::AuthenticatePayload());
-  if (!mtls_authn.GetSourceUser(payload->mutable_x509()->mutable_user())) {
-    done_callback(std::move(payload), false);
-  }
-
-  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if desire.
-  done_callback(std::move(payload), true);
-}
-
-void AuthenticationFilter::validateJwt(
-    const HeaderMap&, const iaapi::Jwt&,
-    const AuthenticateDoneCallback& done_callback) const {
-  std::unique_ptr<IstioAuthN::AuthenticatePayload> payload(
-      new IstioAuthN::AuthenticatePayload());
-  // TODO (diemtvu/lei-tang): construct jwt_authenticator and call Verify;
-  // pass done_callback so that it would be trigger by jwt_authenticator.onDone.
-  done_callback(std::move(payload), false);
 }
 
 FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
@@ -291,6 +102,27 @@ void AuthenticationFilter::setDecoderFilterCallbacks(
     StreamDecoderFilterCallbacks& callbacks) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
   decoder_callbacks_ = &callbacks;
+}
+
+void AuthenticationFilter::continueDecoding() {
+  if (state_ != IstioAuthN::State::PROCESSING) {
+    ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
+    return;
+  }
+  state_ = IstioAuthN::State::COMPLETE;
+  if (stopped_) {
+    decoder_callbacks_->continueDecoding();
+  }
+}
+
+void AuthenticationFilter::rejectRequest(const std::string& message) {
+  if (state_ != IstioAuthN::State::PROCESSING) {
+    ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
+    return;
+  }
+  state_ = IstioAuthN::State::REJECTED;
+  Utility::sendLocalReply(*decoder_callbacks_, false, Http::Code::Unauthorized,
+                          message);
 }
 
 }  // namespace Http

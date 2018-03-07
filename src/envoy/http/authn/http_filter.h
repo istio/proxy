@@ -18,7 +18,7 @@
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"
-#include "src/envoy/http/authn/context.pb.h"
+#include "src/envoy/http/authn/authenticator_base.h"
 
 namespace Envoy {
 namespace Http {
@@ -26,13 +26,8 @@ namespace IstioAuthN {
 enum State { INIT, PROCESSING, COMPLETE, REJECTED };
 }  // namespace IstioAuthN
 
-typedef std::function<void(std::unique_ptr<IstioAuthN::AuthenticatePayload>,
-                           bool)>
-    AuthenticateDoneCallback;
-
 // The authentication filter.
-class AuthenticationFilter : public StreamDecoderFilter,
-                             public Logger::Loggable<Logger::Id::filter> {
+class AuthenticationFilter : public StreamDecoderFilter, public FilterContext {
  public:
   AuthenticationFilter(const istio::authentication::v1alpha1::Policy& config);
   ~AuthenticationFilter();
@@ -47,72 +42,25 @@ class AuthenticationFilter : public StreamDecoderFilter,
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
 
+  // Implement FilterContext
+  const Network::Connection* connection() const override;
+
  protected:
-  // Authenticate peer with the given method.
-  void authenticatePeer(
-      HeaderMap& headers,
-      const istio::authentication::v1alpha1::PeerAuthenticationMethod& method,
-      const AuthenticateDoneCallback& done_callback);
+  // Callback for peer authenticator.
+  void onPeerAuthenticationDone(bool success);
 
-  // Callback for authenticatePeer.
-  // If success is false (authn failed), this function will call the next
-  // authentication method defined in the policy, if available; otherwise,
-  // rejects the request (return 401).
-  // If success is true (authn success), the source_user attribute will be set
-  // from the result payload. It then populates the list of applicable methods
-  // for origin authentication (which have at least one method) and then trigger
-  // the authenticateOrigin flow.
-  void onAuthenticatePeerDone(
-      HeaderMap* headers, int source_method_index,
-      std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success);
-
-  // Authenticate origin using the given method.
-  void authenticateOrigin(
-      HeaderMap& headers,
-      const istio::authentication::v1alpha1::OriginAuthenticationMethod& method,
-      const AuthenticateDoneCallback& done_callback);
-
-  // Call back for authenticateOrigin.
-  // If success is false, this function will call the next authentication
-  // method defined in the policy, if available; otherwise, rejects the
-  // request (return 401).
-  // If success is true, the origin payload will be set from the
-  // result payload. Also, the principal is set from origin.user.
-  void onAuthenticateOriginDone(
-      HeaderMap* headers,
-      const istio::authentication::v1alpha1::CredentialRule* rule,
-      int method_index,
-      std::unique_ptr<IstioAuthN::AuthenticatePayload> payload, bool success);
-
-  // Validates x509 given the params (more or less, just check if x509 exists,
-  // actual validation is not neccessary as it already done when the connection
-  // establish), and extract authenticate attributes (just user/identity for
-  // now). Calling callback with the extracted payload and corresponding status.
-  virtual void validateX509(
-      const HeaderMap& headers,
-      const istio::authentication::v1alpha1::MutualTls& params,
-      const AuthenticateDoneCallback& done_callback) const;
-
-  // Validates JWT given the jwt params. If JWT is validated, it will call
-  // the callback function with the extracted attributes and claims (JwtPayload)
-  // and status SUCCESS. Otherwise, calling callback with status FAILED.
-  virtual void validateJwt(const HeaderMap& headers,
-                           const istio::authentication::v1alpha1::Jwt& params,
-                           const AuthenticateDoneCallback& done_callback) const;
+  // Callback for origin authenticator.
+  void onOriginAuthenticationDone(bool success);
 
   // Convenient function to call decoder_callbacks_ only when stopped_ is true.
-  void continueDecoding();
+  virtual void continueDecoding();
 
   // Convenient function to reject request.
-  void rejectRequest(const std::string& message);
-
- protected:
-  // Holds authentication attribute outputs.
-  IstioAuthN::Context context_;
+  virtual void rejectRequest(const std::string& message);
 
  private:
   // Store the config.
-  const istio::authentication::v1alpha1::Policy& config_;
+  const istio::authentication::v1alpha1::Policy& policy_;
 
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 
@@ -123,13 +71,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
   // should be called.
   bool stopped_{false};
 
-  // Holds the list of methods that should be used for origin authentication.
-  // This list is constructed at runtime, after source authentication success
-  // (as it needs to know which credential rule to be applied, based on source
-  // identity). The list, if constructed, should have at least one method.
-  std::vector<
-      const istio::authentication::v1alpha1::OriginAuthenticationMethod*>
-      active_origin_methods_;
+  std::unique_ptr<AuthenticatorBase> authenticator_;
 };
 
 }  // namespace Http

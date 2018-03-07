@@ -30,18 +30,41 @@ envoy_proto_library(
 )
 
 envoy_cc_library(
-    name = "filter_lib",
+    name = "authenticator",
     srcs = [
-        "http_filter_factory.cc",
-        "http_filter.cc",
+        "authenticator_base.cc",
+        "filter_context.cc",
         "mtls_authentication.cc",
+        "origin_authenticator.cc",
+        "peer_authenticator.cc",
     ],
     hdrs = [
-        "http_filter.h",
-        "mtls_authentication.h"
+        "authenticator_base.h",
+        "filter_context.h",
+        "mtls_authentication.h",
+        "origin_authenticator.h",
+        "peer_authenticator.h",
     ],
     repository = "@envoy",
     deps = [
+        ":context_proto",
+        "//external:authentication_policy_config_cc_proto",
+        "//src/envoy/utils:utils_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "filter_lib",
+    srcs = [
+        "http_filter.cc",
+        "http_filter_factory.cc",
+    ],
+    hdrs = [
+        "http_filter.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":authenticator",
         ":context_proto",
         "//external:authentication_policy_config_cc_proto",
         "//src/envoy/utils:utils_lib",
@@ -55,6 +78,37 @@ cc_library(
     deps = [
         ":context_proto",
         ":filter_lib",
+    ],
+)
+
+cc_library(
+    name = "test_utils",
+    hdrs = ["test_utils.h"],
+    deps = [
+        ":context_proto",
+    ],
+)
+
+envoy_cc_test(
+    name = "filter_context_test",
+    srcs = ["filter_context_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":authenticator",
+        ":test_utils",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "authenticator_base_test",
+    srcs = ["authenticator_base_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":authenticator",
+        ":test_utils",
+        "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/test_common:utility_lib",
     ],
 )
 
@@ -73,8 +127,8 @@ envoy_cc_test(
 envoy_cc_test(
     name = "http_filter_integration_test",
     srcs = ["http_filter_integration_test.cc"],
-    repository = "@envoy",
     data = glob(["testdata/*"]),
+    repository = "@envoy",
     #     ":testdata/*",
     #     ":testdata/envoy_source_mtls.conf",
     #     ":testdata/envoy_source_jwt.conf",
