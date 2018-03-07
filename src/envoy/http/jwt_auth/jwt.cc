@@ -518,13 +518,17 @@ void Pubkeys::ExtractPubkeyFromJwk(Json::ObjectSharedPtr jwk_json) {
 
 void Pubkeys::ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json) {
   std::unique_ptr<Pubkey> pubkey(new Pubkey());
-  pubkey->kid_ = jwk_json->getString("kid");
-  pubkey->alg_ = jwk_json->getString("alg");
-  pubkey->alg_specified_ = true;
-
   std::string n_str, e_str;
-  n_str = jwk_json->getString("n");
-  e_str = jwk_json->getString("e");
+  try {
+    pubkey->kid_ = jwk_json->getString("kid");
+    pubkey->alg_ = jwk_json->getString("alg");
+    n_str = jwk_json->getString("n");
+    e_str = jwk_json->getString("e");
+  } catch (Json::Exception &e) {
+    // Do not extract public key if jwk_json has bad format.
+    return;
+  }
+  pubkey->alg_specified_ = true;
 
   EvpPkeyGetter e;
   pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
@@ -533,13 +537,17 @@ void Pubkeys::ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json) {
 
 void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
   std::unique_ptr<Pubkey> pubkey(new Pubkey());
-  pubkey->kid_ = jwk_json->getString("kid");
-  pubkey->alg_ = jwk_json->getString("alg");
-  pubkey->alg_specified_ = true;
-
   std::string x_str, y_str;
-  x_str = jwk_json->getString("x");
-  y_str = jwk_json->getString("y");
+  try {
+    pubkey->kid_ = jwk_json->getString("kid");
+    pubkey->alg_ = jwk_json->getString("alg");
+    x_str = jwk_json->getString("x");
+    y_str = jwk_json->getString("y");
+  } catch (Json::Exception &e) {
+    // Do not extract public key if jwk_json has bad format.
+    return;
+  }
+  pubkey->alg_specified_ = true;
 
   EvpPkeyGetter e;
   pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
