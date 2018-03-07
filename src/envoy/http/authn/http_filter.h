@@ -53,10 +53,21 @@ class AuthenticationFilter : public StreamDecoderFilter, public FilterContext {
   void onOriginAuthenticationDone(bool success);
 
   // Convenient function to call decoder_callbacks_ only when stopped_ is true.
-  virtual void continueDecoding();
+  void continueDecoding();
 
   // Convenient function to reject request.
-  virtual void rejectRequest(const std::string& message);
+  void rejectRequest(const std::string& message);
+
+  // Creates peer authenticator. This is made virtual function for
+  // testing.
+  virtual AuthenticatorBase* createPeerAuthenticator(
+      FilterContext* filter_context,
+      const AuthenticatorBase::DoneCallback& done_callback);
+
+  // Creates origin authenticator.
+  virtual AuthenticatorBase* createOriginAuthenticator(
+      FilterContext* filter_context,
+      const AuthenticatorBase::DoneCallback& done_callback);
 
  private:
   // Store the config.
@@ -71,7 +82,8 @@ class AuthenticationFilter : public StreamDecoderFilter, public FilterContext {
   // should be called.
   bool stopped_{false};
 
-  std::unique_ptr<AuthenticatorBase> authenticator_;
+  std::unique_ptr<AuthenticatorBase> peer_authenticator_;
+  std::unique_ptr<AuthenticatorBase> origin_authenticator_;
 };
 
 }  // namespace Http

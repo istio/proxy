@@ -44,7 +44,7 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   virtual void run() PURE;
 
   // Calls done_callback_ with success value.
-  void done(bool success);
+  void done(bool success) const;
 
   // Validates x509 given the params (more or less, just check if x509 exists,
   // actual validation is not neccessary as it already done when the connection
@@ -67,7 +67,7 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   // Pointer to filter state. Do not own.
   FilterContext* filter_context_;
 
-  const DoneCallback& done_callback_;
+  const DoneCallback done_callback_;
 };
 
 // Return pointer to credential rule matching with peer_id from the policy.

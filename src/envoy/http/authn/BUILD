@@ -54,7 +54,7 @@ envoy_cc_library(
 )
 
 envoy_cc_library(
-    name = "filter_lib",
+    name = "http_filter",
     srcs = [
         "http_filter.cc",
         "http_filter_factory.cc",
@@ -69,15 +69,6 @@ envoy_cc_library(
         "//external:authentication_policy_config_cc_proto",
         "//src/envoy/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
-    ],
-)
-
-cc_library(
-    name = "filter_mock",
-    hdrs = ["http_filter_mock.h"],
-    deps = [
-        ":context_proto",
-        ":filter_lib",
     ],
 )
 
@@ -113,11 +104,36 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
+    name = "peer_authenticator_test",
+    srcs = ["peer_authenticator_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":authenticator",
+        ":test_utils",
+        "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "origin_authenticator_test",
+    srcs = ["origin_authenticator_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":authenticator",
+        ":test_utils",
+        "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
     name = "http_filter_test",
     srcs = ["http_filter_test.cc"],
     repository = "@envoy",
     deps = [
-        ":filter_mock",
+       ":http_filter",
+        "//external:authentication_policy_config_cc_proto",
         "@envoy//source/common/http:header_map_lib",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/test_common:utility_lib",

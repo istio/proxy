@@ -30,7 +30,9 @@ AuthenticatorBase::AuthenticatorBase(
 
 AuthenticatorBase::~AuthenticatorBase() {}
 
-void AuthenticatorBase::done(bool success) { done_callback_(success); }
+void AuthenticatorBase::done(bool success) const {
+  done_callback_(success);
+}
 
 void AuthenticatorBase::validateX509(
     const iaapi::MutualTls&,
