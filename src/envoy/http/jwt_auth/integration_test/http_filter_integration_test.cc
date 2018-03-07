@@ -211,16 +211,24 @@ class JwtVerificationFilterIntegrationTestWithJwks
       "oA8jBuI8YKwBqYkZCN1I95Q\",\"e\": \"AQAB\"}]}";
 
   const std::string kPublicKeyEC =
-      "{\"keys\": [{\"kty\":\"EC\", \"alg\": \"ES256\","
-      "\"kid\": "
-      "\"1a\",\"crv\":\"P-256\",\"x\":\"UwQ1_lH4UaJ5K-pn9ofZ_unyGZLP-AU38"
-      "20_1vhIXNw\",\"y\":\"CtQozooILf8Llu9qfRDxuAE3YDvqyG1mJE6GKdjvzXI\"}, "
-      "{\"alg"
-      "\": \"ES256\", \"crv\": \"P-256\", \"kid\": \"2b\",\"kty\": \"EC\", "
-      "\"use\""
-      ": \"sig\", \"x\": \"C9_ya1G-mtcqJjMqGGk8Z-b2ALSHGWnMXHNvpqF5OBE\", "
-      "\"y\": "
-      "\"tldOXhHzLb6q0mi2VLlBU1t80TSOUwc9rfEc1w-OnRI\"}]}";
+      "{\"keys\": ["
+      "{"
+      "\"kty\": \"EC\","
+      "\"crv\": \"P-256\","
+      "\"x\": \"EB54wykhS7YJFD6RYJNnwbWEz3cI7CF5bCDTXlrwI5k\","
+      "\"y\": \"92bCBTvMFQ8lKbS2MbgjT3YfmYo6HnPEE2tsAqWUJw8\","
+      "\"alg\": \"ES256\","
+      "\"kid\": \"abc\""
+      "},"
+      "{"
+      "\"kty\": \"EC\","
+      "\"crv\": \"P-256\","
+      "\"x\": \"EB54wykhS7YJFD6RYJNnwbWEz3cI7CF5bCDTXlrwI5k\","
+      "\"y\": \"92bCBTvMFQ8lKbS2MbgjT3YfmYo6HnPEE2tsAqWUJw8\","
+      "\"alg\": \"ES256\","
+      "\"kid\": \"xyz\""
+      "}"
+      "]}";
 };
 
 INSTANTIATE_TEST_CASE_P(
@@ -251,36 +259,28 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, RSASuccess1) {
                    kPublicKeyRSA, true, expected_headers, "");
 }
 
-// TEST_P(JwtVerificationFilterIntegrationTestWithJwks, ES256Success1) {
-//   const std::string kJwtEC =
-//       "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFhIn0.ey"
-//       "Jpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZG"
-//       "V2"
-//       "Z"
-//       "WxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1M"
-//       "jN"
-//       "m"
-//       "NWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20i"
-//       "LC"
-//       "J"
-//       "hdWQiOiJodHRwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9.TFVipa_zF6OoR0tFgflcb_"
-//       "RwN3-"
-//       "44"
-//       "QTCNW3JnFn2c1jXugYwP7WAhC9kXfXNlDLMQedkXa48yawBZEIKo7677w";
+TEST_P(JwtVerificationFilterIntegrationTestWithJwks, ES256Success1) {
+  // Payload:
+  // {"iss": "https://example.com", "sub": "test@example.com", "aud":
+  // "example_service",
+  //  "exp": 2001001001}
 
-//   auto expected_headers = BaseRequestHeaders();
-//   expected_headers.addCopy("sec-istio-auth-userinfo",
-//                            "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ"
-//                            "4dWN2Njk4bGo3OHZ2MGxAZG"
-//                            "V2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2M"
-//                            "jg2NDU3NDE4ODEtbm9hYml1M"
-//                            "jNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdz"
-//                            "ZXJ2aWNlYWNjb3VudC5jb20i"
-//                            "LCJhdWQiOiJodHRwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9");
+  const std::string kJwtEC =
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY"
+      "29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjo"
+      "iZXhhbXBsZV9zZXJ2aWNlIn0.1Slk-zwP_78zR8Go5COxmmMunkxdTnBeeC91CgR-p2MWM"
+      "T9ubWvRvNGGYOTuJ8T17Db68Qk3T8UNTK5lzfR_mw";
 
-//   TestVerification(createHeaders(kJwtEC), "", createIssuerHeaders(),
-//                    kPublicKeyEC, true, expected_headers, "");
-// }
+  auto expected_headers = BaseRequestHeaders();
+  expected_headers.addCopy("sec-istio-auth-userinfo",
+                           "eyJpc3MiOiJo"
+                           "dHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtc"
+                           "GxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbX"
+                           "BsZV9zZXJ2aWNlIn0");
+
+  TestVerification(createHeaders(kJwtEC), "", createIssuerHeaders(),
+                   kPublicKeyEC, true, expected_headers, "");
+}
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
   const std::string kJwtNoKid =

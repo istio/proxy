@@ -42,7 +42,7 @@ def main(args):
 
   # Token claims
   claims = {'iss': args.iss,
-            'sub': args.iss,
+            'sub': args.sub,
             'aud': args.aud}
   if args.email:
     claims['email'] = args.email
@@ -84,6 +84,7 @@ if __name__ == '__main__':
   #optional arguments
   parser.add_argument("-e", "--email", help="Preferred e-mail address.")
   parser.add_argument("-a", "--azp", help="Authorized party - the party to which the ID Token was issued.")
-  parser.add_argument("-x", "--exp", help="Token expiration claim.")
+  parser.add_argument("-x", "--exp", type=int, help="Token expiration claim.")
   parser.add_argument("-k", "--kid", help="Key id.")
+  parser.add_argument("-s", "--sub", help="Token subject claim.")
   main(parser.parse_args())
