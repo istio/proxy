@@ -270,9 +270,8 @@ TEST_F(JwtAuthenticatorTest, TestInvalidJWT) {
 TEST_F(JwtAuthenticatorTest, TestInvalidPrefix) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
-      .WillOnce(Invoke([](const Status& status) {
-        ASSERT_EQ(status, Status::BEARER_PREFIX_MISMATCH);
-      }));
+      .WillOnce(Invoke(
+          [](const Status& status) { ASSERT_EQ(status, Status::JWT_MISSED); }));
 
   auto headers = TestHeaderMapImpl{{"Authorization", "Bearer-invalid"}};
   auth_->Verify(headers, &mock_cb_);

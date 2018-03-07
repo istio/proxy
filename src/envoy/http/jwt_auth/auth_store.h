@@ -21,6 +21,7 @@
 #include "envoy/thread_local/thread_local.h"
 #include "src/envoy/http/jwt_auth/config.pb.h"
 #include "src/envoy/http/jwt_auth/pubkey_cache.h"
+#include "src/envoy/http/jwt_auth/token_extractor.h"
 
 namespace Envoy {
 namespace Http {
@@ -33,7 +34,7 @@ class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
  public:
   // Load the config from envoy config.
   JwtAuthStore(const Config::AuthFilterConfig& config)
-      : config_(config), pubkey_cache_(config_) {}
+      : config_(config), pubkey_cache_(config_), token_extractor_(config_) {}
 
   // Get the Config.
   const Config::AuthFilterConfig& config() const { return config_; }
@@ -41,11 +42,16 @@ class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
   // Get the pubkey cache.
   PubkeyCache& pubkey_cache() { return pubkey_cache_; }
 
+  // Get the private token extractor.
+  const JwtTokenExtractor& token_extractor() const { return token_extractor_; }
+
  private:
   // Store the config.
   const Config::AuthFilterConfig& config_;
   // The public key cache, indexed by issuer.
   PubkeyCache pubkey_cache_;
+  // The object to extract token.
+  JwtTokenExtractor token_extractor_;
 };
 
 // The factory to create per-thread auth store object.

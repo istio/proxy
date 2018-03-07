@@ -33,9 +33,6 @@ enum class Status {
   // JWT token is required.
   JWT_MISSED,
 
-  // Authorization header value doesn't have Bearer prefix.
-  BEARER_PREFIX_MISMATCH,
-
   // Token expired.
   JWT_EXPIRED,
 
