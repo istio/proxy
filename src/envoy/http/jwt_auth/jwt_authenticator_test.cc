@@ -211,6 +211,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWT) {
               "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVz"
               "dEBleGFtcGxlLmNvbSIsImF1ZCI6ImV4YW1wbGVfc2VydmljZSIs"
               "ImV4cCI6MjAwMTAwMTAwMX0");
+    // Verify the token is removed.
+    EXPECT_FALSE(headers.Authorization());
   }
 }
 

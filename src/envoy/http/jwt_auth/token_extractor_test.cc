@@ -112,6 +112,10 @@ TEST_F(JwtTokenExtractorTest, TestDefaultHeaderLocation) {
   EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer3"));
   EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer4"));
   EXPECT_FALSE(tokens[0]->IsIssuerAllowed("unknown_issuer"));
+
+  // Test token remove
+  tokens[0]->Remove(&headers);
+  EXPECT_FALSE(headers.Authorization());
 }
 
 TEST_F(JwtTokenExtractorTest, TestDefaultParamLocation) {
@@ -142,6 +146,10 @@ TEST_F(JwtTokenExtractorTest, TestCustomHeaderToken) {
   EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer3"));
   EXPECT_TRUE(tokens[0]->IsIssuerAllowed("issuer4"));
   EXPECT_FALSE(tokens[0]->IsIssuerAllowed("unknown_issuer"));
+
+  // Test token remove
+  tokens[0]->Remove(&headers);
+  EXPECT_FALSE(headers.get(LowerCaseString("token-header")));
 }
 
 TEST_F(JwtTokenExtractorTest, TestCustomParamToken) {

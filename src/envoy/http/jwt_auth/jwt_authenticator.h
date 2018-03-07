@@ -72,6 +72,8 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
   JwtAuthStore& store_;
   // The JWT object.
   std::unique_ptr<JwtAuth::Jwt> jwt_;
+  // The token data
+  std::unique_ptr<JwtTokenExtractor::Token> token_;
 
   // The HTTP request headers
   HeaderMap* headers_{};

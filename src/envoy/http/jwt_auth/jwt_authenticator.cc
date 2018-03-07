@@ -72,7 +72,9 @@ void JwtAuthenticator::Verify(HeaderMap& headers,
   }
 
   // Only take the first one now.
-  jwt_.reset(new Jwt(tokens[0]->token()));
+  token_.swap(tokens[0]);
+
+  jwt_.reset(new Jwt(token_->token()));
   if (jwt_->GetStatus() != Status::OK) {
     DoneWithStatus(jwt_->GetStatus());
     return;
@@ -89,7 +91,7 @@ void JwtAuthenticator::Verify(HeaderMap& headers,
   }
 
   // Check if token is extracted from the location specified by the issuer.
-  if (!tokens[0]->IsIssuerAllowed(jwt_->Iss())) {
+  if (!token_->IsIssuerAllowed(jwt_->Iss())) {
     ENVOY_LOG(debug, "Token for issuer {} did not specify extract location",
               jwt_->Iss());
     DoneWithStatus(Status::JWT_UNKNOWN_ISSUER);
@@ -196,7 +198,7 @@ void JwtAuthenticator::VerifyKey(const JwtAuth::Pubkeys& pubkey) {
   headers_->addReferenceKey(kJwtPayloadKey, jwt_->PayloadStrBase64Url());
 
   // Remove JWT from headers.
-  headers_->removeAuthorization();
+  token_->Remove(headers_);
   DoneWithStatus(Status::OK);
 }
 

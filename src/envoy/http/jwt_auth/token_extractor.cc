@@ -36,7 +36,7 @@ JwtTokenExtractor::JwtTokenExtractor(const Config::AuthFilterConfig& config) {
     if (jwt.jwt_headers_size() > 0) {
       use_default = false;
       for (const std::string& header : jwt.jwt_headers()) {
-        auto& issuers = header_maps_[header];
+        auto& issuers = header_maps_[LowerCaseString(header)];
         issuers.insert(jwt.issuer());
       }
     }
@@ -68,7 +68,7 @@ void JwtTokenExtractor::Extract(
       const HeaderString& value = entry->value();
       if (StringUtil::startsWith(value.c_str(), kBearerPrefix, true)) {
         tokens->emplace_back(new Token(value.c_str() + kBearerPrefix.length(),
-                                       authorization_issuers_));
+                                       authorization_issuers_, true, nullptr));
         // Only take the first one.
         return;
       }
@@ -77,11 +77,11 @@ void JwtTokenExtractor::Extract(
 
   // Check header first
   for (const auto& header_it : header_maps_) {
-    const HeaderEntry* entry = headers.get(LowerCaseString(header_it.first));
+    const HeaderEntry* entry = headers.get(header_it.first);
     if (entry) {
       tokens->emplace_back(
           new Token(std::string(entry->value().c_str(), entry->value().size()),
-                    header_it.second));
+                    header_it.second, false, &header_it.first));
       // Only take the first one.
       return;
     }
@@ -96,7 +96,8 @@ void JwtTokenExtractor::Extract(
   for (const auto& param_it : param_maps_) {
     const auto& it = params.find(param_it.first);
     if (it != params.end()) {
-      tokens->emplace_back(new Token(it->second, param_it.second));
+      tokens->emplace_back(
+          new Token(it->second, param_it.second, false, nullptr));
       // Only take the first one.
       return;
     }
