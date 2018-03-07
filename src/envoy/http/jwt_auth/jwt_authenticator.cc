@@ -201,7 +201,7 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
     // Remove JWT from headers.
     token_->Remove(headers_);
   }
-  
+
   DoneWithStatus(Status::OK);
 }
 
