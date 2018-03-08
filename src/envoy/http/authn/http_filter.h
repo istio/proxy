@@ -20,6 +20,7 @@
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "src/envoy/http/authn/filter_context.h"
+#include "src/envoy/http/jwt_auth/auth_store.h"
 
 namespace Envoy {
 namespace Http {
@@ -30,7 +31,11 @@ namespace AuthN {
 class AuthenticationFilter : public StreamDecoderFilter,
                              public Logger::Loggable<Logger::Id::filter> {
  public:
-  AuthenticationFilter(const istio::authentication::v1alpha1::Policy& config);
+  AuthenticationFilter(
+      const istio::authentication::v1alpha1::Policy& config,
+      Upstream::ClusterManager& cm,
+      std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store);
+
   ~AuthenticationFilter();
 
   // Http::StreamFilterBase
@@ -77,6 +82,12 @@ class AuthenticationFilter : public StreamDecoderFilter,
   const istio::authentication::v1alpha1::Policy& policy_;
 
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
+
+  // ClusterManager reference
+  Upstream::ClusterManager& cm_;
+
+  // The JwtAuthnStore reference
+  std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store_;
 
   enum State { INIT, PROCESSING, COMPLETE, REJECTED };
   // Holds the state of the filter.

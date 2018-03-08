@@ -32,8 +32,10 @@ const LowerCaseString AuthenticationFilter::kOutputHeaderLocation(
     "sec-istio-authn-payload");
 
 AuthenticationFilter::AuthenticationFilter(
-    const istio::authentication::v1alpha1::Policy& policy)
-    : policy_(policy) {}
+    const istio::authentication::v1alpha1::Policy& policy,
+    Upstream::ClusterManager& cm,
+    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store)
+    : policy_(policy), cm_(cm), jwt_store_(jwt_store) {}
 
 AuthenticationFilter::~AuthenticationFilter() {}
 
@@ -143,7 +145,7 @@ AuthenticationFilter::createPeerAuthenticator(
     Istio::AuthN::FilterContext* filter_context,
     const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
   return std::make_unique<Istio::AuthN::PeerAuthenticator>(
-      filter_context, done_callback, policy_);
+      filter_context, done_callback, cm_, jwt_store_, policy_);
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>
@@ -153,7 +155,7 @@ AuthenticationFilter::createOriginAuthenticator(
   const auto& rule = Istio::AuthN::findCredentialRuleOrDefault(
       policy_, filter_context_->authenticationResult().peer_user());
   return std::make_unique<Istio::AuthN::OriginAuthenticator>(
-      filter_context, done_callback, rule);
+      filter_context, done_callback, cm_, jwt_store_, rule);
 }
 
 }  // namespace AuthN

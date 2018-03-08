@@ -14,9 +14,8 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
-#include "src/envoy/http/authn/filter_context.h"
+#include "src/envoy/http/authn/jwt_authn_utils.h"
 #include "src/envoy/http/authn/mtls_authentication.h"
-#include "src/envoy/utils/utils.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
 
@@ -42,8 +41,13 @@ bool isRuleMatchedWithPeer(const iaapi::CredentialRule& rule,
 
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
-    const AuthenticatorBase::DoneCallback& done_callback)
-    : filter_context_(*filter_context), done_callback_(done_callback) {}
+    const AuthenticatorBase::DoneCallback& done_callback,
+    Upstream::ClusterManager& cm,
+    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store)
+    : filter_context_(*filter_context),
+      done_callback_(done_callback),
+      cm_(cm),
+      jwt_store_(jwt_store) {}
 
 AuthenticatorBase::~AuthenticatorBase() {}
 
@@ -76,12 +80,44 @@ void AuthenticatorBase::validateX509(
 }
 
 void AuthenticatorBase::validateJwt(
-    const iaapi::Jwt&,
-    const AuthenticatorBase::MethodDoneCallback& done_callback) const {
-  Payload payload;
-  // TODO (diemtvu/lei-tang): construct jwt_authenticator and call Verify;
-  // pass done_callback so that it would be trigger by jwt_authenticator.onDone.
-  done_callback(&payload, false);
+    const iaapi::Jwt& jwt,
+    const AuthenticatorBase::MethodDoneCallback& done_callback) {
+  Http::JwtAuth::Config::AuthFilterConfig proto_config;
+  Envoy::Http::Istio::AuthN::convertJwtAuthFormat(jwt, &proto_config);
+
+  std::string config_str;
+  proto_config.SerializeToString(&config_str);
+  if (jwt_store_.find(config_str) == jwt_store_.end()) {
+    ENVOY_LOG(error, "{}: the JWT config is not found: {}", __FUNCTION__,
+              proto_config.DebugString());
+    done_callback(nullptr, false);
+    return;
+  }
+
+  // Choose the JwtAuthStore based on the Jwt config.
+  jwt_auth_.reset(
+      new Http::JwtAuth::JwtAuthenticator(cm_, *jwt_store_[config_str]));
+
+  // Record done_callback so that it would be trigger by
+  // jwt_authenticator.onDone.
+  jwt_done_callback_ = &done_callback;
+
+  // Verify the JWT token, onDone() will be called when completed.
+  jwt_auth_->Verify(*filter_context()->headers(), this);
+}
+
+void AuthenticatorBase::onDone(const JwtAuth::Status& status) {
+  ENVOY_LOG(debug, "AuthenticatorBase::onDone is called with status {}",
+            int(status));
+  if (status != JwtAuth::Status::OK) {
+    (*jwt_done_callback_)(&payload_, false);
+  } else {
+    // TODO (lei-tang): Adding other JWT attributes (i.e jwt sub, claims) to
+    // payload
+    ENVOY_LOG(debug, "AuthenticatorBase::onDone JwtAuth returns OK.");
+    (*jwt_done_callback_)(&payload_, true);
+  }
+  jwt_done_callback_ = nullptr;
 }
 
 const iaapi::CredentialRule& findCredentialRuleOrDefault(

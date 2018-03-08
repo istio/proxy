@@ -28,6 +28,8 @@ class PeerAuthenticator : public AuthenticatorBase {
  public:
   PeerAuthenticator(FilterContext* filter_context,
                     const DoneCallback& done_callback,
+                    Upstream::ClusterManager& cm,
+                    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store,
                     const istio::authentication::v1alpha1::Policy& policy);
 
   void run() override;

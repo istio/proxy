@@ -28,6 +28,8 @@ class OriginAuthenticator : public AuthenticatorBase {
  public:
   OriginAuthenticator(
       FilterContext* filter_context, const DoneCallback& done_callback,
+      Upstream::ClusterManager& cm,
+      std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store,
       const istio::authentication::v1alpha1::CredentialRule& credential_rule);
 
   void run() override;
@@ -49,6 +51,9 @@ class OriginAuthenticator : public AuthenticatorBase {
   // Internal variable to keep track which (origin) authentication methods have
   // been tried.
   int method_index_{0};
+
+  // Callback invoked by runMethod
+  std::unique_ptr<AuthenticatorBase::MethodDoneCallback> callbackForRunMethod;
 };
 
 }  // namespace AuthN

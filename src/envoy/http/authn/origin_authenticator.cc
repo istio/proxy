@@ -25,8 +25,10 @@ namespace AuthN {
 
 OriginAuthenticator::OriginAuthenticator(
     FilterContext* filter_context, const DoneCallback& done_callback,
+    Upstream::ClusterManager& cm,
+    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store,
     const iaapi::CredentialRule& credential_rule)
-    : AuthenticatorBase(filter_context, done_callback),
+    : AuthenticatorBase(filter_context, done_callback, cm, jwt_store),
       credential_rule_(credential_rule) {}
 
 void OriginAuthenticator::run() {
@@ -56,10 +58,22 @@ void OriginAuthenticator::run() {
     }
     return;
   }
-  runMethod(credential_rule_.origins(0),
-            [this](const Payload* payload, bool success) {
-              onMethodDone(payload, success);
-            });
+  // Note to explain the change (the note will be removed after the code review)
+  // The callback variable in runMethod() is a temporary variable and will be
+  // de-allocated after runMethod() returns.
+  // When the callback is later invoked on the reference of the temporary
+  // callback variable, it causes segmentation fault.
+  //
+  //  runMethod(credential_rule_.origins(0), [this](const Payload* payload,
+  //                                                bool success) {
+  //    onMethodDone(payload, success);
+  //  });
+  // Changed into the following:
+  callbackForRunMethod.reset(new AuthenticatorBase::MethodDoneCallback(
+      [this](const Payload* payload, bool success) {
+        onMethodDone(payload, success);
+      }));
+  runMethod(credential_rule_.origins(0), *callbackForRunMethod.get());
 }
 
 void OriginAuthenticator::runMethod(
@@ -70,6 +84,8 @@ void OriginAuthenticator::runMethod(
 
 void OriginAuthenticator::onMethodDone(const Payload* payload, bool success) {
   if (!success && method_index_ + 1 < credential_rule_.origins_size()) {
+    ENVOY_LOG(debug, "{}: success is false, method_index is {}", __FUNCTION__,
+              method_index_);
     // Authentication fail, try the next method, if available.
     method_index_++;
     runMethod(credential_rule_.origins(method_index_),
@@ -80,6 +96,8 @@ void OriginAuthenticator::onMethodDone(const Payload* payload, bool success) {
   }
 
   if (success) {
+    ENVOY_LOG(debug, "{}: success is true, method_index is {}", __FUNCTION__,
+              method_index_);
     filter_context()->setOriginResult(payload);
     filter_context()->setPrincipal(credential_rule_.binding());
   }

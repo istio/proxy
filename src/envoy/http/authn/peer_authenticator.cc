@@ -27,8 +27,11 @@ namespace AuthN {
 PeerAuthenticator::PeerAuthenticator(
     FilterContext* filter_context,
     const AuthenticatorBase::DoneCallback& done_callback,
+    Upstream::ClusterManager& cm,
+    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store,
     const iaapi::Policy& policy)
-    : AuthenticatorBase(filter_context, done_callback), policy_(policy) {}
+    : AuthenticatorBase(filter_context, done_callback, cm, jwt_store),
+      policy_(policy) {}
 
 void PeerAuthenticator::run() {
   if (policy_.peers_size() == 0) {
