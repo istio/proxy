@@ -21,6 +21,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 
 PeerAuthenticator::PeerAuthenticator(
     FilterContext* filter_context,
@@ -33,9 +34,9 @@ void PeerAuthenticator::run() {
     ENVOY_LOG(debug, "No method defined. Skip source authentication.");
     onMethodDone(nullptr, true);
   } else {
-    runMethod(policy_.peers(0),
-              std::bind(&PeerAuthenticator::onMethodDone, this,
-                        std::placeholders::_1, std::placeholders::_2));
+    runMethod(policy_.peers(0), [this](const Payload* payload, bool success) {
+      onMethodDone(payload, success);
+    });
   }
 }
 
@@ -56,14 +57,14 @@ void PeerAuthenticator::runMethod(const iaapi::PeerAuthenticationMethod& method,
                 method.DebugString());
   }
 }
-void PeerAuthenticator::onMethodDone(const IstioAuthN::Payload* payload,
-                                     bool success) {
+void PeerAuthenticator::onMethodDone(const Payload* payload, bool success) {
   if (!success && peer_method_index_ + 1 < policy_.peers_size()) {
     // Authentication fails, try next one if available.
     peer_method_index_++;
     runMethod(policy_.peers(peer_method_index_),
-              std::bind(&PeerAuthenticator::onMethodDone, this,
-                        std::placeholders::_1, std::placeholders::_2));
+              [this](const Payload* payload, bool success) {
+                onMethodDone(payload, success);
+              });
     return;
   }
 
@@ -73,5 +74,6 @@ void PeerAuthenticator::onMethodDone(const IstioAuthN::Payload* payload,
   done(success);
 }
 
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

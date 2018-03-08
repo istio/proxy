@@ -41,10 +41,9 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
 
   setHeaders(&headers);
 
-  peer_authenticator_.reset(createPeerAuthenticator(
-      this, std::bind(&AuthenticationFilter::onPeerAuthenticationDone, this,
-                      std::placeholders::_1)));
-  peer_authenticator_->run();
+  authenticator_.reset(createPeerAuthenticator(
+      this, [this](bool success) { onPeerAuthenticationDone(success); }));
+  authenticator_->run();
 
   if (state_ == IstioAuthN::State::COMPLETE) {
     return FilterHeadersStatus::Continue;
@@ -61,10 +60,9 @@ const Network::Connection* AuthenticationFilter::connection() const {
 void AuthenticationFilter::onPeerAuthenticationDone(bool success) {
   ENVOY_LOG(debug, "{}: success = {}", __func__, success);
   if (success) {
-    origin_authenticator_.reset(createOriginAuthenticator(
-        this, std::bind(&AuthenticationFilter::onOriginAuthenticationDone, this,
-                        std::placeholders::_1)));
-    origin_authenticator_->run();
+    authenticator_.reset(createOriginAuthenticator(
+        this, [this](bool success) { onOriginAuthenticationDone(success); }));
+    authenticator_->run();
   } else {
     rejectRequest("Peer authentication failed.");
   }
@@ -121,18 +119,20 @@ void AuthenticationFilter::rejectRequest(const std::string& message) {
                           message);
 }
 
-AuthenticatorBase* AuthenticationFilter::createPeerAuthenticator(
-    FilterContext* filter_context,
-    const AuthenticatorBase::DoneCallback& done_callback) {
-  return new PeerAuthenticator(filter_context, done_callback, policy_);
+IstioAuthN::AuthenticatorBase* AuthenticationFilter::createPeerAuthenticator(
+    IstioAuthN::FilterContext* filter_context,
+    const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback) {
+  return new IstioAuthN::PeerAuthenticator(filter_context, done_callback,
+                                           policy_);
 }
 
-AuthenticatorBase* AuthenticationFilter::createOriginAuthenticator(
-    FilterContext* filter_context,
-    const AuthenticatorBase::DoneCallback& done_callback) {
-  const auto& rule =
-      findCredentialRuleOrDefault(policy_, authenticationResult().peer_user());
-  return new OriginAuthenticator(filter_context, done_callback, rule);
+IstioAuthN::AuthenticatorBase* AuthenticationFilter::createOriginAuthenticator(
+    IstioAuthN::FilterContext* filter_context,
+    const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback) {
+  const auto& rule = IstioAuthN::findCredentialRuleOrDefault(
+      policy_, authenticationResult().peer_user());
+  return new IstioAuthN::OriginAuthenticator(filter_context, done_callback,
+                                             rule);
 }
 
 }  // namespace Http

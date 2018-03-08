@@ -23,6 +23,7 @@
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 
 // AuthenticatorBase is the base class for authenticator. It provides functions
 // to perform individual authentication methods, which can be used to construct
@@ -30,8 +31,7 @@ namespace Http {
 class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
  public:
   // Callback type for individual authentication method.
-  typedef std::function<void(const IstioAuthN::Payload*, bool)>
-      MethodDoneCallback;
+  typedef std::function<void(const Payload*, bool)> MethodDoneCallback;
 
   // Callback type for the whole authenticator.
   typedef std::function<void(bool)> DoneCallback;
@@ -77,5 +77,6 @@ findCredentialRuleOrDefault(
     const istio::authentication::v1alpha1::Policy& policy,
     const std::string& peer_id);
 
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

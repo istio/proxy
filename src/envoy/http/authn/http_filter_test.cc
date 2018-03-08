@@ -21,6 +21,8 @@
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "test/mocks/http/mocks.h"
 
+using Envoy::Http::IstioAuthN::AuthenticatorBase;
+using Envoy::Http::IstioAuthN::FilterContext;
 using testing::_;
 using testing::Invoke;
 using testing::NiceMock;

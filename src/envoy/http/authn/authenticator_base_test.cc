@@ -31,6 +31,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 namespace {
 
 class TestAuthenticatorBase : public AuthenticatorBase {
@@ -46,14 +47,12 @@ class AuthenticatorBaseTest : public testing::Test {
   ~AuthenticatorBaseTest() {}
 
   void SetUp() override {
-    filter_context_.reset(
-        new StrictMock<AuthNTestUtilities::MockFilterContext>);
+    filter_context_.reset(new StrictMock<MockFilterContext>);
     filter_context_->setHeaders(&request_headers_);
     authenticator_.reset(new TestAuthenticatorBase(filter_context_.get()));
   }
 
-  std::unique_ptr<StrictMock<AuthNTestUtilities::MockFilterContext>>
-      filter_context_;
+  std::unique_ptr<StrictMock<MockFilterContext>> filter_context_;
   std::unique_ptr<AuthenticatorBase> authenticator_;
   Http::TestHeaderMapImpl request_headers_;
   NiceMock<Envoy::Network::MockConnection> connection_;
@@ -64,12 +63,11 @@ TEST_F(AuthenticatorBaseTest, ValidateX509) {
   EXPECT_CALL(*filter_context_, connection())
       .Times(1)
       .WillOnce(Return(&connection_));
-  authenticator_->validateX509(
-      mTlsParams,
-      [](std::unique_ptr<IstioAuthN::Payload> payload, bool success) {
-        EXPECT_FALSE(payload);
-        EXPECT_FALSE(success);
-      });
+  authenticator_->validateX509(mTlsParams,
+                               [](const Payload* payload, bool success) {
+                                 EXPECT_FALSE(payload);
+                                 EXPECT_FALSE(success);
+                               });
 }
 
 // TODO: more tests for other cases of x509 and Jwt.
@@ -158,5 +156,6 @@ TEST(FindCredentialRuleTest, WithOutMatchingPeer) {
 }
 
 }  // namespace
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

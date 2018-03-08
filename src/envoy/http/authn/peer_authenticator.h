@@ -20,6 +20,7 @@
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 
 class PeerAuthenticator : public AuthenticatorBase {
  public:
@@ -33,12 +34,13 @@ class PeerAuthenticator : public AuthenticatorBase {
   void runMethod(
       const istio::authentication::v1alpha1::PeerAuthenticationMethod& method,
       const MethodDoneCallback& done_callback);
-  void onMethodDone(const IstioAuthN::Payload* payload, bool success);
+  void onMethodDone(const Payload* payload, bool success);
 
  private:
   const istio::authentication::v1alpha1::Policy& policy_;
   int peer_method_index_{0};
 };
 
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

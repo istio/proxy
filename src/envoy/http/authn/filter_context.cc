@@ -20,11 +20,12 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 
 FilterContext::FilterContext() {}
 FilterContext::~FilterContext() {}
 
-void FilterContext::setPeerResult(const IstioAuthN::Payload* payload) {
+void FilterContext::setPeerResult(const Payload* payload) {
   if (payload != nullptr) {
     if (payload->has_x509()) {
       result_.set_peer_user(payload->x509().user());
@@ -37,7 +38,7 @@ void FilterContext::setPeerResult(const IstioAuthN::Payload* payload) {
     }
   }
 }
-void FilterContext::setOriginResult(const IstioAuthN::Payload* payload) {
+void FilterContext::setOriginResult(const Payload* payload) {
   // Authentication pass, look at the return payload and store to the context
   // output. Set filter to continueDecoding when done.
   // At the moment, only JWT can be used for origin authentication, so
@@ -63,15 +64,9 @@ void FilterContext::setPrincipal(iaapi::CredentialRule::Binding binding) {
 }
 
 void FilterContext::setHeaders(HeaderMap* headers) { headers_ = headers; }
+
 HeaderMap* FilterContext::headers() { return headers_; }
 
-// void FilterContext::setAuthenticator(
-//     std::unique_ptr<AuthenticatorBase> authenticator) {
-//   authenticator_ = std::move(authenticator);
-// }
-// AuthenticatorBase* FilterContext::authenticator() {
-//   return authenticator_.get();
-// }
-
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

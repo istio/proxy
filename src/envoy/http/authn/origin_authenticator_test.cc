@@ -35,6 +35,7 @@ using testing::StrictMock;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 namespace {
 
 const char kSingleMethodRule[] = R"(
@@ -95,8 +96,8 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
 
   void SetUp() override {
     filter_context_.setHeaders(&request_headers_);
-    jwt_payload_ = AuthNTestUtilities::CreateJwtPayload("foo", "istio.io");
-    expected_result_when_pass_ = AuthNTestUtilities::AuthNResultFromString(R"(
+    jwt_payload_ = CreateJwtPayload("foo", "istio.io");
+    expected_result_when_pass_ = AuthNResultFromString(R"(
       principal: "foo"
       origin {
         user: "foo"
@@ -105,7 +106,7 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
     )");
     set_peer_ = GetParam();
     if (set_peer_) {
-      auto peer_result = AuthNTestUtilities::CreateX509Payload("bar");
+      auto peer_result = CreateX509Payload("bar");
       filter_context_.setPeerResult(peer_result.get());
       expected_result_when_pass_.set_peer_user("bar");
     }
@@ -119,18 +120,18 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
 
  protected:
   std::unique_ptr<StrictMock<MockAuthenticator>> authenticator_;
-  StrictMock<AuthNTestUtilities::MockFilterContext> filter_context_;
+  StrictMock<MockFilterContext> filter_context_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
   iaapi::CredentialRule rule_;
 
   // Mock response payload.
-  std::unique_ptr<IstioAuthN::Payload> jwt_payload_;
+  std::unique_ptr<Payload> jwt_payload_;
   // Expected result (when authentication pass with mock payload above)
-  IstioAuthN::Result expected_result_when_pass_;
+  Result expected_result_when_pass_;
   // Copy of authN result (from filter context) before running authentication.
   // This should be the expected result if authn fail or do nothing.
-  IstioAuthN::Result initial_result_;
+  Result initial_result_;
 
   // Indicates peer is set in the authN result before running. This is set from
   // test GetParam()
@@ -249,5 +250,6 @@ INSTANTIATE_TEST_CASE_P(OriginAuthenticatorTests, OriginAuthenticatorTest,
                         testing::Bool());
 
 }  // namespace
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

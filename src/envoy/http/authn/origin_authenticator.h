@@ -20,6 +20,7 @@
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 
 class OriginAuthenticator : public AuthenticatorBase {
  public:
@@ -34,12 +35,13 @@ class OriginAuthenticator : public AuthenticatorBase {
       const istio::authentication::v1alpha1::OriginAuthenticationMethod& method,
       const MethodDoneCallback& callback);
 
-  void onMethodDone(const IstioAuthN::Payload* payload, bool success);
+  void onMethodDone(const Payload* payload, bool success);
 
  private:
   const istio::authentication::v1alpha1::CredentialRule& credential_rule_;
   int method_index_{0};
 };
 
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

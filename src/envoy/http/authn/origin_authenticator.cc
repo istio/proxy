@@ -20,6 +20,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 
 OriginAuthenticator::OriginAuthenticator(
     FilterContext* filter_context, const DoneCallback& done_callback,
@@ -55,8 +56,9 @@ void OriginAuthenticator::run() {
     return;
   }
   runMethod(credential_rule_.origins(0),
-            std::bind(&OriginAuthenticator::onMethodDone, this,
-                      std::placeholders::_1, std::placeholders::_2));
+            [this](const Payload* payload, bool success) {
+              onMethodDone(payload, success);
+            });
 }
 
 void OriginAuthenticator::runMethod(
@@ -65,14 +67,14 @@ void OriginAuthenticator::runMethod(
   validateJwt(method.jwt(), callback);
 }
 
-void OriginAuthenticator::onMethodDone(const IstioAuthN::Payload* payload,
-                                       bool success) {
+void OriginAuthenticator::onMethodDone(const Payload* payload, bool success) {
   if (!success && method_index_ + 1 < credential_rule_.origins_size()) {
     // Authentication fail, try the next method, if available.
     method_index_++;
     runMethod(credential_rule_.origins(method_index_),
-              std::bind(&OriginAuthenticator::onMethodDone, this,
-                        std::placeholders::_1, std::placeholders::_2));
+              [this](const Payload* payload, bool success) {
+                onMethodDone(payload, success);
+              });
     return;
   }
 
@@ -83,5 +85,6 @@ void OriginAuthenticator::onMethodDone(const IstioAuthN::Payload* payload,
   done(success);
 }
 
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

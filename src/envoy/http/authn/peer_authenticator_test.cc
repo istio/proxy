@@ -35,6 +35,7 @@ using testing::StrictMock;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 namespace {
 
 class MockAuthenticator : public PeerAuthenticator {
@@ -59,8 +60,8 @@ class PeerAuthenticatorTest : public testing::Test {
   void SetUp() override {
     filter_context_.setHeaders(&request_headers_);
 
-    x509_payload_ = AuthNTestUtilities::CreateX509Payload("foo");
-    jwt_payload_ = AuthNTestUtilities::CreateJwtPayload("foo", "istio.io");
+    x509_payload_ = CreateX509Payload("foo");
+    jwt_payload_ = CreateJwtPayload("foo", "istio.io");
   }
   void createAuthenticator() {
     authenticator_.reset(new StrictMock<MockAuthenticator>(
@@ -69,22 +70,21 @@ class PeerAuthenticatorTest : public testing::Test {
 
  protected:
   std::unique_ptr<StrictMock<MockAuthenticator>> authenticator_;
-  StrictMock<AuthNTestUtilities::MockFilterContext> filter_context_;
+  StrictMock<MockFilterContext> filter_context_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
   iaapi::Policy policy_;
 
-  std::unique_ptr<IstioAuthN::Payload> x509_payload_;
-  std::unique_ptr<IstioAuthN::Payload> jwt_payload_;
+  std::unique_ptr<Payload> x509_payload_;
+  std::unique_ptr<Payload> jwt_payload_;
 };
 
 TEST_F(PeerAuthenticatorTest, EmptyPolicy) {
   createAuthenticator();
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(""),
-                              filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(""),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
@@ -102,9 +102,9 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
       .WillOnce(testing::InvokeArgument<1>(x509_payload_.get(), true));
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(TestUtility::protoEqual(
-      AuthNTestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(AuthNResultFromString(R"(peer_user: "foo")"),
+                              filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
@@ -122,9 +122,8 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
       .WillOnce(testing::InvokeArgument<1>(x509_payload_.get(), false));
   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(""),
-                              filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(""),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
@@ -143,9 +142,9 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
       .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(TestUtility::protoEqual(
-      AuthNTestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(AuthNResultFromString(R"(peer_user: "foo")"),
+                              filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
@@ -164,9 +163,8 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
       .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), false));
   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(""),
-                              filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(""),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, Multiple) {
@@ -196,9 +194,9 @@ TEST_F(PeerAuthenticatorTest, Multiple) {
       .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(TestUtility::protoEqual(
-      AuthNTestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(AuthNResultFromString(R"(peer_user: "foo")"),
+                              filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
@@ -228,11 +226,11 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
       .WillRepeatedly(testing::InvokeArgument<1>(nullptr, false));
   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(""),
-                              filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(""),
+                                      filter_context_.authenticationResult()));
 }
 
 }  // namespace
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

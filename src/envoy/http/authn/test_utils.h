@@ -21,18 +21,17 @@
 
 namespace Envoy {
 namespace Http {
-namespace AuthNTestUtilities {
+namespace IstioAuthN {
 
-std::unique_ptr<IstioAuthN::Payload> CreateX509Payload(
-    const std::string& user) {
-  std::unique_ptr<IstioAuthN::Payload> payload(new IstioAuthN::Payload);
+std::unique_ptr<Payload> CreateX509Payload(const std::string& user) {
+  std::unique_ptr<Payload> payload(new Payload);
   payload->mutable_x509()->set_user(user);
   return payload;
 }
 
-std::unique_ptr<IstioAuthN::Payload> CreateJwtPayload(
-    const std::string& user, const std::string& presenter) {
-  std::unique_ptr<IstioAuthN::Payload> payload(new IstioAuthN::Payload);
+std::unique_ptr<Payload> CreateJwtPayload(const std::string& user,
+                                          const std::string& presenter) {
+  std::unique_ptr<Payload> payload(new Payload);
   payload->mutable_jwt()->set_user(user);
   if (!presenter.empty()) {
     payload->mutable_jwt()->set_presenter(presenter);
@@ -40,8 +39,8 @@ std::unique_ptr<IstioAuthN::Payload> CreateJwtPayload(
   return payload;
 }
 
-IstioAuthN::Result AuthNResultFromString(const std::string& text) {
-  IstioAuthN::Result result;
+Result AuthNResultFromString(const std::string& text) {
+  Result result;
   EXPECT_TRUE(Protobuf::TextFormat::ParseFromString(text, &result));
   return result;
 }
@@ -52,6 +51,6 @@ class MockFilterContext : public FilterContext {
   MOCK_CONST_METHOD0(connection, Network::Connection*());
 };
 
-}  // namespace AuthNTestUtilities
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

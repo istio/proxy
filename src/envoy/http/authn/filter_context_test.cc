@@ -26,6 +26,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 namespace {
 
 class FilterContextTest : public testing::Test {
@@ -34,59 +35,48 @@ class FilterContextTest : public testing::Test {
   ~FilterContextTest() {}
 
   void SetUp() override {
-    filter_context_.reset(
-        new StrictMock<AuthNTestUtilities::MockFilterContext>);
+    filter_context_.reset(new StrictMock<MockFilterContext>);
   }
 
-  std::unique_ptr<StrictMock<AuthNTestUtilities::MockFilterContext>>
-      filter_context_;
+  std::unique_ptr<StrictMock<MockFilterContext>> filter_context_;
 };
 
 TEST_F(FilterContextTest, SetPeerResult) {
-  filter_context_->setPeerResult(
-      AuthNTestUtilities::CreateX509Payload("foo").get());
-  EXPECT_TRUE(TestUtility::protoEqual(
-      AuthNTestUtilities::AuthNResultFromString("peer_user: \"foo\""),
-      filter_context_->authenticationResult()));
+  filter_context_->setPeerResult(CreateX509Payload("foo").get());
+  EXPECT_TRUE(
+      TestUtility::protoEqual(AuthNResultFromString("peer_user: \"foo\""),
+                              filter_context_->authenticationResult()));
 }
 
 TEST_F(FilterContextTest, SetOriginResult) {
-  filter_context_->setOriginResult(
-      AuthNTestUtilities::CreateJwtPayload("bar", "istio.io").get());
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(R"(
+  filter_context_->setOriginResult(CreateJwtPayload("bar", "istio.io").get());
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
         }
       )"),
-                              filter_context_->authenticationResult()));
+                                      filter_context_->authenticationResult()));
 }
 
 TEST_F(FilterContextTest, SetBoth) {
-  filter_context_->setPeerResult(
-      AuthNTestUtilities::CreateX509Payload("foo").get());
-  filter_context_->setOriginResult(
-      AuthNTestUtilities::CreateJwtPayload("bar", "istio.io").get());
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(R"(
+  filter_context_->setPeerResult(CreateX509Payload("foo").get());
+  filter_context_->setOriginResult(CreateJwtPayload("bar", "istio.io").get());
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
         peer_user: "foo"
         origin {
           user: "bar"
           presenter: "istio.io"
         }
       )"),
-                              filter_context_->authenticationResult()));
+                                      filter_context_->authenticationResult()));
 }
 
 TEST_F(FilterContextTest, UseOrigin) {
-  filter_context_->setPeerResult(
-      AuthNTestUtilities::CreateX509Payload("foo").get());
-  filter_context_->setOriginResult(
-      AuthNTestUtilities::CreateJwtPayload("bar", "istio.io").get());
+  filter_context_->setPeerResult(CreateX509Payload("foo").get());
+  filter_context_->setOriginResult(CreateJwtPayload("bar", "istio.io").get());
   filter_context_->setPrincipal(iaapi::CredentialRule::USE_ORIGIN);
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
         principal: "bar"
         peer_user: "foo"
         origin {
@@ -94,46 +84,41 @@ TEST_F(FilterContextTest, UseOrigin) {
           presenter: "istio.io"
         }
       )"),
-                              filter_context_->authenticationResult()));
+                                      filter_context_->authenticationResult()));
 }
 
 TEST_F(FilterContextTest, UseOriginOnEmptyOrigin) {
-  filter_context_->setPeerResult(
-      AuthNTestUtilities::CreateX509Payload("foo").get());
+  filter_context_->setPeerResult(CreateX509Payload("foo").get());
   filter_context_->setPrincipal(iaapi::CredentialRule::USE_ORIGIN);
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
         peer_user: "foo"
       )"),
-                              filter_context_->authenticationResult()));
+                                      filter_context_->authenticationResult()));
 }
 
 TEST_F(FilterContextTest, PrincipalUsePeer) {
-  filter_context_->setPeerResult(
-      AuthNTestUtilities::CreateX509Payload("foo").get());
+  filter_context_->setPeerResult(CreateX509Payload("foo").get());
   filter_context_->setPrincipal(iaapi::CredentialRule::USE_PEER);
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
         principal: "foo"
         peer_user: "foo"
       )"),
-                              filter_context_->authenticationResult()));
+                                      filter_context_->authenticationResult()));
 }
 
 TEST_F(FilterContextTest, PrincipalUsePeerOnEmptyPeer) {
-  filter_context_->setOriginResult(
-      AuthNTestUtilities::CreateJwtPayload("bar", "istio.io").get());
+  filter_context_->setOriginResult(CreateJwtPayload("bar", "istio.io").get());
   filter_context_->setPrincipal(iaapi::CredentialRule::USE_PEER);
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
         }
       )"),
-                              filter_context_->authenticationResult()));
+                                      filter_context_->authenticationResult()));
 }
 
 }  // namespace
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

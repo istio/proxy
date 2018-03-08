@@ -22,6 +22,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
+namespace IstioAuthN {
 
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
@@ -49,7 +50,7 @@ void AuthenticatorBase::validateX509(
     return;
   }
 
-  std::unique_ptr<IstioAuthN::Payload> payload(new IstioAuthN::Payload());
+  std::unique_ptr<Payload> payload(new Payload());
   if (!mtls_authn.GetSourceUser(payload->mutable_x509()->mutable_user())) {
     done_callback(payload.get(), false);
   }
@@ -61,7 +62,7 @@ void AuthenticatorBase::validateX509(
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt&,
     const AuthenticatorBase::MethodDoneCallback& done_callback) const {
-  std::unique_ptr<IstioAuthN::Payload> payload(new IstioAuthN::Payload());
+  std::unique_ptr<Payload> payload(new Payload());
   // TODO (diemtvu/lei-tang): construct jwt_authenticator and call Verify;
   // pass done_callback so that it would be trigger by jwt_authenticator.onDone.
   done_callback(payload.get(), false);
@@ -95,5 +96,6 @@ findCredentialRuleOrDefault(
   return iaapi::CredentialRule::default_instance();
 }
 
+}  // namespace IstioAuthN
 }  // namespace Http
 }  // namespace Envoy

@@ -27,7 +27,8 @@ enum State { INIT, PROCESSING, COMPLETE, REJECTED };
 }  // namespace IstioAuthN
 
 // The authentication filter.
-class AuthenticationFilter : public StreamDecoderFilter, public FilterContext {
+class AuthenticationFilter : public StreamDecoderFilter,
+                             public IstioAuthN::FilterContext {
  public:
   AuthenticationFilter(const istio::authentication::v1alpha1::Policy& config);
   ~AuthenticationFilter();
@@ -60,14 +61,14 @@ class AuthenticationFilter : public StreamDecoderFilter, public FilterContext {
 
   // Creates peer authenticator. This is made virtual function for
   // testing.
-  virtual AuthenticatorBase* createPeerAuthenticator(
-      FilterContext* filter_context,
-      const AuthenticatorBase::DoneCallback& done_callback);
+  virtual IstioAuthN::AuthenticatorBase* createPeerAuthenticator(
+      IstioAuthN::FilterContext* filter_context,
+      const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback);
 
   // Creates origin authenticator.
-  virtual AuthenticatorBase* createOriginAuthenticator(
-      FilterContext* filter_context,
-      const AuthenticatorBase::DoneCallback& done_callback);
+  virtual IstioAuthN::AuthenticatorBase* createOriginAuthenticator(
+      IstioAuthN::FilterContext* filter_context,
+      const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback);
 
  private:
   // Store the config.
@@ -82,8 +83,8 @@ class AuthenticationFilter : public StreamDecoderFilter, public FilterContext {
   // should be called.
   bool stopped_{false};
 
-  std::unique_ptr<AuthenticatorBase> peer_authenticator_;
-  std::unique_ptr<AuthenticatorBase> origin_authenticator_;
+  // Holder of authenticator so that it can be cleaned up when done.
+  std::unique_ptr<IstioAuthN::AuthenticatorBase> authenticator_;
 };
 
 }  // namespace Http
