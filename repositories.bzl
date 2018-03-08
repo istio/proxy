@@ -167,7 +167,7 @@ cc_proto_library(
     name = "authentication_policy_config_cc_proto",
     srcs = glob(
         ["authentication/v1alpha1/*.proto",
-         "routing/v1alpha2/*.proto",
+         "networking/v1alpha3/*.proto",
         ],
     ),
     default_runtime = "//external:protobuf",
