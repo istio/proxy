@@ -106,7 +106,8 @@ class PubkeyCacheItem {
     // Point beg to first character after protocol scheme prefix in audience.
     if (aud.compare(0, kHTTPSchemePrefix.length(), kHTTPSchemePrefix) == 0) {
       beg = kHTTPSchemePrefix.length();
-    } else if (aud.compare(0, kHTTPSSchemePrefix.length(), kHTTPSSchemePrefix) == 0) {
+    } else if (aud.compare(0, kHTTPSSchemePrefix.length(),
+                           kHTTPSSchemePrefix) == 0) {
       beg = kHTTPSSchemePrefix.length();
     }
     // Point end to trailing slash in aud.

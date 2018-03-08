@@ -61,28 +61,30 @@ namespace {
 
 // A good public key
 const std::string kPublicKey =
-"{\"keys\": [{"
-"  \"kty\": \"RSA\","
-"  \"n\": \"up97uqrF9MWOPaPkwSaBeuAPLOr9FKcaWGdVEGzQ4f3Zq5WKVZowx9TCBxmImNJ1q"
+    "{\"keys\": [{"
+    "  \"kty\": \"RSA\","
+    "  \"n\": "
+    "\"up97uqrF9MWOPaPkwSaBeuAPLOr9FKcaWGdVEGzQ4f3Zq5WKVZowx9TCBxmImNJ1q"
     "mUi13pB8otwM_l5lfY1AFBMxVbQCUXntLovhDaiSvYp4wGDjFzQiYA-pUq8h6MUZBnhleYrk"
     "U7XlCBwNVyN8qNMkpLA7KFZYz-486GnV2NIJJx_4BGa3HdKwQGxi2tjuQsQvao5W4xmSVaaE"
     "WopBwMy2QmlhSFQuPUpTaywTqUcUq_6SfAHhZ4IDa_FxEd2c2z8gFGtfst9cY3lRYf-c_Zdb"
     "oY3mqN9Su3-j3z5r2SHWlhB_LNAjyWlBGsvbGPlTqDziYQwZN4aGsqVKQb9Vw\","
-"  \"e\": \"AQAB\","
-"  \"alg\": \"RS256\","
-"  \"kid\": \"62a93512c9ee4c7f8067b5a216dade2763d32a47\""
-"},"
-"{"
-"  \"kty\": \"RSA\","
-"  \"n\": \"up97uqrF9MWOPaPkwSaBeuAPLOr9FKcaWGdVEGzQ4f3Zq5WKVZowx9TCBxmImNJ1q"
+    "  \"e\": \"AQAB\","
+    "  \"alg\": \"RS256\","
+    "  \"kid\": \"62a93512c9ee4c7f8067b5a216dade2763d32a47\""
+    "},"
+    "{"
+    "  \"kty\": \"RSA\","
+    "  \"n\": "
+    "\"up97uqrF9MWOPaPkwSaBeuAPLOr9FKcaWGdVEGzQ4f3Zq5WKVZowx9TCBxmImNJ1q"
     "mUi13pB8otwM_l5lfY1AFBMxVbQCUXntLovhDaiSvYp4wGDjFzQiYA-pUq8h6MUZBnhleYrk"
     "U7XlCBwNVyN8qNMkpLA7KFZYz-486GnV2NIJJx_4BGa3HdKwQGxi2tjuQsQvao5W4xmSVaaE"
     "WopBwMy2QmlhSFQuPUpTaywTqUcUq_6SfAHhZ4IDa_FxEd2c2z8gFGtfst9cY3lRYf-c_Zdb"
     "oY3mqN9Su3-j3z5r2SHWlhB_LNAjyWlBGsvbGPlTqDziYQwZN4aGsqVKQb9Vw\","
-"  \"e\": \"AQAB\","
-"  \"alg\": \"RS256\","
-"  \"kid\": \"b3319a147514df7ee5e4bcdee51350cc890cc89e\""
-"}]}";
+    "  \"e\": \"AQAB\","
+    "  \"alg\": \"RS256\","
+    "  \"kid\": \"b3319a147514df7ee5e4bcdee51350cc890cc89e\""
+    "}]}";
 
 // A good JSON config.
 const char kExampleConfig[] = R"(
@@ -138,74 +140,74 @@ const char kBypassConfig[] = R"(
 // {"iss":"https://example.com","sub":"test@example.com","aud":"example_service","exp":1205005587}
 const std::string kExpiredToken =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUu"
-        "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MTIwNTAwNTU4NywiY"
-        "XVkIjoiZXhhbXBsZV9zZXJ2aWNlIn0.izDa6aHNgbsbeRzucE0baXIP7SXOrgopYQ"
-        "ALLFAsKq_N0GvOyqpAZA9nwCAhqCkeKWcL-9gbQe3XJa0KN3FPa2NbW4ChenIjmf2"
-        "QYXOuOQaDu9QRTdHEY2Y4mRy6DiTZAsBHWGA71_cLX-rzTSO_8aC8eIqdHo898oJw"
-        "3E8ISKdryYjayb9X3wtF6KLgNomoD9_nqtOkliuLElD8grO0qHKI1xQurGZNaoeyi"
-        "V1AdwgX_5n3SmQTacVN0WcSgk6YJRZG6VE8PjxZP9bEameBmbSB0810giKRpdTU1-"
-        "RJtjq6aCSTD4CYXtW38T5uko4V-S4zifK3BXeituUTebkgoA";
+    "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MTIwNTAwNTU4NywiY"
+    "XVkIjoiZXhhbXBsZV9zZXJ2aWNlIn0.izDa6aHNgbsbeRzucE0baXIP7SXOrgopYQ"
+    "ALLFAsKq_N0GvOyqpAZA9nwCAhqCkeKWcL-9gbQe3XJa0KN3FPa2NbW4ChenIjmf2"
+    "QYXOuOQaDu9QRTdHEY2Y4mRy6DiTZAsBHWGA71_cLX-rzTSO_8aC8eIqdHo898oJw"
+    "3E8ISKdryYjayb9X3wtF6KLgNomoD9_nqtOkliuLElD8grO0qHKI1xQurGZNaoeyi"
+    "V1AdwgX_5n3SmQTacVN0WcSgk6YJRZG6VE8PjxZP9bEameBmbSB0810giKRpdTU1-"
+    "RJtjq6aCSTD4CYXtW38T5uko4V-S4zifK3BXeituUTebkgoA";
 
 // A token with aud as invalid_service
 // Payload:
 // {"iss":"https://example.com","sub":"test@example.com","aud":"invalid_service","exp":2001001001}
 const std::string kInvalidAudToken =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUu"
-        "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
-        "XVkIjoiaW52YWxpZF9zZXJ2aWNlIn0.B9HuVXpRDVYIvApfNQmE_l5fEMPEiPdi-s"
-        "dKbTione8I_UsnYHccKZVegaF6f2uyWhAvaTPgaMosyDlJD6skadEcmZD0V4TzsYK"
-        "v7eP5FQga26hZ1Kra7n9hAq4oFfH0J8aZLOvDV3tAgCNRXlh9h7QiBPeDNQlwztqE"
-        "csyp1lHI3jdUhsn3InIn-vathdx4PWQWLVb-74vwsP-END-MGlOfu_TY5OZUeY-GB"
-        "E4Wr06aOSU2XQjuNr6y2WJGMYFsKKWfF01kHSuyc9hjnq5UI19WrOM8s7LFP4w2iK"
-        "WFIPUGmPy3aM0TiF2oFOuuMxdPR3HNdSG7EWWRwoXv7n__jA";
+    "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
+    "XVkIjoiaW52YWxpZF9zZXJ2aWNlIn0.B9HuVXpRDVYIvApfNQmE_l5fEMPEiPdi-s"
+    "dKbTione8I_UsnYHccKZVegaF6f2uyWhAvaTPgaMosyDlJD6skadEcmZD0V4TzsYK"
+    "v7eP5FQga26hZ1Kra7n9hAq4oFfH0J8aZLOvDV3tAgCNRXlh9h7QiBPeDNQlwztqE"
+    "csyp1lHI3jdUhsn3InIn-vathdx4PWQWLVb-74vwsP-END-MGlOfu_TY5OZUeY-GB"
+    "E4Wr06aOSU2XQjuNr6y2WJGMYFsKKWfF01kHSuyc9hjnq5UI19WrOM8s7LFP4w2iK"
+    "WFIPUGmPy3aM0TiF2oFOuuMxdPR3HNdSG7EWWRwoXv7n__jA";
 
 // Payload:
 // {"iss":"https://example.com","sub":"test@example.com","aud":"example_service","exp":2001001001}
 const std::string kGoodToken =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUu"
-        "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
-        "XVkIjoiZXhhbXBsZV9zZXJ2aWNlIn0.cuui_Syud76B0tqvjESE8IZbX7vzG6xA-M"
-        "Daof1qEFNIoCFT_YQPkseLSUSR2Od3TJcNKk-dKjvUEL1JW3kGnyC1dBx4f3-Xxro"
-        "yL23UbR2eS8TuxO9ZcNCGkjfvH5O4mDb6cVkFHRDEolGhA7XwNiuVgkGJ5Wkrvshi"
-        "h6nqKXcPNaRx9lOaRWg2PkE6ySNoyju7rNfunXYtVxPuUIkl0KMq3WXWRb_cb8a_Z"
-        "EprqSZUzi_ZzzYzqBNVhIJujcNWij7JRra2sXXiSAfKjtxHQoxrX8n4V1ySWJ3_1T"
-        "H_cJcdfS_RKP7YgXRWC0L16PNF5K7iqRqmjKALNe83ZFnFIw";
+    "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
+    "XVkIjoiZXhhbXBsZV9zZXJ2aWNlIn0.cuui_Syud76B0tqvjESE8IZbX7vzG6xA-M"
+    "Daof1qEFNIoCFT_YQPkseLSUSR2Od3TJcNKk-dKjvUEL1JW3kGnyC1dBx4f3-Xxro"
+    "yL23UbR2eS8TuxO9ZcNCGkjfvH5O4mDb6cVkFHRDEolGhA7XwNiuVgkGJ5Wkrvshi"
+    "h6nqKXcPNaRx9lOaRWg2PkE6ySNoyju7rNfunXYtVxPuUIkl0KMq3WXWRb_cb8a_Z"
+    "EprqSZUzi_ZzzYzqBNVhIJujcNWij7JRra2sXXiSAfKjtxHQoxrX8n4V1ySWJ3_1T"
+    "H_cJcdfS_RKP7YgXRWC0L16PNF5K7iqRqmjKALNe83ZFnFIw";
 
 // Payload:
 // {"iss":"https://example.com","sub":"test@example.com","aud":"http://example_service/","exp":2001001001}
 const std::string kGoodTokenAudHasProtocolScheme =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUu"
-        "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
-        "XVkIjoiaHR0cDovL2V4YW1wbGVfc2VydmljZS8ifQ.gHqO8m3hUZZ8m7EajMQy8vB"
-        "RL5o3njwU5Pg2NxU4z3AwUP6P_7MoB_ChiByjg_LQ92GjHXbHn1gAQHVOn0hERVwm"
-        "VYGmNsZHm4k5pmD6orPcYV1i3DdLqqxEVyw2R1XD8bC9zK7Tc8mKTRIJYC4T1QSo8"
-        "mKTzZ8M-EwAuDYa0CsWGhIfA4o3xChXKPLM2hxA4uM1A6s4AQ4ipNQ5FTgLDabgsC"
-        "EpfDR3lAXSaug1NE22zX_tm0d9JnC5ZrIk3kwmPJPrnAS2_9RKTQW2e2skpAT8dUV"
-        "T5aSpQxJmWIkyp4PKWmH6h4H2INS7hWyASZdX4oW-R0PMy3FAd8D6Y8740A";
+    "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
+    "XVkIjoiaHR0cDovL2V4YW1wbGVfc2VydmljZS8ifQ.gHqO8m3hUZZ8m7EajMQy8vB"
+    "RL5o3njwU5Pg2NxU4z3AwUP6P_7MoB_ChiByjg_LQ92GjHXbHn1gAQHVOn0hERVwm"
+    "VYGmNsZHm4k5pmD6orPcYV1i3DdLqqxEVyw2R1XD8bC9zK7Tc8mKTRIJYC4T1QSo8"
+    "mKTzZ8M-EwAuDYa0CsWGhIfA4o3xChXKPLM2hxA4uM1A6s4AQ4ipNQ5FTgLDabgsC"
+    "EpfDR3lAXSaug1NE22zX_tm0d9JnC5ZrIk3kwmPJPrnAS2_9RKTQW2e2skpAT8dUV"
+    "T5aSpQxJmWIkyp4PKWmH6h4H2INS7hWyASZdX4oW-R0PMy3FAd8D6Y8740A";
 
 // Payload:
 // {"iss":"https://example.com","sub":"test@example.com","aud":"https://example_service1/","exp":2001001001}
 const std::string kGoodTokenAudService1 =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUu"
-        "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
-        "XVkIjoiaHR0cHM6Ly9leGFtcGxlX3NlcnZpY2UxLyJ9.JJq_-fzbNWykI2npW13hJ"
-        "F_2_IK9JAlodt_T_kO_kSCb7ngAJvmbDhnIUKp7PX-UCEx_6sehNnLZzZeazGeDgw"
-        "xcjI4zM7E1bzus_sY_Kl7MSYBx7UyW0rgbEvjJOg681Uwn8MkQh9wfQ-SuzPfe07Y"
-        "O4bFMuNBiZsxS0j3_agJrbmpEPycNBSIZ0ez3aQpnDyUgZ1ZGBoVOgzXUJDXptb71"
-        "nzvwse8DINafa5kOhBmQcrIADiOyTVC1IqcOvaftVcS4MTkTeCyzfsqcNQ-VeNPKY"
-        "3e6wTe9brxbii-IPZFNY-1osQNnfCtYpEDjfvMjwHTielF-b55xq_tUwuqaaQ";
+    "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
+    "XVkIjoiaHR0cHM6Ly9leGFtcGxlX3NlcnZpY2UxLyJ9.JJq_-fzbNWykI2npW13hJ"
+    "F_2_IK9JAlodt_T_kO_kSCb7ngAJvmbDhnIUKp7PX-UCEx_6sehNnLZzZeazGeDgw"
+    "xcjI4zM7E1bzus_sY_Kl7MSYBx7UyW0rgbEvjJOg681Uwn8MkQh9wfQ-SuzPfe07Y"
+    "O4bFMuNBiZsxS0j3_agJrbmpEPycNBSIZ0ez3aQpnDyUgZ1ZGBoVOgzXUJDXptb71"
+    "nzvwse8DINafa5kOhBmQcrIADiOyTVC1IqcOvaftVcS4MTkTeCyzfsqcNQ-VeNPKY"
+    "3e6wTe9brxbii-IPZFNY-1osQNnfCtYpEDjfvMjwHTielF-b55xq_tUwuqaaQ";
 
 // Payload:
 // {"iss":"https://example.com","sub":"test@example.com","aud":"http://example_service2","exp":2001001001}
 const std::string kGoodTokenAudService2 =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUu"
-        "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
-        "XVkIjoiaHR0cDovL2V4YW1wbGVfc2VydmljZTIifQ.XFPQHdA5A2rpoQgMMcCBRcW"
-        "t8QrwVJAhdTgNqBjga_ebnoWZdzj9C6t-8mYYoCQ6t7bulLFbPzO8iJREo7zxN7Rn"
-        "F0-15ur16LV7AYeDnH0istAiti9uy3POW3telcN374hbBVdA6sBafGqzeQ8cDpb4o"
-        "0T_BIy6-kaz3ne4-UEdl8kLrR7UaA_LYrdXGomYKqwH3Q4q4mnV7mpE0YUm98AyI6"
-        "Thwt7f3DTmHOMBeO_3xrLOOZgNtuXipqupkp9sb-DcCRdSokoFpGSTibvV_8RwkQo"
-        "W2fdqw_ZD7WOe4sTcK27Uma9exclisHVxzJJbQOW82WdPQGicYaR_EajYzA";
+    "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
+    "XVkIjoiaHR0cDovL2V4YW1wbGVfc2VydmljZTIifQ.XFPQHdA5A2rpoQgMMcCBRcW"
+    "t8QrwVJAhdTgNqBjga_ebnoWZdzj9C6t-8mYYoCQ6t7bulLFbPzO8iJREo7zxN7Rn"
+    "F0-15ur16LV7AYeDnH0istAiti9uy3POW3telcN374hbBVdA6sBafGqzeQ8cDpb4o"
+    "0T_BIy6-kaz3ne4-UEdl8kLrR7UaA_LYrdXGomYKqwH3Q4q4mnV7mpE0YUm98AyI6"
+    "Thwt7f3DTmHOMBeO_3xrLOOZgNtuXipqupkp9sb-DcCRdSokoFpGSTibvV_8RwkQo"
+    "W2fdqw_ZD7WOe4sTcK27Uma9exclisHVxzJJbQOW82WdPQGicYaR_EajYzA";
 
 }  // namespace
 
@@ -278,8 +280,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTandCache) {
 
     EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
               "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcG"
-                  "xlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbXBsZV9zZXJ2"
-                  "aWNlIn0");
+              "xlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbXBsZV9zZXJ2"
+              "aWNlIn0");
     // Verify the token is removed.
     EXPECT_FALSE(headers.Authorization());
   }
@@ -293,19 +295,20 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService) {
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
 
   // Test OK pubkey and its cache
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudHasProtocolScheme}};
+  auto headers = TestHeaderMapImpl{
+      {"Authorization", "Bearer " + kGoodTokenAudHasProtocolScheme}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
   EXPECT_CALL(mock_cb, onDone(_))
-      .WillOnce(Invoke(
-          [](const Status& status) { ASSERT_EQ(status, Status::OK); }));
+      .WillOnce(
+          Invoke([](const Status& status) { ASSERT_EQ(status, Status::OK); }));
 
   auth_->Verify(headers, &mock_cb);
 
   EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
             "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGx"
-                "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cDovL2V4YW1wbG"
-                "Vfc2VydmljZS8ifQ");
+            "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cDovL2V4YW1wbG"
+            "Vfc2VydmljZS8ifQ");
   // Verify the token is removed.
   EXPECT_FALSE(headers.Authorization());
 
@@ -318,19 +321,20 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService1) {
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
 
   // Test OK pubkey and its cache
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService1}};
+  auto headers =
+      TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService1}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
   EXPECT_CALL(mock_cb, onDone(_))
-      .WillOnce(Invoke(
-          [](const Status& status) { ASSERT_EQ(status, Status::OK); }));
+      .WillOnce(
+          Invoke([](const Status& status) { ASSERT_EQ(status, Status::OK); }));
 
   auth_->Verify(headers, &mock_cb);
 
   EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
             "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGx"
-                "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cHM6Ly9leGFtcG"
-                "xlX3NlcnZpY2UxLyJ9");
+            "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cHM6Ly9leGFtcG"
+            "xlX3NlcnZpY2UxLyJ9");
   // Verify the token is removed.
   EXPECT_FALSE(headers.Authorization());
 
@@ -343,19 +347,20 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService2) {
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
 
   // Test OK pubkey and its cache
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService2}};
+  auto headers =
+      TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService2}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
   EXPECT_CALL(mock_cb, onDone(_))
-      .WillOnce(Invoke(
-          [](const Status& status) { ASSERT_EQ(status, Status::OK); }));
+      .WillOnce(
+          Invoke([](const Status& status) { ASSERT_EQ(status, Status::OK); }));
 
   auth_->Verify(headers, &mock_cb);
 
   EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
             "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGx"
-                "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cDovL2V4YW1wbG"
-                "Vfc2VydmljZTIifQ");
+            "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cDovL2V4YW1wbG"
+            "Vfc2VydmljZTIifQ");
   // Verify the token is removed.
   EXPECT_FALSE(headers.Authorization());
 
