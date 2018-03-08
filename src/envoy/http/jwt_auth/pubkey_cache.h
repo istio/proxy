@@ -27,6 +27,10 @@ namespace JwtAuth {
 namespace {
 // Default cache expiration time in 5 minutes.
 const int kPubkeyCacheExpirationSec = 600;
+
+const std::string kHTTPSchemePrefix("http://");
+
+const std::string kHTTPSSchemePrefix("https://");
 }  // namespace
 
 // Struct to hold an issuer cache item.
@@ -35,7 +39,13 @@ class PubkeyCacheItem {
   PubkeyCacheItem(const Config::JWT& jwt_config) : jwt_config_(jwt_config) {
     // Convert proto repeated fields to std::set.
     for (const auto& aud : jwt_config_.audiences()) {
-      audiences_.insert(aud);
+      int beg = 0;
+      int end = aud.length() - 1;
+      // Searches protocol scheme prefix and trailing slash from aud, and
+      // stores aud into audiences_ without these prefix and suffix.
+      if (SanitizeAudience(aud, beg, end)) {
+        audiences_.insert(aud.substr(beg, end - beg + 1));
+      }
     }
   }
 
@@ -56,7 +66,12 @@ class PubkeyCacheItem {
       return true;
     }
     for (const auto& aud : jwt_audiences) {
-      if (audiences_.find(aud) != audiences_.end()) {
+      int beg = 0;
+      int end = aud.length() - 1;
+      // Searches protocol scheme prefix and trailing slash from aud, and
+      // stores aud into audiences_ without these prefix and suffix.
+      if (SanitizeAudience(aud, beg, end) &&
+          audiences_.find(aud.substr(beg, end - beg + 1)) != audiences_.end()) {
         return true;
       }
     }
@@ -83,6 +98,24 @@ class PubkeyCacheItem {
   }
 
  private:
+  // Searches "http://" or "https://" prefix in aud, and stores the position
+  // after protocol scheme prefix in beg. Searches trailing slash in aud, and
+  // stores the position before trailing slash in end. Returns true if aud has
+  // characters other than prefix and suffix.
+  bool SanitizeAudience(const std::string& aud, int& beg, int& end) {
+    // Point beg to first character after protocol scheme prefix in audience.
+    if (aud.compare(0, kHTTPSchemePrefix.length(), kHTTPSchemePrefix) == 0) {
+      beg = kHTTPSchemePrefix.length();
+    } else if (aud.compare(0, kHTTPSSchemePrefix.length(), kHTTPSSchemePrefix) == 0) {
+      beg = kHTTPSSchemePrefix.length();
+    }
+    // Point end to trailing slash in aud.
+    if (end >= 0 && aud[end] == '/') {
+      --end;
+    }
+    return end >= beg;
+  }
+
   // The issuer config
   const Config::JWT& jwt_config_;
   // Use set for fast lookup
