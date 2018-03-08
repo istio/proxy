@@ -37,6 +37,43 @@ namespace Envoy {
 namespace Http {
 namespace {
 
+const char kSingleMethodRule[] = R"(
+  binding: USE_ORIGIN
+  origins {
+    jwt {
+      issuer: "abc.xyz"
+    }
+  }
+)";
+
+const char kMultipleMethodsRule[] = R"(
+  binding: USE_ORIGIN
+  origins {
+    jwt {
+      issuer: "one"
+    }
+  }
+  origins {
+    jwt {
+      issuer: "two"
+    }
+  }
+  origins {
+    jwt {
+      issuer: "three"
+    }
+  }
+)";
+
+const char kPeerBinding[] = R"(
+  binding: USE_PEER
+  origins {
+    jwt {
+      issuer: "abc.xyz"
+    }
+  }
+)";
+
 class MockAuthenticator : public OriginAuthenticator {
  public:
   MockAuthenticator(FilterContext* filter_context,
@@ -50,14 +87,29 @@ class MockAuthenticator : public OriginAuthenticator {
                      void(const iaapi::Jwt&, const MethodDoneCallback&));
 };
 
-class OriginAuthenticatorTest : public testing::Test {
+class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
  public:
   OriginAuthenticatorTest()
       : request_headers_{{":method", "GET"}, {":path", "/"}} {}
   ~OriginAuthenticatorTest() {}
 
-  void SetUp() override { filter_context_.setHeaders(&request_headers_);
-  jwt_payload_ = AuthNTestUtilities::CreateJwtPayload("foo", "istio.io");
+  void SetUp() override {
+    filter_context_.setHeaders(&request_headers_);
+    jwt_payload_ = AuthNTestUtilities::CreateJwtPayload("foo", "istio.io");
+    expected_result_when_pass_ = AuthNTestUtilities::AuthNResultFromString(R"(
+      principal: "foo"
+      origin {
+        user: "foo"
+        presenter: "istio.io"
+      }
+    )");
+    set_peer_ = GetParam();
+    if (set_peer_) {
+      auto peer_result = AuthNTestUtilities::CreateX509Payload("bar");
+      filter_context_.setPeerResult(peer_result.get());
+      expected_result_when_pass_.set_peer_user("bar");
+    }
+    initial_result_ = filter_context_.authenticationResult();
   }
 
   void init() {
@@ -72,501 +124,130 @@ class OriginAuthenticatorTest : public testing::Test {
   Http::TestHeaderMapImpl request_headers_;
   iaapi::CredentialRule rule_;
 
+  // Mock response payload.
   std::unique_ptr<IstioAuthN::Payload> jwt_payload_;
+  // Expected result (when authentication pass with mock payload above)
+  IstioAuthN::Result expected_result_when_pass_;
+  // Copy of authN result (from filter context) before running authentication.
+  // This should be the expected result if authn fail or do nothing.
+  IstioAuthN::Result initial_result_;
+
+  // Indicates peer is set in the authN result before running. This is set from
+  // test GetParam()
+  bool set_peer_;
 };
 
-TEST_F(OriginAuthenticatorTest, Empty) {
+TEST_P(OriginAuthenticatorTest, Empty) {
   init();
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(""),
-                              filter_context_.authenticationResult()));
+  if (set_peer_) {
+    initial_result_.set_principal("bar");
+  }
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
 }
 
-TEST_F(OriginAuthenticatorTest, SingleMethodPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-      binding: USE_ORIGIN
-      origins {
-        jwt {
-          issuer: "abc.xyz"
-        }
-      }
-    )EOF",
-                                                    &rule_));
+TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleMethodRule, &rule_));
 
   init();
-  // EXPECT_CALL(*authenticator_, validateJwt(_, _))
-  //     .Times(1)
-  //     .WillOnce(testing::WithArg<1>(
-  //         testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-  //         callback) {
-  //           callback(AuthNTestUtilities::CreateJwtPayload("foo", "istio.io"),
-  //           true);
-  //         })));
+
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
-      .WillOnce(testing::InvokeArgument<1>(
-          jwt_payload_, true));
+      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
 
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
-  std::cout << filter_context_.authenticationResult().DebugString();
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNTestUtilities::AuthNResultFromString(R"(
-        principal: "foo"
-        origin {
-          user: "foo"
-          presenter: "istio.io"
-        }
-      )"),
-                              filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                      filter_context_.authenticationResult()));
 }
-// TEST_F(OriginAuthenticatorTest, MTlsOnlyFail) {
-//     ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//       peers {
-//         mtls {
-//         }
-//       }
-//     )EOF",
-//                                                       &policy_));
-//
-//   init();
-//     EXPECT_CALL(*authenticator_, validateX509(_, _))
-//         .Times(1)
-//         .WillOnce(testing::WithArg<1>(
-//             testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-//             callback) {
-//               callback(nullptr, false);
-//             })));
-//   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
-//   authenticator_->run();
-//   EXPECT_TRUE(TestUtility::protoEqual(
-//       AuthNTestUtilities::AuthNResultFromString(""),
-//       filter_context_.authenticationResult()));
-// }
-//
-//
-// TEST_F(OriginAuthenticatorTest, JwtOnlyPass) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       jwt {
-//         issuer: "abc.xyz"
-//       }
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   init();
-//   EXPECT_CALL(*authenticator_, validateJwt( _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<1>(
-//           testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-//           callback) {
-//             callback(AuthNTestUtilities::CreateJwtPayload("foo", "istio.io"),
-//             true);
-//           })));
-//   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
-//   authenticator_->run();
-//   EXPECT_TRUE(TestUtility::protoEqual(
-//       AuthNTestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-//       filter_context_.authenticationResult()));
-// }
-//
-// TEST_F(OriginAuthenticatorTest, JwtOnlyFail) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       jwt {
-//         issuer: "abc.xyz"
-//       }
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   init();
-//   EXPECT_CALL(*authenticator_, validateJwt( _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<1>(
-//           testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-//           callback) {
-//             callback(nullptr, false);
-//           })));
-//   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
-//   authenticator_->run();
-//   EXPECT_TRUE(TestUtility::protoEqual(
-//       AuthNTestUtilities::AuthNResultFromString(""),
-//       filter_context_.authenticationResult()));
-// }
-//
-// TEST_F(OriginAuthenticatorTest, Multiple) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       mtls {}
-//     }
-//     peers {
-//       jwt {
-//         issuer: "abc.xyz"
-//       }
-//     }
-//     peers {
-//       jwt {
-//         issuer: "another"
-//       }
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   init();
-//   EXPECT_CALL(*authenticator_, validateX509(_, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<1>(
-//           testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-//           callback) {
-//             callback(nullptr, false);
-//           })));
-//   EXPECT_CALL(*authenticator_, validateJwt( _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<1>(
-//           testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-//           callback) {
-//             callback(AuthNTestUtilities::CreateJwtPayload("foo", "istio.io"),
-//             true);
-//           })));
-//   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
-//   authenticator_->run();
-//   EXPECT_TRUE(TestUtility::protoEqual(
-//       AuthNTestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-//       filter_context_.authenticationResult()));
-// }
-//
-// TEST_F(OriginAuthenticatorTest, MultipleAllFail) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       mtls {}
-//     }
-//     peers {
-//       jwt {
-//         issuer: "abc.xyz"
-//       }
-//     }
-//     peers {
-//       jwt {
-//         issuer: "another"
-//       }
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   init();
-//   EXPECT_CALL(*authenticator_, validateX509(_, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<1>(
-//           testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-//           callback) {
-//             callback(nullptr, false);
-//           })));
-//   EXPECT_CALL(*authenticator_, validateJwt( _, _))
-//       .Times(2)
-//       .WillRepeatedly(testing::WithArg<1>(
-//           testing::Invoke([](const AuthenticatorBase::MethodDoneCallback&
-//           callback) {
-//             callback(nullptr, false);
-//           })));
-//   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
-//   authenticator_->run();
-//   EXPECT_TRUE(TestUtility::protoEqual(
-//       AuthNTestUtilities::AuthNResultFromString(""),
-//       filter_context_.authenticationResult()));
-// }
 
-//
-// TEST_F(AuthentiationFilterTest, Origin) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     credential_rules [
-//       {
-//         binding: USE_ORIGIN
-//         origins {
-//           jwt {
-//             issuer: "abc.xyz"
-//           }
-//         }
-//       }
-//     ]
-//   )EOF",
-//                                                     &policy_));
-//
-//   setup_filter();
-//   EXPECT_CALL(*filter_, validateJwt(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(CreateJwtPayload("foo", "istio.io"), true);
-//           })));
-//   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-//             filter_->decodeHeaders(request_headers_, true));
-//   EXPECT_TRUE(TestUtility::protoEqual(
-//       ContextFromString(
-//           R"EOF(principal: "foo" origin { user: "foo" presenter: "istio.io"
-// })EOF"),
-//       filter_->context()));
-// }
-//
-// TEST_F(AuthentiationFilterTest, OriginWithNoMethod) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     credential_rules {
-//       binding: USE_ORIGIN
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   setup_filter();
-//   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
-//       .Times(1)
-//       .WillOnce(testing::Invoke([](Http::HeaderMap& headers, bool) {
-//         EXPECT_STREQ("401", headers.Status()->value().c_str());
-//       }));
-//   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
-//             filter_->decodeHeaders(request_headers_, true));
-//   EXPECT_TRUE(
-//       TestUtility::protoEqual(ContextFromString(""), filter_->context()));
-// }
-//
-// TEST_F(AuthentiationFilterTest, OriginNoMatchingBindingRule) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     credential_rules {
-//       binding: USE_ORIGIN
-//       origins {
-//         jwt {
-//           issuer: "abc.xyz"
-//         }
-//       }
-//       matching_peers: "foo"
-//       matching_peers: "bar"
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   setup_filter();
-//   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-//             filter_->decodeHeaders(request_headers_, true));
-//   EXPECT_TRUE(
-//       TestUtility::protoEqual(ContextFromString(""), filter_->context()));
-// }
-//
-// TEST_F(AuthentiationFilterTest, OriginMatchingBindingRule) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       mtls {
-//       }
-//     }
-//     credential_rules {
-//       binding: USE_ORIGIN
-//       origins {
-//         jwt {
-//           issuer: "abc.xyz"
-//         }
-//       }
-//       matching_peers: "foo"
-//       matching_peers: "bar"
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   setup_filter();
-//
-//   EXPECT_CALL(*filter_, validateX509(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(CreateX509Payload("foo"), true);
-//           })));
-//   EXPECT_CALL(*filter_, validateJwt(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(CreateJwtPayload("bar", "istio.io"), true);
-//           })));
-//   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-//             filter_->decodeHeaders(request_headers_, true));
-//
-//   EXPECT_TRUE(TestUtility::protoEqual(ContextFromString(R"EOF(
-//     principal: "bar"
-//     peer_user: "foo"
-//     origin {
-//       user: "bar"
-//       presenter: "istio.io"
-//     })EOF"),
-//                                       filter_->context()));
-// }
-//
-// TEST_F(AuthentiationFilterTest, OriginAughNFail) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       mtls {
-//       }
-//     }
-//     credential_rules {
-//       binding: USE_ORIGIN
-//       origins {
-//         jwt {
-//           issuer: "abc.xyz"
-//         }
-//       }
-//     }
-//   )EOF",
-//                                                     &policy_));
-//
-//   setup_filter();
-//
-//   EXPECT_CALL(*filter_, validateX509(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(CreateX509Payload("foo"), true);
-//           })));
-//   EXPECT_CALL(*filter_, validateJwt(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(nullptr, false);
-//           })));
-//   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
-//       .Times(1)
-//       .WillOnce(testing::Invoke([](Http::HeaderMap& headers, bool) {
-//         EXPECT_STREQ("401", headers.Status()->value().c_str());
-//       }));
-//   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
-//             filter_->decodeHeaders(request_headers_, true));
-//   EXPECT_TRUE(TestUtility::protoEqual(ContextFromString("peer_user:
-//   \"foo\""),
-//                                       filter_->context()));
-// }
-//
-// TEST_F(AuthentiationFilterTest, PeerWithExtraJwtPolicy) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       mtls {
-//       }
-//     }
-//     peers {
-//       jwt {
-//         issuer: "istio.io"
-//       }
-//     }
-//     credential_rules {
-//       binding: USE_PEER
-//       origins {
-//         jwt {
-//           issuer: "foo"
-//         }
-//       }
-//     }
-//   )EOF",
-//                                                     &policy_));
-//   setup_filter();
-//
-//   // Peer authentication with mTLS/x509 success.
-//   EXPECT_CALL(*filter_, validateX509(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(CreateX509Payload("foo"), true);
-//           })));
-//
-//   // Origin authentication also success.
-//   EXPECT_CALL(*filter_, validateJwt(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(CreateJwtPayload("frod", "istio.io"), true);
-//           })));
-//
-//   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-//             filter_->decodeHeaders(request_headers_, true));
-//   EXPECT_TRUE(TestUtility::protoEqual(ContextFromString(R"EOF(
-//     principal: "foo"
-//     peer_user: "foo"
-//     origin {
-//       user: "frod"
-//       presenter: "istio.io"
-//     }
-//   )EOF"),
-//                                       filter_->context()));
-// }
-//
-// TEST_F(AuthentiationFilterTest, ComplexPolicy) {
-//   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
-//     peers {
-//       mtls {
-//       }
-//     }
-//     peers {
-//       jwt {
-//         issuer: "istio.io"
-//       }
-//     }
-//     credential_rules {
-//       binding: USE_ORIGIN
-//       origins {
-//         jwt {
-//           issuer: "foo"
-//         }
-//       }
-//       matching_peers: "foo"
-//       matching_peers: "bar"
-//     }
-//     credential_rules {
-//       binding: USE_ORIGIN
-//       origins {
-//         jwt {
-//           issuer: "frod"
-//         }
-//       }
-//       origins {
-//         jwt {
-//           issuer: "fred"
-//         }
-//       }
-//     }
-//   )EOF",
-//                                                     &policy_));
-//   setup_filter();
-//
-//   // Peerauthentication with mTLS/x509 fails.
-//   EXPECT_CALL(*filter_, validateX509(_, _, _))
-//       .Times(1)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(nullptr, false);
-//           })));
-//
-//   // validateJwt is called 3 times:
-//   // - First for source authentication, which success and set source user to
-//   // frod.
-//   // - Then twice for origin authentications (selected for rule matching
-//   // "frod"), both failed.
-//   EXPECT_CALL(*filter_, validateJwt(_, _, _))
-//       .Times(3)
-//       .WillOnce(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(CreateJwtPayload("frod", "istio.io"), true);
-//           })))
-//       .WillRepeatedly(testing::WithArg<2>(
-//           testing::Invoke([](const AuthenticateDoneCallback& callback) {
-//             callback(nullptr, false);
-//           })));
-//
-//   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
-//       .Times(1)
-//       .WillOnce(testing::Invoke([](Http::HeaderMap& headers, bool) {
-//         EXPECT_STREQ("401", headers.Status()->value().c_str());
-//       }));
-//   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
-//             filter_->decodeHeaders(request_headers_, true));
-//   EXPECT_TRUE(TestUtility::protoEqual(ContextFromString("peer_user:
-//   \"frod\""),
-//                                       filter_->context()));
-// }
+TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleMethodRule, &rule_));
+
+  init();
+
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(1)
+      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), false));
+
+  EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
+  authenticator_->run();
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, Multiple) {
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(kMultipleMethodsRule, &rule_));
+
+  init();
+
+  // First method fails, second success (thus third is ignored)
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(2)
+      .WillOnce(testing::InvokeArgument<1>(nullptr, false))
+      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
+
+  EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
+  authenticator_->run();
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, MultipleFail) {
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(kMultipleMethodsRule, &rule_));
+
+  init();
+
+  // All fail.
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(3)
+      .WillRepeatedly(testing::InvokeArgument<1>(nullptr, false));
+
+  EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
+  authenticator_->run();
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kPeerBinding, &rule_));
+  // Expected principal is from peer_user.
+  expected_result_when_pass_.set_principal(initial_result_.peer_user());
+
+  init();
+
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(1)
+      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
+
+  EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
+  authenticator_->run();
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kPeerBinding, &rule_));
+  init();
+
+  // All fail.
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(1)
+      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), false));
+
+  EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
+  authenticator_->run();
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
+}
+
+INSTANTIATE_TEST_CASE_P(OriginAuthenticatorTests, OriginAuthenticatorTest,
+                        testing::Bool());
+
 }  // namespace
 }  // namespace Http
 }  // namespace Envoy

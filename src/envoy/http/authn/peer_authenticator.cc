@@ -57,7 +57,7 @@ void PeerAuthenticator::runMethod(const iaapi::PeerAuthenticationMethod& method,
   }
 }
 void PeerAuthenticator::onMethodDone(
-    std::unique_ptr<IstioAuthN::Payload> payload, bool success) {
+    const IstioAuthN::Payload* payload, bool success) {
   if (!success && peer_method_index_ + 1 < policy_.peers_size()) {
     // Authentication fails, try next one if available.
     peer_method_index_++;
@@ -68,7 +68,7 @@ void PeerAuthenticator::onMethodDone(
   }
 
   if (success) {
-    filter_context()->setPeerResult(payload.get());
+    filter_context()->setPeerResult(payload);
   }
   done(success);
 }

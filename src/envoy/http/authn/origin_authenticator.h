@@ -34,7 +34,7 @@ class OriginAuthenticator : public AuthenticatorBase {
       const istio::authentication::v1alpha1::OriginAuthenticationMethod& method,
       const MethodDoneCallback& callback);
 
-  void onMethodDone(std::unique_ptr<IstioAuthN::Payload> payload, bool success);
+  void onMethodDone(const IstioAuthN::Payload* payload, bool success);
 
  private:
   const istio::authentication::v1alpha1::CredentialRule& credential_rule_;

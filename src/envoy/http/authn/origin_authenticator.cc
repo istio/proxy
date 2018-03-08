@@ -66,7 +66,7 @@ void OriginAuthenticator::runMethod(
 }
 
 void OriginAuthenticator::onMethodDone(
-    std::unique_ptr<IstioAuthN::Payload> payload, bool success) {
+    const IstioAuthN::Payload* payload, bool success) {
   if (!success && method_index_ + 1 < credential_rule_.origins_size()) {
     // Authentication fail, try the next method, if available.
     method_index_++;
@@ -77,7 +77,7 @@ void OriginAuthenticator::onMethodDone(
   }
 
   if (success) {
-    filter_context()->setOriginResult(payload.get());
+    filter_context()->setOriginResult(payload);
     filter_context()->setPrincipal(credential_rule_.binding());
   }
   done(success);

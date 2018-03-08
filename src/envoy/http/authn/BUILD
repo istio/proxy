@@ -132,7 +132,7 @@ envoy_cc_test(
     srcs = ["http_filter_test.cc"],
     repository = "@envoy",
     deps = [
-       ":http_filter",
+        ":http_filter",
         "//external:authentication_policy_config_cc_proto",
         "@envoy//source/common/http:header_map_lib",
         "@envoy//test/mocks/http:http_mocks",
@@ -150,7 +150,7 @@ envoy_cc_test(
     #     ":testdata/envoy_source_jwt.conf",
     # ],
     deps = [
-        ":filter_lib",
+        ":http_filter",
         "@envoy//test/integration:http_integration_lib",
     ],
 )

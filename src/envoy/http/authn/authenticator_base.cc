@@ -53,11 +53,11 @@ void AuthenticatorBase::validateX509(
 
   std::unique_ptr<IstioAuthN::Payload> payload(new IstioAuthN::Payload());
   if (!mtls_authn.GetSourceUser(payload->mutable_x509()->mutable_user())) {
-    done_callback(std::move(payload), false);
+    done_callback(payload.get(), false);
   }
 
   // TODO (lei-tang): Adding other attributes (i.e ip) to payload if desire.
-  done_callback(std::move(payload), true);
+  done_callback(payload.get(), true);
 }
 
 void AuthenticatorBase::validateJwt(
@@ -66,7 +66,7 @@ void AuthenticatorBase::validateJwt(
   std::unique_ptr<IstioAuthN::Payload> payload(new IstioAuthN::Payload());
   // TODO (diemtvu/lei-tang): construct jwt_authenticator and call Verify;
   // pass done_callback so that it would be trigger by jwt_authenticator.onDone.
-  done_callback(std::move(payload), false);
+  done_callback(payload.get(), false);
 }
 
 namespace {

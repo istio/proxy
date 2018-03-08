@@ -33,7 +33,7 @@ class PeerAuthenticator : public AuthenticatorBase {
   void runMethod(
       const istio::authentication::v1alpha1::PeerAuthenticationMethod& method,
       const MethodDoneCallback& done_callback);
-  void onMethodDone(std::unique_ptr<IstioAuthN::Payload> payload, bool success);
+  void onMethodDone(const IstioAuthN::Payload* payload, bool success);
 
  private:
   const istio::authentication::v1alpha1::Policy& policy_;
