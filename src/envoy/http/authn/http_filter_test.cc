@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
+#include "src/envoy/http/authn/http_filter.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/http/header_map_impl.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/authenticator_base.h"
-#include "src/envoy/http/authn/http_filter.h"
 #include "test/mocks/http/mocks.h"
 
 using testing::_;
@@ -38,7 +38,7 @@ AuthenticatorBase* createAlwaysFailAuthenticator(
   class _local : public AuthenticatorBase {
    public:
     _local(FilterContext* filter_context,
-                            const AuthenticatorBase::DoneCallback& callback)
+           const AuthenticatorBase::DoneCallback& callback)
         : AuthenticatorBase(filter_context, callback) {}
     void run() override { done(false); }
   };
@@ -50,14 +50,14 @@ AuthenticatorBase* createAlwaysFailAuthenticator(
 AuthenticatorBase* createAlwaysPassAuthenticator(
     FilterContext* filter_context,
     const AuthenticatorBase::DoneCallback& done_callback) {
-      class _local : public AuthenticatorBase {
-       public:
-        _local(FilterContext* filter_context,
-                                const AuthenticatorBase::DoneCallback& callback)
-            : AuthenticatorBase(filter_context, callback) {}
-        void run() override { done(true); }
-      };
-      return new _local(filter_context, done_callback);
+  class _local : public AuthenticatorBase {
+   public:
+    _local(FilterContext* filter_context,
+           const AuthenticatorBase::DoneCallback& callback)
+        : AuthenticatorBase(filter_context, callback) {}
+    void run() override { done(true); }
+  };
+  return new _local(filter_context, done_callback);
 }
 
 class MockAuthenticationFilter : public AuthenticationFilter {
@@ -100,10 +100,10 @@ TEST_F(AuthentiationFilterTest, PeerFail) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
-          .Times(1)
-          .WillOnce(testing::Invoke([](Http::HeaderMap& headers, bool) {
-            EXPECT_STREQ("401", headers.Status()->value().c_str());
-          }));
+      .Times(1)
+      .WillOnce(testing::Invoke([](Http::HeaderMap& headers, bool) {
+        EXPECT_STREQ("401", headers.Status()->value().c_str());
+      }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));
 }
@@ -114,14 +114,14 @@ TEST_F(AuthentiationFilterTest, PeerPassOrginFail) {
   EXPECT_CALL(filter_, createPeerAuthenticator(_, _))
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
-      EXPECT_CALL(filter_, createOriginAuthenticator(_, _))
-          .Times(1)
-          .WillOnce(Invoke(createAlwaysFailAuthenticator));
-          EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
-                  .Times(1)
-                  .WillOnce(testing::Invoke([](Http::HeaderMap& headers, bool) {
-                    EXPECT_STREQ("401", headers.Status()->value().c_str());
-                  }));
+  EXPECT_CALL(filter_, createOriginAuthenticator(_, _))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysFailAuthenticator));
+  EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
+      .Times(1)
+      .WillOnce(testing::Invoke([](Http::HeaderMap& headers, bool) {
+        EXPECT_STREQ("401", headers.Status()->value().c_str());
+      }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));
 }
@@ -130,9 +130,9 @@ TEST_F(AuthentiationFilterTest, AllPass) {
   EXPECT_CALL(filter_, createPeerAuthenticator(_, _))
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
-      EXPECT_CALL(filter_, createOriginAuthenticator(_, _))
-          .Times(1)
-          .WillOnce(Invoke(createAlwaysPassAuthenticator));
+  EXPECT_CALL(filter_, createOriginAuthenticator(_, _))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysPassAuthenticator));
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
 }

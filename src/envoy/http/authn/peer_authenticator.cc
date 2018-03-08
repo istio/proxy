@@ -56,8 +56,8 @@ void PeerAuthenticator::runMethod(const iaapi::PeerAuthenticationMethod& method,
                 method.DebugString());
   }
 }
-void PeerAuthenticator::onMethodDone(
-    const IstioAuthN::Payload* payload, bool success) {
+void PeerAuthenticator::onMethodDone(const IstioAuthN::Payload* payload,
+                                     bool success) {
   if (!success && peer_method_index_ + 1 < policy_.peers_size()) {
     // Authentication fails, try next one if available.
     peer_method_index_++;

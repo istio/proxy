@@ -30,7 +30,8 @@ namespace Http {
 class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
  public:
   // Callback type for individual authentication method.
-  typedef std::function<void(const IstioAuthN::Payload*, bool)> MethodDoneCallback;
+  typedef std::function<void(const IstioAuthN::Payload*, bool)>
+      MethodDoneCallback;
 
   // Callback type for the whole authenticator.
   typedef std::function<void(bool)> DoneCallback;

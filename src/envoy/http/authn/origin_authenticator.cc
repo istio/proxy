@@ -65,8 +65,8 @@ void OriginAuthenticator::runMethod(
   validateJwt(method.jwt(), callback);
 }
 
-void OriginAuthenticator::onMethodDone(
-    const IstioAuthN::Payload* payload, bool success) {
+void OriginAuthenticator::onMethodDone(const IstioAuthN::Payload* payload,
+                                       bool success) {
   if (!success && method_index_ + 1 < credential_rule_.origins_size()) {
     // Authentication fail, try the next method, if available.
     method_index_++;
