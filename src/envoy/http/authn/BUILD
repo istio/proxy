@@ -54,7 +54,7 @@ envoy_cc_library(
 )
 
 envoy_cc_library(
-    name = "http_filter",
+    name = "filter_lib",
     srcs = [
         "http_filter.cc",
         "http_filter_factory.cc",
@@ -132,7 +132,7 @@ envoy_cc_test(
     srcs = ["http_filter_test.cc"],
     repository = "@envoy",
     deps = [
-        ":http_filter",
+        ":filter_lib",
         "//external:authentication_policy_config_cc_proto",
         "@envoy//source/common/http:header_map_lib",
         "@envoy//test/mocks/http:http_mocks",
@@ -145,12 +145,8 @@ envoy_cc_test(
     srcs = ["http_filter_integration_test.cc"],
     data = glob(["testdata/*"]),
     repository = "@envoy",
-    #     ":testdata/*",
-    #     ":testdata/envoy_source_mtls.conf",
-    #     ":testdata/envoy_source_jwt.conf",
-    # ],
     deps = [
-        ":http_filter",
+        ":filter_lib",
         "@envoy//test/integration:http_integration_lib",
     ],
 )
