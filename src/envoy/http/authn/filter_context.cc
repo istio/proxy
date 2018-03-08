@@ -27,14 +27,18 @@ FilterContext::~FilterContext() {}
 
 void FilterContext::setPeerResult(const Payload* payload) {
   if (payload != nullptr) {
-    if (payload->has_x509()) {
-      result_.set_peer_user(payload->x509().user());
-    } else if (payload->has_jwt()) {
-      result_.set_peer_user(payload->jwt().user());
-    } else {
-      ENVOY_LOG(warn,
-                "Source authentiation payload doesn't contain x509 nor jwt "
-                "payload.");
+    switch (payload->payload_case()) {
+      case Payload::kX509:
+        result_.set_peer_user(payload->x509().user());
+        break;
+      case Payload::kJwt:
+        result_.set_peer_user(payload->jwt().user());
+        break;
+      default:
+        ENVOY_LOG(warn,
+                  "Source authentiation payload doesn't contain x509 nor jwt "
+                  "payload.");
+        break;
     }
   }
 }

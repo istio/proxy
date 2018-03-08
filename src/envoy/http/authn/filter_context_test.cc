@@ -31,8 +31,7 @@ namespace {
 
 class FilterContextTest : public testing::Test {
  public:
-  FilterContextTest() {}
-  ~FilterContextTest() {}
+  virtual ~FilterContextTest() {}
 
   void SetUp() override {
     filter_context_.reset(new StrictMock<MockFilterContext>);

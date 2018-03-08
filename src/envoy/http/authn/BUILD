@@ -21,6 +21,7 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
     "envoy_cc_test",
+    "envoy_cc_test_library",
     "envoy_proto_library",
 )
 
@@ -72,9 +73,10 @@ envoy_cc_library(
     ],
 )
 
-cc_library(
+envoy_cc_test_library(
     name = "test_utils",
     hdrs = ["test_utils.h"],
+    repository = "@envoy",
     deps = [
         ":context_proto",
     ],

@@ -43,8 +43,7 @@ class TestAuthenticatorBase : public AuthenticatorBase {
 
 class AuthenticatorBaseTest : public testing::Test {
  public:
-  AuthenticatorBaseTest() {}
-  ~AuthenticatorBaseTest() {}
+  virtual ~AuthenticatorBaseTest() {}
 
   void SetUp() override {
     filter_context_.reset(new StrictMock<MockFilterContext>);

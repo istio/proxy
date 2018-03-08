@@ -92,7 +92,7 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
  public:
   OriginAuthenticatorTest()
       : request_headers_{{":method", "GET"}, {":path", "/"}} {}
-  ~OriginAuthenticatorTest() {}
+  virtual ~OriginAuthenticatorTest() {}
 
   void SetUp() override {
     filter_context_.setHeaders(&request_headers_);

@@ -55,7 +55,7 @@ class PeerAuthenticatorTest : public testing::Test {
  public:
   PeerAuthenticatorTest()
       : request_headers_{{":method", "GET"}, {":path", "/"}} {}
-  ~PeerAuthenticatorTest() {}
+  virtual ~PeerAuthenticatorTest() {}
 
   void SetUp() override {
     filter_context_.setHeaders(&request_headers_);
