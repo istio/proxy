@@ -33,14 +33,14 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
  public:
   HttpFilterFactoryCb createFilterFactory(const Json::Object& config,
                                           const std::string&,
-                                          FactoryContext&) override {
+                                          FactoryContext& context) override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
     google::protobuf::util::Status status =
         Utils::ParseJsonMessage(config.asJsonString(), &policy_);
     ENVOY_LOG(debug, "Called AuthnFilterConfig : Utils::ParseJsonMessage()");
     if (status.ok()) {
-      return createFilter();
+      return createFilter(context);
     } else {
       ENVOY_LOG(critical, "Utils::ParseJsonMessage() return value is: " +
                               status.ToString());
@@ -53,7 +53,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
   HttpFilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message& proto_config, const std::string&,
-      FactoryContext&) override {
+      FactoryContext& context) override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
     const istio::authentication::v1alpha1::Policy& policy =
@@ -62,7 +62,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
     policy_ = policy;
 
-    return createFilter();
+    return createFilter(context);
   }
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override {
@@ -74,12 +74,17 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
   std::string name() override { return kAuthnFactoryName; }
 
  private:
-  HttpFilterFactoryCb createFilter() {
+  HttpFilterFactoryCb createFilter(FactoryContext& context) {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
+    Upstream::ClusterManager& cm = context.clusterManager();
+    auto store_factory =
+        std::make_shared<Http::IstioAuthN::JwtAuthnStoreFactory>(policy_,
+                                                                 context);
     return [&](Http::FilterChainFactoryCallbacks& callbacks) -> void {
       callbacks.addStreamDecoderFilter(
-          std::make_shared<Http::AuthenticationFilter>(policy_));
+          std::make_shared<Http::AuthenticationFilter>(cm,
+                                                       store_factory->store()));
     };
   }
 
