@@ -35,39 +35,30 @@ namespace Istio {
 namespace AuthN {
 namespace {
 
-class TestAuthenticatorBase : public AuthenticatorBase {
+class MockAuthenticatorBase : public AuthenticatorBase {
  public:
-  TestAuthenticatorBase(FilterContext* filter_context)
+  MockAuthenticatorBase(FilterContext* filter_context)
       : AuthenticatorBase(filter_context, [](bool) {}) {}
-  void run() override {}
+  MOCK_METHOD0(run, void());
 };
 
 class AuthenticatorBaseTest : public testing::Test {
  public:
   virtual ~AuthenticatorBaseTest() {}
 
-  void SetUp() override {
-    filter_context_.reset(new StrictMock<TestUtilities::MockFilterContext>);
-    filter_context_->setHeaders(&request_headers_);
-    authenticator_.reset(new TestAuthenticatorBase(filter_context_.get()));
-  }
-
-  std::unique_ptr<StrictMock<TestUtilities::MockFilterContext>> filter_context_;
-  std::unique_ptr<AuthenticatorBase> authenticator_;
-  Http::TestHeaderMapImpl request_headers_;
-  NiceMock<Envoy::Network::MockConnection> connection_;
+  Http::TestHeaderMapImpl request_headers_{};
+  NiceMock<Envoy::Network::MockConnection> connection_{};
+  StrictMock<FilterContext> filter_context_{&request_headers_, &connection_};
+  MockAuthenticatorBase authenticator_{&filter_context_};
 };
 
 TEST_F(AuthenticatorBaseTest, ValidateX509) {
   iaapi::MutualTls mTlsParams;
-  EXPECT_CALL(*filter_context_, connection())
-      .Times(1)
-      .WillOnce(Return(&connection_));
-  authenticator_->validateX509(mTlsParams,
-                               [](const Payload* payload, bool success) {
-                                 EXPECT_FALSE(payload);
-                                 EXPECT_FALSE(success);
-                               });
+  authenticator_.validateX509(mTlsParams,
+                              [](const Payload* payload, bool success) {
+                                EXPECT_FALSE(payload);
+                                EXPECT_FALSE(success);
+                              });
 }
 
 // TODO: more tests for other cases of x509 and Jwt.

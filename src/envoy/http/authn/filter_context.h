@@ -25,15 +25,13 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-// FilterContext holds inputs and result data for authentication process. It
-// also
-// provides interface to interact with the filter.
+// FilterContext holds inputs, such as request header and connection and
+// result data for authentication process.
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
-  FilterContext();
-  virtual ~FilterContext();
-
-  virtual const Network::Connection* connection() const PURE;
+  FilterContext(HeaderMap* headers, const Network::Connection* connection)
+      : headers_(headers), connection_(connection) {}
+  virtual ~FilterContext() {}
 
   // Sets peer result based on authenticated payload. Input payload can be null,
   // which basically changes nothing.
@@ -51,19 +49,20 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Returns the authentication result.
   const Result& authenticationResult() { return result_; }
 
-  // Stores pointer to the headers in the context. This should be called before
-  // starting authenticator with this context.
-  void setHeaders(HeaderMap* headers) { headers_ = headers; }
-
   // Accessor to headers.
   HeaderMap* headers() { return headers_; }
+  // Accessor to connection
+  const Network::Connection* connection() { return connection_; }
 
  private:
-  // Holds authentication attribute outputs.
-  Result result_;
-
   // Pointer to the headers of the request.
   HeaderMap* headers_;
+
+  // Pointer to network connection of the request.
+  const Network::Connection* connection_;
+
+  // Holds authentication attribute outputs.
+  Result result_;
 };
 
 }  // namespace AuthN

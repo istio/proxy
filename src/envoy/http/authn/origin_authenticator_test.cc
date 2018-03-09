@@ -96,7 +96,6 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
   virtual ~OriginAuthenticatorTest() {}
 
   void SetUp() override {
-    filter_context_.setHeaders(&request_headers_);
     expected_result_when_pass_ = TestUtilities::AuthNResultFromString(R"(
       principal: "foo"
       origin {
@@ -120,9 +119,9 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
 
  protected:
   std::unique_ptr<StrictMock<MockAuthenticator>> authenticator_;
-  StrictMock<TestUtilities::MockFilterContext> filter_context_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
+  StrictMock<FilterContext> filter_context_{&request_headers_, nullptr};
   iaapi::CredentialRule rule_;
 
   // Mock response payload.

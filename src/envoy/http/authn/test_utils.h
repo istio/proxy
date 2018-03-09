@@ -47,12 +47,6 @@ Result AuthNResultFromString(const std::string& text) {
   return result;
 }
 
-class MockFilterContext : public FilterContext {
- public:
-  MockFilterContext() : FilterContext() {}
-  MOCK_CONST_METHOD0(connection, Network::Connection*());
-};
-
 }  // namespace TestUtilities
 }  // namespace AuthN
 }  // namespace Istio

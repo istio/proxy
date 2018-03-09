@@ -19,18 +19,21 @@
 #include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/http/authn/authenticator_base.h"
+#include "src/envoy/http/authn/filter_context.h"
 
 namespace Envoy {
 namespace Http {
 namespace Istio {
 namespace AuthN {
+
 enum State { INIT, PROCESSING, COMPLETE, REJECTED };
+
 }  // namespace AuthN
 }  // namespace Istio
 
 // The authentication filter.
 class AuthenticationFilter : public StreamDecoderFilter,
-                             public Istio::AuthN::FilterContext {
+                             public Logger::Loggable<Logger::Id::filter> {
  public:
   AuthenticationFilter(const istio::authentication::v1alpha1::Policy& config);
   ~AuthenticationFilter();
@@ -44,9 +47,6 @@ class AuthenticationFilter : public StreamDecoderFilter,
   FilterTrailersStatus decodeTrailers(HeaderMap&) override;
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
-
-  // Implement FilterContext
-  const Network::Connection* connection() const override;
 
  protected:
   // Callback for peer authenticator.
@@ -84,6 +84,10 @@ class AuthenticationFilter : public StreamDecoderFilter,
   // Indicates filter is 'stopped', thus (decoder_callbacks_) continueDecoding
   // should be called.
   bool stopped_{false};
+
+  // Context for authentication process. Created in decodeHeader to start
+  // authentication process.
+  std::unique_ptr<Istio::AuthN::FilterContext> filter_context_;
 
   // Holder of authenticator so that it can be cleaned up when done.
   std::unique_ptr<Istio::AuthN::AuthenticatorBase> authenticator_;

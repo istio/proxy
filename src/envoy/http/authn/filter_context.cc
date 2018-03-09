@@ -23,9 +23,6 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-FilterContext::FilterContext() {}
-FilterContext::~FilterContext() {}
-
 void FilterContext::setPeerResult(const Payload* payload) {
   if (payload != nullptr) {
     switch (payload->payload_case()) {
