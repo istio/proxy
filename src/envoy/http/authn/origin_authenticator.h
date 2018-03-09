@@ -23,6 +23,7 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
+// OriginAuthenticator performs origin authentication for given credential rule.
 class OriginAuthenticator : public AuthenticatorBase {
  public:
   OriginAuthenticator(
@@ -32,14 +33,21 @@ class OriginAuthenticator : public AuthenticatorBase {
   void run() override;
 
  protected:
+  // Runs specific authentication method.
   void runMethod(
       const istio::authentication::v1alpha1::OriginAuthenticationMethod& method,
       const MethodDoneCallback& callback);
 
+  // Callback for runMethod.
   void onMethodDone(const Payload* payload, bool success);
 
  private:
+  // Reference to the credential rule that the authenticator should enforce. The
+  // object is typically owned by filter.
   const istio::authentication::v1alpha1::CredentialRule& credential_rule_;
+
+  // Internal variable to keep track which (origin) authentication methods have
+  // been tried.
   int method_index_{0};
 };
 

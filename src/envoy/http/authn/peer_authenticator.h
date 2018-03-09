@@ -23,6 +23,7 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
+// PeerAuthenticator performs peer authentication for given policy.
 class PeerAuthenticator : public AuthenticatorBase {
  public:
   PeerAuthenticator(FilterContext* filter_context,
@@ -32,13 +33,21 @@ class PeerAuthenticator : public AuthenticatorBase {
   void run() override;
 
  protected:
+  // Runs given authentication method.
   void runMethod(
       const istio::authentication::v1alpha1::PeerAuthenticationMethod& method,
       const MethodDoneCallback& done_callback);
+
+  // Callback for runMethod.
   void onMethodDone(const Payload* payload, bool success);
 
  private:
+  // Reference to the authentication policy that the authenticator should
+  // enforce. Typically, the actual object is owned by filter.
   const istio::authentication::v1alpha1::Policy& policy_;
+
+  // Internal variable to keep track which peer authentication methods have been
+  // tried.
   int peer_method_index_{0};
 };
 

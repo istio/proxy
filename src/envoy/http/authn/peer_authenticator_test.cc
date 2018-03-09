@@ -83,12 +83,12 @@ TEST_F(PeerAuthenticatorTest, EmptyPolicy) {
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
       peers {
         mtls {
         }
       }
-    )EOF",
+    )",
                                                     &policy_));
 
   createAuthenticator();
@@ -103,12 +103,12 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
       peers {
         mtls {
         }
       }
-    )EOF",
+    )",
                                                     &policy_));
 
   createAuthenticator();
@@ -122,13 +122,13 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
     peers {
       jwt {
         issuer: "abc.xyz"
       }
     }
-  )EOF",
+  )",
                                                     &policy_));
 
   createAuthenticator();
@@ -143,13 +143,13 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
     peers {
       jwt {
         issuer: "abc.xyz"
       }
     }
-  )EOF",
+  )",
                                                     &policy_));
 
   createAuthenticator();
@@ -163,7 +163,7 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
 }
 
 TEST_F(PeerAuthenticatorTest, Multiple) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
     peers {
       mtls {}
     }
@@ -177,7 +177,7 @@ TEST_F(PeerAuthenticatorTest, Multiple) {
         issuer: "another"
       }
     }
-  )EOF",
+  )",
                                                     &policy_));
 
   createAuthenticator();
@@ -195,7 +195,7 @@ TEST_F(PeerAuthenticatorTest, Multiple) {
 }
 
 TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"EOF(
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
     peers {
       mtls {}
     }
@@ -209,7 +209,7 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
         issuer: "another"
       }
     }
-  )EOF",
+  )",
                                                     &policy_));
 
   createAuthenticator();
