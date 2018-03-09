@@ -39,8 +39,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
   state_ = Istio::AuthN::State::PROCESSING;
 
-  filter_context_.reset(
-      new Istio::AuthN::FilterContext(&headers, decoder_callbacks_->connection()));
+  filter_context_.reset(new Istio::AuthN::FilterContext(
+      &headers, decoder_callbacks_->connection()));
 
   authenticator_.reset(createPeerAuthenticator(
       filter_context_.get(),
