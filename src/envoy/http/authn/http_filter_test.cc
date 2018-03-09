@@ -34,7 +34,7 @@ namespace {
 
 // Create a fake authenticator for test. This authenticator do nothing except
 // making done callback with failure.
-AuthenticatorBase* createAlwaysFailAuthenticator(
+std::unique_ptr<AuthenticatorBase> createAlwaysFailAuthenticator(
     FilterContext* filter_context,
     const AuthenticatorBase::DoneCallback& done_callback) {
   class _local : public AuthenticatorBase {
@@ -44,12 +44,12 @@ AuthenticatorBase* createAlwaysFailAuthenticator(
         : AuthenticatorBase(filter_context, callback) {}
     void run() override { done(false); }
   };
-  return new _local(filter_context, done_callback);
+  return std::make_unique<_local>(filter_context, done_callback);
 }
 
 // Create a fake authenticator for test. This authenticator do nothing except
 // making done callback with success.
-AuthenticatorBase* createAlwaysPassAuthenticator(
+std::unique_ptr<AuthenticatorBase> createAlwaysPassAuthenticator(
     FilterContext* filter_context,
     const AuthenticatorBase::DoneCallback& done_callback) {
   class _local : public AuthenticatorBase {
@@ -59,7 +59,7 @@ AuthenticatorBase* createAlwaysPassAuthenticator(
         : AuthenticatorBase(filter_context, callback) {}
     void run() override { done(true); }
   };
-  return new _local(filter_context, done_callback);
+  return std::make_unique<_local>(filter_context, done_callback);
 }
 
 class MockAuthenticationFilter : public AuthenticationFilter {

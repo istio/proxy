@@ -42,7 +42,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
   filter_context_.reset(new Istio::AuthN::FilterContext(
       &headers, decoder_callbacks_->connection()));
 
-  authenticator_.reset(createPeerAuthenticator(
+  authenticator_ = std::move(createPeerAuthenticator(
       filter_context_.get(),
       [this](bool success) { onPeerAuthenticationDone(success); }));
   authenticator_->run();
@@ -58,7 +58,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
 void AuthenticationFilter::onPeerAuthenticationDone(bool success) {
   ENVOY_LOG(debug, "{}: success = {}", __func__, success);
   if (success) {
-    authenticator_.reset(createOriginAuthenticator(
+    authenticator_ = std::move(createOriginAuthenticator(
         filter_context_.get(),
         [this](bool success) { onOriginAuthenticationDone(success); }));
     authenticator_->run();
@@ -118,21 +118,22 @@ void AuthenticationFilter::rejectRequest(const std::string& message) {
                           message);
 }
 
-Istio::AuthN::AuthenticatorBase* AuthenticationFilter::createPeerAuthenticator(
+std::unique_ptr<Istio::AuthN::AuthenticatorBase>
+AuthenticationFilter::createPeerAuthenticator(
     Istio::AuthN::FilterContext* filter_context,
     const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
-  return new Istio::AuthN::PeerAuthenticator(filter_context, done_callback,
-                                             policy_);
+  return std::make_unique<Istio::AuthN::PeerAuthenticator>(
+      filter_context, done_callback, policy_);
 }
 
-Istio::AuthN::AuthenticatorBase*
+std::unique_ptr<Istio::AuthN::AuthenticatorBase>
 AuthenticationFilter::createOriginAuthenticator(
     Istio::AuthN::FilterContext* filter_context,
     const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
   const auto& rule = Istio::AuthN::findCredentialRuleOrDefault(
       policy_, filter_context_->authenticationResult().peer_user());
-  return new Istio::AuthN::OriginAuthenticator(filter_context, done_callback,
-                                               rule);
+  return std::make_unique<Istio::AuthN::OriginAuthenticator>(
+      filter_context, done_callback, rule);
 }
 
 }  // namespace Http

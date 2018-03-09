@@ -63,12 +63,14 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
   // Creates peer authenticator. This is made virtual function for
   // testing.
-  virtual Istio::AuthN::AuthenticatorBase* createPeerAuthenticator(
+  virtual std::unique_ptr<Istio::AuthN::AuthenticatorBase>
+  createPeerAuthenticator(
       Istio::AuthN::FilterContext* filter_context,
       const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback);
 
   // Creates origin authenticator.
-  virtual Istio::AuthN::AuthenticatorBase* createOriginAuthenticator(
+  virtual std::unique_ptr<Istio::AuthN::AuthenticatorBase>
+  createOriginAuthenticator(
       Istio::AuthN::FilterContext* filter_context,
       const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback);
 
