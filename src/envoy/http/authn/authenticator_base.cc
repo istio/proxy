@@ -84,10 +84,8 @@ void AuthenticatorBase::validateJwt(
   done_callback(payload.get(), false);
 }
 
-const iaapi::CredentialRule&
-findCredentialRuleOrDefault(
-    const iaapi::Policy& policy,
-    const std::string& peer_id) {
+const iaapi::CredentialRule& findCredentialRuleOrDefault(
+    const iaapi::Policy& policy, const std::string& peer_id) {
   for (const auto& rule : policy.credential_rules()) {
     if (isRuleMatchedWithPeer(rule, peer_id)) {
       return rule;

@@ -79,8 +79,8 @@ const char kPeerBinding[] = R"(
 class MockOriginAuthenticator : public OriginAuthenticator {
  public:
   MockOriginAuthenticator(FilterContext* filter_context,
-                    const DoneCallback& done_callback,
-                    const iaapi::CredentialRule& rule)
+                          const DoneCallback& done_callback,
+                          const iaapi::CredentialRule& rule)
       : OriginAuthenticator(filter_context, done_callback, rule) {}
 
   MOCK_CONST_METHOD2(validateX509,
