@@ -25,7 +25,6 @@
 
 using testing::NiceMock;
 using testing::Return;
-using testing::StrictMock;
 
 namespace iaapi = istio::authentication::v1alpha1;
 
@@ -48,7 +47,7 @@ class AuthenticatorBaseTest : public testing::Test {
 
   Http::TestHeaderMapImpl request_headers_{};
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  StrictMock<FilterContext> filter_context_{&request_headers_, &connection_};
+  FilterContext filter_context_{&request_headers_, &connection_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 };
 

@@ -76,9 +76,9 @@ const char kPeerBinding[] = R"(
   }
 )";
 
-class MockAuthenticator : public OriginAuthenticator {
+class MockOriginAuthenticator : public OriginAuthenticator {
  public:
-  MockAuthenticator(FilterContext* filter_context,
+  MockOriginAuthenticator(FilterContext* filter_context,
                     const DoneCallback& done_callback,
                     const iaapi::CredentialRule& rule)
       : OriginAuthenticator(filter_context, done_callback, rule) {}
@@ -112,16 +112,16 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
     initial_result_ = filter_context_.authenticationResult();
   }
 
-  void init() {
-    authenticator_.reset(new StrictMock<MockAuthenticator>(
+  void createAuthenticator() {
+    authenticator_.reset(new StrictMock<MockOriginAuthenticator>(
         &filter_context_, on_done_callback_.AsStdFunction(), rule_));
   }
 
  protected:
-  std::unique_ptr<StrictMock<MockAuthenticator>> authenticator_;
+  std::unique_ptr<StrictMock<MockOriginAuthenticator>> authenticator_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
-  StrictMock<FilterContext> filter_context_{&request_headers_, nullptr};
+  FilterContext filter_context_{&request_headers_, nullptr};
   iaapi::CredentialRule rule_;
 
   // Mock response payload.
@@ -138,7 +138,7 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
 };
 
 TEST_P(OriginAuthenticatorTest, Empty) {
-  init();
+  createAuthenticator();
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
   if (set_peer_) {
@@ -151,7 +151,7 @@ TEST_P(OriginAuthenticatorTest, Empty) {
 TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleMethodRule, &rule_));
 
-  init();
+  createAuthenticator();
 
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
@@ -166,7 +166,7 @@ TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
 TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleMethodRule, &rule_));
 
-  init();
+  createAuthenticator();
 
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
@@ -182,7 +182,7 @@ TEST_P(OriginAuthenticatorTest, Multiple) {
   ASSERT_TRUE(
       Protobuf::TextFormat::ParseFromString(kMultipleMethodsRule, &rule_));
 
-  init();
+  createAuthenticator();
 
   // First method fails, second success (thus third is ignored)
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
@@ -200,7 +200,7 @@ TEST_P(OriginAuthenticatorTest, MultipleFail) {
   ASSERT_TRUE(
       Protobuf::TextFormat::ParseFromString(kMultipleMethodsRule, &rule_));
 
-  init();
+  createAuthenticator();
 
   // All fail.
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
@@ -218,7 +218,7 @@ TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
   // Expected principal is from peer_user.
   expected_result_when_pass_.set_principal(initial_result_.peer_user());
 
-  init();
+  createAuthenticator();
 
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
@@ -232,7 +232,7 @@ TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
 
 TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kPeerBinding, &rule_));
-  init();
+  createAuthenticator();
 
   // All fail.
   EXPECT_CALL(*authenticator_, validateJwt(_, _))

@@ -39,9 +39,9 @@ namespace Istio {
 namespace AuthN {
 namespace {
 
-class MockAuthenticator : public PeerAuthenticator {
+class MockPeerAuthenticator : public PeerAuthenticator {
  public:
-  MockAuthenticator(FilterContext* filter_context,
+  MockPeerAuthenticator(FilterContext* filter_context,
                     const DoneCallback& done_callback,
                     const istio::authentication::v1alpha1::Policy& policy)
       : PeerAuthenticator(filter_context, done_callback, policy) {}
@@ -59,15 +59,15 @@ class PeerAuthenticatorTest : public testing::Test {
   virtual ~PeerAuthenticatorTest() {}
 
   void createAuthenticator() {
-    authenticator_.reset(new StrictMock<MockAuthenticator>(
+    authenticator_.reset(new StrictMock<MockPeerAuthenticator>(
         &filter_context_, on_done_callback_.AsStdFunction(), policy_));
   }
 
  protected:
-  std::unique_ptr<StrictMock<MockAuthenticator>> authenticator_;
+  std::unique_ptr<StrictMock<MockPeerAuthenticator>> authenticator_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
-  StrictMock<FilterContext> filter_context_{&request_headers_, nullptr};
+  FilterContext filter_context_{&request_headers_, nullptr};
   iaapi::Policy policy_;
 
   Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
