@@ -73,8 +73,8 @@ class PeerAuthenticatorTest : public testing::Test {
   Http::TestHeaderMapImpl request_headers_;
   iaapi::Policy policy_;
 
-  Payload x509_payload_{TestUtility::CreateX509Payload("foo")};
-  Payload jwt_payload_{TestUtility::CreateJwtPayload("foo", "istio.io")};
+  Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
+  Payload jwt_payload_{TestUtilities::CreateJwtPayload("foo", "istio.io")};
 };
 
 TEST_F(PeerAuthenticatorTest, EmptyPolicy) {

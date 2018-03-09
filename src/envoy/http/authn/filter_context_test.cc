@@ -26,7 +26,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace Istio{
+namespace Istio {
 namespace AuthN {
 namespace {
 
@@ -34,19 +34,21 @@ class FilterContextTest : public testing::Test {
  public:
   virtual ~FilterContextTest() {}
 
-  StrictMock<MockFilterContext> filter_context_;
+  StrictMock<TestUtilities::MockFilterContext> filter_context_;
+  Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
+  Payload jwt_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 };
 
 TEST_F(FilterContextTest, SetPeerResult) {
-  filter_context_.setPeerResult(CreateX509Payload("foo").get());
-  EXPECT_TRUE(
-      TestUtility::protoEqual(AuthNResultFromString("peer_user: \"foo\""),
-                              filter_context_.authenticationResult()));
+  filter_context_.setPeerResult(&x509_payload_);
+  EXPECT_TRUE(TestUtility::protoEqual(
+      TestUtilities::AuthNResultFromString("peer_user: \"foo\""),
+      filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, SetOriginResult) {
-  filter_context_.setOriginResult(CreateJwtPayload("bar", "istio.io").get());
-  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
+  filter_context_.setOriginResult(&jwt_payload_);
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
@@ -56,9 +58,9 @@ TEST_F(FilterContextTest, SetOriginResult) {
 }
 
 TEST_F(FilterContextTest, SetBoth) {
-  filter_context_.setPeerResult(CreateX509Payload("foo").get());
-  filter_context_.setOriginResult(CreateJwtPayload("bar", "istio.io").get());
-  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
+  filter_context_.setPeerResult(&x509_payload_);
+  filter_context_.setOriginResult(&jwt_payload_);
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         peer_user: "foo"
         origin {
           user: "bar"
@@ -69,10 +71,10 @@ TEST_F(FilterContextTest, SetBoth) {
 }
 
 TEST_F(FilterContextTest, UseOrigin) {
-  filter_context_.setPeerResult(CreateX509Payload("foo").get());
-  filter_context_.setOriginResult(CreateJwtPayload("bar", "istio.io").get());
+  filter_context_.setPeerResult(&x509_payload_);
+  filter_context_.setOriginResult(&jwt_payload_);
   filter_context_.setPrincipal(iaapi::CredentialRule::USE_ORIGIN);
-  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         principal: "bar"
         peer_user: "foo"
         origin {
@@ -84,18 +86,18 @@ TEST_F(FilterContextTest, UseOrigin) {
 }
 
 TEST_F(FilterContextTest, UseOriginOnEmptyOrigin) {
-  filter_context_.setPeerResult(CreateX509Payload("foo").get());
+  filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setPrincipal(iaapi::CredentialRule::USE_ORIGIN);
-  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         peer_user: "foo"
       )"),
                                       filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, PrincipalUsePeer) {
-  filter_context_.setPeerResult(CreateX509Payload("foo").get());
+  filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setPrincipal(iaapi::CredentialRule::USE_PEER);
-  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         principal: "foo"
         peer_user: "foo"
       )"),
@@ -103,9 +105,9 @@ TEST_F(FilterContextTest, PrincipalUsePeer) {
 }
 
 TEST_F(FilterContextTest, PrincipalUsePeerOnEmptyPeer) {
-  filter_context_.setOriginResult(CreateJwtPayload("bar", "istio.io").get());
+  filter_context_.setOriginResult(&jwt_payload_);
   filter_context_.setPrincipal(iaapi::CredentialRule::USE_PEER);
-  EXPECT_TRUE(TestUtility::protoEqual(AuthNResultFromString(R"(
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
