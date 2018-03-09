@@ -72,11 +72,11 @@ class MockAuthenticationFilter : public AuthenticationFilter {
   ~MockAuthenticationFilter(){};
 
   MOCK_METHOD2(createPeerAuthenticator,
-               AuthenticatorBase*(FilterContext*,
-                                  const AuthenticatorBase::DoneCallback&));
+               std::unique_ptr<AuthenticatorBase>(
+                   FilterContext*, const AuthenticatorBase::DoneCallback&));
   MOCK_METHOD2(createOriginAuthenticator,
-               AuthenticatorBase*(FilterContext*,
-                                  const AuthenticatorBase::DoneCallback&));
+               std::unique_ptr<AuthenticatorBase>(
+                   FilterContext*, const AuthenticatorBase::DoneCallback&));
 };
 
 class AuthentiationFilterTest : public testing::Test {

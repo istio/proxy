@@ -43,7 +43,7 @@ bool isRuleMatchedWithPeer(const iaapi::CredentialRule& rule,
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
     const AuthenticatorBase::DoneCallback& done_callback)
-    : filter_context_(&filter_context), done_callback_(done_callback) {}
+    : filter_context_(*filter_context), done_callback_(done_callback) {}
 
 AuthenticatorBase::~AuthenticatorBase() {}
 
