@@ -31,7 +31,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace Istio{
+namespace Istio {
 namespace AuthN {
 namespace {
 
@@ -47,12 +47,12 @@ class AuthenticatorBaseTest : public testing::Test {
   virtual ~AuthenticatorBaseTest() {}
 
   void SetUp() override {
-    filter_context_.reset(new StrictMock<MockFilterContext>);
+    filter_context_.reset(new StrictMock<TestUtilities::MockFilterContext>);
     filter_context_->setHeaders(&request_headers_);
     authenticator_.reset(new TestAuthenticatorBase(filter_context_.get()));
   }
 
-  std::unique_ptr<StrictMock<MockFilterContext>> filter_context_;
+  std::unique_ptr<StrictMock<TestUtilities::MockFilterContext>> filter_context_;
   std::unique_ptr<AuthenticatorBase> authenticator_;
   Http::TestHeaderMapImpl request_headers_;
   NiceMock<Envoy::Network::MockConnection> connection_;

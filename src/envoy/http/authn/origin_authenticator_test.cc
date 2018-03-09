@@ -97,8 +97,7 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
 
   void SetUp() override {
     filter_context_.setHeaders(&request_headers_);
-    jwt_payload_ = CreateJwtPayload("foo", "istio.io");
-    expected_result_when_pass_ = AuthNResultFromString(R"(
+    expected_result_when_pass_ = TestUtilities::AuthNResultFromString(R"(
       principal: "foo"
       origin {
         user: "foo"
@@ -107,8 +106,8 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
     )");
     set_peer_ = GetParam();
     if (set_peer_) {
-      auto peer_result = CreateX509Payload("bar");
-      filter_context_.setPeerResult(peer_result.get());
+      auto peer_result = TestUtilities::CreateX509Payload("bar");
+      filter_context_.setPeerResult(&peer_result);
       expected_result_when_pass_.set_peer_user("bar");
     }
     initial_result_ = filter_context_.authenticationResult();
@@ -121,13 +120,13 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
 
  protected:
   std::unique_ptr<StrictMock<MockAuthenticator>> authenticator_;
-  StrictMock<MockFilterContext> filter_context_;
+  StrictMock<TestUtilities::MockFilterContext> filter_context_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
   iaapi::CredentialRule rule_;
 
   // Mock response payload.
-  std::unique_ptr<Payload> jwt_payload_;
+  Payload jwt_payload_{TestUtilities::CreateJwtPayload("foo", "istio.io")};
   // Expected result (when authentication pass with mock payload above)
   Result expected_result_when_pass_;
   // Copy of authN result (from filter context) before running authentication.
@@ -157,7 +156,7 @@ TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
 
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
-      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
+      .WillOnce(testing::InvokeArgument<1>(&jwt_payload_, true));
 
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
@@ -172,7 +171,7 @@ TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
 
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
-      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), false));
+      .WillOnce(testing::InvokeArgument<1>(&jwt_payload_, false));
 
   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
   authenticator_->run();
@@ -190,7 +189,7 @@ TEST_P(OriginAuthenticatorTest, Multiple) {
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(2)
       .WillOnce(testing::InvokeArgument<1>(nullptr, false))
-      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
+      .WillOnce(testing::InvokeArgument<1>(&jwt_payload_, true));
 
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
@@ -224,7 +223,7 @@ TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
 
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
-      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), true));
+      .WillOnce(testing::InvokeArgument<1>(&jwt_payload_, true));
 
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
   authenticator_->run();
@@ -239,7 +238,7 @@ TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
   // All fail.
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
-      .WillOnce(testing::InvokeArgument<1>(jwt_payload_.get(), false));
+      .WillOnce(testing::InvokeArgument<1>(&jwt_payload_, false));
 
   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
   authenticator_->run();

@@ -23,19 +23,20 @@ namespace Envoy {
 namespace Http {
 namespace Istio{
 namespace AuthN {
+namespace TestUtilities {
 
-std::unique_ptr<Payload> CreateX509Payload(const std::string& user) {
-  std::unique_ptr<Payload> payload(new Payload);
-  payload->mutable_x509()->set_user(user);
+Payload CreateX509Payload(const std::string& user) {
+  Payload payload;
+  payload.mutable_x509()->set_user(user);
   return payload;
 }
 
-std::unique_ptr<Payload> CreateJwtPayload(const std::string& user,
-                                          const std::string& presenter) {
-  std::unique_ptr<Payload> payload(new Payload);
-  payload->mutable_jwt()->set_user(user);
+Payload CreateJwtPayload(const std::string& user,
+                         const std::string& presenter) {
+  Payload payload;
+  payload.mutable_jwt()->set_user(user);
   if (!presenter.empty()) {
-    payload->mutable_jwt()->set_presenter(presenter);
+    payload.mutable_jwt()->set_presenter(presenter);
   }
   return payload;
 }
@@ -52,6 +53,7 @@ class MockFilterContext : public FilterContext {
   MOCK_CONST_METHOD0(connection, Network::Connection*());
 };
 
+}  // namespace TestUtilities
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http

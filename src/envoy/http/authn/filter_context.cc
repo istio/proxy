@@ -53,7 +53,7 @@ void FilterContext::setOriginResult(const Payload* payload) {
   }
 }
 
-void FilterContext::setPrincipal(iaapi::CredentialRule::Binding binding) {
+void FilterContext::setPrincipal(const iaapi::CredentialRule::Binding& binding) {
   switch (binding) {
     case iaapi::CredentialRule::USE_PEER:
       result_.set_principal(result_.peer_user());

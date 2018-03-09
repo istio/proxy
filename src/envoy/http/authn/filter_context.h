@@ -45,7 +45,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Sets principal based on binding rule, and the existing peer and origin
   // result.
   void setPrincipal(
-      istio::authentication::v1alpha1::CredentialRule::Binding binding);
+      const istio::authentication::v1alpha1::CredentialRule::Binding& binding);
 
   // Returns the authentication result.
   const Result& authenticationResult() { return result_; }
