@@ -42,8 +42,8 @@ namespace {
 class MockPeerAuthenticator : public PeerAuthenticator {
  public:
   MockPeerAuthenticator(FilterContext* filter_context,
-                    const DoneCallback& done_callback,
-                    const istio::authentication::v1alpha1::Policy& policy)
+                        const DoneCallback& done_callback,
+                        const istio::authentication::v1alpha1::Policy& policy)
       : PeerAuthenticator(filter_context, done_callback, policy) {}
 
   MOCK_CONST_METHOD2(validateX509,
