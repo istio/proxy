@@ -37,9 +37,11 @@ test:
 	@bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
 
 test_asan:
+	export CC=clang-5.0 CXX=clang++-5.0
 	@bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=asan //...
 
 test_tsan:
+	export CC=clang-5.0 CXX=clang++-5.0
 	@bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan //...
 
 check:
