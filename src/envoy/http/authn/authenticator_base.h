@@ -61,11 +61,11 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
                            const MethodDoneCallback& done_callback) const;
 
   // Mutable accessor to filter context.
-  FilterContext* filter_context() { return filter_context_; }
+  FilterContext* filter_context() { return &filter_context_; }
 
  private:
   // Pointer to filter state. Do not own.
-  FilterContext* filter_context_;
+  FilterContext& filter_context_;
 
   const DoneCallback done_callback_;
 };
