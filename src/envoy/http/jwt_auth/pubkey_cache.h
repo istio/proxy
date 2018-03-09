@@ -94,22 +94,22 @@ class PubkeyCacheItem {
   std::string SanitizeAudience(const std::string& aud) {
     int beg = 0;
     int end = aud.length() - 1;
-    bool create_new_aud = false;
+    bool sanitize_aud = false;
     // Point beg to first character after protocol scheme prefix in audience.
     if (aud.compare(0, kHTTPSchemePrefix.length(), kHTTPSchemePrefix) == 0) {
       beg = kHTTPSchemePrefix.length();
-      create_new_aud = true;
+      sanitize_aud = true;
     } else if (aud.compare(0, kHTTPSSchemePrefix.length(),
                            kHTTPSSchemePrefix) == 0) {
       beg = kHTTPSSchemePrefix.length();
-      create_new_aud = true;
+      sanitize_aud = true;
     }
     // Point end to trailing slash in aud.
     if (end >= 0 && aud[end] == '/') {
       --end;
-      create_new_aud = true;
+      sanitize_aud = true;
     }
-    if (create_new_aud) {
+    if (sanitize_aud) {
       return aud.substr(beg, end - beg + 1);
     }
     return aud;
