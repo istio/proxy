@@ -21,7 +21,7 @@
 
 namespace Envoy {
 namespace Http {
-namespace Istio{
+namespace Istio {
 namespace AuthN {
 namespace TestUtilities {
 

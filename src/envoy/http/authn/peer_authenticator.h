@@ -20,7 +20,7 @@
 
 namespace Envoy {
 namespace Http {
-namespace Istio{
+namespace Istio {
 namespace AuthN {
 
 class PeerAuthenticator : public AuthenticatorBase {

@@ -22,11 +22,11 @@
 
 namespace Envoy {
 namespace Http {
-namespace Istio{
+namespace Istio {
 namespace AuthN {
 enum State { INIT, PROCESSING, COMPLETE, REJECTED };
 }  // namespace AuthN
-}  //namespace Istio
+}  // namespace Istio
 
 // The authentication filter.
 class AuthenticationFilter : public StreamDecoderFilter,

@@ -22,7 +22,7 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace Istio{
+namespace Istio {
 namespace AuthN {
 
 AuthenticatorBase::AuthenticatorBase(

@@ -123,16 +123,17 @@ Istio::AuthN::AuthenticatorBase* AuthenticationFilter::createPeerAuthenticator(
     Istio::AuthN::FilterContext* filter_context,
     const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
   return new Istio::AuthN::PeerAuthenticator(filter_context, done_callback,
-                                           policy_);
+                                             policy_);
 }
 
-Istio::AuthN::AuthenticatorBase* AuthenticationFilter::createOriginAuthenticator(
+Istio::AuthN::AuthenticatorBase*
+AuthenticationFilter::createOriginAuthenticator(
     Istio::AuthN::FilterContext* filter_context,
     const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
   const auto& rule = Istio::AuthN::findCredentialRuleOrDefault(
       policy_, authenticationResult().peer_user());
   return new Istio::AuthN::OriginAuthenticator(filter_context, done_callback,
-                                             rule);
+                                               rule);
 }
 
 }  // namespace Http

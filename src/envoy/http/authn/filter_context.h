@@ -22,10 +22,11 @@
 
 namespace Envoy {
 namespace Http {
-namespace Istio{
+namespace Istio {
 namespace AuthN {
 
-// FilterContext holds inputs and result data for authentication process. It also
+// FilterContext holds inputs and result data for authentication process. It
+// also
 // provides interface to interact with the filter.
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:

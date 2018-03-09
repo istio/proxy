@@ -58,9 +58,7 @@ class PeerAuthenticatorTest : public testing::Test {
       : request_headers_{{":method", "GET"}, {":path", "/"}} {}
   virtual ~PeerAuthenticatorTest() {}
 
-  void SetUp() override {
-    filter_context_.setHeaders(&request_headers_);
-  }
+  void SetUp() override { filter_context_.setHeaders(&request_headers_); }
   void createAuthenticator() {
     authenticator_.reset(new StrictMock<MockAuthenticator>(
         &filter_context_, on_done_callback_.AsStdFunction(), policy_));
