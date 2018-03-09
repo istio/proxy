@@ -401,7 +401,7 @@ bool Verifier::Verify(const Jwt &jwt, const Pubkeys &pubkeys) {
     // If kid is specified in JWT, JWK with the same kid is used for
     // verification.
     // If kid is not specified in JWT, try all JWK.
-    if (jwt.kid_ != "" && pubkey->kid_ != jwt.kid_) {
+    if (jwt.kid_ != "" && pubkey->kid_specified_ && pubkey->kid_ != jwt.kid_) {
       continue;
     }
 
@@ -411,12 +411,12 @@ bool Verifier::Verify(const Jwt &jwt, const Pubkeys &pubkeys) {
     }
     kid_alg_matched = true;
 
-    if (pubkey->alg_ == "ES256" &&
+    if (pubkey->kty_ == "EC" &&
         VerifySignatureEC(pubkey->ec_key_.get(), jwt.signature_, signed_data)) {
       // Verification succeeded.
       return true;
-    } else if (VerifySignatureRSA(pubkey->evp_pkey_.get(), jwt.md_,
-                                  jwt.signature_, signed_data)) {
+    } else if (pubkey->kty_ == "RSA" &&
+        VerifySignatureRSA(pubkey->evp_pkey_.get(), jwt.md_, jwt.signature_, signed_data)) {
       // Verification succeeded.
       return true;
     }
@@ -498,18 +498,14 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
 void Pubkeys::ExtractPubkeyFromJwk(Json::ObjectSharedPtr jwk_json) {
   // Check "kty" parameter, it should exist.
   // https://tools.ietf.org/html/rfc7517#section-4.1
-  // If "kty" is missing, throw an exception.
-  std::string kty = jwk_json->getString("kty", "");
-  if (kty != "RSA" && kty != "EC") {
-    return;
-  }
-  // Compare "kty" and "alg", and do nothing if they do not match.
+  // If "kty" is missing, getString throws an exception.
+  std::string kty = jwk_json->getString("kty");
+
+  // Extract public key according to "kty" value.
   // https://tools.ietf.org/html/rfc7518#section-6.1
-  // https://tools.ietf.org/html/rfc7518#section-7.1.2
-  std::string alg = jwk_json->getString("alg");
-  if (kty == "EC" && alg == "ES256") {
+  if (kty == "EC") {
     ExtractPubkeyFromJwkEC(jwk_json);
-  } else if (kty == "RSA" && alg.compare(0, 2, "RS") == 0) {
+  } else if (kty == "RSA") {
     ExtractPubkeyFromJwkRSA(jwk_json);
   }
 }
@@ -518,15 +514,26 @@ void Pubkeys::ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json) {
   std::unique_ptr<Pubkey> pubkey(new Pubkey());
   std::string n_str, e_str;
   try {
-    pubkey->kid_ = jwk_json->getString("kid");
-    pubkey->alg_ = jwk_json->getString("alg");
+    // "kid" and "alg" are optional, if they do not exist, set them to "".
+    // https://tools.ietf.org/html/rfc7517#page-8
+    if (jwk_json->hasObject("kid")) {
+      pubkey->kid_ = jwk_json->getString("kid");
+      pubkey->kid_specified_ = true;
+    }
+    if (jwk_json->hasObject("alg")) {
+      pubkey->alg_ = jwk_json->getString("alg");
+      if (pubkey->alg_.compare(0, 2, "RS") != 0) {
+        throw EnvoyException("alg claim in public key is not RSA");
+      }
+      pubkey->alg_specified_ = true;
+    }
+    pubkey->kty_ = jwk_json->getString("kty");
     n_str = jwk_json->getString("n");
     e_str = jwk_json->getString("e");
   } catch (Json::Exception &e) {
     // Do not extract public key if jwk_json has bad format.
     return;
   }
-  pubkey->alg_specified_ = true;
 
   EvpPkeyGetter e;
   pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
@@ -537,15 +544,26 @@ void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
   std::unique_ptr<Pubkey> pubkey(new Pubkey());
   std::string x_str, y_str;
   try {
-    pubkey->kid_ = jwk_json->getString("kid");
-    pubkey->alg_ = jwk_json->getString("alg");
+    // "kid" and "alg" are optional, if they do not exist, set them to "".
+    // https://tools.ietf.org/html/rfc7517#page-8
+    if (jwk_json->hasObject("kid")) {
+      pubkey->kid_ = jwk_json->getString("kid");
+      pubkey->kid_specified_ = true;
+    }
+    if (jwk_json->hasObject("alg")) {
+      pubkey->alg_ = jwk_json->getString("alg");
+      if (pubkey->alg_ != "ES256") {
+        throw EnvoyException("alg claim in public key is not ES256");
+      }
+      pubkey->alg_specified_ = true;
+    }
+    pubkey->kty_ = jwk_json->getString("kty");
     x_str = jwk_json->getString("x");
     y_str = jwk_json->getString("y");
   } catch (Json::Exception &e) {
     // Do not extract public key if jwk_json has bad format.
     return;
   }
-  pubkey->alg_specified_ = true;
 
   EvpPkeyGetter e;
   pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
