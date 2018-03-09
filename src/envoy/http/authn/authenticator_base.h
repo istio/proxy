@@ -17,13 +17,13 @@
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
-#include "server/config/network/http_connection_manager.h"
 #include "src/envoy/http/authn/context.pb.h"
 #include "src/envoy/http/authn/filter_context.h"
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
 // AuthenticatorBase is the base class for authenticator. It provides functions
 // to perform individual authentication methods, which can be used to construct
@@ -77,6 +77,7 @@ findCredentialRuleOrDefault(
     const istio::authentication::v1alpha1::Policy& policy,
     const std::string& peer_id);
 
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

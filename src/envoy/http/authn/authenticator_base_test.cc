@@ -31,7 +31,8 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 namespace {
 
 class TestAuthenticatorBase : public AuthenticatorBase {
@@ -155,6 +156,7 @@ TEST(FindCredentialRuleTest, WithOutMatchingPeer) {
 }
 
 }  // namespace
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

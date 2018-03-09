@@ -37,7 +37,7 @@ void AuthenticationFilter::onDestroy() {
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
                                                         bool) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  state_ = IstioAuthN::State::PROCESSING;
+  state_ = Istio::AuthN::State::PROCESSING;
 
   setHeaders(&headers);
 
@@ -45,7 +45,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
       this, [this](bool success) { onPeerAuthenticationDone(success); }));
   authenticator_->run();
 
-  if (state_ == IstioAuthN::State::COMPLETE) {
+  if (state_ == Istio::AuthN::State::COMPLETE) {
     return FilterHeadersStatus::Continue;
   }
 
@@ -86,7 +86,7 @@ FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
 
 FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  if (state_ == IstioAuthN::State::PROCESSING) {
+  if (state_ == Istio::AuthN::State::PROCESSING) {
     return FilterTrailersStatus::StopIteration;
   }
   return FilterTrailersStatus::Continue;
@@ -99,39 +99,39 @@ void AuthenticationFilter::setDecoderFilterCallbacks(
 }
 
 void AuthenticationFilter::continueDecoding() {
-  if (state_ != IstioAuthN::State::PROCESSING) {
+  if (state_ != Istio::AuthN::State::PROCESSING) {
     ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
     return;
   }
-  state_ = IstioAuthN::State::COMPLETE;
+  state_ = Istio::AuthN::State::COMPLETE;
   if (stopped_) {
     decoder_callbacks_->continueDecoding();
   }
 }
 
 void AuthenticationFilter::rejectRequest(const std::string& message) {
-  if (state_ != IstioAuthN::State::PROCESSING) {
+  if (state_ != Istio::AuthN::State::PROCESSING) {
     ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
     return;
   }
-  state_ = IstioAuthN::State::REJECTED;
+  state_ = Istio::AuthN::State::REJECTED;
   Utility::sendLocalReply(*decoder_callbacks_, false, Http::Code::Unauthorized,
                           message);
 }
 
-IstioAuthN::AuthenticatorBase* AuthenticationFilter::createPeerAuthenticator(
-    IstioAuthN::FilterContext* filter_context,
-    const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback) {
-  return new IstioAuthN::PeerAuthenticator(filter_context, done_callback,
+Istio::AuthN::AuthenticatorBase* AuthenticationFilter::createPeerAuthenticator(
+    Istio::AuthN::FilterContext* filter_context,
+    const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
+  return new Istio::AuthN::PeerAuthenticator(filter_context, done_callback,
                                            policy_);
 }
 
-IstioAuthN::AuthenticatorBase* AuthenticationFilter::createOriginAuthenticator(
-    IstioAuthN::FilterContext* filter_context,
-    const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback) {
-  const auto& rule = IstioAuthN::findCredentialRuleOrDefault(
+Istio::AuthN::AuthenticatorBase* AuthenticationFilter::createOriginAuthenticator(
+    Istio::AuthN::FilterContext* filter_context,
+    const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
+  const auto& rule = Istio::AuthN::findCredentialRuleOrDefault(
       policy_, authenticationResult().peer_user());
-  return new IstioAuthN::OriginAuthenticator(filter_context, done_callback,
+  return new Istio::AuthN::OriginAuthenticator(filter_context, done_callback,
                                              rule);
 }
 

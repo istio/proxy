@@ -22,8 +22,11 @@
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
+// FilterContext holds inputs and result data for authentication process. It also
+// provides interface to interact with the filter.
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext();
@@ -45,23 +48,24 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
       istio::authentication::v1alpha1::CredentialRule::Binding binding);
 
   // Returns the authentication result.
-  const IstioAuthN::Result& authenticationResult() { return result_; }
+  const Result& authenticationResult() { return result_; }
 
   // Stores pointer to the headers in the context. This should be called before
   // starting authenticator with this context.
-  void setHeaders(HeaderMap* headers);
+  void setHeaders(HeaderMap* headers) { headers_ = headers; }
 
   // Accessor to headers.
-  HeaderMap* headers();
+  HeaderMap* headers() { return headers_; }
 
  private:
   // Holds authentication attribute outputs.
-  IstioAuthN::Result result_;
+  Result result_;
 
   // Pointer to the headers of the request.
   HeaderMap* headers_;
 };
 
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

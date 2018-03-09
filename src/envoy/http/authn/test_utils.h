@@ -21,7 +21,8 @@
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
 std::unique_ptr<Payload> CreateX509Payload(const std::string& user) {
   std::unique_ptr<Payload> payload(new Payload);
@@ -51,6 +52,7 @@ class MockFilterContext : public FilterContext {
   MOCK_CONST_METHOD0(connection, Network::Connection*());
 };
 
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

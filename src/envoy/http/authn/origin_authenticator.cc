@@ -20,7 +20,8 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
 OriginAuthenticator::OriginAuthenticator(
     FilterContext* filter_context, const DoneCallback& done_callback,
@@ -85,6 +86,7 @@ void OriginAuthenticator::onMethodDone(const Payload* payload, bool success) {
   done(success);
 }
 
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

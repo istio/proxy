@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/peer_authenticator.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/http/header_map_impl.h"
 #include "common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/envoy/http/authn/peer_authenticator.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/utility.h"
@@ -35,7 +35,8 @@ using testing::StrictMock;
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 namespace {
 
 class MockAuthenticator : public PeerAuthenticator {
@@ -231,6 +232,7 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
 }
 
 }  // namespace
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

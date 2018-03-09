@@ -22,7 +22,8 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
@@ -96,6 +97,7 @@ findCredentialRuleOrDefault(
   return iaapi::CredentialRule::default_instance();
 }
 
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

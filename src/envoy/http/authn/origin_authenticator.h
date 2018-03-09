@@ -20,7 +20,8 @@
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
 class OriginAuthenticator : public AuthenticatorBase {
  public:
@@ -42,6 +43,7 @@ class OriginAuthenticator : public AuthenticatorBase {
   int method_index_{0};
 };
 
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

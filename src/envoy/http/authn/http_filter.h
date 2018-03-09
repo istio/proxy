@@ -22,13 +22,15 @@
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 enum State { INIT, PROCESSING, COMPLETE, REJECTED };
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  //namespace Istio
 
 // The authentication filter.
 class AuthenticationFilter : public StreamDecoderFilter,
-                             public IstioAuthN::FilterContext {
+                             public Istio::AuthN::FilterContext {
  public:
   AuthenticationFilter(const istio::authentication::v1alpha1::Policy& config);
   ~AuthenticationFilter();
@@ -61,14 +63,14 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
   // Creates peer authenticator. This is made virtual function for
   // testing.
-  virtual IstioAuthN::AuthenticatorBase* createPeerAuthenticator(
-      IstioAuthN::FilterContext* filter_context,
-      const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback);
+  virtual Istio::AuthN::AuthenticatorBase* createPeerAuthenticator(
+      Istio::AuthN::FilterContext* filter_context,
+      const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback);
 
   // Creates origin authenticator.
-  virtual IstioAuthN::AuthenticatorBase* createOriginAuthenticator(
-      IstioAuthN::FilterContext* filter_context,
-      const IstioAuthN::AuthenticatorBase::DoneCallback& done_callback);
+  virtual Istio::AuthN::AuthenticatorBase* createOriginAuthenticator(
+      Istio::AuthN::FilterContext* filter_context,
+      const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback);
 
  private:
   // Store the config.
@@ -77,14 +79,14 @@ class AuthenticationFilter : public StreamDecoderFilter,
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 
   // Holds the state of the filter.
-  IstioAuthN::State state_{IstioAuthN::State::INIT};
+  Istio::AuthN::State state_{Istio::AuthN::State::INIT};
 
   // Indicates filter is 'stopped', thus (decoder_callbacks_) continueDecoding
   // should be called.
   bool stopped_{false};
 
   // Holder of authenticator so that it can be cleaned up when done.
-  std::unique_ptr<IstioAuthN::AuthenticatorBase> authenticator_;
+  std::unique_ptr<Istio::AuthN::AuthenticatorBase> authenticator_;
 };
 
 }  // namespace Http

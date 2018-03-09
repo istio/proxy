@@ -20,7 +20,8 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
 FilterContext::FilterContext() {}
 FilterContext::~FilterContext() {}
@@ -67,10 +68,7 @@ void FilterContext::setPrincipal(iaapi::CredentialRule::Binding binding) {
   }
 }
 
-void FilterContext::setHeaders(HeaderMap* headers) { headers_ = headers; }
-
-HeaderMap* FilterContext::headers() { return headers_; }
-
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

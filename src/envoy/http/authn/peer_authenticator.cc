@@ -13,15 +13,16 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/peer_authenticator.h"
 #include "common/http/utility.h"
+#include "src/envoy/http/authn/peer_authenticator.h"
 #include "src/envoy/utils/utils.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
-namespace IstioAuthN {
+namespace Istio{
+namespace AuthN {
 
 PeerAuthenticator::PeerAuthenticator(
     FilterContext* filter_context,
@@ -74,6 +75,7 @@ void PeerAuthenticator::onMethodDone(const Payload* payload, bool success) {
   done(success);
 }
 
-}  // namespace IstioAuthN
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy
