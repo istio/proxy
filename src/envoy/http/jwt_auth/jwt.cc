@@ -523,7 +523,7 @@ void Pubkeys::ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json) {
     if (jwk_json->hasObject("alg")) {
       pubkey->alg_ = jwk_json->getString("alg");
       if (pubkey->alg_.compare(0, 2, "RS") != 0) {
-        throw EnvoyException("alg claim in public key is not RSA");
+        return;
       }
       pubkey->alg_specified_ = true;
     }
@@ -553,7 +553,7 @@ void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
     if (jwk_json->hasObject("alg")) {
       pubkey->alg_ = jwk_json->getString("alg");
       if (pubkey->alg_ != "ES256") {
-        throw EnvoyException("alg claim in public key is not ES256");
+        return;
       }
       pubkey->alg_specified_ = true;
     }
