@@ -30,6 +30,8 @@ using testing::StrictMock;
 
 namespace Envoy {
 namespace Http {
+namespace Istio {
+namespace AuthN {
 namespace {
 
 // Create a fake authenticator for test. This authenticator do nothing except
@@ -140,5 +142,7 @@ TEST_F(AuthentiationFilterTest, AllPass) {
 }
 
 }  // namespace
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

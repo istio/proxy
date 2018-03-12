@@ -26,11 +26,6 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-enum State { INIT, PROCESSING, COMPLETE, REJECTED };
-
-}  // namespace AuthN
-}  // namespace Istio
-
 // The authentication filter.
 class AuthenticationFilter : public StreamDecoderFilter,
                              public Logger::Loggable<Logger::Id::filter> {
@@ -80,8 +75,9 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 
+  enum State { INIT, PROCESSING, COMPLETE, REJECTED };
   // Holds the state of the filter.
-  Istio::AuthN::State state_{Istio::AuthN::State::INIT};
+  State state_{State::INIT};
 
   // Indicates filter is 'stopped', thus (decoder_callbacks_) continueDecoding
   // should be called.
@@ -95,5 +91,8 @@ class AuthenticationFilter : public StreamDecoderFilter,
   std::unique_ptr<Istio::AuthN::AuthenticatorBase> authenticator_;
 };
 
+
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

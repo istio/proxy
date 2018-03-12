@@ -23,6 +23,8 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
+namespace Istio {
+namespace AuthN {
 
 AuthenticationFilter::AuthenticationFilter(
     const istio::authentication::v1alpha1::Policy& policy)
@@ -37,7 +39,7 @@ void AuthenticationFilter::onDestroy() {
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
                                                         bool) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  state_ = Istio::AuthN::State::PROCESSING;
+  state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
       &headers, decoder_callbacks_->connection()));
@@ -47,7 +49,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
       [this](bool success) { onPeerAuthenticationDone(success); });
   authenticator_->run();
 
-  if (state_ == Istio::AuthN::State::COMPLETE) {
+  if (state_ == State::COMPLETE) {
     return FilterHeadersStatus::Continue;
   }
 
@@ -80,7 +82,7 @@ FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
   ENVOY_LOG(debug,
             "Called AuthenticationFilter : {} FilterDataStatus::Continue;",
             __FUNCTION__);
-  if (state_ == Istio::AuthN::State::PROCESSING) {
+  if (state_ == State::PROCESSING) {
     return FilterDataStatus::StopIterationAndBuffer;
   }
   return FilterDataStatus::Continue;
@@ -88,7 +90,7 @@ FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
 
 FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
-  if (state_ == Istio::AuthN::State::PROCESSING) {
+  if (state_ == State::PROCESSING) {
     return FilterTrailersStatus::StopIteration;
   }
   return FilterTrailersStatus::Continue;
@@ -101,22 +103,22 @@ void AuthenticationFilter::setDecoderFilterCallbacks(
 }
 
 void AuthenticationFilter::continueDecoding() {
-  if (state_ != Istio::AuthN::State::PROCESSING) {
+  if (state_ != State::PROCESSING) {
     ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
     return;
   }
-  state_ = Istio::AuthN::State::COMPLETE;
+  state_ = State::COMPLETE;
   if (stopped_) {
     decoder_callbacks_->continueDecoding();
   }
 }
 
 void AuthenticationFilter::rejectRequest(const std::string& message) {
-  if (state_ != Istio::AuthN::State::PROCESSING) {
+  if (state_ != State::PROCESSING) {
     ENVOY_LOG(error, "State {} is not PROCESSING.", state_);
     return;
   }
-  state_ = Istio::AuthN::State::REJECTED;
+  state_ = State::REJECTED;
   Utility::sendLocalReply(*decoder_callbacks_, false, Http::Code::Unauthorized,
                           message);
 }
@@ -139,5 +141,7 @@ AuthenticationFilter::createOriginAuthenticator(
       filter_context, done_callback, rule);
 }
 
+}  // namespace AuthN
+}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy
