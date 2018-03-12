@@ -415,8 +415,9 @@ bool Verifier::Verify(const Jwt &jwt, const Pubkeys &pubkeys) {
         VerifySignatureEC(pubkey->ec_key_.get(), jwt.signature_, signed_data)) {
       // Verification succeeded.
       return true;
-    } else if (pubkey->kty_ == "RSA" &&
-        VerifySignatureRSA(pubkey->evp_pkey_.get(), jwt.md_, jwt.signature_, signed_data)) {
+    } else if ((pubkey->pem_format_ || pubkey->kty_ == "RSA") &&
+               VerifySignatureRSA(pubkey->evp_pkey_.get(), jwt.md_,
+                                  jwt.signature_, signed_data)) {
       // Verification succeeded.
       return true;
     }
@@ -454,6 +455,7 @@ void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   std::unique_ptr<Pubkey> key_ptr(new Pubkey());
   EvpPkeyGetter e;
   key_ptr->evp_pkey_ = e.EvpPkeyFromStr(pkey_pem);
+  key_ptr->pem_format_ = true;
   UpdateStatus(e.GetStatus());
   if (e.GetStatus() == Status::OK) {
     keys_.push_back(std::move(key_ptr));

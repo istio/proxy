@@ -285,6 +285,7 @@ class Pubkeys : public WithStatus {
     std::string kty_;
     bool alg_specified_ = false;
     bool kid_specified_ = false;
+    bool pem_format_ = false;
     std::string alg_;
   };
   std::vector<std::unique_ptr<Pubkey> > keys_;
