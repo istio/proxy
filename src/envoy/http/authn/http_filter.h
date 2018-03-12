@@ -91,7 +91,6 @@ class AuthenticationFilter : public StreamDecoderFilter,
   std::unique_ptr<Istio::AuthN::AuthenticatorBase> authenticator_;
 };
 
-
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http
