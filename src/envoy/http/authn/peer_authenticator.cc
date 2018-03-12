@@ -56,6 +56,7 @@ void PeerAuthenticator::runMethod(const iaapi::PeerAuthenticationMethod& method,
     default:
       ENVOY_LOG(error, "Unknown peer authentication param {}",
                 method.DebugString());
+      done_callback(nullptr, false);
   }
 }
 void PeerAuthenticator::onMethodDone(const Payload* payload, bool success) {
