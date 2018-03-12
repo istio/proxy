@@ -42,9 +42,9 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
   filter_context_.reset(new Istio::AuthN::FilterContext(
       &headers, decoder_callbacks_->connection()));
 
-  authenticator_ = std::move(createPeerAuthenticator(
+  authenticator_ = createPeerAuthenticator(
       filter_context_.get(),
-      [this](bool success) { onPeerAuthenticationDone(success); }));
+      [this](bool success) { onPeerAuthenticationDone(success); });
   authenticator_->run();
 
   if (state_ == Istio::AuthN::State::COMPLETE) {
@@ -58,9 +58,9 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
 void AuthenticationFilter::onPeerAuthenticationDone(bool success) {
   ENVOY_LOG(debug, "{}: success = {}", __func__, success);
   if (success) {
-    authenticator_ = std::move(createOriginAuthenticator(
+    authenticator_ = createOriginAuthenticator(
         filter_context_.get(),
-        [this](bool success) { onOriginAuthenticationDone(success); }));
+        [this](bool success) { onOriginAuthenticationDone(success); });
     authenticator_->run();
   } else {
     rejectRequest("Peer authentication failed.");
@@ -80,6 +80,9 @@ FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
   ENVOY_LOG(debug,
             "Called AuthenticationFilter : {} FilterDataStatus::Continue;",
             __FUNCTION__);
+  if (state_ == Istio::AuthN::State::PROCESSING) {
+    return FilterDataStatus::StopIterationAndBuffer;
+  }
   return FilterDataStatus::Continue;
 }
 

@@ -62,7 +62,7 @@ TEST_F(AuthenticatorBaseTest, ValidateX509) {
 
 // TODO: more tests for other cases of x509 and Jwt.
 
-TEST(FindCredentialRuleTest, Empty) {
+TEST(FindCredentialRuleTest, EmptyPolicy) {
   iaapi::Policy policy;
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString("", &policy));
   EXPECT_TRUE(TestUtility::protoEqual(iaapi::CredentialRule::default_instance(),

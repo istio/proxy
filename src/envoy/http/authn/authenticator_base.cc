@@ -66,22 +66,22 @@ void AuthenticatorBase::validateX509(
     return;
   }
 
-  std::unique_ptr<Payload> payload = std::make_unique<Payload>();
-  if (!mtls_authn.GetSourceUser(payload->mutable_x509()->mutable_user())) {
-    done_callback(payload.get(), false);
+  Payload payload;
+  if (!mtls_authn.GetSourceUser(payload.mutable_x509()->mutable_user())) {
+    done_callback(&payload, false);
   }
 
   // TODO (lei-tang): Adding other attributes (i.e ip) to payload if desire.
-  done_callback(payload.get(), true);
+  done_callback(&payload, true);
 }
 
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt&,
     const AuthenticatorBase::MethodDoneCallback& done_callback) const {
-  std::unique_ptr<Payload> payload = std::make_unique<Payload>();
+  Payload payload;
   // TODO (diemtvu/lei-tang): construct jwt_authenticator and call Verify;
   // pass done_callback so that it would be trigger by jwt_authenticator.onDone.
-  done_callback(payload.get(), false);
+  done_callback(&payload, false);
 }
 
 const iaapi::CredentialRule& findCredentialRuleOrDefault(
