@@ -56,7 +56,7 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
       on_done_(on_done),
       request_(async_client_->send(
           descriptor(), request, *this, Tracing::NullSpan::instance(),
-          Optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
+          optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
   ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
             request.DebugString());
 }
@@ -110,10 +110,10 @@ GrpcTransport<RequestType, ResponseType>::GetFunc(
   return [&factory, headers](const RequestType& request, ResponseType* response,
                              istio::mixerclient::DoneFunc on_done)
              -> istio::mixerclient::CancelFunc {
-               auto transport = new GrpcTransport<RequestType, ResponseType>(
-                   factory.create(), request, headers, response, on_done);
-               return [transport]() { transport->Cancel(); };
-             };
+    auto transport = new GrpcTransport<RequestType, ResponseType>(
+        factory.create(), request, headers, response, on_done);
+    return [transport]() { transport->Cancel(); };
+  };
 }
 
 template <>
