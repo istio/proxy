@@ -53,7 +53,7 @@ class ReportData : public ::istio::control::http::ReportData {
     // responseCode is for the backend response. If it is not valid, the request
     // is rejected by Envoy. Set the response code for such requests as 500.
     data->response_code = 500;
-    if (info_.responseCode().valid()) {
+    if (info_.responseCode().has_value()) {
       data->response_code = info_.responseCode().value();
     }
   }
