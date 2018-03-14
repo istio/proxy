@@ -57,7 +57,7 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
       on_done_(on_done),
       request_(async_client_->send(
           descriptor(), request, *this, Tracing::NullSpan::instance(),
-          optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
+          absl::optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
   ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
             request.DebugString());
 }
