@@ -27,13 +27,13 @@ namespace {
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
 
-} // namespace
+}  // namespace
 
 class ReportData : public ::istio::control::http::ReportData {
   const HeaderMap *headers_;
   const RequestInfo::RequestInfo &info_;
 
-public:
+ public:
   ReportData(const HeaderMap *headers, const RequestInfo::RequestInfo &info)
       : headers_(headers), info_(info) {}
 
@@ -48,7 +48,10 @@ public:
       ::istio::control::http::ReportData::ReportInfo *data) const override {
     data->received_bytes = info_.bytesReceived();
     data->send_bytes = info_.bytesSent();
-    data->duration = info_.requestComplete();
+    data->duration = std::chrono::nanoseconds{0};
+    if (info_.requestComplete().has_value()) {
+      data->duration = info_.requestComplete().value();
+    }
     // responseCode is for the backend response. If it is not valid, the request
     // is rejected by Envoy. Set the response code for such requests as 500.
     data->response_code = 500;
@@ -58,6 +61,6 @@ public:
   }
 };
 
-} // namespace Mixer
-} // namespace Http
-} // namespace Envoy
+}  // namespace Mixer
+}  // namespace Http
+}  // namespace Envoy
