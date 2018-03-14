@@ -82,7 +82,7 @@ void AuthenticationFilter::onOriginAuthenticationDone(bool success) {
       filter_context_->authenticationResult().SerializeToString(&payload_data);
       const std::string base64_data =
           Base64::encode(payload_data.c_str(), payload_data.size());
-      filter_context_->headers()->addReferenceKey(kAuthenticationPayloadKey,
+      filter_context_->headers()->addReferenceKey(kOutputHeaderLocation,
                                                   base64_data);
     }
 
