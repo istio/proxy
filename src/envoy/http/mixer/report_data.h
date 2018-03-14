@@ -48,16 +48,11 @@ class ReportData : public ::istio::control::http::ReportData {
       ::istio::control::http::ReportData::ReportInfo *data) const override {
     data->received_bytes = info_.bytesReceived();
     data->send_bytes = info_.bytesSent();
-    data->duration = std::chrono::nanoseconds{0};
-    if (info_.requestComplete().has_value()) {
-      data->duration = info_.requestComplete().value();
-    }
+    data->duration =
+        info_.requestComplete().value_or(std::chrono::nanoseconds{0});
     // responseCode is for the backend response. If it is not valid, the request
     // is rejected by Envoy. Set the response code for such requests as 500.
-    data->response_code = 500;
-    if (info_.responseCode().has_value()) {
-      data->response_code = info_.responseCode().value();
-    }
+    data->response_code = info_.responseCode().value_or(500);
   }
 };
 
