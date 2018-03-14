@@ -9,8 +9,8 @@
 	{
 		"name": "ENVOY_SHA",
 		"repoName": "envoyproxy/envoy",
-		"prodBranch": "cds_warming",
+		"prodBranch": "master",
 		"file": "WORKSPACE",
-		"lastStableSHA": "5792150f086b3e4df3d4f8b1d9483fe876024867"
+		"lastStableSHA": "7d03b231c7e8e086956096f6ca961f82c684ed0b"
 	}
 ]
