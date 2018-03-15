@@ -24,6 +24,7 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 namespace {
+
 // Returns true if rule is mathed for peer_id
 bool isRuleMatchedWithPeer(const iaapi::CredentialRule& rule,
                            const std::string& peer_id) {
@@ -39,15 +40,45 @@ bool isRuleMatchedWithPeer(const iaapi::CredentialRule& rule,
 }
 }  // namespace
 
+// This class implements the onDone() of JwtAuth::JwtAuthenticator::Callbacks.
+class JwtAuthenticatorCallbacks : public Logger::Loggable<Logger::Id::filter>,
+                                  public JwtAuth::JwtAuthenticator::Callbacks {
+ public:
+  JwtAuthenticatorCallbacks(
+      const AuthenticatorBase::MethodDoneCallback& done_callback)
+      : done_callback_(done_callback) {}
+
+  // Implement the onDone() of JwtAuth::JwtAuthenticator::Callbacks.
+  void onDone(const JwtAuth::Status& status) override {
+    ENVOY_LOG(debug,
+              "JwtAuthenticatorCallbacks::onDone is called with status {}",
+              int(status));
+    if (status != JwtAuth::Status::OK) {
+      // nullptr when authentication fails
+      done_callback_(nullptr, false);
+    } else {
+      // TODO (lei-tang): Adding other JWT attributes (i.e jwt sub, claims) to
+      // payload
+      ENVOY_LOG(debug, "JwtAuthenticatorCallbacks::onDone JwtAuth returns OK.");
+      done_callback_(&payload_, true);
+    }
+  }
+
+ private:
+  // The MethodDoneCallback of JWT authentication.
+  const AuthenticatorBase::MethodDoneCallback& done_callback_;
+
+  // The payload object
+  Payload payload_;
+};
+
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
     const AuthenticatorBase::DoneCallback& done_callback,
-    Upstream::ClusterManager& cm,
-    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store)
+    JwtToAuthStoreMap& jwt_store)
     : filter_context_(*filter_context),
       done_callback_(done_callback),
-      cm_(cm),
-      jwt_store_(jwt_store) {}
+      jwt_store_map_(jwt_store) {}
 
 AuthenticatorBase::~AuthenticatorBase() {}
 
@@ -82,42 +113,23 @@ void AuthenticatorBase::validateX509(
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt& jwt,
     const AuthenticatorBase::MethodDoneCallback& done_callback) {
-  Http::JwtAuth::Config::AuthFilterConfig proto_config;
-  Envoy::Http::Istio::AuthN::convertJwtAuthFormat(jwt, &proto_config);
-
-  std::string config_str;
-  proto_config.SerializeToString(&config_str);
-  if (jwt_store_.find(config_str) == jwt_store_.end()) {
+  if (jwt_store_map_.find(jwt) == jwt_store_map_.end()) {
     ENVOY_LOG(error, "{}: the JWT config is not found: {}", __FUNCTION__,
-              proto_config.DebugString());
+              jwt.DebugString());
     done_callback(nullptr, false);
     return;
   }
-
   // Choose the JwtAuthStore based on the Jwt config.
-  jwt_auth_.reset(
-      new Http::JwtAuth::JwtAuthenticator(cm_, *jwt_store_[config_str]));
+  jwt_auth_.reset(new Http::JwtAuth::JwtAuthenticator(
+      filter_context_.clusterManager(), *jwt_store_map_[jwt]));
 
   // Record done_callback so that it would be trigger by
   // jwt_authenticator.onDone.
-  jwt_done_callback_ = &done_callback;
+  jwt_authenticator_cb_.reset(new JwtAuthenticatorCallbacks(done_callback));
 
   // Verify the JWT token, onDone() will be called when completed.
-  jwt_auth_->Verify(*filter_context()->headers(), this);
-}
-
-void AuthenticatorBase::onDone(const JwtAuth::Status& status) {
-  ENVOY_LOG(debug, "AuthenticatorBase::onDone is called with status {}",
-            int(status));
-  if (status != JwtAuth::Status::OK) {
-    (*jwt_done_callback_)(&payload_, false);
-  } else {
-    // TODO (lei-tang): Adding other JWT attributes (i.e jwt sub, claims) to
-    // payload
-    ENVOY_LOG(debug, "AuthenticatorBase::onDone JwtAuth returns OK.");
-    (*jwt_done_callback_)(&payload_, true);
-  }
-  jwt_done_callback_ = nullptr;
+  // jwt_auth_->Verify(*filter_context()->headers(), this);
+  jwt_auth_->Verify(*filter_context()->headers(), jwt_authenticator_cb_.get());
 }
 
 const iaapi::CredentialRule& findCredentialRuleOrDefault(

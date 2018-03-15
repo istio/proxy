@@ -29,8 +29,9 @@ namespace AuthN {
 // result data for authentication process.
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
-  FilterContext(HeaderMap* headers, const Network::Connection* connection)
-      : headers_(headers), connection_(connection) {}
+  FilterContext(HeaderMap* headers, const Network::Connection* connection,
+                Upstream::ClusterManager& cm)
+      : headers_(headers), connection_(connection), cm_(cm) {}
   virtual ~FilterContext() {}
 
   // Sets peer result based on authenticated payload. Input payload can be null,
@@ -54,12 +55,18 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
 
+  // Accessor to ClusterManager
+  Upstream::ClusterManager& clusterManager() { return cm_; }
+
  private:
   // Pointer to the headers of the request.
   HeaderMap* headers_;
 
   // Pointer to network connection of the request.
   const Network::Connection* connection_;
+
+  // ClusterManager reference
+  Upstream::ClusterManager& cm_;
 
   // Holds authentication attribute outputs.
   Result result_;

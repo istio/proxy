@@ -34,7 +34,8 @@ const LowerCaseString AuthenticationFilter::kOutputHeaderLocation(
 AuthenticationFilter::AuthenticationFilter(
     const istio::authentication::v1alpha1::Policy& policy,
     Upstream::ClusterManager& cm,
-    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store)
+    // std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store)
+    JwtToAuthStoreMap& jwt_store)
     : policy_(policy), cm_(cm), jwt_store_(jwt_store) {}
 
 AuthenticationFilter::~AuthenticationFilter() {}
@@ -49,7 +50,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
   state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
-      &headers, decoder_callbacks_->connection()));
+      &headers, decoder_callbacks_->connection(), cm_));
 
   authenticator_ = createPeerAuthenticator(
       filter_context_.get(),
@@ -145,7 +146,7 @@ AuthenticationFilter::createPeerAuthenticator(
     Istio::AuthN::FilterContext* filter_context,
     const Istio::AuthN::AuthenticatorBase::DoneCallback& done_callback) {
   return std::make_unique<Istio::AuthN::PeerAuthenticator>(
-      filter_context, done_callback, cm_, jwt_store_, policy_);
+      filter_context, done_callback, jwt_store_, policy_);
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>
@@ -155,7 +156,7 @@ AuthenticationFilter::createOriginAuthenticator(
   const auto& rule = Istio::AuthN::findCredentialRuleOrDefault(
       policy_, filter_context_->authenticationResult().peer_user());
   return std::make_unique<Istio::AuthN::OriginAuthenticator>(
-      filter_context, done_callback, cm_, jwt_store_, rule);
+      filter_context, done_callback, jwt_store_, rule);
 }
 
 }  // namespace AuthN

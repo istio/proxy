@@ -64,7 +64,6 @@ envoy_cc_library(
     ],
     hdrs = [
         "http_filter.h",
-        "jwt_authn_store.h",
     ],
     repository = "@envoy",
     deps = [
@@ -84,6 +83,7 @@ envoy_cc_library(
         "jwt_authn_utils.cc",
     ],
     hdrs = [
+        "jwt_authn_store.h",
         "jwt_authn_utils.h",
     ],
     repository = "@envoy",

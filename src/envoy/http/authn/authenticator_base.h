@@ -19,6 +19,7 @@
 #include "common/common/logger.h"
 #include "src/envoy/http/authn/context.pb.h"
 #include "src/envoy/http/authn/filter_context.h"
+#include "src/envoy/http/authn/jwt_authn_store.h"
 #include "src/envoy/http/jwt_auth/jwt_authenticator.h"
 
 namespace Envoy {
@@ -26,11 +27,12 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
+class JwtAuthenticatorCallbacks;
+
 // AuthenticatorBase is the base class for authenticator. It provides functions
 // to perform individual authentication methods, which can be used to construct
 // compound authentication flow.
-class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter>,
-                          public JwtAuth::JwtAuthenticator::Callbacks {
+class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
  public:
   // Callback type for individual authentication method.
   typedef std::function<void(const Payload*, bool)> MethodDoneCallback;
@@ -39,8 +41,7 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter>,
   typedef std::function<void(bool)> DoneCallback;
 
   AuthenticatorBase(FilterContext* filter_context, const DoneCallback& callback,
-                    Upstream::ClusterManager& cm,
-                    std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store);
+                    JwtToAuthStoreMap& jwt_store);
   virtual ~AuthenticatorBase();
 
   // Perform authentication.
@@ -67,29 +68,19 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter>,
   FilterContext* filter_context() { return &filter_context_; }
 
  private:
-  // Implement the onDone() function of JwtAuth::Authenticator::Callbacks
-  // interface.
-  void onDone(const JwtAuth::Status& status);
-
   // Pointer to filter state. Do not own.
   FilterContext& filter_context_;
 
   const DoneCallback done_callback_;
 
-  // ClusterManager reference
-  Upstream::ClusterManager& cm_;
-
-  // The JwtAuthnStore reference
-  std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store_;
+  // The JwtToAuthStoreMap reference
+  JwtToAuthStoreMap& jwt_store_map_;
 
   // The JWT authenticator object.
   std::unique_ptr<Envoy::Http::JwtAuth::JwtAuthenticator> jwt_auth_;
 
-  // The MethodDoneCallback for JWT authentication.
-  const AuthenticatorBase::MethodDoneCallback* jwt_done_callback_;
-
-  // The payload object
-  Payload payload_;
+  // The JwtAuthenticatorCallbacks object.
+  std::unique_ptr<JwtAuthenticatorCallbacks> jwt_authenticator_cb_;
 };
 
 // Return pointer to credential rule matching with peer_id from the policy.

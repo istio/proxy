@@ -28,6 +28,9 @@ void convertJwtAuthFormat(
     const ::istio::authentication::v1alpha1::Jwt& jwt_authn,
     Http::JwtAuth::Config::AuthFilterConfig* proto_config);
 
+// Get the Jwks URI for Envoy cluster
+const std::string getJwksUriEnvoyCluster();
+
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http

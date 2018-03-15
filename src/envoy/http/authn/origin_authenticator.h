@@ -17,6 +17,7 @@
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "src/envoy/http/authn/authenticator_base.h"
+#include "src/envoy/http/authn/jwt_authn_store.h"
 
 namespace Envoy {
 namespace Http {
@@ -28,8 +29,7 @@ class OriginAuthenticator : public AuthenticatorBase {
  public:
   OriginAuthenticator(
       FilterContext* filter_context, const DoneCallback& done_callback,
-      Upstream::ClusterManager& cm,
-      std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store,
+      JwtToAuthStoreMap& jwt_store,
       const istio::authentication::v1alpha1::CredentialRule& credential_rule);
 
   void run() override;

@@ -18,6 +18,7 @@
 #include "common/common/logger.h"
 #include "envoy/server/filter_config.h"
 #include "envoy/thread_local/thread_local.h"
+#include "src/envoy/http/authn/jwt_authn_utils.h"
 #include "src/envoy/http/jwt_auth/auth_store.h"
 #include "src/envoy/http/jwt_auth/config.pb.h"
 
@@ -26,6 +27,29 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
+// The comparator for ::istio::authentication::v1alpha1::Jwt
+struct JwtAuthnComparator {
+  bool operator()(const ::istio::authentication::v1alpha1::Jwt &a,
+                  const ::istio::authentication::v1alpha1::Jwt &b) const {
+    std::string s1, s2;
+    a.SerializeToString(&s1);
+    b.SerializeToString(&s2);
+    return s1 < s2;
+  }
+};
+
+// The map type for ::istio::authentication::v1alpha1::Jwt ->
+// Envoy::Http::JwtAuth::JwtAuthStoreFactory
+typedef std::map<::istio::authentication::v1alpha1::Jwt,
+                 Envoy::Http::JwtAuth::JwtAuthStoreFactory, JwtAuthnComparator>
+    JwtToAuthFactoryMap;
+
+// The map type for ::istio::authentication::v1alpha1::Jwt ->
+// Envoy::Http::JwtAuth::JwtAuthStore *
+typedef std::map<::istio::authentication::v1alpha1::Jwt,
+                 Envoy::Http::JwtAuth::JwtAuthStore *, JwtAuthnComparator>
+    JwtToAuthStoreMap;
+
 // Store the JwtAuthStoreFactory objects
 class JwtAuthnFactoryStore : public Logger::Loggable<Logger::Id::config> {
  public:
@@ -33,25 +57,25 @@ class JwtAuthnFactoryStore : public Logger::Loggable<Logger::Id::config> {
       : context_(context) {}
 
   // Get the reference of the JwtAuthStore objects
-  std::map<std::string, Envoy::Http::JwtAuth::JwtAuthStore *> &store() {
-    store_tls_.clear();
-    for (auto it = store_.begin(); it != store_.end(); it++) {
-      store_tls_[it->first] = &(it->second.store());
+  JwtToAuthStoreMap &store() {
+    jwt_store_tls_.clear();
+    for (auto it = jwt_store_.begin(); it != jwt_store_.end(); it++) {
+      jwt_store_tls_[it->first] = &(it->second.store());
     }
-    return store_tls_;
+    return jwt_store_tls_;
   }
 
-  // Add an AuthFilterConfig to the store.
-  void addToStore(Envoy::Http::JwtAuth::Config::AuthFilterConfig &config) {
-    std::string config_str;
-    config.SerializeToString(&config_str);
-    if (store_.find(config_str) != store_.end()) {
+  // Add a JWT config to the store.
+  void addToStore(const ::istio::authentication::v1alpha1::Jwt &jwt) {
+    if (jwt_store_.find(jwt) != jwt_store_.end()) {
       ENVOY_LOG(debug, "{}: AuthFilterConfig exists already", __FUNCTION__);
       return;
     }
     // Add a JwtAuthStoreFactory
-    store_.emplace(std::piecewise_construct, std::forward_as_tuple(config_str),
-                   std::forward_as_tuple(config, context_));
+    Http::JwtAuth::Config::AuthFilterConfig config;
+    Envoy::Http::Istio::AuthN::convertJwtAuthFormat(jwt, &config);
+    jwt_store_.emplace(std::piecewise_construct, std::forward_as_tuple(jwt),
+                       std::forward_as_tuple(config, context_));
     ENVOY_LOG(debug, "{}: added a JwtAuthStoreFactory", __FUNCTION__);
   }
 
@@ -60,16 +84,16 @@ class JwtAuthnFactoryStore : public Logger::Loggable<Logger::Id::config> {
   Server::Configuration::FactoryContext &context_;
 
   // Store the JwtAuthStoreFactory objects in a map.
-  // The key is AuthFilterConfig as string.
+  // The key is JWT.
   // Todo: may only need to use the issuer as the key.
-  std::map<std::string, Envoy::Http::JwtAuth::JwtAuthStoreFactory> store_{};
+  JwtToAuthFactoryMap jwt_store_{};
 
   // Store the JwtAuthStore objects in a map.
   // Generated from JwtAuthStoreFactory at run time due to the thread local
   // nature.
-  // The key is AuthFilterConfig as string.
+  // The key is JWT.
   // Todo: may only need to use the issuer as the key.
-  std::map<std::string, Envoy::Http::JwtAuth::JwtAuthStore *> store_tls_{};
+  JwtToAuthStoreMap jwt_store_tls_{};
 };
 
 }  // namespace AuthN

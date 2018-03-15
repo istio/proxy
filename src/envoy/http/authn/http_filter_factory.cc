@@ -15,8 +15,6 @@
 
 #include "src/envoy/http/authn/http_filter.h"
 #include "envoy/registry/registry.h"
-#include "src/envoy/http/authn/jwt_authn_store.h"
-#include "src/envoy/http/authn/jwt_authn_utils.h"
 #include "src/envoy/utils/utils.h"
 
 namespace Envoy {
@@ -83,9 +81,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     for (int i = 0; i < policy_.peers_size(); i++) {
       auto m = policy_.peers(i);
       if (m.has_jwt()) {
-        Http::JwtAuth::Config::AuthFilterConfig proto_config;
-        Envoy::Http::Istio::AuthN::convertJwtAuthFormat(m.jwt(), &proto_config);
-        jwt_factory_store->addToStore(proto_config);
+        jwt_factory_store->addToStore(m.jwt());
       }
     }
     // Iterate through all CredentialRules for JWT configs
@@ -93,10 +89,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
       auto m = policy_.credential_rules(i);
       for (int j = 0; j < m.origins_size(); j++) {
         if (m.origins(j).has_jwt()) {
-          Http::JwtAuth::Config::AuthFilterConfig proto_config;
-          Envoy::Http::Istio::AuthN::convertJwtAuthFormat(m.origins(j).jwt(),
-                                                          &proto_config);
-          jwt_factory_store->addToStore(proto_config);
+          jwt_factory_store->addToStore(m.origins(j).jwt());
         }
       }
     }

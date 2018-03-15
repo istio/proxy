@@ -21,12 +21,16 @@ namespace Istio {
 namespace AuthN {
 
 namespace {
-// The name for JWT cluster
-// Todo: need to add a cluster field in the Istio authn JWT config.
-// Before such field is added to the Istio authn JWT config,
-// it is temporarily hard-coded.
 const std::string kJwtClusterName("example_issuer");
 }  // namespace
+
+// Get the Jwks URI for Envoy cluster
+const std::string getJwksUriEnvoyCluster() {
+  // Todo: Pilot needs to put a cluster field in the Istio authn JWT config.
+  // Before such field is added to the Istio authn JWT config,
+  // it is temporarily hard-coded.
+  return kJwtClusterName;
+}
 
 // Convert istio-authn::jwt to jwt_auth::jwt in protobuf format.
 void convertJwtAuthFormat(
@@ -36,7 +40,7 @@ void convertJwtAuthFormat(
   // may need to convert more fields.
   auto jwt = proto_config->add_jwts();
   MessageUtil::jsonConvert(jwt_authn, *jwt);
-  jwt->set_jwks_uri_envoy_cluster(kJwtClusterName);
+  jwt->set_jwks_uri_envoy_cluster(getJwksUriEnvoyCluster());
 }
 
 }  // namespace AuthN
