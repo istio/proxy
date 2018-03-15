@@ -21,6 +21,7 @@
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
+#include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
@@ -67,7 +68,9 @@ class PeerAuthenticatorTest : public testing::Test {
   std::unique_ptr<StrictMock<MockPeerAuthenticator>> authenticator_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
-  FilterContext filter_context_{&request_headers_, nullptr};
+  Envoy::Upstream::MockClusterManager cm_;
+  JwtToAuthStoreMap jwt_store_map_;
+  FilterContext filter_context_{&request_headers_, nullptr, cm_, jwt_store_map_};
   iaapi::Policy policy_;
 
   Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};

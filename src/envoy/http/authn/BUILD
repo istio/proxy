@@ -134,6 +134,7 @@ envoy_cc_test(
         ":authenticator",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )

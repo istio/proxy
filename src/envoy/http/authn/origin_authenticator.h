@@ -17,7 +17,6 @@
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "src/envoy/http/authn/authenticator_base.h"
-#include "src/envoy/http/authn/jwt_authn_store.h"
 
 namespace Envoy {
 namespace Http {
