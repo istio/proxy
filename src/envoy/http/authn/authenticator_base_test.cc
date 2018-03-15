@@ -64,7 +64,7 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnPlaintextConnection) {
 
 TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithNoPeerCert) {
   iaapi::MutualTls mTlsParams;
-  EXPECT_CALL(Const(connection_), ssl()).Times(2).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(false));
@@ -77,7 +77,7 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithNoPeerCert) {
 
 TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerCert) {
   iaapi::MutualTls mTlsParams;
-  EXPECT_CALL(Const(connection_), ssl()).Times(3).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
@@ -91,7 +91,7 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerCert) {
 
 TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerSpiffeCert) {
   iaapi::MutualTls mTlsParams;
-  EXPECT_CALL(Const(connection_), ssl()).Times(3).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
@@ -108,7 +108,7 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerSpiffeCert) {
 TEST_F(AuthenticatorBaseTest,
        ValidateX509OnSslConnectionWithPeerMalformedSpiffeCert) {
   iaapi::MutualTls mTlsParams;
-  EXPECT_CALL(Const(connection_), ssl()).Times(3).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
