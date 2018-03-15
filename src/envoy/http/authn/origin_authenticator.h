@@ -29,7 +29,6 @@ class OriginAuthenticator : public AuthenticatorBase {
  public:
   OriginAuthenticator(
       FilterContext* filter_context, const DoneCallback& done_callback,
-      JwtToAuthStoreMap& jwt_store,
       const istio::authentication::v1alpha1::CredentialRule& credential_rule);
 
   void run() override;

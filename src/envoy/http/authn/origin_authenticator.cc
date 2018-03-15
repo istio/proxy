@@ -25,8 +25,8 @@ namespace AuthN {
 
 OriginAuthenticator::OriginAuthenticator(
     FilterContext* filter_context, const DoneCallback& done_callback,
-    JwtToAuthStoreMap& jwt_store, const iaapi::CredentialRule& credential_rule)
-    : AuthenticatorBase(filter_context, done_callback, jwt_store),
+    const iaapi::CredentialRule& credential_rule)
+    : AuthenticatorBase(filter_context, done_callback),
       credential_rule_(credential_rule) {}
 
 void OriginAuthenticator::run() {

@@ -32,11 +32,9 @@ namespace AuthN {
 class AuthenticationFilter : public StreamDecoderFilter,
                              public Logger::Loggable<Logger::Id::filter> {
  public:
-  AuthenticationFilter(
-      const istio::authentication::v1alpha1::Policy& config,
-      Upstream::ClusterManager& cm,
-      // std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store);
-      JwtToAuthStoreMap& jwt_store);
+  AuthenticationFilter(const istio::authentication::v1alpha1::Policy& config,
+                       Upstream::ClusterManager& cm,
+                       JwtToAuthStoreMap& jwt_store);
 
   ~AuthenticationFilter();
 
@@ -89,8 +87,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
   Upstream::ClusterManager& cm_;
 
   // The JwtAuthnStore reference
-  // std::map<std::string, JwtAuth::JwtAuthStore*>& jwt_store_;
-  JwtToAuthStoreMap& jwt_store_;
+  JwtToAuthStoreMap& jwt_store_map_;
 
   enum State { INIT, PROCESSING, COMPLETE, REJECTED };
   // Holds the state of the filter.

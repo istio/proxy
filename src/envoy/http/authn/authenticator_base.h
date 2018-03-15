@@ -40,8 +40,8 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   // Callback type for the whole authenticator.
   typedef std::function<void(bool)> DoneCallback;
 
-  AuthenticatorBase(FilterContext* filter_context, const DoneCallback& callback,
-                    JwtToAuthStoreMap& jwt_store);
+  AuthenticatorBase(FilterContext* filter_context,
+                    const DoneCallback& callback);
   virtual ~AuthenticatorBase();
 
   // Perform authentication.
@@ -72,9 +72,6 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   FilterContext& filter_context_;
 
   const DoneCallback done_callback_;
-
-  // The JwtToAuthStoreMap reference
-  JwtToAuthStoreMap& jwt_store_map_;
 
   // The JWT authenticator object.
   std::unique_ptr<Envoy::Http::JwtAuth::JwtAuthenticator> jwt_auth_;

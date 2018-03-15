@@ -74,11 +74,8 @@ class JwtAuthenticatorCallbacks : public Logger::Loggable<Logger::Id::filter>,
 
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
-    const AuthenticatorBase::DoneCallback& done_callback,
-    JwtToAuthStoreMap& jwt_store)
-    : filter_context_(*filter_context),
-      done_callback_(done_callback),
-      jwt_store_map_(jwt_store) {}
+    const AuthenticatorBase::DoneCallback& done_callback)
+    : filter_context_(*filter_context), done_callback_(done_callback) {}
 
 AuthenticatorBase::~AuthenticatorBase() {}
 
@@ -113,7 +110,8 @@ void AuthenticatorBase::validateX509(
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt& jwt,
     const AuthenticatorBase::MethodDoneCallback& done_callback) {
-  if (jwt_store_map_.find(jwt) == jwt_store_map_.end()) {
+  if (filter_context_.jwtToAuthStoreMap().find(jwt) ==
+      filter_context_.jwtToAuthStoreMap().end()) {
     ENVOY_LOG(error, "{}: the JWT config is not found: {}", __FUNCTION__,
               jwt.DebugString());
     done_callback(nullptr, false);
@@ -121,7 +119,8 @@ void AuthenticatorBase::validateJwt(
   }
   // Choose the JwtAuthStore based on the Jwt config.
   jwt_auth_.reset(new Http::JwtAuth::JwtAuthenticator(
-      filter_context_.clusterManager(), *jwt_store_map_[jwt]));
+      filter_context_.clusterManager(),
+      *filter_context_.jwtToAuthStoreMap()[jwt]));
 
   // Record done_callback so that it would be trigger by
   // jwt_authenticator.onDone.

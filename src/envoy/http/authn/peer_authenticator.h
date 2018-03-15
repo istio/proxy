@@ -29,7 +29,6 @@ class PeerAuthenticator : public AuthenticatorBase {
  public:
   PeerAuthenticator(FilterContext* filter_context,
                     const DoneCallback& done_callback,
-                    JwtToAuthStoreMap& jwt_store,
                     const istio::authentication::v1alpha1::Policy& policy);
 
   void run() override;
