@@ -109,6 +109,7 @@ envoy_cc_test(
     deps = [
         ":authenticator",
         ":test_utils",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )

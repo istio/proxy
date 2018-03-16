@@ -18,6 +18,7 @@
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/context.pb.h"
 #include "src/envoy/http/authn/test_utils.h"
+#include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"
 
 using testing::StrictMock;
@@ -34,9 +35,11 @@ class FilterContextTest : public testing::Test {
  public:
   virtual ~FilterContextTest() {}
 
+  Envoy::Upstream::MockClusterManager cm_;
+  JwtToAuthStoreMap jwt_store_map_;
   // This test suit does not use headers nor connection, so ok to use null for
   // them.
-  StrictMock<FilterContext> filter_context_{nullptr, nullptr};
+  FilterContext filter_context_{nullptr, nullptr, cm_, jwt_store_map_};
   Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 };
