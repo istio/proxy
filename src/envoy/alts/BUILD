@@ -66,10 +66,14 @@ envoy_cc_library(
     ],
 )
 
-envoy_cc_library(
+# envoy_cc_library uses -Werror=unused-variable and -Werror=old-style-cast which
+# is not compatible with some gRPC headers, use cc_library here.
+cc_library(
     name = "alts_socket_factory",
-    repository = "@envoy",
     visibility = ["//visibility:public"],
+    copts = [
+        "-std=c++14",
+    ],
     srcs = [
         "alts_socket_factory.cc",
     ],
@@ -81,4 +85,6 @@ envoy_cc_library(
         ":alts_socket_proto_cc",
         "@envoy//source/exe:envoy_common_lib",
     ],
+    alwayslink = 1,
+    linkstatic = 1,
 )
