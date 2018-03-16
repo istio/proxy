@@ -74,6 +74,7 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   const DoneCallback done_callback_;
 
   // The JWT authenticator object.
+  // It will deallocate JwtAuthenticator when it is out of scope.
   std::unique_ptr<Envoy::Http::JwtAuth::JwtAuthenticator> jwt_auth_;
 
   // The JwtAuthenticatorCallbacks object.

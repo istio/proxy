@@ -34,7 +34,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
                 Upstream::ClusterManager& cm, JwtToAuthStoreMap& jwt_store_map)
       : headers_(headers),
         connection_(connection),
-        cm_(cm),
+        cluster_manager_(cm),
         jwt_store_map_(jwt_store_map) {}
   virtual ~FilterContext() {}
 
@@ -63,7 +63,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   JwtToAuthStoreMap& jwtToAuthStoreMap() { return jwt_store_map_; }
 
   // Accessor to ClusterManager
-  Upstream::ClusterManager& clusterManager() { return cm_; }
+  Upstream::ClusterManager& clusterManager() { return cluster_manager_; }
 
  private:
   // Pointer to the headers of the request.
@@ -73,7 +73,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   const Network::Connection* connection_;
 
   // ClusterManager reference
-  Upstream::ClusterManager& cm_;
+  Upstream::ClusterManager& cluster_manager_;
 
   // The JwtAuthnStore reference
   JwtToAuthStoreMap& jwt_store_map_;
