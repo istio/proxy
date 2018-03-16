@@ -123,6 +123,7 @@ envoy_cc_test(
         ":test_utils",
         "@envoy//test/mocks/ssl:ssl_mocks",
         "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
@@ -163,6 +164,7 @@ envoy_cc_test(
         "//external:authentication_policy_config_cc_proto",
         "@envoy//source/common/http:header_map_lib",
         "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
