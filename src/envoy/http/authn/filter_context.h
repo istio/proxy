@@ -19,6 +19,7 @@
 #include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"
 #include "src/envoy/http/authn/context.pb.h"
+#include "src/envoy/http/authn/jwt_authn_store.h"
 
 namespace Envoy {
 namespace Http {
@@ -29,8 +30,12 @@ namespace AuthN {
 // result data for authentication process.
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
-  FilterContext(HeaderMap* headers, const Network::Connection* connection)
-      : headers_(headers), connection_(connection) {}
+  FilterContext(HeaderMap* headers, const Network::Connection* connection,
+                Upstream::ClusterManager& cm, JwtToAuthStoreMap& jwt_store_map)
+      : headers_(headers),
+        connection_(connection),
+        cluster_manager_(cm),
+        jwt_store_map_(jwt_store_map) {}
   virtual ~FilterContext() {}
 
   // Sets peer result based on authenticated payload. Input payload can be null,
@@ -54,12 +59,24 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
 
+  // Accessor to ClusterManager
+  JwtToAuthStoreMap& jwtToAuthStoreMap() { return jwt_store_map_; }
+
+  // Accessor to ClusterManager
+  Upstream::ClusterManager& clusterManager() { return cluster_manager_; }
+
  private:
   // Pointer to the headers of the request.
   HeaderMap* headers_;
 
   // Pointer to network connection of the request.
   const Network::Connection* connection_;
+
+  // ClusterManager reference
+  Upstream::ClusterManager& cluster_manager_;
+
+  // The JwtAuthnStore reference
+  JwtToAuthStoreMap& jwt_store_map_;
 
   // Holds authentication attribute outputs.
   Result result_;

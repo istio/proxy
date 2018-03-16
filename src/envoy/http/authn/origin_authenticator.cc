@@ -56,10 +56,11 @@ void OriginAuthenticator::run() {
     }
     return;
   }
-  runMethod(credential_rule_.origins(0),
-            [this](const Payload* payload, bool success) {
-              onMethodDone(payload, success);
-            });
+  callbackForRunMethod.reset(new AuthenticatorBase::MethodDoneCallback(
+      [this](const Payload* payload, bool success) {
+        onMethodDone(payload, success);
+      }));
+  runMethod(credential_rule_.origins(0), *callbackForRunMethod.get());
 }
 
 void OriginAuthenticator::runMethod(
@@ -70,6 +71,8 @@ void OriginAuthenticator::runMethod(
 
 void OriginAuthenticator::onMethodDone(const Payload* payload, bool success) {
   if (!success && method_index_ + 1 < credential_rule_.origins_size()) {
+    ENVOY_LOG(debug, "{}: success is false, method_index is {}", __FUNCTION__,
+              method_index_);
     // Authentication fail, try the next method, if available.
     method_index_++;
     runMethod(credential_rule_.origins(method_index_),
@@ -80,6 +83,8 @@ void OriginAuthenticator::onMethodDone(const Payload* payload, bool success) {
   }
 
   if (success) {
+    ENVOY_LOG(debug, "{}: success is true, method_index is {}", __FUNCTION__,
+              method_index_);
     filter_context()->setOriginResult(payload);
     filter_context()->setPrincipal(credential_rule_.binding());
   }

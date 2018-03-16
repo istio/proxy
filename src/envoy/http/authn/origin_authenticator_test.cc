@@ -21,6 +21,7 @@
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
+#include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
@@ -85,8 +86,7 @@ class MockOriginAuthenticator : public OriginAuthenticator {
 
   MOCK_CONST_METHOD2(validateX509,
                      void(const iaapi::MutualTls&, const MethodDoneCallback&));
-  MOCK_CONST_METHOD2(validateJwt,
-                     void(const iaapi::Jwt&, const MethodDoneCallback&));
+  MOCK_METHOD2(validateJwt, void(const iaapi::Jwt&, const MethodDoneCallback&));
 };
 
 class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
@@ -121,7 +121,10 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
   std::unique_ptr<StrictMock<MockOriginAuthenticator>> authenticator_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
-  FilterContext filter_context_{&request_headers_, nullptr};
+  Envoy::Upstream::MockClusterManager cm_;
+  JwtToAuthStoreMap jwt_store_map_;
+  FilterContext filter_context_{&request_headers_, nullptr, cm_,
+                                jwt_store_map_};
   iaapi::CredentialRule rule_;
 
   // Mock response payload.

@@ -22,6 +22,7 @@
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
+#include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"
 
 using Envoy::Http::Istio::AuthN::AuthenticatorBase;
@@ -78,7 +79,8 @@ class MockAuthenticationFilter : public AuthenticationFilter {
   // default policy for simplicity.
   MockAuthenticationFilter()
       : AuthenticationFilter(
-            istio::authentication::v1alpha1::Policy::default_instance()) {}
+            istio::authentication::v1alpha1::Policy::default_instance(), cm_,
+            jwt_store_map_) {}
   ~MockAuthenticationFilter(){};
 
   MOCK_METHOD2(createPeerAuthenticator,
@@ -87,6 +89,10 @@ class MockAuthenticationFilter : public AuthenticationFilter {
   MOCK_METHOD2(createOriginAuthenticator,
                std::unique_ptr<AuthenticatorBase>(
                    FilterContext*, const AuthenticatorBase::DoneCallback&));
+
+ protected:
+  Envoy::Upstream::MockClusterManager cm_;
+  JwtToAuthStoreMap jwt_store_map_;
 };
 
 class AuthenticationFilterTest : public testing::Test {

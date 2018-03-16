@@ -19,11 +19,15 @@
 #include "common/common/logger.h"
 #include "src/envoy/http/authn/context.pb.h"
 #include "src/envoy/http/authn/filter_context.h"
+#include "src/envoy/http/authn/jwt_authn_store.h"
+#include "src/envoy/http/jwt_auth/jwt_authenticator.h"
 
 namespace Envoy {
 namespace Http {
 namespace Istio {
 namespace AuthN {
+
+class JwtAuthenticatorCallbacks;
 
 // AuthenticatorBase is the base class for authenticator. It provides functions
 // to perform individual authentication methods, which can be used to construct
@@ -58,7 +62,7 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   // the callback function with the extracted attributes and claims (JwtPayload)
   // and status SUCCESS. Otherwise, calling callback with status FAILED.
   virtual void validateJwt(const istio::authentication::v1alpha1::Jwt& params,
-                           const MethodDoneCallback& done_callback) const;
+                           const MethodDoneCallback& done_callback);
 
   // Mutable accessor to filter context.
   FilterContext* filter_context() { return &filter_context_; }
@@ -68,6 +72,13 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   FilterContext& filter_context_;
 
   const DoneCallback done_callback_;
+
+  // The JWT authenticator object.
+  // It will deallocate JwtAuthenticator when it is out of scope.
+  std::unique_ptr<Envoy::Http::JwtAuth::JwtAuthenticator> jwt_auth_;
+
+  // The JwtAuthenticatorCallbacks object.
+  std::unique_ptr<JwtAuthenticatorCallbacks> jwt_authenticator_cb_;
 };
 
 // Return pointer to credential rule matching with peer_id from the policy.

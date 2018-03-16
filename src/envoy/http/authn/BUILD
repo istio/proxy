@@ -49,7 +49,9 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":context_proto",
+        ":jwt_authn_utils_lib",
         "//external:authentication_policy_config_cc_proto",
+        "//src/envoy/http/jwt_auth:jwt_authenticator_lib",
         "//src/envoy/utils:utils_lib",
     ],
 )
@@ -67,9 +69,27 @@ envoy_cc_library(
     deps = [
         ":authenticator",
         ":context_proto",
+        ":jwt_authn_utils_lib",
         "//external:authentication_policy_config_cc_proto",
+        "//src/envoy/http/jwt_auth:jwt_authenticator_lib",
         "//src/envoy/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "jwt_authn_utils_lib",
+    srcs = [
+        "jwt_authn_utils.cc",
+    ],
+    hdrs = [
+        "jwt_authn_store.h",
+        "jwt_authn_utils.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        "//external:authentication_policy_config_cc_proto",
+        "//src/envoy/http/jwt_auth:jwt_authenticator_lib",
     ],
 )
 
@@ -89,6 +109,7 @@ envoy_cc_test(
     deps = [
         ":authenticator",
         ":test_utils",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
@@ -102,6 +123,7 @@ envoy_cc_test(
         ":test_utils",
         "@envoy//test/mocks/ssl:ssl_mocks",
         "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
@@ -114,6 +136,7 @@ envoy_cc_test(
         ":authenticator",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
@@ -126,6 +149,7 @@ envoy_cc_test(
         ":authenticator",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
@@ -140,6 +164,7 @@ envoy_cc_test(
         "//external:authentication_policy_config_cc_proto",
         "@envoy//source/common/http:header_map_lib",
         "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )

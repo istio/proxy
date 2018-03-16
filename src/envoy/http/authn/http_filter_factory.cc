@@ -14,9 +14,7 @@
  */
 
 #include "src/envoy/http/authn/http_filter.h"
-#include "authentication/v1alpha1/policy.pb.h"
 #include "envoy/registry/registry.h"
-#include "google/protobuf/util/json_util.h"
 #include "src/envoy/utils/utils.h"
 
 namespace Envoy {
@@ -33,14 +31,14 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
  public:
   HttpFilterFactoryCb createFilterFactory(const Json::Object& config,
                                           const std::string&,
-                                          FactoryContext&) override {
+                                          FactoryContext& context) override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
     google::protobuf::util::Status status =
         Utils::ParseJsonMessage(config.asJsonString(), &policy_);
     ENVOY_LOG(debug, "Called AuthnFilterConfig : Utils::ParseJsonMessage()");
     if (status.ok()) {
-      return createFilter();
+      return createFilter(context);
     } else {
       ENVOY_LOG(critical, "Utils::ParseJsonMessage() return value is: " +
                               status.ToString());
@@ -53,7 +51,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
   HttpFilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message& proto_config, const std::string&,
-      FactoryContext&) override {
+      FactoryContext& context) override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
 
     const istio::authentication::v1alpha1::Policy& policy =
@@ -62,7 +60,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
     policy_ = policy;
 
-    return createFilter();
+    return createFilter(context);
   }
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override {
@@ -74,12 +72,34 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
   std::string name() override { return kAuthnFactoryName; }
 
  private:
-  HttpFilterFactoryCb createFilter() {
+  HttpFilterFactoryCb createFilter(FactoryContext& context) {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
+    std::shared_ptr<Http::Istio::AuthN::JwtAuthnFactoryStore>
+        jwt_factory_store =
+            std::make_shared<Http::Istio::AuthN::JwtAuthnFactoryStore>(context);
+    // Iterate through all peer rules for JWT configs
+    for (int i = 0; i < policy_.peers_size(); i++) {
+      auto m = policy_.peers(i);
+      if (m.has_jwt()) {
+        jwt_factory_store->addToStore(m.jwt());
+      }
+    }
+    // Iterate through all CredentialRules for JWT configs
+    for (int i = 0; i < policy_.credential_rules_size(); i++) {
+      auto m = policy_.credential_rules(i);
+      for (int j = 0; j < m.origins_size(); j++) {
+        if (m.origins(j).has_jwt()) {
+          jwt_factory_store->addToStore(m.origins(j).jwt());
+        }
+      }
+    }
 
-    return [&](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+    Upstream::ClusterManager& cm = context.clusterManager();
+    return [&, jwt_factory_store](
+               Http::FilterChainFactoryCallbacks& callbacks) -> void {
       callbacks.addStreamDecoderFilter(
-          std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(policy_));
+          std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(
+              policy_, cm, jwt_factory_store->store()));
     };
   }
 

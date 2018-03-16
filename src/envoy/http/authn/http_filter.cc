@@ -32,8 +32,9 @@ const LowerCaseString AuthenticationFilter::kOutputHeaderLocation(
     "sec-istio-authn-payload");
 
 AuthenticationFilter::AuthenticationFilter(
-    const istio::authentication::v1alpha1::Policy& policy)
-    : policy_(policy) {}
+    const istio::authentication::v1alpha1::Policy& policy,
+    Upstream::ClusterManager& cm, JwtToAuthStoreMap& jwt_store)
+    : policy_(policy), cm_(cm), jwt_store_map_(jwt_store) {}
 
 AuthenticationFilter::~AuthenticationFilter() {}
 
@@ -47,7 +48,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
   state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
-      &headers, decoder_callbacks_->connection()));
+      &headers, decoder_callbacks_->connection(), cm_, jwt_store_map_));
 
   authenticator_ = createPeerAuthenticator(
       filter_context_.get(),

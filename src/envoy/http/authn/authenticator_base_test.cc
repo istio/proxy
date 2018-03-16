@@ -22,6 +22,7 @@
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
+#include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"
 
 using testing::NiceMock;
@@ -49,7 +50,10 @@ class AuthenticatorBaseTest : public testing::Test {
   Http::TestHeaderMapImpl request_headers_{};
   NiceMock<Envoy::Network::MockConnection> connection_{};
   NiceMock<Envoy::Ssl::MockConnection> ssl_{};
-  FilterContext filter_context_{&request_headers_, &connection_};
+  Envoy::Upstream::MockClusterManager cm_;
+  JwtToAuthStoreMap jwt_store_map_;
+  FilterContext filter_context_{&request_headers_, &connection_, cm_,
+                                jwt_store_map_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 };
 
