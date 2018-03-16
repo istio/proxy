@@ -50,7 +50,9 @@ class OriginAuthenticator : public AuthenticatorBase {
   // been tried.
   int method_index_{0};
 
-  // Callback invoked by runMethod
+  // Callback invoked by runMethod, will deallocate the MethodDoneCallback
+  // object
+  // when out of scope.
   std::unique_ptr<AuthenticatorBase::MethodDoneCallback> callbackForRunMethod;
 };
 

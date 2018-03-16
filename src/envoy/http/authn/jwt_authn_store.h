@@ -67,6 +67,9 @@ class JwtAuthnFactoryStore : public Logger::Loggable<Logger::Id::config> {
 
   // Add a JWT config to the store.
   void addToStore(const ::istio::authentication::v1alpha1::Jwt &jwt) {
+    // TODO(lei-tang): it may be ok to use issuer as the key but need to make
+    // sure
+    // no cases of multiple Jwt have the same issuer
     if (jwt_store_.find(jwt) != jwt_store_.end()) {
       ENVOY_LOG(debug, "{}: AuthFilterConfig exists already", __FUNCTION__);
       return;
@@ -85,14 +88,16 @@ class JwtAuthnFactoryStore : public Logger::Loggable<Logger::Id::config> {
 
   // Store the JwtAuthStoreFactory objects in a map.
   // The key is JWT.
-  // Todo: may only need to use the issuer as the key.
+  // TODO(lei-tang): it may be ok to use issuer as the key but need to make sure
+  // no cases of multiple Jwt have the same issuer
   JwtToAuthFactoryMap jwt_store_{};
 
   // Store the JwtAuthStore objects in a map.
   // Generated from JwtAuthStoreFactory at run time due to the thread local
   // nature.
   // The key is JWT.
-  // Todo: may only need to use the issuer as the key.
+  // TODO(lei-tang): it may be ok to use issuer as the key but need to make sure
+  // no cases of multiple Jwt have the same issuer
   JwtToAuthStoreMap jwt_store_tls_{};
 };
 

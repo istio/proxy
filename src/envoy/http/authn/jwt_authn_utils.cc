@@ -26,7 +26,8 @@ const std::string kJwtClusterName("example_issuer");
 
 // Get the Jwks URI for Envoy cluster
 const std::string getJwksUriEnvoyCluster() {
-  // Todo: Pilot needs to put a cluster field in the Istio authn JWT config.
+  // TODO(lei-tang): Pilot needs to put a cluster field in the Istio authn JWT
+  // config.
   // Before such field is added to the Istio authn JWT config,
   // it is temporarily hard-coded.
   return kJwtClusterName;
@@ -36,7 +37,7 @@ const std::string getJwksUriEnvoyCluster() {
 void convertJwtAuthFormat(
     const ::istio::authentication::v1alpha1::Jwt& jwt_authn,
     Http::JwtAuth::Config::AuthFilterConfig* proto_config) {
-  // Todo: when istio-authn::jwt diverges from jwt_auth::jwt,
+  // TODO(lei-tang): when istio-authn::jwt diverges from jwt_auth::jwt,
   // may need to convert more fields.
   auto jwt = proto_config->add_jwts();
   MessageUtil::jsonConvert(jwt_authn, *jwt);

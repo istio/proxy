@@ -56,17 +56,6 @@ void OriginAuthenticator::run() {
     }
     return;
   }
-  // Note to explain the change (the note will be removed after the code review)
-  // The callback variable in runMethod() is a temporary variable and will be
-  // de-allocated after runMethod() returns.
-  // When the callback is later invoked on the reference of the temporary
-  // callback variable, it causes segmentation fault.
-  //
-  //  runMethod(credential_rule_.origins(0), [this](const Payload* payload,
-  //                                                bool success) {
-  //    onMethodDone(payload, success);
-  //  });
-  // Changed into the following:
   callbackForRunMethod.reset(new AuthenticatorBase::MethodDoneCallback(
       [this](const Payload* payload, bool success) {
         onMethodDone(payload, success);
