@@ -14,9 +14,10 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
-#include "src/envoy/http/authn/filter_context.h"
+//#include "src/envoy/http/authn/filter_context.h"
 #include "src/envoy/http/authn/mtls_authentication.h"
-#include "src/envoy/utils/utils.h"
+#include "src/envoy/http/mixer/check_data.h"
+//#include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
 
@@ -45,7 +46,7 @@ void AuthenticatorBase::validateX509(
   // itself is validation).
   // If x509 is missing (i.e connection is not on TLS) or SAN value is not
   // legit, call callback with status FAILED.
-  ENVOY_LOG(debug, "AuthenticationFilter: {} this connection requires mTLS",
+  ENVOY_LOG(debug, "AuthenticatorBase: {} this connection requires mTLS",
             __func__);
   MtlsAuthentication mtls_authn(filter_context_.connection());
   if (mtls_authn.IsMutualTLS() == false) {
@@ -58,17 +59,48 @@ void AuthenticatorBase::validateX509(
     done_callback(&payload, false);
   }
 
-  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if desire.
+  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if needed.
   done_callback(&payload, true);
+}
+
+// TODO (lei-tang): Extracting more attributes/claims to payload if needed.
+void extractJwtPayload(std::map<std::string, std::string>& jwt_payload,
+                       Payload* payload) {
+  // Extract attributes from JWT payload
+  // Extract user
+  if (jwt_payload.count("iss") > 0 && jwt_payload.count("sub") > 0) {
+    payload->mutable_jwt()->set_user(jwt_payload["iss"] + "/" +
+                                     jwt_payload["sub"]);
+  }
+  if (jwt_payload.count("aud") > 0) {
+    payload->mutable_jwt()->add_audiences(jwt_payload["aud"]);
+  }
+  // Extract authorized presenter (azp)
+  if (jwt_payload.count("azp") > 0) {
+    payload->mutable_jwt()->set_presenter(jwt_payload["azp"]);
+  }
 }
 
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt&,
-    const AuthenticatorBase::MethodDoneCallback& done_callback) const {
+    const AuthenticatorBase::MethodDoneCallback& done_callback) {
   Payload payload;
-  // TODO (diemtvu/lei-tang): construct jwt_authenticator and call Verify;
-  // pass done_callback so that it would be trigger by jwt_authenticator.onDone.
-  done_callback(&payload, false);
+  Envoy::Http::HeaderMap& header = *filter_context()->headers();
+  const Network::Connection* connection = filter_context()->connection();
+  std::map<std::string, std::string> jwt_payload;
+
+  Mixer::CheckData check_data(header, connection);
+  bool ret = check_data.GetJWTPayload(&jwt_payload);
+  if (!ret || jwt_payload.size() <= 0) {
+    ENVOY_LOG(debug, "AuthenticatorBase: {} no such JWT.", __func__);
+    done_callback(&payload, false);
+  } else {
+    ENVOY_LOG(debug, "AuthenticatorBase: {}(): a valid JWT is found.",
+              __func__);
+    // Extract attributes from JWT payload
+    extractJwtPayload(jwt_payload, &payload);
+    done_callback(&payload, true);
+  }
 }
 
 }  // namespace AuthN
