@@ -18,7 +18,7 @@ static_resources:
     - transport_socket:
         name: alts
         config:
-          handshaker_service: "127.0.0.1:8080"
+          handshaker_service: "169.254.169.254:8080"
       filters:
       - name: envoy.tcp_proxy
         config:
@@ -29,7 +29,7 @@ static_resources:
     transport_socket:
       name: alts
       config:
-        handshaker_service: "127.0.0.1:8080"
+        handshaker_service: "169.254.169.254:8080"
     connect_timeout: 0.25s
     type: strict_dns
     lb_policy: round_robin
