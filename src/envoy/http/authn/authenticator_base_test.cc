@@ -14,16 +14,13 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
-#include "common/http/header_map_impl.h"
 #include "common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/envoy/http/authn/test_utils.h"
-#include "src/istio/authn/context.pb.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
-#include "test/test_common/utility.h"
 
+using google::protobuf::util::MessageDifferencer;
 using istio::authn::Payload;
 using testing::NiceMock;
 using testing::Return;
@@ -35,6 +32,15 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 namespace {
+
+const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
+const std::string kSecIstioAuthUserinfoHeaderValue =
+    "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OH"
+    "Z2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3"
+    "NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLm"
+    "dzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJib29rc3RvcmUtZXNwLWVjaG8uY2xv"
+    "dWRlbmRwb2ludHNhcGlzLmNvbSIsImlhdCI6MTUxMjc1NDIwNSwiZXhwIjo1MTEyNz"
+    "U0MjA1fQ==";
 
 class MockAuthenticatorBase : public AuthenticatorBase {
  public:

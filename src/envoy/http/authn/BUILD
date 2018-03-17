@@ -42,8 +42,8 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
+        ":authn_utils_lib",
         "//external:authentication_policy_config_cc_proto",
-        "//src/envoy/http/mixer:filter_lib",
         "//src/envoy/utils:utils_lib",
         "//src/istio/authn:context_proto",
     ],
@@ -61,8 +61,24 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":authenticator",
-        "//external:authentication_policy_config_cc_proto",
+        "@envoy//source/exe:envoy_common_lib",
         "//src/envoy/utils:utils_lib",
+        "//src/istio/authn:context_proto",
+        "//external:authentication_policy_config_cc_proto",
+    ],
+)
+
+envoy_cc_library(
+    name = "authn_utils_lib",
+    srcs = [
+        "authn_utils.cc",
+    ],
+    hdrs = [
+        "authn_utils.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        "//src/envoy/http/jwt_auth:jwt_lib",
         "//src/istio/authn:context_proto",
         "@envoy//source/exe:envoy_common_lib",
     ],

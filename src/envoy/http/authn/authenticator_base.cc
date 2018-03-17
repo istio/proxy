@@ -14,10 +14,8 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
-//#include "src/envoy/http/authn/filter_context.h"
+#include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/http/authn/mtls_authentication.h"
-#include "src/envoy/http/mixer/check_data.h"
-//#include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
 
@@ -27,6 +25,14 @@ namespace Envoy {
 namespace Http {
 namespace Istio {
 namespace AuthN {
+namespace {
+// The HTTP header from which to get the verified Jwt result.
+// It is currently hard-coded. After jwt-auth has a
+// parameter for this header, the hardcoded parameter will
+// be removed.
+const LowerCaseString kJwtHeaderKey("sec-istio-auth-userinfo");
+
+}  // namespace
 
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
@@ -63,42 +69,25 @@ void AuthenticatorBase::validateX509(
   done_callback(&payload, true);
 }
 
-// TODO (lei-tang): Extracting more attributes/claims to payload if needed.
-void extractJwtPayload(std::map<std::string, std::string>& jwt_payload,
-                       Payload* payload) {
-  // Extract attributes from JWT payload
-  // Extract user
-  if (jwt_payload.count("iss") > 0 && jwt_payload.count("sub") > 0) {
-    payload->mutable_jwt()->set_user(jwt_payload["iss"] + "/" +
-                                     jwt_payload["sub"]);
-  }
-  if (jwt_payload.count("aud") > 0) {
-    payload->mutable_jwt()->add_audiences(jwt_payload["aud"]);
-  }
-  // Extract authorized presenter (azp)
-  if (jwt_payload.count("azp") > 0) {
-    payload->mutable_jwt()->set_presenter(jwt_payload["azp"]);
-  }
-}
-
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt&,
     const AuthenticatorBase::MethodDoneCallback& done_callback) {
   Payload payload;
   Envoy::Http::HeaderMap& header = *filter_context()->headers();
-  const Network::Connection* connection = filter_context()->connection();
-  std::map<std::string, std::string> jwt_payload;
+  ENVOY_LOG(debug, "{} the number of headers is {}", __func__, header.size());
 
-  Mixer::CheckData check_data(header, connection);
-  bool ret = check_data.GetJWTPayload(&jwt_payload);
-  if (!ret || jwt_payload.size() <= 0) {
-    ENVOY_LOG(debug, "AuthenticatorBase: {} no such JWT.", __func__);
-    done_callback(&payload, false);
+  bool ret = AuthnUtils::GetJWTPayloadFromHeaders(header, kJwtHeaderKey,
+                                                  payload.mutable_jwt());
+  if (!ret) {
+    ENVOY_LOG(debug,
+              "AuthenticatorBase: {} GetJWTPayloadFromHeaders() returns false.",
+              __func__);
+    done_callback(nullptr, false);
   } else {
     ENVOY_LOG(debug, "AuthenticatorBase: {}(): a valid JWT is found.",
               __func__);
-    // Extract attributes from JWT payload
-    extractJwtPayload(jwt_payload, &payload);
+    // payload is a stack variable, done_callback should treat it only as a
+    // temporary variable
     done_callback(&payload, true);
   }
 }
