@@ -20,6 +20,8 @@ import "google/protobuf/duration.proto";
 import "validate/validate.proto";
 
 message AltsSocket {
+  // The location of a handshaker service, this is usually 169.254.169.254:8080
+  // on GCE
   string handshaker_service = 1 [(validate.rules).string.min_bytes = 1];
 
   // NOT IMPLEMENTED
