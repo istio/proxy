@@ -25,8 +25,8 @@ using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::CheckRequest;
 using ::istio::mixer::v1::CheckResponse;
 using ::istio::quota_config::Requirement;
-using ::testing::_;
 using ::testing::Invoke;
+using ::testing::_;
 
 namespace istio {
 namespace mixerclient {
