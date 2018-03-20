@@ -28,9 +28,30 @@ namespace Utils {
 namespace {
 
 const std::string kV2Config("v2");
+const std::string kV1Config("v1");
 
 // The name for the mixer server cluster.
 const std::string kDefaultMixerClusterName("mixer_server");
+
+// ReadConfig() finds config from |json| that matches version |config_version|,
+// and parses config into |message|. Returns true if config is read and parsed
+// successfully.
+bool ReadConfig(const Json::Object &json, Message *message,
+                const std::string &config_version) {
+  std::string config_str = json.getObject(config_version)->asJsonString();
+  Status status = ParseJsonMessage(config_str, message);
+  auto &logger = Logger::Registry::getLog(Logger::Id::config);
+  if (status.ok()) {
+    ENVOY_LOG_TO_LOGGER(logger, info, "{} mixer client config: {}",
+                        config_version, message->DebugString());
+    return true;
+  }
+  ENVOY_LOG_TO_LOGGER(
+      logger, error,
+      "Failed to convert mixer {} client config, error: {}, data: {}",
+      config_version, status.ToString(), config_str);
+  return false;
+}
 
 }  // namespace
 
@@ -47,19 +68,14 @@ bool ReadV2Config(const Json::Object &json, Message *message) {
   if (!json.hasObject(kV2Config)) {
     return false;
   }
-  std::string v2_str = json.getObject(kV2Config)->asJsonString();
-  Status status = ParseJsonMessage(v2_str, message);
-  auto &logger = Logger::Registry::getLog(Logger::Id::config);
-  if (status.ok()) {
-    ENVOY_LOG_TO_LOGGER(logger, info, "V2 mixer client config: {}",
-                        message->DebugString());
-    return true;
+  return ReadConfig(json, message, kV2Config);
+}
+
+bool ReadV1Config(const Json::Object &json, Message *message) {
+  if (!json.hasObject(kV1Config)) {
+    return false;
   }
-  ENVOY_LOG_TO_LOGGER(
-      logger, error,
-      "Failed to convert mixer V2 client config, error: {}, data: {}",
-      status.ToString(), v2_str);
-  return false;
+  return ReadConfig(json, message, kV1Config);
 }
 
 }  // namespace Utils
