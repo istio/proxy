@@ -254,8 +254,9 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
         *port = 8080;
         return true;
       }));
-  EXPECT_CALL(mock_data, IsMutualTLS())
-      .WillOnce(Invoke([]() -> bool { return true; }));
+  EXPECT_CALL(mock_data, IsMutualTLS()).WillOnce(Invoke([]() -> bool {
+    return true;
+  }));
   EXPECT_CALL(mock_data, GetSourceUser(_))
       .WillOnce(Invoke([](std::string* user) -> bool {
         *user = "test_user";

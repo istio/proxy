@@ -24,9 +24,9 @@ using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::TcpClientConfig;
 using ::istio::mixerclient::CancelFunc;
-using ::istio::mixerclient::TransportCheckFunc;
 using ::istio::mixerclient::DoneFunc;
 using ::istio::mixerclient::MixerClient;
+using ::istio::mixerclient::TransportCheckFunc;
 using ::istio::quota_config::Requirement;
 
 using ::testing::_;
