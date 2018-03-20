@@ -36,8 +36,12 @@ const std::string kDefaultMixerClusterName("mixer_server");
 // ReadConfig() finds config from |json| that matches version |config_version|,
 // and parses config into |message|. Returns true if config is read and parsed
 // successfully.
-bool ReadConfig(const Json::Object &json, Message *message,
-                const std::string &config_version) {
+bool ReadConfig(const Json::Object &json, const std::string &config_version,
+                Message *message) {
+  if (!json.hasObject(config_version)) {
+    return false;
+  }
+
   std::string config_str = json.getObject(config_version)->asJsonString();
   Status status = ParseJsonMessage(config_str, message);
   auto &logger = Logger::Registry::getLog(Logger::Id::config);
@@ -65,17 +69,11 @@ void SetDefaultMixerClusters(TransportConfig *config) {
 }
 
 bool ReadV2Config(const Json::Object &json, Message *message) {
-  if (!json.hasObject(kV2Config)) {
-    return false;
-  }
-  return ReadConfig(json, message, kV2Config);
+  return ReadConfig(json, kV2Config, message);
 }
 
 bool ReadV1Config(const Json::Object &json, Message *message) {
-  if (!json.hasObject(kV1Config)) {
-    return false;
-  }
-  return ReadConfig(json, message, kV1Config);
+  return ReadConfig(json, kV1Config, message);
 }
 
 }  // namespace Utils
