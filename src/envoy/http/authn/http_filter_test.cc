@@ -27,10 +27,10 @@
 using Envoy::Http::Istio::AuthN::AuthenticatorBase;
 using Envoy::Http::Istio::AuthN::FilterContext;
 using istio::authn::Result;
-using testing::_;
 using testing::Invoke;
 using testing::NiceMock;
 using testing::StrictMock;
+using testing::_;
 
 namespace Envoy {
 namespace Http {
