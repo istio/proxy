@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "src/envoy/tcp/mixer/filter.h"
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 #include "src/envoy/tcp/mixer/control_factory.h"
+#include "src/envoy/tcp/mixer/filter.h"
 
 using ::istio::mixer::v1::config::client::TcpClientConfig;
 
@@ -29,7 +29,8 @@ class FilterFactory : public NamedNetworkFilterConfigFactory {
   NetworkFilterFactoryCb createFilterFactory(const Json::Object& config_json,
                                              FactoryContext& context) override {
     TcpClientConfig config_pb;
-    if (!Utils::ReadV2Config(config_json, &config_pb)) {
+    if (!Utils::ReadV2Config(config_json, &config_pb) &&
+        !Utils::ReadV1Config(config_json, &config_pb)) {
       throw EnvoyException("Failed to parse JSON config");
     }
 

@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/mixer/filter.h"
 #include "common/config/utility.h"
 #include "envoy/json/json_object.h"
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 #include "src/envoy/http/mixer/control_factory.h"
+#include "src/envoy/http/mixer/filter.h"
 #include "src/envoy/utils/config.h"
 
 using ::istio::mixer::v1::config::client::HttpClientConfig;
@@ -33,7 +33,8 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
                                           const std::string& prefix,
                                           FactoryContext& context) override {
     HttpClientConfig config_pb;
-    if (!Utils::ReadV2Config(config_json, &config_pb)) {
+    if (!Utils::ReadV2Config(config_json, &config_pb) &&
+        !Utils::ReadV1Config(config_json, &config_pb)) {
       throw EnvoyException("Failed to parse JSON config");
     }
 
