@@ -24,6 +24,7 @@
 #include "test/mocks/ssl/mocks.h"
 #include "test/test_common/utility.h"
 
+using istio::authn::Payload;
 using testing::NiceMock;
 using testing::Return;
 

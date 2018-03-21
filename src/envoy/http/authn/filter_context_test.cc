@@ -20,6 +20,7 @@
 #include "src/istio/authn/context.pb.h"
 #include "test/test_common/utility.h"
 
+using istio::authn::Payload;
 using testing::StrictMock;
 
 namespace iaapi = istio::authentication::v1alpha1;

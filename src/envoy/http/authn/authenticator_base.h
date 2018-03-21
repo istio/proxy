@@ -31,7 +31,7 @@ namespace AuthN {
 class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
  public:
   // Callback type for individual authentication method.
-  typedef std::function<void(const Payload*, bool)> MethodDoneCallback;
+  typedef std::function<void(istio::authn::Payload*, bool)> MethodDoneCallback;
 
   // Callback type for the whole authenticator.
   typedef std::function<void(bool)> DoneCallback;

@@ -24,6 +24,7 @@
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/utility.h"
 
+using istio::authn::Result;
 using Envoy::Http::Istio::AuthN::AuthenticatorBase;
 using Envoy::Http::Istio::AuthN::FilterContext;
 using testing::Invoke;
