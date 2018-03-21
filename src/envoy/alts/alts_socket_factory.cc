@@ -49,25 +49,26 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
 
   std::string handshaker_service = config.handshaker_service();
 
-  return std::make_unique<Security::TsiSocketFactory>([handshaker_service](
-      Event::Dispatcher &dispatcher) {
-    grpc_alts_credentials_options *options =
-        grpc_alts_credentials_client_options_create();
+  return std::make_unique<Security::TsiSocketFactory>(
+      [handshaker_service](Event::Dispatcher &dispatcher) {
+        grpc_alts_credentials_options *options =
+            grpc_alts_credentials_client_options_create();
 
-    tsi_handshaker *handshaker = nullptr;
+        tsi_handshaker *handshaker = nullptr;
 
-    // Specifying target name as empty since TSI won't take care of validating
-    // peer identity in this
-    // use case. The validation will be implemented in TsiSocket later.
-    alts_tsi_handshaker_create(options, "", handshaker_service.c_str(),
-                               true /* is_client */, &handshaker);
+        // Specifying target name as empty since TSI won't take care of
+        // validating peer identity in this use case. The validation will be
+        // implemented in TsiSocket later.
+        alts_tsi_handshaker_create(options, "", handshaker_service.c_str(),
+                                   true /* is_client */, &handshaker);
 
-    ASSERT(handshaker != nullptr);
+        ASSERT(handshaker != nullptr);
 
-    grpc_alts_credentials_options_destroy(options);
+        grpc_alts_credentials_options_destroy(options);
 
-    return std::make_unique<Security::TsiHandshaker>(handshaker, dispatcher);
-  });
+        return std::make_unique<Security::TsiHandshaker>(handshaker,
+                                                         dispatcher);
+      });
 }
 
 Network::TransportSocketFactoryPtr
@@ -80,22 +81,23 @@ DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
 
   std::string handshaker_service = config.handshaker_service();
 
-  return std::make_unique<Security::TsiSocketFactory>([handshaker_service](
-      Event::Dispatcher &dispatcher) {
-    grpc_alts_credentials_options *options =
-        grpc_alts_credentials_server_options_create();
+  return std::make_unique<Security::TsiSocketFactory>(
+      [handshaker_service](Event::Dispatcher &dispatcher) {
+        grpc_alts_credentials_options *options =
+            grpc_alts_credentials_server_options_create();
 
-    tsi_handshaker *handshaker = nullptr;
+        tsi_handshaker *handshaker = nullptr;
 
-    alts_tsi_handshaker_create(options, nullptr, handshaker_service.c_str(),
-                               false /* is_client */, &handshaker);
+        alts_tsi_handshaker_create(options, nullptr, handshaker_service.c_str(),
+                                   false /* is_client */, &handshaker);
 
-    ASSERT(handshaker != nullptr);
+        ASSERT(handshaker != nullptr);
 
-    grpc_alts_credentials_options_destroy(options);
+        grpc_alts_credentials_options_destroy(options);
 
-    return std::make_unique<Security::TsiHandshaker>(handshaker, dispatcher);
-  });
+        return std::make_unique<Security::TsiHandshaker>(handshaker,
+                                                         dispatcher);
+      });
 }
 
 static Registry::RegisterFactory<UpstreamAltsTransportSocketConfigFactory,
@@ -105,6 +107,6 @@ static Registry::RegisterFactory<UpstreamAltsTransportSocketConfigFactory,
 static Registry::RegisterFactory<DownstreamAltsTransportSocketConfigFactory,
                                  DownstreamTransportSocketConfigFactory>
     downstream_registered_;
-}
-}
-}
+}  // namespace Configuration
+}  // namespace Server
+}  // namespace Envoy

@@ -102,5 +102,5 @@ class TsiSocketFactory : public Network::TransportSocketFactory {
  private:
   HandshakerFactory handshaker_factory_;
 };
-}
-}
+}  // namespace Security
+}  // namespace Envoy

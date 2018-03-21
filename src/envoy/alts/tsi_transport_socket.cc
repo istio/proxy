@@ -291,5 +291,5 @@ bool TsiSocketFactory::implementsSecureTransport() const { return true; }
 Network::TransportSocketPtr TsiSocketFactory::createTransportSocket() const {
   return std::make_unique<TsiSocket>(handshaker_factory_);
 }
-}
-}
+}  // namespace Security
+}  // namespace Envoy

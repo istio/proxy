@@ -65,8 +65,9 @@ tsi_result TsiHandshaker::next(Envoy::Buffer::Instance &received) {
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result *result = nullptr;
   tsi_result status =
-      tsi_handshaker_next(handshaker_, reinterpret_cast<const unsigned char *>(
-                                           received.linearize(received_size)),
+      tsi_handshaker_next(handshaker_,
+                          reinterpret_cast<const unsigned char *>(
+                              received.linearize(received_size)),
                           received_size, &bytes_to_send, &bytes_to_send_size,
                           &result, onNextDone, this);
 
@@ -83,5 +84,5 @@ void TsiHandshaker::deferredDelete() {
     dispatcher_.deferredDelete(Event::DeferredDeletablePtr{this});
   }
 }
-}
-}
+}  // namespace Security
+}  // namespace Envoy

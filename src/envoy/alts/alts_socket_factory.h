@@ -42,6 +42,6 @@ class DownstreamAltsTransportSocketConfigFactory
       const std::string &, const std::vector<std::string> &, bool,
       const Protobuf::Message &, TransportSocketFactoryContext &) override;
 };
-}
-}
-}
+}  // namespace Configuration
+}  // namespace Server
+}  // namespace Envoy

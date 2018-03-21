@@ -112,8 +112,9 @@ CancelFunc MixerClientImpl::Check(
   }
 
   return transport(
-      request, response, [this, request_copy, response, raw_check_result,
-                          raw_quota_result, on_done](const Status &status) {
+      request, response,
+      [this, request_copy, response, raw_check_result, raw_quota_result,
+       on_done](const Status &status) {
         raw_check_result->SetResponse(status, *request_copy, *response);
         raw_quota_result->SetResponse(status, *request_copy, *response);
         if (on_done) {

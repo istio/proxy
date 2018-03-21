@@ -96,5 +96,5 @@ class TsiHandshaker : Event::DeferredDeletable {
 };
 
 typedef std::unique_ptr<TsiHandshaker> TsiHandshakerPtr;
-}
-}
+}  // namespace Security
+}  // namespace Envoy
