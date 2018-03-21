@@ -18,7 +18,7 @@
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
 #include "server/config/network/http_connection_manager.h"
-#include "src/envoy/http/authn/context.pb.h"
+#include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
 namespace Http {
