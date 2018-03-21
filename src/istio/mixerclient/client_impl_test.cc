@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+#include "include/istio/mixerclient/client.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "include/istio/mixerclient/client.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "src/istio/mixerclient/status_test_util.h"
 

@@ -224,10 +224,10 @@ Network::IoResult TsiSocket::doWrite(Buffer::Instance &buffer,
           frame_protector_, message_bytes, &processed_message_size,
           protected_buffer, &protected_buffer_size_to_send);
       if (result != TSI_OK) {
-        ENVOY_CONN_LOG(info,
-                       "TSI: protecting message failure {}, closing connection",
-                       callbacks_->connection(), result);
-        return {Network::PostIoAction::Close, 0, false};
+        ENVOY_CONN_LOG(
+            info, "TSI: protecting message failure {} wait until next write",
+            callbacks_->connection(), result);
+        break;
       }
       raw_write_buffer_.add(protected_buffer, protected_buffer_size_to_send);
       message_bytes += processed_message_size;
@@ -235,28 +235,26 @@ Network::IoResult TsiSocket::doWrite(Buffer::Instance &buffer,
 
       ENVOY_CONN_LOG(debug, "TSI: protecting message processed: {}",
                      callbacks_->connection(), processed_message_size);
+    }
 
-      // Don't forget to flush.
-      if (message_size == 0) {
-        ENVOY_CONN_LOG(debug, "TSI: protecting message flush: {}",
-                       callbacks_->connection(), message_size);
-        size_t still_pending_size;
-        do {
-          protected_buffer_size_to_send = protected_buffer_size;
-          result = tsi_frame_protector_protect_flush(
-              frame_protector_, protected_buffer,
-              &protected_buffer_size_to_send, &still_pending_size);
-          if (result != TSI_OK) {
-            ENVOY_CONN_LOG(
-                info,
-                "TSI: protect flush message failure {}, closing connection",
-                callbacks_->connection(), result);
-            return {Network::PostIoAction::Close, 0, false};
-          }
-          raw_write_buffer_.add(protected_buffer,
-                                protected_buffer_size_to_send);
-        } while (still_pending_size > 0);
-      }
+    // Don't forget to flush.
+    if (message_size == 0) {
+      ENVOY_CONN_LOG(debug, "TSI: protecting message flush: {}",
+                     callbacks_->connection(), message_size);
+      size_t still_pending_size;
+      do {
+        size_t protected_buffer_size_to_send = protected_buffer_size;
+        result = tsi_frame_protector_protect_flush(
+            frame_protector_, protected_buffer, &protected_buffer_size_to_send,
+            &still_pending_size);
+        if (result != TSI_OK) {
+          ENVOY_CONN_LOG(
+              info, "TSI: protect flush message failure {}, closing connection",
+              callbacks_->connection(), result);
+          return {Network::PostIoAction::Close, 0, false};
+        }
+        raw_write_buffer_.add(protected_buffer, protected_buffer_size_to_send);
+      } while (still_pending_size > 0);
     }
 
     buffer.drain(buffer.length() - message_size);
