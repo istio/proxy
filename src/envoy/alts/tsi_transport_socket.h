@@ -22,13 +22,19 @@
 namespace Envoy {
 namespace Security {
 
-typedef std::function<TsiHandshakerPtr(Event::Dispatcher&)> HandshakerFactoryCb;
+typedef std::function<TsiHandshakerPtr(Event::Dispatcher&)> HandshakerFactory;
 
+/**
+ * A implementation of Network::TransportSocket based on gRPC TSI
+ */
 class TsiSocket : public Network::TransportSocket,
                   public TsiHandshakerCallbacks,
                   public Logger::Loggable<Logger::Id::connection> {
  public:
-  explicit TsiSocket(HandshakerFactoryCb handshaker_cb_);
+  /**
+   * @param handshaker_factory a function to initiate a TsiHandshaker
+   */
+  explicit TsiSocket(HandshakerFactory handshaker_factory);
   virtual ~TsiSocket();
 
   // Network::TransportSocket
@@ -67,9 +73,10 @@ class TsiSocket : public Network::TransportSocket,
   void doHandshakeNext();
   Network::PostIoAction doHandshakeNextDone(NextResultPtr&& next_result);
 
-  HandshakerFactoryCb handshaker_cb_;
+  HandshakerFactory handshaker_factory_;
   TsiHandshakerPtr handshaker_{};
   bool handshaker_next_calling_{};
+  // TODO(lizan): wrap frame protector in a C++ class
   tsi_frame_protector* frame_protector_{};
 
   Envoy::Network::TransportSocketCallbacks* callbacks_{};
@@ -82,15 +89,18 @@ class TsiSocket : public Network::TransportSocket,
   size_t max_output_protected_frame_size_{};
 };
 
+/**
+ * An implementation of Network::TransportSocketFactory for TsiSocket
+ */
 class TsiSocketFactory : public Network::TransportSocketFactory {
  public:
-  explicit TsiSocketFactory(HandshakerFactoryCb handshaker_factory);
+  explicit TsiSocketFactory(HandshakerFactory handshaker_factory);
 
   bool implementsSecureTransport() const override;
   Network::TransportSocketPtr createTransportSocket() const override;
 
  private:
-  HandshakerFactoryCb handshaker_factory_;
+  HandshakerFactory handshaker_factory_;
 };
 }
 }

@@ -56,9 +56,11 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
 
     tsi_handshaker *handshaker = nullptr;
 
-    alts_tsi_handshaker_create(options, "target_name",
-                               handshaker_service.c_str(), true /* is_client */,
-                               &handshaker);
+    // Specifying target name as empty since TSI won't take care of validating
+    // peer identity in this
+    // use case. The validation will be implemented in TsiSocket later.
+    alts_tsi_handshaker_create(options, "", handshaker_service.c_str(),
+                               true /* is_client */, &handshaker);
 
     ASSERT(handshaker != nullptr);
 

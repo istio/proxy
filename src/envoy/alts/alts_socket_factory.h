@@ -18,6 +18,7 @@ namespace Envoy {
 namespace Server {
 namespace Configuration {
 
+// ALTS config registry
 class AltsTransportSocketConfigFactory
     : public virtual TransportSocketConfigFactory {
  public:

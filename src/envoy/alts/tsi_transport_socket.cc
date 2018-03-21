@@ -21,8 +21,8 @@
 namespace Envoy {
 namespace Security {
 
-TsiSocket::TsiSocket(HandshakerFactoryCb handshaker_cb)
-    : handshaker_cb_(handshaker_cb), raw_buffer_callbacks_(*this) {
+TsiSocket::TsiSocket(HandshakerFactory handshaker_factory)
+    : handshaker_factory_(handshaker_factory), raw_buffer_callbacks_(*this) {
   raw_buffer_socket_.setTransportSocketCallbacks(raw_buffer_callbacks_);
 }
 
@@ -36,7 +36,7 @@ void TsiSocket::setTransportSocketCallbacks(
     Envoy::Network::TransportSocketCallbacks &callbacks) {
   callbacks_ = &callbacks;
 
-  handshaker_ = handshaker_cb_(callbacks.connection().dispatcher());
+  handshaker_ = handshaker_factory_(callbacks.connection().dispatcher());
   handshaker_->setHandshakerCallbacks(*this);
 }
 
@@ -135,7 +135,7 @@ Network::PostIoAction TsiSocket::doHandshakeNextDone(
 
 Network::IoResult TsiSocket::doRead(Buffer::Instance &buffer) {
   Network::IoResult result = raw_buffer_socket_.doRead(raw_read_buffer_);
-  ENVOY_CONN_LOG(debug, "TSI: raw_read result action {} bytes {} end_stream {}",
+  ENVOY_CONN_LOG(debug, "TSI: raw read result action {} bytes {} end_stream {}",
                  callbacks_->connection(), enumToInt(result.action_),
                  result.bytes_processed_, result.end_stream_read_);
   if (result.action_ == Network::PostIoAction::Close &&
@@ -151,10 +151,12 @@ Network::IoResult TsiSocket::doRead(Buffer::Instance &buffer) {
   }
 
   if (handshake_complete_) {
+    // TODO(lizan): Do not linearize all buffer
     size_t message_size = raw_read_buffer_.length();
     auto *message_bytes = reinterpret_cast<unsigned char *>(
         raw_read_buffer_.linearize(message_size));
 
+    // TODO(lizan): Tune the buffer size.
     unsigned char unprotected_buffer[4096];
     size_t unprotected_buffer_size = sizeof(unprotected_buffer);
     tsi_result status = TSI_OK;
@@ -168,7 +170,13 @@ Network::IoResult TsiSocket::doRead(Buffer::Instance &buffer) {
       status = tsi_frame_protector_unprotect(
           frame_protector_, message_bytes, &processed_message_size,
           unprotected_buffer, &unprotected_buffer_size_to_send);
-      if (status != TSI_OK) break;
+      if (status != TSI_OK) {
+        ENVOY_CONN_LOG(
+            info, "TSI: unprotecting message failure {}, closing connection",
+            callbacks_->connection(), status);
+        result.action_ = Network::PostIoAction::Close;
+        return result;
+      }
       buffer.add(unprotected_buffer, unprotected_buffer_size_to_send);
       message_bytes += processed_message_size;
       message_size -= processed_message_size;
@@ -182,7 +190,7 @@ Network::IoResult TsiSocket::doRead(Buffer::Instance &buffer) {
     ASSERT(status == TSI_OK);
   }
 
-  ENVOY_CONN_LOG(debug, "TSI: do ead result action {} bytes {} end_stream {}",
+  ENVOY_CONN_LOG(debug, "TSI: do read result action {} bytes {} end_stream {}",
                  callbacks_->connection(), enumToInt(result.action_),
                  result.bytes_processed_, result.end_stream_read_);
   return result;
@@ -215,7 +223,12 @@ Network::IoResult TsiSocket::doWrite(Buffer::Instance &buffer,
       result = tsi_frame_protector_protect(
           frame_protector_, message_bytes, &processed_message_size,
           protected_buffer, &protected_buffer_size_to_send);
-      ASSERT(result == TSI_OK);
+      if (result != TSI_OK) {
+        ENVOY_CONN_LOG(info,
+                       "TSI: protecting message failure {}, closing connection",
+                       callbacks_->connection(), result);
+        return {Network::PostIoAction::Close, 0, false};
+      }
       raw_write_buffer_.add(protected_buffer, protected_buffer_size_to_send);
       message_bytes += processed_message_size;
       message_size -= processed_message_size;
@@ -233,7 +246,13 @@ Network::IoResult TsiSocket::doWrite(Buffer::Instance &buffer,
           result = tsi_frame_protector_protect_flush(
               frame_protector_, protected_buffer,
               &protected_buffer_size_to_send, &still_pending_size);
-          if (result != TSI_OK) break;
+          if (result != TSI_OK) {
+            ENVOY_CONN_LOG(
+                info,
+                "TSI: protect flush message failure {}, closing connection",
+                callbacks_->connection(), result);
+            return {Network::PostIoAction::Close, 0, false};
+          }
           raw_write_buffer_.add(protected_buffer,
                                 protected_buffer_size_to_send);
         } while (still_pending_size > 0);
@@ -266,8 +285,8 @@ void TsiSocket::onNextDone(NextResultPtr &&result) {
   }
 }
 
-TsiSocketFactory::TsiSocketFactory(HandshakerFactoryCb handshaker_factory)
-    : handshaker_factory_(handshaker_factory) {}
+TsiSocketFactory::TsiSocketFactory(HandshakerFactory handshaker_factory)
+    : handshaker_factory_(std::move(handshaker_factory)) {}
 
 bool TsiSocketFactory::implementsSecureTransport() const { return true; }
 
