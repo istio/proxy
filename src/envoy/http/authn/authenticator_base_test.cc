@@ -49,7 +49,8 @@ class MockAuthenticatorBase : public AuthenticatorBase {
   MOCK_METHOD0(run, void());
 };
 
-class AuthenticatorBaseTest : public testing::Test {
+class AuthenticatorBaseTest : public testing::Test,
+                              public Logger::Loggable<Logger::Id::filter> {
  public:
   virtual ~AuthenticatorBaseTest() {}
 
