@@ -23,8 +23,10 @@ namespace mixerclient {
 
 // The CheckResponseInfo holds response information in detail.
 struct CheckResponseInfo {
-  CheckResponseInfo() : is_check_cache_hit(false), is_quota_cache_hit(false),
-      response_status(::google::protobuf::util::Status::UNKNOWN) {}
+  CheckResponseInfo()
+      : is_check_cache_hit(false),
+        is_quota_cache_hit(false),
+        response_status(::google::protobuf::util::Status::UNKNOWN) {}
 
   // Whether this check response is from cache.
   bool is_check_cache_hit;
@@ -39,4 +41,4 @@ struct CheckResponseInfo {
 }  // namespace mixerclient
 }  // namespace istio
 
-#endif //PROXY_CHECK_RESPONSE_H
+#endif  // PROXY_CHECK_RESPONSE_H
