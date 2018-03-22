@@ -38,8 +38,9 @@ class Authentication : public Logger::Loggable<Logger::Id::filter> {
   // Clears authentication result in header, if exist.
   static void ClearResultInHeader(Http::HeaderMap* headers);
 
-  // Returns true if there is header entry at thelocation that is used to store authentication result.
-  // (function does not check for validity of the data though).
+  // Returns true if there is header entry at thelocation that is used to store
+  // authentication result. (function does not check for validity of the data
+  // though).
   static bool HasResultInHeader(const Http::HeaderMap& headers);
 
  private:
