@@ -131,6 +131,51 @@ TEST_F(AuthenticatorBaseTest,
 }
 
 // TODO: more tests for Jwt.
+TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoJwtInHeader) {
+  iaapi::Jwt jwt;
+  authenticator_.validateJwt(jwt, [](const Payload* payload, bool success) {
+    // When there is no JWT in the HTTP header, validateJwt() should return
+    // nullptr and failure.
+    EXPECT_TRUE(payload == nullptr);
+    EXPECT_FALSE(success);
+  });
+}
+
+TEST_F(AuthenticatorBaseTest, ValidateJwtWithJwtInHeader) {
+  iaapi::Jwt jwt;
+  Http::TestHeaderMapImpl request_headers_with_jwt{
+      {kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue}};
+  FilterContext filter_context{&request_headers_with_jwt, &connection_};
+  MockAuthenticatorBase authenticator{&filter_context};
+  Payload expected_payload;
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(
+      R"({
+             "jwt": {
+               "user": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+               "audiences": ["bookstore-esp-echo.cloudendpointsapis.com"],
+               "presenter": "",
+               "claims": {
+                 "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+                 "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+               }
+             }
+           }
+        )",
+      &expected_payload, options);
+
+  authenticator.validateJwt(
+      jwt, [&expected_payload](const Payload* payload, bool success) {
+        // When there is a verified JWT in the HTTP header, validateJwt()
+        // should return non-nullptr and success.
+        EXPECT_TRUE(payload != nullptr);
+        EXPECT_TRUE(success);
+        // Note: TestUtility::protoEqual() uses SerializeAsString() and the
+        // output is non-deterministic.  Thus, MessageDifferencer::Equals() is
+        // used.
+        EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload));
+      });
+}
 
 }  // namespace
 }  // namespace AuthN
