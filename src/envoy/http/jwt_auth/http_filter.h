@@ -51,6 +51,8 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   StreamDecoderFilterCallbacks* decoder_callbacks_;
   // The auth object.
   JwtAuth::JwtAuthenticator jwt_auth_;
+  // The auth store object, which can be used to get the config
+  JwtAuth::JwtAuthStore& store_;
 
   // The state of the request
   enum State { Init, Calling, Responded, Complete };
