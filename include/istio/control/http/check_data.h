@@ -82,6 +82,8 @@ class CheckData {
   virtual bool GetJWTPayload(
       std::map<std::string, std::string> *payload) const = 0;
 
+  // If the request has authentication result in header, parses data into the
+  // output result; returns true if success. Otherwise, returns false.
   virtual bool GetAuthenticationResult(istio::authn::Result *result) const = 0;
 };
 
