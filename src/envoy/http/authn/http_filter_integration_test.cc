@@ -2,6 +2,7 @@
 #include "src/istio/authn/context.pb.h"
 #include "test/integration/http_integration.h"
 
+using google::protobuf::util::MessageDifferencer;
 using istio::authn::Payload;
 using istio::authn::Result;
 
@@ -148,7 +149,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckAuthnResultIsExpected) {
   waitForNextUpstreamRequest(0);
 
   // Authn result should be as expected
-  const Envoy::Http::HeaderString& header_value =
+  const Envoy::Http::HeaderString &header_value =
       upstream_request_->headers().get(kSecIstioAuthnPayloadHeaderKey)->value();
   std::string value_base64(header_value.c_str(), header_value.size());
   const std::string value = Base64::decode(value_base64);
@@ -161,26 +162,24 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckAuthnResultIsExpected) {
   JsonStringToMessage(
       R"(
           {
-            "principal": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-            "peer_user": "",                                                                                                  
-            "origin": {                                                                                                                                 
+            "origin": {
               "user": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-              "audiences": [                                                                                                             
-               "bookstore-esp-echo.cloudendpointsapis.com"                                                                               
-              ],                                                                                                              
-              "presenter": "",                                                                                                      
-              "claims": {                                                                                                                                         
-               "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",                                                                                       
-               "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"                                                                  
-              }                                                                                                                                                       
-            }                                                                                                                                                           
-          } 
+              "audiences": [
+               "bookstore-esp-echo.cloudendpointsapis.com"
+              ],
+              "presenter": "",
+              "claims": {
+               "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+               "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+              }
+            }
+          }
       )",
       &expected_result, options);
   // Note: TestUtility::protoEqual() uses SerializeAsString() and the output
   // is non-deterministic. Thus, MessageDifferencer::Equals() is used.
-  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(
-      expected_result, result));
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_result, result));
 }
+
 }  // namespace
 }  // namespace Envoy

@@ -61,10 +61,10 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":authenticator",
-        "@envoy//source/exe:envoy_common_lib",
+        "//external:authentication_policy_config_cc_proto",
         "//src/envoy/utils:utils_lib",
         "//src/istio/authn:context_proto",
-        "//external:authentication_policy_config_cc_proto",
+        "@envoy//source/exe:envoy_common_lib",
     ],
 )
 
