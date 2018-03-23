@@ -28,7 +28,8 @@ namespace Http {
 
 JwtVerificationFilter::JwtVerificationFilter(Upstream::ClusterManager& cm,
                                              JwtAuth::JwtAuthStore& store)
-    : jwt_auth_(cm, store), store_(store) {}
+    : jwt_auth_(cm, store),
+      allow_missing_or_failed_(store.config().allow_missing_or_failed()) {}
 
 JwtVerificationFilter::~JwtVerificationFilter() {}
 
@@ -61,8 +62,7 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
   if (state_ == Responded) {
     return;
   }
-  if (status != JwtAuth::Status::OK &&
-      !store_.config().allow_missing_or_failed()) {
+  if (status != JwtAuth::Status::OK && !allow_missing_or_failed_) {
     state_ = Responded;
     // verification failed
     Code code = Code(401);  // Unauthorized
