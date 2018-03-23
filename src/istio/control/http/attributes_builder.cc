@@ -75,8 +75,9 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
         builder.AddString(AttributeName::kRequestAuthUser, origin.user());
       }
       if (!origin.audiences().empty()) {
-        // TODO(diemtvu): what to do with multiple aud ?. For now, just send the
-        // first one.
+        // TODO(diemtvu): this should be send as repeated field once mixer support string_list
+        // (https://github.com/istio/istio/issues/2802)
+        // For now, just use the first value.
         builder.AddString(AttributeName::kRequestAuthAudiences,
                           origin.audiences(0));
       }
