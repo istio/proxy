@@ -61,12 +61,12 @@ CancelFunc MixerClientImpl::Check(
       new CheckCache::CheckResult);
   check_cache_->Check(attributes, check_result.get());
 
-  std::unique_ptr<CheckResponseInfo> check_response_info(new CheckResponseInfo);
-  check_response_info->is_check_cache_hit = check_result->IsCacheHit();
-  check_response_info->response_status = check_result->status();
+  CheckResponseInfo check_response_info;
+  check_response_info.is_check_cache_hit = check_result->IsCacheHit();
+  check_response_info.response_status = check_result->status();
 
   if (check_result->IsCacheHit() && !check_result->status().ok()) {
-    on_done(*check_response_info);
+    on_done(check_response_info);
     return nullptr;
   }
 
@@ -83,10 +83,10 @@ CancelFunc MixerClientImpl::Check(
 
   CheckRequest request;
   bool quota_call = quota_result->BuildRequest(&request);
-  check_response_info->is_quota_cache_hit = quota_result->IsCacheHit();
-  check_response_info->response_status = check_result->status();
+  check_response_info.is_quota_cache_hit = quota_result->IsCacheHit();
+  check_response_info.response_status = check_result->status();
   if (check_result->IsCacheHit() && quota_result->IsCacheHit()) {
-    on_done(*check_response_info);
+    on_done(check_response_info);
     on_done = nullptr;
     if (!quota_call) {
       return nullptr;
@@ -126,16 +126,13 @@ CancelFunc MixerClientImpl::Check(
         raw_check_result->SetResponse(status, *request_copy, *response);
         raw_quota_result->SetResponse(status, *request_copy, *response);
         CheckResponseInfo check_response_info;
-        check_response_info.is_check_cache_hit = false;
-        check_response_info.is_quota_cache_hit = false;
         if (on_done) {
           if (!raw_check_result->status().ok()) {
             check_response_info.response_status = raw_check_result->status();
-            on_done(check_response_info);
           } else {
             check_response_info.response_status = raw_quota_result->status();
-            on_done(check_response_info);
           }
+          on_done(check_response_info);
         }
         delete raw_check_result;
         delete raw_quota_result;

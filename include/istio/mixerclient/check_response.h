@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PROXY_CHECK_RESPONSE_H
-#define PROXY_CHECK_RESPONSE_H
+#ifndef ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
+#define ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
 
 #include "google/protobuf/stubs/status.h"
 
@@ -23,22 +23,18 @@ namespace mixerclient {
 
 // The CheckResponseInfo holds response information in detail.
 struct CheckResponseInfo {
-  CheckResponseInfo()
-      : is_check_cache_hit(false),
-        is_quota_cache_hit(false),
-        response_status(::google::protobuf::util::Status::UNKNOWN) {}
-
   // Whether this check response is from cache.
-  bool is_check_cache_hit;
+  bool is_check_cache_hit{false};
 
   // Whether this quota response is from cache.
-  bool is_quota_cache_hit;
+  bool is_quota_cache_hit{false};
 
   // The check and quota response status.
-  ::google::protobuf::util::Status response_status;
+  ::google::protobuf::util::Status response_status{
+      ::google::protobuf::util::Status::UNKNOWN};
 };
 
 }  // namespace mixerclient
 }  // namespace istio
 
-#endif  // PROXY_CHECK_RESPONSE_H
+#endif  // ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
