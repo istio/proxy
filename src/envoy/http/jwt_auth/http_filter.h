@@ -51,8 +51,6 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   StreamDecoderFilterCallbacks* decoder_callbacks_;
   // The auth object.
   JwtAuth::JwtAuthenticator jwt_auth_;
-  // The allow_missing_or_failed option in the jwt_auth config
-  bool allow_missing_or_failed_ = false;
   // The state of the request
   enum State { Init, Calling, Responded, Complete };
   State state_ = Init;

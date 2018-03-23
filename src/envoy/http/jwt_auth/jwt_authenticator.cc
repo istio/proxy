@@ -227,7 +227,11 @@ bool JwtAuthenticator::OkToBypass() {
 void JwtAuthenticator::DoneWithStatus(const Status& status) {
   ENVOY_LOG(debug, "Jwt authentication completed with: {}",
             JwtAuth::StatusToString(status));
-  callback_->onDone(status);
+  if (store_.config().allow_missing_or_failed()) {
+    callback_->onDone(JwtAuth::Status::OK);
+  } else {
+    callback_->onDone(status);
+  }
   callback_ = nullptr;
 }
 
