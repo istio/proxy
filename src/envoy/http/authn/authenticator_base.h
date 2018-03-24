@@ -17,8 +17,8 @@
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
-#include "src/envoy/http/authn/context.pb.h"
 #include "src/envoy/http/authn/filter_context.h"
+#include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
 namespace Http {
@@ -31,7 +31,7 @@ namespace AuthN {
 class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
  public:
   // Callback type for individual authentication method.
-  typedef std::function<void(const Payload*, bool)> MethodDoneCallback;
+  typedef std::function<void(istio::authn::Payload*, bool)> MethodDoneCallback;
 
   // Callback type for the whole authenticator.
   typedef std::function<void(bool)> DoneCallback;
@@ -58,7 +58,7 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   // the callback function with the extracted attributes and claims (JwtPayload)
   // and status SUCCESS. Otherwise, calling callback with status FAILED.
   virtual void validateJwt(const istio::authentication::v1alpha1::Jwt& params,
-                           const MethodDoneCallback& done_callback) const;
+                           const MethodDoneCallback& done_callback);
 
   // Mutable accessor to filter context.
   FilterContext* filter_context() { return &filter_context_; }
@@ -69,13 +69,6 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
 
   const DoneCallback done_callback_;
 };
-
-// Return pointer to credential rule matching with peer_id from the policy.
-// If no rule found, return the default credential rule.
-const istio::authentication::v1alpha1::CredentialRule&
-findCredentialRuleOrDefault(
-    const istio::authentication::v1alpha1::Policy& policy,
-    const std::string& peer_id);
 
 }  // namespace AuthN
 }  // namespace Istio

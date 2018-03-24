@@ -22,12 +22,6 @@ load(
     "envoy_cc_library",
     "envoy_cc_test",
     "envoy_cc_test_library",
-    "envoy_proto_library",
-)
-
-envoy_proto_library(
-    name = "context_proto",
-    srcs = ["context.proto"],
 )
 
 envoy_cc_library(
@@ -48,9 +42,10 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":context_proto",
+        ":authn_utils_lib",
         "//external:authentication_policy_config_cc_proto",
         "//src/envoy/utils:utils_lib",
+        "//src/istio/authn:context_proto",
     ],
 )
 
@@ -66,9 +61,25 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":authenticator",
-        ":context_proto",
         "//external:authentication_policy_config_cc_proto",
         "//src/envoy/utils:utils_lib",
+        "//src/istio/authn:context_proto",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "authn_utils_lib",
+    srcs = [
+        "authn_utils.cc",
+    ],
+    hdrs = [
+        "authn_utils.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        "//src/envoy/http/jwt_auth:jwt_lib",
+        "//src/istio/authn:context_proto",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -78,7 +89,7 @@ envoy_cc_test_library(
     hdrs = ["test_utils.h"],
     repository = "@envoy",
     deps = [
-        ":context_proto",
+        "//src/istio/authn:context_proto",
     ],
 )
 
@@ -100,8 +111,8 @@ envoy_cc_test(
     deps = [
         ":authenticator",
         ":test_utils",
-        "@envoy//test/mocks/ssl:ssl_mocks",
         "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/ssl:ssl_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )

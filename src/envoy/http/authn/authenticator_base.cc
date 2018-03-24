@@ -14,9 +14,10 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
-#include "src/envoy/http/authn/filter_context.h"
+#include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/http/authn/mtls_authentication.h"
-#include "src/envoy/utils/utils.h"
+
+using istio::authn::Payload;
 
 namespace iaapi = istio::authentication::v1alpha1;
 
@@ -25,19 +26,12 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 namespace {
-// Returns true if rule is mathed for peer_id
-bool isRuleMatchedWithPeer(const iaapi::CredentialRule& rule,
-                           const std::string& peer_id) {
-  if (rule.matching_peers_size() == 0) {
-    return true;
-  }
-  for (const auto& allowed_id : rule.matching_peers()) {
-    if (peer_id == allowed_id) {
-      return true;
-    }
-  }
-  return false;
-}
+// The HTTP header from which to get the verified Jwt result.
+// It is currently hard-coded. After jwt-auth has a
+// parameter for this header, the hardcoded parameter will
+// be removed.
+const LowerCaseString kJwtHeaderKey("sec-istio-auth-userinfo");
+
 }  // namespace
 
 AuthenticatorBase::AuthenticatorBase(
@@ -58,7 +52,7 @@ void AuthenticatorBase::validateX509(
   // itself is validation).
   // If x509 is missing (i.e connection is not on TLS) or SAN value is not
   // legit, call callback with status FAILED.
-  ENVOY_LOG(debug, "AuthenticationFilter: {} this connection requires mTLS",
+  ENVOY_LOG(debug, "AuthenticatorBase: {} this connection requires mTLS",
             __func__);
   MtlsAuthentication mtls_authn(filter_context_.connection());
   if (mtls_authn.IsMutualTLS() == false) {
@@ -71,27 +65,31 @@ void AuthenticatorBase::validateX509(
     done_callback(&payload, false);
   }
 
-  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if desire.
+  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if needed.
   done_callback(&payload, true);
 }
 
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt&,
-    const AuthenticatorBase::MethodDoneCallback& done_callback) const {
+    const AuthenticatorBase::MethodDoneCallback& done_callback) {
   Payload payload;
-  // TODO (diemtvu/lei-tang): construct jwt_authenticator and call Verify;
-  // pass done_callback so that it would be trigger by jwt_authenticator.onDone.
-  done_callback(&payload, false);
-}
+  Envoy::Http::HeaderMap& header = *filter_context()->headers();
+  ENVOY_LOG(debug, "{} the number of headers is {}", __func__, header.size());
 
-const iaapi::CredentialRule& findCredentialRuleOrDefault(
-    const iaapi::Policy& policy, const std::string& peer_id) {
-  for (const auto& rule : policy.credential_rules()) {
-    if (isRuleMatchedWithPeer(rule, peer_id)) {
-      return rule;
-    }
+  bool ret = AuthnUtils::GetJWTPayloadFromHeaders(header, kJwtHeaderKey,
+                                                  payload.mutable_jwt());
+  if (!ret) {
+    ENVOY_LOG(debug,
+              "AuthenticatorBase: {} GetJWTPayloadFromHeaders() returns false.",
+              __func__);
+    done_callback(nullptr, false);
+  } else {
+    ENVOY_LOG(debug, "AuthenticatorBase: {}(): a valid JWT is found.",
+              __func__);
+    // payload is a stack variable, done_callback should treat it only as a
+    // temporary variable
+    done_callback(&payload, true);
   }
-  return iaapi::CredentialRule::default_instance();
 }
 
 }  // namespace AuthN

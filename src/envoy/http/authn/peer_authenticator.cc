@@ -17,6 +17,8 @@
 #include "common/http/utility.h"
 #include "src/envoy/utils/utils.h"
 
+using istio::authn::Payload;
+
 namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
@@ -49,9 +51,6 @@ void PeerAuthenticator::runMethod(const iaapi::PeerAuthenticationMethod& method,
       break;
     case iaapi::PeerAuthenticationMethod::ParamsCase::kJwt:
       validateJwt(method.jwt(), done_callback);
-      break;
-    case iaapi::PeerAuthenticationMethod::ParamsCase::kNone:
-      done_callback(nullptr, true);
       break;
     default:
       ENVOY_LOG(error, "Unknown peer authentication param {}",

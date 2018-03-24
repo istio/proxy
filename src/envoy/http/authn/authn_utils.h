@@ -15,39 +15,25 @@
 
 #pragma once
 
-#include "common/protobuf/protobuf.h"
-#include "gmock/gmock.h"
+#include "common/common/logger.h"
+#include "envoy/http/header_map.h"
+#include "envoy/json/json_object.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
 namespace Http {
 namespace Istio {
 namespace AuthN {
-namespace TestUtilities {
 
-istio::authn::Payload CreateX509Payload(const std::string& user) {
-  istio::authn::Payload payload;
-  payload.mutable_x509()->set_user(user);
-  return payload;
-}
+// AuthnUtils class provides utility functions used for authentication.
+class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
+ public:
+  // Retrieve the JWT payload from the HTTP header into the output payload map
+  static bool GetJWTPayloadFromHeaders(const HeaderMap& headers,
+                                       const LowerCaseString& jwt_payload_key,
+                                       istio::authn::JwtPayload* payload);
+};
 
-istio::authn::Payload CreateJwtPayload(const std::string& user,
-                                       const std::string& presenter) {
-  istio::authn::Payload payload;
-  payload.mutable_jwt()->set_user(user);
-  if (!presenter.empty()) {
-    payload.mutable_jwt()->set_presenter(presenter);
-  }
-  return payload;
-}
-
-istio::authn::Result AuthNResultFromString(const std::string& text) {
-  istio::authn::Result result;
-  EXPECT_TRUE(Protobuf::TextFormat::ParseFromString(text, &result));
-  return result;
-}
-
-}  // namespace TestUtilities
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http

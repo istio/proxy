@@ -26,9 +26,9 @@ namespace AuthN {
 // OriginAuthenticator performs origin authentication for given credential rule.
 class OriginAuthenticator : public AuthenticatorBase {
  public:
-  OriginAuthenticator(
-      FilterContext* filter_context, const DoneCallback& done_callback,
-      const istio::authentication::v1alpha1::CredentialRule& credential_rule);
+  OriginAuthenticator(FilterContext* filter_context,
+                      const DoneCallback& done_callback,
+                      const istio::authentication::v1alpha1::Policy& policy);
 
   void run() override;
 
@@ -39,12 +39,12 @@ class OriginAuthenticator : public AuthenticatorBase {
       const MethodDoneCallback& callback);
 
   // Callback for runMethod.
-  void onMethodDone(const Payload* payload, bool success);
+  void onMethodDone(const istio::authn::Payload* payload, bool success);
 
  private:
-  // Reference to the credential rule that the authenticator should enforce. The
-  // object is typically owned by filter.
-  const istio::authentication::v1alpha1::CredentialRule& credential_rule_;
+  // Reference to the authentication policy that the authenticator should
+  // enforce. Typically, the actual object is owned by filter.
+  const istio::authentication::v1alpha1::Policy& policy_;
 
   // Internal variable to keep track which (origin) authentication methods have
   // been tried.

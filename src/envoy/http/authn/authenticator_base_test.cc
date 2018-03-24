@@ -14,16 +14,14 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
-#include "common/http/header_map_impl.h"
 #include "common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "src/envoy/http/authn/context.pb.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
-#include "test/test_common/utility.h"
 
+using google::protobuf::util::MessageDifferencer;
+using istio::authn::Payload;
 using testing::NiceMock;
 using testing::Return;
 
@@ -35,6 +33,15 @@ namespace Istio {
 namespace AuthN {
 namespace {
 
+const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
+const std::string kSecIstioAuthUserinfoHeaderValue =
+    "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OH"
+    "Z2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3"
+    "NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLm"
+    "dzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJib29rc3RvcmUtZXNwLWVjaG8uY2xv"
+    "dWRlbmRwb2ludHNhcGlzLmNvbSIsImlhdCI6MTUxMjc1NDIwNSwiZXhwIjo1MTEyNz"
+    "U0MjA1fQ==";
+
 class MockAuthenticatorBase : public AuthenticatorBase {
  public:
   MockAuthenticatorBase(FilterContext* filter_context)
@@ -42,7 +49,8 @@ class MockAuthenticatorBase : public AuthenticatorBase {
   MOCK_METHOD0(run, void());
 };
 
-class AuthenticatorBaseTest : public testing::Test {
+class AuthenticatorBaseTest : public testing::Test,
+                              public Logger::Loggable<Logger::Id::filter> {
  public:
   virtual ~AuthenticatorBaseTest() {}
 
@@ -123,88 +131,50 @@ TEST_F(AuthenticatorBaseTest,
 }
 
 // TODO: more tests for Jwt.
-
-TEST(FindCredentialRuleTest, EmptyPolicy) {
-  iaapi::Policy policy;
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString("", &policy));
-  EXPECT_TRUE(TestUtility::protoEqual(iaapi::CredentialRule::default_instance(),
-                                      findCredentialRuleOrDefault(policy, "")));
-  EXPECT_TRUE(
-      TestUtility::protoEqual(iaapi::CredentialRule::default_instance(),
-                              findCredentialRuleOrDefault(policy, "foo")));
-  // Also make sure the default rule USE_PEER binding (i.e USE_PEER should
-  // be the first entry in the Binding enum)
-  EXPECT_EQ(iaapi::CredentialRule::USE_PEER,
-            iaapi::CredentialRule::default_instance().binding());
+TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoJwtInHeader) {
+  iaapi::Jwt jwt;
+  authenticator_.validateJwt(jwt, [](const Payload* payload, bool success) {
+    // When there is no JWT in the HTTP header, validateJwt() should return
+    // nullptr and failure.
+    EXPECT_TRUE(payload == nullptr);
+    EXPECT_FALSE(success);
+  });
 }
 
-TEST(FindCredentialRuleTest, WithMatchingPeer) {
-  iaapi::Policy policy;
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      R"(credential_rules {
-           binding: USE_PEER
-           matching_peers: "foo"
-           matching_peers: "bar"
-         }
-         credential_rules {
-           binding: USE_ORIGIN
-           origins: {
-             jwt: {
-               issuer: "abc"
+TEST_F(AuthenticatorBaseTest, ValidateJwtWithJwtInHeader) {
+  iaapi::Jwt jwt;
+  Http::TestHeaderMapImpl request_headers_with_jwt{
+      {kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue}};
+  FilterContext filter_context{&request_headers_with_jwt, &connection_};
+  MockAuthenticatorBase authenticator{&filter_context};
+  Payload expected_payload;
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(
+      R"({
+             "jwt": {
+               "user": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+               "audiences": ["bookstore-esp-echo.cloudendpointsapis.com"],
+               "presenter": "",
+               "claims": {
+                 "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+                 "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+               }
              }
            }
-           matching_peers: "dead"
-         }
-      )",
-      &policy));
-  EXPECT_TRUE(TestUtility::protoEqual(
-      policy.credential_rules(0), findCredentialRuleOrDefault(policy, "foo")));
-  EXPECT_TRUE(TestUtility::protoEqual(
-      policy.credential_rules(0), findCredentialRuleOrDefault(policy, "bar")));
-  EXPECT_TRUE(TestUtility::protoEqual(
-      policy.credential_rules(1), findCredentialRuleOrDefault(policy, "dead")));
+        )",
+      &expected_payload, options);
 
-  // No matches, return default.
-  EXPECT_TRUE(
-      TestUtility::protoEqual(iaapi::CredentialRule::default_instance(),
-                              findCredentialRuleOrDefault(policy, "beef")));
-  // case sensitive, FOO != foo.
-  EXPECT_TRUE(
-      TestUtility::protoEqual(iaapi::CredentialRule::default_instance(),
-                              findCredentialRuleOrDefault(policy, "FOO")));
-  EXPECT_TRUE(TestUtility::protoEqual(iaapi::CredentialRule::default_instance(),
-                                      findCredentialRuleOrDefault(policy, "")));
-}
-
-TEST(FindCredentialRuleTest, WithOutMatchingPeer) {
-  iaapi::Policy policy;
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      R"(credential_rules {
-           binding: USE_PEER
-           matching_peers: "foo"
-           matching_peers: "bar"
-         }
-         credential_rules {
-           binding: USE_ORIGIN
-           origins: {
-             jwt: {
-               issuer: "xyz"
-             }
-           }
-         }
-      )",
-      &policy));
-
-  EXPECT_TRUE(TestUtility::protoEqual(
-      policy.credential_rules(0), findCredentialRuleOrDefault(policy, "foo")));
-
-  // Rule 1 without matching criteria will match anything.
-  EXPECT_TRUE(TestUtility::protoEqual(
-      policy.credential_rules(1), findCredentialRuleOrDefault(policy, "beef")));
-  EXPECT_TRUE(TestUtility::protoEqual(
-      policy.credential_rules(1), findCredentialRuleOrDefault(policy, "FOO")));
-  EXPECT_TRUE(TestUtility::protoEqual(policy.credential_rules(1),
-                                      findCredentialRuleOrDefault(policy, "")));
+  authenticator.validateJwt(
+      jwt, [&expected_payload](const Payload* payload, bool success) {
+        // When there is a verified JWT in the HTTP header, validateJwt()
+        // should return non-nullptr and success.
+        EXPECT_TRUE(payload != nullptr);
+        EXPECT_TRUE(success);
+        // Note: TestUtility::protoEqual() uses SerializeAsString() and the
+        // output is non-deterministic.  Thus, MessageDifferencer::Equals() is
+        // used.
+        EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload));
+      });
 }
 
 }  // namespace

@@ -25,6 +25,7 @@
 
 namespace iaapi = istio::authentication::v1alpha1;
 
+using istio::authn::Payload;
 using testing::DoAll;
 using testing::MockFunction;
 using testing::NiceMock;
@@ -48,8 +49,7 @@ class MockPeerAuthenticator : public PeerAuthenticator {
 
   MOCK_CONST_METHOD2(validateX509,
                      void(const iaapi::MutualTls&, const MethodDoneCallback&));
-  MOCK_CONST_METHOD2(validateJwt,
-                     void(const iaapi::Jwt&, const MethodDoneCallback&));
+  MOCK_METHOD2(validateJwt, void(const iaapi::Jwt&, const MethodDoneCallback&));
 };
 
 class PeerAuthenticatorTest : public testing::Test {
