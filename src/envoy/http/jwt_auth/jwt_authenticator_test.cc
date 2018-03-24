@@ -485,6 +485,20 @@ TEST_F(JwtAuthenticatorTest, TestAllowMissingOrFailedIsTrue) {
   auth_->Verify(headers, &mock_cb_);
 }
 
+TEST_F(JwtAuthenticatorTest, TestInValidJwtWhenAllowMissingOrFailedIsTrue) {
+  // In this test, when JWT is invalid, the status should still be OK
+  // because allow_missing_or_failed is true.
+  SetupConfig(kExampleConfigWithAllowMissingOrFailed);
+  EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
+  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+    ASSERT_EQ(status, Status::OK);
+  }));
+
+  std::string token = "invalidToken";
+  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + token}};
+  auth_->Verify(headers, &mock_cb_);
+}
+
 TEST_F(JwtAuthenticatorTest, TestBypassJWT) {
   SetupConfig(kBypassConfig);
 
