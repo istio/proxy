@@ -72,7 +72,7 @@ tsi_result TsiHandshaker::next(Envoy::Buffer::Instance &received) {
                           &result, onNextDone, this);
 
   if (status != TSI_ASYNC) {
-    onNextDone(status, callbacks_, bytes_to_send, bytes_to_send_size, result);
+    onNextDone(status, this, bytes_to_send, bytes_to_send_size, result);
   }
   return status;
 }
