@@ -197,5 +197,7 @@ message AuthFilterConfig {
   // If true, the request is allowed if JWT is missing or JWT verification
   // fails. Default is false, a request without JWT or failed JWT verification
   // is not allowed.
+  // Note: in current implementation, if token is not there, no rejection (401
+  // code) is sent.
   bool allow_missing_or_failed = 4;
 }

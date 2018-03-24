@@ -472,6 +472,7 @@ TEST_F(JwtAuthenticatorTest, TestMissedJWT) {
 }
 
 TEST_F(JwtAuthenticatorTest, TestAllowMissingOrFailedIsTrue) {
+  // When JWT is missing from the config, the status should be OK
   SetupConfig(kExampleConfigWithAllowMissingOrFailed);
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
