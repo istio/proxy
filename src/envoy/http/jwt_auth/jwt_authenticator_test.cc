@@ -107,13 +107,6 @@ const char kExampleConfig[] = R"(
 }
 )";
 
-// An example JSON config with allow_missing_or_failed option enabled
-const char kExampleConfigWithAllowMissingOrFailed[] = R"(
-{
-  "allow_missing_or_failed": true
-}
-)";
-
 // An example JSON config with a good JWT config and allow_missing_or_failed
 // option enabled
 const char kExampleConfigWithJwtAndAllowMissingOrFailed[] = R"(
@@ -494,10 +487,10 @@ TEST_F(JwtAuthenticatorTest, TestMissedJWT) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-TEST_F(JwtAuthenticatorTest, TestAllowMissingOrFailedIsTrue) {
+TEST_F(JwtAuthenticatorTest, TestMissingJwtWhenAllowMissingOrFailedIsTrue) {
   // In this test, when JWT is missing, the status should still be OK
   // because allow_missing_or_failed is true.
-  SetupConfig(kExampleConfigWithAllowMissingOrFailed);
+  SetupConfig(kExampleConfigWithJwtAndAllowMissingOrFailed);
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
