@@ -48,6 +48,8 @@ bool JsonIterCallback::JsonIteratorCallback(const std::string& key,
         try {
           auto audience = obj.asString();
           aud_vector.push_back(audience);
+          // If aud is a string, save it to claims.
+          (*claims)[key] = audience;
         } catch (Json::Exception& e) {
           ENVOY_LOG(error, "aud field type is not string or string array");
         }
@@ -56,9 +58,10 @@ bool JsonIterCallback::JsonIteratorCallback(const std::string& key,
         payload->add_audiences(aud_vector[i]);
       }
     } else {
-      // will throw execption if value type is not string.
+      // Will throw execption if value type is not string.
       // In current implementation, only string objects are extracted into
-      // claims.
+      // claims. If call obj.asJsonString(), will get "panic: not reached" from
+      // json_loader.cc.
       (*claims)[key] = obj.asString();
     }
   } catch (...) {
