@@ -36,35 +36,36 @@ bool JsonIterCallback::JsonIteratorCallback(const std::string& key,
   ENVOY_LOG(debug, "{}: key is {}", __FUNCTION__, key);
   ::google::protobuf::Map< ::std::string, ::std::string>* claims =
       payload->mutable_claims();
+
+  // In current implementation, only string objects are extracted into
+  // claims. If call obj.asJsonString(), will get "panic: not reached" from
+  // json_loader.cc.
   try {
+    // Try as string, will throw execption if object type is not string.
+    std::string obj_str = obj.asString();
+    (*claims)[key] = obj_str;
+    // "aud" can be either string array or string.
+    // If it is string, save it to the claims and the payload
+    if (key == "aud") {
+      payload->add_audiences(obj_str);
+    }
+  } catch (Json::Exception& e) {
     if (key == "aud") {
       // "aud" can be either string array or string.
+      // If it is string array, only save it to the payload.
       // Try as string array, read it as empty array if doesn't exist.
       std::vector<std::string> aud_vector;
       try {
         aud_vector = obj.getStringArray(key, true);
       } catch (Json::Exception& e) {
-        // Try as string
-        try {
-          auto audience = obj.asString();
-          aud_vector.push_back(audience);
-          // If aud is a string, save it to claims.
-          (*claims)[key] = audience;
-        } catch (Json::Exception& e) {
-          ENVOY_LOG(error, "aud field type is not string or string array");
-        }
+        ENVOY_LOG(error, "aud field type is not string or string array");
+        // return true to proceed to the next iteration.
+        return true;
       }
       for (size_t i = 0; i < aud_vector.size(); i++) {
         payload->add_audiences(aud_vector[i]);
       }
-    } else {
-      // Will throw execption if value type is not string.
-      // In current implementation, only string objects are extracted into
-      // claims. If call obj.asJsonString(), will get "panic: not reached" from
-      // json_loader.cc.
-      (*claims)[key] = obj.asString();
     }
-  } catch (...) {
   }
   return true;
 }
