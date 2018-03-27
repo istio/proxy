@@ -34,8 +34,8 @@ const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
 const std::string kSecIstioAuthUserinfoHeaderValue =
     R"(
      {
-       "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-       "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+       "iss": "foo@developer.gserviceaccount.com",
+       "sub": "foo@developer.gserviceaccount.com",
        "aud": "bookstore-esp-echo.cloudendpointsapis.com",
        "iat": 1512754205,
        "exp": 5112754205
@@ -44,8 +44,8 @@ const std::string kSecIstioAuthUserinfoHeaderValue =
 const std::string kSecIstioAuthUserInfoHeaderWithNoAudValue =
     R"(
        {
-         "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-         "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+         "iss": "foo@developer.gserviceaccount.com",
+         "sub": "foo@developer.gserviceaccount.com",
          "iat": 1512754205,
          "exp": 5112754205
        }
@@ -53,8 +53,8 @@ const std::string kSecIstioAuthUserInfoHeaderWithNoAudValue =
 const std::string kSecIstioAuthUserInfoHeaderWithTwoAudValue =
     R"(
        {
-         "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-         "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+         "iss": "foo@developer.gserviceaccount.com",
+         "sub": "foo@developer.gserviceaccount.com",
          "aud": ["bookstore-esp-echo.cloudendpointsapis.com", "bookstore-esp-echo2.cloudendpointsapis.com"],
          "iat": 1512754205,
          "exp": 5112754205
@@ -70,7 +70,7 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
       {kSecIstioAuthUserInfoHeaderKey, value_base64}};
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
-      user: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      user: "foo@developer.gserviceaccount.com/foo@developer.gserviceaccount.com"
       audiences: ["bookstore-esp-echo.cloudendpointsapis.com"]
       claims {
         key: "aud"
@@ -78,11 +78,11 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
       }
       claims {
         key: "iss"
-        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+        value: "foo@developer.gserviceaccount.com"
       }
       claims {
         key: "sub"
-        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+        value: "foo@developer.gserviceaccount.com"
       }
     )",
       &expected_payload));
@@ -104,14 +104,14 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithNoAudTest) {
       {kSecIstioAuthUserInfoHeaderKey, value_base64}};
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
-      user: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      user: "foo@developer.gserviceaccount.com/foo@developer.gserviceaccount.com"
       claims {
         key: "iss"
-        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+        value: "foo@developer.gserviceaccount.com"
       }
       claims {
         key: "sub"
-        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+        value: "foo@developer.gserviceaccount.com"
       }
     )",
       &expected_payload));
@@ -134,19 +134,20 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithTwoAudTest) {
       {kSecIstioAuthUserInfoHeaderKey, value_base64}};
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
-      user: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      user: "foo@developer.gserviceaccount.com/foo@developer.gserviceaccount.com"
       audiences: "bookstore-esp-echo.cloudendpointsapis.com"
       audiences: "bookstore-esp-echo2.cloudendpointsapis.com"
       claims {
         key: "iss"
-        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+        value: "foo@developer.gserviceaccount.com"
       }
       claims {
         key: "sub"
-        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+        value: "foo@developer.gserviceaccount.com"
       }
     )",
       &expected_payload));
+
   // The payload returned from GetJWTPayloadFromHeaders() should be the same as
   // the expected. When the aud is a string array, the aud is not saved in the
   // claims.
