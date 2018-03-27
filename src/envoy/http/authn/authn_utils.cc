@@ -64,12 +64,9 @@ bool JsonIterCallback::JsonIteratorCallbackForJwtAudience(
   // First, try as string, will throw execption if object type is not string.
   try {
     std::string obj_str = obj.asString();
-    // "aud" can be either string array or string.
-    // Save it to the payload
-    if (key == "aud") {
-      payload->add_audiences(obj_str);
-      return true;
-    }
+    // Save "aud" to the payload
+    payload->add_audiences(obj_str);
+    return true;
   } catch (Json::Exception& e) {
     // Not convertable to string
   }
