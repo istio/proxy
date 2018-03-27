@@ -24,57 +24,71 @@ namespace AuthN {
 namespace {
 class JsonIterCallback : public Logger::Loggable<Logger::Id::filter> {
  public:
-  // The json iterator callback function
-  static bool JsonIteratorCallback(const std::string&,
-                                   const Envoy::Json::Object&,
-                                   istio::authn::JwtPayload* payload);
+  // The json iterator callback function for extracting Jwt claims
+  static bool JsonIteratorCallbackForJwtClaims(
+      const std::string&, const Envoy::Json::Object&,
+      istio::authn::JwtPayload* payload);
+  // The json iterator callback function for exracting Jwt audience
+  static bool JsonIteratorCallbackForJwtAudience(
+      const std::string&, const Envoy::Json::Object&,
+      istio::authn::JwtPayload* payload);
 };
 
-bool JsonIterCallback::JsonIteratorCallback(const std::string& key,
-                                            const Envoy::Json::Object& obj,
-                                            istio::authn::JwtPayload* payload) {
+bool JsonIterCallback::JsonIteratorCallbackForJwtClaims(
+    const std::string& key, const Envoy::Json::Object& obj,
+    istio::authn::JwtPayload* payload) {
   ENVOY_LOG(debug, "{}: key is {}", __FUNCTION__, key);
   ::google::protobuf::Map< ::std::string, ::std::string>* claims =
       payload->mutable_claims();
-
   // In current implementation, only string objects are extracted into
   // claims. If call obj.asJsonString(), will get "panic: not reached" from
   // json_loader.cc.
-  bool as_string = true;
   try {
     // Try as string, will throw execption if object type is not string.
     std::string obj_str = obj.asString();
     (*claims)[key] = obj_str;
+  } catch (Json::Exception& e) {
+  }
+  return true;
+}
+
+bool JsonIterCallback::JsonIteratorCallbackForJwtAudience(
+    const std::string& key, const Envoy::Json::Object& obj,
+    istio::authn::JwtPayload* payload) {
+  ENVOY_LOG(debug, "{}: key is {}", __FUNCTION__, key);
+  // Only extract audience
+  if (key != "aud") {
+    return true;
+  }
+  // "aud" can be either string array or string.
+  // First, try as string, will throw execption if object type is not string.
+  try {
+    std::string obj_str = obj.asString();
     // "aud" can be either string array or string.
-    // If it is string, save it to the claims and the payload
+    // Save it to the payload
     if (key == "aud") {
       payload->add_audiences(obj_str);
+      return true;
     }
   } catch (Json::Exception& e) {
     // Not convertable to string
-    as_string = false;
   }
-  if (!as_string && key == "aud") {
-    // "aud" can be either string array or string.
-    // If it is string array, only save it to the payload.
-    // Try as string array, read it as empty array if doesn't exist.
-    try {
-      // TODO (lei-tang): confirm the following code is a correct way to extract
-      // the string array.
-      std::string json_str = "{\"" + key + "\":" + obj.asJsonString() + "}";
-      Envoy::Json::ObjectSharedPtr json_ptr =
-          Envoy::Json::Factory::loadFromString(json_str);
-      std::vector<std::string> aud_vector = json_ptr->getStringArray(key, true);
-      for (size_t i = 0; i < aud_vector.size(); i++) {
-        payload->add_audiences(aud_vector[i]);
-      }
-    } catch (Json::Exception& e) {
-      ENVOY_LOG(error, "aud field type is not string or string array");
-      ENVOY_LOG(error, "{}", e.what());
-      // return true to proceed to the next iteration.
-      return true;
+  // Next, try as string array, read it as empty array if doesn't exist.
+  try {
+    // TODO (lei-tang): confirm the following code is a correct way to extract
+    // the string array.
+    std::string json_str = "{\"" + key + "\":" + obj.asJsonString() + "}";
+    Envoy::Json::ObjectSharedPtr json_ptr =
+        Envoy::Json::Factory::loadFromString(json_str);
+    std::vector<std::string> aud_vector = json_ptr->getStringArray(key, true);
+    for (size_t i = 0; i < aud_vector.size(); i++) {
+      payload->add_audiences(aud_vector[i]);
     }
+  } catch (Json::Exception& e) {
+    ENVOY_LOG(error, "aud field type is not string or string array");
+    ENVOY_LOG(error, "{}", e.what());
   }
+  // return true to proceed to the next iteration.
   return true;
 }
 };  // namespace
@@ -103,11 +117,18 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
     auto json_obj = Json::Factory::loadFromString(payload_str);
     ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
               json_obj->asJsonString());
+    // Extract claims
     json_obj->iterate(
         [payload](const std::string& key, const Json::Object& obj) -> bool {
-          return JsonIterCallback::JsonIteratorCallback(key, obj, payload);
+          return JsonIterCallback::JsonIteratorCallbackForJwtClaims(key, obj,
+                                                                    payload);
         });
-
+    // Extract audience
+    json_obj->iterate(
+        [payload](const std::string& key, const Json::Object& obj) -> bool {
+          return JsonIterCallback::JsonIteratorCallbackForJwtAudience(key, obj,
+                                                                      payload);
+        });
   } catch (...) {
     ENVOY_LOG(error, "Invalid {} header, invalid json: {}",
               jwt_payload_key.get(), payload_str);
