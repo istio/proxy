@@ -41,13 +41,9 @@ Network::PostIoAction TsiSocket::doHandshake() {
   ASSERT(!handshake_complete_);
   ENVOY_CONN_LOG(debug, "TSI: doHandshake", callbacks_->connection());
 
-  if (handshaker_next_calling_) {
-    ENVOY_CONN_LOG(debug, "TSI: doHandshake next is pending, wait...",
-                   callbacks_->connection());
-    return Network::PostIoAction::KeepOpen;
+  if (!handshaker_next_calling_) {
+    doHandshakeNext();
   }
-
-  doHandshakeNext();
   return Network::PostIoAction::KeepOpen;
 }
 
