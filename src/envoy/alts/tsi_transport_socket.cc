@@ -73,11 +73,8 @@ Network::PostIoAction TsiSocket::doHandshakeNextDone(
                  callbacks_->connection(), next_result->status_,
                  next_result->to_send_->length());
 
-  tsi_result status;
-  tsi_handshaker_result *handshaker_result;
-
-  status = next_result->status_;
-  handshaker_result = next_result->result_;
+  tsi_result status = next_result->status_;
+  tsi_handshaker_result *handshaker_result = next_result->result_.get();
 
   if (status != TSI_INCOMPLETE_DATA && status != TSI_OK) {
     ENVOY_CONN_LOG(debug, "TSI: Handshake failed: status: {}",
@@ -120,8 +117,6 @@ Network::PostIoAction TsiSocket::doHandshakeNextDone(
     ASSERT(status == TSI_OK);
     ENVOY_CONN_LOG(debug, "TSI: Handshake successful: max frame: {}",
                    callbacks_->connection(), max_output_protected_frame_size_);
-
-    tsi_handshaker_result_destroy(handshaker_result);
 
     handshake_complete_ = true;
     callbacks_->raiseEvent(Network::ConnectionEvent::Connected);

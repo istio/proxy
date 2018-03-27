@@ -31,18 +31,20 @@ void TsiHandshaker::onNextDone(tsi_result status, void *user_data,
   }
 
   auto next_result = new TsiHandshakerCallbacks::NextResult{
-      status, std::move(to_send), handshaker_result};
+      status, std::move(to_send), {handshaker_result}};
 
   handshaker->dispatcher_.post([handshaker, next_result]() {
     ASSERT(handshaker->calling_);
     handshaker->calling_ = false;
+
+    TsiHandshakerCallbacks::NextResultPtr next_result_ptr{next_result};
+
     if (handshaker->delete_on_done_) {
       handshaker->dispatcher_.deferredDelete(
           Event::DeferredDeletablePtr{handshaker});
       return;
     }
-    handshaker->callbacks_->onNextDone(
-        TsiHandshakerCallbacks::NextResultPtr(next_result));
+    handshaker->callbacks_->onNextDone(std::move(next_result_ptr));
   });
 }
 

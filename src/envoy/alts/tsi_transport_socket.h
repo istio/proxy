@@ -53,6 +53,11 @@ class TsiSocket : public Network::TransportSocket,
   void onNextDone(NextResultPtr&& result) override;
 
  private:
+  /**
+   * Callbacks for underlying RawBufferSocket, it proxies fd() and connection()
+   * but not raising event or flow control since they have to be handled in
+   * TsiSocket.
+   */
   class RawBufferCallbacks : public Network::TransportSocketCallbacks {
    public:
     explicit RawBufferCallbacks(TsiSocket& parent) : parent_(parent) {}

@@ -17,6 +17,7 @@
 #include <memory>
 #include <mutex>
 
+#include "common/common/c_smart_ptr.h"
 #include "envoy/buffer/buffer.h"
 #include "envoy/event/dispatcher.h"
 
@@ -25,7 +26,14 @@
 namespace Envoy {
 namespace Security {
 
-// An interface to get callback from TsiHandshaker
+typedef CSmartPtr<tsi_handshaker_result, tsi_handshaker_result_destroy>
+    TsiHandshakerResultPtr;
+
+/**
+ * An interface to get callback from TsiHandshaker.
+ * TsiHandshaker will call this callback in the thread which its dispatcher
+ * posts.
+ */
 class TsiHandshakerCallbacks {
  public:
   virtual ~TsiHandshakerCallbacks() {}
@@ -38,8 +46,7 @@ class TsiHandshakerCallbacks {
     Buffer::InstancePtr to_send_;
 
     // A pointer to tsi_handshaker_result struct. Owned by instance.
-    // TODO(lizan): consider add a C++ wrapper.
-    tsi_handshaker_result* result_;
+    TsiHandshakerResultPtr result_;
   };
 
   typedef std::unique_ptr<NextResult> NextResultPtr;
@@ -53,7 +60,11 @@ class TsiHandshakerCallbacks {
   virtual void onNextDone(NextResultPtr&& result) PURE;
 };
 
-// A C++ wrapper for tsi_handshaker interface
+/**
+ * A C++ wrapper for tsi_handshaker interface.
+ * For detail of tsi_handshaker, see
+ * https://github.com/grpc/grpc/blob/v1.10.0/src/core/tsi/transport_security_interface.h#L236
+ */
 class TsiHandshaker : Event::DeferredDeletable {
  public:
   explicit TsiHandshaker(tsi_handshaker* handshaker,
