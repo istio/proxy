@@ -30,12 +30,29 @@ typedef CSmartPtr<tsi_frame_protector, tsi_frame_protector_destroy>
  * A C++ wrapper for tsi_frame_protector interface.
  * For detail of tsi_frame_protector, see
  * https://github.com/grpc/grpc/blob/v1.10.0/src/core/tsi/transport_security_interface.h#L70
+ *
+ * TODO(lizan): migrate to tsi_zero_copy_grpc_protector for further optimization
  */
 class TsiFrameProtector final {
  public:
   explicit TsiFrameProtector(tsi_frame_protector* frame_protector);
 
+  /**
+   * Wrapper for tsi_frame_protector_protect
+   * @param input supplies the input buffer, the method will drain it when it is
+   * protected.
+   * @param output supplies the output buffer
+   * @return tsi_result the status.
+   */
   tsi_result protect(Buffer::Instance& input, Buffer::Instance& output);
+
+  /**
+   * Wrapper for tsi_frame_protector_unprotect
+   * @param input supplies the input buffer, the method will drain it when it is
+   * protected.
+   * @param output supplies the output buffer
+   * @return tsi_result the status.
+   */
   tsi_result unprotect(Buffer::Instance& input, Buffer::Instance& output);
 
  private:
