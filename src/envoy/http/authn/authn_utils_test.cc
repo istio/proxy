@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/authn_utils.h"
+#include "common/common/base64.h"
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/test_common/utility.h"
@@ -31,32 +32,124 @@ namespace {
 
 const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
 const std::string kSecIstioAuthUserinfoHeaderValue =
-    "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OH"
-    "Z2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3"
-    "NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLm"
-    "dzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJib29rc3RvcmUtZXNwLWVjaG8uY2xv"
-    "dWRlbmRwb2ludHNhcGlzLmNvbSIsImlhdCI6MTUxMjc1NDIwNSwiZXhwIjo1MTEyNz"
-    "U0MjA1fQ==";
+    R"(
+     {
+       "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+       "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+       "aud": "bookstore-esp-echo.cloudendpointsapis.com",
+       "iat": 1512754205,
+       "exp": 5112754205
+     }
+   )";
+const std::string kSecIstioAuthUserInfoHeaderWithNoAudValue =
+    R"(
+       {
+         "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+         "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+         "iat": 1512754205,
+         "exp": 5112754205
+       }
+     )";
+const std::string kSecIstioAuthUserInfoHeaderWithTwoAudValue =
+    R"(
+       {
+         "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+         "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+         "aud": ["bookstore-esp-echo.cloudendpointsapis.com", "bookstore-esp-echo2.cloudendpointsapis.com"],
+         "iat": 1512754205,
+         "exp": 5112754205
+       }
+     )";
 
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
   JwtPayload payload, expected_payload;
+  std::string value_base64 =
+      Base64::encode(kSecIstioAuthUserinfoHeaderValue.c_str(),
+                     kSecIstioAuthUserinfoHeaderValue.size());
   Http::TestHeaderMapImpl request_headers_with_jwt{
-      {kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue}};
-  google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
-      R"({
-           "user": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-           "audiences": "bookstore-esp-echo.cloudendpointsapis.com",
-           "claims": {
-             "aud": "bookstore-esp-echo.cloudendpointsapis.com",
-             "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-             "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
-           }
-         }
-        )",
-      &expected_payload, options);
+      {kSecIstioAuthUserInfoHeaderKey, value_base64}};
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      R"(
+      user: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      audiences: ["bookstore-esp-echo.cloudendpointsapis.com"]
+      claims {
+        key: "aud"
+        value: "bookstore-esp-echo.cloudendpointsapis.com"
+      }
+      claims {
+        key: "iss"
+        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      }
+      claims {
+        key: "sub"
+        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      }
+    )",
+      &expected_payload));
   // The payload returned from GetJWTPayloadFromHeaders() should be the same as
   // the expected.
+  bool ret = AuthnUtils::GetJWTPayloadFromHeaders(
+      request_headers_with_jwt, LowerCaseString(kSecIstioAuthUserInfoHeaderKey),
+      &payload);
+  EXPECT_TRUE(ret);
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
+}
+
+TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithNoAudTest) {
+  JwtPayload payload, expected_payload;
+  std::string value_base64 =
+      Base64::encode(kSecIstioAuthUserInfoHeaderWithNoAudValue.c_str(),
+                     kSecIstioAuthUserInfoHeaderWithNoAudValue.size());
+  Http::TestHeaderMapImpl request_headers_with_jwt{
+      {kSecIstioAuthUserInfoHeaderKey, value_base64}};
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      R"(
+      user: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      claims {
+        key: "iss"
+        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      }
+      claims {
+        key: "sub"
+        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      }
+    )",
+      &expected_payload));
+  // The payload returned from GetJWTPayloadFromHeaders() should be the same as
+  // the expected. When there is no aud,  the aud is not saved in the payload
+  // and claims.
+  bool ret = AuthnUtils::GetJWTPayloadFromHeaders(
+      request_headers_with_jwt, LowerCaseString(kSecIstioAuthUserInfoHeaderKey),
+      &payload);
+  EXPECT_TRUE(ret);
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
+}
+
+TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithTwoAudTest) {
+  JwtPayload payload, expected_payload;
+  std::string value_base64 =
+      Base64::encode(kSecIstioAuthUserInfoHeaderWithTwoAudValue.c_str(),
+                     kSecIstioAuthUserInfoHeaderWithTwoAudValue.size());
+  Http::TestHeaderMapImpl request_headers_with_jwt{
+      {kSecIstioAuthUserInfoHeaderKey, value_base64}};
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      R"(
+      user: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      audiences: "bookstore-esp-echo.cloudendpointsapis.com"
+      audiences: "bookstore-esp-echo2.cloudendpointsapis.com"
+      claims {
+        key: "iss"
+        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      }
+      claims {
+        key: "sub"
+        value: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+      }
+    )",
+      &expected_payload));
+  // The payload returned from GetJWTPayloadFromHeaders() should be the same as
+  // the expected. When the aud is a string array, the aud is not saved in the
+  // claims.
   bool ret = AuthnUtils::GetJWTPayloadFromHeaders(
       request_headers_with_jwt, LowerCaseString(kSecIstioAuthUserInfoHeaderKey),
       &payload);

@@ -54,16 +54,21 @@ bool JsonIterCallback::JsonIteratorCallback(const std::string& key,
       // "aud" can be either string array or string.
       // If it is string array, only save it to the payload.
       // Try as string array, read it as empty array if doesn't exist.
-      std::vector<std::string> aud_vector;
       try {
-        aud_vector = obj.getStringArray(key, true);
+        std::string json_str = "{\"" + key + "\":" + obj.asJsonString() + "}";
+        Envoy::Json::ObjectSharedPtr json_ptr =
+            Envoy::Json::Factory::loadFromString(json_str);
+        std::vector<std::string> aud_vector =
+            json_ptr->getStringArray(key, true);
+        for (size_t i = 0; i < aud_vector.size(); i++) {
+          ENVOY_LOG(debug, "aud_vector {} is: {}", i, aud_vector[i]);
+          payload->add_audiences(aud_vector[i]);
+        }
       } catch (Json::Exception& e) {
         ENVOY_LOG(error, "aud field type is not string or string array");
+        ENVOY_LOG(error, "{}", e.what());
         // return true to proceed to the next iteration.
         return true;
-      }
-      for (size_t i = 0; i < aud_vector.size(); i++) {
-        payload->add_audiences(aud_vector[i]);
       }
     }
   }
