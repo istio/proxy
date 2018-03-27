@@ -119,6 +119,17 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
+    name = "authn_utils_test",
+    srcs = ["authn_utils_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":authenticator",
+        ":test_utils",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
     name = "peer_authenticator_test",
     srcs = ["peer_authenticator_test.cc"],
     repository = "@envoy",
