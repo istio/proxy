@@ -51,6 +51,24 @@ envoy_cc_library(
 )
 
 envoy_cc_library(
+    name = "tsi_frame_protector",
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    srcs = [
+        "tsi_frame_protector.cc",
+    ],
+    hdrs = [
+        "tsi_frame_protector.h",
+    ],
+    deps = [
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+    external_deps = [
+        "grpc",
+    ],
+)
+
+envoy_cc_library(
     name = "tsi_transport_socket",
     repository = "@envoy",
     visibility = ["//visibility:public"],
@@ -61,6 +79,7 @@ envoy_cc_library(
         "tsi_transport_socket.h",
     ],
     deps = [
+        ":tsi_frame_protector",
         ":tsi_handshaker",
         "@envoy//source/exe:envoy_common_lib",
     ],

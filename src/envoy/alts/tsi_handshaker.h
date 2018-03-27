@@ -28,6 +28,7 @@ namespace Security {
 
 typedef CSmartPtr<tsi_handshaker_result, tsi_handshaker_result_destroy>
     TsiHandshakerResultPtr;
+typedef CSmartPtr<tsi_handshaker, tsi_handshaker_destroy> CHandshakerPtr;
 
 /**
  * An interface to get callback from TsiHandshaker.
@@ -65,11 +66,11 @@ class TsiHandshakerCallbacks {
  * For detail of tsi_handshaker, see
  * https://github.com/grpc/grpc/blob/v1.10.0/src/core/tsi/transport_security_interface.h#L236
  */
-class TsiHandshaker : Event::DeferredDeletable {
+class TsiHandshaker final : public Event::DeferredDeletable {
  public:
   explicit TsiHandshaker(tsi_handshaker* handshaker,
                          Event::Dispatcher& dispatcher);
-  virtual ~TsiHandshaker();
+  ~TsiHandshaker();
 
   /**
    * Conduct next step of handshake, see
@@ -99,7 +100,7 @@ class TsiHandshaker : Event::DeferredDeletable {
                          size_t bytes_to_send_size,
                          tsi_handshaker_result* handshaker_result);
 
-  tsi_handshaker* handshaker_{nullptr};
+  CHandshakerPtr handshaker_;
   TsiHandshakerCallbacks* callbacks_{nullptr};
   bool calling_{false};
   bool delete_on_done_{false};

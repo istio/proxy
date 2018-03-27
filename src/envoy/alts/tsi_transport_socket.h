@@ -17,6 +17,7 @@
 #include "common/buffer/buffer_impl.h"
 #include "common/network/raw_buffer_socket.h"
 #include "envoy/network/transport_socket.h"
+#include "src/envoy/alts/tsi_frame_protector.h"
 #include "src/envoy/alts/tsi_handshaker.h"
 
 namespace Envoy {
@@ -82,7 +83,7 @@ class TsiSocket : public Network::TransportSocket,
   TsiHandshakerPtr handshaker_{};
   bool handshaker_next_calling_{};
   // TODO(lizan): wrap frame protector in a C++ class
-  tsi_frame_protector* frame_protector_{};
+  TsiFrameProtectorPtr frame_protector_;
 
   Envoy::Network::TransportSocketCallbacks* callbacks_{};
   RawBufferCallbacks raw_buffer_callbacks_;
@@ -91,7 +92,6 @@ class TsiSocket : public Network::TransportSocket,
   Envoy::Buffer::OwnedImpl raw_read_buffer_;
   Envoy::Buffer::OwnedImpl raw_write_buffer_;
   bool handshake_complete_{};
-  size_t max_output_protected_frame_size_{};
 };
 
 /**

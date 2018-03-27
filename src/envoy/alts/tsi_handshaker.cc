@@ -52,11 +52,7 @@ TsiHandshaker::TsiHandshaker(tsi_handshaker *handshaker,
                              Event::Dispatcher &dispatcher)
     : handshaker_(handshaker), dispatcher_(dispatcher) {}
 
-TsiHandshaker::~TsiHandshaker() {
-  ASSERT(!calling_);
-  tsi_handshaker_destroy(handshaker_);
-  handshaker_ = nullptr;
-}
+TsiHandshaker::~TsiHandshaker() { ASSERT(!calling_); }
 
 tsi_result TsiHandshaker::next(Envoy::Buffer::Instance &received) {
   ASSERT(!calling_);
@@ -67,7 +63,7 @@ tsi_result TsiHandshaker::next(Envoy::Buffer::Instance &received) {
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result *result = nullptr;
   tsi_result status =
-      tsi_handshaker_next(handshaker_,
+      tsi_handshaker_next(handshaker_.get(),
                           reinterpret_cast<const unsigned char *>(
                               received.linearize(received_size)),
                           received_size, &bytes_to_send, &bytes_to_send_size,
