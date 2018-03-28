@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "common/common/base64.h"
 #include "src/envoy/http/authn/authn_utils.h"
+#include "common/common/base64.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/test_common/utility.h"
 
