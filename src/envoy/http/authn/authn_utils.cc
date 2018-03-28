@@ -26,15 +26,16 @@ namespace {
 static const std::string kJwtAudienceKey = "aud";
 
 // Extract JWT audience into the JwtPayload.
-// This function should to be called after
-// the claims are extracted into the payload.
-void ExtractJwtAudience(const Envoy::Json::Object& obj,
-                        istio::authn::JwtPayload* payload) {
+// This function should to be called after the claims are extracted.
+void ExtractJwtAudience(
+    const Envoy::Json::Object& obj,
+    const ::google::protobuf::Map< ::std::string, ::std::string>& claims,
+    istio::authn::JwtPayload* payload) {
   const std::string& key = kJwtAudienceKey;
   // "aud" can be either string array or string.
   // First, try as string
-  if (payload->claims().count(key) > 0) {
-    payload->add_audiences(payload->claims().at(key));
+  if (claims.count(key) > 0) {
+    payload->add_audiences(claims.at(key));
     return;
   }
   // Next, try as string array
@@ -96,7 +97,7 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
       });
   // Extract audience
   // ExtractJwtAudience() should be called after claims are extracted.
-  ExtractJwtAudience(*json_obj, payload);
+  ExtractJwtAudience(*json_obj, payload->claims(), payload);
   // Build user
   if (claims->count("iss") > 0 && claims->count("sub") > 0) {
     payload->set_user((*claims)["iss"] + "/" + (*claims)["sub"]);

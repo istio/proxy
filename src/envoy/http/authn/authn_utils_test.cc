@@ -26,7 +26,7 @@ namespace Istio {
 namespace AuthN {
 namespace {
 
-const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
+const LowerCaseString kSecIstioAuthUserInfoHeaderKey("sec-istio-auth-userinfo");
 const std::string kSecIstioAuthUserinfoHeaderValue =
     R"(
      {
@@ -57,14 +57,14 @@ const std::string kSecIstioAuthUserInfoHeaderWithTwoAudValue =
        }
      )";
 
-Http::TestHeaderMapImpl CreateTestHeaderMap(const std::string& header_key,
+Http::TestHeaderMapImpl CreateTestHeaderMap(const LowerCaseString& header_key,
                                             const std::string& header_value) {
   // The base64 encoding is done through Base64::encode().
   // If the test input has special chars, may need to use the counterpart of
   // Base64UrlDecode().
   std::string value_base64 =
       Base64::encode(header_value.c_str(), header_value.size());
-  return Http::TestHeaderMapImpl{{header_key, value_base64}};
+  return Http::TestHeaderMapImpl{{header_key.get(), value_base64}};
 }
 
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
