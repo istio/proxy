@@ -22,11 +22,14 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 namespace {
+// The JWT audience key name
+static const std::string kJwtAudienceKey = "aud";
+
 // Extract JWT audience into the JwtPayload.
 // Return true if "aud" is extracted. Otherwise, return false.
 bool ExtractJwtAudience(const Envoy::Json::Object& obj,
                         istio::authn::JwtPayload* payload) {
-  const std::string key = "aud";
+  const std::string& key = kJwtAudienceKey;
   // "aud" can be either string array or string.
   // First, try as string, will throw execption if object type is not string.
   try {
@@ -40,8 +43,8 @@ bool ExtractJwtAudience(const Envoy::Json::Object& obj,
   // Next, try as string array
   try {
     std::vector<std::string> aud_vector = obj.getStringArray(key);
-    for (size_t i = 0; i < aud_vector.size(); i++) {
-      payload->add_audiences(aud_vector[i]);
+    for (const std::string aud : aud_vector) {
+      payload->add_audiences(aud);
     }
   } catch (Json::Exception& e) {
     // Not convertable to string array
@@ -52,6 +55,7 @@ bool ExtractJwtAudience(const Envoy::Json::Object& obj,
 }
 };  // namespace
 
+// Retrieve the JwtPayload from the HTTP headers with the key
 bool AuthnUtils::GetJWTPayloadFromHeaders(
     const HeaderMap& headers, const LowerCaseString& jwt_payload_key,
     istio::authn::JwtPayload* payload) {
@@ -72,31 +76,32 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
   }
   ::google::protobuf::Map< ::std::string, ::std::string>* claims =
       payload->mutable_claims();
+  Envoy::Json::ObjectSharedPtr json_obj;
   try {
-    auto json_obj = Json::Factory::loadFromString(payload_str);
+    json_obj = Json::Factory::loadFromString(payload_str);
     ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
               json_obj->asJsonString());
-    // Extract claims
-    json_obj->iterate(
-        [payload](const std::string& key, const Json::Object& obj) -> bool {
-          ::google::protobuf::Map< ::std::string, ::std::string>* claims =
-              payload->mutable_claims();
-          // In current implementation, only string objects are extracted into
-          // claims. If call obj.asJsonString(), will get "panic: not reached"
-          // from json_loader.cc.
-          try {
-            // Try as string, will throw execption if object type is not string.
-            (*claims)[key] = obj.asString();
-          } catch (Json::Exception& e) {
-          }
-          return true;
-        });
-    // Extract audience
-    ExtractJwtAudience(*json_obj, payload);
   } catch (...) {
     return false;
   }
 
+  // Extract claims
+  json_obj->iterate(
+      [payload](const std::string& key, const Json::Object& obj) -> bool {
+        ::google::protobuf::Map< ::std::string, ::std::string>* claims =
+            payload->mutable_claims();
+        // In current implementation, only string objects are extracted into
+        // claims. If call obj.asJsonString(), will get "panic: not reached"
+        // from json_loader.cc.
+        try {
+          // Try as string, will throw execption if object type is not string.
+          (*claims)[key] = obj.asString();
+        } catch (Json::Exception& e) {
+        }
+        return true;
+      });
+  // Extract audience
+  ExtractJwtAudience(*json_obj, payload);
   if (payload->claims().empty()) {
     ENVOY_LOG(error, "{}: there is no JWT claims.", __func__);
     return false;

@@ -61,8 +61,8 @@ const std::string kSecIstioAuthUserInfoHeaderWithTwoAudValue =
        }
      )";
 
-Http::TestHeaderMapImpl GetTestHeaderMap(std::string header_key,
-                                         std::string header_value) {
+Http::TestHeaderMapImpl CreateTestHeaderMap(const std::string& header_key,
+                                            const std::string& header_value) {
   // The base64 encoding is done through Base64::encode().
   // If the test input has special chars, may need to use the counterpart of
   // Base64UrlDecode().
@@ -73,7 +73,7 @@ Http::TestHeaderMapImpl GetTestHeaderMap(std::string header_key,
 
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
   JwtPayload payload, expected_payload;
-  Http::TestHeaderMapImpl request_headers_with_jwt = GetTestHeaderMap(
+  Http::TestHeaderMapImpl request_headers_with_jwt = CreateTestHeaderMap(
       kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue);
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
@@ -109,8 +109,8 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithNoAudTest) {
   JwtPayload payload, expected_payload;
   Http::TestHeaderMapImpl request_headers_with_jwt =
-      GetTestHeaderMap(kSecIstioAuthUserInfoHeaderKey,
-                       kSecIstioAuthUserInfoHeaderWithNoAudValue);
+      CreateTestHeaderMap(kSecIstioAuthUserInfoHeaderKey,
+                          kSecIstioAuthUserInfoHeaderWithNoAudValue);
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
       user: "issuer@foo.com/sub@foo.com"
@@ -141,8 +141,8 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithNoAudTest) {
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithTwoAudTest) {
   JwtPayload payload, expected_payload;
   Http::TestHeaderMapImpl request_headers_with_jwt =
-      GetTestHeaderMap(kSecIstioAuthUserInfoHeaderKey,
-                       kSecIstioAuthUserInfoHeaderWithTwoAudValue);
+      CreateTestHeaderMap(kSecIstioAuthUserInfoHeaderKey,
+                          kSecIstioAuthUserInfoHeaderWithTwoAudValue);
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
       user: "issuer@foo.com/sub@foo.com"
