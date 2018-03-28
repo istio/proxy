@@ -35,12 +35,8 @@ namespace {
 
 const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
 const std::string kSecIstioAuthUserinfoHeaderValue =
-    "eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OH"
-    "Z2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3"
-    "NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLm"
-    "dzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJib29rc3RvcmUtZXNwLWVjaG8uY2xv"
-    "dWRlbmRwb2ludHNhcGlzLmNvbSIsImlhdCI6MTUxMjc1NDIwNSwiZXhwIjo1MTEyNz"
-    "U0MjA1fQ==";
+    "eyJpc3MiOiJpc3N1ZXJAZm9vLmNvbSIsInN1YiI6InN1YkBmb28uY29tIiwiYXVkIj"
+    "oiYXVkMSIsImlhdCI6MTUxMjc1NDIwNSwiZXhwIjo1MTEyNzU0MjA1fQ==";
 
 class MockAuthenticatorBase : public AuthenticatorBase {
  public:
@@ -152,19 +148,18 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithJwtInHeader) {
   JsonStringToMessage(
       R"({
              "jwt": {
-               "user": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com/628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-               "audiences": ["bookstore-esp-echo.cloudendpointsapis.com"],
+               "user": "issuer@foo.com/sub@foo.com",
+               "audiences": ["aud1"],
                "presenter": "",
                "claims": {
-                 "aud": "bookstore-esp-echo.cloudendpointsapis.com",
-                 "iss": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
-                 "sub": "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com"
+                 "aud": "aud1",
+                 "iss": "issuer@foo.com",
+                 "sub": "sub@foo.com"
                }
              }
            }
         )",
       &expected_payload, options);
-
   authenticator.validateJwt(
       jwt, [&expected_payload](const Payload* payload, bool success) {
         // When there is a verified JWT in the HTTP header, validateJwt()

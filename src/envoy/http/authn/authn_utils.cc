@@ -26,18 +26,16 @@ namespace {
 static const std::string kJwtAudienceKey = "aud";
 
 // Extract JWT audience into the JwtPayload.
+// This function should to be called after
+// the claims are extracted into the payload.
 void ExtractJwtAudience(const Envoy::Json::Object& obj,
                         istio::authn::JwtPayload* payload) {
   const std::string& key = kJwtAudienceKey;
   // "aud" can be either string array or string.
-  // First, try as string, will throw execption if object type is not string.
-  try {
-    std::string obj_str = obj.getString(key);
-    // Save "aud" to the payload
-    payload->add_audiences(obj_str);
+  // First, try as string
+  if (payload->claims().count(key) > 0) {
+    payload->add_audiences(payload->claims().at(key));
     return;
-  } catch (Json::Exception& e) {
-    // Not convertable to string
   }
   // Next, try as string array
   try {
@@ -97,9 +95,9 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
         return true;
       });
   // Extract audience
+  // ExtractJwtAudience() should be called after claims are extracted.
   ExtractJwtAudience(*json_obj, payload);
   if (payload->claims().empty()) {
-    ENVOY_LOG(error, "{}: there is no JWT claims.", __func__);
     return false;
   }
   // Build user
