@@ -22,68 +22,29 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 namespace {
-class JsonIterCallback : public Logger::Loggable<Logger::Id::filter> {
- public:
-  // The json iterator callback function for extracting Jwt claims
-  static bool JsonIteratorCallbackForJwtClaims(
-      const std::string&, const Envoy::Json::Object&,
-      istio::authn::JwtPayload* payload);
-  // The json iterator callback function for exracting Jwt audience
-  static bool JsonIteratorCallbackForJwtAudience(
-      const std::string&, const Envoy::Json::Object&,
-      istio::authn::JwtPayload* payload);
-};
-
-bool JsonIterCallback::JsonIteratorCallbackForJwtClaims(
-    const std::string& key, const Envoy::Json::Object& obj,
-    istio::authn::JwtPayload* payload) {
-  ENVOY_LOG(debug, "{}: key is {}", __FUNCTION__, key);
-  ::google::protobuf::Map< ::std::string, ::std::string>* claims =
-      payload->mutable_claims();
-  // In current implementation, only string objects are extracted into
-  // claims. If call obj.asJsonString(), will get "panic: not reached" from
-  // json_loader.cc.
-  try {
-    // Try as string, will throw execption if object type is not string.
-    std::string obj_str = obj.asString();
-    (*claims)[key] = obj_str;
-  } catch (Json::Exception& e) {
-  }
-  return true;
-}
-
-bool JsonIterCallback::JsonIteratorCallbackForJwtAudience(
-    const std::string& key, const Envoy::Json::Object& obj,
-    istio::authn::JwtPayload* payload) {
-  ENVOY_LOG(debug, "{}: key is {}", __FUNCTION__, key);
-  // Only extract audience
-  if (key != "aud") {
-    return true;
-  }
+// Extract JWT audience into the JwtPayload.
+// Return true if "aud" is extracted. Otherwise, return false.
+bool ExtractJwtAudience(const Envoy::Json::Object& obj,
+                        istio::authn::JwtPayload* payload) {
+  const std::string key = "aud";
   // "aud" can be either string array or string.
   // First, try as string, will throw execption if object type is not string.
   try {
-    std::string obj_str = obj.asString();
+    std::string obj_str = obj.getString(key);
     // Save "aud" to the payload
     payload->add_audiences(obj_str);
     return true;
   } catch (Json::Exception& e) {
     // Not convertable to string
   }
-  // Next, try as string array, read it as empty array if doesn't exist.
+  // Next, try as string array
   try {
-    // TODO (lei-tang): confirm the following code is a correct way to extract
-    // the string array.
-    std::string json_str = "{\"" + key + "\":" + obj.asJsonString() + "}";
-    Envoy::Json::ObjectSharedPtr json_ptr =
-        Envoy::Json::Factory::loadFromString(json_str);
-    std::vector<std::string> aud_vector = json_ptr->getStringArray(key, true);
+    std::vector<std::string> aud_vector = obj.getStringArray(key);
     for (size_t i = 0; i < aud_vector.size(); i++) {
       payload->add_audiences(aud_vector[i]);
     }
   } catch (Json::Exception& e) {
-    ENVOY_LOG(error, "aud field type is not string or string array");
-    ENVOY_LOG(error, "{}", e.what());
+    return false;
   }
   // return true to proceed to the next iteration.
   return true;
@@ -117,18 +78,21 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
     // Extract claims
     json_obj->iterate(
         [payload](const std::string& key, const Json::Object& obj) -> bool {
-          return JsonIterCallback::JsonIteratorCallbackForJwtClaims(key, obj,
-                                                                    payload);
+          ::google::protobuf::Map< ::std::string, ::std::string>* claims =
+              payload->mutable_claims();
+          // In current implementation, only string objects are extracted into
+          // claims. If call obj.asJsonString(), will get "panic: not reached"
+          // from json_loader.cc.
+          try {
+            // Try as string, will throw execption if object type is not string.
+            (*claims)[key] = obj.asString();
+          } catch (Json::Exception& e) {
+          }
+          return true;
         });
     // Extract audience
-    json_obj->iterate(
-        [payload](const std::string& key, const Json::Object& obj) -> bool {
-          return JsonIterCallback::JsonIteratorCallbackForJwtAudience(key, obj,
-                                                                      payload);
-        });
+    ExtractJwtAudience(*json_obj, payload);
   } catch (...) {
-    ENVOY_LOG(error, "Invalid {} header, invalid json: {}",
-              jwt_payload_key.get(), payload_str);
     return false;
   }
 

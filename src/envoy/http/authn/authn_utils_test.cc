@@ -34,55 +34,66 @@ const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
 const std::string kSecIstioAuthUserinfoHeaderValue =
     R"(
      {
-       "iss": "foo@developer.gserviceaccount.com",
-       "sub": "foo@developer.gserviceaccount.com",
-       "aud": "bookstore-esp-echo.cloudendpointsapis.com",
-       "iat": 1512754205,
-       "exp": 5112754205
+       "iss": "issuer@foo.com",
+       "sub": "sub@foo.com",
+       "aud": "aud1",
+       "non-string-will-be-ignored": 1512754205,
+       "some-other-string-claims": "some-claims-kept"
      }
    )";
 const std::string kSecIstioAuthUserInfoHeaderWithNoAudValue =
     R"(
        {
-         "iss": "foo@developer.gserviceaccount.com",
-         "sub": "foo@developer.gserviceaccount.com",
-         "iat": 1512754205,
-         "exp": 5112754205
+         "iss": "issuer@foo.com",
+         "sub": "sub@foo.com",
+         "non-string-will-be-ignored": 1512754205,
+         "some-other-string-claims": "some-claims-kept"
        }
      )";
 const std::string kSecIstioAuthUserInfoHeaderWithTwoAudValue =
     R"(
        {
-         "iss": "foo@developer.gserviceaccount.com",
-         "sub": "foo@developer.gserviceaccount.com",
-         "aud": ["bookstore-esp-echo.cloudendpointsapis.com", "bookstore-esp-echo2.cloudendpointsapis.com"],
-         "iat": 1512754205,
-         "exp": 5112754205
+         "iss": "issuer@foo.com",
+         "sub": "sub@foo.com",
+         "aud": ["aud1", "aud2"],
+         "non-string-will-be-ignored": 1512754205,
+         "some-other-string-claims": "some-claims-kept"
        }
      )";
 
+Http::TestHeaderMapImpl GetTestHeaderMap(std::string header_key,
+                                         std::string header_value) {
+  // The base64 encoding is done through Base64::encode().
+  // If the test input has special chars, may need to use the counterpart of
+  // Base64UrlDecode().
+  std::string value_base64 =
+      Base64::encode(header_value.c_str(), header_value.size());
+  return Http::TestHeaderMapImpl{{header_key, value_base64}};
+}
+
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
   JwtPayload payload, expected_payload;
-  std::string value_base64 =
-      Base64::encode(kSecIstioAuthUserinfoHeaderValue.c_str(),
-                     kSecIstioAuthUserinfoHeaderValue.size());
-  Http::TestHeaderMapImpl request_headers_with_jwt{
-      {kSecIstioAuthUserInfoHeaderKey, value_base64}};
+  Http::TestHeaderMapImpl request_headers_with_jwt = GetTestHeaderMap(
+      kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue);
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
-      user: "foo@developer.gserviceaccount.com/foo@developer.gserviceaccount.com"
-      audiences: ["bookstore-esp-echo.cloudendpointsapis.com"]
+      user: "issuer@foo.com/sub@foo.com"
+      audiences: ["aud1"]
       claims {
         key: "aud"
-        value: "bookstore-esp-echo.cloudendpointsapis.com"
+        value: "aud1"
       }
       claims {
         key: "iss"
-        value: "foo@developer.gserviceaccount.com"
+        value: "issuer@foo.com"
       }
       claims {
         key: "sub"
-        value: "foo@developer.gserviceaccount.com"
+        value: "sub@foo.com"
+      }
+      claims {
+        key: "some-other-string-claims"
+        value: "some-claims-kept"
       }
     )",
       &expected_payload));
@@ -97,21 +108,23 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
 
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithNoAudTest) {
   JwtPayload payload, expected_payload;
-  std::string value_base64 =
-      Base64::encode(kSecIstioAuthUserInfoHeaderWithNoAudValue.c_str(),
-                     kSecIstioAuthUserInfoHeaderWithNoAudValue.size());
-  Http::TestHeaderMapImpl request_headers_with_jwt{
-      {kSecIstioAuthUserInfoHeaderKey, value_base64}};
+  Http::TestHeaderMapImpl request_headers_with_jwt =
+      GetTestHeaderMap(kSecIstioAuthUserInfoHeaderKey,
+                       kSecIstioAuthUserInfoHeaderWithNoAudValue);
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
-      user: "foo@developer.gserviceaccount.com/foo@developer.gserviceaccount.com"
+      user: "issuer@foo.com/sub@foo.com"
       claims {
         key: "iss"
-        value: "foo@developer.gserviceaccount.com"
+        value: "issuer@foo.com"
       }
       claims {
         key: "sub"
-        value: "foo@developer.gserviceaccount.com"
+        value: "sub@foo.com"
+      }
+      claims {
+        key: "some-other-string-claims"
+        value: "some-claims-kept"
       }
     )",
       &expected_payload));
@@ -127,23 +140,25 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithNoAudTest) {
 
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderWithTwoAudTest) {
   JwtPayload payload, expected_payload;
-  std::string value_base64 =
-      Base64::encode(kSecIstioAuthUserInfoHeaderWithTwoAudValue.c_str(),
-                     kSecIstioAuthUserInfoHeaderWithTwoAudValue.size());
-  Http::TestHeaderMapImpl request_headers_with_jwt{
-      {kSecIstioAuthUserInfoHeaderKey, value_base64}};
+  Http::TestHeaderMapImpl request_headers_with_jwt =
+      GetTestHeaderMap(kSecIstioAuthUserInfoHeaderKey,
+                       kSecIstioAuthUserInfoHeaderWithTwoAudValue);
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
-      user: "foo@developer.gserviceaccount.com/foo@developer.gserviceaccount.com"
-      audiences: "bookstore-esp-echo.cloudendpointsapis.com"
-      audiences: "bookstore-esp-echo2.cloudendpointsapis.com"
+      user: "issuer@foo.com/sub@foo.com"
+      audiences: "aud1"
+      audiences: "aud2"
       claims {
         key: "iss"
-        value: "foo@developer.gserviceaccount.com"
+        value: "issuer@foo.com"
       }
       claims {
         key: "sub"
-        value: "foo@developer.gserviceaccount.com"
+        value: "sub@foo.com"
+      }
+      claims {
+        key: "some-other-string-claims"
+        value: "some-claims-kept"
       }
     )",
       &expected_payload));
