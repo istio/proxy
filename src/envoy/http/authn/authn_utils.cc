@@ -26,8 +26,7 @@ namespace {
 static const std::string kJwtAudienceKey = "aud";
 
 // Extract JWT audience into the JwtPayload.
-// Return true if "aud" is extracted. Otherwise, return false.
-bool ExtractJwtAudience(const Envoy::Json::Object& obj,
+void ExtractJwtAudience(const Envoy::Json::Object& obj,
                         istio::authn::JwtPayload* payload) {
   const std::string& key = kJwtAudienceKey;
   // "aud" can be either string array or string.
@@ -36,7 +35,7 @@ bool ExtractJwtAudience(const Envoy::Json::Object& obj,
     std::string obj_str = obj.getString(key);
     // Save "aud" to the payload
     payload->add_audiences(obj_str);
-    return true;
+    return;
   } catch (Json::Exception& e) {
     // Not convertable to string
   }
@@ -48,10 +47,7 @@ bool ExtractJwtAudience(const Envoy::Json::Object& obj,
     }
   } catch (Json::Exception& e) {
     // Not convertable to string array
-    return false;
   }
-  // return true to proceed to the next iteration.
-  return true;
 }
 };  // namespace
 
