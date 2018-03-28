@@ -44,6 +44,7 @@ bool ExtractJwtAudience(const Envoy::Json::Object& obj,
       payload->add_audiences(aud_vector[i]);
     }
   } catch (Json::Exception& e) {
+    // Not convertable to string array
     return false;
   }
   // return true to proceed to the next iteration.
