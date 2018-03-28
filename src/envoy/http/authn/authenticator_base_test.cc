@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
+#include "common/common/base64.h"
 #include "common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
 #include "src/envoy/http/authn/test_utils.h"
@@ -35,8 +36,15 @@ namespace {
 
 const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
 const std::string kSecIstioAuthUserinfoHeaderValue =
-    "eyJpc3MiOiJpc3N1ZXJAZm9vLmNvbSIsInN1YiI6InN1YkBmb28uY29tIiwiYXVkIj"
-    "oiYXVkMSIsImlhdCI6MTUxMjc1NDIwNSwiZXhwIjo1MTEyNzU0MjA1fQ==";
+    R"(
+     {
+       "iss": "issuer@foo.com",
+       "sub": "sub@foo.com",
+       "aud": "aud1",
+       "non-string-will-be-ignored": 1512754205,
+       "some-other-string-claims": "some-claims-kept"
+     }
+   )";
 
 class MockAuthenticatorBase : public AuthenticatorBase {
  public:
@@ -137,10 +145,20 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoJwtInHeader) {
   });
 }
 
+Http::TestHeaderMapImpl CreateTestHeaderMap(const std::string& header_key,
+                                            const std::string& header_value) {
+  // The base64 encoding is done through Base64::encode().
+  // If the test input has special chars, may need to use the counterpart of
+  // Base64UrlDecode().
+  std::string value_base64 =
+      Base64::encode(header_value.c_str(), header_value.size());
+  return Http::TestHeaderMapImpl{{header_key, value_base64}};
+}
+
 TEST_F(AuthenticatorBaseTest, ValidateJwtWithJwtInHeader) {
   iaapi::Jwt jwt;
-  Http::TestHeaderMapImpl request_headers_with_jwt{
-      {kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue}};
+  Http::TestHeaderMapImpl request_headers_with_jwt = CreateTestHeaderMap(
+      kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue);
   FilterContext filter_context{&request_headers_with_jwt, &connection_};
   MockAuthenticatorBase authenticator{&filter_context};
   Payload expected_payload;
@@ -154,7 +172,8 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithJwtInHeader) {
                "claims": {
                  "aud": "aud1",
                  "iss": "issuer@foo.com",
-                 "sub": "sub@foo.com"
+                 "sub": "sub@foo.com",
+                 "some-other-string-claims": "some-claims-kept"
                }
              }
            }

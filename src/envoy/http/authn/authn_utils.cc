@@ -97,9 +97,6 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
   // Extract audience
   // ExtractJwtAudience() should be called after claims are extracted.
   ExtractJwtAudience(*json_obj, payload);
-  if (payload->claims().empty()) {
-    return false;
-  }
   // Build user
   if (claims->count("iss") > 0 && claims->count("sub") > 0) {
     payload->set_user((*claims)["iss"] + "/" + (*claims)["sub"]);
