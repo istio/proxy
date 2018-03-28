@@ -82,6 +82,7 @@ Network::PostIoAction TsiSocket::doHandshakeNextDone(
     tsi_handshaker_result_extract_peer(handshaker_result, &peer);
     ENVOY_CONN_LOG(debug, "TSI: Handshake successful: peer properties: {}",
                    callbacks_->connection(), peer.property_count);
+    // TODO(lizan): validate peers
     for (size_t i = 0; i < peer.property_count; ++i) {
       ENVOY_CONN_LOG(debug, "  {}: {}", callbacks_->connection(),
                      peer.properties[i].name,
