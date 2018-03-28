@@ -113,7 +113,7 @@ cc_library(
             actual = "@googletest_git//:googletest_prod",
         )
 
-ISTIO_API = "7e10af28c89ef66637dbad64fdd324c652263667"
+ISTIO_API = "9d38913a1051047a1dcd6345400e374136e47d2f"
 
 def mixerapi_repositories(bind=True):
     BUILD = """
