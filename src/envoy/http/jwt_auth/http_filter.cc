@@ -25,6 +25,14 @@
 
 namespace Envoy {
 namespace Http {
+namespace {
+// This function sanitizes the HTTP headers to remove the existing
+// JWT verification results specified by the key.
+void SanitizeJwtVerificationResultInHeaders(const LowerCaseString key,
+                                            HeaderMap& headers) {
+  headers.remove(key);
+}
+}  // namespace
 
 JwtVerificationFilter::JwtVerificationFilter(Upstream::ClusterManager& cm,
                                              JwtAuth::JwtAuthStore& store)
@@ -42,6 +50,12 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
   ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
   state_ = Calling;
   stopped_ = false;
+
+  // Sanitize the JWT verification result in the HTTP headers
+  // TODO (lei-tang): when the JWT verification result is in a configurable
+  // header, need to sanitize based on the configuration.
+  SanitizeJwtVerificationResultInHeaders(
+      JwtAuth::JwtAuthenticator::JwtPayloadKey(), headers);
 
   // Verify the JWT token, onDone() will be called when completed.
   jwt_auth_.Verify(headers, this);
