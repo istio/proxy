@@ -104,7 +104,7 @@ class AttributesBuilder {
     }
   }
 
-  bool HasAttribute(const std::string& key) {
+  bool HasAttribute(const std::string& key) const {
     const auto& attrs_map = attributes_->attributes();
     return attrs_map.find(key) != attrs_map.end();
   }
