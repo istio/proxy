@@ -43,6 +43,11 @@ FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
   state_ = Calling;
   stopped_ = false;
 
+  // Sanitize the JWT verification result in the HTTP headers
+  // TODO (lei-tang): when the JWT verification result is in a configurable
+  // header, need to sanitize based on the configuration.
+  headers.remove(JwtAuth::JwtAuthenticator::JwtPayloadKey());
+
   // Verify the JWT token, onDone() will be called when completed.
   jwt_auth_.Verify(headers, this);
 
@@ -80,7 +85,7 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
 FilterDataStatus JwtVerificationFilter::decodeData(Buffer::Instance&, bool) {
   ENVOY_LOG(debug, "Called JwtVerificationFilter : {}", __func__);
   if (state_ == Calling) {
-    return FilterDataStatus::StopIterationAndBuffer;
+    return FilterDataStatus::StopIterationAndWatermark;
   }
   return FilterDataStatus::Continue;
 }
