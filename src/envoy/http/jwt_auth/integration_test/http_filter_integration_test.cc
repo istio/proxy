@@ -344,9 +344,8 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
 
 class JwtVerificationFilterIntegrationTestWithInjectedJwtResult
     : public JwtVerificationFilterIntegrationTestWithJwks {
-  // With allow_missing_or_failed option being true,
-  // a request without JWT will reach the backend.
-  // This is to test the injected JWT result.
+  // With allow_missing_or_failed option being true, a request without JWT
+  // will reach the backend. This is to test the injected JWT result.
   std::string ConfigPath() override {
     return "src/envoy/http/jwt_auth/integration_test/"
            "envoy_allow_missing_or_failed_jwt.conf.jwk";
@@ -361,7 +360,9 @@ TEST_P(JwtVerificationFilterIntegrationTestWithInjectedJwtResult,
        InjectedJwtResultSanitized) {
   // Issuer is not called by passing empty pubkey.
   std::string pubkey = "";
-  // A request without JWT
+  // Create a request without JWT.
+  // With allow_missing_or_failed option being true, a request without JWT
+  // will reach the backend. This is to test the injected JWT result.
   auto headers = BaseRequestHeaders();
   // Inject a header of JWT verification result
   headers.addCopy(kJwtVerificationResultHeaderKey, kJwtVerificationResult);
