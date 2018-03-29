@@ -22,10 +22,7 @@ load(
     "envoy_cc_binary",
     "envoy_cc_library",
     "envoy_cc_test",
-    "envoy_package",
 )
-
-envoy_package()
 
 envoy_cc_library(
     name = "jwt_lib",

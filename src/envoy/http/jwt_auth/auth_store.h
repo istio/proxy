@@ -16,9 +16,9 @@
 #pragma once
 
 #include "common/common/logger.h"
+#include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.h"
 #include "envoy/server/filter_config.h"
 #include "envoy/thread_local/thread_local.h"
-#include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.h"
 #include "src/envoy/http/jwt_auth/pubkey_cache.h"
 #include "src/envoy/http/jwt_auth/token_extractor.h"
 
@@ -32,11 +32,15 @@ namespace JwtAuth {
 class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
  public:
   // Load the config from envoy config.
- JwtAuthStore(const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication& config)
+  JwtAuthStore(const ::envoy::config::filter::http::jwt_authn::v2alpha::
+                   JwtAuthentication& config)
       : config_(config), pubkey_cache_(config_), token_extractor_(config_) {}
 
   // Get the Config.
-  const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication& config() const { return config_; }
+  const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication&
+  config() const {
+    return config_;
+  }
 
   // Get the pubkey cache.
   PubkeyCache& pubkey_cache() { return pubkey_cache_; }
@@ -46,7 +50,8 @@ class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
 
  private:
   // Store the config.
-  const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication& config_;
+  const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication&
+      config_;
   // The public key cache, indexed by issuer.
   PubkeyCache pubkey_cache_;
   // The object to extract token.
@@ -56,7 +61,8 @@ class JwtAuthStore : public ThreadLocal::ThreadLocalObject {
 // The factory to create per-thread auth store object.
 class JwtAuthStoreFactory : public Logger::Loggable<Logger::Id::config> {
  public:
- JwtAuthStoreFactory(const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication& config,
+  JwtAuthStoreFactory(const ::envoy::config::filter::http::jwt_authn::v2alpha::
+                          JwtAuthentication& config,
                       Server::Configuration::FactoryContext& context)
       : config_(config), tls_(context.threadLocal().allocateSlot()) {
     tls_->set(

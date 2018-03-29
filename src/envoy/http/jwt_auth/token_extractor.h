@@ -35,7 +35,8 @@ namespace JwtAuth {
 //
 class JwtTokenExtractor : public Logger::Loggable<Logger::Id::filter> {
  public:
-  JwtTokenExtractor(const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication& config);
+  JwtTokenExtractor(const ::envoy::config::filter::http::jwt_authn::v2alpha::
+                        JwtAuthentication& config);
 
   // The object to store extracted token.
   // Based on the location the token is extracted from, it also
