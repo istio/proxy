@@ -154,14 +154,6 @@ const char kOtherIssuerConfig[] = R"(
 const char kBypassConfig[] = R"(
 {
   "bypass": [
-     {
-       "http_method": "OPTIONS",
-       "path_prefix": "/"
-     },
-     {
-       "http_method": "GET",
-       "path_exact": "/healthz"
-     }
   ]
 }
 )";
@@ -522,10 +514,11 @@ TEST_F(JwtAuthenticatorTest, TestInValidJwtWhenAllowMissingOrFailedIsTrue) {
   auth_->Verify(headers, &mock_cb_);
 }
 
-// TODO: enable Bypass test
-#if 0
 TEST_F(JwtAuthenticatorTest, TestBypassJWT) {
   SetupConfig(kBypassConfig);
+
+  // TODO: enable Bypass test
+  return;
 
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
   EXPECT_CALL(mock_cb_, onDone(_))
@@ -553,7 +546,6 @@ TEST_F(JwtAuthenticatorTest, TestBypassJWT) {
       TestHeaderMapImpl{{":method", "GET"}, {":path", "/healthz"}};
   auth_->Verify(healthz_headers, &mock_cb_);
 }
-#endif
 
 TEST_F(JwtAuthenticatorTest, TestInvalidJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
