@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/jwt_auth/http_filter.h"
 #include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.validate.h"
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
 #include "src/envoy/http/jwt_auth/auth_store.h"
+#include "src/envoy/http/jwt_auth/http_filter.h"
 
 using ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication;
 
