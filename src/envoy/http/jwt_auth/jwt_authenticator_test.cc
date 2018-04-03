@@ -113,6 +113,31 @@ const char kExampleConfig[] = R"(
 }
 )";
 
+// A JSON config without forward_payload_header configured.
+const char kExampleConfigWithoutForwardPayloadHeader[] = R"(
+{
+   "rules": [
+      {
+         "issuer": "https://example.com",
+         "audiences": [
+            "example_service",
+            "http://example_service1",
+            "https://example_service2/"
+          ],
+          "remote_jwks": {
+            "http_uri": {
+              "uri": "https://pubkey_server/pubkey_path",
+              "cluster": "pubkey_cluster"
+            },
+            "cache_duration": {
+              "seconds": 600
+            }
+         },
+      }
+   ]
+}
+)";
+
 // An example JSON config with a good JWT config and allow_missing_or_failed
 // option enabled
 const char kExampleConfigWithJwtAndAllowMissingOrFailed[] = R"(
@@ -730,6 +755,25 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
 
   // Destroy the authenticating process.
   auth_->onDestroy();
+}
+
+// In the test, there is no forward_payload_header
+class NoForwardPayloadHeaderTest : public JwtAuthenticatorTest {
+ public:
+  void SetUp() { SetupConfig(kExampleConfigWithoutForwardPayloadHeader); }
+};
+
+TEST_F(NoForwardPayloadHeaderTest, TestNoForwardPayloadHeader) {
+  MockUpstream mock_pubkey(mock_cm_, kPublicKey);
+  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  MockJwtAuthenticatorCallbacks mock_cb;
+  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
+    ASSERT_EQ(status, Status::OK);
+  }));
+  auth_->Verify(headers, &mock_cb);
+
+  // Test when forward_payload_header is not set, the output should be empty.
+  EXPECT_FALSE(headers.has("sec-istio-auth-userinfo"));
 }
 
 }  // namespace JwtAuth

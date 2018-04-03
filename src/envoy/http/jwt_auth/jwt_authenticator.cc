@@ -199,7 +199,7 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
   }
 
   LowerCaseString key(issuer_item.jwt_config().forward_payload_header());
-  if (!jwt_->PayloadStrBase64Url().empty()) {
+  if (!key.get().empty() && !jwt_->PayloadStrBase64Url().empty()) {
     headers_->addCopy(key, jwt_->PayloadStrBase64Url());
   }
 
