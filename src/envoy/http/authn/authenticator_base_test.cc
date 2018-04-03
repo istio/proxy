@@ -151,7 +151,7 @@ TEST_F(AuthenticatorBaseTest,
 // TODO: more tests for Jwt.
 TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoIstioAuthnConfig) {
   iaapi::Jwt jwt;
-  *jwt.mutable_issuer() = "issuer@foo.com";
+  jwt.set_issuer("issuer@foo.com");
   // authenticator_ has empty Istio authn config
   authenticator_.validateJwt(jwt, [](const Payload* payload, bool success) {
     // When there is empty Istio authn config, validateJwt() should return
@@ -189,7 +189,7 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoIssuer) {
 
 TEST_F(AuthenticatorBaseTest, ValidateJwtWithEmptyJwtOutputPayloadLocations) {
   iaapi::Jwt jwt;
-  *jwt.mutable_issuer() = "issuer@foo.com";
+  jwt.set_issuer("issuer@foo.com");
   Http::TestHeaderMapImpl request_headers_with_jwt = CreateTestHeaderMap(
       kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue);
   google::protobuf::util::JsonParseOptions options;
@@ -216,7 +216,7 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithEmptyJwtOutputPayloadLocations) {
 
 TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoJwtInHeader) {
   iaapi::Jwt jwt;
-  *jwt.mutable_issuer() = "issuer@foo.com";
+  jwt.set_issuer("issuer@foo.com");
   google::protobuf::util::JsonParseOptions options;
   FilterConfig filter_config;
   JsonStringToMessage(
@@ -242,7 +242,7 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoJwtInHeader) {
 
 TEST_F(AuthenticatorBaseTest, ValidateJwtWithJwtInHeader) {
   iaapi::Jwt jwt;
-  *jwt.mutable_issuer() = "issuer@foo.com";
+  jwt.set_issuer("issuer@foo.com");
   Http::TestHeaderMapImpl request_headers_with_jwt = CreateTestHeaderMap(
       kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue);
   google::protobuf::util::JsonParseOptions options;
