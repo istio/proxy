@@ -757,13 +757,9 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
   auth_->onDestroy();
 }
 
-// In the test, there is no forward_payload_header
-class NoForwardPayloadHeaderTest : public JwtAuthenticatorTest {
- public:
-  void SetUp() { SetupConfig(kExampleConfigWithoutForwardPayloadHeader); }
-};
-
-TEST_F(NoForwardPayloadHeaderTest, TestNoForwardPayloadHeader) {
+TEST_F(JwtAuthenticatorTest, TestNoForwardPayloadHeader) {
+  // In this config, there is no forward_payload_header
+  SetupConfig(kExampleConfigWithoutForwardPayloadHeader);
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
   auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   MockJwtAuthenticatorCallbacks mock_cb;
