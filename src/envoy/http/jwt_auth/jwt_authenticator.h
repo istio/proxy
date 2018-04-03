@@ -83,13 +83,6 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
   std::string uri_;
   // The pending remote request so it can be canceled.
   AsyncClient::Request* request_{};
-
-  // The HTTP header to pass verified token payload.
-  // As HeaderMap::addReferenceKey() requires that "The key MUST point to point
-  // to data that will live beyond the lifetime of any request/response using
-  // the string (since a codec may optimize for zero copy)", the header key is
-  // not stored in a stack variable.
-  std::unique_ptr<LowerCaseString> forward_payload_header_;
 };
 
 }  // namespace JwtAuth

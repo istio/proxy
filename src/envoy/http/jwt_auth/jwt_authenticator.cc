@@ -195,10 +195,10 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
     return;
   }
 
-  forward_payload_header_.reset(
-      new LowerCaseString(issuer_item.jwt_config().forward_payload_header()));
-  headers_->addReferenceKey(*forward_payload_header_.get(),
-                            jwt_->PayloadStrBase64Url());
+  LowerCaseString key(issuer_item.jwt_config().forward_payload_header());
+  if (!jwt_->PayloadStrBase64Url().empty()) {
+    headers_->addCopy(key, jwt_->PayloadStrBase64Url());
+  }
 
   if (!issuer_item.jwt_config().forward()) {
     // Remove JWT from headers.
