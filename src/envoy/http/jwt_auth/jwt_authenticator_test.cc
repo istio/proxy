@@ -106,7 +106,8 @@ const char kExampleConfig[] = R"(
             "cache_duration": {
               "seconds": 600
             }
-         }
+         },
+         "forward_payload_header": "sec-istio-auth-userinfo"
       }
    ]
 }
