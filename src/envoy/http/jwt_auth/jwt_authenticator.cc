@@ -22,6 +22,9 @@ namespace Http {
 namespace JwtAuth {
 namespace {
 
+// TODO (lei-tang) remove kJwtPayloadKey after adding the
+// support of forward_payload_header to Istio authn and other
+// code that reads the output from jwt_auth.
 // The HTTP header to pass verified token payload.
 const LowerCaseString kJwtPayloadKey("sec-istio-auth-userinfo");
 
