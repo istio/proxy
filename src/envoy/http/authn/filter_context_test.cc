@@ -37,7 +37,7 @@ class FilterContextTest : public testing::Test {
 
   // This test suit does not use headers nor connection, so ok to use null for
   // them.
-  StrictMock<FilterContext> filter_context_{nullptr, nullptr};
+  StrictMock<FilterContext> filter_context_{nullptr, nullptr, nullptr};
   Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 };

@@ -67,7 +67,7 @@ class PeerAuthenticatorTest : public testing::Test {
   std::unique_ptr<StrictMock<MockPeerAuthenticator>> authenticator_;
   StrictMock<MockFunction<void(bool)>> on_done_callback_;
   Http::TestHeaderMapImpl request_headers_;
-  FilterContext filter_context_{&request_headers_, nullptr};
+  FilterContext filter_context_{&request_headers_, nullptr, nullptr};
   iaapi::Policy policy_;
 
   Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};

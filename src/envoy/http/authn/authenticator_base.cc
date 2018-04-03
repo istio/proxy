@@ -25,14 +25,6 @@ namespace Envoy {
 namespace Http {
 namespace Istio {
 namespace AuthN {
-namespace {
-// The HTTP header from which to get the verified Jwt result.
-// It is currently hard-coded. After jwt-auth has a
-// parameter for this header, the hardcoded parameter will
-// be removed.
-const LowerCaseString kJwtHeaderKey("sec-istio-auth-userinfo");
-
-}  // namespace
 
 AuthenticatorBase::AuthenticatorBase(
     FilterContext* filter_context,
@@ -70,13 +62,27 @@ void AuthenticatorBase::validateX509(
 }
 
 void AuthenticatorBase::validateJwt(
-    const iaapi::Jwt&,
+    const iaapi::Jwt& jwt,
     const AuthenticatorBase::MethodDoneCallback& done_callback) {
   Payload payload;
   Envoy::Http::HeaderMap& header = *filter_context()->headers();
   ENVOY_LOG(debug, "{} the number of headers is {}", __func__, header.size());
 
-  bool ret = AuthnUtils::GetJWTPayloadFromHeaders(header, kJwtHeaderKey,
+  if (0 ==
+      filter_context()->filterConfig()->jwt_output_payload_locations().count(
+          jwt.issuer())) {
+    ENVOY_LOG(
+        error,
+        "AuthenticatorBase: {}(): no JWT payload header location is found "
+        "for the issuer {}",
+        __func__, jwt.issuer());
+    done_callback(nullptr, false);
+    return;
+  }
+  LowerCaseString header_key(
+      filter_context()->filterConfig()->jwt_output_payload_locations().at(
+          jwt.issuer()));
+  bool ret = AuthnUtils::GetJWTPayloadFromHeaders(header, header_key,
                                                   payload.mutable_jwt());
   if (!ret) {
     ENVOY_LOG(debug,
