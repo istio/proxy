@@ -61,7 +61,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config
   const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-  filter_config() {
+  filter_config() const {
     return filter_config_;
   }
 

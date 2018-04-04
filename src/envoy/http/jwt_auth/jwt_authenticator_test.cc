@@ -771,6 +771,8 @@ TEST_F(JwtAuthenticatorTest, TestNoForwardPayloadHeader) {
   // Test when forward_payload_header is not set, the output should still
   // contain the sec-istio-auth-userinfo header for backward compatibility.
   EXPECT_TRUE(headers.has("sec-istio-auth-userinfo"));
+  // In addition, the sec-istio-auth-userinfo header should be the only header
+  EXPECT_EQ(headers.size(), 1);
 }
 
 }  // namespace JwtAuth
