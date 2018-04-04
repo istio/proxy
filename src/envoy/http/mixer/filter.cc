@@ -20,8 +20,7 @@
 #include "src/envoy/http/mixer/check_data.h"
 #include "src/envoy/http/mixer/header_update.h"
 #include "src/envoy/http/mixer/report_data.h"
-#include "src/envoy/utils/grpc_transport.h"
-#include "src/envoy/utils/utils.h"
+#include "src/envoy/utils/authn.h"
 
 using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::config::client::ServiceConfig;
@@ -121,6 +120,9 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
       &check_data, &header_update, control_.GetCheckTransport(&headers),
       [this](const Status& status) { completeCheck(status); });
   initiating_call_ = false;
+
+  // Remove Istio authentication header after Check()
+  Envoy::Utils::Authentication::ClearResultInHeader(&headers);
 
   if (state_ == Complete) {
     return FilterHeadersStatus::Continue;
