@@ -65,7 +65,9 @@ class AuthenticatorBaseTest : public testing::Test,
   NiceMock<Envoy::Ssl::MockConnection> ssl_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{&request_headers_, &connection_,
-                                &filter_config_};
+                                istio::envoy::config::filter::http::authn::
+                                    v2alpha1::FilterConfig::default_instance()};
+
   MockAuthenticatorBase authenticator_{&filter_context_};
 };
 
@@ -177,7 +179,7 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoIssuer) {
       &filter_config, options);
   Http::TestHeaderMapImpl empty_request_headers{};
   FilterContext filter_context{&empty_request_headers, &connection_,
-                               &filter_config};
+                               filter_config};
   MockAuthenticatorBase authenticator{&filter_context};
   authenticator.validateJwt(jwt, [](const Payload* payload, bool success) {
     // When there is no issuer in the JWT config, validateJwt() should return
@@ -203,7 +205,7 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithEmptyJwtOutputPayloadLocations) {
         )",
       &filter_config, options);
   FilterContext filter_context{&request_headers_with_jwt, &connection_,
-                               &filter_config};
+                               filter_config};
   MockAuthenticatorBase authenticator{&filter_context};
   // authenticator has empty jwt_output_payload_locations in Istio authn config
   authenticator.validateJwt(jwt, [](const Payload* payload, bool success) {
@@ -223,14 +225,14 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithNoJwtInHeader) {
       R"({
               "jwt_output_payload_locations":
               {
-                "issuer@foo.com": "sec-istio-auth-userinfo"
+                "issuer@foo.com": "sec-istio-auth-jwt-output"
               }
            }
         )",
       &filter_config, options);
   Http::TestHeaderMapImpl empty_request_headers{};
   FilterContext filter_context{&empty_request_headers, &connection_,
-                               &filter_config};
+                               filter_config};
   MockAuthenticatorBase authenticator{&filter_context};
   authenticator.validateJwt(jwt, [](const Payload* payload, bool success) {
     // When there is no JWT in the HTTP header, validateJwt() should return
@@ -244,20 +246,20 @@ TEST_F(AuthenticatorBaseTest, ValidateJwtWithJwtInHeader) {
   iaapi::Jwt jwt;
   jwt.set_issuer("issuer@foo.com");
   Http::TestHeaderMapImpl request_headers_with_jwt = CreateTestHeaderMap(
-      kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue);
+      "sec-istio-auth-jwt-output", kSecIstioAuthUserinfoHeaderValue);
   google::protobuf::util::JsonParseOptions options;
   FilterConfig filter_config;
   JsonStringToMessage(
       R"({
               "jwt_output_payload_locations":
               {
-                "issuer@foo.com": "sec-istio-auth-userinfo"
+                "issuer@foo.com": "sec-istio-auth-jwt-output"
               }
            }
         )",
       &filter_config, options);
   FilterContext filter_context{&request_headers_with_jwt, &connection_,
-                               &filter_config};
+                               filter_config};
   MockAuthenticatorBase authenticator{&filter_context};
   Payload expected_payload;
   JsonStringToMessage(

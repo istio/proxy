@@ -768,8 +768,9 @@ TEST_F(JwtAuthenticatorTest, TestNoForwardPayloadHeader) {
   }));
   auth_->Verify(headers, &mock_cb);
 
-  // Test when forward_payload_header is not set, the output should be empty.
-  EXPECT_FALSE(headers.has("sec-istio-auth-userinfo"));
+  // Test when forward_payload_header is not set, the output should still
+  // contain the sec-istio-auth-userinfo header for backward compatibility.
+  EXPECT_TRUE(headers.has("sec-istio-auth-userinfo"));
 }
 
 }  // namespace JwtAuth

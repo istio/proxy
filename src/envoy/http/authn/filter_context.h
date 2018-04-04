@@ -32,7 +32,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext(
       HeaderMap* headers, const Network::Connection* connection,
-      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig*
+      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
       : headers_(headers),
         connection_(connection),
@@ -60,8 +60,8 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config
-  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig*
-  filterConfig() {
+  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
+  filter_config() {
     return filter_config_;
   }
 
@@ -76,7 +76,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   istio::authn::Result result_;
 
   // Store the Istio authn filter config.
-  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig*
+  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
       filter_config_;
 };
 

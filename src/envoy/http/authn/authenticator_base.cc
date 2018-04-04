@@ -66,32 +66,26 @@ void AuthenticatorBase::validateJwt(
     const AuthenticatorBase::MethodDoneCallback& done_callback) {
   Payload payload;
   Envoy::Http::HeaderMap& header = *filter_context()->headers();
-  ENVOY_LOG(debug, "{} the number of headers is {}", __func__, header.size());
 
-  if (0 ==
-      filter_context()->filterConfig()->jwt_output_payload_locations().count(
-          jwt.issuer())) {
-    ENVOY_LOG(
-        error,
-        "AuthenticatorBase: {}(): no JWT payload header location is found "
-        "for the issuer {}",
-        __func__, jwt.issuer());
+  auto iter =
+      filter_context()->filter_config().jwt_output_payload_locations().find(
+          jwt.issuer());
+  if (iter ==
+      filter_context()->filter_config().jwt_output_payload_locations().end()) {
+    ENVOY_LOG(error,
+              "No JWT payload header location is found for the issuer {}",
+              jwt.issuer());
     done_callback(nullptr, false);
     return;
   }
-  LowerCaseString header_key(
-      filter_context()->filterConfig()->jwt_output_payload_locations().at(
-          jwt.issuer()));
+  LowerCaseString header_key(iter->second);
   bool ret = AuthnUtils::GetJWTPayloadFromHeaders(header, header_key,
                                                   payload.mutable_jwt());
   if (!ret) {
-    ENVOY_LOG(debug,
-              "AuthenticatorBase: {} GetJWTPayloadFromHeaders() returns false.",
-              __func__);
+    ENVOY_LOG(debug, "GetJWTPayloadFromHeaders() returns false.");
     done_callback(nullptr, false);
   } else {
-    ENVOY_LOG(debug, "AuthenticatorBase: {}(): a valid JWT is found.",
-              __func__);
+    ENVOY_LOG(debug, "A valid JWT is found.");
     // payload is a stack variable, done_callback should treat it only as a
     // temporary variable
     done_callback(&payload, true);

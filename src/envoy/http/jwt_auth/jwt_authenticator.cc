@@ -22,9 +22,6 @@ namespace Http {
 namespace JwtAuth {
 namespace {
 
-// TODO (lei-tang) remove kJwtPayloadKey after adding the
-// support of forward_payload_header to Istio authn and other
-// code that reads the output from jwt_auth.
 // The HTTP header to pass verified token payload.
 const LowerCaseString kJwtPayloadKey("sec-istio-auth-userinfo");
 
@@ -198,8 +195,10 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
     return;
   }
 
-  LowerCaseString key(issuer_item.jwt_config().forward_payload_header());
-  if (!key.get().empty() && !jwt_->PayloadStrBase64Url().empty()) {
+  headers_->addReferenceKey(kJwtPayloadKey, jwt_->PayloadStrBase64Url());
+  const LowerCaseString key(issuer_item.jwt_config().forward_payload_header());
+  if (!key.get().empty() && !jwt_->PayloadStrBase64Url().empty() &&
+      !(key == kJwtPayloadKey)) {
     headers_->addCopy(key, jwt_->PayloadStrBase64Url());
   }
 
