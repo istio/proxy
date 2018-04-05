@@ -51,7 +51,10 @@ bool ReadStringMap(const std::multimap<std::string, std::string>& string_map,
 }  // namespace
 
 Filter::Filter(Control& control)
-    : control_(control), state_(NotStarted), initiating_call_(false) {
+    : control_(control),
+      state_(NotStarted),
+      initiating_call_(false),
+      headers_(nullptr) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
 }
 
@@ -116,13 +119,11 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   initiating_call_ = true;
   CheckData check_data(headers, decoder_callbacks_->connection());
   HeaderUpdate header_update(&headers);
+  headers_ = &headers;
   cancel_check_ = handler_->Check(
       &check_data, &header_update, control_.GetCheckTransport(&headers),
       [this](const Status& status) { completeCheck(status); });
   initiating_call_ = false;
-
-  // Remove Istio authentication header after Check()
-  Envoy::Utils::Authentication::ClearResultInHeader(&headers);
 
   if (state_ == Complete) {
     return FilterHeadersStatus::Continue;
@@ -157,6 +158,12 @@ void Filter::setDecoderFilterCallbacks(
 void Filter::completeCheck(const Status& status) {
   ENVOY_LOG(debug, "Called Mixer::Filter : check complete {}",
             status.ToString());
+  // Remove Istio authentication header after Check() is completed
+  if (nullptr != headers_) {
+    Envoy::Utils::Authentication::ClearResultInHeader(headers_);
+    headers_ = nullptr;
+  }
+
   // This stream has been reset, abort the callback.
   if (state_ == Responded) {
     return;
