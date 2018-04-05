@@ -61,6 +61,32 @@ void AuthenticatorBase::validateX509(
   done_callback(&payload, true);
 }
 
+void AuthenticatorBase::validateTls(
+    const iaapi::MutualTls&,
+    const AuthenticatorBase::MethodDoneCallback& done_callback) const {
+  // In TLS connection, a client certificate may not always be present.
+  // If the client certificate is present, extract its identity.
+  ENVOY_LOG(debug, "AuthenticatorBase: {} this connection allows TLS",
+            __func__);
+  MtlsAuthentication mtls_authn(filter_context_.connection());
+  if (mtls_authn.IsTLS() == false) {
+    done_callback(nullptr, false);
+    return;
+  }
+
+  Payload payload;
+  // Try to extract the client identity, if any
+  std::string source_user;
+  if (mtls_authn.GetSourceUser(&source_user)) {
+    if (!source_user.empty()) {
+      payload.mutable_x509()->set_user(source_user);
+    }
+  }
+
+  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if needed.
+  done_callback(&payload, true);
+}
+
 void AuthenticatorBase::validateJwt(
     const iaapi::Jwt& jwt,
     const AuthenticatorBase::MethodDoneCallback& done_callback) {

@@ -90,6 +90,17 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnPlaintextConnection) {
                               });
 }
 
+TEST_F(AuthenticatorBaseTest, ValidateTlsOnPlaintextConnection) {
+  iaapi::MutualTls mTlsParams;
+  authenticator_.validateTls(mTlsParams,
+                             [](const Payload* payload, bool success) {
+                               // When requiring TLS, plaintext connection
+                               // should fail.
+                               EXPECT_FALSE(payload);
+                               EXPECT_FALSE(success);
+                             });
+}
+
 TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithNoPeerCert) {
   iaapi::MutualTls mTlsParams;
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
@@ -101,6 +112,18 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithNoPeerCert) {
                                 EXPECT_FALSE(payload);
                                 EXPECT_FALSE(success);
                               });
+}
+
+TEST_F(AuthenticatorBaseTest, ValidateTlsOnSslConnectionWithNoPeerCert) {
+  iaapi::MutualTls mTlsParams;
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+  authenticator_.validateTls(mTlsParams,
+                             [](const Payload* payload, bool success) {
+                               EXPECT_TRUE(payload);
+                               // When client certificate is not present on TLS,
+                               // authentication should still succeed.
+                               EXPECT_TRUE(success);
+                             });
 }
 
 TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerCert) {
@@ -115,6 +138,19 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerCert) {
                                 EXPECT_EQ(payload->x509().user(), "foo");
                                 EXPECT_TRUE(success);
                               });
+}
+
+TEST_F(AuthenticatorBaseTest, ValidateTlsOnSslConnectionWithPeerCert) {
+  iaapi::MutualTls mTlsParams;
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return("foo"));
+  authenticator_.validateTls(mTlsParams,
+                             [](const Payload* payload, bool success) {
+                               // When client certificate is present on TLS,
+                               // authenticated attribute should be extracted.
+                               EXPECT_EQ(payload->x509().user(), "foo");
+                               EXPECT_TRUE(success);
+                             });
 }
 
 TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerSpiffeCert) {
@@ -133,6 +169,21 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerSpiffeCert) {
                               });
 }
 
+TEST_F(AuthenticatorBaseTest, ValidateTlsOnSslConnectionWithPeerSpiffeCert) {
+  iaapi::MutualTls mTlsParams;
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(1)
+      .WillOnce(Return("spiffe://foo"));
+  authenticator_.validateTls(mTlsParams,
+                             [](const Payload* payload, bool success) {
+                               // When client certificate is present on TLS,
+                               // authenticated attribute should be extracted.
+                               EXPECT_EQ(payload->x509().user(), "foo");
+                               EXPECT_TRUE(success);
+                             });
+}
+
 TEST_F(AuthenticatorBaseTest,
        ValidateX509OnSslConnectionWithPeerMalformedSpiffeCert) {
   iaapi::MutualTls mTlsParams;
@@ -148,6 +199,24 @@ TEST_F(AuthenticatorBaseTest,
                                 EXPECT_EQ(payload->x509().user(), "spiffe:foo");
                                 EXPECT_TRUE(success);
                               });
+}
+
+TEST_F(AuthenticatorBaseTest,
+       ValidateTlsOnSslConnectionWithPeerMalformedSpiffeCert) {
+  iaapi::MutualTls mTlsParams;
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(1)
+      .WillOnce(Return("spiffe:foo"));
+  authenticator_.validateTls(mTlsParams,
+                             [](const Payload* payload, bool success) {
+                               // When client certificate is present on TLS and
+                               // the spiffe subject format is wrong
+                               // ("spiffe:foo" instead of "spiffe://foo"), the
+                               // user attribute should be extracted.
+                               EXPECT_EQ(payload->x509().user(), "spiffe:foo");
+                               EXPECT_TRUE(success);
+                             });
 }
 
 // TODO: more tests for Jwt.

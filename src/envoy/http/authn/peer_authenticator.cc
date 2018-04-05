@@ -47,7 +47,11 @@ void PeerAuthenticator::runMethod(const iaapi::PeerAuthenticationMethod& method,
                                   const MethodDoneCallback& done_callback) {
   switch (method.params_case()) {
     case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
-      validateX509(method.mtls(), done_callback);
+      if (!method.mtls().allow_tls()) {
+        validateX509(method.mtls(), done_callback);
+      } else {
+        validateTls(method.mtls(), done_callback);
+      }
       break;
     case iaapi::PeerAuthenticationMethod::ParamsCase::kJwt:
       validateJwt(method.jwt(), done_callback);

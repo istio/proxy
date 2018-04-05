@@ -48,9 +48,16 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
 
   // Validates x509 given the params (more or less, just check if x509 exists,
   // actual validation is not neccessary as it already done when the connection
-  // establish), and extract authenticate attributes (just user/identity for
+  // establish), and extract authenticated attributes (just user/identity for
   // now). Calling callback with the extracted payload and corresponding status.
   virtual void validateX509(
+      const istio::authentication::v1alpha1::MutualTls& params,
+      const MethodDoneCallback& done_callback) const;
+
+  // Validate TLS connection and extract authenticated attributes.
+  // Unlike mTLS, TLS connection does not require a client certificate.
+  // Upon completion of the authentication, the callback is invoked.
+  virtual void validateTls(
       const istio::authentication::v1alpha1::MutualTls& params,
       const MethodDoneCallback& done_callback) const;
 

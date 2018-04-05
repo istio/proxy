@@ -37,5 +37,9 @@ bool MtlsAuthentication::IsMutualTLS() const {
   return Utils::IsMutualTLS(connection_);
 }
 
+bool MtlsAuthentication::IsTLS() const {
+  return connection_ != nullptr && connection_->ssl() != nullptr;
+}
+
 }  // namespace Http
 }  // namespace Envoy

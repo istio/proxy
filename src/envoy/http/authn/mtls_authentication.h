@@ -33,6 +33,8 @@ class MtlsAuthentication : public Logger::Loggable<Logger::Id::filter> {
   bool GetSourceUser(std::string* user) const;
   // This function returns whether the connection is mTLS.
   bool IsMutualTLS() const;
+  // This function returns whether the connection is TLS
+  bool IsTLS() const;
 
  private:
   const Network::Connection* connection_;
