@@ -137,7 +137,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckConsumedJwtHeadersAreRemoved) {
   const Envoy::Http::LowerCaseString header_location(
       "location-to-read-jwt-result");
   const std::string jwt_header =
-     R"(
+      R"(
      {
        "iss": "issuer@foo.com",
        "sub": "sub@foo.com",
