@@ -48,13 +48,12 @@ void AuthenticatorBase::validateX509(
   Payload payload;
   std::string user;
   bool has_user = connection->ssl()->peerCertificatePresented() &&
-                  Utils::GetSourceUser(connection, &user) && !user.empty();
+                  Utils::GetSourceUser(connection, &user);
 
   if (!has_user && !mtls.allow_tls()) {
     // mTLS and no source user
     done_callback(nullptr, false);
   } else {
-    // TODO (lei-tang): Adding other attributes (i.e ip) to payload if needed.
     payload.mutable_x509()->set_user(user);
     done_callback(&payload, true);
   }
