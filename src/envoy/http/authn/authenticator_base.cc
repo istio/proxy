@@ -16,6 +16,7 @@
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/http/authn/mtls_authentication.h"
+#include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
 
@@ -38,59 +39,26 @@ void AuthenticatorBase::done(bool success) const { done_callback_(success); }
 void AuthenticatorBase::validateX509(
     const iaapi::MutualTls& mtls,
     const AuthenticatorBase::MethodDoneCallback& done_callback) const {
-  if (mtls.allow_tls()) {
-    validateTls(mtls, done_callback);
+  const Network::Connection* connection = filter_context_.connection();
+  if (connection == nullptr || connection->ssl() == nullptr) {
+    // Not a TLS connection
+    done_callback(nullptr, false);
+    return;
+  }
+
+  Payload payload;
+  std::string user;
+  bool has_user = connection->ssl()->peerCertificatePresented() &&
+                  Utils::GetSourceUser(connection, &user) && !user.empty();
+
+  if (!has_user && !mtls.allow_tls()) {
+    // mTLS and no source user
+    done_callback(nullptr, false);
   } else {
-    validateMtls(mtls, done_callback);
+    // TODO (lei-tang): Adding other attributes (i.e ip) to payload if needed.
+    payload.mutable_x509()->set_user(user);
+    done_callback(&payload, true);
   }
-}
-
-void AuthenticatorBase::validateMtls(
-    const iaapi::MutualTls&,
-    const AuthenticatorBase::MethodDoneCallback& done_callback) const {
-  // Boilerplate for x509 validation and extraction. This function should
-  // extract user from SAN field from the x509 certificate come with request.
-  // (validation might not be needed, as establisment of the connection by
-  // itself is validation).
-  // If x509 is missing (i.e connection is not on TLS) or SAN value is not
-  // legit, call callback with status FAILED.
-  MtlsAuthentication mtls_authn(filter_context_.connection());
-  if (mtls_authn.IsMutualTLS() == false) {
-    done_callback(nullptr, false);
-    return;
-  }
-
-  Payload payload;
-  if (!mtls_authn.GetSourceUser(payload.mutable_x509()->mutable_user())) {
-    done_callback(&payload, false);
-  }
-
-  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if needed.
-  done_callback(&payload, true);
-}
-
-void AuthenticatorBase::validateTls(
-    const iaapi::MutualTls&,
-    const AuthenticatorBase::MethodDoneCallback& done_callback) const {
-  // In TLS connection, a client certificate may not always be present.
-  // If the client certificate is present, extract its identity.
-  MtlsAuthentication mtls_authn(filter_context_.connection());
-  if (mtls_authn.IsTLS() == false) {
-    done_callback(nullptr, false);
-    return;
-  }
-
-  Payload payload;
-  // Try to extract the client identity, if any
-  std::string source_user;
-  if (mtls_authn.GetSourceUser(&source_user)) {
-    if (!source_user.empty()) {
-      payload.mutable_x509()->set_user(source_user);
-    }
-  }
-
-  // TODO (lei-tang): Adding other attributes (i.e ip) to payload if needed.
-  done_callback(&payload, true);
 }
 
 void AuthenticatorBase::validateJwt(

@@ -85,9 +85,7 @@ class MockOriginAuthenticator : public OriginAuthenticator {
                           const iaapi::Policy& policy)
       : OriginAuthenticator(filter_context, done_callback, policy) {}
 
-  MOCK_CONST_METHOD2(validateMtls,
-                     void(const iaapi::MutualTls&, const MethodDoneCallback&));
-  MOCK_CONST_METHOD2(validateTls,
+  MOCK_CONST_METHOD2(validateX509,
                      void(const iaapi::MutualTls&, const MethodDoneCallback&));
   MOCK_METHOD2(validateJwt, void(const iaapi::Jwt&, const MethodDoneCallback&));
 };
