@@ -54,6 +54,12 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
       const istio::authentication::v1alpha1::MutualTls& params,
       const MethodDoneCallback& done_callback) const;
 
+  // Validate MTLS connection and extract authenticated attributes.
+  // Upon completion of the authentication, the callback is invoked.
+  virtual void validateMtls(
+      const istio::authentication::v1alpha1::MutualTls& params,
+      const MethodDoneCallback& done_callback) const;
+
   // Validate TLS connection and extract authenticated attributes.
   // Unlike mTLS, TLS connection does not require a client certificate.
   // Upon completion of the authentication, the callback is invoked.

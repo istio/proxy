@@ -36,6 +36,16 @@ AuthenticatorBase::~AuthenticatorBase() {}
 void AuthenticatorBase::done(bool success) const { done_callback_(success); }
 
 void AuthenticatorBase::validateX509(
+    const iaapi::MutualTls& mtls,
+    const AuthenticatorBase::MethodDoneCallback& done_callback) const {
+  if (mtls.allow_tls()) {
+    validateTls(mtls, done_callback);
+  } else {
+    validateMtls(mtls, done_callback);
+  }
+}
+
+void AuthenticatorBase::validateMtls(
     const iaapi::MutualTls&,
     const AuthenticatorBase::MethodDoneCallback& done_callback) const {
   // Boilerplate for x509 validation and extraction. This function should
@@ -44,8 +54,6 @@ void AuthenticatorBase::validateX509(
   // itself is validation).
   // If x509 is missing (i.e connection is not on TLS) or SAN value is not
   // legit, call callback with status FAILED.
-  ENVOY_LOG(debug, "AuthenticatorBase: {} this connection requires mTLS",
-            __func__);
   MtlsAuthentication mtls_authn(filter_context_.connection());
   if (mtls_authn.IsMutualTLS() == false) {
     done_callback(nullptr, false);
@@ -66,8 +74,6 @@ void AuthenticatorBase::validateTls(
     const AuthenticatorBase::MethodDoneCallback& done_callback) const {
   // In TLS connection, a client certificate may not always be present.
   // If the client certificate is present, extract its identity.
-  ENVOY_LOG(debug, "AuthenticatorBase: {} this connection allows TLS",
-            __func__);
   MtlsAuthentication mtls_authn(filter_context_.connection());
   if (mtls_authn.IsTLS() == false) {
     done_callback(nullptr, false);

@@ -81,9 +81,9 @@ Http::TestHeaderMapImpl CreateTestHeaderMap(const std::string& header_key,
   return Http::TestHeaderMapImpl{{header_key, value_base64}};
 }
 
-TEST_F(AuthenticatorBaseTest, ValidateX509OnPlaintextConnection) {
+TEST_F(AuthenticatorBaseTest, ValidateMtlsOnPlaintextConnection) {
   iaapi::MutualTls mTlsParams;
-  authenticator_.validateX509(mTlsParams,
+  authenticator_.validateMtls(mTlsParams,
                               [](const Payload* payload, bool success) {
                                 EXPECT_FALSE(payload);
                                 EXPECT_FALSE(success);
@@ -101,13 +101,13 @@ TEST_F(AuthenticatorBaseTest, ValidateTlsOnPlaintextConnection) {
                              });
 }
 
-TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithNoPeerCert) {
+TEST_F(AuthenticatorBaseTest, ValidateMtlsOnSslConnectionWithNoPeerCert) {
   iaapi::MutualTls mTlsParams;
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(false));
-  authenticator_.validateX509(mTlsParams,
+  authenticator_.validateMtls(mTlsParams,
                               [](const Payload* payload, bool success) {
                                 EXPECT_FALSE(payload);
                                 EXPECT_FALSE(success);
@@ -126,14 +126,14 @@ TEST_F(AuthenticatorBaseTest, ValidateTlsOnSslConnectionWithNoPeerCert) {
                              });
 }
 
-TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerCert) {
+TEST_F(AuthenticatorBaseTest, ValidateMtlsOnSslConnectionWithPeerCert) {
   iaapi::MutualTls mTlsParams;
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
   EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return("foo"));
-  authenticator_.validateX509(mTlsParams,
+  authenticator_.validateMtls(mTlsParams,
                               [](const Payload* payload, bool success) {
                                 EXPECT_EQ(payload->x509().user(), "foo");
                                 EXPECT_TRUE(success);
@@ -153,7 +153,7 @@ TEST_F(AuthenticatorBaseTest, ValidateTlsOnSslConnectionWithPeerCert) {
                              });
 }
 
-TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerSpiffeCert) {
+TEST_F(AuthenticatorBaseTest, ValidateMtlsOnSslConnectionWithPeerSpiffeCert) {
   iaapi::MutualTls mTlsParams;
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
@@ -162,7 +162,7 @@ TEST_F(AuthenticatorBaseTest, ValidateX509OnSslConnectionWithPeerSpiffeCert) {
   EXPECT_CALL(ssl_, uriSanPeerCertificate())
       .Times(1)
       .WillOnce(Return("spiffe://foo"));
-  authenticator_.validateX509(mTlsParams,
+  authenticator_.validateMtls(mTlsParams,
                               [](const Payload* payload, bool success) {
                                 EXPECT_EQ(payload->x509().user(), "foo");
                                 EXPECT_TRUE(success);
@@ -185,7 +185,7 @@ TEST_F(AuthenticatorBaseTest, ValidateTlsOnSslConnectionWithPeerSpiffeCert) {
 }
 
 TEST_F(AuthenticatorBaseTest,
-       ValidateX509OnSslConnectionWithPeerMalformedSpiffeCert) {
+       ValidateMtlsOnSslConnectionWithPeerMalformedSpiffeCert) {
   iaapi::MutualTls mTlsParams;
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
@@ -194,7 +194,7 @@ TEST_F(AuthenticatorBaseTest,
   EXPECT_CALL(ssl_, uriSanPeerCertificate())
       .Times(1)
       .WillOnce(Return("spiffe:foo"));
-  authenticator_.validateX509(mTlsParams,
+  authenticator_.validateMtls(mTlsParams,
                               [](const Payload* payload, bool success) {
                                 EXPECT_EQ(payload->x509().user(), "spiffe:foo");
                                 EXPECT_TRUE(success);

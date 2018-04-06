@@ -47,7 +47,7 @@ class MockPeerAuthenticator : public PeerAuthenticator {
                         const istio::authentication::v1alpha1::Policy& policy)
       : PeerAuthenticator(filter_context, done_callback, policy) {}
 
-  MOCK_CONST_METHOD2(validateX509,
+  MOCK_CONST_METHOD2(validateMtls,
                      void(const iaapi::MutualTls&, const MethodDoneCallback&));
   MOCK_CONST_METHOD2(validateTls,
                      void(const iaapi::MutualTls&, const MethodDoneCallback&));
@@ -97,7 +97,7 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
                                                     &policy_));
 
   createAuthenticator();
-  EXPECT_CALL(*authenticator_, validateX509(_, _))
+  EXPECT_CALL(*authenticator_, validateMtls(_, _))
       .Times(1)
       .WillOnce(testing::InvokeArgument<1>(&x509_payload_, true));
   EXPECT_CALL(on_done_callback_, Call(true)).Times(1);
@@ -140,7 +140,7 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
                                                     &policy_));
 
   createAuthenticator();
-  EXPECT_CALL(*authenticator_, validateX509(_, _))
+  EXPECT_CALL(*authenticator_, validateMtls(_, _))
       .Times(1)
       .WillOnce(testing::InvokeArgument<1>(&x509_payload_, false));
   EXPECT_CALL(on_done_callback_, Call(false)).Times(1);
@@ -231,7 +231,7 @@ TEST_F(PeerAuthenticatorTest, Multiple) {
                                                     &policy_));
 
   createAuthenticator();
-  EXPECT_CALL(*authenticator_, validateX509(_, _))
+  EXPECT_CALL(*authenticator_, validateMtls(_, _))
       .Times(1)
       .WillOnce(testing::InvokeArgument<1>(nullptr, false));
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
@@ -297,7 +297,7 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
                                                     &policy_));
 
   createAuthenticator();
-  EXPECT_CALL(*authenticator_, validateX509(_, _))
+  EXPECT_CALL(*authenticator_, validateMtls(_, _))
       .Times(1)
       .WillOnce(testing::InvokeArgument<1>(nullptr, false));
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
