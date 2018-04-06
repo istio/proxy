@@ -15,7 +15,6 @@
 
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "src/envoy/http/authn/authn_utils.h"
-#include "src/envoy/http/authn/mtls_authentication.h"
 #include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
