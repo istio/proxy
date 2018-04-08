@@ -186,8 +186,9 @@ void Filter::completeCheck(const Status& status) {
 }
 
 // Http::StreamEncoderFilter
-FilterHeadersStatus Filter::encode100ContinueHeaders(Http::HeaderMap&) {
+FilterHeadersStatus Filter::encode100ContinueHeaders(Http::HeaderMap& headers) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
+  sent_bytes_ += headers.byteSize();
   return FilterHeadersStatus::Continue;
 }
 

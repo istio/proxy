@@ -38,7 +38,8 @@ class Filter : public Http::StreamFilter,
       StreamDecoderFilterCallbacks& callbacks) override;
 
   // Http::StreamEncoderFilter
-  FilterHeadersStatus encode100ContinueHeaders(Http::HeaderMap&) override;
+  FilterHeadersStatus encode100ContinueHeaders(
+      Http::HeaderMap& headers) override;
   FilterHeadersStatus encodeHeaders(HeaderMap& headers, bool) override;
   FilterDataStatus encodeData(Buffer::Instance& data, bool) override;
   FilterTrailersStatus encodeTrailers(HeaderMap& trailers) override;
