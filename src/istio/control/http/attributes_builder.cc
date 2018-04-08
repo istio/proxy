@@ -180,8 +180,10 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
 
   ReportData::ReportInfo info;
   report_data->GetReportInfo(&info);
-  builder.AddInt64(AttributeName::kRequestSize, info.received_bytes);
-  builder.AddInt64(AttributeName::kResponseSize, info.send_bytes);
+  builder.AddInt64(AttributeName::kRequestSize, info.request_body_size);
+  builder.AddInt64(AttributeName::kResponseSize, info.response_body_size);
+  builder.AddInt64(AttributeName::kReceivedBytes, info.received_bytes);
+  builder.AddInt64(AttributeName::kSentBytes, info.sent_bytes);
   builder.AddDuration(AttributeName::kResponseDuration, info.duration);
   if (!request_->check_status.ok()) {
     builder.AddInt64(

@@ -35,6 +35,9 @@ struct AttributeName {
   static const char kRequestReferer[];
   static const char kRequestScheme[];
   static const char kRequestSize[];
+  // Total size of bytes received, including request headers, body, and
+  // trailers.
+  static const char kReceivedBytes[];
   static const char kRequestTime[];
   static const char kRequestUserAgent[];
   static const char kRequestApiKey[];
@@ -43,6 +46,8 @@ struct AttributeName {
   static const char kResponseDuration[];
   static const char kResponseHeaders[];
   static const char kResponseSize[];
+  // Total size of bytes sent, including response headers, body, and trailers.
+  static const char kSentBytes[];
   static const char kResponseTime[];
 
   // TCP attributes
