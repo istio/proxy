@@ -26,5 +26,5 @@ message AltsSocket {
 
   // The AltsSocket will only connect to peers with service account listed here.
   // Peers not in the list will be rejected in the handshake validation step.
-  repeated string target_service_accounts = 2;
+  repeated string peer_service_accounts = 2;
 }

@@ -31,30 +31,27 @@ namespace Configuration {
 
 using ::google::protobuf::RepeatedPtrField;
 
-// Returns true if the peer's service account is found in targets, otherwise
+// Returns true if the peer's service account is found in peers, otherwise
 // returns false and fills out err with an error message.
 static bool doValidate(const tsi_peer &peer,
-                       const RepeatedPtrField<std::string> &targets,
+                       std::unordered_set<std::string> peers,
                        std::string &err) {
   for (size_t i = 0; i < peer.property_count; ++i) {
     std::string name = std::string(peer.properties[i].name);
     std::string value = std::string(peer.properties[i].value.data,
                                     peer.properties[i].value.length);
-    if (name.compare(TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 0) {
-      for (int j = 0; j < targets.size(); ++j) {
-        if (value.compare(targets[j]) == 0) {
-          return true;
-        }
-      }
+    if (name.compare(TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 0 &&
+        peers.count(value) > 0) {
+      return true;
     }
   }
 
-  err = "Couldn't find peer's service account in targets: ";
-  for (int i = 0; i < targets.size(); ++i) {
-    if (i != 0) {
+  err = "Couldn't find peer's service account in peer_service_accounts: ";
+  for (auto it = peers.cbegin(); it != peers.cend(); ++it) {
+    if (it != peers.cbegin()) {
       err += ", ";
     }
-    err += targets[i];
+    err += *it;
   }
   return false;
 }
@@ -77,8 +74,9 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
           message);
 
   std::string handshaker_service = config.handshaker_service();
-  const auto &target_service_accounts = config.target_service_accounts();
-
+  const auto &peer_service_accounts = config.peer_service_accounts();
+  std::unordered_set<std::string> peers(peer_service_accounts.cbegin(),
+                                        peer_service_accounts.cend());
   return std::make_unique<Security::TsiSocketFactory>(
       [handshaker_service](Event::Dispatcher &dispatcher) {
         grpc_alts_credentials_options *options =
@@ -99,8 +97,8 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
         return std::make_unique<Security::TsiHandshaker>(handshaker,
                                                          dispatcher);
       },
-      [target_service_accounts](const tsi_peer &peer, std::string &err) {
-        return doValidate(peer, target_service_accounts, err);
+      [peers](const tsi_peer &peer, std::string &err) {
+        return doValidate(peer, peers, err);
       });
 }
 
@@ -113,7 +111,9 @@ DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
           message);
 
   std::string handshaker_service = config.handshaker_service();
-  const auto &target_service_accounts = config.target_service_accounts();
+  const auto &peer_service_accounts = config.peer_service_accounts();
+  std::unordered_set<std::string> peers(peer_service_accounts.cbegin(),
+                                        peer_service_accounts.cend());
 
   return std::make_unique<Security::TsiSocketFactory>(
       [handshaker_service](Event::Dispatcher &dispatcher) {
@@ -132,8 +132,8 @@ DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
         return std::make_unique<Security::TsiHandshaker>(handshaker,
                                                          dispatcher);
       },
-      [target_service_accounts](const tsi_peer &peer, std::string &err) {
-        return doValidate(peer, target_service_accounts, err);
+      [peers](const tsi_peer &peer, std::string &err) {
+        return doValidate(peer, peers, err);
       });
 }
 
