@@ -5,7 +5,7 @@
 		"repoName": "api",
 		"prodBranch": "master",
 		"file": "repositories.bzl",
-		"lastStableSHA": "80900db86e07f68b09b21adf49efd1e68df242d1"
+		"lastStableSHA": "bf7eff00d3dede110dbe8b2f8fb09d778c9948ce"
 	},
 	{
 		"_comment": "",
@@ -13,6 +13,6 @@
 		"repoName": "envoyproxy/envoy",
 		"prodBranch": "master",
 		"file": "WORKSPACE",
-		"lastStableSHA": "0739bd915235f90c7f45d429e27fc98341fab3cf"
+		"lastStableSHA": "498744da1714e400e152b47ebd07c09fcacd10f8"
 	}
 ]
