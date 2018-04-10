@@ -36,9 +36,12 @@ class TsiSocket : public Network::TransportSocket,
  public:
   /**
    * @param handshaker_factory a function to initiate a TsiHandshaker
+   * @param handshake_validator a function to validate the peer. Called right
+   * after the handshake completed with peer data to do the peer validation.
+   * The connection will be closed immediately if it returns false.
    */
-  explicit TsiSocket(HandshakerFactory handshaker_factory,
-                     HandshakeValidator handshake_validator);
+  TsiSocket(HandshakerFactory handshaker_factory,
+            HandshakeValidator handshake_validator);
   virtual ~TsiSocket();
 
   // Network::TransportSocket
@@ -83,9 +86,6 @@ class TsiSocket : public Network::TransportSocket,
   Network::PostIoAction doHandshakeNextDone(NextResultPtr&& next_result);
 
   HandshakerFactory handshaker_factory_;
-  // Called right after the handshake completed with peer data to do the peer
-  // validation. The connection will be closed immediately if it returns false
-  // (peer validation failed).
   HandshakeValidator handshake_validator_;
   TsiHandshakerPtr handshaker_{};
   bool handshaker_next_calling_{};
@@ -106,8 +106,8 @@ class TsiSocket : public Network::TransportSocket,
  */
 class TsiSocketFactory : public Network::TransportSocketFactory {
  public:
-  explicit TsiSocketFactory(HandshakerFactory handshaker_factory,
-                            HandshakeValidator handshake_validator);
+  TsiSocketFactory(HandshakerFactory handshaker_factory,
+                   HandshakeValidator handshake_validator);
 
   bool implementsSecureTransport() const override;
   Network::TransportSocketPtr createTransportSocket() const override;
