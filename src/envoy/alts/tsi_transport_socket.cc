@@ -91,17 +91,23 @@ Network::PostIoAction TsiSocket::doHandshakeNextDone(
                      std::string(peer.properties[i].value.data,
                                  peer.properties[i].value.length));
     }
-    std::string err = "";
-    bool peer_validated = handshake_validator_(peer, err);
-    tsi_peer_destruct(&peer);
-    if (peer_validated) {
-      ENVOY_CONN_LOG(info, "TSI: Handshake validation succeeded.",
-                     callbacks_->connection());
+    if (handshake_validator_) {
+      std::string err = "";
+      bool peer_validated = handshake_validator_(peer, err);
+      if (peer_validated) {
+        ENVOY_CONN_LOG(info, "TSI: Handshake validation succeeded.",
+                       callbacks_->connection());
+      } else {
+        ENVOY_CONN_LOG(warn, "TSI: Handshake validation failed: {}",
+                       callbacks_->connection(), err);
+        tsi_peer_destruct(&peer);
+        return Network::PostIoAction::Close;
+      }
     } else {
-      ENVOY_CONN_LOG(warn, "TSI: Handshake validation failed: {}",
-                     callbacks_->connection(), err);
-      return Network::PostIoAction::Close;
+      ENVOY_CONN_LOG(info, "TSI: Handshake validation skipped.",
+                     callbacks_->connection());
     }
+    tsi_peer_destruct(&peer);
 
     const unsigned char *unused_bytes;
     size_t unused_byte_size;
