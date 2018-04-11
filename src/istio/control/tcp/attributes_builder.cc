@@ -42,8 +42,8 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
   // result output here instead.
   std::string source_user;
   if (check_data->GetSourceUser(&source_user)) {
-    // TODO(diemtvu): remove kSourceUser once migration to source.principal is over.
-    // https://github.com/istio/istio/issues/4689
+    // TODO(diemtvu): remove kSourceUser once migration to source.principal is
+    // over. https://github.com/istio/istio/issues/4689
     builder.AddString(AttributeName::kSourceUser, source_user);
     builder.AddString(AttributeName::kSourcePrincipal, source_user);
   }
