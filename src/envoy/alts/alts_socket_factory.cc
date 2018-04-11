@@ -77,6 +77,12 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
   const auto &peer_service_accounts = config.peer_service_accounts();
   std::unordered_set<std::string> peers(peer_service_accounts.cbegin(),
                                         peer_service_accounts.cend());
+
+  std::function<bool(const tsi_peer &, std::string &)> empty_validator;
+  auto actual_validator = [peers](const tsi_peer &peer, std::string &err) {
+    return doValidate(peer, peers, err);
+  };
+
   return std::make_unique<Security::TsiSocketFactory>(
       [handshaker_service](Event::Dispatcher &dispatcher) {
         grpc_alts_credentials_options *options =
@@ -97,9 +103,8 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
         return std::make_unique<Security::TsiHandshaker>(handshaker,
                                                          dispatcher);
       },
-      [peers](const tsi_peer &peer, std::string &err) {
-        return doValidate(peer, peers, err);
-      });
+      // Skip validation if peers is empty.
+      peers.empty() ? empty_validator : actual_validator);
 }
 
 Network::TransportSocketFactoryPtr
@@ -114,6 +119,11 @@ DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
   const auto &peer_service_accounts = config.peer_service_accounts();
   std::unordered_set<std::string> peers(peer_service_accounts.cbegin(),
                                         peer_service_accounts.cend());
+
+  std::function<bool(const tsi_peer &, std::string &)> empty_validator;
+  auto actual_validator = [peers](const tsi_peer &peer, std::string &err) {
+    return doValidate(peer, peers, err);
+  };
 
   return std::make_unique<Security::TsiSocketFactory>(
       [handshaker_service](Event::Dispatcher &dispatcher) {
@@ -132,9 +142,8 @@ DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
         return std::make_unique<Security::TsiHandshaker>(handshaker,
                                                          dispatcher);
       },
-      [peers](const tsi_peer &peer, std::string &err) {
-        return doValidate(peer, peers, err);
-      });
+      // Skip validation if peers is empty.
+      peers.empty() ? empty_validator : actual_validator);
 }
 
 static Registry::RegisterFactory<UpstreamAltsTransportSocketConfigFactory,
