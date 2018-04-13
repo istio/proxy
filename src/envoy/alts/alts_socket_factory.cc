@@ -78,10 +78,13 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
   std::unordered_set<std::string> peers(peer_service_accounts.cbegin(),
                                         peer_service_accounts.cend());
 
-  std::function<bool(const tsi_peer &, std::string &)> empty_validator;
-  auto actual_validator = [peers](const tsi_peer &peer, std::string &err) {
-    return doValidate(peer, peers, err);
-  };
+  Security::HandshakeValidator validator;
+  // Skip validation if peers is empty.
+  if (!peers.empty()) {
+    validator = [peers](const tsi_peer &peer, std::string &err) {
+      return doValidate(peer, peers, err);
+    };
+  }
 
   return std::make_unique<Security::TsiSocketFactory>(
       [handshaker_service](Event::Dispatcher &dispatcher) {
@@ -103,8 +106,7 @@ UpstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
         return std::make_unique<Security::TsiHandshaker>(handshaker,
                                                          dispatcher);
       },
-      // Skip validation if peers is empty.
-      peers.empty() ? empty_validator : actual_validator);
+      validator);
 }
 
 Network::TransportSocketFactoryPtr
@@ -120,10 +122,13 @@ DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
   std::unordered_set<std::string> peers(peer_service_accounts.cbegin(),
                                         peer_service_accounts.cend());
 
-  std::function<bool(const tsi_peer &, std::string &)> empty_validator;
-  auto actual_validator = [peers](const tsi_peer &peer, std::string &err) {
-    return doValidate(peer, peers, err);
-  };
+  Security::HandshakeValidator validator;
+  // Skip validation if peers is empty.
+  if (!peers.empty()) {
+    validator = [peers](const tsi_peer &peer, std::string &err) {
+      return doValidate(peer, peers, err);
+    };
+  }
 
   return std::make_unique<Security::TsiSocketFactory>(
       [handshaker_service](Event::Dispatcher &dispatcher) {
@@ -142,8 +147,7 @@ DownstreamAltsTransportSocketConfigFactory::createTransportSocketFactory(
         return std::make_unique<Security::TsiHandshaker>(handshaker,
                                                          dispatcher);
       },
-      // Skip validation if peers is empty.
-      peers.empty() ? empty_validator : actual_validator);
+      validator);
 }
 
 static Registry::RegisterFactory<UpstreamAltsTransportSocketConfigFactory,
