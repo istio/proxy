@@ -223,13 +223,13 @@ attributes {
   }
 }
 attributes {
-  key: "sent.bytes"
+  key: "response.totle_size"
   value {
     int64_value: 120
   }
 }
 attributes {
-  key: "received.bytes"
+  key: "request.totle_size"
   value {
     int64_value: 240
   }
@@ -437,8 +437,8 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
       .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->request_body_size = 100;
         info->response_body_size = 200;
-        info->sent_bytes = 120;
-        info->received_bytes = 240;
+        info->response_totle_size = 120;
+        info->request_totle_size = 240;
         info->duration = std::chrono::nanoseconds(1);
         info->response_code = 404;
       }));
@@ -479,8 +479,8 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
       .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->request_body_size = 100;
         info->response_body_size = 200;
-        info->sent_bytes = 120;
-        info->received_bytes = 240;
+        info->response_totle_size = 120;
+        info->request_totle_size = 240;
         info->duration = std::chrono::nanoseconds(1);
         info->response_code = 404;
       }));
