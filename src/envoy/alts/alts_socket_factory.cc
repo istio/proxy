@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/alts/alts_socket_factory.h"
+#include "absl/strings/str_join.h"
 #include "common/common/assert.h"
 #include "common/protobuf/protobuf.h"
 #include "common/protobuf/utility.h"
@@ -34,25 +35,20 @@ using ::google::protobuf::RepeatedPtrField;
 // Returns true if the peer's service account is found in peers, otherwise
 // returns false and fills out err with an error message.
 static bool doValidate(const tsi_peer &peer,
-                       std::unordered_set<std::string> peers,
+                       const std::unordered_set<std::string> &peers,
                        std::string &err) {
   for (size_t i = 0; i < peer.property_count; ++i) {
     std::string name = std::string(peer.properties[i].name);
     std::string value = std::string(peer.properties[i].value.data,
                                     peer.properties[i].value.length);
     if (name.compare(TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 0 &&
-        peers.count(value) > 0) {
+        peers.find(value) != peers.end()) {
       return true;
     }
   }
 
-  err = "Couldn't find peer's service account in peer_service_accounts: ";
-  for (auto it = peers.cbegin(); it != peers.cend(); ++it) {
-    if (it != peers.cbegin()) {
-      err += ", ";
-    }
-    err += *it;
-  }
+  err = "Couldn't find peer's service account in peer_service_accounts: " +
+        absl::StrJoin(peers, ",");
   return false;
 }
 
