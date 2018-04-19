@@ -229,10 +229,8 @@ void Filter::log(const HeaderMap* request_headers,
     CheckData check_data(*request_headers, nullptr);
     handler_->ExtractRequestAttributes(&check_data);
   }
-  response_total_size_ =
-      response_headers->byteSize() + request_info.bytesSent();
-  ReportData report_data(response_headers, request_info, response_total_size_,
-                         request_total_size_);
+  // response trailer header is not counted to response total size.
+  ReportData report_data(response_headers, request_info, request_total_size_);
   handler_->Report(&report_data);
 }
 

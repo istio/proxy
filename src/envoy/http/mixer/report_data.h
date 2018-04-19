@@ -37,10 +37,10 @@ class ReportData : public ::istio::control::http::ReportData {
 
  public:
   ReportData(const HeaderMap *headers, const RequestInfo::RequestInfo &info,
-             uint64_t response_total_size, uint64_t request_total_size)
+             uint64_t request_total_size)
       : headers_(headers),
         info_(info),
-        response_total_size_(response_total_size),
+        response_total_size_(headers->byteSize() + info.bytesSent()),
         request_total_size_(request_total_size) {}
 
   std::map<std::string, std::string> GetResponseHeaders() const override {

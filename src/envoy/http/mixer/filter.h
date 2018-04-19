@@ -72,8 +72,6 @@ class Filter : public Http::StreamDecoderFilter,
   // Total number of bytes received, including request headers, body, and
   // trailers.
   uint64_t request_total_size_{0};
-  // Total number of bytes sent, including response headers, body, and trailers.
-  uint64_t response_total_size_{0};
 
   // The stream decoder filter callback.
   StreamDecoderFilterCallbacks* decoder_callbacks_{nullptr};
