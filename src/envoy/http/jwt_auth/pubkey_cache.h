@@ -18,6 +18,8 @@
 #include <chrono>
 #include <unordered_map>
 
+#include "common/common/base64.h"
+#include "common/common/logger.h"
 #include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.h"
 #include "src/envoy/http/jwt_auth/jwt.h"
 
@@ -36,7 +38,7 @@ const std::string kHTTPSSchemePrefix("https://");
 }  // namespace
 
 // Struct to hold an issuer cache item.
-class PubkeyCacheItem {
+class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
  public:
   PubkeyCacheItem(
       const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtRule&
@@ -45,6 +47,18 @@ class PubkeyCacheItem {
     // Convert proto repeated fields to std::set.
     for (const auto& aud : jwt_config_.audiences()) {
       audiences_.insert(SanitizeAudience(aud));
+    }
+
+    if (jwt_config_.has_local_jwks() &&
+        jwt_config_.local_jwks().specifier_case() ==
+            ::envoy::api::v2::core::DataSource::kInlineString) {
+      Status status =
+          SetKey(Base64::decode(jwt_config_.local_jwks().inline_string()));
+      if (status != Status::OK) {
+        ENVOY_LOG(warn, "Invalid inline jwks for issuer: {}, jwks: {}",
+                  jwt_config_.issuer(),
+                  jwt_config_.local_jwks().inline_string());
+      }
     }
   }
 
@@ -84,12 +98,17 @@ class PubkeyCacheItem {
     pubkey_ = std::move(pubkey);
 
     expiration_time_ = std::chrono::steady_clock::now();
-    if (jwt_config_.remote_jwks().has_cache_duration()) {
-      const auto& duration = jwt_config_.remote_jwks().cache_duration();
-      expiration_time_ += std::chrono::seconds(duration.seconds()) +
-                          std::chrono::nanoseconds(duration.nanos());
+    if (jwt_config_.has_remote_jwks()) {
+      if (jwt_config_.remote_jwks().has_cache_duration()) {
+        const auto& duration = jwt_config_.remote_jwks().cache_duration();
+        expiration_time_ += std::chrono::seconds(duration.seconds()) +
+                            std::chrono::nanoseconds(duration.nanos());
+      } else {
+        expiration_time_ += std::chrono::seconds(kPubkeyCacheExpirationSec);
+      }
     } else {
-      expiration_time_ += std::chrono::seconds(kPubkeyCacheExpirationSec);
+      // inline jwks never expire
+      expiration_time_ = std::chrono::steady_clock::time_point::max();
     }
     return Status::OK;
   }
