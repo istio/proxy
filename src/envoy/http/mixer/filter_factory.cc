@@ -55,7 +55,7 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
   }
 
   Router::RouteSpecificFilterConfigConstSharedPtr
-  createRouteSpecificFilterConfig(const ProtobufWkt::Struct& config) {
+  createRouteSpecificFilterConfig(const ProtobufWkt::Struct& config) override {
     auto obj = std::make_shared<Http::Mixer::PerRouteServiceConfig>();
     MessageUtil::jsonConvert(config, obj->config);
     obj->hash = std::to_string(MessageUtil::hash(obj->config));
