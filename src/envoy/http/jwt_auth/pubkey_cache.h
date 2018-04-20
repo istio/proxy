@@ -20,6 +20,7 @@
 
 #include "common/common/base64.h"
 #include "common/common/logger.h"
+#include "common/config/datasource.h"
 #include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.h"
 #include "src/envoy/http/jwt_auth/jwt.h"
 
@@ -49,15 +50,14 @@ class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
       audiences_.insert(SanitizeAudience(aud));
     }
 
-    if (jwt_config_.has_local_jwks() &&
-        jwt_config_.local_jwks().specifier_case() ==
-            ::envoy::api::v2::core::DataSource::kInlineString) {
-      Status status =
-          SetKey(Base64::decode(jwt_config_.local_jwks().inline_string()));
+    auto inline_jwks = Config::DataSource::read(jwt_config_.local_jwks(), true);
+    if (!inline_jwks.empty()) {
+      Status status = SetKey(Base64::decode(inline_jwks),
+                             // inline jwks never expires.
+                             std::chrono::steady_clock::time_point::max());
       if (status != Status::OK) {
         ENVOY_LOG(warn, "Invalid inline jwks for issuer: {}, jwks: {}",
-                  jwt_config_.issuer(),
-                  jwt_config_.local_jwks().inline_string());
+                  jwt_config_.issuer(), inline_jwks);
       }
     }
   }
@@ -89,31 +89,37 @@ class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
     return false;
   }
 
+  Status SetRemoteJwks(const std::string& pubkey_str) {
+    return SetKey(pubkey_str, GetRemoteJwksExpirationTime());
+  }
+
+ private:
+  // Get the expiration time for remote JWKS
+  std::chrono::steady_clock::time_point GetRemoteJwksExpirationTime() const {
+    auto expire = std::chrono::steady_clock::now();
+    if (jwt_config_.has_remote_jwks() &&
+        jwt_config_.remote_jwks().has_cache_duration()) {
+      const auto& duration = jwt_config_.remote_jwks().cache_duration();
+      expire += std::chrono::seconds(duration.seconds()) +
+                std::chrono::nanoseconds(duration.nanos());
+    } else {
+      expire += std::chrono::seconds(kPubkeyCacheExpirationSec);
+    }
+    return expire;
+  }
+
   // Set a pubkey as string.
-  Status SetKey(const std::string& pubkey_str) {
+  Status SetKey(const std::string& pubkey_str,
+                std::chrono::steady_clock::time_point expire) {
     auto pubkey = Pubkeys::CreateFrom(pubkey_str, Pubkeys::JWKS);
     if (pubkey->GetStatus() != Status::OK) {
       return pubkey->GetStatus();
     }
     pubkey_ = std::move(pubkey);
-
-    expiration_time_ = std::chrono::steady_clock::now();
-    if (jwt_config_.has_remote_jwks()) {
-      if (jwt_config_.remote_jwks().has_cache_duration()) {
-        const auto& duration = jwt_config_.remote_jwks().cache_duration();
-        expiration_time_ += std::chrono::seconds(duration.seconds()) +
-                            std::chrono::nanoseconds(duration.nanos());
-      } else {
-        expiration_time_ += std::chrono::seconds(kPubkeyCacheExpirationSec);
-      }
-    } else {
-      // inline jwks never expire
-      expiration_time_ = std::chrono::steady_clock::time_point::max();
-    }
+    expiration_time_ = expire;
     return Status::OK;
   }
 
- private:
   // Searches protocol scheme prefix and trailing slash from aud, and
   // returns aud without these prefix and suffix.
   std::string SanitizeAudience(const std::string& aud) {
