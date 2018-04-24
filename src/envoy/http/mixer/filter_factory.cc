@@ -14,7 +14,6 @@
  */
 
 #include "common/config/utility.h"
-//#include "common/protobuf/utility.h"
 #include "envoy/json/json_object.h"
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
