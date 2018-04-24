@@ -60,11 +60,10 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
   Router::RouteSpecificFilterConfigConstSharedPtr
   createRouteSpecificFilterConfig(const Protobuf::Message& config) override {
     auto obj = std::make_shared<Http::Mixer::PerRouteServiceConfig>();
-    // TODO: use downcastAndValidate after http_client_config.proto adds
-    // validate rules.
-    const auto& service_config = dynamic_cast<const ServiceConfig&>(config);
-    obj->config = service_config;
-    obj->hash = std::to_string(MessageUtil::hash(service_config));
+    // TODO: use downcastAndValidate once client_config.proto adds validate
+    // rules.
+    obj->config = dynamic_cast<const ServiceConfig&>(config);
+    obj->hash = std::to_string(MessageUtil::hash(obj->config));
     return obj;
   }
 
