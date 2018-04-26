@@ -153,8 +153,8 @@ bool Referenced::Signature(const Attributes &attributes,
     } while (true);
   }
 
-  utils::MD5 hasher;
-
+  // First loop for exact_keys
+  // DON‘T DO Signature in this loop!
   for (std::size_t i = 0; i < exact_keys_.size(); ++i) {
     const auto &key = exact_keys_[i];
     const auto it = attributes_map.find(key.name);
@@ -162,6 +162,39 @@ bool Referenced::Signature(const Attributes &attributes,
     if (it == attributes_map.end()) {
       return false;
     }
+
+    const Attributes_AttributeValue &value = it->second;
+    if (value.value_case() == Attributes_AttributeValue::kStringMapValue) {
+        std::string map_key = key.map_key;
+        const auto &smap = value.string_map_value().entries();
+        // Since exact_keys_ are sorted by key.name,
+        // continue processing stringMaps until a new name is found.
+        do {
+          const auto sub_it = smap.find(map_key);
+          // exact match of map_key is missing
+          if (sub_it == smap.end()) {
+            return false;
+          }
+
+          // break loop if at the end or keyname changes.
+          if (i + 1 == exact_keys_.size() ||
+              exact_keys_[i + 1].name != key.name) {
+            break;
+          }
+
+          map_key = exact_keys_[++i].map_key;
+        } while (true);
+    }
+  }
+
+
+  utils::MD5 hasher;
+
+  // Second loop for exact_keys
+  // Until we know that it is matched, we start to do hash and signature.
+  for (std::size_t i = 0; i < exact_keys_.size(); ++i) {
+    const auto &key = exact_keys_[i];
+    const auto it = attributes_map.find(key.name);
 
     hasher.Update(it->first);
     hasher.Update(kDelimiter, kDelimiterLength);
@@ -207,10 +240,6 @@ bool Referenced::Signature(const Attributes &attributes,
         // continue processing stringMaps until a new name is found.
         do {
           const auto sub_it = smap.find(map_key);
-          // exact match of map_key is missing
-          if (sub_it == smap.end()) {
-            return false;
-          }
 
           hasher.Update(sub_it->first);
           hasher.Update(kDelimiter, kDelimiterLength);
