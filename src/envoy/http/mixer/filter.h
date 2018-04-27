@@ -24,6 +24,15 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
+// The struct to store per-route service config and its hash.
+struct PerRouteServiceConfig : public Router::RouteSpecificFilterConfig {
+  // The per_route service config.
+  ::istio::mixer::v1::config::client::ServiceConfig config;
+
+  // Its config hash
+  std::string hash;
+};
+
 class Filter : public Http::StreamDecoderFilter,
                public AccessLog::Instance,
                public Logger::Loggable<Logger::Id::filter> {
@@ -33,9 +42,11 @@ class Filter : public Http::StreamDecoderFilter,
   // Implementing virtual functions for StreamDecoderFilter
   FilterHeadersStatus decodeHeaders(HeaderMap& headers, bool) override;
   FilterDataStatus decodeData(Buffer::Instance& data, bool end_stream) override;
-  FilterTrailersStatus decodeTrailers(HeaderMap&) override;
+  FilterTrailersStatus decodeTrailers(HeaderMap& trailers) override;
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
+
+  // Http::StreamFilterBase
   void onDestroy() override;
 
   // This is the callback function when Check is done.
@@ -67,8 +78,12 @@ class Filter : public Http::StreamDecoderFilter,
   // Point to the request HTTP headers
   HeaderMap* headers_;
 
-  // The filter callback.
-  StreamDecoderFilterCallbacks* decoder_callbacks_;
+  // Total number of bytes received, including request headers, body, and
+  // trailers.
+  uint64_t request_total_size_{0};
+
+  // The stream decoder filter callback.
+  StreamDecoderFilterCallbacks* decoder_callbacks_{nullptr};
 };
 
 }  // namespace Mixer

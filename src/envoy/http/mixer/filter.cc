@@ -65,6 +65,17 @@ void Filter::ReadPerRouteConfig(
     return;
   }
 
+  // Check v2 per-route config.
+  auto route_cfg = entry->perFilterConfigTyped<PerRouteServiceConfig>("mixer");
+  if (route_cfg) {
+    if (!control_.controller()->LookupServiceConfig(route_cfg->hash)) {
+      control_.controller()->AddServiceConfig(route_cfg->hash,
+                                              route_cfg->config);
+    }
+    config->service_config_id = route_cfg->hash;
+    return;
+  }
+
   const auto& string_map = entry->opaqueConfig();
   ReadStringMap(string_map, kPerRouteDestinationService,
                 &config->destination_service);
@@ -107,6 +118,7 @@ void Filter::ReadPerRouteConfig(
 
 FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
+  request_total_size_ += headers.byteSize();
 
   ::istio::control::http::Controller::PerRouteConfig config;
   auto route = decoder_callbacks_->route();
@@ -135,14 +147,16 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
 FilterDataStatus Filter::decodeData(Buffer::Instance& data, bool end_stream) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {} ({}, {})", __func__,
             data.length(), end_stream);
+  request_total_size_ += data.length();
   if (state_ == Calling) {
     return FilterDataStatus::StopIterationAndWatermark;
   }
   return FilterDataStatus::Continue;
 }
 
-FilterTrailersStatus Filter::decodeTrailers(HeaderMap&) {
+FilterTrailersStatus Filter::decodeTrailers(HeaderMap& trailers) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
+  request_total_size_ += trailers.byteSize();
   if (state_ == Calling) {
     return FilterTrailersStatus::StopIteration;
   }
@@ -212,7 +226,8 @@ void Filter::log(const HeaderMap* request_headers,
     CheckData check_data(*request_headers, nullptr);
     handler_->ExtractRequestAttributes(&check_data);
   }
-  ReportData report_data(response_headers, request_info);
+  // response trailer header is not counted to response total size.
+  ReportData report_data(response_headers, request_info, request_total_size_);
   handler_->Report(&report_data);
 }
 
