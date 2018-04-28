@@ -32,7 +32,8 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  config_.config_pb().transport().stats_update_interval(),
                  [this](::istio::mixerclient::Statistics* stat) -> bool {
                    return GetStats(stat);
-                 }) {
+                 }),
+      random_(random) {
   ::istio::control::http::Controller::Options options(config_.config_pb());
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
@@ -43,7 +44,8 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
 
 Utils::CheckTransport::Func Control::GetCheckTransport(
     const HeaderMap* headers) {
-  return Utils::CheckTransport::GetFunc(*check_client_factory_, headers);
+  return Utils::CheckTransport::GetFunc(*check_client_factory_, random_,
+                                        headers);
 }
 
 // Call controller to get statistics.

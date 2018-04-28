@@ -56,6 +56,8 @@ class Control final : public ThreadLocal::ThreadLocalObject {
   Grpc::AsyncClientFactoryPtr report_client_factory_;
   // The stats object.
   Utils::MixerStatsObject stats_obj_;
+  // Random number generator for remote check span id.
+  Runtime::RandomGenerator& random_;
 };
 
 }  // namespace Mixer

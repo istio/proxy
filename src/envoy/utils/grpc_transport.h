@@ -39,10 +39,12 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
       istio::mixerclient::DoneFunc on_done)>;
 
   static Func GetFunc(Grpc::AsyncClientFactory& factory,
+                      Runtime::RandomGenerator& random,
                       const Http::HeaderMap* headers = nullptr);
 
   GrpcTransport(Grpc::AsyncClientPtr async_client, const RequestType& request,
                 const Http::HeaderMap* headers, ResponseType* response,
+                Runtime::RandomGenerator& random,
                 istio::mixerclient::DoneFunc on_done);
 
   // Grpc::AsyncRequestCallbacks<ResponseType>
@@ -62,6 +64,7 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
   Grpc::AsyncClientPtr async_client_;
   const Http::HeaderMap* headers_;
   ResponseType* response_;
+  Runtime::RandomGenerator& random_;
   ::istio::mixerclient::DoneFunc on_done_;
   Grpc::AsyncRequest* request_{};
 };
