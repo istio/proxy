@@ -50,10 +50,11 @@ template <class RequestType, class ResponseType>
 GrpcTransport<RequestType, ResponseType>::GrpcTransport(
     Grpc::AsyncClientPtr async_client, const RequestType &request,
     const Http::HeaderMap *headers, ResponseType *response,
-    istio::mixerclient::DoneFunc on_done)
+    Runtime::RandomGenerator &random, istio::mixerclient::DoneFunc on_done)
     : async_client_(std::move(async_client)),
       headers_(headers),
       response_(response),
+      random_(random),
       on_done_(on_done),
       request_(async_client_->send(
           descriptor(), request, *this, Tracing::NullSpan::instance(),
@@ -69,10 +70,11 @@ void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
 
   CopyHeaderEntry(headers_->RequestId(), kRequestId, metadata);
   CopyHeaderEntry(headers_->XB3TraceId(), kB3TraceId, metadata);
-  CopyHeaderEntry(headers_->XB3SpanId(), kB3SpanId, metadata);
-  CopyHeaderEntry(headers_->XB3ParentSpanId(), kB3ParentSpanId, metadata);
   CopyHeaderEntry(headers_->XB3Sampled(), kB3Sampled, metadata);
   CopyHeaderEntry(headers_->XB3Flags(), kB3Flags, metadata);
+  // Create a child span for mixer call.
+  CopyHeaderEntry(headers_->XB3SpanId(), kB3ParentSpanId, metadata);
+  metadata.addReferenceKey(kB3SpanId, Hex::uint64ToHex(random_.random()));
 
   // This one is NOT inline, need to do linar search.
   CopyHeaderEntry(headers_->get(kOtSpanContext), kOtSpanContext, metadata);
@@ -107,12 +109,14 @@ void GrpcTransport<RequestType, ResponseType>::Cancel() {
 template <class RequestType, class ResponseType>
 typename GrpcTransport<RequestType, ResponseType>::Func
 GrpcTransport<RequestType, ResponseType>::GetFunc(
-    Grpc::AsyncClientFactory &factory, const Http::HeaderMap *headers) {
-  return [&factory, headers](const RequestType &request, ResponseType *response,
-                             istio::mixerclient::DoneFunc on_done)
+    Grpc::AsyncClientFactory &factory, Runtime::RandomGenerator &random,
+    const Http::HeaderMap *headers) {
+  return [&factory, &random, headers](const RequestType &request,
+                                      ResponseType *response,
+                                      istio::mixerclient::DoneFunc on_done)
              -> istio::mixerclient::CancelFunc {
     auto transport = new GrpcTransport<RequestType, ResponseType>(
-        factory.create(), request, headers, response, on_done);
+        factory.create(), request, headers, response, random, on_done);
     return [transport]() { transport->Cancel(); };
   };
 }
@@ -137,9 +141,11 @@ const google::protobuf::MethodDescriptor &ReportTransport::descriptor() {
 
 // explicitly instantiate CheckTransport and ReportTransport
 template CheckTransport::Func CheckTransport::GetFunc(
-    Grpc::AsyncClientFactory &factory, const Http::HeaderMap *headers);
+    Grpc::AsyncClientFactory &factory, Runtime::RandomGenerator &random,
+    const Http::HeaderMap *headers);
 template ReportTransport::Func ReportTransport::GetFunc(
-    Grpc::AsyncClientFactory &factory, const Http::HeaderMap *headers);
+    Grpc::AsyncClientFactory &factory, Runtime::RandomGenerator &random,
+    const Http::HeaderMap *headers);
 
 }  // namespace Utils
 }  // namespace Envoy
