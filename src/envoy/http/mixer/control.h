@@ -41,7 +41,7 @@ class Control final : public ThreadLocal::ThreadLocalObject {
   ::istio::control::http::Controller* controller() { return controller_.get(); }
 
   // Create a per-request Check transport function.
-  Utils::CheckTransport::Func GetCheckTransport(const HeaderMap* headers);
+  Utils::CheckTransport::Func GetCheckTransport(Tracing::Span& parent_span);
 
  private:
   // Call controller to get statistics.
@@ -56,8 +56,6 @@ class Control final : public ThreadLocal::ThreadLocalObject {
   Grpc::AsyncClientFactoryPtr report_client_factory_;
   // The stats object.
   Utils::MixerStatsObject stats_obj_;
-  // Random number generator for remote check span id.
-  Runtime::RandomGenerator& random_;
 };
 
 }  // namespace Mixer
