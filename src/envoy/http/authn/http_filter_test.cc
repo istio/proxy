@@ -104,7 +104,6 @@ class AuthenticationFilterTest : public testing::Test {
 
  protected:
   FilterConfig filter_config_ = FilterConfig::default_instance();
-  iaapi::Policy policy_;
 
   Http::TestHeaderMapImpl request_headers_;
   StrictMock<MockAuthenticationFilter> filter_{filter_config_};
@@ -163,12 +162,12 @@ TEST_F(AuthenticationFilterTest, AllPass) {
 }
 
 TEST_F(AuthenticationFilterTest, IgnoreBothFail) {
+  iaapi::Policy policy_;
   ASSERT_TRUE(
       Protobuf::TextFormat::ParseFromString(ingoreBothPolicy, &policy_));
-  filter_config_.set_allocated_policy(&policy_);
+  *filter_config_.mutable_policy() = policy_;
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
-  filter_config_.clear_policy();
 }
 
 }  // namespace
