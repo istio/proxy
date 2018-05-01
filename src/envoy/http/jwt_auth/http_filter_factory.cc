@@ -16,8 +16,8 @@
 #include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.validate.h"
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
-#include "src/envoy/http/jwt_auth/auth_store.h"
-#include "src/envoy/http/jwt_auth/http_filter.h"
+#include "src/envoy/utils/auth_store.h"
+#include "src/envoy/http/jwt_auth//http_filter.h"
 
 using ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication;
 
@@ -52,15 +52,21 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
 
  private:
   Http::FilterFactoryCb createFilter(const JwtAuthentication& proto_config,
-                                     FactoryContext& context) {
-    auto store_factory = std::make_shared<Http::JwtAuth::JwtAuthStoreFactory>(
-        proto_config, context);
+                                   FactoryContext& context) {
+    // Copy verification rules.
+    std::vector<::envoy::config::filter::http::common::v1alpha::JwtVerificationRule> verification_rules;
+    for (auto& rule : proto_config.rules()) {
+      verification_rules.push_back(rule.second.verifier());
+    }
+    auto store_factory = std::make_shared<Utils::Jwt::JwtAuthStoreFactory>(
+      verification_rules, context);
     Upstream::ClusterManager& cm = context.clusterManager();
-    return [&cm, store_factory](
+    return [&cm, store_factory, proto_config](
                Http::FilterChainFactoryCallbacks& callbacks) -> void {
+      auto jwt_auth = std::shared_ptr<Utils::Jwt::JwtAuthenticator>(new Utils::Jwt::JwtAuthenticatorImpl(cm, store_factory->store()));
       callbacks.addStreamDecoderFilter(
           std::make_shared<Http::JwtVerificationFilter>(
-              cm, store_factory->store()));
+            jwt_auth, proto_config));
     };
   }
 };

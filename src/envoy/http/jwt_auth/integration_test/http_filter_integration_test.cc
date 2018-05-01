@@ -305,11 +305,9 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
       "qS7Wwf8C0V9o2KZu0KDV0j0c9nZPWTv3IMlaGZAtQgJUeyemzRDtf4g2yG3xBZrLm3AzDUj_"
       "EX_pmQAHA5ZjPVCAw";
 
-  // Issuer is not called by passing empty pubkey.
-  std::string pubkey = "";
-  TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(), pubkey,
+  TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(), "",
                    false, Http::TestHeaderMapImpl{{":status", "401"}},
-                   "JWT is expired");
+                   "Unauthorized");
 }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, AudInvalid) {
@@ -330,7 +328,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, AudInvalid) {
   std::string pubkey = "";
   TestVerification(createHeaders(jwt), "", createIssuerHeaders(), pubkey, false,
                    Http::TestHeaderMapImpl{{":status", "401"}},
-                   "Audience doesn't match");
+                   "Unauthorized");
 }
 
 TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
@@ -339,7 +337,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
   std::string pubkey = "";
   TestVerification(createHeaders(token), "", createIssuerHeaders(), pubkey,
                    false, Http::TestHeaderMapImpl{{":status", "401"}},
-                   "JWT_BAD_FORMAT");
+                   "Unauthorized");
 }
 
 class JwtVerificationFilterIntegrationTestWithInjectedJwtResult

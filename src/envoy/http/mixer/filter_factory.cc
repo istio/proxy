@@ -15,6 +15,7 @@
 
 #include "common/config/utility.h"
 #include "envoy/json/json_object.h"
+#include "envoy/network/filter.h"
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 #include "src/envoy/http/mixer/control_factory.h"

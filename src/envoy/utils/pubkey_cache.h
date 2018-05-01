@@ -20,12 +20,12 @@
 
 #include "common/common/logger.h"
 #include "common/config/datasource.h"
-#include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.h"
-#include "src/envoy/http/jwt_auth/jwt.h"
+#include "envoy/config/filter/http/common/v1alpha/config.pb.h"
+#include "src/envoy/utils/jwt.h"
 
 namespace Envoy {
-namespace Http {
-namespace JwtAuth {
+namespace Utils {
+namespace Jwt {
 namespace {
 // Default cache expiration time in 5 minutes.
 const int kPubkeyCacheExpirationSec = 600;
@@ -41,7 +41,7 @@ const std::string kHTTPSSchemePrefix("https://");
 class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
  public:
   PubkeyCacheItem(
-      const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtRule&
+      const ::envoy::config::filter::http::common::v1alpha::JwtVerificationRule&
           jwt_config)
       : jwt_config_(jwt_config) {
     // Convert proto repeated fields to std::set.
@@ -67,7 +67,7 @@ class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
   }
 
   // Get the JWT config.
-  const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtRule& jwt_config()
+  const ::envoy::config::filter::http::common::v1alpha::JwtVerificationRule& jwt_config()
       const {
     return jwt_config_;
   }
@@ -146,7 +146,7 @@ class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
   }
 
   // The issuer config
-  const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtRule& jwt_config_;
+  const ::envoy::config::filter::http::common::v1alpha::JwtVerificationRule& jwt_config_;
   // Use set for fast lookup
   std::set<std::string> audiences_;
   // The generated pubkey object.
@@ -158,10 +158,10 @@ class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
 // Pubkey cache
 class PubkeyCache {
  public:
+  typedef const std::vector<::envoy::config::filter::http::common::v1alpha::JwtVerificationRule> PubKeyCacheConfig_t;
   // Load the config from envoy config.
-  PubkeyCache(const ::envoy::config::filter::http::jwt_authn::v2alpha::
-                  JwtAuthentication& config) {
-    for (const auto& jwt : config.rules()) {
+  PubkeyCache(PubKeyCacheConfig_t& config) {
+    for (const auto& jwt : config) {
       pubkey_cache_map_.emplace(jwt.issuer(), jwt);
     }
   }
@@ -181,5 +181,5 @@ class PubkeyCache {
 };
 
 }  // namespace JwtAuth
-}  // namespace Http
+}  // namespace Utils
 }  // namespace Envoy

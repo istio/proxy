@@ -18,39 +18,45 @@
 #include "common/common/logger.h"
 #include "envoy/http/async_client.h"
 
-#include "src/envoy/http/jwt_auth/auth_store.h"
+#include "src/envoy/utils/auth_store.h"
+#include "src/envoy/utils/token_extractor.h"
 
 namespace Envoy {
-namespace Http {
-namespace JwtAuth {
+namespace Utils {
+namespace Jwt {
+
+class JwtAuthenticator : public Http::AsyncClient::Callbacks {
+  public:
+    // The callback interface to notify the completion event.
+    class Callbacks {
+      public:
+      virtual ~Callbacks() {}
+      virtual void onError(Status status) PURE;
+      virtual void onSuccess(const Jwt *jwt, const Http::LowerCaseString *header) PURE;
+    };
+    virtual void onDestroy() PURE;
+    virtual void Verify(std::unique_ptr<JwtTokenExtractor::Token> &token, JwtAuthenticator::Callbacks* callback) PURE;
+    virtual void Verify(Http::HeaderMap& headers, Callbacks* callback) PURE;
+};
 
 // A per-request JWT authenticator to handle all JWT authentication:
 // * fetch remote public keys and cache them.
-class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
-                         public AsyncClient::Callbacks {
+class JwtAuthenticatorImpl : public JwtAuthenticator, public Logger::Loggable<Logger::Id::filter> {
  public:
-  JwtAuthenticator(Upstream::ClusterManager& cm, JwtAuthStore& store);
+  JwtAuthenticatorImpl(Upstream::ClusterManager& cm, JwtAuthStore& store);
 
-  // The callback interface to notify the completion event.
-  class Callbacks {
-   public:
-    virtual ~Callbacks() {}
-    virtual void onDone(const Status& status) PURE;
-  };
-  void Verify(HeaderMap& headers, Callbacks* callback);
+  void Verify(std::unique_ptr<JwtTokenExtractor::Token> &token, JwtAuthenticator::Callbacks* callback);
+  void Verify(Http::HeaderMap& headers, Callbacks* callback);
 
   // Called when the object is about to be destroyed.
-  void onDestroy();
-
-  // The HTTP header key to carry the verified JWT payload.
-  static const LowerCaseString& JwtPayloadKey();
+  void onDestroy() override;
 
  private:
   // Fetch a remote public key.
   void FetchPubkey(PubkeyCacheItem* issuer);
   // Following two functions are for AyncClient::Callbacks
-  void onSuccess(MessagePtr&& response);
-  void onFailure(AsyncClient::FailureReason);
+  void onSuccess(Http::MessagePtr&& response);
+  void onFailure(Http::AsyncClient::FailureReason);
 
   // Verify with a specific public key.
   void VerifyKey(const PubkeyCacheItem& issuer);
@@ -58,8 +64,11 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
   // Handle the public key fetch done event.
   void OnFetchPubkeyDone(const std::string& pubkey);
 
-  // Calls the callback with status.
-  void DoneWithStatus(const Status& status);
+  // Calls the failed callback with status.
+  void FailedWithStatus(const Status& status);
+
+  // Calls the success callback with the JWT and token extractor
+  void Success();
 
   // Return true if it is OK to forward this request without JWT.
   bool OkToBypass();
@@ -69,21 +78,18 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
   // The cache object.
   JwtAuthStore& store_;
   // The JWT object.
-  std::unique_ptr<JwtAuth::Jwt> jwt_;
+  std::unique_ptr<Jwt> jwt_;
   // The token data
   std::unique_ptr<JwtTokenExtractor::Token> token_;
-
-  // The HTTP request headers
-  HeaderMap* headers_{};
   // The on_done function.
   Callbacks* callback_{};
 
   // The pending uri_, only used for logging.
   std::string uri_;
   // The pending remote request so it can be canceled.
-  AsyncClient::Request* request_{};
+  Http::AsyncClient::Request* request_{};
 };
 
-}  // namespace JwtAuth
-}  // namespace Http
+}  // namespace Jwt
+}  // namespace Utils
 }  // namespace Envoy

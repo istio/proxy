@@ -14,11 +14,47 @@
 #
 ################################################################################
 #
+package(default_visibility = ["//visibility:public"])
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
     "envoy_cc_test",
+)
+
+envoy_cc_library(
+    name = "jwt_lib",
+    srcs = ["jwt.cc"],
+    hdrs = ["jwt.h"],
+    external_deps = [
+        "rapidjson",
+        "ssl",
+    ],
+    repository = "@envoy",
+    deps = [
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "jwt_authenticator_lib",
+    srcs = [
+        "jwt_authenticator.cc",
+        "token_extractor.cc",
+    ],
+    hdrs = [
+        "auth_store.h",
+        "jwt_authenticator.h",
+        "pubkey_cache.h",
+        "token_extractor.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":jwt_lib",
+        "@envoy_api//envoy/config/filter/http/jwt_authn/v2alpha:jwt_authn_cc",
+        "@envoy_api//envoy/config/filter/http/common/v1alpha:common_cc",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
 )
 
 envoy_cc_library(
@@ -41,6 +77,7 @@ envoy_cc_library(
     name = "utils_lib",
     srcs = [
         "config.cc",
+        "constants.cc",
         "grpc_transport.cc",
         "mixer_control.cc",
         "stats.cc",
@@ -48,6 +85,7 @@ envoy_cc_library(
     ],
     hdrs = [
         "config.h",
+        "constants.h",
         "grpc_transport.h",
         "mixer_control.h",
         "stats.h",
@@ -59,6 +97,49 @@ envoy_cc_library(
         "//external:mixer_client_config_cc_proto",
         "//src/istio/mixerclient:mixerclient_lib",
         "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "jwt_test",
+    srcs = [
+        "jwt_test.cc",
+    ],
+    data = [],
+    repository = "@envoy",
+    deps = [
+        ":jwt_lib",
+        "@envoy//source/exe:envoy_common_lib",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "jwt_authenticator_test",
+    srcs = [
+        "jwt_authenticator_test.cc",
+    ],
+    data = [],
+    repository = "@envoy",
+    deps = [
+        ":jwt_authenticator_lib",
+        "@envoy//source/exe:envoy_common_lib",
+        "@envoy//test/mocks/upstream:upstream_mocks",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "token_extractor_test",
+    srcs = [
+        "token_extractor_test.cc",
+    ],
+    data = [],
+    repository = "@envoy",
+    deps = [
+        ":jwt_authenticator_lib",
+        "@envoy//source/exe:envoy_common_lib",
+        "@envoy//test/test_common:utility_lib",
     ],
 )
 

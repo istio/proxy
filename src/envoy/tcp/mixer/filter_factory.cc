@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "envoy/network/filter.h"
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 #include "src/envoy/tcp/mixer/control_factory.h"

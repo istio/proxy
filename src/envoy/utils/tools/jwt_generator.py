@@ -40,16 +40,20 @@ def main(args):
   if args.kid:
     hdrs['kid'] = args.kid
 
+    # The aud field can either be a string containing a single audience or an array of audiences.
+  aud = args.aud[0] if len(args.aud) == 1 else args.aud
   # Token claims
   claims = {'iss': args.iss,
             'sub': args.sub,
-            'aud': args.aud}
+            'aud': aud}
   if args.email:
     claims['email'] = args.email
   if args.azp:
     claims['azp'] = args.azp
   if args.exp:
     claims['exp'] = args.exp
+  if args.nbf:
+      claims['nbf'] = args.nbf
 
   # Change claim and headers field to fit needs.
   jwt_token = jwt.encode(claims,
@@ -68,23 +72,27 @@ if __name__ == '__main__':
 
   # positional arguments
   parser.add_argument(
+      "private_key_file",
+      help="The path to the generated ES256/RS256 private key file, e.g., /path/to/private_key.pem.")
+  parser.add_argument(
       "alg",
       help="Signing algorithm, i.e., ES256/RS256.")
   parser.add_argument(
       "iss",
       help="Token issuer, which is also used for sub claim.")
   parser.add_argument(
-      "aud",
-      help="Audience. This must match 'audience' in the security configuration"
-      " in the swagger spec.")
+      "sub",
+      help="Token subject claim.")
   parser.add_argument(
-      "private_key_file",
-      help="The path to the generated ES256/RS256 private key file, e.g., /path/to/private_key.pem.")
+      "aud",
+      nargs='+',
+      help="Audience. This must match 'audience' in the security configuration"
+           " in the swagger spec.")
 
   #optional arguments
   parser.add_argument("-e", "--email", help="Preferred e-mail address.")
   parser.add_argument("-a", "--azp", help="Authorized party - the party to which the ID Token was issued.")
   parser.add_argument("-x", "--exp", type=int, help="Token expiration claim.")
   parser.add_argument("-k", "--kid", help="Key id.")
-  parser.add_argument("-s", "--sub", help="Token subject claim.")
+  parser.add_argument("-n", "--nbf", type=int, help="Token Not Before claim.")
   main(parser.parse_args())

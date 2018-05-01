@@ -16,12 +16,13 @@
 #pragma once
 
 #include "common/common/logger.h"
-#include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.h"
+#include "envoy/config/filter/http/common/v1alpha/config.pb.h"
 #include "envoy/http/header_map.h"
 
+
 namespace Envoy {
-namespace Http {
-namespace JwtAuth {
+namespace Utils {
+namespace Jwt {
 
 // Extracts JWT token from locations specified in the config.
 //
@@ -36,34 +37,27 @@ namespace JwtAuth {
 //
 class JwtTokenExtractor : public Logger::Loggable<Logger::Id::filter> {
  public:
-  JwtTokenExtractor(const ::envoy::config::filter::http::jwt_authn::v2alpha::
-                        JwtAuthentication& config);
+  typedef const std::vector<::envoy::config::filter::http::common::v1alpha::JwtVerificationRule> RuleSet_t;
+
+  JwtTokenExtractor(RuleSet_t& rules);
 
   // The object to store extracted token.
   // Based on the location the token is extracted from, it also
   // has the allowed issuers that have specified the location.
   class Token {
    public:
-    Token(const std::string& token, const std::set<std::string>& issuers,
-          bool from_authorization, const LowerCaseString* header_name)
+    Token(const std::string& token, const std::set<std::string>& issuers, const Http::LowerCaseString* header_name)
         : token_(token),
           allowed_issuers_(issuers),
-          from_authorization_(from_authorization),
           header_name_(header_name) {}
 
     const std::string& token() const { return token_; }
+    const Http::LowerCaseString *header() const {
+      return header_name_;
+    }
 
     bool IsIssuerAllowed(const std::string& issuer) const {
       return allowed_issuers_.find(issuer) != allowed_issuers_.end();
-    }
-
-    // TODO: to remove token from query parameter.
-    void Remove(HeaderMap* headers) {
-      if (from_authorization_) {
-        headers->removeAuthorization();
-      } else if (header_name_ != nullptr) {
-        headers->remove(*header_name_);
-      }
     }
 
    private:
@@ -71,26 +65,24 @@ class JwtTokenExtractor : public Logger::Loggable<Logger::Id::filter> {
     std::string token_;
     // Allowed issuers specified the location the token is extacted from.
     const std::set<std::string>& allowed_issuers_;
-    // True if token is extracted from default Authorization header
-    bool from_authorization_;
-    // Not nullptr if token is extracted from custom header.
-    const LowerCaseString* header_name_;
+    // Not nullptr if token is extracted from a header.
+    const Http::LowerCaseString* header_name_;
   };
 
   // Return the extracted JWT tokens.
   // Only extract one token for now.
-  void Extract(const HeaderMap& headers,
+  void Extract(const Http::HeaderMap& headers,
                std::vector<std::unique_ptr<Token>>* tokens) const;
 
  private:
   struct LowerCaseStringCmp {
-    bool operator()(const LowerCaseString& lhs,
-                    const LowerCaseString& rhs) const {
+    bool operator()(const Http::LowerCaseString& lhs,
+                    const Http::LowerCaseString& rhs) const {
       return lhs.get() < rhs.get();
     }
   };
   // The map of header to set of issuers
-  std::map<LowerCaseString, std::set<std::string>, LowerCaseStringCmp>
+  std::map<Http::LowerCaseString, std::set<std::string>, LowerCaseStringCmp>
       header_maps_;
   // The map of parameters to set of issuers.
   std::map<std::string, std::set<std::string>> param_maps_;
@@ -98,6 +90,6 @@ class JwtTokenExtractor : public Logger::Loggable<Logger::Id::filter> {
   std::set<std::string> authorization_issuers_;
 };
 
-}  // namespace JwtAuth
-}  // namespace Http
+}  // namespace Jwt
+}  // namespace Utils
 }  // namespace Envoy

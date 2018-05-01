@@ -24,8 +24,8 @@
 #include <vector>
 
 namespace Envoy {
-namespace Http {
-namespace JwtAuth {
+namespace Utils {
+namespace Jwt {
 
 enum class Status {
   OK = 0,
@@ -36,75 +36,78 @@ enum class Status {
   // Token expired.
   JWT_EXPIRED = 2,
 
+  // Token not valid yet
+  JWT_NOT_VALID_YET = 3,
+
   // Given JWT is not in the form of Header.Payload.Signature
-  JWT_BAD_FORMAT = 3,
+  JWT_BAD_FORMAT = 4,
 
   // Header is an invalid Base64url input or an invalid JSON.
-  JWT_HEADER_PARSE_ERROR = 4,
+  JWT_HEADER_PARSE_ERROR = 5,
 
   // Header does not have "alg".
-  JWT_HEADER_NO_ALG = 5,
+  JWT_HEADER_NO_ALG = 6,
 
   // "alg" in the header is not a string.
-  JWT_HEADER_BAD_ALG = 6,
+  JWT_HEADER_BAD_ALG = 7,
 
   // Signature is an invalid Base64url input.
-  JWT_SIGNATURE_PARSE_ERROR = 7,
+  JWT_SIGNATURE_PARSE_ERROR = 8,
 
   // Signature Verification failed (= Failed in DigestVerifyFinal())
-  JWT_INVALID_SIGNATURE = 8,
+  JWT_INVALID_SIGNATURE = 9,
 
   // Signature is valid but payload is an invalid Base64url input or an invalid
   // JSON.
-  JWT_PAYLOAD_PARSE_ERROR = 9,
+  JWT_PAYLOAD_PARSE_ERROR = 10,
 
   // "kid" in the JWT header is not a string.
-  JWT_HEADER_BAD_KID = 10,
+  JWT_HEADER_BAD_KID = 11,
 
   // Issuer is not configured.
-  JWT_UNKNOWN_ISSUER = 11,
+  JWT_UNKNOWN_ISSUER = 12,
 
   // JWK is an invalid JSON.
-  JWK_PARSE_ERROR = 12,
+  JWK_PARSE_ERROR = 13,
 
   // JWK does not have "keys".
-  JWK_NO_KEYS = 13,
+  JWK_NO_KEYS = 14,
 
   // "keys" in JWK is not an array.
-  JWK_BAD_KEYS = 14,
+  JWK_BAD_KEYS = 15,
 
   // There are no valid public key in given JWKs.
-  JWK_NO_VALID_PUBKEY = 15,
+  JWK_NO_VALID_PUBKEY = 16,
 
   // There is no key the kid and the alg of which match those of the given JWT.
-  KID_ALG_UNMATCH = 16,
+  KID_ALG_UNMATCH = 17,
 
   // Value of "alg" in the header is invalid.
-  ALG_NOT_IMPLEMENTED = 17,
+  ALG_NOT_IMPLEMENTED = 18,
 
   // Given PEM formatted public key is an invalid Base64 input.
-  PEM_PUBKEY_BAD_BASE64 = 18,
+  PEM_PUBKEY_BAD_BASE64 = 19,
 
   // A parse error on PEM formatted public key happened.
-  PEM_PUBKEY_PARSE_ERROR = 19,
+  PEM_PUBKEY_PARSE_ERROR = 20,
 
   // "n" or "e" field of a JWK has a parse error or is missing.
-  JWK_RSA_PUBKEY_PARSE_ERROR = 20,
+  JWK_RSA_PUBKEY_PARSE_ERROR = 21,
 
   // Failed to create a EC_KEY object.
-  FAILED_CREATE_EC_KEY = 21,
+  FAILED_CREATE_EC_KEY = 22,
 
   // "x" or "y" field of a JWK has a parse error or is missing.
-  JWK_EC_PUBKEY_PARSE_ERROR = 22,
+  JWK_EC_PUBKEY_PARSE_ERROR = 23,
 
   // Failed to create ECDSA_SIG object.
-  FAILED_CREATE_ECDSA_SIGNATURE = 23,
+  FAILED_CREATE_ECDSA_SIGNATURE = 24,
 
   // Audience is not allowed.
-  AUDIENCE_NOT_ALLOWED = 24,
+  AUDIENCE_NOT_ALLOWED = 25,
 
   // Failed to fetch public key
-  FAILED_FETCH_PUBKEY = 25,
+  FAILED_FETCH_PUBKEY = 26,
 };
 
 std::string StatusToString(Status status);
@@ -190,45 +193,49 @@ class Jwt : public WithStatus {
   // It returns a pointer to a JSON object of the header of the given JWT.
   // When the given JWT has a format error, it returns nullptr.
   // It returns the header JSON even if the signature is invalid.
-  Json::ObjectSharedPtr Header();
+  const Json::ObjectSharedPtr Header() const;
 
   // They return a string (or base64url-encoded string) of the header JSON of
   // the given JWT.
-  const std::string& HeaderStr();
-  const std::string& HeaderStrBase64Url();
+  const std::string& HeaderStr() const;
+  const std::string& HeaderStrBase64Url() const;
 
   // They return the "alg" (or "kid") value of the header of the given JWT.
-  const std::string& Alg();
+  const std::string& Alg() const;
 
   // It returns the "kid" value of the header of the given JWT, or an empty
   // string if "kid" does not exist in the header.
-  const std::string& Kid();
+  const std::string& Kid() const;
 
   // It returns a pointer to a JSON object of the payload of the given JWT.
   // When the given jWT has a format error, it returns nullptr.
   // It returns the payload JSON even if the signature is invalid.
-  Json::ObjectSharedPtr Payload();
+  const Json::ObjectSharedPtr Payload() const;
 
   // They return a string (or base64url-encoded string) of the payload JSON of
   // the given JWT.
-  const std::string& PayloadStr();
-  const std::string& PayloadStrBase64Url();
+  const std::string& PayloadStr() const;
+  const std::string& PayloadStrBase64Url() const;
 
   // It returns the "iss" claim value of the given JWT, or an empty string if
   // "iss" claim does not exist.
-  const std::string& Iss();
+  const std::string& Iss() const;
 
   // It returns the "aud" claim value of the given JWT, or an empty string if
   // "aud" claim does not exist.
-  const std::vector<std::string>& Aud();
+  const std::vector<std::string>& Aud() const;
 
   // It returns the "sub" claim value of the given JWT, or an empty string if
   // "sub" claim does not exist.
-  const std::string& Sub();
+  const std::string& Sub() const;
 
   // It returns the "exp" claim value of the given JWT, or 0 if "exp" claim does
   // not exist.
-  int64_t Exp();
+  int64_t Exp() const;
+
+  // It returns the "nbf" claim value of the given JWT, or 0 if "nbf" claim does
+  // not exist.
+  int64_t Nbf() const;
 
  private:
   const EVP_MD* md_;
@@ -246,6 +253,7 @@ class Jwt : public WithStatus {
   std::vector<std::string> aud_;
   std::string sub_;
   int64_t exp_;
+  int64_t nbf_;
 
   /*
    * TODO: try not to use friend function
@@ -296,6 +304,6 @@ class Pubkeys : public WithStatus {
   friend bool Verifier::Verify(const Jwt& jwt, const Pubkeys& pubkeys);
 };
 
-}  // namespace JwtAuth
-}  // namespace Http
+}  // namespace Jwt
+}  // namespace Utils
 }  // namespace Envoy
