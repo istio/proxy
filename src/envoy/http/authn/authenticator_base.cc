@@ -34,16 +34,28 @@ AuthenticatorBase::~AuthenticatorBase() {}
 bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
                                      Payload* payload) const {
   const Network::Connection* connection = filter_context_.connection();
-  if (connection == nullptr || connection->ssl() == nullptr) {
-    // Not a TLS connection
+  if (connection == nullptr) {
+    // It's wrong if connection does not exist.
     return false;
   }
-
-  bool has_user =
+  // Always try to get principal and set to output if available.
+  const bool has_user =
+      connection->ssl() != nullptr &&
       connection->ssl()->peerCertificatePresented() &&
       Utils::GetSourceUser(connection, payload->mutable_x509()->mutable_user());
 
-  return has_user || mtls.allow_tls();
+  // Return value depend on mode:
+  // - PERMISSIVE: plaintext connection is acceptable, thus return true regardless.
+  // - TLS_PERMISSIVE: tls connection is required, but certificate is optional.
+  // - STRICT: must be TLS with valid certificate.
+  switch (mtls.mode()) {
+    case iaapi::MutualTls::PERMISSIVE: return true;
+    case iaapi::MutualTls::TLS_PERMISSIVE: return connection->ssl() != nullptr;
+    case iaapi::MutualTls::STRICT: return has_user;
+    default:
+      ENVOY_LOG(warn, "Invalid mTLS mode {}", iaapi::MutualTls::Mode_Name(mtls.mode()));
+      return false;
+  }
 }
 
 bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
