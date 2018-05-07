@@ -45,15 +45,20 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
       Utils::GetSourceUser(connection, payload->mutable_x509()->mutable_user());
 
   // Return value depend on mode:
-  // - PERMISSIVE: plaintext connection is acceptable, thus return true regardless.
+  // - PERMISSIVE: plaintext connection is acceptable, thus return true
+  // regardless.
   // - TLS_PERMISSIVE: tls connection is required, but certificate is optional.
   // - STRICT: must be TLS with valid certificate.
   switch (mtls.mode()) {
-    case iaapi::MutualTls::PERMISSIVE: return true;
-    case iaapi::MutualTls::TLS_PERMISSIVE: return connection->ssl() != nullptr;
-    case iaapi::MutualTls::STRICT: return has_user;
+    case iaapi::MutualTls::PERMISSIVE:
+      return true;
+    case iaapi::MutualTls::TLS_PERMISSIVE:
+      return connection->ssl() != nullptr;
+    case iaapi::MutualTls::STRICT:
+      return has_user;
     default:
-      ENVOY_LOG(warn, "Invalid mTLS mode {}", iaapi::MutualTls::Mode_Name(mtls.mode()));
+      ENVOY_LOG(warn, "Invalid mTLS mode {}",
+                iaapi::MutualTls::Mode_Name(mtls.mode()));
       return false;
   }
 }
