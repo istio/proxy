@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "common/common/assert.h"
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/utils/utils.h"
@@ -57,9 +58,7 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
     case iaapi::MutualTls::STRICT:
       return has_user;
     default:
-      ENVOY_LOG(warn, "Invalid mTLS mode {}",
-                iaapi::MutualTls::Mode_Name(mtls.mode()));
-      return false;
+      NOT_REACHED;
   }
 }
 
