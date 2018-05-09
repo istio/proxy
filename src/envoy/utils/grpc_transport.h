@@ -49,7 +49,7 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
     // We generate cluster name contains invalid characters, so override the
     // authority header temorarily until it can be specified via CDS.
     // See https://github.com/envoyproxy/envoy/issues/3297 for details.
-    metadata.Host()->value("mixer");
+    metadata.Host()->value("mixer", 5);
   }
 
   void onSuccess(std::unique_ptr<ResponseType>&& response,
