@@ -91,7 +91,7 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
       }
       if (!origin.raw_claims().empty()) {
         builder.AddString(AttributeName::kRequestAuthRawClaims,
-                                     origin.raw_claims());
+                          origin.raw_claims());
       }
     }
     return;

@@ -415,10 +415,12 @@ TEST(AttributesBuilderTest, TestCheckAttributesWithAuthNResult) {
   Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kCheckAttributes, &expected_attributes));
-  // kCheckAttributes is also used in TestCheckAttributes, which is a deprecated way to construct
-  // mixer attribute (it was a fallback when authn filter is not available, which can be removed
-  // after 0.8). For now, modifying expected data manually for this test.
-  (*expected_attributes.mutable_attributes())[AttributeName::kRequestAuthRawClaims]
+  // kCheckAttributes is also used in TestCheckAttributes, which is a deprecated
+  // way to construct mixer attribute (it was a fallback when authn filter is
+  // not available, which can be removed after 0.8). For now, modifying expected
+  // data manually for this test.
+  (*expected_attributes
+        .mutable_attributes())[AttributeName::kRequestAuthRawClaims]
       .set_string_value("test_raw_claims");
 
   EXPECT_TRUE(
