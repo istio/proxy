@@ -141,7 +141,7 @@ bool Referenced::CheckAbsenceKeys(const Attributes &attributes) const {
       return false;
     }
 
-    const std::string &map_key = key.map_key;
+    std::string map_key = key.map_key;
     const auto &smap = value.string_map_value().entries();
     // Since absence_keys_ are sorted by key.name,
     // continue processing stringMaps until a new name is found.
