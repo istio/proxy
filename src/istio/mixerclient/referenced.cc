@@ -117,11 +117,7 @@ bool Referenced::Fill(const Attributes &attributes,
 bool Referenced::Signature(const Attributes &attributes,
                            const std::string &extra_key,
                            std::string *signature) const {
-  if (!CheckAbsenceKeys(attributes)) {
-    return false;
-  }
-
-  if (!CheckExactKeys(attributes)) {
+  if (!CheckAbsenceKeys(attributes) || !CheckExactKeys(attributes)) {
     return false;
   }
 
@@ -145,7 +141,7 @@ bool Referenced::CheckAbsenceKeys(const Attributes &attributes) const {
       return false;
     }
 
-    std::string map_key = key.map_key;
+    const std::string &map_key = key.map_key;
     const auto &smap = value.string_map_value().entries();
     // Since absence_keys_ are sorted by key.name,
     // continue processing stringMaps until a new name is found.
