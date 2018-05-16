@@ -117,7 +117,7 @@ bool Referenced::Fill(const Attributes &attributes,
 bool Referenced::Signature(const Attributes &attributes,
                            const std::string &extra_key,
                            std::string *signature) const {
-  if (!CheckAbsenceKeys(attributes) || !CheckExactKeys(attributes)) {
+  if (!CheckAbsentKeys(attributes) || !CheckExactKeys(attributes)) {
     return false;
   }
 
@@ -125,7 +125,7 @@ bool Referenced::Signature(const Attributes &attributes,
   return true;
 }
 
-bool Referenced::CheckAbsenceKeys(const Attributes &attributes) const {
+bool Referenced::CheckAbsentKeys(const Attributes &attributes) const {
   const auto &attributes_map = attributes.attributes();
   for (std::size_t i = 0; i < absence_keys_.size(); ++i) {
     const auto &key = absence_keys_[i];

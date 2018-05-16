@@ -50,7 +50,7 @@ class Referenced {
 
  private:
   // Return true if all absent keys are not in the attributes.
-  bool CheckAbsenceKeys(const ::istio::mixer::v1::Attributes &attributes) const;
+  bool CheckAbsentKeys(const ::istio::mixer::v1::Attributes &attributes) const;
 
   // Return true if all exact keys are in the attributes.
   bool CheckExactKeys(const ::istio::mixer::v1::Attributes &attributes) const;
