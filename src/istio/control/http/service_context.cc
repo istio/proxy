@@ -15,7 +15,9 @@
 
 #include "service_context.h"
 #include "src/istio/control/attribute_names.h"
+#include "src/istio/control/http/attributes_builder.h"
 
+using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 
 namespace istio {
@@ -53,8 +55,27 @@ void ServiceContext::AddStaticAttributes(RequestContext* request) const {
   if (client_context_->config().has_mixer_attributes()) {
     request->attributes.MergeFrom(client_context_->config().mixer_attributes());
   }
-  if (service_config_->has_mixer_attributes()) {
+  if (service_config_ && service_config_->has_mixer_attributes()) {
     request->attributes.MergeFrom(service_config_->mixer_attributes());
+  }
+}
+
+// Inject a header that contains the static forwarded attributes.
+void ServiceContext::InjectForwardedAttributes(HeaderUpdate* header_update) const {
+  bool forward = false;
+  Attributes attributes;
+
+  if (client_context_->config().has_forward_attributes()) {
+    forward = true;
+    attributes.MergeFrom(client_context_->config().forward_attributes());
+  }
+  if (service_config_ && service_config_->has_forward_attributes()) {
+    forward = true;
+    attributes.MergeFrom(service_config_->forward_attributes());
+  }
+
+  if (forward) {
+    AttributesBuilder::ForwardAttributes(attributes, header_update);
   }
 }
 

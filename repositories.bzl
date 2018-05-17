@@ -188,7 +188,7 @@ filegroup(
     native.new_git_repository(
         name = "mixerapi_git",
         build_file_content = BUILD,
-        commit = ISTIO_API,
+        commit = "b33fb6d1d44ae6e7252004c8916a702976cfb101",
         remote = "https://github.com/istio/api.git",
     )
     if bind:
