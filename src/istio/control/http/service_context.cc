@@ -106,6 +106,6 @@ void ServiceContext::AddQuotas(RequestContext *request) const {
   }
 }
 
-} // namespace http
-} // namespace control
-} // namespace istio
+}  // namespace http
+}  // namespace control
+}  // namespace istio
