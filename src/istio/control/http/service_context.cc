@@ -63,19 +63,16 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
 // Inject a header that contains the static forwarded attributes.
 void ServiceContext::InjectForwardedAttributes(
     HeaderUpdate *header_update) const {
-  bool forward = false;
   Attributes attributes;
 
   if (client_context_->config().has_forward_attributes()) {
-    forward = true;
     attributes.MergeFrom(client_context_->config().forward_attributes());
   }
   if (service_config_ && service_config_->has_forward_attributes()) {
-    forward = true;
     attributes.MergeFrom(service_config_->forward_attributes());
   }
 
-  if (forward) {
+  if (! attributes.attributes().empty()) {
     AttributesBuilder::ForwardAttributes(attributes, header_update);
   }
 }
