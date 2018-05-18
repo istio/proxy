@@ -72,7 +72,7 @@ void ServiceContext::InjectForwardedAttributes(
     attributes.MergeFrom(service_config_->forward_attributes());
   }
 
-  if (! attributes.attributes().empty()) {
+  if (!attributes.attributes().empty()) {
     AttributesBuilder::ForwardAttributes(attributes, header_update);
   }
 }
