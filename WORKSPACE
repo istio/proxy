@@ -38,7 +38,7 @@ git_repository(
 )
 
 # When updating envoy sha manually please update the sha in istio.deps file also
-ENVOY_SHA = "2b2c299144600fb9e525d21aabf39bf48e64fb1f"
+ENVOY_SHA = "5843954375fe548776d3d5c36ff8bb79cd61f2a0"
 
 http_archive(
     name = "envoy",
