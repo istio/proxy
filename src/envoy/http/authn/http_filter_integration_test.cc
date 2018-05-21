@@ -168,11 +168,12 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckConsumedJwtHeadersAreRemoved) {
   // should be generated.
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  codec_client_->makeHeaderOnlyRequest(
+  auto response = codec_client_->makeHeaderOnlyRequest(
       request_headers_with_jwt_at_specified_location);
 
   // Wait for request to upstream[0] (backend)
   waitForNextUpstreamRequest(0);
+  response->waitForEndStream();
 
   // After Istio authn, the JWT headers consumed by Istio authn should have
   // been removed.
@@ -189,10 +190,12 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckAuthnResultIsExpected) {
   // should be generated.
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  codec_client_->makeHeaderOnlyRequest(request_headers_with_jwt_);
+  auto response =
+      codec_client_->makeHeaderOnlyRequest(request_headers_with_jwt_);
 
   // Wait for request to upstream[0] (backend)
   waitForNextUpstreamRequest(0);
+  response->waitForEndStream();
 
   // Authn result should be as expected
   const Envoy::Http::HeaderString &header_value =
