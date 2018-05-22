@@ -96,6 +96,11 @@ void AttributesBuilder::ExtractReportAttributes(
     builder.AddInt64(AttributeName::kDestinationPort, dest_port);
   }
 
+  std::string uid;
+  if (report_data->GetDestinationUID(&uid)) {
+    builder.AddString(AttributeName::kDestinationUID, uid);
+  }
+
   builder.AddTimestamp(AttributeName::kContextTime,
                        std::chrono::system_clock::now());
 }
