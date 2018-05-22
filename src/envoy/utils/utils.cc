@@ -70,6 +70,20 @@ bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
   return false;
 }
 
+bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
+                       std::string* uid) {
+  const auto filter_it = metadata.filter_metadata().find("mixer");
+  if (filter_it == metadata.filter_metadata().end()) {
+    return false;
+  }
+  const auto fields_it = filter_it->second.fields().find("destination.uid");
+  if (fields_it == filter_it->second.fields().end()) {
+    return false;
+  }
+  *uid = fields_it->second.string_value();
+  return true;
+}
+
 bool GetSourceUser(const Network::Connection* connection, std::string* user) {
   if (connection) {
     Ssl::Connection* ssl = const_cast<Ssl::Connection*>(connection->ssl());
