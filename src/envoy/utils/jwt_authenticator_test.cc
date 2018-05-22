@@ -108,49 +108,6 @@ const char kExampleConfig[] = R"(
 }
 )";
 
-// A JSON config without forward_payload_header configured.
-const char kExampleConfigWithoutForwardPayloadHeader[] = R"(
-{
-     "issuer": "https://example.com",
-     "audiences": [
-        "example_service",
-        "http://example_service1",
-        "https://example_service2/"
-      ],
-      "remote_jwks": {
-        "http_uri": {
-          "uri": "https://pubkey_server/pubkey_path",
-          "cluster": "pubkey_cluster"
-        },
-        "cache_duration": {
-          "seconds": 600
-        }
-     }
-}
-)";
-
-// An example JSON config with a good JWT config and allow_missing_or_failed
-// option enabled
-const char kExampleConfigWithJwtAndAllowMissingOrFailed[] = R"(
-{
-   "issuer": "https://example.com",
-   "audiences": [
-      "example_service",
-      "http://example_service1",
-      "https://example_service2/"
-    ],
-    "remote_jwks": {
-      "http_uri": {
-        "uri": "https://pubkey_server/pubkey_path",
-        "cluster": "pubkey_cluster"
-      },
-      "cache_duration": {
-        "seconds": 600
-      }
-   }
-}
-)";
-
 // A JSON config for "other_issuer"
 const char kOtherIssuerConfig[] = R"(
 {

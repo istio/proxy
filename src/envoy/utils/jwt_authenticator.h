@@ -45,8 +45,8 @@ class JwtAuthenticatorImpl : public JwtAuthenticator, public Logger::Loggable<Lo
  public:
   JwtAuthenticatorImpl(Upstream::ClusterManager& cm, JwtAuthStore& store);
 
-  void Verify(std::unique_ptr<JwtTokenExtractor::Token> &token, JwtAuthenticator::Callbacks* callback);
-  void Verify(Http::HeaderMap& headers, Callbacks* callback);
+  void Verify(std::unique_ptr<JwtTokenExtractor::Token> &token, JwtAuthenticator::Callbacks* callback) override;
+  void Verify(Http::HeaderMap& headers, Callbacks* callback) override;
 
   // Called when the object is about to be destroyed.
   void onDestroy() override;
@@ -55,8 +55,8 @@ class JwtAuthenticatorImpl : public JwtAuthenticator, public Logger::Loggable<Lo
   // Fetch a remote public key.
   void FetchPubkey(PubkeyCacheItem* issuer);
   // Following two functions are for AyncClient::Callbacks
-  void onSuccess(Http::MessagePtr&& response);
-  void onFailure(Http::AsyncClient::FailureReason);
+  void onSuccess(Http::MessagePtr&& response) override;
+  void onFailure(Http::AsyncClient::FailureReason) override;
 
   // Verify with a specific public key.
   void VerifyKey(const PubkeyCacheItem& issuer);
