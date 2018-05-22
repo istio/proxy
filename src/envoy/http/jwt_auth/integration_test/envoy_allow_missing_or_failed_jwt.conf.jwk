@@ -34,20 +34,22 @@
                 "type": "decoder",
                 "name": "jwt-auth",
                 "config": {
-                   "rules": [
-                     {
-                        "issuer": "https://example.com",
-                        "audiences": [
-                           "example_service"
-                         ],
-                         "remote_jwks": {
-                           "http_uri": {
-                             "uri": "http://example.com/foobar_cert",
-                             "cluster": "example_issuer"
-                         }
+                   "rules": {
+                      "https://example.com": {
+                       "verifier": {
+                          "issuer": "https://example.com",
+                          "audiences": [
+                             "example_service"
+                           ],
+                           "remote_jwks": {
+                             "http_uri": {
+                               "uri": "http://example.com/foobar_cert",
+                               "cluster": "example_issuer"
+                           }
+                          }
                         }
                       }
-                   ],
+                   },
                    "allow_missing_or_failed": true
                  }
               },

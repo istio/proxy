@@ -13,21 +13,21 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/jwt_auth/jwt_authenticator.h"
+#include "src/envoy/utils/jwt_authenticator.h"
 #include "common/http/message_impl.h"
 #include "common/json/json_loader.h"
 #include "gtest/gtest.h"
 #include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"
 
-using ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication;
+using ::envoy::config::filter::http::common::v1alpha::JwtVerificationRule;
 using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::_;
 
 namespace Envoy {
-namespace Http {
-namespace JwtAuth {
+namespace Utils {
+namespace Jwt {
 namespace {
 
 // RS256 private key
@@ -90,97 +90,28 @@ const std::string kPublicKey =
 // A good JSON config.
 const char kExampleConfig[] = R"(
 {
-   "rules": [
-      {
-         "issuer": "https://example.com",
-         "audiences": [
-            "example_service",
-            "http://example_service1",
-            "https://example_service2/"
-          ],
-          "remote_jwks": {
-            "http_uri": {
-              "uri": "https://pubkey_server/pubkey_path",
-              "cluster": "pubkey_cluster"
-            },
-            "cache_duration": {
-              "seconds": 600
-            }
-         },
-         "forward_payload_header": "sec-istio-auth-userinfo"
-      }
-   ]
-}
-)";
-
-// A JSON config without forward_payload_header configured.
-const char kExampleConfigWithoutForwardPayloadHeader[] = R"(
-{
-   "rules": [
-      {
-         "issuer": "https://example.com",
-         "audiences": [
-            "example_service",
-            "http://example_service1",
-            "https://example_service2/"
-          ],
-          "remote_jwks": {
-            "http_uri": {
-              "uri": "https://pubkey_server/pubkey_path",
-              "cluster": "pubkey_cluster"
-            },
-            "cache_duration": {
-              "seconds": 600
-            }
-         },
-      }
-   ]
-}
-)";
-
-// An example JSON config with a good JWT config and allow_missing_or_failed
-// option enabled
-const char kExampleConfigWithJwtAndAllowMissingOrFailed[] = R"(
-{
-   "rules": [
-      {
-         "issuer": "https://example.com",
-         "audiences": [
-            "example_service",
-            "http://example_service1",
-            "https://example_service2/"
-          ],
-          "remote_jwks": {
-            "http_uri": {
-              "uri": "https://pubkey_server/pubkey_path",
-              "cluster": "pubkey_cluster"
-            },
-            "cache_duration": {
-              "seconds": 600
-            }
-         }
-      }
-   ],
-  "allow_missing_or_failed": true
+     "issuer": "https://example.com",
+     "audiences": [
+        "example_service",
+        "http://example_service1",
+        "https://example_service2/"
+      ],
+      "remote_jwks": {
+        "http_uri": {
+          "uri": "https://pubkey_server/pubkey_path",
+          "cluster": "pubkey_cluster"
+        },
+        "cache_duration": {
+          "seconds": 600
+        }
+     },
 }
 )";
 
 // A JSON config for "other_issuer"
 const char kOtherIssuerConfig[] = R"(
 {
-   "rules": [
-      {
-         "issuer": "other_issuer"
-      }
-   ]
-}
-)";
-
-// A config with bypass
-const char kBypassConfig[] = R"(
-{
-  "bypass": [
-  ]
+   "issuer": "other_issuer"
 }
 )";
 
@@ -261,7 +192,8 @@ const std::string kGoodTokenAudService2 =
 
 class MockJwtAuthenticatorCallbacks : public JwtAuthenticator::Callbacks {
  public:
-  MOCK_METHOD1(onDone, void(const Status &status));
+  MOCK_METHOD1(onError, void(Status status));
+  MOCK_METHOD2(onSuccess, void(const Jwt *jwt, const Http::LowerCaseString *header));
 };
 
 class JwtAuthenticatorTest : public ::testing::Test {
@@ -269,14 +201,17 @@ class JwtAuthenticatorTest : public ::testing::Test {
   void SetUp() { SetupConfig(kExampleConfig); }
 
   void SetupConfig(const std::string &json_str) {
+    rules_.clear();
+    JwtVerificationRule rule;
     google::protobuf::util::Status status =
-        ::google::protobuf::util::JsonStringToMessage(json_str, &config_);
+        ::google::protobuf::util::JsonStringToMessage(json_str, &rule);
     ASSERT_TRUE(status.ok());
-    store_.reset(new JwtAuthStore(config_));
-    auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
+    rules_.push_back(rule);
+    store_.reset(new JwtAuthStore(rules_));
+    auth_.reset(new JwtAuthenticatorImpl(mock_cm_, *store_));
   }
 
-  JwtAuthentication config_;
+  std::vector<JwtVerificationRule> rules_;
   std::unique_ptr<JwtAuthStore> store_;
   std::unique_ptr<JwtAuthenticator> auth_;
   NiceMock<Upstream::MockClusterManager> mock_cm_;
@@ -291,11 +226,11 @@ class MockUpstream {
       : request_(&mock_cm.async_client_), response_body_(response_body) {
     ON_CALL(mock_cm.async_client_, send_(_, _, _))
         .WillByDefault(
-            Invoke([this](MessagePtr &, AsyncClient::Callbacks &cb,
+            Invoke([this](Http::MessagePtr &, Http::AsyncClient::Callbacks &cb,
                           const absl::optional<std::chrono::milliseconds> &)
-                       -> AsyncClient::Request * {
-              Http::MessagePtr response_message(new ResponseMessageImpl(
-                  HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
+                       -> Http::AsyncClient::Request * {
+              Http::MessagePtr response_message(new Http::ResponseMessageImpl(
+                Http::HeaderMapPtr{new Http::TestHeaderMapImpl{{":status", "200"}}}));
               response_message->body().reset(
                   new Buffer::OwnedImpl(response_body_));
               cb.onSuccess(std::move(response_message));
@@ -307,7 +242,7 @@ class MockUpstream {
   int called_count() const { return called_count_; }
 
  private:
-  MockAsyncClientRequest request_;
+  Http::MockAsyncClientRequest request_;
   std::string response_body_;
   int called_count_{};
 };
@@ -317,21 +252,17 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTandCache) {
 
   // Test OK pubkey and its cache
   for (int i = 0; i < 10; i++) {
-    auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+    auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
 
     MockJwtAuthenticatorCallbacks mock_cb;
-    EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-      ASSERT_EQ(status, Status::OK);
+    EXPECT_CALL(mock_cb, onError(_)).Times(0);
+    EXPECT_CALL(mock_cb, onSuccess(_,_)).WillOnce(Invoke([](const Jwt *jwt, const Http::LowerCaseString *header) {
+      ASSERT_NE(jwt, nullptr);
+      ASSERT_NE(header, nullptr);
+      ASSERT_EQ(*header, Http::LowerCaseString("Authorization"));
     }));
 
     auth_->Verify(headers, &mock_cb);
-
-    EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
-              "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcG"
-              "xlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbXBsZV9zZXJ2"
-              "aWNlIn0");
-    // Verify the token is removed.
-    EXPECT_FALSE(headers.Authorization());
   }
 
   EXPECT_EQ(mock_pubkey.called_count(), 1);
@@ -348,21 +279,17 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTPubkeyNoAlg) {
   }
   MockUpstream mock_pubkey(mock_cm_, pubkey_no_alg);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
+  EXPECT_CALL(mock_cb, onError(_)).Times(0);
+  EXPECT_CALL(mock_cb, onSuccess(_,_)).WillOnce(Invoke([](const Jwt *jwt, const Http::LowerCaseString *header) {
+    ASSERT_NE(jwt, nullptr);
+    ASSERT_NE(header, nullptr);
+    ASSERT_EQ(*header, Http::LowerCaseString("Authorization"));
   }));
 
   auth_->Verify(headers, &mock_cb);
-
-  EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
-            "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcG"
-            "xlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbXBsZV9zZXJ2"
-            "aWNlIn0");
-  // Verify the token is removed.
-  EXPECT_FALSE(headers.Authorization());
 
   EXPECT_EQ(mock_pubkey.called_count(), 1);
 }
@@ -381,21 +308,16 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTPubkeyNoKid) {
 
   MockUpstream mock_pubkey(mock_cm_, pubkey_no_kid);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
+  EXPECT_CALL(mock_cb, onError(_)).Times(0);
+  EXPECT_CALL(mock_cb, onSuccess(_,_)).WillOnce(Invoke([](const Jwt *jwt, const Http::LowerCaseString *header) {
+    ASSERT_NE(jwt, nullptr);
+    ASSERT_NE(header, nullptr);
   }));
 
   auth_->Verify(headers, &mock_cb);
-
-  EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
-            "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcG"
-            "xlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbXBsZV9zZXJ2"
-            "aWNlIn0");
-  // Verify the token is removed.
-  EXPECT_FALSE(headers.Authorization());
 
   EXPECT_EQ(mock_pubkey.called_count(), 1);
 }
@@ -406,22 +328,17 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService) {
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
 
   // Test OK pubkey and its cache
-  auto headers = TestHeaderMapImpl{
+  auto headers = Http::TestHeaderMapImpl{
       {"Authorization", "Bearer " + kGoodTokenAudHasProtocolScheme}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
+  EXPECT_CALL(mock_cb, onError(_)).Times(0);
+  EXPECT_CALL(mock_cb, onSuccess(_,_)).WillOnce(Invoke([](const Jwt *jwt, const Http::LowerCaseString *header) {
+    ASSERT_NE(jwt, nullptr);
+    ASSERT_NE(header, nullptr);
   }));
 
   auth_->Verify(headers, &mock_cb);
-
-  EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
-            "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGx"
-            "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cDovL2V4YW1wbG"
-            "Vfc2VydmljZS8ifQ");
-  // Verify the token is removed.
-  EXPECT_FALSE(headers.Authorization());
 
   EXPECT_EQ(mock_pubkey.called_count(), 1);
 }
@@ -432,22 +349,16 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService1) {
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
 
   // Test OK pubkey and its cache
-  auto headers =
-      TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService1}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService1}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
+  EXPECT_CALL(mock_cb, onError(_)).Times(0);
+  EXPECT_CALL(mock_cb, onSuccess(_,_)).WillOnce(Invoke([](const Jwt *jwt, const Http::LowerCaseString *header) {
+    ASSERT_NE(jwt, nullptr);
+    ASSERT_NE(header, nullptr);
   }));
 
   auth_->Verify(headers, &mock_cb);
-
-  EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
-            "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGx"
-            "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cHM6Ly9leGFtcG"
-            "xlX3NlcnZpY2UxLyJ9");
-  // Verify the token is removed.
-  EXPECT_FALSE(headers.Authorization());
 
   EXPECT_EQ(mock_pubkey.called_count(), 1);
 }
@@ -459,160 +370,76 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService2) {
 
   // Test OK pubkey and its cache
   auto headers =
-      TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService2}};
+    Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenAudService2}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
+  EXPECT_CALL(mock_cb, onError(_)).Times(0);
+  EXPECT_CALL(mock_cb, onSuccess(_,_)).WillOnce(Invoke([](const Jwt *jwt, const Http::LowerCaseString *header) {
+    ASSERT_NE(jwt, nullptr);
+    ASSERT_NE(header, nullptr);
   }));
 
   auth_->Verify(headers, &mock_cb);
-
-  EXPECT_EQ(headers.get_("sec-istio-auth-userinfo"),
-            "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGx"
-            "lLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiaHR0cDovL2V4YW1wbG"
-            "Vfc2VydmljZTIifQ");
-  // Verify the token is removed.
-  EXPECT_FALSE(headers.Authorization());
 
   EXPECT_EQ(mock_pubkey.called_count(), 1);
 }
 
-TEST_F(JwtAuthenticatorTest, TestForwardJwt) {
-  // Confit forward_jwt flag
-  config_.mutable_rules(0)->set_forward(true);
-  // Re-create store and auth objects.
-  store_.reset(new JwtAuthStore(config_));
-  auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
-
-  MockUpstream mock_pubkey(mock_cm_, kPublicKey);
-
-  // Test OK pubkey and its cache
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
-
-  MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
-  }));
-
-  auth_->Verify(headers, &mock_cb);
-
-  // Verify the token is NOT removed.
-  EXPECT_TRUE(headers.Authorization());
-}
-
 TEST_F(JwtAuthenticatorTest, TestMissedJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::JWT_MISSED);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
   // Empty headers.
-  auto headers = TestHeaderMapImpl{};
+  auto headers = Http::TestHeaderMapImpl{};
   auth_->Verify(headers, &mock_cb_);
-}
-
-TEST_F(JwtAuthenticatorTest, TestMissingJwtWhenAllowMissingOrFailedIsTrue) {
-  // In this test, when JWT is missing, the status should still be OK
-  // because allow_missing_or_failed is true.
-  SetupConfig(kExampleConfigWithJwtAndAllowMissingOrFailed);
-  EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
-  }));
-
-  // Empty headers.
-  auto headers = TestHeaderMapImpl{};
-  auth_->Verify(headers, &mock_cb_);
-}
-
-TEST_F(JwtAuthenticatorTest, TestInValidJwtWhenAllowMissingOrFailedIsTrue) {
-  // In this test, when JWT is invalid, the status should still be OK
-  // because allow_missing_or_failed is true.
-  SetupConfig(kExampleConfigWithJwtAndAllowMissingOrFailed);
-  EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
-  }));
-
-  std::string token = "invalidToken";
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + token}};
-  auth_->Verify(headers, &mock_cb_);
-}
-
-TEST_F(JwtAuthenticatorTest, TestBypassJWT) {
-  SetupConfig(kBypassConfig);
-
-  // TODO: enable Bypass test
-  return;
-
-  EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_))
-      .WillOnce(Invoke(
-          // Empty header, rejected.
-          [](const Status &status) { ASSERT_EQ(status, Status::JWT_MISSED); }))
-      .WillOnce(Invoke(
-          // CORS header, OK
-          [](const Status &status) { ASSERT_EQ(status, Status::OK); }))
-      .WillOnce(Invoke(
-          // healthz header, OK
-          [](const Status &status) { ASSERT_EQ(status, Status::OK); }));
-
-  // Empty headers.
-  auto empty_headers = TestHeaderMapImpl{};
-  auth_->Verify(empty_headers, &mock_cb_);
-
-  // CORS headers
-  auto cors_headers =
-      TestHeaderMapImpl{{":method", "OPTIONS"}, {":path", "/any/path"}};
-  auth_->Verify(cors_headers, &mock_cb_);
-
-  // healthz headers
-  auto healthz_headers =
-      TestHeaderMapImpl{{":method", "GET"}, {":path", "/healthz"}};
-  auth_->Verify(healthz_headers, &mock_cb_);
 }
 
 TEST_F(JwtAuthenticatorTest, TestInvalidJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::JWT_BAD_FORMAT);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
   std::string token = "invalidToken";
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + token}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + token}};
   auth_->Verify(headers, &mock_cb_);
 }
 
 TEST_F(JwtAuthenticatorTest, TestInvalidPrefix) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::JWT_MISSED);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer-invalid"}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer-invalid"}};
   auth_->Verify(headers, &mock_cb_);
 }
 
 TEST_F(JwtAuthenticatorTest, TestExpiredJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::JWT_EXPIRED);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
   auto headers =
-      TestHeaderMapImpl{{"Authorization", "Bearer " + kExpiredToken}};
+    Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kExpiredToken}};
   auth_->Verify(headers, &mock_cb_);
 }
 
 TEST_F(JwtAuthenticatorTest, TestNonMatchAudJWT) {
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::AUDIENCE_NOT_ALLOWED);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
   auto headers =
-      TestHeaderMapImpl{{"Authorization", "Bearer " + kInvalidAudToken}};
+    Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kInvalidAudToken}};
   auth_->Verify(headers, &mock_cb_);
 }
 
@@ -626,11 +453,12 @@ TEST_F(JwtAuthenticatorTest, TestWrongCluster) {
           }));
 
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::FAILED_FETCH_PUBKEY);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   auth_->Verify(headers, &mock_cb_);
 }
 
@@ -639,11 +467,12 @@ TEST_F(JwtAuthenticatorTest, TestIssuerNotFound) {
   SetupConfig(kOtherIssuerConfig);
 
   EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::JWT_UNKNOWN_ISSUER);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   auth_->Verify(headers, &mock_cb_);
 }
 
@@ -655,13 +484,13 @@ TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
         return async_client;
       }));
 
-  MockAsyncClientRequest request(&async_client);
-  AsyncClient::Callbacks *callbacks;
+  Http::MockAsyncClientRequest request(&async_client);
+  Http::AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
-      .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
+      .WillOnce(Invoke([&](Http::MessagePtr &message, Http::AsyncClient::Callbacks &cb,
                            const absl::optional<std::chrono::milliseconds> &)
-                           -> AsyncClient::Request * {
-        EXPECT_EQ((TestHeaderMapImpl{
+                           -> Http::AsyncClient::Request * {
+        EXPECT_EQ((Http::TestHeaderMapImpl{
                       {":method", "GET"},
                       {":path", "/pubkey_path"},
                       {":authority", "pubkey_server"},
@@ -671,15 +500,16 @@ TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
         return &request;
       }));
 
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::FAILED_FETCH_PUBKEY);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   auth_->Verify(headers, &mock_cb_);
 
-  Http::MessagePtr response_message(new ResponseMessageImpl(
-      HeaderMapPtr{new TestHeaderMapImpl{{":status", "401"}}}));
+  Http::MessagePtr response_message(new Http::ResponseMessageImpl(
+    Http::HeaderMapPtr{new Http::TestHeaderMapImpl{{":status", "401"}}}));
   callbacks->onSuccess(std::move(response_message));
 }
 
@@ -691,13 +521,13 @@ TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
         return async_client;
       }));
 
-  MockAsyncClientRequest request(&async_client);
-  AsyncClient::Callbacks *callbacks;
+  Http::MockAsyncClientRequest request(&async_client);
+  Http::AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
-      .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
+      .WillOnce(Invoke([&](Http::MessagePtr &message, Http::AsyncClient::Callbacks &cb,
                            const absl::optional<std::chrono::milliseconds> &)
-                           -> AsyncClient::Request * {
-        EXPECT_EQ((TestHeaderMapImpl{
+                           -> Http::AsyncClient::Request * {
+        EXPECT_EQ((Http::TestHeaderMapImpl{
                       {":method", "GET"},
                       {":path", "/pubkey_path"},
                       {":authority", "pubkey_server"},
@@ -707,15 +537,16 @@ TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
         return &request;
       }));
 
-  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+  EXPECT_CALL(mock_cb_, onError(_)).WillOnce(Invoke([](Status status) {
     ASSERT_EQ(status, Status::JWK_PARSE_ERROR);
   }));
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   auth_->Verify(headers, &mock_cb_);
 
-  Http::MessagePtr response_message(new ResponseMessageImpl(
-      HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
+  Http::MessagePtr response_message(new Http::ResponseMessageImpl(
+    Http::HeaderMapPtr{new Http::TestHeaderMapImpl{{":status", "200"}}}));
   response_message->body().reset(new Buffer::OwnedImpl("invalid publik key"));
   callbacks->onSuccess(std::move(response_message));
 }
@@ -728,13 +559,13 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
         return async_client;
       }));
 
-  MockAsyncClientRequest request(&async_client);
-  AsyncClient::Callbacks *callbacks;
+  Http::MockAsyncClientRequest request(&async_client);
+  Http::AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
-      .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
+      .WillOnce(Invoke([&](Http::MessagePtr &message, Http::AsyncClient::Callbacks &cb,
                            const absl::optional<std::chrono::milliseconds> &)
-                           -> AsyncClient::Request * {
-        EXPECT_EQ((TestHeaderMapImpl{
+                           -> Http::AsyncClient::Request * {
+        EXPECT_EQ((Http::TestHeaderMapImpl{
                       {":method", "GET"},
                       {":path", "/pubkey_path"},
                       {":authority", "pubkey_server"},
@@ -747,57 +578,38 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
   // Cancel is called once.
   EXPECT_CALL(request, cancel()).Times(1);
 
-  // onDone() should not be called.
-  EXPECT_CALL(mock_cb_, onDone(_)).Times(0);
+  // onxxx() should not be called.
+  EXPECT_CALL(mock_cb_, onError(_)).Times(0);
+  EXPECT_CALL(mock_cb_, onSuccess(_,_)).Times(0);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   auth_->Verify(headers, &mock_cb_);
 
   // Destroy the authenticating process.
   auth_->onDestroy();
 }
 
-TEST_F(JwtAuthenticatorTest, TestNoForwardPayloadHeader) {
-  // In this config, there is no forward_payload_header
-  SetupConfig(kExampleConfigWithoutForwardPayloadHeader);
-  MockUpstream mock_pubkey(mock_cm_, kPublicKey);
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
-  MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
-  }));
-  auth_->Verify(headers, &mock_cb);
-
-  // Test when forward_payload_header is not set, the output should still
-  // contain the sec-istio-auth-userinfo header for backward compatibility.
-  EXPECT_TRUE(headers.has("sec-istio-auth-userinfo"));
-  // In addition, the sec-istio-auth-userinfo header should be the only header
-  EXPECT_EQ(headers.size(), 1);
-}
-
 TEST_F(JwtAuthenticatorTest, TestInlineJwks) {
   // Change the config to use local_jwks.inline_string
-  auto rule0 = config_.mutable_rules(0);
-  rule0->clear_remote_jwks();
-  auto local_jwks = rule0->mutable_local_jwks();
+  rules_[0].clear_remote_jwks();
+  auto local_jwks = rules_[0].mutable_local_jwks();
   local_jwks->set_inline_string(kPublicKey);
 
   // recreate store and auth with modified config.
-  store_.reset(new JwtAuthStore(config_));
-  auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
+  store_.reset(new JwtAuthStore(rules_));
+  auth_.reset(new JwtAuthenticatorImpl(mock_cm_, *store_));
 
   MockUpstream mock_pubkey(mock_cm_, "");
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
+  auto headers = Http::TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
-  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
-    ASSERT_EQ(status, Status::OK);
-  }));
+  EXPECT_CALL(mock_cb, onError(_)).Times(0);
+  EXPECT_CALL(mock_cb, onSuccess(_,_)).Times(1);
 
   auth_->Verify(headers, &mock_cb);
   EXPECT_EQ(mock_pubkey.called_count(), 0);
 }
 
-}  // namespace JwtAuth
-}  // namespace Http
+}  // namespace Jwt
+}  // namespace Utils
 }  // namespace Envoy

@@ -25,40 +25,6 @@ load(
 )
 
 envoy_cc_library(
-    name = "jwt_lib",
-    srcs = ["jwt.cc"],
-    hdrs = ["jwt.h"],
-    external_deps = [
-        "rapidjson",
-        "ssl",
-    ],
-    repository = "@envoy",
-    deps = [
-        "@envoy//source/exe:envoy_common_lib",
-    ],
-)
-
-envoy_cc_library(
-    name = "jwt_authenticator_lib",
-    srcs = [
-        "jwt_authenticator.cc",
-        "token_extractor.cc",
-    ],
-    hdrs = [
-        "auth_store.h",
-        "jwt_authenticator.h",
-        "pubkey_cache.h",
-        "token_extractor.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":jwt_lib",
-        "@envoy_api//envoy/config/filter/http/jwt_authn/v2alpha:jwt_authn_cc",
-        "@envoy//source/exe:envoy_common_lib",
-    ],
-)
-
-envoy_cc_library(
     name = "http_filter_lib",
     srcs = [
         "http_filter.cc",
@@ -68,7 +34,8 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":jwt_authenticator_lib",
+        "//src/envoy/utils:jwt_authenticator_lib",
+        "//src/envoy/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -84,6 +51,17 @@ envoy_cc_library(
 )
 
 envoy_cc_test(
+    name = "http_filter_test",
+    srcs = ["http_filter_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":http_filter_lib",
+        "@envoy//test/test_common:utility_lib",
+        "@envoy//test/mocks/http:http_mocks",
+    ],
+)
+
+envoy_cc_test(
     name = "http_filter_integration_test",
     srcs = [":integration_test/http_filter_integration_test.cc"],
     data = [
@@ -93,51 +71,9 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":http_filter_factory",
-        ":jwt_lib",
+        "//src/envoy/utils:jwt_lib",
+        "//src/envoy/utils:jwt_authenticator_lib",
         "@envoy//test/integration:http_integration_lib",
         "@envoy//test/integration:integration_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "jwt_test",
-    srcs = [
-        "jwt_test.cc",
-    ],
-    data = [],
-    repository = "@envoy",
-    deps = [
-        ":jwt_lib",
-        "@envoy//source/exe:envoy_common_lib",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "jwt_authenticator_test",
-    srcs = [
-        "jwt_authenticator_test.cc",
-    ],
-    data = [],
-    repository = "@envoy",
-    deps = [
-        ":jwt_authenticator_lib",
-        "@envoy//source/exe:envoy_common_lib",
-        "@envoy//test/mocks/upstream:upstream_mocks",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "token_extractor_test",
-    srcs = [
-        "token_extractor_test.cc",
-    ],
-    data = [],
-    repository = "@envoy",
-    deps = [
-        ":jwt_authenticator_lib",
-        "@envoy//source/exe:envoy_common_lib",
-        "@envoy//test/test_common:utility_lib",
     ],
 )

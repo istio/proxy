@@ -14,8 +14,9 @@
  */
 
 #pragma once
+#include "envoy/config/filter/http/jwt_authn/v2alpha/config.pb.h"
 
-#include "src/envoy/http/jwt_auth/jwt_authenticator.h"
+#include "src/envoy/utils/jwt_authenticator.h"
 
 #include "common/common/logger.h"
 #include "envoy/http/filter.h"
@@ -25,11 +26,11 @@ namespace Http {
 
 // The Envoy filter to process JWT auth.
 class JwtVerificationFilter : public StreamDecoderFilter,
-                              public JwtAuth::JwtAuthenticator::Callbacks,
+                              public Utils::Jwt::JwtAuthenticator::Callbacks,
                               public Logger::Loggable<Logger::Id::filter> {
  public:
-  JwtVerificationFilter(Upstream::ClusterManager& cm,
-                        JwtAuth::JwtAuthStore& store);
+  JwtVerificationFilter(std::shared_ptr<Utils::Jwt::JwtAuthenticator> jwt_auth,
+                        const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication& config);
   ~JwtVerificationFilter();
 
   // Http::StreamFilterBase
@@ -43,19 +44,30 @@ class JwtVerificationFilter : public StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override;
 
  private:
-  // the function for JwtAuth::Authenticator::Callbacks interface.
-  // To be called when its Verify() call is completed.
-  void onDone(const JwtAuth::Status& status) override;
+  // JwtAuth::Authenticator::Callbacks interface.
+  // To be called when its Verify() call is completed successfully.
+  void onSuccess(const Utils::Jwt::Jwt *jwt, const Http::LowerCaseString *header) override;
+  // To be called when token authentication fails
+  void onError(Utils::Jwt::Status status) override;
 
   // The callback funcion.
   StreamDecoderFilterCallbacks* decoder_callbacks_;
   // The auth object.
-  JwtAuth::JwtAuthenticator jwt_auth_;
+  std::shared_ptr<Utils::Jwt::JwtAuthenticator> jwt_auth_;
+  // The filter configuration.
+  const ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication config_;
   // The state of the request
   enum State { Init, Calling, Responded, Complete };
   State state_ = Init;
   // Mark if request has been stopped.
   bool stopped_ = false;
+  // Stream has been reset.
+  bool stream_reset_;
+
+  // The HTTP request headers
+  Http::HeaderMap* headers_{};
+
+  bool OkToBypass() const;
 };
 
 }  // namespace Http

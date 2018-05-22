@@ -15,8 +15,9 @@
 
 #include "src/envoy/http/mixer/check_data.h"
 #include "common/common/base64.h"
-#include "src/envoy/http/jwt_auth/jwt.h"
-#include "src/envoy/http/jwt_auth/jwt_authenticator.h"
+#include "src/envoy/utils/constants.h"
+#include "src/envoy/utils/jwt.h"
+#include "src/envoy/utils/jwt_authenticator.h"
 #include "src/envoy/utils/authn.h"
 #include "src/envoy/utils/utils.h"
 
@@ -161,16 +162,16 @@ bool CheckData::FindCookie(const std::string& name, std::string* value) const {
 bool CheckData::GetJWTPayload(
     std::map<std::string, std::string>* payload) const {
   const HeaderEntry* entry =
-      headers_.get(JwtAuth::JwtAuthenticator::JwtPayloadKey());
+      headers_.get(Utils::Constants::JwtPayloadKey());
   if (!entry) {
     return false;
   }
   std::string value(entry->value().c_str(), entry->value().size());
-  std::string payload_str = JwtAuth::Base64UrlDecode(value);
+  std::string payload_str = Utils::Jwt::Base64UrlDecode(value);
   // Return an empty string if Base64 decode fails.
   if (payload_str.empty()) {
     ENVOY_LOG(error, "Invalid {} header, invalid base64: {}",
-              JwtAuth::JwtAuthenticator::JwtPayloadKey().get(), value);
+              Utils::Constants::JwtPayloadKey().get(), value);
     return false;
   }
   try {
@@ -186,7 +187,7 @@ bool CheckData::GetJWTPayload(
         });
   } catch (...) {
     ENVOY_LOG(error, "Invalid {} header, invalid json: {}",
-              JwtAuth::JwtAuthenticator::JwtPayloadKey().get(), payload_str);
+              Utils::Constants::JwtPayloadKey().get(), payload_str);
     return false;
   }
   return true;

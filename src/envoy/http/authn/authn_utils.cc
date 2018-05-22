@@ -15,7 +15,7 @@
 
 #include "authn_utils.h"
 #include "common/json/json_loader.h"
-#include "src/envoy/http/jwt_auth/jwt.h"
+#include "src/envoy/utils/jwt.h"
 
 namespace Envoy {
 namespace Http {
@@ -61,7 +61,7 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
   }
   std::string value(entry->value().c_str(), entry->value().size());
   // JwtAuth::Base64UrlDecode() is different from Base64::decode().
-  std::string payload_str = JwtAuth::Base64UrlDecode(value);
+  std::string payload_str = Utils::Jwt::Base64UrlDecode(value);
   // Return an empty string if Base64 decode fails.
   if (payload_str.empty()) {
     ENVOY_LOG(error, "Invalid {} header, invalid base64: {}",

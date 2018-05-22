@@ -13,15 +13,14 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/jwt_auth/token_extractor.h"
+#include "src/envoy/utils/token_extractor.h"
 #include "common/common/utility.h"
+#include "common/http/headers.h"
 #include "common/http/utility.h"
 
-using ::envoy::config::filter::http::jwt_authn::v2alpha::JwtAuthentication;
-
 namespace Envoy {
-namespace Http {
-namespace JwtAuth {
+namespace Utils {
+namespace Jwt {
 namespace {
 
 // The autorization bearer prefix.
@@ -32,13 +31,13 @@ const std::string kParamAccessToken = "access_token";
 
 }  // namespace
 
-JwtTokenExtractor::JwtTokenExtractor(const JwtAuthentication& config) {
-  for (const auto& jwt : config.rules()) {
+JwtTokenExtractor::JwtTokenExtractor(RuleSet_t& rules) {
+  for (const auto& jwt : rules) {
     bool use_default = true;
     if (jwt.from_headers_size() > 0) {
       use_default = false;
       for (const auto& header : jwt.from_headers()) {
-        auto& issuers = header_maps_[LowerCaseString(header.name())];
+        auto& issuers = header_maps_[Http::LowerCaseString(header.name())];
         issuers.insert(jwt.issuer());
       }
     }
@@ -61,16 +60,16 @@ JwtTokenExtractor::JwtTokenExtractor(const JwtAuthentication& config) {
 }
 
 void JwtTokenExtractor::Extract(
-    const HeaderMap& headers,
+    const Http::HeaderMap& headers,
     std::vector<std::unique_ptr<JwtTokenExtractor::Token>>* tokens) const {
   if (!authorization_issuers_.empty()) {
-    const HeaderEntry* entry = headers.Authorization();
+    const Http::HeaderEntry* entry = headers.Authorization();
     if (entry) {
       // Extract token from header.
-      const HeaderString& value = entry->value();
+      const Http::HeaderString& value = entry->value();
       if (StringUtil::startsWith(value.c_str(), kBearerPrefix, true)) {
         tokens->emplace_back(new Token(value.c_str() + kBearerPrefix.length(),
-                                       authorization_issuers_, true, nullptr));
+                                       authorization_issuers_, &Http::Headers::get().Authorization));
         // Only take the first one.
         return;
       }
@@ -79,11 +78,11 @@ void JwtTokenExtractor::Extract(
 
   // Check header first
   for (const auto& header_it : header_maps_) {
-    const HeaderEntry* entry = headers.get(header_it.first);
+    const Http::HeaderEntry* entry = headers.get(header_it.first);
     if (entry) {
       tokens->emplace_back(
           new Token(std::string(entry->value().c_str(), entry->value().size()),
-                    header_it.second, false, &header_it.first));
+                    header_it.second, &header_it.first));
       // Only take the first one.
       return;
     }
@@ -93,19 +92,19 @@ void JwtTokenExtractor::Extract(
     return;
   }
 
-  const auto& params = Utility::parseQueryString(std::string(
+  const auto& params = Http::Utility::parseQueryString(std::string(
       headers.Path()->value().c_str(), headers.Path()->value().size()));
   for (const auto& param_it : param_maps_) {
     const auto& it = params.find(param_it.first);
     if (it != params.end()) {
       tokens->emplace_back(
-          new Token(it->second, param_it.second, false, nullptr));
+          new Token(it->second, param_it.second, nullptr));
       // Only take the first one.
       return;
     }
   }
 }
 
-}  // namespace JwtAuth
-}  // namespace Http
+}  // namespace Jwt
+}  // namespace Utils
 }  // namespace Envoy
