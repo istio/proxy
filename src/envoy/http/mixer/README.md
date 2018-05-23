@@ -237,4 +237,4 @@ This filter will intercept a tcp connection:
 
 You can set metadata field `uid` for filter `mixer` to a string value in the
 per-host metadata in the EDS response. That will override the value of the
-attribute sent to the telemetry service.
+attribute `destination.uid` sent to the telemetry service.
