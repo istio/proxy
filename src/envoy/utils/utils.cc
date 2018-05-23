@@ -17,6 +17,7 @@
 #include "mixer/v1/attributes.pb.h"
 
 using ::google::protobuf::Message;
+using ::google::protobuf::Struct;
 using ::google::protobuf::util::Status;
 
 namespace Envoy {
@@ -82,9 +83,9 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
   if (filter_it == metadata.filter_metadata().end()) {
     return false;
   }
-  const auto fields_it =
-      filter_it->second.fields().find(kMetadataDestinationUID);
-  if (fields_it == filter_it->second.fields().end()) {
+  const Struct& struct_pb = filter_it->second;
+  const auto fields_it = struct_pb.fields().find(kMetadataDestinationUID);
+  if (fields_it == struct_pb.fields().end()) {
     return false;
   }
   *uid = fields_it->second.string_value();
