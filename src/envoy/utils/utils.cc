@@ -30,7 +30,7 @@ const std::string kSPIFFEPrefix("spiffe://");
 const std::string kPerHostMixer("mixer");
 
 // Attribute field for per-host data override
-const std::string kMetadataDestinationUID("destination.uid");
+const std::string kMetadataDestinationUID("uid");
 
 }  // namespace
 
