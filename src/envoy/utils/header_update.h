@@ -15,9 +15,9 @@
 
 #pragma once
 
+#include "common/common/base64.h"
 #include "common/common/logger.h"
 #include "envoy/http/header_map.h"
-#include "common/common/base64.h"
 
 #include "include/istio/control/http/controller.h"
 
@@ -27,7 +27,7 @@ namespace Utils {
 namespace {
 // The HTTP header to forward Istio attributes.
 const Http::LowerCaseString kIstioAttributeHeader("x-istio-attributes");
-}; // namespace
+};  // namespace
 
 class HeaderUpdate : public ::istio::control::http::HeaderUpdate,
                      public Logger::Loggable<Logger::Id::filter> {
@@ -50,7 +50,6 @@ class HeaderUpdate : public ::istio::control::http::HeaderUpdate,
   static const Http::LowerCaseString& IstioAttributeHeader() {
     return kIstioAttributeHeader;
   }
-
 };
 
 }  // namespace Utils
