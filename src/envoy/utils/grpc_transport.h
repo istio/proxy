@@ -25,6 +25,9 @@
 
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/mixerclient/client.h"
+#include "src/envoy/utils/header_update.h"
+
+using ::istio::mixer::v1::Attributes;
 
 namespace Envoy {
 namespace Utils {
@@ -39,10 +42,12 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
       istio::mixerclient::DoneFunc on_done)>;
 
   static Func GetFunc(Grpc::AsyncClientFactory& factory,
-                      Tracing::Span& parent_span);
+                      Tracing::Span& parent_span,
+                      const Attributes& forward_attributes);
 
   GrpcTransport(Grpc::AsyncClientPtr async_client, const RequestType& request,
                 ResponseType* response, Tracing::Span& parent_span,
+                const Attributes& forward_attributes,
                 istio::mixerclient::DoneFunc on_done);
 
   void onCreateInitialMetadata(Http::HeaderMap& metadata) override {
@@ -50,6 +55,9 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
     // authority header temorarily until it can be specified via CDS.
     // See https://github.com/envoyproxy/envoy/issues/3297 for details.
     metadata.Host()->value("mixer", 5);
+
+    HeaderUpdate header_update_(&metadata);
+    header_update_.AddIstioAttributes(forward_attributes_);
   }
 
   void onSuccess(std::unique_ptr<ResponseType>&& response,
@@ -67,6 +75,7 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
   ResponseType* response_;
   ::istio::mixerclient::DoneFunc on_done_;
   Grpc::AsyncRequest* request_{};
+  std::string forward_attributes_;
 };
 
 typedef GrpcTransport<istio::mixer::v1::CheckRequest,

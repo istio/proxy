@@ -31,7 +31,7 @@ template <class RequestType, class ResponseType>
 GrpcTransport<RequestType, ResponseType>::GrpcTransport(
     Grpc::AsyncClientPtr async_client, const RequestType &request,
     ResponseType *response, Tracing::Span &parent_span,
-    istio::mixerclient::DoneFunc on_done)
+    const Attributes &forward_attributes, istio::mixerclient::DoneFunc on_done)
     : async_client_(std::move(async_client)),
       response_(response),
       on_done_(on_done),
@@ -40,6 +40,8 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
           absl::optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
   ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
             request.DebugString());
+
+  forward_attributes.SerializeToString(&forward_attributes_);
 }
 
 template <class RequestType, class ResponseType>
@@ -71,13 +73,15 @@ void GrpcTransport<RequestType, ResponseType>::Cancel() {
 template <class RequestType, class ResponseType>
 typename GrpcTransport<RequestType, ResponseType>::Func
 GrpcTransport<RequestType, ResponseType>::GetFunc(
-    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span) {
-  return [&factory, &parent_span](const RequestType &request,
-                                  ResponseType *response,
-                                  istio::mixerclient::DoneFunc on_done)
+    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
+    const Attributes &forward_attributes) {
+  return [&factory, &parent_span, &forward_attributes](
+             const RequestType &request, ResponseType *response,
+             istio::mixerclient::DoneFunc on_done)
              -> istio::mixerclient::CancelFunc {
     auto transport = new GrpcTransport<RequestType, ResponseType>(
-        factory.create(), request, response, parent_span, on_done);
+        factory.create(), request, response, parent_span, forward_attributes,
+        on_done);
     return [transport]() { transport->Cancel(); };
   };
 }
@@ -102,9 +106,11 @@ const google::protobuf::MethodDescriptor &ReportTransport::descriptor() {
 
 // explicitly instantiate CheckTransport and ReportTransport
 template CheckTransport::Func CheckTransport::GetFunc(
-    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span);
+    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
+    const Attributes &forward_attributes);
 template ReportTransport::Func ReportTransport::GetFunc(
-    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span);
+    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
+    const Attributes &forward_attributes);
 
 }  // namespace Utils
 }  // namespace Envoy
