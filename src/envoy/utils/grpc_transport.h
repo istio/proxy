@@ -57,7 +57,9 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
     metadata.Host()->value("mixer", 5);
 
     HeaderUpdate header_update_(&metadata);
-    header_update_.AddIstioAttributes(forward_attributes_);
+    std::string serialized_attributes;
+    forward_attributes_.SerializeToString(&serialized_attributes);
+    header_update_.AddIstioAttributes(serialized_attributes);
   }
 
   void onSuccess(std::unique_ptr<ResponseType>&& response,
@@ -73,9 +75,9 @@ class GrpcTransport : public Grpc::TypedAsyncRequestCallbacks<ResponseType>,
 
   Grpc::AsyncClientPtr async_client_;
   ResponseType* response_;
+  const Attributes& forward_attributes_;
   ::istio::mixerclient::DoneFunc on_done_;
   Grpc::AsyncRequest* request_{};
-  std::string forward_attributes_;
 };
 
 typedef GrpcTransport<istio::mixer::v1::CheckRequest,

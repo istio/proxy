@@ -34,14 +34,13 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
     const Attributes &forward_attributes, istio::mixerclient::DoneFunc on_done)
     : async_client_(std::move(async_client)),
       response_(response),
+      forward_attributes_(forward_attributes),
       on_done_(on_done),
       request_(async_client_->send(
           descriptor(), request, *this, parent_span,
           absl::optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
   ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
             request.DebugString());
-
-  forward_attributes.SerializeToString(&forward_attributes_);
 }
 
 template <class RequestType, class ResponseType>
