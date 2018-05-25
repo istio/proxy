@@ -14,9 +14,11 @@
  */
 #include "src/envoy/utils/grpc_transport.h"
 #include "absl/types/optional.h"
+#include "src/envoy/utils/header_update.h"
 
 using ::google::protobuf::util::Status;
 using StatusCode = ::google::protobuf::util::error::Code;
+using ::istio::mixer::v1::Attributes;
 
 namespace Envoy {
 namespace Utils {
@@ -41,6 +43,22 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
           absl::optional<std::chrono::milliseconds>(kGrpcRequestTimeoutMs))) {
   ENVOY_LOG(debug, "Sending {} request: {}", descriptor().name(),
             request.DebugString());
+}
+
+template <class RequestType, class ResponseType>
+void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
+    Http::HeaderMap &metadata) {
+  // We generate cluster name contains invalid characters, so override the
+  // authority header temorarily until it can be specified via CDS.
+  // See https://github.com/envoyproxy/envoy/issues/3297 for details.
+  metadata.Host()->value("mixer", 5);
+
+  if (!forward_attributes_.attributes().empty()) {
+    HeaderUpdate header_update_(&metadata);
+    std::string serialized_attributes;
+    forward_attributes_.SerializeToString(&serialized_attributes);
+    header_update_.AddIstioAttributes(serialized_attributes);
+  }
 }
 
 template <class RequestType, class ResponseType>
