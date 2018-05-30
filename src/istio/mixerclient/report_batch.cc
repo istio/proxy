@@ -42,6 +42,7 @@ ReportBatch::~ReportBatch() {
 }
 
 void ReportBatch::Report(const Attributes& request) {
+  std::lock_guard<std::mutex> lock(mutex_);
   ++total_report_calls_;
   if (!batch_compressor_) {
     batch_compressor_ = compressor_.CreateBatchCompressor();
