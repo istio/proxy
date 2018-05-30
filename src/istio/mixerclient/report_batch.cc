@@ -38,7 +38,7 @@ ReportBatch::ReportBatch(const ReportOptions& options,
 
 ReportBatch::~ReportBatch() {
   // No to flush batched report in the destructor. At this time
-  // Transport may be gone, may not be used.
+  // Transport may be gone, should not be used.
 }
 
 void ReportBatch::Report(const Attributes& request) {
