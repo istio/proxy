@@ -70,6 +70,8 @@ CancelFunc MixerClientImpl::Check(
     return nullptr;
   }
 
+  check_response_info.route_directive = check_result->route_directive();
+
   if (!quotas.empty()) {
     ++total_quota_calls_;
   }

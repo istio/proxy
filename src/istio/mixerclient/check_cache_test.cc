@@ -49,16 +49,16 @@ class CheckCacheTest : public ::testing::Test {
     CheckResponse ok_response;
     ok_response.mutable_precondition()->set_valid_use_count(1000);
     // Just to calculate signature
-    EXPECT_ERROR_CODE(Code::NOT_FOUND, cache_->Check(attributes_, FakeTime(0)));
+    EXPECT_ERROR_CODE(Code::NOT_FOUND, cache_->Check(attributes_, FakeTime(0), nullptr));
     // set to the cache
     EXPECT_OK(cache_->CacheResponse(attributes_, ok_response, FakeTime(0)));
 
     // Still not_found, so cache is disabled.
-    EXPECT_ERROR_CODE(Code::NOT_FOUND, cache_->Check(attributes_, FakeTime(0)));
+    EXPECT_ERROR_CODE(Code::NOT_FOUND, cache_->Check(attributes_, FakeTime(0), nullptr));
   }
 
   Status Check(const Attributes& request, time_point<system_clock> time_now) {
-    return cache_->Check(request, time_now);
+    return cache_->Check(request, time_now, nullptr);
   }
   Status CacheResponse(const Attributes& attributes,
                        const ::istio::mixer::v1::CheckResponse& response,
