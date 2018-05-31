@@ -24,6 +24,7 @@
 
 using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::config::client::ServiceConfig;
+using ::istio::mixerclient::CheckResponseInfo;
 
 namespace Envoy {
 namespace Http {
@@ -135,7 +136,9 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   cancel_check_ = handler_->Check(
       &check_data, &header_update,
       control_.GetCheckTransport(decoder_callbacks_->activeSpan()),
-      [this](const Status& status) { completeCheck(status); });
+      [this](const CheckResponseInfo& info) {
+        completeCheck(info.response_status);
+      });
   initiating_call_ = false;
 
   if (state_ == Complete) {
