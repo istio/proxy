@@ -56,7 +56,9 @@ class CheckCache {
 
     ::google::protobuf::util::Status status() const { return status_; }
 
-    ::istio::mixer::v1::RouteDirective route_directive() const { return route_directive_; }
+    ::istio::mixer::v1::RouteDirective route_directive() const {
+      return route_directive_;
+    }
 
     void SetResponse(const ::google::protobuf::util::Status& status,
                      const ::istio::mixer::v1::Attributes& attributes,
@@ -95,7 +97,8 @@ class CheckCache {
   // If the check could not be handled by the cache, returns NOT_FOUND,
   // caller has to send the request to mixer.
   ::google::protobuf::util::Status Check(
-      const ::istio::mixer::v1::Attributes& request, Tick time_now, CheckResult* result);
+      const ::istio::mixer::v1::Attributes& request, Tick time_now,
+      CheckResult* result);
 
   // Caches a response from a remote mixer call.
   // Return the converted status from response.
@@ -130,7 +133,9 @@ class CheckCache {
     ::google::protobuf::util::Status status() const { return status_; }
 
     // getter for the route directive
-    ::istio::mixer::v1::RouteDirective route_directive() const { return route_directive_; }
+    ::istio::mixer::v1::RouteDirective route_directive() const {
+      return route_directive_;
+    }
 
    private:
     // To the parent cache object.

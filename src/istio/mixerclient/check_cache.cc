@@ -96,7 +96,8 @@ void CheckCache::Check(const Attributes &attributes, CheckResult *result) {
   };
 }
 
-Status CheckCache::Check(const Attributes &attributes, Tick time_now, CheckResult *result) {
+Status CheckCache::Check(const Attributes &attributes, Tick time_now,
+                         CheckResult *result) {
   if (!cache_) {
     // By returning NOT_FOUND, caller will send request to server.
     return Status(Code::NOT_FOUND, "");

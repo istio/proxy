@@ -35,7 +35,8 @@ struct CheckResponseInfo {
       ::google::protobuf::util::Status::UNKNOWN};
 
   // Routing directive (applicable if the status is OK)
-  ::istio::mixer::v1::RouteDirective route_directive{::istio::mixer::v1::RouteDirective::default_instance()};
+  ::istio::mixer::v1::RouteDirective route_directive{
+      ::istio::mixer::v1::RouteDirective::default_instance()};
 };
 
 }  // namespace mixerclient
