@@ -64,13 +64,12 @@ CancelFunc MixerClientImpl::Check(
   CheckResponseInfo check_response_info;
   check_response_info.is_check_cache_hit = check_result->IsCacheHit();
   check_response_info.response_status = check_result->status();
+  check_response_info.route_directive = check_result->route_directive();
 
   if (check_result->IsCacheHit() && !check_result->status().ok()) {
     on_done(check_response_info);
     return nullptr;
   }
-
-  check_response_info.route_directive = check_result->route_directive();
 
   if (!quotas.empty()) {
     ++total_quota_calls_;
