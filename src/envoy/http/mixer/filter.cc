@@ -166,7 +166,7 @@ FilterTrailersStatus Filter::decodeTrailers(HeaderMap& trailers) {
 }
 
 FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
-  ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
+  ENVOY_LOG(debug, "Called Mixer::Filter : {} {}", __func__, state_);
   if (state_ == Calling) {
     return FilterHeadersStatus::StopIteration;
   }
@@ -175,13 +175,14 @@ FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
     for (auto const iter : route_directive_.update_response_headers()) {
       switch (iter.operation()) {
         case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
-          headers.setReference(LowerCaseString(iter.name()), iter.value());
+          headers.remove(LowerCaseString(iter.name()));
+          headers.addCopy(LowerCaseString(iter.name()), iter.value());
           break;
         case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
           headers.remove(LowerCaseString(iter.name()));
           break;
         case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
-          headers.addReference(LowerCaseString(iter.name()), iter.value());
+          headers.addCopy(LowerCaseString(iter.name()), iter.value());
           break;
         default:
           PANIC("unreachable header operation");
@@ -220,7 +221,6 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
   // Remove Istio authentication header after Check() is completed
   if (nullptr != headers_) {
     Envoy::Utils::Authentication::ClearResultInHeader(headers_);
-    headers_ = nullptr;
   }
 
   // This stream has been reset, abort the callback.
@@ -253,22 +253,24 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
   for (auto const iter : route_directive_.update_request_headers()) {
     switch (iter.operation()) {
       case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
-        headers_->setReference(LowerCaseString(iter.name()), iter.value());
+        headers_->remove(LowerCaseString(iter.name()));
+        headers_->addCopy(LowerCaseString(iter.name()), iter.value());
         break;
       case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
         headers_->remove(LowerCaseString(iter.name()));
         break;
       case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
-        headers_->addReference(LowerCaseString(iter.name()), iter.value());
+        headers_->addCopy(LowerCaseString(iter.name()), iter.value());
         break;
       default:
         PANIC("unreachable header operation");
     }
   }
 
+  headers_ = nullptr;
+
   if (!initiating_call_) {
     decoder_callbacks_->continueDecoding();
-    encoder_callbacks_->continueEncoding();
   }
 }
 
