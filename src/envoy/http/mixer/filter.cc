@@ -136,9 +136,7 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   cancel_check_ = handler_->Check(
       &check_data, &header_update,
       control_.GetCheckTransport(decoder_callbacks_->activeSpan()),
-      [this](const CheckResponseInfo& info) {
-        completeCheck(info.response_status);
-      });
+      [this](const CheckResponseInfo& info) { completeCheck(info); });
   initiating_call_ = false;
 
   if (state_ == Complete) {
@@ -167,13 +165,56 @@ FilterTrailersStatus Filter::decodeTrailers(HeaderMap& trailers) {
   return FilterTrailersStatus::Continue;
 }
 
+FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
+  ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
+  if (state_ == Calling) {
+    return FilterHeadersStatus::StopIteration;
+  }
+  if (state_ == Complete) {
+    // handle response header operations
+    for (auto const iter : route_directive_.update_response_headers()) {
+      switch (iter.operation()) {
+        case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
+          headers.setReference(LowerCaseString(iter.name()), iter.value());
+          break;
+        case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
+          headers.remove(LowerCaseString(iter.name()));
+          break;
+        case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
+          headers.addReference(LowerCaseString(iter.name()), iter.value());
+          break;
+        default:
+          PANIC("unreachable header operation");
+      }
+    }
+  }
+  return FilterHeadersStatus::Continue;
+}
+
+FilterDataStatus Filter::encodeData(Buffer::Instance&, bool) {
+  ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
+  if (state_ == Calling) {
+    return FilterDataStatus::StopIterationAndWatermark;
+  }
+  return FilterDataStatus::Continue;
+}
+
+FilterTrailersStatus Filter::encodeTrailers(HeaderMap&) {
+  ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
+  if (state_ == Calling) {
+    return FilterTrailersStatus::StopIteration;
+  }
+  return FilterTrailersStatus::Continue;
+}
+
 void Filter::setDecoderFilterCallbacks(
     StreamDecoderFilterCallbacks& callbacks) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
   decoder_callbacks_ = &callbacks;
 }
 
-void Filter::completeCheck(const Status& status) {
+void Filter::completeCheck(const CheckResponseInfo& info) {
+  auto status = info.response_status;
   ENVOY_LOG(debug, "Called Mixer::Filter : check complete {}",
             status.ToString());
   // Remove Istio authentication header after Check() is completed
@@ -186,7 +227,8 @@ void Filter::completeCheck(const Status& status) {
   if (state_ == Responded) {
     return;
   }
-  if (!status.ok() && state_ != Responded) {
+
+  if (!status.ok()) {
     state_ = Responded;
     int status_code = ::istio::utils::StatusHttpCode(status.error_code());
     decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
@@ -195,8 +237,38 @@ void Filter::completeCheck(const Status& status) {
   }
 
   state_ = Complete;
+  route_directive_ = info.route_directive;
+
+  // handle direct response from the route directive
+  if (status.ok() && route_directive_.direct_response_code() != 0) {
+    ENVOY_LOG(debug, "Mixer::Filter direct response");
+    state_ = Responded;
+    decoder_callbacks_->sendLocalReply(
+        Code(route_directive_.direct_response_code()),
+        route_directive_.direct_response_body(), nullptr);
+    return;
+  }
+
+  // handle request header operations
+  for (auto const iter : route_directive_.update_request_headers()) {
+    switch (iter.operation()) {
+      case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
+        headers_->setReference(LowerCaseString(iter.name()), iter.value());
+        break;
+      case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
+        headers_->remove(LowerCaseString(iter.name()));
+        break;
+      case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
+        headers_->addReference(LowerCaseString(iter.name()), iter.value());
+        break;
+      default:
+        PANIC("unreachable header operation");
+    }
+  }
+
   if (!initiating_call_) {
     decoder_callbacks_->continueDecoding();
+    encoder_callbacks_->continueEncoding();
   }
 }
 
