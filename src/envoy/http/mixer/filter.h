@@ -56,10 +56,7 @@ class Filter : public StreamFilter,
   FilterHeadersStatus encodeHeaders(HeaderMap& headers, bool) override;
   FilterDataStatus encodeData(Buffer::Instance&, bool) override;
   FilterTrailersStatus encodeTrailers(HeaderMap&) override;
-  void setEncoderFilterCallbacks(
-      StreamEncoderFilterCallbacks& callbacks) override {
-    encoder_callbacks_ = &callbacks;
-  }
+  void setEncoderFilterCallbacks(StreamEncoderFilterCallbacks&) override {}
 
   // This is the callback function when Check is done.
   void completeCheck(const ::istio::mixerclient::CheckResponseInfo& info);
@@ -75,6 +72,11 @@ class Filter : public StreamFilter,
   void ReadPerRouteConfig(
       const Router::RouteEntry* entry,
       ::istio::control::http::Controller::PerRouteConfig* config);
+
+  // Update header maps
+  void UpdateHeaders(HeaderMap* headers,
+                     const ::google::protobuf::RepeatedPtrField<
+                         ::istio::mixer::v1::HeaderOperation>& operations);
 
   // The control object.
   Control& control_;
@@ -97,9 +99,6 @@ class Filter : public StreamFilter,
 
   // The stream decoder filter callback.
   StreamDecoderFilterCallbacks* decoder_callbacks_{nullptr};
-
-  // The stream encoder filter callback.
-  StreamEncoderFilterCallbacks* encoder_callbacks_{nullptr};
 
   // Returned directive
   ::istio::mixer::v1::RouteDirective route_directive_{

@@ -165,29 +165,33 @@ FilterTrailersStatus Filter::decodeTrailers(HeaderMap& trailers) {
   return FilterTrailersStatus::Continue;
 }
 
+void Filter::UpdateHeaders(
+    HeaderMap* headers, const ::google::protobuf::RepeatedPtrField<
+                            ::istio::mixer::v1::HeaderOperation>& operations) {
+  for (auto const iter : operations) {
+    switch (iter.operation()) {
+      case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
+        headers->remove(LowerCaseString(iter.name()));
+        headers->addCopy(LowerCaseString(iter.name()), iter.value());
+        break;
+      case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
+        headers->remove(LowerCaseString(iter.name()));
+        break;
+      case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
+        headers->addCopy(LowerCaseString(iter.name()), iter.value());
+        break;
+      default:
+        PANIC("unreachable header operation");
+    }
+  }
+}
+
 FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {} {}", __func__, state_);
-  if (state_ == Calling) {
-    return FilterHeadersStatus::StopIteration;
-  }
+  ASSERT(state_ == Complete || state_ == Responded);
   if (state_ == Complete) {
     // handle response header operations
-    for (auto const iter : route_directive_.update_response_headers()) {
-      switch (iter.operation()) {
-        case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
-          headers.remove(LowerCaseString(iter.name()));
-          headers.addCopy(LowerCaseString(iter.name()), iter.value());
-          break;
-        case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
-          headers.remove(LowerCaseString(iter.name()));
-          break;
-        case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
-          headers.addCopy(LowerCaseString(iter.name()), iter.value());
-          break;
-        default:
-          PANIC("unreachable header operation");
-      }
-    }
+    UpdateHeaders(&headers, route_directive_.update_response_headers());
   }
   return FilterHeadersStatus::Continue;
 }
@@ -250,23 +254,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
   }
 
   // handle request header operations
-  for (auto const iter : route_directive_.update_request_headers()) {
-    switch (iter.operation()) {
-      case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
-        headers_->remove(LowerCaseString(iter.name()));
-        headers_->addCopy(LowerCaseString(iter.name()), iter.value());
-        break;
-      case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
-        headers_->remove(LowerCaseString(iter.name()));
-        break;
-      case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
-        headers_->addCopy(LowerCaseString(iter.name()), iter.value());
-        break;
-      default:
-        PANIC("unreachable header operation");
-    }
-  }
-
+  UpdateHeaders(headers_, route_directive_.update_request_headers());
   headers_ = nullptr;
 
   if (!initiating_call_) {
