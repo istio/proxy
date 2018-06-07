@@ -74,7 +74,7 @@ class Filter : public StreamFilter,
       ::istio::control::http::Controller::PerRouteConfig* config);
 
   // Update header maps
-  void UpdateHeaders(HeaderMap* headers,
+  void UpdateHeaders(HeaderMap& headers,
                      const ::google::protobuf::RepeatedPtrField<
                          ::istio::mixer::v1::HeaderOperation>& operations);
 

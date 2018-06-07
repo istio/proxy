@@ -166,19 +166,19 @@ FilterTrailersStatus Filter::decodeTrailers(HeaderMap& trailers) {
 }
 
 void Filter::UpdateHeaders(
-    HeaderMap* headers, const ::google::protobuf::RepeatedPtrField<
+    HeaderMap& headers, const ::google::protobuf::RepeatedPtrField<
                             ::istio::mixer::v1::HeaderOperation>& operations) {
   for (auto const iter : operations) {
     switch (iter.operation()) {
       case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
-        headers->remove(LowerCaseString(iter.name()));
-        headers->addCopy(LowerCaseString(iter.name()), iter.value());
+        headers.remove(LowerCaseString(iter.name()));
+        headers.addCopy(LowerCaseString(iter.name()), iter.value());
         break;
       case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
-        headers->remove(LowerCaseString(iter.name()));
+        headers.remove(LowerCaseString(iter.name()));
         break;
       case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
-        headers->addCopy(LowerCaseString(iter.name()), iter.value());
+        headers.addCopy(LowerCaseString(iter.name()), iter.value());
         break;
       default:
         PANIC("unreachable header operation");
@@ -191,7 +191,7 @@ FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
   ASSERT(state_ == Complete || state_ == Responded);
   if (state_ == Complete) {
     // handle response header operations
-    UpdateHeaders(&headers, route_directive_.response_header_operations());
+    UpdateHeaders(headers, route_directive_.response_header_operations());
   }
   return FilterHeadersStatus::Continue;
 }
@@ -245,13 +245,17 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     state_ = Responded;
     decoder_callbacks_->sendLocalReply(
         Code(route_directive_.direct_response_code()),
-        route_directive_.direct_response_body(), nullptr);
+        route_directive_.direct_response_body(), [this](HeaderMap& headers) {
+          UpdateHeaders(headers, route_directive_.response_header_operations());
+        });
     return;
   }
 
   // handle request header operations
-  UpdateHeaders(headers_, route_directive_.request_header_operations());
-  headers_ = nullptr;
+  if (nullptr != headers_) {
+    UpdateHeaders(*headers_, route_directive_.request_header_operations());
+    headers_ = nullptr;
+  }
 
   if (!initiating_call_) {
     decoder_callbacks_->continueDecoding();
