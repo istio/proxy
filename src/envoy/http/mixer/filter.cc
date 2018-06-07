@@ -198,17 +198,13 @@ FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
 
 FilterDataStatus Filter::encodeData(Buffer::Instance&, bool) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
-  if (state_ == Calling) {
-    return FilterDataStatus::StopIterationAndWatermark;
-  }
+  ASSERT(state_ == Complete || state_ == Responded);
   return FilterDataStatus::Continue;
 }
 
 FilterTrailersStatus Filter::encodeTrailers(HeaderMap&) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
-  if (state_ == Calling) {
-    return FilterTrailersStatus::StopIteration;
-  }
+  ASSERT(state_ == Complete || state_ == Responded);
   return FilterTrailersStatus::Continue;
 }
 

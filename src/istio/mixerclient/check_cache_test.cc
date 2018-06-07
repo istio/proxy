@@ -133,6 +133,9 @@ TEST_F(CheckCacheTest, TestCheckResult) {
 
   CheckResponse ok_response;
   ok_response.mutable_precondition()->set_valid_use_count(1000);
+  ok_response.mutable_precondition()
+      ->mutable_route_directive()
+      ->set_direct_response_code(302);
   result.SetResponse(Status::OK, attributes_, ok_response);
   EXPECT_OK(result.status());
 
@@ -141,6 +144,7 @@ TEST_F(CheckCacheTest, TestCheckResult) {
     cache_->Check(attributes_, &result);
     EXPECT_TRUE(result.IsCacheHit());
     EXPECT_OK(result.status());
+    EXPECT_EQ(result.route_directive().direct_response_code(), 302);
   }
 }
 
