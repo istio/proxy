@@ -113,7 +113,7 @@ cc_library(
             actual = "@googletest_git//:googletest_prod",
         )
 
-ISTIO_API = "629185f0e609420e10080a6e72836273b4a42b07"
+ISTIO_API = "c747495e9419606fa1febe210a7626e177b1935c"
 
 def mixerapi_repositories(bind=True):
     BUILD = """
@@ -202,7 +202,7 @@ filegroup(
         name = "mixerapi_git",
         build_file_content = BUILD,
         commit = ISTIO_API,
-        remote = "https://github.com/qiwzhang/api.git",
+        remote = "https://github.com/istio/api.git",
     )
     if bind:
         native.bind(
