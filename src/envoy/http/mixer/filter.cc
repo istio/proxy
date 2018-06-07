@@ -191,7 +191,7 @@ FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
   ASSERT(state_ == Complete || state_ == Responded);
   if (state_ == Complete) {
     // handle response header operations
-    UpdateHeaders(&headers, route_directive_.update_response_headers());
+    UpdateHeaders(&headers, route_directive_.response_header_operations());
   }
   return FilterHeadersStatus::Continue;
 }
@@ -254,7 +254,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
   }
 
   // handle request header operations
-  UpdateHeaders(headers_, route_directive_.update_request_headers());
+  UpdateHeaders(headers_, route_directive_.request_header_operations());
   headers_ = nullptr;
 
   if (!initiating_call_) {
