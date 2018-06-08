@@ -122,6 +122,8 @@ Status CheckCache::Check(const Attributes &attributes, Tick time_now,
         result->route_directive_ = elem->route_directive();
       }
       return elem->status();
+    } else {
+      return Status(Code::NOT_FOUND, "");
     }
   }
 
