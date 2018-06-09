@@ -31,6 +31,7 @@ const std::set<std::string> ResponseHeaderExclusives = {};
 
 class ReportData : public ::istio::control::http::ReportData {
   const HeaderMap *headers_;
+  const HeaderMap *trailers_;
   const RequestInfo::RequestInfo &info_;
   uint64_t response_total_size_;
   uint64_t request_total_size_;
@@ -39,6 +40,7 @@ class ReportData : public ::istio::control::http::ReportData {
   ReportData(const HeaderMap *headers, const HeaderMap *response_trailers,
              const RequestInfo::RequestInfo &info, uint64_t request_total_size)
       : headers_(headers),
+        trailers_(response_trailers),
         info_(info),
         response_total_size_(info.bytesSent()),
         request_total_size_(request_total_size) {
@@ -51,10 +53,14 @@ class ReportData : public ::istio::control::http::ReportData {
   }
 
   std::map<std::string, std::string> GetResponseHeaders() const override {
+    std::map<std::string, std::string> header_map;
     if (headers_) {
-      return Utils::ExtractHeaders(*headers_, ResponseHeaderExclusives);
+      Utils::ExtractHeaders(*headers_, ResponseHeaderExclusives, header_map);
     }
-    return std::map<std::string, std::string>();
+    if (trailers_) {
+      Utils::ExtractHeaders(*trailers_, ResponseHeaderExclusives, header_map);
+    }
+    return header_map;
   }
 
   void GetReportInfo(
@@ -83,6 +89,19 @@ class ReportData : public ::istio::control::http::ReportData {
       return Utils::GetDestinationUID(info_.upstreamHost()->metadata(), uid);
     }
     return false;
+  }
+
+  bool GetGrpcStatus(GrpcStatus *status) const override {
+    if (trailers_ == nullptr || !trailers_->GrpcStatus()) {
+      return false;
+    }
+    status->status = std::string(trailers_->GrpcStatus()->value().c_str(),
+                                 trailers_->GrpcStatus()->value().size());
+    if (trailers_->GrpcMessage()) {
+      status->message = std::string(trailers_->GrpcMessage()->value().c_str(),
+                                    trailers_->GrpcMessage()->value().size());
+    }
+    return true;
   }
 };
 
