@@ -27,6 +27,20 @@ namespace {
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
 
+bool ExtractGrpcStatus(const HeaderMap *headers,
+                       ::istio::control::http::ReportData::GrpcStatus *status) {
+  if (headers != nullptr && headers->GrpcStatus()) {
+    status->status = std::string(headers->GrpcStatus()->value().c_str(),
+                                 headers->GrpcStatus()->value().size());
+    if (headers->GrpcMessage()) {
+      status->message = std::string(headers->GrpcMessage()->value().c_str(),
+                                    headers->GrpcMessage()->value().size());
+    }
+    return true;
+  }
+  return false;
+}
+
 }  // namespace
 
 class ReportData : public ::istio::control::http::ReportData {
@@ -92,16 +106,10 @@ class ReportData : public ::istio::control::http::ReportData {
   }
 
   bool GetGrpcStatus(GrpcStatus *status) const override {
-    if (trailers_ == nullptr || !trailers_->GrpcStatus()) {
-      return false;
-    }
-    status->status = std::string(trailers_->GrpcStatus()->value().c_str(),
-                                 trailers_->GrpcStatus()->value().size());
-    if (trailers_->GrpcMessage()) {
-      status->message = std::string(trailers_->GrpcMessage()->value().c_str(),
-                                    trailers_->GrpcMessage()->value().size());
-    }
-    return true;
+    // Check trailer first.
+    // If not response body, grpc-status is in response headers.
+    return ExtractGrpcStatus(trailers_, status) ||
+           ExtractGrpcStatus(headers_, status);
   }
 };
 
