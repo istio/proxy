@@ -29,12 +29,6 @@ bind(
     actual = "//external:ssl",
 )
 
-git_repository(
-    name = "com_github_grpc_grpc",
-    remote = "https://github.com/grpc/grpc.git",
-    commit = "bec3b5ada2c5e5d782dff0b7b5018df646b65cb0",  # May 15, 2018
-)
-
 # When updating envoy sha manually please update the sha in istio.deps file also
 ENVOY_SHA = "6d3d5d72986c2131a40268467c3ddcc57ef7bbc7"
 
