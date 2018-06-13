@@ -33,20 +33,6 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  [this](::istio::mixerclient::Statistics* stat) -> bool {
                    return GetStats(stat);
                  }) {
-  ::istio::control::http::Controller::Options options(config_.config_pb());
-
-  Utils::CreateEnvironment(
-      dispatcher, random, *check_client_factory_, *report_client_factory_,
-      &options.env,
-      config_.config_pb().transport().attributes_for_mixer_proxy());
-
-  controller_ = ::istio::control::http::Controller::Create(options);
-}
-
-Utils::CheckTransport::Func Control::GetCheckTransport(
-    Tracing::Span& parent_span) {
-  std::string serialized_forward_attributes;
-
   if (!config_.config_pb()
            .transport()
            .attributes_for_mixer_proxy()
@@ -55,11 +41,23 @@ Utils::CheckTransport::Func Control::GetCheckTransport(
     config_.config_pb()
         .transport()
         .attributes_for_mixer_proxy()
-        .SerializeToString(&serialized_forward_attributes);
+        .SerializeToString(&serialized_forward_attributes_);
   }
 
+  ::istio::control::http::Controller::Options options(config_.config_pb());
+
+  Utils::CreateEnvironment(
+      dispatcher, random, *check_client_factory_, *report_client_factory_,
+      serialized_forward_attributes_,
+      &options.env);
+
+  controller_ = ::istio::control::http::Controller::Create(options);
+}
+
+Utils::CheckTransport::Func Control::GetCheckTransport(
+    Tracing::Span& parent_span) {
   return Utils::CheckTransport::GetFunc(*check_client_factory_, parent_span,
-                                        serialized_forward_attributes);
+                                        serialized_forward_attributes_);
 }
 
 // Call controller to get statistics.
