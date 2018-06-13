@@ -45,9 +45,21 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
 
 Utils::CheckTransport::Func Control::GetCheckTransport(
     Tracing::Span& parent_span) {
-  return Utils::CheckTransport::GetFunc(
-      *check_client_factory_, parent_span,
-      config_.config_pb().transport().attributes_for_mixer_proxy());
+  std::string serialized_forward_attributes;
+
+  if (!config_.config_pb()
+           .transport()
+           .attributes_for_mixer_proxy()
+           .attributes()
+           .empty()) {
+    config_.config_pb()
+        .transport()
+        .attributes_for_mixer_proxy()
+        .SerializeToString(&serialized_forward_attributes);
+  }
+
+  return Utils::CheckTransport::GetFunc(*check_client_factory_, parent_span,
+                                        serialized_forward_attributes);
 }
 
 // Call controller to get statistics.
