@@ -46,10 +46,9 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
 
   ::istio::control::http::Controller::Options options(config_.config_pb());
 
-  Utils::CreateEnvironment(
-      dispatcher, random, *check_client_factory_, *report_client_factory_,
-      serialized_forward_attributes_,
-      &options.env);
+  Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
+                           *report_client_factory_,
+                           serialized_forward_attributes_, &options.env);
 
   controller_ = ::istio::control::http::Controller::Create(options);
 }

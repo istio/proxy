@@ -60,7 +60,7 @@ void CreateEnvironment(Event::Dispatcher &dispatcher,
                        Runtime::RandomGenerator &random,
                        Grpc::AsyncClientFactory &check_client_factory,
                        Grpc::AsyncClientFactory &report_client_factory,
-std::string serialized_forward_attributes,
+                       std::string serialized_forward_attributes,
                        ::istio::mixerclient::Environment *env) {
   env->check_transport = CheckTransport::GetFunc(check_client_factory,
                                                  Tracing::NullSpan::instance(),
