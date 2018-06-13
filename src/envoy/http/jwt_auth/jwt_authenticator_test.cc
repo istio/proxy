@@ -22,9 +22,9 @@
 
 using ::istio::envoy::config::filter::http::jwt_auth::v2alpha1::
     JwtAuthentication;
+using ::testing::_;
 using ::testing::Invoke;
 using ::testing::NiceMock;
-using ::testing::_;
 
 namespace Envoy {
 namespace Http {

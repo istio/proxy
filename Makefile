@@ -17,30 +17,42 @@ TOP := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SHELL := /bin/bash
 LOCAL_ARTIFACTS_DIR ?= $(abspath artifacts)
 ARTIFACTS_DIR ?= $(LOCAL_ARTIFACTS_DIR)
-BAZEL_STARTUP_ARGS ?= --batch
+BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
 BAZEL_TEST_ARGS ?=
 HUB ?=
 TAG ?=
+ifeq "$(origin CC)" "default"
+CC := clang-6.0
+endif
+ifeq "$(origin CXX)" "default"
+CXX := clang++-6.0
+endif
 
 build:
-	@bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //...
+	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //...
+	@bazel shutdown
 
 # Build only envoy - fast
 build_envoy:
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
+	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
+	@bazel shutdown
 
 clean:
 	@bazel clean
+	@bazel shutdown
 
 test:
-	bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
+	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
+	@bazel shutdown
 
 test_asan:
-	CC=clang-5.0 CXX=clang++-5.0 bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan //...
+	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan //...
+	@bazel shutdown
 
 test_tsan:
-	CC=clang-5.0 CXX=clang++-5.0 bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan //...
+	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan //...
+	@bazel shutdown
 
 check:
 	@script/check-license-headers
@@ -50,7 +62,8 @@ artifacts: build
 	@script/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
 
 deb:
-	@bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
+	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
+	@bazel shutdown
 
 
 .PHONY: build clean test check artifacts

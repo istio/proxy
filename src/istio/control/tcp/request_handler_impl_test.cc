@@ -31,8 +31,8 @@ using ::istio::mixerclient::MixerClient;
 using ::istio::mixerclient::TransportCheckFunc;
 using ::istio::quota_config::Requirement;
 
-using ::testing::Invoke;
 using ::testing::_;
+using ::testing::Invoke;
 
 namespace istio {
 namespace control {
