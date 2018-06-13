@@ -60,7 +60,8 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
       result_.set_principal(result_.peer_user());
       return;
     case iaapi::PrincipalBinding::USE_ORIGIN:
-      ENVOY_LOG(debug, "Set principal from origin: {}", result_.origin().user());
+      ENVOY_LOG(debug, "Set principal from origin: {}",
+                result_.origin().user());
       result_.set_principal(result_.origin().user());
       return;
     default:

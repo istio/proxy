@@ -43,7 +43,8 @@ void AuthenticationFilter::onDestroy() {
 
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
                                                         bool) {
-  ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}", filter_config_.DebugString());
+  ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
+            filter_config_.DebugString());
   state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
