@@ -91,7 +91,7 @@ typename GrpcTransport<RequestType, ResponseType>::Func
 GrpcTransport<RequestType, ResponseType>::GetFunc(
     Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
     std::string serialized_forward_attributes) {
-  return [&factory, &parent_span, &serialized_forward_attributes](
+  return [&factory, &parent_span, serialized_forward_attributes](
              const RequestType &request, ResponseType *response,
              istio::mixerclient::DoneFunc on_done)
              -> istio::mixerclient::CancelFunc {
