@@ -36,7 +36,6 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  config_.config_pb().transport().stats_update_interval(),
                  [this](Statistics* stat) -> bool { return GetStats(stat); }),
       uuid_(uuid) {
-  std::string serialized_forward_attributes;
   if (!config_.config_pb()
            .transport()
            .attributes_for_mixer_proxy()
@@ -45,13 +44,13 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
     config_.config_pb()
         .transport()
         .attributes_for_mixer_proxy()
-        .SerializeToString(&serialized_forward_attributes);
+        .SerializeToString(&serialized_forward_attributes_);
   }
   ::istio::control::tcp::Controller::Options options(config_.config_pb());
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
                            *report_client_factory_,
-                           serialized_forward_attributes, &options.env);
+                           serialized_forward_attributes_, &options.env);
 
   controller_ = ::istio::control::tcp::Controller::Create(options);
 }

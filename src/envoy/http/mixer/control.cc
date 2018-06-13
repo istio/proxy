@@ -33,16 +33,8 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  [this](::istio::mixerclient::Statistics* stat) -> bool {
                    return GetStats(stat);
                  }) {
-  if (!config_.config_pb()
-           .transport()
-           .attributes_for_mixer_proxy()
-           .attributes()
-           .empty()) {
-    config_.config_pb()
-        .transport()
-        .attributes_for_mixer_proxy()
-        .SerializeToString(&serialized_forward_attributes_);
-  }
+  Utils::SerializeForwardedAttributes(config_.config_pb().transport(),
+                                      &serialized_forward_attributes_);
 
   ::istio::control::http::Controller::Options options(config_.config_pb());
 

@@ -33,7 +33,7 @@ template <class RequestType, class ResponseType>
 GrpcTransport<RequestType, ResponseType>::GrpcTransport(
     Grpc::AsyncClientPtr async_client, const RequestType &request,
     ResponseType *response, Tracing::Span &parent_span,
-    std::string serialized_forward_attributes,
+    const std::string &serialized_forward_attributes,
     istio::mixerclient::DoneFunc on_done)
     : async_client_(std::move(async_client)),
       response_(response),
@@ -90,8 +90,8 @@ template <class RequestType, class ResponseType>
 typename GrpcTransport<RequestType, ResponseType>::Func
 GrpcTransport<RequestType, ResponseType>::GetFunc(
     Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
-    std::string serialized_forward_attributes) {
-  return [&factory, &parent_span, serialized_forward_attributes](
+    const std::string &serialized_forward_attributes) {
+  return [&factory, &parent_span, &serialized_forward_attributes](
              const RequestType &request, ResponseType *response,
              istio::mixerclient::DoneFunc on_done)
              -> istio::mixerclient::CancelFunc {
@@ -123,10 +123,10 @@ const google::protobuf::MethodDescriptor &ReportTransport::descriptor() {
 // explicitly instantiate CheckTransport and ReportTransport
 template CheckTransport::Func CheckTransport::GetFunc(
     Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
-    std::string serialized_forward_attributes);
+    const std::string &serialized_forward_attributes);
 template ReportTransport::Func ReportTransport::GetFunc(
     Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
-    std::string serialized_forward_attributes);
+    const std::string &serialized_forward_attributes);
 
 }  // namespace Utils
 }  // namespace Envoy
