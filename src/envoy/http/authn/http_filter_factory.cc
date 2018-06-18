@@ -57,10 +57,6 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
       const Protobuf::Message& proto_config, const std::string&,
       FactoryContext&) override {
     auto filter_config = dynamic_cast<const FilterConfig&>(proto_config);
-    ENVOY_LOG(error,
-              "jianfeih debug, AuthnFilterConfig::createFilterFactoryFromProto "
-              ": {}\n",
-              filter_config.DebugString());
     return createFilterFactory(filter_config);
   }
 
