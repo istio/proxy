@@ -57,8 +57,10 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
       const Protobuf::Message& proto_config, const std::string&,
       FactoryContext&) override {
     auto filter_config = dynamic_cast<const FilterConfig&>(proto_config);
-    ENVOY_LOG(error, "jianfeih debug, AuthnFilterConfig::createFilterFactoryFromProto : {}\n",
-      filter_config.DebugString());
+    ENVOY_LOG(error,
+              "jianfeih debug, AuthnFilterConfig::createFilterFactoryFromProto "
+              ": {}\n",
+              filter_config.DebugString());
     return createFilterFactory(filter_config);
   }
 
@@ -72,13 +74,15 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
  private:
   Http::FilterFactoryCb createFilterFactory(const FilterConfig& config_pb) {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
-    // Make it shared_ptr so that the object is still reachable when callback is invoked.
+    // Make it shared_ptr so that the object is still reachable when callback is
+    // invoked.
     auto filter_config = std::make_shared<FilterConfig>(config_pb);
-    return [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-      callbacks.addStreamDecoderFilter(
-          std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(
-              *filter_config));
-    };
+    return
+        [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+          callbacks.addStreamDecoderFilter(
+              std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(
+                  *filter_config));
+        };
   }
 };
 
