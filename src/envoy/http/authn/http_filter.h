@@ -31,8 +31,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
                              public Logger::Loggable<Logger::Id::filter> {
  public:
   AuthenticationFilter(
-      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-          config);
+      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig& config);
   ~AuthenticationFilter();
 
   // Http::StreamFilterBase
@@ -68,8 +67,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
  private:
   // Store the config.
-  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-      filter_config_;
+   istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig filter_config_;
 
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 
