@@ -166,8 +166,10 @@ TEST_F(AuthenticationFilterTest, IgnoreBothFail) {
   ASSERT_TRUE(
       Protobuf::TextFormat::ParseFromString(ingoreBothPolicy, &policy_));
   *filter_config_.mutable_policy() = policy_;
+  StrictMock<MockAuthenticationFilter> filter(filter_config_);
+  filter.setDecoderFilterCallbacks(decoder_callbacks_);
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-            filter_.decodeHeaders(request_headers_, true));
+            filter.decodeHeaders(request_headers_, true));
 }
 
 }  // namespace
