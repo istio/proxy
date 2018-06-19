@@ -72,6 +72,8 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
     // Make it shared_ptr so that the object is still reachable when callback is
     // invoked.
+    // TODO(incfly): add a test to simulate different config can be handled correctly
+    // similar to multiplexing on different port.
     auto filter_config = std::make_shared<FilterConfig>(config_pb);
     return
         [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {

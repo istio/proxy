@@ -68,7 +68,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
  private:
   // Store the config.
-  istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig
+  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
       filter_config_;
 
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
