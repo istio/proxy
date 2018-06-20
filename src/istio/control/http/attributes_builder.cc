@@ -29,6 +29,12 @@ namespace {
 // The gRPC content types.
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
+
+// Helper function to set a key/value pair into Struct.
+static void setKeyValue(::google::protobuf::Struct &data, std::string key,
+                        std::string value) {
+  (*data.mutable_fields())[key].set_string_value(value);
+}
 }  // namespace
 
 void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
@@ -58,6 +64,44 @@ void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
       builder.AddString(it.name, data);
     } else if (it.set_default) {
       builder.AddString(it.name, it.default_value);
+    }
+  }
+}
+
+void AttributesBuilder::SaveAuthAttributesToStruct(
+    const istio::authn::Result &result, ::google::protobuf::Struct &data) {
+  if (!result.principal().empty()) {
+    setKeyValue(data, AttributeName::kRequestAuthPrincipal, result.principal());
+  }
+  if (!result.peer_user().empty()) {
+    // TODO(diemtvu): remove kSourceUser once migration to source.principal is
+    // over. https://github.com/istio/istio/issues/4689
+    setKeyValue(data, AttributeName::kSourceUser, result.peer_user());
+    setKeyValue(data, AttributeName::kSourcePrincipal, result.peer_user());
+  }
+  if (result.has_origin()) {
+    const auto &origin = result.origin();
+    if (!origin.audiences().empty()) {
+      // TODO(diemtvu): this should be send as repeated field once mixer
+      // support string_list (https://github.com/istio/istio/issues/2802) For
+      // now, just use the first value.
+      setKeyValue(data, AttributeName::kRequestAuthAudiences,
+                  origin.audiences(0));
+    }
+    if (!origin.presenter().empty()) {
+      setKeyValue(data, AttributeName::kRequestAuthPresenter,
+                  origin.presenter());
+    }
+    if (!origin.claims().empty()) {
+      auto s = (*data.mutable_fields())[AttributeName::kRequestAuthClaims]
+                   .mutable_struct_value();
+      for (const auto &pair : origin.claims()) {
+        setKeyValue(*s, pair.first, pair.second);
+      }
+    }
+    if (!origin.raw_claims().empty()) {
+      setKeyValue(data, AttributeName::kRequestAuthRawClaims,
+                  origin.raw_claims());
     }
   }
 }

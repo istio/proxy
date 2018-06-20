@@ -243,6 +243,52 @@ void SetDestinationIp(RequestContext *request, const std::string &ip) {
   builder.AddBytes(AttributeName::kDestinationIp, ip);
 }
 
+TEST(AttributesBuilderTest, TestSaveAuthAttributesToStruct) {
+  istio::authn::Result result;
+  ::google::protobuf::Struct data;
+
+  AttributesBuilder::SaveAuthAttributesToStruct(result, data);
+  EXPECT_TRUE(data.mutable_fields()->empty());
+
+  result.set_principal("principal");
+  result.set_peer_user("peeruser");
+  auto origin = result.mutable_origin();
+  origin->add_audiences("audiences0");
+  origin->add_audiences("audiences1");
+  origin->set_presenter("presenter");
+  auto claim = origin->mutable_claims();
+  (*claim)["key1"] = "value1";
+  (*claim)["key2"] = "value2";
+  origin->set_raw_claims("rawclaim");
+
+  AttributesBuilder::SaveAuthAttributesToStruct(result, data);
+  EXPECT_FALSE(data.mutable_fields()->empty());
+
+  EXPECT_EQ(
+      data.fields().at(AttributeName::kRequestAuthPrincipal).string_value(),
+      "principal");
+  EXPECT_EQ(data.fields().at(AttributeName::kSourceUser).string_value(),
+            "peeruser");
+  EXPECT_EQ(data.fields().at(AttributeName::kSourcePrincipal).string_value(),
+            "peeruser");
+  EXPECT_EQ(
+      data.fields().at(AttributeName::kRequestAuthAudiences).string_value(),
+      "audiences0");
+  EXPECT_EQ(
+      data.fields().at(AttributeName::kRequestAuthPresenter).string_value(),
+      "presenter");
+
+  auto actual_claim = data.fields().at(AttributeName::kRequestAuthClaims);
+  EXPECT_EQ(actual_claim.struct_value().fields().at("key1").string_value(),
+            "value1");
+  EXPECT_EQ(actual_claim.struct_value().fields().at("key2").string_value(),
+            "value2");
+
+  EXPECT_EQ(
+      data.fields().at(AttributeName::kRequestAuthRawClaims).string_value(),
+      "rawclaim");
+}
+
 TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   Attributes attr;
   (*attr.mutable_attributes())["test_key"].set_string_value("test_value");

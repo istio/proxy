@@ -16,6 +16,7 @@
 #ifndef ISTIO_CONTROL_HTTP_ATTRIBUTES_BUILDER_H
 #define ISTIO_CONTROL_HTTP_ATTRIBUTES_BUILDER_H
 
+#include "google/protobuf/struct.pb.h"
 #include "include/istio/control/http/check_data.h"
 #include "include/istio/control/http/report_data.h"
 #include "src/istio/control/request_context.h"
@@ -40,6 +41,10 @@ class AttributesBuilder {
   void ExtractCheckAttributes(CheckData* check_data);
   // Extract attributes for Report call.
   void ExtractReportAttributes(ReportData* report_data);
+
+  // Save authentication attributes into the data Struct.
+  static void SaveAuthAttributesToStruct(const istio::authn::Result& result,
+                                         ::google::protobuf::Struct& data);
 
  private:
   // Extract HTTP header attributes
