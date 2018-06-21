@@ -21,7 +21,6 @@
 #include "src/envoy/http/authn/peer_authenticator.h"
 #include "src/envoy/utils/authn.h"
 #include "src/envoy/utils/utils.h"
-#include "src/istio/control/http/attributes_builder.h"
 
 using istio::authn::Payload;
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
@@ -82,7 +81,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
 
     // Save auth results in the metadata, could be later used by RBAC filter.
     ProtobufWkt::Struct data;
-    ::istio::control::http::AttributesBuilder::SaveAuthAttributesToStruct(
+    Utils::Authentication::SaveAuthAttributesToStruct(
         filter_context_->authenticationResult(), data);
     decoder_callbacks_->requestInfo().setDynamicMetadata("istio_authn", data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
