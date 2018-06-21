@@ -32,7 +32,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "//include/istio/utils:attribute_names_lib",
+        "//include/istio/utils:attribute_names_header",
         "//src/istio/authn:context_proto",
         "//src/istio/utils:attribute_names_lib",
         "@envoy//source/exe:envoy_common_lib",

@@ -86,9 +86,9 @@ CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
     request->check_status = check_response_info.response_status;
 
     utils::AttributesBuilder builder(&request->attributes);
-    builder.AddBool(istio::utils::AttributeName::kCheckCacheHit,
+    builder.AddBool(utils::AttributeName::kCheckCacheHit,
                     check_response_info.is_check_cache_hit);
-    builder.AddBool(istio::utils::AttributeName::kQuotaCacheHit,
+    builder.AddBool(utils::AttributeName::kQuotaCacheHit,
                     check_response_info.is_quota_cache_hit);
     on_done(check_response_info);
   };

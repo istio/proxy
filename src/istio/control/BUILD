@@ -26,7 +26,7 @@ cc_library(
     visibility = [":__subpackages__"],
     deps = [
         "//external:mixer_client_config_cc_proto",
-        "//include/istio/utils:attribute_names_lib",
+        "//include/istio/utils:attribute_names_header",
         "//src/istio/mixerclient:mixerclient_lib",
         "//src/istio/quota_config:config_parser_lib",
         "//src/istio/utils:attribute_names_lib",

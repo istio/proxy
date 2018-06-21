@@ -403,9 +403,8 @@ TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
-        EXPECT_EQ(
-            map[istio::utils::AttributeName::kRequestApiKey].string_value(),
-            "test-api-key");
+        EXPECT_EQ(map[utils::AttributeName::kRequestApiKey].string_value(),
+                  "test-api-key");
         return nullptr;
       }));
 

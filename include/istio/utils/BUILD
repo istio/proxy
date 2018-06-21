@@ -36,7 +36,7 @@ cc_library(
 )
 
 cc_library(
-    name = "attribute_names_lib",
+    name = "attribute_names_header",
     hdrs = [
         "attribute_names.h",
     ],

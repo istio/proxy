@@ -92,7 +92,7 @@ void ServiceContext::AddApiAttributes(CheckData *check_data,
   std::string api_key;
   if (api_spec_parser_->ExtractApiKey(check_data, &api_key)) {
     (*request->attributes
-          .mutable_attributes())[istio::utils::AttributeName::kRequestApiKey]
+          .mutable_attributes())[utils::AttributeName::kRequestApiKey]
         .set_string_value(api_key);
   }
 }

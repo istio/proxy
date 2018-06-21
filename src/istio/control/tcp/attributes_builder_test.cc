@@ -285,7 +285,7 @@ void ClearContextTime(RequestContext* request) {
   // Override timestamp with -
   utils::AttributesBuilder builder(&request->attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
-  builder.AddTimestamp(istio::utils::AttributeName::kContextTime, time0);
+  builder.AddTimestamp(utils::AttributeName::kContextTime, time0);
 }
 
 TEST(AttributesBuilderTest, TestCheckAttributes) {

@@ -36,7 +36,7 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
   // TODO(kuat): there is no way to propagate source IP in TCP, so we auto-set
   // it
   if (check_data->GetSourceIpPort(&source_ip, &source_port)) {
-    builder.AddBytes(istio::utils::AttributeName::kSourceIp, source_ip);
+    builder.AddBytes(utils::AttributeName::kSourceIp, source_ip);
   }
 
   // TODO(diemtvu): add TCP authn filter similar to http case, and use authn
@@ -45,22 +45,20 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
   if (check_data->GetSourceUser(&source_user)) {
     // TODO(diemtvu): remove kSourceUser once migration to source.principal is
     // over. https://github.com/istio/istio/issues/4689
-    builder.AddString(istio::utils::AttributeName::kSourceUser, source_user);
-    builder.AddString(istio::utils::AttributeName::kSourcePrincipal,
-                      source_user);
+    builder.AddString(utils::AttributeName::kSourceUser, source_user);
+    builder.AddString(utils::AttributeName::kSourcePrincipal, source_user);
   }
-  builder.AddBool(istio::utils::AttributeName::kConnectionMtls,
+  builder.AddBool(utils::AttributeName::kConnectionMtls,
                   check_data->IsMutualTLS());
 
-  builder.AddTimestamp(istio::utils::AttributeName::kContextTime,
+  builder.AddTimestamp(utils::AttributeName::kContextTime,
                        std::chrono::system_clock::now());
-  builder.AddString(istio::utils::AttributeName::kContextProtocol, "tcp");
-  builder.AddString(istio::utils::AttributeName::kConnectionEvent,
-                    kConnectionOpen);
+  builder.AddString(utils::AttributeName::kContextProtocol, "tcp");
+  builder.AddString(utils::AttributeName::kConnectionEvent, kConnectionOpen);
 
   // Get unique downstream connection ID, which is <uuid>-<connection id>.
   std::string connection_id = check_data->GetConnectionId();
-  builder.AddString(istio::utils::AttributeName::kConnectionId, connection_id);
+  builder.AddString(utils::AttributeName::kConnectionId, connection_id);
 }
 
 void AttributesBuilder::ExtractReportAttributes(
@@ -70,30 +68,29 @@ void AttributesBuilder::ExtractReportAttributes(
 
   ReportData::ReportInfo info;
   report_data->GetReportInfo(&info);
-  builder.AddInt64(istio::utils::AttributeName::kConnectionReceviedBytes,
+  builder.AddInt64(utils::AttributeName::kConnectionReceviedBytes,
                    info.received_bytes - last_report_info->received_bytes);
-  builder.AddInt64(istio::utils::AttributeName::kConnectionReceviedTotalBytes,
+  builder.AddInt64(utils::AttributeName::kConnectionReceviedTotalBytes,
                    info.received_bytes);
-  builder.AddInt64(istio::utils::AttributeName::kConnectionSendBytes,
+  builder.AddInt64(utils::AttributeName::kConnectionSendBytes,
                    info.send_bytes - last_report_info->send_bytes);
-  builder.AddInt64(istio::utils::AttributeName::kConnectionSendTotalBytes,
+  builder.AddInt64(utils::AttributeName::kConnectionSendTotalBytes,
                    info.send_bytes);
 
   if (is_final_report) {
-    builder.AddDuration(istio::utils::AttributeName::kConnectionDuration,
+    builder.AddDuration(utils::AttributeName::kConnectionDuration,
                         info.duration);
     if (!request_->check_status.ok()) {
-      builder.AddInt64(istio::utils::AttributeName::kCheckErrorCode,
+      builder.AddInt64(utils::AttributeName::kCheckErrorCode,
                        request_->check_status.error_code());
-      builder.AddString(istio::utils::AttributeName::kCheckErrorMessage,
+      builder.AddString(utils::AttributeName::kCheckErrorMessage,
                         request_->check_status.ToString());
     }
-    builder.AddString(istio::utils::AttributeName::kConnectionEvent,
-                      kConnectionClose);
+    builder.AddString(utils::AttributeName::kConnectionEvent, kConnectionClose);
   } else {
     last_report_info->received_bytes = info.received_bytes;
     last_report_info->send_bytes = info.send_bytes;
-    builder.AddString(istio::utils::AttributeName::kConnectionEvent,
+    builder.AddString(utils::AttributeName::kConnectionEvent,
                       kConnectionContinue);
   }
 
@@ -101,21 +98,20 @@ void AttributesBuilder::ExtractReportAttributes(
   int dest_port;
   // Do not overwrite destination IP and port if it has already been set.
   if (report_data->GetDestinationIpPort(&dest_ip, &dest_port)) {
-    if (!builder.HasAttribute(istio::utils::AttributeName::kDestinationIp)) {
-      builder.AddBytes(istio::utils::AttributeName::kDestinationIp, dest_ip);
+    if (!builder.HasAttribute(utils::AttributeName::kDestinationIp)) {
+      builder.AddBytes(utils::AttributeName::kDestinationIp, dest_ip);
     }
-    if (!builder.HasAttribute(istio::utils::AttributeName::kDestinationPort)) {
-      builder.AddInt64(istio::utils::AttributeName::kDestinationPort,
-                       dest_port);
+    if (!builder.HasAttribute(utils::AttributeName::kDestinationPort)) {
+      builder.AddInt64(utils::AttributeName::kDestinationPort, dest_port);
     }
   }
 
   std::string uid;
   if (report_data->GetDestinationUID(&uid)) {
-    builder.AddString(istio::utils::AttributeName::kDestinationUID, uid);
+    builder.AddString(utils::AttributeName::kDestinationUID, uid);
   }
 
-  builder.AddTimestamp(istio::utils::AttributeName::kContextTime,
+  builder.AddTimestamp(utils::AttributeName::kContextTime,
                        std::chrono::system_clock::now());
 }
 

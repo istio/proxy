@@ -240,7 +240,7 @@ void ClearContextTime(const std::string &name, RequestContext *request) {
 
 void SetDestinationIp(RequestContext *request, const std::string &ip) {
   utils::AttributesBuilder builder(&request->attributes);
-  builder.AddBytes(istio::utils::AttributeName::kDestinationIp, ip);
+  builder.AddBytes(utils::AttributeName::kDestinationIp, ip);
 }
 
 TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
@@ -323,7 +323,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   AttributesBuilder builder(&request);
   builder.ExtractCheckAttributes(&mock_data);
 
-  ClearContextTime(istio::utils::AttributeName::kRequestTime, &request);
+  ClearContextTime(utils::AttributeName::kRequestTime, &request);
 
   std::string out_str;
   TextFormat::PrintToString(request.attributes, &out_str);
@@ -382,7 +382,7 @@ TEST(AttributesBuilderTest, TestCheckAttributesWithAuthNResult) {
   AttributesBuilder builder(&request);
   builder.ExtractCheckAttributes(&mock_data);
 
-  ClearContextTime(istio::utils::AttributeName::kRequestTime, &request);
+  ClearContextTime(utils::AttributeName::kRequestTime, &request);
 
   std::string out_str;
   TextFormat::PrintToString(request.attributes, &out_str);
@@ -395,9 +395,9 @@ TEST(AttributesBuilderTest, TestCheckAttributesWithAuthNResult) {
   // way to construct mixer attribute (it was a fallback when authn filter is
   // not available, which can be removed after 0.8). For now, modifying expected
   // data manually for this test.
-  (*expected_attributes.mutable_attributes())
-      [istio::utils::AttributeName::kRequestAuthRawClaims]
-          .set_string_value("test_raw_claims");
+  (*expected_attributes
+        .mutable_attributes())[utils::AttributeName::kRequestAuthRawClaims]
+      .set_string_value("test_raw_claims");
 
   EXPECT_TRUE(
       MessageDifferencer::Equals(request.attributes, expected_attributes));
@@ -443,7 +443,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   AttributesBuilder builder(&request);
   builder.ExtractReportAttributes(&mock_data);
 
-  ClearContextTime(istio::utils::AttributeName::kResponseTime, &request);
+  ClearContextTime(utils::AttributeName::kResponseTime, &request);
 
   std::string out_str;
   TextFormat::PrintToString(request.attributes, &out_str);
@@ -453,14 +453,14 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   ASSERT_TRUE(
       TextFormat::ParseFromString(kReportAttributes, &expected_attributes));
   (*expected_attributes
-        .mutable_attributes())[istio::utils::AttributeName::kDestinationUID]
+        .mutable_attributes())[utils::AttributeName::kDestinationUID]
       .set_string_value("pod1.ns2");
   (*expected_attributes
-        .mutable_attributes())[istio::utils::AttributeName::kResponseGrpcStatus]
+        .mutable_attributes())[utils::AttributeName::kResponseGrpcStatus]
       .set_string_value("grpc-status");
-  (*expected_attributes.mutable_attributes())
-      [istio::utils::AttributeName::kResponseGrpcMessage]
-          .set_string_value("grpc-message");
+  (*expected_attributes
+        .mutable_attributes())[utils::AttributeName::kResponseGrpcMessage]
+      .set_string_value("grpc-message");
   EXPECT_TRUE(
       MessageDifferencer::Equals(request.attributes, expected_attributes));
 }
@@ -495,7 +495,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   AttributesBuilder builder(&request);
   builder.ExtractReportAttributes(&mock_data);
 
-  ClearContextTime(istio::utils::AttributeName::kResponseTime, &request);
+  ClearContextTime(utils::AttributeName::kResponseTime, &request);
 
   std::string out_str;
   TextFormat::PrintToString(request.attributes, &out_str);

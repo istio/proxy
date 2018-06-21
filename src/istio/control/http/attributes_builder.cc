@@ -35,7 +35,7 @@ const std::set<std::string> kGrpcContentTypes{
 void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
   utils::AttributesBuilder builder(&request_->attributes);
   std::map<std::string, std::string> headers = check_data->GetRequestHeaders();
-  builder.AddStringMap(istio::utils::AttributeName::kRequestHeaders, headers);
+  builder.AddStringMap(utils::AttributeName::kRequestHeaders, headers);
 
   struct TopLevelAttr {
     CheckData::HeaderType header_type;
@@ -44,18 +44,16 @@ void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
     const char *default_value;
   };
   static TopLevelAttr attrs[] = {
-      {CheckData::HEADER_HOST, istio::utils::AttributeName::kRequestHost, true,
+      {CheckData::HEADER_HOST, utils::AttributeName::kRequestHost, true, ""},
+      {CheckData::HEADER_METHOD, utils::AttributeName::kRequestMethod, false,
        ""},
-      {CheckData::HEADER_METHOD, istio::utils::AttributeName::kRequestMethod,
-       false, ""},
-      {CheckData::HEADER_PATH, istio::utils::AttributeName::kRequestPath, true,
+      {CheckData::HEADER_PATH, utils::AttributeName::kRequestPath, true, ""},
+      {CheckData::HEADER_REFERER, utils::AttributeName::kRequestReferer, false,
        ""},
-      {CheckData::HEADER_REFERER, istio::utils::AttributeName::kRequestReferer,
+      {CheckData::HEADER_SCHEME, utils::AttributeName::kRequestScheme, true,
+       "http"},
+      {CheckData::HEADER_USER_AGENT, utils::AttributeName::kRequestUserAgent,
        false, ""},
-      {CheckData::HEADER_SCHEME, istio::utils::AttributeName::kRequestScheme,
-       true, "http"},
-      {CheckData::HEADER_USER_AGENT,
-       istio::utils::AttributeName::kRequestUserAgent, false, ""},
   };
 
   for (const auto &it : attrs) {
@@ -73,15 +71,15 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
   if (check_data->GetAuthenticationResult(&authn_result)) {
     utils::AttributesBuilder builder(&request_->attributes);
     if (!authn_result.principal().empty()) {
-      builder.AddString(istio::utils::AttributeName::kRequestAuthPrincipal,
+      builder.AddString(utils::AttributeName::kRequestAuthPrincipal,
                         authn_result.principal());
     }
     if (!authn_result.peer_user().empty()) {
       // TODO(diemtvu): remove kSourceUser once migration to source.principal is
       // over. https://github.com/istio/istio/issues/4689
-      builder.AddString(istio::utils::AttributeName::kSourceUser,
+      builder.AddString(utils::AttributeName::kSourceUser,
                         authn_result.peer_user());
-      builder.AddString(istio::utils::AttributeName::kSourcePrincipal,
+      builder.AddString(utils::AttributeName::kSourcePrincipal,
                         authn_result.peer_user());
     }
     if (authn_result.has_origin()) {
@@ -90,19 +88,19 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
         // TODO(diemtvu): this should be send as repeated field once mixer
         // support string_list (https://github.com/istio/istio/issues/2802) For
         // now, just use the first value.
-        builder.AddString(istio::utils::AttributeName::kRequestAuthAudiences,
+        builder.AddString(utils::AttributeName::kRequestAuthAudiences,
                           origin.audiences(0));
       }
       if (!origin.presenter().empty()) {
-        builder.AddString(istio::utils::AttributeName::kRequestAuthPresenter,
+        builder.AddString(utils::AttributeName::kRequestAuthPresenter,
                           origin.presenter());
       }
       if (!origin.claims().empty()) {
-        builder.AddProtobufStringMap(
-            istio::utils::AttributeName::kRequestAuthClaims, origin.claims());
+        builder.AddProtobufStringMap(utils::AttributeName::kRequestAuthClaims,
+                                     origin.claims());
       }
       if (!origin.raw_claims().empty()) {
-        builder.AddString(istio::utils::AttributeName::kRequestAuthRawClaims,
+        builder.AddString(utils::AttributeName::kRequestAuthRawClaims,
                           origin.raw_claims());
       }
     }
@@ -116,27 +114,25 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
   if (check_data->GetJWTPayload(&payload) && !payload.empty()) {
     // Populate auth attributes.
     if (payload.count("iss") > 0 && payload.count("sub") > 0) {
-      builder.AddString(istio::utils::AttributeName::kRequestAuthPrincipal,
+      builder.AddString(utils::AttributeName::kRequestAuthPrincipal,
                         payload["iss"] + "/" + payload["sub"]);
     }
     if (payload.count("aud") > 0) {
-      builder.AddString(istio::utils::AttributeName::kRequestAuthAudiences,
+      builder.AddString(utils::AttributeName::kRequestAuthAudiences,
                         payload["aud"]);
     }
     if (payload.count("azp") > 0) {
-      builder.AddString(istio::utils::AttributeName::kRequestAuthPresenter,
+      builder.AddString(utils::AttributeName::kRequestAuthPresenter,
                         payload["azp"]);
     }
-    builder.AddStringMap(istio::utils::AttributeName::kRequestAuthClaims,
-                         payload);
+    builder.AddStringMap(utils::AttributeName::kRequestAuthClaims, payload);
   }
   std::string source_user;
   if (check_data->GetSourceUser(&source_user)) {
     // TODO(diemtvu): remove kSourceUser once migration to source.principal is
     // over. https://github.com/istio/istio/issues/4689
-    builder.AddString(istio::utils::AttributeName::kSourceUser, source_user);
-    builder.AddString(istio::utils::AttributeName::kSourcePrincipal,
-                      source_user);
+    builder.AddString(utils::AttributeName::kSourceUser, source_user);
+    builder.AddString(utils::AttributeName::kSourcePrincipal, source_user);
   }
 }  // namespace http
 
@@ -158,10 +154,10 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
 
   utils::AttributesBuilder builder(&request_->attributes);
 
-  builder.AddBool(istio::utils::AttributeName::kConnectionMtls,
+  builder.AddBool(utils::AttributeName::kConnectionMtls,
                   check_data->IsMutualTLS());
 
-  builder.AddTimestamp(istio::utils::AttributeName::kRequestTime,
+  builder.AddTimestamp(utils::AttributeName::kRequestTime,
                        std::chrono::system_clock::now());
 
   std::string protocol = "http";
@@ -172,7 +168,7 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
       protocol = "grpc";
     }
   }
-  builder.AddString(istio::utils::AttributeName::kContextProtocol, protocol);
+  builder.AddString(utils::AttributeName::kContextProtocol, protocol);
 }
 
 void AttributesBuilder::ForwardAttributes(const Attributes &forward_attributes,
@@ -189,57 +185,54 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
   int dest_port;
   // Do not overwrite destination IP and port if it has already been set.
   if (report_data->GetDestinationIpPort(&dest_ip, &dest_port)) {
-    if (!builder.HasAttribute(istio::utils::AttributeName::kDestinationIp)) {
-      builder.AddBytes(istio::utils::AttributeName::kDestinationIp, dest_ip);
+    if (!builder.HasAttribute(utils::AttributeName::kDestinationIp)) {
+      builder.AddBytes(utils::AttributeName::kDestinationIp, dest_ip);
     }
-    if (!builder.HasAttribute(istio::utils::AttributeName::kDestinationPort)) {
-      builder.AddInt64(istio::utils::AttributeName::kDestinationPort,
-                       dest_port);
+    if (!builder.HasAttribute(utils::AttributeName::kDestinationPort)) {
+      builder.AddInt64(utils::AttributeName::kDestinationPort, dest_port);
     }
   }
 
   std::string uid;
   if (report_data->GetDestinationUID(&uid)) {
-    builder.AddString(istio::utils::AttributeName::kDestinationUID, uid);
+    builder.AddString(utils::AttributeName::kDestinationUID, uid);
   }
 
   std::map<std::string, std::string> headers =
       report_data->GetResponseHeaders();
-  builder.AddStringMap(istio::utils::AttributeName::kResponseHeaders, headers);
+  builder.AddStringMap(utils::AttributeName::kResponseHeaders, headers);
 
-  builder.AddTimestamp(istio::utils::AttributeName::kResponseTime,
+  builder.AddTimestamp(utils::AttributeName::kResponseTime,
                        std::chrono::system_clock::now());
 
   ReportData::ReportInfo info;
   report_data->GetReportInfo(&info);
-  builder.AddInt64(istio::utils::AttributeName::kRequestBodySize,
+  builder.AddInt64(utils::AttributeName::kRequestBodySize,
                    info.request_body_size);
-  builder.AddInt64(istio::utils::AttributeName::kResponseBodySize,
+  builder.AddInt64(utils::AttributeName::kResponseBodySize,
                    info.response_body_size);
-  builder.AddInt64(istio::utils::AttributeName::kRequestTotalSize,
+  builder.AddInt64(utils::AttributeName::kRequestTotalSize,
                    info.request_total_size);
-  builder.AddInt64(istio::utils::AttributeName::kResponseTotalSize,
+  builder.AddInt64(utils::AttributeName::kResponseTotalSize,
                    info.response_total_size);
-  builder.AddDuration(istio::utils::AttributeName::kResponseDuration,
-                      info.duration);
+  builder.AddDuration(utils::AttributeName::kResponseDuration, info.duration);
   if (!request_->check_status.ok()) {
     builder.AddInt64(
-        istio::utils::AttributeName::kResponseCode,
+        utils::AttributeName::kResponseCode,
         utils::StatusHttpCode(request_->check_status.error_code()));
-    builder.AddInt64(istio::utils::AttributeName::kCheckErrorCode,
+    builder.AddInt64(utils::AttributeName::kCheckErrorCode,
                      request_->check_status.error_code());
-    builder.AddString(istio::utils::AttributeName::kCheckErrorMessage,
+    builder.AddString(utils::AttributeName::kCheckErrorMessage,
                       request_->check_status.ToString());
   } else {
-    builder.AddInt64(istio::utils::AttributeName::kResponseCode,
-                     info.response_code);
+    builder.AddInt64(utils::AttributeName::kResponseCode, info.response_code);
   }
 
   ReportData::GrpcStatus grpc_status;
   if (report_data->GetGrpcStatus(&grpc_status)) {
-    builder.AddString(istio::utils::AttributeName::kResponseGrpcStatus,
+    builder.AddString(utils::AttributeName::kResponseGrpcStatus,
                       grpc_status.status);
-    builder.AddString(istio::utils::AttributeName::kResponseGrpcMessage,
+    builder.AddString(utils::AttributeName::kResponseGrpcMessage,
                       grpc_status.message);
   }
 }

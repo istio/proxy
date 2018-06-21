@@ -74,6 +74,6 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//include/istio/utils:attribute_names_lib",
+        "//include/istio/utils:attribute_names_header",
     ],
 )
