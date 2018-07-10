@@ -25,6 +25,7 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
+// Check data for HTTP Mixer filter.
 class CheckData : public ::istio::control::http::CheckData,
                   public Logger::Loggable<Logger::Id::filter> {
  public:
