@@ -44,7 +44,7 @@ bool GetSourceUser(const Network::Connection* connection, std::string* user);
 bool IsMutualTLS(const Network::Connection* connection);
 
 // Get requested server name, SNI in case of TLS
-bool GetRequestedServerName(const Network::Connection* connection*,
+bool GetRequestedServerName(const Network::Connection* connection,
                             std::string* name);
 
 // Parse JSON string into message.

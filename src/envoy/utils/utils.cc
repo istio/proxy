@@ -116,7 +116,7 @@ bool IsMutualTLS(const Network::Connection* connection) {
          connection->ssl()->peerCertificatePresented();
 }
 
-bool GetRequestedServerName(const Network::Connection* connection*,
+bool GetRequestedServerName(const Network::Connection* connection,
                             std::string* name) {
   if (connection) {
     *name = std::string(connection->requestedServerName());
