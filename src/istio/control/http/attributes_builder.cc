@@ -157,8 +157,8 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
   builder.AddBool(utils::AttributeName::kConnectionMtls,
                   check_data->IsMutualTLS());
 
-  std::string requested_server_name = check_data->GetRequestedServerName();
-  if (!requested_server_name.empty()) {
+  std::string requested_server_name;
+  if (check_data->GetRequestedServerName(&requested_server_name) {
     builder.AddString(utils::AttributeName::kConnectionRequestedServerName,
                       requested_server_name);
   }

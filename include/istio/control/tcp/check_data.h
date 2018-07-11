@@ -38,7 +38,7 @@ class CheckData {
   virtual bool IsMutualTLS() const = 0;
 
   // Get requested server name, SNI in case of TLS
-  virtual std::string GetRequestedServerName() const = 0;
+  virtual bool GetRequestedServerName(std::string* name) const = 0;
 
   // Get downstream tcp connection id.
   virtual std::string GetConnectionId() const = 0;

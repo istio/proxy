@@ -311,9 +311,11 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
         return true;
       }));
   EXPECT_CALL(mock_data, GetConnectionId()).WillOnce(Return("1234-5"));
-  EXPECT_CALL(mock_data, GetRequestedServerName())
-      .WillOnce(Return("www.google.com"));
-
+  EXPECT_CALL(mock_data, GetRequestedServerName(_))
+      .WillOnce(Invoke([](std::string* name) -> bool {
+        *name = "www.google.com";
+        return true;
+      }));
   RequestContext request;
   AttributesBuilder builder(&request);
   builder.ExtractCheckAttributes(&mock_data);

@@ -48,7 +48,7 @@ class CheckData {
   virtual bool IsMutualTLS() const = 0;
 
   // Get requested server name, SNI in case of TLS
-  virtual std::string GetRequestedServerName() const = 0;
+  virtual bool GetRequestedServerName(std::string *name) const = 0;
 
   // These headers are extracted into top level attributes.
   // This is for standard HTTP headers.  It supports both HTTP/1.1 and HTTP2
