@@ -75,10 +75,11 @@ bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
   return false;
 }
 
-bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
-                       std::string* uid) {
-  const auto filter_it = metadata.filter_metadata().find(kPerHostMetadataKey);
-  if (filter_it == metadata.filter_metadata().end()) {
+bool GetDestinationUID(
+    const std::shared_ptr<envoy::api::v2::core::Metadata> metadata,
+    std::string* uid) {
+  const auto filter_it = metadata->filter_metadata().find(kPerHostMetadataKey);
+  if (filter_it == metadata->filter_metadata().end()) {
     return false;
   }
   const Struct& struct_pb = filter_it->second;
