@@ -19,9 +19,10 @@
 namespace Envoy {
 
 namespace {
-// The HTTP header key for the JWT verification result. Should be the same as the one define for
-// forward_payload_header in envoy.conf.jwk
-const Http::LowerCaseString kJwtVerificationResultHeaderKey("test-jwt-payload-output");
+// The HTTP header key for the JWT verification result. Should be the same as
+// the one define for forward_payload_header in envoy.conf.jwk
+const Http::LowerCaseString kJwtVerificationResultHeaderKey(
+    "test-jwt-payload-output");
 // {"iss":"https://example.com","sub":"test@example.com","aud":"example_service","exp":2001001001}
 const std::string kJwtVerificationResult =
     "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVz"

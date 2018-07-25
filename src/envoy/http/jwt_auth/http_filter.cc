@@ -31,9 +31,7 @@ JwtVerificationFilter::JwtVerificationFilter(Upstream::ClusterManager& cm,
 
 JwtVerificationFilter::~JwtVerificationFilter() {}
 
-void JwtVerificationFilter::onDestroy() {
-  jwt_auth_.onDestroy();
-}
+void JwtVerificationFilter::onDestroy() { jwt_auth_.onDestroy(); }
 
 FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
                                                          bool) {
