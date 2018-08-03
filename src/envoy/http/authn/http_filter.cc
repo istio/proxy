@@ -74,7 +74,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     ProtobufWkt::Struct data;
     Utils::Authentication::SaveAuthAttributesToStruct(
         filter_context_->authenticationResult(), data);
-    decoder_callbacks_->requestInfo().setDynamicMetadata(
+    filter_context_->mutable_request_info()->setDynamicMetadata(
         istio::utils::FilterName::kAuthentication, data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
   }

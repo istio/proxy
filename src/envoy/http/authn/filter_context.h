@@ -62,6 +62,11 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   const Envoy::RequestInfo::RequestInfo& request_info() const {
     return *request_info_;
   }
+
+  Envoy::RequestInfo::RequestInfo* mutable_request_info() {
+    return request_info_;
+  }
+
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config

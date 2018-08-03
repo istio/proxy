@@ -17,6 +17,7 @@
 #include "envoy/http/header_map.h"
 #include "google/protobuf/struct.pb.h"
 #include "src/istio/authn/context.pb.h"
+#include "envoy/request_info/request_info.h"
 
 namespace Envoy {
 namespace Utils {
@@ -39,6 +40,10 @@ class Authentication : public Logger::Loggable<Logger::Id::filter> {
   // in bad format.
   static bool FetchResultFromHeader(const Http::HeaderMap& headers,
                                     istio::authn::Result* result);
+
+  // Returns a pointer to the authentication result from request info, if
+  // available. Otherwise, return nullptrl
+  static const ProtobufWkt::Struct* GetResultFromRequestInfo(const RequestInfo::RequestInfo& request_info);
 
   // Clears authentication result in header, if exist.
   static void ClearResultInHeader(Http::HeaderMap* headers);
