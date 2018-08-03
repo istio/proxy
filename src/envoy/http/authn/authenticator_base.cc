@@ -18,6 +18,7 @@
 #include "common/config/metadata.h"
 #include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/utils/utils.h"
+#include "include/istio/utils/filter_names.h"
 
 using istio::authn::Payload;
 
@@ -76,7 +77,7 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
   }
 
   const auto& value = Envoy::Config::Metadata::metadataValue(
-      filter_context()->request_info().dynamicMetadata(), "jwt-auth",
+      filter_context()->request_info().dynamicMetadata(), istio::utils::FilterName::kJwt,
       iter->second);
   if (!value.string_value().empty()) {
     return AuthnUtils::ProcessJwtPayload(value.string_value(),

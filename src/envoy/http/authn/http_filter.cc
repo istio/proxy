@@ -47,6 +47,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
             filter_config_.DebugString());
   state_ = State::PROCESSING;
 
+  std::cout << "oooooooooooooooooo " << decoder_callbacks_->requestInfo().dynamicMetadata().DebugString() << "\n";
   filter_context_.reset(new Istio::AuthN::FilterContext(
       &decoder_callbacks_->requestInfo(), decoder_callbacks_->connection(),
       filter_config_));
@@ -74,7 +75,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     ProtobufWkt::Struct data;
     Utils::Authentication::SaveAuthAttributesToStruct(
         filter_context_->authenticationResult(), data);
-    filter_context_->mutable_request_info()->setDynamicMetadata(
+    decoder_callbacks_->requestInfo().setDynamicMetadata(
         istio::utils::FilterName::kAuthentication, data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
   }

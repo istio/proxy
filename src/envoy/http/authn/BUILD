@@ -46,6 +46,7 @@ envoy_cc_library(
         "//src/envoy/http/jwt_auth:jwt_lib",
         "//src/envoy/utils:utils_lib",
         "//src/istio/authn:context_proto",
+        "//src/istio/utils:filter_names_lib",
     ],
 )
 
@@ -161,6 +162,9 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":filter_lib",
-        "@envoy//test/integration:http_integration_lib",
+        #"//src/envoy/http/jwt_auth:http_filter_factory",
+        "@envoy//source/common/common:utility_lib",
+        "@envoy//test/integration:http_protocol_integration_lib",
+        "//src/istio/utils:filter_names_lib",
     ],
 )
