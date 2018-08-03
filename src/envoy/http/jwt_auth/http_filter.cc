@@ -18,6 +18,7 @@
 #include "common/http/message_impl.h"
 #include "common/http/utility.h"
 #include "envoy/http/async_client.h"
+#include "include/istio/utils/filter_names.h"
 
 #include <chrono>
 #include <string>
@@ -70,6 +71,10 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
   if (stopped_) {
     decoder_callbacks_->continueDecoding();
   }
+}
+
+void JwtVerificationFilter::savePayload(const std::string& key, const std::string& payload) {
+  decoder_callbacks_->requestInfo().setDynamicMetadata(istio::utils::FilterName::kJwt, MessageUtil::keyValueStruct(key, payload));
 }
 
 FilterDataStatus JwtVerificationFilter::decodeData(Buffer::Instance&, bool) {

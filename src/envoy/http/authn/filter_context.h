@@ -18,7 +18,8 @@
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-#include "envoy/http/header_map.h"
+// #include "envoy/http/header_map.h"
+#include "envoy/request_info/request_info.h"
 #include "envoy/network/connection.h"
 #include "src/istio/authn/context.pb.h"
 
@@ -32,10 +33,10 @@ namespace AuthN {
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext(
-      HeaderMap* headers, const Network::Connection* connection,
+      Envoy::RequestInfo::RequestInfo* request_info, const Network::Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
-      : headers_(headers),
+      : request_info_(request_info),
         connection_(connection),
         filter_config_(filter_config) {}
   virtual ~FilterContext() {}
@@ -56,8 +57,8 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Returns the authentication result.
   const istio::authn::Result& authenticationResult() { return result_; }
 
-  // Accessor to headers.
-  HeaderMap* headers() { return headers_; }
+  // Accessor to request_info.
+  const Envoy::RequestInfo::RequestInfo& request_info() const { return *request_info_; }
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config
@@ -66,9 +67,11 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
     return filter_config_;
   }
 
+  bool getJwtPayload(const std::string& key, std::string* payload);
+
  private:
-  // Pointer to the headers of the request.
-  HeaderMap* headers_;
+  // Pointer to the request info.
+  Envoy::RequestInfo::RequestInfo* request_info_;
 
   // Pointer to network connection of the request.
   const Network::Connection* connection_;

@@ -15,6 +15,7 @@
 
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "common/common/assert.h"
+#include "common/config/metadata.h"
 #include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/utils/utils.h"
 
@@ -64,8 +65,6 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
 }
 
 bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
-  Envoy::Http::HeaderMap& header = *filter_context()->headers();
-
   auto iter =
       filter_context()->filter_config().jwt_output_payload_locations().find(
           jwt.issuer());
@@ -76,9 +75,11 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
     return false;
   }
 
-  LowerCaseString header_key(iter->second);
-  return AuthnUtils::GetJWTPayloadFromHeaders(header, header_key,
-                                              payload->mutable_jwt());
+  const auto& value = Envoy::Config::Metadata::metadataValue(filter_context()->request_info().dynamicMetadata(), "jwt-auth", iter->second);
+  if (!value.string_value().empty()) {
+    return AuthnUtils::ProcessJwtPayload(value.string_value(), payload->mutable_jwt());
+  }
+  return false;
 }
 
 }  // namespace AuthN

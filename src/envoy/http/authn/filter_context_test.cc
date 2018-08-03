@@ -32,7 +32,7 @@ class FilterContextTest : public testing::Test {
  public:
   virtual ~FilterContextTest() {}
 
-  // This test suit does not use headers nor connection, so ok to use null for
+  // This test suit does not use request_info nor connection, so ok to use null for
   // them.
   FilterContext filter_context_{nullptr, nullptr,
                                 istio::envoy::config::filter::http::authn::

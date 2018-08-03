@@ -15,13 +15,13 @@
 
 #include "src/envoy/http/authn/peer_authenticator.h"
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/http/header_map_impl.h"
 #include "common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/utility.h"
+#include "test/mocks/request_info/mocks.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
 
@@ -52,8 +52,7 @@ class MockPeerAuthenticator : public PeerAuthenticator {
 
 class PeerAuthenticatorTest : public testing::Test {
  public:
-  PeerAuthenticatorTest()
-      : request_headers_{{":method", "GET"}, {":path", "/"}} {}
+  PeerAuthenticatorTest() {}
   virtual ~PeerAuthenticatorTest() {}
 
   void createAuthenticator() {
@@ -67,8 +66,8 @@ class PeerAuthenticatorTest : public testing::Test {
 
  protected:
   std::unique_ptr<StrictMock<MockPeerAuthenticator>> authenticator_;
-  Http::TestHeaderMapImpl request_headers_;
-  FilterContext filter_context_{&request_headers_, nullptr,
+  StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
+  FilterContext filter_context_{&request_info_, nullptr,
                                 istio::envoy::config::filter::http::authn::
                                     v2alpha1::FilterConfig::default_instance()};
 

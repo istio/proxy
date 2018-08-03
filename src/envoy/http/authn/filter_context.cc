@@ -70,7 +70,6 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
       return;
   }
 }
-
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http

@@ -20,12 +20,14 @@
 #include "gmock/gmock.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/network/mocks.h"
+#include "test/mocks/request_info/mocks.h"
 #include "test/mocks/ssl/mocks.h"
 
 using google::protobuf::util::MessageDifferencer;
 using istio::authn::Payload;
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
 using testing::NiceMock;
+using testing::StrictMock;
 using testing::Return;
 
 namespace iaapi = istio::authentication::v1alpha1;
@@ -60,11 +62,11 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
  public:
   virtual ~ValidateX509Test() {}
 
-  Http::TestHeaderMapImpl request_headers_{};
+  NiceMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   NiceMock<Envoy::Network::MockConnection> connection_{};
   NiceMock<Envoy::Ssl::MockConnection> ssl_{};
   FilterConfig filter_config_{};
-  FilterContext filter_context_{&request_headers_, &connection_,
+  FilterContext filter_context_{&request_info_, &connection_,
                                 istio::envoy::config::filter::http::authn::
                                     v2alpha1::FilterConfig::default_instance()};
 
@@ -162,29 +164,16 @@ class ValidateJwtTest : public testing::Test,
  public:
   virtual ~ValidateJwtTest() {}
 
-  Http::TestHeaderMapImpl request_headers_{};
+  StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  // NiceMock<Envoy::Ssl::MockConnection> ssl_{};
   FilterConfig filter_config_{};
-  FilterContext filter_context_{&request_headers_, &connection_,
-                                istio::envoy::config::filter::http::authn::
-                                    v2alpha1::FilterConfig::default_instance()};
-
+  FilterContext filter_context_{&request_info_, &connection_, filter_config_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 
   void SetUp() override { payload_ = new Payload(); }
 
   void TearDown() override { delete (payload_); }
-
-  Http::TestHeaderMapImpl CreateTestHeaderMap(const std::string& header_key,
-                                              const std::string& header_value) {
-    // The base64 encoding is done through Base64::encode().
-    // If the test input has special chars, may need to use the counterpart of
-    // Base64UrlDecode().
-    std::string value_base64 =
-        Base64::encode(header_value.c_str(), header_value.size());
-    return Http::TestHeaderMapImpl{{header_key, value_base64}};
-  }
 
  protected:
   iaapi::MutualTls mtls_params_;
@@ -193,8 +182,7 @@ class ValidateJwtTest : public testing::Test,
   Payload default_payload_;
 };
 
-// TODO: more tests for Jwt.
-TEST_F(ValidateJwtTest, ValidateJwtWithNoIstioAuthnConfig) {
+TEST_F(ValidateJwtTest, NoIstioAuthnConfig) {
   jwt_.set_issuer("issuer@foo.com");
   // authenticator_ has empty Istio authn config
   // When there is empty Istio authn config, validateJwt() should return
@@ -206,7 +194,6 @@ TEST_F(ValidateJwtTest, ValidateJwtWithNoIstioAuthnConfig) {
 TEST_F(ValidateJwtTest, NoIssuer) {
   // no issuer in jwt
   google::protobuf::util::JsonParseOptions options;
-  FilterConfig filter_config;
   JsonStringToMessage(
       R"({
               "jwt_output_payload_locations":
@@ -215,11 +202,7 @@ TEST_F(ValidateJwtTest, NoIssuer) {
               }
            }
         )",
-      &filter_config, options);
-  Http::TestHeaderMapImpl empty_request_headers{};
-  FilterContext filter_context{&empty_request_headers, &connection_,
-                               filter_config};
-  MockAuthenticatorBase authenticator{&filter_context};
+      &filter_config_, options);
 
   // When there is no issuer in the JWT config, validateJwt() should return
   // nullptr and failure.
@@ -227,12 +210,9 @@ TEST_F(ValidateJwtTest, NoIssuer) {
   EXPECT_TRUE(MessageDifferencer::Equals(*payload_, default_payload_));
 }
 
-TEST_F(ValidateJwtTest, EmptyJwtOutputPayloadLocations) {
+TEST_F(ValidateJwtTest, OutputPayloadLocationNotDefine) {
   jwt_.set_issuer("issuer@foo.com");
-  Http::TestHeaderMapImpl request_headers_with_jwt = CreateTestHeaderMap(
-      kSecIstioAuthUserInfoHeaderKey, kSecIstioAuthUserinfoHeaderValue);
   google::protobuf::util::JsonParseOptions options;
-  FilterConfig filter_config;
   JsonStringToMessage(
       R"({
               "jwt_output_payload_locations":
@@ -240,10 +220,8 @@ TEST_F(ValidateJwtTest, EmptyJwtOutputPayloadLocations) {
               }
            }
         )",
-      &filter_config, options);
-  FilterContext filter_context{&request_headers_with_jwt, &connection_,
-                               filter_config};
-  MockAuthenticatorBase authenticator{&filter_context};
+      &filter_config_, options);
+
   // authenticator has empty jwt_output_payload_locations in Istio authn config
   // When there is no matching jwt_output_payload_locations for the issuer in
   // the Istio authn config, validateJwt() should return nullptr and failure.
@@ -251,10 +229,9 @@ TEST_F(ValidateJwtTest, EmptyJwtOutputPayloadLocations) {
   EXPECT_TRUE(MessageDifferencer::Equals(*payload_, default_payload_));
 }
 
-TEST_F(ValidateJwtTest, NoJwtInHeader) {
+TEST_F(ValidateJwtTest, NoJwtPayloadOutput) {
   jwt_.set_issuer("issuer@foo.com");
   google::protobuf::util::JsonParseOptions options;
-  FilterConfig filter_config;
   JsonStringToMessage(
       R"({
               "jwt_output_payload_locations":
@@ -263,23 +240,18 @@ TEST_F(ValidateJwtTest, NoJwtInHeader) {
               }
            }
         )",
-      &filter_config, options);
-  Http::TestHeaderMapImpl empty_request_headers{};
-  FilterContext filter_context{&empty_request_headers, &connection_,
-                               filter_config};
-  MockAuthenticatorBase authenticator{&filter_context};
+      &filter_config_, options);
+  EXPECT_CALL(request_info_, dynamicMetadata());
+
   // When there is no JWT in the HTTP header, validateJwt() should return
   // nullptr and failure.
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equals(*payload_, default_payload_));
 }
 
-TEST_F(ValidateJwtTest, JwtInHeader) {
+TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
   jwt_.set_issuer("issuer@foo.com");
-  Http::TestHeaderMapImpl request_headers_with_jwt = CreateTestHeaderMap(
-      "sec-istio-auth-jwt-output", kSecIstioAuthUserinfoHeaderValue);
   google::protobuf::util::JsonParseOptions options;
-  FilterConfig filter_config;
   JsonStringToMessage(
       R"({
               "jwt_output_payload_locations":
@@ -288,10 +260,56 @@ TEST_F(ValidateJwtTest, JwtInHeader) {
               }
            }
         )",
-      &filter_config, options);
-  FilterContext filter_context{&request_headers_with_jwt, &connection_,
-                               filter_config};
-  MockAuthenticatorBase authenticator{&filter_context};
+      &filter_config_, options);
+
+  (*request_info_.metadata_.mutable_filter_metadata())["jwt-awuth"].MergeFrom(
+    MessageUtil::keyValueStruct("foo", "bar"));
+  EXPECT_CALL(request_info_, dynamicMetadata());
+
+  // When there is no JWT in the HTTP header, validateJwt() should return
+  // nullptr and failure.
+  EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
+  EXPECT_TRUE(MessageDifferencer::Equals(*payload_, default_payload_));
+}
+
+TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
+  jwt_.set_issuer("issuer@foo.com");
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(
+      R"({
+              "jwt_output_payload_locations":
+              {
+                "issuer@foo.com": "sec-istio-auth-jwt-output"
+              }
+           }
+        )",
+      &filter_config_, options);
+
+  (*request_info_.metadata_.mutable_filter_metadata())["jwt-auth"].MergeFrom(
+    MessageUtil::keyValueStruct("sec-istio-auth-jwt-output", "bad-data"));
+  EXPECT_CALL(request_info_, dynamicMetadata());
+
+  EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
+  EXPECT_TRUE(MessageDifferencer::Equivalent(*payload_, default_payload_));
+}
+
+TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
+  jwt_.set_issuer("issuer@foo.com");
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(
+      R"({
+              "jwt_output_payload_locations":
+              {
+                "issuer@foo.com": "sec-istio-auth-jwt-output"
+              }
+           }
+        )",
+      &filter_config_, options);
+
+  (*request_info_.metadata_.mutable_filter_metadata())["jwt-auth"].MergeFrom(
+    MessageUtil::keyValueStruct("sec-istio-auth-jwt-output", kSecIstioAuthUserinfoHeaderValue));
+  EXPECT_CALL(request_info_, dynamicMetadata());
+
   Payload expected_payload;
   JsonStringToMessage(
       R"({
@@ -311,7 +329,7 @@ TEST_F(ValidateJwtTest, JwtInHeader) {
         )",
       &expected_payload, options);
 
-  EXPECT_TRUE(authenticator.validateJwt(jwt_, payload_));
+  EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
 }
 

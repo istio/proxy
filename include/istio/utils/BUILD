@@ -42,3 +42,11 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_library(
+    name = "filter_names_header",
+    hdrs = [
+        "filter_names.h",
+    ],
+    visibility = ["//visibility:public"],
+)

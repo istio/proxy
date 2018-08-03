@@ -60,14 +60,14 @@ void JwtAuthenticator::Verify(HeaderMap& headers,
   callback_ = callback;
 
   // Sanitize the JWT verification result in the HTTP headers
-  for (const auto& rule : store_.config().rules()) {
-    if (!rule.forward_payload_header().empty()) {
-      ENVOY_LOG(debug, "Sanitize JWT authentication output header {}",
-                rule.forward_payload_header());
-      const LowerCaseString key(rule.forward_payload_header());
-      headers.remove(key);
-    }
-  }
+  // for (const auto& rule : store_.config().rules()) {
+  //   if (!rule.forward_payload_header().empty()) {
+  //     ENVOY_LOG(debug, "Sanitize JWT authentication output header {}",
+  //               rule.forward_payload_header());
+  //     const LowerCaseString key(rule.forward_payload_header());
+  //     headers.remove(key);
+  //   }
+  // }
 
   ENVOY_LOG(debug, "Jwt authentication starts");
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
@@ -206,9 +206,12 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
   }
 
   if (!issuer_item.jwt_config().forward_payload_header().empty()) {
-    const LowerCaseString key(
-        issuer_item.jwt_config().forward_payload_header());
-    headers_->addCopy(key, jwt_->PayloadStrBase64Url());
+    // TODO: can we save as proto or json object directly?
+    callback_->savePayload(issuer_item.jwt_config().forward_payload_header(),
+                           jwt_->PayloadStr());
+    // const LowerCaseString key(
+    //     issuer_item.jwt_config().forward_payload_header());
+    // headers_->addCopy(key, jwt_->PayloadStrBase64Url());
   }
 
   if (!issuer_item.jwt_config().forward()) {
