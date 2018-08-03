@@ -71,8 +71,7 @@ std::string MakeHeaderToMetadataConfig() {
           metadata_namespace: %s
           key: %s
           value: "%s"
-          type: STRING
-  )",
+          type: STRING)",
       Extensions::HttpFilters::HttpFilterNames::get().HeaderToMetadata,
       istio::utils::FilterName::kJwt, kJwtIssuer,
       StringUtil::escape(kMockJwtPayload));
