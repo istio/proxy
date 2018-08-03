@@ -27,8 +27,8 @@ using google::protobuf::util::MessageDifferencer;
 using istio::authn::Payload;
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
 using testing::NiceMock;
-using testing::StrictMock;
 using testing::Return;
+using testing::StrictMock;
 
 namespace iaapi = istio::authentication::v1alpha1;
 
@@ -263,7 +263,7 @@ TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
       &filter_config_, options);
 
   (*request_info_.metadata_.mutable_filter_metadata())["jwt-awuth"].MergeFrom(
-    MessageUtil::keyValueStruct("foo", "bar"));
+      MessageUtil::keyValueStruct("foo", "bar"));
   EXPECT_CALL(request_info_, dynamicMetadata());
 
   // When there is no JWT in the HTTP header, validateJwt() should return
@@ -286,7 +286,7 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
       &filter_config_, options);
 
   (*request_info_.metadata_.mutable_filter_metadata())["jwt-auth"].MergeFrom(
-    MessageUtil::keyValueStruct("sec-istio-auth-jwt-output", "bad-data"));
+      MessageUtil::keyValueStruct("sec-istio-auth-jwt-output", "bad-data"));
   EXPECT_CALL(request_info_, dynamicMetadata());
 
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
@@ -307,7 +307,8 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
       &filter_config_, options);
 
   (*request_info_.metadata_.mutable_filter_metadata())["jwt-auth"].MergeFrom(
-    MessageUtil::keyValueStruct("sec-istio-auth-jwt-output", kSecIstioAuthUserinfoHeaderValue));
+      MessageUtil::keyValueStruct("sec-istio-auth-jwt-output",
+                                  kSecIstioAuthUserinfoHeaderValue));
   EXPECT_CALL(request_info_, dynamicMetadata());
 
   Payload expected_payload;

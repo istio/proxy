@@ -75,9 +75,12 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
     return false;
   }
 
-  const auto& value = Envoy::Config::Metadata::metadataValue(filter_context()->request_info().dynamicMetadata(), "jwt-auth", iter->second);
+  const auto& value = Envoy::Config::Metadata::metadataValue(
+      filter_context()->request_info().dynamicMetadata(), "jwt-auth",
+      iter->second);
   if (!value.string_value().empty()) {
-    return AuthnUtils::ProcessJwtPayload(value.string_value(), payload->mutable_jwt());
+    return AuthnUtils::ProcessJwtPayload(value.string_value(),
+                                         payload->mutable_jwt());
   }
   return false;
 }

@@ -51,7 +51,7 @@ void ExtractJwtAudience(
 };  // namespace
 
 bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
-    istio::authn::JwtPayload* payload) {
+                                   istio::authn::JwtPayload* payload) {
   Envoy::Json::ObjectSharedPtr json_obj;
   try {
     json_obj = Json::Factory::loadFromString(payload_str);

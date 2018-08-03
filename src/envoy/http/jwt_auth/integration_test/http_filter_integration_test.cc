@@ -260,8 +260,8 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, RSASuccess1) {
       "xfP590ACPyXrivtsxg";
 
   auto expected_headers = BaseRequestHeaders();
-  // TODO: JWT payload is not longer output to header. Find way to verify that data equivalent to
-  // this is added to dynamicMetadata.
+  // TODO: JWT payload is not longer output to header. Find way to verify that
+  // data equivalent to this is added to dynamicMetadata.
   //   expected_headers.addCopy(
   //       kJwtVerificationResultHeaderKey,
   //       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVz"
@@ -285,8 +285,8 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, ES256Success1) {
       "T9ubWvRvNGGYOTuJ8T17Db68Qk3T8UNTK5lzfR_mw";
 
   auto expected_headers = BaseRequestHeaders();
-  // TODO: JWT payload is not longer output to header. Find way to verify that data equivalent to
-  // this is added to dynamicMetadata.
+  // TODO: JWT payload is not longer output to header. Find way to verify that
+  // data equivalent to this is added to dynamicMetadata.
   //   expected_headers.addCopy(kJwtVerificationResultHeaderKey,
   //                            "eyJpc3MiOiJo"
   //                            "dHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtc"

@@ -218,7 +218,8 @@ const std::string kGoodToken =
 
 // Payload output for kGoodToken.
 const std::string kGoodTokenPayload =
-    "{\"iss\":\"https://example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
+    "{\"iss\":\"https://"
+    "example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
     "\"aud\":\"example_service\"}";
 
 // Payload:
@@ -235,7 +236,8 @@ const std::string kGoodTokenAudHasProtocolScheme =
 
 // Payload output for kGoodTokenAudHasProtocolScheme.
 const std::string kGoodTokenAudHasProtocolSchemePayload =
-    "{\"iss\":\"https://example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
+    "{\"iss\":\"https://"
+    "example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
     "\"aud\":\"http://example_service/\"}";
 
 // Payload:
@@ -252,7 +254,8 @@ const std::string kGoodTokenAudService1 =
 
 // Payload output for kGoodTokenAudService1.
 const std::string kGoodTokenAudService1Payload =
-    "{\"iss\":\"https://example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
+    "{\"iss\":\"https://"
+    "example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
     "\"aud\":\"https://example_service1/\"}";
 
 // Payload:
@@ -269,14 +272,16 @@ const std::string kGoodTokenAudService2 =
 
 // Payload output for kGoodTokenAudService2.
 const std::string kGoodTokenAudService2Payload =
-    "{\"iss\":\"https://example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
+    "{\"iss\":\"https://"
+    "example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
     "\"aud\":\"http://example_service2\"}";
 }  // namespace
 
 class MockJwtAuthenticatorCallbacks : public JwtAuthenticator::Callbacks {
  public:
   MOCK_METHOD1(onDone, void(const Status &status));
-  MOCK_METHOD2(savePayload, void(const std::string& key, const std::string& payload));
+  MOCK_METHOD2(savePayload,
+               void(const std::string &key, const std::string &payload));
 };
 
 class JwtAuthenticatorTest : public ::testing::Test {
@@ -418,7 +423,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenAudHasProtocolSchemePayload));
+  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey,
+                                   kGoodTokenAudHasProtocolSchemePayload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -441,7 +447,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService1) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenAudService1Payload));
+  EXPECT_CALL(mock_cb,
+              savePayload(kJwtPayloadOutputKey, kGoodTokenAudService1Payload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -464,7 +471,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService2) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenAudService2Payload));
+  EXPECT_CALL(mock_cb,
+              savePayload(kJwtPayloadOutputKey, kGoodTokenAudService2Payload));
 
   auth_->Verify(headers, &mock_cb);
 

@@ -19,8 +19,8 @@
 #include "common/common/logger.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 // #include "envoy/http/header_map.h"
-#include "envoy/request_info/request_info.h"
 #include "envoy/network/connection.h"
+#include "envoy/request_info/request_info.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
@@ -33,7 +33,8 @@ namespace AuthN {
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext(
-      Envoy::RequestInfo::RequestInfo* request_info, const Network::Connection* connection,
+      Envoy::RequestInfo::RequestInfo* request_info,
+      const Network::Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
       : request_info_(request_info),
@@ -58,7 +59,9 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   const istio::authn::Result& authenticationResult() { return result_; }
 
   // Accessor to request_info.
-  const Envoy::RequestInfo::RequestInfo& request_info() const { return *request_info_; }
+  const Envoy::RequestInfo::RequestInfo& request_info() const {
+    return *request_info_;
+  }
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config

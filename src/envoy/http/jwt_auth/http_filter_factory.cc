@@ -15,9 +15,9 @@
 
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
+#include "include/istio/utils/filter_names.h"
 #include "src/envoy/http/jwt_auth/auth_store.h"
 #include "src/envoy/http/jwt_auth/http_filter.h"
-#include "include/istio/utils/filter_names.h"
 
 using ::istio::envoy::config::filter::http::jwt_auth::v2alpha1::
     JwtAuthentication;

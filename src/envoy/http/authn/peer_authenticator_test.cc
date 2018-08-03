@@ -20,8 +20,8 @@
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
-#include "test/test_common/utility.h"
 #include "test/mocks/request_info/mocks.h"
+#include "test/test_common/utility.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
 

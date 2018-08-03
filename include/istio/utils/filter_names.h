@@ -21,8 +21,9 @@
 namespace istio {
 namespace utils {
 
-// These are name of filters that currently output data to dynamicMetadata (by convention, under the
-// the entry using filter name itself as key). Define them here for easy access.
+// These are name of filters that currently output data to dynamicMetadata (by
+// convention, under the the entry using filter name itself as key). Define them
+// here for easy access.
 struct FilterName {
   static const char kJwt[];
   static const char kAuthentication[];

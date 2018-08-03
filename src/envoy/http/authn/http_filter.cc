@@ -17,11 +17,11 @@
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/http/utility.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
+#include "include/istio/utils/filter_names.h"
 #include "src/envoy/http/authn/origin_authenticator.h"
 #include "src/envoy/http/authn/peer_authenticator.h"
 #include "src/envoy/utils/authn.h"
 #include "src/envoy/utils/utils.h"
-#include "include/istio/utils/filter_names.h"
 
 using istio::authn::Payload;
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
@@ -48,7 +48,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
-      &decoder_callbacks_->requestInfo(), decoder_callbacks_->connection(), filter_config_));
+      &decoder_callbacks_->requestInfo(), decoder_callbacks_->connection(),
+      filter_config_));
 
   Payload payload;
 
@@ -73,7 +74,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     ProtobufWkt::Struct data;
     Utils::Authentication::SaveAuthAttributesToStruct(
         filter_context_->authenticationResult(), data);
-    decoder_callbacks_->requestInfo().setDynamicMetadata(istio::utils::FilterName::kAuthentication, data);
+    decoder_callbacks_->requestInfo().setDynamicMetadata(
+        istio::utils::FilterName::kAuthentication, data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
   }
   state_ = State::COMPLETE;
