@@ -16,11 +16,11 @@
 #include "src/envoy/http/authn/origin_authenticator.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/protobuf/protobuf.h"
+#include "envoy/api/v2/core/base.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
-#include "test/mocks/request_info/mocks.h"
 #include "test/test_common/utility.h"
 
 namespace iaapi = istio::authentication::v1alpha1;
@@ -91,7 +91,6 @@ class MockOriginAuthenticator : public OriginAuthenticator {
 class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
  public:
   OriginAuthenticatorTest() {}
-  // : request_headers_{{":method", "GET"}, {":path", "/"}} {}
   virtual ~OriginAuthenticatorTest() {}
 
   void SetUp() override {
@@ -121,10 +120,11 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
 
  protected:
   std::unique_ptr<StrictMock<MockOriginAuthenticator>> authenticator_;
-  StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
-  FilterContext filter_context_{&request_info_, nullptr,
-                                istio::envoy::config::filter::http::authn::
-                                    v2alpha1::FilterConfig::default_instance()};
+  // envoy::api::v2::core::Metadata metadata_;
+  FilterContext filter_context_{
+      envoy::api::v2::core::Metadata::default_instance(), nullptr,
+      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
+          default_instance()};
   iaapi::Policy policy_;
 
   Payload* payload_;

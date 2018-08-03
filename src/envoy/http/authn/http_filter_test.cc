@@ -33,8 +33,8 @@ using istio::authn::Result;
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
 using testing::Invoke;
 using testing::NiceMock;
-using testing::StrictMock;
 using testing::ReturnRef;
+using testing::StrictMock;
 using testing::_;
 
 namespace iaapi = istio::authentication::v1alpha1;
@@ -119,7 +119,8 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2);
-  EXPECT_CALL(decoder_callbacks_, requestInfo()).WillOnce(ReturnRef(request_info));
+  EXPECT_CALL(decoder_callbacks_, requestInfo())
+      .WillRepeatedly(ReturnRef(request_info));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
       .WillOnce(testing::Invoke([](Http::HeaderMap &headers, bool) {
@@ -157,18 +158,19 @@ TEST_F(AuthenticationFilterTest, AllPass) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
   RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2);
-  EXPECT_CALL(decoder_callbacks_, requestInfo()).WillOnce(ReturnRef(request_info));
+  EXPECT_CALL(decoder_callbacks_, requestInfo())
+      .WillRepeatedly(ReturnRef(request_info));
 
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
 
   EXPECT_EQ(1, request_info.dynamicMetadata().filter_metadata_size());
-  const auto* data = Utils::Authentication::GetResultFromRequestInfo(request_info);
+  const auto *data =
+      Utils::Authentication::GetResultFromRequestInfo(request_info);
   ASSERT_TRUE(data);
 
   ProtobufWkt::Struct expected_data;
-  ASSERT_TRUE(
-       Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
        fields {
          key: "source.principal"
          value {
@@ -180,7 +182,8 @@ TEST_F(AuthenticationFilterTest, AllPass) {
          value {
            string_value: "foo"
          }
-       })", &expected_data));
+       })",
+                                                    &expected_data));
   EXPECT_TRUE(TestUtility::protoEqual(expected_data, *data));
 }
 

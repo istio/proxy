@@ -17,9 +17,9 @@
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
+#include "envoy/api/v2/core/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "envoy/network/connection.h"
-#include "envoy/request_info/request_info.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
@@ -27,16 +27,16 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-// FilterContext holds inputs, such as request header and connection and
-// result data for authentication process.
+// FilterContext holds inputs, such as request dynamic metadata and connection
+// and result data for authentication process.
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext(
-      Envoy::RequestInfo::RequestInfo* request_info,
+      const envoy::api::v2::core::Metadata& dynamic_metadata,
       const Network::Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
-      : request_info_(request_info),
+      : dynamic_metadata_(dynamic_metadata),
         connection_(connection),
         filter_config_(filter_config) {}
   virtual ~FilterContext() {}
@@ -57,15 +57,10 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Returns the authentication result.
   const istio::authn::Result& authenticationResult() { return result_; }
 
-  // Accessor to request_info.
-  const Envoy::RequestInfo::RequestInfo& request_info() const {
-    return *request_info_;
+  // Acessor to dynamic metadata.
+  const envoy::api::v2::core::Metadata& dynamic_metadata() const {
+    return dynamic_metadata_;
   }
-
-  Envoy::RequestInfo::RequestInfo* mutable_request_info() {
-    return request_info_;
-  }
-
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config
@@ -74,11 +69,15 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
     return filter_config_;
   }
 
-  bool getJwtPayload(const std::string& key, std::string* payload);
+  // Gets JWT payload (output from JWT filter) for given issuer. If non-empty
+  // payload found, returns true and set the output payload string. Otherwise,
+  // returns false.
+  bool getJwtPayload(const std::string& issuer, std::string* payload) const;
 
  private:
-  // Pointer to the request info.
-  Envoy::RequestInfo::RequestInfo* request_info_;
+  // Const reference to request info dynamic metadata. This provides data that
+  // output from other filters, e.g JWT.
+  const envoy::api::v2::core::Metadata& dynamic_metadata_;
 
   // Pointer to network connection of the request.
   const Network::Connection* connection_;

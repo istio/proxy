@@ -16,9 +16,9 @@
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "common/common/assert.h"
 #include "common/config/metadata.h"
+#include "include/istio/utils/filter_names.h"
 #include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/utils/utils.h"
-#include "include/istio/utils/filter_names.h"
 
 using istio::authn::Payload;
 
@@ -66,22 +66,9 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
 }
 
 bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
-  auto iter =
-      filter_context()->filter_config().jwt_output_payload_locations().find(
-          jwt.issuer());
-  if (iter ==
-      filter_context()->filter_config().jwt_output_payload_locations().end()) {
-    ENVOY_LOG(warn, "No JWT payload header location is found for the issuer {}",
-              jwt.issuer());
-    return false;
-  }
-
-  const auto& value = Envoy::Config::Metadata::metadataValue(
-      filter_context()->request_info().dynamicMetadata(), istio::utils::FilterName::kJwt,
-      iter->second);
-  if (!value.string_value().empty()) {
-    return AuthnUtils::ProcessJwtPayload(value.string_value(),
-                                         payload->mutable_jwt());
+  std::string jwt_payload;
+  if (filter_context()->getJwtPayload(jwt.issuer(), &jwt_payload)) {
+    return AuthnUtils::ProcessJwtPayload(jwt_payload, payload->mutable_jwt());
   }
   return false;
 }

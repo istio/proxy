@@ -88,8 +88,8 @@ const std::string kPublicKey =
     "  \"kid\": \"b3319a147514df7ee5e4bcdee51350cc890cc89e\""
     "}]}";
 
-// Keep this same as forward_payload_header field in the config below.
-const char kJwtPayloadOutputKey[] = "test-output";
+// Keep this same as issuer field in the config below.
+const char kJwtIssuer[] = "https://example.com";
 // A good JSON config.
 const char kExampleConfig[] = R"(
 {
@@ -343,7 +343,7 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTandCache) {
     EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
       ASSERT_EQ(status, Status::OK);
     }));
-    EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenPayload));
+    EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
     auth_->Verify(headers, &mock_cb);
 
     // Verify the token is removed.
@@ -370,7 +370,7 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTPubkeyNoAlg) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenPayload));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -400,7 +400,7 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTPubkeyNoKid) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenPayload));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -423,8 +423,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey,
-                                   kGoodTokenAudHasProtocolSchemePayload));
+  EXPECT_CALL(mock_cb,
+              savePayload(kJwtIssuer, kGoodTokenAudHasProtocolSchemePayload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -447,8 +447,7 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService1) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb,
-              savePayload(kJwtPayloadOutputKey, kGoodTokenAudService1Payload));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenAudService1Payload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -471,8 +470,7 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTAudService2) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb,
-              savePayload(kJwtPayloadOutputKey, kGoodTokenAudService2Payload));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenAudService2Payload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -498,7 +496,7 @@ TEST_F(JwtAuthenticatorTest, TestForwardJwt) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenPayload));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
 
   auth_->Verify(headers, &mock_cb);
 
@@ -730,7 +728,9 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
 }
 
 TEST_F(JwtAuthenticatorTest, TestNoForwardPayloadHeader) {
-  // In this config, there is no forward_payload_header
+  // The flag (forward_payload_header) is deprecated and have no impact. The
+  // current behavior is always save JWT payload to request info (dynamic
+  // metadata). In this config, there is no forward_payload_header.
   SetupConfig(kExampleConfigWithoutForwardPayloadHeader);
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
   auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
@@ -738,6 +738,8 @@ TEST_F(JwtAuthenticatorTest, TestNoForwardPayloadHeader) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
+  // Note savePayload is still being called, as explain above.
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
   auth_->Verify(headers, &mock_cb);
 
   // Test when forward_payload_header is not set, nothing added to headers.
@@ -762,7 +764,7 @@ TEST_F(JwtAuthenticatorTest, TestInlineJwks) {
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
     ASSERT_EQ(status, Status::OK);
   }));
-  EXPECT_CALL(mock_cb, savePayload(kJwtPayloadOutputKey, kGoodTokenPayload));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
 
   auth_->Verify(headers, &mock_cb);
   EXPECT_EQ(mock_pubkey.called_count(), 0);

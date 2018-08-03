@@ -20,7 +20,9 @@
 #include "gmock/gmock.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/network/mocks.h"
-#include "test/mocks/request_info/mocks.h"
+//#include "test/mocks/request_info/mocks.h"
+#include "envoy/api/v2/core/base.pb.h"
+#include "include/istio/utils/filter_names.h"
 #include "test/mocks/ssl/mocks.h"
 
 using google::protobuf::util::MessageDifferencer;
@@ -38,7 +40,6 @@ namespace Istio {
 namespace AuthN {
 namespace {
 
-const std::string kSecIstioAuthUserInfoHeaderKey = "sec-istio-auth-userinfo";
 const std::string kSecIstioAuthUserinfoHeaderValue =
     R"(
      {
@@ -62,13 +63,13 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
  public:
   virtual ~ValidateX509Test() {}
 
-  NiceMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   NiceMock<Envoy::Network::MockConnection> connection_{};
   NiceMock<Envoy::Ssl::MockConnection> ssl_{};
   FilterConfig filter_config_{};
-  FilterContext filter_context_{&request_info_, &connection_,
-                                istio::envoy::config::filter::http::authn::
-                                    v2alpha1::FilterConfig::default_instance()};
+  FilterContext filter_context_{
+      envoy::api::v2::core::Metadata::default_instance(), &connection_,
+      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
+          default_instance()};
 
   MockAuthenticatorBase authenticator_{&filter_context_};
 
@@ -164,11 +165,13 @@ class ValidateJwtTest : public testing::Test,
  public:
   virtual ~ValidateJwtTest() {}
 
-  StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
+  // StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
+  envoy::api::v2::core::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
   // NiceMock<Envoy::Ssl::MockConnection> ssl_{};
   FilterConfig filter_config_{};
-  FilterContext filter_context_{&request_info_, &connection_, filter_config_};
+  FilterContext filter_context_{dynamic_metadata_, &connection_,
+                                filter_config_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 
   void SetUp() override { payload_ = new Payload(); }
@@ -231,63 +234,30 @@ TEST_F(ValidateJwtTest, OutputPayloadLocationNotDefine) {
 
 TEST_F(ValidateJwtTest, NoJwtPayloadOutput) {
   jwt_.set_issuer("issuer@foo.com");
-  google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
-      R"({
-              "jwt_output_payload_locations":
-              {
-                "issuer@foo.com": "sec-istio-auth-jwt-output"
-              }
-           }
-        )",
-      &filter_config_, options);
-  EXPECT_CALL(request_info_, dynamicMetadata());
 
-  // When there is no JWT in the HTTP header, validateJwt() should return
-  // nullptr and failure.
+  // When there is no JWT in request info dynamic metadata, validateJwt() should
+  // return nullptr and failure.
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equals(*payload_, default_payload_));
 }
 
 TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
   jwt_.set_issuer("issuer@foo.com");
-  google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
-      R"({
-              "jwt_output_payload_locations":
-              {
-                "issuer@foo.com": "sec-istio-auth-jwt-output"
-              }
-           }
-        )",
-      &filter_config_, options);
 
-  (*request_info_.metadata_.mutable_filter_metadata())["jwt-awuth"].MergeFrom(
-      MessageUtil::keyValueStruct("foo", "bar"));
-  EXPECT_CALL(request_info_, dynamicMetadata());
+  (*dynamic_metadata_.mutable_filter_metadata())[istio::utils::FilterName::kJwt]
+      .MergeFrom(MessageUtil::keyValueStruct("foo", "bar"));
 
-  // When there is no JWT in the HTTP header, validateJwt() should return
-  // nullptr and failure.
+  // When there is no JWT payload for given issuer in request info dynamic
+  // metadata, validateJwt() should return nullptr and failure.
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equals(*payload_, default_payload_));
 }
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
   jwt_.set_issuer("issuer@foo.com");
-  google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
-      R"({
-              "jwt_output_payload_locations":
-              {
-                "issuer@foo.com": "sec-istio-auth-jwt-output"
-              }
-           }
-        )",
-      &filter_config_, options);
-
-  (*request_info_.metadata_.mutable_filter_metadata())["jwt-auth"].MergeFrom(
-      MessageUtil::keyValueStruct("sec-istio-auth-jwt-output", "bad-data"));
-  EXPECT_CALL(request_info_, dynamicMetadata());
+  (*dynamic_metadata_.mutable_filter_metadata())[istio::utils::FilterName::kJwt]
+      .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
+  // EXPECT_CALL(request_info_, dynamicMetadata());
 
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equivalent(*payload_, default_payload_));
@@ -295,21 +265,9 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
   jwt_.set_issuer("issuer@foo.com");
-  google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
-      R"({
-              "jwt_output_payload_locations":
-              {
-                "issuer@foo.com": "sec-istio-auth-jwt-output"
-              }
-           }
-        )",
-      &filter_config_, options);
-
-  (*request_info_.metadata_.mutable_filter_metadata())["jwt-auth"].MergeFrom(
-      MessageUtil::keyValueStruct("sec-istio-auth-jwt-output",
-                                  kSecIstioAuthUserinfoHeaderValue));
-  EXPECT_CALL(request_info_, dynamicMetadata());
+  (*dynamic_metadata_.mutable_filter_metadata())[istio::utils::FilterName::kJwt]
+      .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com",
+                                             kSecIstioAuthUserinfoHeaderValue));
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -328,7 +286,7 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
              }
            }
         )",
-      &expected_payload, options);
+      &expected_payload, google::protobuf::util::JsonParseOptions{});
 
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));

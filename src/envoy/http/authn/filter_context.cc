@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/filter_context.h"
+#include "include/istio/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
@@ -70,6 +71,36 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
       return;
   }
 }
+
+bool FilterContext::getJwtPayload(const std::string& issuer,
+                                  std::string* payload) const {
+  // auto location_iter =
+  //     filter_config_.jwt_output_payload_locations().find(issuer);
+  // if (location_iter == filter_config_.jwt_output_payload_locations().end()) {
+  //   ENVOY_LOG(warn, "No JWT payload output location is found for the issuer
+  //   {}", issuer); return false;
+  // }
+  const auto filter_it =
+      dynamic_metadata_.filter_metadata().find(istio::utils::FilterName::kJwt);
+  if (filter_it == dynamic_metadata_.filter_metadata().end()) {
+    ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
+              istio::utils::FilterName::kJwt);
+    return false;
+  }
+
+  const auto& data_struct = filter_it->second;
+  const auto entry_it = data_struct.fields().find(issuer);
+  if (entry_it == data_struct.fields().end()) {
+    return false;
+  }
+  if (entry_it->second.string_value().empty()) {
+    return false;
+  }
+
+  *payload = entry_it->second.string_value();
+  return true;
+}
+
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http

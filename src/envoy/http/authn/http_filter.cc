@@ -42,15 +42,15 @@ void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
+FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
+                                                        bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
             filter_config_.DebugString());
   state_ = State::PROCESSING;
 
-  std::cout << "oooooooooooooooooo " << decoder_callbacks_->requestInfo().dynamicMetadata().DebugString() << "\n";
   filter_context_.reset(new Istio::AuthN::FilterContext(
-      &decoder_callbacks_->requestInfo(), decoder_callbacks_->connection(),
-      filter_config_));
+      decoder_callbacks_->requestInfo().dynamicMetadata(),
+      decoder_callbacks_->connection(), filter_config_));
 
   Payload payload;
 
@@ -71,6 +71,10 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
 
   // Put authentication result to headers.
   if (filter_context_ != nullptr) {
+    // TODO(diemvu): Remove the header and only use the metadata to pass the
+    // attributes.
+    Utils::Authentication::SaveResultToHeader(
+        filter_context_->authenticationResult(), &headers);
     // Save auth results in the metadata, could be later used by RBAC filter.
     ProtobufWkt::Struct data;
     Utils::Authentication::SaveAuthAttributesToStruct(
