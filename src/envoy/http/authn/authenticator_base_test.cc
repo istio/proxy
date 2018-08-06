@@ -20,9 +20,8 @@
 #include "gmock/gmock.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/mocks/network/mocks.h"
-//#include "test/mocks/request_info/mocks.h"
 #include "envoy/api/v2/core/base.pb.h"
-#include "include/istio/utils/filter_names.h"
+#include "src/envoy/utils/filter_names.h"
 #include "test/mocks/ssl/mocks.h"
 
 using google::protobuf::util::MessageDifferencer;
@@ -244,7 +243,7 @@ TEST_F(ValidateJwtTest, NoJwtPayloadOutput) {
 TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
   jwt_.set_issuer("issuer@foo.com");
 
-  (*dynamic_metadata_.mutable_filter_metadata())[istio::utils::FilterName::kJwt]
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
       .MergeFrom(MessageUtil::keyValueStruct("foo", "bar"));
 
   // When there is no JWT payload for given issuer in request info dynamic
@@ -255,7 +254,7 @@ TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
   jwt_.set_issuer("issuer@foo.com");
-  (*dynamic_metadata_.mutable_filter_metadata())[istio::utils::FilterName::kJwt]
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
       .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
   // EXPECT_CALL(request_info_, dynamicMetadata());
 
@@ -265,7 +264,7 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
   jwt_.set_issuer("issuer@foo.com");
-  (*dynamic_metadata_.mutable_filter_metadata())[istio::utils::FilterName::kJwt]
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
       .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com",
                                              kSecIstioAuthUserinfoHeaderValue));
 

@@ -59,16 +59,6 @@ void JwtAuthenticator::Verify(HeaderMap& headers,
   headers_ = &headers;
   callback_ = callback;
 
-  // Sanitize the JWT verification result in the HTTP headers
-  // for (const auto& rule : store_.config().rules()) {
-  //   if (!rule.forward_payload_header().empty()) {
-  //     ENVOY_LOG(debug, "Sanitize JWT authentication output header {}",
-  //               rule.forward_payload_header());
-  //     const LowerCaseString key(rule.forward_payload_header());
-  //     headers.remove(key);
-  //   }
-  // }
-
   ENVOY_LOG(debug, "Jwt authentication starts");
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   store_.token_extractor().Extract(headers, &tokens);

@@ -15,7 +15,7 @@
 
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
-#include "include/istio/utils/filter_names.h"
+#include "src/envoy/utils/filter_names.h"
 #include "src/envoy/http/jwt_auth/auth_store.h"
 #include "src/envoy/http/jwt_auth/http_filter.h"
 
@@ -47,7 +47,7 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
     return ProtobufTypes::MessagePtr{new JwtAuthentication};
   }
 
-  std::string name() override { return istio::utils::FilterName::kJwt; }
+  std::string name() override { return Utils::IstioFilterName::kJwt; }
 
  private:
   Http::FilterFactoryCb createFilter(const JwtAuthentication& proto_config,

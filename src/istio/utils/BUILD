@@ -77,14 +77,3 @@ cc_library(
         "//include/istio/utils:attribute_names_header",
     ],
 )
-
-cc_library(
-    name = "filter_names_lib",
-    srcs = [
-        "filter_names.cc",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//include/istio/utils:filter_names_header",
-    ],
-)

@@ -17,7 +17,7 @@
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 #include "google/protobuf/util/json_util.h"
-#include "include/istio/utils/filter_names.h"
+#include "src/envoy/utils/filter_names.h"
 #include "src/envoy/http/authn/http_filter.h"
 #include "src/envoy/utils/utils.h"
 
@@ -62,7 +62,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
   }
 
   std::string name() override {
-    return istio::utils::FilterName::kAuthentication;
+    return Utils::IstioFilterName::kAuthentication;
   }
 
  private:

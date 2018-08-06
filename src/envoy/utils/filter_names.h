@@ -13,14 +13,20 @@
  * limitations under the License.
  */
 
-#include "include/istio/utils/filter_names.h"
+#pragma once
 
-namespace istio {
-namespace utils {
+#include <string>
 
-// TODO: using more standard naming, e.g istio.jwt, istio.authn
-const char FilterName::kJwt[] = "jwt-auth";
-const char FilterName::kAuthentication[] = "istio_authn";
+namespace Envoy {
+namespace Utils {
 
-}  // namespace utils
-}  // namespace istio
+// These are name of (Istio) filters that currently output data to dynamicMetadata (by
+// convention, under the the entry using filter name itself as key). Define them
+// here for easy access.
+struct IstioFilterName {
+  static const char kJwt[];
+  static const char kAuthentication[];
+};
+
+}  // namespace Utils
+}  // namespace Envoy

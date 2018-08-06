@@ -16,7 +16,7 @@
 #include "src/envoy/utils/authn.h"
 #include "common/common/base64.h"
 #include "include/istio/utils/attribute_names.h"
-#include "include/istio/utils/filter_names.h"
+#include "src/envoy/utils/filter_names.h"
 #include "src/istio/authn/context.pb.h"
 
 using istio::authn::Result;
@@ -109,7 +109,7 @@ const ProtobufWkt::Struct* Authentication::GetResultFromRequestInfo(
     const RequestInfo::RequestInfo& request_info) {
   const auto& metadata = request_info.dynamicMetadata();
   const auto& iter = metadata.filter_metadata().find(
-      istio::utils::FilterName::kAuthentication);
+      Utils::IstioFilterName::kAuthentication);
   if (iter == metadata.filter_metadata().end()) {
     return nullptr;
   }

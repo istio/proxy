@@ -17,7 +17,7 @@
 #include "common/common/utility.h"
 #include "extensions/filters/http/well_known_names.h"
 #include "fmt/printf.h"
-#include "include/istio/utils/filter_names.h"
+#include "src/envoy/utils/filter_names.h"
 #include "src/istio/authn/context.pb.h"
 #include "test/integration/http_protocol_integration.h"
 
@@ -73,7 +73,7 @@ std::string MakeHeaderToMetadataConfig() {
           value: "%s"
           type: STRING)",
       Extensions::HttpFilters::HttpFilterNames::get().HeaderToMetadata,
-      istio::utils::FilterName::kJwt, kJwtIssuer,
+      Utils::IstioFilterName::kJwt, kJwtIssuer,
       StringUtil::escape(kMockJwtPayload));
 }
 

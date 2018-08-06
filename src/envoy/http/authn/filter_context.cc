@@ -14,7 +14,7 @@
  */
 
 #include "src/envoy/http/authn/filter_context.h"
-#include "include/istio/utils/filter_names.h"
+#include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
@@ -74,17 +74,11 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
 
 bool FilterContext::getJwtPayload(const std::string& issuer,
                                   std::string* payload) const {
-  // auto location_iter =
-  //     filter_config_.jwt_output_payload_locations().find(issuer);
-  // if (location_iter == filter_config_.jwt_output_payload_locations().end()) {
-  //   ENVOY_LOG(warn, "No JWT payload output location is found for the issuer
-  //   {}", issuer); return false;
-  // }
   const auto filter_it =
-      dynamic_metadata_.filter_metadata().find(istio::utils::FilterName::kJwt);
+      dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
     ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
-              istio::utils::FilterName::kJwt);
+              Utils::IstioFilterName::kJwt);
     return false;
   }
 

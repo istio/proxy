@@ -57,10 +57,6 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Returns the authentication result.
   const istio::authn::Result& authenticationResult() { return result_; }
 
-  // Acessor to dynamic metadata.
-  const envoy::api::v2::core::Metadata& dynamic_metadata() const {
-    return dynamic_metadata_;
-  }
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config
