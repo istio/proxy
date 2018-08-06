@@ -18,7 +18,6 @@
 namespace Envoy {
 namespace Utils {
 
-
 // TODO: using more standard naming, e.g istio.jwt, istio.authn
 const char IstioFilterName::kJwt[] = "jwt-auth";
 const char IstioFilterName::kAuthentication[] = "istio_authn";

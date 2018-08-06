@@ -16,12 +16,12 @@
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "common/common/base64.h"
 #include "common/protobuf/protobuf.h"
+#include "envoy/api/v2/core/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "gmock/gmock.h"
 #include "src/envoy/http/authn/test_utils.h"
-#include "test/mocks/network/mocks.h"
-#include "envoy/api/v2/core/base.pb.h"
 #include "src/envoy/utils/filter_names.h"
+#include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
 
 using google::protobuf::util::MessageDifferencer;

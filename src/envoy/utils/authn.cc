@@ -108,8 +108,8 @@ bool Authentication::FetchResultFromHeader(const Http::HeaderMap& headers,
 const ProtobufWkt::Struct* Authentication::GetResultFromRequestInfo(
     const RequestInfo::RequestInfo& request_info) {
   const auto& metadata = request_info.dynamicMetadata();
-  const auto& iter = metadata.filter_metadata().find(
-      Utils::IstioFilterName::kAuthentication);
+  const auto& iter =
+      metadata.filter_metadata().find(Utils::IstioFilterName::kAuthentication);
   if (iter == metadata.filter_metadata().end()) {
     return nullptr;
   }

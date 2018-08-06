@@ -76,8 +76,7 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
 void JwtVerificationFilter::savePayload(const std::string& key,
                                         const std::string& payload) {
   decoder_callbacks_->requestInfo().setDynamicMetadata(
-      Utils::IstioFilterName::kJwt,
-      MessageUtil::keyValueStruct(key, payload));
+      Utils::IstioFilterName::kJwt, MessageUtil::keyValueStruct(key, payload));
 }
 
 FilterDataStatus JwtVerificationFilter::decodeData(Buffer::Instance&, bool) {

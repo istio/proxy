@@ -20,9 +20,9 @@
 namespace Envoy {
 namespace Utils {
 
-// These are name of (Istio) filters that currently output data to dynamicMetadata (by
-// convention, under the the entry using filter name itself as key). Define them
-// here for easy access.
+// These are name of (Istio) filters that currently output data to
+// dynamicMetadata (by convention, under the the entry using filter name itself
+// as key). Define them here for easy access.
 struct IstioFilterName {
   static const char kJwt[];
   static const char kAuthentication[];
