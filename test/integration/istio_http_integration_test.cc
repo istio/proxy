@@ -13,35 +13,44 @@
  * limitations under the License.
  */
 
-// This test suite verifies the end-to-end behaviour of the HTTP filter chain with JWT + AuthN + Mixer.
-// That chain is used in Istio, when authentication is active. Filters exchanges data between each other
-// using request info (dynamic metadata) and that information can only be observed at the end (i.e
-// from request to mixer backends).
+// This test suite verifies the end-to-end behaviour of the HTTP filter chain
+// with JWT + AuthN + Mixer. That chain is used in Istio, when authentication is
+// active. Filters exchanges data between each other using request info (dynamic
+// metadata) and that information can only be observed at the end (i.e from
+// request to mixer backends).
 
 #include "fmt/printf.h"
+#include "gmock/gmock.h"
+#include "mixer/v1/check.pb.h"
+#include "mixer/v1/report.pb.h"
 #include "src/envoy/utils/filter_names.h"
 #include "test/integration/http_protocol_integration.h"
-#include "mixer/v1/report.pb.h"
-#include "mixer/v1/check.pb.h"
-#include "gmock/gmock.h"
 
 using ::google::protobuf::util::error::Code;
-using google::protobuf::util::MessageDifferencer;
 using ::testing::Contains;
 using ::testing::Not;
+using google::protobuf::util::MessageDifferencer;
 
 namespace Envoy {
 namespace {
 
-// From https://github.com/istio/istio/blob/master/security/tools/jwt/samples/demo.jwt
+// From
+// https://github.com/istio/istio/blob/master/security/tools/jwt/samples/demo.jwt
 static const char kGoodToken[] =
-  "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0UnpIVV8tZW52dlEiLC"
-  "J0eXAiOiJKV1QifQ.eyJleHAiOjQ2ODU5ODk3MDAsImZvbyI6ImJhciIsImlhdCI6MTUzMjM4OTcwMCwiaXNzIjoidG"
-  "VzdGluZ0BzZWN1cmUuaXN0aW8uaW8iLCJzdWIiOiJ0ZXN0aW5nQHNlY3VyZS5pc3Rpby5pbyJ9.CfNnxWP2tcnR9q0v"
-  "xyxweaF3ovQYHYZl82hAUsn21bwQd9zP7c-LS9qd_vpdLG4Tn1A15NxfCjp5f7QNBUo-KC9PJqYpgGbaXhaGx7bEdFW"
-  "jcwv3nZzvc7M__ZpaCERdwU7igUmJqYGBYQ51vr2njU9ZimyKkfDe3axcyiBZde7G6dabliUosJvvKOPcKIWPccCgef"
-  "Sj_GNfwIip3-SsFdlR7BtbVUcqR-yv-XOxJ3Uc1MI0tz3uMiiZcyPV7sNCU4KRnemRIMHVOfuvHsU60_GhGbiSFzgPT"
-  "Aa9WTltbnarTbxudb_YEOx12JiwYToeX0DCPb43W1tzIBxgm8NxUg";
+    "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0Un"
+    "pIVV8tZW52dlEiLC"
+    "J0eXAiOiJKV1QifQ."
+    "eyJleHAiOjQ2ODU5ODk3MDAsImZvbyI6ImJhciIsImlhdCI6MTUzMjM4OTcwMCwiaXNzIjoidG"
+    "VzdGluZ0BzZWN1cmUuaXN0aW8uaW8iLCJzdWIiOiJ0ZXN0aW5nQHNlY3VyZS5pc3Rpby5pbyJ9"
+    ".CfNnxWP2tcnR9q0v"
+    "xyxweaF3ovQYHYZl82hAUsn21bwQd9zP7c-LS9qd_vpdLG4Tn1A15NxfCjp5f7QNBUo-"
+    "KC9PJqYpgGbaXhaGx7bEdFW"
+    "jcwv3nZzvc7M__"
+    "ZpaCERdwU7igUmJqYGBYQ51vr2njU9ZimyKkfDe3axcyiBZde7G6dabliUosJvvKOPcKIWPccC"
+    "gef"
+    "Sj_GNfwIip3-SsFdlR7BtbVUcqR-yv-"
+    "XOxJ3Uc1MI0tz3uMiiZcyPV7sNCU4KRnemRIMHVOfuvHsU60_GhGbiSFzgPT"
+    "Aa9WTltbnarTbxudb_YEOx12JiwYToeX0DCPb43W1tzIBxgm8NxUg";
 
 // Generate by gen-jwt.py as described in
 // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/README.md
@@ -49,15 +58,24 @@ static const char kGoodToken[] =
 // `security/tools/jwt/samples/gen-jwt.py security/tools/jwt/samples/key.pem \
 //  --expire=3153600000 --iss "wrong-issuer@secure.istio.io"`
 static const char kBadToken[] =
-  "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0UnpIVV8tZW52dlEiLCJ"
-  "0eXAiOiJKV1QifQ.eyJleHAiOjQ2ODcxODkyNTEsImlhdCI6MTUzMzU4OTI1MSwiaXNzIjoid3JvbmctaXNzdWVyQHN"
-  "lY3VyZS5pc3Rpby5pbyIsInN1YiI6Indyb25nLWlzc3VlckBzZWN1cmUuaXN0aW8uaW8ifQ.Ye7RKrEgr3mUxRE1OF5"
-  "sCaaH6kg_OT-mAM1HI3tTUp0ljVuxZLCcTXPvvEAjyeiNUm8fjeeER0fsXv7y8wTaA4FFw9x8NT9xS8pyLi6RsTwdjkq"
-  "0-Plu93VQk1R98BdbEVT-T5vVz7uACES4LQBqsvvTcLBbBNUvKs_eJyZG71WJuymkkbL5Ki7CB73sQUMl2T3eORC7DJt"
-  "yn_C9Dxy2cwCzHrLZnnGz839_bX_yi29dI4veYCNBgU-9ZwehqfgSCJWYUoBTrdM06N3jEemlWB83ZY4OXoW0pNx-ecu"
-  "3asJVbwyxV2_HT6_aUsdHwTYwHv2hXBjdKEfwZxSsBxbKpA";
+    "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0Un"
+    "pIVV8tZW52dlEiLCJ"
+    "0eXAiOiJKV1QifQ."
+    "eyJleHAiOjQ2ODcxODkyNTEsImlhdCI6MTUzMzU4OTI1MSwiaXNzIjoid3JvbmctaXNzdWVyQH"
+    "N"
+    "lY3VyZS5pc3Rpby5pbyIsInN1YiI6Indyb25nLWlzc3VlckBzZWN1cmUuaXN0aW8uaW8ifQ."
+    "Ye7RKrEgr3mUxRE1OF5"
+    "sCaaH6kg_OT-"
+    "mAM1HI3tTUp0ljVuxZLCcTXPvvEAjyeiNUm8fjeeER0fsXv7y8wTaA4FFw9x8NT9xS8pyLi6Rs"
+    "Twdjkq"
+    "0-Plu93VQk1R98BdbEVT-T5vVz7uACES4LQBqsvvTcLBbBNUvKs_"
+    "eJyZG71WJuymkkbL5Ki7CB73sQUMl2T3eORC7DJt"
+    "yn_C9Dxy2cwCzHrLZnnGz839_bX_yi29dI4veYCNBgU-"
+    "9ZwehqfgSCJWYUoBTrdM06N3jEemlWB83ZY4OXoW0pNx-ecu"
+    "3asJVbwyxV2_HT6_aUsdHwTYwHv2hXBjdKEfwZxSsBxbKpA";
 
-static const char kExpectedPrincipal[] = "testing@secure.istio.io/testing@secure.istio.io";
+static const char kExpectedPrincipal[] =
+    "testing@secure.istio.io/testing@secure.istio.io";
 static const char kDestinationUID[] = "dest.pod.123";
 static const char kSourceUID[] = "src.pod.xyz";
 static const char kTelemetryBackend[] = "telemetry-backend";
@@ -65,13 +83,11 @@ static const char kPolicyBackend[] = "policy-backend";
 
 // Generates basic test request header.
 Http::TestHeaderMapImpl BaseRequestHeaders() {
-  return Http::TestHeaderMapImpl{
-      {":method", "GET"},
-      {":path", "/"},
-      {":scheme", "http"},
-      {":authority", "host"},
-      {"x-forwarded-for", "10.0.0.1"}
-  };
+  return Http::TestHeaderMapImpl{{":method", "GET"},
+                                 {":path", "/"},
+                                 {":scheme", "http"},
+                                 {":authority", "host"},
+                                 {"x-forwarded-for", "10.0.0.1"}};
 }
 
 // Generates test request header with given token.
@@ -91,16 +107,21 @@ std::string MakeJwtFilterConfig() {
         inline_string: "%s"
       allow_missing_or_failed: true
   )";
-  // From https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json
+  // From
+  // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json
   static const char kJwksInline[] =
-    "{ \"keys\":[ {\"e\":\"AQAB\",\"kid\":\"DHFbpoIUqrY8t2zpA2qXfCmr5VO5ZEr4RzHU_-envvQ\","
-    "\"kty\":\"RSA\",\"n\":\"xAE7eB6qugXyCAG3yhh7pkDkT65pHymX-P7KfIupjf59vsdo91bSP9C8H07pSAGQO1MV"
-    "_xFj9VswgsCg4R6otmg5PV2He95lZdHtOcU5DXIg_pbhLdKXbi66GlVeK6ABZOUW3WYtnNHD-91gVuoeJT_"
-    "DwtGGcp4ignkgXfkiEm4sw-4sfb4qdt5oLbyVpmW6x9cfa7vs2WTfURiCrBoUqgBo_-"
-    "4WTiULmmHSGZHOjzwa8WtrtOQGsAFjIbno85jp6MnGGGZPYZbDAa_b3y5u-"
-    "YpW7ypZrvD8BgtKVjgtQgZhLAGezMt0ua3DRrWnKqTZ0BJ_EyxOGuHJrLsn00fnMQ\"}]}";
+      "{ \"keys\":[ "
+      "{\"e\":\"AQAB\",\"kid\":\"DHFbpoIUqrY8t2zpA2qXfCmr5VO5ZEr4RzHU_-envvQ\","
+      "\"kty\":\"RSA\",\"n\":\"xAE7eB6qugXyCAG3yhh7pkDkT65pHymX-"
+      "P7KfIupjf59vsdo91bSP9C8H07pSAGQO1MV"
+      "_xFj9VswgsCg4R6otmg5PV2He95lZdHtOcU5DXIg_"
+      "pbhLdKXbi66GlVeK6ABZOUW3WYtnNHD-91gVuoeJT_"
+      "DwtGGcp4ignkgXfkiEm4sw-4sfb4qdt5oLbyVpmW6x9cfa7vs2WTfURiCrBoUqgBo_-"
+      "4WTiULmmHSGZHOjzwa8WtrtOQGsAFjIbno85jp6MnGGGZPYZbDAa_b3y5u-"
+      "YpW7ypZrvD8BgtKVjgtQgZhLAGezMt0ua3DRrWnKqTZ0BJ_EyxOGuHJrLsn00fnMQ\"}]}";
 
-  return fmt::sprintf(kJwtFilterTemplate, Utils::IstioFilterName::kJwt, StringUtil::escape(kJwksInline));
+  return fmt::sprintf(kJwtFilterTemplate, Utils::IstioFilterName::kJwt,
+                      StringUtil::escape(kJwksInline));
 }
 
 std::string MakeAuthFilterConfig() {
@@ -113,7 +134,8 @@ std::string MakeAuthFilterConfig() {
             issuer: testing@secure.istio.io
             jwks_uri: http://localhost:8081/
         principalBinding: USE_ORIGIN)";
-  return fmt::sprintf(kAuthnFilterWithJwtTemplate, Utils::IstioFilterName::kAuthentication);
+  return fmt::sprintf(kAuthnFilterWithJwtTemplate,
+                      Utils::IstioFilterName::kAuthentication);
 }
 
 std::string MakeMixerFilterConfig() {
@@ -140,17 +162,20 @@ std::string MakeMixerFilterConfig() {
       report_cluster: %s
       check_cluster: %s
   )";
-  return fmt::sprintf(kMixerFilterTemplate, kDestinationUID, kSourceUID, kTelemetryBackend, kPolicyBackend);
+  return fmt::sprintf(kMixerFilterTemplate, kDestinationUID, kSourceUID,
+                      kTelemetryBackend, kPolicyBackend);
 }
 
 class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
  public:
   void createUpstreams() override {
     HttpProtocolIntegrationTest::createUpstreams();
-    fake_upstreams_.emplace_back(new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_));
+    fake_upstreams_.emplace_back(
+        new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_));
     telemetry_upstream_ = fake_upstreams_.back().get();
 
-    fake_upstreams_.emplace_back(new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_));
+    fake_upstreams_.emplace_back(
+        new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_));
     policy_upstream_ = fake_upstreams_.back().get();
   }
 
@@ -180,12 +205,12 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
     };
   }
 
-
   void waitForTelemetryRequest(::istio::mixer::v1::ReportRequest* request) {
-    AssertionResult result =
-        telemetry_upstream_->waitForHttpConnection(*dispatcher_, telemetry_connection_);
+    AssertionResult result = telemetry_upstream_->waitForHttpConnection(
+        *dispatcher_, telemetry_connection_);
     RELEASE_ASSERT(result, result.message());
-    result = telemetry_connection_->waitForNewStream(*dispatcher_, telemetry_request_);
+    result = telemetry_connection_->waitForNewStream(*dispatcher_,
+                                                     telemetry_request_);
     RELEASE_ASSERT(result, result.message());
 
     result = telemetry_request_->waitForGrpcMessage(*dispatcher_, *request);
@@ -200,10 +225,11 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   void waitForPolicyRequest(::istio::mixer::v1::CheckRequest* request) {
-    AssertionResult result =
-        policy_upstream_->waitForHttpConnection(*dispatcher_, policy_connection_);
+    AssertionResult result = policy_upstream_->waitForHttpConnection(
+        *dispatcher_, policy_connection_);
     RELEASE_ASSERT(result, result.message());
-    result = policy_connection_->waitForNewStream(*dispatcher_, policy_request_);
+    result =
+        policy_connection_->waitForNewStream(*dispatcher_, policy_request_);
     RELEASE_ASSERT(result, result.message());
 
     result = policy_request_->waitForGrpcMessage(*dispatcher_, *request);
@@ -235,7 +261,6 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   FakeUpstream* policy_upstream_{};
   FakeHttpConnectionPtr policy_connection_{};
   FakeStreamPtr policy_request_{};
-
 };
 
 INSTANTIATE_TEST_CASE_P(
@@ -251,11 +276,11 @@ TEST_P(IstioHttpIntegrationTest, NoJwt) {
 
   ::istio::mixer::v1::ReportRequest report_request;
   waitForTelemetryRequest(&report_request);
-  // As authentication fail, report should not have 'word' that might come authN.
-  EXPECT_THAT(report_request.default_words(), ::testing::AllOf(
-    Contains(kDestinationUID),
-    Contains("10.0.0.1"),
-    Not(Contains(kExpectedPrincipal))));
+  // As authentication fail, report should not have 'word' that might come
+  // authN.
+  EXPECT_THAT(report_request.default_words(),
+              ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
+                               Not(Contains(kExpectedPrincipal))));
   waitForTelemetryResponse();
 
   response->waitForEndStream();
@@ -266,14 +291,14 @@ TEST_P(IstioHttpIntegrationTest, NoJwt) {
 TEST_P(IstioHttpIntegrationTest, BadJwt) {
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response = codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kBadToken));
+  auto response =
+      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kBadToken));
 
   ::istio::mixer::v1::ReportRequest report_request;
   waitForTelemetryRequest(&report_request);
-  EXPECT_THAT(report_request.default_words(), ::testing::AllOf(
-    Contains(kDestinationUID),
-    Contains("10.0.0.1"),
-    Not(Contains(kExpectedPrincipal))));
+  EXPECT_THAT(report_request.default_words(),
+              ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
+                               Not(Contains(kExpectedPrincipal))));
   waitForTelemetryResponse();
 
   response->waitForEndStream();
@@ -284,40 +309,36 @@ TEST_P(IstioHttpIntegrationTest, BadJwt) {
 TEST_P(IstioHttpIntegrationTest, GoodJwt) {
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response = codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kGoodToken));
+  auto response =
+      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kGoodToken));
 
   ::istio::mixer::v1::CheckRequest check_request;
   waitForPolicyRequest(&check_request);
   // Check request should see authn attributes.
-  EXPECT_THAT(check_request.attributes().words(), ::testing::AllOf(
-    Contains(kDestinationUID),
-    Contains("10.0.0.1"),
-    Contains(kExpectedPrincipal),
-    Contains("testing@secure.istio.io"),
-    Contains("sub"),
-    Contains("iss"),
-    Contains("foo"),
-    Contains("bar")));
+  EXPECT_THAT(
+      check_request.attributes().words(),
+      ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
+                       Contains(kExpectedPrincipal),
+                       Contains("testing@secure.istio.io"), Contains("sub"),
+                       Contains("iss"), Contains("foo"), Contains("bar")));
   waitForPolicyResponse();
 
   waitForNextUpstreamRequest(0);
   // Send backend response.
-  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}}, true);
+  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
+                                   true);
   response->waitForEndStream();
 
   // Report (log) is sent after backen response.
   ::istio::mixer::v1::ReportRequest report_request;
   waitForTelemetryRequest(&report_request);
   // Report request should also see the same authn attributes.
-  EXPECT_THAT(report_request.default_words(), ::testing::AllOf(
-    Contains(kDestinationUID),
-    Contains("10.0.0.1"),
-    Contains(kExpectedPrincipal),
-    Contains("testing@secure.istio.io"),
-    Contains("sub"),
-    Contains("iss"),
-    Contains("foo"),
-    Contains("bar")));
+  EXPECT_THAT(
+      report_request.default_words(),
+      ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
+                       Contains(kExpectedPrincipal),
+                       Contains("testing@secure.istio.io"), Contains("sub"),
+                       Contains("iss"), Contains("foo"), Contains("bar")));
   waitForTelemetryResponse();
 
   EXPECT_TRUE(response->complete());
