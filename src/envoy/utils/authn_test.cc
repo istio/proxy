@@ -97,12 +97,14 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kRequestAuthGroups)
                 .list_value()
-                .values(0),
+                .values(0)
+                .string_value(),
             "group1");
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kRequestAuthGroups)
                 .list_value()
-                .values(1),
+                .values(1)
+                .string_value(),
             "group2");
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kRequestAuthPresenter)
