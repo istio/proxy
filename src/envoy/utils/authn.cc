@@ -79,8 +79,10 @@ void Authentication::SaveAuthAttributesToStruct(
       for (int i = 0; i < origin.groups().size(); i++) {
         groups.push_back(origin.groups(i));
       }
-      ::google::protobuf::ListValue *value;
-      value = (*data.mutable_fields())[istio::utils::AttributeName::kRequestAuthGroups].mutable_list_value();
+      ::google::protobuf::ListValue* value;
+      value = (*data.mutable_fields())
+                  [istio::utils::AttributeName::kRequestAuthGroups]
+                      .mutable_list_value();
       value->ParseFromArray(groups.data(), groups.size());
     }
     if (!origin.presenter().empty()) {
