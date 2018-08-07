@@ -36,7 +36,7 @@ static void setKeyValue(::google::protobuf::Struct& data, std::string key,
 
 // Helper function to set a key list pair into Struct.
 static void setListValue(::google::protobuf::Struct& data, std::string key,
-                        ::google::protobuf::ListValue* value) {
+                         ::google::protobuf::ListValue* value) {
   (*data.mutable_fields())[key].set_allocated_list_value(value);
 }
 
@@ -82,13 +82,13 @@ void Authentication::SaveAuthAttributesToStruct(
     }
     if (!origin.groups().empty()) {
       std::vector<std::string> groups;
-      for(int i=0; i<origin.groups().size(); i++) {
+      for (int i = 0; i < origin.groups().size(); i++) {
         groups.push_back(origin.groups(i));
       }
       ::google::protobuf::ListValue value;
       value.ParsePartialFromArray(groups.data(), groups.size());
       setListValue(data, istio::utils::AttributeName::kRequestAuthGroups,
-                  &value);
+                   &value);
     }
     if (!origin.presenter().empty()) {
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthPresenter,

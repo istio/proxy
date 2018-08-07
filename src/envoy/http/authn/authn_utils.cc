@@ -55,9 +55,9 @@ void ExtractJwtAudience(
 // Extract JWT groups into the JwtPayload.
 // This function should to be called after the claims are extracted.
 void ExtractJwtGroups(
-const Envoy::Json::Object& obj,
-const ::google::protobuf::Map< ::std::string, ::std::string>& claims,
-istio::authn::JwtPayload* payload) {
+    const Envoy::Json::Object& obj,
+    const ::google::protobuf::Map< ::std::string, ::std::string>& claims,
+    istio::authn::JwtPayload* payload) {
   const std::string& key = kJwtGroupsKey;
   // "groups" can be either string array or string.
   // First, try as string
