@@ -218,7 +218,7 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   // Must be called after waitForTelemetryRequest
-  void waitForTelemetryResponse() {
+  void sendTelemetryResponse() {
     telemetry_request_->startGrpcStream();
     telemetry_request_->sendGrpcMessage(::istio::mixer::v1::ReportResponse{});
     telemetry_request_->finishGrpcStream(Grpc::Status::Ok);
@@ -237,7 +237,7 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   // Must be called after waitForPolicyRequest
-  void waitForPolicyResponse() {
+  void sendPolicyResponse() {
     policy_request_->startGrpcStream();
     ::istio::mixer::v1::CheckResponse response;
     response.mutable_precondition()->mutable_status()->set_code(Code::OK);
@@ -281,7 +281,7 @@ TEST_P(IstioHttpIntegrationTest, NoJwt) {
   EXPECT_THAT(report_request.default_words(),
               ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
                                Not(Contains(kExpectedPrincipal))));
-  waitForTelemetryResponse();
+  sendTelemetryResponse();
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
@@ -299,7 +299,7 @@ TEST_P(IstioHttpIntegrationTest, BadJwt) {
   EXPECT_THAT(report_request.default_words(),
               ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
                                Not(Contains(kExpectedPrincipal))));
-  waitForTelemetryResponse();
+  sendTelemetryResponse();
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
@@ -321,7 +321,7 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
                        Contains(kExpectedPrincipal),
                        Contains("testing@secure.istio.io"), Contains("sub"),
                        Contains("iss"), Contains("foo"), Contains("bar")));
-  waitForPolicyResponse();
+  sendPolicyResponse();
 
   waitForNextUpstreamRequest(0);
   // Send backend response.
@@ -339,7 +339,7 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
                        Contains(kExpectedPrincipal),
                        Contains("testing@secure.istio.io"), Contains("sub"),
                        Contains("iss"), Contains("foo"), Contains("bar")));
-  waitForTelemetryResponse();
+  sendTelemetryResponse();
 
   EXPECT_TRUE(response->complete());
   EXPECT_STREQ("200", response->headers().Status()->value().c_str());
