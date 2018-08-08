@@ -230,17 +230,17 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
   builder.AddString(utils::AttributeName::kContextProxyErrorCode,
                     info.response_flags);
 
-  std::string rbac_shadow_resp_code;
-  std::string rbac_shadow_policy_id;
-  report_data->GetRBACShadowAttributes(&rbac_shadow_resp_code,
-                                       &rbac_shadow_policy_id);
-  if (!rbac_shadow_resp_code.empty()) {
-    builder.AddString(utils::AttributeName::kRbacShadowResponseCode,
-                      rbac_shadow_resp_code);
+  std::string rbac_permissive_resp_code;
+  std::string rbac_permissive_policy_id;
+  report_data->GetRBACPermissiveAttributes(&rbac_permissive_resp_code,
+                                           &rbac_permissive_policy_id);
+  if (!rbac_permissive_resp_code.empty()) {
+    builder.AddString(utils::AttributeName::kRbacPermissiveResponseCode,
+                      rbac_permissive_resp_code);
   }
-  if (!rbac_shadow_policy_id.empty()) {
-    builder.AddString(utils::AttributeName::kRbacShadowPolicyId,
-                      rbac_shadow_policy_id);
+  if (!rbac_permissive_policy_id.empty()) {
+    builder.AddString(utils::AttributeName::kRbacPermissivePolicyId,
+                      rbac_permissive_policy_id);
   }
 }
 

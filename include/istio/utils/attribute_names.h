@@ -96,8 +96,8 @@ struct AttributeName {
   static const char kResponseGrpcStatus[];
   static const char kResponseGrpcMessage[];
 
-  static const char kRbacShadowResponseCode[];
-  static const char kRbacShadowPolicyId[];
+  static const char kRbacPermissiveResponseCode[];
+  static const char kRbacPermissivePolicyId[];
 };
 
 }  // namespace utils

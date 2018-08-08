@@ -343,13 +343,13 @@ attributes {
   }
 }
 attributes {
-  key: "rbac.shadow.response_code"
+  key: "rbac.permissive.response_code"
   value {
     string_value: "403"
   }
 }
 attributes {
-  key: "rbac.shadow.effective_policy_id"
+  key: "rbac.permissive.effective_policy_id"
   value {
     string_value: "policy-foo"
   }
@@ -573,7 +573,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         status->message = "grpc-message";
         return true;
       }));
-  EXPECT_CALL(mock_data, GetRBACShadowAttributes(_, _))
+  EXPECT_CALL(mock_data, GetRBACPermissiveAttributes(_, _))
       .WillOnce(Invoke([](std::string *code, std::string *id) {
         *code = "403";
         *id = "policy-foo";
@@ -627,7 +627,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         info->response_flags = "NR";
       }));
   EXPECT_CALL(mock_data, GetGrpcStatus(_)).WillOnce(testing::Return(false));
-  EXPECT_CALL(mock_data, GetRBACShadowAttributes(_, _))
+  EXPECT_CALL(mock_data, GetRBACPermissiveAttributes(_, _))
       .WillOnce(Invoke([](std::string *code, std::string *id) {
         *code = "403";
         *id = "policy-foo";

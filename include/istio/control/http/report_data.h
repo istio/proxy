@@ -47,9 +47,9 @@ class ReportData {
   // Get destination ip/port.
   virtual bool GetDestinationIpPort(std::string* ip, int* port) const = 0;
 
-  // Get rbac shadow attributes.
-  virtual void GetRBACShadowAttributes(std::string* resp_code,
-                                       std::string* policy_id) const = 0;
+  // Get rbac permissive mode policy attributes.
+  virtual void GetRBACPermissiveAttributes(std::string* resp_code,
+                                           std::string* policy_id) const = 0;
 
   // Get upstream host UID. This value overrides the value in the report bag.
   virtual bool GetDestinationUID(std::string* uid) const = 0;
