@@ -29,14 +29,13 @@
 using ::google::protobuf::util::error::Code;
 using ::testing::Contains;
 using ::testing::Not;
-using google::protobuf::util::MessageDifferencer;
 
 namespace Envoy {
 namespace {
 
 // From
 // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/demo.jwt
-static const char kGoodToken[] =
+constexpr char kGoodToken[] =
     "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0Un"
     "pIVV8tZW52dlEiLC"
     "J0eXAiOiJKV1QifQ."
@@ -57,7 +56,7 @@ static const char kGoodToken[] =
 // to generate token with invalid issuer.
 // `security/tools/jwt/samples/gen-jwt.py security/tools/jwt/samples/key.pem
 //  --expire=3153600000 --iss "wrong-issuer@secure.istio.io"`
-static const char kBadToken[] =
+constexpr char kBadToken[] =
     "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0Un"
     "pIVV8tZW52dlEiLCJ"
     "0eXAiOiJKV1QifQ."
@@ -74,12 +73,12 @@ static const char kBadToken[] =
     "9ZwehqfgSCJWYUoBTrdM06N3jEemlWB83ZY4OXoW0pNx-ecu"
     "3asJVbwyxV2_HT6_aUsdHwTYwHv2hXBjdKEfwZxSsBxbKpA";
 
-static const char kExpectedPrincipal[] =
+constexpr char kExpectedPrincipal[] =
     "testing@secure.istio.io/testing@secure.istio.io";
-static const char kDestinationUID[] = "dest.pod.123";
-static const char kSourceUID[] = "src.pod.xyz";
-static const char kTelemetryBackend[] = "telemetry-backend";
-static const char kPolicyBackend[] = "policy-backend";
+constexpr char kDestinationUID[] = "dest.pod.123";
+constexpr char kSourceUID[] = "src.pod.xyz";
+constexpr char kTelemetryBackend[] = "telemetry-backend";
+constexpr char kPolicyBackend[] = "policy-backend";
 
 // Generates basic test request header.
 Http::TestHeaderMapImpl BaseRequestHeaders() {
@@ -98,7 +97,7 @@ Http::TestHeaderMapImpl HeadersWithToken(const std::string& token) {
 }
 
 std::string MakeJwtFilterConfig() {
-  static const char kJwtFilterTemplate[] = R"(
+  constexpr char kJwtFilterTemplate[] = R"(
   name: %s
   config:
     rules:
@@ -109,7 +108,7 @@ std::string MakeJwtFilterConfig() {
   )";
   // From
   // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json
-  static const char kJwksInline[] =
+  constexpr char kJwksInline[] =
       "{ \"keys\":[ "
       "{\"e\":\"AQAB\",\"kid\":\"DHFbpoIUqrY8t2zpA2qXfCmr5VO5ZEr4RzHU_-envvQ\","
       "\"kty\":\"RSA\",\"n\":\"xAE7eB6qugXyCAG3yhh7pkDkT65pHymX-"
@@ -125,7 +124,7 @@ std::string MakeJwtFilterConfig() {
 }
 
 std::string MakeAuthFilterConfig() {
-  static const char kAuthnFilterWithJwtTemplate[] = R"(
+  constexpr char kAuthnFilterWithJwtTemplate[] = R"(
     name: %s
     config:
       policy:
@@ -139,7 +138,7 @@ std::string MakeAuthFilterConfig() {
 }
 
 std::string MakeMixerFilterConfig() {
-  static const char kMixerFilterTemplate[] = R"(
+  constexpr char kMixerFilterTemplate[] = R"(
   name: mixer
   config:
     defaultDestinationService: "default"
