@@ -168,7 +168,7 @@ bool CheckData::FindCookie(const std::string& name, std::string* value) const {
 }
 
 const ::google::protobuf::Struct* CheckData::GetAuthenticationResult() const {
-  return  Utils::Authentication::GetResultFromMetadata(metadata_);
+  return Utils::Authentication::GetResultFromMetadata(metadata_);
 }
 
 }  // namespace Mixer

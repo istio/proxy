@@ -131,7 +131,9 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
 
   state_ = Calling;
   initiating_call_ = true;
-  CheckData check_data(headers, decoder_callbacks_->requestInfo().dynamicMetadata(), decoder_callbacks_->connection());
+  CheckData check_data(headers,
+                       decoder_callbacks_->requestInfo().dynamicMetadata(),
+                       decoder_callbacks_->connection());
   Utils::HeaderUpdate header_update(&headers);
   headers_ = &headers;
   cancel_check_ = handler_->Check(
@@ -276,7 +278,8 @@ void Filter::log(const HeaderMap* request_headers,
     ReadPerRouteConfig(request_info.routeEntry(), &config);
     handler_ = control_.controller()->CreateRequestHandler(config);
 
-    CheckData check_data(*request_headers, request_info.dynamicMetadata(), nullptr);
+    CheckData check_data(*request_headers, request_info.dynamicMetadata(),
+                         nullptr);
     handler_->ExtractRequestAttributes(&check_data);
   }
   // response trailer header is not counted to response total size.

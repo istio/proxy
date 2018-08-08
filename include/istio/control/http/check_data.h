@@ -81,9 +81,9 @@ class CheckData {
   virtual bool FindCookie(const std::string &name,
                           std::string *value) const = 0;
 
-  // Returns a pointer to the authentication result from request info dynamic metadata, if
-  // available. Otherwise, returns nullptrl
-  virtual const ::google::protobuf::Struct* GetAuthenticationResult() const = 0;
+  // Returns a pointer to the authentication result from request info dynamic
+  // metadata, if available. Otherwise, returns nullptrl
+  virtual const ::google::protobuf::Struct *GetAuthenticationResult() const = 0;
 };
 
 // An interfact to update request HTTP headers with Istio attributes.

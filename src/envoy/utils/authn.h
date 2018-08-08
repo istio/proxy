@@ -24,14 +24,14 @@ namespace Utils {
 
 class Authentication : public Logger::Loggable<Logger::Id::filter> {
  public:
-
   // Save authentication attributes into the data Struct.
   static void SaveAuthAttributesToStruct(const istio::authn::Result& result,
                                          ::google::protobuf::Struct& data);
 
-  // Returns a pointer to the authentication result from metadata. Typically, the input metadata is
-  // the request info's dynamic metadata. Authentication result, if available, is stored under
-  // authentication filter metdata. Returns nullptr if there is no data for that filter.
+  // Returns a pointer to the authentication result from metadata. Typically,
+  // the input metadata is the request info's dynamic metadata. Authentication
+  // result, if available, is stored under authentication filter metdata.
+  // Returns nullptr if there is no data for that filter.
   static const ProtobufWkt::Struct* GetResultFromMetadata(
       const envoy::api::v2::core::Metadata& metadata);
 };

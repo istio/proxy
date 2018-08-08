@@ -77,14 +77,14 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
                       destination_principal);
   }
   static const std::set<std::string> kAuthenticationStringAttributes = {
-    utils::AttributeName::kRequestAuthPrincipal,
-    utils::AttributeName::kSourceUser,
-    utils::AttributeName::kSourcePrincipal,
-    utils::AttributeName::kRequestAuthAudiences,
-    utils::AttributeName::kRequestAuthPresenter,
-    utils::AttributeName::kRequestAuthRawClaims,
+      utils::AttributeName::kRequestAuthPrincipal,
+      utils::AttributeName::kSourceUser,
+      utils::AttributeName::kSourcePrincipal,
+      utils::AttributeName::kRequestAuthAudiences,
+      utils::AttributeName::kRequestAuthPresenter,
+      utils::AttributeName::kRequestAuthRawClaims,
   };
-  const auto* authn_result = check_data->GetAuthenticationResult();
+  const auto *authn_result = check_data->GetAuthenticationResult();
   if (authn_result != nullptr) {
     // Not all data in authentication results need to be sent to mixer (e.g
     // groups), so we need to iterate on pre-approved attributes only. for
@@ -98,9 +98,11 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
     }
 
     // Add string-map attribute (kRequestAuthClaims)
-    const auto &claims = authn_result->fields().find(utils::AttributeName::kRequestAuthClaims);
+    const auto &claims =
+        authn_result->fields().find(utils::AttributeName::kRequestAuthClaims);
     if (claims != authn_result->fields().end()) {
-      builder.AddProtoStructStringMap(utils::AttributeName::kRequestAuthClaims, claims->second.struct_value());
+      builder.AddProtoStructStringMap(utils::AttributeName::kRequestAuthClaims,
+                                      claims->second.struct_value());
     }
   }
 }

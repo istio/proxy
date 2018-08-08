@@ -76,7 +76,8 @@ constexpr char kBadToken[] =
 constexpr char kExpectedPrincipal[] =
     "testing@secure.istio.io/testing@secure.istio.io";
 constexpr char kExpectedRawClaims[] =
-    "{\"exp\":4685989700,\"foo\":\"bar\",\"iat\":1532389700,\"iss\":\"testing@secure.istio.io\","
+    "{\"exp\":4685989700,\"foo\":\"bar\",\"iat\":1532389700,\"iss\":\"testing@"
+    "secure.istio.io\","
     "\"sub\":\"testing@secure.istio.io\"}";
 constexpr char kDestinationUID[] = "dest.pod.123";
 constexpr char kSourceUID[] = "src.pod.xyz";
@@ -319,12 +320,11 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
   // Check request should see authn attributes.
   EXPECT_THAT(
       check_request.attributes().words(),
-      ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
-                       Contains(kExpectedPrincipal),
-                       Contains(kExpectedRawClaims),
-                       Contains("testing@secure.istio.io"), Contains("sub"),
-                       Contains("iss"), Contains("foo"), Contains("bar"),
-                       Contains("c")));
+      ::testing::AllOf(
+          Contains(kDestinationUID), Contains("10.0.0.1"),
+          Contains(kExpectedPrincipal), Contains(kExpectedRawClaims),
+          Contains("testing@secure.istio.io"), Contains("sub"), Contains("iss"),
+          Contains("foo"), Contains("bar"), Contains("c")));
   sendPolicyResponse();
 
   waitForNextUpstreamRequest(0);
@@ -337,13 +337,12 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
   ::istio::mixer::v1::ReportRequest report_request;
   waitForTelemetryRequest(&report_request);
   // Report request should also see the same authn attributes.
-  EXPECT_THAT(
-      report_request.default_words(),
-      ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
-                       Contains(kExpectedPrincipal),
-                       Contains(kExpectedRawClaims),
-                       Contains("testing@secure.istio.io"), Contains("sub"),
-                       Contains("iss"), Contains("foo"), Contains("bar")));
+  EXPECT_THAT(report_request.default_words(),
+              ::testing::AllOf(
+                  Contains(kDestinationUID), Contains("10.0.0.1"),
+                  Contains(kExpectedPrincipal), Contains(kExpectedRawClaims),
+                  Contains("testing@secure.istio.io"), Contains("sub"),
+                  Contains("iss"), Contains("foo"), Contains("bar")));
   sendTelemetryResponse();
 
   EXPECT_TRUE(response->complete());
