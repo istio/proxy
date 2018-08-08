@@ -231,14 +231,15 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
                     info.response_flags);
 
   ReportData::RbacReportInfo rbac_info;
-  report_data->GetRbacReportInfo(&rbac_info);
-  if (!rbac_info.permissive_resp_code.empty()) {
-    builder.AddString(utils::AttributeName::kRbacPermissiveResponseCode,
-                      rbac_info.permissive_resp_code);
-  }
-  if (!rbac_info.permissive_policy_id.empty()) {
-    builder.AddString(utils::AttributeName::kRbacPermissivePolicyId,
-                      rbac_info.permissive_policy_id);
+  if (report_data->GetRbacReportInfo(&rbac_info)) {
+    if (!rbac_info.permissive_resp_code.empty()) {
+      builder.AddString(utils::AttributeName::kRbacPermissiveResponseCode,
+                        rbac_info.permissive_resp_code);
+    }
+    if (!rbac_info.permissive_policy_id.empty()) {
+      builder.AddString(utils::AttributeName::kRbacPermissivePolicyId,
+                        rbac_info.permissive_policy_id);
+    }
   }
 }
 

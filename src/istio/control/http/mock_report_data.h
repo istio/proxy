@@ -31,7 +31,7 @@ class MockReportData : public ReportData {
   MOCK_CONST_METHOD2(GetDestinationIpPort, bool(std::string* ip, int* port));
   MOCK_CONST_METHOD1(GetDestinationUID, bool(std::string* ip));
   MOCK_CONST_METHOD1(GetGrpcStatus, bool(GrpcStatus* status));
-  MOCK_CONST_METHOD1(GetRbacReportInfo, void(RbacReportInfo* info));
+  MOCK_CONST_METHOD1(GetRbacReportInfo, bool(RbacReportInfo* info));
 };
 
 }  // namespace http

@@ -25,8 +25,9 @@
 namespace Envoy {
 namespace Http {
 namespace Mixer {
-static const std::string permissivePolicyIDField = "shadow_effective_policyID";
-static const std::string permissiveRespCodeField = "shadow_response_code";
+static const std::string kRbacPermissivePolicyIDField =
+    "shadow_effective_policyID";
+static const std::string kRbacPermissiveRespCodeField = "shadow_response_code";
 
 namespace {
 // Set of headers excluded from response.headers attribute.
@@ -120,28 +121,28 @@ class ReportData : public ::istio::control::http::ReportData {
   }
 
   // Get Rbac related attributes.
-  void GetRbacReportInfo(RbacReportInfo *rbacReportInfo) const override {
+  bool GetRbacReportInfo(RbacReportInfo *report_info) const override {
     const auto filter_meta = info_.dynamicMetadata().filter_metadata();
     const auto filter_it =
         filter_meta.find(Extensions::HttpFilters::HttpFilterNames::get().Rbac);
     if (filter_it == filter_meta.end()) {
-      return;
+      return false;
     }
 
     const auto &data_struct = filter_it->second;
     const auto resp_code_it =
-        data_struct.fields().find(permissiveRespCodeField);
+        data_struct.fields().find(kRbacPermissiveRespCodeField);
     if (resp_code_it != data_struct.fields().end()) {
-      rbacReportInfo->permissive_resp_code =
-          resp_code_it->second.string_value();
+      report_info->permissive_resp_code = resp_code_it->second.string_value();
     }
 
     const auto policy_id_it =
-        data_struct.fields().find(permissivePolicyIDField);
+        data_struct.fields().find(kRbacPermissivePolicyIDField);
     if (policy_id_it != data_struct.fields().end()) {
-      rbacReportInfo->permissive_policy_id =
-          policy_id_it->second.string_value();
+      report_info->permissive_policy_id = policy_id_it->second.string_value();
     }
+
+    return true;
   }
 };
 

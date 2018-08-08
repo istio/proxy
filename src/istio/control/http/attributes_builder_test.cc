@@ -574,9 +574,10 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         return true;
       }));
   EXPECT_CALL(mock_data, GetRbacReportInfo(_))
-      .WillOnce(Invoke([](ReportData::RbacReportInfo *rbacReportInfo) {
-        rbacReportInfo->permissive_resp_code = "403";
-        rbacReportInfo->permissive_policy_id = "policy-foo";
+      .WillOnce(Invoke([](ReportData::RbacReportInfo *report_info) -> bool {
+        report_info->permissive_resp_code = "403";
+        report_info->permissive_policy_id = "policy-foo";
+        return true;
       }));
 
   RequestContext request;
@@ -628,9 +629,10 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
       }));
   EXPECT_CALL(mock_data, GetGrpcStatus(_)).WillOnce(testing::Return(false));
   EXPECT_CALL(mock_data, GetRbacReportInfo(_))
-      .WillOnce(Invoke([](ReportData::RbacReportInfo *rbacReportInfo) {
-        rbacReportInfo->permissive_resp_code = "403";
-        rbacReportInfo->permissive_policy_id = "policy-foo";
+      .WillOnce(Invoke([](ReportData::RbacReportInfo *report_info) -> bool {
+        report_info->permissive_resp_code = "403";
+        report_info->permissive_policy_id = "policy-foo";
+        return true;
       }));
 
   RequestContext request;
