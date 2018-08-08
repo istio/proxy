@@ -55,7 +55,7 @@ static const char kGoodToken[] =
 // Generate by gen-jwt.py as described in
 // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/README.md
 // to generate token with invalid issuer.
-// `security/tools/jwt/samples/gen-jwt.py security/tools/jwt/samples/key.pem \
+// `security/tools/jwt/samples/gen-jwt.py security/tools/jwt/samples/key.pem
 //  --expire=3153600000 --iss "wrong-issuer@secure.istio.io"`
 static const char kBadToken[] =
     "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0Un"
