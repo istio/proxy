@@ -87,8 +87,7 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
   const auto *authn_result = check_data->GetAuthenticationResult();
   if (authn_result != nullptr) {
     // Not all data in authentication results need to be sent to mixer (e.g
-    // groups), so we need to iterate on pre-approved attributes only. for
-    // (const auto &field : authn_result->fields()) {
+    // groups), so we need to iterate on pre-approved attributes only.
     for (const auto &attribute : kAuthenticationStringAttributes) {
       const auto &iter = authn_result->fields().find(attribute);
       if (iter != authn_result->fields().end() &&

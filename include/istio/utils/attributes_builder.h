@@ -100,8 +100,11 @@ class AttributesBuilder {
     entries->clear();
     for (const auto& field : struct_map.fields()) {
       // Ignore all fields that are not string.
-      if (!field.second.string_value().empty()) {
-        (*entries)[field.first] = field.second.string_value();
+      switch (field.second.kind_case()) {
+        case google::protobuf::Value::kStringValue:
+          (*entries)[field.first] = field.second.string_value();
+          break;
+        default: break;
       }
     }
   }

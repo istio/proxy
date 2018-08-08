@@ -82,7 +82,7 @@ class CheckData {
                           std::string *value) const = 0;
 
   // Returns a pointer to the authentication result from request info dynamic
-  // metadata, if available. Otherwise, returns nullptrl
+  // metadata, if available. Otherwise, returns nullptr.
   virtual const ::google::protobuf::Struct *GetAuthenticationResult() const = 0;
 };
 
