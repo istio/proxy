@@ -101,38 +101,5 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
             "rawclaim");
 }
 
-// TEST_F(AuthenticationTest, ResultAlreadyExist) {
-//   request_headers_.addCopy(GetHeaderLocation(), "somedata");
-//   EXPECT_TRUE(Authentication::HasResultInHeader(request_headers_));
-//   EXPECT_FALSE(Authentication::SaveResultToHeader(Result{}, &request_headers_));
-//   EXPECT_TRUE(Authentication::HasResultInHeader(request_headers_));
-//   const auto entry = request_headers_.get(GetHeaderLocation());
-//   EXPECT_TRUE(entry != nullptr);
-//   EXPECT_EQ("somedata", entry->value().getStringView());
-// }
-
-// TEST_F(AuthenticationTest, FetchResultNotExit) {
-//   Result result;
-//   EXPECT_FALSE(
-//       Authentication::FetchResultFromHeader(request_headers_, &result));
-// }
-
-// TEST_F(AuthenticationTest, FetchResultBadFormat) {
-//   request_headers_.addCopy(GetHeaderLocation(), "somedata");
-//   EXPECT_TRUE(Authentication::HasResultInHeader(request_headers_));
-//   Result result;
-//   EXPECT_FALSE(
-//       Authentication::FetchResultFromHeader(request_headers_, &result));
-// }
-
-// TEST_F(AuthenticationTest, FetchResult) {
-//   EXPECT_TRUE(
-//       Authentication::SaveResultToHeader(test_result_, &request_headers_));
-//   Result fetch_result;
-//   EXPECT_TRUE(
-//       Authentication::FetchResultFromHeader(request_headers_, &fetch_result));
-//   EXPECT_TRUE(TestUtility::protoEqual(test_result_, fetch_result));
-// }
-
 }  // namespace Utils
 }  // namespace Envoy

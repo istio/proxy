@@ -70,7 +70,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
 
   // Put authentication result to headers.
   if (filter_context_ != nullptr) {
-    // Save auth results in the metadata, could be later used by RBAC filter.
+    // Save auth results in the metadata, could be used later by RBAC and/or mixer filter.
     ProtobufWkt::Struct data;
     Utils::Authentication::SaveAuthAttributesToStruct(
         filter_context_->authenticationResult(), data);
