@@ -573,10 +573,10 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         status->message = "grpc-message";
         return true;
       }));
-  EXPECT_CALL(mock_data, GetRBACPermissiveAttributes(_, _))
-      .WillOnce(Invoke([](std::string *code, std::string *id) {
-        *code = "403";
-        *id = "policy-foo";
+  EXPECT_CALL(mock_data, GetRbacReportInfo(_))
+      .WillOnce(Invoke([](ReportData::RbacReportInfo *rbacReportInfo) {
+        rbacReportInfo->permissive_resp_code = "403";
+        rbacReportInfo->permissive_policy_id = "policy-foo";
       }));
 
   RequestContext request;
@@ -627,10 +627,10 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         info->response_flags = "NR";
       }));
   EXPECT_CALL(mock_data, GetGrpcStatus(_)).WillOnce(testing::Return(false));
-  EXPECT_CALL(mock_data, GetRBACPermissiveAttributes(_, _))
-      .WillOnce(Invoke([](std::string *code, std::string *id) {
-        *code = "403";
-        *id = "policy-foo";
+  EXPECT_CALL(mock_data, GetRbacReportInfo(_))
+      .WillOnce(Invoke([](ReportData::RbacReportInfo *rbacReportInfo) {
+        rbacReportInfo->permissive_resp_code = "403";
+        rbacReportInfo->permissive_policy_id = "policy-foo";
       }));
 
   RequestContext request;

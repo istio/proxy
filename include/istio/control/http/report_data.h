@@ -42,14 +42,18 @@ class ReportData {
     int response_code;
     std::string response_flags;
   };
+
   virtual void GetReportInfo(ReportInfo* info) const = 0;
 
   // Get destination ip/port.
   virtual bool GetDestinationIpPort(std::string* ip, int* port) const = 0;
 
-  // Get rbac permissive mode policy attributes.
-  virtual void GetRBACPermissiveAttributes(std::string* resp_code,
-                                           std::string* policy_id) const = 0;
+  // Get Rbac attributes.
+  struct RbacReportInfo {
+    std::string permissive_resp_code;
+    std::string permissive_policy_id;
+  };
+  virtual void GetRbacReportInfo(RbacReportInfo* rbacReportInfo) const = 0;
 
   // Get upstream host UID. This value overrides the value in the report bag.
   virtual bool GetDestinationUID(std::string* uid) const = 0;
