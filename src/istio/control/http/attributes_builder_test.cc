@@ -342,6 +342,18 @@ attributes {
     string_value: "NR"
   }
 }
+attributes {
+  key: "rbac.shadow.response_code"
+  value {
+    string_value: "403"
+  }
+}
+attributes {
+  key: "rbac.shadow.effective_policy_id"
+  value {
+    string_value: "policy-foo"
+  }
+}
 )";
 
 void ClearContextTime(const std::string &name, RequestContext *request) {
@@ -561,6 +573,11 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         status->message = "grpc-message";
         return true;
       }));
+  EXPECT_CALL(mock_data, GetRBACShadowAttributes(_, _))
+      .WillOnce(Invoke([](std::string *code, std::string *id) {
+        *code = "403";
+        *id = "policy-foo";
+      }));
 
   RequestContext request;
   AttributesBuilder builder(&request);
@@ -610,6 +627,11 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         info->response_flags = "NR";
       }));
   EXPECT_CALL(mock_data, GetGrpcStatus(_)).WillOnce(testing::Return(false));
+  EXPECT_CALL(mock_data, GetRBACShadowAttributes(_, _))
+      .WillOnce(Invoke([](std::string *code, std::string *id) {
+        *code = "403";
+        *id = "policy-foo";
+      }));
 
   RequestContext request;
   SetDestinationIp(&request, "1.2.3.4");

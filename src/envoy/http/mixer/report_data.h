@@ -18,12 +18,16 @@
 #include "common/request_info/utility.h"
 #include "envoy/http/header_map.h"
 #include "envoy/request_info/request_info.h"
+#include "extensions/filters/http/well_known_names.h"
 #include "include/istio/control/http/controller.h"
 #include "src/envoy/utils/utils.h"
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
+static const std::string shadow_policy_id_field = "shadow_effective_policyID";
+static const std::string shadow_resp_code_field = "shadow_response_code";
+
 namespace {
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
@@ -113,6 +117,28 @@ class ReportData : public ::istio::control::http::ReportData {
     // If not response body, grpc-status is in response headers.
     return ExtractGrpcStatus(trailers_, status) ||
            ExtractGrpcStatus(headers_, status);
+  }
+
+  // Get rbac shadow attributes.
+  void GetRBACShadowAttributes(std::string *resp_code,
+                               std::string *policy_id) const override {
+    const auto filter_meta = info_.dynamicMetadata().filter_metadata();
+    const auto filter_it =
+        filter_meta.find(Extensions::HttpFilters::HttpFilterNames::get().Rbac);
+    if (filter_it == filter_meta.end()) {
+      return;
+    }
+
+    const auto &data_struct = filter_it->second;
+    const auto resp_code_it = data_struct.fields().find(shadow_resp_code_field);
+    if (resp_code_it != data_struct.fields().end()) {
+      *resp_code = resp_code_it->second.string_value();
+    }
+
+    const auto policy_id_it = data_struct.fields().find(shadow_policy_id_field);
+    if (policy_id_it != data_struct.fields().end()) {
+      *policy_id = policy_id_it->second.string_value();
+    }
   }
 };
 

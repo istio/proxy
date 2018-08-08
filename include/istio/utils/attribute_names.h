@@ -95,6 +95,9 @@ struct AttributeName {
 
   static const char kResponseGrpcStatus[];
   static const char kResponseGrpcMessage[];
+
+  static const char kRbacShadowResponseCode[];
+  static const char kRbacShadowPolicyId[];
 };
 
 }  // namespace utils
