@@ -75,6 +75,9 @@ constexpr char kBadToken[] =
 
 constexpr char kExpectedPrincipal[] =
     "testing@secure.istio.io/testing@secure.istio.io";
+constexpr char kExpectedRawClaims[] =
+    "{\"exp\":4685989700,\"foo\":\"bar\",\"iat\":1532389700,\"iss\":\"testing@secure.istio.io\","
+    "\"sub\":\"testing@secure.istio.io\"}";
 constexpr char kDestinationUID[] = "dest.pod.123";
 constexpr char kSourceUID[] = "src.pod.xyz";
 constexpr char kTelemetryBackend[] = "telemetry-backend";
@@ -318,8 +321,10 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
       check_request.attributes().words(),
       ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
                        Contains(kExpectedPrincipal),
+                       Contains(kExpectedRawClaims),
                        Contains("testing@secure.istio.io"), Contains("sub"),
-                       Contains("iss"), Contains("foo"), Contains("bar")));
+                       Contains("iss"), Contains("foo"), Contains("bar"),
+                       Contains("c")));
   sendPolicyResponse();
 
   waitForNextUpstreamRequest(0);
@@ -336,6 +341,7 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
       report_request.default_words(),
       ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
                        Contains(kExpectedPrincipal),
+                       Contains(kExpectedRawClaims),
                        Contains("testing@secure.istio.io"), Contains("sub"),
                        Contains("iss"), Contains("foo"), Contains("bar")));
   sendTelemetryResponse();
