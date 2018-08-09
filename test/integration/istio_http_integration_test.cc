@@ -21,6 +21,7 @@
 
 #include "fmt/printf.h"
 #include "gmock/gmock.h"
+#include "include/istio/utils/attribute_names.h"
 #include "mixer/v1/check.pb.h"
 #include "mixer/v1/report.pb.h"
 #include "src/envoy/utils/filter_names.h"
@@ -53,6 +54,22 @@ constexpr char kGoodToken[] =
 
 // Generate by gen-jwt.py as described in
 // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/README.md
+// to generate token with another issuer.
+// `security/tools/jwt/samples/gen-jwt.py security/tools/jwt/samples/key.pem
+//  --expire=3153600000 --claims=foo:bar --iss "testing2@secure.istio.io"`
+constexpr char kAnotherGoodToken[] =
+    "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0Un"
+    "pIVV8tZW52dlEiLCJ0eXAiOiJKV1QifQ.eyJleHAiOjQ2ODc0NTUyOTEsImZvbyI6ImJhciIsI"
+    "mlhdCI6MTUzMzg1NTI5MSwiaXNzIjoidGVzdGluZzJAc2VjdXJlLmlzdGlvLmlvIiwic3ViIjo"
+    "idGVzdGluZzJAc2VjdXJlLmlzdGlvLmlvIn0.RHB6Tx6QmbIBTCMe1i3uVpCFvhbPkYRMf0Znk"
+    "4mD7qgq3VxYakW5BZ1LMk86f4wJNwF14LNpoX8QWuSMih5UjxMoQ22nNsyL5ktM-olIDutH5wX"
+    "sU1RrNVsPNupveJxO0H2uUdFk9NHoR5WzUkZnYUHhzQQKXSCCjYcfxXxqwMhG7po3MD5-EqvhP"
+    "04yDGUoTkEnxPIO13bhyeYDyr7sOSvjE04pElAa7WHMxwJ7ZnqUdkZzbC4R6VNaJmJVLdX3_RP"
+    "bJOoWSQ__ijPvkbYEw_COIxta7F0cJlnqX_7HCFWFMtF2DNpS7YQLXXJV-C9wKRMug2qk2GOdx"
+    "-6tAj_1Tw";
+
+// Generate by gen-jwt.py as described in
+// https://github.com/istio/istio/blob/master/security/tools/jwt/samples/README.md
 // to generate token with invalid issuer.
 // `security/tools/jwt/samples/gen-jwt.py security/tools/jwt/samples/key.pem
 //  --expire=3153600000 --iss "wrong-issuer@secure.istio.io"`
@@ -75,6 +92,8 @@ constexpr char kBadToken[] =
 
 constexpr char kExpectedPrincipal[] =
     "testing@secure.istio.io/testing@secure.istio.io";
+constexpr char kAnotherPrincipal[] =
+    "testing2@secure.istio.io/testing2@secure.istio.io";
 constexpr char kExpectedRawClaims[] =
     "{\"exp\":4685989700,\"foo\":\"bar\",\"iat\":1532389700,\"iss\":\"testing@"
     "secure.istio.io\","
@@ -109,6 +128,10 @@ std::string MakeJwtFilterConfig() {
       local_jwks:
         inline_string: "%s"
       allow_missing_or_failed: true
+    - issuer: "testing2@secure.istio.io"
+      local_jwks:
+        inline_string: "%s"
+      allow_missing_or_failed: true
   )";
   // From
   // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json
@@ -124,6 +147,7 @@ std::string MakeJwtFilterConfig() {
       "YpW7ypZrvD8BgtKVjgtQgZhLAGezMt0ua3DRrWnKqTZ0BJ_EyxOGuHJrLsn00fnMQ\"}]}";
 
   return fmt::sprintf(kJwtFilterTemplate, Utils::IstioFilterName::kJwt,
+                      StringUtil::escape(kJwksInline),
                       StringUtil::escape(kJwksInline));
 }
 
@@ -136,9 +160,36 @@ std::string MakeAuthFilterConfig() {
         - jwt:
             issuer: testing@secure.istio.io
             jwks_uri: http://localhost:8081/
-        principalBinding: USE_ORIGIN)";
+        - jwt:
+            issuer: testing2@secure.istio.io
+            jwks_uri: http://localhost:8081/
+        principalBinding: USE_ORIGIN
+)";
   return fmt::sprintf(kAuthnFilterWithJwtTemplate,
                       Utils::IstioFilterName::kAuthentication);
+}
+
+std::string MakeRbacFilterConfig() {
+  constexpr char kRbacFilterTemplate[] = R"(
+  name: envoy.filters.http.rbac
+  config:
+    rules:
+      policies:
+        "foo":
+          permissions:
+            - any: true
+          principals:
+            - metadata:
+                filter: %s
+                path:
+                  - key: %s
+                value:
+                  string_match:
+                    exact: %s
+)";
+  return fmt::sprintf(
+      kRbacFilterTemplate, Utils::IstioFilterName::kAuthentication,
+      istio::utils::AttributeName::kRequestAuthPrincipal, kExpectedPrincipal);
 }
 
 std::string MakeMixerFilterConfig() {
@@ -184,6 +235,7 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
 
   void SetUp() override {
     config_helper_.addFilter(MakeMixerFilterConfig());
+    config_helper_.addFilter(MakeRbacFilterConfig());
     config_helper_.addFilter(MakeAuthFilterConfig());
     config_helper_.addFilter(MakeJwtFilterConfig());
 
@@ -307,6 +359,28 @@ TEST_P(IstioHttpIntegrationTest, BadJwt) {
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
   EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+}
+
+TEST_P(IstioHttpIntegrationTest, RbacDeny) {
+  codec_client_ =
+      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response =
+      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kAnotherGoodToken));
+
+  ::istio::mixer::v1::ReportRequest report_request;
+  waitForTelemetryRequest(&report_request);
+  // As authentication succeeded, report should have 'word' that comes from
+  // authN.
+  EXPECT_THAT(report_request.default_words(),
+              ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
+                               Contains(kAnotherPrincipal)));
+  sendTelemetryResponse();
+
+  response->waitForEndStream();
+  EXPECT_TRUE(response->complete());
+
+  // Expecting error code 403 for RBAC deny.
+  EXPECT_STREQ("403", response->headers().Status()->value().c_str());
 }
 
 TEST_P(IstioHttpIntegrationTest, GoodJwt) {
