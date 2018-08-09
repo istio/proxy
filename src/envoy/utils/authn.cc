@@ -57,25 +57,18 @@ void Authentication::SaveAuthAttributesToStruct(
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthAudiences,
                   origin.audiences(0));
     }
-    if (!origin.groups().empty()) {
-      ::google::protobuf::ListValue* value;
-      value = (*data.mutable_fields())
-                  [istio::utils::AttributeName::kRequestAuthGroups]
-                      .mutable_list_value();
-      for (int i = 0; i < origin.groups().size(); i++) {
-        value->add_values()->set_string_value(origin.groups(i));
-      }
-    }
     if (!origin.presenter().empty()) {
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthPresenter,
                   origin.presenter());
     }
-    if (!origin.claims().empty()) {
+    if (!origin.claims().fields().empty()) {
       auto s = (*data.mutable_fields())
                    [istio::utils::AttributeName::kRequestAuthClaims]
-                       .mutable_struct_value();
-      for (const auto& pair : origin.claims()) {
-        setKeyValue(*s, pair.first, pair.second);
+                       .mutable_struct_value()
+                       ->mutable_fields();
+      for (const auto& pair : origin.claims().fields()) {
+        auto* value = (*s)[pair.first].mutable_list_value();
+        value->CopyFrom(pair.second.list_value());
       }
     }
     if (!origin.raw_claims().empty()) {

@@ -44,7 +44,7 @@ const std::string kSecIstioAuthUserinfoHeaderValue =
      {
        "iss": "issuer@foo.com",
        "sub": "sub@foo.com",
-       "aud": "aud1",
+       "aud": ["aud1", "aud2"],
        "non-string-will-be-ignored": 1512754205,
        "some-other-string-claims": "some-claims-kept"
      }
@@ -273,15 +273,15 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
       R"({
              "jwt": {
                "user": "issuer@foo.com/sub@foo.com",
-               "audiences": ["aud1"],
+               "audiences": ["aud1", "aud2"],
                "presenter": "",
                "claims": {
-                 "aud": "aud1",
-                 "iss": "issuer@foo.com",
-                 "sub": "sub@foo.com",
-                 "some-other-string-claims": "some-claims-kept"
+                 "aud": ["aud1", "aud2"],
+                 "iss": ["issuer@foo.com"],
+                 "some-other-string-claims": ["some-claims-kept"],
+                 "sub": ["sub@foo.com"],
                },
-               raw_claims: "\n     {\n       \"iss\": \"issuer@foo.com\",\n       \"sub\": \"sub@foo.com\",\n       \"aud\": \"aud1\",\n       \"non-string-will-be-ignored\": 1512754205,\n       \"some-other-string-claims\": \"some-claims-kept\"\n     }\n   "
+               "raw_claims": "\n     {\n       \"iss\": \"issuer@foo.com\",\n       \"sub\": \"sub@foo.com\",\n       \"aud\": [\"aud1\", \"aud2\"],\n       \"non-string-will-be-ignored\": 1512754205,\n       \"some-other-string-claims\": \"some-claims-kept\"\n     }\n   ",
              }
            }
         )",
