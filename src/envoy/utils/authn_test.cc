@@ -72,21 +72,26 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
                 .string_value(),
             "audiences0");
   EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthGroups)
+                .at(istio::utils::AttributeName::kRequestAuthPresenter)
+                .string_value(),
+            "presenter");
+
+  auto auth_claims =
+      data.fields().at(istio::utils::AttributeName::kRequestAuthClaims);
+  EXPECT_EQ(auth_claims.struct_value()
+                .fields()
+                .at("groups")
                 .list_value()
                 .values(0)
                 .string_value(),
             "group1");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthGroups)
+  EXPECT_EQ(auth_claims.struct_value()
+                .fields()
+                .at("groups")
                 .list_value()
                 .values(1)
                 .string_value(),
             "group2");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthPresenter)
-                .string_value(),
-            "presenter");
 
   auto actual_claim =
       data.fields().at(istio::utils::AttributeName::kRequestAuthClaims);

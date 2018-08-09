@@ -58,12 +58,14 @@ void Authentication::SaveAuthAttributesToStruct(
                   origin.audiences(0));
     }
     if (!origin.groups().empty()) {
-      ::google::protobuf::ListValue* value;
-      value = (*data.mutable_fields())
-                  [istio::utils::AttributeName::kRequestAuthGroups]
-                      .mutable_list_value();
-      for (int i = 0; i < origin.groups().size(); i++) {
-        value->add_values()->set_string_value(origin.groups(i));
+      ::google::protobuf::Struct* s =
+          (*data.mutable_fields())
+              [istio::utils::AttributeName::kRequestAuthClaims]
+                  .mutable_struct_value();
+      ::google::protobuf::ListValue* value =
+          (*s->mutable_fields())["groups"].mutable_list_value();
+      for (const auto& group : origin.groups()) {
+        value->add_values()->set_string_value(group);
       }
     }
     if (!origin.presenter().empty()) {
