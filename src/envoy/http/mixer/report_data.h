@@ -25,11 +25,10 @@
 namespace Envoy {
 namespace Http {
 namespace Mixer {
-static const std::string kRbacPermissivePolicyIDField =
-    "shadow_effective_policyID";
-static const std::string kRbacPermissiveRespCodeField = "shadow_response_code";
-
 namespace {
+const std::string kRbacPermissivePolicyIDField = "shadow_effective_policyID";
+const std::string kRbacPermissiveRespCodeField = "shadow_response_code";
+
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
 
@@ -142,7 +141,8 @@ class ReportData : public ::istio::control::http::ReportData {
       report_info->permissive_policy_id = policy_id_it->second.string_value();
     }
 
-    return true;
+    return !report_info->permissive_resp_code.empty() ||
+           !report_info->permissive_policy_id.empty();
   }
 };
 
