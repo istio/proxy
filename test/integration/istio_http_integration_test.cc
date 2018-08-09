@@ -324,7 +324,7 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
           Contains(kDestinationUID), Contains("10.0.0.1"),
           Contains(kExpectedPrincipal), Contains(kExpectedRawClaims),
           Contains("testing@secure.istio.io"), Contains("sub"), Contains("iss"),
-          Contains("foo"), Contains("bar"), Contains("c")));
+          Contains("foo"), Contains("bar")));
   sendPolicyResponse();
 
   waitForNextUpstreamRequest(0);
