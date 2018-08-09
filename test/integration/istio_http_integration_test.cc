@@ -318,13 +318,12 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
   ::istio::mixer::v1::CheckRequest check_request;
   waitForPolicyRequest(&check_request);
   // Check request should see authn attributes.
-  EXPECT_THAT(
-      check_request.attributes().words(),
-      ::testing::AllOf(
-          Contains(kDestinationUID), Contains("10.0.0.1"),
-          Contains(kExpectedPrincipal), Contains(kExpectedRawClaims),
-          Contains("testing@secure.istio.io"), Contains("sub"), Contains("iss"),
-          Contains("foo"), Contains("bar")));
+  EXPECT_THAT(check_request.attributes().words(),
+              ::testing::AllOf(
+                  Contains(kDestinationUID), Contains("10.0.0.1"),
+                  Contains(kExpectedPrincipal), Contains(kExpectedRawClaims),
+                  Contains("testing@secure.istio.io"), Contains("sub"),
+                  Contains("iss"), Contains("foo"), Contains("bar")));
   sendPolicyResponse();
 
   waitForNextUpstreamRequest(0);

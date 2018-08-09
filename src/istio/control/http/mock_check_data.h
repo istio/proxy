@@ -17,8 +17,8 @@
 #define ISTIO_CONTROL_HTTP_MOCK_CHECK_DATA_H
 
 #include "gmock/gmock.h"
-#include "include/istio/control/http/check_data.h"
 #include "google/protobuf/struct.pb.h"
+#include "include/istio/control/http/check_data.h"
 
 namespace istio {
 namespace control {
@@ -42,7 +42,8 @@ class MockCheckData : public CheckData {
                      bool(const std::string &name, std::string *value));
   MOCK_CONST_METHOD1(GetJWTPayload,
                      bool(std::map<std::string, std::string> *payload));
-  MOCK_CONST_METHOD0(GetAuthenticationResult, const ::google::protobuf::Struct*());
+  MOCK_CONST_METHOD0(GetAuthenticationResult,
+                     const ::google::protobuf::Struct *());
   MOCK_CONST_METHOD0(IsMutualTLS, bool());
   MOCK_CONST_METHOD1(GetRequestedServerName, bool(std::string *name));
 };
