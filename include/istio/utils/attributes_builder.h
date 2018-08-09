@@ -104,7 +104,8 @@ class AttributesBuilder {
         case google::protobuf::Value::kStringValue:
           (*entries)[field.first] = field.second.string_value();
           break;
-        default: break;
+        default:
+          break;
       }
     }
   }
