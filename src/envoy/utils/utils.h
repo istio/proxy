@@ -41,6 +41,10 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
 bool GetPrincipal(const Network::Connection* connection, bool peer,
                   std::string* principal);
 
+// Get source.namespace attribute from principal.
+bool GetSourceNamespace(const std::string& principal,
+                        std::string* source_namespace);
+
 // Returns true if connection is mutual TLS enabled.
 bool IsMutualTLS(const Network::Connection* connection);
 

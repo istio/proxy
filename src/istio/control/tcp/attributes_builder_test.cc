@@ -74,15 +74,21 @@ attributes {
   }
 }
 attributes {
+  key: "source.namespace"
+  value {
+    string_value: "test_ns"
+  }
+}
+attributes {
   key: "source.principal"
   value {
-    string_value: "test_user"
+    string_value: "sa/test_user/ns/test_ns/"
   }
 }
 attributes {
   key: "source.user"
   value {
-    string_value: "test_user"
+    string_value: "sa/test_user/ns/test_ns/"
   }
 }
 attributes {
@@ -372,12 +378,21 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _))
       .WillRepeatedly(Invoke([](bool peer, std::string* user) -> bool {
         if (peer) {
-          *user = "test_user";
+          *user = "sa/test_user/ns/test_ns/";
         } else {
           *user = "destination_user";
         }
         return true;
       }));
+  EXPECT_CALL(mock_data, GetSourceNamespace(_, _))
+      .WillRepeatedly(
+          Invoke([](const std::string& principal, std::string* ns) -> bool {
+            if (principal == "sa/test_user/ns/test_ns/") {
+              *ns = "test_ns";
+              return true;
+            }
+            return false;
+          }));
   EXPECT_CALL(mock_data, GetConnectionId()).WillOnce(Return("1234-5"));
   EXPECT_CALL(mock_data, GetRequestedServerName(_))
       .WillOnce(Invoke([](std::string* name) -> bool {

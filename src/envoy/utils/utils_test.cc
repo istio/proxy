@@ -44,4 +44,31 @@ TEST(UtilsTest, ParseMessageWithUnknownField) {
   EXPECT_EQ(http_config.default_destination_service(),
             "service.svc.cluster.local");
 }
+
+TEST(UtilsTest, GetSourceNamespace) {
+  std::string ns = "";
+  EXPECT_EQ(false, Envoy::Utils::GetSourceNamespace("", &ns));
+  EXPECT_EQ("", ns);
+
+  EXPECT_EQ(false, Envoy::Utils::GetSourceNamespace("ns/abc", &ns));
+  EXPECT_EQ("", ns);
+
+  EXPECT_EQ(false, Envoy::Utils::GetSourceNamespace("ns/", &ns));
+  EXPECT_EQ("", ns);
+
+  EXPECT_EQ(false, Envoy::Utils::GetSourceNamespace("s/abc/", &ns));
+  EXPECT_EQ("", ns);
+
+  EXPECT_EQ(false, Envoy::Utils::GetSourceNamespace("NS/abc/", &ns));
+  EXPECT_EQ("", ns);
+
+  EXPECT_EQ(false, Envoy::Utils::GetSourceNamespace("abc", &ns));
+  EXPECT_EQ("", ns);
+
+  EXPECT_EQ(true, Envoy::Utils::GetSourceNamespace("ns/abc/", &ns));
+  EXPECT_EQ("abc", ns);
+
+  EXPECT_EQ(true, Envoy::Utils::GetSourceNamespace("ns//", &ns));
+  EXPECT_EQ("", ns);
+}
 }  // namespace

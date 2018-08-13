@@ -33,6 +33,8 @@ const std::string kPerHostMetadataKey("istio");
 // Attribute field for per-host data override
 const std::string kMetadataDestinationUID("uid");
 
+const std::string kNamespacePrefix("ns/");
+
 }  // namespace
 
 void ExtractHeaders(const Http::HeaderMap& header_map,
@@ -114,6 +116,24 @@ bool GetPrincipal(const Network::Connection* connection, bool peer,
       }
       return true;
     }
+  }
+  return false;
+}
+
+bool GetSourceNamespace(const std::string& principal,
+                        std::string* source_namespace) {
+  if (source_namespace) {
+    size_t begin = principal.find(kNamespacePrefix);
+    if (begin == std::string::npos) {
+      return false;
+    }
+    begin += kNamespacePrefix.length();
+    size_t end = principal.find("/", begin);
+    if (end == std::string::npos) {
+      return false;
+    }
+    *source_namespace = principal.substr(begin, end - begin);
+    return true;
   }
   return false;
 }

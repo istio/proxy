@@ -49,6 +49,10 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
     // over. https://github.com/istio/istio/issues/4689
     builder.AddString(utils::AttributeName::kSourceUser, source_user);
     builder.AddString(utils::AttributeName::kSourcePrincipal, source_user);
+    std::string source_ns("");
+    if (check_data->GetSourceNamespace(source_user, &source_ns)) {
+      builder.AddString(utils::AttributeName::kSourceNamespace, source_ns);
+    }
   }
 
   std::string destination_principal;

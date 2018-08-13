@@ -225,15 +225,21 @@ attributes {
   }
 }
 attributes {
+  key: "source.namespace"
+  value {
+    string_value: "test_ns"
+  }
+}
+attributes {
   key: "source.principal"
   value {
-    string_value: "test_user"
+    string_value: "sa/test_user/ns/test_ns/"
   }
 }
 attributes {
   key: "source.user"
   value {
-    string_value: "test_user"
+    string_value: "sa/test_user/ns/test_ns/"
   }
 }
 attributes {
@@ -490,15 +496,21 @@ fields {
   }
 }
 fields {
+  key: "source.namespace"
+  value {
+    string_value: "test_ns"
+  }
+}
+fields {
   key: "source.principal"
   value {
-    string_value: "test_user"
+    string_value: "sa/test_user/ns/test_ns/"
   }
 }
 fields {
   key: "source.user"
   value {
-    string_value: "test_user"
+    string_value: "sa/test_user/ns/test_ns/"
   }
 }
 )";
@@ -556,7 +568,7 @@ TEST(AttributesBuilderTest, TestCheckAttributesWithoutAuthnFilter) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _))
       .WillRepeatedly(Invoke([](bool peer, std::string *user) -> bool {
         if (peer) {
-          *user = "test_user";
+          *user = "sa/test_user/ns/test_ns/";
         } else {
           *user = "destination_user";
         }
@@ -630,7 +642,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _))
       .WillRepeatedly(Invoke([](bool peer, std::string *user) -> bool {
         if (peer) {
-          *user = "test_user";
+          *user = "sa/test_user/ns/test_ns/";
         } else {
           *user = "destination_user";
         }
