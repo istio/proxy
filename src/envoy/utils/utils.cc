@@ -123,6 +123,7 @@ bool GetPrincipal(const Network::Connection* connection, bool peer,
 bool GetSourceNamespace(const std::string& principal,
                         std::string* source_namespace) {
   if (source_namespace) {
+    // The namespace is a substring in principal with format: "ns/<NAMESPACE>/".
     size_t begin = principal.find(kNamespacePrefix);
     if (begin == std::string::npos) {
       return false;
