@@ -29,8 +29,8 @@ using ::google::protobuf::util::MessageDifferencer;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_StringMap;
 
-using ::testing::Invoke;
 using ::testing::_;
+using ::testing::Invoke;
 
 namespace istio {
 namespace control {

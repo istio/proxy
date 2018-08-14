@@ -26,9 +26,9 @@
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
 
+using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Return;
-using ::testing::_;
 
 namespace istio {
 namespace control {

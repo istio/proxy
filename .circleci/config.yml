@@ -3,13 +3,11 @@ version: 2
 jobs:
   build:
     docker:
-      - image: istio/ci:go1.9-bazel0.11
+      - image: istio/ci:go1.10-bazel0.15-clang6.0
     environment:
       - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
     steps:
-      - run: curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.15.2/bazel_0.15.2-linux-x86_64.deb && sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build pkg-config
       - checkout
       - restore_cache:
           keys:
@@ -32,13 +30,11 @@ jobs:
           destination: /proxy/bin
   linux_asan:
     docker:
-      - image: istio/ci:go1.9-bazel0.11
+      - image: istio/ci:go1.10-bazel0.15-clang6.0
     environment:
       - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
     steps:
-      - run: curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.15.2/bazel_0.15.2-linux-x86_64.deb && sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build pkg-config
       - checkout
       - restore_cache:
           keys:
@@ -53,13 +49,11 @@ jobs:
             - /home/circleci/.cache/bazel
   linux_tsan:
     docker:
-      - image: istio/ci:go1.9-bazel0.11
+      - image: istio/ci:go1.10-bazel0.15-clang6.0
     environment:
       - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
     steps:
-      - run: curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.15.2/bazel_0.15.2-linux-x86_64.deb && sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build pkg-config
       - checkout
       - restore_cache:
           keys:
@@ -78,6 +72,8 @@ jobs:
     environment:
       - BAZEL_STARTUP_ARGS: "--output_base /Users/distiller/.cache/bazel"
       - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
+      - CC: clang
+      - CXX: clang++
     steps:
       - run: sudo ntpdate -vu time.apple.com
       - run: brew install bazel cmake coreutils go libtool ninja wget
