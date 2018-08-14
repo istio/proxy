@@ -34,10 +34,6 @@ class CheckData {
   // If SSL is used, get peer or local certificate SAN URI.
   virtual bool GetPrincipal(bool peer, std::string* user) const = 0;
 
-  // Get source namespace from the principal.
-  virtual bool GetSourceNamespace(const std::string& principal,
-                                  std::string* ns) const = 0;
-
   // Returns true if connection is mutual TLS enabled.
   virtual bool IsMutualTLS() const = 0;
 

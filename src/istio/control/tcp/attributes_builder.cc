@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/control/tcp/attributes_builder.h"
+#include "src/istio/utils/utils.h"
 
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
@@ -50,7 +51,7 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
     builder.AddString(utils::AttributeName::kSourceUser, source_user);
     builder.AddString(utils::AttributeName::kSourcePrincipal, source_user);
     std::string source_ns("");
-    if (check_data->GetSourceNamespace(source_user, &source_ns)) {
+    if (utils::GetSourceNamespace(source_user, &source_ns)) {
       builder.AddString(utils::AttributeName::kSourceNamespace, source_ns);
     }
   }

@@ -36,6 +36,7 @@ envoy_cc_library(
         "//include/istio/utils:attribute_names_header",
         "//src/istio/authn:context_proto",
         "//src/istio/utils:attribute_names_lib",
+        "//src/istio/utils:utils_lib",
         ":filter_names_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],

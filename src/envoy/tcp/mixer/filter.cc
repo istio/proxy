@@ -154,11 +154,6 @@ bool Filter::GetPrincipal(bool peer, std::string* user) const {
   return Utils::GetPrincipal(&filter_callbacks_->connection(), peer, user);
 }
 
-bool Filter::GetSourceNamespace(const std::string& principal,
-                                std::string* ns) const {
-  return Utils::GetSourceNamespace(principal, ns);
-}
-
 bool Filter::IsMutualTLS() const {
   return Utils::IsMutualTLS(&filter_callbacks_->connection());
 }

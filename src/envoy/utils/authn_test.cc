@@ -41,7 +41,7 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
   EXPECT_TRUE(data.mutable_fields()->empty());
 
   result.set_principal("principal");
-  result.set_peer_user("sa/peeruser/ns/abc/");
+  result.set_peer_user("cluster.local/sa/peeruser/ns/abc/");
   auto origin = result.mutable_origin();
   origin->add_audiences("audiences0");
   origin->add_audiences("audiences1");
@@ -62,11 +62,11 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
             "principal");
   EXPECT_EQ(
       data.fields().at(istio::utils::AttributeName::kSourceUser).string_value(),
-      "sa/peeruser/ns/abc/");
+      "cluster.local/sa/peeruser/ns/abc/");
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kSourcePrincipal)
                 .string_value(),
-            "sa/peeruser/ns/abc/");
+            "cluster.local/sa/peeruser/ns/abc/");
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kSourceNamespace)
                 .string_value(),

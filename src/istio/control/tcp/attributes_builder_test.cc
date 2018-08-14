@@ -22,6 +22,7 @@
 #include "include/istio/utils/attributes_builder.h"
 #include "src/istio/control/tcp/mock_check_data.h"
 #include "src/istio/control/tcp/mock_report_data.h"
+#include "src/istio/utils/utils.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
@@ -82,13 +83,13 @@ attributes {
 attributes {
   key: "source.principal"
   value {
-    string_value: "sa/test_user/ns/test_ns/"
+    string_value: "cluster.local/sa/test_user/ns/test_ns/"
   }
 }
 attributes {
   key: "source.user"
   value {
-    string_value: "sa/test_user/ns/test_ns/"
+    string_value: "cluster.local/sa/test_user/ns/test_ns/"
   }
 }
 attributes {
@@ -378,7 +379,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _))
       .WillRepeatedly(Invoke([](bool peer, std::string* user) -> bool {
         if (peer) {
-          *user = "sa/test_user/ns/test_ns/";
+          *user = "cluster.local/sa/test_user/ns/test_ns/";
         } else {
           *user = "destination_user";
         }
@@ -387,7 +388,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   EXPECT_CALL(mock_data, GetSourceNamespace(_, _))
       .WillRepeatedly(
           Invoke([](const std::string& principal, std::string* ns) -> bool {
-            if (principal == "sa/test_user/ns/test_ns/") {
+            if (principal == "cluster.local/sa/test_user/ns/test_ns/") {
               *ns = "test_ns";
               return true;
             }
