@@ -46,8 +46,8 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
   origin->add_audiences("audiences0");
   origin->add_audiences("audiences1");
   origin->set_presenter("presenter");
-  origin->add_groups("group1");
-  origin->add_groups("group2");
+  (*origin->mutable_claim_string_lists())["groups"].add_list("group1");
+  (*origin->mutable_claim_string_lists())["groups"].add_list("group2");
   auto claim = origin->mutable_claims();
   (*claim)["key1"] = "value1";
   (*claim)["key2"] = "value2";

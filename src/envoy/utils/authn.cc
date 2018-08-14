@@ -57,17 +57,6 @@ void Authentication::SaveAuthAttributesToStruct(
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthAudiences,
                   origin.audiences(0));
     }
-    if (!origin.groups().empty()) {
-      ::google::protobuf::Struct* s =
-          (*data.mutable_fields())
-              [istio::utils::AttributeName::kRequestAuthClaims]
-                  .mutable_struct_value();
-      ::google::protobuf::ListValue* value =
-          (*s->mutable_fields())["groups"].mutable_list_value();
-      for (const auto& group : origin.groups()) {
-        value->add_values()->set_string_value(group);
-      }
-    }
     if (!origin.presenter().empty()) {
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthPresenter,
                   origin.presenter());
@@ -83,6 +72,20 @@ void Authentication::SaveAuthAttributesToStruct(
     if (!origin.raw_claims().empty()) {
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthRawClaims,
                   origin.raw_claims());
+    }
+    // Store the claims for RBAC
+    if (!origin.claim_string_lists().empty()) {
+      ::google::protobuf::Struct* s =
+          (*data.mutable_fields())
+              [istio::utils::AttributeName::kRequestAuthClaims]
+                  .mutable_struct_value();
+      for (auto const& e : origin.claim_string_lists()) {
+        ::google::protobuf::ListValue* value =
+            (*s->mutable_fields())[e.first].mutable_list_value();
+        for (const auto& v : e.second.list()) {
+          value->add_values()->set_string_value(v);
+        }
+      }
     }
   }
 }

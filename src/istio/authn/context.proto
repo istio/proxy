@@ -41,9 +41,8 @@ message JwtPayload {
   // map above.
   string raw_claims = 6;
 
-  // The groups claim in the JWT.
-  // Example: [‘group1’, ‘group2’]
-  repeated string groups = 7;
+  // Claims in JWT as lists of strings
+  map<string, StringList> claim_string_lists = 7;
 }
 
 // Container to hold authenticated attributes from X509 (mTLS).
@@ -73,4 +72,9 @@ message Result {
   // Origin authentication supports only JWT at the moment, so we can use
   // JwtPayload for origin authenticated attributes.
   JwtPayload origin = 3;
+}
+
+message StringList {
+  // A list of strings
+  repeated string list = 1;
 }
