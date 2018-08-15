@@ -119,11 +119,11 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   }
 
   // Extract claims as lists of strings for RBAC list matcher
-  json_obj->iterate([payload, claims](const std::string& key,
-                                      const Json::Object& obj) -> bool {
+  json_obj->iterate([json_obj, payload, claims](const std::string& key,
+                                                const Json::Object&) -> bool {
     auto* claim_lists = payload->mutable_claim_string_lists();
     std::vector<std::string> list;
-    ExtractStringList(key, obj, *claims, list);
+    ExtractStringList(key, *json_obj, *claims, list);
     for (auto s : list) {
       (*claim_lists)[key].add_list(s);
     }
