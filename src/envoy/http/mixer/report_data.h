@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "common/common/logger.h"
 #include "common/request_info/utility.h"
 #include "envoy/http/header_map.h"
 #include "envoy/request_info/request_info.h"
@@ -48,7 +49,8 @@ bool ExtractGrpcStatus(const HeaderMap *headers,
 
 }  // namespace
 
-class ReportData : public ::istio::control::http::ReportData {
+class ReportData : public ::istio::control::http::ReportData,
+                   public Logger::Loggable<Logger::Id::filter> {
   const HeaderMap *headers_;
   const HeaderMap *trailers_;
   const RequestInfo::RequestInfo &info_;
@@ -125,6 +127,8 @@ class ReportData : public ::istio::control::http::ReportData {
     const auto filter_it =
         filter_meta.find(Extensions::HttpFilters::HttpFilterNames::get().Rbac);
     if (filter_it == filter_meta.end()) {
+      ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
+                Extensions::HttpFilters::HttpFilterNames::get().Rbac);
       return false;
     }
 
@@ -133,12 +137,20 @@ class ReportData : public ::istio::control::http::ReportData {
         data_struct.fields().find(kRbacPermissiveRespCodeField);
     if (resp_code_it != data_struct.fields().end()) {
       report_info->permissive_resp_code = resp_code_it->second.string_value();
+    } else {
+      ENVOY_LOG(debug, "No {} field found in filter {} dynamic_metadata",
+                kRbacPermissiveRespCodeField,
+                Extensions::HttpFilters::HttpFilterNames::get().Rbac);
     }
 
     const auto policy_id_it =
         data_struct.fields().find(kRbacPermissivePolicyIDField);
     if (policy_id_it != data_struct.fields().end()) {
       report_info->permissive_policy_id = policy_id_it->second.string_value();
+    } else {
+      ENVOY_LOG(debug, "No {} field found in filter {} dynamic_metadata",
+                kRbacPermissivePolicyIDField,
+                Extensions::HttpFilters::HttpFilterNames::get().Rbac);
     }
 
     return !report_info->permissive_resp_code.empty() ||
