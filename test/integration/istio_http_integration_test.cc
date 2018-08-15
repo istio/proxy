@@ -126,11 +126,10 @@ std::string MakeJwtFilterConfig() {
     - issuer: "testing@secure.istio.io"
       local_jwks:
         inline_string: "%s"
-      allow_missing_or_failed: true
     - issuer: "testing-rbac@secure.istio.io"
       local_jwks:
         inline_string: "%s"
-      allow_missing_or_failed: true
+    allow_missing_or_failed: true
   )";
   // From
   // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json

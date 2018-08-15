@@ -142,7 +142,8 @@ class JwtVerificationFilterIntegrationTest
           *dispatcher_, request_stream_issuer));
       ASSERT_TRUE(request_stream_issuer->waitForEndStream(*dispatcher_));
 
-      request_stream_issuer->encodeHeaders(issuer_response_headers, false);
+      request_stream_issuer->encodeHeaders(
+          Http::HeaderMapImpl(issuer_response_headers), false);
       Buffer::OwnedImpl body(issuer_response_body);
       request_stream_issuer->encodeData(body, true);
     }
