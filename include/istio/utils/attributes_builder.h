@@ -107,6 +107,8 @@ class AttributesBuilder {
         case google::protobuf::Value::kListValue:
           if (field.second.list_value().values_size() > 0) {
             // Only uses the first item in the list as string
+            // TODO (lei-tang): the items in the list may be converted into a
+            // comma separated string
             (*entries)[field.first] =
                 field.second.list_value().values().Get(0).string_value();
           }

@@ -55,7 +55,7 @@ void ExtractJwtAudience(
 // Extract JWT claim as a string list
 // This function should to be called after the claims are extracted.
 void ExtractStringList(
-    const std::string key, const Envoy::Json::Object& obj,
+    const std::string& key, const Envoy::Json::Object& obj,
     const ::google::protobuf::Map< ::std::string, ::std::string>& claims,
     std::vector<std::string>& list) {
   // First, try as string
