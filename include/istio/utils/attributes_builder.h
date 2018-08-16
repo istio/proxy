@@ -99,10 +99,17 @@ class AttributesBuilder {
                        ->mutable_entries();
     entries->clear();
     for (const auto& field : struct_map.fields()) {
-      // Ignore all fields that are not string.
+      // Ignore all fields that are not string or string list.
       switch (field.second.kind_case()) {
         case google::protobuf::Value::kStringValue:
           (*entries)[field.first] = field.second.string_value();
+          break;
+        case google::protobuf::Value::kListValue:
+          if (field.second.list_value().values_size() > 0) {
+            // Only uses the first item in the list as string
+            (*entries)[field.first] =
+                field.second.list_value().values().Get(0).string_value();
+          }
           break;
         default:
           break;
