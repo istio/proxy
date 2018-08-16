@@ -27,9 +27,9 @@
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
 
-using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Return;
+using ::testing::_;
 
 namespace istio {
 namespace control {
@@ -385,15 +385,6 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
         }
         return true;
       }));
-  EXPECT_CALL(mock_data, GetSourceNamespace(_, _))
-      .WillRepeatedly(
-          Invoke([](const std::string& principal, std::string* ns) -> bool {
-            if (principal == "cluster.local/sa/test_user/ns/test_ns/") {
-              *ns = "test_ns";
-              return true;
-            }
-            return false;
-          }));
   EXPECT_CALL(mock_data, GetConnectionId()).WillOnce(Return("1234-5"));
   EXPECT_CALL(mock_data, GetRequestedServerName(_))
       .WillOnce(Invoke([](std::string* name) -> bool {

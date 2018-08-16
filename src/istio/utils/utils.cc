@@ -36,22 +36,34 @@ bool GetSourceNamespace(const std::string& principal,
     // but is a little more flexible. It assumes that the principal begins with
     // a <DOMAIN> string followed by <key,value> pairs separated by '/'.
 
-    // Spilt the principal into tokens separated by kDelimiter.
-    std::stringstream ss(principal);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (std::getline(ss, token, kDelimiter)) {
-      tokens.push_back(token);
-    }
-
     // Skip the first <DOMAIN> string and check remaining <key, value> pairs.
-    for (int i = 1; i < tokens.size(); i += 2) {
-      if (tokens[i] == kNamespaceKey) {
-        // Found the namespace key, treat the following token as namespace.
-        int j = i + 1;
-        *source_namespace = (j < tokens.size() ? tokens[j] : "");
+    size_t begin = principal.find(kDelimiter);
+    if (begin == std::string::npos) {
+      return false;
+    }
+    begin += 1;
+
+    while (1) {
+      size_t key_end = principal.find(kDelimiter, begin);
+      if (key_end == std::string::npos) {
+        return false;
+      }
+
+      size_t value_begin = key_end + 1;
+      size_t value_end = principal.find(kDelimiter, value_begin);
+
+      if (principal.compare(begin, key_end - begin, kNamespaceKey) == 0) {
+        size_t len = (value_end == std::string::npos ? value_end
+                                                     : value_end - value_begin);
+        *source_namespace = principal.substr(value_begin, len);
         return true;
       }
+
+      if (value_end == std::string::npos) {
+        return false;
+      }
+
+      begin = value_end + 1;
     }
   }
   return false;
