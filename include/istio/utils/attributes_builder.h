@@ -106,11 +106,16 @@ class AttributesBuilder {
           break;
         case google::protobuf::Value::kListValue:
           if (field.second.list_value().values_size() > 0) {
-            // Only uses the first item in the list as string
-            // TODO (lei-tang): the items in the list may be converted into a
+            // The items in the list is converted into a
             // comma separated string
-            (*entries)[field.first] =
-                field.second.list_value().values().Get(0).string_value();
+            std::string s;
+            for (int i = 0; i < field.second.list_value().values_size(); i++) {
+              s += field.second.list_value().values().Get(i).string_value();
+              if (i + 1 < field.second.list_value().values_size()) {
+                s += ",";
+              }
+            }
+            (*entries)[field.first] = s;
           }
           break;
         default:

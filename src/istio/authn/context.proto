@@ -36,6 +36,8 @@ message JwtPayload {
   string presenter = 3;
 
   // JWT claims stored as protobuf.Struct
+  // Only string and string-list claims are extracted into claims.
+  // A string claim is stored as a string list of one item.
   google.protobuf.Struct claims = 5;
 
   // All original claims in JsonString format, which can be parsed into json

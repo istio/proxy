@@ -26,13 +26,15 @@ namespace {
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
 
-// Extract JWT claim as a string list
+// Extract JWT claim as a string list.
+// This function only extracts string and string list claims.
+// A string claim is extracted as a string list of 1 item.
 void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
-                       std::vector<std::string>& list) {
+                       std::vector<std::string>* list) {
   // First, try as string
   try {
     // Try as string, will throw execption if object type is not string.
-    list.push_back(obj.getString(key));
+    list->push_back(obj.getString(key));
   } catch (Json::Exception& e) {
     // Not convertable to string
   }
@@ -40,7 +42,7 @@ void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
   try {
     std::vector<std::string> vector = obj.getStringArray(key);
     for (const std::string v : vector) {
-      list.push_back(v);
+      list->push_back(v);
     }
   } catch (Json::Exception& e) {
     // Not convertable to string array
@@ -67,7 +69,7 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
                                        const Json::Object&) -> bool {
     // In current implementation, only string/string list objects are extracted
     std::vector<std::string> list;
-    ExtractStringList(key, *json_obj, list);
+    ExtractStringList(key, *json_obj, &list);
     for (auto s : list) {
       (*claims)[key].mutable_list_value()->add_values()->set_string_value(s);
     }

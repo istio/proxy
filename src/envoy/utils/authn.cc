@@ -62,14 +62,9 @@ void Authentication::SaveAuthAttributesToStruct(
                   origin.presenter());
     }
     if (!origin.claims().fields().empty()) {
-      auto s = (*data.mutable_fields())
-                   [istio::utils::AttributeName::kRequestAuthClaims]
-                       .mutable_struct_value()
-                       ->mutable_fields();
-      for (const auto& pair : origin.claims().fields()) {
-        auto* value = (*s)[pair.first].mutable_list_value();
-        value->CopyFrom(pair.second.list_value());
-      }
+      *((*data.mutable_fields())
+            [istio::utils::AttributeName::kRequestAuthClaims]
+                .mutable_struct_value()) = origin.claims();
     }
     if (!origin.raw_claims().empty()) {
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthRawClaims,
