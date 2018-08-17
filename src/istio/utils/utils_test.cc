@@ -37,9 +37,6 @@ class UtilsTest : public ::testing::Test {
 
 TEST_F(UtilsTest, GetSourceNamespace) {
   checkFalse("");
-  checkFalse("ns/abc");
-  checkFalse("sa/user/ns/abc");
-  checkFalse("ns/abc/sa/user");
   checkFalse("cluster.local");
   checkFalse("cluster.local/");
   checkFalse("cluster.local/ns");

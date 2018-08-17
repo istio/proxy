@@ -27,8 +27,8 @@ using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::HTTPAPISpec;
 using ::istio::utils::AttributesBuilder;
 
-using ::testing::_;
 using ::testing::Invoke;
+using ::testing::_;
 
 namespace istio {
 namespace api_spec {

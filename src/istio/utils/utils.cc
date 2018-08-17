@@ -22,7 +22,7 @@ namespace istio {
 namespace utils {
 
 namespace {
-const std::string kNamespaceKey("ns");
+const std::string kNamespaceKey("/ns/");
 const char kDelimiter = '/';
 }  // namespace
 
@@ -32,39 +32,15 @@ bool GetSourceNamespace(const std::string& principal,
     // The namespace is a substring in principal with format:
     // "<DOMAIN>/ns/<NAMESPACE>/sa/<SERVICE-ACCOUNT>". '/' is not allowed to
     // appear in actual content except as delimiter between tokens.
-    // The following algorithm extracts the namespace based on the above format
-    // but is a little more flexible. It assumes that the principal begins with
-    // a <DOMAIN> string followed by <key,value> pairs separated by '/'.
-
-    // Skip the first <DOMAIN> string and check remaining <key, value> pairs.
-    size_t begin = principal.find(kDelimiter);
+    size_t begin = principal.find(kNamespaceKey);
     if (begin == std::string::npos) {
       return false;
     }
-    begin += 1;
-
-    while (1) {
-      size_t key_end = principal.find(kDelimiter, begin);
-      if (key_end == std::string::npos) {
-        return false;
-      }
-
-      size_t value_begin = key_end + 1;
-      size_t value_end = principal.find(kDelimiter, value_begin);
-
-      if (principal.compare(begin, key_end - begin, kNamespaceKey) == 0) {
-        size_t len = (value_end == std::string::npos ? value_end
-                                                     : value_end - value_begin);
-        *source_namespace = principal.substr(value_begin, len);
-        return true;
-      }
-
-      if (value_end == std::string::npos) {
-        return false;
-      }
-
-      begin = value_end + 1;
-    }
+    begin += kNamespaceKey.length();
+    size_t end = principal.find(kDelimiter, begin);
+    size_t len = (end == std::string::npos ? end : end - begin);
+    *source_namespace = principal.substr(begin, len);
+    return true;
   }
   return false;
 }
