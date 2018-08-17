@@ -25,9 +25,6 @@ namespace {
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
 
-// The JWT groups key name
-static const std::string kJwtGroupsKey = "groups";
-
 // Extract JWT audience into the JwtPayload.
 // This function should to be called after the claims are extracted.
 void ExtractJwtAudience(
