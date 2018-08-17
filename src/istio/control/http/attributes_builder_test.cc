@@ -136,6 +136,12 @@ attributes {
     string_value: "/books"
   }
 }
+attributes {
+  key: "source.principal"
+  value {
+    string_value: "test_user"
+  }
+}
 )";
 
 const char kCheckAttributes[] = R"(

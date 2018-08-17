@@ -113,6 +113,14 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
       builder.AddProtoStructStringMap(utils::AttributeName::kRequestAuthClaims,
                                       claims->second.struct_value());
     }
+    return;
+  }
+
+  // Fallback to source.principal extracted from mTLS if no authentication
+  // filter is installed
+  std::string source_user;
+  if (check_data->GetPrincipal(true, &source_user)) {
+    builder.AddString(utils::AttributeName::kSourcePrincipal, source_user);
   }
 }
 
