@@ -34,8 +34,9 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port);
 
 // Get destination.uid attribute value from metadata.
-bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
-                       std::string* uid);
+bool GetDestinationUID(
+    const std::shared_ptr<envoy::api::v2::core::Metadata> metadata,
+    std::string* uid);
 
 // Get peer or local principal URI.
 bool GetPrincipal(const Network::Connection* connection, bool peer,
