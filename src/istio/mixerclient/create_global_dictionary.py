@@ -62,7 +62,7 @@ all_words = ''
 with open(sys.argv[1]) as src_file:
     for line in src_file:
         if line.startswith("-"):
-            all_words += "    \"" + line[1:].strip() + "\",\n"
+            all_words += "    \"" + line[1:].strip().replace("\"", "\\\"") + "\",\n"
 
 print (TOP + all_words + BOTTOM)
 
