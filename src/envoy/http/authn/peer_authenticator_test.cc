@@ -66,8 +66,9 @@ class PeerAuthenticatorTest : public testing::Test {
 
  protected:
   std::unique_ptr<StrictMock<MockPeerAuthenticator>> authenticator_;
+  Envoy::Http::TestHeaderMapImpl header_;
   FilterContext filter_context_{
-      envoy::api::v2::core::Metadata::default_instance(), nullptr,
+      envoy::api::v2::core::Metadata::default_instance(), header_, nullptr,
       istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
           default_instance()};
 
