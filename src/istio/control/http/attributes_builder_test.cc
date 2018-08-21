@@ -15,6 +15,7 @@
 
 #include "src/istio/control/http/attributes_builder.h"
 
+#include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
@@ -28,13 +29,120 @@ using ::google::protobuf::util::MessageDifferencer;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_StringMap;
 
-using ::testing::Invoke;
 using ::testing::_;
+using ::testing::Invoke;
 
 namespace istio {
 namespace control {
 namespace http {
 namespace {
+
+MATCHER_P(EqualsAttribute, expected, "") {
+  const auto matched = MessageDifferencer::Equals(arg, expected);
+  if (!matched) {
+    GOOGLE_LOG(INFO) << arg.DebugString() << " vs " << expected.DebugString();
+  }
+  return matched;
+}
+const char kCheckAttributesWithoutAuthnFilter[] = R"(
+attributes {
+  key: "connection.mtls"
+  value {
+    bool_value: true
+  }
+}
+attributes {
+  key: "connection.requested_server_name"
+  value {
+    string_value: "www.google.com"
+  }
+}
+attributes {
+  key: "context.protocol"
+  value {
+    string_value: "http"
+  }
+}
+attributes {
+  key: "destination.principal"
+  value {
+    string_value: "destination_user"
+  }
+}
+attributes {
+  key: "origin.ip"
+  value {
+    bytes_value: "1.2.3.4"
+  }
+}
+attributes {
+  key: "request.headers"
+  value {
+    string_map_value {
+      entries {
+        key: "host"
+        value: "localhost"
+      }
+      entries {
+        key: "path"
+        value: "/books?a=b&c=d"
+      }
+    }
+  }
+}
+attributes {
+  key: "request.host"
+  value {
+    string_value: "localhost"
+  }
+}
+attributes {
+  key: "request.path"
+  value {
+    string_value: "/books?a=b&c=d"
+  }
+}
+attributes {
+  key: "request.query_params"
+  value {
+    string_map_value {
+      entries {
+        key: "a"
+        value: "b"
+      }
+      entries {
+        key: "c"
+        value: "d"
+      }
+    }
+  }
+}
+attributes {
+  key: "request.scheme"
+  value {
+    string_value: "http"
+  }
+}
+attributes {
+  key: "request.time"
+  value {
+    timestamp_value {
+    }
+  }
+}
+attributes {
+  key: "request.url_path"
+  value {
+    string_value: "/books"
+  }
+}
+attributes {
+  key: "source.principal"
+  value {
+    string_value: "test_user"
+  }
+}
+)";
 
 const char kCheckAttributes[] = R"(
 attributes {
@@ -53,7 +161,7 @@ attributes {
       }
       entries {
         key: "path"
-        value: "/books"
+        value: "/books?a=b&c=d"
       }
     }
   }
@@ -67,7 +175,28 @@ attributes {
 attributes {
   key: "request.path"
   value {
+    string_value: "/books?a=b&c=d"
+  }
+}
+attributes {
+  key: "request.url_path"
+  value {
     string_value: "/books"
+  }
+}
+attributes {
+  key: "request.query_params"
+  value {
+    string_map_value {
+      entries {
+        key: "a"
+        value: "b"
+      }
+      entries {
+        key: "c"
+        value: "d"
+      }
+    }
   }
 }
 attributes {
@@ -90,6 +219,12 @@ attributes {
   }
 }
 attributes {
+  key: "connection.requested_server_name"
+  value {
+    string_value: "www.google.com"
+  }
+}
+attributes {
   key: "source.principal"
   value {
     string_value: "test_user"
@@ -99,6 +234,18 @@ attributes {
   key: "source.user"
   value {
     string_value: "test_user"
+  }
+}
+attributes {
+  key: "origin.ip"
+  value {
+    bytes_value: "1.2.3.4"
+  }
+}
+attributes {
+  key: "destination.principal"
+  value {
+    string_value: "destination_user"
   }
 }
 attributes {
@@ -152,6 +299,12 @@ attributes {
   key: "request.auth.principal"
   value {
     string_value: "thisisiss/thisissub"
+  }
+}
+attributes {
+  key: "request.auth.raw_claims"
+  value {
+    string_value: "test_raw_claims"
   }
 }
 )";
@@ -229,6 +382,125 @@ attributes {
     }
   }
 }
+attributes {
+  key: "context.proxy_error_code"
+  value {
+    string_value: "NR"
+  }
+}
+attributes {
+  key: "rbac.permissive.response_code"
+  value {
+    string_value: "403"
+  }
+}
+attributes {
+  key: "rbac.permissive.effective_policy_id"
+  value {
+    string_value: "policy-foo"
+  }
+}
+)";
+
+constexpr char kAuthenticationResultStruct[] = R"(
+fields {
+  key: "request.auth.audiences"
+  value {
+    string_value: "thisisaud"
+  }
+}
+fields {
+  key: "request.auth.claims"
+  value {
+    struct_value {
+      fields {
+        key: "iss"
+        value {
+          string_value: "thisisiss"
+        }
+      }
+      fields {
+        key: "sub"
+        value {
+          string_value: "thisissub"
+        }
+      }
+      fields {
+        key: "aud"
+        value {
+          string_value: "thisisaud"
+        }
+      }
+      fields {
+        key: "azp"
+        value {
+          string_value: "thisisazp"
+        }
+      }
+      fields {
+        key: "email"
+        value {
+          string_value: "thisisemail@email.com"
+        }
+      }
+      fields {
+        key: "iat"
+        value {
+          string_value: "1512754205"
+        }
+      }
+      fields {
+        key: "exp"
+        value {
+          string_value: "5112754205"
+        }
+      }
+    }
+  }
+}
+fields {
+  key: "request.auth.groups"
+  value {
+    list_value {
+      values {
+        string_value: "group1"
+      }
+      values {
+        string_value: "group2"
+      }
+    }
+  }
+}
+fields {
+  key: "request.auth.presenter"
+  value {
+    string_value: "thisisazp"
+  }
+}
+fields {
+  key: "request.auth.principal"
+  value {
+    string_value: "thisisiss/thisissub"
+  }
+}
+fields {
+  key: "request.auth.raw_claims"
+  value {
+    string_value: "test_raw_claims"
+  }
+}
+fields {
+  key: "source.principal"
+  value {
+    string_value: "test_user"
+  }
+}
+fields {
+  key: "source.user"
+  value {
+    string_value: "test_user"
+  }
+}
 )";
 
 void ClearContextTime(const std::string &name, RequestContext *request) {
@@ -247,7 +519,7 @@ TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   Attributes attr;
   (*attr.mutable_attributes())["test_key"].set_string_value("test_value");
 
-  ::testing::NiceMock<MockCheckData> mock_data;
+  ::testing::StrictMock<MockCheckData> mock_data;
   EXPECT_CALL(mock_data, ExtractIstioAttributes(_))
       .WillOnce(Invoke([&attr](std::string *data) -> bool {
         attr.SerializeToString(data);
@@ -257,12 +529,12 @@ TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   RequestContext request;
   AttributesBuilder builder(&request);
   builder.ExtractForwardedAttributes(&mock_data);
-  EXPECT_TRUE(MessageDifferencer::Equals(request.attributes, attr));
+  EXPECT_THAT(request.attributes, EqualsAttribute(attr));
 }
 
 TEST(AttributesBuilderTest, TestForwardAttributes) {
   Attributes forwarded_attr;
-  ::testing::NiceMock<MockHeaderUpdate> mock_header;
+  ::testing::StrictMock<MockHeaderUpdate> mock_header;
   EXPECT_CALL(mock_header, AddIstioAttributes(_))
       .WillOnce(Invoke([&forwarded_attr](const std::string &data) {
         EXPECT_TRUE(forwarded_attr.ParseFromString(data));
@@ -273,23 +545,112 @@ TEST(AttributesBuilderTest, TestForwardAttributes) {
       "test_value");
 
   AttributesBuilder::ForwardAttributes(origin_attr, &mock_header);
-  EXPECT_TRUE(MessageDifferencer::Equals(origin_attr, forwarded_attr));
+  EXPECT_THAT(forwarded_attr, EqualsAttribute(origin_attr));
+}
+
+TEST(AttributesBuilderTest, TestCheckAttributesWithoutAuthnFilter) {
+  // In production, it is expected that authn filter always available whenver
+  // mTLS or JWT is in used. This test case merely for completness to illustrate
+  // what attributes are populated if authn filter is missing.
+  ::testing::StrictMock<MockCheckData> mock_data;
+  EXPECT_CALL(mock_data, GetPrincipal(_, _))
+      .WillRepeatedly(Invoke([](bool peer, std::string *user) -> bool {
+        if (peer) {
+          *user = "test_user";
+        } else {
+          *user = "destination_user";
+        }
+        return true;
+      }));
+  EXPECT_CALL(mock_data, IsMutualTLS()).WillOnce(Invoke([]() -> bool {
+    return true;
+  }));
+  EXPECT_CALL(mock_data, GetRequestedServerName(_))
+      .WillOnce(Invoke([](std::string *name) -> bool {
+        *name = "www.google.com";
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetSourceIpPort(_, _))
+      .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
+        *ip = "1.2.3.4";
+        *port = 8080;
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetRequestHeaders())
+      .WillOnce(Invoke([]() -> std::map<std::string, std::string> {
+        std::map<std::string, std::string> map;
+        map["path"] = "/books?a=b&c=d";
+        map["host"] = "localhost";
+        return map;
+      }));
+  EXPECT_CALL(mock_data, FindHeaderByType(_, _))
+      .WillRepeatedly(Invoke(
+          [](CheckData::HeaderType header_type, std::string *value) -> bool {
+            if (header_type == CheckData::HEADER_PATH) {
+              *value = "/books?a=b&c=d";
+              return true;
+            } else if (header_type == CheckData::HEADER_HOST) {
+              *value = "localhost";
+              return true;
+            }
+            return false;
+          }));
+  EXPECT_CALL(mock_data, GetAuthenticationResult())
+      .WillOnce(testing::Return(nullptr));
+
+  EXPECT_CALL(mock_data, GetUrlPath(_))
+      .WillOnce(Invoke([](std::string *path) -> bool {
+        *path = "/books";
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetRequestQueryParams(_))
+      .WillOnce(Invoke([](std::map<std::string, std::string> *map) -> bool {
+        (*map)["a"] = "b";
+        (*map)["c"] = "d";
+        return true;
+      }));
+
+  RequestContext request;
+  AttributesBuilder builder(&request);
+  builder.ExtractCheckAttributes(&mock_data);
+
+  ClearContextTime(utils::AttributeName::kRequestTime, &request);
+
+  Attributes expected_attributes;
+  ASSERT_TRUE(TextFormat::ParseFromString(kCheckAttributesWithoutAuthnFilter,
+                                          &expected_attributes));
+  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestCheckAttributes) {
-  ::testing::NiceMock<MockCheckData> mock_data;
-  EXPECT_CALL(mock_data, GetSourceUser(_))
-      .WillOnce(Invoke([](std::string *user) -> bool {
-        *user = "test_user";
-        return true;
-      }));
+  ::testing::StrictMock<MockCheckData> mock_data;
   EXPECT_CALL(mock_data, IsMutualTLS()).WillOnce(Invoke([]() -> bool {
     return true;
   }));
+  EXPECT_CALL(mock_data, GetPrincipal(_, _))
+      .WillRepeatedly(Invoke([](bool peer, std::string *user) -> bool {
+        if (peer) {
+          *user = "test_user";
+        } else {
+          *user = "destination_user";
+        }
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetRequestedServerName(_))
+      .WillOnce(Invoke([](std::string *name) -> bool {
+        *name = "www.google.com";
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetSourceIpPort(_, _))
+      .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
+        *ip = "1.2.3.4";
+        *port = 8080;
+        return true;
+      }));
   EXPECT_CALL(mock_data, GetRequestHeaders())
       .WillOnce(Invoke([]() -> std::map<std::string, std::string> {
         std::map<std::string, std::string> map;
-        map["path"] = "/books";
+        map["path"] = "/books?a=b&c=d";
         map["host"] = "localhost";
         return map;
       }));
@@ -297,7 +658,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
       .WillRepeatedly(Invoke(
           [](CheckData::HeaderType header_type, std::string *value) -> bool {
             if (header_type == CheckData::HEADER_PATH) {
-              *value = "/books";
+              *value = "/books?a=b&c=d";
               return true;
             } else if (header_type == CheckData::HEADER_HOST) {
               *value = "localhost";
@@ -305,17 +666,21 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
             }
             return false;
           }));
-  EXPECT_CALL(mock_data, GetAuthenticationResult(_))
-      .WillOnce(testing::Return(false));
-  EXPECT_CALL(mock_data, GetJWTPayload(_))
-      .WillOnce(Invoke([](std::map<std::string, std::string> *payload) -> bool {
-        (*payload)["iss"] = "thisisiss";
-        (*payload)["sub"] = "thisissub";
-        (*payload)["aud"] = "thisisaud";
-        (*payload)["azp"] = "thisisazp";
-        (*payload)["email"] = "thisisemail@email.com";
-        (*payload)["iat"] = "1512754205";
-        (*payload)["exp"] = "5112754205";
+  google::protobuf::Struct authn_result;
+  ASSERT_TRUE(
+      TextFormat::ParseFromString(kAuthenticationResultStruct, &authn_result));
+
+  EXPECT_CALL(mock_data, GetAuthenticationResult())
+      .WillOnce(testing::Return(&authn_result));
+  EXPECT_CALL(mock_data, GetUrlPath(_))
+      .WillOnce(Invoke([](std::string *path) -> bool {
+        *path = "/books";
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetRequestQueryParams(_))
+      .WillOnce(Invoke([](std::map<std::string, std::string> *map) -> bool {
+        (*map)["a"] = "b";
+        (*map)["c"] = "d";
         return true;
       }));
 
@@ -325,86 +690,14 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
 
   ClearContextTime(utils::AttributeName::kRequestTime, &request);
 
-  std::string out_str;
-  TextFormat::PrintToString(request.attributes, &out_str);
-  GOOGLE_LOG(INFO) << "===" << out_str << "===";
-
   Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kCheckAttributes, &expected_attributes));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(request.attributes, expected_attributes));
-}
-
-TEST(AttributesBuilderTest, TestCheckAttributesWithAuthNResult) {
-  ::testing::NiceMock<MockCheckData> mock_data;
-  EXPECT_CALL(mock_data, IsMutualTLS()).WillOnce(Invoke([]() -> bool {
-    return true;
-  }));
-  EXPECT_CALL(mock_data, GetRequestHeaders())
-      .WillOnce(Invoke([]() -> std::map<std::string, std::string> {
-        std::map<std::string, std::string> map;
-        map["path"] = "/books";
-        map["host"] = "localhost";
-        return map;
-      }));
-  EXPECT_CALL(mock_data, FindHeaderByType(_, _))
-      .WillRepeatedly(Invoke(
-          [](CheckData::HeaderType header_type, std::string *value) -> bool {
-            if (header_type == CheckData::HEADER_PATH) {
-              *value = "/books";
-              return true;
-            } else if (header_type == CheckData::HEADER_HOST) {
-              *value = "localhost";
-              return true;
-            }
-            return false;
-          }));
-  EXPECT_CALL(mock_data, GetAuthenticationResult(_))
-      .WillOnce(Invoke([](istio::authn::Result *result) -> bool {
-        result->set_principal("thisisiss/thisissub");
-        result->set_peer_user("test_user");
-        result->mutable_origin()->add_audiences("thisisaud");
-        result->mutable_origin()->set_presenter("thisisazp");
-        (*result->mutable_origin()->mutable_claims())["iss"] = "thisisiss";
-        (*result->mutable_origin()->mutable_claims())["sub"] = "thisissub";
-        (*result->mutable_origin()->mutable_claims())["aud"] = "thisisaud";
-        (*result->mutable_origin()->mutable_claims())["azp"] = "thisisazp";
-        (*result->mutable_origin()->mutable_claims())["email"] =
-            "thisisemail@email.com";
-        (*result->mutable_origin()->mutable_claims())["iat"] = "1512754205";
-        (*result->mutable_origin()->mutable_claims())["exp"] = "5112754205";
-        result->mutable_origin()->set_raw_claims("test_raw_claims");
-        return true;
-      }));
-
-  RequestContext request;
-  AttributesBuilder builder(&request);
-  builder.ExtractCheckAttributes(&mock_data);
-
-  ClearContextTime(utils::AttributeName::kRequestTime, &request);
-
-  std::string out_str;
-  TextFormat::PrintToString(request.attributes, &out_str);
-  GOOGLE_LOG(INFO) << "===" << out_str << "===";
-
-  Attributes expected_attributes;
-  ASSERT_TRUE(
-      TextFormat::ParseFromString(kCheckAttributes, &expected_attributes));
-  // kCheckAttributes is also used in TestCheckAttributes, which is a deprecated
-  // way to construct mixer attribute (it was a fallback when authn filter is
-  // not available, which can be removed after 0.8). For now, modifying expected
-  // data manually for this test.
-  (*expected_attributes
-        .mutable_attributes())[utils::AttributeName::kRequestAuthRawClaims]
-      .set_string_value("test_raw_claims");
-
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(request.attributes, expected_attributes));
+  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
-  ::testing::NiceMock<MockReportData> mock_data;
+  ::testing::StrictMock<MockReportData> mock_data;
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
         *ip = "1.2.3.4";
@@ -431,11 +724,18 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         info->request_total_size = 240;
         info->duration = std::chrono::nanoseconds(1);
         info->response_code = 404;
+        info->response_flags = "NR";
       }));
   EXPECT_CALL(mock_data, GetGrpcStatus(_))
       .WillOnce(Invoke([](ReportData::GrpcStatus *status) -> bool {
         status->status = "grpc-status";
         status->message = "grpc-message";
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetRbacReportInfo(_))
+      .WillOnce(Invoke([](ReportData::RbacReportInfo *report_info) -> bool {
+        report_info->permissive_resp_code = "403";
+        report_info->permissive_policy_id = "policy-foo";
         return true;
       }));
 
@@ -444,10 +744,6 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   builder.ExtractReportAttributes(&mock_data);
 
   ClearContextTime(utils::AttributeName::kResponseTime, &request);
-
-  std::string out_str;
-  TextFormat::PrintToString(request.attributes, &out_str);
-  GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   Attributes expected_attributes;
   ASSERT_TRUE(
@@ -461,18 +757,18 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   (*expected_attributes
         .mutable_attributes())[utils::AttributeName::kResponseGrpcMessage]
       .set_string_value("grpc-message");
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(request.attributes, expected_attributes));
+  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
-  ::testing::NiceMock<MockReportData> mock_data;
+  ::testing::StrictMock<MockReportData> mock_data;
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
         *ip = "2.3.4.5";
         *port = 8080;
         return true;
       }));
+  EXPECT_CALL(mock_data, GetDestinationUID(_)).WillOnce(testing::Return(false));
   EXPECT_CALL(mock_data, GetResponseHeaders())
       .WillOnce(Invoke([]() -> std::map<std::string, std::string> {
         std::map<std::string, std::string> map;
@@ -488,6 +784,14 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         info->request_total_size = 240;
         info->duration = std::chrono::nanoseconds(1);
         info->response_code = 404;
+        info->response_flags = "NR";
+      }));
+  EXPECT_CALL(mock_data, GetGrpcStatus(_)).WillOnce(testing::Return(false));
+  EXPECT_CALL(mock_data, GetRbacReportInfo(_))
+      .WillOnce(Invoke([](ReportData::RbacReportInfo *report_info) -> bool {
+        report_info->permissive_resp_code = "403";
+        report_info->permissive_policy_id = "policy-foo";
+        return true;
       }));
 
   RequestContext request;
@@ -497,15 +801,10 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
 
   ClearContextTime(utils::AttributeName::kResponseTime, &request);
 
-  std::string out_str;
-  TextFormat::PrintToString(request.attributes, &out_str);
-  GOOGLE_LOG(INFO) << "===" << out_str << "===";
-
   Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kReportAttributes, &expected_attributes));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(request.attributes, expected_attributes));
+  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
 }
 
 }  // namespace

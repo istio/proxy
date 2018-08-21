@@ -15,8 +15,11 @@
 
 #pragma once
 
+#include "common/common/logger.h"
+#include "common/request_info/utility.h"
 #include "envoy/http/header_map.h"
 #include "envoy/request_info/request_info.h"
+#include "extensions/filters/http/well_known_names.h"
 #include "include/istio/control/http/controller.h"
 #include "src/envoy/utils/utils.h"
 
@@ -24,6 +27,9 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 namespace {
+const std::string kRbacPermissivePolicyIDField = "shadow_effective_policyID";
+const std::string kRbacPermissiveRespCodeField = "shadow_response_code";
+
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
 
@@ -43,7 +49,8 @@ bool ExtractGrpcStatus(const HeaderMap *headers,
 
 }  // namespace
 
-class ReportData : public ::istio::control::http::ReportData {
+class ReportData : public ::istio::control::http::ReportData,
+                   public Logger::Loggable<Logger::Id::filter> {
   const HeaderMap *headers_;
   const HeaderMap *trailers_;
   const RequestInfo::RequestInfo &info_;
@@ -88,6 +95,8 @@ class ReportData : public ::istio::control::http::ReportData {
     // responseCode is for the backend response. If it is not valid, the request
     // is rejected by Envoy. Set the response code for such requests as 500.
     data->response_code = info_.responseCode().value_or(500);
+
+    data->response_flags = RequestInfo::ResponseFlagUtils::toShortString(info_);
   }
 
   bool GetDestinationIpPort(std::string *str_ip, int *port) const override {
@@ -100,7 +109,7 @@ class ReportData : public ::istio::control::http::ReportData {
 
   bool GetDestinationUID(std::string *uid) const override {
     if (info_.upstreamHost()) {
-      return Utils::GetDestinationUID(info_.upstreamHost()->metadata(), uid);
+      return Utils::GetDestinationUID(*info_.upstreamHost()->metadata(), uid);
     }
     return false;
   }
@@ -110,6 +119,42 @@ class ReportData : public ::istio::control::http::ReportData {
     // If not response body, grpc-status is in response headers.
     return ExtractGrpcStatus(trailers_, status) ||
            ExtractGrpcStatus(headers_, status);
+  }
+
+  // Get Rbac related attributes.
+  bool GetRbacReportInfo(RbacReportInfo *report_info) const override {
+    const auto filter_meta = info_.dynamicMetadata().filter_metadata();
+    const auto filter_it =
+        filter_meta.find(Extensions::HttpFilters::HttpFilterNames::get().Rbac);
+    if (filter_it == filter_meta.end()) {
+      ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
+                Extensions::HttpFilters::HttpFilterNames::get().Rbac);
+      return false;
+    }
+
+    const auto &data_struct = filter_it->second;
+    const auto resp_code_it =
+        data_struct.fields().find(kRbacPermissiveRespCodeField);
+    if (resp_code_it != data_struct.fields().end()) {
+      report_info->permissive_resp_code = resp_code_it->second.string_value();
+    } else {
+      ENVOY_LOG(debug, "No {} field found in filter {} dynamic_metadata",
+                kRbacPermissiveRespCodeField,
+                Extensions::HttpFilters::HttpFilterNames::get().Rbac);
+    }
+
+    const auto policy_id_it =
+        data_struct.fields().find(kRbacPermissivePolicyIDField);
+    if (policy_id_it != data_struct.fields().end()) {
+      report_info->permissive_policy_id = policy_id_it->second.string_value();
+    } else {
+      ENVOY_LOG(debug, "No {} field found in filter {} dynamic_metadata",
+                kRbacPermissivePolicyIDField,
+                Extensions::HttpFilters::HttpFilterNames::get().Rbac);
+    }
+
+    return !report_info->permissive_resp_code.empty() ||
+           !report_info->permissive_policy_id.empty();
   }
 };
 

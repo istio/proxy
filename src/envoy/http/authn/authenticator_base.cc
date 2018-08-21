@@ -15,7 +15,9 @@
 
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "common/common/assert.h"
+#include "common/config/metadata.h"
 #include "src/envoy/http/authn/authn_utils.h"
+#include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
@@ -43,7 +45,8 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
   const bool has_user =
       connection->ssl() != nullptr &&
       connection->ssl()->peerCertificatePresented() &&
-      Utils::GetSourceUser(connection, payload->mutable_x509()->mutable_user());
+      Utils::GetPrincipal(connection, true,
+                          payload->mutable_x509()->mutable_user());
 
   ENVOY_LOG(debug, "validateX509 mode {}: ssl={}, has_user={}",
             iaapi::MutualTls::Mode_Name(mtls.mode()),
@@ -58,26 +61,16 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
     case iaapi::MutualTls::STRICT:
       return has_user;
     default:
-      NOT_REACHED;
+      NOT_REACHED_GCOVR_EXCL_LINE;
   }
 }
 
 bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
-  Envoy::Http::HeaderMap& header = *filter_context()->headers();
-
-  auto iter =
-      filter_context()->filter_config().jwt_output_payload_locations().find(
-          jwt.issuer());
-  if (iter ==
-      filter_context()->filter_config().jwt_output_payload_locations().end()) {
-    ENVOY_LOG(warn, "No JWT payload header location is found for the issuer {}",
-              jwt.issuer());
-    return false;
+  std::string jwt_payload;
+  if (filter_context()->getJwtPayload(jwt.issuer(), &jwt_payload)) {
+    return AuthnUtils::ProcessJwtPayload(jwt_payload, payload->mutable_jwt());
   }
-
-  LowerCaseString header_key(iter->second);
-  return AuthnUtils::GetJWTPayloadFromHeaders(header, header_key,
-                                              payload->mutable_jwt());
+  return false;
 }
 
 }  // namespace AuthN

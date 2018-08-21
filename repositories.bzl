@@ -113,7 +113,7 @@ cc_library(
             actual = "@googletest_git//:googletest_prod",
         )
 
-ISTIO_API = "2d8fbdb9495e737b10f6ac5f64e344517b0e7b10"
+ISTIO_API = "214c7598afb74f7f4dea49f77e45832c49382a15"
 
 def mixerapi_repositories(bind=True):
     BUILD = """
@@ -168,6 +168,7 @@ cc_proto_library(
     srcs = glob(
         ["envoy/config/filter/http/authn/v2alpha1/*.proto",
          "authentication/v1alpha1/*.proto",
+         "common/v1alpha1/*.proto",
         ],
     ),
     default_runtime = "//external:protobuf",

@@ -14,7 +14,8 @@
  */
 
 #include "common/common/logger.h"
-#include "envoy/http/header_map.h"
+#include "common/protobuf/protobuf.h"
+#include "envoy/api/v2/core/base.pb.h"
 #include "google/protobuf/struct.pb.h"
 #include "src/istio/authn/context.pb.h"
 
@@ -23,36 +24,16 @@ namespace Utils {
 
 class Authentication : public Logger::Loggable<Logger::Id::filter> {
  public:
-  // Saves (authentication) result to header with proper encoding (base64). The
-  // location is internal implementation detail, and is chosen to avoid possible
-  // collision. If header already contains data in that location, function will
-  // returns false and data is *not* overwritten.
-  static bool SaveResultToHeader(const istio::authn::Result& result,
-                                 Http::HeaderMap* headers);
-
   // Save authentication attributes into the data Struct.
   static void SaveAuthAttributesToStruct(const istio::authn::Result& result,
                                          ::google::protobuf::Struct& data);
 
-  // Looks up authentication result data in the header. If data is available,
-  // decodes and output result proto. Returns false if data is not available, or
-  // in bad format.
-  static bool FetchResultFromHeader(const Http::HeaderMap& headers,
-                                    istio::authn::Result* result);
-
-  // Clears authentication result in header, if exist.
-  static void ClearResultInHeader(Http::HeaderMap* headers);
-
-  // Returns true if there is header entry at thelocation that is used to store
-  // authentication result. (function does not check for validity of the data
-  // though).
-  static bool HasResultInHeader(const Http::HeaderMap& headers);
-
- private:
-  // Return the header location key. For testing purpose only.
-  static const Http::LowerCaseString& GetHeaderLocation();
-
-  friend class AuthenticationTest;
+  // Returns a pointer to the authentication result from metadata. Typically,
+  // the input metadata is the request info's dynamic metadata. Authentication
+  // result, if available, is stored under authentication filter metdata.
+  // Returns nullptr if there is no data for that filter.
+  static const ProtobufWkt::Struct* GetResultFromMetadata(
+      const envoy::api::v2::core::Metadata& metadata);
 };
 
 }  // namespace Utils

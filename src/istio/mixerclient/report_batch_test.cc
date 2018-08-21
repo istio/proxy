@@ -23,8 +23,8 @@ using ::google::protobuf::util::error::Code;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::ReportRequest;
 using ::istio::mixer::v1::ReportResponse;
-using ::testing::Invoke;
 using ::testing::_;
+using ::testing::Invoke;
 
 namespace istio {
 namespace mixerclient {

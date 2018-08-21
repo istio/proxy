@@ -25,6 +25,9 @@ namespace {
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
 
+// The JWT groups key name
+static const std::string kJwtGroupsKey = "groups";
+
 // Extract JWT audience into the JwtPayload.
 // This function should to be called after the claims are extracted.
 void ExtractJwtAudience(
@@ -48,29 +51,34 @@ void ExtractJwtAudience(
     // Not convertable to string array
   }
 }
+
+// Extract JWT groups into the JwtPayload.
+// This function should to be called after the claims are extracted.
+void ExtractJwtGroups(
+    const Envoy::Json::Object& obj,
+    const ::google::protobuf::Map< ::std::string, ::std::string>& claims,
+    istio::authn::JwtPayload* payload) {
+  const std::string& key = kJwtGroupsKey;
+  // "groups" can be either string array or string.
+  // First, try as string
+  if (claims.count(key) > 0) {
+    payload->add_groups(claims.at(key));
+    return;
+  }
+  // Next, try as string array
+  try {
+    std::vector<std::string> group_vector = obj.getStringArray(key);
+    for (const std::string group : group_vector) {
+      payload->add_groups(group);
+    }
+  } catch (Json::Exception& e) {
+    // Not convertable to string array
+  }
+}
 };  // namespace
 
-// Retrieve the JwtPayload from the HTTP headers with the key
-bool AuthnUtils::GetJWTPayloadFromHeaders(
-    const HeaderMap& headers, const LowerCaseString& jwt_payload_key,
-    istio::authn::JwtPayload* payload) {
-  const HeaderEntry* entry = headers.get(jwt_payload_key);
-  if (!entry) {
-    ENVOY_LOG(debug, "No JWT payload {} in the header", jwt_payload_key.get());
-    return false;
-  }
-  std::string value(entry->value().c_str(), entry->value().size());
-  // JwtAuth::Base64UrlDecode() is different from Base64::decode().
-  std::string payload_str = JwtAuth::Base64UrlDecode(value);
-  // Return an empty string if Base64 decode fails.
-  if (payload_str.empty()) {
-    ENVOY_LOG(error, "Invalid {} header, invalid base64: {}",
-              jwt_payload_key.get(), value);
-    return false;
-  }
-  *payload->mutable_raw_claims() = payload_str;
-  ::google::protobuf::Map< ::std::string, ::std::string>* claims =
-      payload->mutable_claims();
+bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
+                                   istio::authn::JwtPayload* payload) {
   Envoy::Json::ObjectSharedPtr json_obj;
   try {
     json_obj = Json::Factory::loadFromString(payload_str);
@@ -79,6 +87,10 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
   } catch (...) {
     return false;
   }
+
+  *payload->mutable_raw_claims() = payload_str;
+  ::google::protobuf::Map< ::std::string, ::std::string>* claims =
+      payload->mutable_claims();
 
   // Extract claims
   json_obj->iterate(
@@ -98,6 +110,8 @@ bool AuthnUtils::GetJWTPayloadFromHeaders(
   // Extract audience
   // ExtractJwtAudience() should be called after claims are extracted.
   ExtractJwtAudience(*json_obj, payload->claims(), payload);
+  // ExtractJwtGroups() should be called after claims are extracted.
+  ExtractJwtGroups(*json_obj, payload->claims(), payload);
   // Build user
   if (claims->count("iss") > 0 && claims->count("sub") > 0) {
     payload->set_user((*claims)["iss"] + "/" + (*claims)["sub"]);

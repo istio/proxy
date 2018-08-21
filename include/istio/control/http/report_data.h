@@ -40,11 +40,19 @@ class ReportData {
     uint64_t response_body_size;
     std::chrono::nanoseconds duration;
     int response_code;
+    std::string response_flags;
   };
   virtual void GetReportInfo(ReportInfo* info) const = 0;
 
   // Get destination ip/port.
   virtual bool GetDestinationIpPort(std::string* ip, int* port) const = 0;
+
+  // Get Rbac attributes.
+  struct RbacReportInfo {
+    std::string permissive_resp_code;
+    std::string permissive_policy_id;
+  };
+  virtual bool GetRbacReportInfo(RbacReportInfo* report_info) const = 0;
 
   // Get upstream host UID. This value overrides the value in the report bag.
   virtual bool GetDestinationUID(std::string* uid) const = 0;

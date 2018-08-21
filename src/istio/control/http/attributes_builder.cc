@@ -15,6 +15,8 @@
 
 #include "src/istio/control/http/attributes_builder.h"
 
+#include <set>
+
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "include/istio/utils/status.h"
@@ -64,77 +66,63 @@ void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
       builder.AddString(it.name, it.default_value);
     }
   }
+
+  std::string query_path;
+  if (check_data->GetUrlPath(&query_path)) {
+    builder.AddString(utils::AttributeName::kRequestUrlPath, query_path);
+  }
+
+  std::map<std::string, std::string> query_map;
+  if (check_data->GetRequestQueryParams(&query_map) && query_map.size() > 0) {
+    builder.AddStringMap(utils::AttributeName::kRequestQueryParams, query_map);
+  }
 }
 
 void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
-  istio::authn::Result authn_result;
-  if (check_data->GetAuthenticationResult(&authn_result)) {
-    utils::AttributesBuilder builder(&request_->attributes);
-    if (!authn_result.principal().empty()) {
-      builder.AddString(utils::AttributeName::kRequestAuthPrincipal,
-                        authn_result.principal());
+  utils::AttributesBuilder builder(&request_->attributes);
+
+  std::string destination_principal;
+  if (check_data->GetPrincipal(false, &destination_principal)) {
+    builder.AddString(utils::AttributeName::kDestinationPrincipal,
+                      destination_principal);
+  }
+  static const std::set<std::string> kAuthenticationStringAttributes = {
+      utils::AttributeName::kRequestAuthPrincipal,
+      utils::AttributeName::kSourceUser,
+      utils::AttributeName::kSourcePrincipal,
+      utils::AttributeName::kRequestAuthAudiences,
+      utils::AttributeName::kRequestAuthPresenter,
+      utils::AttributeName::kRequestAuthRawClaims,
+  };
+  const auto *authn_result = check_data->GetAuthenticationResult();
+  if (authn_result != nullptr) {
+    // Not all data in authentication results need to be sent to mixer (e.g
+    // groups), so we need to iterate on pre-approved attributes only.
+    for (const auto &attribute : kAuthenticationStringAttributes) {
+      const auto &iter = authn_result->fields().find(attribute);
+      if (iter != authn_result->fields().end() &&
+          !iter->second.string_value().empty()) {
+        builder.AddString(attribute, iter->second.string_value());
+      }
     }
-    if (!authn_result.peer_user().empty()) {
-      // TODO(diemtvu): remove kSourceUser once migration to source.principal is
-      // over. https://github.com/istio/istio/issues/4689
-      builder.AddString(utils::AttributeName::kSourceUser,
-                        authn_result.peer_user());
-      builder.AddString(utils::AttributeName::kSourcePrincipal,
-                        authn_result.peer_user());
-    }
-    if (authn_result.has_origin()) {
-      const auto &origin = authn_result.origin();
-      if (!origin.audiences().empty()) {
-        // TODO(diemtvu): this should be send as repeated field once mixer
-        // support string_list (https://github.com/istio/istio/issues/2802) For
-        // now, just use the first value.
-        builder.AddString(utils::AttributeName::kRequestAuthAudiences,
-                          origin.audiences(0));
-      }
-      if (!origin.presenter().empty()) {
-        builder.AddString(utils::AttributeName::kRequestAuthPresenter,
-                          origin.presenter());
-      }
-      if (!origin.claims().empty()) {
-        builder.AddProtobufStringMap(utils::AttributeName::kRequestAuthClaims,
-                                     origin.claims());
-      }
-      if (!origin.raw_claims().empty()) {
-        builder.AddString(utils::AttributeName::kRequestAuthRawClaims,
-                          origin.raw_claims());
-      }
+
+    // Add string-map attribute (kRequestAuthClaims)
+    const auto &claims =
+        authn_result->fields().find(utils::AttributeName::kRequestAuthClaims);
+    if (claims != authn_result->fields().end()) {
+      builder.AddProtoStructStringMap(utils::AttributeName::kRequestAuthClaims,
+                                      claims->second.struct_value());
     }
     return;
   }
 
-  // Fallback to extract from jwt filter directly. This can be removed once
-  // authn filter is in place.
-  std::map<std::string, std::string> payload;
-  utils::AttributesBuilder builder(&request_->attributes);
-  if (check_data->GetJWTPayload(&payload) && !payload.empty()) {
-    // Populate auth attributes.
-    if (payload.count("iss") > 0 && payload.count("sub") > 0) {
-      builder.AddString(utils::AttributeName::kRequestAuthPrincipal,
-                        payload["iss"] + "/" + payload["sub"]);
-    }
-    if (payload.count("aud") > 0) {
-      builder.AddString(utils::AttributeName::kRequestAuthAudiences,
-                        payload["aud"]);
-    }
-    if (payload.count("azp") > 0) {
-      builder.AddString(utils::AttributeName::kRequestAuthPresenter,
-                        payload["azp"]);
-    }
-    builder.AddStringMap(utils::AttributeName::kRequestAuthClaims, payload);
-  }
+  // Fallback to source.principal extracted from mTLS if no authentication
+  // filter is installed
   std::string source_user;
-  if (check_data->GetSourceUser(&source_user)) {
-    // TODO(diemtvu): remove kSourceUser once migration to source.principal is
-    // over. https://github.com/istio/istio/issues/4689
-    builder.AddString(utils::AttributeName::kSourceUser, source_user);
+  if (check_data->GetPrincipal(true, &source_user)) {
     builder.AddString(utils::AttributeName::kSourcePrincipal, source_user);
   }
-}  // namespace http
+}
 
 void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
   std::string forwarded_data;
@@ -154,8 +142,21 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
 
   utils::AttributesBuilder builder(&request_->attributes);
 
+  // connection remote IP is always reported as origin IP
+  std::string source_ip;
+  int source_port;
+  if (check_data->GetSourceIpPort(&source_ip, &source_port)) {
+    builder.AddBytes(utils::AttributeName::kOriginIp, source_ip);
+  }
+
   builder.AddBool(utils::AttributeName::kConnectionMtls,
                   check_data->IsMutualTLS());
+
+  std::string requested_server_name;
+  if (check_data->GetRequestedServerName(&requested_server_name)) {
+    builder.AddString(utils::AttributeName::kConnectionRequestedServerName,
+                      requested_server_name);
+  }
 
   builder.AddTimestamp(utils::AttributeName::kRequestTime,
                        std::chrono::system_clock::now());
@@ -234,6 +235,21 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
                       grpc_status.status);
     builder.AddString(utils::AttributeName::kResponseGrpcMessage,
                       grpc_status.message);
+  }
+
+  builder.AddString(utils::AttributeName::kContextProxyErrorCode,
+                    info.response_flags);
+
+  ReportData::RbacReportInfo rbac_info;
+  if (report_data->GetRbacReportInfo(&rbac_info)) {
+    if (!rbac_info.permissive_resp_code.empty()) {
+      builder.AddString(utils::AttributeName::kRbacPermissiveResponseCode,
+                        rbac_info.permissive_resp_code);
+    }
+    if (!rbac_info.permissive_policy_id.empty()) {
+      builder.AddString(utils::AttributeName::kRbacPermissivePolicyId,
+                        rbac_info.permissive_policy_id);
+    }
   }
 }
 

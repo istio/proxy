@@ -27,6 +27,7 @@ struct AttributeName {
   // https://github.com/istio/istio/issues/4689
   static const char kSourceUser[];
   static const char kSourcePrincipal[];
+  static const char kDestinationPrincipal[];
 
   static const char kRequestHeaders[];
   static const char kRequestHost[];
@@ -34,6 +35,8 @@ struct AttributeName {
   static const char kRequestPath[];
   static const char kRequestReferer[];
   static const char kRequestScheme[];
+  static const char kRequestUrlPath[];
+  static const char kRequestQueryParams[];
   static const char kRequestBodySize[];
   // Total size of request received, including request headers, body, and
   // trailers.
@@ -59,12 +62,14 @@ struct AttributeName {
   static const char kDestinationIp[];
   static const char kDestinationPort[];
   static const char kDestinationUID[];
+  static const char kOriginIp[];
   static const char kConnectionReceviedBytes[];
   static const char kConnectionReceviedTotalBytes[];
   static const char kConnectionSendBytes[];
   static const char kConnectionSendTotalBytes[];
   static const char kConnectionDuration[];
   static const char kConnectionMtls[];
+  static const char kConnectionRequestedServerName[];
   static const char kConnectionId[];
   // Record TCP connection status: open, continue, close
   static const char kConnectionEvent[];
@@ -72,6 +77,7 @@ struct AttributeName {
   // Context attributes
   static const char kContextProtocol[];
   static const char kContextTime[];
+  static const char kContextProxyErrorCode[];
 
   // Check error code and message.
   static const char kCheckErrorCode[];
@@ -84,12 +90,16 @@ struct AttributeName {
   // Authentication attributes
   static const char kRequestAuthPrincipal[];
   static const char kRequestAuthAudiences[];
+  static const char kRequestAuthGroups[];
   static const char kRequestAuthPresenter[];
   static const char kRequestAuthClaims[];
   static const char kRequestAuthRawClaims[];
 
   static const char kResponseGrpcStatus[];
   static const char kResponseGrpcMessage[];
+
+  static const char kRbacPermissiveResponseCode[];
+  static const char kRbacPermissivePolicyId[];
 };
 
 }  // namespace utils

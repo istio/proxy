@@ -19,7 +19,7 @@
 #include <map>
 #include <string>
 
-#include "src/istio/authn/context.pb.h"
+#include "google/protobuf/struct.pb.h"
 
 namespace istio {
 namespace control {
@@ -38,14 +38,17 @@ class CheckData {
   // Get downstream tcp connection ip and port.
   virtual bool GetSourceIpPort(std::string *ip, int *port) const = 0;
 
-  // If SSL is used, get origin user name.
-  virtual bool GetSourceUser(std::string *user) const = 0;
+  // If SSL is used, get peer or local certificate SAN URI.
+  virtual bool GetPrincipal(bool peer, std::string *user) const = 0;
 
   // Get request HTTP headers
   virtual std::map<std::string, std::string> GetRequestHeaders() const = 0;
 
   // Returns true if connection is mutual TLS enabled.
   virtual bool IsMutualTLS() const = 0;
+
+  // Get requested server name, SNI in case of TLS
+  virtual bool GetRequestedServerName(std::string *name) const = 0;
 
   // These headers are extracted into top level attributes.
   // This is for standard HTTP headers.  It supports both HTTP/1.1 and HTTP2
@@ -78,14 +81,18 @@ class CheckData {
   virtual bool FindCookie(const std::string &name,
                           std::string *value) const = 0;
 
-  // If the request has a JWT token and it is verified, get its payload as
-  // string map, and return true. Otherwise return false.
-  virtual bool GetJWTPayload(
-      std::map<std::string, std::string> *payload) const = 0;
+  // Returns a pointer to the authentication result from request info dynamic
+  // metadata, if available. Otherwise, returns nullptr.
+  virtual const ::google::protobuf::Struct *GetAuthenticationResult() const = 0;
 
-  // If the request has authentication result in header, parses data into the
-  // output result; returns true if success. Otherwise, returns false.
-  virtual bool GetAuthenticationResult(istio::authn::Result *result) const = 0;
+  // Get request url path, which strips query part from the http path header.
+  // Return true if url path is found, otherwise return false.
+  virtual bool GetUrlPath(std::string *url_path) const = 0;
+
+  // Get request queries with string map format. Return true if query params are
+  // found, otherwise return false.
+  virtual bool GetRequestQueryParams(
+      std::map<std::string, std::string> *query_params) const = 0;
 };
 
 // An interfact to update request HTTP headers with Istio attributes.

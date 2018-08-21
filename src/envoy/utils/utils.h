@@ -38,11 +38,16 @@ bool GetDestinationUID(
     const std::shared_ptr<envoy::api::v2::core::Metadata> metadata,
     std::string* uid);
 
-// Get user id from ssl.
-bool GetSourceUser(const Network::Connection* connection, std::string* user);
+// Get peer or local principal URI.
+bool GetPrincipal(const Network::Connection* connection, bool peer,
+                  std::string* principal);
 
 // Returns true if connection is mutual TLS enabled.
 bool IsMutualTLS(const Network::Connection* connection);
+
+// Get requested server name, SNI in case of TLS
+bool GetRequestedServerName(const Network::Connection* connection,
+                            std::string* name);
 
 // Parse JSON string into message.
 ::google::protobuf::util::Status ParseJsonMessage(

@@ -195,17 +195,11 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
     return;
   }
 
-  // TODO(lei-tang): remove this backward compatibility.
-  // Tracking issue: https://github.com/istio/istio/issues/4744
-  headers_->addReferenceKey(kJwtPayloadKey, jwt_->PayloadStrBase64Url());
-
-  if (!issuer_item.jwt_config().forward_payload_header().empty()) {
-    const LowerCaseString key(
-        issuer_item.jwt_config().forward_payload_header());
-    if (key.get() != kJwtPayloadKey.get()) {
-      headers_->addCopy(key, jwt_->PayloadStrBase64Url());
-    }
-  }
+  // TODO: can we save as proto or json object directly?
+  // User the issuer as the entry key for simplicity. The forward_payload_header
+  // field can be removed or replace by a boolean (to make `save` is
+  // conditional)
+  callback_->savePayload(issuer_item.jwt_config().issuer(), jwt_->PayloadStr());
 
   if (!issuer_item.jwt_config().forward()) {
     // Remove JWT from headers.
