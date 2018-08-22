@@ -50,7 +50,9 @@ TEST_F(UtilsTest, GetSourceNamespace) {
   checkTrue("cluster.local/ns//", "");
   checkTrue("cluster.local/sa/user/ns/", "");
   checkTrue("cluster.local/ns//sa/user", "");
+  checkTrue("cluster.local/ns//ns/ns", "");
 
+  checkTrue("cluster.local/ns/ns/ns/ns", "ns");
   checkTrue("cluster.local/ns/abc_ns", "abc_ns");
   checkTrue("cluster.local/ns/abc_ns/", "abc_ns");
   checkTrue("cluster.local/ns/abc_ns/sa/user_ns", "abc_ns");
