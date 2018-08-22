@@ -139,7 +139,7 @@ attributes {
 attributes {
   key: "source.principal"
   value {
-    string_value: "test_user"
+    string_value: "sa/test_user/ns/ns_ns/"
   }
 }
 )";
