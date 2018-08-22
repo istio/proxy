@@ -31,12 +31,12 @@ using Envoy::Http::Istio::AuthN::FilterContext;
 using istio::authn::Payload;
 using istio::authn::Result;
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
+using testing::_;
 using testing::AtLeast;
 using testing::Invoke;
 using testing::NiceMock;
 using testing::ReturnRef;
 using testing::StrictMock;
-using testing::_;
 
 namespace iaapi = istio::authentication::v1alpha1;
 
