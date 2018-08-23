@@ -72,7 +72,8 @@ std::unique_ptr<AuthenticatorBase> createAlwaysPassAuthenticator(
     _local(FilterContext *filter_context) : AuthenticatorBase(filter_context) {}
     bool run(Payload *) override {
       // Set some data to verify authentication result later.
-      auto payload = TestUtilities::CreateX509Payload("foo");
+      auto payload = TestUtilities::CreateX509Payload(
+          "cluster.local/sa/test_user/ns/test_ns/");
       filter_context()->setPeerResult(&payload);
       return true;
     }
@@ -181,15 +182,21 @@ TEST_F(AuthenticationFilterTest, AllPass) {
   ProtobufWkt::Struct expected_data;
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
        fields {
+         key: "source.namespace"
+         value {
+           string_value: "test_ns"
+         }
+       }
+       fields {
          key: "source.principal"
          value {
-           string_value: "foo"
+           string_value: "cluster.local/sa/test_user/ns/test_ns/"
          }
        }
        fields {
          key: "source.user"
          value {
-           string_value: "foo"
+           string_value: "cluster.local/sa/test_user/ns/test_ns/"
          }
        })",
                                                     &expected_data));

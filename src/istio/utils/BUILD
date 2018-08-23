@@ -19,11 +19,25 @@ cc_library(
     srcs = [
         "protobuf.cc",
         "status.cc",
+        "utils.cc"
+    ],
+    hdrs = [
+        "utils.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//external:protobuf",
         "//include/istio/utils:headers_lib",
+    ],
+)
+
+cc_test(
+    name = "utils_test",
+    size = "small",
+    srcs = ["utils_test.cc"],
+    deps = [
+        ":utils_lib",
+        "//external:googletest_main",
     ],
 )
 

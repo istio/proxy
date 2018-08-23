@@ -21,6 +21,7 @@ namespace utils {
 // Define attribute names
 const char AttributeName::kSourceUser[] = "source.user";
 const char AttributeName::kSourcePrincipal[] = "source.principal";
+const char AttributeName::kSourceNamespace[] = "source.namespace";
 const char AttributeName::kDestinationPrincipal[] = "destination.principal";
 
 const char AttributeName::kRequestHeaders[] = "request.headers";

@@ -22,6 +22,7 @@
 #include "include/istio/utils/attributes_builder.h"
 #include "src/istio/control/tcp/mock_check_data.h"
 #include "src/istio/control/tcp/mock_report_data.h"
+#include "src/istio/utils/utils.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
@@ -74,15 +75,21 @@ attributes {
   }
 }
 attributes {
+  key: "source.namespace"
+  value {
+    string_value: "ns_ns"
+  }
+}
+attributes {
   key: "source.principal"
   value {
-    string_value: "test_user"
+    string_value: "cluster.local/sa/test_user/ns/ns_ns/"
   }
 }
 attributes {
   key: "source.user"
   value {
-    string_value: "test_user"
+    string_value: "cluster.local/sa/test_user/ns/ns_ns/"
   }
 }
 attributes {
@@ -372,7 +379,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _))
       .WillRepeatedly(Invoke([](bool peer, std::string* user) -> bool {
         if (peer) {
-          *user = "test_user";
+          *user = "cluster.local/sa/test_user/ns/ns_ns/";
         } else {
           *user = "destination_user";
         }

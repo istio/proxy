@@ -90,6 +90,7 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
       utils::AttributeName::kRequestAuthPrincipal,
       utils::AttributeName::kSourceUser,
       utils::AttributeName::kSourcePrincipal,
+      utils::AttributeName::kSourceNamespace,
       utils::AttributeName::kRequestAuthAudiences,
       utils::AttributeName::kRequestAuthPresenter,
       utils::AttributeName::kRequestAuthRawClaims,
