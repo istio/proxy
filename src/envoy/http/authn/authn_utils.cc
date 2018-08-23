@@ -15,6 +15,7 @@
 
 #include "authn_utils.h"
 #include "common/json/json_loader.h"
+#include "google/protobuf/struct.pb.h"
 #include "src/envoy/http/jwt_auth/jwt.h"
 
 namespace Envoy {
@@ -25,51 +26,23 @@ namespace {
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
 
-// The JWT groups key name
-static const std::string kJwtGroupsKey = "groups";
-
-// Extract JWT audience into the JwtPayload.
-// This function should to be called after the claims are extracted.
-void ExtractJwtAudience(
-    const Envoy::Json::Object& obj,
-    const ::google::protobuf::Map< ::std::string, ::std::string>& claims,
-    istio::authn::JwtPayload* payload) {
-  const std::string& key = kJwtAudienceKey;
-  // "aud" can be either string array or string.
+// Extract JWT claim as a string list.
+// This function only extracts string and string list claims.
+// A string claim is extracted as a string list of 1 item.
+void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
+                       std::vector<std::string>* list) {
   // First, try as string
-  if (claims.count(key) > 0) {
-    payload->add_audiences(claims.at(key));
-    return;
-  }
-  // Next, try as string array
   try {
-    std::vector<std::string> aud_vector = obj.getStringArray(key);
-    for (const std::string aud : aud_vector) {
-      payload->add_audiences(aud);
-    }
+    // Try as string, will throw execption if object type is not string.
+    list->push_back(obj.getString(key));
   } catch (Json::Exception& e) {
-    // Not convertable to string array
-  }
-}
-
-// Extract JWT groups into the JwtPayload.
-// This function should to be called after the claims are extracted.
-void ExtractJwtGroups(
-    const Envoy::Json::Object& obj,
-    const ::google::protobuf::Map< ::std::string, ::std::string>& claims,
-    istio::authn::JwtPayload* payload) {
-  const std::string& key = kJwtGroupsKey;
-  // "groups" can be either string array or string.
-  // First, try as string
-  if (claims.count(key) > 0) {
-    payload->add_groups(claims.at(key));
-    return;
+    // Not convertable to string
   }
   // Next, try as string array
   try {
-    std::vector<std::string> group_vector = obj.getStringArray(key);
-    for (const std::string group : group_vector) {
-      payload->add_groups(group);
+    std::vector<std::string> vector = obj.getStringArray(key);
+    for (const std::string v : vector) {
+      list->push_back(v);
     }
   } catch (Json::Exception& e) {
     // Not convertable to string array
@@ -89,37 +62,39 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   }
 
   *payload->mutable_raw_claims() = payload_str;
-  ::google::protobuf::Map< ::std::string, ::std::string>* claims =
-      payload->mutable_claims();
 
-  // Extract claims
-  json_obj->iterate(
-      [payload](const std::string& key, const Json::Object& obj) -> bool {
-        ::google::protobuf::Map< ::std::string, ::std::string>* claims =
-            payload->mutable_claims();
-        // In current implementation, only string objects are extracted into
-        // claims. If call obj.asJsonString(), will get "panic: not reached"
-        // from json_loader.cc.
-        try {
-          // Try as string, will throw execption if object type is not string.
-          (*claims)[key] = obj.asString();
-        } catch (Json::Exception& e) {
-        }
-        return true;
-      });
-  // Extract audience
-  // ExtractJwtAudience() should be called after claims are extracted.
-  ExtractJwtAudience(*json_obj, payload->claims(), payload);
-  // ExtractJwtGroups() should be called after claims are extracted.
-  ExtractJwtGroups(*json_obj, payload->claims(), payload);
+  auto claims = payload->mutable_claims()->mutable_fields();
+  // Extract claims as string lists
+  json_obj->iterate([json_obj, claims](const std::string& key,
+                                       const Json::Object&) -> bool {
+    // In current implementation, only string/string list objects are extracted
+    std::vector<std::string> list;
+    ExtractStringList(key, *json_obj, &list);
+    for (auto s : list) {
+      (*claims)[key].mutable_list_value()->add_values()->set_string_value(s);
+    }
+    return true;
+  });
+  // Copy audience to the audience in context.proto
+  if (claims->find(kJwtAudienceKey) != claims->end()) {
+    for (const auto& v : (*claims)[kJwtAudienceKey].list_value().values()) {
+      payload->add_audiences(v.string_value());
+    }
+  }
+
   // Build user
-  if (claims->count("iss") > 0 && claims->count("sub") > 0) {
-    payload->set_user((*claims)["iss"] + "/" + (*claims)["sub"]);
+  if (claims->find("iss") != claims->end() &&
+      claims->find("sub") != claims->end()) {
+    payload->set_user(
+        (*claims)["iss"].list_value().values().Get(0).string_value() + "/" +
+        (*claims)["sub"].list_value().values().Get(0).string_value());
   }
   // Build authorized presenter (azp)
-  if (claims->count("azp") > 0) {
-    payload->set_presenter((*claims)["azp"]);
+  if (claims->find("azp") != claims->end()) {
+    payload->set_presenter(
+        (*claims)["azp"].list_value().values().Get(0).string_value());
   }
+
   return true;
 }
 

@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package istio.authn;
 
+import "google/protobuf/struct.proto";
+
 // Container to hold authenticated attributes from JWT.
 message JwtPayload {
   // This is a string of the issuer (iss) and subject (sub) claims within a
@@ -33,17 +35,15 @@ message JwtPayload {
   // id. Example 123456789012.my-svc.com
   string presenter = 3;
 
-  // Only raw JWT string claims are kept.
-  map<string, string> claims = 5;
+  // JWT claims stored as protobuf.Struct
+  // Only string and string-list claims are extracted into claims.
+  // A string claim is stored as a string list of one item.
+  google.protobuf.Struct claims = 5;
 
   // All original claims in JsonString format, which can be parsed into json
   // object (map) to access other claims that not cover with the string claims
   // map above.
   string raw_claims = 6;
-
-  // The groups claim in the JWT.
-  // Example: [‘group1’, ‘group2’]
-  repeated string groups = 7;
 }
 
 // Container to hold authenticated attributes from X509 (mTLS).

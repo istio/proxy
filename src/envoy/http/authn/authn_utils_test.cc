@@ -63,21 +63,47 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
       R"(
       user: "issuer@foo.com/sub@foo.com"
       audiences: ["aud1"]
-      claims {
-        key: "aud"
-        value: "aud1"
-      }
-      claims {
-        key: "iss"
-        value: "issuer@foo.com"
-      }
-      claims {
-        key: "sub"
-        value: "sub@foo.com"
-      }
-      claims {
-        key: "some-other-string-claims"
-        value: "some-claims-kept"
+      claims: {
+        fields: {
+          key: "aud"
+          value: {
+            list_value: {
+              values: {
+                string_value: "aud1"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "iss"
+          value: {
+            list_value: {
+              values: {
+                string_value: "issuer@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "sub"
+          value: {
+            list_value: {
+              values: {
+                string_value: "sub@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "some-other-string-claims"
+          value: {
+            list_value: {
+              values: {
+                string_value: "some-claims-kept"
+              }
+            }
+          }
+        }
       }
       raw_claims: ")" +
           StringUtil::escape(kSecIstioAuthUserinfoHeaderValue) + R"(")",
@@ -95,17 +121,37 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithNoAudTest) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
       user: "issuer@foo.com/sub@foo.com"
-      claims {
-        key: "iss"
-        value: "issuer@foo.com"
-      }
-      claims {
-        key: "sub"
-        value: "sub@foo.com"
-      }
-      claims {
-        key: "some-other-string-claims"
-        value: "some-claims-kept"
+      claims: {
+        fields: {
+          key: "iss"
+          value: {
+            list_value: {
+              values: {
+                string_value: "issuer@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "sub"
+          value: {
+            list_value: {
+              values: {
+                string_value: "sub@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "some-other-string-claims"
+          value: {
+            list_value: {
+              values: {
+                string_value: "some-claims-kept"
+              }
+            }
+          }
+        }
       }
       raw_claims: ")" +
           StringUtil::escape(kSecIstioAuthUserInfoHeaderWithNoAudValue) +
@@ -127,28 +173,61 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithTwoAudTest) {
       user: "issuer@foo.com/sub@foo.com"
       audiences: "aud1"
       audiences: "aud2"
-      claims {
-        key: "iss"
-        value: "issuer@foo.com"
-      }
-      claims {
-        key: "sub"
-        value: "sub@foo.com"
-      }
-      claims {
-        key: "some-other-string-claims"
-        value: "some-claims-kept"
+      claims: {
+        fields: {
+          key: "aud"
+          value: {
+            list_value: {
+              values: {
+                string_value: "aud1"
+              }
+              values: {
+                string_value: "aud2"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "iss"
+          value: {
+            list_value: {
+              values: {
+                string_value: "issuer@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "sub"
+          value: {
+            list_value: {
+              values: {
+                string_value: "sub@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "some-other-string-claims"
+          value: {
+            list_value: {
+              values: {
+                string_value: "some-claims-kept"
+              }
+            }
+          }
+        }
       }
       raw_claims: ")" +
           StringUtil::escape(kSecIstioAuthUserInfoHeaderWithTwoAudValue) +
           R"(")",
       &expected_payload));
-
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected. When the aud is a string array, the aud is not saved in the
   // claims.
   bool ret = AuthnUtils::ProcessJwtPayload(
       kSecIstioAuthUserInfoHeaderWithTwoAudValue, &payload);
+
   EXPECT_TRUE(ret);
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
