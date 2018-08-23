@@ -79,6 +79,22 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
         key: "some-other-string-claims"
         value: "some-claims-kept"
       }
+      claim_string_lists {
+        key: "aud"
+        value: {list: ["aud1"]}
+      }
+      claim_string_lists {
+        key: "iss"
+        value: {list: ["issuer@foo.com"]}
+      }
+      claim_string_lists {
+        key: "sub"
+        value: {list: ["sub@foo.com"]}
+      }
+      claim_string_lists {
+        key: "some-other-string-claims"
+        value: {list: ["some-claims-kept"]}
+      }
       raw_claims: ")" +
           StringUtil::escape(kSecIstioAuthUserinfoHeaderValue) + R"(")",
       &expected_payload));
@@ -106,6 +122,18 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithNoAudTest) {
       claims {
         key: "some-other-string-claims"
         value: "some-claims-kept"
+      }
+      claim_string_lists {
+        key: "iss"
+        value: {list: ["issuer@foo.com"]}
+      }
+      claim_string_lists {
+        key: "sub"
+        value: {list: ["sub@foo.com"]}
+      }
+      claim_string_lists {
+        key: "some-other-string-claims"
+        value: {list: ["some-claims-kept"]}
       }
       raw_claims: ")" +
           StringUtil::escape(kSecIstioAuthUserInfoHeaderWithNoAudValue) +
@@ -139,16 +167,32 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithTwoAudTest) {
         key: "some-other-string-claims"
         value: "some-claims-kept"
       }
+      claim_string_lists {
+        key: "aud"
+        value: {list: ["aud1", "aud2"]}
+      }
+      claim_string_lists {
+        key: "iss"
+        value: {list: ["issuer@foo.com"]}
+      }
+      claim_string_lists {
+        key: "sub"
+        value: {list: ["sub@foo.com"]}
+      }
+      claim_string_lists {
+        key: "some-other-string-claims"
+        value: {list: ["some-claims-kept"]}
+      }
       raw_claims: ")" +
           StringUtil::escape(kSecIstioAuthUserInfoHeaderWithTwoAudValue) +
           R"(")",
       &expected_payload));
-
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected. When the aud is a string array, the aud is not saved in the
   // claims.
   bool ret = AuthnUtils::ProcessJwtPayload(
       kSecIstioAuthUserInfoHeaderWithTwoAudValue, &payload);
+
   EXPECT_TRUE(ret);
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }

@@ -46,8 +46,8 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
   origin->add_audiences("audiences0");
   origin->add_audiences("audiences1");
   origin->set_presenter("presenter");
-  origin->add_groups("group1");
-  origin->add_groups("group2");
+  (*origin->mutable_claim_string_lists())["groups"].add_list("group1");
+  (*origin->mutable_claim_string_lists())["groups"].add_list("group2");
   auto claim = origin->mutable_claims();
   (*claim)["key1"] = "value1";
   (*claim)["key2"] = "value2";
@@ -76,21 +76,26 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
                 .string_value(),
             "audiences0");
   EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthGroups)
+                .at(istio::utils::AttributeName::kRequestAuthPresenter)
+                .string_value(),
+            "presenter");
+
+  auto auth_claims =
+      data.fields().at(istio::utils::AttributeName::kRequestAuthClaims);
+  EXPECT_EQ(auth_claims.struct_value()
+                .fields()
+                .at("groups")
                 .list_value()
                 .values(0)
                 .string_value(),
             "group1");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthGroups)
+  EXPECT_EQ(auth_claims.struct_value()
+                .fields()
+                .at("groups")
                 .list_value()
                 .values(1)
                 .string_value(),
             "group2");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthPresenter)
-                .string_value(),
-            "presenter");
 
   auto actual_claim =
       data.fields().at(istio::utils::AttributeName::kRequestAuthClaims);
