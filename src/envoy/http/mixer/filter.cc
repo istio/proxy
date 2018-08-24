@@ -221,6 +221,8 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     int status_code = ::istio::utils::StatusHttpCode(status.error_code());
     decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
                                        nullptr);
+    decoder_callbacks_->requestInfo().setResponseFlag(
+        RequestInfo::ResponseFlag::UnauthorizedExternalService);
     return;
   }
 
