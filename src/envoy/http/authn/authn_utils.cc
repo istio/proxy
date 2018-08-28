@@ -100,7 +100,8 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   return true;
 }
 
-bool AuthnUtils::MatchString(const char* str, const iaapi::StringMatch& match) {
+bool AuthnUtils::MatchString(const char* const str,
+                             const iaapi::StringMatch& match) {
   if (str == nullptr) {
     return false;
   }
@@ -122,7 +123,8 @@ bool AuthnUtils::MatchString(const char* str, const iaapi::StringMatch& match) {
   }
 }
 
-static bool matchRule(const char* path, const iaapi::Jwt_TriggerRule& rule) {
+static bool matchRule(const char* const path,
+                      const iaapi::Jwt_TriggerRule& rule) {
   for (const auto& excluded : rule.excluded_paths()) {
     if (AuthnUtils::MatchString(path, excluded)) {
       // The rule is not matched if any of excluded_paths matched.
@@ -148,7 +150,7 @@ static bool matchRule(const char* path, const iaapi::Jwt_TriggerRule& rule) {
   return true;
 }
 
-bool AuthnUtils::IsJwtTriggered(const char* path, const iaapi::Jwt& jwt) {
+bool AuthnUtils::IsJwtTriggered(const char* const path, const iaapi::Jwt& jwt) {
   if (path == nullptr || jwt.trigger_rules_size() == 0) {
     return true;
   }

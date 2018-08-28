@@ -39,11 +39,12 @@ class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
                                 istio::authn::JwtPayload* payload);
 
   // Returns true if str is matched to match.
-  static bool MatchString(const char* str, const iaapi::StringMatch& match);
+  static bool MatchString(const char* const str,
+                          const iaapi::StringMatch& match);
 
   // Returns true if the jwt should be validated. It will check if the request
   // path is matched to the trigger rule in the jwt.
-  static bool IsJwtTriggered(const char* path, const iaapi::Jwt& jwt);
+  static bool IsJwtTriggered(const char* const path, const iaapi::Jwt& jwt);
 };
 
 }  // namespace AuthN
