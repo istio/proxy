@@ -245,6 +245,9 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
   if (nullptr != headers_) {
     UpdateHeaders(*headers_, route_directive_.request_header_operations());
     headers_ = nullptr;
+    if (route_directive_.request_header_operations().size() > 0) {
+      decoder_callbacks_->clearRouteCache();
+    }
   }
 
   if (!initiating_call_) {
