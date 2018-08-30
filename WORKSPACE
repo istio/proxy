@@ -30,12 +30,12 @@ bind(
 )
 
 # When updating envoy sha manually please update the sha in istio.deps file also
-ENVOY_SHA = "c1cc68dda009452e90d485da22ee9c74c08b328d"
+ENVOY_SHA = "2d8386532f68899ca1fe6476dc458b0df1260b29"
 
 http_archive(
     name = "envoy",
     strip_prefix = "envoy-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".zip",
+    url = "https://github.com/istio/envoy/archive/" + ENVOY_SHA + ".zip",
 )
 
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
