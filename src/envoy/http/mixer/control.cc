@@ -22,7 +22,7 @@ namespace Mixer {
 Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  Event::Dispatcher& dispatcher,
                  Runtime::RandomGenerator& random, Stats::Scope& scope,
-                 Utils::MixerFilterStats& stats)
+                 Utils::MixerFilterStats& stats, LocalInfo::LocalInfo& local_info)
     : config_(config),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
           config_.check_cluster(), cm, scope)),
