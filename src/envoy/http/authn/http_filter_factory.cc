@@ -87,6 +87,7 @@ class AliasAuthnFilterConfig : public AuthnFilterConfig {
  public:
   std::string name() override {
     return "istio_authn";
+  }
 };
 
 /**
