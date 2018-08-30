@@ -44,7 +44,7 @@ static const Http::TestHeaderMapImpl kSimpleRequestHeader{{
 static const char kJwtIssuer[] = "some@issuer";
 
 static const char kAuthnFilterWithJwt[] = R"(
-    name: istio_authn
+    name: istio.authn
     config:
       policy:
         origins:
@@ -85,7 +85,7 @@ INSTANTIATE_TEST_CASE_P(
     HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
-  config_helper_.addFilter("name: istio_authn");
+  config_helper_.addFilter("name: istio.authn");
   initialize();
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
@@ -104,7 +104,7 @@ TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
 
 TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
   config_helper_.addFilter(R"(
-    name: istio_authn
+    name: istio.authn
     config:
       policy:
         peers:
