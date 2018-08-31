@@ -239,6 +239,21 @@ TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
                                       filter_context_.authenticationResult()));
 }
 
+TEST_P(OriginAuthenticatorTest, TriggeredWithNullPath) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+
+  createAuthenticator();
+
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
+
+  EXPECT_TRUE(authenticator_->run(payload_));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                      filter_context_.authenticationResult()));
+}
+
 TEST_P(OriginAuthenticatorTest, SingleRuleTriggered) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       kSingleOriginMethodWithTriggerRulePolicy, &policy_));

@@ -72,8 +72,9 @@ bool OriginAuthenticator::run(Payload* payload) {
   for (const auto& method : policy_.origins()) {
     const auto& jwt = method.jwt();
 
-    if (AuthnUtils::IsJwtTriggered(request_path, jwt)) {
-      ENVOY_LOG(debug, "Validating JWT: {}", jwt.DebugString());
+    if (AuthnUtils::ShouldValidateJwtPerPath(request_path, jwt)) {
+      ENVOY_LOG(debug, "Validating request path {} for jwt {}", request_path,
+                jwt.DebugString());
       // set triggered to true if any of the jwt trigger rule matched.
       triggered = true;
       if (validateJwt(jwt, payload)) {

@@ -261,70 +261,70 @@ TEST(AuthnUtilsTest, MatchString) {
   EXPECT_FALSE(AuthnUtils::MatchString("1-ac-1", match));
 }
 
-TEST(AuthnUtilsTest, IsJwtTriggeredExcluded) {
+TEST(AuthnUtilsTest, ShouldValidateJwtPerPathExcluded) {
   iaapi::Jwt jwt;
 
   // Create a rule that triggers on everything except /good-x and /allow-x.
   auto* rule = jwt.add_trigger_rules();
   rule->add_excluded_paths()->set_exact("/good-x");
   rule->add_excluded_paths()->set_exact("/allow-x");
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/good-x", jwt));
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/good-1", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/allow-1", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/other", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-1", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
 
   // Change the rule to only triggers on prefix /good and /allow.
   rule->add_included_paths()->set_prefix("/good");
   rule->add_included_paths()->set_prefix("/allow");
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/good-x", jwt));
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/good-1", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/allow-1", jwt));
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/other", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-1", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
 }
 
-TEST(AuthnUtilsTest, IsJwtTriggeredIncluded) {
+TEST(AuthnUtilsTest, ShouldValidateJwtPerPathIncluded) {
   iaapi::Jwt jwt;
 
   // Create a rule that triggers on everything with prefix /good and /allow.
   auto* rule = jwt.add_trigger_rules();
   rule->add_included_paths()->set_prefix("/good");
   rule->add_included_paths()->set_prefix("/allow");
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/good-x", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/good-2", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/allow-1", jwt));
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/other", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-2", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
 
   // Change the rule to also exclude /allow-x and /good-x.
   rule->add_excluded_paths()->set_exact("/good-x");
   rule->add_excluded_paths()->set_exact("/allow-x");
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/good-x", jwt));
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/good-2", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/allow-1", jwt));
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/other", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-2", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
 }
 
-TEST(AuthnUtilsTest, IsJwtTriggeredDefault) {
+TEST(AuthnUtilsTest, ShouldValidateJwtPerPathDefault) {
   iaapi::Jwt jwt;
 
   // Always trigger when path is unavailable.
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered(nullptr, jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath(nullptr, jwt));
 
   // Always trigger when there is no rules in jwt.
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/test", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/test", jwt));
 
   // Add a rule that triggers on everything except /hello.
   jwt.add_trigger_rules()->add_excluded_paths()->set_exact("/hello");
-  EXPECT_FALSE(AuthnUtils::IsJwtTriggered("/hello", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/other", jwt));
+  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/hello", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
 
   // Add another rule that triggers on path /hello.
   jwt.add_trigger_rules()->add_included_paths()->set_exact("/hello");
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/hello", jwt));
-  EXPECT_TRUE(AuthnUtils::IsJwtTriggered("/other", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/hello", jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
 }
 
 }  // namespace

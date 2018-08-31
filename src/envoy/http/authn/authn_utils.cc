@@ -150,7 +150,11 @@ static bool matchRule(const char* const path,
   return true;
 }
 
-bool AuthnUtils::IsJwtTriggered(const char* const path, const iaapi::Jwt& jwt) {
+bool AuthnUtils::ShouldValidateJwtPerPath(const char* const path,
+                                          const iaapi::Jwt& jwt) {
+  // If the path is nullptr which shouldn't happen for a HTTP request or if
+  // there are no trigger rules at all, then simply return true as if there're
+  // no per-path jwt support.
   if (path == nullptr || jwt.trigger_rules_size() == 0) {
     return true;
   }

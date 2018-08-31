@@ -44,7 +44,8 @@ class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
 
   // Returns true if the jwt should be validated. It will check if the request
   // path is matched to the trigger rule in the jwt.
-  static bool IsJwtTriggered(const char* const path, const iaapi::Jwt& jwt);
+  static bool ShouldValidateJwtPerPath(const char* const path,
+                                       const iaapi::Jwt& jwt);
 };
 
 }  // namespace AuthN
