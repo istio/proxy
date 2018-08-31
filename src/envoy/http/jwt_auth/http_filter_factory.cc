@@ -64,7 +64,8 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
   }
 };
 
-// For backward compatible. This can be removed once pilot switch to use the new name.
+// For backward compatible. This can be removed once pilot switch to use the new
+// name.
 class AliasJwtVerificationFilterConfig : public JwtVerificationFilterConfig {
  public:
   std::string name() override { return "jwt-auth"; }

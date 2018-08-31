@@ -82,12 +82,11 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
   }
 };
 
-// For backward compatible. This can be removed once pilot switch to use the new name.
+// For backward compatible. This can be removed once pilot switch to use the new
+// name.
 class AliasAuthnFilterConfig : public AuthnFilterConfig {
  public:
-  std::string name() override {
-    return "istio_authn";
-  }
+  std::string name() override { return "istio_authn"; }
 };
 
 /**
