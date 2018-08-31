@@ -16,6 +16,7 @@
 #ifndef ISTIO_CONTROL_HTTP_CONTROLLER_H
 #define ISTIO_CONTROL_HTTP_CONTROLLER_H
 
+#include "envoy/local_info/local_info.h"
 #include "include/istio/control/http/request_handler.h"
 #include "include/istio/mixerclient/client.h"
 #include "mixer/v1/config/client/client_config.pb.h"
@@ -81,6 +82,8 @@ class Controller {
     // The LRU cache size for service config.
     // If not set or is 0 default value, the cache size is 1000.
     int service_config_cache_size{};
+
+    const ::envoy::LocalInfo::LocalInfo& local_info;
   };
 
   // The factory function to create a new instance of the controller.

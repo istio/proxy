@@ -43,11 +43,12 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
     Upstream::ClusterManager& cm = context.clusterManager();
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
-    
-    tls_->set([this, &cm, &random, &scope](Event::Dispatcher& dispatcher)
+    LocalInfo::LocalInfo& local_info = context.localInfo()
+
+    tls_->set([this, &cm, &random, &scope, &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
       return std::make_shared<Control>(*config_, cm, dispatcher, random, scope,
-                                       stats_, context.localInfo());
+                                       stats_, local_info);
     });
   }
 
