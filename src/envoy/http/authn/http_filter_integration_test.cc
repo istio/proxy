@@ -165,5 +165,28 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
   EXPECT_STREQ("200", response->headers().Status()->value().c_str());
 }
 
+// This test verifies filter with the old name (istio_authn) is recognizable.
+TEST_P(AuthenticationFilterIntegrationTest, Alias) {
+  config_helper_.addFilter(R"(
+    name: istio_authn
+    config:
+      policy:
+        peers:
+        - mtls: {})");
+  initialize();
+
+  // AuthN filter use MTls, but request doesn't have certificate, request
+  // would be rejected.
+  codec_client_ =
+      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response = codec_client_->makeHeaderOnlyRequest(kSimpleRequestHeader);
+
+  // Request is rejected, there will be no upstream request (thus no
+  // waitForNextUpstreamRequest).
+  response->waitForEndStream();
+  EXPECT_TRUE(response->complete());
+  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+}
+
 }  // namespace
 }  // namespace Envoy
