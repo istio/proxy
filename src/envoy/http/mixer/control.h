@@ -36,7 +36,7 @@ class Control final : public ThreadLocal::ThreadLocalObject {
   // The constructor.
   Control(const Config& config, Upstream::ClusterManager& cm,
           Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random,
-          Stats::Scope& scope, Utils::MixerFilterStats& stats, LocalInfo::LocalInfo& local_info);
+          Stats::Scope& scope, Utils::MixerFilterStats& stats, const LocalInfo::LocalInfo& local_info);
 
   // Get low-level controller object.
   ::istio::control::http::Controller* controller() { return controller_.get(); }

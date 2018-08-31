@@ -33,7 +33,10 @@ class ClientContext : public ClientContextBase {
   ClientContext(
       std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
       const ::istio::mixer::v1::config::client::HttpClientConfig& config,
-      int service_config_cache_size);
+      int service_config_cache_size,
+      const ::istio::mixer::v1::Attributes& local_inbound_attributes,
+      const ::istio::mixer::v1::Attributes& local_outbound_attributes,
+      const ::istio::mixer::v1::Attributes& local_forward_attributes);
 
   // Retrieve mixer client config.
   const ::istio::mixer::v1::config::client::HttpClientConfig& config() const {

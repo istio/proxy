@@ -43,7 +43,7 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
     Upstream::ClusterManager& cm = context.clusterManager();
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
-    LocalInfo::LocalInfo& local_info = context.localInfo()
+    const LocalInfo::LocalInfo& local_info = context.localInfo();
 
     tls_->set([this, &cm, &random, &scope, &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {

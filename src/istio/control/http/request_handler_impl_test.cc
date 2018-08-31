@@ -42,6 +42,34 @@ namespace istio {
 namespace control {
 namespace http {
 
+// local inbound
+const char kLocalInbound[] = R"(
+attributes {
+  key: "destination.uid"
+  value {
+    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+  }
+}
+)";
+
+const char kLocalOutbound[] = R"(
+attributes {
+  key: "source.uid"
+  value {
+    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+  }
+}
+)";
+
+const char kLocalForward[] = R"(
+attributes {
+  key: "source.uid"
+  value {
+    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+  }
+}
+)";
+
 // The default client config
 const char kDefaultClientConfig[] = R"(
 service_configs {
@@ -101,12 +129,24 @@ class RequestHandlerImplTest : public ::testing::Test {
   void SetUp() { SetUpMockController(kDefaultClientConfig); }
 
   void SetUpMockController(const std::string& config_text) {
+     SetUpMockController(config_text, kLocalInbound, kLocalOutbound, kLocalForward); 
+  }
+
+  void SetUpMockController(const std::string& config_text, const std::string& local_inbound_attributes,
+      const std::string& local_outbound_attributes, const std::string& local_forward_attributes) {
     ASSERT_TRUE(TextFormat::ParseFromString(config_text, &client_config_));
+    
+    Attributes inbound;
+    ASSERT_TRUE(TextFormat::ParseFromString(local_inbound_attributes, &inbound));
+    Attributes outbound;
+    ASSERT_TRUE(TextFormat::ParseFromString(local_outbound_attributes, &outbound));
+    Attributes forward;
+    ASSERT_TRUE(TextFormat::ParseFromString(local_forward_attributes, &forward));
 
     mock_client_ = new ::testing::NiceMock<MockMixerClient>;
     // set LRU cache size is 3
     client_context_ = std::make_shared<ClientContext>(
-        std::unique_ptr<MixerClient>(mock_client_), client_config_, 3);
+        std::unique_ptr<MixerClient>(mock_client_), client_config_, 3, inbound, outbound, forward);
     controller_ =
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }

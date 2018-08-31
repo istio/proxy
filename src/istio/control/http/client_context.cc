@@ -24,15 +24,24 @@ namespace http {
 ClientContext::ClientContext(const Controller::Options& data)
     : ClientContextBase(data.config.transport(), data.env),
       config_(data.config),
-      service_config_cache_size_(data.service_config_cache_size) {}
+      service_config_cache_size_(data.service_config_cache_size),
+      local_inbound_attributes_(data.local_inbound_attributes),
+      local_outbound_attributes_(data.local_outbound_attributes),
+      local_forward_attributes_(data.local_forward_attributes) {}
 
 ClientContext::ClientContext(
     std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
     const ::istio::mixer::v1::config::client::HttpClientConfig& config,
-    int service_config_cache_size)
+    int service_config_cache_size,
+    const ::istio::mixer::v1::Attributes& local_inbound_attributes,
+    const ::istio::mixer::v1::Attributes& local_outbound_attributes,
+    const ::istio::mixer::v1::Attributes& local_forward_attributes)
     : ClientContextBase(std::move(mixer_client)),
       config_(config),
-      service_config_cache_size_(service_config_cache_size) {}
+      service_config_cache_size_(service_config_cache_size), 
+      local_inbound_attributes_(local_inbound_attributes),
+      local_outbound_attributes_(local_outbound_attributes),
+      local_forward_attributes_(local_forward_attributes) {}
 
 const std::string& ClientContext::GetServiceName(
     const std::string& service_name) const {

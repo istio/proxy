@@ -16,6 +16,7 @@
 #pragma once
 
 #include "envoy/event/dispatcher.h"
+#include "envoy/local_info/local_info.h"
 #include "envoy/runtime/runtime.h"
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/mixerclient/client.h"
