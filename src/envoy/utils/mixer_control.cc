@@ -123,13 +123,15 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(const LocalInfo::LocalInfo& local_info) {
   struct LocalAttributes* la = new LocalAttributes();
   auto parts = StringUtil::splitToken(local_info.node().id(), "~");
-  if (parts.size() != 3) {
+  if (parts.size() < 3) {
+    GOOGLE_LOG(ERROR) << "GenerateLocalAttributes error len(id)<3: " << local_info.node().id(); 
     return std::make_unique<struct LocalAttributes*> (la);
   }
 
   auto longname = std::string(parts[2].begin(), parts[2].end());
   auto names = StringUtil::splitToken(longname, ".");
-  if (names.size() != 3) {
+  if (names.size() < 2) {
+    GOOGLE_LOG(ERROR) << "GenerateLocalAttributes error len(longname) < 3: " << longname;
     return std::make_unique<struct LocalAttributes*> (la);
   }
 
