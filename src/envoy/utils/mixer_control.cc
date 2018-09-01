@@ -151,7 +151,9 @@ std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(const LocalInfo
  
   auto forward = (*la->forward.mutable_attributes());
   forward[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
-  
+  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  out:" << la->outbound.DebugString();
+  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  in" << la->inbound.DebugString();
+  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  forward" << la->forward.DebugString();
   return std::make_unique<struct LocalAttributes*> (la);
 }
 
