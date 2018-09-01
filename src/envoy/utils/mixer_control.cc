@@ -138,18 +138,20 @@ std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(const LocalInfo
   std::string ns = std::string(names[1].begin(), names[1].end());
   std::string uid = "kubernetes://" + longname;
 
-  auto inbound = (*la->inbound.mutable_attributes());
+  auto& inbound = (*la->inbound.mutable_attributes());
   inbound[::istio::utils::AttributeName::kDestinationUID].set_string_value(uid);
   inbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
   inbound[::istio::utils::AttributeName::kDestinationNamespace].set_string_value(ns);
 
+  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  out:" << la->outbound.DebugString();
+  
   //TODO: mjog check if destination.ip should be setup here
-  auto outbound = (*la->outbound.mutable_attributes());
+  auto& outbound = (*la->outbound.mutable_attributes());
   outbound[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
   outbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
   outbound[::istio::utils::AttributeName::kSourceNamespace].set_string_value(ns);
  
-  auto forward = (*la->forward.mutable_attributes());
+  auto& forward = (*la->forward.mutable_attributes());
   forward[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
   GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  out:" << la->outbound.DebugString();
   GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  in" << la->inbound.DebugString();
