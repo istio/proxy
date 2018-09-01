@@ -38,10 +38,11 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
   Utils::SerializeForwardedAttributes(config_.config_pb().transport(),
                                       &serialized_forward_attributes_);
 
+  std::unique_ptr<struct Utils::LocalAttributes*> local = Utils::GenerateLocalAttributes(local_info);
+  //Attributes inbound;
+  //(*inbound.mutable_attributes())[istio::utils::AttributeName::kDestinationUID].set_string_value(local_info.node().id());
   
-  Attributes inbound;
-  (*inbound.mutable_attributes())[istio::utils::AttributeName::kDestinationUID].set_string_value(local_info.node().id());
-  ::istio::control::http::Controller::Options options(config_.config_pb(), inbound, inbound, inbound);
+  ::istio::control::http::Controller::Options options(config_.config_pb(), (*local)->inbound, (*local)->outbound, (*local)->forward);
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
                            *report_client_factory_,

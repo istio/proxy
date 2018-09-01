@@ -28,6 +28,7 @@ struct AttributeName {
   static const char kSourceUser[];
   static const char kSourcePrincipal[];
   static const char kSourceNamespace[];
+  static const char kSourceUID[];
   static const char kDestinationPrincipal[];
 
   static const char kRequestHeaders[];
@@ -63,6 +64,7 @@ struct AttributeName {
   static const char kDestinationIp[];
   static const char kDestinationPort[];
   static const char kDestinationUID[];
+  static const char kDestinationNamespace[];
   static const char kOriginIp[];
   static const char kConnectionReceviedBytes[];
   static const char kConnectionReceviedTotalBytes[];
@@ -79,6 +81,7 @@ struct AttributeName {
   static const char kContextProtocol[];
   static const char kContextTime[];
   static const char kContextProxyErrorCode[];
+  static const char kContextReporterUID[];
 
   // Check error code and message.
   static const char kCheckErrorCode[];

@@ -100,5 +100,58 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
   return std::make_unique<EnvoyGrpcAsyncClientFactory>(cm, service);
 }
 
+/** example node
+   "node": {
+     "id": "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local",
+     "cluster": "fortioclient",
+     "metadata": {
+      "ISTIO_VERSION": "1.0.1",
+      "POD_NAME": "fortioclient-84469dc8d7-jbbxt",
+      "istio": "sidecar",
+      "INTERCEPTION_MODE": "REDIRECT",
+      "ISTIO_PROXY_VERSION": "1.0.0",
+      "ISTIO_PROXY_SHA": "istio-proxy:2656f34080413d3aec444aa659cc78057508c57b"
+     },
+     "build_version": "0/1.8.0-dev//RELEASE"
+    },
+
+    ==> uid: kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph
+    reporter == uid
+    namespace
+    IP_Address only for inbound.
+**/
+std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(const LocalInfo::LocalInfo& local_info) {
+  struct LocalAttributes* la = new LocalAttributes();
+  auto parts = StringUtil::splitToken(local_info.node().id(), "~");
+  if (parts.size() != 3) {
+    return std::make_unique<struct LocalAttributes*> (la);
+  }
+
+  auto longname = std::string(parts[2].begin(), parts[2].end());
+  auto names = StringUtil::splitToken(longname, ".");
+  if (names.size() != 3) {
+    return std::make_unique<struct LocalAttributes*> (la);
+  }
+
+  std::string ns = std::string(names[1].begin(), names[1].end());
+  std::string uid = "kubernetes://" + longname;
+
+  auto inbound = (*la->inbound.mutable_attributes());
+  inbound[::istio::utils::AttributeName::kDestinationUID].set_string_value(uid);
+  inbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
+  inbound[::istio::utils::AttributeName::kDestinationNamespace].set_string_value(ns);
+
+  //TODO: mjog check if destination.ip should be setup here
+  auto outbound = (*la->outbound.mutable_attributes());
+  outbound[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
+  outbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
+  outbound[::istio::utils::AttributeName::kSourceNamespace].set_string_value(ns);
+ 
+  auto forward = (*la->forward.mutable_attributes());
+  forward[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
+  
+  return std::make_unique<struct LocalAttributes*> (la);
+}
+
 }  // namespace Utils
 }  // namespace Envoy
