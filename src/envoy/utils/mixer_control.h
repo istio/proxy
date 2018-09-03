@@ -21,9 +21,11 @@
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/mixerclient/client.h"
 #include "include/istio/utils/attribute_names.h"
+#include "include/istio/utils/attributes_builder.h"
 #include "src/envoy/utils/config.h"
 
 using ::istio::mixer::v1::Attributes;
+using ::istio::utils::LocalAttributes;
 
 namespace Envoy {
 namespace Utils {
@@ -44,7 +46,7 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope);
 
-
+/*
 struct LocalAttributes {
     public:
     // local_inbound attributes
@@ -56,6 +58,8 @@ struct LocalAttributes {
     // local_forward attributes
     ::istio::mixer::v1::Attributes forward;
 };
+
+*/
 
 // return local attributes based on local info.
 std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(

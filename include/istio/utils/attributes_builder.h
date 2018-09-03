@@ -133,6 +133,17 @@ class AttributesBuilder {
   ::istio::mixer::v1::Attributes* attributes_;
 };
 
+struct LocalAttributes {
+    // local inbound attributes
+    ::istio::mixer::v1::Attributes inbound;
+
+    // local outbound attributes
+    ::istio::mixer::v1::Attributes outbound;
+
+    // local forward attributes
+    ::istio::mixer::v1::Attributes forward;
+};
+
 }  // namespace utils
 }  // namespace istio
 

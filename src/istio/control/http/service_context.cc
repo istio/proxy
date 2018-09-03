@@ -72,7 +72,9 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
   }
 
   if (inbound) {
+    request->attributes.MergeFrom(client_context_->local_inbound_attributes());
   } else {
+    request->attributes.MergeFrom(client_context_->local_outbound_attributes());
   }
 }
 

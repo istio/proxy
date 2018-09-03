@@ -21,6 +21,7 @@
 #include "envoy/thread_local/thread_local.h"
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/control/http/controller.h"
+#include "include/istio/utils/attributes_builder.h"
 #include "src/envoy/http/mixer/config.h"
 #include "src/envoy/utils/grpc_transport.h"
 #include "src/envoy/utils/mixer_control.h"

@@ -56,13 +56,13 @@ class ClientContext : public ClientContextBase {
   int service_config_cache_size() const { return service_config_cache_size_; }
 
   // local_inbound attributes
-  const ::istio::mixer::v1::Attributes& local_inbound_attributes () { return local_inbound_attributes_; }
+  const ::istio::mixer::v1::Attributes& local_inbound_attributes () const { return local_inbound_attributes_; }
 
   // local_outbound attributes
-  const ::istio::mixer::v1::Attributes& local_outbound_attributes () { return local_outbound_attributes_; }
+  const ::istio::mixer::v1::Attributes& local_outbound_attributes () const { return local_outbound_attributes_; }
 
   // local_forward attributes
-  const ::istio::mixer::v1::Attributes& local_forward_attributes () { return local_forward_attributes_; }
+  const ::istio::mixer::v1::Attributes& local_forward_attributes () const { return local_forward_attributes_; }
 
  private:
   // The http client config.

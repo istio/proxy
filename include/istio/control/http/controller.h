@@ -87,6 +87,8 @@ class Controller {
     // If not set or is 0 default value, the cache size is 1000.
     int service_config_cache_size{};
 
+    const ::istio::utils::LocalAttributes& local_attributes;
+
     // local_inbound attributes
     const ::istio::mixer::v1::Attributes& local_inbound_attributes;
 

@@ -17,6 +17,7 @@
 #include "src/envoy/utils/grpc_transport.h"
 
 using ::istio::mixerclient::Statistics;
+using ::istio::utils::LocalAttributes;
 
 namespace Envoy {
 namespace Utils {
@@ -142,10 +143,8 @@ std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(const LocalInfo
   inbound[::istio::utils::AttributeName::kDestinationUID].set_string_value(uid);
   inbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
   inbound[::istio::utils::AttributeName::kDestinationNamespace].set_string_value(ns);
+  //TODO: mjog check if destination.ip should be setup for inbound.
 
-  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  out:" << la->outbound.DebugString();
-  
-  //TODO: mjog check if destination.ip should be setup here
   auto& outbound = (*la->outbound.mutable_attributes());
   outbound[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
   outbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
@@ -153,9 +152,6 @@ std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(const LocalInfo
  
   auto& forward = (*la->forward.mutable_attributes());
   forward[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
-  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  out:" << la->outbound.DebugString();
-  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  in" << la->inbound.DebugString();
-  GOOGLE_LOG(ERROR) << "GenerateLocalAttributes  forward" << la->forward.DebugString();
   return std::make_unique<struct LocalAttributes*> (la);
 }
 
