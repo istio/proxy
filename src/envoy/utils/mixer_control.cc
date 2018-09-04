@@ -17,6 +17,7 @@
 #include "src/envoy/utils/grpc_transport.h"
 
 using ::istio::mixerclient::Statistics;
+using ::istio::utils::AttributeName;
 using ::istio::utils::LocalAttributes;
 
 namespace Envoy {
@@ -103,7 +104,8 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 
 /** example node
    "node": {
-     "id": "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local",
+     "id":
+"sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local",
      "cluster": "fortioclient",
      "metadata": {
       "ISTIO_VERSION": "1.0.1",
@@ -121,38 +123,45 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     namespace
     IP_Address only for inbound.
 **/
-std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(const LocalInfo::LocalInfo& local_info) {
-  struct LocalAttributes* la = new LocalAttributes();
+const LocalAttributes GenerateLocalAttributes(
+    const LocalInfo::LocalInfo &local_info) {
   auto parts = StringUtil::splitToken(local_info.node().id(), "~");
   if (parts.size() < 3) {
-    GOOGLE_LOG(ERROR) << "GenerateLocalAttributes error len(id)<3: " << local_info.node().id(); 
-    return std::make_unique<struct LocalAttributes*> (la);
+    GOOGLE_LOG(ERROR)
+        << "GenerateLocalAttributes error len(node.id.split(~))<3: "
+        << local_info.node().id();
+    return LocalAttributes();
   }
 
   auto longname = std::string(parts[2].begin(), parts[2].end());
   auto names = StringUtil::splitToken(longname, ".");
   if (names.size() < 2) {
-    GOOGLE_LOG(ERROR) << "GenerateLocalAttributes error len(longname) < 3: " << longname;
-    return std::make_unique<struct LocalAttributes*> (la);
+    GOOGLE_LOG(ERROR)
+        << "GenerateLocalAttributes error len(split(longname, '.')) < 3: "
+        << longname;
+    return LocalAttributes();
   }
 
   std::string ns = std::string(names[1].begin(), names[1].end());
   std::string uid = "kubernetes://" + longname;
 
-  auto& inbound = (*la->inbound.mutable_attributes());
-  inbound[::istio::utils::AttributeName::kDestinationUID].set_string_value(uid);
-  inbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
-  inbound[::istio::utils::AttributeName::kDestinationNamespace].set_string_value(ns);
-  //TODO: mjog check if destination.ip should be setup for inbound.
+  ::istio::mixer::v1::Attributes ib;
+  auto &inbound = (*ib.mutable_attributes());
+  inbound[AttributeName::kDestinationUID].set_string_value(uid);
+  inbound[AttributeName::kContextReporterUID].set_string_value(uid);
+  inbound[AttributeName::kDestinationNamespace].set_string_value(ns);
+  // TODO: mjog check if destination.ip should be setup for inbound.
 
-  auto& outbound = (*la->outbound.mutable_attributes());
-  outbound[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
-  outbound[::istio::utils::AttributeName::kContextReporterUID].set_string_value(uid);
-  outbound[::istio::utils::AttributeName::kSourceNamespace].set_string_value(ns);
- 
-  auto& forward = (*la->forward.mutable_attributes());
-  forward[::istio::utils::AttributeName::kSourceUID].set_string_value(uid);
-  return std::make_unique<struct LocalAttributes*> (la);
+  ::istio::mixer::v1::Attributes ob;
+  auto &outbound = (*ob.mutable_attributes());
+  outbound[AttributeName::kSourceUID].set_string_value(uid);
+  outbound[AttributeName::kContextReporterUID].set_string_value(uid);
+  outbound[AttributeName::kSourceNamespace].set_string_value(ns);
+
+  ::istio::mixer::v1::Attributes fwd;
+  auto &forward = (*fwd.mutable_attributes());
+  forward[AttributeName::kSourceUID].set_string_value(uid);
+  return LocalAttributes(ib, ob, fwd);
 }
 
 }  // namespace Utils

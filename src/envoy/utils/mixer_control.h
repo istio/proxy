@@ -62,8 +62,8 @@ struct LocalAttributes {
 */
 
 // return local attributes based on local info.
-std::unique_ptr<struct LocalAttributes*> GenerateLocalAttributes(
-    const LocalInfo::LocalInfo& local_info);
+const LocalAttributes GenerateLocalAttributes(
+    const LocalInfo::LocalInfo &local_info);
 
 }  // namespace Utils
 }  // namespace Envoy

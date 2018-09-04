@@ -17,6 +17,7 @@
 #define ISTIO_CONTROL_HTTP_CLIENT_CONTEXT_H
 
 #include "include/istio/control/http/controller.h"
+#include "include/istio/utils/attributes_builder.h"
 #include "src/istio/control/client_context_base.h"
 
 namespace istio {
@@ -34,9 +35,7 @@ class ClientContext : public ClientContextBase {
       std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
       const ::istio::mixer::v1::config::client::HttpClientConfig& config,
       int service_config_cache_size,
-      const ::istio::mixer::v1::Attributes& local_inbound_attributes,
-      const ::istio::mixer::v1::Attributes& local_outbound_attributes,
-      const ::istio::mixer::v1::Attributes& local_forward_attributes);
+      const ::istio::utils::LocalAttributes& local_attributes);
 
   // Retrieve mixer client config.
   const ::istio::mixer::v1::config::client::HttpClientConfig& config() const {
@@ -55,14 +54,10 @@ class ClientContext : public ClientContextBase {
   // Get the service config cache size
   int service_config_cache_size() const { return service_config_cache_size_; }
 
-  // local_inbound attributes
-  const ::istio::mixer::v1::Attributes& local_inbound_attributes () const { return local_inbound_attributes_; }
-
-  // local_outbound attributes
-  const ::istio::mixer::v1::Attributes& local_outbound_attributes () const { return local_outbound_attributes_; }
-
-  // local_forward attributes
-  const ::istio::mixer::v1::Attributes& local_forward_attributes () const { return local_forward_attributes_; }
+  // local attributes
+  const ::istio::utils::LocalAttributes& local_attributes() const {
+    return local_attributes_;
+  }
 
  private:
   // The http client config.
@@ -71,14 +66,8 @@ class ClientContext : public ClientContextBase {
   // The service config cache size
   int service_config_cache_size_;
 
-  // local_inbound attributes
-  const ::istio::mixer::v1::Attributes& local_inbound_attributes_;
-
-  // local_outbound attributes
-  const ::istio::mixer::v1::Attributes& local_outbound_attributes_;
-
-  // local_forward attributes
-  const ::istio::mixer::v1::Attributes& local_forward_attributes_;
+  // local attributes
+  const ::istio::utils::LocalAttributes local_attributes_;
 };
 
 }  // namespace http

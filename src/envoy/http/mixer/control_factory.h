@@ -45,11 +45,12 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
     Stats::Scope& scope = context.scope();
     const LocalInfo::LocalInfo& local_info = context.localInfo();
 
-    tls_->set([this, &cm, &random, &scope, &local_info](Event::Dispatcher& dispatcher)
-                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return std::make_shared<Control>(*config_, cm, dispatcher, random, scope,
-                                       stats_, local_info);
-    });
+    tls_->set(
+        [this, &cm, &random, &scope, &local_info](Event::Dispatcher& dispatcher)
+            -> ThreadLocal::ThreadLocalObjectSharedPtr {
+          return std::make_shared<Control>(*config_, cm, dispatcher, random,
+                                           scope, stats_, local_info);
+        });
   }
 
   Control& control() { return tls_->getTyped<Control>(); }

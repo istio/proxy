@@ -133,15 +133,33 @@ class AttributesBuilder {
   ::istio::mixer::v1::Attributes* attributes_;
 };
 
-struct LocalAttributes {
-    // local inbound attributes
-    ::istio::mixer::v1::Attributes inbound;
+class LocalAttributes {
+ public:
+  LocalAttributes() {}
 
-    // local outbound attributes
-    ::istio::mixer::v1::Attributes outbound;
+  LocalAttributes(const ::istio::mixer::v1::Attributes inbound,
+                  const ::istio::mixer::v1::Attributes outbound,
+                  const ::istio::mixer::v1::Attributes forward)
+      : inbound_(inbound), outbound_(outbound), forward_(forward) {}
 
-    // local forward attributes
-    ::istio::mixer::v1::Attributes forward;
+  // inbound attributes
+  const ::istio::mixer::v1::Attributes& inbound() const { return inbound_; }
+
+  // outbound attributes
+  const ::istio::mixer::v1::Attributes& outbound() const { return outbound_; }
+
+  // outbound attributes
+  const ::istio::mixer::v1::Attributes& forward() const { return forward_; }
+
+ private:
+  // local inbound attributes
+  const ::istio::mixer::v1::Attributes inbound_;
+
+  // local outbound attributes
+  const ::istio::mixer::v1::Attributes outbound_;
+
+  // local forward attributes
+  const ::istio::mixer::v1::Attributes forward_;
 };
 
 }  // namespace utils

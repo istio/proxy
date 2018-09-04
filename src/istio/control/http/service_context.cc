@@ -62,7 +62,8 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
 
   // Add locally known attributes
   bool inbound = true;
-  const auto &attributes_map = client_context_->config().mixer_attributes().attributes();
+  const auto &attributes_map =
+      client_context_->config().mixer_attributes().attributes();
   const auto it = attributes_map.find("context.reporter.kind");
   if (it != attributes_map.end()) {
     const Attributes_AttributeValue &value = it->second;
@@ -72,9 +73,11 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
   }
 
   if (inbound) {
-    request->attributes.MergeFrom(client_context_->local_inbound_attributes());
+    request->attributes.MergeFrom(
+        client_context_->local_attributes().inbound());
   } else {
-    request->attributes.MergeFrom(client_context_->local_outbound_attributes());
+    request->attributes.MergeFrom(
+        client_context_->local_attributes().outbound());
   }
 }
 
