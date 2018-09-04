@@ -153,7 +153,7 @@ class RequestHandlerImplTest : public ::testing::Test {
     // set LRU cache size is 3
     client_context_ = std::make_shared<ClientContext>(
         std::unique_ptr<MixerClient>(mock_client_), client_config_, 3,
-        ::istio::utils::LocalAttributes(inbound, outbound, forward));
+        ::istio::utils::LocalAttributes(inbound, outbound, forward), false);
     controller_ =
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }

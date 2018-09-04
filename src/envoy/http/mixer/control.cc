@@ -37,6 +37,7 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  [this](::istio::mixerclient::Statistics* stat) -> bool {
                    return GetStats(stat);
                  }) {
+  
   Utils::SerializeForwardedAttributes(config_.config_pb().transport(),
                                       &serialized_forward_attributes_);
 

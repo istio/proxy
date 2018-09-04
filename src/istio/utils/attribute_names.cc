@@ -74,6 +74,7 @@ const char AttributeName::kConnectionEvent[] = "connection.event";
 
 // Context attributes
 const char AttributeName::kContextProtocol[] = "context.protocol";
+const char AttributeName::kContextReporterKind[] = "context.reporter.kind";
 const char AttributeName::kContextTime[] = "context.time";
 const char AttributeName::kContextProxyErrorCode[] = "context.proxy_error_code";
 const char AttributeName::kContextReporterUID[] = "context.reporter.uid";

@@ -18,7 +18,6 @@
 #include "src/istio/control/http/attributes_builder.h"
 
 using ::istio::mixer::v1::Attributes;
-using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 
 namespace istio {
@@ -60,24 +59,12 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
     request->attributes.MergeFrom(service_config_->mixer_attributes());
   }
 
-  // Add locally known attributes
-  bool inbound = true;
-  const auto &attributes_map =
-      client_context_->config().mixer_attributes().attributes();
-  const auto it = attributes_map.find("context.reporter.kind");
-  if (it != attributes_map.end()) {
-    const Attributes_AttributeValue &value = it->second;
-    if ("outbound" == value.string_value()) {
-      inbound = false;
-    }
-  }
-
-  if (inbound) {
+  if (client_context_->outbound()) {
     request->attributes.MergeFrom(
-        client_context_->local_attributes().inbound());
+      client_context_->local_attributes().outbound());
   } else {
     request->attributes.MergeFrom(
-        client_context_->local_attributes().outbound());
+        client_context_->local_attributes().inbound());
   }
 }
 

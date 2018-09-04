@@ -79,6 +79,7 @@ struct AttributeName {
 
   // Context attributes
   static const char kContextProtocol[];
+  static const char kContextReporterKind[];
   static const char kContextTime[];
   static const char kContextProxyErrorCode[];
   static const char kContextReporterUID[];
