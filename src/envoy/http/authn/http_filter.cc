@@ -42,13 +42,14 @@ void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
+FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
+                                                        bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
             filter_config_.DebugString());
   state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
-      decoder_callbacks_->requestInfo().dynamicMetadata(),
+      decoder_callbacks_->requestInfo().dynamicMetadata(), headers,
       decoder_callbacks_->connection(), filter_config_));
 
   Payload payload;

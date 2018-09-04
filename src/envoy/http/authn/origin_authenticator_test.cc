@@ -78,6 +78,54 @@ const char kPeerBinding[] = R"(
   }
 )";
 
+const char kSingleOriginMethodWithTriggerRulePolicy[] = R"(
+  principal_binding: USE_ORIGIN
+  origins {
+    jwt {
+      issuer: "abc.xyz"
+      trigger_rules: {
+        included_paths: {
+          exact: "/allow"
+        }
+      }
+    }
+  }
+)";
+
+const char kMultipleOriginMethodWithTriggerRulePolicy[] = R"(
+  principal_binding: USE_ORIGIN
+  origins {
+    jwt {
+      issuer: "one"
+      trigger_rules: {
+        excluded_paths: {
+          exact: "/bad"
+        }
+      }
+    }
+  }
+  origins {
+    jwt {
+      issuer: "two"
+      trigger_rules: {
+        included_paths: {
+          exact: "/two"
+        }
+      }
+    }
+  }
+  origins {
+    jwt {
+      issuer: "three"
+      trigger_rules: {
+        included_paths: {
+          exact: "/allow"
+        }
+      }
+    }
+  }
+)";
+
 class MockOriginAuthenticator : public OriginAuthenticator {
  public:
   MockOriginAuthenticator(FilterContext* filter_context,
@@ -121,8 +169,9 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
  protected:
   std::unique_ptr<StrictMock<MockOriginAuthenticator>> authenticator_;
   // envoy::api::v2::core::Metadata metadata_;
+  Envoy::Http::TestHeaderMapImpl header_{};
   FilterContext filter_context_{
-      envoy::api::v2::core::Metadata::default_instance(), nullptr,
+      envoy::api::v2::core::Metadata::default_instance(), header_, nullptr,
       istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
           default_instance()};
   iaapi::Policy policy_;
@@ -143,6 +192,11 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
   // Indicates peer is set in the authN result before running. This is set from
   // test GetParam()
   bool set_peer_;
+
+  void setPath(const std::string& path) {
+    header_.removePath();
+    header_.addCopy(":path", path);
+  }
 };
 
 TEST_P(OriginAuthenticatorTest, Empty) {
@@ -185,6 +239,51 @@ TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
                                       filter_context_.authenticationResult()));
 }
 
+TEST_P(OriginAuthenticatorTest, TriggeredWithNullPath) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+
+  createAuthenticator();
+
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
+
+  EXPECT_TRUE(authenticator_->run(payload_));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, SingleRuleTriggered) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+
+  createAuthenticator();
+
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
+
+  setPath("/allow");
+  EXPECT_TRUE(authenticator_->run(payload_));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, SingleRuleNotTriggered) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+
+  createAuthenticator();
+
+  EXPECT_CALL(*authenticator_, validateJwt(_, _)).Times(0);
+
+  setPath("/bad");
+  EXPECT_TRUE(authenticator_->run(payload_));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
+}
+
 TEST_P(OriginAuthenticatorTest, Multiple) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       kMultipleOriginMethodsPolicy, &policy_));
@@ -215,6 +314,54 @@ TEST_P(OriginAuthenticatorTest, MultipleFail) {
           DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
 
   authenticator_->run(payload_);
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationSucceeded) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
+
+  createAuthenticator();
+  // First method triggered but failed, second method not triggered, third
+  // method triggered and succeeded.
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(2)
+      .WillOnce(DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)))
+      .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
+
+  setPath("/allow");
+  EXPECT_TRUE(authenticator_->run(payload_));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationFailed) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
+
+  createAuthenticator();
+  // Triggered on first and second method but all failed.
+  EXPECT_CALL(*authenticator_, validateJwt(_, _))
+      .Times(2)
+      .WillRepeatedly(
+          DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
+
+  setPath("/two");
+  EXPECT_FALSE(authenticator_->run(payload_));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, MultipleRuleNotTriggered) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
+
+  createAuthenticator();
+  EXPECT_CALL(*authenticator_, validateJwt(_, _)).Times(0);
+
+  setPath("/bad");
+  EXPECT_TRUE(authenticator_->run(payload_));
   EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
                                       filter_context_.authenticationResult()));
 }

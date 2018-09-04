@@ -15,10 +15,14 @@
 
 #pragma once
 
+#include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
+#include "common/common/utility.h"
 #include "envoy/http/header_map.h"
 #include "envoy/json/json_object.h"
 #include "src/istio/authn/context.pb.h"
+
+namespace iaapi = istio::authentication::v1alpha1;
 
 namespace Envoy {
 namespace Http {
@@ -33,6 +37,15 @@ class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
   // successfully. Otherwise, return false.
   static bool ProcessJwtPayload(const std::string& jwt_payload_str,
                                 istio::authn::JwtPayload* payload);
+
+  // Returns true if str is matched to match.
+  static bool MatchString(const char* const str,
+                          const iaapi::StringMatch& match);
+
+  // Returns true if the jwt should be validated. It will check if the request
+  // path is matched to the trigger rule in the jwt.
+  static bool ShouldValidateJwtPerPath(const char* const path,
+                                       const iaapi::Jwt& jwt);
 };
 
 }  // namespace AuthN

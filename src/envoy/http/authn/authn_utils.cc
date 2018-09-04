@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <regex>
+
 #include "authn_utils.h"
 #include "common/json/json_loader.h"
 #include "google/protobuf/struct.pb.h"
@@ -96,6 +98,72 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   }
 
   return true;
+}
+
+bool AuthnUtils::MatchString(const char* const str,
+                             const iaapi::StringMatch& match) {
+  if (str == nullptr) {
+    return false;
+  }
+  switch (match.match_type_case()) {
+    case iaapi::StringMatch::kExact: {
+      return match.exact().compare(str) == 0;
+    }
+    case iaapi::StringMatch::kPrefix: {
+      return StringUtil::startsWith(str, match.prefix());
+    }
+    case iaapi::StringMatch::kSuffix: {
+      return StringUtil::endsWith(str, match.suffix());
+    }
+    case iaapi::StringMatch::kRegex: {
+      return std::regex_match(str, std::regex(match.regex()));
+    }
+    default:
+      return false;
+  }
+}
+
+static bool matchRule(const char* const path,
+                      const iaapi::Jwt_TriggerRule& rule) {
+  for (const auto& excluded : rule.excluded_paths()) {
+    if (AuthnUtils::MatchString(path, excluded)) {
+      // The rule is not matched if any of excluded_paths matched.
+      return false;
+    }
+  }
+
+  if (rule.included_paths_size() > 0) {
+    for (const auto& included : rule.included_paths()) {
+      if (AuthnUtils::MatchString(path, included)) {
+        // The rule is matched if any of included_paths matched.
+        return true;
+      }
+    }
+
+    // The rule is not matched if included_paths is not empty and none of them
+    // matched.
+    return false;
+  }
+
+  // The rule is matched if none of excluded_paths matched and included_paths is
+  // empty.
+  return true;
+}
+
+bool AuthnUtils::ShouldValidateJwtPerPath(const char* const path,
+                                          const iaapi::Jwt& jwt) {
+  // If the path is nullptr which shouldn't happen for a HTTP request or if
+  // there are no trigger rules at all, then simply return true as if there're
+  // no per-path jwt support.
+  if (path == nullptr || jwt.trigger_rules_size() == 0) {
+    return true;
+  }
+  for (const auto& rule : jwt.trigger_rules()) {
+    if (matchRule(path, rule)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace AuthN

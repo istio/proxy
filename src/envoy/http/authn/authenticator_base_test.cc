@@ -64,9 +64,10 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
 
   NiceMock<Envoy::Network::MockConnection> connection_{};
   NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{
-      envoy::api::v2::core::Metadata::default_instance(), &connection_,
+      envoy::api::v2::core::Metadata::default_instance(), header_, &connection_,
       istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
           default_instance()};
 
@@ -168,8 +169,9 @@ class ValidateJwtTest : public testing::Test,
   envoy::api::v2::core::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
   // NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
-  FilterContext filter_context_{dynamic_metadata_, &connection_,
+  FilterContext filter_context_{dynamic_metadata_, header_, &connection_,
                                 filter_config_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 
