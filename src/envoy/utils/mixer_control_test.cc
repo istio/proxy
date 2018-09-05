@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
-#include "src/envoy/utils/utils.h"
 #include "src/envoy/utils/mixer_control.h"
 #include "mixer/v1/config/client/client_config.pb.h"
+#include "src/envoy/utils/utils.h"
 #include "test/test_common/utility.h"
 
-using Envoy::Utils::ParseJsonMessage;
-using Envoy::Utils::readMap;
+using ::istio::utils::AttributeName;
+using ::istio::utils::LocalAttributes;
 using Envoy::Utils::GenerateLocalAttributes;
+using Envoy::Utils::ParseJsonMessage;
 using Envoy::Utils::createLocalAttributes;
 using Envoy::Utils::localAttributesArgs;
 using Envoy::Utils::nodeKey;
-using ::istio::utils::AttributeName;
-using ::istio::utils::LocalAttributes;
+using Envoy::Utils::readMap;
 
 namespace {
 
@@ -44,10 +44,6 @@ TEST(MixerControlTest, WithMetadata) {
       "NODE_NAME": "fortioclient-84469dc8d7-jbbxt",
       "NODE_IP": "10.36.0.15",
       "NODE_NAMESPACE": "service-graph",
-      "istio": "sidecar",
-      "INTERCEPTION_MODE": "REDIRECT",
-      "ISTIO_PROXY_VERSION": "1.0.0",
-      "ISTIO_PROXY_SHA": "istio-proxy:2656f34080413d3aec444aa659cc78057508c57b"
      },
      "build_version": "0/1.8.0-dev//RELEASE"
     })";
@@ -62,7 +58,7 @@ TEST(MixerControlTest, WithMetadata) {
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";
 
-  const LocalAttributes *la = GenerateLocalAttributes(node);
+  const LocalAttributes* la = GenerateLocalAttributes(node);
   EXPECT_NE(la, nullptr);
 
   const auto att = la->outbound.attributes();
@@ -77,7 +73,6 @@ TEST(MixerControlTest, WithMetadata) {
 
   assertEqual(laExpect, la);
 }
-
 
 TEST(MixerControlTest, NoMetadata) {
   std::string config_str = R"({
@@ -98,7 +93,7 @@ TEST(MixerControlTest, NoMetadata) {
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";
 
-  const LocalAttributes *la = GenerateLocalAttributes(node);
+  const LocalAttributes* la = GenerateLocalAttributes(node);
   EXPECT_NE(la, nullptr);
 
   const auto att = la->outbound.attributes();
