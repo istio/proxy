@@ -23,9 +23,9 @@ using ::istio::mixer::v1::Attributes;
 namespace istio {
 namespace utils {
 
-typedef struct LocalAttributes_t {
-  LocalAttributes_t(const Attributes& inbound, const Attributes& outbound,
-                    const Attributes& forward)
+struct LocalAttributes {
+  LocalAttributes(const Attributes& inbound, const Attributes& outbound,
+                  const Attributes& forward)
       : inbound(inbound), outbound(outbound), forward(forward) {}
 
   // local inbound attributes
@@ -36,7 +36,7 @@ typedef struct LocalAttributes_t {
 
   // local forward attributes
   const Attributes forward;
-} LocalAttributes;
+};
 
 }  // namespace utils
 }  // namespace istio

@@ -47,20 +47,20 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope);
 
-// localAttributesArgs_t used internally
-typedef struct localAttributesArgs_t {
+// LocalAttributesArgs used internally
+struct LocalAttributesArgs {
   std::string ns;
   std::string ip;
   std::string uid;
-} localAttributesArgs;
+};
 
 // return local attributes based on local info.
 const LocalAttributes *GenerateLocalAttributes(
     const envoy::api::v2::core::Node &node);
 
-const LocalAttributes *createLocalAttributes(const localAttributesArgs &local);
+const LocalAttributes *CreateLocalAttributes(const LocalAttributesArgs &local);
 
-inline bool readMap(
+inline bool ReadMap(
     const google::protobuf::Map<std::string, google::protobuf::Value> &meta,
     const std::string &key, std::string *val) {
   const auto it = meta.find(key);
@@ -71,7 +71,7 @@ inline bool readMap(
   return false;
 }
 
-inline bool readMap(
+inline bool ReadMap(
     const google::protobuf::Map<std::string, Attributes_AttributeValue> &meta,
     const std::string &key, std::string *val) {
   const auto it = meta.find(key);
@@ -81,28 +81,14 @@ inline bool readMap(
   }
   return false;
 }
-/*
-"NODE_NAME", &name)) {
-    GOOGLE_LOG(ERROR) << "extractInfo  metadata missing NODE_NAME "
-                      << node.metadata().DebugString();
-    return false;
-  }
-  std::string ns;
-  readMap(meta, "NODE_NAMESPACE", &ns);
 
-  std::string ip;
-  readMap(meta, "NODE_IP", &ip);
-
-  std::string reg("kubernetes");
-  readMap(meta, "NODE_REGISTRY",
-  */
-
-typedef struct nodeKey_t {
+// NodeKey are node matadata keys that are expected to be set.
+struct NodeKey {
   static const char kName[];
   static const char kNamespace[];
   static const char kIp[];
   static const char kRegistry[];
-} nodeKey;
+};
 
 }  // namespace Utils
 }  // namespace Envoy

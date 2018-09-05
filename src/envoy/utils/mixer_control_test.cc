@@ -20,12 +20,12 @@
 
 using ::istio::utils::AttributeName;
 using ::istio::utils::LocalAttributes;
+using Envoy::Utils::CreateLocalAttributes;
 using Envoy::Utils::GenerateLocalAttributes;
+using Envoy::Utils::LocalAttributesArgs;
+using Envoy::Utils::NodeKey;
 using Envoy::Utils::ParseJsonMessage;
-using Envoy::Utils::createLocalAttributes;
-using Envoy::Utils::localAttributesArgs;
-using Envoy::Utils::nodeKey;
-using Envoy::Utils::readMap;
+using Envoy::Utils::ReadMap;
 
 namespace {
 
@@ -53,7 +53,7 @@ TEST(MixerControlTest, WithMetadata) {
   EXPECT_OK(status) << status;
   std::string val;
 
-  localAttributesArgs largs;
+  LocalAttributesArgs largs;
   largs.ip = "10.36.0.15";
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";
@@ -63,13 +63,13 @@ TEST(MixerControlTest, WithMetadata) {
 
   const auto att = la->outbound.attributes();
 
-  EXPECT_EQ(true, readMap(att, AttributeName::kSourceUID, &val));
+  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceUID, &val));
   EXPECT_EQ(val, largs.uid);
 
-  EXPECT_EQ(true, readMap(att, AttributeName::kSourceNamespace, &val));
+  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceNamespace, &val));
   EXPECT_EQ(val, largs.ns);
 
-  auto laExpect = createLocalAttributes(largs);
+  auto laExpect = CreateLocalAttributes(largs);
 
   assertEqual(laExpect, la);
 }
@@ -88,7 +88,7 @@ TEST(MixerControlTest, NoMetadata) {
   auto status = ParseJsonMessage(config_str, &node);
   EXPECT_OK(status) << status;
 
-  localAttributesArgs largs;
+  LocalAttributesArgs largs;
   largs.ip = "10.36.0.15";
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";
@@ -99,13 +99,13 @@ TEST(MixerControlTest, NoMetadata) {
   const auto att = la->outbound.attributes();
   std::string val;
 
-  EXPECT_EQ(true, readMap(att, AttributeName::kSourceUID, &val));
+  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceUID, &val));
   EXPECT_EQ(val, largs.uid);
 
-  EXPECT_EQ(true, readMap(att, AttributeName::kSourceNamespace, &val));
+  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceNamespace, &val));
   EXPECT_EQ(val, largs.ns);
 
-  auto laExpect = createLocalAttributes(largs);
+  auto laExpect = CreateLocalAttributes(largs);
 
   assertEqual(laExpect, la);
 }

@@ -23,10 +23,10 @@ using ::istio::utils::LocalAttributes;
 namespace Envoy {
 namespace Utils {
 
-const char nodeKey::kName[] = "NODE_NAME";
-const char nodeKey::kNamespace[] = "NODE_NAMESPACE";
-const char nodeKey::kIp[] = "NODE_IP";
-const char nodeKey::kRegistry[] = "NODE_REGISTRY";
+const char NodeKey::kName[] = "NODE_NAME";
+const char NodeKey::kNamespace[] = "NODE_NAMESPACE";
+const char NodeKey::kIp[] = "NODE_IP";
+const char NodeKey::kRegistry[] = "NODE_REGISTRY";
 
 namespace {
 
@@ -110,7 +110,7 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 
 // create Local attributes object and return a pointer to it.
 // Should be freed by the caller.
-const LocalAttributes *createLocalAttributes(const localAttributesArgs &local) {
+const LocalAttributes *CreateLocalAttributes(const LocalAttributesArgs &local) {
   ::istio::mixer::v1::Attributes ib;
   auto &inbound = (*ib.mutable_attributes());
   inbound[AttributeName::kDestinationUID].set_string_value(local.uid);
@@ -132,14 +132,14 @@ const LocalAttributes *createLocalAttributes(const localAttributesArgs &local) {
   return new LocalAttributes(ib, ob, fwd);
 }
 
-//
+// This is for compatibility with existing node ids.
 // "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local"
 //  --> {proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain}
-bool extractInfo(localAttributesArgs *args, std::string nodeid) {
+bool ExtractInfoCompat(const std::string &nodeid, LocalAttributesArgs *args) {
   auto parts = StringUtil::splitToken(nodeid, "~");
   if (parts.size() < 3) {
-    GOOGLE_LOG(ERROR)
-        << "GenerateLocalAttributes error len(nodeid.split(~))<3: " << nodeid;
+    GOOGLE_LOG(ERROR) << "ExtractInfoCompat error len(nodeid.split(~))<3: "
+                      << nodeid;
     return false;
   }
 
@@ -148,40 +148,38 @@ bool extractInfo(localAttributesArgs *args, std::string nodeid) {
   auto names = StringUtil::splitToken(longname, ".");
   if (names.size() < 2) {
     GOOGLE_LOG(ERROR)
-        << "GenerateLocalAttributes error len(split(longname, '.')) < 3: "
+        << "ExtractInfoCompat error len(split(longname, '.')) < 3: "
         << longname;
     return false;
   }
   auto ns = std::string(names[1].begin(), names[1].end());
 
-  std::string reg("kubernetes");
-
   args->ip = ip;
   args->ns = ns;
-  args->uid = reg + "://" + longname;
+  args->uid = "kubernetes://" + longname;
 
   return true;
 }
 
-// extractInfo depends on NODE_NAME, NODE_NAMESPACE, NODE_IP and optional
+// ExtractInfo depends on NODE_NAME, NODE_NAMESPACE, NODE_IP and optional
 // NODE_REG If work cannot be done, returns false.
-bool extractInfo(localAttributesArgs *args,
-                 const envoy::api::v2::core::Node &node) {
+bool ExtractInfo(const envoy::api::v2::core::Node &node,
+                 LocalAttributesArgs *args) {
   const auto meta = node.metadata().fields();
   std::string name;
-  if (!readMap(meta, nodeKey::kName, &name)) {
-    GOOGLE_LOG(ERROR) << "extractInfo  metadata missing NODE_NAME "
-                      << node.metadata().DebugString();
+  if (!ReadMap(meta, NodeKey::kName, &name)) {
+    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata missing " << NodeKey::kName
+                      << " " << node.metadata().DebugString();
     return false;
   }
   std::string ns;
-  readMap(meta, nodeKey::kNamespace, &ns);
+  ReadMap(meta, NodeKey::kNamespace, &ns);
 
   std::string ip;
-  readMap(meta, nodeKey::kIp, &ip);
+  ReadMap(meta, NodeKey::kIp, &ip);
 
   std::string reg("kubernetes");
-  readMap(meta, nodeKey::kRegistry, &reg);
+  ReadMap(meta, NodeKey::kRegistry, &reg);
 
   args->ip = ip;
   args->ns = ns;
@@ -190,37 +188,16 @@ bool extractInfo(localAttributesArgs *args,
   return true;
 }
 
-/** example node
-   "node": {
-     "id":
-"sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local",
-     "cluster": "fortioclient",
-     "metadata": {
-      "ISTIO_VERSION": "1.0.1",
-      "POD_NAME": "fortioclient-84469dc8d7-jbbxt",
-      "istio": "sidecar",
-      "INTERCEPTION_MODE": "REDIRECT",
-      "ISTIO_PROXY_VERSION": "1.0.0",
-      "ISTIO_PROXY_SHA": "istio-proxy:2656f34080413d3aec444aa659cc78057508c57b"
-     },
-     "build_version": "0/1.8.0-dev//RELEASE"
-    },
-
-    ==> uid: kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph
-    reporter == uid
-    namespace
-    IP_Address only for inbound.
-**/
 const LocalAttributes *GenerateLocalAttributes(
     const envoy::api::v2::core::Node &node) {
-  localAttributesArgs args;
+  LocalAttributesArgs args;
 
-  if (extractInfo(&args, node)) {
-    return createLocalAttributes(args);
+  if (ExtractInfo(node, &args)) {
+    return CreateLocalAttributes(args);
   }
 
-  if (extractInfo(&args, node.id())) {
-    return createLocalAttributes(args);
+  if (ExtractInfoCompat(node.id(), &args)) {
+    return CreateLocalAttributes(args);
   }
   return nullptr;
 }
