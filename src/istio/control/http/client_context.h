@@ -17,7 +17,7 @@
 #define ISTIO_CONTROL_HTTP_CLIENT_CONTEXT_H
 
 #include "include/istio/control/http/controller.h"
-#include "include/istio/utils/attributes_builder.h"
+#include "include/istio/utils/local_attributes.h"
 #include "src/istio/control/client_context_base.h"
 
 namespace istio {

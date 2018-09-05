@@ -19,7 +19,7 @@
 #include "include/istio/control/http/request_handler.h"
 #include "include/istio/mixerclient/client.h"
 #include "include/istio/utils/attribute_names.h"
-#include "include/istio/utils/attributes_builder.h"
+#include "include/istio/utils/local_attributes.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 
 namespace istio {

@@ -81,6 +81,12 @@ void ServiceContext::InjectForwardedAttributes(
     attributes.MergeFrom(service_config_->forward_attributes());
   }
 
+  auto local_attributes = client_context_->local_attributes();
+  if (local_attributes != nullptr && client_context_->outbound()) {
+    // attributes are only forwarded on outbound.
+    attributes.MergeFrom(local_attributes->forward);
+  }
+
   if (!attributes.attributes().empty()) {
     AttributesBuilder::ForwardAttributes(attributes, header_update);
   }
