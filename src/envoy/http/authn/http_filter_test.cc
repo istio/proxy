@@ -135,7 +135,7 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
       request_info.dynamicMetadata()));
 }
 
-TEST_F(AuthenticationFilterTest, PeerPassOrginFail) {
+TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
   // Peer pass thus origin authentication must be called. Final result should
   // fail as origin authn fails.
   EXPECT_CALL(filter_, createPeerAuthenticator(_))
@@ -210,8 +210,66 @@ TEST_F(AuthenticationFilterTest, IgnoreBothFail) {
   *filter_config_.mutable_policy() = policy_;
   StrictMock<MockAuthenticationFilter> filter(filter_config_);
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
+
+  EXPECT_CALL(filter, createPeerAuthenticator(_))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysFailAuthenticator));
+  EXPECT_CALL(filter, createOriginAuthenticator(_))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysFailAuthenticator));
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter.decodeHeaders(request_headers_, true));
+}
+
+TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
+  iaapi::Policy policy_;
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(ingoreBothPolicy, &policy_));
+  *filter_config_.mutable_policy() = policy_;
+  StrictMock<MockAuthenticationFilter> filter(filter_config_);
+  filter.setDecoderFilterCallbacks(decoder_callbacks_);
+
+  EXPECT_CALL(filter, createPeerAuthenticator(_))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysPassAuthenticator));
+  EXPECT_CALL(filter, createOriginAuthenticator(_))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysPassAuthenticator));
+  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2);
+  EXPECT_CALL(decoder_callbacks_, requestInfo())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(request_info));
+
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter.decodeHeaders(request_headers_, true));
+
+  EXPECT_EQ(1, request_info.dynamicMetadata().filter_metadata_size());
+  const auto *data = Utils::Authentication::GetResultFromMetadata(
+      request_info.dynamicMetadata());
+  ASSERT_TRUE(data);
+
+  ProtobufWkt::Struct expected_data;
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+       fields {
+         key: "source.namespace"
+         value {
+           string_value: "test_ns"
+         }
+       }
+       fields {
+         key: "source.principal"
+         value {
+           string_value: "cluster.local/sa/test_user/ns/test_ns/"
+         }
+       }
+       fields {
+         key: "source.user"
+         value {
+           string_value: "cluster.local/sa/test_user/ns/test_ns/"
+         }
+       })",
+                                                    &expected_data));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_data, *data));
 }
 
 }  // namespace

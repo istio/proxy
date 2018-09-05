@@ -54,15 +54,15 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
 
   Payload payload;
 
-  if (!filter_config_.policy().peer_is_optional() &&
-      !createPeerAuthenticator(filter_context_.get())->run(&payload)) {
+  if (!createPeerAuthenticator(filter_context_.get())->run(&payload) &&
+      !filter_config_.policy().peer_is_optional()) {
     rejectRequest("Peer authentication failed.");
     return FilterHeadersStatus::StopIteration;
   }
 
   bool success =
-      filter_config_.policy().origin_is_optional() ||
-      createOriginAuthenticator(filter_context_.get())->run(&payload);
+      createOriginAuthenticator(filter_context_.get())->run(&payload) ||
+      filter_config_.policy().origin_is_optional();
 
   if (!success) {
     rejectRequest("Origin authentication failed.");
