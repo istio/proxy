@@ -34,6 +34,7 @@ using ::istio::mixerclient::DoneFunc;
 using ::istio::mixerclient::MixerClient;
 using ::istio::mixerclient::TransportCheckFunc;
 using ::istio::quota_config::Requirement;
+using ::istio::utils::LocalAttributes;
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -151,9 +152,11 @@ class RequestHandlerImplTest : public ::testing::Test {
 
     mock_client_ = new ::testing::NiceMock<MockMixerClient>;
     // set LRU cache size is 3
+    const LocalAttributes* local_attributes =
+        new LocalAttributes(inbound, outbound, forward);
     client_context_ = std::make_shared<ClientContext>(
         std::unique_ptr<MixerClient>(mock_client_), client_config_, 3,
-        ::istio::utils::LocalAttributes(inbound, outbound, forward), false);
+        local_attributes, false);
     controller_ =
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }

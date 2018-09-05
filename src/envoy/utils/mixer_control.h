@@ -62,7 +62,7 @@ struct LocalAttributes {
 */
 
 // return local attributes based on local info.
-const LocalAttributes GenerateLocalAttributes(
+const LocalAttributes *GenerateLocalAttributes(
     const LocalInfo::LocalInfo &local_info);
 
 }  // namespace Utils

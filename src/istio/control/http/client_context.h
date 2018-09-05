@@ -23,7 +23,7 @@
 namespace istio {
 namespace control {
 namespace http {
-    
+
 // The global context object to hold:
 // * the mixer client config
 // * the mixer client object to call Check/Report with cache.
@@ -35,8 +35,7 @@ class ClientContext : public ClientContextBase {
       std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
       const ::istio::mixer::v1::config::client::HttpClientConfig& config,
       int service_config_cache_size,
-      const ::istio::utils::LocalAttributes& local_attributes,
-      bool outbound);
+      const ::istio::utils::LocalAttributes* local_attributes, bool outbound);
 
   // Retrieve mixer client config.
   const ::istio::mixer::v1::config::client::HttpClientConfig& config() const {
@@ -56,10 +55,11 @@ class ClientContext : public ClientContextBase {
   int service_config_cache_size() const { return service_config_cache_size_; }
 
   // local attributes
-  const ::istio::utils::LocalAttributes& local_attributes() const { return local_attributes_;}
+  const ::istio::utils::LocalAttributes* local_attributes() const {
+    return local_attributes_.get();
+  }
 
-  const bool outbound() const { return outbound_;}
-  
+  const bool outbound() const { return outbound_; }
 
  private:
   // The http client config.
@@ -69,7 +69,7 @@ class ClientContext : public ClientContextBase {
   int service_config_cache_size_;
 
   // local attributes - owned by the client context.
-  const ::istio::utils::LocalAttributes local_attributes_;
+  std::unique_ptr<const ::istio::utils::LocalAttributes> local_attributes_;
 
   // if this client context is for an inbound listener or outbound listener.
   bool outbound_;

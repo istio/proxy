@@ -123,14 +123,14 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     namespace
     IP_Address only for inbound.
 **/
-const LocalAttributes GenerateLocalAttributes(
+const LocalAttributes *GenerateLocalAttributes(
     const LocalInfo::LocalInfo &local_info) {
   auto parts = StringUtil::splitToken(local_info.node().id(), "~");
   if (parts.size() < 3) {
     GOOGLE_LOG(ERROR)
         << "GenerateLocalAttributes error len(node.id.split(~))<3: "
         << local_info.node().id();
-    return LocalAttributes();
+    return nullptr;
   }
 
   auto longname = std::string(parts[2].begin(), parts[2].end());
@@ -139,7 +139,7 @@ const LocalAttributes GenerateLocalAttributes(
     GOOGLE_LOG(ERROR)
         << "GenerateLocalAttributes error len(split(longname, '.')) < 3: "
         << longname;
-    return LocalAttributes();
+    return nullptr;
   }
 
   std::string ns = std::string(names[1].begin(), names[1].end());
@@ -161,7 +161,7 @@ const LocalAttributes GenerateLocalAttributes(
   ::istio::mixer::v1::Attributes fwd;
   auto &forward = (*fwd.mutable_attributes());
   forward[AttributeName::kSourceUID].set_string_value(uid);
-  return LocalAttributes(ib, ob, fwd);
+  return new LocalAttributes(ib, ob, fwd);
 }
 
 }  // namespace Utils

@@ -16,26 +16,26 @@
 #include "src/istio/control/http/client_context.h"
 #include "include/istio/utils/attribute_names.h"
 
-using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::mixer::v1::Attributes_AttributeValue;
+using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::utils::AttributeName;
 
 namespace istio {
 namespace control {
 namespace http {
-const char*  kReporterOutbound = "outbound";
+const char* kReporterOutbound = "outbound";
 
 namespace {
 
 // isOutbound returns true if this is an outbound listener configuration.
 // It relies on pilot setting context.reporter.kind == outbound;
-static bool isOutbound(const ::istio::mixer::v1::config::client::HttpClientConfig& config) {
+static bool isOutbound(
+    const ::istio::mixer::v1::config::client::HttpClientConfig& config) {
   bool outbound = false;
-    const auto &attributes_map =
-      config.mixer_attributes().attributes();
+  const auto& attributes_map = config.mixer_attributes().attributes();
   const auto it = attributes_map.find(AttributeName::kContextReporterKind);
   if (it != attributes_map.end()) {
-    const Attributes_AttributeValue &value = it->second;
+    const Attributes_AttributeValue& value = it->second;
     if (kReporterOutbound == value.string_value()) {
       outbound = true;
     }
@@ -43,7 +43,7 @@ static bool isOutbound(const ::istio::mixer::v1::config::client::HttpClientConfi
   return outbound;
 }
 
-} // namespace
+}  // namespace
 
 ClientContext::ClientContext(const Controller::Options& data)
     : ClientContextBase(data.config.transport(), data.env),
@@ -56,12 +56,12 @@ ClientContext::ClientContext(
     std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
     const ::istio::mixer::v1::config::client::HttpClientConfig& config,
     int service_config_cache_size,
-    const ::istio::utils::LocalAttributes& local_attributes,
-    bool outbound)
+    const ::istio::utils::LocalAttributes* local_attributes, bool outbound)
     : ClientContextBase(std::move(mixer_client)),
       config_(config),
       service_config_cache_size_(service_config_cache_size),
-      local_attributes_(local_attributes), outbound_(outbound) {}
+      local_attributes_(local_attributes),
+      outbound_(outbound) {}
 
 const std::string& ClientContext::GetServiceName(
     const std::string& service_name) const {

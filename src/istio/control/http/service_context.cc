@@ -59,12 +59,13 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
     request->attributes.MergeFrom(service_config_->mixer_attributes());
   }
 
-  if (client_context_->outbound()) {
-    request->attributes.MergeFrom(
-      client_context_->local_attributes().outbound());
-  } else {
-    request->attributes.MergeFrom(
-        client_context_->local_attributes().inbound());
+  auto local_attributes = client_context_->local_attributes();
+  if (local_attributes != nullptr) {
+    if (client_context_->outbound()) {
+      request->attributes.MergeFrom(local_attributes->outbound);
+    } else {
+      request->attributes.MergeFrom(local_attributes->inbound);
+    }
   }
 }
 
