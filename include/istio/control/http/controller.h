@@ -85,7 +85,7 @@ class Controller {
     // If not set or is 0 default value, the cache size is 1000.
     int service_config_cache_size{};
 
-    // local attributes
+    // local attributes. not owned by options.
     const ::istio::utils::LocalAttributes* local_attributes;
   };
 

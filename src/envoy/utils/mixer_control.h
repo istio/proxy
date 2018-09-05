@@ -25,6 +25,7 @@
 #include "src/envoy/utils/config.h"
 
 using ::istio::mixer::v1::Attributes;
+using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::utils::LocalAttributes;
 
 namespace Envoy {
@@ -55,7 +56,53 @@ typedef struct localAttributesArgs_t {
 
 // return local attributes based on local info.
 const LocalAttributes *GenerateLocalAttributes(
-    const LocalInfo::LocalInfo &local_info);
+    const envoy::api::v2::core::Node &node);
+
+const LocalAttributes *createLocalAttributes(const localAttributesArgs &local);
+
+inline bool readMap(
+    const google::protobuf::Map<std::string, google::protobuf::Value> &meta,
+    const std::string &key, std::string *val) {
+  const auto it = meta.find(key);
+  if (it != meta.end()) {
+    *val = it->second.string_value();
+    return true;
+  }
+  return false;
+}
+
+inline bool readMap(
+    const google::protobuf::Map<std::string, Attributes_AttributeValue> &meta,
+    const std::string &key, std::string *val) {
+  const auto it = meta.find(key);
+  if (it != meta.end()) {
+    *val = it->second.string_value();
+    return true;
+  }
+  return false;
+}
+/*
+"NODE_NAME", &name)) {
+    GOOGLE_LOG(ERROR) << "extractInfo  metadata missing NODE_NAME "
+                      << node.metadata().DebugString();
+    return false;
+  }
+  std::string ns;
+  readMap(meta, "NODE_NAMESPACE", &ns);
+
+  std::string ip;
+  readMap(meta, "NODE_IP", &ip);
+
+  std::string reg("kubernetes");
+  readMap(meta, "NODE_REGISTRY",
+  */
+
+typedef struct nodeKey_t {
+  static const char kName[];
+  static const char kNamespace[];
+  static const char kIp[];
+  static const char kRegistry[];
+} nodeKey;
 
 }  // namespace Utils
 }  // namespace Envoy

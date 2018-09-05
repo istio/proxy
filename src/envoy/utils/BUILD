@@ -93,6 +93,17 @@ envoy_cc_test(
     ],
 )
 
+envoy_cc_test(
+    name = "mixer_control_test",
+    srcs = [
+        "mixer_control_test.cc",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":utils_lib",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
 
 cc_library(
     name = "filter_names_lib",

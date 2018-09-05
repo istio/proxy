@@ -22,6 +22,12 @@ using ::istio::utils::LocalAttributes;
 
 namespace Envoy {
 namespace Utils {
+
+const char nodeKey::kName[] = "NODE_NAME";
+const char nodeKey::kNamespace[] = "NODE_NAMESPACE";
+const char nodeKey::kIp[] = "NODE_IP";
+const char nodeKey::kRegistry[] = "NODE_REGISTRY";
+
 namespace {
 
 // A class to wrap envoy timer for mixer client timer.
@@ -163,34 +169,19 @@ bool extractInfo(localAttributesArgs *args,
                  const envoy::api::v2::core::Node &node) {
   const auto meta = node.metadata().fields();
   std::string name;
-  auto it = meta.find("NODE_NAME");
-  if (it == meta.end()) {
+  if (!readMap(meta, nodeKey::kName, &name)) {
     GOOGLE_LOG(ERROR) << "extractInfo  metadata missing NODE_NAME "
                       << node.metadata().DebugString();
     return false;
   }
-
-  if (it != meta.end()) {
-    name = it->second.string_value();
-  }
-
   std::string ns;
-  it = meta.find("NODE_NAMESPACE");
-  if (it != meta.end()) {
-    ns = it->second.string_value();
-  }
+  readMap(meta, nodeKey::kNamespace, &ns);
 
   std::string ip;
-  it = meta.find("NODE_IP");
-  if (it != meta.end()) {
-    ip = it->second.string_value();
-  }
+  readMap(meta, nodeKey::kIp, &ip);
 
   std::string reg("kubernetes");
-  it = meta.find("NODE_REGISTRY");
-  if (it != meta.end()) {
-    reg = it->second.string_value();
-  }
+  readMap(meta, nodeKey::kRegistry, &reg);
 
   args->ip = ip;
   args->ns = ns;
@@ -221,14 +212,14 @@ bool extractInfo(localAttributesArgs *args,
     IP_Address only for inbound.
 **/
 const LocalAttributes *GenerateLocalAttributes(
-    const LocalInfo::LocalInfo &local_info) {
+    const envoy::api::v2::core::Node &node) {
   localAttributesArgs args;
 
-  if (extractInfo(&args, local_info.node())) {
+  if (extractInfo(&args, node)) {
     return createLocalAttributes(args);
   }
 
-  if (extractInfo(&args, local_info.node().id())) {
+  if (extractInfo(&args, node.id())) {
     return createLocalAttributes(args);
   }
   return nullptr;

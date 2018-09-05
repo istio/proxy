@@ -41,7 +41,7 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                                       &serialized_forward_attributes_);
 
   ::istio::control::http::Controller::Options options(
-      config_.config_pb(), Utils::GenerateLocalAttributes(local_info));
+      config_.config_pb(), Utils::GenerateLocalAttributes(local_info.node()));
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
                            *report_client_factory_,
