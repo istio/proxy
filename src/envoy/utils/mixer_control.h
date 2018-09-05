@@ -46,6 +46,13 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope);
 
+// localAttributesArgs_t used internally
+typedef struct localAttributesArgs_t {
+  std::string ns;
+  std::string ip;
+  std::string uid;
+} localAttributesArgs;
+
 // return local attributes based on local info.
 const LocalAttributes *GenerateLocalAttributes(
     const LocalInfo::LocalInfo &local_info);

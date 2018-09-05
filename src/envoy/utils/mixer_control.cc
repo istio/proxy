@@ -102,6 +102,103 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
   return std::make_unique<EnvoyGrpcAsyncClientFactory>(cm, service);
 }
 
+// create Local attributes object and return a pointer to it.
+// Should be freed by the caller.
+const LocalAttributes *createLocalAttributes(const localAttributesArgs &local) {
+  ::istio::mixer::v1::Attributes ib;
+  auto &inbound = (*ib.mutable_attributes());
+  inbound[AttributeName::kDestinationUID].set_string_value(local.uid);
+  inbound[AttributeName::kContextReporterUID].set_string_value(local.uid);
+  inbound[AttributeName::kDestinationNamespace].set_string_value(local.ns);
+  if (!local.ip.empty()) {
+    // TODO: mjog check if destination.ip should be setup for inbound.
+  }
+
+  ::istio::mixer::v1::Attributes ob;
+  auto &outbound = (*ob.mutable_attributes());
+  outbound[AttributeName::kSourceUID].set_string_value(local.uid);
+  outbound[AttributeName::kContextReporterUID].set_string_value(local.uid);
+  outbound[AttributeName::kSourceNamespace].set_string_value(local.ns);
+
+  ::istio::mixer::v1::Attributes fwd;
+  auto &forward = (*fwd.mutable_attributes());
+  forward[AttributeName::kSourceUID].set_string_value(local.uid);
+  return new LocalAttributes(ib, ob, fwd);
+}
+
+//
+// "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local"
+//  --> {proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain}
+bool extractInfo(localAttributesArgs *args, std::string nodeid) {
+  auto parts = StringUtil::splitToken(nodeid, "~");
+  if (parts.size() < 3) {
+    GOOGLE_LOG(ERROR)
+        << "GenerateLocalAttributes error len(nodeid.split(~))<3: " << nodeid;
+    return false;
+  }
+
+  auto ip = std::string(parts[1].begin(), parts[1].end());
+  auto longname = std::string(parts[2].begin(), parts[2].end());
+  auto names = StringUtil::splitToken(longname, ".");
+  if (names.size() < 2) {
+    GOOGLE_LOG(ERROR)
+        << "GenerateLocalAttributes error len(split(longname, '.')) < 3: "
+        << longname;
+    return false;
+  }
+  auto ns = std::string(names[1].begin(), names[1].end());
+
+  std::string reg("kubernetes");
+
+  args->ip = ip;
+  args->ns = ns;
+  args->uid = reg + "://" + longname;
+
+  return true;
+}
+
+// extractInfo depends on NODE_NAME, NODE_NAMESPACE, NODE_IP and optional
+// NODE_REG If work cannot be done, returns false.
+bool extractInfo(localAttributesArgs *args,
+                 const envoy::api::v2::core::Node &node) {
+  const auto meta = node.metadata().fields();
+  std::string name;
+  auto it = meta.find("NODE_NAME");
+  if (it == meta.end()) {
+    GOOGLE_LOG(ERROR) << "extractInfo  metadata missing NODE_NAME "
+                      << node.metadata().DebugString();
+    return false;
+  }
+
+  if (it != meta.end()) {
+    name = it->second.string_value();
+  }
+
+  std::string ns;
+  it = meta.find("NODE_NAMESPACE");
+  if (it != meta.end()) {
+    ns = it->second.string_value();
+  }
+
+  std::string ip;
+  it = meta.find("NODE_IP");
+  if (it != meta.end()) {
+    ip = it->second.string_value();
+  }
+
+  std::string reg("kubernetes");
+  it = meta.find("NODE_REGISTRY");
+  if (it != meta.end()) {
+    reg = it->second.string_value();
+  }
+
+  args->ip = ip;
+  args->ns = ns;
+  args->uid = reg + "://" + name + "." + ns;
+
+  return true;
+}
+
 /** example node
    "node": {
      "id":
@@ -125,43 +222,16 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 **/
 const LocalAttributes *GenerateLocalAttributes(
     const LocalInfo::LocalInfo &local_info) {
-  auto parts = StringUtil::splitToken(local_info.node().id(), "~");
-  if (parts.size() < 3) {
-    GOOGLE_LOG(ERROR)
-        << "GenerateLocalAttributes error len(node.id.split(~))<3: "
-        << local_info.node().id();
-    return nullptr;
+  localAttributesArgs args;
+
+  if (extractInfo(&args, local_info.node())) {
+    return createLocalAttributes(args);
   }
 
-  auto longname = std::string(parts[2].begin(), parts[2].end());
-  auto names = StringUtil::splitToken(longname, ".");
-  if (names.size() < 2) {
-    GOOGLE_LOG(ERROR)
-        << "GenerateLocalAttributes error len(split(longname, '.')) < 3: "
-        << longname;
-    return nullptr;
+  if (extractInfo(&args, local_info.node().id())) {
+    return createLocalAttributes(args);
   }
-
-  std::string ns = std::string(names[1].begin(), names[1].end());
-  std::string uid = "kubernetes://" + longname;
-
-  ::istio::mixer::v1::Attributes ib;
-  auto &inbound = (*ib.mutable_attributes());
-  inbound[AttributeName::kDestinationUID].set_string_value(uid);
-  inbound[AttributeName::kContextReporterUID].set_string_value(uid);
-  inbound[AttributeName::kDestinationNamespace].set_string_value(ns);
-  // TODO: mjog check if destination.ip should be setup for inbound.
-
-  ::istio::mixer::v1::Attributes ob;
-  auto &outbound = (*ob.mutable_attributes());
-  outbound[AttributeName::kSourceUID].set_string_value(uid);
-  outbound[AttributeName::kContextReporterUID].set_string_value(uid);
-  outbound[AttributeName::kSourceNamespace].set_string_value(ns);
-
-  ::istio::mixer::v1::Attributes fwd;
-  auto &forward = (*fwd.mutable_attributes());
-  forward[AttributeName::kSourceUID].set_string_value(uid);
-  return new LocalAttributes(ib, ob, fwd);
+  return nullptr;
 }
 
 }  // namespace Utils
