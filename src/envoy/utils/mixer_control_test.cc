@@ -18,14 +18,14 @@
 #include "src/envoy/utils/utils.h"
 #include "test/test_common/utility.h"
 
-using ::istio::utils::AttributeName;
-using ::istio::utils::CreateLocalAttributes;
-using ::istio::utils::LocalAttributes;
-using ::istio::utils::LocalNode;
 using Envoy::Utils::Extract;
 using Envoy::Utils::NodeKey;
 using Envoy::Utils::ParseJsonMessage;
 using Envoy::Utils::ReadMap;
+using ::istio::utils::AttributeName;
+using ::istio::utils::CreateLocalAttributes;
+using ::istio::utils::LocalAttributes;
+using ::istio::utils::LocalNode;
 
 #define assertEqual(laExpect, la)                                              \
   {                                                                            \
