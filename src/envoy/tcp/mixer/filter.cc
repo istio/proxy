@@ -159,7 +159,12 @@ bool Filter::IsMutualTLS() const {
 }
 
 bool Filter::GetRequestedServerName(std::string* name) const {
-  return Utils::GetRequestedServerName(&filter_callbacks_->connection(), name);
+  bool isSet = Utils::GetRequestedServerName(&filter_callbacks_->connection(), name);
+  if (!filter_callbacks_->networkLevelRequestedServerName().empty()) {
+    *name = std::string(filter_callbacks_->networkLevelRequestedServerName());
+    isSet = true;
+  }
+  return isSet;
 }
 
 bool Filter::GetDestinationIpPort(std::string* str_ip, int* port) const {
