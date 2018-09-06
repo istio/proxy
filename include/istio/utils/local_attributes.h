@@ -38,6 +38,16 @@ struct LocalAttributes {
   const Attributes forward;
 };
 
+// LocalNode are used to extract information from envoy Node.
+struct LocalNode {
+  std::string ns;
+  std::string ip;
+  std::string uid;
+};
+
+std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
+    const LocalNode& local);
+
 }  // namespace utils
 }  // namespace istio
 

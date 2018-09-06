@@ -18,8 +18,8 @@
 
 using ::istio::mixerclient::Statistics;
 using ::istio::utils::AttributeName;
-using ::istio::utils::AttributesBuilder;
 using ::istio::utils::LocalAttributes;
+using ::istio::utils::LocalNode;
 
 namespace Envoy {
 namespace Utils {
@@ -112,7 +112,7 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 // create Local attributes object and return a pointer to it.
 // Should be freed by the caller.
 std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
-    const LocalAttributesArgs &local) {
+    const LocalNode &local) {
   ::istio::mixer::v1::Attributes inbound;
   AttributesBuilder ib(&inbound);
   ib.AddString(AttributeName::kDestinationUID, local.uid);
@@ -189,6 +189,16 @@ bool ExtractInfo(const envoy::api::v2::core::Node &node,
   args->uid = reg + "://" + name + "." + ns;
 
   return true;
+}
+
+bool Extract(const envoy::api::v2::core::Node &node, LocalNode *args) {
+  if (ExtractInfo(node, args)) {
+    return true;
+  }
+  if (ExtractInfoCompat(node.id(), args)) {
+    return true;
+  }
+  return false;
 }
 
 std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(

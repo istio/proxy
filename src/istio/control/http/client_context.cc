@@ -49,8 +49,9 @@ ClientContext::ClientContext(const Controller::Options& data)
     : ClientContextBase(data.config.transport(), data.env),
       config_(data.config),
       service_config_cache_size_(data.service_config_cache_size),
-      // local_attributes_(std::move(data.local_attributes)),
-      outbound_(isOutbound(data.config)) {}
+      outbound_(isOutbound(data.config)) {
+  local_attributes_ = Utils::CreateLocalAttributes(data.local_node);
+}
 
 ClientContext::ClientContext(
     std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,

@@ -21,13 +21,13 @@
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/mixerclient/client.h"
 #include "include/istio/utils/attribute_names.h"
-#include "include/istio/utils/attributes_builder.h"
 #include "include/istio/utils/local_attributes.h"
 #include "src/envoy/utils/config.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::utils::LocalAttributes;
+using ::istio::utils::LocalNode;
 
 namespace Envoy {
 namespace Utils {
@@ -48,20 +48,10 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope);
 
-// LocalAttributesArgs used internally
-struct LocalAttributesArgs {
-  std::string ns;
-  std::string ip;
-  std::string uid;
-};
-
-// returns local attributes based on local info.
-std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(
-    const envoy::api::v2::core::Node &node);
-
-// only used internally, but exposed for tests.
 std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
-    const LocalAttributesArgs &local);
+    const LocalNode &local);
+
+bool Extract(const envoy::api::v2::core::Node &node, LocalNode *args);
 
 inline bool ReadMap(
     const google::protobuf::Map<std::string, google::protobuf::Value> &meta,

@@ -17,6 +17,7 @@ licenses(["notice"])
 cc_library(
     name = "utils_lib",
     srcs = [
+        "local_attributes.cc",
         "protobuf.cc",
         "status.cc",
         "utils.cc"
@@ -28,6 +29,9 @@ cc_library(
     deps = [
         "//external:protobuf",
         "//include/istio/utils:headers_lib",
+        "//include/istio/utils:attribute_names_header",
+        "//external:mixer_client_config_cc_proto",
+        #"//src/istio/mixerclient:mixerclient_lib",
     ],
 )
 

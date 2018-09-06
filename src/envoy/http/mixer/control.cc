@@ -16,7 +16,7 @@
 #include "src/envoy/http/mixer/control.h"
 
 using ::istio::mixer::v1::Attributes;
-using ::istio::utils::LocalAttributes;
+using ::istio::utils::LocalNode;
 
 namespace Envoy {
 namespace Http {
@@ -40,8 +40,11 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
   Utils::SerializeForwardedAttributes(config_.config_pb().transport(),
                                       &serialized_forward_attributes_);
 
-  auto ptr = Utils::GenerateLocalAttributes(local_info.node());
-  ::istio::control::http::Controller::Options options(config_.config_pb(), ptr);
+  LocalNode local_node;
+  Utils::Extract(local_info.node(), &local_node);
+
+  ::istio::control::http::Controller::Options options(config_.config_pb(),
+                                                      local_node);
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
                            *report_client_factory_,
