@@ -16,6 +16,7 @@
 #pragma once
 
 #include "common/common/logger.h"
+#include "envoy/local_info/local_info.h"
 #include "src/envoy/http/mixer/control.h"
 #include "src/envoy/utils/stats.h"
 
@@ -42,11 +43,14 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
     Upstream::ClusterManager& cm = context.clusterManager();
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
-    tls_->set([this, &cm, &random, &scope](Event::Dispatcher& dispatcher)
-                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return std::make_shared<Control>(*config_, cm, dispatcher, random, scope,
-                                       stats_);
-    });
+    const LocalInfo::LocalInfo& local_info = context.localInfo();
+
+    tls_->set(
+        [this, &cm, &random, &scope, &local_info](Event::Dispatcher& dispatcher)
+            -> ThreadLocal::ThreadLocalObjectSharedPtr {
+          return std::make_shared<Control>(*config_, cm, dispatcher, random,
+                                           scope, stats_, local_info);
+        });
   }
 
   Control& control() { return tls_->getTyped<Control>(); }

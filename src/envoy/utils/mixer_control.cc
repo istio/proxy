@@ -17,9 +17,18 @@
 #include "src/envoy/utils/grpc_transport.h"
 
 using ::istio::mixerclient::Statistics;
+using ::istio::utils::AttributeName;
+using ::istio::utils::AttributesBuilder;
+using ::istio::utils::LocalAttributes;
 
 namespace Envoy {
 namespace Utils {
+
+const char NodeKey::kName[] = "NODE_NAME";
+const char NodeKey::kNamespace[] = "NODE_NAMESPACE";
+const char NodeKey::kIp[] = "NODE_IP";
+const char NodeKey::kRegistry[] = "NODE_REGISTRY";
+
 namespace {
 
 // A class to wrap envoy timer for mixer client timer.
@@ -98,6 +107,102 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
   // Workaround for https://github.com/envoyproxy/envoy/issues/2762
   UNREFERENCED_PARAMETER(scope);
   return std::make_unique<EnvoyGrpcAsyncClientFactory>(cm, service);
+}
+
+// create Local attributes object and return a pointer to it.
+// Should be freed by the caller.
+std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
+    const LocalAttributesArgs &local) {
+  ::istio::mixer::v1::Attributes inbound;
+  AttributesBuilder ib(&inbound);
+  ib.AddString(AttributeName::kDestinationUID, local.uid);
+  ib.AddString(AttributeName::kContextReporterUID, local.uid);
+  ib.AddString(AttributeName::kDestinationNamespace, local.ns);
+
+  if (!local.ip.empty()) {
+    // TODO: mjog check if destination.ip should be setup for inbound.
+  }
+
+  ::istio::mixer::v1::Attributes outbound;
+  AttributesBuilder ob(&outbound);
+  ob.AddString(AttributeName::kSourceUID, local.uid);
+  ob.AddString(AttributeName::kContextReporterUID, local.uid);
+  ob.AddString(AttributeName::kSourceNamespace, local.ns);
+
+  ::istio::mixer::v1::Attributes forward;
+  AttributesBuilder(&forward).AddString(AttributeName::kSourceUID, local.uid);
+
+  return std::make_unique<LocalAttributes>(inbound, outbound, forward);
+}
+
+// This function is for compatibility with existing node ids.
+// "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local"
+//  --> {proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain}
+bool ExtractInfoCompat(const std::string &nodeid, LocalAttributesArgs *args) {
+  auto parts = StringUtil::splitToken(nodeid, "~");
+  if (parts.size() < 3) {
+    GOOGLE_LOG(ERROR) << "ExtractInfoCompat error len(nodeid.split(~))<3: "
+                      << nodeid;
+    return false;
+  }
+
+  auto ip = std::string(parts[1].begin(), parts[1].end());
+  auto longname = std::string(parts[2].begin(), parts[2].end());
+  auto names = StringUtil::splitToken(longname, ".");
+  if (names.size() < 2) {
+    GOOGLE_LOG(ERROR)
+        << "ExtractInfoCompat error len(split(longname, '.')) < 3: "
+        << longname;
+    return false;
+  }
+  auto ns = std::string(names[1].begin(), names[1].end());
+
+  args->ip = ip;
+  args->ns = ns;
+  args->uid = "kubernetes://" + longname;
+
+  return true;
+}
+
+// ExtractInfo depends on NODE_NAME, NODE_NAMESPACE, NODE_IP and optional
+// NODE_REG If work cannot be done, returns false.
+bool ExtractInfo(const envoy::api::v2::core::Node &node,
+                 LocalAttributesArgs *args) {
+  const auto meta = node.metadata().fields();
+  std::string name;
+  if (!ReadMap(meta, NodeKey::kName, &name)) {
+    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata missing " << NodeKey::kName
+                      << " " << node.metadata().DebugString();
+    return false;
+  }
+  std::string ns;
+  ReadMap(meta, NodeKey::kNamespace, &ns);
+
+  std::string ip;
+  ReadMap(meta, NodeKey::kIp, &ip);
+
+  std::string reg("kubernetes");
+  ReadMap(meta, NodeKey::kRegistry, &reg);
+
+  args->ip = ip;
+  args->ns = ns;
+  args->uid = reg + "://" + name + "." + ns;
+
+  return true;
+}
+
+std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(
+    const envoy::api::v2::core::Node &node) {
+  LocalAttributesArgs args;
+
+  if (ExtractInfo(node, &args)) {
+    return CreateLocalAttributes(args);
+  }
+
+  if (ExtractInfoCompat(node.id(), &args)) {
+    return CreateLocalAttributes(args);
+  }
+  return nullptr;
 }
 
 }  // namespace Utils
