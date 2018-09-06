@@ -21,6 +21,7 @@
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/mixerclient/client.h"
 #include "include/istio/utils/attribute_names.h"
+#include "include/istio/utils/attributes_builder.h"
 #include "include/istio/utils/local_attributes.h"
 #include "src/envoy/utils/config.h"
 

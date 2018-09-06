@@ -18,6 +18,7 @@
 
 using ::istio::mixerclient::Statistics;
 using ::istio::utils::AttributeName;
+using ::istio::utils::AttributesBuilder;
 using ::istio::utils::LocalAttributes;
 
 namespace Envoy {
@@ -111,28 +112,29 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 // create Local attributes object and return a pointer to it.
 // Should be freed by the caller.
 const LocalAttributes *CreateLocalAttributes(const LocalAttributesArgs &local) {
-  ::istio::mixer::v1::Attributes ib;
-  auto &inbound = (*ib.mutable_attributes());
-  inbound[AttributeName::kDestinationUID].set_string_value(local.uid);
-  inbound[AttributeName::kContextReporterUID].set_string_value(local.uid);
-  inbound[AttributeName::kDestinationNamespace].set_string_value(local.ns);
+  ::istio::mixer::v1::Attributes inbound;
+  AttributesBuilder ib(&inbound);
+  ib.AddString(AttributeName::kDestinationUID, local.uid);
+  ib.AddString(AttributeName::kContextReporterUID, local.uid);
+  ib.AddString(AttributeName::kDestinationNamespace, local.ns);
+
   if (!local.ip.empty()) {
     // TODO: mjog check if destination.ip should be setup for inbound.
   }
 
-  ::istio::mixer::v1::Attributes ob;
-  auto &outbound = (*ob.mutable_attributes());
-  outbound[AttributeName::kSourceUID].set_string_value(local.uid);
-  outbound[AttributeName::kContextReporterUID].set_string_value(local.uid);
-  outbound[AttributeName::kSourceNamespace].set_string_value(local.ns);
+  ::istio::mixer::v1::Attributes outbound;
+  AttributesBuilder ob(&outbound);
+  ob.AddString(AttributeName::kSourceUID, local.uid);
+  ob.AddString(AttributeName::kContextReporterUID, local.uid);
+  ob.AddString(AttributeName::kSourceNamespace, local.ns);
 
-  ::istio::mixer::v1::Attributes fwd;
-  auto &forward = (*fwd.mutable_attributes());
-  forward[AttributeName::kSourceUID].set_string_value(local.uid);
-  return new LocalAttributes(ib, ob, fwd);
+  ::istio::mixer::v1::Attributes forward;
+  AttributesBuilder(&forward).AddString(AttributeName::kSourceUID, local.uid);
+
+  return new LocalAttributes(inbound, outbound, forward);
 }
 
-// This is for compatibility with existing node ids.
+// This function is for compatibility with existing node ids.
 // "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local"
 //  --> {proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain}
 bool ExtractInfoCompat(const std::string &nodeid, LocalAttributesArgs *args) {
