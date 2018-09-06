@@ -19,10 +19,10 @@
 #include "test/test_common/utility.h"
 
 using ::istio::utils::AttributeName;
+using ::istio::utils::CreateLocalAttributes;
 using ::istio::utils::LocalAttributes;
-using Envoy::Utils::CreateLocalAttributes;
-using Envoy::Utils::GenerateLocalAttributes;
-using Envoy::Utils::LocalAttributesArgs;
+using ::istio::utils::LocalNode;
+using Envoy::Utils::Extract;
 using Envoy::Utils::NodeKey;
 using Envoy::Utils::ParseJsonMessage;
 using Envoy::Utils::ReadMap;
@@ -36,6 +36,15 @@ using Envoy::Utils::ReadMap;
   };
 
 namespace {
+
+std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(
+    envoy::api::v2::core::Node& node) {
+  LocalNode largs;
+  if (!Extract(node, &largs)) {
+    return nullptr;
+  }
+  return CreateLocalAttributes(largs);
+}
 
 TEST(MixerControlTest, WithMetadata) {
   std::string config_str = R"({
@@ -55,7 +64,7 @@ TEST(MixerControlTest, WithMetadata) {
   EXPECT_OK(status) << status;
   std::string val;
 
-  LocalAttributesArgs largs;
+  LocalNode largs;
   largs.ip = "10.36.0.15";
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";
@@ -90,7 +99,7 @@ TEST(MixerControlTest, NoMetadata) {
   auto status = ParseJsonMessage(config_str, &node);
   EXPECT_OK(status) << status;
 
-  LocalAttributesArgs largs;
+  LocalNode largs;
   largs.ip = "10.36.0.15";
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";

@@ -19,6 +19,7 @@
 using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::utils::AttributeName;
+using ::istio::utils::CreateLocalAttributes;
 
 namespace istio {
 namespace control {
@@ -50,7 +51,7 @@ ClientContext::ClientContext(const Controller::Options& data)
       config_(data.config),
       service_config_cache_size_(data.service_config_cache_size),
       outbound_(isOutbound(data.config)) {
-  local_attributes_ = Utils::CreateLocalAttributes(data.local_node);
+  local_attributes_ = CreateLocalAttributes(data.local_node);
 }
 
 ClientContext::ClientContext(

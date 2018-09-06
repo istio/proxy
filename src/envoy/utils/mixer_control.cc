@@ -109,36 +109,10 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
   return std::make_unique<EnvoyGrpcAsyncClientFactory>(cm, service);
 }
 
-// create Local attributes object and return a pointer to it.
-// Should be freed by the caller.
-std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
-    const LocalNode &local) {
-  ::istio::mixer::v1::Attributes inbound;
-  AttributesBuilder ib(&inbound);
-  ib.AddString(AttributeName::kDestinationUID, local.uid);
-  ib.AddString(AttributeName::kContextReporterUID, local.uid);
-  ib.AddString(AttributeName::kDestinationNamespace, local.ns);
-
-  if (!local.ip.empty()) {
-    // TODO: mjog check if destination.ip should be setup for inbound.
-  }
-
-  ::istio::mixer::v1::Attributes outbound;
-  AttributesBuilder ob(&outbound);
-  ob.AddString(AttributeName::kSourceUID, local.uid);
-  ob.AddString(AttributeName::kContextReporterUID, local.uid);
-  ob.AddString(AttributeName::kSourceNamespace, local.ns);
-
-  ::istio::mixer::v1::Attributes forward;
-  AttributesBuilder(&forward).AddString(AttributeName::kSourceUID, local.uid);
-
-  return std::make_unique<LocalAttributes>(inbound, outbound, forward);
-}
-
 // This function is for compatibility with existing node ids.
 // "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local"
 //  --> {proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain}
-bool ExtractInfoCompat(const std::string &nodeid, LocalAttributesArgs *args) {
+bool ExtractInfoCompat(const std::string &nodeid, LocalNode *args) {
   auto parts = StringUtil::splitToken(nodeid, "~");
   if (parts.size() < 3) {
     GOOGLE_LOG(ERROR) << "ExtractInfoCompat error len(nodeid.split(~))<3: "
@@ -166,8 +140,7 @@ bool ExtractInfoCompat(const std::string &nodeid, LocalAttributesArgs *args) {
 
 // ExtractInfo depends on NODE_NAME, NODE_NAMESPACE, NODE_IP and optional
 // NODE_REG If work cannot be done, returns false.
-bool ExtractInfo(const envoy::api::v2::core::Node &node,
-                 LocalAttributesArgs *args) {
+bool ExtractInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
   const auto meta = node.metadata().fields();
   std::string name;
   if (!ReadMap(meta, NodeKey::kName, &name)) {
@@ -199,20 +172,6 @@ bool Extract(const envoy::api::v2::core::Node &node, LocalNode *args) {
     return true;
   }
   return false;
-}
-
-std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(
-    const envoy::api::v2::core::Node &node) {
-  LocalAttributesArgs args;
-
-  if (ExtractInfo(node, &args)) {
-    return CreateLocalAttributes(args);
-  }
-
-  if (ExtractInfoCompat(node.id(), &args)) {
-    return CreateLocalAttributes(args);
-  }
-  return nullptr;
 }
 
 }  // namespace Utils

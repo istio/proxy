@@ -43,7 +43,8 @@ std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
   ::istio::mixer::v1::Attributes forward;
   AttributesBuilder(&forward).AddString(AttributeName::kSourceUID, local.uid);
 
-  return std::make_unique<LocalAttributes>(inbound, outbound, forward);
+  return std::unique_ptr<LocalAttributes>(
+      new LocalAttributes(inbound, outbound, forward));
 }
 
 }  // namespace utils
