@@ -29,9 +29,9 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
     : config_(config),
       dispatcher_(dispatcher),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
-          config_.check_cluster(), cm, scope)),
+          config_.check_cluster(), cm, scope, dispatcher.timeSource())),
       report_client_factory_(Utils::GrpcClientFactoryForCluster(
-          config_.report_cluster(), cm, scope)),
+          config_.report_cluster(), cm, scope, dispatcher.timeSource())),
       stats_obj_(dispatcher, stats,
                  config_.config_pb().transport().stats_update_interval(),
                  [this](Statistics* stat) -> bool { return GetStats(stat); }),
