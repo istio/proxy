@@ -72,8 +72,9 @@ class Controller {
   // * optional service config cache size.
   struct Options {
     Options(const ::istio::mixer::v1::config::client::HttpClientConfig& config,
-            const ::istio::utils::LocalAttributes* local_attributes)
-        : config(config), local_attributes(local_attributes) {}
+            std::unique_ptr<const ::istio::utils::LocalAttributes>&
+                local_attributes)
+        : config(config), local_attributes(std::move(local_attributes)) {}
 
     // Mixer filter config
     const ::istio::mixer::v1::config::client::HttpClientConfig& config;
@@ -86,7 +87,7 @@ class Controller {
     int service_config_cache_size{};
 
     // local attributes. not owned by options.
-    const ::istio::utils::LocalAttributes* local_attributes;
+    std::unique_ptr<const ::istio::utils::LocalAttributes> local_attributes;
   };
 
   // The factory function to create a new instance of the controller.

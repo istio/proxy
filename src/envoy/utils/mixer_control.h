@@ -55,11 +55,13 @@ struct LocalAttributesArgs {
   std::string uid;
 };
 
-// return local attributes based on local info.
-const LocalAttributes *GenerateLocalAttributes(
+// returns local attributes based on local info.
+std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(
     const envoy::api::v2::core::Node &node);
 
-const LocalAttributes *CreateLocalAttributes(const LocalAttributesArgs &local);
+// only used internally, but exposed for tests.
+std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
+    const LocalAttributesArgs &local);
 
 inline bool ReadMap(
     const google::protobuf::Map<std::string, google::protobuf::Value> &meta,

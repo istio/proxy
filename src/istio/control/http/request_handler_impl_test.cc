@@ -152,11 +152,11 @@ class RequestHandlerImplTest : public ::testing::Test {
 
     mock_client_ = new ::testing::NiceMock<MockMixerClient>;
     // set LRU cache size is 3
-    const LocalAttributes* local_attributes =
-        new LocalAttributes(inbound, outbound, forward);
+    auto la = new LocalAttributes(inbound, outbound, forward);
+
     client_context_ = std::make_shared<ClientContext>(
         std::unique_ptr<MixerClient>(mock_client_), client_config_, 3,
-        local_attributes, false);
+        std::unique_ptr<LocalAttributes>(la), false);
     controller_ =
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }

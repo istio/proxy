@@ -49,18 +49,19 @@ ClientContext::ClientContext(const Controller::Options& data)
     : ClientContextBase(data.config.transport(), data.env),
       config_(data.config),
       service_config_cache_size_(data.service_config_cache_size),
-      local_attributes_(data.local_attributes),
+      // local_attributes_(std::move(data.local_attributes)),
       outbound_(isOutbound(data.config)) {}
 
 ClientContext::ClientContext(
     std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
     const ::istio::mixer::v1::config::client::HttpClientConfig& config,
     int service_config_cache_size,
-    const ::istio::utils::LocalAttributes* local_attributes, bool outbound)
+    std::unique_ptr<const ::istio::utils::LocalAttributes> local_attributes,
+    bool outbound)
     : ClientContextBase(std::move(mixer_client)),
       config_(config),
       service_config_cache_size_(service_config_cache_size),
-      local_attributes_(local_attributes),
+      local_attributes_(std::move(local_attributes)),
       outbound_(outbound) {}
 
 const std::string& ClientContext::GetServiceName(

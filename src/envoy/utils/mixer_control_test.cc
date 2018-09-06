@@ -27,13 +27,15 @@ using Envoy::Utils::NodeKey;
 using Envoy::Utils::ParseJsonMessage;
 using Envoy::Utils::ReadMap;
 
-namespace {
+#define assertEqual(laExpect, la)                                              \
+  {                                                                            \
+    EXPECT_EQ((laExpect)->outbound.DebugString(),                              \
+              (la)->outbound.DebugString());                                   \
+    EXPECT_EQ((laExpect)->inbound.DebugString(), (la)->inbound.DebugString()); \
+    EXPECT_EQ((laExpect)->forward.DebugString(), (la)->forward.DebugString()); \
+  };
 
-void assertEqual(const LocalAttributes* laExpect, const LocalAttributes* la) {
-  EXPECT_EQ(laExpect->outbound.DebugString(), la->outbound.DebugString());
-  EXPECT_EQ(laExpect->inbound.DebugString(), la->inbound.DebugString());
-  EXPECT_EQ(laExpect->forward.DebugString(), la->forward.DebugString());
-}
+namespace {
 
 TEST(MixerControlTest, WithMetadata) {
   std::string config_str = R"({
@@ -58,7 +60,7 @@ TEST(MixerControlTest, WithMetadata) {
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";
 
-  const LocalAttributes* la = GenerateLocalAttributes(node);
+  auto la = GenerateLocalAttributes(node);
   EXPECT_NE(la, nullptr);
 
   const auto att = la->outbound.attributes();
@@ -93,7 +95,7 @@ TEST(MixerControlTest, NoMetadata) {
   largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
   largs.ns = "service-graph";
 
-  const LocalAttributes* la = GenerateLocalAttributes(node);
+  auto la = GenerateLocalAttributes(node);
   EXPECT_NE(la, nullptr);
 
   const auto att = la->outbound.attributes();

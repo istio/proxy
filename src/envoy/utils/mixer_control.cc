@@ -111,7 +111,8 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 
 // create Local attributes object and return a pointer to it.
 // Should be freed by the caller.
-const LocalAttributes *CreateLocalAttributes(const LocalAttributesArgs &local) {
+std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
+    const LocalAttributesArgs &local) {
   ::istio::mixer::v1::Attributes inbound;
   AttributesBuilder ib(&inbound);
   ib.AddString(AttributeName::kDestinationUID, local.uid);
@@ -131,7 +132,7 @@ const LocalAttributes *CreateLocalAttributes(const LocalAttributesArgs &local) {
   ::istio::mixer::v1::Attributes forward;
   AttributesBuilder(&forward).AddString(AttributeName::kSourceUID, local.uid);
 
-  return new LocalAttributes(inbound, outbound, forward);
+  return std::make_unique<LocalAttributes>(inbound, outbound, forward);
 }
 
 // This function is for compatibility with existing node ids.
@@ -190,7 +191,7 @@ bool ExtractInfo(const envoy::api::v2::core::Node &node,
   return true;
 }
 
-const LocalAttributes *GenerateLocalAttributes(
+std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(
     const envoy::api::v2::core::Node &node) {
   LocalAttributesArgs args;
 
