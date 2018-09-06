@@ -18,6 +18,7 @@
 
 #include "include/istio/control/http/controller.h"
 #include "include/istio/utils/local_attributes.h"
+#include "mixer/v1/attributes.pb.h"
 #include "src/istio/control/client_context_base.h"
 
 namespace istio {
@@ -54,12 +55,12 @@ class ClientContext : public ClientContextBase {
   // Get the service config cache size
   int service_config_cache_size() const { return service_config_cache_size_; }
 
-  // local attributes
-  const ::istio::utils::LocalAttributes* local_attributes() const {
-    return local_attributes_.get();
-  }
+  // AddRequestAttributes adds source.* attributes for outbound mixer filter
+  // and adds destination.* attributes for inbound mixer filter.
+  void AddRequestAttributes(::istio::mixer::v1::Attributes* request) const;
 
-  const bool outbound() const { return outbound_; }
+  // AddForwardAttributes add forward attributes for outbound mixer filter.
+  void AddForwardAttributes(::istio::mixer::v1::Attributes* request) const;
 
  private:
   // The http client config.

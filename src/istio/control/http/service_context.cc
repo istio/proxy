@@ -59,14 +59,7 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
     request->attributes.MergeFrom(service_config_->mixer_attributes());
   }
 
-  auto local_attributes = client_context_->local_attributes();
-  if (local_attributes != nullptr) {
-    if (client_context_->outbound()) {
-      request->attributes.MergeFrom(local_attributes->outbound);
-    } else {
-      request->attributes.MergeFrom(local_attributes->inbound);
-    }
-  }
+  client_context_->AddRequestAttributes(&request->attributes);
 }
 
 // Inject a header that contains the static forwarded attributes.
@@ -81,11 +74,7 @@ void ServiceContext::InjectForwardedAttributes(
     attributes.MergeFrom(service_config_->forward_attributes());
   }
 
-  auto local_attributes = client_context_->local_attributes();
-  if (local_attributes != nullptr && client_context_->outbound()) {
-    // attributes are only forwarded on outbound.
-    attributes.MergeFrom(local_attributes->forward);
-  }
+  client_context_->AddForwardAttributes(&attributes);
 
   if (!attributes.attributes().empty()) {
     AttributesBuilder::ForwardAttributes(attributes, header_update);

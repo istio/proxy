@@ -87,6 +87,30 @@ const ServiceConfig* ClientContext::GetServiceConfig(
   return nullptr;
 }
 
+void ClientContext::AddRequestAttributes(
+    ::istio::mixer::v1::Attributes* request) const {
+  if (local_attributes_ == nullptr) {
+    return;
+  }
+
+  if (outbound_) {
+    request->MergeFrom(local_attributes_->outbound);
+  } else {
+    request->MergeFrom(local_attributes_->inbound);
+  }
+}
+
+void ClientContext::AddForwardAttributes(
+    ::istio::mixer::v1::Attributes* request) const {
+  if (local_attributes_ == nullptr) {
+    return;
+  }
+
+  if (outbound_) {
+    request->MergeFrom(local_attributes_->forward);
+  }
+}
+
 }  // namespace http
 }  // namespace control
 }  // namespace istio
