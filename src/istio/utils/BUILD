@@ -27,11 +27,11 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        ":attribute_names_lib",
         "//external:protobuf",
         "//include/istio/utils:headers_lib",
         "//include/istio/utils:attribute_names_header",
         "//external:mixer_client_config_cc_proto",
-        #"//src/istio/mixerclient:mixerclient_lib",
     ],
 )
 

@@ -72,7 +72,7 @@ class Controller {
   // * optional service config cache size.
   struct Options {
     Options(const ::istio::mixer::v1::config::client::HttpClientConfig& config,
-            const ::istio::utils::LocalNode local_node)
+            const ::istio::utils::LocalNode& local_node)
         : config(config), local_node(local_node) {}
 
     // Mixer filter config
