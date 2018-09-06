@@ -97,8 +97,11 @@ constexpr char kExpectedRawClaims[] =
     "{\"exp\":4685989700,\"foo\":\"bar\",\"iat\":1532389700,\"iss\":\"testing@"
     "secure.istio.io\","
     "\"sub\":\"testing@secure.istio.io\"}";
-constexpr char kDestinationUID[] = "dest.pod.123";
-constexpr char kSourceUID[] = "src.pod.xyz";
+
+constexpr char kDestinationPOD[] = "dest";
+constexpr char kDestinationNamespace[] = "pod";
+constexpr char kDestinationUID[] = "kubernetes://dest.pod";
+constexpr char kSourceUID[] = "kubernetes://src.pod";
 constexpr char kTelemetryBackend[] = "telemetry-backend";
 constexpr char kPolicyBackend[] = "policy-backend";
 
@@ -232,6 +235,8 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   void SetUp() override {
+    config_helper_.addConfigModifier(addNodeMetadata());
+
     config_helper_.addFilter(MakeMixerFilterConfig());
     config_helper_.addFilter(MakeRbacFilterConfig());
     config_helper_.addFilter(MakeAuthFilterConfig());
@@ -247,6 +252,22 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
     cleanupConnection(fake_upstream_connection_);
     cleanupConnection(telemetry_connection_);
     cleanupConnection(policy_connection_);
+  }
+
+  ConfigHelper::ConfigModifierFunction addNodeMetadata() {
+    return [](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+      ::google::protobuf::Struct meta;
+      MessageUtil::loadFromJson(
+          fmt::sprintf(R"({
+        "ISTIO_VERSION": "1.0.1",
+        "NODE_NAME": "%s",
+        "NODE_IP": "10.36.0.15",
+        "NODE_NAMESPACE": "%s"
+      })",
+                       kDestinationPOD, kDestinationNamespace),
+          meta);
+      bootstrap.mutable_node()->mutable_metadata()->MergeFrom(meta);
+    };
   }
 
   ConfigHelper::ConfigModifierFunction addCluster(const std::string& name) {

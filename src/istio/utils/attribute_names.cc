@@ -22,6 +22,7 @@ namespace utils {
 const char AttributeName::kSourceUser[] = "source.user";
 const char AttributeName::kSourcePrincipal[] = "source.principal";
 const char AttributeName::kSourceNamespace[] = "source.namespace";
+const char AttributeName::kSourceUID[] = "source.uid";
 const char AttributeName::kDestinationPrincipal[] = "destination.principal";
 
 const char AttributeName::kRequestHeaders[] = "request.headers";
@@ -53,6 +54,7 @@ const char AttributeName::kSourcePort[] = "source.port";
 const char AttributeName::kDestinationIp[] = "destination.ip";
 const char AttributeName::kDestinationPort[] = "destination.port";
 const char AttributeName::kDestinationUID[] = "destination.uid";
+const char AttributeName::kDestinationNamespace[] = "destination.namespace";
 const char AttributeName::kOriginIp[] = "origin.ip";
 const char AttributeName::kConnectionReceviedBytes[] =
     "connection.received.bytes";
@@ -72,8 +74,10 @@ const char AttributeName::kConnectionEvent[] = "connection.event";
 
 // Context attributes
 const char AttributeName::kContextProtocol[] = "context.protocol";
+const char AttributeName::kContextReporterKind[] = "context.reporter.kind";
 const char AttributeName::kContextTime[] = "context.time";
 const char AttributeName::kContextProxyErrorCode[] = "context.proxy_error_code";
+const char AttributeName::kContextReporterUID[] = "context.reporter.uid";
 
 // Check error code and message.
 const char AttributeName::kCheckErrorCode[] = "check.error_code";

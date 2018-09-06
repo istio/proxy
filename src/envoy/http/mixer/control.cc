@@ -15,6 +15,9 @@
 
 #include "src/envoy/http/mixer/control.h"
 
+using ::istio::mixer::v1::Attributes;
+using ::istio::utils::LocalNode;
+
 namespace Envoy {
 namespace Http {
 namespace Mixer {
@@ -22,7 +25,8 @@ namespace Mixer {
 Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  Event::Dispatcher& dispatcher,
                  Runtime::RandomGenerator& random, Stats::Scope& scope,
-                 Utils::MixerFilterStats& stats)
+                 Utils::MixerFilterStats& stats,
+                 const LocalInfo::LocalInfo& local_info)
     : config_(config),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
           config_.check_cluster(), cm, scope)),
@@ -36,7 +40,11 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
   Utils::SerializeForwardedAttributes(config_.config_pb().transport(),
                                       &serialized_forward_attributes_);
 
-  ::istio::control::http::Controller::Options options(config_.config_pb());
+  LocalNode local_node;
+  Utils::Extract(local_info.node(), &local_node);
+
+  ::istio::control::http::Controller::Options options(config_.config_pb(),
+                                                      local_node);
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
                            *report_client_factory_,
