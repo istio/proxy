@@ -24,10 +24,8 @@ using ::istio::utils::LocalNode;
 namespace Envoy {
 namespace Utils {
 
-const char NodeKey::kName[] = "NODE_NAME";
-const char NodeKey::kNamespace[] = "NODE_NAMESPACE";
-const char NodeKey::kIp[] = "NODE_IP";
-const char NodeKey::kRegistry[] = "NODE_REGISTRY";
+const char kNodeUID[] = "NODE_UID";
+const char kNodeNamespace[] = "NODE_NAMESPACE";
 
 namespace {
 
@@ -115,12 +113,12 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 bool ExtractInfoCompat(const std::string &nodeid, LocalNode *args) {
   auto parts = StringUtil::splitToken(nodeid, "~");
   if (parts.size() < 3) {
-    GOOGLE_LOG(ERROR) << "ExtractInfoCompat error len(nodeid.split(~))<3: "
-                      << nodeid;
+    GOOGLE_LOG(ERROR)
+        << "ExtractInfoCompat node id did not have the correct format: "
+        << "{proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain} " << nodeid;
     return false;
   }
 
-  auto ip = std::string(parts[1].begin(), parts[1].end());
   auto longname = std::string(parts[2].begin(), parts[2].end());
   auto names = StringUtil::splitToken(longname, ".");
   if (names.size() < 2) {
@@ -131,40 +129,42 @@ bool ExtractInfoCompat(const std::string &nodeid, LocalNode *args) {
   }
   auto ns = std::string(names[1].begin(), names[1].end());
 
-  args->ip = ip;
   args->ns = ns;
   args->uid = "kubernetes://" + longname;
 
   return true;
 }
 
-// ExtractInfo depends on NODE_NAME, NODE_NAMESPACE, NODE_IP and optional
-// NODE_REG If work cannot be done, returns false.
+// ExtractInfo depends on NODE_UID, NODE_NAMESPACE
 bool ExtractInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
   const auto meta = node.metadata().fields();
-  std::string name;
-  if (!ReadMap(meta, NodeKey::kName, &name)) {
-    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata missing " << NodeKey::kName
+
+  if (meta.empty()) {
+    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata empty: " << node.DebugString();
+    return false;
+  }
+
+  std::string uid;
+  if (!ReadProtoMap(meta, kNodeUID, &uid)) {
+    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata missing " << kNodeUID << " "
+                      << node.metadata().DebugString();
+    return false;
+  }
+
+  std::string ns;
+  if (!ReadProtoMap(meta, kNodeNamespace, &ns)) {
+    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata missing " << kNodeNamespace
                       << " " << node.metadata().DebugString();
     return false;
   }
-  std::string ns;
-  ReadMap(meta, NodeKey::kNamespace, &ns);
 
-  std::string ip;
-  ReadMap(meta, NodeKey::kIp, &ip);
-
-  std::string reg("kubernetes");
-  ReadMap(meta, NodeKey::kRegistry, &reg);
-
-  args->ip = ip;
   args->ns = ns;
-  args->uid = reg + "://" + name + "." + ns;
+  args->uid = uid;
 
   return true;
 }
 
-bool Extract(const envoy::api::v2::core::Node &node, LocalNode *args) {
+bool ExtractNodeInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
   if (ExtractInfo(node, args)) {
     return true;
   }

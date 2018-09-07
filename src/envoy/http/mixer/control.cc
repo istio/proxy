@@ -41,7 +41,7 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                                       &serialized_forward_attributes_);
 
   LocalNode local_node;
-  Utils::Extract(local_info.node(), &local_node);
+  Utils::ExtractNodeInfo(local_info.node(), &local_node);
 
   ::istio::control::http::Controller::Options options(config_.config_pb(),
                                                       local_node);

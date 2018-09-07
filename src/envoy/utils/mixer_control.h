@@ -48,12 +48,9 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope);
 
-std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
-    const LocalNode &local);
+bool ExtractNodeInfo(const envoy::api::v2::core::Node &node, LocalNode *args);
 
-bool Extract(const envoy::api::v2::core::Node &node, LocalNode *args);
-
-inline bool ReadMap(
+inline bool ReadProtoMap(
     const google::protobuf::Map<std::string, google::protobuf::Value> &meta,
     const std::string &key, std::string *val) {
   const auto it = meta.find(key);
@@ -61,10 +58,11 @@ inline bool ReadMap(
     *val = it->second.string_value();
     return true;
   }
+
   return false;
 }
 
-inline bool ReadMap(
+inline bool ReadAttributeMap(
     const google::protobuf::Map<std::string, Attributes_AttributeValue> &meta,
     const std::string &key, std::string *val) {
   const auto it = meta.find(key);
@@ -74,14 +72,6 @@ inline bool ReadMap(
   }
   return false;
 }
-
-// NodeKey are node matadata keys that are expected to be set.
-struct NodeKey {
-  static const char kName[];
-  static const char kNamespace[];
-  static const char kIp[];
-  static const char kRegistry[];
-};
 
 }  // namespace Utils
 }  // namespace Envoy

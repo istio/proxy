@@ -22,29 +22,21 @@ namespace utils {
 
 // create Local attributes object and return a pointer to it.
 // Should be freed by the caller.
-std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
-    const LocalNode &local) {
+void CreateLocalAttributes(const LocalNode& local,
+                           LocalAttributes* local_attributes) {
   ::istio::mixer::v1::Attributes inbound;
-  AttributesBuilder ib(&inbound);
+  AttributesBuilder ib(&local_attributes->inbound);
   ib.AddString(AttributeName::kDestinationUID, local.uid);
   ib.AddString(AttributeName::kContextReporterUID, local.uid);
   ib.AddString(AttributeName::kDestinationNamespace, local.ns);
 
-  if (!local.ip.empty()) {
-    // TODO: mjog check if destination.ip should be setup for inbound.
-  }
-
-  ::istio::mixer::v1::Attributes outbound;
-  AttributesBuilder ob(&outbound);
+  AttributesBuilder ob(&local_attributes->outbound);
   ob.AddString(AttributeName::kSourceUID, local.uid);
   ob.AddString(AttributeName::kContextReporterUID, local.uid);
   ob.AddString(AttributeName::kSourceNamespace, local.ns);
 
-  ::istio::mixer::v1::Attributes forward;
-  AttributesBuilder(&forward).AddString(AttributeName::kSourceUID, local.uid);
-
-  return std::unique_ptr<LocalAttributes>(
-      new LocalAttributes(inbound, outbound, forward));
+  AttributesBuilder(&local_attributes->forward)
+      .AddString(AttributeName::kSourceUID, local.uid);
 }
 
 }  // namespace utils

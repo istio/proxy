@@ -51,19 +51,18 @@ ClientContext::ClientContext(const Controller::Options& data)
       config_(data.config),
       service_config_cache_size_(data.service_config_cache_size),
       outbound_(isOutbound(data.config)) {
-  local_attributes_ = CreateLocalAttributes(data.local_node);
+  CreateLocalAttributes(data.local_node, &local_attributes_);
 }
 
 ClientContext::ClientContext(
     std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
     const ::istio::mixer::v1::config::client::HttpClientConfig& config,
     int service_config_cache_size,
-    std::unique_ptr<const ::istio::utils::LocalAttributes> local_attributes,
-    bool outbound)
+    ::istio::utils::LocalAttributes& local_attributes, bool outbound)
     : ClientContextBase(std::move(mixer_client)),
       config_(config),
       service_config_cache_size_(service_config_cache_size),
-      local_attributes_(std::move(local_attributes)),
+      local_attributes_(local_attributes),
       outbound_(outbound) {}
 
 const std::string& ClientContext::GetServiceName(
@@ -92,25 +91,17 @@ const ServiceConfig* ClientContext::GetServiceConfig(
 
 void ClientContext::AddRequestAttributes(
     ::istio::mixer::v1::Attributes* request) const {
-  if (local_attributes_ == nullptr) {
-    return;
-  }
-
   if (outbound_) {
-    request->MergeFrom(local_attributes_->outbound);
+    request->MergeFrom(local_attributes_.outbound);
   } else {
-    request->MergeFrom(local_attributes_->inbound);
+    request->MergeFrom(local_attributes_.inbound);
   }
 }
 
 void ClientContext::AddForwardAttributes(
     ::istio::mixer::v1::Attributes* request) const {
-  if (local_attributes_ == nullptr) {
-    return;
-  }
-
   if (outbound_) {
-    request->MergeFrom(local_attributes_->forward);
+    request->MergeFrom(local_attributes_.forward);
   }
 }
 

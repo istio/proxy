@@ -14,20 +14,20 @@
  */
 
 #include "src/envoy/utils/mixer_control.h"
+#include "fmt/printf.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 #include "src/envoy/utils/utils.h"
 #include "test/test_common/utility.h"
 
-using Envoy::Utils::Extract;
-using Envoy::Utils::NodeKey;
+using Envoy::Utils::ExtractNodeInfo;
 using Envoy::Utils::ParseJsonMessage;
-using Envoy::Utils::ReadMap;
+using Envoy::Utils::ReadAttributeMap;
 using ::istio::utils::AttributeName;
 using ::istio::utils::CreateLocalAttributes;
 using ::istio::utils::LocalAttributes;
 using ::istio::utils::LocalNode;
 
-#define assertEqual(laExpect, la)                                              \
+#define assertEqualLocalAttributes(laExpect, la)                               \
   {                                                                            \
     EXPECT_EQ((laExpect)->outbound.DebugString(),                              \
               (la)->outbound.DebugString());                                   \
@@ -35,89 +35,92 @@ using ::istio::utils::LocalNode;
     EXPECT_EQ((laExpect)->forward.DebugString(), (la)->forward.DebugString()); \
   };
 
+#define ASSERT_LOCAL_NODE(lexp, la)  \
+  {                                  \
+    EXPECT_EQ((lexp).uid, (la).uid); \
+    EXPECT_EQ((lexp).ns, (la).ns);   \
+  };
+
 namespace {
 
-std::unique_ptr<const LocalAttributes> GenerateLocalAttributes(
-    envoy::api::v2::core::Node& node) {
-  LocalNode largs;
-  if (!Extract(node, &largs)) {
-    return nullptr;
+const std::string kUID =
+    "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
+const std::string kNS = "service-graph";
+const std::string kNodeID =
+    "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-"
+    "graph.svc.cluster.local";
+
+std::string genNodeConfig(std::string uid, std::string nodeid, std::string ns) {
+  auto md = R"(
+  "metadata": {
+      "ISTIO_VERSION": "1.0.1",
+      "NODE_UID": "%s",
+      "NODE_NAMESPACE": "%s",
+     },
+  )";
+  std::string meta = "";
+  if (!ns.empty()) {
+    meta = fmt::sprintf(md, nodeid, ns);
   }
-  return CreateLocalAttributes(largs);
+
+  return fmt::sprintf(R"({
+     "id": "%s",
+     "cluster": "fortioclient",
+     %s
+     "build_version": "0/1.8.0-dev//RELEASE"
+    })",
+                      uid, meta);
+}
+
+void initTestLocalNode(LocalNode *lexp) {
+  lexp->uid = kUID;
+  lexp->ns = kNS;
+}
+
+TEST(MixerControlTest, CreateLocalAttributes) {
+  LocalNode lexp;
+  initTestLocalNode(&lexp);
+
+  LocalAttributes la;
+  CreateLocalAttributes(lexp, &la);
+
+  const auto att = la.outbound.attributes();
+  std::string val;
+
+  EXPECT_TRUE(ReadAttributeMap(att, AttributeName::kSourceUID, &val));
+  EXPECT_TRUE(val == lexp.uid);
+
+  EXPECT_TRUE(ReadAttributeMap(att, AttributeName::kSourceNamespace, &val));
+  EXPECT_TRUE(val == lexp.ns);
 }
 
 TEST(MixerControlTest, WithMetadata) {
-  std::string config_str = R"({
-     "id": "NEWID",
-     "cluster": "fortioclient",
-     "metadata": {
-      "ISTIO_VERSION": "1.0.1",
-      "NODE_NAME": "fortioclient-84469dc8d7-jbbxt",
-      "NODE_IP": "10.36.0.15",
-      "NODE_NAMESPACE": "service-graph",
-     },
-     "build_version": "0/1.8.0-dev//RELEASE"
-    })";
-  envoy::api::v2::core::Node node;
+  LocalNode lexp;
+  initTestLocalNode(&lexp);
 
-  auto status = ParseJsonMessage(config_str, &node);
+  envoy::api::v2::core::Node node;
+  auto status =
+      ParseJsonMessage(genNodeConfig("new_id", lexp.uid, lexp.ns), &node);
   EXPECT_OK(status) << status;
-  std::string val;
 
   LocalNode largs;
-  largs.ip = "10.36.0.15";
-  largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
-  largs.ns = "service-graph";
+  EXPECT_TRUE(ExtractNodeInfo(node, &largs));
 
-  auto la = GenerateLocalAttributes(node);
-  EXPECT_NE(la, nullptr);
-
-  const auto att = la->outbound.attributes();
-
-  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceUID, &val));
-  EXPECT_EQ(val, largs.uid);
-
-  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceNamespace, &val));
-  EXPECT_EQ(val, largs.ns);
-
-  auto laExpect = CreateLocalAttributes(largs);
-
-  assertEqual(laExpect, la);
+  ASSERT_LOCAL_NODE(lexp, largs);
 }
 
 TEST(MixerControlTest, NoMetadata) {
-  std::string config_str = R"({
-     "id": "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local",
-     "cluster": "fortioclient",
-     "metadata": {
-      "ISTIO_VERSION": "1.0.1",
-     },
-     "build_version": "0/1.8.0-dev//RELEASE"
-    })";
-  envoy::api::v2::core::Node node;
+  LocalNode lexp;
+  initTestLocalNode(&lexp);
 
-  auto status = ParseJsonMessage(config_str, &node);
+  envoy::api::v2::core::Node node;
+  auto status = ParseJsonMessage(genNodeConfig(kNodeID, "", ""), &node);
   EXPECT_OK(status) << status;
 
   LocalNode largs;
-  largs.ip = "10.36.0.15";
-  largs.uid = "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";
-  largs.ns = "service-graph";
+  EXPECT_TRUE(ExtractNodeInfo(node, &largs));
 
-  auto la = GenerateLocalAttributes(node);
-  EXPECT_NE(la, nullptr);
-
-  const auto att = la->outbound.attributes();
-  std::string val;
-
-  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceUID, &val));
-  EXPECT_EQ(val, largs.uid);
-
-  EXPECT_EQ(true, ReadMap(att, AttributeName::kSourceNamespace, &val));
-  EXPECT_EQ(val, largs.ns);
-
-  auto laExpect = CreateLocalAttributes(largs);
-
-  assertEqual(laExpect, la);
+  ASSERT_LOCAL_NODE(lexp, largs);
 }
+
 }  // namespace

@@ -140,23 +140,20 @@ class RequestHandlerImplTest : public ::testing::Test {
                            const std::string& local_forward_attributes) {
     ASSERT_TRUE(TextFormat::ParseFromString(config_text, &client_config_));
 
-    Attributes inbound;
+    LocalAttributes la;
     ASSERT_TRUE(
-        TextFormat::ParseFromString(local_inbound_attributes, &inbound));
-    Attributes outbound;
+        TextFormat::ParseFromString(local_inbound_attributes, &la.inbound));
     ASSERT_TRUE(
-        TextFormat::ParseFromString(local_outbound_attributes, &outbound));
-    Attributes forward;
+        TextFormat::ParseFromString(local_outbound_attributes, &la.outbound));
     ASSERT_TRUE(
-        TextFormat::ParseFromString(local_forward_attributes, &forward));
+        TextFormat::ParseFromString(local_forward_attributes, &la.forward));
 
     mock_client_ = new ::testing::NiceMock<MockMixerClient>;
     // set LRU cache size is 3
-    auto la = new LocalAttributes(inbound, outbound, forward);
 
     client_context_ = std::make_shared<ClientContext>(
-        std::unique_ptr<MixerClient>(mock_client_), client_config_, 3,
-        std::unique_ptr<LocalAttributes>(la), false);
+        std::unique_ptr<MixerClient>(mock_client_), client_config_, 3, la,
+        false);
     controller_ =
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }

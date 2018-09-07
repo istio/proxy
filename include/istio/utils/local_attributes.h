@@ -24,29 +24,27 @@ namespace istio {
 namespace utils {
 
 struct LocalAttributes {
-  LocalAttributes(const Attributes& inbound, const Attributes& outbound,
-                  const Attributes& forward)
-      : inbound(inbound), outbound(outbound), forward(forward) {}
-
   // local inbound attributes
-  const Attributes inbound;
+  Attributes inbound;
 
   // local outbound attributes
-  const Attributes outbound;
+  Attributes outbound;
 
   // local forward attributes
-  const Attributes forward;
+  Attributes forward;
 };
 
-// LocalNode are used to extract information from envoy Node.
+// LocalNode is abstract information about the node from Mixer's perspective.
 struct LocalNode {
-  std::string ns;
-  std::string ip;
+  // like kubernetes://podname.namespace
   std::string uid;
+
+  // namespace
+  std::string ns;
 };
 
-std::unique_ptr<const LocalAttributes> CreateLocalAttributes(
-    const LocalNode& local);
+void CreateLocalAttributes(const LocalNode& local,
+                           LocalAttributes* local_attributes);
 
 }  // namespace utils
 }  // namespace istio

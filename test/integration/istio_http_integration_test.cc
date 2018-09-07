@@ -98,7 +98,6 @@ constexpr char kExpectedRawClaims[] =
     "secure.istio.io\","
     "\"sub\":\"testing@secure.istio.io\"}";
 
-constexpr char kDestinationPOD[] = "dest";
 constexpr char kDestinationNamespace[] = "pod";
 constexpr char kDestinationUID[] = "kubernetes://dest.pod";
 constexpr char kSourceUID[] = "kubernetes://src.pod";
@@ -200,9 +199,6 @@ std::string MakeMixerFilterConfig() {
     defaultDestinationService: "default"
     mixerAttributes:
       attributes: {
-        "destination.uid": {
-          stringValue: %s
-        }
       }
     serviceConfigs: {
       "default": {}
@@ -217,8 +213,8 @@ std::string MakeMixerFilterConfig() {
       report_cluster: %s
       check_cluster: %s
   )";
-  return fmt::sprintf(kMixerFilterTemplate, kDestinationUID, kSourceUID,
-                      kTelemetryBackend, kPolicyBackend);
+  return fmt::sprintf(kMixerFilterTemplate, kSourceUID, kTelemetryBackend,
+                      kPolicyBackend);
 }
 
 class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
@@ -260,11 +256,10 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
       MessageUtil::loadFromJson(
           fmt::sprintf(R"({
         "ISTIO_VERSION": "1.0.1",
-        "NODE_NAME": "%s",
-        "NODE_IP": "10.36.0.15",
+        "NODE_UID": "%s",
         "NODE_NAMESPACE": "%s"
       })",
-                       kDestinationPOD, kDestinationNamespace),
+                       kDestinationUID, kDestinationNamespace),
           meta);
       bootstrap.mutable_node()->mutable_metadata()->MergeFrom(meta);
     };

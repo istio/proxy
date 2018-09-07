@@ -85,7 +85,7 @@ class Controller {
     // If not set or is 0 default value, the cache size is 1000.
     int service_config_cache_size{};
 
-    const ::istio::utils::LocalNode local_node;
+    const ::istio::utils::LocalNode& local_node;
   };
 
   // The factory function to create a new instance of the controller.
