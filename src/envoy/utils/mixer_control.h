@@ -24,11 +24,6 @@
 #include "include/istio/utils/local_attributes.h"
 #include "src/envoy/utils/config.h"
 
-using ::istio::mixer::v1::Attributes;
-using ::istio::mixer::v1::Attributes_AttributeValue;
-using ::istio::utils::LocalAttributes;
-using ::istio::utils::LocalNode;
-
 namespace Envoy {
 namespace Utils {
 
@@ -48,30 +43,8 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope);
 
-bool ExtractNodeInfo(const envoy::api::v2::core::Node &node, LocalNode *args);
-
-inline bool ReadProtoMap(
-    const google::protobuf::Map<std::string, google::protobuf::Value> &meta,
-    const std::string &key, std::string *val) {
-  const auto it = meta.find(key);
-  if (it != meta.end()) {
-    *val = it->second.string_value();
-    return true;
-  }
-
-  return false;
-}
-
-inline bool ReadAttributeMap(
-    const google::protobuf::Map<std::string, Attributes_AttributeValue> &meta,
-    const std::string &key, std::string *val) {
-  const auto it = meta.find(key);
-  if (it != meta.end()) {
-    *val = it->second.string_value();
-    return true;
-  }
-  return false;
-}
+bool ExtractNodeInfo(const envoy::api::v2::core::Node &node,
+                     ::istio::utils::LocalNode *args);
 
 }  // namespace Utils
 }  // namespace Envoy

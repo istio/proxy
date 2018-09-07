@@ -89,7 +89,7 @@ const ServiceConfig* ClientContext::GetServiceConfig(
   return nullptr;
 }
 
-void ClientContext::AddRequestAttributes(
+void ClientContext::AddLocalNodeAttributes(
     ::istio::mixer::v1::Attributes* request) const {
   if (outbound_) {
     request->MergeFrom(local_attributes_.outbound);
@@ -98,7 +98,7 @@ void ClientContext::AddRequestAttributes(
   }
 }
 
-void ClientContext::AddForwardAttributes(
+void ClientContext::AddLocalNodeForwardAttribues(
     ::istio::mixer::v1::Attributes* request) const {
   if (outbound_) {
     request->MergeFrom(local_attributes_.forward);

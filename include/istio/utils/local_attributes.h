@@ -18,20 +18,18 @@
 
 #include "mixer/v1/attributes.pb.h"
 
-using ::istio::mixer::v1::Attributes;
-
 namespace istio {
 namespace utils {
 
 struct LocalAttributes {
   // local inbound attributes
-  Attributes inbound;
+  ::istio::mixer::v1::Attributes inbound;
 
   // local outbound attributes
-  Attributes outbound;
+  ::istio::mixer::v1::Attributes outbound;
 
   // local forward attributes
-  Attributes forward;
+  ::istio::mixer::v1::Attributes forward;
 };
 
 // LocalNode is abstract information about the node from Mixer's perspective.
@@ -48,8 +46,8 @@ void CreateLocalAttributes(const LocalNode& local,
 
 // create preserialized header to send to proxy that is fronting mixer.
 // This header is used for istio self monitoring.
-bool SerializeForwardedAttributes(const LocalNode &local,
-                                  std::string *serialized_forward_attributes);                           
+bool SerializeForwardedAttributes(const LocalNode& local,
+                                  std::string* serialized_forward_attributes);
 
 }  // namespace utils
 }  // namespace istio

@@ -55,12 +55,14 @@ class ClientContext : public ClientContextBase {
   // Get the service config cache size
   int service_config_cache_size() const { return service_config_cache_size_; }
 
-  // AddRequestAttributes adds source.* attributes for outbound mixer filter
+  // AddLocalNodeAttributes adds source.* attributes for outbound mixer filter
   // and adds destination.* attributes for inbound mixer filter.
-  void AddRequestAttributes(::istio::mixer::v1::Attributes* request) const;
+  void AddLocalNodeAttributes(::istio::mixer::v1::Attributes* request) const;
 
-  // AddForwardAttributes add forward attributes for outbound mixer filter.
-  void AddForwardAttributes(::istio::mixer::v1::Attributes* request) const;
+  // AddLocalNodeForwardAttribues add forward attributes for outbound mixer
+  // filter.
+  void AddLocalNodeForwardAttribues(
+      ::istio::mixer::v1::Attributes* request) const;
 
  private:
   // The http client config.

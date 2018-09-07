@@ -19,21 +19,14 @@
 #include "src/envoy/utils/utils.h"
 #include "test/test_common/utility.h"
 
-using Envoy::Utils::ExtractNodeInfo;
-using Envoy::Utils::ParseJsonMessage;
-using Envoy::Utils::ReadAttributeMap;
 using ::istio::utils::AttributeName;
 using ::istio::utils::CreateLocalAttributes;
 using ::istio::utils::LocalAttributes;
 using ::istio::utils::LocalNode;
+using Envoy::Utils::ExtractNodeInfo;
+using Envoy::Utils::ParseJsonMessage;
 
-#define assertEqualLocalAttributes(laExpect, la)                               \
-  {                                                                            \
-    EXPECT_EQ((laExpect)->outbound.DebugString(),                              \
-              (la)->outbound.DebugString());                                   \
-    EXPECT_EQ((laExpect)->inbound.DebugString(), (la)->inbound.DebugString()); \
-    EXPECT_EQ((laExpect)->forward.DebugString(), (la)->forward.DebugString()); \
-  };
+namespace {
 
 #define ASSERT_LOCAL_NODE(lexp, la)  \
   {                                  \
@@ -41,7 +34,17 @@ using ::istio::utils::LocalNode;
     EXPECT_EQ((lexp).ns, (la).ns);   \
   };
 
-namespace {
+bool ReadAttributeMap(
+    const google::protobuf::Map<
+        std::string, ::istio::mixer::v1::Attributes_AttributeValue> &meta,
+    const std::string &key, std::string *val) {
+  const auto it = meta.find(key);
+  if (it != meta.end()) {
+    *val = it->second.string_value();
+    return true;
+  }
+  return false;
+}
 
 const std::string kUID =
     "kubernetes://fortioclient-84469dc8d7-jbbxt.service-graph";

@@ -62,6 +62,18 @@ class EnvoyGrpcAsyncClientFactory : public Grpc::AsyncClientFactory {
 
 }  // namespace
 
+inline bool ReadProtoMap(
+    const google::protobuf::Map<std::string, google::protobuf::Value> &meta,
+    const std::string &key, std::string *val) {
+  const auto it = meta.find(key);
+  if (it != meta.end()) {
+    *val = it->second.string_value();
+    return true;
+  }
+
+  return false;
+}
+
 // Create all environment functions for mixerclient
 void CreateEnvironment(Event::Dispatcher &dispatcher,
                        Runtime::RandomGenerator &random,
@@ -111,20 +123,22 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
 // "sidecar~10.36.0.15~fortioclient-84469dc8d7-jbbxt.service-graph~service-graph.svc.cluster.local"
 //  --> {proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain}
 bool ExtractInfoCompat(const std::string &nodeid, LocalNode *args) {
+  auto &logger = Logger::Registry::getLog(Logger::Id::config);
+
   auto parts = StringUtil::splitToken(nodeid, "~");
   if (parts.size() < 3) {
-    GOOGLE_LOG(ERROR)
-        << "ExtractInfoCompat node id did not have the correct format: "
-        << "{proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain} " << nodeid;
+    ENVOY_LOG_TO_LOGGER(
+        logger, warn,
+        "ExtractInfoCompat node id did not have the correct format:",
+        "{proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain} ", nodeid);
     return false;
   }
 
   auto longname = std::string(parts[2].begin(), parts[2].end());
   auto names = StringUtil::splitToken(longname, ".");
   if (names.size() < 2) {
-    GOOGLE_LOG(ERROR)
-        << "ExtractInfoCompat error len(split(longname, '.')) < 3: "
-        << longname;
+    ENVOY_LOG_TO_LOGGER(logger, warn,
+                        "error len(split(longname, '.')) < 3: ", longname);
     return false;
   }
   auto ns = std::string(names[1].begin(), names[1].end());
@@ -137,24 +151,29 @@ bool ExtractInfoCompat(const std::string &nodeid, LocalNode *args) {
 
 // ExtractInfo depends on NODE_UID, NODE_NAMESPACE
 bool ExtractInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
+  auto &logger = Logger::Registry::getLog(Logger::Id::config);
+
   const auto meta = node.metadata().fields();
 
   if (meta.empty()) {
-    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata empty: " << node.DebugString();
+    ENVOY_LOG_TO_LOGGER(logger, warn,
+                        "ExtractInfo  metadata empty:", node.DebugString());
     return false;
   }
 
   std::string uid;
   if (!ReadProtoMap(meta, kNodeUID, &uid)) {
-    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata missing " << kNodeUID << " "
-                      << node.metadata().DebugString();
+    ENVOY_LOG_TO_LOGGER(logger, warn,
+                        "ExtractInfo  metadata missing:", kNodeUID,
+                        node.metadata().DebugString());
     return false;
   }
 
   std::string ns;
   if (!ReadProtoMap(meta, kNodeNamespace, &ns)) {
-    GOOGLE_LOG(ERROR) << "ExtractInfo  metadata missing " << kNodeNamespace
-                      << " " << node.metadata().DebugString();
+    ENVOY_LOG_TO_LOGGER(logger, warn,
+                        "ExtractInfo  metadata missing:", kNodeNamespace,
+                        node.metadata().DebugString());
     return false;
   }
 

@@ -41,11 +41,11 @@ void CreateLocalAttributes(const LocalNode& local,
 
 // create preserialized header to send to proxy that is fronting mixer.
 // This header is used for istio self monitoring.
-bool SerializeForwardedAttributes(const LocalNode &local,
-                                  std::string *serialized_forward_attributes) {
-
+bool SerializeForwardedAttributes(const LocalNode& local,
+                                  std::string* serialized_forward_attributes) {
   ::istio::mixer::v1::Attributes attributes;
-  AttributesBuilder(&attributes).AddString(AttributeName::kSourceUID, local.uid);
+  AttributesBuilder(&attributes)
+      .AddString(AttributeName::kSourceUID, local.uid);
   return attributes.SerializeToString(serialized_forward_attributes);
 }
 

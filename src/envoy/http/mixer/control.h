@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "common/common/logger.h"
 #include "envoy/event/dispatcher.h"
 #include "envoy/local_info/local_info.h"
 #include "envoy/runtime/runtime.h"
