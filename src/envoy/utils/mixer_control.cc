@@ -60,8 +60,6 @@ class EnvoyGrpcAsyncClientFactory : public Grpc::AsyncClientFactory {
   envoy::api::v2::core::GrpcService config_;
 };
 
-}  // namespace
-
 inline bool ReadProtoMap(
     const google::protobuf::Map<std::string, google::protobuf::Value> &meta,
     const std::string &key, std::string *val) {
@@ -73,6 +71,8 @@ inline bool ReadProtoMap(
 
   return false;
 }
+
+}  // namespace
 
 // Create all environment functions for mixerclient
 void CreateEnvironment(Event::Dispatcher &dispatcher,
