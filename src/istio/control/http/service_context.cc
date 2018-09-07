@@ -52,6 +52,8 @@ void ServiceContext::BuildParsers() {
 
 // Add static mixer attributes.
 void ServiceContext::AddStaticAttributes(RequestContext *request) const {
+  client_context_->AddLocalNodeAttributes(&request->attributes);
+
   if (client_context_->config().has_mixer_attributes()) {
     request->attributes.MergeFrom(client_context_->config().mixer_attributes());
   }
@@ -64,6 +66,8 @@ void ServiceContext::AddStaticAttributes(RequestContext *request) const {
 void ServiceContext::InjectForwardedAttributes(
     HeaderUpdate *header_update) const {
   Attributes attributes;
+
+  client_context_->AddLocalNodeForwardAttribues(&attributes);
 
   if (client_context_->config().has_forward_attributes()) {
     attributes.MergeFrom(client_context_->config().forward_attributes());

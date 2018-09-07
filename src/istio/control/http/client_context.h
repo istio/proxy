@@ -17,6 +17,8 @@
 #define ISTIO_CONTROL_HTTP_CLIENT_CONTEXT_H
 
 #include "include/istio/control/http/controller.h"
+#include "include/istio/utils/local_attributes.h"
+#include "mixer/v1/attributes.pb.h"
 #include "src/istio/control/client_context_base.h"
 
 namespace istio {
@@ -33,7 +35,8 @@ class ClientContext : public ClientContextBase {
   ClientContext(
       std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
       const ::istio::mixer::v1::config::client::HttpClientConfig& config,
-      int service_config_cache_size);
+      int service_config_cache_size,
+      ::istio::utils::LocalAttributes& local_attributes, bool outbound);
 
   // Retrieve mixer client config.
   const ::istio::mixer::v1::config::client::HttpClientConfig& config() const {
@@ -52,12 +55,27 @@ class ClientContext : public ClientContextBase {
   // Get the service config cache size
   int service_config_cache_size() const { return service_config_cache_size_; }
 
+  // AddLocalNodeAttributes adds source.* attributes for outbound mixer filter
+  // and adds destination.* attributes for inbound mixer filter.
+  void AddLocalNodeAttributes(::istio::mixer::v1::Attributes* request) const;
+
+  // AddLocalNodeForwardAttribues add forward attributes for outbound mixer
+  // filter.
+  void AddLocalNodeForwardAttribues(
+      ::istio::mixer::v1::Attributes* request) const;
+
  private:
   // The http client config.
   const ::istio::mixer::v1::config::client::HttpClientConfig& config_;
 
   // The service config cache size
   int service_config_cache_size_;
+
+  // local attributes - owned by the client context.
+  ::istio::utils::LocalAttributes local_attributes_;
+
+  // if this client context is for an inbound listener or outbound listener.
+  bool outbound_;
 };
 
 }  // namespace http

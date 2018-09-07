@@ -15,11 +15,14 @@
 
 #pragma once
 
+#include "common/common/logger.h"
 #include "envoy/event/dispatcher.h"
+#include "envoy/local_info/local_info.h"
 #include "envoy/runtime/runtime.h"
 #include "envoy/thread_local/thread_local.h"
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/control/http/controller.h"
+#include "include/istio/utils/local_attributes.h"
 #include "src/envoy/http/mixer/config.h"
 #include "src/envoy/utils/grpc_transport.h"
 #include "src/envoy/utils/mixer_control.h"
@@ -35,7 +38,8 @@ class Control final : public ThreadLocal::ThreadLocalObject {
   // The constructor.
   Control(const Config& config, Upstream::ClusterManager& cm,
           Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random,
-          Stats::Scope& scope, Utils::MixerFilterStats& stats);
+          Stats::Scope& scope, Utils::MixerFilterStats& stats,
+          const LocalInfo::LocalInfo& local_info);
 
   // Get low-level controller object.
   ::istio::control::http::Controller* controller() { return controller_.get(); }

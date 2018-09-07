@@ -18,6 +18,8 @@
 
 #include "include/istio/control/http/request_handler.h"
 #include "include/istio/mixerclient/client.h"
+#include "include/istio/utils/attribute_names.h"
+#include "include/istio/utils/local_attributes.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 
 namespace istio {
@@ -69,8 +71,9 @@ class Controller {
   // * some functions provided by the environment (Envoy)
   // * optional service config cache size.
   struct Options {
-    Options(const ::istio::mixer::v1::config::client::HttpClientConfig& config)
-        : config(config) {}
+    Options(const ::istio::mixer::v1::config::client::HttpClientConfig& config,
+            const ::istio::utils::LocalNode& local_node)
+        : config(config), local_node(local_node) {}
 
     // Mixer filter config
     const ::istio::mixer::v1::config::client::HttpClientConfig& config;
@@ -81,6 +84,8 @@ class Controller {
     // The LRU cache size for service config.
     // If not set or is 0 default value, the cache size is 1000.
     int service_config_cache_size{};
+
+    const ::istio::utils::LocalNode& local_node;
   };
 
   // The factory function to create a new instance of the controller.

@@ -42,6 +42,7 @@ envoy_cc_library(
         "//src/envoy/utils:authn_lib",
         "//src/envoy/utils:utils_lib",
         "//src/istio/control/http:control_lib",
+        "//src/istio/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )

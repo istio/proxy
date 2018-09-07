@@ -16,12 +16,13 @@
 #pragma once
 
 #include "envoy/event/dispatcher.h"
+#include "envoy/local_info/local_info.h"
 #include "envoy/runtime/runtime.h"
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/mixerclient/client.h"
+#include "include/istio/utils/attribute_names.h"
+#include "include/istio/utils/local_attributes.h"
 #include "src/envoy/utils/config.h"
-
-using ::istio::mixer::v1::Attributes;
 
 namespace Envoy {
 namespace Utils {
@@ -41,6 +42,9 @@ void SerializeForwardedAttributes(
 Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope);
+
+bool ExtractNodeInfo(const envoy::api::v2::core::Node &node,
+                     ::istio::utils::LocalNode *args);
 
 }  // namespace Utils
 }  // namespace Envoy

@@ -97,8 +97,10 @@ constexpr char kExpectedRawClaims[] =
     "{\"exp\":4685989700,\"foo\":\"bar\",\"iat\":1532389700,\"iss\":\"testing@"
     "secure.istio.io\","
     "\"sub\":\"testing@secure.istio.io\"}";
-constexpr char kDestinationUID[] = "dest.pod.123";
-constexpr char kSourceUID[] = "src.pod.xyz";
+
+constexpr char kDestinationNamespace[] = "pod";
+constexpr char kDestinationUID[] = "kubernetes://dest.pod";
+constexpr char kSourceUID[] = "kubernetes://src.pod";
 constexpr char kTelemetryBackend[] = "telemetry-backend";
 constexpr char kPolicyBackend[] = "policy-backend";
 
@@ -197,9 +199,6 @@ std::string MakeMixerFilterConfig() {
     defaultDestinationService: "default"
     mixerAttributes:
       attributes: {
-        "destination.uid": {
-          stringValue: %s
-        }
       }
     serviceConfigs: {
       "default": {}
@@ -214,8 +213,8 @@ std::string MakeMixerFilterConfig() {
       report_cluster: %s
       check_cluster: %s
   )";
-  return fmt::sprintf(kMixerFilterTemplate, kDestinationUID, kSourceUID,
-                      kTelemetryBackend, kPolicyBackend);
+  return fmt::sprintf(kMixerFilterTemplate, kSourceUID, kTelemetryBackend,
+                      kPolicyBackend);
 }
 
 class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
@@ -232,6 +231,8 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   void SetUp() override {
+    config_helper_.addConfigModifier(addNodeMetadata());
+
     config_helper_.addFilter(MakeMixerFilterConfig());
     config_helper_.addFilter(MakeRbacFilterConfig());
     config_helper_.addFilter(MakeAuthFilterConfig());
@@ -247,6 +248,21 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
     cleanupConnection(fake_upstream_connection_);
     cleanupConnection(telemetry_connection_);
     cleanupConnection(policy_connection_);
+  }
+
+  ConfigHelper::ConfigModifierFunction addNodeMetadata() {
+    return [](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+      ::google::protobuf::Struct meta;
+      MessageUtil::loadFromJson(
+          fmt::sprintf(R"({
+        "ISTIO_VERSION": "1.0.1",
+        "NODE_UID": "%s",
+        "NODE_NAMESPACE": "%s"
+      })",
+                       kDestinationUID, kDestinationNamespace),
+          meta);
+      bootstrap.mutable_node()->mutable_metadata()->MergeFrom(meta);
+    };
   }
 
   ConfigHelper::ConfigModifierFunction addCluster(const std::string& name) {

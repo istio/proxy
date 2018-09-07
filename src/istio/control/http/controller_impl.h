@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "include/istio/control/http/controller.h"
+#include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/simple_lru_cache.h"
 #include "include/istio/utils/simple_lru_cache_inl.h"
 #include "src/istio/control/http/client_context.h"
