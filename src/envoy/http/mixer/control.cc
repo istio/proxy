@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/mixer/control.h"
+#include "include/istio/utils/local_attributes.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::utils::LocalNode;
@@ -37,12 +38,13 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  [this](::istio::mixerclient::Statistics* stat) -> bool {
                    return GetStats(stat);
                  }) {
-  Utils::SerializeForwardedAttributes(config_.config_pb().transport(),
-                                      &serialized_forward_attributes_);
 
   LocalNode local_node;
-  Utils::ExtractNodeInfo(local_info.node(), &local_node);
-
+  if (!Utils::ExtractNodeInfo(local_info.node(), &local_node)) {
+    ENVOY_LOG(WARN, "Unable to get node metadata");
+  }
+  ::istio::utils::SerializeForwardedAttributes(local_node, &serialized_forward_attributes_);
+  
   ::istio::control::http::Controller::Options options(config_.config_pb(),
                                                       local_node);
 

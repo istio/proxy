@@ -46,6 +46,11 @@ struct LocalNode {
 void CreateLocalAttributes(const LocalNode& local,
                            LocalAttributes* local_attributes);
 
+// create preserialized header to send to proxy that is fronting mixer.
+// This header is used for istio self monitoring.
+bool SerializeForwardedAttributes(const LocalNode &local,
+                                  std::string *serialized_forward_attributes);                           
+
 }  // namespace utils
 }  // namespace istio
 
