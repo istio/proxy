@@ -19,12 +19,12 @@
 #include "src/envoy/utils/utils.h"
 #include "test/test_common/utility.h"
 
+using Envoy::Utils::ExtractNodeInfo;
+using Envoy::Utils::ParseJsonMessage;
 using ::istio::utils::AttributeName;
 using ::istio::utils::CreateLocalAttributes;
 using ::istio::utils::LocalAttributes;
 using ::istio::utils::LocalNode;
-using Envoy::Utils::ExtractNodeInfo;
-using Envoy::Utils::ParseJsonMessage;
 
 namespace {
 
