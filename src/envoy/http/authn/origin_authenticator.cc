@@ -92,7 +92,7 @@ bool OriginAuthenticator::run(Payload* payload) {
 
   // If none of the JWT triggered, origin authentication will be ignored, as if
   // it is not defined.
-  return !triggered || success;
+  return (policy_.origins_size() > 0 && !triggered) || success;
 }
 
 }  // namespace AuthN
