@@ -48,16 +48,18 @@ class EnvoyTimer : public ::istio::mixerclient::Timer {
 class EnvoyGrpcAsyncClientFactory : public Grpc::AsyncClientFactory {
  public:
   EnvoyGrpcAsyncClientFactory(Upstream::ClusterManager &cm,
-                              envoy::api::v2::core::GrpcService config)
-      : cm_(cm), config_(config) {}
+                              envoy::api::v2::core::GrpcService config,
+                              TimeSource &time_source)
+      : cm_(cm), config_(config), time_source_(time_source) {}
 
   Grpc::AsyncClientPtr create() override {
-    return std::make_unique<Grpc::AsyncClientImpl>(cm_, config_);
+    return std::make_unique<Grpc::AsyncClientImpl>(cm_, config_, time_source_);
   }
 
  private:
   Upstream::ClusterManager &cm_;
   envoy::api::v2::core::GrpcService config_;
+  TimeSource &time_source_;
 };
 
 inline bool ReadProtoMap(
@@ -110,13 +112,14 @@ void SerializeForwardedAttributes(
 
 Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
-    Stats::Scope &scope) {
+    Stats::Scope &scope, TimeSource &time_source) {
   envoy::api::v2::core::GrpcService service;
   service.mutable_envoy_grpc()->set_cluster_name(cluster_name);
 
   // Workaround for https://github.com/envoyproxy/envoy/issues/2762
   UNREFERENCED_PARAMETER(scope);
-  return std::make_unique<EnvoyGrpcAsyncClientFactory>(cm, service);
+  return std::make_unique<EnvoyGrpcAsyncClientFactory>(cm, service,
+                                                       time_source);
 }
 
 // This function is for compatibility with existing node ids.

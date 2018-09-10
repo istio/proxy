@@ -34,7 +34,7 @@ envoy_cc_library(
     deps = [
         ":utils_lib",
         "//include/istio/utils:attribute_names_header",
-        "//src/istio/authn:context_proto",
+        "//src/istio/authn:context_proto_cc",
         "//src/istio/utils:attribute_names_lib",
         "//src/istio/utils:utils_lib",
         ":filter_names_lib",
