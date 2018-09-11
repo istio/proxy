@@ -31,9 +31,6 @@ OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context,
     : AuthenticatorBase(filter_context), policy_(policy) {}
 
 bool OriginAuthenticator::run(Payload* payload) {
-  bool triggered_success = false;
-  bool triggered = false;
-
   if (policy_.origins_size() == 0 &&
       policy_.principal_binding() == iaapi::PrincipalBinding::USE_ORIGIN) {
     // Validation should reject policy that have rule to USE_ORIGIN but
@@ -46,6 +43,7 @@ bool OriginAuthenticator::run(Payload* payload) {
               policy_.DebugString());
     return false;
   }
+
   const char* request_path = nullptr;
   if (filter_context()->headerMap().Path() != nullptr) {
     request_path = filter_context()->headerMap().Path()->value().c_str();
@@ -56,6 +54,8 @@ bool OriginAuthenticator::run(Payload* payload) {
               "validation");
   }
 
+  bool triggered = false;
+  bool triggered_success = false;
   for (const auto& method : policy_.origins()) {
     const auto& jwt = method.jwt();
 
