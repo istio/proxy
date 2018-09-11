@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 #include "src/istio/control/mock_mixer_client.h"
 #include "src/istio/control/tcp/client_context.h"
@@ -20,6 +21,7 @@
 #include "src/istio/control/tcp/mock_check_data.h"
 #include "src/istio/control/tcp/mock_report_data.h"
 
+using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::TcpClientConfig;
@@ -30,6 +32,7 @@ using ::istio::mixerclient::DoneFunc;
 using ::istio::mixerclient::MixerClient;
 using ::istio::mixerclient::TransportCheckFunc;
 using ::istio::quota_config::Requirement;
+using ::istio::utils::LocalAttributes;
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -37,6 +40,36 @@ using ::testing::Invoke;
 namespace istio {
 namespace control {
 namespace tcp {
+
+namespace {
+// local inbound
+const char kLocalInbound[] = R"(
+attributes {
+  key: "destination.uid"
+  value {
+    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+  }
+}
+)";
+
+const char kLocalOutbound[] = R"(
+attributes {
+  key: "source.uid"
+  value {
+    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+  }
+}
+)";
+
+const char kLocalForward[] = R"(
+attributes {
+  key: "source.uid"
+  value {
+    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+  }
+}
+)";
+}  // namespace
 
 class RequestHandlerImplTest : public ::testing::Test {
  public:
@@ -50,9 +83,14 @@ class RequestHandlerImplTest : public ::testing::Test {
     quota->set_quota("quota");
     quota->set_charge(5);
 
+    LocalAttributes la;
+    ASSERT_TRUE(TextFormat::ParseFromString(kLocalInbound, &la.inbound));
+    ASSERT_TRUE(TextFormat::ParseFromString(kLocalOutbound, &la.outbound));
+    ASSERT_TRUE(TextFormat::ParseFromString(kLocalForward, &la.forward));
+
     mock_client_ = new ::testing::NiceMock<MockMixerClient>;
     client_context_ = std::make_shared<ClientContext>(
-        std::unique_ptr<MixerClient>(mock_client_), client_config_);
+        std::unique_ptr<MixerClient>(mock_client_), client_config_, false, la);
     controller_ =
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }

@@ -18,6 +18,7 @@
 
 #include "include/istio/control/tcp/request_handler.h"
 #include "include/istio/mixerclient/client.h"
+#include "include/istio/utils/local_attributes.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 
 namespace istio {
@@ -39,14 +40,17 @@ class Controller {
   // * mixer_config: the mixer client config.
   // * some functions provided by the environment (Envoy)
   struct Options {
-    Options(const ::istio::mixer::v1::config::client::TcpClientConfig& config)
-        : config(config) {}
+    Options(const ::istio::mixer::v1::config::client::TcpClientConfig& config,
+            const ::istio::utils::LocalNode& local_node)
+        : config(config), local_node(local_node) {}
 
     // Mixer filter config
     const ::istio::mixer::v1::config::client::TcpClientConfig& config;
 
     // Some plaform functions for mixer client library.
     ::istio::mixerclient::Environment env;
+
+    const ::istio::utils::LocalNode& local_node;
   };
 
   // The factory function to create a new instance of the controller.

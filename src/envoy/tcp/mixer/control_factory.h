@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "envoy/local_info/local_info.h"
 #include "src/envoy/tcp/mixer/control.h"
 
 namespace Envoy {
@@ -38,10 +39,13 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
         uuid_(context.random().uuid()) {
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
-    tls_->set([this, &random, &scope](Event::Dispatcher& dispatcher)
+    const LocalInfo::LocalInfo& local_info = context.localInfo();
+
+    tls_->set([this, &random, &scope,
+               &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return ThreadLocal::ThreadLocalObjectSharedPtr(
-          new Control(*config_, cm_, dispatcher, random, scope, stats_, uuid_));
+      return ThreadLocal::ThreadLocalObjectSharedPtr(new Control(
+          *config_, cm_, dispatcher, random, scope, stats_, uuid_, local_info));
     });
   }
 
