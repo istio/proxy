@@ -71,8 +71,7 @@ ReportOptions GetReportOptions(const TransportConfig& config) {
 }  // namespace
 
 ClientContextBase::ClientContextBase(const TransportConfig& config,
-                                     const Environment& env,
-                                     const bool& outbound,
+                                     const Environment& env, bool outbound,
                                      const LocalNode& local_node)
     : outbound_(outbound) {
   MixerClientOptions options(GetCheckOptions(config), GetReportOptions(config),

@@ -31,7 +31,7 @@ class ClientContextBase {
  public:
   ClientContextBase(
       const ::istio::mixer::v1::config::client::TransportConfig& config,
-      const ::istio::mixerclient::Environment& env, const bool& outbound,
+      const ::istio::mixerclient::Environment& env, bool outbound,
       const ::istio::utils::LocalNode& local_node);
 
   // A constructor for unit-test to pass in a mock mixer_client

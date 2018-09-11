@@ -20,6 +20,10 @@
 namespace istio {
 namespace utils {
 
+namespace {
+const char kReporterOutbound[] = "outbound";
+}  // namespace
+
 // create Local attributes object and return a pointer to it.
 // Should be freed by the caller.
 void CreateLocalAttributes(const LocalNode& local,
@@ -48,8 +52,6 @@ bool SerializeForwardedAttributes(const LocalNode& local,
       .AddString(AttributeName::kSourceUID, local.uid);
   return attributes.SerializeToString(serialized_forward_attributes);
 }
-
-static const char kReporterOutbound[] = "outbound";
 
 // check if this listener is outbound based on "context.reporter.kind" attribute
 bool IsOutbound(const ::istio::mixer::v1::Attributes& attributes) {
