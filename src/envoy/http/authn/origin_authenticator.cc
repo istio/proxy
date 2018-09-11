@@ -32,6 +32,7 @@ OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context,
 
 bool OriginAuthenticator::run(Payload* payload) {
   bool success = false;
+  bool triggered = false;
 
   if (policy_.origins_size() == 0) {
     switch (policy_.principal_binding()) {
@@ -44,7 +45,7 @@ bool OriginAuthenticator::run(Payload* payload) {
                   "Principal is binded to origin, but no method specified in "
                   "policy {}",
                   policy_.DebugString());
-        break;
+        return false;
       case iaapi::PrincipalBinding::USE_PEER:
         // On the other hand, it's ok to have no (origin) methods if
         // rule USE_SOURCE
@@ -54,33 +55,32 @@ bool OriginAuthenticator::run(Payload* payload) {
         // Should never come here.
         ENVOY_LOG(error, "Invalid binding value for policy {}",
                   policy_.DebugString());
-        break;
+        return false;
     }
-  }
-
-  bool triggered = false;
-  const char* request_path = nullptr;
-  if (filter_context()->headerMap().Path() != nullptr) {
-    request_path = filter_context()->headerMap().Path()->value().c_str();
-    ENVOY_LOG(debug, "Got request path {}", request_path);
   } else {
-    ENVOY_LOG(error,
-              "Failed to get request path, JWT will always be used for "
-              "validation");
-  }
+    const char* request_path = nullptr;
+    if (filter_context()->headerMap().Path() != nullptr) {
+      request_path = filter_context()->headerMap().Path()->value().c_str();
+      ENVOY_LOG(debug, "Got request path {}", request_path);
+    } else {
+      ENVOY_LOG(error,
+                "Failed to get request path, JWT will always be used for "
+                "validation");
+    }
 
-  for (const auto& method : policy_.origins()) {
-    const auto& jwt = method.jwt();
+    for (const auto& method : policy_.origins()) {
+      const auto& jwt = method.jwt();
 
-    if (AuthnUtils::ShouldValidateJwtPerPath(request_path, jwt)) {
-      ENVOY_LOG(debug, "Validating request path {} for jwt {}", request_path,
-                jwt.DebugString());
-      // set triggered to true if any of the jwt trigger rule matched.
-      triggered = true;
-      if (validateJwt(jwt, payload)) {
-        ENVOY_LOG(debug, "JWT validation succeeded");
-        success = true;
-        break;
+      if (AuthnUtils::ShouldValidateJwtPerPath(request_path, jwt)) {
+        ENVOY_LOG(debug, "Validating request path {} for jwt {}", request_path,
+                  jwt.DebugString());
+        // set triggered to true if any of the jwt trigger rule matched.
+        triggered = true;
+        if (validateJwt(jwt, payload)) {
+          ENVOY_LOG(debug, "JWT validation succeeded");
+          success = true;
+          break;
+        }
       }
     }
   }

@@ -217,6 +217,7 @@ TEST_P(OriginAuthenticatorTest, Empty) {
                                       filter_context_.authenticationResult()));
 }
 
+// It should fail if the binding is USE_ORIGIN but origin methods are empty.
 TEST_P(OriginAuthenticatorTest, ZeroMethodFail) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       kZeroOriginMethodPolicyBindOrigin, &policy_));
@@ -224,6 +225,7 @@ TEST_P(OriginAuthenticatorTest, ZeroMethodFail) {
   EXPECT_FALSE(authenticator_->run(payload_));
 }
 
+// It should pass if the binding is USE_PEER and origin methods are empty.
 TEST_P(OriginAuthenticatorTest, ZeroMethodPass) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       kZeroOriginMethodPolicyBindPeer, &policy_));
