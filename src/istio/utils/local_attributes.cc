@@ -49,5 +49,22 @@ bool SerializeForwardedAttributes(const LocalNode& local,
   return attributes.SerializeToString(serialized_forward_attributes);
 }
 
+static const char kReporterOutbound[] = "outbound";
+
+// check if this listener is outbound based on "context.reporter.kind" attribute
+bool IsOutbound(const ::istio::mixer::v1::Attributes& attributes) {
+  bool outbound = false;
+  const auto& attributes_map = attributes.attributes();
+  const auto it =
+      attributes_map.find(::istio::utils::AttributeName::kContextReporterKind);
+  if (it != attributes_map.end()) {
+    const ::istio::mixer::v1::Attributes_AttributeValue& value = it->second;
+    if (kReporterOutbound == value.string_value()) {
+      outbound = true;
+    }
+  }
+  return outbound;
+}
+
 }  // namespace utils
 }  // namespace istio

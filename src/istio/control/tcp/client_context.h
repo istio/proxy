@@ -18,6 +18,7 @@
 
 #include "include/istio/control/tcp/controller.h"
 #include "include/istio/quota_config/config_parser.h"
+#include "include/istio/utils/local_attributes.h"
 #include "src/istio/control/client_context_base.h"
 #include "src/istio/control/request_context.h"
 
@@ -31,9 +32,10 @@ namespace tcp {
 class ClientContext : public ClientContextBase {
  public:
   ClientContext(const Controller::Options& data)
-      : ClientContextBase(data.config.transport(), data.env,
-                          data.config.mixer_attributes().attributes(),
-                          data.local_node),
+      : ClientContextBase(
+            data.config.transport(), data.env,
+            ::istio::utils::IsOutbound(data.config.mixer_attributes()),
+            data.local_node),
         config_(data.config) {
     BuildQuotaParser();
   }

@@ -25,20 +25,13 @@
 namespace istio {
 namespace control {
 
-bool isOutbound(const google::protobuf::Map<
-                std::string, ::istio::mixer::v1::Attributes_AttributeValue>&
-                    attributes_map);
-
 // The global context object to hold the mixer client object
 // to call Check/Report with cache.
 class ClientContextBase {
  public:
   ClientContextBase(
       const ::istio::mixer::v1::config::client::TransportConfig& config,
-      const ::istio::mixerclient::Environment& env,
-      const google::protobuf::Map<
-          std::string, ::istio::mixer::v1::Attributes_AttributeValue>&
-          attributes_map,
+      const ::istio::mixerclient::Environment& env, const bool& outbound,
       const ::istio::utils::LocalNode& local_node);
 
   // A constructor for unit-test to pass in a mock mixer_client

@@ -19,6 +19,7 @@
 using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::utils::AttributeName;
+using ::istio::utils::IsOutbound;
 
 namespace istio {
 namespace control {
@@ -26,7 +27,7 @@ namespace http {
 
 ClientContext::ClientContext(const Controller::Options& data)
     : ClientContextBase(data.config.transport(), data.env,
-                        data.config.mixer_attributes().attributes(),
+                        IsOutbound(data.config.mixer_attributes()),
                         data.local_node),
       config_(data.config),
       service_config_cache_size_(data.service_config_cache_size) {}

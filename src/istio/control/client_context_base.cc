@@ -36,23 +36,6 @@ using ::istio::utils::LocalNode;
 
 namespace istio {
 namespace control {
-static const char kReporterOutbound[] = "outbound";
-
-bool isOutbound(const google::protobuf::Map<
-                std::string, ::istio::mixer::v1::Attributes_AttributeValue>&
-                    attributes_map) {
-  bool outbound = false;
-  const auto it =
-      attributes_map.find(::istio::utils::AttributeName::kContextReporterKind);
-  if (it != attributes_map.end()) {
-    const ::istio::mixer::v1::Attributes_AttributeValue& value = it->second;
-    if (kReporterOutbound == value.string_value()) {
-      outbound = true;
-    }
-  }
-  return outbound;
-}
-
 namespace {
 
 CheckOptions GetJustCheckOptions(const TransportConfig& config) {
@@ -87,17 +70,15 @@ ReportOptions GetReportOptions(const TransportConfig& config) {
 
 }  // namespace
 
-ClientContextBase::ClientContextBase(
-    const TransportConfig& config, const Environment& env,
-    const google::protobuf::Map<std::string,
-                                ::istio::mixer::v1::Attributes_AttributeValue>&
-        attributes_map,
-    const LocalNode& local_node) {
+ClientContextBase::ClientContextBase(const TransportConfig& config,
+                                     const Environment& env,
+                                     const bool& outbound,
+                                     const LocalNode& local_node)
+    : outbound_(outbound) {
   MixerClientOptions options(GetCheckOptions(config), GetReportOptions(config),
                              GetQuotaOptions(config));
   options.env = env;
   mixer_client_ = ::istio::mixerclient::CreateMixerClient(options);
-  outbound_ = isOutbound(attributes_map);
   CreateLocalAttributes(local_node, &local_attributes_);
 }
 
