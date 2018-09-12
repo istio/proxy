@@ -49,6 +49,9 @@ void CreateLocalAttributes(const LocalNode& local,
 bool SerializeForwardedAttributes(const LocalNode& local,
                                   std::string* serialized_forward_attributes);
 
+// check if this listener is outbound based on "context.reporter.kind" attribute
+bool IsOutbound(const ::istio::mixer::v1::Attributes& attributes);
+
 }  // namespace utils
 }  // namespace istio
 

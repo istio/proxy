@@ -31,6 +31,8 @@ using ::istio::mixerclient::QuotaOptions;
 using ::istio::mixerclient::ReportOptions;
 using ::istio::mixerclient::Statistics;
 using ::istio::mixerclient::TransportCheckFunc;
+using ::istio::utils::CreateLocalAttributes;
+using ::istio::utils::LocalNode;
 
 namespace istio {
 namespace control {
@@ -69,11 +71,14 @@ ReportOptions GetReportOptions(const TransportConfig& config) {
 }  // namespace
 
 ClientContextBase::ClientContextBase(const TransportConfig& config,
-                                     const Environment& env) {
+                                     const Environment& env, bool outbound,
+                                     const LocalNode& local_node)
+    : outbound_(outbound) {
   MixerClientOptions options(GetCheckOptions(config), GetReportOptions(config),
                              GetQuotaOptions(config));
   options.env = env;
   mixer_client_ = ::istio::mixerclient::CreateMixerClient(options);
+  CreateLocalAttributes(local_node, &local_attributes_);
 }
 
 CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
@@ -111,5 +116,20 @@ void ClientContextBase::GetStatistics(Statistics* stat) const {
   mixer_client_->GetStatistics(stat);
 }
 
+void ClientContextBase::AddLocalNodeAttributes(
+    ::istio::mixer::v1::Attributes* request) const {
+  if (outbound_) {
+    request->MergeFrom(local_attributes_.outbound);
+  } else {
+    request->MergeFrom(local_attributes_.inbound);
+  }
+}
+
+void ClientContextBase::AddLocalNodeForwardAttribues(
+    ::istio::mixer::v1::Attributes* request) const {
+  if (outbound_) {
+    request->MergeFrom(local_attributes_.forward);
+  }
+}
 }  // namespace control
 }  // namespace istio

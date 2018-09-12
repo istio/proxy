@@ -17,6 +17,8 @@
 #define ISTIO_CONTROL_CLIENT_CONTEXT_BASE_H
 
 #include "include/istio/mixerclient/client.h"
+#include "include/istio/utils/attribute_names.h"
+#include "include/istio/utils/local_attributes.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 #include "request_context.h"
 
@@ -29,12 +31,16 @@ class ClientContextBase {
  public:
   ClientContextBase(
       const ::istio::mixer::v1::config::client::TransportConfig& config,
-      const ::istio::mixerclient::Environment& env);
+      const ::istio::mixerclient::Environment& env, bool outbound,
+      const ::istio::utils::LocalNode& local_node);
 
   // A constructor for unit-test to pass in a mock mixer_client
   ClientContextBase(
-      std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client)
-      : mixer_client_(std::move(mixer_client)) {}
+      std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
+      bool outbound, ::istio::utils::LocalAttributes& local_attributes)
+      : mixer_client_(std::move(mixer_client)),
+        outbound_(outbound),
+        local_attributes_(local_attributes) {}
   // virtual destrutor
   virtual ~ClientContextBase() {}
 
@@ -49,9 +55,20 @@ class ClientContextBase {
   // Get statistics.
   void GetStatistics(::istio::mixerclient::Statistics* stat) const;
 
+  void AddLocalNodeAttributes(::istio::mixer::v1::Attributes* request) const;
+
+  void AddLocalNodeForwardAttribues(
+      ::istio::mixer::v1::Attributes* request) const;
+
  private:
   // The mixer client object with check cache and report batch features.
   std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client_;
+
+  // If this is an outbound client context.
+  bool outbound_;
+
+  // local attributes - owned by the client context.
+  ::istio::utils::LocalAttributes local_attributes_;
 };
 
 }  // namespace control

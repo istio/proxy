@@ -14,9 +14,12 @@
  */
 
 #include "src/envoy/tcp/mixer/control.h"
+#include "include/istio/utils/local_attributes.h"
 #include "src/envoy/utils/mixer_control.h"
 
+using ::istio::mixer::v1::Attributes;
 using ::istio::mixerclient::Statistics;
+using ::istio::utils::LocalNode;
 
 namespace Envoy {
 namespace Tcp {
@@ -25,7 +28,8 @@ namespace Mixer {
 Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  Event::Dispatcher& dispatcher,
                  Runtime::RandomGenerator& random, Stats::Scope& scope,
-                 Utils::MixerFilterStats& stats, const std::string& uuid)
+                 Utils::MixerFilterStats& stats, const std::string& uuid,
+                 const LocalInfo::LocalInfo& local_info)
     : config_(config),
       dispatcher_(dispatcher),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
@@ -36,10 +40,16 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  config_.config_pb().transport().stats_update_interval(),
                  [this](Statistics* stat) -> bool { return GetStats(stat); }),
       uuid_(uuid) {
-  Utils::SerializeForwardedAttributes(config_.config_pb().transport(),
-                                      &serialized_forward_attributes_);
+  auto& logger = Logger::Registry::getLog(Logger::Id::config);
+  LocalNode local_node;
+  if (!Utils::ExtractNodeInfo(local_info.node(), &local_node)) {
+    ENVOY_LOG_TO_LOGGER(logger, warn, "Unable to get node metadata");
+  }
+  ::istio::utils::SerializeForwardedAttributes(local_node,
+                                               &serialized_forward_attributes_);
 
-  ::istio::control::tcp::Controller::Options options(config_.config_pb());
+  ::istio::control::tcp::Controller::Options options(config_.config_pb(),
+                                                     local_node);
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
                            *report_client_factory_,

@@ -18,6 +18,7 @@
 
 #include "include/istio/control/tcp/controller.h"
 #include "include/istio/quota_config/config_parser.h"
+#include "include/istio/utils/local_attributes.h"
 #include "src/istio/control/client_context_base.h"
 #include "src/istio/control/request_context.h"
 
@@ -31,7 +32,10 @@ namespace tcp {
 class ClientContext : public ClientContextBase {
  public:
   ClientContext(const Controller::Options& data)
-      : ClientContextBase(data.config.transport(), data.env),
+      : ClientContextBase(
+            data.config.transport(), data.env,
+            ::istio::utils::IsOutbound(data.config.mixer_attributes()),
+            data.local_node),
         config_(data.config) {
     BuildQuotaParser();
   }
@@ -39,13 +43,17 @@ class ClientContext : public ClientContextBase {
   // A constructor for unit-test to pass in a mock mixer_client
   ClientContext(
       std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
-      const ::istio::mixer::v1::config::client::TcpClientConfig& config)
-      : ClientContextBase(std::move(mixer_client)), config_(config) {
+      const ::istio::mixer::v1::config::client::TcpClientConfig& config,
+      bool outbound, ::istio::utils::LocalAttributes& local_attributes)
+      : ClientContextBase(std::move(mixer_client), outbound, local_attributes),
+        config_(config) {
     BuildQuotaParser();
   }
 
   // Add static mixer attributes.
   void AddStaticAttributes(RequestContext* request) const {
+    AddLocalNodeAttributes(&request->attributes);
+
     if (config_.has_mixer_attributes()) {
       request->attributes.MergeFrom(config_.mixer_attributes());
     }
