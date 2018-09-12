@@ -31,34 +31,19 @@ OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context,
     : AuthenticatorBase(filter_context), policy_(policy) {}
 
 bool OriginAuthenticator::run(Payload* payload) {
-  bool success = false;
-
-  if (policy_.origins_size() == 0) {
-    switch (policy_.principal_binding()) {
-      case iaapi::PrincipalBinding::USE_ORIGIN:
-        // Validation should reject policy that have rule to USE_ORIGIN but
-        // does not provide any origin method so this code should
-        // never reach. However, it's ok to treat it as authentication
-        // fails.
-        ENVOY_LOG(warn,
-                  "Principal is binded to origin, but no method specified in "
-                  "policy {}",
-                  policy_.DebugString());
-        break;
-      case iaapi::PrincipalBinding::USE_PEER:
-        // On the other hand, it's ok to have no (origin) methods if
-        // rule USE_SOURCE
-        success = true;
-        break;
-      default:
-        // Should never come here.
-        ENVOY_LOG(error, "Invalid binding value for policy {}",
-                  policy_.DebugString());
-        break;
-    }
+  if (policy_.origins_size() == 0 &&
+      policy_.principal_binding() == iaapi::PrincipalBinding::USE_ORIGIN) {
+    // Validation should reject policy that have rule to USE_ORIGIN but
+    // does not provide any origin method so this code should
+    // never reach. However, it's ok to treat it as authentication
+    // fails.
+    ENVOY_LOG(warn,
+              "Principal is binded to origin, but no method specified in "
+              "policy {}",
+              policy_.DebugString());
+    return false;
   }
 
-  bool triggered = false;
   const char* request_path = nullptr;
   if (filter_context()->headerMap().Path() != nullptr) {
     request_path = filter_context()->headerMap().Path()->value().c_str();
@@ -69,6 +54,8 @@ bool OriginAuthenticator::run(Payload* payload) {
               "validation");
   }
 
+  bool triggered = false;
+  bool triggered_success = false;
   for (const auto& method : policy_.origins()) {
     const auto& jwt = method.jwt();
 
@@ -79,20 +66,22 @@ bool OriginAuthenticator::run(Payload* payload) {
       triggered = true;
       if (validateJwt(jwt, payload)) {
         ENVOY_LOG(debug, "JWT validation succeeded");
-        success = true;
+        triggered_success = true;
         break;
       }
     }
   }
 
-  if (success) {
+  // returns true if no jwt was triggered, or triggered and success.
+  if (!triggered || triggered_success) {
     filter_context()->setOriginResult(payload);
     filter_context()->setPrincipal(policy_.principal_binding());
+    ENVOY_LOG(debug, "Origin authenticator succeeded");
+    return true;
   }
 
-  // If none of the JWT triggered, origin authentication will be ignored, as if
-  // it is not defined.
-  return !triggered || success;
+  ENVOY_LOG(debug, "Origin authenticator failed");
+  return false;
 }
 
 }  // namespace AuthN

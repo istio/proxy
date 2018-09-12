@@ -41,6 +41,14 @@ namespace Istio {
 namespace AuthN {
 namespace {
 
+const char kZeroOriginMethodPolicyBindPeer[] = R"(
+  principal_binding: USE_PEER
+)";
+
+const char kZeroOriginMethodPolicyBindOrigin[] = R"(
+  principal_binding: USE_ORIGIN
+)";
+
 const char kSingleOriginMethodPolicy[] = R"(
   principal_binding: USE_ORIGIN
   origins {
@@ -206,6 +214,36 @@ TEST_P(OriginAuthenticatorTest, Empty) {
     initial_result_.set_principal("bar");
   }
   EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
+                                      filter_context_.authenticationResult()));
+}
+
+// It should fail if the binding is USE_ORIGIN but origin methods are empty.
+TEST_P(OriginAuthenticatorTest, ZeroMethodFail) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kZeroOriginMethodPolicyBindOrigin, &policy_));
+  createAuthenticator();
+  EXPECT_FALSE(authenticator_->run(payload_));
+}
+
+// It should pass if the binding is USE_PEER and origin methods are empty.
+TEST_P(OriginAuthenticatorTest, ZeroMethodPass) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      kZeroOriginMethodPolicyBindPeer, &policy_));
+  createAuthenticator();
+
+  Result expected_result = TestUtilities::AuthNResultFromString(R"(
+      origin {
+        user: "bar"
+        presenter: "istio.io"
+      }
+    )");
+  if (set_peer_) {
+    expected_result.set_principal("bar");
+    expected_result.set_peer_user("bar");
+  }
+
+  EXPECT_TRUE(authenticator_->run(&jwt_extra_payload_));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result,
                                       filter_context_.authenticationResult()));
 }
 
