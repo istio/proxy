@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "extensions/filters/network/network_level_sni_reader/network_level_sni_reader.h"
+#include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 
 #include "envoy/buffer/buffer.h"
 #include "envoy/common/exception.h"
@@ -29,22 +29,46 @@ namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
 
-thread_local uint8_t NetworkLevelSniReaderFilter::buf_
-    [Extensions::ListenerFilters::TlsInspector::Config::TLS_MAX_CLIENT_HELLO];
+Config::Config(Stats::Scope& scope, uint32_t max_client_hello_size)
+    : stats_{SNI_VERIFIER_STATS(POOL_COUNTER_PREFIX(scope, "sni_verifier."))},
+      ssl_ctx_(SSL_CTX_new(TLS_with_buffers_method())),
+      max_client_hello_size_(max_client_hello_size) {
 
-NetworkLevelSniReaderFilter::NetworkLevelSniReaderFilter(
-    const Extensions::ListenerFilters::TlsInspector::ConfigSharedPtr config)
-    : config_(config), ssl_(config_->newSsl()) {
-  Extensions::ListenerFilters::TlsInspector::Filter::initializeSsl(
-      config->maxClientHelloSize(), sizeof(buf_), ssl_,
-      static_cast<Extensions::ListenerFilters::TlsInspector::TlsFilterBase*>(this));
+  if (max_client_hello_size_ > TLS_MAX_CLIENT_HELLO) {
+    throw EnvoyException(fmt::format("max_client_hello_size of {} is greater than maximum of {}.",
+                                     max_client_hello_size_, size_t(TLS_MAX_CLIENT_HELLO)));
+  }
+
+  SSL_CTX_set_options(ssl_ctx_.get(), SSL_OP_NO_TICKET);
+  SSL_CTX_set_session_cache_mode(ssl_ctx_.get(), SSL_SESS_CACHE_OFF);
+  SSL_CTX_set_tlsext_servername_callback(
+      ssl_ctx_.get(), [](SSL* ssl, int* out_alert, void*) -> int {
+        SniVerifierFilter* filter = static_cast<SniVerifierFilter*>(SSL_get_app_data(ssl));
+        filter->onServername(SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name));
+
+        // Return an error to stop the handshake; we have what we wanted already.
+        *out_alert = SSL_AD_USER_CANCELLED;
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+      });
 }
 
-Network::FilterStatus NetworkLevelSniReaderFilter::onData(Buffer::Instance& data, bool) {
-  ENVOY_CONN_LOG(trace, "NetworkLevelSniReader: got {} bytes", read_callbacks_->connection(),
+bssl::UniquePtr<SSL> Config::newSsl() { return bssl::UniquePtr<SSL>{SSL_new(ssl_ctx_.get())}; }
+
+thread_local uint8_t SniVerifierFilter::buf_[Config::TLS_MAX_CLIENT_HELLO];
+
+SniVerifierFilter::SniVerifierFilter(const ConfigSharedPtr config)
+    : config_(config), ssl_(config_->newSsl()) {
+  RELEASE_ASSERT(sizeof(buf_) >= config_->maxClientHelloSize(), "");
+
+  SSL_set_app_data(ssl_.get(), this);
+  SSL_set_accept_state(ssl_.get());
+}
+
+Network::FilterStatus SniVerifierFilter::onData(Buffer::Instance& data, bool) {
+  ENVOY_CONN_LOG(trace, "SniVerifier: got {} bytes", read_callbacks_->connection(),
                  data.length());
   if (done_) {
-    return Network::FilterStatus::Continue;
+    return is_match_ ? Network::FilterStatus::Continue : Network::FilterStatus::StopIteration;
   }
 
   size_t freeSpaceInBuf = sizeof(buf_) - read_;
@@ -52,34 +76,71 @@ Network::FilterStatus NetworkLevelSniReaderFilter::onData(Buffer::Instance& data
   uint8_t* bufToParse = buf_ + read_;
   data.copyOut(0, lenToRead, bufToParse);
   read_ += lenToRead;
-  Extensions::ListenerFilters::TlsInspector::Filter::parseClientHello(
-      bufToParse, lenToRead, ssl_, read_, config_->maxClientHelloSize(), config_->stats(),
-      [&](bool success) -> void { done(success); }, alpn_found_, clienthello_success_,
-      []() -> void {});
+  parseClientHello(bufToParse, lenToRead);
 
-  return done_ ? Network::FilterStatus::Continue : Network::FilterStatus::StopIteration;
+  return is_match_ ? Network::FilterStatus::Continue : Network::FilterStatus::StopIteration;
 }
 
-void NetworkLevelSniReaderFilter::onServername(absl::string_view servername) {
-  ENVOY_CONN_LOG(debug, "network level sni reader: servername: {}", read_callbacks_->connection(),
-                 servername);
-  Extensions::ListenerFilters::TlsInspector::Filter::doOnServername(
-      servername, config_->stats(),
-      [&](absl::string_view name) -> void {
-        read_callbacks_->networkLevelRequestedServerName(name);
-      },
-      clienthello_success_);
+void SniVerifierFilter::onServername(absl::string_view servername) {
+  if (!servername.empty()) {
+    config_->stats().sni_found_.inc();
+    absl::string_view outerSni = read_callbacks_->connection().requestedServerName();
+    if (servername == outerSni) {
+        is_match_ = true;
+    }
+    ENVOY_LOG(debug, "sni_verifier:onServerName(), requestedServerName: {}", servername);
+  } else {
+    config_->stats().sni_not_found_.inc();
+  }
+  clienthello_success_ = true;
 }
 
-void NetworkLevelSniReaderFilter::done(bool success) {
-  ENVOY_LOG(trace, "network level sni reader: done: {}", success);
+void SniVerifierFilter::done(bool success) {
+  ENVOY_LOG(trace, "sni_verifier: done: {}", success);
   done_ = true;
   if (success) {
     read_callbacks_->continueReading();
   }
 }
 
-} // namespace NetworkLevelSniReader
-} // namespace NetworkFilters
-} // namespace Extensions
+void SniVerifierFilter::parseClientHello(const void* data, size_t len) {
+  // Ownership is passed to ssl_ in SSL_set_bio()
+  bssl::UniquePtr<BIO> bio(BIO_new_mem_buf(data, len));
+
+  // Make the mem-BIO return that there is more data
+  // available beyond it's end
+  BIO_set_mem_eof_return(bio.get(), -1);
+
+  SSL_set_bio(ssl_.get(), bio.get(), bio.get());
+  bio.release();
+
+  int ret = SSL_do_handshake(ssl_.get());
+
+  // This should never succeed because an error is always returned from the SNI callback.
+  ASSERT(ret <= 0);
+  switch (SSL_get_error(ssl_.get(), ret)) {
+  case SSL_ERROR_WANT_READ:
+    if (read_ == config_->maxClientHelloSize()) {
+      // We've hit the specified size limit. This is an unreasonably large ClientHello;
+      // indicate failure.
+      config_->stats().client_hello_too_large_.inc();
+      done(false);
+    }
+    break;
+  case SSL_ERROR_SSL:
+    if (clienthello_success_) {
+      config_->stats().tls_found_.inc();
+    } else {
+      config_->stats().tls_not_found_.inc();
+    }
+    done(true);
+    break;
+  default:
+    done(false);
+    break;
+  }
+}
+
+} // namespace SniVerifier
+} // namespace Tcp
 } // namespace Envoy

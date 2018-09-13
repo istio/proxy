@@ -23,10 +23,14 @@ load(
 envoy_cc_library(
     name = "filter_lib",
     srcs = [
-        "control.cc",
+        "config.cc",
         "sni_verifier.h",
         "sni_verifier.cc",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
+    external_deps = ["ssl"],
+    deps = [
+        "@envoy//source/exe:envoy_common_lib",
+    ],
 )
