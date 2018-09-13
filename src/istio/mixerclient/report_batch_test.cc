@@ -106,29 +106,6 @@ TEST_F(ReportBatchTest, TestBatchReport) {
   EXPECT_EQ(report_call_count, 4);
 }
 
-TEST_F(ReportBatchTest, TestNoDeltaUpdate) {
-  int report_call_count = 0;
-  EXPECT_CALL(mock_report_transport_, Report(_, _, _))
-      .WillRepeatedly(Invoke([&](const ReportRequest& request,
-                                 ReportResponse* response, DoneFunc on_done) {
-        report_call_count++;
-        on_done(Status::OK);
-      }));
-
-  Attributes report;
-  utils::AttributesBuilder(&report).AddString("key", "value");
-  batch_->Report(report);
-  EXPECT_EQ(report_call_count, 0);
-
-  // Erase a key, so delta update fail to push the batched result.
-  report.mutable_attributes()->erase("key");
-  batch_->Report(report);
-  EXPECT_EQ(report_call_count, 1);
-
-  batch_->Flush();
-  EXPECT_EQ(report_call_count, 2);
-}
-
 TEST_F(ReportBatchTest, TestBatchReportWithTimeout) {
   int report_call_count = 0;
   EXPECT_CALL(mock_report_transport_, Report(_, _, _))

@@ -45,13 +45,7 @@ void ReportBatch::Report(const Attributes& request) {
     batch_compressor_ = compressor_.CreateBatchCompressor();
   }
 
-  if (!batch_compressor_->Add(request)) {
-    FlushWithLock();
-
-    batch_compressor_ = compressor_.CreateBatchCompressor();
-    batch_compressor_->Add(request);
-  }
-
+  batch_compressor_->Add(request);
   if (batch_compressor_->size() >= options_.max_batch_entries) {
     FlushWithLock();
   } else {

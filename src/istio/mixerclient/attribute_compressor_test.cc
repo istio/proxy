@@ -146,9 +146,21 @@ attributes {
   }
 }
 attributes {
+  strings {
+    key: 2
+    value: 127
+  }
+  strings {
+    key: 6
+    value: 101
+  }
   int64s {
     key: 1
     value: 135
+  }
+  int64s {
+    key: 8
+    value: 8080
   }
   int64s {
     key: 27
@@ -161,6 +173,75 @@ attributes {
   bools {
     key: 71
     value: false
+  }
+  timestamps {
+    key: 132
+    value {
+    }
+  }
+  durations {
+    key: 29
+    value {
+      seconds: 5
+    }
+  }
+  bytes {
+    key: 0
+    value: "text/html; charset=utf-8"
+  }
+  string_maps {
+    key: 15
+    value {
+      entries {
+        key: 32
+        value: 90
+      }
+      entries {
+        key: 58
+        value: 104
+      }
+    }
+  }
+}
+attributes {
+  strings {
+    key: 2
+    value: 127
+  }
+  strings {
+    key: 6
+    value: 101
+  }
+  int64s {
+    key: 1
+    value: 135
+  }
+  int64s {
+    key: 8
+    value: 8080
+  }
+  doubles {
+    key: 78
+    value: 123.99
+  }
+  bools {
+    key: 71
+    value: false
+  }
+  timestamps {
+    key: 132
+    value {
+    }
+  }
+  durations {
+    key: 29
+    value {
+      seconds: 5
+    }
+  }
+  bytes {
+    key: 0
+    value: "text/html; charset=utf-8"
   }
   string_maps {
     key: 15
@@ -177,7 +258,7 @@ attributes {
   }
 }
 default_words: "JWT-Token"
-global_word_count: 111
+global_word_count: 221
 )";
 
 class AttributeCompressorTest : public ::testing::Test {
@@ -234,7 +315,7 @@ TEST_F(AttributeCompressorTest, BatchCompressTest) {
   AttributeCompressor compressor;
   auto batch_compressor = compressor.CreateBatchCompressor();
 
-  EXPECT_TRUE(batch_compressor->Add(attributes_));
+  batch_compressor->Add(attributes_);
 
   // modify some attributes
   utils::AttributesBuilder builder(&attributes_);
@@ -245,13 +326,13 @@ TEST_F(AttributeCompressorTest, BatchCompressTest) {
   builder.AddStringMap("request.headers", {{"content-type", "application/json"},
                                            {":method", "GET"}});
 
-  // Since there is no deletion, batch is good
-  EXPECT_TRUE(batch_compressor->Add(attributes_));
+  // Batch the second one with added attributes
+  batch_compressor->Add(attributes_);
 
   // remove a key
   attributes_.mutable_attributes()->erase("response.size");
-  // Batch should fail.
-  EXPECT_FALSE(batch_compressor->Add(attributes_));
+  // Batch the third with a removed attribute.
+  batch_compressor->Add(attributes_);
 
   auto report_pb = batch_compressor->Finish();
 
@@ -262,7 +343,7 @@ TEST_F(AttributeCompressorTest, BatchCompressTest) {
   ::istio::mixer::v1::ReportRequest expected_report_pb;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kReportAttributes, &expected_report_pb));
-  report_pb->set_global_word_count(111);
+  report_pb->set_global_word_count(221);
   EXPECT_TRUE(MessageDifferencer::Equals(*report_pb, expected_report_pb));
 }
 

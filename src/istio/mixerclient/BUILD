@@ -42,8 +42,6 @@ cc_library(
         "check_cache.h",
         "client_impl.cc",
         "client_impl.h",
-        "delta_update.cc",
-        "delta_update.h",
         "global_dictionary.cc",
         "global_dictionary.h",
         "quota_cache.cc",
@@ -92,17 +90,6 @@ cc_test(
     deps = [
         ":mixerclient_lib",
         ":status_test_util_lib",
-        "//external:googletest_main",
-    ],
-)
-
-cc_test(
-    name = "delta_update_test",
-    size = "small",
-    srcs = ["delta_update_test.cc"],
-    linkstatic = 1,
-    deps = [
-        ":mixerclient_lib",
         "//external:googletest_main",
     ],
 )
