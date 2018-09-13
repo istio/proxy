@@ -20,8 +20,6 @@
 
 #include "common/common/logger.h"
 
-#include "extensions/filters/listener/tls_inspector/tls_inspector.h"
-
 #include "openssl/bytestring.h"
 #include "openssl/ssl.h"
 
@@ -29,12 +27,52 @@ namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
 
-class NetworkLevelSniReaderFilter : public Network::ReadFilter,
-                                    public Extensions::ListenerFilters::TlsInspector::TlsFilterBase,
-                                    Logger::Loggable<Logger::Id::filter> {
+/**
+ * All stats for the SNI verifier. @see stats_macros.h
+ */
+#define SNI_VERIFIER_STATS(COUNTER)                                                                \
+  COUNTER(connection_closed)                                                                       \
+  COUNTER(client_hello_too_large)                                                                  \
+  COUNTER(read_error)                                                                              \
+  COUNTER(read_timeout)                                                                            \
+  COUNTER(tls_found)                                                                               \
+  COUNTER(tls_not_found)                                                                           \
+  COUNTER(alpn_found)                                                                              \
+  COUNTER(alpn_not_found)                                                                          \
+  COUNTER(sni_found)                                                                               \
+  COUNTER(sni_not_found)
+
+/**
+ * Definition of all stats for the SNI verifier. @see stats_macros.h
+ */
+struct SniVerifierStats {
+  SNI_VERIFIER_STATS(GENERATE_COUNTER_STRUCT)
+};
+
+/**
+ * Global configuration for SNI verifier.
+ */
+class Config {
 public:
-  NetworkLevelSniReaderFilter(
-      const Extensions::ListenerFilters::TlsInspector::ConfigSharedPtr config);
+  Config(Stats::Scope& scope, uint32_t max_client_hello_size = TLS_MAX_CLIENT_HELLO);
+
+  const SniVerifierStats& stats() const { return stats_; }
+  bssl::UniquePtr<SSL> newSsl();
+  uint32_t maxClientHelloSize() const { return max_client_hello_size_; }
+
+  static constexpr size_t TLS_MAX_CLIENT_HELLO = 64 * 1024;
+
+private:
+  SniVerifierStats stats_;
+  bssl::UniquePtr<SSL_CTX> ssl_ctx_;
+  const uint32_t max_client_hello_size_;
+};
+
+typedef std::shared_ptr<Config> ConfigSharedPtr;
+
+class SniVerifierFilter : public Network::ReadFilter, Logger::Loggable<Logger::Id::filter> {
+public:
+  SniVerifierFilter(const ConfigSharedPtr config);
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance& data, bool end_stream) override;
@@ -44,25 +82,25 @@ public:
   }
 
 private:
+  void parseClientHello(const void* data, size_t len);
   void done(bool success);
-  // Extensions::ListenerFilters::TlsInspector::TlsFilterBase
-  void onServername(absl::string_view name) override;
-  void onALPN(const unsigned char*, unsigned int) override{};
+  void onServername(absl::string_view name);
 
-  Extensions::ListenerFilters::TlsInspector::ConfigSharedPtr config_;
+  ConfigSharedPtr config_;
   Network::ReadFilterCallbacks* read_callbacks_{};
 
   bssl::UniquePtr<SSL> ssl_;
   uint64_t read_{0};
-  bool alpn_found_{false};
   bool clienthello_success_{false};
   bool done_{false};
+  bool is_match_{false};
 
-  static thread_local uint8_t
-      buf_[Extensions::ListenerFilters::TlsInspector::Config::TLS_MAX_CLIENT_HELLO];
+  static thread_local uint8_t buf_[Config::TLS_MAX_CLIENT_HELLO];
+
+  // Allows callbacks on the SSL_CTX to set fields in this class.
+  friend class Config;
 };
 
-} // namespace NetworkLevelSniReader
-} // namespace NetworkFilters
-} // namespace Extensions
+} // namespace SniVerifier
+} // namespace Tcp
 } // namespace Envoy

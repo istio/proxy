@@ -16,19 +16,17 @@
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 
-#include "extensions/filters/listener/tls_inspector/tls_inspector.h"
-#include "extensions/filters/network/network_level_sni_reader/network_level_sni_reader.h"
-#include "extensions/filters/network/well_known_names.h"
+#include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 
 namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
 
 /**
- * Config registration for the network level SNI reader filter. @see
+ * Config registration for the  SNI verifier filter. @see
  * NamedNetworkFilterConfigFactory.
  */
-class NetworkLevelSniReaderConfigFactory
+class SniVerifierConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
 public:
   // NamedNetworkFilterConfigFactory
@@ -48,17 +46,14 @@ public:
     return ProtobufTypes::MessagePtr{new Envoy::ProtobufWkt::Empty()};
   }
 
-  std::string name() override { return NetworkFilterNames::get().NetworkLevelSniReader; }
+  std::string name() override { return "sni_verifier"; }
 
 private:
   Network::FilterFactoryCb
   createFilterFactoryFromContext(Server::Configuration::FactoryContext& context) {
-    Extensions::ListenerFilters::TlsInspector::ConfigSharedPtr filter_config(
-        new Extensions::ListenerFilters::TlsInspector::Config(
-            context.scope(), Extensions::ListenerFilters::TlsInspector::Config::TLS_MAX_CLIENT_HELLO,
-            "network_level_sni_reader."));
+    ConfigSharedPtr filter_config(new Config(context.scope()));
     return [filter_config](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addReadFilter(std::make_shared<NetworkLevelSniReaderFilter>(filter_config));
+      filter_manager.addReadFilter(std::make_shared<SniVerifierFilter>(filter_config));
     };
   }
 };
@@ -66,11 +61,10 @@ private:
 /**
  * Static registration for the echo filter. @see RegisterFactory.
  */
-static Registry::RegisterFactory<NetworkLevelSniReaderConfigFactory,
+static Registry::RegisterFactory<SniVerifierConfigFactory,
                                  Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
 
-} // namespace NetworkLevelSniReader
-} // namespace NetworkFilters
-} // namespace Extensions
+} // namespace SniVerifier
+} // namespace Tcp
 } // namespace Envoy
