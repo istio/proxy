@@ -88,7 +88,7 @@ void SniVerifierFilter::onServername(absl::string_view servername) {
     if (servername == outerSni) {
         is_match_ = true;
     }
-    ENVOY_LOG(debug, "sni_verifier:onServerName(), requestedServerName: {}", servername);
+    ENVOY_LOG(debug, "sni_verifier:onServerName(), inner SNI: {}, outer SNI: {}, match: {}", servername, outerSni, is_match_);
   } else {
     config_->stats().sni_not_found_.inc();
   }
