@@ -168,6 +168,13 @@ TEST_F(AuthenticationFilterTest, IgnoreBothFail) {
   *filter_config_.mutable_policy() = policy_;
   StrictMock<MockAuthenticationFilter> filter(filter_config_);
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
+
+  EXPECT_CALL(filter, createPeerAuthenticator(_))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysFailAuthenticator));
+  EXPECT_CALL(filter, createOriginAuthenticator(_))
+      .Times(1)
+      .WillOnce(Invoke(createAlwaysFailAuthenticator));
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter.decodeHeaders(request_headers_, true));
 }
