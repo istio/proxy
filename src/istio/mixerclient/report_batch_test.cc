@@ -65,7 +65,7 @@ class ReportBatchTest : public ::testing::Test {
     };
   }
 
-  MockReportTransport mock_report_transport_;
+  ::testing::NiceMock<MockReportTransport> mock_report_transport_;
   MockTimer* mock_timer_;
   AttributeCompressor compressor_;
   std::unique_ptr<ReportBatch> batch_;

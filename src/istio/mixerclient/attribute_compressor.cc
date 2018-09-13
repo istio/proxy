@@ -58,6 +58,11 @@ class MessageDictionary {
 
   const std::vector<std::string>& GetWords() const { return message_words_; }
 
+  void Clear() {
+    message_words_.clear();
+    message_dict_.clear();
+  }
+
  private:
   const GlobalDictionary& global_dict_;
 
@@ -121,28 +126,31 @@ void CompressByDict(const Attributes& attributes, MessageDictionary& dict,
 class BatchCompressorImpl : public BatchCompressor {
  public:
   BatchCompressorImpl(const GlobalDictionary& global_dict)
-      : dict_(global_dict), report_(new ::istio::mixer::v1::ReportRequest) {
-    report_->set_global_word_count(global_dict.size());
+      : dict_(global_dict) {
+    report_.set_global_word_count(global_dict.size());
   }
 
   void Add(const Attributes& attributes) override {
-    CompressedAttributes pb;
-    CompressByDict(attributes, dict_, &pb);
-    pb.GetReflection()->Swap(report_->add_attributes(), &pb);
+    CompressByDict(attributes, dict_, report_.add_attributes());
   }
 
-  int size() const override { return report_->attributes_size(); }
+  int size() const override { return report_.attributes_size(); }
 
-  std::unique_ptr<::istio::mixer::v1::ReportRequest> Finish() override {
+  const ::istio::mixer::v1::ReportRequest& Finish() override {
     for (const std::string& word : dict_.GetWords()) {
-      report_->add_default_words(word);
+      report_.add_default_words(word);
     }
-    return std::move(report_);
+    return report_;
+  }
+
+  void Clear() override {
+    dict_.Clear();
+    report_.Clear();
   }
 
  private:
   MessageDictionary dict_;
-  std::unique_ptr<::istio::mixer::v1::ReportRequest> report_;
+  ::istio::mixer::v1::ReportRequest report_;
 };
 
 }  // namespace
