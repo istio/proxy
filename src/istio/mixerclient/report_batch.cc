@@ -33,6 +33,7 @@ ReportBatch::ReportBatch(const ReportOptions& options,
       transport_(transport),
       timer_create_(timer_create),
       compressor_(compressor),
+      batch_compressor_(compressor.CreateBatchCompressor()),
       total_report_calls_(0),
       total_remote_report_calls_(0) {}
 
@@ -41,10 +42,6 @@ ReportBatch::~ReportBatch() { Flush(); }
 void ReportBatch::Report(const Attributes& request) {
   std::lock_guard<std::mutex> lock(mutex_);
   ++total_report_calls_;
-  if (!batch_compressor_) {
-    batch_compressor_ = compressor_.CreateBatchCompressor();
-  }
-
   batch_compressor_->Add(request);
   if (batch_compressor_->size() >= options_.max_batch_entries) {
     FlushWithLock();
@@ -59,19 +56,18 @@ void ReportBatch::Report(const Attributes& request) {
 }
 
 void ReportBatch::FlushWithLock() {
-  if (!batch_compressor_) {
+  if (batch_compressor_->size() == 0) {
     return;
   }
 
-  ++total_remote_report_calls_;
-  std::unique_ptr<ReportRequest> request = batch_compressor_->Finish();
-  batch_compressor_.reset();
   if (timer_) {
     timer_->Stop();
   }
 
+  ++total_remote_report_calls_;
+  auto request = batch_compressor_->Finish();
   ReportResponse* response = new ReportResponse;
-  transport_(*request, response, [this, response](const Status& status) {
+  transport_(request, response, [this, response](const Status& status) {
     delete response;
     if (!status.ok()) {
       GOOGLE_LOG(ERROR) << "Mixer Report failed with: " << status.ToString();
@@ -80,6 +76,8 @@ void ReportBatch::FlushWithLock() {
       }
     }
   });
+
+  batch_compressor_->Clear();
 }
 
 void ReportBatch::Flush() {

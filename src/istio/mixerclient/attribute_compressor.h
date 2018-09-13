@@ -56,7 +56,10 @@ class BatchCompressor {
   virtual int size() const = 0;
 
   // Finish the batch and create the batched report request.
-  virtual std::unique_ptr<::istio::mixer::v1::ReportRequest> Finish() = 0;
+  virtual const ::istio::mixer::v1::ReportRequest& Finish() = 0;
+
+  // Reset the object data.
+  virtual void Clear() = 0;
 };
 
 // Compress attributes.

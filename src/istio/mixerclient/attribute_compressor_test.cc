@@ -337,14 +337,14 @@ TEST_F(AttributeCompressorTest, BatchCompressTest) {
   auto report_pb = batch_compressor->Finish();
 
   std::string out_str;
-  TextFormat::PrintToString(*report_pb, &out_str);
+  TextFormat::PrintToString(report_pb, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::ReportRequest expected_report_pb;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kReportAttributes, &expected_report_pb));
-  report_pb->set_global_word_count(221);
-  EXPECT_TRUE(MessageDifferencer::Equals(*report_pb, expected_report_pb));
+  report_pb.set_global_word_count(221);
+  EXPECT_TRUE(MessageDifferencer::Equals(report_pb, expected_report_pb));
 }
 
 }  // namespace
