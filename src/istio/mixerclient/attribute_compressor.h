@@ -50,8 +50,7 @@ class BatchCompressor {
   virtual ~BatchCompressor() {}
 
   // Add an attribute set to the batch.
-  // Return false if it could not be added for delta update.
-  virtual bool Add(const ::istio::mixer::v1::Attributes& attributes) = 0;
+  virtual void Add(const ::istio::mixer::v1::Attributes& attributes) = 0;
 
   // Get the batched size.
   virtual int size() const = 0;

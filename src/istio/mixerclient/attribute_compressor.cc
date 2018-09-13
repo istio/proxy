@@ -15,7 +15,6 @@
 
 #include "src/istio/mixerclient/attribute_compressor.h"
 #include "include/istio/utils/protobuf.h"
-#include "src/istio/mixerclient/delta_update.h"
 #include "src/istio/mixerclient/global_dictionary.h"
 
 using ::istio::mixer::v1::Attributes;
@@ -77,21 +76,14 @@ class MessageDictionary {
   return compressed_map;
 }
 
-bool CompressByDict(const Attributes& attributes, MessageDictionary& dict,
-                    DeltaUpdate& delta_update, CompressedAttributes* pb) {
-  delta_update.Start();
-
+void CompressByDict(const Attributes& attributes, MessageDictionary& dict,
+                    CompressedAttributes* pb) {
   // Fill attributes.
   for (const auto& it : attributes.attributes()) {
     const std::string& name = it.first;
     const Attributes_AttributeValue& value = it.second;
 
     int index = dict.GetIndex(name);
-
-    // Check delta update. If same, skip it.
-    if (delta_update.Check(index, value)) {
-      continue;
-    }
 
     // Fill the attribute to proper map.
     switch (value.value_case()) {
@@ -124,26 +116,19 @@ bool CompressByDict(const Attributes& attributes, MessageDictionary& dict,
         break;
     }
   }
-
-  return delta_update.Finish();
 }
 
 class BatchCompressorImpl : public BatchCompressor {
  public:
   BatchCompressorImpl(const GlobalDictionary& global_dict)
-      : dict_(global_dict),
-        delta_update_(DeltaUpdate::Create()),
-        report_(new ::istio::mixer::v1::ReportRequest) {
+      : dict_(global_dict), report_(new ::istio::mixer::v1::ReportRequest) {
     report_->set_global_word_count(global_dict.size());
   }
 
-  bool Add(const Attributes& attributes) override {
+  void Add(const Attributes& attributes) override {
     CompressedAttributes pb;
-    if (!CompressByDict(attributes, dict_, *delta_update_, &pb)) {
-      return false;
-    }
+    CompressByDict(attributes, dict_, &pb);
     pb.GetReflection()->Swap(report_->add_attributes(), &pb);
-    return true;
   }
 
   int size() const override { return report_->attributes_size(); }
@@ -157,7 +142,6 @@ class BatchCompressorImpl : public BatchCompressor {
 
  private:
   MessageDictionary dict_;
-  std::unique_ptr<DeltaUpdate> delta_update_;
   std::unique_ptr<::istio::mixer::v1::ReportRequest> report_;
 };
 
@@ -194,9 +178,7 @@ void AttributeCompressor::Compress(
     const Attributes& attributes,
     ::istio::mixer::v1::CompressedAttributes* pb) const {
   MessageDictionary dict(global_dict_);
-  std::unique_ptr<DeltaUpdate> delta_update = DeltaUpdate::CreateNoOp();
-
-  CompressByDict(attributes, dict, *delta_update, pb);
+  CompressByDict(attributes, dict, pb);
 
   for (const std::string& word : dict.GetWords()) {
     pb->add_words(word);
