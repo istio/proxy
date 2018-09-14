@@ -145,12 +145,14 @@ class BatchCompressorImpl : public BatchCompressor {
   void Clear() override {
     dict_.Clear();
     report_.Clear();
+    google::protobuf::Arena::Create<MyCustomClass>(&arena
   }
 
  private:
   const GlobalDictionary& global_dict_;
   MessageDictionary dict_;
-  ::istio::mixer::v1::ReportRequest report_;
+  google::protobuf::Arena arena_;
+  ::istio::mixer::v1::ReportRequest* report_;
 };
 
 }  // namespace
