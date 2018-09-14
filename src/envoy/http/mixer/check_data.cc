@@ -15,6 +15,7 @@
 
 #include "src/envoy/http/mixer/check_data.h"
 #include "common/common/base64.h"
+#include "common/http/headers.h"
 #include "src/envoy/http/jwt_auth/jwt.h"
 #include "src/envoy/http/jwt_auth/jwt_authenticator.h"
 #include "src/envoy/utils/authn.h"
@@ -32,6 +33,7 @@ const LowerCaseString kRefererHeaderKey("referer");
 
 // Set of headers excluded from request.headers attribute.
 const std::set<std::string> RequestHeaderExclusives = {
+    Http::Headers::get().Authorization.get(),
     Utils::HeaderUpdate::IstioAttributeHeader().get(),
 };
 
