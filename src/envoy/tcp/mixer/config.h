@@ -78,6 +78,7 @@ class Config {
   // Time interval in milliseconds for sending periodical delta reports.
   std::chrono::milliseconds report_interval_ms_;
 };
+typedef std::unique_ptr<Config> ConfigPtr;
 
 }  // namespace Mixer
 }  // namespace Tcp

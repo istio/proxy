@@ -45,6 +45,7 @@ class Config {
   // The Http client config.
   ::istio::mixer::v1::config::client::HttpClientConfig config_pb_;
 };
+typedef std::unique_ptr<Config> ConfigPtr;
 
 }  // namespace Mixer
 }  // namespace Http

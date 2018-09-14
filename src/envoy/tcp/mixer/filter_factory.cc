@@ -52,11 +52,8 @@ class FilterFactory : public NamedNetworkFilterConfigFactory {
  private:
   Network::FilterFactoryCb createFilterFactory(const TcpClientConfig& config_pb,
                                                FactoryContext& context) {
-    std::unique_ptr<Tcp::Mixer::Config> config_obj(
-        new Tcp::Mixer::Config(config_pb));
-
-    auto control_factory = std::make_shared<Tcp::Mixer::ControlFactory>(
-        std::move(config_obj), context);
+    auto config_obj = std::make_unique<Tcp::Mixer::Config>(config_pb);
+    auto control_factory = getControlFactory(std::move(config_obj), context);
     return [control_factory](Network::FilterManager& filter_manager) -> void {
       std::shared_ptr<Tcp::Mixer::Filter> instance =
           std::make_shared<Tcp::Mixer::Filter>(control_factory->control());
@@ -64,6 +61,23 @@ class FilterFactory : public NamedNetworkFilterConfigFactory {
       filter_manager.addWriteFilter(Network::WriteFilterSharedPtr(instance));
     };
   }
+
+  Tcp::Mixer::ControlFactorySharedPtr getControlFactory(
+      Tcp::Mixer::ConfigPtr config_obj, FactoryContext& context) {
+    const std::string hash = config_obj->config_pb().SerializeAsString();
+    Tcp::Mixer::ControlFactorySharedPtr control_factory =
+        control_factory_maps_[hash].lock();
+    if (!control_factory) {
+      control_factory = std::make_shared<Tcp::Mixer::ControlFactory>(
+          std::move(config_obj), context);
+      control_factory_maps_[hash] = control_factory;
+    }
+    return control_factory;
+  }
+
+  // A weak pointer map to share control factory across different listeners.
+  std::unordered_map<std::string, std::weak_ptr<Tcp::Mixer::ControlFactory>>
+      control_factory_maps_;
 };
 
 static Registry::RegisterFactory<FilterFactory, NamedNetworkFilterConfigFactory>
