@@ -517,13 +517,13 @@ fields {
 
 void ClearContextTime(const std::string &name, RequestContext *request) {
   // Override timestamp with -
-  utils::AttributesBuilder builder(&request->attributes);
+  utils::AttributesBuilder builder(request->attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
   builder.AddTimestamp(name, time0);
 }
 
 void SetDestinationIp(RequestContext *request, const std::string &ip) {
-  utils::AttributesBuilder builder(&request->attributes);
+  utils::AttributesBuilder builder(request->attributes);
   builder.AddBytes(utils::AttributeName::kDestinationIp, ip);
 }
 
@@ -541,7 +541,7 @@ TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   RequestContext request;
   AttributesBuilder builder(&request);
   builder.ExtractForwardedAttributes(&mock_data);
-  EXPECT_THAT(request.attributes, EqualsAttribute(attr));
+  EXPECT_THAT(*request.attributes, EqualsAttribute(attr));
 }
 
 TEST(AttributesBuilderTest, TestForwardAttributes) {
@@ -631,7 +631,7 @@ TEST(AttributesBuilderTest, TestCheckAttributesWithoutAuthnFilter) {
   Attributes expected_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kCheckAttributesWithoutAuthnFilter,
                                           &expected_attributes));
-  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestCheckAttributes) {
@@ -705,7 +705,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kCheckAttributes, &expected_attributes));
-  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
@@ -769,7 +769,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   (*expected_attributes
         .mutable_attributes())[utils::AttributeName::kResponseGrpcMessage]
       .set_string_value("grpc-message");
-  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
@@ -816,7 +816,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kReportAttributes, &expected_attributes));
-  EXPECT_THAT(request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
 
 }  // namespace

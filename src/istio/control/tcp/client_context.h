@@ -52,17 +52,17 @@ class ClientContext : public ClientContextBase {
 
   // Add static mixer attributes.
   void AddStaticAttributes(RequestContext* request) const {
-    AddLocalNodeAttributes(&request->attributes);
+    AddLocalNodeAttributes(request->attributes);
 
     if (config_.has_mixer_attributes()) {
-      request->attributes.MergeFrom(config_.mixer_attributes());
+      request->attributes->MergeFrom(config_.mixer_attributes());
     }
   }
 
   // Add quota requirements from quota configs.
   void AddQuotas(RequestContext* request) const {
     if (quota_parser_) {
-      quota_parser_->GetRequirements(request->attributes, &request->quotas);
+      quota_parser_->GetRequirements(*request->attributes, &request->quotas);
     }
   }
 

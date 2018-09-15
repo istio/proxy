@@ -360,7 +360,7 @@ attributes {
 
 void ClearContextTime(RequestContext* request) {
   // Override timestamp with -
-  utils::AttributesBuilder builder(&request->attributes);
+  utils::AttributesBuilder builder(request->attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
   builder.AddTimestamp(utils::AttributeName::kContextTime, time0);
 }
@@ -398,14 +398,14 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   ClearContextTime(&request);
 
   std::string out_str;
-  TextFormat::PrintToString(request.attributes, &out_str);
+  TextFormat::PrintToString(*request.attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kCheckAttributes, &expected_attributes));
   EXPECT_TRUE(
-      MessageDifferencer::Equals(request.attributes, expected_attributes));
+      MessageDifferencer::Equals(*request.attributes, expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
@@ -459,14 +459,14 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   ClearContextTime(&request);
 
   std::string out_str;
-  TextFormat::PrintToString(request.attributes, &out_str);
+  TextFormat::PrintToString(*request.attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_open_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kFirstReportAttributes,
                                           &expected_open_attributes));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(request.attributes, expected_open_attributes));
+  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
+                                         expected_open_attributes));
   EXPECT_EQ(0, last_report_info.received_bytes);
   EXPECT_EQ(0, last_report_info.send_bytes);
 
@@ -475,13 +475,13 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
       &mock_data, ReportData::ConnectionEvent::CONTINUE, &last_report_info);
   ClearContextTime(&request);
 
-  TextFormat::PrintToString(request.attributes, &out_str);
+  TextFormat::PrintToString(*request.attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_delta_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kDeltaOneReportAttributes,
                                           &expected_delta_attributes));
-  EXPECT_TRUE(MessageDifferencer::Equals(request.attributes,
+  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
                                          expected_delta_attributes));
   EXPECT_EQ(100, last_report_info.received_bytes);
   EXPECT_EQ(200, last_report_info.send_bytes);
@@ -492,13 +492,13 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   ClearContextTime(&request);
 
   out_str.clear();
-  TextFormat::PrintToString(request.attributes, &out_str);
+  TextFormat::PrintToString(*request.attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   expected_delta_attributes.Clear();
   ASSERT_TRUE(TextFormat::ParseFromString(kDeltaTwoReportAttributes,
                                           &expected_delta_attributes));
-  EXPECT_TRUE(MessageDifferencer::Equals(request.attributes,
+  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
                                          expected_delta_attributes));
   EXPECT_EQ(201, last_report_info.received_bytes);
   EXPECT_EQ(404, last_report_info.send_bytes);
@@ -509,13 +509,13 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   ClearContextTime(&request);
 
   out_str.clear();
-  TextFormat::PrintToString(request.attributes, &out_str);
+  TextFormat::PrintToString(*request.attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_final_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kReportAttributes,
                                           &expected_final_attributes));
-  EXPECT_TRUE(MessageDifferencer::Equals(request.attributes,
+  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
                                          expected_final_attributes));
 }
 

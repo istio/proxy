@@ -52,13 +52,14 @@ void ServiceContext::BuildParsers() {
 
 // Add static mixer attributes.
 void ServiceContext::AddStaticAttributes(RequestContext *request) const {
-  client_context_->AddLocalNodeAttributes(&request->attributes);
+  client_context_->AddLocalNodeAttributes(request->attributes);
 
   if (client_context_->config().has_mixer_attributes()) {
-    request->attributes.MergeFrom(client_context_->config().mixer_attributes());
+    request->attributes->MergeFrom(
+        client_context_->config().mixer_attributes());
   }
   if (service_config_ && service_config_->has_mixer_attributes()) {
-    request->attributes.MergeFrom(service_config_->mixer_attributes());
+    request->attributes->MergeFrom(service_config_->mixer_attributes());
   }
 }
 
@@ -90,13 +91,13 @@ void ServiceContext::AddApiAttributes(CheckData *check_data,
   std::string path;
   if (check_data->FindHeaderByType(CheckData::HEADER_METHOD, &http_method) &&
       check_data->FindHeaderByType(CheckData::HEADER_PATH, &path)) {
-    api_spec_parser_->AddAttributes(http_method, path, &request->attributes);
+    api_spec_parser_->AddAttributes(http_method, path, request->attributes);
   }
 
   std::string api_key;
   if (api_spec_parser_->ExtractApiKey(check_data, &api_key)) {
     (*request->attributes
-          .mutable_attributes())[utils::AttributeName::kRequestApiKey]
+          ->mutable_attributes())[utils::AttributeName::kRequestApiKey]
         .set_string_value(api_key);
   }
 }
@@ -104,7 +105,7 @@ void ServiceContext::AddApiAttributes(CheckData *check_data,
 // Add quota requirements from quota configs.
 void ServiceContext::AddQuotas(RequestContext *request) const {
   for (const auto &parser : quota_parsers_) {
-    parser->GetRequirements(request->attributes, &request->quotas);
+    parser->GetRequirements(*request->attributes, &request->quotas);
   }
 }
 

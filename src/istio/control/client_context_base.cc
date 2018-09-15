@@ -90,7 +90,7 @@ CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
     // save the check status code
     request->check_status = check_response_info.response_status;
 
-    utils::AttributesBuilder builder(&request->attributes);
+    utils::AttributesBuilder builder(request->attributes);
     builder.AddBool(utils::AttributeName::kCheckCacheHit,
                     check_response_info.is_check_cache_hit);
     builder.AddBool(utils::AttributeName::kQuotaCacheHit,
@@ -100,16 +100,16 @@ CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
 
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Check attributes: " <<
-  // request->attributes.DebugString();
-  return mixer_client_->Check(request->attributes, request->quotas, transport,
+  // request->attributes->DebugString();
+  return mixer_client_->Check(*request->attributes, request->quotas, transport,
                               local_on_done);
 }
 
 void ClientContextBase::SendReport(const RequestContext& request) {
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Report attributes: " <<
-  // request.attributes.DebugString();
-  mixer_client_->Report(request.attributes);
+  // request.attributes->DebugString();
+  mixer_client_->Report(*request.attributes);
 }
 
 void ClientContextBase::GetStatistics(Statistics* stat) const {
