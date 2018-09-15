@@ -126,9 +126,7 @@ void CompressByDict(const Attributes& attributes, MessageDictionary& dict,
 class BatchCompressorImpl : public BatchCompressor {
  public:
   BatchCompressorImpl(const GlobalDictionary& global_dict)
-      : dict_(global_dict) {
-    report_.set_global_word_count(global_dict.size());
-  }
+      : global_dict_(global_dict), dict_(global_dict) {}
 
   void Add(const Attributes& attributes) override {
     CompressByDict(attributes, dict_, report_.add_attributes());
@@ -140,6 +138,7 @@ class BatchCompressorImpl : public BatchCompressor {
     for (const std::string& word : dict_.GetWords()) {
       report_.add_default_words(word);
     }
+    report_.set_global_word_count(global_dict_.size());
     return report_;
   }
 
@@ -149,6 +148,7 @@ class BatchCompressorImpl : public BatchCompressor {
   }
 
  private:
+  const GlobalDictionary& global_dict_;
   MessageDictionary dict_;
   ::istio::mixer::v1::ReportRequest report_;
 };
