@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "src/istio/mixerclient/client_impl.h"
+#include <google/protobuf/arena.h>
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/protobuf.h"
 
@@ -82,26 +83,32 @@ CancelFunc MixerClientImpl::Check(
   quota_cache_->Check(attributes, quotas, check_result->IsCacheHit(),
                       quota_result.get());
 
-  CheckRequest request;
-  bool quota_call = quota_result->BuildRequest(&request);
+  auto arena = new google::protobuf::Arena;
+  CheckRequest *request =
+      google::protobuf::Arena::CreateMessage<CheckRequest>(arena);
+  bool quota_call = quota_result->BuildRequest(request);
   check_response_info.is_quota_cache_hit = quota_result->IsCacheHit();
   check_response_info.response_status = quota_result->status();
   if (check_result->IsCacheHit() && quota_result->IsCacheHit()) {
     on_done(check_response_info);
     on_done = nullptr;
     if (!quota_call) {
+      delete arena;
       return nullptr;
     }
   }
 
-  compressor_.Compress(attributes, request.mutable_attributes());
-  request.set_global_word_count(compressor_.global_word_count());
-  request.set_deduplication_id(deduplication_id_base_ +
-                               std::to_string(deduplication_id_.fetch_add(1)));
+  compressor_.Compress(attributes, request->mutable_attributes());
+  request->set_global_word_count(compressor_.global_word_count());
+  request->set_deduplication_id(deduplication_id_base_ +
+                                std::to_string(deduplication_id_.fetch_add(1)));
 
   // Need to make a copy for processing the response for check cache.
-  Attributes *request_copy = new Attributes(attributes);
-  auto response = new CheckResponse;
+  Attributes *attributes_copy =
+      google::protobuf::Arena::CreateMessage<Attributes>(arena);
+  CheckResponse *response =
+      google::protobuf::Arena::CreateMessage<CheckResponse>(arena);
+  *attributes_copy = attributes;
   // Lambda capture could not pass unique_ptr, use raw pointer.
   CheckCache::CheckResult *raw_check_result = check_result.release();
   QuotaCache::CheckResult *raw_quota_result = quota_result.release();
@@ -121,11 +128,11 @@ CancelFunc MixerClientImpl::Check(
   }
 
   return transport(
-      request, response,
-      [this, request_copy, response, raw_check_result, raw_quota_result,
-       on_done](const Status &status) {
-        raw_check_result->SetResponse(status, *request_copy, *response);
-        raw_quota_result->SetResponse(status, *request_copy, *response);
+      *request, response,
+      [this, attributes_copy, response, raw_check_result, raw_quota_result,
+       on_done, arena](const Status &status) {
+        raw_check_result->SetResponse(status, *attributes_copy, *response);
+        raw_quota_result->SetResponse(status, *attributes_copy, *response);
         CheckResponseInfo check_response_info;
         if (on_done) {
           if (!raw_check_result->status().ok()) {
@@ -139,8 +146,7 @@ CancelFunc MixerClientImpl::Check(
         }
         delete raw_check_result;
         delete raw_quota_result;
-        delete request_copy;
-        delete response;
+        delete arena;
 
         if (utils::InvalidDictionaryStatus(status)) {
           compressor_.ShrinkGlobalDictionary();

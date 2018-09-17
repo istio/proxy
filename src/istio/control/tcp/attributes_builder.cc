@@ -30,7 +30,7 @@ const std::string kConnectionClose("close");
 }  // namespace
 
 void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
-  utils::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(request_->attributes);
 
   std::string source_ip;
   int source_port;
@@ -83,7 +83,7 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
 void AttributesBuilder::ExtractReportAttributes(
     ReportData* report_data, ReportData::ConnectionEvent event,
     ReportData::ReportInfo* last_report_info) {
-  utils::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(request_->attributes);
 
   ReportData::ReportInfo info;
   report_data->GetReportInfo(&info);

@@ -16,6 +16,7 @@
 #ifndef ISTIO_CONTROL_REQUEST_CONTEXT_H
 #define ISTIO_CONTROL_REQUEST_CONTEXT_H
 
+#include "google/protobuf/arena.h"
 #include "google/protobuf/stubs/status.h"
 #include "include/istio/quota_config/requirement.h"
 #include "mixer/v1/attributes.pb.h"
@@ -27,8 +28,15 @@ namespace control {
 
 // The context to hold request data for both HTTP and TCP.
 struct RequestContext {
+  RequestContext() {
+    attributes =
+        google::protobuf::Arena::CreateMessage<::istio::mixer::v1::Attributes>(
+            &arena_);
+  }
+  // protobuf arena
+  google::protobuf::Arena arena_;
   // The attributes for both Check and Report.
-  ::istio::mixer::v1::Attributes attributes;
+  ::istio::mixer::v1::Attributes* attributes;
   // The quota requirements
   std::vector<::istio::quota_config::Requirement> quotas;
   // The check status.

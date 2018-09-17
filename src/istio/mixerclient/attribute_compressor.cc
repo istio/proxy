@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/mixerclient/attribute_compressor.h"
+#include "google/protobuf/arena.h"
 #include "include/istio/utils/protobuf.h"
 #include "src/istio/mixerclient/global_dictionary.h"
 
@@ -126,31 +127,36 @@ void CompressByDict(const Attributes& attributes, MessageDictionary& dict,
 class BatchCompressorImpl : public BatchCompressor {
  public:
   BatchCompressorImpl(const GlobalDictionary& global_dict)
-      : global_dict_(global_dict), dict_(global_dict) {}
-
-  void Add(const Attributes& attributes) override {
-    CompressByDict(attributes, dict_, report_.add_attributes());
+      : global_dict_(global_dict), dict_(global_dict) {
+    report_ = google::protobuf::Arena::CreateMessage<
+        ::istio::mixer::v1::ReportRequest>(&arena_);
   }
 
-  int size() const override { return report_.attributes_size(); }
+  void Add(const Attributes& attributes) override {
+    CompressByDict(attributes, dict_, report_->add_attributes());
+  }
+
+  int size() const override { return report_->attributes_size(); }
 
   const ::istio::mixer::v1::ReportRequest& Finish() override {
     for (const std::string& word : dict_.GetWords()) {
-      report_.add_default_words(word);
+      report_->add_default_words(word);
     }
-    report_.set_global_word_count(global_dict_.size());
-    return report_;
+    report_->set_global_word_count(global_dict_.size());
+    return *report_;
   }
 
   void Clear() override {
     dict_.Clear();
-    report_.Clear();
+    report_->Clear();
   }
 
  private:
   const GlobalDictionary& global_dict_;
+  // protobuf arena
+  google::protobuf::Arena arena_;
   MessageDictionary dict_;
-  ::istio::mixer::v1::ReportRequest report_;
+  ::istio::mixer::v1::ReportRequest* report_;
 };
 
 }  // namespace
