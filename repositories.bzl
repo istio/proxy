@@ -113,7 +113,7 @@ cc_library(
             actual = "@googletest_git//:googletest_prod",
         )
 
-ISTIO_API = "214c7598afb74f7f4dea49f77e45832c49382a15"
+ISTIO_API = "62c345bd6d6e4c2047dd2dee128b7413231be7b4"
 
 def mixerapi_repositories(bind=True):
     BUILD = """
@@ -199,12 +199,11 @@ filegroup(
 )
 
 """
-    native.new_local_repository(
+    native.new_git_repository(
         name = "mixerapi_git",
         build_file_content = BUILD,
-#        commit = ISTIO_API,
-#        remote = "https://github.com/istio/api.git",
-        path = "../api",
+        commit = ISTIO_API,
+        remote = "https://github.com/istio/api.git",
     )
     if bind:
         native.bind(
