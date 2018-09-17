@@ -24,6 +24,7 @@
 #include "src/envoy/http/authn/test_utils.h"
 #include "src/envoy/utils/authn.h"
 #include "test/mocks/http/mocks.h"
+#include "test/test_common/test_time.h"
 #include "test/test_common/utility.h"
 
 using Envoy::Http::Istio::AuthN::AuthenticatorBase;
@@ -119,7 +120,9 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
   EXPECT_CALL(filter_, createPeerAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
-  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2);
+  DangerousDeprecatedTestTime test_time;
+  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2,
+                                            test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, requestInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(request_info));
@@ -134,7 +137,7 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
       request_info.dynamicMetadata()));
 }
 
-TEST_F(AuthenticationFilterTest, PeerPassOrginFail) {
+TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
   // Peer pass thus origin authentication must be called. Final result should
   // fail as origin authn fails.
   EXPECT_CALL(filter_, createPeerAuthenticator(_))
@@ -143,7 +146,9 @@ TEST_F(AuthenticationFilterTest, PeerPassOrginFail) {
   EXPECT_CALL(filter_, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
-  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2);
+  DangerousDeprecatedTestTime test_time;
+  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2,
+                                            test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, requestInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(request_info));
@@ -165,7 +170,9 @@ TEST_F(AuthenticationFilterTest, AllPass) {
   EXPECT_CALL(filter_, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
-  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2);
+  DangerousDeprecatedTestTime test_time;
+  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2,
+                                            test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, requestInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(request_info));

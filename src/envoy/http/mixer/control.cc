@@ -25,9 +25,9 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
                  Utils::MixerFilterStats& stats)
     : config_(config),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
-          config_.check_cluster(), cm, scope)),
+          config_.check_cluster(), cm, scope, dispatcher.timeSystem())),
       report_client_factory_(Utils::GrpcClientFactoryForCluster(
-          config_.report_cluster(), cm, scope)),
+          config_.report_cluster(), cm, scope, dispatcher.timeSystem())),
       stats_obj_(dispatcher, stats,
                  config_.config_pb().transport().stats_update_interval(),
                  [this](::istio::mixerclient::Statistics* stat) -> bool {
