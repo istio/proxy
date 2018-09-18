@@ -82,12 +82,23 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
   }
 };
 
+// For backward compatible. This can be removed once pilot switch to use the new
+// name.
+class AliasAuthnFilterConfig : public AuthnFilterConfig {
+ public:
+  std::string name() override { return "istio_authn"; }
+};
+
 /**
  * Static registration for the Authn filter. @see RegisterFactory.
  */
 static Registry::RegisterFactory<AuthnFilterConfig,
                                  NamedHttpFilterConfigFactory>
     register_;
+
+static Registry::RegisterFactory<AliasAuthnFilterConfig,
+                                 NamedHttpFilterConfigFactory>
+    register_alias_;
 
 }  // namespace Configuration
 }  // namespace Server

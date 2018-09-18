@@ -44,7 +44,7 @@ static const Http::TestHeaderMapImpl kSimpleRequestHeader{{
 static const char kJwtIssuer[] = "some@issuer";
 
 static const char kAuthnFilterWithJwt[] = R"(
-    name: istio_authn
+    name: istio.authn
     config:
       policy:
         origins:
@@ -85,7 +85,7 @@ INSTANTIATE_TEST_CASE_P(
     HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
-  config_helper_.addFilter("name: istio_authn");
+  config_helper_.addFilter("name: istio.authn");
   initialize();
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
@@ -104,7 +104,7 @@ TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
 
 TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
   config_helper_.addFilter(R"(
-    name: istio_authn
+    name: istio.authn
     config:
       policy:
         peers:
@@ -163,6 +163,29 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
   EXPECT_STREQ("200", response->headers().Status()->value().c_str());
+}
+
+// This test verifies filter with the old name (istio_authn) is recognizable.
+TEST_P(AuthenticationFilterIntegrationTest, Alias) {
+  config_helper_.addFilter(R"(
+    name: istio_authn
+    config:
+      policy:
+        peers:
+        - mtls: {})");
+  initialize();
+
+  // AuthN filter use MTls, but request doesn't have certificate, request
+  // would be rejected.
+  codec_client_ =
+      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response = codec_client_->makeHeaderOnlyRequest(kSimpleRequestHeader);
+
+  // Request is rejected, there will be no upstream request (thus no
+  // waitForNextUpstreamRequest).
+  response->waitForEndStream();
+  EXPECT_TRUE(response->complete());
+  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
 }
 
 }  // namespace

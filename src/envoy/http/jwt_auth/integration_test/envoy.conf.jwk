@@ -32,7 +32,7 @@
             "filters": [
               {
                 "type": "decoder",
-                "name": "jwt-auth",
+                "name": "istio.jwt",
                 "config": {
                    "rules": [
                      {
