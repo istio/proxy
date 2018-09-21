@@ -218,7 +218,29 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheckReport) {
 TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
   ::testing::NiceMock<MockCheckData> mock_data;
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
-  // Report is enabled so Attributes are extracted.
+  // Report is enabled so Check Attributes are not extracted.
+  EXPECT_CALL(mock_data, GetSourceIpPort(_, _)).Times(0);
+  EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(0);
+
+  // Check should NOT be called.
+  EXPECT_CALL(*mock_client_, Check(_, _, _, _)).Times(0);
+
+  ServiceConfig config;
+  config.set_disable_check_calls(true);
+  Controller::PerRouteConfig per_route;
+  ApplyPerRouteConfig(config, &per_route);
+
+  auto handler = controller_->CreateRequestHandler(per_route);
+  handler->Check(&mock_data, &mock_header, nullptr,
+                 [](const CheckResponseInfo& info) {
+                   EXPECT_TRUE(info.response_status.ok());
+                 });
+}
+
+TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheckWithExtract) {
+  ::testing::NiceMock<MockCheckData> mock_data;
+  ::testing::NiceMock<MockHeaderUpdate> mock_header;
+  // Report is enabled so Check Attributes are not extracted.
   EXPECT_CALL(mock_data, GetSourceIpPort(_, _)).Times(1);
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
@@ -235,6 +257,8 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
                  [](const CheckResponseInfo& info) {
                    EXPECT_TRUE(info.response_status.ok());
                  });
+
+  handler->ExtractRequestAttributes(&mock_data);
 }
 
 TEST_F(RequestHandlerImplTest, TestPerRouteAttributes) {

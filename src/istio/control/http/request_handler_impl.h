@@ -42,11 +42,21 @@ class RequestHandlerImpl : public RequestHandler {
   void ExtractRequestAttributes(CheckData* check_data) override;
 
  private:
+  // Add Forward attributes, allow re-entry
+  void AddForwardAttributes(CheckData* check_data);
+  // Add check attributes, allow re-entry
+  void AddCheckAttributes(CheckData* check_data);
+
   // The request context object.
   RequestContext request_context_;
 
   // The service context.
   std::shared_ptr<ServiceContext> service_context_;
+
+  // If true, request attributes are added
+  bool check_attributes_added_;
+  // If true, forward attributes are added
+  bool forward_attributes_added_;
 };
 
 }  // namespace http
