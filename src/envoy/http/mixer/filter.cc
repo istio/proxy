@@ -24,33 +24,11 @@
 #include "src/envoy/utils/header_update.h"
 
 using ::google::protobuf::util::Status;
-using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::mixerclient::CheckResponseInfo;
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
-namespace {
-
-// Per route opaque data for "destination.service".
-const std::string kPerRouteDestinationService("destination.service");
-// Per route opaque data name "mixer" is base64(JSON(ServiceConfig))
-const std::string kPerRouteMixer("mixer");
-// Per route opaque data name "mixer_sha" is SHA(JSON(ServiceConfig))
-const std::string kPerRouteMixerSha("mixer_sha");
-
-// Read a string value from a string map.
-bool ReadStringMap(const std::multimap<std::string, std::string>& string_map,
-                   const std::string& name, std::string* value) {
-  auto it = string_map.find(name);
-  if (it != string_map.end()) {
-    *value = it->second;
-    return true;
-  }
-  return false;
-}
-
-}  // namespace
 
 Filter::Filter(Control& control)
     : control_(control),
@@ -77,45 +55,6 @@ void Filter::ReadPerRouteConfig(
     config->service_config_id = route_cfg->hash;
     return;
   }
-
-  const auto& string_map = entry->opaqueConfig();
-  ReadStringMap(string_map, kPerRouteDestinationService,
-                &config->destination_service);
-
-  if (!ReadStringMap(string_map, kPerRouteMixerSha,
-                     &config->service_config_id) ||
-      config->service_config_id.empty()) {
-    return;
-  }
-
-  if (control_.controller()->LookupServiceConfig(config->service_config_id)) {
-    return;
-  }
-
-  std::string config_base64;
-  if (!ReadStringMap(string_map, kPerRouteMixer, &config_base64)) {
-    ENVOY_LOG(warn, "Service {} missing [mixer] per-route attribute",
-              config->destination_service);
-    return;
-  }
-  std::string config_json = Base64::decode(config_base64);
-  if (config_json.empty()) {
-    ENVOY_LOG(warn, "Service {} invalid base64 config data",
-              config->destination_service);
-    return;
-  }
-  ServiceConfig config_pb;
-  auto status = Utils::ParseJsonMessage(config_json, &config_pb);
-  if (!status.ok()) {
-    ENVOY_LOG(warn,
-              "Service {} failed to convert JSON config to protobuf, error: {}",
-              config->destination_service, status.ToString());
-    return;
-  }
-  control_.controller()->AddServiceConfig(config->service_config_id, config_pb);
-  ENVOY_LOG(info, "Service {}, config_id {}, config: {}",
-            config->destination_service, config->service_config_id,
-            MessageUtil::getJsonStringFromMessage(config_pb, true));
 }
 
 FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
