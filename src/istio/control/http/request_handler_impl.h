@@ -37,9 +37,7 @@ class RequestHandlerImpl : public RequestHandler {
       ::istio::mixerclient::CheckDoneFunc on_done) override;
 
   // Make a Report call.
-  void Report(ReportData* report_data) override;
-
-  void ExtractRequestAttributes(CheckData* check_data) override;
+  void Report(CheckData* check_data, ReportData* report_data) override;
 
  private:
   // Add Forward attributes, allow re-entry

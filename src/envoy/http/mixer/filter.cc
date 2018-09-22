@@ -284,16 +284,13 @@ void Filter::log(const HeaderMap* request_headers,
     handler_ = control_.controller()->CreateRequestHandler(config);
   }
 
-  // If check is NOT called, some request attributes are not extracted.
-  // If they are already extracted, handler will skip it.
+  // If check is NOT called, check attributes are not extracted.
   CheckData check_data(*request_headers, request_info.dynamicMetadata(),
                        decoder_callbacks_->connection());
-  handler_->ExtractRequestAttributes(&check_data);
-
   // response trailer header is not counted to response total size.
   ReportData report_data(response_headers, response_trailers, request_info,
                          request_total_size_);
-  handler_->Report(&report_data);
+  handler_->Report(&check_data, &report_data);
 }
 
 }  // namespace Mixer

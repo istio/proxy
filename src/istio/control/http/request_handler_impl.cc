@@ -60,15 +60,12 @@ void RequestHandlerImpl::AddCheckAttributes(CheckData* check_data) {
   }
 }
 
-void RequestHandlerImpl::ExtractRequestAttributes(CheckData* check_data) {
-  AddForwardAttributes(check_data);
-  AddCheckAttributes(check_data);
-}
-
 CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
                                      HeaderUpdate* header_update,
                                      TransportCheckFunc transport,
                                      CheckDoneFunc on_done) {
+  // Forwarded attributes need to be stored regardless Check is needed
+  // or not since the header will be updated or removed.
   AddForwardAttributes(check_data);
   header_update->RemoveIstioAttributes();
   service_context_->InjectForwardedAttributes(header_update);
@@ -89,10 +86,15 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
 }
 
 // Make remote report call.
-void RequestHandlerImpl::Report(ReportData* report_data) {
+void RequestHandlerImpl::Report(CheckData* check_data,
+                                ReportData* report_data) {
   if (!service_context_->enable_mixer_report()) {
     return;
   }
+
+  AddForwardAttributes(check_data);
+  AddCheckAttributes(check_data);
+
   AttributesBuilder builder(&request_context_);
   builder.ExtractReportAttributes(report_data);
 
