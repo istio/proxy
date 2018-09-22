@@ -221,15 +221,15 @@ void Filter::log(const HeaderMap* request_headers,
     ::istio::control::http::Controller::PerRouteConfig config;
     ReadPerRouteConfig(request_info.routeEntry(), &config);
     handler_ = control_.controller()->CreateRequestHandler(config);
-
-    CheckData check_data(*request_headers, request_info.dynamicMetadata(),
-                         nullptr);
-    handler_->ExtractRequestAttributes(&check_data);
   }
+
+  // If check is NOT called, check attributes are not extracted.
+  CheckData check_data(*request_headers, request_info.dynamicMetadata(),
+                       decoder_callbacks_->connection());
   // response trailer header is not counted to response total size.
   ReportData report_data(response_headers, response_trailers, request_info,
                          request_total_size_);
-  handler_->Report(&report_data);
+  handler_->Report(&check_data, &report_data);
 }
 
 }  // namespace Mixer

@@ -29,15 +29,31 @@ namespace http {
 
 RequestHandlerImpl::RequestHandlerImpl(
     std::shared_ptr<ServiceContext> service_context)
-    : service_context_(service_context) {}
+    : service_context_(service_context),
+      check_attributes_added_(false),
+      forward_attributes_added_(false) {}
 
-void RequestHandlerImpl::ExtractRequestAttributes(CheckData* check_data) {
+void RequestHandlerImpl::AddForwardAttributes(CheckData* check_data) {
+  if (forward_attributes_added_) {
+    return;
+  }
+  forward_attributes_added_ = true;
+
+  AttributesBuilder builder(&request_context_);
+  builder.ExtractForwardedAttributes(check_data);
+}
+
+void RequestHandlerImpl::AddCheckAttributes(CheckData* check_data) {
+  if (check_attributes_added_) {
+    return;
+  }
+  check_attributes_added_ = true;
+
   if (service_context_->enable_mixer_check() ||
       service_context_->enable_mixer_report()) {
     service_context_->AddStaticAttributes(&request_context_);
 
     AttributesBuilder builder(&request_context_);
-    builder.ExtractForwardedAttributes(check_data);
     builder.ExtractCheckAttributes(check_data);
 
     service_context_->AddApiAttributes(check_data, &request_context_);
@@ -48,7 +64,9 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
                                      HeaderUpdate* header_update,
                                      TransportCheckFunc transport,
                                      CheckDoneFunc on_done) {
-  ExtractRequestAttributes(check_data);
+  // Forwarded attributes need to be stored regardless Check is needed
+  // or not since the header will be updated or removed.
+  AddForwardAttributes(check_data);
   header_update->RemoveIstioAttributes();
   service_context_->InjectForwardedAttributes(header_update);
 
@@ -59,6 +77,8 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
     return nullptr;
   }
 
+  AddCheckAttributes(check_data);
+
   service_context_->AddQuotas(&request_context_);
 
   return service_context_->client_context()->SendCheck(transport, on_done,
@@ -66,10 +86,15 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
 }
 
 // Make remote report call.
-void RequestHandlerImpl::Report(ReportData* report_data) {
+void RequestHandlerImpl::Report(CheckData* check_data,
+                                ReportData* report_data) {
   if (!service_context_->enable_mixer_report()) {
     return;
   }
+
+  AddForwardAttributes(check_data);
+  AddCheckAttributes(check_data);
+
   AttributesBuilder builder(&request_context_);
   builder.ExtractReportAttributes(report_data);
 

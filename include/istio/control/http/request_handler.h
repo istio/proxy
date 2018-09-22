@@ -42,24 +42,10 @@ class RequestHandler {
 
   // Make a Report call. It will:
   // * check service config to see if Report is required
+  // * extract check attributes if not done yet.
   // * extract more report attributes
   // * make a Report call.
-  virtual void Report(ReportData* report_data) = 0;
-
-  // Extract the request attributes for Report() call.
-  // This is called at Report time when Check() is not called.
-  // Normally request attributes are extracted at Check() call.
-  // This is for cases the requests are rejected by http filters
-  // before mixer, such as fault injection, or auth.
-  //
-  // Usage:  at Envoy filter::log() function
-  //   if (!hander) {
-  //       handle = control->CreateHandler();
-  //       handler->ExtractRequestAttributes();
-  //   }
-  //   handler->Report();
-  //
-  virtual void ExtractRequestAttributes(CheckData* check_data) = 0;
+  virtual void Report(CheckData* check_data, ReportData* report_data) = 0;
 };
 
 }  // namespace http
