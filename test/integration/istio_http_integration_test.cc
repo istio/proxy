@@ -222,11 +222,11 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   void createUpstreams() override {
     HttpProtocolIntegrationTest::createUpstreams();
     fake_upstreams_.emplace_back(
-        new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_));
+        new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_, timeSystem()));
     telemetry_upstream_ = fake_upstreams_.back().get();
 
     fake_upstreams_.emplace_back(
-        new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_));
+        new FakeUpstream(0, FakeHttpConnection::Type::HTTP2, version_, timeSystem()));
     policy_upstream_ = fake_upstreams_.back().get();
   }
 
