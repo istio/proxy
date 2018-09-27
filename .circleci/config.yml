@@ -77,6 +77,7 @@ jobs:
     steps:
       - run: sudo ntpdate -vu time.apple.com
       - run: brew install bazel cmake coreutils go libtool ninja wget
+      - run: sudo ln -s /usr/local/bin/gsha256sum /usr/local/bin/sha256sum
       - checkout
       - restore_cache:
           keys:
