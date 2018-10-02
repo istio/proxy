@@ -75,8 +75,10 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
   Http::FilterFactoryCb createFilterFactory(const HttpClientConfig& config_pb,
                                             const std::string&,
                                             FactoryContext& context) {
-    auto config_obj = std::make_unique<Http::Mixer::Config>(config_pb);
-    auto control_factory = getControlFactory(std::move(config_obj), context);
+    std::unique_ptr<Http::Mixer::Config> config_obj(
+        new Http::Mixer::Config(config_pb));
+    auto control_factory = std::make_shared<Http::Mixer::ControlFactory>(
+        std::move(config_obj), context);
     return [control_factory](
                Http::FilterChainFactoryCallbacks& callbacks) -> void {
       std::shared_ptr<Http::Mixer::Filter> instance =
@@ -85,23 +87,6 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
       callbacks.addAccessLogHandler(AccessLog::InstanceSharedPtr(instance));
     };
   }
-
-  Http::Mixer::ControlFactorySharedPtr getControlFactory(
-      Http::Mixer::ConfigPtr config_obj, FactoryContext& context) {
-    const std::string hash = config_obj->config_pb().SerializeAsString();
-    Http::Mixer::ControlFactorySharedPtr control_factory =
-        control_factory_maps_[hash].lock();
-    if (!control_factory) {
-      control_factory = std::make_shared<Http::Mixer::ControlFactory>(
-          std::move(config_obj), context);
-      control_factory_maps_[hash] = control_factory;
-    }
-    return control_factory;
-  }
-
-  // A weak pointer map to share control factory across different listeners.
-  std::unordered_map<std::string, std::weak_ptr<Http::Mixer::ControlFactory>>
-      control_factory_maps_;
 };
 
 static Registry::RegisterFactory<MixerConfigFactory,
