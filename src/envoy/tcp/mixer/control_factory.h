@@ -70,7 +70,6 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
   // UUID of the Envoy TCP mixer filter.
   const std::string uuid_;
 };
-typedef std::shared_ptr<ControlFactory> ControlFactorySharedPtr;
 
 }  // namespace Mixer
 }  // namespace Tcp

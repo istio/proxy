@@ -63,7 +63,6 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
   // This stats object.
   Utils::MixerFilterStats stats_;
 };
-typedef std::shared_ptr<ControlFactory> ControlFactorySharedPtr;
 
 }  // namespace Mixer
 }  // namespace Http
