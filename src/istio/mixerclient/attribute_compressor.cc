@@ -128,8 +128,7 @@ class BatchCompressorImpl : public BatchCompressor {
  public:
   BatchCompressorImpl(const GlobalDictionary& global_dict)
       : global_dict_(global_dict), dict_(global_dict) {
-    report_ = google::protobuf::Arena::CreateMessage<
-        ::istio::mixer::v1::ReportRequest>(&arena_);
+    AllocReportProtobuf();
   }
 
   void Add(const Attributes& attributes) override {
@@ -148,14 +147,20 @@ class BatchCompressorImpl : public BatchCompressor {
 
   void Clear() override {
     dict_.Clear();
-    report_->Clear();
+    AllocReportProtobuf();
   }
 
  private:
+  void AllocReportProtobuf() {
+    arena_.reset(new google::protobuf::Arena);
+    report_ = google::protobuf::Arena::CreateMessage<
+        ::istio::mixer::v1::ReportRequest>(arena_.get());
+  }
+
   const GlobalDictionary& global_dict_;
-  // protobuf arena
-  google::protobuf::Arena arena_;
   MessageDictionary dict_;
+  // protobuf arena
+  std::unique_ptr<google::protobuf::Arena> arena_;
   ::istio::mixer::v1::ReportRequest* report_;
 };
 
