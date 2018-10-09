@@ -127,41 +127,31 @@ void CompressByDict(const Attributes& attributes, MessageDictionary& dict,
 class BatchCompressorImpl : public BatchCompressor {
  public:
   BatchCompressorImpl(const GlobalDictionary& global_dict)
-      : global_dict_(global_dict), dict_(global_dict) {
-    AllocReportProtobuf();
-  }
+      : global_dict_(global_dict), dict_(global_dict) {}
 
   void Add(const Attributes& attributes) override {
-    CompressByDict(attributes, dict_, report_->add_attributes());
+    CompressByDict(attributes, dict_, report_.add_attributes());
   }
 
-  int size() const override { return report_->attributes_size(); }
+  int size() const override { return report_.attributes_size(); }
 
   const ::istio::mixer::v1::ReportRequest& Finish() override {
     for (const std::string& word : dict_.GetWords()) {
-      report_->add_default_words(word);
+      report_.add_default_words(word);
     }
-    report_->set_global_word_count(global_dict_.size());
-    return *report_;
+    report_.set_global_word_count(global_dict_.size());
+    return report_;
   }
 
   void Clear() override {
     dict_.Clear();
-    AllocReportProtobuf();
+    report_.Clear();
   }
 
  private:
-  void AllocReportProtobuf() {
-    arena_.reset(new google::protobuf::Arena);
-    report_ = google::protobuf::Arena::CreateMessage<
-        ::istio::mixer::v1::ReportRequest>(arena_.get());
-  }
-
   const GlobalDictionary& global_dict_;
   MessageDictionary dict_;
-  // protobuf arena
-  std::unique_ptr<google::protobuf::Arena> arena_;
-  ::istio::mixer::v1::ReportRequest* report_;
+  ::istio::mixer::v1::ReportRequest report_;
 };
 
 }  // namespace
