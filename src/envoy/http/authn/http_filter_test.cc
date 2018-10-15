@@ -16,7 +16,7 @@
 #include "src/envoy/http/authn/http_filter.h"
 #include "common/common/base64.h"
 #include "common/http/header_map_impl.h"
-#include "common/request_info/request_info_impl.h"
+#include "common/stream_info/stream_info_impl.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -122,11 +122,11 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   DangerousDeprecatedTestTime test_time;
-  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2,
-                                            test_time.timeSystem());
-  EXPECT_CALL(decoder_callbacks_, requestInfo())
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
+                                         test_time.timeSystem());
+  EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(request_info));
+      .WillRepeatedly(ReturnRef(stream_info));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
       .WillOnce(testing::Invoke([](Http::HeaderMap &headers, bool) {
@@ -135,7 +135,7 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));
   EXPECT_FALSE(Utils::Authentication::GetResultFromMetadata(
-      request_info.dynamicMetadata()));
+      stream_info.dynamicMetadata()));
 }
 
 TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
@@ -148,11 +148,11 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   DangerousDeprecatedTestTime test_time;
-  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2,
-                                            test_time.timeSystem());
-  EXPECT_CALL(decoder_callbacks_, requestInfo())
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
+                                         test_time.timeSystem());
+  EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(request_info));
+      .WillRepeatedly(ReturnRef(stream_info));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
       .WillOnce(testing::Invoke([](Http::HeaderMap &headers, bool) {
@@ -161,7 +161,7 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));
   EXPECT_FALSE(Utils::Authentication::GetResultFromMetadata(
-      request_info.dynamicMetadata()));
+      stream_info.dynamicMetadata()));
 }
 
 TEST_F(AuthenticationFilterTest, AllPass) {
@@ -172,18 +172,18 @@ TEST_F(AuthenticationFilterTest, AllPass) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
   DangerousDeprecatedTestTime test_time;
-  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2,
-                                            test_time.timeSystem());
-  EXPECT_CALL(decoder_callbacks_, requestInfo())
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
+                                         test_time.timeSystem());
+  EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(request_info));
+      .WillRepeatedly(ReturnRef(stream_info));
 
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
 
-  EXPECT_EQ(1, request_info.dynamicMetadata().filter_metadata_size());
+  EXPECT_EQ(1, stream_info.dynamicMetadata().filter_metadata_size());
   const auto *data = Utils::Authentication::GetResultFromMetadata(
-      request_info.dynamicMetadata());
+      stream_info.dynamicMetadata());
   ASSERT_TRUE(data);
 
   ProtobufWkt::Struct expected_data;
@@ -243,18 +243,18 @@ TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
   DangerousDeprecatedTestTime test_time;
-  RequestInfo::RequestInfoImpl request_info(Http::Protocol::Http2,
-                                            test_time.timeSystem());
-  EXPECT_CALL(decoder_callbacks_, requestInfo())
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
+                                         test_time.timeSystem());
+  EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(request_info));
+      .WillRepeatedly(ReturnRef(stream_info));
 
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter.decodeHeaders(request_headers_, true));
 
-  EXPECT_EQ(1, request_info.dynamicMetadata().filter_metadata_size());
+  EXPECT_EQ(1, stream_info.dynamicMetadata().filter_metadata_size());
   const auto *data = Utils::Authentication::GetResultFromMetadata(
-      request_info.dynamicMetadata());
+      stream_info.dynamicMetadata());
   ASSERT_TRUE(data);
 
   ProtobufWkt::Struct expected_data;

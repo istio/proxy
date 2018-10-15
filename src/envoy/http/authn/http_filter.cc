@@ -49,7 +49,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
   state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
-      decoder_callbacks_->requestInfo().dynamicMetadata(), headers,
+      decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
       decoder_callbacks_->connection(), filter_config_));
 
   Payload payload;
@@ -76,7 +76,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
     ProtobufWkt::Struct data;
     Utils::Authentication::SaveAuthAttributesToStruct(
         filter_context_->authenticationResult(), data);
-    decoder_callbacks_->requestInfo().setDynamicMetadata(
+    decoder_callbacks_->streamInfo().setDynamicMetadata(
         Utils::IstioFilterName::kAuthentication, data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
   }
