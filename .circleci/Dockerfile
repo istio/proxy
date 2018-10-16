@@ -19,7 +19,7 @@ RUN sudo apt-get update && \
     clang-6.0 clang-format-6.0 rsync ninja-build
 
 # ~100M, depends on g++, zlib1g-dev, bash-completions
-RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.15.2/bazel_0.15.2-linux-x86_64.deb && \
+RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.18.0/bazel_0.18.0-linux-x86_64.deb && \
     sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
 
 
