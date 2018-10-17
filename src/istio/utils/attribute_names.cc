@@ -56,9 +56,9 @@ const char AttributeName::kDestinationPort[] = "destination.port";
 const char AttributeName::kDestinationUID[] = "destination.uid";
 const char AttributeName::kDestinationNamespace[] = "destination.namespace";
 const char AttributeName::kOriginIp[] = "origin.ip";
-const char AttributeName::kConnectionReceviedBytes[] =
+const char AttributeName::kConnectionReceivedBytes[] =
     "connection.received.bytes";
-const char AttributeName::kConnectionReceviedTotalBytes[] =
+const char AttributeName::kConnectionReceivedTotalBytes[] =
     "connection.received.bytes_total";
 const char AttributeName::kConnectionSendBytes[] = "connection.sent.bytes";
 const char AttributeName::kConnectionSendTotalBytes[] =

@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: istio/ci:go1.10-bazel0.15-clang6.0
+      - image: istio/ci:go1.10-bazel0.18-clang6.0
     environment:
       - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
