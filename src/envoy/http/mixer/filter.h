@@ -69,7 +69,7 @@ class Filter : public StreamFilter,
   virtual void log(const HeaderMap* request_headers,
                    const HeaderMap* response_headers,
                    const HeaderMap* response_trailers,
-                   const RequestInfo::RequestInfo& request_info) override;
+                   const StreamInfo::StreamInfo& stream_info) override;
 
  private:
   // Read per-route config.

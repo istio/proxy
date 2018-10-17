@@ -16,9 +16,9 @@
 #pragma once
 
 #include "common/common/logger.h"
-#include "common/request_info/utility.h"
+#include "common/stream_info/utility.h"
 #include "envoy/http/header_map.h"
-#include "envoy/request_info/request_info.h"
+#include "envoy/stream_info/stream_info.h"
 #include "extensions/filters/http/well_known_names.h"
 #include "include/istio/control/http/controller.h"
 #include "src/envoy/utils/utils.h"
@@ -53,13 +53,13 @@ class ReportData : public ::istio::control::http::ReportData,
                    public Logger::Loggable<Logger::Id::filter> {
   const HeaderMap *headers_;
   const HeaderMap *trailers_;
-  const RequestInfo::RequestInfo &info_;
+  const StreamInfo::StreamInfo &info_;
   uint64_t response_total_size_;
   uint64_t request_total_size_;
 
  public:
   ReportData(const HeaderMap *headers, const HeaderMap *response_trailers,
-             const RequestInfo::RequestInfo &info, uint64_t request_total_size)
+             const StreamInfo::StreamInfo &info, uint64_t request_total_size)
       : headers_(headers),
         trailers_(response_trailers),
         info_(info),
@@ -96,7 +96,7 @@ class ReportData : public ::istio::control::http::ReportData,
     // is rejected by Envoy. Set the response code for such requests as 500.
     data->response_code = info_.responseCode().value_or(500);
 
-    data->response_flags = RequestInfo::ResponseFlagUtils::toShortString(info_);
+    data->response_flags = StreamInfo::ResponseFlagUtils::toShortString(info_);
   }
 
   bool GetDestinationIpPort(std::string *str_ip, int *port) const override {

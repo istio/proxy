@@ -71,7 +71,7 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   state_ = Calling;
   initiating_call_ = true;
   CheckData check_data(headers,
-                       decoder_callbacks_->requestInfo().dynamicMetadata(),
+                       decoder_callbacks_->streamInfo().dynamicMetadata(),
                        decoder_callbacks_->connection());
   Utils::HeaderUpdate header_update(&headers);
   headers_ = &headers;
@@ -160,8 +160,8 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     int status_code = ::istio::utils::StatusHttpCode(status.error_code());
     decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
                                        nullptr);
-    decoder_callbacks_->requestInfo().setResponseFlag(
-        RequestInfo::ResponseFlag::UnauthorizedExternalService);
+    decoder_callbacks_->streamInfo().setResponseFlag(
+        StreamInfo::ResponseFlag::UnauthorizedExternalService);
     return;
   }
 
@@ -210,7 +210,7 @@ void Filter::onDestroy() {
 void Filter::log(const HeaderMap* request_headers,
                  const HeaderMap* response_headers,
                  const HeaderMap* response_trailers,
-                 const RequestInfo::RequestInfo& request_info) {
+                 const StreamInfo::StreamInfo& stream_info) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
   if (!handler_) {
     if (request_headers == nullptr) {
@@ -219,15 +219,15 @@ void Filter::log(const HeaderMap* request_headers,
 
     // Here Request is rejected by other filters, Mixer filter is not called.
     ::istio::control::http::Controller::PerRouteConfig config;
-    ReadPerRouteConfig(request_info.routeEntry(), &config);
+    ReadPerRouteConfig(stream_info.routeEntry(), &config);
     handler_ = control_.controller()->CreateRequestHandler(config);
   }
 
   // If check is NOT called, check attributes are not extracted.
-  CheckData check_data(*request_headers, request_info.dynamicMetadata(),
+  CheckData check_data(*request_headers, stream_info.dynamicMetadata(),
                        decoder_callbacks_->connection());
   // response trailer header is not counted to response total size.
-  ReportData report_data(response_headers, response_trailers, request_info,
+  ReportData report_data(response_headers, response_trailers, stream_info,
                          request_total_size_);
   handler_->Report(&check_data, &report_data);
 }
