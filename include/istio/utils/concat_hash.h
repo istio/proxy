@@ -53,12 +53,14 @@ class ConcatHash {
 
   // Converts a binary string to a printable string for unit-test only
   static std::string DebugString(const std::string& hash) {
-    char buf[hash.size() * 2];
-    char* p = buf;
-    for (size_t i = 0; i < hash.size(); ++i, p += 2) {
-      sprintf(p, "%02x", (unsigned char)hash[i]);
+    std::string out;
+    out.reserve(hash.size() * 2);
+    for (size_t i = 0; i < hash.size(); ++i) {
+      char buf[10];
+      sprintf(buf, "%02x", (unsigned char)hash[i]);
+      out.append(buf);
     }
-    return std::string(buf, hash.size() * 2);
+    return out;
   }
 
  private:
