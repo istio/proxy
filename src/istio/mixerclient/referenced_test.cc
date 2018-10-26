@@ -178,11 +178,9 @@ TEST(ReferencedTest, FillSuccessTest) {
             "time-key, ");
 
   EXPECT_EQ(utils::ConcatHash::DebugString(referenced.Hash()),
-            "737472696e672d6d61702d6b657900557365722d4167656e74007461726765742e"
-            "6e616d65007461726765742e73657276696365003a626f6f6c2d6b657900627974"
-            "65732d6b657900646f75626c652d6b6579006475726174696f6e2d6b657900696e"
-            "742d6b657900737472696e672d6b657900737472696e672d6d61702d6b65790049"
-            "662d4d617463680074696d652d6b657900");
+            "string-map-key00User-Agent00target.name00target.service00:bool-"
+            "key00bytes-key00double-key00duration-key00int-key00string-"
+            "key00string-map-key00If-Match00time-key00");
 }
 
 TEST(ReferencedTest, FillFail1Test) {
@@ -253,14 +251,13 @@ TEST(ReferencedTest, OKSignature1Test) {
   std::string signature;
   EXPECT_TRUE(referenced.Signature(attributes, "extra", &signature));
 
-  EXPECT_EQ(
-      utils::ConcatHash::DebugString(signature),
-      "626f6f6c2d6b657900010062797465732d6b657900746869732069732061206279746573"
-      "2076616c756500646f75626c652d6b6579009a99999999f95840006475726174696f6e2d"
-      "6b6579000500000000000000000000000000696e742d6b65790023000000000000000073"
-      "7472696e672d6b65790074686973206973206120737472696e672076616c756500737472"
-      "696e672d6d61702d6b65790049662d4d617463680076616c756531000074696d652d6b65"
-      "790000000000000000000000000000006578747261");
+  EXPECT_EQ(utils::ConcatHash::DebugString(signature),
+            "bool-key000100bytes-key00this is a bytes "
+            "value00double-key009a99999999f9X@00duration-"
+            "key000500000000000000000000000000int-key00#0000000000000000string-"
+            "key00this is a string "
+            "value00string-map-key00If-Match00value10000time-"
+            "key000000000000000000000000000000extra");
 }
 
 TEST(ReferencedTest, StringMapReferencedTest) {
@@ -282,9 +279,8 @@ TEST(ReferencedTest, StringMapReferencedTest) {
   std::string signature;
   EXPECT_TRUE(referenced.Signature(attrs, "extra", &signature));
   EXPECT_EQ(utils::ConcatHash::DebugString(signature),
-            "6d61702d6b6579310076616c756531006d61702d6b6579320065786163742d7375"
-            "626b6579340073756276616c7565340065786163742d7375626b65793500737562"
-            "76616c75653500006578747261");
+            "map-key100value100map-key200exact-subkey400subvalue400exact-"
+            "subkey500subvalue50000extra");
 
   // negative test: map-key3 must absence
   ::istio::mixer::v1::Attributes attr1(attrs);

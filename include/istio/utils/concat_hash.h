@@ -55,10 +55,14 @@ class ConcatHash {
   static std::string DebugString(const std::string& hash) {
     std::string out;
     out.reserve(hash.size() * 2);
-    for (size_t i = 0; i < hash.size(); ++i) {
-      char buf[10];
-      sprintf(buf, "%02x", (unsigned char)hash[i]);
-      out.append(buf);
+    for (auto c : hash) {
+      if (std::isprint(c)) {
+        out.append(1, c);
+      } else {
+        char buf[10];
+        sprintf(buf, "%02x", (unsigned char)c);
+        out.append(buf);
+      }
     }
     return out;
   }
