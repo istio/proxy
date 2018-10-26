@@ -18,7 +18,7 @@
 
 #include <vector>
 
-#include "include/istio/utils/md5.h"
+#include "include/istio/utils/concat_hash.h"
 #include "mixer/v1/check.pb.h"
 
 namespace istio {
@@ -86,7 +86,7 @@ class Referenced {
 
   // Updates hasher with keys
   static void UpdateHash(const std::vector<AttributeRef> &keys,
-                         utils::MD5 *hasher);
+                         utils::ConcatHash *hasher);
 };
 
 }  // namespace mixerclient

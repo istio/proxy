@@ -58,7 +58,6 @@ cc_library(
         "//include/istio/quota_config:requirement_header",
         "//include/istio/utils:simple_lru_cache",
         "//src/istio/prefetch:quota_prefetch_lib",
-        "//src/istio/utils:md5_lib",
         "//src/istio/utils:utils_lib",
     ],
 )

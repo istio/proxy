@@ -16,7 +16,7 @@
 #include "src/istio/mixerclient/referenced.h"
 
 #include "include/istio/utils/attributes_builder.h"
-#include "include/istio/utils/md5.h"
+#include "include/istio/utils/concat_hash.h"
 
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
@@ -177,8 +177,10 @@ TEST(ReferencedTest, FillSuccessTest) {
             "duration-key, int-key, string-key, string-map-key[If-Match], "
             "time-key, ");
 
-  EXPECT_EQ(utils::MD5::DebugString(referenced.Hash()),
-            "602d5bbd45b623c3560d2bdb6104f3ab");
+  EXPECT_EQ(utils::ConcatHash::DebugString(referenced.Hash()),
+            "string-map-key00User-Agent00target.name00target.service00:bool-"
+            "key00bytes-key00double-key00duration-key00int-key00string-"
+            "key00string-map-key00If-Match00time-key00");
 }
 
 TEST(ReferencedTest, FillFail1Test) {
@@ -249,8 +251,13 @@ TEST(ReferencedTest, OKSignature1Test) {
   std::string signature;
   EXPECT_TRUE(referenced.Signature(attributes, "extra", &signature));
 
-  EXPECT_EQ(utils::MD5::DebugString(signature),
-            "751b028b2e2c230ef9c4e59ac556ca04");
+  EXPECT_EQ(utils::ConcatHash::DebugString(signature),
+            "bool-key000100bytes-key00this is a bytes "
+            "value00double-key009a99999999f9X@00duration-"
+            "key000500000000000000000000000000int-key00#0000000000000000string-"
+            "key00this is a string "
+            "value00string-map-key00If-Match00value10000time-"
+            "key000000000000000000000000000000extra");
 }
 
 TEST(ReferencedTest, StringMapReferencedTest) {
@@ -271,8 +278,9 @@ TEST(ReferencedTest, StringMapReferencedTest) {
 
   std::string signature;
   EXPECT_TRUE(referenced.Signature(attrs, "extra", &signature));
-  EXPECT_EQ(utils::MD5::DebugString(signature),
-            "bc055468af1a0d4d03ec7f6fa2265b9b");
+  EXPECT_EQ(utils::ConcatHash::DebugString(signature),
+            "map-key100value100map-key200exact-subkey400subvalue400exact-"
+            "subkey500subvalue50000extra");
 
   // negative test: map-key3 must absence
   ::istio::mixer::v1::Attributes attr1(attrs);
