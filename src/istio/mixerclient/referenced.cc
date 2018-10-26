@@ -31,6 +31,7 @@ namespace mixerclient {
 namespace {
 const char kDelimiter[] = "\0";
 const int kDelimiterLength = 1;
+const size_t kMaxConcatHashSize = 4096;
 const std::string kWordDelimiter = ":";
 
 // Decode dereferences index into str using global and local word lists.
@@ -63,7 +64,7 @@ bool Decode(int idx, const std::vector<std::string> &global_words,
 
 // Updates hasher with keys
 void Referenced::UpdateHash(const std::vector<AttributeRef> &keys,
-                            utils::MD5 *hasher) {
+                            utils::ConcatHash *hasher) {
   // keys are already sorted during Fill
   for (const AttributeRef &key : keys) {
     hasher->Update(key.name);
@@ -203,7 +204,7 @@ void Referenced::CalculateSignature(const Attributes &attributes,
                                     std::string *signature) const {
   const auto &attributes_map = attributes.attributes();
 
-  utils::MD5 hasher;
+  utils::ConcatHash hasher(kMaxConcatHashSize);
   for (std::size_t i = 0; i < exact_keys_.size(); ++i) {
     const auto &key = exact_keys_[i];
     const auto it = attributes_map.find(key.name);
@@ -274,18 +275,18 @@ void Referenced::CalculateSignature(const Attributes &attributes,
   }
   hasher.Update(extra_key);
 
-  *signature = hasher.Digest();
+  *signature = hasher.getHash();
 }
 
 std::string Referenced::Hash() const {
-  utils::MD5 hasher;
+  utils::ConcatHash hasher(kMaxConcatHashSize);
 
   // keys are sorted during Fill
   UpdateHash(absence_keys_, &hasher);
   hasher.Update(kWordDelimiter);
   UpdateHash(exact_keys_, &hasher);
 
-  return hasher.Digest();
+  return hasher.getHash();
 }
 
 std::string Referenced::DebugString() const {

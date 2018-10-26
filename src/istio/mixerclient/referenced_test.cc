@@ -16,7 +16,7 @@
 #include "src/istio/mixerclient/referenced.h"
 
 #include "include/istio/utils/attributes_builder.h"
-#include "include/istio/utils/md5.h"
+#include "include/istio/utils/concat_hash.h"
 
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
@@ -177,8 +177,12 @@ TEST(ReferencedTest, FillSuccessTest) {
             "duration-key, int-key, string-key, string-map-key[If-Match], "
             "time-key, ");
 
-  EXPECT_EQ(utils::MD5::DebugString(referenced.Hash()),
-            "602d5bbd45b623c3560d2bdb6104f3ab");
+  EXPECT_EQ(utils::ConcatHash::DebugString(referenced.Hash()),
+            "737472696e672d6d61702d6b657900557365722d4167656e74007461726765742e"
+            "6e616d65007461726765742e73657276696365003a626f6f6c2d6b657900627974"
+            "65732d6b657900646f75626c652d6b6579006475726174696f6e2d6b657900696e"
+            "742d6b657900737472696e672d6b657900737472696e672d6d61702d6b65790049"
+            "662d4d617463680074696d652d6b657900");
 }
 
 TEST(ReferencedTest, FillFail1Test) {
@@ -249,8 +253,14 @@ TEST(ReferencedTest, OKSignature1Test) {
   std::string signature;
   EXPECT_TRUE(referenced.Signature(attributes, "extra", &signature));
 
-  EXPECT_EQ(utils::MD5::DebugString(signature),
-            "751b028b2e2c230ef9c4e59ac556ca04");
+  EXPECT_EQ(
+      utils::ConcatHash::DebugString(signature),
+      "626f6f6c2d6b657900010062797465732d6b657900746869732069732061206279746573"
+      "2076616c756500646f75626c652d6b6579009a99999999f95840006475726174696f6e2d"
+      "6b6579000500000000000000000000000000696e742d6b65790023000000000000000073"
+      "7472696e672d6b65790074686973206973206120737472696e672076616c756500737472"
+      "696e672d6d61702d6b65790049662d4d617463680076616c756531000074696d652d6b65"
+      "790000000000000000000000000000006578747261");
 }
 
 TEST(ReferencedTest, StringMapReferencedTest) {
@@ -271,8 +281,10 @@ TEST(ReferencedTest, StringMapReferencedTest) {
 
   std::string signature;
   EXPECT_TRUE(referenced.Signature(attrs, "extra", &signature));
-  EXPECT_EQ(utils::MD5::DebugString(signature),
-            "bc055468af1a0d4d03ec7f6fa2265b9b");
+  EXPECT_EQ(utils::ConcatHash::DebugString(signature),
+            "6d61702d6b6579310076616c756531006d61702d6b6579320065786163742d7375"
+            "626b6579340073756276616c7565340065786163742d7375626b65793500737562"
+            "76616c75653500006578747261");
 
   // negative test: map-key3 must absence
   ::istio::mixer::v1::Attributes attr1(attrs);
