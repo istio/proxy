@@ -155,13 +155,13 @@ class CheckCache {
   // Key is the signature of the Attributes. Value is the CacheElem.
   // It is a LRU cache with maximum size.
   // When the maximum size is reached, oldest idle items will be removed.
-  using CheckLRUCache = utils::SimpleLRUCache<std::string, CacheElem>;
+  using CheckLRUCache = utils::SimpleLRUCache<utils::HashType, CacheElem>;
 
   // The check options.
   CheckOptions options_;
 
   // Referenced map keyed with their hashes
-  std::unordered_map<std::string, Referenced> referenced_map_;
+  std::unordered_map<utils::HashType, Referenced> referenced_map_;
 
   // Mutex guarding the access of cache_;
   std::mutex cache_mutex_;

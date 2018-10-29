@@ -140,7 +140,7 @@ class QuotaCache {
     std::unique_ptr<CacheElem> pending_item;
 
     // Referenced map keyed with their hashes
-    std::unordered_map<std::string, Referenced> referenced_map;
+    std::unordered_map<utils::HashType, Referenced> referenced_map;
   };
 
   // Set a quota response.
@@ -154,7 +154,7 @@ class QuotaCache {
 
   // Key is the signature of the Attributes. Value is the CacheElem.
   // It is a LRU cache with MaxIdelTime as response_expiration_time.
-  using QuotaLRUCache = utils::SimpleLRUCache<std::string, CacheElem>;
+  using QuotaLRUCache = utils::SimpleLRUCache<utils::HashType, CacheElem>;
 
   // The quota options.
   QuotaOptions options_;

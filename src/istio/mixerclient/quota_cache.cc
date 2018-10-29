@@ -174,7 +174,7 @@ void QuotaCache::CheckCache(const Attributes& request, bool check_use_cache,
   PerQuotaReferenced& quota_ref = quota_referenced_map_[quota->name];
   for (const auto& it : quota_ref.referenced_map) {
     const Referenced& referenced = it.second;
-    std::string signature;
+    utils::HashType signature;
     if (!referenced.Signature(request, quota->name, &signature)) {
       continue;
     }
@@ -216,7 +216,7 @@ void QuotaCache::SetResponse(const Attributes& attributes,
     return;
   }
 
-  std::string signature;
+  utils::HashType signature;
   if (!referenced.Signature(attributes, quota_name, &signature)) {
     GOOGLE_LOG(ERROR) << "Quota response referenced mismatchs with request";
     GOOGLE_LOG(ERROR) << "Request attributes: " << attributes.DebugString();
@@ -232,7 +232,7 @@ void QuotaCache::SetResponse(const Attributes& attributes,
   }
 
   PerQuotaReferenced& quota_ref = quota_referenced_map_[quota_name];
-  std::string hash = referenced.Hash();
+  utils::HashType hash = referenced.Hash();
   if (quota_ref.referenced_map.find(hash) == quota_ref.referenced_map.end()) {
     quota_ref.referenced_map[hash] = referenced;
     GOOGLE_LOG(INFO) << "Add a new Referenced for quota cache: " << quota_name
