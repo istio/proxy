@@ -132,6 +132,11 @@ void AttributesBuilder::ExtractReportAttributes(
     builder.AddString(utils::AttributeName::kDestinationUID, uid);
   }
 
+  std::string filter_state;
+  if (report_data->GetDynamicFilterState(&filter_state)) {
+    builder.AddBytes(utils::AttributeName::kConnectionFilterState, filter_state);
+  }
+
   builder.AddTimestamp(utils::AttributeName::kContextTime,
                        std::chrono::system_clock::now());
 }

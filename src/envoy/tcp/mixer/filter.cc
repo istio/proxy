@@ -177,6 +177,14 @@ bool Filter::GetDestinationUID(std::string* uid) const {
   }
   return false;
 }
+bool Filter::GetDynamicFilterState(std::string* filter_state) const {
+  if (filter_callbacks_->connection().streamInfo().dynamicMetadata().filter_metadata_size() > 0) {
+    filter_callbacks_->connection().streamInfo().dynamicMetadata().SerializeToString(filter_state);
+    return true;
+  }
+
+  return false;
+}
 void Filter::GetReportInfo(
     ::istio::control::tcp::ReportData::ReportInfo* data) const {
   data->received_bytes = received_bytes_;
