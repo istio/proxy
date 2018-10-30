@@ -45,16 +45,6 @@ cc_test(
     ],
 )
 
-cc_library(
-    name = "md5_lib",
-    srcs = ["md5.cc"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//external:boringssl_crypto",
-        "//include/istio/utils:headers_lib",
-    ],
-)
-
 cc_test(
     name = "simple_lru_cache_test",
     size = "small",
@@ -67,21 +57,6 @@ cc_test(
     deps = [
         "//external:googletest_main",
         "//include/istio/utils:simple_lru_cache",
-    ],
-)
-
-cc_test(
-    name = "md5_test",
-    size = "small",
-    srcs = ["md5_test.cc"],
-    linkopts = [
-        "-lm",
-        "-lpthread",
-    ],
-    linkstatic = 1,
-    deps = [
-        ":md5_lib",
-        "//external:googletest_main",
     ],
 )
 
