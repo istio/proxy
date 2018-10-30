@@ -106,7 +106,7 @@ Status CheckCache::Check(const Attributes &attributes, Tick time_now,
   std::lock_guard<std::mutex> lock(cache_mutex_);
   for (const auto &it : referenced_map_) {
     const Referenced &reference = it.second;
-    std::string signature;
+    utils::HashType signature;
     if (!reference.Signature(attributes, "", &signature)) {
       continue;
     }
@@ -145,7 +145,7 @@ Status CheckCache::CacheResponse(const Attributes &attributes,
     // Failed to decode referenced_attributes, not to cache this result.
     return ConvertRpcStatus(response.precondition().status());
   }
-  std::string signature;
+  utils::HashType signature;
   if (!referenced.Signature(attributes, "", &signature)) {
     GOOGLE_LOG(ERROR) << "Response referenced mismatchs with request";
     GOOGLE_LOG(ERROR) << "Request attributes: " << attributes.DebugString();
@@ -154,7 +154,7 @@ Status CheckCache::CacheResponse(const Attributes &attributes,
   }
 
   std::lock_guard<std::mutex> lock(cache_mutex_);
-  std::string hash = referenced.Hash();
+  utils::HashType hash = referenced.Hash();
   if (referenced_map_.find(hash) == referenced_map_.end()) {
     referenced_map_[hash] = referenced;
     GOOGLE_LOG(INFO) << "Add a new Referenced for check cache: "

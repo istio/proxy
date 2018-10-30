@@ -18,7 +18,7 @@
 
 #include <vector>
 
-#include "include/istio/utils/md5.h"
+#include "include/istio/utils/concat_hash.h"
 #include "mixer/v1/check.pb.h"
 
 namespace istio {
@@ -37,13 +37,13 @@ class Referenced {
 
   // Calculate a cache signature for the attributes.
   // Return false if attributes are mismatched, such as "absence" attributes
-  // present
-  // or "exact" match attributes don't present.
+  // present or "exact" match attributes don't present.
   bool Signature(const ::istio::mixer::v1::Attributes &attributes,
-                 const std::string &extra_key, std::string *signature) const;
+                 const std::string &extra_key,
+                 utils::HashType *signature) const;
 
   // A hash value to identify an instance.
-  std::string Hash() const;
+  utils::HashType Hash() const;
 
   // For debug logging only.
   std::string DebugString() const;
@@ -58,7 +58,7 @@ class Referenced {
   // Do the actual signature calculation.
   void CalculateSignature(const ::istio::mixer::v1::Attributes &attributes,
                           const std::string &extra_key,
-                          std::string *signature) const;
+                          utils::HashType *signature) const;
 
   // Holds reference to an attribute and potentially a map key
   struct AttributeRef {
@@ -86,7 +86,7 @@ class Referenced {
 
   // Updates hasher with keys
   static void UpdateHash(const std::vector<AttributeRef> &keys,
-                         utils::MD5 *hasher);
+                         utils::ConcatHash *hasher);
 };
 
 }  // namespace mixerclient
