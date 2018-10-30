@@ -177,10 +177,7 @@ TEST(ReferencedTest, FillSuccessTest) {
             "duration-key, int-key, string-key, string-map-key[If-Match], "
             "time-key, ");
 
-  EXPECT_EQ(utils::ConcatHash::DebugString(referenced.Hash()),
-            "string-map-key00User-Agent00target.name00target.service00:bool-"
-            "key00bytes-key00double-key00duration-key00int-key00string-"
-            "key00string-map-key00If-Match00time-key00");
+  EXPECT_EQ(referenced.Hash(), 15726019709841724427U);
 }
 
 TEST(ReferencedTest, FillFail1Test) {
@@ -209,7 +206,7 @@ TEST(ReferencedTest, NegativeSignature1Test) {
   Referenced referenced;
   EXPECT_TRUE(referenced.Fill(attrs, pb));
 
-  std::string signature;
+  utils::HashType signature;
 
   Attributes attributes1;
   // "target.service" should be absence.
@@ -248,16 +245,10 @@ TEST(ReferencedTest, OKSignature1Test) {
   Referenced referenced;
   EXPECT_TRUE(referenced.Fill(attributes, pb));
 
-  std::string signature;
+  utils::HashType signature;
   EXPECT_TRUE(referenced.Signature(attributes, "extra", &signature));
 
-  EXPECT_EQ(utils::ConcatHash::DebugString(signature),
-            "bool-key000100bytes-key00this is a bytes "
-            "value00double-key009a99999999f9X@00duration-"
-            "key000500000000000000000000000000int-key00#0000000000000000string-"
-            "key00this is a string "
-            "value00string-map-key00If-Match00value10000time-"
-            "key000000000000000000000000000000extra");
+  EXPECT_EQ(signature, 7485122822970549717U);
 }
 
 TEST(ReferencedTest, StringMapReferencedTest) {
@@ -276,11 +267,9 @@ TEST(ReferencedTest, StringMapReferencedTest) {
   Referenced referenced;
   EXPECT_TRUE(referenced.Fill(attrs, pb));
 
-  std::string signature;
+  utils::HashType signature;
   EXPECT_TRUE(referenced.Signature(attrs, "extra", &signature));
-  EXPECT_EQ(utils::ConcatHash::DebugString(signature),
-            "map-key100value100map-key200exact-subkey400subvalue400exact-"
-            "subkey500subvalue50000extra");
+  EXPECT_EQ(signature, 5578853713114714386U);
 
   // negative test: map-key3 must absence
   ::istio::mixer::v1::Attributes attr1(attrs);

@@ -17,10 +17,14 @@
 #define ISTIO_UTILS_CONCAT_HASH_H_
 
 #include <string.h>
+#include <functional>
 #include <string>
 
 namespace istio {
 namespace utils {
+
+// The hash type for Check cache.
+typedef std::size_t HashType;
 
 // This class concatenates multiple values into a string as hash
 class ConcatHash {
@@ -48,24 +52,8 @@ class ConcatHash {
     return *this;
   }
 
-  // Returns the concated string as hash.
-  std::string getHash() const { return hash_; }
-
-  // Converts a binary string to a printable string for unit-test only
-  static std::string DebugString(const std::string& hash) {
-    std::string out;
-    out.reserve(hash.size() * 2);
-    for (auto c : hash) {
-      if (std::isprint(c)) {
-        out.append(1, c);
-      } else {
-        char buf[10];
-        sprintf(buf, "%02x", (unsigned char)c);
-        out.append(buf);
-      }
-    }
-    return out;
-  }
+  // Returns the hash of the concated string.
+  HashType getHash() const { return std::hash<std::string>{}(hash_); }
 
  private:
   std::string hash_;
