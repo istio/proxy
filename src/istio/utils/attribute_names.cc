@@ -110,5 +110,5 @@ const char AttributeName::kRbacPermissiveResponseCode[] =
 const char AttributeName::kRbacPermissivePolicyId[] =
     "rbac.permissive.effective_policy_id";
 
-} // namespace utils
-} // namespace istio
+}  // namespace utils
+}  // namespace istio
