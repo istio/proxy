@@ -16,7 +16,7 @@
 #include "src/istio/mixerclient/referenced.h"
 
 #include "include/istio/utils/attributes_builder.h"
-#include "include/istio/utils/md5.h"
+#include "include/istio/utils/concat_hash.h"
 
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
@@ -177,8 +177,7 @@ TEST(ReferencedTest, FillSuccessTest) {
             "duration-key, int-key, string-key, string-map-key[If-Match], "
             "time-key, ");
 
-  EXPECT_EQ(utils::MD5::DebugString(referenced.Hash()),
-            "602d5bbd45b623c3560d2bdb6104f3ab");
+  EXPECT_EQ(referenced.Hash(), 15726019709841724427U);
 }
 
 TEST(ReferencedTest, FillFail1Test) {
@@ -207,7 +206,7 @@ TEST(ReferencedTest, NegativeSignature1Test) {
   Referenced referenced;
   EXPECT_TRUE(referenced.Fill(attrs, pb));
 
-  std::string signature;
+  utils::HashType signature;
 
   Attributes attributes1;
   // "target.service" should be absence.
@@ -246,11 +245,10 @@ TEST(ReferencedTest, OKSignature1Test) {
   Referenced referenced;
   EXPECT_TRUE(referenced.Fill(attributes, pb));
 
-  std::string signature;
+  utils::HashType signature;
   EXPECT_TRUE(referenced.Signature(attributes, "extra", &signature));
 
-  EXPECT_EQ(utils::MD5::DebugString(signature),
-            "751b028b2e2c230ef9c4e59ac556ca04");
+  EXPECT_EQ(signature, 7485122822970549717U);
 }
 
 TEST(ReferencedTest, StringMapReferencedTest) {
@@ -269,10 +267,9 @@ TEST(ReferencedTest, StringMapReferencedTest) {
   Referenced referenced;
   EXPECT_TRUE(referenced.Fill(attrs, pb));
 
-  std::string signature;
+  utils::HashType signature;
   EXPECT_TRUE(referenced.Signature(attrs, "extra", &signature));
-  EXPECT_EQ(utils::MD5::DebugString(signature),
-            "bc055468af1a0d4d03ec7f6fa2265b9b");
+  EXPECT_EQ(signature, 5578853713114714386U);
 
   // negative test: map-key3 must absence
   ::istio::mixer::v1::Attributes attr1(attrs);
