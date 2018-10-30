@@ -163,7 +163,7 @@ attributes {
   }
 }
 attributes {
-  key: "connection.filter_state"
+  key: "connection.dynamic_state"
   value {
     bytes_value: "aeiou"
   }
@@ -247,7 +247,7 @@ attributes {
   }
 }
 attributes {
-  key: "connection.filter_state"
+  key: "connection.dynamic_state"
   value {
     bytes_value: "aeiou"
   }
@@ -311,7 +311,7 @@ attributes {
   }
 }
 attributes {
-  key: "connection.filter_state"
+  key: "connection.dynamic_state"
   value {
     bytes_value: "aeiou"
   }
@@ -375,7 +375,7 @@ attributes {
   }
 }
 attributes {
-  key: "connection.filter_state"
+  key: "connection.dynamic_state"
   value {
     bytes_value: "aeiou"
   }
@@ -449,8 +449,8 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
       }));
   EXPECT_CALL(mock_data, GetDynamicFilterState(_))
       .Times(4)
-      .WillRepeatedly(Invoke([](std::string* filter_state) -> bool {
-        *filter_state = "aeiou";
+      .WillRepeatedly(Invoke([](std::string* dynamic_state) -> bool {
+        *dynamic_state = "aeiou";
         return true;
       }));
   EXPECT_CALL(mock_data, GetReportInfo(_))

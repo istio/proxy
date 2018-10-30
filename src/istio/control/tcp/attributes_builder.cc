@@ -134,7 +134,7 @@ void AttributesBuilder::ExtractReportAttributes(
 
   std::string filter_state;
   if (report_data->GetDynamicFilterState(&filter_state)) {
-    builder.AddBytes(utils::AttributeName::kConnectionFilterState,
+    builder.AddBytes(utils::AttributeName::kConnectionDynamicState,
                      filter_state);
   }
 

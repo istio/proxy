@@ -406,6 +406,12 @@ attributes {
     string_value: "policy-foo"
   }
 }
+attributes {
+  key: "request.dynamic_state"
+  value {
+    bytes_value: "aeiou"
+  }
+}
 )";
 
 constexpr char kAuthenticationResultStruct[] = R"(
@@ -750,6 +756,11 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         report_info->permissive_policy_id = "policy-foo";
         return true;
       }));
+  EXPECT_CALL(mock_data, GetDynamicFilterState(_))
+      .WillOnce(Invoke([](std::string *dynamic_state) -> bool {
+        *dynamic_state = "aeiou";
+        return true;
+      }));
 
   RequestContext request;
   AttributesBuilder builder(&request);
@@ -803,6 +814,11 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
       .WillOnce(Invoke([](ReportData::RbacReportInfo *report_info) -> bool {
         report_info->permissive_resp_code = "403";
         report_info->permissive_policy_id = "policy-foo";
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetDynamicFilterState(_))
+      .WillOnce(Invoke([](std::string *dynamic_state) -> bool {
+        *dynamic_state = "aeiou";
         return true;
       }));
 
