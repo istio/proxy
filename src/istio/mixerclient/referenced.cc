@@ -117,7 +117,7 @@ bool Referenced::Fill(const Attributes &attributes,
 
 bool Referenced::Signature(const Attributes &attributes,
                            const std::string &extra_key,
-                           std::string *signature) const {
+                           utils::HashType *signature) const {
   if (!CheckAbsentKeys(attributes) || !CheckExactKeys(attributes)) {
     return false;
   }
@@ -201,7 +201,7 @@ bool Referenced::CheckExactKeys(const Attributes &attributes) const {
 
 void Referenced::CalculateSignature(const Attributes &attributes,
                                     const std::string &extra_key,
-                                    std::string *signature) const {
+                                    utils::HashType *signature) const {
   const auto &attributes_map = attributes.attributes();
 
   utils::ConcatHash hasher(kMaxConcatHashSize);
@@ -278,7 +278,7 @@ void Referenced::CalculateSignature(const Attributes &attributes,
   *signature = hasher.getHash();
 }
 
-std::string Referenced::Hash() const {
+utils::HashType Referenced::Hash() const {
   utils::ConcatHash hasher(kMaxConcatHashSize);
 
   // keys are sorted during Fill
