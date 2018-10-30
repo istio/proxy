@@ -38,7 +38,7 @@ const char AttributeName::kRequestTotalSize[] = "request.total_size";
 const char AttributeName::kRequestTime[] = "request.time";
 const char AttributeName::kRequestUserAgent[] = "request.useragent";
 const char AttributeName::kRequestApiKey[] = "request.api_key";
-  
+
 const char AttributeName::kResponseCode[] = "response.code";
 const char AttributeName::kResponseDuration[] = "response.duration";
 const char AttributeName::kResponseHeaders[] = "response.headers";
