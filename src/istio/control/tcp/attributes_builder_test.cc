@@ -165,7 +165,7 @@ attributes {
 attributes {
   key: "connection.filter_state"
   value {
-    string_value: "www.google.com"
+    bytes_value: "aeiou"
   }
 }
 )";
@@ -249,7 +249,7 @@ attributes {
 attributes {
   key: "connection.filter_state"
   value {
-    string_value: "aeiou"
+    bytes_value: "aeiou"
   }
 }
 )";
@@ -313,7 +313,7 @@ attributes {
 attributes {
   key: "connection.filter_state"
   value {
-    string_value: "aeiou"
+    bytes_value: "aeiou"
   }
 }
 )";
@@ -377,7 +377,7 @@ attributes {
 attributes {
   key: "connection.filter_state"
   value {
-    string_value: "aeiou"
+    bytes_value: "aeiou"
   }
 }
 )";
