@@ -32,7 +32,7 @@ namespace {
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
 
-}  // namespace
+} // namespace
 
 void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
   utils::AttributesBuilder builder(request_->attributes);
@@ -255,11 +255,10 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
 
   std::string filter_state;
   if (report_data->GetDynamicFilterState(&filter_state)) {
-    builder.AddBytes(utils::AttributeName::kRequestDynamicState,
-                     filter_state);
+    builder.AddBytes(utils::AttributeName::kRequestDynamicState, filter_state);
   }
 }
 
-}  // namespace http
-}  // namespace control
-}  // namespace istio
+} // namespace http
+} // namespace control
+} // namespace istio
