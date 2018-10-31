@@ -162,6 +162,12 @@ attributes {
     string_value: "pod1.ns2"
   }
 }
+attributes {
+  key: "connection.dynamic_state"
+  value {
+    bytes_value: "aeiou"
+  }
+}
 )";
 
 const char kReportAttributes[] = R"(
@@ -240,6 +246,12 @@ attributes {
     string_value: "pod1.ns2"
   }
 }
+attributes {
+  key: "connection.dynamic_state"
+  value {
+    bytes_value: "aeiou"
+  }
+}
 )";
 
 const char kDeltaOneReportAttributes[] = R"(
@@ -298,6 +310,12 @@ attributes {
     string_value: "pod1.ns2"
   }
 }
+attributes {
+  key: "connection.dynamic_state"
+  value {
+    bytes_value: "aeiou"
+  }
+}
 )";
 
 const char kDeltaTwoReportAttributes[] = R"(
@@ -354,6 +372,12 @@ attributes {
   key: "destination.uid"
   value {
     string_value: "pod1.ns2"
+  }
+}
+attributes {
+  key: "connection.dynamic_state"
+  value {
+    bytes_value: "aeiou"
   }
 }
 )";
@@ -421,6 +445,12 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
       .Times(4)
       .WillRepeatedly(Invoke([](std::string* uid) -> bool {
         *uid = "pod1.ns2";
+        return true;
+      }));
+  EXPECT_CALL(mock_data, GetDynamicFilterState(_))
+      .Times(4)
+      .WillRepeatedly(Invoke([](std::string* dynamic_state) -> bool {
+        *dynamic_state = "aeiou";
         return true;
       }));
   EXPECT_CALL(mock_data, GetReportInfo(_))

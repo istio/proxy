@@ -252,6 +252,11 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
                         rbac_info.permissive_policy_id);
     }
   }
+
+  std::string filter_state;
+  if (report_data->GetDynamicFilterState(&filter_state)) {
+    builder.AddBytes(utils::AttributeName::kRequestDynamicState, filter_state);
+  }
 }
 
 }  // namespace http

@@ -28,6 +28,7 @@ class MockReportData : public ReportData {
  public:
   MOCK_CONST_METHOD2(GetDestinationIpPort, bool(std::string* ip, int* port));
   MOCK_CONST_METHOD1(GetDestinationUID, bool(std::string*));
+  MOCK_CONST_METHOD1(GetDynamicFilterState, bool(std::string*));
   MOCK_CONST_METHOD1(GetReportInfo, void(ReportInfo* info));
 };
 
