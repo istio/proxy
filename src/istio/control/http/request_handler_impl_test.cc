@@ -14,13 +14,13 @@
  */
 
 #include "google/protobuf/text_format.h"
-#include "gtest/gtest.h"
 #include "include/istio/utils/attribute_names.h"
 #include "src/istio/control/http/client_context.h"
 #include "src/istio/control/http/controller_impl.h"
 #include "src/istio/control/http/mock_check_data.h"
 #include "src/istio/control/http/mock_report_data.h"
 #include "src/istio/control/mock_mixer_client.h"
+#include "gtest/gtest.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::Status;
@@ -127,18 +127,18 @@ forward_attributes {
 )";
 
 class RequestHandlerImplTest : public ::testing::Test {
- public:
+public:
   void SetUp() { SetUpMockController(kDefaultClientConfig); }
 
-  void SetUpMockController(const std::string& config_text) {
+  void SetUpMockController(const std::string &config_text) {
     SetUpMockController(config_text, kLocalInbound, kLocalOutbound,
                         kLocalForward);
   }
 
-  void SetUpMockController(const std::string& config_text,
-                           const std::string& local_inbound_attributes,
-                           const std::string& local_outbound_attributes,
-                           const std::string& local_forward_attributes) {
+  void SetUpMockController(const std::string &config_text,
+                           const std::string &local_inbound_attributes,
+                           const std::string &local_outbound_attributes,
+                           const std::string &local_forward_attributes) {
     ASSERT_TRUE(TextFormat::ParseFromString(config_text, &client_config_));
 
     LocalAttributes la;
@@ -159,19 +159,19 @@ class RequestHandlerImplTest : public ::testing::Test {
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }
 
-  void SetServiceConfig(const std::string& name, const ServiceConfig& config) {
+  void SetServiceConfig(const std::string &name, const ServiceConfig &config) {
     (*client_config_.mutable_service_configs())[name] = config;
   }
 
-  void ApplyPerRouteConfig(const ServiceConfig& service_config,
-                           Controller::PerRouteConfig* per_route) {
+  void ApplyPerRouteConfig(const ServiceConfig &service_config,
+                           Controller::PerRouteConfig *per_route) {
     per_route->service_config_id = "1111";
     controller_->AddServiceConfig(per_route->service_config_id, service_config);
   }
 
   std::shared_ptr<ClientContext> client_context_;
   HttpClientConfig client_config_;
-  ::testing::NiceMock<MockMixerClient>* mock_client_;
+  ::testing::NiceMock<MockMixerClient> *mock_client_;
   std::unique_ptr<Controller> controller_;
 };
 
@@ -211,7 +211,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheckReport) {
 
   auto handler = controller_->CreateRequestHandler(per_route);
   handler->Check(&mock_data, &mock_header, nullptr,
-                 [](const CheckResponseInfo& info) {
+                 [](const CheckResponseInfo &info) {
                    EXPECT_TRUE(info.response_status.ok());
                  });
 }
@@ -233,7 +233,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
 
   auto handler = controller_->CreateRequestHandler(per_route);
   handler->Check(&mock_data, &mock_header, nullptr,
-                 [](const CheckResponseInfo& info) {
+                 [](const CheckResponseInfo &info) {
                    EXPECT_TRUE(info.response_status.ok());
                  });
 }
@@ -246,8 +246,8 @@ TEST_F(RequestHandlerImplTest, TestPerRouteAttributes) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes& attributes,
-                          const std::vector<Requirement>& quotas,
+      .WillOnce(Invoke([](const Attributes &attributes,
+                          const std::vector<Requirement> &quotas,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
@@ -274,8 +274,8 @@ TEST_F(RequestHandlerImplTest, TestDefaultRouteAttributes) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes& attributes,
-                          const std::vector<Requirement>& quotas,
+      .WillOnce(Invoke([](const Attributes &attributes,
+                          const std::vector<Requirement> &quotas,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
@@ -286,7 +286,7 @@ TEST_F(RequestHandlerImplTest, TestDefaultRouteAttributes) {
 
   // Attribute is forwarded: route override
   EXPECT_CALL(mock_header, AddIstioAttributes(_))
-      .WillOnce(Invoke([](const std::string& data) {
+      .WillOnce(Invoke([](const std::string &data) {
         Attributes forwarded_attr;
         EXPECT_TRUE(forwarded_attr.ParseFromString(data));
         auto map = forwarded_attr.attributes();
@@ -313,8 +313,8 @@ TEST_F(RequestHandlerImplTest, TestRouteAttributes) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes& attributes,
-                          const std::vector<Requirement>& quotas,
+      .WillOnce(Invoke([](const Attributes &attributes,
+                          const std::vector<Requirement> &quotas,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
@@ -325,7 +325,7 @@ TEST_F(RequestHandlerImplTest, TestRouteAttributes) {
 
   // Attribute is forwarded: global
   EXPECT_CALL(mock_header, AddIstioAttributes(_))
-      .WillOnce(Invoke([](const std::string& data) {
+      .WillOnce(Invoke([](const std::string &data) {
         Attributes forwarded_attr;
         EXPECT_TRUE(forwarded_attr.ParseFromString(data));
         auto map = forwarded_attr.attributes();
@@ -344,8 +344,8 @@ TEST_F(RequestHandlerImplTest, TestPerRouteQuota) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes& attributes,
-                          const std::vector<Requirement>& quotas,
+      .WillOnce(Invoke([](const Attributes &attributes,
+                          const std::vector<Requirement> &quotas,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
@@ -372,7 +372,7 @@ TEST_F(RequestHandlerImplTest, TestPerRouteApiSpec) {
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
   EXPECT_CALL(mock_data, FindHeaderByType(_, _))
       .WillRepeatedly(
-          Invoke([](CheckData::HeaderType type, std::string* value) -> bool {
+          Invoke([](CheckData::HeaderType type, std::string *value) -> bool {
             if (type == CheckData::HEADER_PATH) {
               *value = "/books/120";
               return true;
@@ -386,8 +386,8 @@ TEST_F(RequestHandlerImplTest, TestPerRouteApiSpec) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes& attributes,
-                          const std::vector<Requirement>& quotas,
+      .WillOnce(Invoke([](const Attributes &attributes,
+                          const std::vector<Requirement> &quotas,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
@@ -436,7 +436,7 @@ TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
   EXPECT_CALL(mock_data, FindQueryParameter(_, _))
       .WillRepeatedly(
-          Invoke([](const std::string& name, std::string* value) -> bool {
+          Invoke([](const std::string &name, std::string *value) -> bool {
             if (name == "key") {
               *value = "test-api-key";
               return true;
@@ -446,8 +446,8 @@ TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes& attributes,
-                          const std::vector<Requirement>& quotas,
+      .WillOnce(Invoke([](const Attributes &attributes,
+                          const std::vector<Requirement> &quotas,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
@@ -465,11 +465,14 @@ TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
 TEST_F(RequestHandlerImplTest, TestHandlerReport) {
   ::testing::NiceMock<MockCheckData> mock_check;
   ::testing::NiceMock<MockReportData> mock_report;
-  ::google::protobuf::Map<std::string, ::google::protobuf::Struct> filter_metadata;
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      filter_metadata;
   EXPECT_CALL(mock_check, GetSourceIpPort(_, _)).Times(1);
   EXPECT_CALL(mock_report, GetResponseHeaders()).Times(1);
   EXPECT_CALL(mock_report, GetReportInfo(_)).Times(1);
-  EXPECT_CALL(mock_report, GetDynamicFilterState()).Times(1).WillOnce(ReturnRef(filter_metadata));
+  EXPECT_CALL(mock_report, GetDynamicFilterState())
+      .Times(1)
+      .WillOnce(ReturnRef(filter_metadata));
 
   // Report should be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(1);
@@ -513,7 +516,7 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
 
   // Attributes is forwarded.
   EXPECT_CALL(mock_header, AddIstioAttributes(_))
-      .WillOnce(Invoke([](const std::string& data) {
+      .WillOnce(Invoke([](const std::string &data) {
         Attributes forwarded_attr;
         EXPECT_TRUE(forwarded_attr.ParseFromString(data));
         auto map = forwarded_attr.attributes();
@@ -534,12 +537,12 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
   Controller::PerRouteConfig config;
   auto handler = controller_->CreateRequestHandler(config);
   handler->Check(&mock_check, &mock_header, nullptr,
-                 [](const CheckResponseInfo& info) {
+                 [](const CheckResponseInfo &info) {
                    EXPECT_TRUE(info.response_status.ok());
                  });
   handler->Report(&mock_check, &mock_report);
 }
 
-}  // namespace http
-}  // namespace control
-}  // namespace istio
+} // namespace http
+} // namespace control
+} // namespace istio

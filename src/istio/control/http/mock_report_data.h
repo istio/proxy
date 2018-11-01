@@ -16,8 +16,8 @@
 #ifndef ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
 #define ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
 
-#include "gmock/gmock.h"
 #include "include/istio/control/http/report_data.h"
+#include "gmock/gmock.h"
 
 namespace istio {
 namespace control {
@@ -25,18 +25,21 @@ namespace http {
 
 // The mock object for ReportData interface.
 class MockReportData : public ReportData {
- public:
+public:
   MOCK_CONST_METHOD0(GetResponseHeaders, std::map<std::string, std::string>());
-  MOCK_CONST_METHOD1(GetReportInfo, void(ReportInfo* info));
-  MOCK_CONST_METHOD2(GetDestinationIpPort, bool(std::string* ip, int* port));
-  MOCK_CONST_METHOD1(GetDestinationUID, bool(std::string* ip));
-  MOCK_CONST_METHOD1(GetGrpcStatus, bool(GrpcStatus* status));
-  MOCK_CONST_METHOD1(GetRbacReportInfo, bool(RbacReportInfo* info));
-  MOCK_CONST_METHOD0(GetDynamicFilterState, const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>&());
+  MOCK_CONST_METHOD1(GetReportInfo, void(ReportInfo *info));
+  MOCK_CONST_METHOD2(GetDestinationIpPort, bool(std::string *ip, int *port));
+  MOCK_CONST_METHOD1(GetDestinationUID, bool(std::string *ip));
+  MOCK_CONST_METHOD1(GetGrpcStatus, bool(GrpcStatus *status));
+  MOCK_CONST_METHOD1(GetRbacReportInfo, bool(RbacReportInfo *info));
+  MOCK_CONST_METHOD0(
+      GetDynamicFilterState,
+      const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+          &());
 };
 
-}  // namespace http
-}  // namespace control
-}  // namespace istio
+} // namespace http
+} // namespace control
+} // namespace istio
 
-#endif  // ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
+#endif // ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H

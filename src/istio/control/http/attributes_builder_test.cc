@@ -15,14 +15,14 @@
 
 #include "src/istio/control/http/attributes_builder.h"
 
-#include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
-#include "gtest/gtest.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "src/istio/control/http/mock_check_data.h"
 #include "src/istio/control/http/mock_report_data.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
@@ -727,7 +727,8 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
 TEST(AttributesBuilderTest, TestReportAttributes) {
   ::testing::StrictMock<MockReportData> mock_data;
 
-  ::google::protobuf::Map<std::string, ::google::protobuf::Struct> filter_metadata;
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      filter_metadata;
   ::google::protobuf::Struct struct_obj;
   ::google::protobuf::Value strval, numval, boolval, listval;
   strval.set_string_value("abc");
@@ -740,7 +741,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   listval.mutable_list_value()->add_values()->set_string_value("b");
   listval.mutable_list_value()->add_values()->set_string_value("c");
   (*struct_obj.mutable_fields())["list"] = listval;
-  filter_metadata["foo.bar.com"]=struct_obj;
+  filter_metadata["foo.bar.com"] = struct_obj;
 
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
@@ -783,7 +784,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         return true;
       }));
   EXPECT_CALL(mock_data, GetDynamicFilterState())
-    .WillOnce(ReturnRef(filter_metadata));
+      .WillOnce(ReturnRef(filter_metadata));
 
   RequestContext request;
   AttributesBuilder builder(&request);
@@ -809,7 +810,8 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
 TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   ::testing::StrictMock<MockReportData> mock_data;
 
-  ::google::protobuf::Map<std::string, ::google::protobuf::Struct> filter_metadata;
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      filter_metadata;
   ::google::protobuf::Struct struct_obj;
   ::google::protobuf::Value strval, numval, boolval, listval;
   strval.set_string_value("abc");
@@ -822,7 +824,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   listval.mutable_list_value()->add_values()->set_string_value("b");
   listval.mutable_list_value()->add_values()->set_string_value("c");
   (*struct_obj.mutable_fields())["list"] = listval;
-  filter_metadata["foo.bar.com"]=struct_obj;
+  filter_metadata["foo.bar.com"] = struct_obj;
 
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
@@ -856,7 +858,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         return true;
       }));
   EXPECT_CALL(mock_data, GetDynamicFilterState())
-    .WillOnce(ReturnRef(filter_metadata));
+      .WillOnce(ReturnRef(filter_metadata));
 
   RequestContext request;
   SetDestinationIp(&request, "1.2.3.4");
@@ -871,7 +873,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
 
-}  // namespace
-}  // namespace http
-}  // namespace control
-}  // namespace istio
+} // namespace
+} // namespace http
+} // namespace control
+} // namespace istio

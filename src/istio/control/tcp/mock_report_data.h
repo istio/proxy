@@ -16,8 +16,8 @@
 #ifndef ISTIO_CONTROL_TCP_MOCK_REPORT_DATA_H
 #define ISTIO_CONTROL_TCP_MOCK_REPORT_DATA_H
 
-#include "gmock/gmock.h"
 #include "include/istio/control/tcp/report_data.h"
+#include "gmock/gmock.h"
 
 namespace istio {
 namespace control {
@@ -25,15 +25,18 @@ namespace tcp {
 
 // The mock object for ReportData interface.
 class MockReportData : public ReportData {
- public:
-  MOCK_CONST_METHOD2(GetDestinationIpPort, bool(std::string* ip, int* port));
-  MOCK_CONST_METHOD1(GetDestinationUID, bool(std::string*));
-  MOCK_CONST_METHOD0(GetDynamicFilterState, const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>&());
-  MOCK_CONST_METHOD1(GetReportInfo, void(ReportInfo* info));
+public:
+  MOCK_CONST_METHOD2(GetDestinationIpPort, bool(std::string *ip, int *port));
+  MOCK_CONST_METHOD1(GetDestinationUID, bool(std::string *));
+  MOCK_CONST_METHOD0(
+      GetDynamicFilterState,
+      const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+          &());
+  MOCK_CONST_METHOD1(GetReportInfo, void(ReportInfo *info));
 };
 
-}  // namespace tcp
-}  // namespace control
-}  // namespace istio
+} // namespace tcp
+} // namespace control
+} // namespace istio
 
-#endif  // ISTIO_CONTROL_TCP_MOCK_REPORT_DATA_H
+#endif // ISTIO_CONTROL_TCP_MOCK_REPORT_DATA_H
