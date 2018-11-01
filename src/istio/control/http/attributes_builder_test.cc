@@ -31,6 +31,7 @@ using ::istio::mixer::v1::Attributes_StringMap;
 
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::ReturnRef;
 
 namespace istio {
 namespace control {
@@ -407,9 +408,18 @@ attributes {
   }
 }
 attributes {
-  key: "request.dynamic_state"
+  key: "foo.bar.com"
   value {
-    bytes_value: "aeiou"
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
   }
 }
 )";
@@ -716,6 +726,23 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
   ::testing::StrictMock<MockReportData> mock_data;
+
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      filter_metadata;
+  ::google::protobuf::Struct struct_obj;
+  ::google::protobuf::Value strval, numval, boolval, listval;
+  strval.set_string_value("abc");
+  (*struct_obj.mutable_fields())["str"] = strval;
+  numval.set_number_value(12.3);
+  (*struct_obj.mutable_fields())["num"] = numval;
+  boolval.set_bool_value(true);
+  (*struct_obj.mutable_fields())["bool"] = boolval;
+  listval.mutable_list_value()->add_values()->set_string_value("a");
+  listval.mutable_list_value()->add_values()->set_string_value("b");
+  listval.mutable_list_value()->add_values()->set_string_value("c");
+  (*struct_obj.mutable_fields())["list"] = listval;
+  filter_metadata["foo.bar.com"] = struct_obj;
+
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
         *ip = "1.2.3.4";
@@ -756,11 +783,8 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         report_info->permissive_policy_id = "policy-foo";
         return true;
       }));
-  EXPECT_CALL(mock_data, GetDynamicFilterState(_))
-      .WillOnce(Invoke([](std::string *dynamic_state) -> bool {
-        *dynamic_state = "aeiou";
-        return true;
-      }));
+  EXPECT_CALL(mock_data, GetDynamicFilterState())
+      .WillOnce(ReturnRef(filter_metadata));
 
   RequestContext request;
   AttributesBuilder builder(&request);
@@ -785,6 +809,23 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
 
 TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   ::testing::StrictMock<MockReportData> mock_data;
+
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      filter_metadata;
+  ::google::protobuf::Struct struct_obj;
+  ::google::protobuf::Value strval, numval, boolval, listval;
+  strval.set_string_value("abc");
+  (*struct_obj.mutable_fields())["str"] = strval;
+  numval.set_number_value(12.3);
+  (*struct_obj.mutable_fields())["num"] = numval;
+  boolval.set_bool_value(true);
+  (*struct_obj.mutable_fields())["bool"] = boolval;
+  listval.mutable_list_value()->add_values()->set_string_value("a");
+  listval.mutable_list_value()->add_values()->set_string_value("b");
+  listval.mutable_list_value()->add_values()->set_string_value("c");
+  (*struct_obj.mutable_fields())["list"] = listval;
+  filter_metadata["foo.bar.com"] = struct_obj;
+
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
         *ip = "2.3.4.5";
@@ -816,11 +857,8 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         report_info->permissive_policy_id = "policy-foo";
         return true;
       }));
-  EXPECT_CALL(mock_data, GetDynamicFilterState(_))
-      .WillOnce(Invoke([](std::string *dynamic_state) -> bool {
-        *dynamic_state = "aeiou";
-        return true;
-      }));
+  EXPECT_CALL(mock_data, GetDynamicFilterState())
+      .WillOnce(ReturnRef(filter_metadata));
 
   RequestContext request;
   SetDestinationIp(&request, "1.2.3.4");

@@ -36,6 +36,7 @@ using ::istio::utils::LocalAttributes;
 
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::ReturnRef;
 
 namespace istio {
 namespace control {
@@ -97,7 +98,7 @@ class RequestHandlerImplTest : public ::testing::Test {
 
   std::shared_ptr<ClientContext> client_context_;
   TcpClientConfig client_config_;
-  ::testing::NiceMock<MockMixerClient>* mock_client_;
+  ::testing::NiceMock<MockMixerClient> *mock_client_;
   std::unique_ptr<Controller> controller_;
 };
 
@@ -111,7 +112,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
 
   client_config_.set_disable_check_calls(true);
   auto handler = controller_->CreateRequestHandler();
-  handler->Check(&mock_data, [](const CheckResponseInfo& info) {
+  handler->Check(&mock_data, [](const CheckResponseInfo &info) {
     EXPECT_TRUE(info.response_status.ok());
   });
 }
@@ -123,8 +124,8 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes& attributes,
-                          const std::vector<Requirement>& quotas,
+      .WillOnce(Invoke([](const Attributes &attributes,
+                          const std::vector<Requirement> &quotas,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
@@ -141,9 +142,14 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
 
 TEST_F(RequestHandlerImplTest, TestHandlerReport) {
   ::testing::NiceMock<MockReportData> mock_data;
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      filter_metadata;
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _)).Times(1);
   EXPECT_CALL(mock_data, GetDestinationUID(_)).Times(1);
   EXPECT_CALL(mock_data, GetReportInfo(_)).Times(1);
+  EXPECT_CALL(mock_data, GetDynamicFilterState())
+      .Times(1)
+      .WillOnce(ReturnRef(filter_metadata));
 
   // Report should be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(1);
