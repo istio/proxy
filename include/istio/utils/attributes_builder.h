@@ -122,6 +122,10 @@ class AttributesBuilder {
           break;
       }
     }
+
+    if (entries->empty()) {
+      attributes_->mutable_attributes()->erase(key);
+    }
   }
 
   // Serializes all the keys in a map<string, struct> and builds attributes.
