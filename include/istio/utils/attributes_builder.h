@@ -31,7 +31,7 @@ namespace utils {
 //    builder(attribute).Add("key", value)
 //                      .Add("key2", value2);
 class AttributesBuilder {
-public:
+ public:
   AttributesBuilder(::istio::mixer::v1::Attributes *attributes)
       : attributes_(attributes) {}
 
@@ -101,25 +101,25 @@ public:
     for (const auto &field : struct_map.fields()) {
       // Ignore all fields that are not string or string list.
       switch (field.second.kind_case()) {
-      case google::protobuf::Value::kStringValue:
-        (*entries)[field.first] = field.second.string_value();
-        break;
-      case google::protobuf::Value::kListValue:
-        if (field.second.list_value().values_size() > 0) {
-          // The items in the list is converted into a
-          // comma separated string
-          std::string s;
-          for (int i = 0; i < field.second.list_value().values_size(); i++) {
-            s += field.second.list_value().values().Get(i).string_value();
-            if (i + 1 < field.second.list_value().values_size()) {
-              s += ",";
+        case google::protobuf::Value::kStringValue:
+          (*entries)[field.first] = field.second.string_value();
+          break;
+        case google::protobuf::Value::kListValue:
+          if (field.second.list_value().values_size() > 0) {
+            // The items in the list is converted into a
+            // comma separated string
+            std::string s;
+            for (int i = 0; i < field.second.list_value().values_size(); i++) {
+              s += field.second.list_value().values().Get(i).string_value();
+              if (i + 1 < field.second.list_value().values_size()) {
+                s += ",";
+              }
             }
+            (*entries)[field.first] = s;
           }
-          (*entries)[field.first] = s;
-        }
-        break;
-      default:
-        break;
+          break;
+        default:
+          break;
       }
     }
   }
@@ -147,11 +147,11 @@ public:
     return attrs_map.find(key) != attrs_map.end();
   }
 
-private:
+ private:
   ::istio::mixer::v1::Attributes *attributes_;
 };
 
-} // namespace utils
-} // namespace istio
+}  // namespace utils
+}  // namespace istio
 
-#endif // ISTIO_MIXERCLIENT_ATTRIBUTES_BUILDER_H
+#endif  // ISTIO_MIXERCLIENT_ATTRIBUTES_BUILDER_H

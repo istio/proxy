@@ -28,7 +28,7 @@ namespace http {
 // The interface to extract HTTP data for Mixer report.
 // Implemented by the environment (Envoy) and used by the library.
 class ReportData {
-public:
+ public:
   virtual ~ReportData() {}
 
   // Get response HTTP headers.
@@ -72,8 +72,8 @@ public:
       &GetDynamicFilterState() const = 0;
 };
 
-} // namespace http
-} // namespace control
-} // namespace istio
+}  // namespace http
+}  // namespace control
+}  // namespace istio
 
-#endif // ISTIO_CONTROL_HTTP_REPORT_DATA_H
+#endif  // ISTIO_CONTROL_HTTP_REPORT_DATA_H

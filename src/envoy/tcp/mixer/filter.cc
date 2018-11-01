@@ -177,8 +177,8 @@ bool Filter::GetDestinationUID(std::string *uid) const {
   }
   return false;
 }
-const ::google::protobuf::Map<std::string, ::google::protobuf::Struct> &
-Filter::GetDynamicFilterState() const {
+const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+    &Filter::GetDynamicFilterState() const {
   return filter_callbacks_->connection()
       .streamInfo()
       .dynamicMetadata()
@@ -205,6 +205,6 @@ void Filter::OnReportTimer() {
   report_timer_->enableTimer(control_.config().report_interval_ms());
 }
 
-} // namespace Mixer
-} // namespace Tcp
-} // namespace Envoy
+}  // namespace Mixer
+}  // namespace Tcp
+}  // namespace Envoy

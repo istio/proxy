@@ -30,7 +30,7 @@ class Filter : public Network::Filter,
                public ::istio::control::tcp::CheckData,
                public ::istio::control::tcp::ReportData,
                public Logger::Loggable<Logger::Id::filter> {
-public:
+ public:
   Filter(Control &control);
   ~Filter();
 
@@ -59,13 +59,13 @@ public:
   // ReportData virtual functions.
   bool GetDestinationIpPort(std::string *str_ip, int *port) const override;
   bool GetDestinationUID(std::string *uid) const override;
-  const ::google::protobuf::Map<std::string, ::google::protobuf::Struct> &
-  GetDynamicFilterState() const override;
+  const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      &GetDynamicFilterState() const override;
   void GetReportInfo(
       ::istio::control::tcp::ReportData::ReportInfo *data) const override;
   std::string GetConnectionId() const override;
 
-private:
+ private:
   enum class State { NotStarted, Calling, Completed, Closed };
   // This function is invoked when timer event fires.
   // It sends periodical delta reports.
@@ -103,6 +103,6 @@ private:
   std::chrono::time_point<std::chrono::system_clock> start_time_;
 };
 
-} // namespace Mixer
-} // namespace Tcp
-} // namespace Envoy
+}  // namespace Mixer
+}  // namespace Tcp
+}  // namespace Envoy

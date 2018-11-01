@@ -17,12 +17,12 @@
 
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "gtest/gtest.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "src/istio/control/tcp/mock_check_data.h"
 #include "src/istio/control/tcp/mock_report_data.h"
 #include "src/istio/utils/utils.h"
-#include "gtest/gtest.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
@@ -600,7 +600,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
                                          expected_final_attributes));
 }
 
-} // namespace
-} // namespace tcp
-} // namespace control
-} // namespace istio
+}  // namespace
+}  // namespace tcp
+}  // namespace control
+}  // namespace istio

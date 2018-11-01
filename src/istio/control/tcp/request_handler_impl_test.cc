@@ -14,12 +14,12 @@
  */
 
 #include "google/protobuf/text_format.h"
+#include "gtest/gtest.h"
 #include "src/istio/control/mock_mixer_client.h"
 #include "src/istio/control/tcp/client_context.h"
 #include "src/istio/control/tcp/controller_impl.h"
 #include "src/istio/control/tcp/mock_check_data.h"
 #include "src/istio/control/tcp/mock_report_data.h"
-#include "gtest/gtest.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::Status;
@@ -70,10 +70,10 @@ attributes {
   }
 }
 )";
-} // namespace
+}  // namespace
 
 class RequestHandlerImplTest : public ::testing::Test {
-public:
+ public:
   void SetUp() {
     auto map1 = client_config_.mutable_mixer_attributes()->mutable_attributes();
     (*map1)["key1"].set_string_value("value1");
@@ -158,6 +158,6 @@ TEST_F(RequestHandlerImplTest, TestHandlerReport) {
   handler->Report(&mock_data, ReportData::CONTINUE);
 }
 
-} // namespace tcp
-} // namespace control
-} // namespace istio
+}  // namespace tcp
+}  // namespace control
+}  // namespace istio

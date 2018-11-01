@@ -16,8 +16,8 @@
 #ifndef ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
 #define ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
 
-#include "include/istio/control/http/report_data.h"
 #include "gmock/gmock.h"
+#include "include/istio/control/http/report_data.h"
 
 namespace istio {
 namespace control {
@@ -25,7 +25,7 @@ namespace http {
 
 // The mock object for ReportData interface.
 class MockReportData : public ReportData {
-public:
+ public:
   MOCK_CONST_METHOD0(GetResponseHeaders, std::map<std::string, std::string>());
   MOCK_CONST_METHOD1(GetReportInfo, void(ReportInfo *info));
   MOCK_CONST_METHOD2(GetDestinationIpPort, bool(std::string *ip, int *port));
@@ -38,8 +38,8 @@ public:
           &());
 };
 
-} // namespace http
-} // namespace control
-} // namespace istio
+}  // namespace http
+}  // namespace control
+}  // namespace istio
 
-#endif // ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H
+#endif  // ISTIO_CONTROL_HTTP_MOCK_REPORT_DATA_H

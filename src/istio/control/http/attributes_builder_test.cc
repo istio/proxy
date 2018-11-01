@@ -15,14 +15,14 @@
 
 #include "src/istio/control/http/attributes_builder.h"
 
+#include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "gtest/gtest.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "src/istio/control/http/mock_check_data.h"
 #include "src/istio/control/http/mock_report_data.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::MessageDifferencer;
@@ -873,7 +873,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
 
-} // namespace
-} // namespace http
-} // namespace control
-} // namespace istio
+}  // namespace
+}  // namespace http
+}  // namespace control
+}  // namespace istio

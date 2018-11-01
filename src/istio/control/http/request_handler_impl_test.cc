@@ -14,13 +14,13 @@
  */
 
 #include "google/protobuf/text_format.h"
+#include "gtest/gtest.h"
 #include "include/istio/utils/attribute_names.h"
 #include "src/istio/control/http/client_context.h"
 #include "src/istio/control/http/controller_impl.h"
 #include "src/istio/control/http/mock_check_data.h"
 #include "src/istio/control/http/mock_report_data.h"
 #include "src/istio/control/mock_mixer_client.h"
-#include "gtest/gtest.h"
 
 using ::google::protobuf::TextFormat;
 using ::google::protobuf::util::Status;
@@ -127,7 +127,7 @@ forward_attributes {
 )";
 
 class RequestHandlerImplTest : public ::testing::Test {
-public:
+ public:
   void SetUp() { SetUpMockController(kDefaultClientConfig); }
 
   void SetUpMockController(const std::string &config_text) {
@@ -543,6 +543,6 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
   handler->Report(&mock_check, &mock_report);
 }
 
-} // namespace http
-} // namespace control
-} // namespace istio
+}  // namespace http
+}  // namespace control
+}  // namespace istio
