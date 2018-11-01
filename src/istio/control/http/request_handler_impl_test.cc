@@ -38,6 +38,7 @@ using ::istio::utils::LocalAttributes;
 
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::ReturnRef;
 
 namespace istio {
 namespace control {
@@ -464,9 +465,11 @@ TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
 TEST_F(RequestHandlerImplTest, TestHandlerReport) {
   ::testing::NiceMock<MockCheckData> mock_check;
   ::testing::NiceMock<MockReportData> mock_report;
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct> filter_metadata;
   EXPECT_CALL(mock_check, GetSourceIpPort(_, _)).Times(1);
   EXPECT_CALL(mock_report, GetResponseHeaders()).Times(1);
   EXPECT_CALL(mock_report, GetReportInfo(_)).Times(1);
+  EXPECT_CALL(mock_report, GetDynamicFilterState()).Times(1).WillOnce(ReturnRef(filter_metadata));
 
   // Report should be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(1);
@@ -485,6 +488,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledReport) {
   EXPECT_CALL(mock_check, GetSourceIpPort(_, _)).Times(0);
   EXPECT_CALL(mock_report, GetResponseHeaders()).Times(0);
   EXPECT_CALL(mock_report, GetReportInfo(_)).Times(0);
+  EXPECT_CALL(mock_report, GetDynamicFilterState()).Times(0);
 
   // Report should NOT be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(0);
@@ -522,6 +526,7 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
   ::testing::NiceMock<MockReportData> mock_report;
   EXPECT_CALL(mock_report, GetResponseHeaders()).Times(0);
   EXPECT_CALL(mock_report, GetReportInfo(_)).Times(0);
+  EXPECT_CALL(mock_report, GetDynamicFilterState()).Times(0);
 
   // Report should NOT be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(0);

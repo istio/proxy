@@ -30,6 +30,7 @@ using ::google::protobuf::util::MessageDifferencer;
 using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace istio {
 namespace control {
@@ -163,9 +164,18 @@ attributes {
   }
 }
 attributes {
-  key: "connection.dynamic_state"
+  key: "foo.bar.com"
   value {
-    bytes_value: "aeiou"
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
   }
 }
 )";
@@ -247,9 +257,18 @@ attributes {
   }
 }
 attributes {
-  key: "connection.dynamic_state"
+  key: "foo.bar.com"
   value {
-    bytes_value: "aeiou"
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
   }
 }
 )";
@@ -311,9 +330,18 @@ attributes {
   }
 }
 attributes {
-  key: "connection.dynamic_state"
+  key: "foo.bar.com"
   value {
-    bytes_value: "aeiou"
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
   }
 }
 )";
@@ -375,9 +403,18 @@ attributes {
   }
 }
 attributes {
-  key: "connection.dynamic_state"
+  key: "foo.bar.com"
   value {
-    bytes_value: "aeiou"
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
   }
 }
 )";
@@ -434,6 +471,23 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
   ::testing::NiceMock<MockReportData> mock_data;
+
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct> filter_metadata;
+  ::google::protobuf::Struct struct_obj;
+  ::google::protobuf::Value strval, numval, boolval, listval;
+  strval.set_string_value("abc");
+  (*struct_obj.mutable_fields())["str"] = strval;
+  numval.set_number_value(12.3);
+  (*struct_obj.mutable_fields())["num"] = numval;
+  boolval.set_bool_value(true);
+  (*struct_obj.mutable_fields())["bool"] = boolval;
+  listval.mutable_list_value()->add_values()->set_string_value("a");
+  listval.mutable_list_value()->add_values()->set_string_value("b");
+  listval.mutable_list_value()->add_values()->set_string_value("c");
+  (*struct_obj.mutable_fields())["list"] = listval;
+  filter_metadata["foo.bar.com"]=struct_obj;
+
+
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .Times(4)
       .WillRepeatedly(Invoke([](std::string* ip, int* port) -> bool {
@@ -447,12 +501,9 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         *uid = "pod1.ns2";
         return true;
       }));
-  EXPECT_CALL(mock_data, GetDynamicFilterState(_))
-      .Times(4)
-      .WillRepeatedly(Invoke([](std::string* dynamic_state) -> bool {
-        *dynamic_state = "aeiou";
-        return true;
-      }));
+  EXPECT_CALL(mock_data, GetDynamicFilterState())
+    .Times(4)
+    .WillRepeatedly(ReturnRef(filter_metadata));
   EXPECT_CALL(mock_data, GetReportInfo(_))
       .Times(4)
       .WillOnce(Invoke([](ReportData::ReportInfo* info) {

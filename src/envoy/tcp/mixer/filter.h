@@ -18,6 +18,7 @@
 #include "common/common/logger.h"
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
+#include "google/protobuf/struct.pb.h"
 #include "src/envoy/tcp/mixer/control.h"
 
 namespace Envoy {
@@ -57,8 +58,8 @@ class Filter : public Network::Filter,
 
   // ReportData virtual functions.
   bool GetDestinationIpPort(std::string* str_ip, int* port) const override;
-  bool GetDestinationUID(std::string* uid) const override;
-  bool GetDynamicFilterState(std::string* filter_state) const override;
+  bool GetDestinationUID(std::string* uid) const override;  
+  const ::google::protobuf::Map<std::string, ::google::protobuf::Struct >& GetDynamicFilterState() const override;
   void GetReportInfo(
       ::istio::control::tcp::ReportData::ReportInfo* data) const override;
   std::string GetConnectionId() const override;

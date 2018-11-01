@@ -36,6 +36,7 @@ using ::istio::utils::LocalAttributes;
 
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::ReturnRef;
 
 namespace istio {
 namespace control {
@@ -141,9 +142,11 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
 
 TEST_F(RequestHandlerImplTest, TestHandlerReport) {
   ::testing::NiceMock<MockReportData> mock_data;
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct> filter_metadata;
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _)).Times(1);
   EXPECT_CALL(mock_data, GetDestinationUID(_)).Times(1);
   EXPECT_CALL(mock_data, GetReportInfo(_)).Times(1);
+  EXPECT_CALL(mock_data, GetDynamicFilterState()).Times(1).WillOnce(ReturnRef(filter_metadata));
 
   // Report should be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(1);

@@ -124,6 +124,21 @@ class AttributesBuilder {
     }
   }
 
+  // Serializes all the keys in a map<string, struct> and builds attributes.
+  // for example, foo.bar.com: struct {str:abc, list:[c,d,e]} will be emitted as
+  // foo.bar.com: string_map[str:abc, list: c,d,e]
+  // Only extracts strings and lists.
+  // TODO: add the ability to pack bools and nums as strings and recurse down the struct.
+  void FlattenMapOfStringToStruct(const ::google::protobuf::Map< ::std::string, ::google::protobuf::Struct >& filter_state) {
+      if (filter_state.empty()) {
+          return;
+      }
+
+      for (const auto& filter : filter_state) {
+          AddProtoStructStringMap(filter.first, filter.second);
+      }
+  }
+
   bool HasAttribute(const std::string& key) const {
     const auto& attrs_map = attributes_->attributes();
     return attrs_map.find(key) != attrs_map.end();
