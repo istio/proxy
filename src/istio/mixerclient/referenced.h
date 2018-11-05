@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "include/istio/utils/concat_hash.h"
-#include "mixer/v1/check.pb.h"
+#include "mixer/v1/mixer.pb.h"
 
 namespace istio {
 namespace mixerclient {
