@@ -44,7 +44,9 @@ class TcpClusterRewriteFilterConfigFactory
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() override { return "tcp_cluster_rewrite"; }
+  std::string name() override {
+    return "envoy.filters.network.tcp_cluster_rewrite";
+  }
 
  private:
   Network::FilterFactoryCb createFilterFactory(
