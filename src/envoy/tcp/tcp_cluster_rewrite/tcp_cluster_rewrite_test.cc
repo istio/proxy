@@ -58,41 +58,14 @@ class TcpClusterRewriteFilterTest : public testing::Test {
   std::unique_ptr<TcpClusterRewriteFilter> filter_;
 };
 
-TEST_F(TcpClusterRewriteFilterTest, SetTcpProxyClusterOnlyIfSniIsPresent) {
-  // no sni
-  {
-    ON_CALL(filter_callbacks_.connection_, requestedServerName())
-        .WillByDefault(Return(EMPTY_STRING));
-    filter_->onNewConnection();
-
-    EXPECT_FALSE(
-        stream_info_.filterState().hasData<TcpProxy::PerConnectionCluster>(
-            TcpProxy::PerConnectionCluster::Key));
-  }
-
-  // with sni
-  {
-    ON_CALL(filter_callbacks_.connection_, requestedServerName())
-        .WillByDefault(Return("filter_state_cluster"));
-    filter_->onNewConnection();
-
-    EXPECT_TRUE(
-        stream_info_.filterState().hasData<TcpProxy::PerConnectionCluster>(
-            TcpProxy::PerConnectionCluster::Key));
-
-    auto per_connection_cluster =
-        stream_info_.filterState()
-            .getDataReadOnly<TcpProxy::PerConnectionCluster>(
-                TcpProxy::PerConnectionCluster::Key);
-    EXPECT_EQ(per_connection_cluster.value(), "filter_state_cluster");
-  }
-}
-
 TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
   // no rewrite
   {
-    ON_CALL(filter_callbacks_.connection_, requestedServerName())
-        .WillByDefault(Return("hello.ns1.svc.cluster.local"));
+    stream_info_.filterState().setData(
+        TcpProxy::PerConnectionCluster::Key,
+        std::make_unique<TcpProxy::PerConnectionCluster>(
+            "hello.ns1.svc.cluster.local"),
+        StreamInfo::FilterState::StateType::Mutable);
     filter_->onNewConnection();
 
     EXPECT_TRUE(
@@ -113,8 +86,10 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
     proto_config.set_cluster_replacement(".svc.cluster.local");
     configure(proto_config);
 
-    ON_CALL(filter_callbacks_.connection_, requestedServerName())
-        .WillByDefault(Return("hello.ns1.global"));
+    stream_info_.filterState().setData(
+        TcpProxy::PerConnectionCluster::Key,
+        std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.global"),
+        StreamInfo::FilterState::StateType::Mutable);
     filter_->onNewConnection();
 
     EXPECT_TRUE(
@@ -135,8 +110,10 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
     proto_config.set_cluster_replacement("another.svc.cluster.local");
     configure(proto_config);
 
-    ON_CALL(filter_callbacks_.connection_, requestedServerName())
-        .WillByDefault(Return("hello.ns1.global"));
+    stream_info_.filterState().setData(
+        TcpProxy::PerConnectionCluster::Key,
+        std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.global"),
+        StreamInfo::FilterState::StateType::Mutable);
     filter_->onNewConnection();
 
     EXPECT_TRUE(
