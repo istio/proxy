@@ -19,7 +19,7 @@
 #include <unordered_map>
 
 #include "mixer/v1/attributes.pb.h"
-#include "mixer/v1/report.pb.h"
+#include "mixer/v1/mixer.pb.h"
 
 namespace istio {
 namespace mixerclient {

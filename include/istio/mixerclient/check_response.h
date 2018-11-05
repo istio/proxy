@@ -17,7 +17,7 @@
 #define ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
 
 #include "google/protobuf/stubs/status.h"
-#include "mixer/v1/check.pb.h"
+#include "mixer/v1/mixer.pb.h"
 
 namespace istio {
 namespace mixerclient {
