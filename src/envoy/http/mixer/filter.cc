@@ -159,7 +159,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     state_ = Responded;
     int status_code = ::istio::utils::StatusHttpCode(status.error_code());
     decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
-                                       nullptr);
+                                       nullptr, absl::nullopt);
     decoder_callbacks_->streamInfo().setResponseFlag(
         StreamInfo::ResponseFlag::UnauthorizedExternalService);
     return;
@@ -174,9 +174,11 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     state_ = Responded;
     decoder_callbacks_->sendLocalReply(
         Code(route_directive_.direct_response_code()),
-        route_directive_.direct_response_body(), [this](HeaderMap& headers) {
+        route_directive_.direct_response_body(),
+        [this](HeaderMap& headers) {
           UpdateHeaders(headers, route_directive_.response_header_operations());
-        });
+        },
+        absl::nullopt);
     return;
   }
 
