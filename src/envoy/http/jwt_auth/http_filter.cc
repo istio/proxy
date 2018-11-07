@@ -63,7 +63,7 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
     Code code = Code(401);  // Unauthorized
     // return failure reason as message body
     decoder_callbacks_->sendLocalReply(code, JwtAuth::StatusToString(status),
-                                       nullptr);
+                                       nullptr, absl::nullopt);
     return;
   }
 
