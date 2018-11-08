@@ -174,9 +174,11 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     state_ = Responded;
     decoder_callbacks_->sendLocalReply(
         Code(route_directive_.direct_response_code()),
-        route_directive_.direct_response_body(), [this](HeaderMap& headers) {
+        route_directive_.direct_response_body(),
+        [this](HeaderMap& headers) {
           UpdateHeaders(headers, route_directive_.response_header_operations());
-        }, absl::nullopt);
+        },
+        absl::nullopt);
     return;
   }
 
