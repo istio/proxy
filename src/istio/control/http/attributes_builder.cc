@@ -252,6 +252,8 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
                         rbac_info.permissive_policy_id);
     }
   }
+
+  builder.FlattenMapOfStringToStruct(report_data->GetDynamicFilterState());
 }
 
 }  // namespace http

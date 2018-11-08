@@ -30,6 +30,7 @@ using ::google::protobuf::util::MessageDifferencer;
 using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace istio {
 namespace control {
@@ -162,6 +163,21 @@ attributes {
     string_value: "pod1.ns2"
   }
 }
+attributes {
+  key: "foo.bar.com"
+  value {
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
+  }
+}
 )";
 
 const char kReportAttributes[] = R"(
@@ -240,6 +256,21 @@ attributes {
     string_value: "pod1.ns2"
   }
 }
+attributes {
+  key: "foo.bar.com"
+  value {
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
+  }
+}
 )";
 
 const char kDeltaOneReportAttributes[] = R"(
@@ -296,6 +327,21 @@ attributes {
   key: "destination.uid"
   value {
     string_value: "pod1.ns2"
+  }
+}
+attributes {
+  key: "foo.bar.com"
+  value {
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
   }
 }
 )";
@@ -356,9 +402,24 @@ attributes {
     string_value: "pod1.ns2"
   }
 }
+attributes {
+  key: "foo.bar.com"
+  value {
+    string_map_value {
+      entries {
+        key: "str"
+        value: "abc"
+      }
+      entries {
+        key: "list"
+        value: "a,b,c"
+      }
+    }
+  }
+}
 )";
 
-void ClearContextTime(RequestContext* request) {
+void ClearContextTime(RequestContext *request) {
   // Override timestamp with -
   utils::AttributesBuilder builder(request->attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
@@ -368,7 +429,7 @@ void ClearContextTime(RequestContext* request) {
 TEST(AttributesBuilderTest, TestCheckAttributes) {
   ::testing::NiceMock<MockCheckData> mock_data;
   EXPECT_CALL(mock_data, GetSourceIpPort(_, _))
-      .WillOnce(Invoke([](std::string* ip, int* port) -> bool {
+      .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
         *ip = "1.2.3.4";
         *port = 8080;
         return true;
@@ -377,7 +438,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
     return true;
   }));
   EXPECT_CALL(mock_data, GetPrincipal(_, _))
-      .WillRepeatedly(Invoke([](bool peer, std::string* user) -> bool {
+      .WillRepeatedly(Invoke([](bool peer, std::string *user) -> bool {
         if (peer) {
           *user = "cluster.local/sa/test_user/ns/ns_ns/";
         } else {
@@ -387,7 +448,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
       }));
   EXPECT_CALL(mock_data, GetConnectionId()).WillOnce(Return("1234-5"));
   EXPECT_CALL(mock_data, GetRequestedServerName(_))
-      .WillOnce(Invoke([](std::string* name) -> bool {
+      .WillOnce(Invoke([](std::string *name) -> bool {
         *name = "www.google.com";
         return true;
       }));
@@ -410,37 +471,57 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
   ::testing::NiceMock<MockReportData> mock_data;
+
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      filter_metadata;
+  ::google::protobuf::Struct struct_obj;
+  ::google::protobuf::Value strval, numval, boolval, listval;
+  strval.set_string_value("abc");
+  (*struct_obj.mutable_fields())["str"] = strval;
+  numval.set_number_value(12.3);
+  (*struct_obj.mutable_fields())["num"] = numval;
+  boolval.set_bool_value(true);
+  (*struct_obj.mutable_fields())["bool"] = boolval;
+  listval.mutable_list_value()->add_values()->set_string_value("a");
+  listval.mutable_list_value()->add_values()->set_string_value("b");
+  listval.mutable_list_value()->add_values()->set_string_value("c");
+  (*struct_obj.mutable_fields())["list"] = listval;
+  filter_metadata["foo.bar.com"] = struct_obj;
+
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .Times(4)
-      .WillRepeatedly(Invoke([](std::string* ip, int* port) -> bool {
+      .WillRepeatedly(Invoke([](std::string *ip, int *port) -> bool {
         *ip = "1.2.3.4";
         *port = 8080;
         return true;
       }));
   EXPECT_CALL(mock_data, GetDestinationUID(_))
       .Times(4)
-      .WillRepeatedly(Invoke([](std::string* uid) -> bool {
+      .WillRepeatedly(Invoke([](std::string *uid) -> bool {
         *uid = "pod1.ns2";
         return true;
       }));
+  EXPECT_CALL(mock_data, GetDynamicFilterState())
+      .Times(4)
+      .WillRepeatedly(ReturnRef(filter_metadata));
   EXPECT_CALL(mock_data, GetReportInfo(_))
       .Times(4)
-      .WillOnce(Invoke([](ReportData::ReportInfo* info) {
+      .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->received_bytes = 0;
         info->send_bytes = 0;
         info->duration = std::chrono::nanoseconds(1);
       }))
-      .WillOnce(Invoke([](ReportData::ReportInfo* info) {
+      .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->received_bytes = 100;
         info->send_bytes = 200;
         info->duration = std::chrono::nanoseconds(2);
       }))
-      .WillOnce(Invoke([](ReportData::ReportInfo* info) {
+      .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->received_bytes = 201;
         info->send_bytes = 404;
         info->duration = std::chrono::nanoseconds(3);
       }))
-      .WillOnce(Invoke([](ReportData::ReportInfo* info) {
+      .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->received_bytes = 345;
         info->send_bytes = 678;
         info->duration = std::chrono::nanoseconds(4);

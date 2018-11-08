@@ -176,6 +176,8 @@ TEST(ReferencedTest, FillSuccessTest) {
             "target.service, Exact-keys: bool-key, bytes-key, double-key, "
             "duration-key, int-key, string-key, string-map-key[If-Match], "
             "time-key, ");
+
+  EXPECT_EQ(referenced.Hash(), 15726019709841724427U);
 }
 
 TEST(ReferencedTest, FillFail1Test) {
@@ -245,6 +247,7 @@ TEST(ReferencedTest, OKSignature1Test) {
 
   utils::HashType signature;
   EXPECT_TRUE(referenced.Signature(attributes, "extra", &signature));
+  EXPECT_EQ(signature, 7485122822970549717U);
 }
 
 TEST(ReferencedTest, StringMapReferencedTest) {
@@ -265,6 +268,7 @@ TEST(ReferencedTest, StringMapReferencedTest) {
 
   utils::HashType signature;
   EXPECT_TRUE(referenced.Signature(attrs, "extra", &signature));
+  EXPECT_EQ(signature, 5578853713114714386U);
 
   // negative test: map-key3 must absence
   ::istio::mixer::v1::Attributes attr1(attrs);

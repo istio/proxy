@@ -32,32 +32,32 @@ namespace utils {
 //                      .Add("key2", value2);
 class AttributesBuilder {
  public:
-  AttributesBuilder(::istio::mixer::v1::Attributes* attributes)
+  AttributesBuilder(::istio::mixer::v1::Attributes *attributes)
       : attributes_(attributes) {}
 
-  void AddString(const std::string& key, const std::string& str) {
+  void AddString(const std::string &key, const std::string &str) {
     (*attributes_->mutable_attributes())[key].set_string_value(str);
   }
 
-  void AddBytes(const std::string& key, const std::string& bytes) {
+  void AddBytes(const std::string &key, const std::string &bytes) {
     (*attributes_->mutable_attributes())[key].set_bytes_value(bytes);
   }
 
-  void AddInt64(const std::string& key, int64_t value) {
+  void AddInt64(const std::string &key, int64_t value) {
     (*attributes_->mutable_attributes())[key].set_int64_value(value);
   }
 
-  void AddDouble(const std::string& key, double value) {
+  void AddDouble(const std::string &key, double value) {
     (*attributes_->mutable_attributes())[key].set_double_value(value);
   }
 
-  void AddBool(const std::string& key, bool value) {
+  void AddBool(const std::string &key, bool value) {
     (*attributes_->mutable_attributes())[key].set_bool_value(value);
   }
 
   void AddTimestamp(
-      const std::string& key,
-      const std::chrono::time_point<std::chrono::system_clock>& value) {
+      const std::string &key,
+      const std::chrono::time_point<std::chrono::system_clock> &value) {
     auto time_stamp =
         (*attributes_->mutable_attributes())[key].mutable_timestamp_value();
     long long nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -67,16 +67,16 @@ class AttributesBuilder {
     time_stamp->set_nanos(nanos % 1000000000);
   }
 
-  void AddDuration(const std::string& key,
-                   const std::chrono::nanoseconds& value) {
+  void AddDuration(const std::string &key,
+                   const std::chrono::nanoseconds &value) {
     auto duration =
         (*attributes_->mutable_attributes())[key].mutable_duration_value();
     duration->set_seconds(value.count() / 1000000000);
     duration->set_nanos(value.count() % 1000000000);
   }
 
-  void AddStringMap(const std::string& key,
-                    const std::map<std::string, std::string>& string_map) {
+  void AddStringMap(const std::string &key,
+                    const std::map<std::string, std::string> &string_map) {
     if (string_map.size() == 0) {
       return;
     }
@@ -84,13 +84,13 @@ class AttributesBuilder {
                        .mutable_string_map_value()
                        ->mutable_entries();
     entries->clear();
-    for (const auto& map_it : string_map) {
+    for (const auto &map_it : string_map) {
       (*entries)[map_it.first] = map_it.second;
     }
   }
 
-  void AddProtoStructStringMap(const std::string& key,
-                               const google::protobuf::Struct& struct_map) {
+  void AddProtoStructStringMap(const std::string &key,
+                               const google::protobuf::Struct &struct_map) {
     if (struct_map.fields().empty()) {
       return;
     }
@@ -98,7 +98,7 @@ class AttributesBuilder {
                        .mutable_string_map_value()
                        ->mutable_entries();
     entries->clear();
-    for (const auto& field : struct_map.fields()) {
+    for (const auto &field : struct_map.fields()) {
       // Ignore all fields that are not string or string list.
       switch (field.second.kind_case()) {
         case google::protobuf::Value::kStringValue:
@@ -122,15 +122,37 @@ class AttributesBuilder {
           break;
       }
     }
+
+    if (entries->empty()) {
+      attributes_->mutable_attributes()->erase(key);
+    }
   }
 
-  bool HasAttribute(const std::string& key) const {
-    const auto& attrs_map = attributes_->attributes();
+  // Serializes all the keys in a map<string, struct> and builds attributes.
+  // for example, foo.bar.com: struct {str:abc, list:[c,d,e]} will be emitted as
+  // foo.bar.com: string_map[str:abc, list: c,d,e]
+  // Only extracts strings and lists.
+  // TODO: add the ability to pack bools and nums as strings and recurse down
+  // the struct.
+  void FlattenMapOfStringToStruct(
+      const ::google::protobuf::Map<::std::string, ::google::protobuf::Struct>
+          &filter_state) {
+    if (filter_state.empty()) {
+      return;
+    }
+
+    for (const auto &filter : filter_state) {
+      AddProtoStructStringMap(filter.first, filter.second);
+    }
+  }
+
+  bool HasAttribute(const std::string &key) const {
+    const auto &attrs_map = attributes_->attributes();
     return attrs_map.find(key) != attrs_map.end();
   }
 
  private:
-  ::istio::mixer::v1::Attributes* attributes_;
+  ::istio::mixer::v1::Attributes *attributes_;
 };
 
 }  // namespace utils
