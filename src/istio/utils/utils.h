@@ -16,6 +16,7 @@
 #pragma once
 
 #include <string>
+#include "google/protobuf/struct.pb.h"
 
 namespace istio {
 namespace utils {
@@ -23,6 +24,5 @@ namespace utils {
 // Get source.namespace attribute from principal.
 bool GetSourceNamespace(const std::string& principal,
                         std::string* source_namespace);
-
 }  // namespace utils
 }  // namespace istio
