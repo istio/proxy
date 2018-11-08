@@ -108,8 +108,8 @@ void AuthenticationFilter::rejectRequest(const std::string& message) {
     return;
   }
   state_ = State::REJECTED;
-  decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message,
-                                     nullptr);
+  decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message, nullptr,
+                                     absl::nullopt);
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>
