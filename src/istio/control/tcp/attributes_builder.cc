@@ -29,7 +29,7 @@ const std::string kConnectionContinue("continue");
 const std::string kConnectionClose("close");
 }  // namespace
 
-void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
+void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
   utils::AttributesBuilder builder(request_->attributes);
 
   std::string source_ip;
@@ -81,8 +81,8 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
 }
 
 void AttributesBuilder::ExtractReportAttributes(
-    ReportData* report_data, ReportData::ConnectionEvent event,
-    ReportData::ReportInfo* last_report_info) {
+    ReportData *report_data, ReportData::ConnectionEvent event,
+    ReportData::ReportInfo *last_report_info) {
   utils::AttributesBuilder builder(request_->attributes);
 
   ReportData::ReportInfo info;
@@ -131,6 +131,8 @@ void AttributesBuilder::ExtractReportAttributes(
   if (report_data->GetDestinationUID(&uid)) {
     builder.AddString(utils::AttributeName::kDestinationUID, uid);
   }
+
+  builder.FlattenMapOfStringToStruct(report_data->GetDynamicFilterState());
 
   builder.AddTimestamp(utils::AttributeName::kContextTime,
                        std::chrono::system_clock::now());

@@ -11,6 +11,6 @@
 		"name": "ENVOY_SHA",
 		"repoName": "envoyproxy/envoy",
 		"file": "WORKSPACE",
-		"lastStableSHA": "c41fa7118e69a0872074d7a685a62331c5d5c17e"
+		"lastStableSHA": "74de08a0d4d31bd466639d25d681df5d290bb770"
 	}
 ]
