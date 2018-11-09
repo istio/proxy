@@ -14,7 +14,11 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# Jun 23, 2017 (no releases)
+TOOLS_SHA = "e6cb469339aef5b7be0c89de730d5f3cc8e47e50"
+TOOLS_SHA256 = "fe9489eabcb598e13137d0641525ff3813d8af151e1418e6940e611850d90136"
 
 def go_x_tools_imports_repositories():
     BUILD_FILE = """
@@ -46,9 +50,10 @@ go_binary(
     # simple build rule that will build the binary for usage (and avoid
     # the need to project a more complicated BUILD file over the entire
     # tools repo.)
-    new_git_repository(
+    http_archive(
         name = "org_golang_x_tools_imports",
         build_file_content = BUILD_FILE,
-        commit = "e6cb469339aef5b7be0c89de730d5f3cc8e47e50",  # Jun 23, 2017 (no releases)
-        remote = "https://github.com/golang/tools.git",
+        strip_prefix = "tools-" + TOOLS_SHA,
+        url = "https://github.com/golang/tools/archives/" + TOOLS_SHA + ".tar.gz",
+        sha256 = TOOLS_SHA256,
     )

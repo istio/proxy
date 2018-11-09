@@ -14,8 +14,10 @@
 #
 ################################################################################
 #
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+GOGO_PROTO_SHA = "100ba4e885062801d56799d78530b73b178a78f3"
+GOGO_PROTO_SHA256 = "b04eb8eddd2d15d8b12d111d4ef7816fca6e5c5d495adf45fb8478278aa80f79"
 
 def cc_gogoproto_repositories(bind=True):
     BUILD = """
@@ -56,10 +58,11 @@ cc_proto_library(
     ],
 )
 """
-    new_git_repository(
+    http_archive(
         name = "gogoproto_git",
-        commit = "100ba4e885062801d56799d78530b73b178a78f3",
-        remote = "https://github.com/gogo/protobuf",
+        strip_prefix = "protobuf-" + GOGO_PROTO_SHA,
+        url = "https://github.com/gogo/protobuf/archive/" + GOGO_PROTO_SHA + ".tar.gz",
+        sha256 = GOGO_PROTO_SHA256,
         build_file_content = BUILD,
     )
 
