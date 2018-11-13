@@ -16,28 +16,6 @@
 #
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-BORINGSSL = "12c35d69008ae6b8486e435447445240509f7662"
-BORINGSSL_SHA256 = "fc668864f0b4ec825e889c048b7debda7f2327468672cdb5ac4dc5f5f0ee365a"
-
-def boringssl_repositories(bind=True):
-    http_archive(
-        name = "boringssl",
-        strip_prefix = "boringssl-" + BORINGSSL,
-        url = "https://github.com/google/boringssl/archive/" + BORINGSSL + ".tar.gz",
-        sha256 = BORINGSSL_SHA256,
-    )
-
-    if bind:
-        native.bind(
-            name = "boringssl_crypto",
-            actual = "@boringssl//:crypto",
-        )
-
-        native.bind(
-            name = "libssl",
-            actual = "@boringssl//:ssl",
-        )
-
 GOOGLETEST = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0"
 GOOGLETEST_SHA256 = "01508c8f47c99509130f128924f07f3a60be05d039cff571bb11d60bb11a3581"
 
