@@ -14,14 +14,19 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# Match SHA used by Envoy
+PROTOBUF_SHA = "fa252ec2a54acb24ddc87d48fed1ecfd458445fd"
+PROTOBUF_SHA256 = "3d610ac90f8fa16e12490088605c248b85fdaf23114ce4b3605cdf81f7823604"
 
 def protobuf_repositories(load_repo=True, bind=True):
     if load_repo:
-        git_repository(
+        http_archive(
             name = "com_google_protobuf",
-            commit = "fa252ec2a54acb24ddc87d48fed1ecfd458445fd",  # Match SHA used by Envoy
-            remote = "https://github.com/google/protobuf.git",
+            strip_prefix = "protobuf-" + PROTOBUF_SHA,
+            url = "https://github.com/google/protobuf/archive/" + PROTOBUF_SHA + ".tar.gz",
+            sha256 = PROTOBUF_SHA256,
         )
 
     if bind:

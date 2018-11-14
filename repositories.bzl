@@ -14,25 +14,10 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-def boringssl_repositories(bind=True):
-    git_repository(
-        name = "boringssl",
-        commit = "12c35d69008ae6b8486e435447445240509f7662",  # 2016-10-24
-        remote = "https://boringssl.googlesource.com/boringssl",
-    )
-
-    if bind:
-        native.bind(
-            name = "boringssl_crypto",
-            actual = "@boringssl//:crypto",
-        )
-
-        native.bind(
-            name = "libssl",
-            actual = "@boringssl//:ssl",
-        )
+GOOGLETEST = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0"
+GOOGLETEST_SHA256 = "01508c8f47c99509130f128924f07f3a60be05d039cff571bb11d60bb11a3581"
 
 def googletest_repositories(bind=True):
     BUILD = """
@@ -90,11 +75,12 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 """
-    native.new_git_repository(
+    http_archive(
         name = "googletest_git",
         build_file_content = BUILD,
-        commit = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0",
-        remote = "https://github.com/google/googletest.git",
+        strip_prefix = "googletest-" + GOOGLETEST,
+        url = "https://github.com/google/googletest/archive/" + GOOGLETEST + ".tar.gz",
+        sha256 = GOOGLETEST_SHA256,
     )
 
     if bind:
@@ -114,6 +100,7 @@ cc_library(
         )
 
 ISTIO_API = "6b9e3a501e6ef254958bf82f7b74c37d64a57a15"
+ISTIO_API_SHA256 = "ce43fcc51bd7c653d39b810e50df68e32ed95991919c1d1f2f56b331d79e674e"
 
 def mixerapi_repositories(bind=True):
     BUILD = """
@@ -212,11 +199,12 @@ filegroup(
 )
 
 """
-    native.new_git_repository(
+    http_archive(
         name = "mixerapi_git",
         build_file_content = BUILD,
-        commit = ISTIO_API,
-        remote = "https://github.com/istio/api.git",
+        strip_prefix = "api-" + ISTIO_API,
+        url = "https://github.com/istio/api/archive/" + ISTIO_API + ".tar.gz",
+        sha256 = ISTIO_API_SHA256,
     )
     if bind:
         native.bind(
