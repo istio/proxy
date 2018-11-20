@@ -56,7 +56,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
 
   if (!createPeerAuthenticator(filter_context_.get())->run(&payload) &&
       !filter_config_.policy().peer_is_optional()) {
-    rejectRequest("Peer authentication failed.");
+    rejectRequest("Peer authentication failed: none of the peer authn policies "
+                  "are satisfied.");
     return FilterHeadersStatus::StopIteration;
   }
 
@@ -65,7 +66,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
       filter_config_.policy().origin_is_optional();
 
   if (!success) {
-    rejectRequest("Origin authentication failed.");
+    rejectRequest("Origin authentication failed: none of the origin authn "
+                  "policies are satisfied.");
     return FilterHeadersStatus::StopIteration;
   }
 
