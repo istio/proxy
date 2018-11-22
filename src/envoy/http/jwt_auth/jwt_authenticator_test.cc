@@ -312,7 +312,7 @@ class MockUpstream {
     ON_CALL(mock_cm.async_client_, send_(_, _, _))
         .WillByDefault(
             Invoke([this](MessagePtr &, AsyncClient::Callbacks &cb,
-                          const absl::optional<std::chrono::milliseconds> &)
+                          const Http::AsyncClient::RequestOptions &)
                        -> AsyncClient::Request * {
               Http::MessagePtr response_message(new ResponseMessageImpl(
                   HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
@@ -629,7 +629,7 @@ TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
       .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
-                           const absl::optional<std::chrono::milliseconds> &)
+                           const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
         EXPECT_EQ((TestHeaderMapImpl{
                       {":method", "GET"},
@@ -665,7 +665,7 @@ TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
       .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
-                           const absl::optional<std::chrono::milliseconds> &)
+                           const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
         EXPECT_EQ((TestHeaderMapImpl{
                       {":method", "GET"},
@@ -702,7 +702,7 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
       .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
-                           const absl::optional<std::chrono::milliseconds> &)
+                           const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
         EXPECT_EQ((TestHeaderMapImpl{
                       {":method", "GET"},
