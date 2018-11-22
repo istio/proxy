@@ -310,18 +310,16 @@ class MockUpstream {
                const std::string &response_body)
       : request_(&mock_cm.async_client_), response_body_(response_body) {
     ON_CALL(mock_cm.async_client_, send_(_, _, _))
-        .WillByDefault(
-            Invoke([this](MessagePtr &, AsyncClient::Callbacks &cb,
-                          const Http::AsyncClient::RequestOptions &)
-                       -> AsyncClient::Request * {
-              Http::MessagePtr response_message(new ResponseMessageImpl(
-                  HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
-              response_message->body().reset(
-                  new Buffer::OwnedImpl(response_body_));
-              cb.onSuccess(std::move(response_message));
-              called_count_++;
-              return &request_;
-            }));
+        .WillByDefault(Invoke([this](MessagePtr &, AsyncClient::Callbacks &cb,
+                                     const Http::AsyncClient::RequestOptions &)
+                                  -> AsyncClient::Request * {
+          Http::MessagePtr response_message(new ResponseMessageImpl(
+              HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
+          response_message->body().reset(new Buffer::OwnedImpl(response_body_));
+          cb.onSuccess(std::move(response_message));
+          called_count_++;
+          return &request_;
+        }));
   }
 
   int called_count() const { return called_count_; }
