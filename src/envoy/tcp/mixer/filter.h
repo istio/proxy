@@ -65,6 +65,11 @@ class Filter : public Network::Filter,
       ::istio::control::tcp::ReportData::ReportInfo *data) const override;
   std::string GetConnectionId() const override;
 
+  void cacheFilterMetadata(
+      const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+          &filter_metadata);
+  void clearCachedFilterMetadata();
+
  private:
   enum class State { NotStarted, Calling, Completed, Closed };
   // This function is invoked when timer event fires.
@@ -96,6 +101,9 @@ class Filter : public Network::Filter,
   uint64_t received_bytes_{};
   // send bytes
   uint64_t send_bytes_{};
+  // cached filter metadata
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      cached_filter_metadata_{};
 
   // Timer that periodically sends reports.
   Event::TimerPtr report_timer_;
