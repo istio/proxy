@@ -79,19 +79,12 @@ void Filter::cacheFilterMetadata(
         ProtobufWkt::Struct dynamic_metadata;
         cached_filter_metadata_[filter_pair.first] = dynamic_metadata;
       }
-      if (filter_pair.second.fields().count("messages") == 1) {
-        auto &fields =
-            *cached_filter_metadata_[filter_pair.first].mutable_fields();
-        auto &list = *fields["messages"].mutable_list_value();
-        for (auto &message :
-             filter_pair.second.fields().at("messages").list_value().values()) {
-          auto &message_clone =
-              *list.add_values()->mutable_struct_value()->mutable_fields();
-          message_clone["operation"].set_string_value(
-              message.struct_value().fields().at("operation").string_value());
-          message_clone["resource"].set_string_value(
-              message.struct_value().fields().at("resource").string_value());
-        }
+
+      auto &cached_fields =
+          *cached_filter_metadata_[filter_pair.first].mutable_fields();
+      for (const auto &message_pair : filter_pair.second.fields()) {
+        cached_fields[message_pair.first].mutable_list_value()->CopyFrom(
+            message_pair.second.list_value());
       }
     }
   }
