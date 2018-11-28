@@ -22,7 +22,7 @@ namespace Envoy {
 namespace Tcp {
 namespace ForwardDownstreamSni {
 
-using ::Envoy::StreamInfo::UpstreamServerName;
+using ::Envoy::Network::UpstreamServerName;
 
 Network::FilterStatus ForwardDownstreamSniFilter::onNewConnection() {
   absl::string_view sni = read_callbacks_->connection().requestedServerName();

@@ -35,7 +35,7 @@ namespace Envoy {
 namespace Tcp {
 namespace ForwardDownstreamSni {
 
-using ::Envoy::StreamInfo::UpstreamServerName;
+using ::Envoy::Network::UpstreamServerName;
 
 // Test that a ForwardDownstreamSni filter config works.
 TEST(ForwardDownstreamSni, ConfigTest) {
