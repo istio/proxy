@@ -18,7 +18,7 @@
 #include "envoy/network/filter.h"
 
 namespace Envoy {
-namespace Extensions {
+namespace Tcp {
 namespace ForwardDownstreamSni {
 
 /**
@@ -42,5 +42,5 @@ class ForwardDownstreamSniFilter : public Network::ReadFilter {
 };
 
 }  // namespace ForwardDownstreamSni
-}  // namespace Extensions
+}  // namespace Tcp
 }  // namespace Envoy
