@@ -38,7 +38,6 @@ envoy_cc_library(
     srcs = ["forward_downstream_sni.cc"],
     hdrs = ["forward_downstream_sni.h"],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         "@envoy//source/exe:envoy_common_lib",
     ],
