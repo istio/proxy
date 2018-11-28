@@ -54,13 +54,3 @@ envoy_cc_test(
         "@envoy//test/mocks/stream_info:stream_info_mocks",
     ],
 )
-
-envoy_cc_test(
-    name = "config_test",
-    srcs = ["config_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":config_lib",
-        "@envoy//test/mocks/server:server_mocks",
-    ],
-)
