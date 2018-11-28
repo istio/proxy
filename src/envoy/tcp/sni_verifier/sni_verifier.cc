@@ -33,26 +33,31 @@ Config::Config(Stats::Scope& scope, uint32_t max_client_hello_size)
     : stats_{SNI_VERIFIER_STATS(POOL_COUNTER_PREFIX(scope, "sni_verifier."))},
       ssl_ctx_(SSL_CTX_new(TLS_with_buffers_method())),
       max_client_hello_size_(max_client_hello_size) {
-
   if (max_client_hello_size_ > TLS_MAX_CLIENT_HELLO) {
-    throw EnvoyException(fmt::format("max_client_hello_size of {} is greater than maximum of {}.",
-                                     max_client_hello_size_, size_t(TLS_MAX_CLIENT_HELLO)));
+    throw EnvoyException(fmt::format(
+        "max_client_hello_size of {} is greater than maximum of {}.",
+        max_client_hello_size_, size_t(TLS_MAX_CLIENT_HELLO)));
   }
 
   SSL_CTX_set_options(ssl_ctx_.get(), SSL_OP_NO_TICKET);
   SSL_CTX_set_session_cache_mode(ssl_ctx_.get(), SSL_SESS_CACHE_OFF);
   SSL_CTX_set_tlsext_servername_callback(
       ssl_ctx_.get(), [](SSL* ssl, int* out_alert, void*) -> int {
-        SniVerifierFilter* filter = static_cast<SniVerifierFilter*>(SSL_get_app_data(ssl));
-        filter->onServername(SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name));
+        SniVerifierFilter* filter =
+            static_cast<SniVerifierFilter*>(SSL_get_app_data(ssl));
+        filter->onServername(
+            SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name));
 
-        // Return an error to stop the handshake; we have what we wanted already.
+        // Return an error to stop the handshake; we have what we wanted
+        // already.
         *out_alert = SSL_AD_USER_CANCELLED;
         return SSL_TLSEXT_ERR_ALERT_FATAL;
       });
 }
 
-bssl::UniquePtr<SSL> Config::newSsl() { return bssl::UniquePtr<SSL>{SSL_new(ssl_ctx_.get())}; }
+bssl::UniquePtr<SSL> Config::newSsl() {
+  return bssl::UniquePtr<SSL>{SSL_new(ssl_ctx_.get())};
+}
 
 thread_local uint8_t SniVerifierFilter::buf_[Config::TLS_MAX_CLIENT_HELLO];
 
@@ -65,30 +70,37 @@ SniVerifierFilter::SniVerifierFilter(const ConfigSharedPtr config)
 }
 
 Network::FilterStatus SniVerifierFilter::onData(Buffer::Instance& data, bool) {
-  ENVOY_CONN_LOG(trace, "SniVerifier: got {} bytes", read_callbacks_->connection(),
-                 data.length());
+  ENVOY_CONN_LOG(trace, "SniVerifier: got {} bytes",
+                 read_callbacks_->connection(), data.length());
   if (done_) {
-    return is_match_ ? Network::FilterStatus::Continue : Network::FilterStatus::StopIteration;
+    return is_match_ ? Network::FilterStatus::Continue
+                     : Network::FilterStatus::StopIteration;
   }
 
   size_t freeSpaceInBuf = sizeof(buf_) - read_;
-  size_t lenToRead = (data.length() < freeSpaceInBuf) ? data.length() : freeSpaceInBuf;
+  size_t lenToRead =
+      (data.length() < freeSpaceInBuf) ? data.length() : freeSpaceInBuf;
   uint8_t* bufToParse = buf_ + read_;
   data.copyOut(0, lenToRead, bufToParse);
   read_ += lenToRead;
   parseClientHello(bufToParse, lenToRead);
 
-  return is_match_ ? Network::FilterStatus::Continue : Network::FilterStatus::StopIteration;
+  return is_match_ ? Network::FilterStatus::Continue
+                   : Network::FilterStatus::StopIteration;
 }
 
 void SniVerifierFilter::onServername(absl::string_view servername) {
   if (!servername.empty()) {
     config_->stats().sni_found_.inc();
-    absl::string_view outerSni = read_callbacks_->connection().requestedServerName();
+    absl::string_view outerSni =
+        read_callbacks_->connection().requestedServerName();
     if (servername == outerSni) {
-        is_match_ = true;
+      is_match_ = true;
     }
-    ENVOY_LOG(debug, "sni_verifier:onServerName(), inner SNI: {}, outer SNI: {}, match: {}", servername, outerSni, is_match_);
+    ENVOY_LOG(
+        debug,
+        "sni_verifier:onServerName(), inner SNI: {}, outer SNI: {}, match: {}",
+        servername, outerSni, is_match_);
   } else {
     config_->stats().sni_not_found_.inc();
   }
@@ -116,31 +128,32 @@ void SniVerifierFilter::parseClientHello(const void* data, size_t len) {
 
   int ret = SSL_do_handshake(ssl_.get());
 
-  // This should never succeed because an error is always returned from the SNI callback.
+  // This should never succeed because an error is always returned from the SNI
+  // callback.
   ASSERT(ret <= 0);
   switch (SSL_get_error(ssl_.get(), ret)) {
-  case SSL_ERROR_WANT_READ:
-    if (read_ == config_->maxClientHelloSize()) {
-      // We've hit the specified size limit. This is an unreasonably large ClientHello;
-      // indicate failure.
-      config_->stats().client_hello_too_large_.inc();
+    case SSL_ERROR_WANT_READ:
+      if (read_ == config_->maxClientHelloSize()) {
+        // We've hit the specified size limit. This is an unreasonably large
+        // ClientHello; indicate failure.
+        config_->stats().client_hello_too_large_.inc();
+        done(false);
+      }
+      break;
+    case SSL_ERROR_SSL:
+      if (clienthello_success_) {
+        config_->stats().tls_found_.inc();
+      } else {
+        config_->stats().tls_not_found_.inc();
+      }
+      done(true);
+      break;
+    default:
       done(false);
-    }
-    break;
-  case SSL_ERROR_SSL:
-    if (clienthello_success_) {
-      config_->stats().tls_found_.inc();
-    } else {
-      config_->stats().tls_not_found_.inc();
-    }
-    done(true);
-    break;
-  default:
-    done(false);
-    break;
+      break;
   }
 }
 
-} // namespace SniVerifier
-} // namespace Tcp
-} // namespace Envoy
+}  // namespace SniVerifier
+}  // namespace Tcp
+}  // namespace Envoy

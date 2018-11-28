@@ -28,17 +28,17 @@ namespace SniVerifier {
  */
 class SniVerifierConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
-public:
+ public:
   // NamedNetworkFilterConfigFactory
-  Network::FilterFactoryCb
-  createFilterFactory(const Json::Object&,
-                      Server::Configuration::FactoryContext& context) override {
+  Network::FilterFactoryCb createFilterFactory(
+      const Json::Object&,
+      Server::Configuration::FactoryContext& context) override {
     return createFilterFactoryFromContext(context);
   }
 
-  Network::FilterFactoryCb
-  createFilterFactoryFromProto(const Protobuf::Message&,
-                               Server::Configuration::FactoryContext& context) override {
+  Network::FilterFactoryCb createFilterFactoryFromProto(
+      const Protobuf::Message&,
+      Server::Configuration::FactoryContext& context) override {
     return createFilterFactoryFromContext(context);
   }
 
@@ -48,12 +48,13 @@ public:
 
   std::string name() override { return "sni_verifier"; }
 
-private:
-  Network::FilterFactoryCb
-  createFilterFactoryFromContext(Server::Configuration::FactoryContext& context) {
+ private:
+  Network::FilterFactoryCb createFilterFactoryFromContext(
+      Server::Configuration::FactoryContext& context) {
     ConfigSharedPtr filter_config(new Config(context.scope()));
     return [filter_config](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addReadFilter(std::make_shared<SniVerifierFilter>(filter_config));
+      filter_manager.addReadFilter(
+          std::make_shared<SniVerifierFilter>(filter_config));
     };
   }
 };
@@ -61,10 +62,11 @@ private:
 /**
  * Static registration for the echo filter. @see RegisterFactory.
  */
-static Registry::RegisterFactory<SniVerifierConfigFactory,
-                                 Server::Configuration::NamedNetworkFilterConfigFactory>
+static Registry::RegisterFactory<
+    SniVerifierConfigFactory,
+    Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
 
-} // namespace SniVerifier
-} // namespace Tcp
-} // namespace Envoy
+}  // namespace SniVerifier
+}  // namespace Tcp
+}  // namespace Envoy
