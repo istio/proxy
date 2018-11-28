@@ -23,6 +23,17 @@ load(
 )
 
 envoy_cc_library(
+    name = "config_lib",
+    srcs = ["config.cc"],
+    hdrs = ["config.h"],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":forward_downstream_sni_lib",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+envoy_cc_library(
     name = "forward_downstream_sni_lib",
     srcs = ["forward_downstream_sni.cc"],
     hdrs = ["forward_downstream_sni.h"],
