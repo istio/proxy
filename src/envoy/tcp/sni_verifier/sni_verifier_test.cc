@@ -16,6 +16,14 @@
 #include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 #include "src/envoy/tcp/sni_verifier/config.h"
 
+#include "test/mocks/network/mocks.h"
+#include "test/mocks/server/mocks.h"
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+using testing::_;
+
 namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
