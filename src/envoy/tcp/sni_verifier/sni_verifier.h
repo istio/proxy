@@ -31,16 +31,12 @@ namespace SniVerifier {
  * All stats for the SNI verifier. @see stats_macros.h
  */
 #define SNI_VERIFIER_STATS(COUNTER) \
-  COUNTER(connection_closed)        \
   COUNTER(client_hello_too_large)   \
-  COUNTER(read_error)               \
-  COUNTER(read_timeout)             \
   COUNTER(tls_found)                \
   COUNTER(tls_not_found)            \
-  COUNTER(alpn_found)               \
-  COUNTER(alpn_not_found)           \
-  COUNTER(sni_found)                \
-  COUNTER(sni_not_found)
+  COUNTER(inner_sni_found)          \
+  COUNTER(inner_sni_not_found)      \
+  COUNTER(snis_do_not_match)
 
 /**
  * Definition of all stats for the SNI verifier. @see stats_macros.h

@@ -91,18 +91,20 @@ Network::FilterStatus SniVerifierFilter::onData(Buffer::Instance& data, bool) {
 
 void SniVerifierFilter::onServername(absl::string_view servername) {
   if (!servername.empty()) {
-    config_->stats().sni_found_.inc();
+    config_->stats().inner_sni_found_.inc();
     absl::string_view outerSni =
         read_callbacks_->connection().requestedServerName();
-    if (servername == outerSni) {
-      is_match_ = true;
+
+    is_match_ = (servername == outerSni);
+    if (!is_match_) {
+      config_->stats().snis_do_not_match.inc();
     }
     ENVOY_LOG(
         debug,
         "sni_verifier:onServerName(), inner SNI: {}, outer SNI: {}, match: {}",
         servername, outerSni, is_match_);
   } else {
-    config_->stats().sni_not_found_.inc();
+    config_->stats().inner_sni_not_found_.inc();
   }
   clienthello_success_ = true;
 }
