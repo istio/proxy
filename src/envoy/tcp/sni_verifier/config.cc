@@ -13,51 +13,39 @@
  * limitations under the License.
  */
 
+#include "src/envoy/tcp/sni_verifier/config.h"
 #include "envoy/registry/registry.h"
-#include "envoy/server/filter_config.h"
-
 #include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 
 namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
 
-/**
- * Config registration for the  SNI verifier filter. @see
- * NamedNetworkFilterConfigFactory.
- */
-class SniVerifierConfigFactory
-    : public Server::Configuration::NamedNetworkFilterConfigFactory {
- public:
-  // NamedNetworkFilterConfigFactory
-  Network::FilterFactoryCb createFilterFactory(
-      const Json::Object&,
-      Server::Configuration::FactoryContext& context) override {
-    return createFilterFactoryFromContext(context);
-  }
+Network::FilterFactoryCb SniVerifierConfigFactory::createFilterFactory(
+    const Json::Object&,
+    Server::Configuration::FactoryContext& context) override {
+  return createFilterFactoryFromContext(context);
+}
 
-  Network::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message&,
-      Server::Configuration::FactoryContext& context) override {
-    return createFilterFactoryFromContext(context);
-  }
+Network::FilterFactoryCb SniVerifierConfigFactory::createFilterFactoryFromProto(
+    const Protobuf::Message&,
+    Server::Configuration::FactoryContext& context) override {
+  return createFilterFactoryFromContext(context);
+}
 
-  ProtobufTypes::MessagePtr createEmptyConfigProto() override {
-    return ProtobufTypes::MessagePtr{new Envoy::ProtobufWkt::Empty()};
-  }
+ProtobufTypes::MessagePtr SniVerifierConfigFactory::createEmptyConfigProto() {
+  return ProtobufTypes::MessagePtr{new Envoy::ProtobufWkt::Empty()};
+}
 
-  std::string name() override { return "sni_verifier"; }
-
- private:
-  Network::FilterFactoryCb createFilterFactoryFromContext(
-      Server::Configuration::FactoryContext& context) {
-    ConfigSharedPtr filter_config(new Config(context.scope()));
-    return [filter_config](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addReadFilter(
-          std::make_shared<SniVerifierFilter>(filter_config));
-    };
-  }
-};
+Network::FilterFactoryCb
+SniVerifierConfigFactory::createFilterFactoryFromContext(
+    Server::Configuration::FactoryContext& context) {
+  ConfigSharedPtr filter_config(new Config(context.scope()));
+  return [filter_config](Network::FilterManager& filter_manager) -> void {
+    filter_manager.addReadFilter(
+        std::make_shared<SniVerifierFilter>(filter_config));
+  };
+}
 
 /**
  * Static registration for the echo filter. @see RegisterFactory.

@@ -18,11 +18,13 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
+    "envoy_test",
 )
 
 envoy_cc_library(
     name = "config_lib",
     srcs = ["config.cc"],
+    hdrs = ["config.h"],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
