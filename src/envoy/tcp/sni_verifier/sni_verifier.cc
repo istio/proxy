@@ -97,7 +97,7 @@ void SniVerifierFilter::onServername(absl::string_view servername) {
 
     is_match_ = (servername == outerSni);
     if (!is_match_) {
-      config_->stats().snis_do_not_match.inc();
+      config_->stats().snis_do_not_match_.inc();
     }
     ENVOY_LOG(
         debug,
