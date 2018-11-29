@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "src/envoy/tcp/sni_verifier/config.h"
 #include "src/envoy/tcp/sni_verifier/sni_verifier.h"
+#include "src/envoy/tcp/sni_verifier/config.h"
 
 namespace Envoy {
 namespace Tcp {
