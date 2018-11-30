@@ -51,7 +51,7 @@ class SniVerifierTest : public testing::Test {
  protected:
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
-    cfg_ = std::make_unique<Config>(*store_);
+    cfg_ = std::make_shared<Config>(*store_);
     filter_ = std::make_unique<SniVerifierFilter>(cfg_);
   }
 
@@ -80,7 +80,7 @@ class SniVerifierTest : public testing::Test {
 
  private:
   std::unique_ptr<SniVerifierFilter> filter_;
-  std::unique_ptr<Config> cfg_;
+  ConfigSharedPtr cfg_;
   std::unique_ptr<Stats::Scope> store_;
 };
 
