@@ -47,7 +47,7 @@ TEST(SniVerifierTest, ConfigTest) {
   cb(connection);
 }
 
-class SniVerifierTest : public testing::Test {
+class SniVerifierFilterTest : public testing::Test {
  protected:
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
@@ -84,12 +84,12 @@ class SniVerifierTest : public testing::Test {
   std::unique_ptr<Stats::Scope> store_;
 };
 
-TEST_F(SniVerifierTest, SnisMatch) {
+TEST_F(SniVerifierFilterTest, SnisMatch) {
   runTest("www.example.com", "www.example.com",
           Network::FilterStatus::Continue);
 }
 
-TEST_F(SniVerifierTest, SnisDoNotMatch) {
+TEST_F(SniVerifierFilterTest, SnisDoNotMatch) {
   runTest("www.example.com", "istio.io", Network::FilterStatus::StopIteration);
 }
 
