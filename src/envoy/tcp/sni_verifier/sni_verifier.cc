@@ -45,8 +45,11 @@ Config::Config(Stats::Scope& scope, uint32_t max_client_hello_size)
       ssl_ctx_.get(), [](SSL* ssl, int* out_alert, void*) -> int {
         SniVerifierFilter* filter =
             static_cast<SniVerifierFilter*>(SSL_get_app_data(ssl));
-        filter->onServername(
-            SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name));
+
+        if (filter != nullptr) {
+          filter->onServername(
+              SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name));
+        }
 
         // Return an error to stop the handshake; we have what we wanted
         // already.
