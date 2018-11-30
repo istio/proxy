@@ -65,7 +65,6 @@ SniVerifierFilter::SniVerifierFilter(const ConfigSharedPtr config)
     : config_(config), ssl_(config_->newSsl()) {
   RELEASE_ASSERT(sizeof(buf_) >= config_->maxClientHelloSize(), "");
 
-  SSL_set_app_data(ssl_.get(), this);
   SSL_set_accept_state(ssl_.get());
 }
 
@@ -128,7 +127,11 @@ void SniVerifierFilter::parseClientHello(const void* data, size_t len) {
   SSL_set_bio(ssl_.get(), bio.get(), bio.get());
   bio.release();
 
+  SSL_set_app_data(ssl_.get(), this);
   int ret = SSL_do_handshake(ssl_.get());
+
+  // reset the app data
+  SSL_set_app_data(ssl_.get(), nullptr);
 
   // This should never succeed because an error is always returned from the SNI
   // callback.
