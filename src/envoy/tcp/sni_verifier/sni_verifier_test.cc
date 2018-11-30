@@ -51,7 +51,7 @@ class SniVerifierTest : public testing::Test {
  protected:
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
-    cfg_ = std::make_unique<Config>(store_);
+    cfg_ = std::make_unique<Config>(*store_);
     filter_ = std::make_unique<SniVerifierFilter>(cfg_);
   }
 
