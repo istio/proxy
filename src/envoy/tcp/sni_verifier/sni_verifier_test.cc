@@ -73,7 +73,7 @@ class SniVerifierTest : public testing::Test {
 
     auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
     Buffer::OwnedImpl data;
-    buffer.add(client_hello.data(), client_hello.size());
+    data.add(client_hello.data(), client_hello.size());
 
     EXPECT_EQ(expected_status, filter_->onData(data, true));
   }
