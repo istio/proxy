@@ -82,7 +82,7 @@ class SniVerifierTest : public testing::Test {
   std::unique_ptr<SniVerifierFilter> filter_;
   std::unique_ptr<Config> cfg_;
   std::unique_ptr<Stats::Scope> store_;
-}
+};
 
 TEST_F(SniVerifierTest, SnisMatch) {
   runTest("www.example.com", "www.example.com",
