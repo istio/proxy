@@ -66,7 +66,7 @@ class SniVerifierFilterTest : public testing::Test {
 
   void runTest(std::string outer_sni, std::string inner_sni,
                Network::FilterStatus expected_status,
-               int data_installment_size = MAX_INT) {
+               int data_installment_size = INT_MAX) {
     NiceMock<Network::MockReadFilterCallbacks> filter_callbacks;
 
     ON_CALL(filter_callbacks.connection_, requestedServerName())
