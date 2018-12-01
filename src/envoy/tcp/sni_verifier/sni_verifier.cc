@@ -62,12 +62,9 @@ bssl::UniquePtr<SSL> Config::newSsl() {
   return bssl::UniquePtr<SSL>{SSL_new(ssl_ctx_.get())};
 }
 
-thread_local uint8_t SniVerifierFilter::buf_[Config::TLS_MAX_CLIENT_HELLO];
-
 SniVerifierFilter::SniVerifierFilter(const ConfigSharedPtr config)
-    : config_(config), ssl_(config_->newSsl()) {
-  RELEASE_ASSERT(sizeof(buf_) >= config_->maxClientHelloSize(), "");
-
+  : config_(config), ssl_(config_->newSsl(),
+                          buf_(std::make_unique<unit8_t[]>(config_->macClientHelloSize())) {
   SSL_set_accept_state(ssl_.get());
 }
 
@@ -79,7 +76,7 @@ Network::FilterStatus SniVerifierFilter::onData(Buffer::Instance& data, bool) {
                      : Network::FilterStatus::StopIteration;
   }
 
-  size_t freeSpaceInBuf = sizeof(buf_) - read_;
+  size_t freeSpaceInBuf = config_->macClientHelloSize() - read_;
   size_t lenToRead =
       (data.length() < freeSpaceInBuf) ? data.length() : freeSpaceInBuf;
   uint8_t* bufToParse = buf_ + read_;

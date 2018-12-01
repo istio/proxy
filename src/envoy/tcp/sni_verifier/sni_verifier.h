@@ -97,7 +97,7 @@ class SniVerifierFilter : public Network::ReadFilter,
   bool done_{false};
   bool is_match_{false};
 
-  static thread_local uint8_t buf_[Config::TLS_MAX_CLIENT_HELLO];
+  std::unique_ptr<uint8_t[]> buf_;
 
   // Allows callbacks on the SSL_CTX to set fields in this class.
   friend class Config;
