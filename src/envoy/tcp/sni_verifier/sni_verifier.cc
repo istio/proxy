@@ -80,10 +80,8 @@ Network::FilterStatus SniVerifierFilter::onData(Buffer::Instance& data, bool) {
   size_t freeSpaceInBuf = config_->maxClientHelloSize() - read_;
   size_t lenToRead =
       (data.length() < freeSpaceInBuf) ? data.length() : freeSpaceInBuf;
-  uint8_t* bufToParse = buf_ + read_;
-  data.copyOut(0, lenToRead, bufToParse);
   read_ += lenToRead;
-  parseClientHello(bufToParse, lenToRead);
+  parseClientHello(buf_, read_);
 
   return is_match_ ? Network::FilterStatus::Continue
                    : Network::FilterStatus::StopIteration;
