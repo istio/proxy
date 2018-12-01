@@ -87,6 +87,8 @@ class SniVerifierFilterTest : public testing::Test {
   std::unique_ptr<Stats::Scope> store_;
 };
 
+constexpr size_t SniVerifierFilterTest::TLS_MAX_CLIENT_HELLO;  // definition
+
 TEST_F(SniVerifierFilterTest, SnisMatch) {
   runTest("www.example.com", "www.example.com",
           Network::FilterStatus::Continue);
