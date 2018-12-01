@@ -63,8 +63,9 @@ bssl::UniquePtr<SSL> Config::newSsl() {
 }
 
 SniVerifierFilter::SniVerifierFilter(const ConfigSharedPtr config)
-  : config_(config), ssl_(config_->newSsl()),
-                          buf_(std::make_unique<uint8_t[]>(config_->macClientHelloSize())) {
+    : config_(config),
+      ssl_(config_->newSsl()),
+      buf_(std::make_unique<uint8_t[]>(config_->macClientHelloSize())) {
   SSL_set_accept_state(ssl_.get());
 }
 
