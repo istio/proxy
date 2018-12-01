@@ -49,9 +49,11 @@ TEST(SniVerifierTest, ConfigTest) {
 
 class SniVerifierFilterTest : public testing::Test {
  protected:
+  static constexpr size_t TLS_MAX_CLIENT_HELLO = 100;
+
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
-    cfg_ = std::make_shared<Config>(*store_);
+    cfg_ = std::make_shared<Config>(*store_, TLS_MAX_CLIENT_HELLO);
     filter_ = std::make_unique<SniVerifierFilter>(cfg_);
   }
 
@@ -137,7 +139,7 @@ TEST_F(SniVerifierFilterTest, BothSnisEmpty) {
 }
 
 TEST_F(SniVerifierFilterTest, SniTooLarge) {
-  runTest("www.example.com", std::string(Config::TLS_MAX_CLIENT_HELLO, 'a'),
+  runTest("www.example.com", std::string(TLS_MAX_CLIENT_HELLO, 'a'),
           Network::FilterStatus::StopIteration);
   EXPECT_EQ(1, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(0, cfg_->stats().tls_found_.value());
