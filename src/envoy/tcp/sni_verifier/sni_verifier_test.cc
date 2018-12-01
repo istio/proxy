@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <climits>
 #include <string>
 
 #include "src/envoy/tcp/sni_verifier/config.h"
@@ -64,7 +65,8 @@ class SniVerifierFilterTest : public testing::Test {
   }
 
   void runTest(std::string outer_sni, std::string inner_sni,
-               Network::FilterStatus expected_status) {
+               Network::FilterStatus expected_status,
+               int data_installment_size = MAX_INT) {
     NiceMock<Network::MockReadFilterCallbacks> filter_callbacks;
 
     ON_CALL(filter_callbacks.connection_, requestedServerName())
@@ -74,10 +76,27 @@ class SniVerifierFilterTest : public testing::Test {
     filter_->onNewConnection();
 
     auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
-    Buffer::OwnedImpl data;
-    data.add(client_hello.data(), client_hello.size());
+    int sent_data = 0;
+    int remaining_data_to_send = client_hello.size();
+    auto status = Network::FilterStatus::StopIteration;
+    int data_to_send_size = data_installment_size < client_hello.size()
+                                ? data_installment_size
+                                : client_hello.size();
 
-    EXPECT_EQ(expected_status, filter_->onData(data, true));
+    while (remaining_data_to_send > 0) {
+      Buffer::OwnedImpl data;
+      data.add(client_hello.data() + sent_data, data_to_send_size);
+      status = filter_->onData(data, true);
+      sent_data += data_to_send_size;
+      remaining_data_to_send -= data_to_send_size;
+      if (remaining_data_to_send > 0) {
+        // expect that until the whole hello message is parsed, the status is
+        // stop iteration
+        EXPECT_EQ(Network::FilterStatus::StopIteration, status);
+      }
+    }
+
+    EXPECT_EQ(expected_status, status);
   }
 
   ConfigSharedPtr cfg_;
@@ -147,6 +166,17 @@ TEST_F(SniVerifierFilterTest, SniTooLarge) {
   EXPECT_EQ(0, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
   EXPECT_EQ(0, cfg_->stats().inner_sni_found_.value());
+  EXPECT_EQ(0, cfg_->stats().inner_sni_not_found_.value());
+  EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
+}
+
+TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfTen, 10) {
+  runTest("www.example.com", "www.example.com",
+          Network::FilterStatus::Continue);
+  EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
+  EXPECT_EQ(1, cfg_->stats().tls_found_.value());
+  EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
+  EXPECT_EQ(1, cfg_->stats().inner_sni_found_.value());
   EXPECT_EQ(0, cfg_->stats().inner_sni_not_found_.value());
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
