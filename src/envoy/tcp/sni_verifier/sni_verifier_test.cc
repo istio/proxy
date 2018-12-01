@@ -49,7 +49,7 @@ TEST(SniVerifierTest, ConfigTest) {
 
 class SniVerifierFilterTest : public testing::Test {
  protected:
-  static constexpr size_t TLS_MAX_CLIENT_HELLO = 100;
+  static constexpr size_t TLS_MAX_CLIENT_HELLO = 200;
 
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
