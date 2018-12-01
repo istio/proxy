@@ -78,9 +78,10 @@ class SniVerifierFilterTest : public testing::Test {
     EXPECT_EQ(expected_status, filter_->onData(data, true));
   }
 
+  ConfigSharedPtr cfg_;
+
  private:
   std::unique_ptr<SniVerifierFilter> filter_;
-  ConfigSharedPtr cfg_;
   std::unique_ptr<Stats::Scope> store_;
 };
 
