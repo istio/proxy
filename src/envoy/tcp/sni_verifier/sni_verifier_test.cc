@@ -136,6 +136,17 @@ TEST_F(SniVerifierFilterTest, BothSnisEmpty) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
+TEST_F(SniVerifierFilterTest, SniTooLarge) {
+  runTest("www.example.com", std::string(Config::TLS_MAX_CLIENT_HELLO, "a"),
+          Network::FilterStatus::StopIteration);
+  EXPECT_EQ(1, cfg_->stats().client_hello_too_large_.value());
+  EXPECT_EQ(0, cfg_->stats().tls_found_.value());
+  EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
+  EXPECT_EQ(0, cfg_->stats().inner_sni_found_.value());
+  EXPECT_EQ(0, cfg_->stats().inner_sni_not_found_.value());
+  EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
+}
+
 }  // namespace SniVerifier
 }  // namespace Tcp
 }  // namespace Envoy
