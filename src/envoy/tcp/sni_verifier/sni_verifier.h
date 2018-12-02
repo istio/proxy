@@ -59,6 +59,9 @@ class Config {
 
   static constexpr size_t TLS_MAX_CLIENT_HELLO = 64 * 1024;
 
+  // read at least this number of bytes before giving up on parsing
+  static constexpr size_t TLS_MIN_CLIENT_HELLO = 100;
+
  private:
   SniVerifierStats stats_;
   bssl::UniquePtr<SSL_CTX> ssl_ctx_;

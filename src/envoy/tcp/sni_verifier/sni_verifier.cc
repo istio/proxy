@@ -148,10 +148,11 @@ void SniVerifierFilter::parseClientHello(const void* data, size_t len) {
     case SSL_ERROR_SSL:
       if (clienthello_success_) {
         config_->stats().tls_found_.inc();
-      } else {
+        done(true);
+      } else if (read_ > TLS_MIN_CLIENT_HELLO) {  // we give up at this point
         config_->stats().tls_not_found_.inc();
+        done(false);
       }
-      done(true);
       break;
     default:
       done(false);
