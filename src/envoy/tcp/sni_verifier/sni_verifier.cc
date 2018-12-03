@@ -26,6 +26,7 @@
 #include "common/common/assert.h"
 
 #include "openssl/bytestring.h"
+#include "openssl/err.h"
 #include "openssl/ssl.h"
 
 namespace Envoy {
@@ -177,6 +178,8 @@ void Filter::parseClientHello(const void* data, size_t len) {
       done(false);
       break;
   }
+
+  ERR_clear_error();
 }
 
 }  // namespace SniVerifier
