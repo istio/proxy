@@ -71,9 +71,17 @@ class SniVerifierFilterTest : public testing::Test {
     store_ = nullptr;
   }
 
-  void runTest(std::string outer_sni, std::string inner_sni,
-               Network::FilterStatus expected_status,
-               uint32_t data_installment_size = UINT_MAX) {
+  void runTestForClientHello(std::string outer_sni, std::string inner_sni,
+                             Network::FilterStatus expected_status,
+                             uint32_t data_installment_size = UINT_MAX) {
+    auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
+    runTestForData(outer_sni, client_hello, expected_status,
+                   data_installment_size);
+  }
+
+  void runTestForData(std::string outer_sni, std::vector<uint8_t>& data,
+                      Network::FilterStatus expected_status,
+                      uint32_t data_installment_size = UINT_MAX) {
     NiceMock<Network::MockReadFilterCallbacks> filter_callbacks;
 
     ON_CALL(filter_callbacks.connection_, requestedServerName())
@@ -82,9 +90,8 @@ class SniVerifierFilterTest : public testing::Test {
     filter_->initializeReadFilterCallbacks(filter_callbacks);
     filter_->onNewConnection();
 
-    auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
     uint32_t sent_data = 0;
-    uint32_t remaining_data_to_send = client_hello.size();
+    uint32_t remaining_data_to_send = data.size();
     auto status = Network::FilterStatus::StopIteration;
 
     while (remaining_data_to_send > 0) {
@@ -93,7 +100,7 @@ class SniVerifierFilterTest : public testing::Test {
               ? data_installment_size
               : remaining_data_to_send;
       Buffer::OwnedImpl data;
-      data.add(client_hello.data() + sent_data, data_to_send_size);
+      data.add(data.data() + sent_data, data_to_send_size);
       status = filter_->onData(data, true);
       sent_data += data_to_send_size;
       remaining_data_to_send -= data_to_send_size;
@@ -117,8 +124,8 @@ class SniVerifierFilterTest : public testing::Test {
 constexpr size_t SniVerifierFilterTest::TLS_MAX_CLIENT_HELLO;  // definition
 
 TEST_F(SniVerifierFilterTest, SnisMatch) {
-  runTest("www.example.com", "www.example.com",
-          Network::FilterStatus::Continue);
+  runTestForClientHello("www.example.com", "www.example.com",
+                        Network::FilterStatus::Continue);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -128,7 +135,8 @@ TEST_F(SniVerifierFilterTest, SnisMatch) {
 }
 
 TEST_F(SniVerifierFilterTest, SnisDoNotMatch) {
-  runTest("www.example.com", "istio.io", Network::FilterStatus::StopIteration);
+  runTestForClientHello("www.example.com", "istio.io",
+                        Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -138,7 +146,7 @@ TEST_F(SniVerifierFilterTest, SnisDoNotMatch) {
 }
 
 TEST_F(SniVerifierFilterTest, EmptyOuterSni) {
-  runTest("", "istio.io", Network::FilterStatus::StopIteration);
+  runTestForClientHello("", "istio.io", Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -148,7 +156,8 @@ TEST_F(SniVerifierFilterTest, EmptyOuterSni) {
 }
 
 TEST_F(SniVerifierFilterTest, EmptyInnerSni) {
-  runTest("www.example.com", "", Network::FilterStatus::StopIteration);
+  runTestForClientHello("www.example.com", "",
+                        Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -158,7 +167,7 @@ TEST_F(SniVerifierFilterTest, EmptyInnerSni) {
 }
 
 TEST_F(SniVerifierFilterTest, BothSnisEmpty) {
-  runTest("", "", Network::FilterStatus::StopIteration);
+  runTestForClientHello("", "", Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -168,8 +177,9 @@ TEST_F(SniVerifierFilterTest, BothSnisEmpty) {
 }
 
 TEST_F(SniVerifierFilterTest, SniTooLarge) {
-  runTest("www.example.com", std::string(TLS_MAX_CLIENT_HELLO, 'a'),
-          Network::FilterStatus::StopIteration);
+  runTestForClientHello("www.example.com",
+                        std::string(TLS_MAX_CLIENT_HELLO, 'a'),
+                        Network::FilterStatus::StopIteration);
   EXPECT_EQ(1, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(0, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -179,12 +189,24 @@ TEST_F(SniVerifierFilterTest, SniTooLarge) {
 }
 
 TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfTen) {
-  runTest("www.example.com", "www.example.com", Network::FilterStatus::Continue,
-          10);
+  runTestForClientHello("www.example.com", "www.example.com",
+                        Network::FilterStatus::Continue, 10);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
   EXPECT_EQ(1, cfg_->stats().inner_sni_found_.value());
+  EXPECT_EQ(0, cfg_->stats().inner_sni_not_found_.value());
+  EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
+}
+
+TEST_F(SniVerifierFilterTest, NonTLS) {
+  std::vector<uint8_t> nonTLSData(TLS_MAX_CLIENT_HELLO, 7);
+  runTestForData("www.example.com", nonTLSData,
+                 Network::FilterStatus::StopIteration);
+  EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
+  EXPECT_EQ(0, cfg_->stats().tls_found_.value());
+  EXPECT_EQ(1, cfg_->stats().tls_not_found_.value());
+  EXPECT_EQ(0, cfg_->stats().inner_sni_found_.value());
   EXPECT_EQ(0, cfg_->stats().inner_sni_not_found_.value());
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
