@@ -83,7 +83,8 @@ Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
 
   auto start_handshake_data =
       restart_handshake_ ? buf_.get() : buf_.get() + read_;
-  auto handshake_size = restart_handshake_ ? read_ : data_to_read;
+  auto handshake_size =
+      restart_handshake_ ? read_ + data_to_read : data_to_read;
 
   parseClientHello(start_handshake_data, handshake_size);
   read_ += data_to_read;
