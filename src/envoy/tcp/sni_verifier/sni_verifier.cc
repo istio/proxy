@@ -29,7 +29,7 @@ namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
 
-Config::Config(Stats::Scope& scope, uint32_t max_client_hello_size)
+Config::Config(Stats::Scope& scope, size_t max_client_hello_size)
     : stats_{SNI_VERIFIER_STATS(POOL_COUNTER_PREFIX(scope, "sni_verifier."))},
       ssl_ctx_(SSL_CTX_new(TLS_with_buffers_method())),
       max_client_hello_size_(max_client_hello_size) {

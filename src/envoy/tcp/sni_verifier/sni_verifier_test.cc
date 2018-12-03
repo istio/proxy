@@ -73,7 +73,7 @@ class SniVerifierFilterTest : public testing::Test {
 
   void runTestForClientHello(std::string outer_sni, std::string inner_sni,
                              Network::FilterStatus expected_status,
-                             uint32_t data_installment_size = UINT_MAX) {
+                             size_t data_installment_size = UINT_MAX) {
     auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
     runTestForData(outer_sni, client_hello, expected_status,
                    data_installment_size);
@@ -81,7 +81,7 @@ class SniVerifierFilterTest : public testing::Test {
 
   void runTestForData(std::string outer_sni, std::vector<uint8_t>& data,
                       Network::FilterStatus expected_status,
-                      uint32_t data_installment_size = UINT_MAX) {
+                      size_t data_installment_size = UINT_MAX) {
     NiceMock<Network::MockReadFilterCallbacks> filter_callbacks;
 
     ON_CALL(filter_callbacks.connection_, requestedServerName())
@@ -90,15 +90,14 @@ class SniVerifierFilterTest : public testing::Test {
     filter_->initializeReadFilterCallbacks(filter_callbacks);
     filter_->onNewConnection();
 
-    uint32_t sent_data = 0;
-    uint32_t remaining_data_to_send = data.size();
+    size_t sent_data = 0;
+    size_t remaining_data_to_send = data.size();
     auto status = Network::FilterStatus::StopIteration;
 
     while (remaining_data_to_send > 0) {
-      uint32_t data_to_send_size =
-          data_installment_size < remaining_data_to_send
-              ? data_installment_size
-              : remaining_data_to_send;
+      size_t data_to_send_size = data_installment_size < remaining_data_to_send
+                                     ? data_installment_size
+                                     : remaining_data_to_send;
       Buffer::OwnedImpl buff;
       buff.add(data.data() + sent_data, data_to_send_size);
       status = filter_->onData(buff, true);

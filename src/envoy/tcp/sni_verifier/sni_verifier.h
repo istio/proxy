@@ -51,18 +51,18 @@ struct SniVerifierStats {
 class Config {
  public:
   Config(Stats::Scope& scope,
-         uint32_t max_client_hello_size = TLS_MAX_CLIENT_HELLO);
+         size_t max_client_hello_size = TLS_MAX_CLIENT_HELLO);
 
   const SniVerifierStats& stats() const { return stats_; }
   bssl::UniquePtr<SSL> newSsl();
-  uint32_t maxClientHelloSize() const { return max_client_hello_size_; }
+  size_t maxClientHelloSize() const { return max_client_hello_size_; }
 
   static constexpr size_t TLS_MAX_CLIENT_HELLO = 64 * 1024;
 
  private:
   SniVerifierStats stats_;
   bssl::UniquePtr<SSL_CTX> ssl_ctx_;
-  const uint32_t max_client_hello_size_;
+  const size_t max_client_hello_size_;
 };
 
 typedef std::shared_ptr<Config> ConfigSharedPtr;
