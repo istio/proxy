@@ -48,11 +48,10 @@ TEST(SniVerifierTest, ConfigTest) {
   cb(connection);
 }
 
-// Test that an exception is thrown for an invalid value for
-// max_client_hello_size
 TEST(SniVerifierTest, MaxClientHelloSize) {
+  Stats::IsolatedStoreImpl store;
   EXPECT_THROW_WITH_MESSAGE(
-      Config(store_, Config::TLS_MAX_CLIENT_HELLO + 1), EnvoyException,
+      Config(store, Config::TLS_MAX_CLIENT_HELLO + 1), EnvoyException,
       "max_client_hello_size of 65537 is greater than maximum of 65536.");
 }
 
