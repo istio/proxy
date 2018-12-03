@@ -67,10 +67,10 @@ class Config {
 
 typedef std::shared_ptr<Config> ConfigSharedPtr;
 
-class SniVerifierFilter : public Network::ReadFilter,
-                          Logger::Loggable<Logger::Id::filter> {
+class Filter : public Network::ReadFilter,
+               Logger::Loggable<Logger::Id::filter> {
  public:
-  SniVerifierFilter(const ConfigSharedPtr config);
+  Filter(const ConfigSharedPtr config);
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance& data,

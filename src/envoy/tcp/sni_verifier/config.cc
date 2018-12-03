@@ -40,8 +40,7 @@ SniVerifierConfigFactory::createFilterFactoryFromContext(
     Server::Configuration::FactoryContext& context) {
   ConfigSharedPtr filter_config(new Config(context.scope()));
   return [filter_config](Network::FilterManager& filter_manager) -> void {
-    filter_manager.addReadFilter(
-        std::make_shared<SniVerifierFilter>(filter_config));
+    filter_manager.addReadFilter(std::make_shared<Filter>(filter_config));
   };
 }
 

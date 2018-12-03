@@ -62,7 +62,7 @@ class SniVerifierFilterTest : public testing::Test {
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
     cfg_ = std::make_shared<Config>(*store_, TLS_MAX_CLIENT_HELLO);
-    filter_ = std::make_unique<SniVerifierFilter>(cfg_);
+    filter_ = std::make_unique<Filter>(cfg_);
   }
 
   void TearDown() override {
@@ -117,7 +117,7 @@ class SniVerifierFilterTest : public testing::Test {
   ConfigSharedPtr cfg_;
 
  private:
-  std::unique_ptr<SniVerifierFilter> filter_;
+  std::unique_ptr<Filter> filter_;
   std::unique_ptr<Stats::Scope> store_;
 };
 

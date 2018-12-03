@@ -43,8 +43,7 @@ Config::Config(Stats::Scope& scope, uint32_t max_client_hello_size)
   SSL_CTX_set_session_cache_mode(ssl_ctx_.get(), SSL_SESS_CACHE_OFF);
   SSL_CTX_set_tlsext_servername_callback(
       ssl_ctx_.get(), [](SSL* ssl, int* out_alert, void*) -> int {
-        SniVerifierFilter* filter =
-            static_cast<SniVerifierFilter*>(SSL_get_app_data(ssl));
+        Filter* filter = static_cast<Filter*>(SSL_get_app_data(ssl));
 
         if (filter != nullptr) {
           filter->onServername(
@@ -62,14 +61,14 @@ bssl::UniquePtr<SSL> Config::newSsl() {
   return bssl::UniquePtr<SSL>{SSL_new(ssl_ctx_.get())};
 }
 
-SniVerifierFilter::SniVerifierFilter(const ConfigSharedPtr config)
+Filter::Filter(const ConfigSharedPtr config)
     : config_(config),
       ssl_(config_->newSsl()),
       buf_(std::make_unique<uint8_t[]>(config_->maxClientHelloSize())) {
   SSL_set_accept_state(ssl_.get());
 }
 
-Network::FilterStatus SniVerifierFilter::onData(Buffer::Instance& data, bool) {
+Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
   ENVOY_CONN_LOG(trace, "SniVerifier: got {} bytes",
                  read_callbacks_->connection(), data.length());
   if (done_) {
@@ -88,7 +87,7 @@ Network::FilterStatus SniVerifierFilter::onData(Buffer::Instance& data, bool) {
                    : Network::FilterStatus::StopIteration;
 }
 
-void SniVerifierFilter::onServername(absl::string_view servername) {
+void Filter::onServername(absl::string_view servername) {
   if (!servername.empty()) {
     config_->stats().inner_sni_found_.inc();
     absl::string_view outerSni =
@@ -108,7 +107,7 @@ void SniVerifierFilter::onServername(absl::string_view servername) {
   clienthello_success_ = true;
 }
 
-void SniVerifierFilter::done(bool success) {
+void Filter::done(bool success) {
   ENVOY_LOG(trace, "sni_verifier: done: {}", success);
   done_ = true;
   if (success) {
@@ -116,7 +115,7 @@ void SniVerifierFilter::done(bool success) {
   }
 }
 
-void SniVerifierFilter::parseClientHello(const void* data, size_t len) {
+void Filter::parseClientHello(const void* data, size_t len) {
   // Ownership is passed to ssl_ in SSL_set_bio()
   bssl::UniquePtr<BIO> bio(BIO_new_mem_buf(data, len));
 
