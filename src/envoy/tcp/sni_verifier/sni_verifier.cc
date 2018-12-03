@@ -80,9 +80,14 @@ Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
   size_t data_to_read =
       (data.length() < left_space_in_buf) ? data.length() : left_space_in_buf;
   data.copyOut(0, data_to_read, buf_.get() + read_);
+
+  auto start_handshake_data =
+      restart_handshake_ ? buf_.get() : buf.get() + read_;
+  auto handshake_size = restart_handshake_ ? read_ : data_to_read;
+
+  parseClientHello(start_handshake_data, end_handshake_data);
   read_ += data_to_read;
 
-  parseClientHello(buf_.get(), read_);
   return is_match_ ? Network::FilterStatus::Continue
                    : Network::FilterStatus::StopIteration;
 }
@@ -126,6 +131,7 @@ void Filter::parseClientHello(const void* data, size_t len) {
   SSL_set_bio(ssl_.get(), bio.get(), bio.get());
   bio.release();
 
+  restart_handshake_ = false;
   SSL_set_app_data(ssl_.get(), this);
   int ret = SSL_do_handshake(ssl_.get());
 
@@ -143,19 +149,23 @@ void Filter::parseClientHello(const void* data, size_t len) {
         config_->stats().client_hello_too_large_.inc();
         done(false);
       }
-      break;
+      break;  // do nothing until more data arrives
     case SSL_ERROR_SSL:
       if (clienthello_success_) {
         config_->stats().tls_found_.inc();
         done(true);
       } else {
-        if (read_ >=
-            config_->maxClientHelloSize()) {  // we give up at this point
+        if (read_ >= config_->maxClientHelloSize()) {
+          // give up on client hello parsing at this point
           config_->stats().tls_not_found_.inc();
           done(false);
-        } else {  // clean the SSL object to allow another handshake
+        } else {  // clean the SSL object to allow another handshake once we get
+                  // more data
           SSL_shutdown(ssl_.get());
           SSL_clear(ssl_.get());
+          // once we get more data - restart the hanshake with the data from the
+          // beginning
+          restart_handshake_ = true;
         }
       }
       break;

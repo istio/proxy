@@ -96,6 +96,7 @@ class Filter : public Network::ReadFilter,
   bool clienthello_success_{false};
   bool done_{false};
   bool is_match_{false};
+  bool restart_handshake_{false};
 
   std::unique_ptr<uint8_t[]> buf_;
 
