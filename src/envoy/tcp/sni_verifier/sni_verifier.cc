@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// the implementation (extracting the SNI) is based on the TLS inspector
+// listener filter of Envoy
+
 #include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 
 #include "envoy/buffer/buffer.h"
