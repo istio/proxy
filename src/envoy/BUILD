@@ -30,8 +30,7 @@ envoy_cc_binary(
         "//src/envoy/http/mixer:filter_lib",
         "//src/envoy/tcp/mixer:filter_lib",
         "//src/envoy/tcp/tcp_cluster_rewrite:config_lib",
-        "//src/envoy/tcp/sni_verifier:filter_lib",
-        "//src/envoy/alts:alts_socket_factory",
+        "//src/envoy/tcp/sni_verifier:config_lib",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )

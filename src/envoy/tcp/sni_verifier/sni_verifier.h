@@ -30,17 +30,13 @@ namespace SniVerifier {
 /**
  * All stats for the SNI verifier. @see stats_macros.h
  */
-#define SNI_VERIFIER_STATS(COUNTER)                                                                \
-  COUNTER(connection_closed)                                                                       \
-  COUNTER(client_hello_too_large)                                                                  \
-  COUNTER(read_error)                                                                              \
-  COUNTER(read_timeout)                                                                            \
-  COUNTER(tls_found)                                                                               \
-  COUNTER(tls_not_found)                                                                           \
-  COUNTER(alpn_found)                                                                              \
-  COUNTER(alpn_not_found)                                                                          \
-  COUNTER(sni_found)                                                                               \
-  COUNTER(sni_not_found)
+#define SNI_VERIFIER_STATS(COUNTER) \
+  COUNTER(client_hello_too_large)   \
+  COUNTER(tls_found)                \
+  COUNTER(tls_not_found)            \
+  COUNTER(inner_sni_found)          \
+  COUNTER(inner_sni_not_found)      \
+  COUNTER(snis_do_not_match)
 
 /**
  * Definition of all stats for the SNI verifier. @see stats_macros.h
@@ -53,35 +49,41 @@ struct SniVerifierStats {
  * Global configuration for SNI verifier.
  */
 class Config {
-public:
-  Config(Stats::Scope& scope, uint32_t max_client_hello_size = TLS_MAX_CLIENT_HELLO);
+ public:
+  Config(Stats::Scope& scope,
+         size_t max_client_hello_size = TLS_MAX_CLIENT_HELLO);
 
   const SniVerifierStats& stats() const { return stats_; }
   bssl::UniquePtr<SSL> newSsl();
-  uint32_t maxClientHelloSize() const { return max_client_hello_size_; }
+  size_t maxClientHelloSize() const { return max_client_hello_size_; }
 
   static constexpr size_t TLS_MAX_CLIENT_HELLO = 64 * 1024;
 
-private:
+ private:
   SniVerifierStats stats_;
   bssl::UniquePtr<SSL_CTX> ssl_ctx_;
-  const uint32_t max_client_hello_size_;
+  const size_t max_client_hello_size_;
 };
 
 typedef std::shared_ptr<Config> ConfigSharedPtr;
 
-class SniVerifierFilter : public Network::ReadFilter, Logger::Loggable<Logger::Id::filter> {
-public:
-  SniVerifierFilter(const ConfigSharedPtr config);
+class Filter : public Network::ReadFilter,
+               Logger::Loggable<Logger::Id::filter> {
+ public:
+  Filter(const ConfigSharedPtr config);
 
   // Network::ReadFilter
-  Network::FilterStatus onData(Buffer::Instance& data, bool end_stream) override;
-  Network::FilterStatus onNewConnection() override { return Network::FilterStatus::Continue; }
-  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
+  Network::FilterStatus onData(Buffer::Instance& data,
+                               bool end_stream) override;
+  Network::FilterStatus onNewConnection() override {
+    return Network::FilterStatus::Continue;
+  }
+  void initializeReadFilterCallbacks(
+      Network::ReadFilterCallbacks& callbacks) override {
     read_callbacks_ = &callbacks;
   }
 
-private:
+ private:
   void parseClientHello(const void* data, size_t len);
   void done(bool success);
   void onServername(absl::string_view name);
@@ -94,13 +96,14 @@ private:
   bool clienthello_success_{false};
   bool done_{false};
   bool is_match_{false};
+  bool restart_handshake_{false};
 
-  static thread_local uint8_t buf_[Config::TLS_MAX_CLIENT_HELLO];
+  std::unique_ptr<uint8_t[]> buf_;
 
   // Allows callbacks on the SSL_CTX to set fields in this class.
   friend class Config;
 };
 
-} // namespace SniVerifier
-} // namespace Tcp
-} // namespace Envoy
+}  // namespace SniVerifier
+}  // namespace Tcp
+}  // namespace Envoy

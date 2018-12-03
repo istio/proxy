@@ -18,19 +18,41 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
+    "envoy_cc_test",
 )
 
 envoy_cc_library(
-    name = "filter_lib",
-    srcs = [
-        "config.cc",
-        "sni_verifier.h",
-        "sni_verifier.cc",
-    ],
+    name = "config_lib",
+    srcs = ["config.cc"],
+    hdrs = ["config.h"],
     repository = "@envoy",
     visibility = ["//visibility:public"],
+    deps = [
+        ":sni_verifier_lib",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "sni_verifier_lib",
+    srcs = [ "sni_verifier.cc"],
+    hdrs = [ "sni_verifier.h"],
+    repository = "@envoy",
     external_deps = ["ssl"],
     deps = [
         "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "sni_verifier_test",
+    srcs = ["sni_verifier_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":sni_verifier_lib",
+        ":config_lib",
+        "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/server:server_mocks",
+        "@envoy//test/test_common:tls_utility_lib",
     ],
 )
