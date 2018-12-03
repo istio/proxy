@@ -151,9 +151,9 @@ void SniVerifierFilter::parseClientHello(const void* data, size_t len) {
         done(true);
       } else if (read_ >
                  Config::TLS_MIN_CLIENT_HELLO) {  // we give up at this point
+        config_->stats().tls_not_found_.inc();
         done(false);
       }
-      config_->stats().tls_not_found_.inc();
       break;
     default:
       done(false);
