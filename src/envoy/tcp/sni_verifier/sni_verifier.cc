@@ -76,11 +76,11 @@ Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
                      : Network::FilterStatus::StopIteration;
   }
 
-  size_t freeSpaceInBuf = config_->maxClientHelloSize() - read_;
-  size_t lenToRead =
-      (data.length() < freeSpaceInBuf) ? data.length() : freeSpaceInBuf;
-  data.copyOut(0, lenToRead, buf_.get() + read_);
-  read_ += lenToRead;
+  size_t left_space_in_buf = config_->maxClientHelloSize() - read_;
+  size_t data_to_read =
+      (data.length() < left_space_in_buf) ? data.length() : left_space_in_buf;
+  data.copyOut(0, data_to_read, buf_.get() + read_);
+  read_ += data_to_read;
 
   parseClientHello(buf_.get(), read_);
   return is_match_ ? Network::FilterStatus::Continue
@@ -90,17 +90,17 @@ Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
 void Filter::onServername(absl::string_view servername) {
   if (!servername.empty()) {
     config_->stats().inner_sni_found_.inc();
-    absl::string_view outerSni =
+    absl::string_view outer_sni =
         read_callbacks_->connection().requestedServerName();
 
-    is_match_ = (servername == outerSni);
+    is_match_ = (servername == outer_sni);
     if (!is_match_) {
       config_->stats().snis_do_not_match_.inc();
     }
     ENVOY_LOG(
         debug,
         "sni_verifier:onServerName(), inner SNI: {}, outer SNI: {}, match: {}",
-        servername, outerSni, is_match_);
+        servername, outer_sni, is_match_);
   } else {
     config_->stats().inner_sni_not_found_.inc();
   }
