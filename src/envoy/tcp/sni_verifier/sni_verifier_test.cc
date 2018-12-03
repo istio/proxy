@@ -98,9 +98,9 @@ class SniVerifierFilterTest : public testing::Test {
       size_t data_to_send_size = data_installment_size < remaining_data_to_send
                                      ? data_installment_size
                                      : remaining_data_to_send;
-      Buffer::OwnedImpl buff;
-      buff.add(data.data() + sent_data, data_to_send_size);
-      status = filter_->onData(buff, true);
+      Buffer::OwnedImpl buf;
+      buf.add(data.data() + sent_data, data_to_send_size);
+      status = filter_->onData(buf, true);
       sent_data += data_to_send_size;
       remaining_data_to_send -= data_to_send_size;
       if (remaining_data_to_send > 0) {
