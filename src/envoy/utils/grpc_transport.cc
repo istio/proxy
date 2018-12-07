@@ -83,6 +83,7 @@ void GrpcTransport<RequestType, ResponseType>::onFailure(
 template <class RequestType, class ResponseType>
 void GrpcTransport<RequestType, ResponseType>::Cancel() {
   ENVOY_LOG(debug, "Cancel gRPC request {}", descriptor().name());
+  request_->cancel();
   delete this;
 }
 
