@@ -38,6 +38,12 @@ class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
   static bool ProcessJwtPayload(const std::string& jwt_payload_str,
                                 istio::authn::JwtPayload* payload);
 
+  // Parse the original_payload in an APToken.
+  // Return true if original_payload can be
+  // parsed successfully. Otherwise, return false.
+  static bool ExtractOriginalPayload(const std::string& token,
+                                     std::string* original_payload);
+
   // Returns true if str is matched to match.
   static bool MatchString(const char* const str,
                           const iaapi::StringMatch& match);
