@@ -24,6 +24,10 @@ namespace {
 
 // The HTTP header to pass verified token payload.
 const LowerCaseString kJwtPayloadKey("sec-istio-auth-userinfo");
+// The JWT issuer key name
+const std::string kJwtIssuerKey = "iss";
+// The key name for the APToken original claims
+const std::string kAPTokenOriginalPayload = "original_payload";
 
 // Extract host and path from a URI
 void ExtractUriHostPath(const std::string& uri, std::string* host,
@@ -45,6 +49,31 @@ void ExtractUriHostPath(const std::string& uri, std::string* host,
     *host = uri.substr(pos, pos1 - pos);
     *path = "/" + uri.substr(pos1 + 1);
   }
+}
+
+bool ExtractOriginalIssuer(const Envoy::Json::ObjectSharedPtr& payload,
+                           std::string* issuer) {
+  if (payload->hasObject(kAPTokenOriginalPayload) == false) {
+    return false;
+  }
+
+  Envoy::Json::ObjectSharedPtr original_payload_obj;
+  try {
+    auto original_payload_obj = payload->getObject(kAPTokenOriginalPayload);
+    std::string iss1 = payload->getString(kJwtIssuerKey, "");
+    std::string iss2 = original_payload_obj->getString(kJwtIssuerKey, "");
+    // Token exchange makes the issuers of the APToken and the original JWT
+    // to be different.
+    if (!(!iss1.empty() && !iss2.empty() && iss1 != iss2)) {
+      return false;
+    }
+
+    *issuer = iss2;
+  } catch (...) {
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace
@@ -199,7 +228,11 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
   // User the issuer as the entry key for simplicity. The forward_payload_header
   // field can be removed or replace by a boolean (to make `save` is
   // conditional)
-  callback_->savePayload(issuer_item.jwt_config().issuer(), jwt_->PayloadStr());
+  std::string issuer;
+  if (!ExtractOriginalIssuer(jwt_->Payload(), &issuer)) {
+    issuer = issuer_item.jwt_config().issuer();
+  }
+  callback_->savePayload(issuer, jwt_->PayloadStr());
 
   if (!issuer_item.jwt_config().forward()) {
     // Remove JWT from headers.
