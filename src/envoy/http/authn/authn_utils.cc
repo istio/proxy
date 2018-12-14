@@ -30,7 +30,7 @@ static const std::string kJwtAudienceKey = "aud";
 // The JWT issuer key name
 static const std::string kJwtIssuerKey = "iss";
 // The key name for the APToken original claims
-static const std::string kAPTokenOriginalPayload = "original_payload";
+static const std::string kAPTokenOriginalPayload = "original_claims";
 
 // Extract JWT claim as a string list.
 // This function only extracts string and string list claims.
@@ -129,7 +129,7 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
     }
 
     *original_payload = original_payload_obj->asJsonString();
-    ENVOY_LOG(debug, "{}: original_payload in APToken is {}", __FUNCTION__,
+    ENVOY_LOG(debug, "{}: the original payload in APToken is {}", __FUNCTION__,
               *original_payload);
   } catch (...) {
     ENVOY_LOG(debug, "{}: original_payload in APToken is of invalid format.",
