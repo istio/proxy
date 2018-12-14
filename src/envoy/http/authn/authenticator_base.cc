@@ -29,6 +29,11 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
+namespace {
+// The default header name for an exchanged token
+static const std::string kExchangedTokenHeaderName = "x-ingress-authorization";
+}  // namespace
+
 AuthenticatorBase::AuthenticatorBase(FilterContext* filter_context)
     : filter_context_(*filter_context) {}
 
@@ -70,7 +75,15 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
   if (filter_context()->getJwtPayload(jwt.issuer(), &jwt_payload)) {
     std::string payload_to_process = jwt_payload;
     std::string original_payload;
-    if (AuthnUtils::ExtractOriginalPayload(jwt_payload, &original_payload)) {
+    bool found = false;
+    for (auto h : jwt.jwt_headers()) {
+      if (kExchangedTokenHeaderName == h) {
+        found = true;
+        break;
+      }
+    }
+    if (found &&
+        AuthnUtils::ExtractOriginalPayload(jwt_payload, &original_payload)) {
       payload_to_process = original_payload;
     }
     return AuthnUtils::ProcessJwtPayload(payload_to_process,
