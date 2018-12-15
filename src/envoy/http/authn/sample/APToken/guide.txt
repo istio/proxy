@@ -15,4 +15,4 @@ an example exchanged token.
 3. Open a terminal, go to the root directory of the istio-proxy repository.
 Send a request with the example exchanged token.
     export token=$(cat src/envoy/http/jwt_auth/sample/APToken/APToken-example1.jwt)
-    curl --header "x-ingress-authorization:$token" http://localhost:9090/echo -d "hello world"
+    curl --header "ingress-authorization:$token" http://localhost:9090/echo -d "hello world"

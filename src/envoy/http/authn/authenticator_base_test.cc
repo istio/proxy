@@ -50,6 +50,22 @@ const std::string kSecIstioAuthUserinfoHeaderValue =
      }
    )";
 
+const std::string kExchangedTokenHeaderName = "ingress-authorization";
+
+const std::string kExchangedTokenPayload =
+    R"(
+     {
+       "iss": "token-service",
+       "sub": "subject",
+       "aud": ["aud1", "aud2"],
+       "original_claims": {
+         "iss": "https://accounts.example.com",
+         "sub": "example-subject",
+         "email": "user@example.com"
+       }
+     }
+   )";
+
 class MockAuthenticatorBase : public AuthenticatorBase {
  public:
   MockAuthenticatorBase(FilterContext* filter_context)
@@ -284,6 +300,34 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
                  "sub": ["sub@foo.com"],
                },
                "raw_claims": "\n     {\n       \"iss\": \"issuer@foo.com\",\n       \"sub\": \"sub@foo.com\",\n       \"aud\": [\"aud1\", \"aud2\"],\n       \"non-string-will-be-ignored\": 1512754205,\n       \"some-other-string-claims\": \"some-claims-kept\"\n     }\n   ",
+             }
+           }
+        )",
+      &expected_payload, google::protobuf::util::JsonParseOptions{});
+
+  EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+}
+
+TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
+  jwt_.set_issuer("token-service");
+  jwt_.add_jwt_headers(kExchangedTokenHeaderName);
+
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
+      .MergeFrom(
+          MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+
+  Payload expected_payload;
+  JsonStringToMessage(
+      R"({
+             "jwt": {
+               "user": "https://accounts.example.com/example-subject",
+               "claims": {
+                 "iss": ["https://accounts.example.com"],
+                 "sub": ["example-subject"],
+                 "email": ["user@example.com"]
+               },
+               "raw_claims": "{\"email\":\"user@example.com\",\"sub\":\"example-subject\",\"iss\":\"https://accounts.example.com\"}"
              }
            }
         )",
