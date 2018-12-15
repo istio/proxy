@@ -15,6 +15,9 @@
 ################################################################################
 #
 
+# http_archive is not a native function since bazel 0.19
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 load(
      "//:repositories.bzl",
      "googletest_repositories",
