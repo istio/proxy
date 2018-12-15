@@ -43,7 +43,9 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
   auto& logger = Logger::Registry::getLog(Logger::Id::config);
   LocalNode local_node;
   if (!Utils::ExtractNodeInfo(local_info.node(), &local_node)) {
-    ENVOY_LOG_TO_LOGGER(logger, warn, "Unable to get node metadata");
+    ENVOY_LOG_TO_LOGGER(
+        logger, warn,
+        "Missing required node metadata: NODE_UID, NODE_NAMESPACE");
   }
   ::istio::utils::SerializeForwardedAttributes(local_node,
                                                &serialized_forward_attributes_);
