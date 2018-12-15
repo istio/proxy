@@ -131,17 +131,19 @@ bool ExtractInfoCompat(const std::string &nodeid, LocalNode *args) {
   auto parts = StringUtil::splitToken(nodeid, "~");
   if (parts.size() < 3) {
     ENVOY_LOG_TO_LOGGER(
-        logger, warn,
-        "ExtractInfoCompat node id did not have the correct format:",
-        "{proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain} ", nodeid);
+        logger, debug,
+        "ExtractInfoCompat node id {} did not have the correct format:{} ",
+        nodeid, "{proxy_type}~{ip}~{node_name}.{node_ns}~{node_domain} ");
     return false;
   }
 
   auto longname = std::string(parts[2].begin(), parts[2].end());
   auto names = StringUtil::splitToken(longname, ".");
   if (names.size() < 2) {
-    ENVOY_LOG_TO_LOGGER(logger, warn,
-                        "error len(split(longname, '.')) < 3: ", longname);
+    ENVOY_LOG_TO_LOGGER(logger, debug,
+                        "ExtractInfoCompat node_name {} must have two parts: "
+                        "node_name.namespace",
+                        longname);
     return false;
   }
   auto ns = std::string(names[1].begin(), names[1].end());
@@ -159,24 +161,24 @@ bool ExtractInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
   const auto meta = node.metadata().fields();
 
   if (meta.empty()) {
-    ENVOY_LOG_TO_LOGGER(logger, warn,
-                        "ExtractInfo  metadata empty:", node.DebugString());
+    ENVOY_LOG_TO_LOGGER(logger, debug, "ExtractInfo node metadata empty: {}",
+                        node.DebugString());
     return false;
   }
 
   std::string uid;
   if (!ReadProtoMap(meta, kNodeUID, &uid)) {
-    ENVOY_LOG_TO_LOGGER(logger, warn,
-                        "ExtractInfo  metadata missing:", kNodeUID,
+    ENVOY_LOG_TO_LOGGER(logger, debug,
+                        "ExtractInfo node metadata missing:{} {}", kNodeUID,
                         node.metadata().DebugString());
     return false;
   }
 
   std::string ns;
   if (!ReadProtoMap(meta, kNodeNamespace, &ns)) {
-    ENVOY_LOG_TO_LOGGER(logger, warn,
-                        "ExtractInfo  metadata missing:", kNodeNamespace,
-                        node.metadata().DebugString());
+    ENVOY_LOG_TO_LOGGER(logger, debug,
+                        "ExtractInfo node metadata missing:{} {}",
+                        kNodeNamespace, node.metadata().DebugString());
     return false;
   }
 
