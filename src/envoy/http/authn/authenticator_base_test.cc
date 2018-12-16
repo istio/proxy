@@ -66,6 +66,15 @@ const std::string kExchangedTokenPayload =
      }
    )";
 
+const std::string kExchangedTokenPayloadNoOriginalClaims =
+    R"(
+     {
+       "iss": "token-service",
+       "sub": "subject",
+       "aud": ["aud1", "aud2"]
+     }
+   )";
+
 class MockAuthenticatorBase : public AuthenticatorBase {
  public:
   MockAuthenticatorBase(FilterContext* filter_context)
@@ -333,6 +342,67 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
         )",
       &expected_payload, google::protobuf::util::JsonParseOptions{});
 
+  EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+}
+
+TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
+  jwt_.set_issuer("token-service");
+  jwt_.add_jwt_headers(kExchangedTokenHeaderName);
+
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
+      .MergeFrom(MessageUtil::keyValueStruct(
+          "token-service", kExchangedTokenPayloadNoOriginalClaims));
+
+  Payload expected_payload;
+  JsonStringToMessage(
+      R"({
+             "jwt": {
+               "user": "token-service/subject",
+               "audiences": ["aud1", "aud2"],
+               "claims": {
+                 "iss": ["token-service"],
+                 "sub": ["subject"],
+                 "aud": ["aud1", "aud2"]
+               },
+               "raw_claims": "\n     {\n       \"iss\": \"token-service\",\n       \"sub\": \"subject\",\n       \"aud\": [\"aud1\", \"aud2\"]\n     }\n   "
+             }
+           }
+        )",
+      &expected_payload, google::protobuf::util::JsonParseOptions{});
+
+  // When no original_claims in an exchanged token, the token
+  // is treated as a normal token with its claims extracted.
+  EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+}
+
+TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
+  jwt_.set_issuer("token-service");
+
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
+      .MergeFrom(
+          MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+
+  Payload expected_payload;
+  JsonStringToMessage(
+      R"({
+             "jwt": {
+               "user": "token-service/subject",
+               "audiences": ["aud1", "aud2"],
+               "claims": {
+                 "iss": ["token-service"],
+                 "sub": ["subject"],
+                 "aud": ["aud1", "aud2"]
+               },
+               "raw_claims":"\n     {\n       \"iss\": \"token-service\",\n       \"sub\": \"subject\",\n       \"aud\": [\"aud1\", \"aud2\"],\n       \"original_claims\": {\n         \"iss\": \"https://accounts.example.com\",\n         \"sub\": \"example-subject\",\n         \"email\": \"user@example.com\"\n       }\n     }\n   "
+             }
+           }
+        )",
+      &expected_payload, google::protobuf::util::JsonParseOptions{});
+
+  // When an exchanged token is not in the intended header, the token
+  // is treated as a normal token with its claims extracted.
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
 }

@@ -90,6 +90,9 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
     std::string original_payload;
     if (FindHeaderOfExchangedToken(jwt) &&
         AuthnUtils::ExtractOriginalPayload(jwt_payload, &original_payload)) {
+      // When the header of an exchanged token is found and the token
+      // contains the claim of the original payload, the original payload
+      // is extracted and used as the token payload.
       payload_to_process = original_payload;
     }
     return AuthnUtils::ProcessJwtPayload(payload_to_process,
