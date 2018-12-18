@@ -88,12 +88,20 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
   if (filter_context()->getJwtPayload(jwt.issuer(), &jwt_payload)) {
     std::string payload_to_process = jwt_payload;
     std::string original_payload;
-    if (FindHeaderOfExchangedToken(jwt) &&
-        AuthnUtils::ExtractOriginalPayload(jwt_payload, &original_payload)) {
-      // When the header of an exchanged token is found and the token
-      // contains the claim of the original payload, the original payload
-      // is extracted and used as the token payload.
-      payload_to_process = original_payload;
+    if (FindHeaderOfExchangedToken(jwt)) {
+      if (AuthnUtils::ExtractOriginalPayload(jwt_payload, &original_payload)) {
+        // When the header of an exchanged token is found and the token
+        // contains the claim of the original payload, the original payload
+        // is extracted and used as the token payload.
+        payload_to_process = original_payload;
+      } else {
+        // When the header of an exchanged token is found but the token
+        // does not contain the claim of the original payload, it
+        // is regarded as an invalid exchanged token.
+        ENVOY_LOG(error, "The token is invalid. The payload is {}",
+                  jwt_payload);
+        return false;
+      }
     }
     return AuthnUtils::ProcessJwtPayload(payload_to_process,
                                          payload->mutable_jwt());
