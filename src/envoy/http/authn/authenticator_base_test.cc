@@ -336,7 +336,7 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
                  "sub": ["example-subject"],
                  "email": ["user@example.com"]
                },
-               "raw_claims": "{\"email\":\"user@example.com\",\"sub\":\"example-subject\",\"iss\":\"https://accounts.example.com\"}"
+               "raw_claims": "{\"email\":\"user@example.com\",\"iss\":\"https://accounts.example.com\",\"sub\":\"example-subject\"}"
              }
            }
         )",
@@ -354,27 +354,9 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
       .MergeFrom(MessageUtil::keyValueStruct(
           "token-service", kExchangedTokenPayloadNoOriginalClaims));
 
-  Payload expected_payload;
-  JsonStringToMessage(
-      R"({
-             "jwt": {
-               "user": "token-service/subject",
-               "audiences": ["aud1", "aud2"],
-               "claims": {
-                 "iss": ["token-service"],
-                 "sub": ["subject"],
-                 "aud": ["aud1", "aud2"]
-               },
-               "raw_claims": "\n     {\n       \"iss\": \"token-service\",\n       \"sub\": \"subject\",\n       \"aud\": [\"aud1\", \"aud2\"]\n     }\n   "
-             }
-           }
-        )",
-      &expected_payload, google::protobuf::util::JsonParseOptions{});
-
   // When no original_claims in an exchanged token, the token
-  // is treated as a normal token with its claims extracted.
-  EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
-  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+  // is treated as invalid.
+  EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
 }
 
 TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {

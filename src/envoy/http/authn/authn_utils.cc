@@ -120,14 +120,6 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
   Envoy::Json::ObjectSharedPtr original_payload_obj;
   try {
     auto original_payload_obj = json_obj->getObject(kAPTokenOriginalPayload);
-    std::string iss1 = json_obj->getString(kJwtIssuerKey, "");
-    std::string iss2 = original_payload_obj->getString(kJwtIssuerKey, "");
-    // Token exchange makes the issuers of the APToken and the original JWT
-    // to be different.
-    if (!(!iss1.empty() && !iss2.empty() && iss1 != iss2)) {
-      return false;
-    }
-
     *original_payload = original_payload_obj->asJsonString();
     ENVOY_LOG(debug, "{}: the original payload in APToken is {}", __FUNCTION__,
               *original_payload);
