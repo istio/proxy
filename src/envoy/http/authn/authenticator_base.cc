@@ -33,14 +33,12 @@ namespace {
 // The default header name for an exchanged token
 static const std::string kExchangedTokenHeaderName = "ingress-authorization";
 
-// Return whether the header for an exchanged token is found
+// Returns whether the header for an exchanged token is found
 bool FindHeaderOfExchangedToken(const iaapi::Jwt& jwt) {
   bool found = false;
-  for (auto h : jwt.jwt_headers()) {
-    if (kExchangedTokenHeaderName == h) {
-      found = true;
-      break;
-    }
+  if (jwt.jwt_headers_size() == 1 &&
+      kExchangedTokenHeaderName == jwt.jwt_headers(0)) {
+    found = true;
   }
   return found;
 }
@@ -98,8 +96,10 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
         // When the header of an exchanged token is found but the token
         // does not contain the claim of the original payload, it
         // is regarded as an invalid exchanged token.
-        ENVOY_LOG(error, "The token is invalid. The payload is {}",
-                  jwt_payload);
+        ENVOY_LOG(
+            error,
+            "Expect exchanged-token with original payload claim. Received: {}",
+            jwt_payload);
         return false;
       }
     }

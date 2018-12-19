@@ -343,7 +343,16 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
       &expected_payload, google::protobuf::util::JsonParseOptions{});
 
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
-  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+  // On different platforms, the order of fields in raw_claims may be
+  // different. E.g., on MacOs, the raw_claims in the payload_ can be:
+  // raw_claims:
+  // "{\"email\":\"user@example.com\",\"sub\":\"example-subject\",\"iss\":\"https://accounts.example.com\"}"
+  // Therefore, raw_claims is skipped to avoid a flaky test.
+  MessageDifferencer diff;
+  const google::protobuf::FieldDescriptor* field =
+      expected_payload.jwt().GetDescriptor()->FindFieldByName("raw_claims");
+  diff.IgnoreField(field);
+  EXPECT_TRUE(diff.Compare(expected_payload, *payload_));
 }
 
 TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
