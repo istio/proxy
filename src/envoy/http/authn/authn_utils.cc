@@ -29,8 +29,8 @@ namespace {
 static const std::string kJwtAudienceKey = "aud";
 // The JWT issuer key name
 static const std::string kJwtIssuerKey = "iss";
-// The key name for the APToken original claims
-static const std::string kAPTokenOriginalPayload = "original_claims";
+// The key name for the original claims in an exchanged token
+static const std::string kExchangedTokenOriginalPayload = "original_claims";
 
 // Extract JWT claim as a string list.
 // This function only extracts string and string list claims.
@@ -113,13 +113,14 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
     return false;
   }
 
-  if (json_obj->hasObject(kAPTokenOriginalPayload) == false) {
+  if (json_obj->hasObject(kExchangedTokenOriginalPayload) == false) {
     return false;
   }
 
   Envoy::Json::ObjectSharedPtr original_payload_obj;
   try {
-    auto original_payload_obj = json_obj->getObject(kAPTokenOriginalPayload);
+    auto original_payload_obj =
+        json_obj->getObject(kExchangedTokenOriginalPayload);
     *original_payload = original_payload_obj->asJsonString();
     ENVOY_LOG(debug, "{}: the original payload in APToken is {}", __FUNCTION__,
               *original_payload);
