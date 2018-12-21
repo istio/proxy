@@ -122,10 +122,11 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
     auto original_payload_obj =
         json_obj->getObject(kExchangedTokenOriginalPayload);
     *original_payload = original_payload_obj->asJsonString();
-    ENVOY_LOG(debug, "{}: the original payload in APToken is {}", __FUNCTION__,
-              *original_payload);
+    ENVOY_LOG(debug, "{}: the original payload in exchanged token is {}",
+              __FUNCTION__, *original_payload);
   } catch (...) {
-    ENVOY_LOG(debug, "{}: original_payload in APToken is of invalid format.",
+    ENVOY_LOG(debug,
+              "{}: original_payload in exchanged token is of invalid format.",
               __FUNCTION__);
     return false;
   }
