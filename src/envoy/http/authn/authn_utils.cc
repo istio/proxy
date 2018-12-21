@@ -27,6 +27,10 @@ namespace AuthN {
 namespace {
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
+// The JWT issuer key name
+static const std::string kJwtIssuerKey = "iss";
+// The key name for the original claims in an exchanged token
+static const std::string kExchangedTokenOriginalPayload = "original_claims";
 
 // Extract JWT claim as a string list.
 // This function only extracts string and string list claims.
@@ -95,6 +99,36 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   if (claims->find("azp") != claims->end()) {
     payload->set_presenter(
         (*claims)["azp"].list_value().values().Get(0).string_value());
+  }
+
+  return true;
+}
+
+bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
+                                        std::string* original_payload) {
+  Envoy::Json::ObjectSharedPtr json_obj;
+  try {
+    json_obj = Json::Factory::loadFromString(token);
+  } catch (...) {
+    return false;
+  }
+
+  if (json_obj->hasObject(kExchangedTokenOriginalPayload) == false) {
+    return false;
+  }
+
+  Envoy::Json::ObjectSharedPtr original_payload_obj;
+  try {
+    auto original_payload_obj =
+        json_obj->getObject(kExchangedTokenOriginalPayload);
+    *original_payload = original_payload_obj->asJsonString();
+    ENVOY_LOG(debug, "{}: the original payload in exchanged token is {}",
+              __FUNCTION__, *original_payload);
+  } catch (...) {
+    ENVOY_LOG(debug,
+              "{}: original_payload in exchanged token is of invalid format.",
+              __FUNCTION__);
+    return false;
   }
 
   return true;
