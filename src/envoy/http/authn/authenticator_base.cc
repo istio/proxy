@@ -36,7 +36,8 @@ static const std::string kExchangedTokenHeaderName = "ingress-authorization";
 // Returns whether the header for an exchanged token is found
 bool FindHeaderOfExchangedToken(const iaapi::Jwt& jwt) {
   return (jwt.jwt_headers_size() == 1 &&
-          kExchangedTokenHeaderName == jwt.jwt_headers(0));
+          LowerCaseString(kExchangedTokenHeaderName) ==
+              LowerCaseString(jwt.jwt_headers(0)));
 }
 
 }  // namespace
