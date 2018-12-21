@@ -38,9 +38,9 @@ class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
   static bool ProcessJwtPayload(const std::string& jwt_payload_str,
                                 istio::authn::JwtPayload* payload);
 
-  // Parses the original_payload in an APToken.
+  // Parses the original_payload in an exchanged JWT.
   // Returns true if original_payload can be
-  // parsed successfully. Otherwise, return false.
+  // parsed successfully. Otherwise, returns false.
   static bool ExtractOriginalPayload(const std::string& token,
                                      std::string* original_payload);
 
