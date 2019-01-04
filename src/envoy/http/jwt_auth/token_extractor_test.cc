@@ -173,7 +173,6 @@ TEST_F(JwtTokenExtractorTest, TestCustomHeaderTokenWithPrefix) {
   EXPECT_FALSE(headers.get(LowerCaseString("token-header")));
 }
 
-
 TEST_F(JwtTokenExtractorTest, TestCustomParamToken) {
   auto headers = TestHeaderMapImpl{{":path", "/path?token_param=jwt_token"}};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
