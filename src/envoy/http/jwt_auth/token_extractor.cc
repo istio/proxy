@@ -84,9 +84,10 @@ void JwtTokenExtractor::Extract(
     if (entry) {
       std::string token;
       absl::string_view val = entry->value().getStringView();
-      if (val.rfind(" ") != absl::string_view::npos) {
+      size_t pos = val.rfind(" ");
+      if (pos != absl::string_view::npos) {
         // If the header value has prefix, trim the prefix.
-        token = std::string(val.substr(val.rfind(" ") + 1));
+        token = std::string(val.substr(pos + 1));
       } else {
         token = std::string(entry->value().c_str(), entry->value().size());
       }
