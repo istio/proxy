@@ -1,4 +1,4 @@
-/* Copyright 2018 Istio Authors. All Rights Reserved.
+/* Copyright 2017 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ void JwtTokenExtractor::Extract(
     if (entry) {
       // Extract token from header.
       const HeaderString &value = entry->value();
-      if (absl::StartsWith(value.c_str(), kBearerPrefix, true)) {
+      if (absl::StartsWith(value.getStringView(), kBearerPrefix)) {
         tokens->emplace_back(new Token(value.c_str() + kBearerPrefix.length(),
                                        authorization_issuers_, true, nullptr));
         // Only take the first one.

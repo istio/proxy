@@ -148,7 +148,7 @@ bool AuthnUtils::MatchString(const char* const str,
       return absl::StartsWith(str, match.prefix());
     }
     case iaapi::StringMatch::kSuffix: {
-      return absl::StartsWith(str, match.suffix());
+      return absl::EndsWith(str, match.suffix());
     }
     case iaapi::StringMatch::kRegex: {
       return std::regex_match(str, std::regex(match.regex()));
