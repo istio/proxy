@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "absl/strings/match.h"
 #include "src/envoy/http/jwt_auth/token_extractor.h"
 #include "common/common/utility.h"
 #include "common/http/utility.h"
@@ -69,7 +70,7 @@ void JwtTokenExtractor::Extract(
     if (entry) {
       // Extract token from header.
       const HeaderString& value = entry->value();
-      if (StringUtil::startsWith(value.c_str(), kBearerPrefix, true)) {
+      if (absl::StartsWith(value.c_str(), kBearerPrefix, true)) {
         tokens->emplace_back(new Token(value.c_str() + kBearerPrefix.length(),
                                        authorization_issuers_, true, nullptr));
         // Only take the first one.
