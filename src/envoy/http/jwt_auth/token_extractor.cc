@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+#include "src/envoy/http/jwt_auth/token_extractor.h"
 #include "absl/strings/match.h"
 #include "common/common/utility.h"
 #include "common/http/utility.h"
-#include "src/envoy/http/jwt_auth/token_extractor.h"
 
 using ::istio::envoy::config::filter::http::jwt_auth::v2alpha1::
     JwtAuthentication;
@@ -34,20 +34,20 @@ const std::string kParamAccessToken = "access_token";
 
 }  // namespace
 
-JwtTokenExtractor::JwtTokenExtractor(const JwtAuthentication& config) {
-  for (const auto& jwt : config.rules()) {
+JwtTokenExtractor::JwtTokenExtractor(const JwtAuthentication &config) {
+  for (const auto &jwt : config.rules()) {
     bool use_default = true;
     if (jwt.from_headers_size() > 0) {
       use_default = false;
-      for (const auto& header : jwt.from_headers()) {
-        auto& issuers = header_maps_[LowerCaseString(header.name())];
+      for (const auto &header : jwt.from_headers()) {
+        auto &issuers = header_maps_[LowerCaseString(header.name())];
         issuers.insert(jwt.issuer());
       }
     }
     if (jwt.from_params_size() > 0) {
       use_default = false;
-      for (const std::string& param : jwt.from_params()) {
-        auto& issuers = param_maps_[param];
+      for (const std::string &param : jwt.from_params()) {
+        auto &issuers = param_maps_[param];
         issuers.insert(jwt.issuer());
       }
     }
@@ -56,20 +56,20 @@ JwtTokenExtractor::JwtTokenExtractor(const JwtAuthentication& config) {
     if (use_default) {
       authorization_issuers_.insert(jwt.issuer());
 
-      auto& param_issuers = param_maps_[kParamAccessToken];
+      auto &param_issuers = param_maps_[kParamAccessToken];
       param_issuers.insert(jwt.issuer());
     }
   }
 }
 
 void JwtTokenExtractor::Extract(
-    const HeaderMap& headers,
-    std::vector<std::unique_ptr<JwtTokenExtractor::Token>>* tokens) const {
+    const HeaderMap &headers,
+    std::vector<std::unique_ptr<JwtTokenExtractor::Token>> *tokens) const {
   if (!authorization_issuers_.empty()) {
-    const HeaderEntry* entry = headers.Authorization();
+    const HeaderEntry *entry = headers.Authorization();
     if (entry) {
       // Extract token from header.
-      const HeaderString& value = entry->value();
+      const HeaderString &value = entry->value();
       if (absl::StartsWith(value.c_str(), kBearerPrefix, true)) {
         tokens->emplace_back(new Token(value.c_str() + kBearerPrefix.length(),
                                        authorization_issuers_, true, nullptr));
@@ -80,8 +80,8 @@ void JwtTokenExtractor::Extract(
   }
 
   // Check header first
-  for (const auto& header_it : header_maps_) {
-    const HeaderEntry* entry = headers.get(header_it.first);
+  for (const auto &header_it : header_maps_) {
+    const HeaderEntry *entry = headers.get(header_it.first);
     if (entry) {
       tokens->emplace_back(
           new Token(std::string(entry->value().c_str(), entry->value().size()),
@@ -95,10 +95,10 @@ void JwtTokenExtractor::Extract(
     return;
   }
 
-  const auto& params = Utility::parseQueryString(std::string(
+  const auto &params = Utility::parseQueryString(std::string(
       headers.Path()->value().c_str(), headers.Path()->value().size()));
-  for (const auto& param_it : param_maps_) {
-    const auto& it = params.find(param_it.first);
+  for (const auto &param_it : param_maps_) {
+    const auto &it = params.find(param_it.first);
     if (it != params.end()) {
       tokens->emplace_back(
           new Token(it->second, param_it.second, false, nullptr));
