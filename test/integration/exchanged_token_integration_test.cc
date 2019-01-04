@@ -36,6 +36,7 @@ namespace {
 
 // An example exchanged token
 constexpr char kExchangedToken[] =
+    "istio "
     "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZkNtcjVWTzVaRXI0Un"
     "pIVV8tZW52dlEiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJleGFtcGxlLWF1ZGllbmNlIiwiZW1ha"
     "WwiOiJmb29AZ29vZ2xlLmNvbSIsImV4cCI6NDY5ODM2MTUwOCwiaWF0IjoxNTQ0NzYxNTA4LCJ"
