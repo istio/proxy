@@ -1,4 +1,4 @@
-/* Copyright 2017 Istio Authors. All Rights Reserved.
+/* Copyright 2018 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  */
 
 #include "absl/strings/match.h"
-#include "src/envoy/http/jwt_auth/token_extractor.h"
 #include "common/common/utility.h"
 #include "common/http/utility.h"
+#include "src/envoy/http/jwt_auth/token_extractor.h"
 
 using ::istio::envoy::config::filter::http::jwt_auth::v2alpha1::
     JwtAuthentication;
