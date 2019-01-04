@@ -82,9 +82,18 @@ void JwtTokenExtractor::Extract(
   for (const auto& header_it : header_maps_) {
     const HeaderEntry* entry = headers.get(header_it.first);
     if (entry) {
+      std::string token;
+      absl::string_view val = entry->value().getStringView();
+      if (val.find(" ") != absl::string_view::npos) {
+        // If the header value has prefix, trim the prefix.
+        absl::string_view prefix = val.substr(0, val.find(" "));
+        token = entry->value().c_str() + prefix.length() + 1;
+      } else {
+        token = std::string(entry->value().c_str(), entry->value().size());
+      }
+
       tokens->emplace_back(
-          new Token(std::string(entry->value().c_str(), entry->value().size()),
-                    header_it.second, false, &header_it.first));
+          new Token(token, header_it.second, false, &header_it.first));
       // Only take the first one.
       return;
     }
