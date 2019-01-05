@@ -15,6 +15,7 @@
 
 #include <regex>
 
+#include "absl/strings/match.h"
 #include "authn_utils.h"
 #include "common/json/json_loader.h"
 #include "google/protobuf/struct.pb.h"
@@ -144,10 +145,10 @@ bool AuthnUtils::MatchString(const char* const str,
       return match.exact().compare(str) == 0;
     }
     case iaapi::StringMatch::kPrefix: {
-      return StringUtil::startsWith(str, match.prefix());
+      return absl::StartsWith(str, match.prefix());
     }
     case iaapi::StringMatch::kSuffix: {
-      return StringUtil::endsWith(str, match.suffix());
+      return absl::EndsWith(str, match.suffix());
     }
     case iaapi::StringMatch::kRegex: {
       return std::regex_match(str, std::regex(match.regex()));
