@@ -28,8 +28,8 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 namespace {
-const std::string kRbacPermissivePolicyIDField = "shadow_effective_policyID";
-const std::string kRbacPermissiveRespCodeField = "shadow_response_code";
+const std::string kRbacPermissivePolicyIDField = "shadow_effective_policy_id";
+const std::string kRbacPermissiveRespCodeField = "shadow_engine_result";
 
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
