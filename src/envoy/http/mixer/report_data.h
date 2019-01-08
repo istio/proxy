@@ -28,8 +28,8 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 namespace {
-const std::string kRbacPermissivePolicyIDField = "shadow_effective_policyID";
-const std::string kRbacPermissiveRespCodeField = "shadow_response_code";
+const std::string kRbacPermissivePolicyIDField = "shadow_effective_policy_id";
+const std::string kRbacPermissiveEngineResultField = "shadow_engine_result";
 
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
@@ -135,12 +135,12 @@ class ReportData : public ::istio::control::http::ReportData,
 
     const auto &data_struct = filter_it->second;
     const auto resp_code_it =
-        data_struct.fields().find(kRbacPermissiveRespCodeField);
+        data_struct.fields().find(kRbacPermissiveEngineResultField);
     if (resp_code_it != data_struct.fields().end()) {
       report_info->permissive_resp_code = resp_code_it->second.string_value();
     } else {
       ENVOY_LOG(debug, "No {} field found in filter {} dynamic_metadata",
-                kRbacPermissiveRespCodeField,
+                kRbacPermissiveEngineResultField,
                 Extensions::HttpFilters::HttpFilterNames::get().Rbac);
     }
 
