@@ -15,6 +15,7 @@
 
 #include <regex>
 
+#include "absl/strings/match.h"
 #include "authn_utils.h"
 #include "common/json/json_loader.h"
 #include "google/protobuf/struct.pb.h"
@@ -27,6 +28,10 @@ namespace AuthN {
 namespace {
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
+// The JWT issuer key name
+static const std::string kJwtIssuerKey = "iss";
+// The key name for the original claims in an exchanged token
+static const std::string kExchangedTokenOriginalPayload = "original_claims";
 
 // Extract JWT claim as a string list.
 // This function only extracts string and string list claims.
@@ -100,6 +105,36 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   return true;
 }
 
+bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
+                                        std::string* original_payload) {
+  Envoy::Json::ObjectSharedPtr json_obj;
+  try {
+    json_obj = Json::Factory::loadFromString(token);
+  } catch (...) {
+    return false;
+  }
+
+  if (json_obj->hasObject(kExchangedTokenOriginalPayload) == false) {
+    return false;
+  }
+
+  Envoy::Json::ObjectSharedPtr original_payload_obj;
+  try {
+    auto original_payload_obj =
+        json_obj->getObject(kExchangedTokenOriginalPayload);
+    *original_payload = original_payload_obj->asJsonString();
+    ENVOY_LOG(debug, "{}: the original payload in exchanged token is {}",
+              __FUNCTION__, *original_payload);
+  } catch (...) {
+    ENVOY_LOG(debug,
+              "{}: original_payload in exchanged token is of invalid format.",
+              __FUNCTION__);
+    return false;
+  }
+
+  return true;
+}
+
 bool AuthnUtils::MatchString(const char* const str,
                              const iaapi::StringMatch& match) {
   if (str == nullptr) {
@@ -110,10 +145,10 @@ bool AuthnUtils::MatchString(const char* const str,
       return match.exact().compare(str) == 0;
     }
     case iaapi::StringMatch::kPrefix: {
-      return StringUtil::startsWith(str, match.prefix());
+      return absl::StartsWith(str, match.prefix());
     }
     case iaapi::StringMatch::kSuffix: {
-      return StringUtil::endsWith(str, match.suffix());
+      return absl::EndsWith(str, match.suffix());
     }
     case iaapi::StringMatch::kRegex: {
       return std::regex_match(str, std::regex(match.regex()));
