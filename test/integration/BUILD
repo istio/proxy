@@ -36,3 +36,19 @@ envoy_cc_test(
         "//src/envoy/http/mixer:filter_lib",
     ],
 )
+
+envoy_cc_test(
+    name = "exchanged_token_integration_test",
+    srcs = ["exchanged_token_integration_test.cc"],
+    repository = "@envoy",
+    deps = [
+        "@envoy//source/common/common:utility_lib",
+        "@envoy//test/integration:http_protocol_integration_lib",
+        "//include/istio/utils:attribute_names_header",
+        "//src/envoy/http/authn:filter_lib",
+        "//src/envoy/http/jwt_auth:http_filter_factory",
+        "//src/envoy/http/jwt_auth:jwt_lib",
+        "//src/envoy/utils:filter_names_lib",
+        "//src/envoy/http/mixer:filter_lib",
+    ],
+)
