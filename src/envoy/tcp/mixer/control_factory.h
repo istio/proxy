@@ -41,7 +41,8 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
     Stats::Scope& scope = context.scope();
     const LocalInfo::LocalInfo& local_info = context.localInfo();
 
-    tls_->set([config=this->config_, &cm=this->cm_, uuid=this->uuid_, &stats=this->stats_, &random, &scope,
+    tls_->set([config = this->config_, &cm = this->cm_, uuid = this->uuid_,
+               &stats = this->stats_, &random, &scope,
                &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
       return ThreadLocal::ThreadLocalObjectSharedPtr(new Control(

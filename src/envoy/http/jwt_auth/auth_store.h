@@ -66,12 +66,14 @@ class JwtAuthStoreFactory : public Logger::Loggable<Logger::Id::config> {
   JwtAuthStoreFactory(const ::istio::envoy::config::filter::http::jwt_auth::
                           v2alpha1::JwtAuthentication& config,
                       Server::Configuration::FactoryContext& context)
-      : config_(std::make_shared<::istio::envoy::config::filter::http::jwt_auth::v2alpha1::JwtAuthentication>(config)), 
-      tls_(context.threadLocal().allocateSlot()) {
-    tls_->set(
-        [config=this->config_](Event::Dispatcher&) -> ThreadLocal::ThreadLocalObjectSharedPtr {
-          return std::make_shared<JwtAuthStore>(*config);
-        });
+      : config_(
+            std::make_shared<::istio::envoy::config::filter::http::jwt_auth::
+                                 v2alpha1::JwtAuthentication>(config)),
+        tls_(context.threadLocal().allocateSlot()) {
+    tls_->set([config = this->config_](Event::Dispatcher&)
+                  -> ThreadLocal::ThreadLocalObjectSharedPtr {
+      return std::make_shared<JwtAuthStore>(*config);
+    });
     ENVOY_LOG(debug, "Loaded JwtAuthConfig: {}",
               MessageUtil::getJsonStringFromMessage(*config_, true));
   }
@@ -81,7 +83,8 @@ class JwtAuthStoreFactory : public Logger::Loggable<Logger::Id::config> {
 
  private:
   // The auth config.
-  std::shared_ptr<::istio::envoy::config::filter::http::jwt_auth::v2alpha1::JwtAuthentication>
+  std::shared_ptr<::istio::envoy::config::filter::http::jwt_auth::v2alpha1::
+                      JwtAuthentication>
       config_;
   // Thread local slot to store per-thread auth store
   ThreadLocal::SlotPtr tls_;
