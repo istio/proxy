@@ -41,11 +41,12 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
     Stats::Scope& scope = context.scope();
     const LocalInfo::LocalInfo& local_info = context.localInfo();
 
-    tls_->set([this, &random, &scope,
+    tls_->set([config = this->config_, &cm = this->cm_, uuid = this->uuid_,
+               &stats = this->stats_, &random, &scope,
                &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
       return ThreadLocal::ThreadLocalObjectSharedPtr(new Control(
-          *config_, cm_, dispatcher, random, scope, stats_, uuid_, local_info));
+          *config, cm, dispatcher, random, scope, stats, uuid, local_info));
     });
   }
 
@@ -60,7 +61,7 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
   }
 
   // The config object
-  std::unique_ptr<Config> config_;
+  std::shared_ptr<Config> config_;
   // The cluster manager
   Upstream::ClusterManager& cm_;
   // the thread local slots
