@@ -20,7 +20,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 GOOGLEAPIS_SHA = "13ac2436c5e3d568bd0e938f6ed58b77a48aba15"
 GOOGLEAPIS_SHA256 = "f48956fb8c55617ed052c20884465f06b9a57b807164431185be397ea46993ca"
 
-def googleapis_repositories(bind=True):
+def googleapis_repositories(bind = True):
     GOOGLEAPIS_BUILD_FILE = """
 package(default_visibility = ["//visibility:public"])
 

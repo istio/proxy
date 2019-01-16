@@ -38,8 +38,8 @@ envoy_cc_binary(
 
 pkg_tar(
     name = "envoy_tar",
+    srcs = [":envoy"],
     extension = "tar.gz",
-    files = [":envoy"],
     mode = "0755",
     package_dir = "/usr/local/bin/",
     tags = ["manual"],

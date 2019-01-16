@@ -35,10 +35,10 @@ envoy_cc_library(
 
 envoy_cc_library(
     name = "sni_verifier_lib",
-    srcs = [ "sni_verifier.cc"],
-    hdrs = [ "sni_verifier.h"],
-    repository = "@envoy",
+    srcs = ["sni_verifier.cc"],
+    hdrs = ["sni_verifier.h"],
     external_deps = ["ssl"],
+    repository = "@envoy",
     deps = [
         "@envoy//source/exe:envoy_common_lib",
     ],
@@ -49,8 +49,8 @@ envoy_cc_test(
     srcs = ["sni_verifier_test.cc"],
     repository = "@envoy",
     deps = [
-        ":sni_verifier_lib",
         ":config_lib",
+        ":sni_verifier_lib",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/server:server_mocks",
         "@envoy//test/test_common:tls_utility_lib",
