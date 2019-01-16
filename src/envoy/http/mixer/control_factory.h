@@ -48,7 +48,7 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
     tls_->set([control_data = this->control_data_, &cm, &random, &scope,
                &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return std::make_shared<Control>(*control_data, cm, dispatcher, random,
+      return std::make_shared<Control>(control_data, cm, dispatcher, random,
                                        scope, local_info);
     });
   }

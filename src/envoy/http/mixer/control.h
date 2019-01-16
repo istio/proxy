@@ -51,7 +51,7 @@ typedef std::shared_ptr<ControlData> ControlDataSharedPtr;
 class Control final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
-  Control(ControlData& control_data, Upstream::ClusterManager& cm,
+  Control(ControlDataSharedPtr control_data, Upstream::ClusterManager& cm,
           Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random,
           Stats::Scope& scope, const LocalInfo::LocalInfo& local_info);
 
@@ -65,8 +65,8 @@ class Control final : public ThreadLocal::ThreadLocalObject {
   // Call controller to get statistics.
   bool GetStats(::istio::mixerclient::Statistics* stat);
 
-  // The mixer config.
-  const Config& config_;
+  // The control data.
+  ControlDataSharedPtr control_data_;
   // Pre-serialized attributes_for_mixer_proxy.
   std::string serialized_forward_attributes_;
   // async client factories

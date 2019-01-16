@@ -44,8 +44,8 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
                &cm = context.clusterManager(), &random, &scope,
                &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return ThreadLocal::ThreadLocalObjectSharedPtr(new Control(
-          *control_data, cm, dispatcher, random, scope, local_info));
+      return ThreadLocal::ThreadLocalObjectSharedPtr(
+          new Control(control_data, cm, dispatcher, random, scope, local_info));
     });
   }
 
