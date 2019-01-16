@@ -32,17 +32,20 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
  public:
   ControlFactory(std::unique_ptr<Config> config,
                  Server::Configuration::FactoryContext& context)
-      : control_data_(new ControlData(std::move(config), generateStats(kTcpStatsPrefix, context.scope()), context.random().uuid())),
+      : control_data_(new ControlData(
+            std::move(config), generateStats(kTcpStatsPrefix, context.scope()),
+            context.random().uuid())),
         tls_(context.threadLocal().allocateSlot()) {
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
     const LocalInfo::LocalInfo& local_info = context.localInfo();
 
-    tls_->set([control_data = this->control_data_, &cm = context.clusterManager(),
-               &random, &scope, &local_info](Event::Dispatcher& dispatcher)
+    tls_->set([control_data = this->control_data_,
+               &cm = context.clusterManager(), &random, &scope,
+               &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return ThreadLocal::ThreadLocalObjectSharedPtr(new Control(
-          control_data, cm, dispatcher, random, scope, local_info));
+      return ThreadLocal::ThreadLocalObjectSharedPtr(
+          new Control(control_data, cm, dispatcher, random, scope, local_info));
     });
   }
 

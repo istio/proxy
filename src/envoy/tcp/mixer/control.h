@@ -32,11 +32,12 @@ namespace Mixer {
 
 class ControlData {
  public:
-  ControlData(std::unique_ptr<Config> config, Utils::MixerFilterStats stats, const std::string& uuid)
-   : config_(std::move(config)), stats_(stats), uuid_(uuid) {}
+  ControlData(std::unique_ptr<Config> config, Utils::MixerFilterStats stats,
+              const std::string& uuid)
+      : config_(std::move(config)), stats_(stats), uuid_(uuid) {}
 
-  const Config& config() {  return *config_; }
-  Utils::MixerFilterStats& stats() {  return stats_; }
+  const Config& config() { return *config_; }
+  Utils::MixerFilterStats& stats() { return stats_; }
   const std::string& uuid() { return uuid_; }
 
  private:

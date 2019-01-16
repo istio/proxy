@@ -25,8 +25,8 @@ namespace Envoy {
 namespace Tcp {
 namespace Mixer {
 
-Control::Control(ControlDataSharedPtr control_data, Upstream::ClusterManager& cm,
-                 Event::Dispatcher& dispatcher,
+Control::Control(ControlDataSharedPtr control_data,
+                 Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
                  Runtime::RandomGenerator& random, Stats::Scope& scope,
                  const LocalInfo::LocalInfo& local_info)
     : config_(control_data->config()),
