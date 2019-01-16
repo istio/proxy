@@ -51,7 +51,7 @@ typedef std::shared_ptr<ControlData> ControlDataSharedPtr;
 class Control final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
-  Control(ControlDataSharedPtr control_data, Upstream::ClusterManager& cm,
+  Control(ControlData& control_data, Upstream::ClusterManager& cm,
           Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random,
           Stats::Scope& scope, const LocalInfo::LocalInfo& local_info);
 

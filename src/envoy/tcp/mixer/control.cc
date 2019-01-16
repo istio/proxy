@@ -25,20 +25,20 @@ namespace Envoy {
 namespace Tcp {
 namespace Mixer {
 
-Control::Control(ControlDataSharedPtr control_data,
-                 Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
+Control::Control(ControlData& control_data, Upstream::ClusterManager& cm,
+                 Event::Dispatcher& dispatcher,
                  Runtime::RandomGenerator& random, Stats::Scope& scope,
                  const LocalInfo::LocalInfo& local_info)
-    : config_(control_data->config()),
+    : config_(control_data.config()),
       dispatcher_(dispatcher),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
           config_.check_cluster(), cm, scope, dispatcher.timeSystem())),
       report_client_factory_(Utils::GrpcClientFactoryForCluster(
           config_.report_cluster(), cm, scope, dispatcher.timeSystem())),
-      stats_obj_(dispatcher, control_data->stats(),
+      stats_obj_(dispatcher, control_data.stats(),
                  config_.config_pb().transport().stats_update_interval(),
                  [this](Statistics* stat) -> bool { return GetStats(stat); }),
-      uuid_(control_data->uuid()) {
+      uuid_(control_data.uuid()) {
   auto& logger = Logger::Registry::getLog(Logger::Id::config);
   LocalNode local_node;
   if (!Utils::ExtractNodeInfo(local_info.node(), &local_node)) {
