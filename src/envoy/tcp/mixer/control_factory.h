@@ -32,7 +32,7 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
  public:
   ControlFactory(std::unique_ptr<Config> config,
                  Server::Configuration::FactoryContext& context)
-      : control_data_(new ControlData(
+      : control_data_(std::make_shared<ControlData>(
             std::move(config), generateStats(kTcpStatsPrefix, context.scope()),
             context.random().uuid())),
         tls_(context.threadLocal().allocateSlot()) {

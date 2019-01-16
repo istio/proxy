@@ -36,9 +36,9 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
  public:
   ControlFactory(std::unique_ptr<Config> config,
                  Server::Configuration::FactoryContext& context)
-      : control_data_(
-            new ControlData(std::move(config),
-                            generateStats(kHttpStatsPrefix, context.scope()))),
+      : control_data_(std::make_shared<ControlData>(
+            std::move(config),
+            generateStats(kHttpStatsPrefix, context.scope()))),
         tls_(context.threadLocal().allocateSlot()) {
     Upstream::ClusterManager& cm = context.clusterManager();
     Runtime::RandomGenerator& random = context.random();
