@@ -30,13 +30,29 @@ namespace Envoy {
 namespace Tcp {
 namespace Mixer {
 
+class ControlData {
+ public:
+  ControlData(std::unique_ptr<Config> config, Utils::MixerFilterStats stats, const std::string& uuid)
+   : config_(std::move(config)), stats_(stats), uuid_(uuid) {}
+
+  const Config& config() {  return *config_; }
+  Utils::MixerFilterStats& stats() {  return stats_; }
+  const std::string& uuid() { return uuid_; }
+
+ private:
+  std::unique_ptr<Config> config_;
+  Utils::MixerFilterStats stats_;
+  const std::string uuid_;
+};
+
+typedef std::shared_ptr<ControlData> ControlDataSharedPtr;
+
 class Control final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
-  Control(const Config& config, Upstream::ClusterManager& cm,
+  Control(ControlDataSharedPtr control_data, Upstream::ClusterManager& cm,
           Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random,
-          Stats::Scope& scope, Utils::MixerFilterStats& stats,
-          const std::string& uuid, const LocalInfo::LocalInfo& local_info);
+          Stats::Scope& scope, const LocalInfo::LocalInfo& local_info);
 
   ::istio::control::tcp::Controller* controller() { return controller_.get(); }
 
