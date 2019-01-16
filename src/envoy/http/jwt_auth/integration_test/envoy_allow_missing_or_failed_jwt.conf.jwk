@@ -49,7 +49,7 @@
                     {
                       "name": "envoy.file_access_log",
                       "config": {
-                        "path": "/dev/stdout"
+                        "path": "/dev/null"
                       }
                     }
                   ],
