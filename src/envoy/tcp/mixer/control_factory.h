@@ -33,20 +33,20 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
   ControlFactory(std::unique_ptr<Config> config,
                  Server::Configuration::FactoryContext& context)
       : config_(std::move(config)),
-        cm_(context.clusterManager()),
         tls_(context.threadLocal().allocateSlot()),
-        stats_(generateStats(kTcpStatsPrefix, context.scope())),
-        uuid_(context.random().uuid()) {
+        stats_(std::make_shared<Utils::MixerFilterStats>(
+            generateStats(kTcpStatsPrefix, context.scope()))),
+        uuid_(std::make_shared<const std::string>(context.random().uuid())) {
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
     const LocalInfo::LocalInfo& local_info = context.localInfo();
 
-    tls_->set([config = this->config_, &cm = this->cm_, uuid = this->uuid_,
-               &stats = this->stats_, &random, &scope,
+    tls_->set([config = this->config_, &cm = context.clusterManager(),
+               uuid = this->uuid_, &stats = this->stats_, &random, &scope,
                &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
       return ThreadLocal::ThreadLocalObjectSharedPtr(new Control(
-          *config, cm, dispatcher, random, scope, stats, uuid, local_info));
+          *config, cm, dispatcher, random, scope, *stats, *uuid, local_info));
     });
   }
 
@@ -62,14 +62,12 @@ class ControlFactory : public Logger::Loggable<Logger::Id::filter> {
 
   // The config object
   std::shared_ptr<Config> config_;
-  // The cluster manager
-  Upstream::ClusterManager& cm_;
   // the thread local slots
   ThreadLocal::SlotPtr tls_;
   // The statistics struct.
-  Utils::MixerFilterStats stats_;
+  std::shared_ptr<Utils::MixerFilterStats> stats_;
   // UUID of the Envoy TCP mixer filter.
-  const std::string uuid_;
+  std::shared_ptr<const std::string> uuid_;
 };
 
 }  // namespace Mixer
