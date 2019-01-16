@@ -36,32 +36,36 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
  public:
   ControlFactory(std::unique_ptr<Config> config,
                  Server::Configuration::FactoryContext& context)
-      : config_(std::move(config)),
-        tls_(context.threadLocal().allocateSlot()),
-        stats_{ALL_MIXER_FILTER_STATS(
-            POOL_COUNTER_PREFIX(context.scope(), kHttpStatsPrefix))} {
+      : control_data_(std::make_shared<ControlData>(
+            std::move(config),
+            generateStats(kHttpStatsPrefix, context.scope()))),
+        tls_(context.threadLocal().allocateSlot()) {
     Upstream::ClusterManager& cm = context.clusterManager();
     Runtime::RandomGenerator& random = context.random();
     Stats::Scope& scope = context.scope();
     const LocalInfo::LocalInfo& local_info = context.localInfo();
 
-    tls_->set([config = this->config_, &stats = this->stats_, &cm, &random,
-               &scope, &local_info](Event::Dispatcher& dispatcher)
+    tls_->set([control_data = this->control_data_, &cm, &random, &scope,
+               &local_info](Event::Dispatcher& dispatcher)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
-      return std::make_shared<Control>(*config, cm, dispatcher, random, scope,
-                                       stats, local_info);
+      return std::make_shared<Control>(control_data, cm, dispatcher, random,
+                                       scope, local_info);
     });
   }
 
   Control& control() { return tls_->getTyped<Control>(); }
 
  private:
-  // Own the config object.
-  std::shared_ptr<Config> config_;
+  // Generates stats struct.
+  static Utils::MixerFilterStats generateStats(const std::string& name,
+                                               Stats::Scope& scope) {
+    return {ALL_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))};
+  }
+
+  // The control data object
+  ControlDataSharedPtr control_data_;
   // Thread local slot.
   ThreadLocal::SlotPtr tls_;
-  // This stats object.
-  Utils::MixerFilterStats stats_;
 };
 
 }  // namespace Mixer

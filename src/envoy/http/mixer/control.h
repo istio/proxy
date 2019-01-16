@@ -32,14 +32,28 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
+class ControlData {
+ public:
+  ControlData(std::unique_ptr<Config> config, Utils::MixerFilterStats stats)
+      : config_(std::move(config)), stats_(stats) {}
+
+  const Config& config() { return *config_; }
+  Utils::MixerFilterStats& stats() { return stats_; }
+
+ private:
+  std::unique_ptr<Config> config_;
+  Utils::MixerFilterStats stats_;
+};
+
+typedef std::shared_ptr<ControlData> ControlDataSharedPtr;
+
 // The control object created per-thread.
 class Control final : public ThreadLocal::ThreadLocalObject {
  public:
   // The constructor.
-  Control(const Config& config, Upstream::ClusterManager& cm,
+  Control(ControlDataSharedPtr control_data, Upstream::ClusterManager& cm,
           Event::Dispatcher& dispatcher, Runtime::RandomGenerator& random,
-          Stats::Scope& scope, Utils::MixerFilterStats& stats,
-          const LocalInfo::LocalInfo& local_info);
+          Stats::Scope& scope, const LocalInfo::LocalInfo& local_info);
 
   // Get low-level controller object.
   ::istio::control::http::Controller* controller() { return controller_.get(); }
@@ -51,8 +65,8 @@ class Control final : public ThreadLocal::ThreadLocalObject {
   // Call controller to get statistics.
   bool GetStats(::istio::mixerclient::Statistics* stat);
 
-  // The mixer config.
-  const Config& config_;
+  // The control data.
+  ControlDataSharedPtr control_data_;
   // Pre-serialized attributes_for_mixer_proxy.
   std::string serialized_forward_attributes_;
   // async client factories
