@@ -23,17 +23,16 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
-Control::Control(const Config& config, Upstream::ClusterManager& cm,
+Control::Control(ControlDataSharedPtr control_data, Upstream::ClusterManager& cm,
                  Event::Dispatcher& dispatcher,
                  Runtime::RandomGenerator& random, Stats::Scope& scope,
-                 Utils::MixerFilterStats& stats,
                  const LocalInfo::LocalInfo& local_info)
-    : config_(config),
+    : config_(control_data->config()),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
           config_.check_cluster(), cm, scope, dispatcher.timeSystem())),
       report_client_factory_(Utils::GrpcClientFactoryForCluster(
           config_.report_cluster(), cm, scope, dispatcher.timeSystem())),
-      stats_obj_(dispatcher, stats,
+      stats_obj_(dispatcher, control_data->stats(),
                  config_.config_pb().transport().stats_update_interval(),
                  [this](::istio::mixerclient::Statistics* stat) -> bool {
                    return GetStats(stat);
