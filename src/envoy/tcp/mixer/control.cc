@@ -25,21 +25,24 @@ namespace Envoy {
 namespace Tcp {
 namespace Mixer {
 
-Control::Control(const Config& config, Upstream::ClusterManager& cm,
-                 Event::Dispatcher& dispatcher,
+Control::Control(ControlDataSharedPtr control_data,
+                 Upstream::ClusterManager& cm, Event::Dispatcher& dispatcher,
                  Runtime::RandomGenerator& random, Stats::Scope& scope,
-                 Utils::MixerFilterStats& stats, const std::string& uuid,
                  const LocalInfo::LocalInfo& local_info)
-    : config_(config),
+    : control_data_(control_data),
       dispatcher_(dispatcher),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
-          config_.check_cluster(), cm, scope, dispatcher.timeSystem())),
+          control_data_->config().check_cluster(), cm, scope,
+          dispatcher.timeSystem())),
       report_client_factory_(Utils::GrpcClientFactoryForCluster(
-          config_.report_cluster(), cm, scope, dispatcher.timeSystem())),
-      stats_obj_(dispatcher, stats,
-                 config_.config_pb().transport().stats_update_interval(),
-                 [this](Statistics* stat) -> bool { return GetStats(stat); }),
-      uuid_(uuid) {
+          control_data_->config().report_cluster(), cm, scope,
+          dispatcher.timeSystem())),
+      stats_obj_(dispatcher, control_data_->stats(),
+                 control_data_->config()
+                     .config_pb()
+                     .transport()
+                     .stats_update_interval(),
+                 [this](Statistics* stat) -> bool { return GetStats(stat); }) {
   auto& logger = Logger::Registry::getLog(Logger::Id::config);
   LocalNode local_node;
   if (!Utils::ExtractNodeInfo(local_info.node(), &local_node)) {
@@ -50,8 +53,8 @@ Control::Control(const Config& config, Upstream::ClusterManager& cm,
   ::istio::utils::SerializeForwardedAttributes(local_node,
                                                &serialized_forward_attributes_);
 
-  ::istio::control::tcp::Controller::Options options(config_.config_pb(),
-                                                     local_node);
+  ::istio::control::tcp::Controller::Options options(
+      control_data_->config().config_pb(), local_node);
 
   Utils::CreateEnvironment(dispatcher, random, *check_client_factory_,
                            *report_client_factory_,

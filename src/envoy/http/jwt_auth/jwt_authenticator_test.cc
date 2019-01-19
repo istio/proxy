@@ -292,11 +292,13 @@ class JwtAuthenticatorTest : public ::testing::Test {
     google::protobuf::util::Status status =
         ::google::protobuf::util::JsonStringToMessage(json_str, &config_);
     ASSERT_TRUE(status.ok());
-    store_.reset(new JwtAuthStore(config_));
+    config_ptr_ = std::make_shared<const JwtAuthentication>(config_);
+    store_.reset(new JwtAuthStore(config_ptr_));
     auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
   }
 
   JwtAuthentication config_;
+  JwtAuthenticationConstSharedPtr config_ptr_;
   std::unique_ptr<JwtAuthStore> store_;
   std::unique_ptr<JwtAuthenticator> auth_;
   NiceMock<Upstream::MockClusterManager> mock_cm_;
@@ -482,7 +484,8 @@ TEST_F(JwtAuthenticatorTest, TestForwardJwt) {
   // Confit forward_jwt flag
   config_.mutable_rules(0)->set_forward(true);
   // Re-create store and auth objects.
-  store_.reset(new JwtAuthStore(config_));
+  config_ptr_ = std::make_shared<const JwtAuthentication>(config_);
+  store_.reset(new JwtAuthStore(config_ptr_));
   auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
 
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
@@ -752,7 +755,8 @@ TEST_F(JwtAuthenticatorTest, TestInlineJwks) {
   local_jwks->set_inline_string(kPublicKey);
 
   // recreate store and auth with modified config.
-  store_.reset(new JwtAuthStore(config_));
+  config_ptr_ = std::make_shared<const JwtAuthentication>(config_);
+  store_.reset(new JwtAuthStore(config_ptr_));
   auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
 
   MockUpstream mock_pubkey(mock_cm_, "");
