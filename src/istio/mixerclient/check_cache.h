@@ -76,7 +76,7 @@ class CheckCache {
     // Check status.
     ::google::protobuf::util::Status status_;
 
-    // Route directive (if status is OK).
+    // Route directive
     ::istio::mixer::v1::RouteDirective route_directive_;
 
     // The function to set check response.
