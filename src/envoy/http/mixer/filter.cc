@@ -155,32 +155,39 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     return;
   }
 
-  if (!status.ok()) {
-    state_ = Responded;
-    int status_code = ::istio::utils::StatusHttpCode(status.error_code());
-    decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
-                                       nullptr, absl::nullopt);
-    decoder_callbacks_->streamInfo().setResponseFlag(
-        StreamInfo::ResponseFlag::UnauthorizedExternalService);
-    return;
-  }
-
-  state_ = Complete;
   route_directive_ = info.route_directive;
 
+  // set UAEX access log flag
+  if (!status.ok()) {
+    decoder_callbacks_->streamInfo().setResponseFlag(
+        StreamInfo::ResponseFlag::UnauthorizedExternalService);
+  }
+
   // handle direct response from the route directive
-  if (status.ok() && route_directive_.direct_response_code() != 0) {
-    ENVOY_LOG(debug, "Mixer::Filter direct response");
+  if (route_directive_.direct_response_code() != 0) {
+    int status_code = route_directive_.direct_response_code();
+    ENVOY_LOG(debug, "Mixer::Filter direct response {}", status_code);
     state_ = Responded;
     decoder_callbacks_->sendLocalReply(
-        Code(route_directive_.direct_response_code()),
-        route_directive_.direct_response_body(),
+        Code(status_code), route_directive_.direct_response_body(),
         [this](HeaderMap& headers) {
           UpdateHeaders(headers, route_directive_.response_header_operations());
         },
         absl::nullopt);
     return;
   }
+
+  // create a local reply for status not OK even if there is no direct response
+  if (!status.ok()) {
+    state_ = Responded;
+
+    int status_code = ::istio::utils::StatusHttpCode(status.error_code());
+    decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
+                                       nullptr, absl::nullopt);
+    return;
+  }
+
+  state_ = Complete;
 
   // handle request header operations
   if (nullptr != headers_) {
