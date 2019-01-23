@@ -165,11 +165,11 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
 
   // handle direct response from the route directive
   if (route_directive_.direct_response_code() != 0) {
-    ENVOY_LOG(debug, "Mixer::Filter direct response");
+    int status_code = route_directive_.direct_response_code();
+    ENVOY_LOG(debug, "Mixer::Filter direct response {}", status_code);
     state_ = Responded;
     decoder_callbacks_->sendLocalReply(
-        Code(route_directive_.direct_response_code()),
-        route_directive_.direct_response_body(),
+        Code(status_code), route_directive_.direct_response_body(),
         [this](HeaderMap& headers) {
           UpdateHeaders(headers, route_directive_.response_header_operations());
         },
