@@ -14,14 +14,14 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar", "pkg_deb")
+load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_deb", "pkg_tar")
 
 # TODO: decide the proper location for binaries and configs and update the file.
 # Current layout for binaries matches 0.1 and docker images.
 
 pkg_tar(
     name = "envoy-bin",
-    files = [
+    srcs = [
         "//src/envoy",
     ],
     mode = "0755",
@@ -30,7 +30,7 @@ pkg_tar(
 
 pkg_tar(
     name = "istio-conf",
-    files = [
+    srcs = [
         "envoy.json",
         "sidecar.env",
     ],
@@ -41,11 +41,11 @@ pkg_tar(
 pkg_tar(
     name = "debian-data",
     extension = "tar.gz",
+    tags = ["manual"],
     deps = [
         ":envoy-bin",
         ":istio-conf",
     ],
-    tags = ["manual"],
 )
 
 pkg_deb(

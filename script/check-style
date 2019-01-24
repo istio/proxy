@@ -33,7 +33,7 @@ if [[ ! -x "${CLANG_FORMAT}" ]]; then
     echo "Unsupported environment." ; exit 1 ;
   fi
 
-  echo "clang-bin: http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
+  echo "Downloading clang-format: http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
 
   CLANG_VERSION="$(${CLANG_FORMAT} -version | cut -d ' ' -f 3)"
   if [[ "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
@@ -42,7 +42,31 @@ if [[ ! -x "${CLANG_FORMAT}" ]]; then
     curl --silent --show-error --retry 10 \
       "http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
       | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
-    || { echo "Could not install required clang-format. Skip formating." ; exit 0 ; }
+    || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
+  fi
+fi
+
+BUILDIFIER=$(which buildifier)
+if [[ ! -x "${BUILDIFIER}" ]]; then
+  BUILDIFIER="${HOME}/bin/buildifier"
+  if [[ ! -x "${BUILDIFIER}" ]]; then
+
+    if [ "$(uname)" == "Darwin" ]; then
+      BUILDIFIER_BIN="buildifier.osx"
+    elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+      BUILDIFIER_BIN="buildifier"
+    else
+      echo "Unsupported environment." ; exit 1 ;
+    fi
+
+    echo "Downloading buildifier: https://github.com/bazelbuild/buildtools/releases/download/0.20.0/${BUILDIFIER_BIN}"
+
+    mkdir -p "${HOME}/bin"
+    curl --silent --show-error --retry 10 --location \
+      "https://github.com/bazelbuild/buildtools/releases/download/0.20.0/${BUILDIFIER_BIN}" \
+      -o "${BUILDIFIER}" \
+    || { echo "Could not install required buildifier. Skip formatting." ; exit 1 ; }
+    chmod +x ${BUILDIFIER}
   fi
 fi
 
@@ -54,10 +78,21 @@ SOURCE_FILES=($(git ls-tree -r HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))
 "${CLANG_FORMAT}" -style=Google -i "${SOURCE_FILES[@]}" \
   || { echo "Could not run clang-format." ; exit 1 ; }
 
-CHANGED_FILES=($(git diff HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))
+CHANGED_SOURCE_FILES=($(git diff HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))
 
-if [[ "${#CHANGED_FILES}" -ne 0 ]]; then
-  echo "Files not formatted: ${CHANGED_FILES[@]}"
+BAZEL_FILES=($(git ls-tree -r HEAD --name-only | grep -E '(\.bzl|BUILD|WORKSPACE)$'))
+"${BUILDIFIER}" "${BAZEL_FILES[@]}" \
+  || { echo "Could not run buildifier." ; exit 1 ; }
+
+CHANGED_BAZEL_FILES=($(git diff HEAD --name-only | grep -E '(\.bzl|BUILD|WORKSPACE)$'))
+
+if [[ "${#CHANGED_SOURCE_FILES}" -ne 0 ]]; then
+  echo -e "Source file(s) not formatted:\n${CHANGED_SOURCE_FILES[@]}"
+fi
+if [[ "${#CHANGED_BAZEL_FILES}" -ne 0 ]]; then
+  echo -e "Bazel file(s) not formatted:\n${CHANGED_BAZEL_FILES[@]}"
+fi
+if [[ "${#CHANGED_SOURCE_FILES}" -ne 0 || "${#CHANGED_BAZEL_FILES}" -ne 0 ]]; then
   exit 1
 fi
 echo "All files are properly formatted."

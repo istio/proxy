@@ -42,8 +42,8 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":tcp_cluster_rewrite_lib",
-        "//src/envoy/utils:utils_lib",
         "//external:tcp_cluster_rewrite_config_cc_proto",
+        "//src/envoy/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -53,8 +53,8 @@ envoy_cc_test(
     srcs = ["tcp_cluster_rewrite_test.cc"],
     repository = "@envoy",
     deps = [
-        ":tcp_cluster_rewrite_lib",
         ":config_lib",
+        ":tcp_cluster_rewrite_lib",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/server:server_mocks",
         "@envoy//test/mocks/stream_info:stream_info_mocks",

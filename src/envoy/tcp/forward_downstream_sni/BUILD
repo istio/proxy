@@ -32,6 +32,7 @@ envoy_cc_library(
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
+
 envoy_cc_library(
     name = "forward_downstream_sni_lib",
     srcs = ["forward_downstream_sni.cc"],
@@ -47,8 +48,8 @@ envoy_cc_test(
     srcs = ["forward_downstream_sni_test.cc"],
     repository = "@envoy",
     deps = [
-        ":forward_downstream_sni_lib",
         ":config_lib",
+        ":forward_downstream_sni_lib",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/server:server_mocks",
         "@envoy//test/mocks/stream_info:stream_info_mocks",

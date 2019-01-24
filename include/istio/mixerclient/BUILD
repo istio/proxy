@@ -17,8 +17,8 @@ licenses(["notice"])
 cc_library(
     name = "headers_lib",
     hdrs = [
-        "client.h",
         "check_response.h",
+        "client.h",
         "environment.h",
         "options.h",
         "timer.h",

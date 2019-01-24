@@ -46,8 +46,8 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":control_lib",
-        "//src/istio/utils:utils_lib",
         "//external:googletest_main",
+        "//src/istio/utils:utils_lib",
     ],
 )
 

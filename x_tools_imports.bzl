@@ -45,6 +45,7 @@ go_binary(
     ],
 )
 """
+
     # bazel rule for fixing up cfg.pb.go relies on running goimports
     # we import it here as a git repository to allow projection of a
     # simple build rule that will build the binary for usage (and avoid

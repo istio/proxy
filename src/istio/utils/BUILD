@@ -20,7 +20,7 @@ cc_library(
         "local_attributes.cc",
         "protobuf.cc",
         "status.cc",
-        "utils.cc"
+        "utils.cc",
     ],
     hdrs = [
         "utils.h",
@@ -28,10 +28,10 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":attribute_names_lib",
-        "//external:protobuf",
-        "//include/istio/utils:headers_lib",
-        "//include/istio/utils:attribute_names_header",
         "//external:mixer_client_config_cc_proto",
+        "//external:protobuf",
+        "//include/istio/utils:attribute_names_header",
+        "//include/istio/utils:headers_lib",
     ],
 )
 
