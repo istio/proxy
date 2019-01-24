@@ -129,7 +129,14 @@ class BatchCompressorImpl : public BatchCompressor {
   BatchCompressorImpl(const GlobalDictionary& global_dict)
       : global_dict_(global_dict), dict_(global_dict) {}
 
+  bool CanAdd(const Attributes& attributes) override {
+    return attributes_used_.size() <= attributes.attributes().size();
+  }
+
   void Add(const Attributes& attributes) override {
+    for (const auto& it : attributes.attributes()) {
+      attributes_used_.insert(it.first);
+    }
     CompressByDict(attributes, dict_, report_.add_attributes());
   }
 
@@ -146,12 +153,15 @@ class BatchCompressorImpl : public BatchCompressor {
   void Clear() override {
     dict_.Clear();
     report_.Clear();
+    attributes_used_.clear();
   }
 
  private:
   const GlobalDictionary& global_dict_;
   MessageDictionary dict_;
   ::istio::mixer::v1::ReportRequest report_;
+
+  std::set<std::string> attributes_used_;
 };
 
 }  // namespace

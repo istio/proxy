@@ -49,6 +49,8 @@ class BatchCompressor {
  public:
   virtual ~BatchCompressor() {}
 
+  virtual bool CanAdd(const ::istio::mixer::v1::Attributes& attributes) = 0;
+
   // Add an attribute set to the batch.
   virtual void Add(const ::istio::mixer::v1::Attributes& attributes) = 0;
 

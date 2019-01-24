@@ -42,6 +42,9 @@ ReportBatch::~ReportBatch() { Flush(); }
 void ReportBatch::Report(const Attributes& request) {
   std::lock_guard<std::mutex> lock(mutex_);
   ++total_report_calls_;
+  if !batch_compressor_->CanAdd(request) {
+    FlushWithLock();
+  }
   batch_compressor_->Add(request);
   if (batch_compressor_->size() >= options_.max_batch_entries) {
     FlushWithLock();

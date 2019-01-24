@@ -331,8 +331,7 @@ TEST_F(AttributeCompressorTest, BatchCompressTest) {
 
   // remove a key
   attributes_.mutable_attributes()->erase("response.size");
-  // Batch the third with a removed attribute.
-  batch_compressor->Add(attributes_);
+  EXPECT_FALSE(batch_compressor->CanAdd(attributes_));
 
   auto report_pb = batch_compressor->Finish();
 
