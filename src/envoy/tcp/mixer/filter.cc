@@ -61,9 +61,8 @@ void Filter::callCheck() {
   state_ = State::Calling;
   filter_callbacks_->connection().readDisable(true);
   calling_check_ = true;
-  cancel_check_ = handler_->Check(this, [this](const CheckResponseInfo &info) {
-    completeCheck(info);
-  });
+  cancel_check_ = handler_->Check(
+      this, [this](const CheckResponseInfo &info) { completeCheck(info); });
   calling_check_ = false;
 }
 
@@ -139,7 +138,7 @@ Network::FilterStatus Filter::onNewConnection() {
 }
 
 void Filter::completeCheck(const CheckResponseInfo &info) {
-  const auto& status = info.response_status;
+  const auto &status = info.response_status;
   ENVOY_LOG(debug, "Called tcp filter completeCheck: {}", status.ToString());
   cancel_check_ = nullptr;
   if (state_ == State::Closed) {
@@ -147,8 +146,8 @@ void Filter::completeCheck(const CheckResponseInfo &info) {
   }
   state_ = State::Completed;
 
-  Utils::CheckResponseInfoToStreamInfo(info, filter_callbacks_->connection().streamInfo());
-
+  Utils::CheckResponseInfoToStreamInfo(
+      info, filter_callbacks_->connection().streamInfo());
 
   filter_callbacks_->connection().readDisable(false);
 

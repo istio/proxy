@@ -19,8 +19,8 @@
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
 #include "google/protobuf/struct.pb.h"
-#include "src/envoy/tcp/mixer/control.h"
 #include "include/istio/mixerclient/check_response.h"
+#include "src/envoy/tcp/mixer/control.h"
 
 namespace Envoy {
 namespace Tcp {

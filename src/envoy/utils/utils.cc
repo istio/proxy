@@ -145,13 +145,14 @@ void CheckResponseInfoToStreamInfo(
   static std::string metadata_key = "istio.mixer";
 
   if (!check_response.response_status.ok()) {
-    stream_info.setResponseFlag(StreamInfo::ResponseFlag::UnauthorizedExternalService);
+    stream_info.setResponseFlag(
+        StreamInfo::ResponseFlag::UnauthorizedExternalService);
     ProtobufWkt::Struct metadata;
     auto fields = *metadata.mutable_fields();
-    fields["status"].set_string_value(check_response.response_status.ToString());
+    fields["status"].set_string_value(
+        check_response.response_status.ToString());
     stream_info.setDynamicMetadata(metadata_key, metadata);
   }
-
 }
 
 }  // namespace Utils
