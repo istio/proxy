@@ -53,6 +53,7 @@ bool GetRequestedServerName(const Network::Connection* connection,
 ::google::protobuf::util::Status ParseJsonMessage(
     const std::string& json, ::google::protobuf::Message* output);
 
+// Add result of check to envoy stream info to allow better logging.
 void CheckResponseInfoToStreamInfo(
     const istio::mixerclient::CheckResponseInfo& check_response,
     StreamInfo::StreamInfo& stream_info);
