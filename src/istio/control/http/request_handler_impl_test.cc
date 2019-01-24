@@ -49,7 +49,7 @@ const char kLocalInbound[] = R"(
 attributes {
   key: "destination.uid"
   value {
-    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+    string_value: "kubernetes://dest-client-84469dc8d7-jbbxt.default"
   }
 }
 )";
@@ -58,7 +58,7 @@ const char kLocalOutbound[] = R"(
 attributes {
   key: "source.uid"
   value {
-    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+    string_value: "kubernetes://src-client-84469dc8d7-jbbxt.default"
   }
 }
 )";
@@ -67,7 +67,16 @@ const char kLocalForward[] = R"(
 attributes {
   key: "source.uid"
   value {
-    string_value: "kubernetes://client-84469dc8d7-jbbxt.default"
+    string_value: "kubernetes://src-client-84469dc8d7-jbbxt.default"
+  }
+}
+)";
+
+const char kForwardedAttrib[] = R"(
+attributes {
+  key: "source.uid"
+  value {
+    string_value: "kubernetes://forwarded.default"
   }
 }
 )";
@@ -149,6 +158,10 @@ class RequestHandlerImplTest : public ::testing::Test {
     ASSERT_TRUE(
         TextFormat::ParseFromString(local_forward_attributes, &la.forward));
 
+    Attributes forwarded_attr;
+    ASSERT_TRUE(
+        TextFormat::ParseFromString(kForwardedAttrib, &forwarded_attr));
+
     mock_client_ = new ::testing::NiceMock<MockMixerClient>;
     // set LRU cache size is 3
 
@@ -219,9 +232,6 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheckReport) {
 TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
   ::testing::NiceMock<MockCheckData> mock_data;
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
-  // Report is enabled so Check Attributes are not extracted.
-  EXPECT_CALL(mock_data, GetSourceIpPort(_, _)).Times(0);
-  EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(0);
 
   // Check should NOT be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _)).Times(0);
@@ -244,6 +254,14 @@ TEST_F(RequestHandlerImplTest, TestPerRouteAttributes) {
   EXPECT_CALL(mock_data, GetSourceIpPort(_, _)).Times(1);
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
+  EXPECT_CALL(mock_data, ExtractIstioAttributes(_))
+      .WillOnce(Invoke([](std::string* data) -> bool{
+        Attributes fwd_attr;
+        //(*fwd_attr.mutable_attributes())["source.uid"].set_string_value("fwded");        
+        fwd_attr.SerializeToString(data);
+        return true;
+      }));
+
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _, _))
       .WillOnce(Invoke([](const Attributes &attributes,
@@ -253,12 +271,17 @@ TEST_F(RequestHandlerImplTest, TestPerRouteAttributes) {
         auto map = attributes.attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(map["per-route-key"].string_value(), "per-route-value");
+        std::string out_str;
+        TextFormat::PrintToString(attributes, &out_str);
+        EXPECT_EQ(out_str, "bobo");
+        EXPECT_EQ(map["source.uid"].string_value(), "fwded");
         return nullptr;
       }));
 
   ServiceConfig config;
   auto map2 = config.mutable_mixer_attributes()->mutable_attributes();
   (*map2)["per-route-key"].set_string_value("per-route-value");
+  (*map2)["context.repoter.kind"].set_string_value("inbound");
   Controller::PerRouteConfig per_route;
   ApplyPerRouteConfig(config, &per_route);
 

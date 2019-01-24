@@ -64,11 +64,12 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
                                      HeaderUpdate* header_update,
                                      TransportCheckFunc transport,
                                      CheckDoneFunc on_done) {
+  service_context_->InjectForwardedAttributes(header_update);
   // Forwarded attributes need to be stored regardless Check is needed
   // or not since the header will be updated or removed.
+  AddCheckAttributes(check_data);
   AddForwardAttributes(check_data);
   header_update->RemoveIstioAttributes();
-  service_context_->InjectForwardedAttributes(header_update);
 
   if (!service_context_->enable_mixer_check()) {
     CheckResponseInfo check_response_info;
@@ -77,7 +78,6 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
     return nullptr;
   }
 
-  AddCheckAttributes(check_data);
 
   service_context_->AddQuotas(&request_context_);
 
