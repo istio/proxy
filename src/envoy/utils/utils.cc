@@ -148,7 +148,7 @@ void CheckResponseInfoToStreamInfo(
     stream_info.setResponseFlag(
         StreamInfo::ResponseFlag::UnauthorizedExternalService);
     ProtobufWkt::Struct metadata;
-    auto fields = *metadata.mutable_fields();
+    auto& fields = *metadata.mutable_fields();
     fields["status"].set_string_value(
         check_response.response_status.ToString());
     stream_info.setDynamicMetadata(metadata_key, metadata);
