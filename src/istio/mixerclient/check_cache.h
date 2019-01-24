@@ -148,7 +148,7 @@ class CheckCache {
     std::chrono::time_point<std::chrono::system_clock> expire_time_;
     // if -1, not to check use_count.
     // if 0, cache item should not be used.
-    // use_cound is decreased by 1 for each request,
+    // use_count is decreased by 1 for each request,
     int use_count_;
   };
 
