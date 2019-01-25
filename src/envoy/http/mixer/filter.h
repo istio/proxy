@@ -60,6 +60,9 @@ class Filter : public StreamFilter,
   FilterTrailersStatus encodeTrailers(HeaderMap&) override {
     return FilterTrailersStatus::Continue;
   }
+  Http::FilterMetadataStatus encodeMetadata(MetadataMap&) override {
+    return FilterMetadataStatus::Continue;
+  }
   void setEncoderFilterCallbacks(StreamEncoderFilterCallbacks&) override {}
 
   // This is the callback function when Check is done.
