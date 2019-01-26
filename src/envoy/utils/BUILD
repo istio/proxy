@@ -89,6 +89,7 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":utils_lib",
+        "@envoy//test/mocks/stream_info:stream_info_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )

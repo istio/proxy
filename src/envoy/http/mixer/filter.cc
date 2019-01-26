@@ -157,11 +157,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
 
   route_directive_ = info.route_directive;
 
-  // set UAEX access log flag
-  if (!status.ok()) {
-    decoder_callbacks_->streamInfo().setResponseFlag(
-        StreamInfo::ResponseFlag::UnauthorizedExternalService);
-  }
+  Utils::CheckResponseInfoToStreamInfo(info, decoder_callbacks_->streamInfo());
 
   // handle direct response from the route directive
   if (route_directive_.direct_response_code() != 0) {
