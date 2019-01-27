@@ -4,13 +4,13 @@
 		"name": "ISTIO_API",
 		"repoName": "api",
 		"file": "repositories.bzl",
-		"lastStableSHA": "aec9db9d9a57faf688b4d5606fddede85d4d3855"
+		"lastStableSHA": "825044c7e15f6723d558b7b878855670663c2e1e"
 	},
 	{
 		"_comment": "",
 		"name": "ENVOY_SHA",
 		"repoName": "envoyproxy/envoy",
 		"file": "WORKSPACE",
-		"lastStableSHA": "bbf5674c2c9a901ec4e964e4dd1d845516e672b2"
+		"lastStableSHA": "b3be5713f2100ab5c40316e73ce34581245bd26a"
 	}
 ]
