@@ -139,5 +139,21 @@ Status ParseJsonMessage(const std::string& json, Message* output) {
   return ::google::protobuf::util::JsonStringToMessage(json, output, options);
 }
 
+void CheckResponseInfoToStreamInfo(
+    const istio::mixerclient::CheckResponseInfo& check_response,
+    StreamInfo::StreamInfo& stream_info) {
+  static std::string metadata_key = "istio.mixer";
+
+  if (!check_response.response_status.ok()) {
+    stream_info.setResponseFlag(
+        StreamInfo::ResponseFlag::UnauthorizedExternalService);
+    ProtobufWkt::Struct metadata;
+    auto& fields = *metadata.mutable_fields();
+    fields["status"].set_string_value(
+        check_response.response_status.ToString());
+    stream_info.setDynamicMetadata(metadata_key, metadata);
+  }
+}
+
 }  // namespace Utils
 }  // namespace Envoy

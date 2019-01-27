@@ -19,6 +19,7 @@
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
 #include "google/protobuf/struct.pb.h"
+#include "include/istio/mixerclient/check_response.h"
 #include "src/envoy/tcp/mixer/control.h"
 
 namespace Envoy {
@@ -80,7 +81,7 @@ class Filter : public Network::Filter,
   void callCheck();
 
   // Called when Check is done.
-  void completeCheck(const ::google::protobuf::util::Status &status);
+  void completeCheck(const ::istio::mixerclient::CheckResponseInfo &info);
 
   // Cancel the pending Check call.
   void cancelCheck();

@@ -15,11 +15,13 @@
 
 #include "src/envoy/utils/utils.h"
 #include "mixer/v1/config/client/client_config.pb.h"
+#include "test/mocks/stream_info/mocks.h"
 #include "test/test_common/utility.h"
 
-using Envoy::Utils::ParseJsonMessage;
-
 namespace {
+
+using Envoy::Utils::CheckResponseInfoToStreamInfo;
+using Envoy::Utils::ParseJsonMessage;
 
 TEST(UtilsTest, ParseNormalMessage) {
   std::string config_str = R"({
@@ -44,4 +46,25 @@ TEST(UtilsTest, ParseMessageWithUnknownField) {
   EXPECT_EQ(http_config.default_destination_service(),
             "service.svc.cluster.local");
 }
+
+TEST(UtilsTest, CheckResponseInfoToStreamInfo) {
+  ::istio::mixerclient::CheckResponseInfo
+      check_response;  // by default status is unknown
+  Envoy::StreamInfo::MockStreamInfo mock_stream_info;
+
+  EXPECT_CALL(
+      mock_stream_info,
+      setResponseFlag(
+          Envoy::StreamInfo::ResponseFlag::UnauthorizedExternalService));
+  EXPECT_CALL(mock_stream_info, setDynamicMetadata(_, _))
+      .WillOnce(Invoke(
+          [](const std::string& key, const Envoy::ProtobufWkt::Struct& value) {
+            EXPECT_EQ("istio.mixer", key);
+            EXPECT_EQ(1, value.fields().count("status"));
+            EXPECT_EQ("UNKNOWN", value.fields().at("status").string_value());
+          }));
+
+  CheckResponseInfoToStreamInfo(check_response, mock_stream_info);
+}
+
 }  // namespace

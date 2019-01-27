@@ -53,6 +53,6 @@ envoy_cc_test(
         ":sni_verifier_lib",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/server:server_mocks",
-        "@envoy//test/test_common:tls_utility_lib",
+        "@envoy//test/extensions/filters/listener/tls_inspector:tls_utility_lib",
     ],
 )

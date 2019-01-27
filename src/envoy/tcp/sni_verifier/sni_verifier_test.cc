@@ -21,9 +21,9 @@
 
 #include "common/buffer/buffer_impl.h"
 
+#include "test/extensions/filters/listener/tls_inspector/tls_utility.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/server/mocks.h"
-#include "test/test_common/tls_utility.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
