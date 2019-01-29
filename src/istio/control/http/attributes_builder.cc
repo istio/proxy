@@ -16,6 +16,7 @@
 #include "src/istio/control/http/attributes_builder.h"
 
 #include <set>
+
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "include/istio/utils/status.h"
@@ -130,8 +131,7 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
     return;
   }
   Attributes v2_format;
-  auto ok = v2_format.ParseFromString(forwarded_data);
-  if (ok) {
+  if (v2_format.ParseFromString(forwarded_data)) {
     request_->attributes->MergeFrom(v2_format);
     return;
   }
