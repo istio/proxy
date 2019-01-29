@@ -78,7 +78,6 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
     return nullptr;
   }
 
-
   service_context_->AddQuotas(&request_context_);
 
   return service_context_->client_context()->SendCheck(transport, on_done,
