@@ -128,6 +128,7 @@ forward_attributes {
 
 class RequestHandlerImplTest : public ::testing::Test {
  public:
+  RequestHandlerImplTest(bool outbound = false) : outbound_(outbound) {}
   void SetUp() { SetUpMockController(kDefaultClientConfig); }
 
   void SetUpMockController(const std::string &config_text) {
@@ -154,7 +155,7 @@ class RequestHandlerImplTest : public ::testing::Test {
 
     client_context_ = std::make_shared<ClientContext>(
         std::unique_ptr<MixerClient>(mock_client_), client_config_, 3, la,
-        false);
+        outbound_);
     controller_ =
         std::unique_ptr<Controller>(new ControllerImpl(client_context_));
   }
@@ -173,6 +174,14 @@ class RequestHandlerImplTest : public ::testing::Test {
   HttpClientConfig client_config_;
   ::testing::NiceMock<MockMixerClient> *mock_client_;
   std::unique_ptr<Controller> controller_;
+
+ private:
+  bool outbound_;
+};
+
+class OutboundRequestHandlerImplTest : public RequestHandlerImplTest {
+ public:
+  OutboundRequestHandlerImplTest() : RequestHandlerImplTest(true) {}
 };
 
 TEST_F(RequestHandlerImplTest, TestServiceConfigManage) {
@@ -543,7 +552,7 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
   handler->Report(&mock_check, &mock_report);
 }
 
-TEST_F(RequestHandlerImplTest, TestLocalAttributes) {
+TEST_F(OutboundRequestHandlerImplTest, TestLocalAttributes) {
   ::testing::NiceMock<MockCheckData> mock_data;
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
   // Check should be called.
@@ -553,8 +562,8 @@ TEST_F(RequestHandlerImplTest, TestLocalAttributes) {
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
-        EXPECT_EQ(map["destination.uid"].string_value(),
-                  "kubernetes://dest-client-84469dc8d7-jbbxt.default");
+        EXPECT_EQ(map["source.uid"].string_value(),
+                  "kubernetes://src-client-84469dc8d7-jbbxt.default");
         return nullptr;
       }));
 
@@ -565,15 +574,17 @@ TEST_F(RequestHandlerImplTest, TestLocalAttributes) {
   handler->Check(&mock_data, &mock_header, nullptr, nullptr);
 }
 
-TEST_F(RequestHandlerImplTest, TestLocalAttributesOverride) {
+TEST_F(OutboundRequestHandlerImplTest, TestLocalAttributesOverride) {
   ::testing::NiceMock<MockCheckData> mock_data;
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
 
   EXPECT_CALL(mock_data, ExtractIstioAttributes(_))
       .WillOnce(Invoke([](std::string *data) -> bool {
         Attributes fwd_attr;
-        (*fwd_attr.mutable_attributes())["destination.uid"].set_string_value(
+        (*fwd_attr.mutable_attributes())["source.uid"].set_string_value(
             "fwded");
+        (*fwd_attr.mutable_attributes())["destination.uid"].set_string_value(
+            "ignored");
         fwd_attr.SerializeToString(data);
         return true;
       }));
@@ -585,7 +596,8 @@ TEST_F(RequestHandlerImplTest, TestLocalAttributesOverride) {
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
         auto map = attributes.attributes();
-        EXPECT_EQ(map["destination.uid"].string_value(), "fwded");
+        EXPECT_EQ(map["source.uid"].string_value(), "fwded");
+        EXPECT_NE(map["destination.uid"].string_value(), "ignored");
         return nullptr;
       }));
 
