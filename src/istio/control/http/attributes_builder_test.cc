@@ -545,7 +545,7 @@ void SetDestinationIp(RequestContext *request, const std::string &ip) {
 
 TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   Attributes attr;
-  (*attr.mutable_attributes())["test_key"].set_string_value("test_value");
+  (*attr.mutable_attributes())["source.uid"].set_string_value("test_value");
 
   ::testing::StrictMock<MockCheckData> mock_data;
   EXPECT_CALL(mock_data, ExtractIstioAttributes(_))
