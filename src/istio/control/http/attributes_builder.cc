@@ -138,6 +138,7 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
 
   static const std::set<std::string> kForwardWhitelist = {
       utils::AttributeName::kSourceUID,
+      utils::AttributeName::kSourceNamespace,
       utils::AttributeName::kDestinationServiceName,
       utils::AttributeName::kDestinationServiceUID,
       utils::AttributeName::kDestinationServiceHost,
