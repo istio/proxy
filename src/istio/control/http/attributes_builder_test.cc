@@ -742,6 +742,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   listval.mutable_list_value()->add_values()->set_string_value("c");
   (*struct_obj.mutable_fields())["list"] = listval;
   filter_metadata["foo.bar.com"] = struct_obj;
+  filter_metadata["istio.mixer"] = struct_obj;  // to be ignored
 
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
