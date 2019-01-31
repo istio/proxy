@@ -14,23 +14,30 @@
  */
 
 #include "src/istio/control/http/client_context.h"
+#include "include/istio/utils/attribute_names.h"
 
+using ::istio::mixer::v1::Attributes_AttributeValue;
 using ::istio::mixer::v1::config::client::ServiceConfig;
+using ::istio::utils::AttributeName;
 
 namespace istio {
 namespace control {
 namespace http {
 
 ClientContext::ClientContext(const Controller::Options& data)
-    : ClientContextBase(data.config.transport(), data.env),
+    : ClientContextBase(
+          data.config.transport(), data.env,
+          ::istio::utils::IsOutbound(data.config.mixer_attributes()),
+          data.local_node),
       config_(data.config),
       service_config_cache_size_(data.service_config_cache_size) {}
 
 ClientContext::ClientContext(
     std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
     const ::istio::mixer::v1::config::client::HttpClientConfig& config,
-    int service_config_cache_size)
-    : ClientContextBase(std::move(mixer_client)),
+    int service_config_cache_size,
+    ::istio::utils::LocalAttributes& local_attributes, bool outbound)
+    : ClientContextBase(std::move(mixer_client), outbound, local_attributes),
       config_(config),
       service_config_cache_size_(service_config_cache_size) {}
 

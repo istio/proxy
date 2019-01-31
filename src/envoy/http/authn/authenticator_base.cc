@@ -29,6 +29,19 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
+namespace {
+// The default header name for an exchanged token
+static const std::string kExchangedTokenHeaderName = "ingress-authorization";
+
+// Returns whether the header for an exchanged token is found
+bool FindHeaderOfExchangedToken(const iaapi::Jwt& jwt) {
+  return (jwt.jwt_headers_size() == 1 &&
+          LowerCaseString(kExchangedTokenHeaderName) ==
+              LowerCaseString(jwt.jwt_headers(0)));
+}
+
+}  // namespace
+
 AuthenticatorBase::AuthenticatorBase(FilterContext* filter_context)
     : filter_context_(*filter_context) {}
 
@@ -68,7 +81,27 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
 bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
   std::string jwt_payload;
   if (filter_context()->getJwtPayload(jwt.issuer(), &jwt_payload)) {
-    return AuthnUtils::ProcessJwtPayload(jwt_payload, payload->mutable_jwt());
+    std::string payload_to_process = jwt_payload;
+    std::string original_payload;
+    if (FindHeaderOfExchangedToken(jwt)) {
+      if (AuthnUtils::ExtractOriginalPayload(jwt_payload, &original_payload)) {
+        // When the header of an exchanged token is found and the token
+        // contains the claim of the original payload, the original payload
+        // is extracted and used as the token payload.
+        payload_to_process = original_payload;
+      } else {
+        // When the header of an exchanged token is found but the token
+        // does not contain the claim of the original payload, it
+        // is regarded as an invalid exchanged token.
+        ENVOY_LOG(
+            error,
+            "Expect exchanged-token with original payload claim. Received: {}",
+            jwt_payload);
+        return false;
+      }
+    }
+    return AuthnUtils::ProcessJwtPayload(payload_to_process,
+                                         payload->mutable_jwt());
   }
   return false;
 }

@@ -36,6 +36,7 @@ envoy_cc_library(
     deps = [
         "//src/envoy/utils:utils_lib",
         "//src/istio/control/tcp:control_lib",
+        "//src/istio/utils:utils_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )

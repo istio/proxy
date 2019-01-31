@@ -31,6 +31,7 @@ cc_library(
         "//include/istio/utils:attribute_names_header",
         "//src/istio/control:common_lib",
         "//src/istio/utils:attribute_names_lib",
+        "//src/istio/utils:utils_lib",
     ],
 )
 
@@ -45,6 +46,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":control_lib",
+        "//src/istio/utils:utils_lib",
         "//external:googletest_main",
     ],
 )

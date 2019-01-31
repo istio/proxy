@@ -75,11 +75,10 @@ bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
   return false;
 }
 
-bool GetDestinationUID(
-    const std::shared_ptr<envoy::api::v2::core::Metadata> metadata,
-    std::string* uid) {
-  const auto filter_it = metadata->filter_metadata().find(kPerHostMetadataKey);
-  if (filter_it == metadata->filter_metadata().end()) {
+bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
+                       std::string* uid) {
+  const auto filter_it = metadata.filter_metadata().find(kPerHostMetadataKey);
+  if (filter_it == metadata.filter_metadata().end()) {
     return false;
   }
   const Struct& struct_pb = filter_it->second;
@@ -138,6 +137,22 @@ Status ParseJsonMessage(const std::string& json, Message* output) {
   ::google::protobuf::util::JsonParseOptions options;
   options.ignore_unknown_fields = true;
   return ::google::protobuf::util::JsonStringToMessage(json, output, options);
+}
+
+void CheckResponseInfoToStreamInfo(
+    const istio::mixerclient::CheckResponseInfo& check_response,
+    StreamInfo::StreamInfo& stream_info) {
+  static std::string metadata_key = "istio.mixer";
+
+  if (!check_response.response_status.ok()) {
+    stream_info.setResponseFlag(
+        StreamInfo::ResponseFlag::UnauthorizedExternalService);
+    ProtobufWkt::Struct metadata;
+    auto& fields = *metadata.mutable_fields();
+    fields["status"].set_string_value(
+        check_response.response_status.ToString());
+    stream_info.setDynamicMetadata(metadata_key, metadata);
+  }
 }
 
 }  // namespace Utils

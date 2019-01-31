@@ -31,6 +31,8 @@ using ::istio::mixerclient::QuotaOptions;
 using ::istio::mixerclient::ReportOptions;
 using ::istio::mixerclient::Statistics;
 using ::istio::mixerclient::TransportCheckFunc;
+using ::istio::utils::CreateLocalAttributes;
+using ::istio::utils::LocalNode;
 
 namespace istio {
 namespace control {
@@ -69,11 +71,14 @@ ReportOptions GetReportOptions(const TransportConfig& config) {
 }  // namespace
 
 ClientContextBase::ClientContextBase(const TransportConfig& config,
-                                     const Environment& env) {
+                                     const Environment& env, bool outbound,
+                                     const LocalNode& local_node)
+    : outbound_(outbound) {
   MixerClientOptions options(GetCheckOptions(config), GetReportOptions(config),
                              GetQuotaOptions(config));
   options.env = env;
   mixer_client_ = ::istio::mixerclient::CreateMixerClient(options);
+  CreateLocalAttributes(local_node, &local_attributes_);
 }
 
 CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
@@ -85,7 +90,7 @@ CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
     // save the check status code
     request->check_status = check_response_info.response_status;
 
-    utils::AttributesBuilder builder(&request->attributes);
+    utils::AttributesBuilder builder(request->attributes);
     builder.AddBool(utils::AttributeName::kCheckCacheHit,
                     check_response_info.is_check_cache_hit);
     builder.AddBool(utils::AttributeName::kQuotaCacheHit,
@@ -95,21 +100,36 @@ CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
 
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Check attributes: " <<
-  // request->attributes.DebugString();
-  return mixer_client_->Check(request->attributes, request->quotas, transport,
+  // request->attributes->DebugString();
+  return mixer_client_->Check(*request->attributes, request->quotas, transport,
                               local_on_done);
 }
 
 void ClientContextBase::SendReport(const RequestContext& request) {
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Report attributes: " <<
-  // request.attributes.DebugString();
-  mixer_client_->Report(request.attributes);
+  // request.attributes->DebugString();
+  mixer_client_->Report(*request.attributes);
 }
 
 void ClientContextBase::GetStatistics(Statistics* stat) const {
   mixer_client_->GetStatistics(stat);
 }
 
+void ClientContextBase::AddLocalNodeAttributes(
+    ::istio::mixer::v1::Attributes* request) const {
+  if (outbound_) {
+    request->MergeFrom(local_attributes_.outbound);
+  } else {
+    request->MergeFrom(local_attributes_.inbound);
+  }
+}
+
+void ClientContextBase::AddLocalNodeForwardAttribues(
+    ::istio::mixer::v1::Attributes* request) const {
+  if (outbound_) {
+    request->MergeFrom(local_attributes_.forward);
+  }
+}
 }  // namespace control
 }  // namespace istio

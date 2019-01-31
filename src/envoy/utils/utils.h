@@ -21,6 +21,7 @@
 #include "envoy/http/header_map.h"
 #include "envoy/network/connection.h"
 #include "google/protobuf/util/json_util.h"
+#include "include/istio/mixerclient/check_response.h"
 
 namespace Envoy {
 namespace Utils {
@@ -34,9 +35,8 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port);
 
 // Get destination.uid attribute value from metadata.
-bool GetDestinationUID(
-    const std::shared_ptr<envoy::api::v2::core::Metadata> metadata,
-    std::string* uid);
+bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
+                       std::string* uid);
 
 // Get peer or local principal URI.
 bool GetPrincipal(const Network::Connection* connection, bool peer,
@@ -52,6 +52,11 @@ bool GetRequestedServerName(const Network::Connection* connection,
 // Parse JSON string into message.
 ::google::protobuf::util::Status ParseJsonMessage(
     const std::string& json, ::google::protobuf::Message* output);
+
+// Add result of check to envoy stream info to allow better logging.
+void CheckResponseInfoToStreamInfo(
+    const istio::mixerclient::CheckResponseInfo& check_response,
+    StreamInfo::StreamInfo& stream_info);
 
 }  // namespace Utils
 }  // namespace Envoy

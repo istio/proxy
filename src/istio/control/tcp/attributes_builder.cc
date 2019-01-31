@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/control/tcp/attributes_builder.h"
+#include "src/istio/utils/utils.h"
 
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
@@ -28,8 +29,8 @@ const std::string kConnectionContinue("continue");
 const std::string kConnectionClose("close");
 }  // namespace
 
-void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
-  utils::AttributesBuilder builder(&request_->attributes);
+void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
+  utils::AttributesBuilder builder(request_->attributes);
 
   std::string source_ip;
   int source_port;
@@ -49,6 +50,10 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
     // over. https://github.com/istio/istio/issues/4689
     builder.AddString(utils::AttributeName::kSourceUser, source_user);
     builder.AddString(utils::AttributeName::kSourcePrincipal, source_user);
+    std::string source_ns("");
+    if (utils::GetSourceNamespace(source_user, &source_ns)) {
+      builder.AddString(utils::AttributeName::kSourceNamespace, source_ns);
+    }
   }
 
   std::string destination_principal;
@@ -76,15 +81,15 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData* check_data) {
 }
 
 void AttributesBuilder::ExtractReportAttributes(
-    ReportData* report_data, ReportData::ConnectionEvent event,
-    ReportData::ReportInfo* last_report_info) {
-  utils::AttributesBuilder builder(&request_->attributes);
+    ReportData *report_data, ReportData::ConnectionEvent event,
+    ReportData::ReportInfo *last_report_info) {
+  utils::AttributesBuilder builder(request_->attributes);
 
   ReportData::ReportInfo info;
   report_data->GetReportInfo(&info);
-  builder.AddInt64(utils::AttributeName::kConnectionReceviedBytes,
+  builder.AddInt64(utils::AttributeName::kConnectionReceivedBytes,
                    info.received_bytes - last_report_info->received_bytes);
-  builder.AddInt64(utils::AttributeName::kConnectionReceviedTotalBytes,
+  builder.AddInt64(utils::AttributeName::kConnectionReceivedTotalBytes,
                    info.received_bytes);
   builder.AddInt64(utils::AttributeName::kConnectionSendBytes,
                    info.send_bytes - last_report_info->send_bytes);
@@ -126,6 +131,8 @@ void AttributesBuilder::ExtractReportAttributes(
   if (report_data->GetDestinationUID(&uid)) {
     builder.AddString(utils::AttributeName::kDestinationUID, uid);
   }
+
+  builder.FlattenMapOfStringToStruct(report_data->GetDynamicFilterState());
 
   builder.AddTimestamp(utils::AttributeName::kContextTime,
                        std::chrono::system_clock::now());

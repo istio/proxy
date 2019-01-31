@@ -50,12 +50,6 @@ bazel-bin/src/envoy/envoy -c src/envoy/http/jwt_auth/sample/envoy.conf
 go run test/backend/echo/echo.go
 ```
 
-* Start (fake) issuer server.
-
-```
-go run src/envoy/http/jwt_auth/sample/fake_issuer.go src/envoy/http/jwt_auth/sample/pubkey.jwk
-```
-
 * Then issue HTTP request to proxy.
 
 With valid JWT:

@@ -41,16 +41,19 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
   EXPECT_TRUE(data.mutable_fields()->empty());
 
   result.set_principal("principal");
-  result.set_peer_user("peeruser");
+  result.set_peer_user("cluster.local/sa/peeruser/ns/abc/");
   auto origin = result.mutable_origin();
   origin->add_audiences("audiences0");
   origin->add_audiences("audiences1");
   origin->set_presenter("presenter");
-  origin->add_groups("group1");
-  origin->add_groups("group2");
-  auto claim = origin->mutable_claims();
-  (*claim)["key1"] = "value1";
-  (*claim)["key2"] = "value2";
+  (*origin->mutable_claims()->mutable_fields())["groups"]
+      .mutable_list_value()
+      ->add_values()
+      ->set_string_value("group1");
+  (*origin->mutable_claims()->mutable_fields())["groups"]
+      .mutable_list_value()
+      ->add_values()
+      ->set_string_value("group2");
   origin->set_raw_claims("rawclaim");
 
   Authentication::SaveAuthAttributesToStruct(result, data);
@@ -62,38 +65,40 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
             "principal");
   EXPECT_EQ(
       data.fields().at(istio::utils::AttributeName::kSourceUser).string_value(),
-      "peeruser");
+      "cluster.local/sa/peeruser/ns/abc/");
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kSourcePrincipal)
                 .string_value(),
-            "peeruser");
+            "cluster.local/sa/peeruser/ns/abc/");
+  EXPECT_EQ(data.fields()
+                .at(istio::utils::AttributeName::kSourceNamespace)
+                .string_value(),
+            "abc");
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kRequestAuthAudiences)
                 .string_value(),
             "audiences0");
   EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthGroups)
-                .list_value()
-                .values(0)
-                .string_value(),
-            "group1");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthGroups)
-                .list_value()
-                .values(1)
-                .string_value(),
-            "group2");
-  EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kRequestAuthPresenter)
                 .string_value(),
             "presenter");
 
-  auto actual_claim =
+  auto auth_claims =
       data.fields().at(istio::utils::AttributeName::kRequestAuthClaims);
-  EXPECT_EQ(actual_claim.struct_value().fields().at("key1").string_value(),
-            "value1");
-  EXPECT_EQ(actual_claim.struct_value().fields().at("key2").string_value(),
-            "value2");
+  EXPECT_EQ(auth_claims.struct_value()
+                .fields()
+                .at("groups")
+                .list_value()
+                .values(0)
+                .string_value(),
+            "group1");
+  EXPECT_EQ(auth_claims.struct_value()
+                .fields()
+                .at("groups")
+                .list_value()
+                .values(1)
+                .string_value(),
+            "group2");
 
   EXPECT_EQ(data.fields()
                 .at(istio::utils::AttributeName::kRequestAuthRawClaims)

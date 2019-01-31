@@ -35,7 +35,7 @@ const std::set<std::string> kGrpcContentTypes{
 }  // namespace
 
 void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
-  utils::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(request_->attributes);
   std::map<std::string, std::string> headers = check_data->GetRequestHeaders();
   builder.AddStringMap(utils::AttributeName::kRequestHeaders, headers);
 
@@ -79,7 +79,7 @@ void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
 }
 
 void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
-  utils::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(request_->attributes);
 
   std::string destination_principal;
   if (check_data->GetPrincipal(false, &destination_principal)) {
@@ -90,6 +90,7 @@ void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
       utils::AttributeName::kRequestAuthPrincipal,
       utils::AttributeName::kSourceUser,
       utils::AttributeName::kSourcePrincipal,
+      utils::AttributeName::kSourceNamespace,
       utils::AttributeName::kRequestAuthAudiences,
       utils::AttributeName::kRequestAuthPresenter,
       utils::AttributeName::kRequestAuthRawClaims,
@@ -129,18 +130,37 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
   if (!check_data->ExtractIstioAttributes(&forwarded_data)) {
     return;
   }
+
   Attributes v2_format;
-  if (v2_format.ParseFromString(forwarded_data)) {
-    request_->attributes.MergeFrom(v2_format);
+  if (!v2_format.ParseFromString(forwarded_data)) {
     return;
   }
+
+  static const std::set<std::string> kForwardWhitelist = {
+      utils::AttributeName::kSourceUID,
+      utils::AttributeName::kDestinationServiceName,
+      utils::AttributeName::kDestinationServiceUID,
+      utils::AttributeName::kDestinationServiceHost,
+      utils::AttributeName::kDestinationServiceNamespace,
+  };
+
+  auto fwd = v2_format.attributes();
+  utils::AttributesBuilder builder(request_->attributes);
+  for (const auto &attribute : kForwardWhitelist) {
+    const auto &iter = fwd.find(attribute);
+    if (iter != fwd.end() && !iter->second.string_value().empty()) {
+      builder.AddString(attribute, iter->second.string_value());
+    }
+  }
+
+  return;
 }
 
 void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
   ExtractRequestHeaderAttributes(check_data);
   ExtractAuthAttributes(check_data);
 
-  utils::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(request_->attributes);
 
   // connection remote IP is always reported as origin IP
   std::string source_ip;
@@ -180,7 +200,7 @@ void AttributesBuilder::ForwardAttributes(const Attributes &forward_attributes,
 }
 
 void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
-  utils::AttributesBuilder builder(&request_->attributes);
+  utils::AttributesBuilder builder(request_->attributes);
 
   std::string dest_ip;
   int dest_port;
@@ -251,6 +271,8 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
                         rbac_info.permissive_policy_id);
     }
   }
+
+  builder.FlattenMapOfStringToStruct(report_data->GetDynamicFilterState());
 }
 
 }  // namespace http

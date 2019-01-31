@@ -17,23 +17,31 @@ licenses(["notice"])
 cc_library(
     name = "utils_lib",
     srcs = [
+        "local_attributes.cc",
         "protobuf.cc",
         "status.cc",
+        "utils.cc"
+    ],
+    hdrs = [
+        "utils.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
+        ":attribute_names_lib",
         "//external:protobuf",
         "//include/istio/utils:headers_lib",
+        "//include/istio/utils:attribute_names_header",
+        "//external:mixer_client_config_cc_proto",
     ],
 )
 
-cc_library(
-    name = "md5_lib",
-    srcs = ["md5.cc"],
-    visibility = ["//visibility:public"],
+cc_test(
+    name = "utils_test",
+    size = "small",
+    srcs = ["utils_test.cc"],
     deps = [
-        "//external:boringssl_crypto",
-        "//include/istio/utils:headers_lib",
+        ":utils_lib",
+        "//external:googletest_main",
     ],
 )
 
@@ -49,21 +57,6 @@ cc_test(
     deps = [
         "//external:googletest_main",
         "//include/istio/utils:simple_lru_cache",
-    ],
-)
-
-cc_test(
-    name = "md5_test",
-    size = "small",
-    srcs = ["md5_test.cc"],
-    linkopts = [
-        "-lm",
-        "-lpthread",
-    ],
-    linkstatic = 1,
-    deps = [
-        ":md5_lib",
-        "//external:googletest_main",
     ],
 )
 

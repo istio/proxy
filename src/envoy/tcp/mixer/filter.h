@@ -18,6 +18,8 @@
 #include "common/common/logger.h"
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
+#include "google/protobuf/struct.pb.h"
+#include "include/istio/mixerclient/check_response.h"
 #include "src/envoy/tcp/mixer/control.h"
 
 namespace Envoy {
@@ -30,17 +32,17 @@ class Filter : public Network::Filter,
                public ::istio::control::tcp::ReportData,
                public Logger::Loggable<Logger::Id::filter> {
  public:
-  Filter(Control& control);
+  Filter(Control &control);
   ~Filter();
 
   void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override;
+      Network::ReadFilterCallbacks &callbacks) override;
 
   // Network::ReadFilter
-  Network::FilterStatus onData(Buffer::Instance& data, bool) override;
+  Network::FilterStatus onData(Buffer::Instance &data, bool) override;
 
   // Network::WriteFilter
-  Network::FilterStatus onWrite(Buffer::Instance& data, bool) override;
+  Network::FilterStatus onWrite(Buffer::Instance &data, bool) override;
   Network::FilterStatus onNewConnection() override;
 
   // Network::ConnectionCallbacks
@@ -50,17 +52,24 @@ class Filter : public Network::Filter,
   void onBelowWriteBufferLowWatermark() override {}
 
   // CheckData virtual functions.
-  bool GetSourceIpPort(std::string* str_ip, int* port) const override;
-  bool GetPrincipal(bool peer, std::string* user) const override;
+  bool GetSourceIpPort(std::string *str_ip, int *port) const override;
+  bool GetPrincipal(bool peer, std::string *user) const override;
   bool IsMutualTLS() const override;
-  bool GetRequestedServerName(std::string* name) const override;
+  bool GetRequestedServerName(std::string *name) const override;
 
   // ReportData virtual functions.
-  bool GetDestinationIpPort(std::string* str_ip, int* port) const override;
-  bool GetDestinationUID(std::string* uid) const override;
+  bool GetDestinationIpPort(std::string *str_ip, int *port) const override;
+  bool GetDestinationUID(std::string *uid) const override;
+  const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      &GetDynamicFilterState() const override;
   void GetReportInfo(
-      ::istio::control::tcp::ReportData::ReportInfo* data) const override;
+      ::istio::control::tcp::ReportData::ReportInfo *data) const override;
   std::string GetConnectionId() const override;
+
+  void cacheFilterMetadata(
+      const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+          &filter_metadata);
+  void clearCachedFilterMetadata();
 
  private:
   enum class State { NotStarted, Calling, Completed, Closed };
@@ -72,7 +81,7 @@ class Filter : public Network::Filter,
   void callCheck();
 
   // Called when Check is done.
-  void completeCheck(const ::google::protobuf::util::Status& status);
+  void completeCheck(const ::istio::mixerclient::CheckResponseInfo &info);
 
   // Cancel the pending Check call.
   void cancelCheck();
@@ -80,11 +89,11 @@ class Filter : public Network::Filter,
   // the cancel check
   istio::mixerclient::CancelFunc cancel_check_;
   // the control object.
-  Control& control_;
+  Control &control_;
   // pre-request handler
   std::unique_ptr<::istio::control::tcp::RequestHandler> handler_;
   // filter callback
-  Network::ReadFilterCallbacks* filter_callbacks_{};
+  Network::ReadFilterCallbacks *filter_callbacks_{};
   // state
   State state_{State::NotStarted};
   // calling_check
@@ -93,6 +102,9 @@ class Filter : public Network::Filter,
   uint64_t received_bytes_{};
   // send bytes
   uint64_t send_bytes_{};
+  // cached filter metadata
+  ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+      cached_filter_metadata_{};
 
   // Timer that periodically sends reports.
   Event::TimerPtr report_timer_;

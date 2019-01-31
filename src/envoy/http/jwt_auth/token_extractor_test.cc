@@ -136,22 +136,26 @@ TEST_F(JwtTokenExtractorTest, TestDefaultParamLocation) {
 }
 
 TEST_F(JwtTokenExtractorTest, TestCustomHeaderToken) {
-  auto headers = TestHeaderMapImpl{{"token-header", "jwt_token"}};
-  std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
-  extractor_->Extract(headers, &tokens);
-  EXPECT_EQ(tokens.size(), 1);
+  std::vector<std::string> headerVals = {"jwt_token", "istio jwt_token"};
 
-  EXPECT_EQ(tokens[0]->token(), "jwt_token");
+  for (const auto& v : headerVals) {
+    auto headers = TestHeaderMapImpl{{"token-header", v}};
+    std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
+    extractor_->Extract(headers, &tokens);
+    EXPECT_EQ(tokens.size(), 1);
 
-  EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer1"));
-  EXPECT_TRUE(tokens[0]->IsIssuerAllowed("issuer2"));
-  EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer3"));
-  EXPECT_TRUE(tokens[0]->IsIssuerAllowed("issuer4"));
-  EXPECT_FALSE(tokens[0]->IsIssuerAllowed("unknown_issuer"));
+    EXPECT_EQ(tokens[0]->token(), "jwt_token");
 
-  // Test token remove
-  tokens[0]->Remove(&headers);
-  EXPECT_FALSE(headers.get(LowerCaseString("token-header")));
+    EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer1"));
+    EXPECT_TRUE(tokens[0]->IsIssuerAllowed("issuer2"));
+    EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer3"));
+    EXPECT_TRUE(tokens[0]->IsIssuerAllowed("issuer4"));
+    EXPECT_FALSE(tokens[0]->IsIssuerAllowed("unknown_issuer"));
+
+    // Test token remove
+    tokens[0]->Remove(&headers);
+    EXPECT_FALSE(headers.get(LowerCaseString("token-header")));
+  }
 }
 
 TEST_F(JwtTokenExtractorTest, TestCustomParamToken) {

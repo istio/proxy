@@ -14,8 +14,11 @@
 #
 ################################################################################
 #
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+# Oct 21, 2016 (only release pre-dates sha)
+GOOGLEAPIS_SHA = "13ac2436c5e3d568bd0e938f6ed58b77a48aba15"
+GOOGLEAPIS_SHA256 = "f48956fb8c55617ed052c20884465f06b9a57b807164431185be397ea46993ca"
 
 def googleapis_repositories(bind=True):
     GOOGLEAPIS_BUILD_FILE = """
@@ -37,11 +40,12 @@ cc_proto_library(
 )
 
 """
-    new_git_repository(
+    http_archive(
         name = "com_github_googleapis_googleapis",
         build_file_content = GOOGLEAPIS_BUILD_FILE,
-        commit = "13ac2436c5e3d568bd0e938f6ed58b77a48aba15", # Oct 21, 2016 (only release pre-dates sha)
-        remote = "https://github.com/googleapis/googleapis.git",
+        strip_prefix = "googleapis-" + GOOGLEAPIS_SHA,
+        url = "https://github.com/googleapis/googleapis/archive/" + GOOGLEAPIS_SHA + ".tar.gz",
+        sha256 = GOOGLEAPIS_SHA256,
     )
 
     if bind:
