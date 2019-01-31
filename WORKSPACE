@@ -36,13 +36,11 @@ bind(
 #
 # Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/COMMIT.tar.gz && sha256sum COMMIT.tar.gz`
 ENVOY_SHA = "b3be5713f2100ab5c40316e73ce34581245bd26a"
-ENVOY_SHA256 = "79629284ae143d66b873c08883dc6382fac2e8ed45f6f3521f7e7282b6650216"
 
 http_archive(
     name = "envoy",
     strip_prefix = "envoy-" + ENVOY_SHA,
     url = "https://github.com/istio/envoy/archive/" + ENVOY_SHA + ".tar.gz",
-    sha256 = ENVOY_SHA256,
 )
 
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
@@ -60,11 +58,9 @@ go_register_toolchains()
 
 # Nov 28, 2017 (bazel 0.8.0 support)
 RULES_PROTOBUF_SHA = "563b674a2ce6650d459732932ea2bc98c9c9a9bf"
-RULES_PROTOBUF_SHA256 = "338e0d65cd709c6a6f9b5702466e641d536479be8b564d1e12a5d1de22a5cff6"
 
 http_archive(
     name = "org_pubref_rules_protobuf",
     strip_prefix = "rules_protobuf-" + RULES_PROTOBUF_SHA,
     url = "https://github.com/pubref/rules_protobuf/archive/" + RULES_PROTOBUF_SHA + ".tar.gz",
-    sha256 = RULES_PROTOBUF_SHA256,
 )
