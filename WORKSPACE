@@ -41,7 +41,7 @@ ENVOY_SHA256 = "79629284ae143d66b873c08883dc6382fac2e8ed45f6f3521f7e7282b6650216
 http_archive(
     name = "envoy",
     strip_prefix = "envoy-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".tar.gz",
+    url = "https://github.com/istio/envoy/archive/" + ENVOY_SHA + ".tar.gz",
     sha256 = ENVOY_SHA256,
 )
 
