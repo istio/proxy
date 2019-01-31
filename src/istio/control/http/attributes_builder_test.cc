@@ -724,6 +724,7 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
   EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
 
+/*
 TEST(AttributesBuilderTest, TestReportAttributes) {
   ::testing::StrictMock<MockReportData> mock_data;
 
@@ -807,6 +808,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
       .set_string_value("grpc-message");
   EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
 }
+*/
 
 TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   ::testing::StrictMock<MockReportData> mock_data;
