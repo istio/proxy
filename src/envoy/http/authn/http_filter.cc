@@ -42,26 +42,27 @@ void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
+FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
+                                                        bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
             filter_config_.DebugString());
   state_ = State::PROCESSING;
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
-      decoder_callbacks_->requestInfo().dynamicMetadata(),
+      decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
       decoder_callbacks_->connection(), filter_config_));
 
   Payload payload;
 
-  if (!filter_config_.policy().peer_is_optional() &&
-      !createPeerAuthenticator(filter_context_.get())->run(&payload)) {
+  if (!createPeerAuthenticator(filter_context_.get())->run(&payload) &&
+      !filter_config_.policy().peer_is_optional()) {
     rejectRequest("Peer authentication failed.");
     return FilterHeadersStatus::StopIteration;
   }
 
   bool success =
-      filter_config_.policy().origin_is_optional() ||
-      createOriginAuthenticator(filter_context_.get())->run(&payload);
+      createOriginAuthenticator(filter_context_.get())->run(&payload) ||
+      filter_config_.policy().origin_is_optional();
 
   if (!success) {
     rejectRequest("Origin authentication failed.");
@@ -75,7 +76,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     ProtobufWkt::Struct data;
     Utils::Authentication::SaveAuthAttributesToStruct(
         filter_context_->authenticationResult(), data);
-    decoder_callbacks_->requestInfo().setDynamicMetadata(
+    decoder_callbacks_->streamInfo().setDynamicMetadata(
         Utils::IstioFilterName::kAuthentication, data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
   }
@@ -107,8 +108,8 @@ void AuthenticationFilter::rejectRequest(const std::string& message) {
     return;
   }
   state_ = State::REJECTED;
-  decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message,
-                                     nullptr);
+  decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message, nullptr,
+                                     absl::nullopt);
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>

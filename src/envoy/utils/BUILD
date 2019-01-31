@@ -32,9 +32,11 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        ":utils_lib",
         "//include/istio/utils:attribute_names_header",
         "//src/istio/authn:context_proto_cc",
         "//src/istio/utils:attribute_names_lib",
+        "//src/istio/utils:utils_lib",
         ":filter_names_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
@@ -87,10 +89,22 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":utils_lib",
+        "@envoy//test/mocks/stream_info:stream_info_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
 
+envoy_cc_test(
+    name = "mixer_control_test",
+    srcs = [
+        "mixer_control_test.cc",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":utils_lib",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
 
 cc_library(
     name = "filter_names_lib",

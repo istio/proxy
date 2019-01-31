@@ -18,7 +18,8 @@ cc_library(
     name = "headers_lib",
     hdrs = [
         "attributes_builder.h",
-        "md5.h",
+        "concat_hash.h",
+        "local_attributes.h",
         "protobuf.h",
         "status.h",
     ],

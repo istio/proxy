@@ -15,6 +15,7 @@
 
 #include "src/envoy/tcp/mixer/filter.h"
 #include "common/common/enum_to_int.h"
+#include "extensions/filters/network/well_known_names.h"
 #include "src/envoy/utils/utils.h"
 
 using ::google::protobuf::util::Status;
@@ -24,7 +25,7 @@ namespace Envoy {
 namespace Tcp {
 namespace Mixer {
 
-Filter::Filter(Control& control) : control_(control) {
+Filter::Filter(Control &control) : control_(control) {
   ENVOY_LOG(debug, "Called tcp filter: {}", __func__);
 }
 
@@ -34,7 +35,7 @@ Filter::~Filter() {
 }
 
 void Filter::initializeReadFilterCallbacks(
-    Network::ReadFilterCallbacks& callbacks) {
+    Network::ReadFilterCallbacks &callbacks) {
   ENVOY_LOG(debug, "Called tcp filter: {}", __func__);
   filter_callbacks_ = &callbacks;
   filter_callbacks_->connection().addConnectionCallbacks(*this);
@@ -60,14 +61,38 @@ void Filter::callCheck() {
   state_ = State::Calling;
   filter_callbacks_->connection().readDisable(true);
   calling_check_ = true;
-  cancel_check_ = handler_->Check(this, [this](const CheckResponseInfo& info) {
-    completeCheck(info.response_status);
-  });
+  cancel_check_ = handler_->Check(
+      this, [this](const CheckResponseInfo &info) { completeCheck(info); });
   calling_check_ = false;
 }
 
+// TODO(venilnoronha): rewrite this to deep-clone dynamic metadata for all
+// filters.
+void Filter::cacheFilterMetadata(
+    const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+        &filter_metadata) {
+  for (auto &filter_pair : filter_metadata) {
+    if (filter_pair.first ==
+        Extensions::NetworkFilters::NetworkFilterNames::get().MongoProxy) {
+      if (cached_filter_metadata_.count(filter_pair.first) == 0) {
+        ProtobufWkt::Struct dynamic_metadata;
+        cached_filter_metadata_[filter_pair.first] = dynamic_metadata;
+      }
+
+      auto &cached_fields =
+          *cached_filter_metadata_[filter_pair.first].mutable_fields();
+      for (const auto &message_pair : filter_pair.second.fields()) {
+        cached_fields[message_pair.first].mutable_list_value()->CopyFrom(
+            message_pair.second.list_value());
+      }
+    }
+  }
+}
+
+void Filter::clearCachedFilterMetadata() { cached_filter_metadata_.clear(); }
+
 // Network::ReadFilter
-Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
+Network::FilterStatus Filter::onData(Buffer::Instance &data, bool) {
   if (state_ == State::NotStarted) {
     // By waiting to invoke the callCheck() at onData(), the call to Mixer
     // will have sufficient SSL information to fill the check Request.
@@ -78,12 +103,23 @@ Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
                  filter_callbacks_->connection(), data.length());
   received_bytes_ += data.length();
 
+  // Envoy filters like the mongo_proxy filter clear previously set dynamic
+  // metadata on each onData call. Since the Mixer filter sends metadata based
+  // on a timer event, it's possible that the previously set metadata is cleared
+  // off by the time the event is fired. Therefore, we append metadata from each
+  // onData call to a local cache and send it all at once when the timer event
+  // occurs. The local cache is cleared after reporting it on the timer event.
+  cacheFilterMetadata(filter_callbacks_->connection()
+                          .streamInfo()
+                          .dynamicMetadata()
+                          .filter_metadata());
+
   return state_ == State::Calling ? Network::FilterStatus::StopIteration
                                   : Network::FilterStatus::Continue;
 }
 
 // Network::WriteFilter
-Network::FilterStatus Filter::onWrite(Buffer::Instance& data, bool) {
+Network::FilterStatus Filter::onWrite(Buffer::Instance &data, bool) {
   ENVOY_CONN_LOG(debug, "Called tcp filter onWrite bytes: {}",
                  filter_callbacks_->connection(), data.length());
   send_bytes_ += data.length();
@@ -101,13 +137,18 @@ Network::FilterStatus Filter::onNewConnection() {
   return Network::FilterStatus::Continue;
 }
 
-void Filter::completeCheck(const Status& status) {
+void Filter::completeCheck(const CheckResponseInfo &info) {
+  const auto &status = info.response_status;
   ENVOY_LOG(debug, "Called tcp filter completeCheck: {}", status.ToString());
   cancel_check_ = nullptr;
   if (state_ == State::Closed) {
     return;
   }
   state_ = State::Completed;
+
+  Utils::CheckResponseInfoToStreamInfo(
+      info, filter_callbacks_->connection().streamInfo());
+
   filter_callbacks_->connection().readDisable(false);
 
   if (!status.ok()) {
@@ -146,11 +187,12 @@ void Filter::onEvent(Network::ConnectionEvent event) {
   }
 }
 
-bool Filter::GetSourceIpPort(std::string* str_ip, int* port) const {
+bool Filter::GetSourceIpPort(std::string *str_ip, int *port) const {
   return Utils::GetIpPort(filter_callbacks_->connection().remoteAddress()->ip(),
                           str_ip, port);
 }
-bool Filter::GetPrincipal(bool peer, std::string* user) const {
+
+bool Filter::GetPrincipal(bool peer, std::string *user) const {
   return Utils::GetPrincipal(&filter_callbacks_->connection(), peer, user);
 }
 
@@ -158,11 +200,11 @@ bool Filter::IsMutualTLS() const {
   return Utils::IsMutualTLS(&filter_callbacks_->connection());
 }
 
-bool Filter::GetRequestedServerName(std::string* name) const {
+bool Filter::GetRequestedServerName(std::string *name) const {
   return Utils::GetRequestedServerName(&filter_callbacks_->connection(), name);
 }
 
-bool Filter::GetDestinationIpPort(std::string* str_ip, int* port) const {
+bool Filter::GetDestinationIpPort(std::string *str_ip, int *port) const {
   if (filter_callbacks_->upstreamHost() &&
       filter_callbacks_->upstreamHost()->address()) {
     return Utils::GetIpPort(filter_callbacks_->upstreamHost()->address()->ip(),
@@ -170,15 +212,22 @@ bool Filter::GetDestinationIpPort(std::string* str_ip, int* port) const {
   }
   return false;
 }
-bool Filter::GetDestinationUID(std::string* uid) const {
+
+bool Filter::GetDestinationUID(std::string *uid) const {
   if (filter_callbacks_->upstreamHost()) {
     return Utils::GetDestinationUID(
-        filter_callbacks_->upstreamHost()->metadata(), uid);
+        *filter_callbacks_->upstreamHost()->metadata(), uid);
   }
   return false;
 }
+
+const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
+    &Filter::GetDynamicFilterState() const {
+  return cached_filter_metadata_;
+}
+
 void Filter::GetReportInfo(
-    ::istio::control::tcp::ReportData::ReportInfo* data) const {
+    ::istio::control::tcp::ReportData::ReportInfo *data) const {
   data->received_bytes = received_bytes_;
   data->send_bytes = send_bytes_;
   data->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -195,6 +244,7 @@ std::string Filter::GetConnectionId() const {
 
 void Filter::OnReportTimer() {
   handler_->Report(this, ConnectionEvent::CONTINUE);
+  clearCachedFilterMetadata();
   report_timer_->enableTimer(control_.config().report_interval_ms());
 }
 

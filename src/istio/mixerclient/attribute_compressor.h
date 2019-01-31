@@ -19,7 +19,7 @@
 #include <unordered_map>
 
 #include "mixer/v1/attributes.pb.h"
-#include "mixer/v1/report.pb.h"
+#include "mixer/v1/mixer.pb.h"
 
 namespace istio {
 namespace mixerclient {
@@ -50,14 +50,16 @@ class BatchCompressor {
   virtual ~BatchCompressor() {}
 
   // Add an attribute set to the batch.
-  // Return false if it could not be added for delta update.
-  virtual bool Add(const ::istio::mixer::v1::Attributes& attributes) = 0;
+  virtual void Add(const ::istio::mixer::v1::Attributes& attributes) = 0;
 
   // Get the batched size.
   virtual int size() const = 0;
 
   // Finish the batch and create the batched report request.
-  virtual std::unique_ptr<::istio::mixer::v1::ReportRequest> Finish() = 0;
+  virtual const ::istio::mixer::v1::ReportRequest& Finish() = 0;
+
+  // Reset the object data.
+  virtual void Clear() = 0;
 };
 
 // Compress attributes.

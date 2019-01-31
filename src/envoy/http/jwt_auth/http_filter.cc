@@ -63,7 +63,7 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
     Code code = Code(401);  // Unauthorized
     // return failure reason as message body
     decoder_callbacks_->sendLocalReply(code, JwtAuth::StatusToString(status),
-                                       nullptr);
+                                       nullptr, absl::nullopt);
     return;
   }
 
@@ -75,7 +75,7 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
 
 void JwtVerificationFilter::savePayload(const std::string& key,
                                         const std::string& payload) {
-  decoder_callbacks_->requestInfo().setDynamicMetadata(
+  decoder_callbacks_->streamInfo().setDynamicMetadata(
       Utils::IstioFilterName::kJwt, MessageUtil::keyValueStruct(key, payload));
 }
 

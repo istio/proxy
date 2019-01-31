@@ -18,7 +18,7 @@
 
 #include "check_response.h"
 #include "google/protobuf/stubs/status.h"
-#include "mixer/v1/service.pb.h"
+#include "mixer/v1/mixer.pb.h"
 #include "timer.h"
 
 namespace istio {

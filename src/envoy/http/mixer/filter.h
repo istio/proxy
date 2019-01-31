@@ -60,6 +60,9 @@ class Filter : public StreamFilter,
   FilterTrailersStatus encodeTrailers(HeaderMap&) override {
     return FilterTrailersStatus::Continue;
   }
+  Http::FilterMetadataStatus encodeMetadata(MetadataMap&) override {
+    return FilterMetadataStatus::Continue;
+  }
   void setEncoderFilterCallbacks(StreamEncoderFilterCallbacks&) override {}
 
   // This is the callback function when Check is done.
@@ -69,7 +72,7 @@ class Filter : public StreamFilter,
   virtual void log(const HeaderMap* request_headers,
                    const HeaderMap* response_headers,
                    const HeaderMap* response_trailers,
-                   const RequestInfo::RequestInfo& request_info) override;
+                   const StreamInfo::StreamInfo& stream_info) override;
 
  private:
   // Read per-route config.

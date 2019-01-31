@@ -34,8 +34,9 @@ class FilterContextTest : public testing::Test {
   virtual ~FilterContextTest() {}
 
   envoy::api::v2::core::Metadata metadata_;
+  Envoy::Http::TestHeaderMapImpl header_{};
   // This test suit does not use connection, so ok to use null for it.
-  FilterContext filter_context_{metadata_, nullptr,
+  FilterContext filter_context_{metadata_, header_, nullptr,
                                 istio::envoy::config::filter::http::authn::
                                     v2alpha1::FilterConfig::default_instance()};
 

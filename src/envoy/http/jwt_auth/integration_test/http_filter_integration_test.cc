@@ -36,18 +36,19 @@ class JwtVerificationFilterIntegrationTest
       public testing::TestWithParam<Network::Address::IpVersion> {
  public:
   JwtVerificationFilterIntegrationTest()
-      : HttpIntegrationTest(Http::CodecClient::Type::HTTP1, GetParam()) {}
+      : HttpIntegrationTest(Http::CodecClient::Type::HTTP1, GetParam(),
+                            realTime()) {}
   virtual ~JwtVerificationFilterIntegrationTest() {}
   /**
    * Initializer for an individual integration test.
    */
   void SetUp() override {
-    fake_upstreams_.emplace_back(
-        new FakeUpstream(0, FakeHttpConnection::Type::HTTP1, version_));
+    fake_upstreams_.emplace_back(new FakeUpstream(
+        0, FakeHttpConnection::Type::HTTP1, version_, timeSystem()));
     registerPort("upstream_0",
                  fake_upstreams_.back()->localAddress()->ip()->port());
-    fake_upstreams_.emplace_back(
-        new FakeUpstream(0, FakeHttpConnection::Type::HTTP1, version_));
+    fake_upstreams_.emplace_back(new FakeUpstream(
+        0, FakeHttpConnection::Type::HTTP1, version_, timeSystem()));
     registerPort("upstream_1",
                  fake_upstreams_.back()->localAddress()->ip()->port());
     createTestServer(ConfigPath(), {"http"});

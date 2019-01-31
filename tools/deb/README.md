@@ -66,7 +66,7 @@ to a service. The address is the ClusterIP of the service.
        },
 
  ```
-4. For every TCP service, there is a listener on SERVICE_IP:port address, with a destionatio_ip_list.
+4. For every TCP service, there is a listener on SERVICE_IP:port address, with a destination_ip_list.
 
 
 # RDS - or routes

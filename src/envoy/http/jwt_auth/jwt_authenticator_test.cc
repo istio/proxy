@@ -292,11 +292,13 @@ class JwtAuthenticatorTest : public ::testing::Test {
     google::protobuf::util::Status status =
         ::google::protobuf::util::JsonStringToMessage(json_str, &config_);
     ASSERT_TRUE(status.ok());
-    store_.reset(new JwtAuthStore(config_));
+    config_ptr_ = std::make_shared<const JwtAuthentication>(config_);
+    store_.reset(new JwtAuthStore(config_ptr_));
     auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
   }
 
   JwtAuthentication config_;
+  JwtAuthenticationConstSharedPtr config_ptr_;
   std::unique_ptr<JwtAuthStore> store_;
   std::unique_ptr<JwtAuthenticator> auth_;
   NiceMock<Upstream::MockClusterManager> mock_cm_;
@@ -310,18 +312,16 @@ class MockUpstream {
                const std::string &response_body)
       : request_(&mock_cm.async_client_), response_body_(response_body) {
     ON_CALL(mock_cm.async_client_, send_(_, _, _))
-        .WillByDefault(
-            Invoke([this](MessagePtr &, AsyncClient::Callbacks &cb,
-                          const absl::optional<std::chrono::milliseconds> &)
-                       -> AsyncClient::Request * {
-              Http::MessagePtr response_message(new ResponseMessageImpl(
-                  HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
-              response_message->body().reset(
-                  new Buffer::OwnedImpl(response_body_));
-              cb.onSuccess(std::move(response_message));
-              called_count_++;
-              return &request_;
-            }));
+        .WillByDefault(Invoke([this](MessagePtr &, AsyncClient::Callbacks &cb,
+                                     const Http::AsyncClient::RequestOptions &)
+                                  -> AsyncClient::Request * {
+          Http::MessagePtr response_message(new ResponseMessageImpl(
+              HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
+          response_message->body().reset(new Buffer::OwnedImpl(response_body_));
+          cb.onSuccess(std::move(response_message));
+          called_count_++;
+          return &request_;
+        }));
   }
 
   int called_count() const { return called_count_; }
@@ -484,7 +484,8 @@ TEST_F(JwtAuthenticatorTest, TestForwardJwt) {
   // Confit forward_jwt flag
   config_.mutable_rules(0)->set_forward(true);
   // Re-create store and auth objects.
-  store_.reset(new JwtAuthStore(config_));
+  config_ptr_ = std::make_shared<const JwtAuthentication>(config_);
+  store_.reset(new JwtAuthStore(config_ptr_));
   auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
 
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
@@ -629,7 +630,7 @@ TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
       .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
-                           const absl::optional<std::chrono::milliseconds> &)
+                           const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
         EXPECT_EQ((TestHeaderMapImpl{
                       {":method", "GET"},
@@ -665,7 +666,7 @@ TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
       .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
-                           const absl::optional<std::chrono::milliseconds> &)
+                           const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
         EXPECT_EQ((TestHeaderMapImpl{
                       {":method", "GET"},
@@ -702,7 +703,7 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
       .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
-                           const absl::optional<std::chrono::milliseconds> &)
+                           const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
         EXPECT_EQ((TestHeaderMapImpl{
                       {":method", "GET"},
@@ -754,7 +755,8 @@ TEST_F(JwtAuthenticatorTest, TestInlineJwks) {
   local_jwks->set_inline_string(kPublicKey);
 
   // recreate store and auth with modified config.
-  store_.reset(new JwtAuthStore(config_));
+  config_ptr_ = std::make_shared<const JwtAuthentication>(config_);
+  store_.reset(new JwtAuthStore(config_ptr_));
   auth_.reset(new JwtAuthenticator(mock_cm_, *store_));
 
   MockUpstream mock_pubkey(mock_cm_, "");

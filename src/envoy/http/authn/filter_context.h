@@ -19,6 +19,7 @@
 #include "common/common/logger.h"
 #include "envoy/api/v2/core/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
+#include "envoy/http/filter.h"
 #include "envoy/network/connection.h"
 #include "src/istio/authn/context.pb.h"
 
@@ -33,10 +34,11 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext(
       const envoy::api::v2::core::Metadata& dynamic_metadata,
-      const Network::Connection* connection,
+      const HeaderMap& header_map, const Network::Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
       : dynamic_metadata_(dynamic_metadata),
+        header_map_(header_map),
         connection_(connection),
         filter_config_(filter_config) {}
   virtual ~FilterContext() {}
@@ -70,10 +72,16 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // returns false.
   bool getJwtPayload(const std::string& issuer, std::string* payload) const;
 
+  const HeaderMap& headerMap() const { return header_map_; }
+
  private:
   // Const reference to request info dynamic metadata. This provides data that
   // output from other filters, e.g JWT.
   const envoy::api::v2::core::Metadata& dynamic_metadata_;
+
+  // Const reference to header map of the request. This provides request path
+  // that could be used to decide if a JWT should be used for validation.
+  const HeaderMap& header_map_;
 
   // Pointer to network connection of the request.
   const Network::Connection* connection_;

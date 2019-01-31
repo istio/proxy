@@ -17,6 +17,8 @@
 #define ISTIO_CONTROL_HTTP_CLIENT_CONTEXT_H
 
 #include "include/istio/control/http/controller.h"
+#include "include/istio/utils/local_attributes.h"
+#include "mixer/v1/attributes.pb.h"
 #include "src/istio/control/client_context_base.h"
 
 namespace istio {
@@ -33,7 +35,8 @@ class ClientContext : public ClientContextBase {
   ClientContext(
       std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client,
       const ::istio::mixer::v1::config::client::HttpClientConfig& config,
-      int service_config_cache_size);
+      int service_config_cache_size,
+      ::istio::utils::LocalAttributes& local_attributes, bool outbound);
 
   // Retrieve mixer client config.
   const ::istio::mixer::v1::config::client::HttpClientConfig& config() const {

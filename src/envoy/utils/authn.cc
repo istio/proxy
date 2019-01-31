@@ -18,6 +18,7 @@
 #include "include/istio/utils/attribute_names.h"
 #include "src/envoy/utils/filter_names.h"
 #include "src/istio/authn/context.pb.h"
+#include "src/istio/utils/utils.h"
 
 using istio::authn::Result;
 
@@ -47,6 +48,11 @@ void Authentication::SaveAuthAttributesToStruct(
                 result.peer_user());
     setKeyValue(data, istio::utils::AttributeName::kSourcePrincipal,
                 result.peer_user());
+    std::string source_ns("");
+    if (istio::utils::GetSourceNamespace(result.peer_user(), &source_ns)) {
+      setKeyValue(data, istio::utils::AttributeName::kSourceNamespace,
+                  source_ns);
+    }
   }
   if (result.has_origin()) {
     const auto& origin = result.origin();
@@ -70,13 +76,10 @@ void Authentication::SaveAuthAttributesToStruct(
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthPresenter,
                   origin.presenter());
     }
-    if (!origin.claims().empty()) {
-      auto s = (*data.mutable_fields())
-                   [istio::utils::AttributeName::kRequestAuthClaims]
-                       .mutable_struct_value();
-      for (const auto& pair : origin.claims()) {
-        setKeyValue(*s, pair.first, pair.second);
-      }
+    if (!origin.claims().fields().empty()) {
+      *((*data.mutable_fields())
+            [istio::utils::AttributeName::kRequestAuthClaims]
+                .mutable_struct_value()) = origin.claims();
     }
     if (!origin.raw_claims().empty()) {
       setKeyValue(data, istio::utils::AttributeName::kRequestAuthRawClaims,

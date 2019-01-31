@@ -44,9 +44,34 @@ const std::string kSecIstioAuthUserinfoHeaderValue =
      {
        "iss": "issuer@foo.com",
        "sub": "sub@foo.com",
-       "aud": "aud1",
+       "aud": ["aud1", "aud2"],
        "non-string-will-be-ignored": 1512754205,
        "some-other-string-claims": "some-claims-kept"
+     }
+   )";
+
+const std::string kExchangedTokenHeaderName = "ingress-authorization";
+
+const std::string kExchangedTokenPayload =
+    R"(
+     {
+       "iss": "token-service",
+       "sub": "subject",
+       "aud": ["aud1", "aud2"],
+       "original_claims": {
+         "iss": "https://accounts.example.com",
+         "sub": "example-subject",
+         "email": "user@example.com"
+       }
+     }
+   )";
+
+const std::string kExchangedTokenPayloadNoOriginalClaims =
+    R"(
+     {
+       "iss": "token-service",
+       "sub": "subject",
+       "aud": ["aud1", "aud2"]
      }
    )";
 
@@ -64,9 +89,10 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
 
   NiceMock<Envoy::Network::MockConnection> connection_{};
   NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{
-      envoy::api::v2::core::Metadata::default_instance(), &connection_,
+      envoy::api::v2::core::Metadata::default_instance(), header_, &connection_,
       istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
           default_instance()};
 
@@ -168,8 +194,9 @@ class ValidateJwtTest : public testing::Test,
   envoy::api::v2::core::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
   // NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
-  FilterContext filter_context_{dynamic_metadata_, &connection_,
+  FilterContext filter_context_{dynamic_metadata_, header_, &connection_,
                                 filter_config_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 
@@ -273,20 +300,100 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
       R"({
              "jwt": {
                "user": "issuer@foo.com/sub@foo.com",
-               "audiences": ["aud1"],
+               "audiences": ["aud1", "aud2"],
                "presenter": "",
                "claims": {
-                 "aud": "aud1",
-                 "iss": "issuer@foo.com",
-                 "sub": "sub@foo.com",
-                 "some-other-string-claims": "some-claims-kept"
+                 "aud": ["aud1", "aud2"],
+                 "iss": ["issuer@foo.com"],
+                 "some-other-string-claims": ["some-claims-kept"],
+                 "sub": ["sub@foo.com"],
                },
-               raw_claims: "\n     {\n       \"iss\": \"issuer@foo.com\",\n       \"sub\": \"sub@foo.com\",\n       \"aud\": \"aud1\",\n       \"non-string-will-be-ignored\": 1512754205,\n       \"some-other-string-claims\": \"some-claims-kept\"\n     }\n   "
+               "raw_claims": "\n     {\n       \"iss\": \"issuer@foo.com\",\n       \"sub\": \"sub@foo.com\",\n       \"aud\": [\"aud1\", \"aud2\"],\n       \"non-string-will-be-ignored\": 1512754205,\n       \"some-other-string-claims\": \"some-claims-kept\"\n     }\n   ",
              }
            }
         )",
       &expected_payload, google::protobuf::util::JsonParseOptions{});
 
+  EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+}
+
+TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
+  jwt_.set_issuer("token-service");
+  jwt_.add_jwt_headers(kExchangedTokenHeaderName);
+
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
+      .MergeFrom(
+          MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+
+  Payload expected_payload;
+  JsonStringToMessage(
+      R"({
+             "jwt": {
+               "user": "https://accounts.example.com/example-subject",
+               "claims": {
+                 "iss": ["https://accounts.example.com"],
+                 "sub": ["example-subject"],
+                 "email": ["user@example.com"]
+               },
+               "raw_claims": "{\"email\":\"user@example.com\",\"iss\":\"https://accounts.example.com\",\"sub\":\"example-subject\"}"
+             }
+           }
+        )",
+      &expected_payload, google::protobuf::util::JsonParseOptions{});
+
+  EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
+  // On different platforms, the order of fields in raw_claims may be
+  // different. E.g., on MacOs, the raw_claims in the payload_ can be:
+  // raw_claims:
+  // "{\"email\":\"user@example.com\",\"sub\":\"example-subject\",\"iss\":\"https://accounts.example.com\"}"
+  // Therefore, raw_claims is skipped to avoid a flaky test.
+  MessageDifferencer diff;
+  const google::protobuf::FieldDescriptor* field =
+      expected_payload.jwt().GetDescriptor()->FindFieldByName("raw_claims");
+  diff.IgnoreField(field);
+  EXPECT_TRUE(diff.Compare(expected_payload, *payload_));
+}
+
+TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
+  jwt_.set_issuer("token-service");
+  jwt_.add_jwt_headers(kExchangedTokenHeaderName);
+
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
+      .MergeFrom(MessageUtil::keyValueStruct(
+          "token-service", kExchangedTokenPayloadNoOriginalClaims));
+
+  // When no original_claims in an exchanged token, the token
+  // is treated as invalid.
+  EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
+}
+
+TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
+  jwt_.set_issuer("token-service");
+
+  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
+      .MergeFrom(
+          MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+
+  Payload expected_payload;
+  JsonStringToMessage(
+      R"({
+             "jwt": {
+               "user": "token-service/subject",
+               "audiences": ["aud1", "aud2"],
+               "claims": {
+                 "iss": ["token-service"],
+                 "sub": ["subject"],
+                 "aud": ["aud1", "aud2"]
+               },
+               "raw_claims":"\n     {\n       \"iss\": \"token-service\",\n       \"sub\": \"subject\",\n       \"aud\": [\"aud1\", \"aud2\"],\n       \"original_claims\": {\n         \"iss\": \"https://accounts.example.com\",\n         \"sub\": \"example-subject\",\n         \"email\": \"user@example.com\"\n       }\n     }\n   "
+             }
+           }
+        )",
+      &expected_payload, google::protobuf::util::JsonParseOptions{});
+
+  // When an exchanged token is not in the intended header, the token
+  // is treated as a normal token with its claims extracted.
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
 }

@@ -24,33 +24,11 @@
 #include "src/envoy/utils/header_update.h"
 
 using ::google::protobuf::util::Status;
-using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::mixerclient::CheckResponseInfo;
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
-namespace {
-
-// Per route opaque data for "destination.service".
-const std::string kPerRouteDestinationService("destination.service");
-// Per route opaque data name "mixer" is base64(JSON(ServiceConfig))
-const std::string kPerRouteMixer("mixer");
-// Per route opaque data name "mixer_sha" is SHA(JSON(ServiceConfig))
-const std::string kPerRouteMixerSha("mixer_sha");
-
-// Read a string value from a string map.
-bool ReadStringMap(const std::multimap<std::string, std::string>& string_map,
-                   const std::string& name, std::string* value) {
-  auto it = string_map.find(name);
-  if (it != string_map.end()) {
-    *value = it->second;
-    return true;
-  }
-  return false;
-}
-
-}  // namespace
 
 Filter::Filter(Control& control)
     : control_(control),
@@ -77,45 +55,6 @@ void Filter::ReadPerRouteConfig(
     config->service_config_id = route_cfg->hash;
     return;
   }
-
-  const auto& string_map = entry->opaqueConfig();
-  ReadStringMap(string_map, kPerRouteDestinationService,
-                &config->destination_service);
-
-  if (!ReadStringMap(string_map, kPerRouteMixerSha,
-                     &config->service_config_id) ||
-      config->service_config_id.empty()) {
-    return;
-  }
-
-  if (control_.controller()->LookupServiceConfig(config->service_config_id)) {
-    return;
-  }
-
-  std::string config_base64;
-  if (!ReadStringMap(string_map, kPerRouteMixer, &config_base64)) {
-    ENVOY_LOG(warn, "Service {} missing [mixer] per-route attribute",
-              config->destination_service);
-    return;
-  }
-  std::string config_json = Base64::decode(config_base64);
-  if (config_json.empty()) {
-    ENVOY_LOG(warn, "Service {} invalid base64 config data",
-              config->destination_service);
-    return;
-  }
-  ServiceConfig config_pb;
-  auto status = Utils::ParseJsonMessage(config_json, &config_pb);
-  if (!status.ok()) {
-    ENVOY_LOG(warn,
-              "Service {} failed to convert JSON config to protobuf, error: {}",
-              config->destination_service, status.ToString());
-    return;
-  }
-  control_.controller()->AddServiceConfig(config->service_config_id, config_pb);
-  ENVOY_LOG(info, "Service {}, config_id {}, config: {}",
-            config->destination_service, config->service_config_id,
-            MessageUtil::getJsonStringFromMessage(config_pb, true));
 }
 
 FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
@@ -132,7 +71,7 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   state_ = Calling;
   initiating_call_ = true;
   CheckData check_data(headers,
-                       decoder_callbacks_->requestInfo().dynamicMetadata(),
+                       decoder_callbacks_->streamInfo().dynamicMetadata(),
                        decoder_callbacks_->connection());
   Utils::HeaderUpdate header_update(&headers);
   headers_ = &headers;
@@ -216,33 +155,43 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     return;
   }
 
+  route_directive_ = info.route_directive;
+
+  Utils::CheckResponseInfoToStreamInfo(info, decoder_callbacks_->streamInfo());
+
+  // handle direct response from the route directive
+  if (route_directive_.direct_response_code() != 0) {
+    int status_code = route_directive_.direct_response_code();
+    ENVOY_LOG(debug, "Mixer::Filter direct response {}", status_code);
+    state_ = Responded;
+    decoder_callbacks_->sendLocalReply(
+        Code(status_code), route_directive_.direct_response_body(),
+        [this](HeaderMap& headers) {
+          UpdateHeaders(headers, route_directive_.response_header_operations());
+        },
+        absl::nullopt);
+    return;
+  }
+
+  // create a local reply for status not OK even if there is no direct response
   if (!status.ok()) {
     state_ = Responded;
+
     int status_code = ::istio::utils::StatusHttpCode(status.error_code());
     decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
-                                       nullptr);
+                                       nullptr, absl::nullopt);
     return;
   }
 
   state_ = Complete;
-  route_directive_ = info.route_directive;
-
-  // handle direct response from the route directive
-  if (status.ok() && route_directive_.direct_response_code() != 0) {
-    ENVOY_LOG(debug, "Mixer::Filter direct response");
-    state_ = Responded;
-    decoder_callbacks_->sendLocalReply(
-        Code(route_directive_.direct_response_code()),
-        route_directive_.direct_response_body(), [this](HeaderMap& headers) {
-          UpdateHeaders(headers, route_directive_.response_header_operations());
-        });
-    return;
-  }
 
   // handle request header operations
   if (nullptr != headers_) {
     UpdateHeaders(*headers_, route_directive_.request_header_operations());
     headers_ = nullptr;
+    if (route_directive_.request_header_operations().size() > 0) {
+      decoder_callbacks_->clearRouteCache();
+    }
   }
 
   if (!initiating_call_) {
@@ -266,7 +215,7 @@ void Filter::onDestroy() {
 void Filter::log(const HeaderMap* request_headers,
                  const HeaderMap* response_headers,
                  const HeaderMap* response_trailers,
-                 const RequestInfo::RequestInfo& request_info) {
+                 const StreamInfo::StreamInfo& stream_info) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
   if (!handler_) {
     if (request_headers == nullptr) {
@@ -275,17 +224,17 @@ void Filter::log(const HeaderMap* request_headers,
 
     // Here Request is rejected by other filters, Mixer filter is not called.
     ::istio::control::http::Controller::PerRouteConfig config;
-    ReadPerRouteConfig(request_info.routeEntry(), &config);
+    ReadPerRouteConfig(stream_info.routeEntry(), &config);
     handler_ = control_.controller()->CreateRequestHandler(config);
-
-    CheckData check_data(*request_headers, request_info.dynamicMetadata(),
-                         nullptr);
-    handler_->ExtractRequestAttributes(&check_data);
   }
+
+  // If check is NOT called, check attributes are not extracted.
+  CheckData check_data(*request_headers, stream_info.dynamicMetadata(),
+                       decoder_callbacks_->connection());
   // response trailer header is not counted to response total size.
-  ReportData report_data(response_headers, response_trailers, request_info,
+  ReportData report_data(response_headers, response_trailers, stream_info,
                          request_total_size_);
-  handler_->Report(&report_data);
+  handler_->Report(&check_data, &report_data);
 }
 
 }  // namespace Mixer

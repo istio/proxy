@@ -27,7 +27,14 @@ struct AttributeName {
   // https://github.com/istio/istio/issues/4689
   static const char kSourceUser[];
   static const char kSourcePrincipal[];
+  static const char kSourceNamespace[];
+  static const char kSourceUID[];
   static const char kDestinationPrincipal[];
+
+  static const char kDestinationServiceName[];
+  static const char kDestinationServiceUID[];
+  static const char kDestinationServiceHost[];
+  static const char kDestinationServiceNamespace[];
 
   static const char kRequestHeaders[];
   static const char kRequestHost[];
@@ -62,9 +69,10 @@ struct AttributeName {
   static const char kDestinationIp[];
   static const char kDestinationPort[];
   static const char kDestinationUID[];
+  static const char kDestinationNamespace[];
   static const char kOriginIp[];
-  static const char kConnectionReceviedBytes[];
-  static const char kConnectionReceviedTotalBytes[];
+  static const char kConnectionReceivedBytes[];
+  static const char kConnectionReceivedTotalBytes[];
   static const char kConnectionSendBytes[];
   static const char kConnectionSendTotalBytes[];
   static const char kConnectionDuration[];
@@ -76,8 +84,10 @@ struct AttributeName {
 
   // Context attributes
   static const char kContextProtocol[];
+  static const char kContextReporterKind[];
   static const char kContextTime[];
   static const char kContextProxyErrorCode[];
+  static const char kContextReporterUID[];
 
   // Check error code and message.
   static const char kCheckErrorCode[];
