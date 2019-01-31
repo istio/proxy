@@ -57,7 +57,6 @@ test_tsan:
 
 check:
 	@script/check-license-headers
-	@script/check-repositories
 	@script/check-style
 
 artifacts: build
