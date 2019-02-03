@@ -271,7 +271,7 @@ TEST_F(MixerClientImplTest, TestSuccessCheckAndQuota) {
                  });
   EXPECT_TRUE(check_response_info.response_status.ok());
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 100; i++) {
     // Other calls should be cached.
     CheckResponseInfo check_response_info1;
     client_->Check(request_, quotas_, empty_transport_,
@@ -282,16 +282,16 @@ TEST_F(MixerClientImplTest, TestSuccessCheckAndQuota) {
     EXPECT_TRUE(check_response_info1.response_status.ok());
   }
   // Call count should be less than 4
-  EXPECT_LE(call_counts, 3);
+  EXPECT_LE(call_counts, 16);
   Statistics stat;
   client_->GetStatistics(&stat);
-  // Less than 4 remote calls are made for prefetching, and they are
+  // Less than 16 remote calls are made for prefetching, and they are
   // non-blocking remote calls.
-  EXPECT_EQ(stat.total_check_calls, 11);
-  EXPECT_LE(stat.total_remote_check_calls, 3);
+  EXPECT_EQ(stat.total_check_calls, 101);
+  EXPECT_LE(stat.total_remote_check_calls, 16);
   EXPECT_EQ(stat.total_blocking_remote_check_calls, 1);
-  EXPECT_EQ(stat.total_quota_calls, 11);
-  EXPECT_LE(stat.total_remote_quota_calls, 3);
+  EXPECT_EQ(stat.total_quota_calls, 101);
+  EXPECT_LE(stat.total_remote_quota_calls, 16);
   EXPECT_EQ(stat.total_blocking_remote_quota_calls, 1);
 }
 

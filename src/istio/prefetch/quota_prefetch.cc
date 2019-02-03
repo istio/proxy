@@ -23,7 +23,7 @@ using namespace std::chrono;
 
 // Turn this on to debug for quota_prefetch_test.cc
 // Not for debugging in production.
-#if 0
+#if 1
 #include <iostream>
 #define LOG(t)                                                           \
   std::cerr << "("                                                       \
@@ -279,11 +279,12 @@ void QuotaPrefetchImpl::OnResponse(SlotId slot_id, int req_amount,
     }
   }
 
+  /* TODO(jblatt) why is this done?  Once it's hit all future quota checks will fail
   if (resp_amount == req_amount) {
     mode_ = OPEN;
   } else {
     mode_ = CLOSE;
-  }
+  } */
 }
 
 bool QuotaPrefetchImpl::Check(int amount, Tick t) {
