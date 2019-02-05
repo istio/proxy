@@ -36,10 +36,9 @@ class MixerClientImpl : public MixerClient {
   virtual ~MixerClientImpl();
 
   CancelFunc Check(
-      const ::istio::mixer::v1::Attributes& attributes,
-      const std::vector<::istio::quota_config::Requirement>& quotas,
+      istio::mixerclient::CheckContextSharedPtr& context,
       TransportCheckFunc transport, CheckDoneFunc on_done) override;
-  void Report(const ::istio::mixer::v1::Attributes& attributes) override;
+  void Report(SharedAttributesPtr& context) override;
 
   void GetStatistics(Statistics* stat) const override;
 
@@ -61,17 +60,59 @@ class MixerClientImpl : public MixerClient {
   std::string deduplication_id_base_;
   std::atomic<std::uint64_t> deduplication_id_;
 
-  // Atomic objects for recording statistics.
-  // check cache miss rate:
-  // total_blocking_remote_check_calls_ / total_check_calls_.
-  // quota cache miss rate:
-  // total_blocking_remote_quota_calls_ / total_quota_calls_.
-  std::atomic_int_fast64_t total_check_calls_;
-  std::atomic_int_fast64_t total_remote_check_calls_;
-  std::atomic_int_fast64_t total_blocking_remote_check_calls_;
-  std::atomic_int_fast64_t total_quota_calls_;
-  std::atomic_int_fast64_t total_remote_quota_calls_;
-  std::atomic_int_fast64_t total_blocking_remote_quota_calls_;
+  //
+  // Policy check counters.
+  //
+  // total_check_calls = total_check_hits + total_check_misses
+  // total_check_hits = total_check_hit_accepts + total_check_hit_denies
+  // total_remote_check_calls = total_check_misses
+  // total_remote_check_calls >= total_remote_check_accepts + total_remote_check_denies
+  //    ^ Transport errors are responsible for the >=
+  //
+
+  std::atomic<uint64_t> total_check_calls_{0};                     // 1.0
+  std::atomic<uint64_t> total_check_cache_hits_{0};                // 1.1
+  std::atomic<uint64_t> total_check_cache_misses_{0};              // 1.1
+  std::atomic<uint64_t> total_check_cache_hit_accepts_{0};         // 1.1
+  std::atomic<uint64_t> total_check_cache_hit_denies_{0};          // 1.1
+  std::atomic<uint64_t> total_remote_check_calls_{0};              // 1.0
+  std::atomic<uint64_t> total_remote_check_accepts_{0};            // 1.1
+  std::atomic<uint64_t> total_remote_check_denies_{0};             // 1.1
+
+  //
+  // Quota check counters
+  //
+  // total_quota_calls = total_quota_hits + total_quota_misses
+  // total_quota_hits >= total_quota_hit_accepts + total_quota_hit_denies
+  //    ^ we will neither accept or deny from the quota cache if the policy cache is missed
+  // total_remote_quota_calls = total_quota_misses + total_quota_hit_denies
+  //    ^ we will neither accept or deny from the quota cache if the policy cache is missed
+  // total_remote_quota_calls >= total_remote_quota_accepts + total_remote_quota_denies
+  //    ^ Transport errors are responsible for the >=
+  //
+
+  std::atomic<uint64_t> total_quota_calls_{0};                     // 1.0
+  std::atomic<uint64_t> total_quota_cache_hits_{0};                // 1.1
+  std::atomic<uint64_t> total_quota_cache_misses_{0};              // 1.1
+  std::atomic<uint64_t> total_quota_cache_hit_accepts_{0};         // 1.1
+  std::atomic<uint64_t> total_quota_cache_hit_denies_{0};          // 1.1
+  std::atomic<uint64_t> total_remote_quota_calls_{0};              // 1.0
+  std::atomic<uint64_t> total_remote_quota_accepts_{0};            // 1.1
+  std::atomic<uint64_t> total_remote_quota_denies_{0};             // 1.1
+  std::atomic<uint64_t> total_remote_quota_prefetch_calls_{0};     // 1.1
+
+  //
+  // Counters for upstream requests to Mixer.
+  //
+  // total_remote_calls = SUM(total_remote_call_successes, ..., total_remote_call_other_errors)
+  // Total transport errors would be (total_remote_calls - total_remote_call_successes).
+  //
+
+  std::atomic<uint64_t> total_remote_calls_{0};                     // 1.1
+  std::atomic<uint64_t> total_remote_call_successes_{0};            // 1.1
+  std::atomic<uint64_t> total_remote_call_timeouts_{0};             // 1.1
+  std::atomic<uint64_t> total_remote_call_send_errors_{0};          // 1.1
+  std::atomic<uint64_t> total_remote_call_other_errors_{0};         // 1.1
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MixerClientImpl);
 };

@@ -16,6 +16,7 @@
 #include <google/protobuf/arena.h>
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/utils/logger.h"
 
 using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
@@ -28,150 +29,257 @@ using ::istio::mixer::v1::ReportResponse;
 namespace istio {
 namespace mixerclient {
 
-MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
-    : options_(options) {
-  check_cache_ =
-      std::unique_ptr<CheckCache>(new CheckCache(options.check_options));
-  report_batch_ = std::unique_ptr<ReportBatch>(
-      new ReportBatch(options.report_options, options_.env.report_transport,
-                      options.env.timer_create_func, compressor_));
-  quota_cache_ =
-      std::unique_ptr<QuotaCache>(new QuotaCache(options.quota_options));
+static ::google::protobuf::StringPiece TIMEOUT_MESSAGE("upstream request timeout");
+static ::google::protobuf::StringPiece SEND_ERROR_MESSAGE("upstream connect error or disconnect/reset before headers");
+
+enum class TransportResult {
+  SUCCESS,           // Response received
+  SEND_ERROR,        // Cannot connect to peer or send request to peer.
+  RESPONSE_TIMEOUT,  // Connected to peer and sent request, but didn't receive a response in time.
+  OTHER              // Something else went wrong
+};
+
+TransportResult TransportStatus(const Status &status) {
+  if (status.ok()) {
+    return TransportResult::SUCCESS;
+  }
+
+  if (Code::UNAVAILABLE == status.error_code()) {
+    if (TIMEOUT_MESSAGE == status.error_message()) {
+      return TransportResult::RESPONSE_TIMEOUT;
+    }
+    if (SEND_ERROR_MESSAGE == status.error_message()) {
+      return TransportResult::SEND_ERROR;
+    }
+  }
+
+  return TransportResult::OTHER;
+}
+
+MixerClientImpl::MixerClientImpl(const MixerClientOptions &options) : options_(options) {
+  check_cache_ = std::unique_ptr<CheckCache>(new CheckCache(options.check_options));
+  report_batch_ = std::unique_ptr<ReportBatch>(new ReportBatch(options.report_options, options_.env.report_transport,
+                                                               options.env.timer_create_func, compressor_));
+  quota_cache_ = std::unique_ptr<QuotaCache>(new QuotaCache(options.quota_options));
 
   if (options_.env.uuid_generate_func) {
     deduplication_id_base_ = options_.env.uuid_generate_func();
   }
-
-  total_check_calls_ = 0;
-  total_remote_check_calls_ = 0;
-  total_blocking_remote_check_calls_ = 0;
-  total_quota_calls_ = 0;
-  total_remote_quota_calls_ = 0;
-  total_blocking_remote_quota_calls_ = 0;
 }
 
 MixerClientImpl::~MixerClientImpl() {}
 
-CancelFunc MixerClientImpl::Check(
-    const Attributes &attributes,
-    const std::vector<::istio::quota_config::Requirement> &quotas,
-    TransportCheckFunc transport, CheckDoneFunc on_done) {
+CancelFunc MixerClientImpl::Check(istio::mixerclient::CheckContextSharedPtr &context, TransportCheckFunc transport,
+                                  CheckDoneFunc on_done) {
+  //
+  // Always check the policy cache
+  //
+
+  context->checkPolicyCache(*check_cache_);
   ++total_check_calls_;
 
-  std::unique_ptr<CheckCache::CheckResult> check_result(
-      new CheckCache::CheckResult);
-  check_cache_->Check(attributes, check_result.get());
-
-  CheckResponseInfo check_response_info;
-  check_response_info.is_check_cache_hit = check_result->IsCacheHit();
-  check_response_info.response_status = check_result->status();
-  check_response_info.route_directive = check_result->route_directive();
-
-  if (check_result->IsCacheHit() && !check_result->status().ok()) {
-    on_done(check_response_info);
-    return nullptr;
+  if (MIXER_DEBUG_ENABLED) {
+    MIXER_DEBUG("Policy cache hit=%s, status=%s", context->policyCacheHit() ? "true" : "false",
+                context->policyStatus().ToString().c_str());
   }
 
-  if (!quotas.empty()) {
-    ++total_quota_calls_;
-  }
-  std::unique_ptr<QuotaCache::CheckResult> quota_result(
-      new QuotaCache::CheckResult);
-  // Only use quota cache if Check is using cache with OK status.
-  // Otherwise, a remote Check call may be rejected, but quota amounts were
-  // substracted from quota cache already.
-  quota_cache_->Check(attributes, quotas, check_result->IsCacheHit(),
-                      quota_result.get());
+  if (context->policyCacheHit()) {
+    ++total_check_cache_hits_;
 
-  auto arena = new google::protobuf::Arena;
-  CheckRequest *request =
-      google::protobuf::Arena::CreateMessage<CheckRequest>(arena);
-  bool quota_call = quota_result->BuildRequest(request);
-  check_response_info.is_quota_cache_hit = quota_result->IsCacheHit();
-  check_response_info.response_status = quota_result->status();
-  if (check_result->IsCacheHit() && quota_result->IsCacheHit()) {
-    on_done(check_response_info);
-    on_done = nullptr;
-    if (!quota_call) {
-      delete arena;
+    if (!context->policyStatus().ok()) {
+      //
+      // If the policy cache denies the request, immediately fail the request
+      //
+      ++total_check_cache_hit_denies_;
+      context->setFinalStatus(context->policyStatus());
+      on_done(*context);
       return nullptr;
+    } else {
+      //
+      // If policy cache accepts the request and a quota check is not required, immediately accept the request.
+      //
+      ++total_check_cache_hit_accepts_;
+      if (!context->quotaCheckRequired()) {
+        context->setFinalStatus(Status::OK);
+        on_done(*context);
+        return nullptr;
+      }
+    }
+  } else {
+    ++total_check_cache_misses_;
+  }
+
+  if (context->quotaCheckRequired()) {
+    ++total_quota_calls_;
+
+    context->checkQuotaCache(*quota_cache_);
+
+    if (MIXER_DEBUG_ENABLED) {
+      MIXER_DEBUG("Quota cache hit=%s, status=%s, remote_call=%s", context->quotaCacheHit() ? "true" : "false",
+                  context->quotaStatus().ToString().c_str(), context->remoteQuotaRequestRequired() ? "true" : "false");
+    }
+
+    // TODO(jblatt) before PR rework counters so quota check is sent to mixer when policy cache is missed
+
+    if (context->quotaCacheHit()) {
+      ++total_quota_cache_hits_;
+      if (context->quotaStatus().ok()) {
+        ++total_quota_cache_hit_accepts_;
+      } else {
+        ++total_quota_cache_hit_denies_;
+      }
+
+      if (context->policyCacheHit()) {
+        //
+        // If both policy and quota caches are hit, we can call the completion handler now.  However sometimes
+        // the quota cache's prefetch implementation will still need to send a request to the Mixer server in the
+        // background.
+        //
+        context->setFinalStatus(context->quotaStatus());
+        on_done(*context);
+        on_done = nullptr;
+        if (!context->remoteQuotaRequestRequired()) {
+          return nullptr;
+        } else {
+          ++total_remote_quota_prefetch_calls_;
+        }
+      }
+    } else {
+      ++total_quota_cache_misses_;
     }
   }
 
-  compressor_.Compress(attributes, request->mutable_attributes());
-  request->set_global_word_count(compressor_.global_word_count());
-  request->set_deduplication_id(deduplication_id_base_ +
-                                std::to_string(deduplication_id_.fetch_add(1)));
+  // TODO(jblatt) mjog thinks this is a big CPU hog.  Look into it.
+  context->compressRequest(compressor_, deduplication_id_base_ + std::to_string(deduplication_id_.fetch_add(1)));
 
-  // Need to make a copy for processing the response for check cache.
-  Attributes *attributes_copy =
-      google::protobuf::Arena::CreateMessage<Attributes>(arena);
-  CheckResponse *response =
-      google::protobuf::Arena::CreateMessage<CheckResponse>(arena);
-  *attributes_copy = attributes;
-  // Lambda capture could not pass unique_ptr, use raw pointer.
-  CheckCache::CheckResult *raw_check_result = check_result.release();
-  QuotaCache::CheckResult *raw_quota_result = quota_result.release();
   if (!transport) {
     transport = options_.env.check_transport;
   }
-  // We are going to make a remote call now.
-  ++total_remote_check_calls_;
-  if (!quotas.empty()) {
+
+  //
+  // Classify and track reason for remote request
+  //
+
+  ++total_remote_calls_;
+
+  if (!context->policyCacheHit()) {
+    ++total_remote_check_calls_;
+  }
+
+  if (context->remoteQuotaRequestRequired()) {
     ++total_remote_quota_calls_;
   }
-  if (on_done) {
-    ++total_blocking_remote_check_calls_;
-    if (!quotas.empty()) {
-      ++total_blocking_remote_quota_calls_;
+
+  return transport(context->request(), context->response(), [this, context = context, on_done](const Status &status) {
+    //
+    // Classify and track transport errors
+    //
+
+    TransportResult result = TransportStatus(status);
+
+    switch (result) {
+      case TransportResult::SUCCESS:
+        ++total_remote_call_successes_;
+        break;
+      case TransportResult::RESPONSE_TIMEOUT:
+        ++total_remote_call_timeouts_;
+        break;
+      case TransportResult::SEND_ERROR:
+        ++total_remote_call_send_errors_;
+        break;
+      case TransportResult::OTHER:
+        ++total_remote_call_other_errors_;
+        break;
     }
-  }
 
-  return transport(
-      *request, response,
-      [this, attributes_copy, response, raw_check_result, raw_quota_result,
-       on_done, arena](const Status &status) {
-        raw_check_result->SetResponse(status, *attributes_copy, *response);
-        raw_quota_result->SetResponse(status, *attributes_copy, *response);
-        CheckResponseInfo check_response_info;
-        if (on_done) {
-          if (!raw_check_result->status().ok()) {
-            check_response_info.response_status = raw_check_result->status();
-          } else {
-            check_response_info.response_status = raw_quota_result->status();
-          }
-          check_response_info.route_directive =
-              raw_check_result->route_directive();
-          on_done(check_response_info);
-        }
-        delete raw_check_result;
-        delete raw_quota_result;
-        delete arena;
+    // TODO add log statements before PR
 
-        if (utils::InvalidDictionaryStatus(status)) {
-          compressor_.ShrinkGlobalDictionary();
-        }
-      });
+    //
+    // Update caches.  This has the side-effect of updating status, so track those too
+    //
+
+    if (!context->policyCacheHit()) {
+      context->updatePolicyCache(status, *context->response());
+
+      if (context->policyStatus().ok()) {
+        ++total_remote_check_accepts_;
+      } else {
+        ++total_remote_check_denies_;
+      }
+    }
+
+    if (context->quotaCheckRequired()) {
+      context->updateQuotaCache(status, *context->response());
+
+      if (context->quotaStatus().ok()) {
+        ++total_remote_quota_accepts_;
+      } else {
+        ++total_remote_quota_denies_;
+      }
+    }
+
+    //
+    // Determine final status for Filter::completeCheck().  This will send an error response to the
+    // downstream client if the final status is not Status::OK
+    //
+
+    if (result != TransportResult::SUCCESS) {
+      if (context->failOpen()) {
+        context->setFinalStatus(Status::OK);
+      } else {
+        context->setFinalStatus(status);
+      }
+    } else if (!context->quotaCheckRequired()) {
+      context->setFinalStatus(context->policyStatus());
+    } else if (!context->policyStatus().ok()) {
+      context->setFinalStatus(context->policyStatus());
+    } else {
+      context->setFinalStatus(context->quotaStatus());
+    }
+
+    if (on_done) {
+      on_done(*context);
+    }
+
+    if (utils::InvalidDictionaryStatus(status)) {
+      // TODO(jblatt) verify this is threadsafe
+      compressor_.ShrinkGlobalDictionary();
+    }
+  });
 }
 
-void MixerClientImpl::Report(const Attributes &attributes) {
-  report_batch_->Report(attributes);
-}
+void MixerClientImpl::Report(istio::mixerclient::SharedAttributesPtr &context) { report_batch_->Report(context); }
 
 void MixerClientImpl::GetStatistics(Statistics *stat) const {
-  stat->total_check_calls = total_check_calls_;
-  stat->total_remote_check_calls = total_remote_check_calls_;
-  stat->total_blocking_remote_check_calls = total_blocking_remote_check_calls_;
-  stat->total_quota_calls = total_quota_calls_;
-  stat->total_remote_quota_calls = total_remote_quota_calls_;
-  stat->total_blocking_remote_quota_calls = total_blocking_remote_quota_calls_;
-  stat->total_report_calls = report_batch_->total_report_calls();
-  stat->total_remote_report_calls = report_batch_->total_remote_report_calls();
+  stat->total_check_calls_ = total_check_calls_;
+  stat->total_check_cache_hits_ = total_check_cache_hits_;
+  stat->total_check_cache_misses_ = total_check_cache_misses_;
+  stat->total_check_cache_hit_accepts_ = total_check_cache_hit_accepts_;
+  stat->total_check_cache_hit_denies_ = total_check_cache_hit_denies_;
+  stat->total_remote_check_calls_ = total_remote_check_calls_;
+  stat->total_remote_check_accepts_ = total_remote_check_accepts_;
+  stat->total_remote_check_denies_ = total_remote_check_denies_;
+  stat->total_quota_calls_ = total_quota_calls_;
+  stat->total_quota_cache_hits_ = total_quota_cache_hits_;
+  stat->total_quota_cache_misses_ = total_quota_cache_misses_;
+  stat->total_quota_cache_hit_accepts_ = total_quota_cache_hit_accepts_;
+  stat->total_quota_cache_hit_denies_ = total_quota_cache_hit_denies_;
+  stat->total_remote_quota_calls_ = total_remote_quota_calls_;
+  stat->total_remote_quota_accepts_ = total_remote_quota_accepts_;
+  stat->total_remote_quota_denies_ = total_remote_quota_denies_;
+  stat->total_remote_quota_prefetch_calls_ = total_remote_quota_prefetch_calls_;
+  stat->total_remote_calls_ = total_remote_calls_;
+  stat->total_remote_call_successes_ = total_remote_call_successes_;
+  stat->total_remote_call_timeouts_ = total_remote_call_timeouts_;
+  stat->total_remote_call_send_errors_ = total_remote_call_send_errors_;
+  stat->total_remote_call_other_errors_ = total_remote_call_other_errors_;
+
+  stat->total_report_calls_ = report_batch_->total_report_calls();
+  stat->total_remote_report_calls_ = report_batch_->total_remote_report_calls();
 }
 
 // Creates a MixerClient object.
-std::unique_ptr<MixerClient> CreateMixerClient(
-    const MixerClientOptions &options) {
+std::unique_ptr<MixerClient> CreateMixerClient(const MixerClientOptions &options) {
   return std::unique_ptr<MixerClient>(new MixerClientImpl(options));
 }
 

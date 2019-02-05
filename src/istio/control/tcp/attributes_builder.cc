@@ -15,7 +15,7 @@
 
 #include "src/istio/control/tcp/attributes_builder.h"
 #include "src/istio/utils/utils.h"
-
+#include "google/protobuf/stubs/status.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
 
@@ -30,7 +30,7 @@ const std::string kConnectionClose("close");
 }  // namespace
 
 void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
-  utils::AttributesBuilder builder(request_->attributes);
+  utils::AttributesBuilder builder(attributes_);
 
   std::string source_ip;
   int source_port;
@@ -81,9 +81,10 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
 }
 
 void AttributesBuilder::ExtractReportAttributes(
+    const ::google::protobuf::util::Status& policy_check_status,
     ReportData *report_data, ReportData::ConnectionEvent event,
     ReportData::ReportInfo *last_report_info) {
-  utils::AttributesBuilder builder(request_->attributes);
+  utils::AttributesBuilder builder(attributes_);
 
   ReportData::ReportInfo info;
   report_data->GetReportInfo(&info);
@@ -99,11 +100,11 @@ void AttributesBuilder::ExtractReportAttributes(
   if (event == ReportData::ConnectionEvent::CLOSE) {
     builder.AddDuration(utils::AttributeName::kConnectionDuration,
                         info.duration);
-    if (!request_->check_status.ok()) {
+    if (!policy_check_status.ok()) {
       builder.AddInt64(utils::AttributeName::kCheckErrorCode,
-                       request_->check_status.error_code());
+                       policy_check_status.error_code());
       builder.AddString(utils::AttributeName::kCheckErrorMessage,
-                        request_->check_status.ToString());
+                        policy_check_status.ToString());
     }
     builder.AddString(utils::AttributeName::kConnectionEvent, kConnectionClose);
   } else if (event == ReportData::ConnectionEvent::OPEN) {

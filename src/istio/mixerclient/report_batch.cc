@@ -15,6 +15,7 @@
 
 #include "src/istio/mixerclient/report_batch.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/utils/logger.h"
 
 using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
@@ -39,10 +40,10 @@ ReportBatch::ReportBatch(const ReportOptions& options,
 
 ReportBatch::~ReportBatch() { Flush(); }
 
-void ReportBatch::Report(const Attributes& request) {
+void ReportBatch::Report(istio::mixerclient::SharedAttributesPtr& attributes) {
   std::lock_guard<std::mutex> lock(mutex_);
   ++total_report_calls_;
-  batch_compressor_->Add(request);
+  batch_compressor_->Add(*attributes->attributes());
   if (batch_compressor_->size() >= options_.max_batch_entries) {
     FlushWithLock();
   } else {
@@ -67,10 +68,12 @@ void ReportBatch::FlushWithLock() {
   ++total_remote_report_calls_;
   auto request = batch_compressor_->Finish();
   ReportResponse* response = new ReportResponse;
+
+  // TODO(jblatt) should an async call be made while this lock is held?  Can the request send block()?
   transport_(request, response, [this, response](const Status& status) {
     delete response;
     if (!status.ok()) {
-      GOOGLE_LOG(ERROR) << "Mixer Report failed with: " << status.ToString();
+      MIXER_WARN("Mixer Report failed with: %s", status.ToString().c_str());
       if (utils::InvalidDictionaryStatus(status)) {
         compressor_.ShrinkGlobalDictionary();
       }

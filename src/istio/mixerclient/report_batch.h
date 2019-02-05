@@ -34,7 +34,7 @@ class ReportBatch {
   virtual ~ReportBatch();
 
   // Make batched report call.
-  void Report(const ::istio::mixer::v1::Attributes& request);
+  void Report(istio::mixerclient::SharedAttributesPtr& attributes);
 
   // Flush out batched reports.
   void Flush();

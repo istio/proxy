@@ -15,6 +15,7 @@
 
 #include "src/istio/mixerclient/quota_cache.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/utils/logger.h"
 
 using namespace std::chrono;
 using ::google::protobuf::util::Status;
@@ -43,17 +44,17 @@ void QuotaCache::CacheElem::Alloc(int amount, QuotaPrefetch::DoneFunc fn) {
   quota_->response_func =
       [fn](const Attributes&,
            const CheckResponse::QuotaResult* result) -> bool {
-    int amount = -1;
-    milliseconds expire = duration_cast<milliseconds>(minutes(1));
-    if (result != nullptr) {
-      amount = result->granted_amount();
-      if (result->has_valid_duration()) {
-        expire = utils::ToMilliseonds(result->valid_duration());
-      }
-    }
-    fn(amount, expire, system_clock::now());
-    return true;
-  };
+        int amount = -1;
+        milliseconds expire = duration_cast<milliseconds>(minutes(1));
+        if (result != nullptr) {
+          amount = result->granted_amount();
+          if (result->has_valid_duration()) {
+            expire = utils::ToMilliseonds(result->valid_duration());
+          }
+        }
+        fn(amount, expire, system_clock::now());
+        return true;
+      };
 }
 
 void QuotaCache::CacheElem::Quota(int amount, CheckResult::Quota* quota) {
@@ -96,6 +97,9 @@ bool QuotaCache::CheckResult::BuildRequest(CheckRequest* request) {
     }
   }
   if (!rejected_quota_names.empty()) {
+    if (MIXER_DEBUG_ENABLED) {
+      MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
+    }
     status_ =
         Status(Code::RESOURCE_EXHAUSTED,
                std::string("Quota is exhausted for: ") + rejected_quota_names);
@@ -118,8 +122,9 @@ void QuotaCache::CheckResult::SetResponse(const Status& status,
         if (it != quotas.end()) {
           result = &it->second;
         } else {
-          GOOGLE_LOG(ERROR)
-              << "Quota response did not have quota for: " << quota.name;
+          if (MIXER_WARN_ENABLED) {
+            MIXER_WARN("Quota response did not have quota for: %s", quota.name.c_str());
+          }
         }
       }
       if (!quota.response_func(attributes, result)) {
@@ -131,6 +136,9 @@ void QuotaCache::CheckResult::SetResponse(const Status& status,
     }
   }
   if (!rejected_quota_names.empty()) {
+    if (MIXER_DEBUG_ENABLED) {
+      MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
+    }
     status_ =
         Status(Code::RESOURCE_EXHAUSTED,
                std::string("Quota is exhausted for: ") + rejected_quota_names);
@@ -163,10 +171,10 @@ void QuotaCache::CheckCache(const Attributes& request, bool check_use_cache,
     quota->response_func =
         [](const Attributes&,
            const CheckResponse::QuotaResult* result) -> bool {
-      // nullptr means connection error, for quota, it is fail open for
-      // connection error.
-      return result == nullptr || result->granted_amount() > 0;
-    };
+          // nullptr means connection error, for quota, it is fail open for
+          // connection error.
+          return result == nullptr || result->granted_amount() > 0;
+        };
     return;
   }
 
@@ -194,8 +202,8 @@ void QuotaCache::CheckCache(const Attributes& request, bool check_use_cache,
   auto saved_func = quota->response_func;
   std::string quota_name = quota->name;
   quota->response_func = [saved_func, quota_name, this](
-                             const Attributes& attributes,
-                             const CheckResponse::QuotaResult* result) -> bool {
+      const Attributes& attributes,
+      const CheckResponse::QuotaResult* result) -> bool {
     SetResponse(attributes, quota_name, result);
     if (saved_func) {
       return saved_func(attributes, result);
@@ -218,9 +226,10 @@ void QuotaCache::SetResponse(const Attributes& attributes,
 
   utils::HashType signature;
   if (!referenced.Signature(attributes, quota_name, &signature)) {
-    GOOGLE_LOG(ERROR) << "Quota response referenced mismatchs with request";
-    GOOGLE_LOG(ERROR) << "Request attributes: " << attributes.DebugString();
-    GOOGLE_LOG(ERROR) << "Referenced attributes: " << referenced.DebugString();
+    if (MIXER_WARN_ENABLED) {
+      MIXER_WARN("Quota response referenced mismatchs with request. Request attributes: %s, Referenced attributes: %s",
+      attributes.DebugString().c_str(), referenced.DebugString().c_str());
+    }
     return;
   }
 
@@ -235,8 +244,10 @@ void QuotaCache::SetResponse(const Attributes& attributes,
   utils::HashType hash = referenced.Hash();
   if (quota_ref.referenced_map.find(hash) == quota_ref.referenced_map.end()) {
     quota_ref.referenced_map[hash] = referenced;
-    GOOGLE_LOG(INFO) << "Add a new Referenced for quota cache: " << quota_name
-                     << ", reference: " << referenced.DebugString();
+    if (MIXER_DEBUG_ENABLED) {
+      MIXER_DEBUG("Add a new Referenced for quota cache: %s, reference: %s",
+                  quota_name.c_str(), referenced.DebugString().c_str());
+    }
   }
 
   cache_->Insert(signature, quota_ref.pending_item.release(), 1);

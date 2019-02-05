@@ -22,8 +22,10 @@
 #include <string>
 #include <unordered_map>
 
-#include "include/istio/mixerclient/client.h"
+#include "google/protobuf/stubs/status.h"
+#include "include/istio/mixerclient/options.h"
 #include "include/istio/prefetch/quota_prefetch.h"
+#include "include/istio/quota_config/requirement.h"
 #include "include/istio/utils/simple_lru_cache.h"
 #include "include/istio/utils/simple_lru_cache_inl.h"
 #include "src/istio/mixerclient/referenced.h"
@@ -34,7 +36,7 @@ namespace mixerclient {
 // Cache Mixer Quota Attributes.
 // This interface is thread safe.
 class QuotaCache {
- public:
+public:
   QuotaCache(const QuotaOptions& options);
 
   virtual ~QuotaCache();
@@ -48,7 +50,7 @@ class QuotaCache {
   //     result->SetResponse(status, response);
   //     return result->Result();
   class CheckResult {
-   public:
+  public:
     CheckResult();
 
     // Build CheckRequest::quotas fields, return true if remote quota call
@@ -57,13 +59,13 @@ class QuotaCache {
 
     bool IsCacheHit() const;
 
-    ::google::protobuf::util::Status status() const { return status_; }
+    const ::google::protobuf::util::Status &status() const { return status_; }
 
     void SetResponse(const ::google::protobuf::util::Status& status,
                      const ::istio::mixer::v1::Attributes& attributes,
                      const ::istio::mixer::v1::CheckResponse& response);
 
-   private:
+  private:
     friend class QuotaCache;
     // Hold pending quota data needed to talk to server.
     struct Quota {
@@ -96,7 +98,7 @@ class QuotaCache {
              const std::vector<::istio::quota_config::Requirement>& quotas,
              bool use_cache, CheckResult* result);
 
- private:
+private:
   // Check quota cache.
   void CheckCache(const ::istio::mixer::v1::Attributes& request, bool use_cache,
                   CheckResult::Quota* quota);
@@ -111,7 +113,7 @@ class QuotaCache {
 
   // The cache element for each quota metric.
   class CacheElem {
-   public:
+  public:
     CacheElem(const std::string& name);
 
     // Use the prefetch object to check the quota.
@@ -120,7 +122,7 @@ class QuotaCache {
     // The quota name.
     const std::string& quota_name() const { return name_; }
 
-   private:
+  private:
     // The quota allocation call.
     void Alloc(int amount, prefetch::QuotaPrefetch::DoneFunc fn);
 

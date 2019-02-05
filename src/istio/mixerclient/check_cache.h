@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "google/protobuf/stubs/status.h"
-#include "include/istio/mixerclient/client.h"
 #include "include/istio/mixerclient/options.h"
 #include "include/istio/utils/simple_lru_cache.h"
 #include "include/istio/utils/simple_lru_cache_inl.h"
@@ -37,7 +36,7 @@ namespace mixerclient {
 // Cache Mixer Check call result.
 // This interface is thread safe.
 class CheckCache {
- public:
+public:
   CheckCache(const CheckOptions& options);
 
   virtual ~CheckCache();
@@ -49,14 +48,14 @@ class CheckCache {
   //   result->SetReponse(status, response);
   //   return result->Status();
   class CheckResult {
-   public:
+  public:
     CheckResult();
 
     bool IsCacheHit() const;
 
-    ::google::protobuf::util::Status status() const { return status_; }
+    const ::google::protobuf::util::Status& status() const { return status_; }
 
-    ::istio::mixer::v1::RouteDirective route_directive() const {
+    const ::istio::mixer::v1::RouteDirective& route_directive() const {
       return route_directive_;
     }
 
@@ -71,7 +70,7 @@ class CheckCache {
       }
     }
 
-   private:
+  private:
     friend class CheckCache;
     // Check status.
     ::google::protobuf::util::Status status_;
@@ -90,7 +89,7 @@ class CheckCache {
   void Check(const ::istio::mixer::v1::Attributes& attributes,
              CheckResult* result);
 
- private:
+private:
   friend class CheckCacheTest;
   using Tick = std::chrono::time_point<std::chrono::system_clock>;
 
@@ -115,7 +114,7 @@ class CheckCache {
       const ::google::rpc::Status& status) const;
 
   class CacheElem {
-   public:
+  public:
     CacheElem(const CheckCache& parent,
               const ::istio::mixer::v1::CheckResponse& response, Tick time)
         : parent_(parent) {
@@ -137,7 +136,7 @@ class CheckCache {
       return route_directive_;
     }
 
-   private:
+  private:
     // To the parent cache object.
     const CheckCache& parent_;
     // The check status for the last check request.
@@ -148,7 +147,7 @@ class CheckCache {
     std::chrono::time_point<std::chrono::system_clock> expire_time_;
     // if -1, not to check use_count.
     // if 0, cache item should not be used.
-    // use_cound is decreased by 1 for each request,
+    // use_count is decreased by 1 for each request,
     int use_count_;
   };
 

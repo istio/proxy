@@ -18,11 +18,13 @@ cc_library(
     name = "utils_lib",
     srcs = [
         "local_attributes.cc",
+        "logger.cc",
         "protobuf.cc",
         "status.cc",
         "utils.cc"
     ],
     hdrs = [
+        "logger.h",
         "utils.h",
     ],
     visibility = ["//visibility:public"],

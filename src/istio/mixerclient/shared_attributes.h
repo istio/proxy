@@ -1,4 +1,4 @@
-/* Copyright 2018 Istio Authors. All Rights Reserved.
+/* Copyright 2019 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
-#define ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
+#pragma once
 
-#include "google/protobuf/stubs/status.h"
-#include "mixer/v1/mixer.pb.h"
+#include "google/protobuf/arena.h"
+#include "mixer/v1/attributes.pb.h"
 
 namespace istio {
 namespace mixerclient {
 
-// The CheckResponseInfo exposes policy and quota check details to the check callbacks.
-class CheckResponseInfo {
-public:
-  virtual ~CheckResponseInfo() {};
+class SharedAttributes {
+ public:
+  SharedAttributes() : attributes_(google::protobuf::Arena::CreateMessage<::istio::mixer::v1::Attributes>(&arena_)) {}
 
-  virtual const ::google::protobuf::util::Status& status() const = 0;
+  const ::istio::mixer::v1::Attributes* attributes() const { return attributes_; }
+  ::istio::mixer::v1::Attributes* attributes() { return attributes_; }
 
-  virtual const ::istio::mixer::v1::RouteDirective& routeDirective() const = 0;
+  google::protobuf::Arena& arena() { return arena_; }
+
+ private:
+  google::protobuf::Arena arena_;
+  ::istio::mixer::v1::Attributes* attributes_;
 };
+
+typedef std::shared_ptr<SharedAttributes> SharedAttributesPtr;
 
 }  // namespace mixerclient
 }  // namespace istio
-
-#endif  // ISTIO_MIXERCLIENT_CHECK_RESPONSE_H

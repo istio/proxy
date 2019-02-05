@@ -19,6 +19,8 @@
 #include "envoy/local_info/local_info.h"
 #include "src/envoy/http/mixer/control.h"
 #include "src/envoy/utils/stats.h"
+#include "src/istio/utils/logger.h"
+#include "common/common/logger.h"
 
 namespace Envoy {
 namespace Http {
@@ -51,6 +53,9 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
       return std::make_shared<Control>(control_data, cm, dispatcher, random,
                                        scope, local_info);
     });
+
+    // All MIXER_DEBUG(), MIXER_WARN(), etc log messages will be passed to ENVOY_LOG().
+    istio::utils::setLogger(std::make_unique<LoggerAdaptor>());
   }
 
   Control& control() { return tls_->getTyped<Control>(); }
@@ -61,6 +66,42 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
                                                Stats::Scope& scope) {
     return {ALL_MIXER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, name))};
   }
+
+  class LoggerAdaptor : public istio::utils::Logger, Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
+    virtual bool isLoggable(istio::utils::Logger::Level level) override {
+      switch (level) {
+        case istio::utils::Logger::Level::DEBUG:
+          return ENVOY_LOG_CHECK_LEVEL(debug);
+        case istio::utils::Logger::Level::TRACE:
+          return ENVOY_LOG_CHECK_LEVEL(trace);
+        case istio::utils::Logger::Level::INFO:
+          return ENVOY_LOG_CHECK_LEVEL(info);
+        case istio::utils::Logger::Level::WARN:
+          return ENVOY_LOG_CHECK_LEVEL(warn);
+        case istio::utils::Logger::Level::ERROR:
+          return ENVOY_LOG_CHECK_LEVEL(error);
+      }
+    }
+
+    virtual void writeBuffer(istio::utils::Logger::Level level, const char *buffer) override {
+      switch (level) {
+        case istio::utils::Logger::Level::DEBUG:
+          ENVOY_LOGGER().debug(buffer);
+          break;
+        case istio::utils::Logger::Level::TRACE:
+          ENVOY_LOGGER().trace(buffer);
+          break;
+        case istio::utils::Logger::Level::INFO:
+          ENVOY_LOGGER().info(buffer);
+          break;
+        case istio::utils::Logger::Level::WARN:
+          ENVOY_LOGGER().warn(buffer);
+          break;
+        case istio::utils::Logger::Level::ERROR:
+          ENVOY_LOGGER().error(buffer);
+      }
+    }
+  };
 
   // The control data object
   ControlDataSharedPtr control_data_;
