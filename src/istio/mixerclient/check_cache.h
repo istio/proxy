@@ -36,7 +36,7 @@ namespace mixerclient {
 // Cache Mixer Check call result.
 // This interface is thread safe.
 class CheckCache {
-public:
+ public:
   CheckCache(const CheckOptions& options);
 
   virtual ~CheckCache();
@@ -48,7 +48,7 @@ public:
   //   result->SetReponse(status, response);
   //   return result->Status();
   class CheckResult {
-  public:
+   public:
     CheckResult();
 
     bool IsCacheHit() const;
@@ -70,7 +70,7 @@ public:
       }
     }
 
-  private:
+   private:
     friend class CheckCache;
     // Check status.
     ::google::protobuf::util::Status status_;
@@ -89,7 +89,7 @@ public:
   void Check(const ::istio::mixer::v1::Attributes& attributes,
              CheckResult* result);
 
-private:
+ private:
   friend class CheckCacheTest;
   using Tick = std::chrono::time_point<std::chrono::system_clock>;
 
@@ -114,7 +114,7 @@ private:
       const ::google::rpc::Status& status) const;
 
   class CacheElem {
-  public:
+   public:
     CacheElem(const CheckCache& parent,
               const ::istio::mixer::v1::CheckResponse& response, Tick time)
         : parent_(parent) {
@@ -136,7 +136,7 @@ private:
       return route_directive_;
     }
 
-  private:
+   private:
     // To the parent cache object.
     const CheckCache& parent_;
     // The check status for the last check request.

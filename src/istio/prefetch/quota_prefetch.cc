@@ -48,7 +48,7 @@ const int kMaxExpirationInMs = 60000;
 
 // The implementation class to hide internal implementation detail.
 class QuotaPrefetchImpl : public QuotaPrefetch {
-public:
+ public:
   // The slot id type.
   typedef uint64_t SlotId;
 
@@ -79,7 +79,7 @@ public:
 
   bool Check(int amount, Tick t) override;
 
-private:
+ private:
   // Count available token
   int CountAvailable(Tick t);
   // Check available count is bigger than minimum

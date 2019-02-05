@@ -33,7 +33,7 @@ void CheckCache::CacheElem::CacheElem::SetResponse(
 
     if (response.precondition().has_valid_duration()) {
       expire_time_ = time_now + utils::ToMilliseonds(
-          response.precondition().valid_duration());
+                                    response.precondition().valid_duration());
     } else {
       // never expired.
       expire_time_ = time_point<system_clock>::max();
