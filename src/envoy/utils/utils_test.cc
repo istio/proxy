@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/utils/utils.h"
+#include "src/istio/mixerclient/check_context.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 #include "test/mocks/stream_info/mocks.h"
 #include "test/test_common/utility.h"
@@ -47,10 +48,10 @@ TEST(UtilsTest, ParseMessageWithUnknownField) {
             "service.svc.cluster.local");
 }
 
-/* TODO(jblatt) don't ship this
 TEST(UtilsTest, CheckResponseInfoToStreamInfo) {
-  ::istio::mixerclient::CheckResponseInfo
-      check_response;  // by default status is unknown
+  auto attributes = std::make_shared<::istio::mixerclient::SharedAttributes>();
+  ::istio::mixerclient::CheckContext
+      check_response(false, attributes);  // by default status is unknown
   Envoy::StreamInfo::MockStreamInfo mock_stream_info;
 
   EXPECT_CALL(
@@ -66,6 +67,6 @@ TEST(UtilsTest, CheckResponseInfoToStreamInfo) {
           }));
 
   CheckResponseInfoToStreamInfo(check_response, mock_stream_info);
-} */
+}
 
 }  // namespace

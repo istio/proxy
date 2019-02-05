@@ -546,7 +546,7 @@ void SetDestinationIp(istio::mixer::v1::Attributes* attributes, const std::strin
 
 TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   Attributes attr;
-  (*attr.mutable_attributes())["test_key"].set_string_value("test_value");
+  (*attr.mutable_attributes())["source.uid"].set_string_value("test_value");
 
   ::testing::StrictMock<MockCheckData> mock_data;
   EXPECT_CALL(mock_data, ExtractIstioAttributes(_))
@@ -743,6 +743,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   listval.mutable_list_value()->add_values()->set_string_value("c");
   (*struct_obj.mutable_fields())["list"] = listval;
   filter_metadata["foo.bar.com"] = struct_obj;
+  filter_metadata["istio.mixer"] = struct_obj;  // to be ignored
 
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {

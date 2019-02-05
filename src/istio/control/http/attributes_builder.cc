@@ -131,11 +131,31 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
   if (!check_data->ExtractIstioAttributes(&forwarded_data)) {
     return;
   }
+
   Attributes v2_format;
-  if (v2_format.ParseFromString(forwarded_data)) {
-    attributes_->MergeFrom(v2_format);
+  if (!v2_format.ParseFromString(forwarded_data)) {
     return;
   }
+
+  static const std::set<std::string> kForwardWhitelist = {
+      utils::AttributeName::kSourceUID,
+      utils::AttributeName::kSourceNamespace,
+      utils::AttributeName::kDestinationServiceName,
+      utils::AttributeName::kDestinationServiceUID,
+      utils::AttributeName::kDestinationServiceHost,
+      utils::AttributeName::kDestinationServiceNamespace,
+  };
+
+  auto fwd = v2_format.attributes();
+  utils::AttributesBuilder builder(attributes_);
+  for (const auto &attribute : kForwardWhitelist) {
+    const auto &iter = fwd.find(attribute);
+    if (iter != fwd.end() && !iter->second.string_value().empty()) {
+      builder.AddString(attribute, iter->second.string_value());
+    }
+  }
+
+  return;
 }
 
 void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {

@@ -159,7 +159,7 @@ private:
 
   bool fail_open_{false};
   bool remote_quota_check_required_{false};
-  google::protobuf::util::Status final_status_;
+  google::protobuf::util::Status final_status_{google::protobuf::util::Status::UNKNOWN};
 };
 
 typedef std::shared_ptr<CheckContext> CheckContextSharedPtr;

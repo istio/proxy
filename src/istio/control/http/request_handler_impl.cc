@@ -64,6 +64,7 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data, HeaderUpdate* header
                                      CheckDoneFunc on_done) {
   // Forwarded attributes need to be stored regardless Check is needed
   // or not since the header will be updated or removed.
+  AddCheckAttributes(check_data);
   AddForwardAttributes(check_data);
   header_update->RemoveIstioAttributes();
   service_context_->InjectForwardedAttributes(header_update);
@@ -74,7 +75,6 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data, HeaderUpdate* header
     return nullptr;
   }
 
-  AddCheckAttributes(check_data);
   service_context_->AddQuotas(attributes_->attributes(), check_context_->quotaRequirements());
 
   return service_context_->client_context()->SendCheck(transport, on_done, check_context_);
