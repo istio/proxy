@@ -109,6 +109,15 @@ struct AttributeName {
 
   static const char kRbacPermissiveResponseCode[];
   static const char kRbacPermissivePolicyId[];
+
+  static const char kNetworkingVirtualServiceUID[];
+  static const char kNetworkingVirtualServiceName[];
+  static const char kNetworkingVirtualServiceNamespace[];
+
+  static const char kNetworkingDestinationRuleUID[];
+  static const char kNetworkingDestinationRuleName[];
+  static const char kNetworkingDestinationRuleNamespace[];
+
 };
 
 }  // namespace utils

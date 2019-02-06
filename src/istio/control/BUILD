@@ -14,7 +14,12 @@
 
 licenses(["notice"])
 
-cc_library(
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
+)
+
+envoy_cc_library(
     name = "common_lib",
     srcs = [
         "client_context_base.cc",
@@ -30,7 +35,9 @@ cc_library(
         "//src/istio/mixerclient:mixerclient_lib",
         "//src/istio/quota_config:config_parser_lib",
         "//src/istio/utils:attribute_names_lib",
+        "@envoy//source/exe:envoy_common_lib",
     ],
+    repository = "@envoy",
 )
 
 cc_library(

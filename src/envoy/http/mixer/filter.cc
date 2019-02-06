@@ -72,7 +72,9 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   initiating_call_ = true;
   CheckData check_data(headers,
                        decoder_callbacks_->streamInfo().dynamicMetadata(),
-                       decoder_callbacks_->connection());
+                       decoder_callbacks_->connection(),
+                       decoder_callbacks_->streamInfo().routeEntry()->metadata(),
+                       decoder_callbacks_->clusterInfo()->metadata());
   Utils::HeaderUpdate header_update(&headers);
   headers_ = &headers;
   cancel_check_ = handler_->Check(
@@ -230,7 +232,9 @@ void Filter::log(const HeaderMap* request_headers,
 
   // If check is NOT called, check attributes are not extracted.
   CheckData check_data(*request_headers, stream_info.dynamicMetadata(),
-                       decoder_callbacks_->connection());
+                       decoder_callbacks_->connection(),
+                       stream_info.routeEntry()->metadata(),
+                       decoder_callbacks_->clusterInfo()->metadata());
   // response trailer header is not counted to response total size.
   ReportData report_data(response_headers, response_trailers, stream_info,
                          request_total_size_);

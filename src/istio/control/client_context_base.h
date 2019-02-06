@@ -16,6 +16,7 @@
 #ifndef ISTIO_CONTROL_CLIENT_CONTEXT_BASE_H
 #define ISTIO_CONTROL_CLIENT_CONTEXT_BASE_H
 
+#include "common/common/logger.h"
 #include "include/istio/mixerclient/client.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/local_attributes.h"
@@ -27,7 +28,7 @@ namespace control {
 
 // The global context object to hold the mixer client object
 // to call Check/Report with cache.
-class ClientContextBase {
+class ClientContextBase : Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
  public:
   ClientContextBase(
       const ::istio::mixer::v1::config::client::TransportConfig& config,

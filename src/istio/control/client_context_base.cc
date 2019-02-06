@@ -98,17 +98,13 @@ CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
     on_done(check_response_info);
   };
 
-  // TODO: add debug message
-  // GOOGLE_LOG(INFO) << "Check attributes: " <<
-  // request->attributes->DebugString();
+  ENVOY_LOG(debug, "Check Attributes: {}", request->attributes->DebugString());
   return mixer_client_->Check(*request->attributes, request->quotas, transport,
                               local_on_done);
 }
 
 void ClientContextBase::SendReport(const RequestContext& request) {
-  // TODO: add debug message
-  // GOOGLE_LOG(INFO) << "Report attributes: " <<
-  // request.attributes->DebugString();
+  ENVOY_LOG(debug, "Report Attributes: {}", request.attributes->DebugString());
   mixer_client_->Report(*request.attributes);
 }
 

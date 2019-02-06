@@ -111,5 +111,19 @@ const char AttributeName::kRbacPermissiveResponseCode[] =
 const char AttributeName::kRbacPermissivePolicyId[] =
     "rbac.permissive.effective_policy_id";
 
+const char AttributeName::kNetworkingVirtualServiceUID[] =
+    "networking.virtual_service.uid";
+const char AttributeName::kNetworkingVirtualServiceName[] =
+    "networking.virtual_service.name";
+const char AttributeName::kNetworkingVirtualServiceNamespace[] =
+    "networking.virtual_service.namespace";
+
+const char AttributeName::kNetworkingDestinationRuleUID[] =
+    "networking.destination_rule.uid";
+const char AttributeName::kNetworkingDestinationRuleName[] =
+    "networking.destination_rule.uid";
+const char AttributeName::kNetworkingDestinationRuleNamespace[] =
+    "networking.destination_rule.uid";
+
 }  // namespace utils
 }  // namespace istio
