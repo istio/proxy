@@ -117,7 +117,6 @@ struct AttributeName {
   static const char kNetworkingDestinationRuleUID[];
   static const char kNetworkingDestinationRuleName[];
   static const char kNetworkingDestinationRuleNamespace[];
-
 };
 
 }  // namespace utils

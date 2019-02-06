@@ -40,7 +40,9 @@ const std::set<std::string> RequestHeaderExclusives = {
 CheckData::CheckData(const HeaderMap& headers,
                      const envoy::api::v2::core::Metadata& dynamic_metadata,
                      const Network::Connection* connection)
-    : headers_(headers), dynamic_metadata_(dynamic_metadata), connection_(connection) {
+    : headers_(headers),
+      dynamic_metadata_(dynamic_metadata),
+      connection_(connection) {
   if (headers_.Path()) {
     query_params_ = Utility::parseQueryString(std::string(
         headers_.Path()->value().c_str(), headers_.Path()->value().size()));

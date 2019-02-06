@@ -74,7 +74,7 @@ class ReportData {
   // Looks for a virtual service uid in the route metadata.
   // Returns true if found, false otherwise.
   virtual bool FindVirtualService(std::string *value) const = 0;
-  
+
   // Looks for a destination rule uid in the cluster metadata.
   // Returns true if found, false otherwise.
   virtual bool FindDestinationRule(std::string *value) const = 0;

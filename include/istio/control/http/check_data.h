@@ -93,7 +93,6 @@ class CheckData {
   // found, otherwise return false.
   virtual bool GetRequestQueryParams(
       std::map<std::string, std::string> *query_params) const = 0;
-
 };
 
 // An interfact to update request HTTP headers with Istio attributes.
