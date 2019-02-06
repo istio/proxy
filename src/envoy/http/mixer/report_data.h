@@ -60,12 +60,16 @@ class ReportData : public ::istio::control::http::ReportData,
 
  public:
   ReportData(const HeaderMap *headers, const HeaderMap *response_trailers,
-             const StreamInfo::StreamInfo &info, uint64_t request_total_size)
+             const StreamInfo::StreamInfo &info, uint64_t request_total_size,
+             const envoy::api::v2::core::Metadata& route_metadata,
+             const envoy::api::v2::core::Metadata& cluster_metadata)
       : headers_(headers),
         trailers_(response_trailers),
         info_(info),
         response_total_size_(info.bytesSent()),
-        request_total_size_(request_total_size) {
+        request_total_size_(request_total_size),
+        route_metadata_(route_metadata),
+        cluster_metadata_(cluster_metadata) {
     if (headers != nullptr) {
       response_total_size_ += headers->byteSize();
     }
@@ -162,6 +166,39 @@ class ReportData : public ::istio::control::http::ReportData,
   const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
       &GetDynamicFilterState() const override {
     return info_.dynamicMetadata().filter_metadata();
+  }
+
+  bool FindVirtualService(std::string *value) const override {
+    return FindConfigValue(route_metadata_.filter_metadata(), value);
+  }
+
+
+  bool FindDestinationRule(std::string *value) const override {
+    return FindConfigValue(cluster_metadata_.filter_metadata(), value);
+  }
+
+ private:
+
+  const envoy::api::v2::core::Metadata& route_metadata_;
+  const envoy::api::v2::core::Metadata& cluster_metadata_;
+
+  bool FindConfigValue(
+    const::google::protobuf::Map<::std::string,::google::protobuf::Struct>& metadata,
+    std::string *value) const {
+    
+    const auto &iter = metadata.find("istio");
+    if (iter != metadata.end()) {
+      const auto *config = &(iter->second);
+      if (config != nullptr) {
+        const auto &citer = config->fields().find("config");
+        if (citer != config->fields().end() && !citer->second.string_value().empty()) {
+          ENVOY_LOG(warn, "Found Istio Config Value: {}", citer->second.string_value());
+          *value = citer->second.string_value();
+          return true;
+        }
+      }
+    }
+    return false;
   }
 };
 

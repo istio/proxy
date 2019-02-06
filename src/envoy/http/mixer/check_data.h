@@ -32,9 +32,7 @@ class CheckData : public ::istio::control::http::CheckData,
  public:
   CheckData(const HeaderMap& headers,
             const envoy::api::v2::core::Metadata& dynamic_metadata,
-            const Network::Connection* connection,
-            const envoy::api::v2::core::Metadata& route_metadata,
-            const envoy::api::v2::core::Metadata& cluster_metadata);
+            const Network::Connection* connection);
 
   // Find "x-istio-attributes" headers, if found base64 decode
   // its value and remove it from the headers.
@@ -69,22 +67,12 @@ class CheckData : public ::istio::control::http::CheckData,
   bool GetRequestQueryParams(
       std::map<std::string, std::string>* query_params) const override;
 
-  bool FindVirtualService(std::string *value) const override;
-
-  bool FindDestinationRule(std::string *value) const override;
-
  private:
   const HeaderMap& headers_;
   const envoy::api::v2::core::Metadata& dynamic_metadata_;
   const Network::Connection* connection_;
-  const envoy::api::v2::core::Metadata& route_metadata_;
-  const envoy::api::v2::core::Metadata& cluster_metadata_;
 
   Utility::QueryParams query_params_;
-
-  bool FindConfigValue(
-      const::google::protobuf::Map<::std::string,::google::protobuf::Struct>& metadata, 
-      std::string *value) const;
 };
 
 }  // namespace Mixer

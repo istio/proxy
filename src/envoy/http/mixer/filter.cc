@@ -72,9 +72,7 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   initiating_call_ = true;
   CheckData check_data(headers,
                        decoder_callbacks_->streamInfo().dynamicMetadata(),
-                       decoder_callbacks_->connection(),
-                       decoder_callbacks_->streamInfo().routeEntry()->metadata(),
-                       decoder_callbacks_->clusterInfo()->metadata());
+                       decoder_callbacks_->connection());
   Utils::HeaderUpdate header_update(&headers);
   headers_ = &headers;
   cancel_check_ = handler_->Check(
@@ -232,12 +230,21 @@ void Filter::log(const HeaderMap* request_headers,
 
   // If check is NOT called, check attributes are not extracted.
   CheckData check_data(*request_headers, stream_info.dynamicMetadata(),
-                       decoder_callbacks_->connection(),
-                       stream_info.routeEntry()->metadata(),
-                       decoder_callbacks_->clusterInfo()->metadata());
+                       decoder_callbacks_->connection());
   // response trailer header is not counted to response total size.
+
+  envoy::api::v2::core::Metadata route_meta;
+  if (stream_info.routeEntry() != nullptr) {
+    route_meta = stream_info.routeEntry()->metadata();
+  }
+
+  envoy::api::v2::core::Metadata cluster_meta;
+  if (decoder_callbacks_->clusterInfo() != nullptr) {
+    cluster_meta = decoder_callbacks_->clusterInfo()->metadata();
+  }
+
   ReportData report_data(response_headers, response_trailers, stream_info,
-                         request_total_size_);
+                         request_total_size_, route_meta, cluster_meta);
   handler_->Report(&check_data, &report_data);
 }
 

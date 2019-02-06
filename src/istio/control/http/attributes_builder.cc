@@ -193,18 +193,6 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
     }
   }
   builder.AddString(utils::AttributeName::kContextProtocol, protocol);
-
-  std::string vs;
-  if (check_data->FindVirtualService(&vs)) {
-    // TODO: add name, namespace attributes
-    builder.AddString(utils::AttributeName::kNetworkingVirtualServiceUID, vs);
-  }
-  std::string dr;
-  if (check_data->FindDestinationRule(&dr)) {
-    // TODO: add name, namespace attributes
-    builder.AddString(utils::AttributeName::kNetworkingDestinationRuleUID, dr);
-  }
-
 }
 
 void AttributesBuilder::ForwardAttributes(const Attributes &forward_attributes,
@@ -288,6 +276,17 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
   }
 
   builder.FlattenMapOfStringToStruct(report_data->GetDynamicFilterState());
+
+  std::string vs;
+  if (report_data->FindVirtualService(&vs)) {
+    // TODO: add name, namespace attributes
+    builder.AddString(utils::AttributeName::kNetworkingVirtualServiceUID, vs);
+  }
+  std::string dr;
+  if (report_data->FindDestinationRule(&dr)) {
+    // TODO: add name, namespace attributes
+    builder.AddString(utils::AttributeName::kNetworkingDestinationRuleUID, dr);
+  }
 }
 
 }  // namespace http

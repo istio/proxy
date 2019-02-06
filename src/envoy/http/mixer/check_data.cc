@@ -39,11 +39,8 @@ const std::set<std::string> RequestHeaderExclusives = {
 
 CheckData::CheckData(const HeaderMap& headers,
                      const envoy::api::v2::core::Metadata& dynamic_metadata,
-                     const Network::Connection* connection,
-                     const envoy::api::v2::core::Metadata& route_metadata,
-                     const envoy::api::v2::core::Metadata& cluster_metadata)
-    : headers_(headers), dynamic_metadata_(dynamic_metadata), connection_(connection),
-    route_metadata_(route_metadata), cluster_metadata_(cluster_metadata) {
+                     const Network::Connection* connection)
+    : headers_(headers), dynamic_metadata_(dynamic_metadata), connection_(connection) {
   if (headers_.Path()) {
     query_params_ = Utility::parseQueryString(std::string(
         headers_.Path()->value().c_str(), headers_.Path()->value().size()));
@@ -195,33 +192,6 @@ bool CheckData::GetRequestQueryParams(
   }
   *query_params = Utility::parseQueryString(headers_.Path()->value().c_str());
   return true;
-}
-
-bool CheckData::FindVirtualService(std::string *value) const {
-  return FindConfigValue(route_metadata_.filter_metadata(), value);
-}
-
-
-bool CheckData::FindDestinationRule(std::string *value) const {
-  return FindConfigValue(cluster_metadata_.filter_metadata(), value);
-}
-
-bool CheckData::FindConfigValue(
-  const::google::protobuf::Map<::std::string,::google::protobuf::Struct>& metadata,
-  std::string *value) const {
-  const auto &iter = metadata.find("istio");
-  if (iter != metadata.end()) {
-    const auto *config = &(iter->second);
-    if (config != nullptr) {
-      const auto &citer = config->fields().find("config");
-      if (citer != config->fields().end() && !citer->second.string_value().empty()) {
-        ENVOY_LOG(debug, "Found Istio Config Value: {}", citer->second.string_value);
-        *value = citer->second.string_value();
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 }  // namespace Mixer
