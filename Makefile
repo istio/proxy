@@ -24,10 +24,10 @@ BAZEL_TARGETS ?= //...
 HUB ?=
 TAG ?=
 ifeq "$(origin CC)" "default"
-CC := clang-6.0
+CC := clang-7
 endif
 ifeq "$(origin CXX)" "default"
-CXX := clang++-6.0
+CXX := clang++-7
 endif
 
 build:
