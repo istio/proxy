@@ -546,6 +546,7 @@ ServerCallbackHelper::ServerCallbackHelper(
       }
 
       close_callback(connection, reason);
+      std::unique_lock<std::mutex> lock(mutex_);
       condvar_.notify_one();
     };
   } else {
@@ -558,6 +559,7 @@ ServerCallbackHelper::ServerCallbackHelper(
           ++local_closes_;
           break;
       }
+      std::unique_lock<std::mutex> lock(mutex_);
       condvar_.notify_one();
     };
   }
