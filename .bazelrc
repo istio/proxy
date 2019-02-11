@@ -35,12 +35,14 @@ build:clang-asan --build_tag_filters=-no_asan
 build:clang-asan --test_tag_filters=-no_asan
 build:clang-asan --define signal_trace=disabled
 build:clang-asan --test_env=ASAN_SYMBOLIZER_PATH
+build:clang-asan --linkopt -fuse-ld=lld
 
 # Clang 5.0 TSAN
 build:clang-tsan --define ENVOY_CONFIG_TSAN=1
 build:clang-tsan --copt -fsanitize=thread
 build:clang-tsan --linkopt -fsanitize=thread
 build:clang-tsan --define tcmalloc=disabled
+build:clang-tsan --linkopt -fuse-ld=lld
 
 # Clang 5.0 MSAN - broken today since we need to rebuild lib[std]c++ and external deps with MSAN
 # support (see https://github.com/envoyproxy/envoy/issues/443).
