@@ -41,11 +41,13 @@ bool PeerAuthenticator::run(Payload* payload) {
     switch (method.params_case()) {
       case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
         if (method.mtls().mode() == iaapi::MutualTls_Mode_PERMISSIVE) {
-          ENVOY_LOG(warn, "mTLS PERMISSIVE mode is used, connection can be either "
-                          "plaintext or TLS, and client cert can be omitted. "
-                          "Please consider to upgrade to mTLS STRICT mode for "
-                          "more secure that only allows TLS connection with client cert. "
-                          "See https://istio.io/docs/tasks/security/mtls-migration/");
+          ENVOY_LOG(
+              warn,
+              "mTLS PERMISSIVE mode is used, connection can be either "
+              "plaintext or TLS, and client cert can be omitted. "
+              "Please consider to upgrade to mTLS STRICT mode for "
+              "more secure that only allows TLS connection with client cert. "
+              "See https://istio.io/docs/tasks/security/mtls-migration/");
         }
         success = validateX509(method.mtls(), payload);
         break;
