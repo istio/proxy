@@ -198,6 +198,19 @@ cc_proto_library(
     ],
 )
 
+cc_proto_library(
+    name = "policy_v1beta1_cc_proto",
+    srcs = glob(
+        ["policy/v1beta1/*.proto", ],
+    ),
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//external:cc_gogoproto",
+    ],
+)
+
 filegroup(
     name = "global_dictionary_file",
     srcs = ["mixer/v1/global_dictionary.yaml"],
@@ -232,6 +245,10 @@ filegroup(
         native.bind(
             name = "tcp_cluster_rewrite_config_cc_proto",
             actual = "@mixerapi_git//:tcp_cluster_rewrite_config_cc_proto",
+        )
+        native.bind(
+            name = "policy_v1beta1_cc_proto",
+            actual = "@mixerapi_git//:policy_v1beta1_cc_proto",
         )
 
 load(":protobuf.bzl", "protobuf_repositories")

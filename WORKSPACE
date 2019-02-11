@@ -71,3 +71,14 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 go_rules_dependencies()
 
 go_register_toolchains(go_version = GO_VERSION)
+
+ABSL_SHA = "cc8dcd307b76a575d2e3e0958a4fe4c7193c2f68"
+
+ABSL_SHA256 = "e35082e88b9da04f4d68094c05ba112502a5063712f3021adfa465306d238c76"
+
+http_archive(
+    name = "com_google_absl",
+    sha256 = ABSL_SHA256,
+    strip_prefix = "abseil-cpp-ABSL_SHA",
+    url = "https://github.com/abseil/abseil-cpp/archive/ABSL_SHA.tar.gz",
+)
