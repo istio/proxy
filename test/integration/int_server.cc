@@ -317,9 +317,11 @@ ServerConnection::ServerConnection(
       Envoy::Http::Http2Settings settings;
       settings.allow_connect_ = true;
       settings.allow_metadata_ = true;
+      constexpr uint32_t max_request_headers_kb = 2U;
       http_connection_ =
           std::make_unique<Envoy::Http::Http2::ServerConnectionImpl>(
-              network_connection, *this, scope, settings);
+              network_connection, *this, scope, settings,
+              max_request_headers_kb);
     } break;
     default:
       ENVOY_LOG(error,
@@ -611,8 +613,8 @@ Server::Server(const std::string &name,
       stats_(),
       time_system_(),
       api_(std::chrono::milliseconds(1),
-           Envoy::Thread::ThreadFactorySingleton::get(), stats_),
-      dispatcher_(api_.allocateDispatcher(time_system_)),
+           Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_),
+      dispatcher_(api_.allocateDispatcher()),
       connection_handler_(new Envoy::Server::ConnectionHandlerImpl(
           ENVOY_LOGGER(), *dispatcher_)),
       thread_(nullptr),

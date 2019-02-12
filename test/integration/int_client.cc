@@ -279,6 +279,8 @@ class Http1ClientConnection : public ClientConnection {
   HttpClientReadFilterSharedPtr read_filter_;
 };
 
+static constexpr uint32_t max_request_headers_kb = 2U;
+
 class Http2ClientConnection : public ClientConnection {
  public:
   Http2ClientConnection(Client &client, uint32_t id,
@@ -291,7 +293,8 @@ class Http2ClientConnection : public ClientConnection {
         stats_(),
         settings_(),
         network_connection_(std::move(network_connection)),
-        http_connection_(*network_connection_, *this, stats_, settings_),
+        http_connection_(*network_connection_, *this, stats_, settings_,
+                         max_request_headers_kb),
         read_filter_{std::make_shared<HttpClientReadFilter>(client.name(), id,
                                                             http_connection_)} {
     network_connection_->addReadFilter(read_filter_);
@@ -444,8 +447,8 @@ Client::Client(const std::string &name)
       thread_(nullptr),
       time_system_(),
       api_(std::chrono::milliseconds(1),
-           Envoy::Thread::ThreadFactorySingleton::get(), stats_),
-      dispatcher_{api_.allocateDispatcher(time_system_)} {}
+           Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_),
+      dispatcher_{api_.allocateDispatcher()} {}
 
 Client::~Client() {
   stop();
