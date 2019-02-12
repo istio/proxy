@@ -52,9 +52,7 @@ class ServerStreamImpl : public ServerStream,
       : id_(id),
         connection_(connection),
         request_callback_(request_callback),
-        stream_encoder_(stream_encoder) {
-    // TODO do i have to do this? stream_encoder_.addCallbacks(*this);
-  }
+        stream_encoder_(stream_encoder) {}
 
   virtual ~ServerStreamImpl() {
     ENVOY_LOG(trace, "ServerStream({}:{}:{}) destroyed", connection_.name(),
@@ -88,55 +86,40 @@ class ServerStreamImpl : public ServerStream,
     }
 
     // Limitation: at most one response can be sent on a stream at a time.
-    assert(nullptr == delay_timer.get());
-    if (delay_timer.get()) {
+    assert(nullptr == delay_timer_.get());
+    if (delay_timer_.get()) {
       return;
     }
 
     response_headers_ =
         std::make_unique<Envoy::Http::HeaderMapImpl>(response_headers);
-    delay_timer = connection_.dispatcher().createTimer([this, delay]() {
+    delay_timer_ = connection_.dispatcher().createTimer([this, delay]() {
       ENVOY_LOG(
           debug,
           "ServerStream({}:{}:{}) sending response headers after {} msec delay",
           connection_.name(), connection_.id(), id_,
           static_cast<long int>(delay.count()));
       stream_encoder_.encodeHeaders(*response_headers_, true);
-      delay_timer->disableTimer();
-      delay_timer = nullptr;
+      delay_timer_->disableTimer();
+      delay_timer_ = nullptr;
       response_headers_ = nullptr;
     });
-    delay_timer->enableTimer(delay);
+    delay_timer_->enableTimer(delay);
   }
 
   virtual void sendGrpcResponse(
       Envoy::Grpc::Status::GrpcStatus status,
       const Envoy::Protobuf::Message &message,
       const std::chrono::milliseconds delay) override {
-    if (delay <= std::chrono::milliseconds(0)) {
-      ENVOY_LOG(debug, "ServerStream({}:{}:{}) sending gRPC response",
-                connection_.name(), connection_.id(), id_);
-      stream_encoder_.encodeHeaders(
-          Envoy::Http::TestHeaderMapImpl{{":status", "200"}}, false);
-      Envoy::Buffer::InstancePtr serialized_response =
-          Envoy::Grpc::Common::serializeBody(message);
-      stream_encoder_.encodeData(*serialized_response, false);
-      stream_encoder_.encodeTrailers(Envoy::Http::TestHeaderMapImpl{
-          {"grpc-status", std::to_string(static_cast<uint32_t>(status))}});
-      delete_after_callback_ = true;
-      return;
-    }
-
     // Limitation: at most one response can be sent on a stream at a time.
-    assert(nullptr == delay_timer.get());
-    if (delay_timer.get()) {
+    assert(nullptr == delay_timer_.get());
+    if (delay_timer_.get()) {
       return;
     }
 
-    delete_after_callback_ = false;
     response_status_ = status;
     response_body_ = Envoy::Grpc::Common::serializeBody(message);
-    delay_timer = connection_.dispatcher().createTimer([this, delay]() {
+    Envoy::Event::TimerCb send_grpc_response = [this, delay]() {
       ENVOY_LOG(
           debug,
           "ServerStream({}:{}:{}) sending gRPC response after {} msec delay",
@@ -148,11 +131,20 @@ class ServerStreamImpl : public ServerStream,
       stream_encoder_.encodeTrailers(Envoy::Http::TestHeaderMapImpl{
           {"grpc-status",
            std::to_string(static_cast<uint32_t>(response_status_))}});
-      delay_timer->disableTimer();
-      connection_.removeStream(id_);
-      // stream is destroyed
-    });
-    delay_timer->enableTimer(delay);
+    };
+
+    if (delay <= std::chrono::milliseconds(0)) {
+      send_grpc_response();
+      return;
+    }
+
+    delay_timer_ =
+        connection_.dispatcher().createTimer([this, send_grpc_response]() {
+          send_grpc_response();
+          delay_timer_->disableTimer();
+        });
+
+    delay_timer_->enableTimer(delay);
   }
 
   //
@@ -281,10 +273,8 @@ class ServerStreamImpl : public ServerStream,
               connection_.id(), id_);
     request_callback_(connection_, *this, std::move(request_headers_));
 
-    if (delete_after_callback_) {
-      connection_.removeStream(id_);
-      // This stream is now destroyed
-    }
+    connection_.removeStream(id_);
+    // This stream is now destroyed
   }
 
   ServerStreamImpl(const ServerStreamImpl &) = delete;
@@ -299,8 +289,7 @@ class ServerStreamImpl : public ServerStream,
   Envoy::Grpc::Status::GrpcStatus response_status_{Envoy::Grpc::Status::Ok};
   ServerRequestCallback request_callback_;
   Envoy::Http::StreamEncoder &stream_encoder_;
-  Envoy::Event::TimerPtr delay_timer{nullptr};
-  bool delete_after_callback_{true};
+  Envoy::Event::TimerPtr delay_timer_{nullptr};
 };
 
 ServerConnection::ServerConnection(
@@ -340,6 +329,7 @@ ServerConnection::ServerConnection(
       http_connection_ =
           std::make_unique<Envoy::Http::Http1::ServerConnectionImpl>(
               network_connection, *this, Envoy::Http::Http1Settings());
+      break;
   }
 }
 
@@ -546,6 +536,7 @@ ServerCallbackHelper::ServerCallbackHelper(
       }
 
       close_callback(connection, reason);
+      std::unique_lock<std::mutex> lock(mutex_);
       condvar_.notify_one();
     };
   } else {
@@ -558,6 +549,7 @@ ServerCallbackHelper::ServerCallbackHelper(
           ++local_closes_;
           break;
       }
+      std::unique_lock<std::mutex> lock(mutex_);
       condvar_.notify_one();
     };
   }
