@@ -526,6 +526,8 @@ ServerCallbackHelper::ServerCallbackHelper(
   if (close_callback) {
     close_callback_ = [this, &close_callback](ServerConnection &connection,
                                               ServerCloseReason reason) {
+      absl::MutexLock lock(&mutex_);
+
       switch (reason) {
         case ServerCloseReason::REMOTE_CLOSE:
           ++remote_closes_;
@@ -536,11 +538,11 @@ ServerCallbackHelper::ServerCallbackHelper(
       }
 
       close_callback(connection, reason);
-      std::unique_lock<std::mutex> lock(mutex_);
-      condvar_.notify_one();
     };
   } else {
     close_callback_ = [this](ServerConnection &, ServerCloseReason reason) {
+      absl::MutexLock lock(&mutex_);
+
       switch (reason) {
         case ServerCloseReason::REMOTE_CLOSE:
           ++remote_closes_;
@@ -549,8 +551,6 @@ ServerCallbackHelper::ServerCallbackHelper(
           ++local_closes_;
           break;
       }
-      std::unique_lock<std::mutex> lock(mutex_);
-      condvar_.notify_one();
     };
   }
 }
@@ -563,9 +563,15 @@ uint32_t ServerCallbackHelper::requestsReceived() const {
   return requests_received_;
 }
 
-uint32_t ServerCallbackHelper::localCloses() const { return local_closes_; }
+uint32_t ServerCallbackHelper::localCloses() const {
+  absl::MutexLock lock(&mutex_);
+  return local_closes_;
+}
 
-uint32_t ServerCallbackHelper::remoteCloses() const { return remote_closes_; }
+uint32_t ServerCallbackHelper::remoteCloses() const {
+  absl::MutexLock lock(&mutex_);
+  return remote_closes_;
+}
 
 ServerAcceptCallback ServerCallbackHelper::acceptCallback() const {
   return accept_callback_;
@@ -580,17 +586,21 @@ ServerCloseCallback ServerCallbackHelper::closeCallback() const {
 }
 
 void ServerCallbackHelper::wait(uint32_t connections_closed) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  while (connections_closed > local_closes_ + remote_closes_) {
-    condvar_.wait(lock);
-  }
+  auto constraints = [connections_closed, this]() {
+    return connections_closed <= local_closes_ + remote_closes_;
+  };
+
+  absl::MutexLock lock(&mutex_);
+  mutex_.Await(absl::Condition(&constraints));
 }
 
 void ServerCallbackHelper::wait() {
-  std::unique_lock<std::mutex> lock(mutex_);
-  while (accepts_ > local_closes_ + remote_closes_) {
-    condvar_.wait(lock);
-  }
+  auto constraints = [this]() {
+    return accepts_ <= local_closes_ + remote_closes_;
+  };
+
+  absl::MutexLock lock(&mutex_);
+  mutex_.Await(absl::Condition(&constraints));
 }
 
 Server::Server(const std::string &name,
