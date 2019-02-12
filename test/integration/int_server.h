@@ -292,10 +292,9 @@ class ServerCallbackHelper {
 
   std::atomic<uint32_t> accepts_{0};
   std::atomic<uint32_t> requests_received_{0};
-  std::atomic<uint32_t> local_closes_{0};
-  std::atomic<uint32_t> remote_closes_{0};
-  std::mutex mutex_;
-  std::condition_variable condvar_;
+  uint32_t local_closes_{0};
+  uint32_t remote_closes_{0};
+  mutable absl::Mutex mutex_;
 };
 
 typedef std::unique_ptr<ServerCallbackHelper> ServerCallbackHelperPtr;
