@@ -623,7 +623,7 @@ LoadGenerator::LoadGenerator(
     // Unblock run() once we've seen a close for every connection initiated.
     if (remote_closes_ + local_closes_ + connect_failures_ >=
         connections_to_initiate_) {
-      promise_.set_value(true);
+      promise_all_connections_closed_.set_value(true);
     }
   };
 }
@@ -636,7 +636,7 @@ void LoadGenerator::run(uint32_t connections, uint32_t requests,
   connections_to_initiate_ = connections;
   requests_to_send_ = requests;
   request_ = std::move(request);
-  promise_ = std::promise<bool>();
+  promise_all_connections_closed_ = std::promise<bool>();
   timeout_ = timeout;
   requests_remaining_ = requests_to_send_;
   connect_failures_ = 0;
@@ -656,7 +656,7 @@ void LoadGenerator::run(uint32_t connections, uint32_t requests,
                     connect_callback_, close_callback_);
   }
 
-  promise_.get_future().get();
+  promise_all_connections_closed_.get_future().get();
 }
 
 uint32_t LoadGenerator::connectFailures() const { return connect_failures_; }

@@ -63,7 +63,7 @@ enum class ClientCallbackResult {
 };
 
 /**
- * Handle a non-termal connection event asynchronously.
+ * Handle a non-terminal connection event asynchronously.
  *
  * @param connection The connection with the event
  * @param state The state of the connection (connected or idle).
@@ -202,15 +202,11 @@ class Client : Envoy::Logger::Loggable<Envoy::Logger::Id::testing> {
   void releaseConnection(ClientConnection &connection);
 
   /**
-   * Asynchronously connect to a peer.  The same callback will be used for
-   * successful connections and subsequent disconnect/errors, so be prepared for
-   * it to be called multiple times with different ConnectionResults.
-   *
-   * @param socket_factory
-   * @param http_version
-   * @param address
-   * @param sockopts
-   * @param callback
+   * Asynchronously connect to a peer.  The connect_callback will be called on
+   * successful connection establishment and also on idle state, giving the
+   * caller the opportunity to reuse or close connections.  The close_callback
+   * will be called after the connection is closed, giving the caller the
+   * opportunity to cleanup additional resources, etc.
    */
   void connect(
       Envoy::Network::TransportSocketFactory &socket_factory,
@@ -311,7 +307,7 @@ class LoadGenerator : Envoy::Logger::Loggable<Envoy::Logger::Id::testing> {
   std::atomic<uint32_t> class_2xx_{0};
   std::atomic<uint32_t> class_4xx_{0};
   std::atomic<uint32_t> class_5xx_{0};
-  std::promise<bool> promise_;
+  std::promise<bool> promise_all_connections_closed_;
 };
 
 typedef std::unique_ptr<LoadGenerator> LoadGeneratorPtr;
