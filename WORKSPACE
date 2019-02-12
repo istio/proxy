@@ -35,9 +35,9 @@ bind(
 # When updating envoy sha manually please update the sha in istio.deps file also
 #
 # Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/COMMIT.tar.gz && sha256sum COMMIT.tar.gz`
-ENVOY_SHA = "b3be5713f2100ab5c40316e73ce34581245bd26a"
+ENVOY_SHA = "925810d00b0d3095a8e67fd4e04e0f597ed188bb"
 
-ENVOY_SHA256 = "79629284ae143d66b873c08883dc6382fac2e8ed45f6f3521f7e7282b6650216"
+ENVOY_SHA256 = "26d1f14e881455546cf0e222ec92a8e1e5f65cb2c5761d63c66598b39cd9c47d"
 
 http_archive(
     name = "envoy",
@@ -49,6 +49,10 @@ http_archive(
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
 envoy_dependencies()
+
+load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
 
 load("@envoy//bazel:cc_configure.bzl", "cc_configure")
 
