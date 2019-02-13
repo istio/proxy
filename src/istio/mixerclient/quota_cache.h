@@ -22,8 +22,10 @@
 #include <string>
 #include <unordered_map>
 
-#include "include/istio/mixerclient/client.h"
+#include "google/protobuf/stubs/status.h"
+#include "include/istio/mixerclient/options.h"
 #include "include/istio/prefetch/quota_prefetch.h"
+#include "include/istio/quota_config/requirement.h"
 #include "include/istio/utils/simple_lru_cache.h"
 #include "include/istio/utils/simple_lru_cache_inl.h"
 #include "src/istio/mixerclient/referenced.h"
@@ -57,7 +59,7 @@ class QuotaCache {
 
     bool IsCacheHit() const;
 
-    ::google::protobuf::util::Status status() const { return status_; }
+    const ::google::protobuf::util::Status& status() const { return status_; }
 
     void SetResponse(const ::google::protobuf::util::Status& status,
                      const ::istio::mixer::v1::Attributes& attributes,

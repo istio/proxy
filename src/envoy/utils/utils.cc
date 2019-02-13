@@ -143,13 +143,12 @@ Status ParseJsonMessage(const std::string& json, Message* output) {
 void CheckResponseInfoToStreamInfo(
     const istio::mixerclient::CheckResponseInfo& check_response,
     StreamInfo::StreamInfo& stream_info) {
-  if (!check_response.response_status.ok()) {
+  if (!check_response.status().ok()) {
     stream_info.setResponseFlag(
         StreamInfo::ResponseFlag::UnauthorizedExternalService);
     ProtobufWkt::Struct metadata;
     auto& fields = *metadata.mutable_fields();
-    fields["status"].set_string_value(
-        check_response.response_status.ToString());
+    fields["status"].set_string_value(check_response.status().ToString());
     stream_info.setDynamicMetadata(istio::utils::kMixerMetadataKey, metadata);
   }
 }

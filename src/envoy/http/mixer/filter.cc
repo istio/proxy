@@ -147,15 +147,17 @@ void Filter::setDecoderFilterCallbacks(
 }
 
 void Filter::completeCheck(const CheckResponseInfo& info) {
-  auto status = info.response_status;
+  auto status = info.status();
+
   ENVOY_LOG(debug, "Called Mixer::Filter : check complete {}",
             status.ToString());
+
   // This stream has been reset, abort the callback.
   if (state_ == Responded) {
     return;
   }
 
-  route_directive_ = info.route_directive;
+  route_directive_ = info.routeDirective();
 
   Utils::CheckResponseInfoToStreamInfo(info, decoder_callbacks_->streamInfo());
 

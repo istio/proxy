@@ -17,6 +17,7 @@
 
 #include <set>
 
+#include "google/protobuf/stubs/status.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "include/istio/utils/status.h"
@@ -35,7 +36,7 @@ const std::set<std::string> kGrpcContentTypes{
 }  // namespace
 
 void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
-  utils::AttributesBuilder builder(request_->attributes);
+  utils::AttributesBuilder builder(attributes_);
   std::map<std::string, std::string> headers = check_data->GetRequestHeaders();
   builder.AddStringMap(utils::AttributeName::kRequestHeaders, headers);
 
@@ -79,7 +80,7 @@ void AttributesBuilder::ExtractRequestHeaderAttributes(CheckData *check_data) {
 }
 
 void AttributesBuilder::ExtractAuthAttributes(CheckData *check_data) {
-  utils::AttributesBuilder builder(request_->attributes);
+  utils::AttributesBuilder builder(attributes_);
 
   std::string destination_principal;
   if (check_data->GetPrincipal(false, &destination_principal)) {
@@ -146,7 +147,7 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
   };
 
   auto fwd = v2_format.attributes();
-  utils::AttributesBuilder builder(request_->attributes);
+  utils::AttributesBuilder builder(attributes_);
   for (const auto &attribute : kForwardWhitelist) {
     const auto &iter = fwd.find(attribute);
     if (iter != fwd.end() && !iter->second.string_value().empty()) {
@@ -161,7 +162,7 @@ void AttributesBuilder::ExtractCheckAttributes(CheckData *check_data) {
   ExtractRequestHeaderAttributes(check_data);
   ExtractAuthAttributes(check_data);
 
-  utils::AttributesBuilder builder(request_->attributes);
+  utils::AttributesBuilder builder(attributes_);
 
   // connection remote IP is always reported as origin IP
   std::string source_ip;
@@ -200,8 +201,9 @@ void AttributesBuilder::ForwardAttributes(const Attributes &forward_attributes,
   header_update->AddIstioAttributes(str);
 }
 
-void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
-  utils::AttributesBuilder builder(request_->attributes);
+void AttributesBuilder::ExtractReportAttributes(
+    const ::google::protobuf::util::Status &status, ReportData *report_data) {
+  utils::AttributesBuilder builder(attributes_);
 
   std::string dest_ip;
   int dest_port;
@@ -238,14 +240,13 @@ void AttributesBuilder::ExtractReportAttributes(ReportData *report_data) {
   builder.AddInt64(utils::AttributeName::kResponseTotalSize,
                    info.response_total_size);
   builder.AddDuration(utils::AttributeName::kResponseDuration, info.duration);
-  if (!request_->check_status.ok()) {
-    builder.AddInt64(
-        utils::AttributeName::kResponseCode,
-        utils::StatusHttpCode(request_->check_status.error_code()));
+  if (status != ::google::protobuf::util::Status::UNKNOWN && !status.ok()) {
+    builder.AddInt64(utils::AttributeName::kResponseCode,
+                     utils::StatusHttpCode(status.error_code()));
     builder.AddInt64(utils::AttributeName::kCheckErrorCode,
-                     request_->check_status.error_code());
+                     status.error_code());
     builder.AddString(utils::AttributeName::kCheckErrorMessage,
-                      request_->check_status.ToString());
+                      status.ToString());
   } else {
     builder.AddInt64(utils::AttributeName::kResponseCode, info.response_code);
   }

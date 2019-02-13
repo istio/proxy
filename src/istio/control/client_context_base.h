@@ -20,7 +20,8 @@
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/local_attributes.h"
 #include "mixer/v1/config/client/client_config.pb.h"
-#include "request_context.h"
+#include "src/istio/mixerclient/check_context.h"
+#include "src/istio/mixerclient/shared_attributes.h"
 
 namespace istio {
 namespace control {
@@ -40,17 +41,19 @@ class ClientContextBase {
       bool outbound, ::istio::utils::LocalAttributes& local_attributes)
       : mixer_client_(std::move(mixer_client)),
         outbound_(outbound),
-        local_attributes_(local_attributes) {}
+        local_attributes_(local_attributes),
+        network_fail_open_(false) {}
   // virtual destrutor
   virtual ~ClientContextBase() {}
 
   // Use mixer client object to make a Check call.
   ::istio::mixerclient::CancelFunc SendCheck(
       ::istio::mixerclient::TransportCheckFunc transport,
-      ::istio::mixerclient::CheckDoneFunc on_done, RequestContext* request);
+      ::istio::mixerclient::CheckDoneFunc on_done,
+      ::istio::mixerclient::CheckContextSharedPtr& check_context);
 
   // Use mixer client object to make a Report call.
-  void SendReport(const RequestContext& request);
+  void SendReport(istio::mixerclient::SharedAttributesPtr& attributes);
 
   // Get statistics.
   void GetStatistics(::istio::mixerclient::Statistics* stat) const;
@@ -59,6 +62,8 @@ class ClientContextBase {
 
   void AddLocalNodeForwardAttribues(
       ::istio::mixer::v1::Attributes* request) const;
+
+  bool NetworkFailOpen() const { return network_fail_open_; }
 
  private:
   // The mixer client object with check cache and report batch features.
@@ -69,6 +74,8 @@ class ClientContextBase {
 
   // local attributes - owned by the client context.
   ::istio::utils::LocalAttributes local_attributes_;
+
+  bool network_fail_open_;
 };
 
 }  // namespace control

@@ -18,7 +18,7 @@
 
 #include "include/istio/control/http/check_data.h"
 #include "include/istio/control/http/report_data.h"
-#include "src/istio/control/request_context.h"
+#include "mixer/v1/attributes.pb.h"
 
 namespace istio {
 namespace control {
@@ -27,7 +27,8 @@ namespace http {
 // The context for each HTTP request.
 class AttributesBuilder {
  public:
-  AttributesBuilder(RequestContext* request) : request_(request) {}
+  AttributesBuilder(istio::mixer::v1::Attributes* attributes)
+      : attributes_(attributes) {}
 
   // Extract forwarded attributes from HTTP header.
   void ExtractForwardedAttributes(CheckData* check_data);
@@ -39,7 +40,8 @@ class AttributesBuilder {
   // Extract attributes for Check call.
   void ExtractCheckAttributes(CheckData* check_data);
   // Extract attributes for Report call.
-  void ExtractReportAttributes(ReportData* report_data);
+  void ExtractReportAttributes(const ::google::protobuf::util::Status& status,
+                               ReportData* report_data);
 
  private:
   // Extract HTTP header attributes
@@ -52,8 +54,7 @@ class AttributesBuilder {
   // not available.
   void ExtractAuthAttributes(CheckData* check_data);
 
-  // The request context object.
-  RequestContext* request_;
+  istio::mixer::v1::Attributes* attributes_;
 };
 
 }  // namespace http
