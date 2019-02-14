@@ -210,7 +210,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheckReport) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(0);
 
   // Check should NOT be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _)).Times(0);
+  EXPECT_CALL(*mock_client_, Check(_, _, _)).Times(0);
 
   ServiceConfig config;
   config.set_disable_check_calls(true);
@@ -219,10 +219,9 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheckReport) {
   ApplyPerRouteConfig(config, &per_route);
 
   auto handler = controller_->CreateRequestHandler(per_route);
-  handler->Check(&mock_data, &mock_header, nullptr,
-                 [](const CheckResponseInfo &info) {
-                   EXPECT_TRUE(info.response_status.ok());
-                 });
+  handler->Check(
+      &mock_data, &mock_header, nullptr,
+      [](const CheckResponseInfo &info) { EXPECT_TRUE(info.status().ok()); });
 }
 
 TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
@@ -233,7 +232,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
   // Check should NOT be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _)).Times(0);
+  EXPECT_CALL(*mock_client_, Check(_, _, _)).Times(0);
 
   ServiceConfig config;
   config.set_disable_check_calls(true);
@@ -241,10 +240,9 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
   ApplyPerRouteConfig(config, &per_route);
 
   auto handler = controller_->CreateRequestHandler(per_route);
-  handler->Check(&mock_data, &mock_header, nullptr,
-                 [](const CheckResponseInfo &info) {
-                   EXPECT_TRUE(info.response_status.ok());
-                 });
+  handler->Check(
+      &mock_data, &mock_header, nullptr,
+      [](const CheckResponseInfo &info) { EXPECT_TRUE(info.status().ok()); });
 }
 
 TEST_F(RequestHandlerImplTest, TestPerRouteAttributes) {
@@ -254,12 +252,11 @@ TEST_F(RequestHandlerImplTest, TestPerRouteAttributes) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(map["per-route-key"].string_value(), "per-route-value");
         return nullptr;
@@ -282,12 +279,11 @@ TEST_F(RequestHandlerImplTest, TestDefaultRouteAttributes) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(map["route0-key"].string_value(), "route0-value");
         return nullptr;
@@ -321,12 +317,11 @@ TEST_F(RequestHandlerImplTest, TestRouteAttributes) {
   SetServiceConfig("route1", route_config);
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "service-value");
         EXPECT_EQ(map["route1-key"].string_value(), "route1-value");
         return nullptr;
@@ -352,16 +347,15 @@ TEST_F(RequestHandlerImplTest, TestPerRouteQuota) {
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
-        EXPECT_EQ(quotas.size(), 1);
-        EXPECT_EQ(quotas[0].quota, "route0-quota");
-        EXPECT_EQ(quotas[0].charge, 10);
+        EXPECT_EQ(context->quotaRequirements().size(), 1);
+        EXPECT_EQ(context->quotaRequirements()[0].quota, "route0-quota");
+        EXPECT_EQ(context->quotaRequirements()[0].charge, 10);
         return nullptr;
       }));
 
@@ -394,12 +388,11 @@ TEST_F(RequestHandlerImplTest, TestPerRouteApiSpec) {
           }));
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(map["api.name"].string_value(), "test-name");
         EXPECT_EQ(map["api.operation"].string_value(), "test-method");
@@ -430,7 +423,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _)).Times(1);
+  EXPECT_CALL(*mock_client_, Check(_, _, _)).Times(1);
 
   ServiceConfig config;
   Controller::PerRouteConfig per_route;
@@ -454,12 +447,11 @@ TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
           }));
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map[utils::AttributeName::kRequestApiKey].string_value(),
                   "test-api-key");
         return nullptr;
@@ -533,7 +525,7 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
       }));
 
   // Check should NOT be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _)).Times(0);
+  EXPECT_CALL(*mock_client_, Check(_, _, _)).Times(0);
 
   ::testing::NiceMock<MockReportData> mock_report;
   EXPECT_CALL(mock_report, GetResponseHeaders()).Times(0);
@@ -545,10 +537,9 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
 
   Controller::PerRouteConfig config;
   auto handler = controller_->CreateRequestHandler(config);
-  handler->Check(&mock_check, &mock_header, nullptr,
-                 [](const CheckResponseInfo &info) {
-                   EXPECT_TRUE(info.response_status.ok());
-                 });
+  handler->Check(
+      &mock_check, &mock_header, nullptr,
+      [](const CheckResponseInfo &info) { EXPECT_TRUE(info.status().ok()); });
   handler->Report(&mock_check, &mock_report);
 }
 
@@ -556,12 +547,11 @@ TEST_F(OutboundRequestHandlerImplTest, TestLocalAttributes) {
   ::testing::NiceMock<MockCheckData> mock_data;
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["source.uid"].string_value(),
                   "kubernetes://src-client-84469dc8d7-jbbxt.default");
         return nullptr;
@@ -590,12 +580,11 @@ TEST_F(OutboundRequestHandlerImplTest, TestLocalAttributesOverride) {
       }));
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
                           TransportCheckFunc transport,
                           CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["source.uid"].string_value(), "fwded");
         EXPECT_NE(map["destination.uid"].string_value(), "ignored");
         return nullptr;

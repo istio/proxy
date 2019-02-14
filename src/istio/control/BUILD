@@ -21,7 +21,6 @@ cc_library(
     ],
     hdrs = [
         "client_context_base.h",
-        "request_context.h",
     ],
     visibility = [":__subpackages__"],
     deps = [

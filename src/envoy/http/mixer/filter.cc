@@ -24,6 +24,7 @@
 #include "src/envoy/utils/header_update.h"
 
 using ::google::protobuf::util::Status;
+using ::istio::mixer::v1::RouteDirective;
 using ::istio::mixerclient::CheckResponseInfo;
 
 namespace Envoy {
@@ -147,7 +148,8 @@ void Filter::setDecoderFilterCallbacks(
 }
 
 void Filter::completeCheck(const CheckResponseInfo& info) {
-  auto status = info.response_status;
+  const Status& status = info.status();
+
   ENVOY_LOG(debug, "Called Mixer::Filter : check complete {}",
             status.ToString());
   // This stream has been reset, abort the callback.
@@ -155,7 +157,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     return;
   }
 
-  route_directive_ = info.route_directive;
+  route_directive_ = info.routeDirective();
 
   Utils::CheckResponseInfoToStreamInfo(info, decoder_callbacks_->streamInfo());
 

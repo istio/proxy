@@ -79,37 +79,24 @@ ClientContextBase::ClientContextBase(const TransportConfig& config,
   options.env = env;
   mixer_client_ = ::istio::mixerclient::CreateMixerClient(options);
   CreateLocalAttributes(local_node, &local_attributes_);
+  network_fail_open_ = options.check_options.network_fail_open;
 }
 
-CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
-                                        CheckDoneFunc on_done,
-                                        RequestContext* request) {
-  // Intercept the callback to save check status in request_context
-  auto local_on_done = [request,
-                        on_done](const CheckResponseInfo& check_response_info) {
-    // save the check status code
-    request->check_status = check_response_info.response_status;
-
-    utils::AttributesBuilder builder(request->attributes);
-    builder.AddBool(utils::AttributeName::kCheckCacheHit,
-                    check_response_info.is_check_cache_hit);
-    builder.AddBool(utils::AttributeName::kQuotaCacheHit,
-                    check_response_info.is_quota_cache_hit);
-    on_done(check_response_info);
-  };
-
+CancelFunc ClientContextBase::SendCheck(
+    TransportCheckFunc transport, CheckDoneFunc on_done,
+    ::istio::mixerclient::CheckContextSharedPtr& context) {
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Check attributes: " <<
   // request->attributes->DebugString();
-  return mixer_client_->Check(*request->attributes, request->quotas, transport,
-                              local_on_done);
+  return mixer_client_->Check(context, transport, on_done);
 }
 
-void ClientContextBase::SendReport(const RequestContext& request) {
+void ClientContextBase::SendReport(
+    istio::mixerclient::SharedAttributesPtr& attributes) {
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Report attributes: " <<
   // request.attributes->DebugString();
-  mixer_client_->Report(*request.attributes);
+  mixer_client_->Report(attributes);
 }
 
 void ClientContextBase::GetStatistics(Statistics* stat) const {
