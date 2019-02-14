@@ -77,7 +77,7 @@ void ReportBatch::FlushWithLock() {
       if (MIXER_WARN_ENABLED &&
           0 == REPORT_FAIL_LOG_MESSAGES++ % REPORT_FAIL_LOG_MODULUS) {
         MIXER_WARN("Mixer Report failed with: %s", status.ToString().c_str());
-      } else if (MIXER_DEBUG_ENABLED) {
+      } else {
         MIXER_DEBUG("Mixer Report failed with: %s", status.ToString().c_str());
       }
       if (utils::InvalidDictionaryStatus(status)) {

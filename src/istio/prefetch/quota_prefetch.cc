@@ -152,12 +152,10 @@ void QuotaPrefetchImpl::AttemptPrefetch(int amount, Tick t) {
   int avail = CountAvailable(t);
   int pass_count = counter_.Count(t);
   int desired = std::max(pass_count, options_.min_prefetch_amount);
-  if (MIXER_TRACE_ENABLED) {
-    MIXER_TRACE(
-        "Prefetch decision: available=%d, desired=%d, inflight_count=%d, "
-        "requested=%d",
-        avail, desired, inflight_count_, amount);
-  }
+  MIXER_TRACE(
+      "Prefetch decision: available=%d, desired=%d, inflight_count=%d, "
+      "requested=%d",
+      avail, desired, inflight_count_, amount);
   if ((avail < desired / 2 && inflight_count_ == 0) || avail < amount) {
     bool use_not_granted = (avail == 0 && mode_ == OPEN);
     Prefetch(std::max(amount, desired), use_not_granted, t);
@@ -171,9 +169,7 @@ void QuotaPrefetchImpl::Prefetch(int req_amount, bool use_not_granted, Tick t) {
     slot_id = Add(req_amount, t + milliseconds(kMaxExpirationInMs));
   }
 
-  if (MIXER_DEBUG_ENABLED) {
-    MIXER_DEBUG("Prefetch amount %d for slotid: %lu", req_amount, slot_id);
-  }
+  MIXER_DEBUG("Prefetch amount %d for slotid: %lu", req_amount, slot_id);
 
   last_prefetch_time_ = t;
   ++inflight_count_;
@@ -217,9 +213,7 @@ int QuotaPrefetchImpl::Substract(int delta, Tick t) {
       }
     } else {
       if (n->available > 0) {
-        if (MIXER_DEBUG_ENABLED) {
-          MIXER_DEBUG("Expired: %d", n->available);
-        }
+        MIXER_DEBUG("Expired: %d", n->available);
       }
     }
     queue_.Pop();
@@ -234,10 +228,8 @@ void QuotaPrefetchImpl::OnResponse(SlotId slot_id, int req_amount,
   std::lock_guard<std::mutex> lock(mutex_);
   --inflight_count_;
 
-  if (MIXER_DEBUG_ENABLED) {
-    MIXER_DEBUG("OnResponse: req: %d, resp: %d, expire: %ld, id: %lu",
-                req_amount, resp_amount, expiration.count(), slot_id);
-  }
+  MIXER_DEBUG("OnResponse: req: %d, resp: %d, expire: %ld, id: %lu", req_amount,
+              resp_amount, expiration.count(), slot_id);
 
   // resp_amount of -1 indicates any network failures.
   // Use fail open policy to handle any netowrk failures.
@@ -295,7 +287,7 @@ bool QuotaPrefetchImpl::Check(int amount, Tick t) {
       Substract(amount, t);
     }
   }
-  if (!ret && MIXER_DEBUG_ENABLED) {
+  if (!ret) {
     MIXER_DEBUG("Rejected amount: %d", amount);
   }
   return ret;

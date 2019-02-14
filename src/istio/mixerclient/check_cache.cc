@@ -148,12 +148,10 @@ Status CheckCache::CacheResponse(const Attributes &attributes,
   }
   utils::HashType signature;
   if (!referenced.Signature(attributes, "", &signature)) {
-    if (MIXER_WARN_ENABLED) {
-      MIXER_WARN(
-          "Response referenced does not match request.  Request attributes: "
-          "%s.  Referenced attributes: %s",
-          attributes.DebugString().c_str(), referenced.DebugString().c_str());
-    }
+    MIXER_WARN(
+        "Response referenced does not match request.  Request attributes: "
+        "%s.  Referenced attributes: %s",
+        attributes.DebugString().c_str(), referenced.DebugString().c_str());
     return ConvertRpcStatus(response.precondition().status());
   }
 
@@ -161,10 +159,8 @@ Status CheckCache::CacheResponse(const Attributes &attributes,
   utils::HashType hash = referenced.Hash();
   if (referenced_map_.find(hash) == referenced_map_.end()) {
     referenced_map_[hash] = referenced;
-    if (MIXER_DEBUG_ENABLED) {
-      MIXER_DEBUG("Add a new Referenced for check cache: %s",
-                  referenced.DebugString().c_str());
-    }
+    MIXER_DEBUG("Add a new Referenced for check cache: %s",
+                referenced.DebugString().c_str());
   }
 
   CheckLRUCache::ScopedLookup lookup(cache_.get(), signature);

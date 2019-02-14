@@ -97,9 +97,7 @@ bool QuotaCache::CheckResult::BuildRequest(CheckRequest* request) {
     }
   }
   if (!rejected_quota_names.empty()) {
-    if (MIXER_DEBUG_ENABLED) {
-      MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
-    }
+    MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
     status_ =
         Status(Code::RESOURCE_EXHAUSTED,
                std::string("Quota is exhausted for: ") + rejected_quota_names);
@@ -122,10 +120,8 @@ void QuotaCache::CheckResult::SetResponse(const Status& status,
         if (it != quotas.end()) {
           result = &it->second;
         } else {
-          if (MIXER_WARN_ENABLED) {
-            MIXER_WARN("Quota response did not have quota for: %s",
-                       quota.name.c_str());
-          }
+          MIXER_WARN("Quota response did not have quota for: %s",
+                     quota.name.c_str());
         }
       }
       if (!quota.response_func(attributes, result)) {
@@ -137,9 +133,7 @@ void QuotaCache::CheckResult::SetResponse(const Status& status,
     }
   }
   if (!rejected_quota_names.empty()) {
-    if (MIXER_DEBUG_ENABLED) {
-      MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
-    }
+    MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
     status_ =
         Status(Code::RESOURCE_EXHAUSTED,
                std::string("Quota is exhausted for: ") + rejected_quota_names);
@@ -227,12 +221,10 @@ void QuotaCache::SetResponse(const Attributes& attributes,
 
   utils::HashType signature;
   if (!referenced.Signature(attributes, quota_name, &signature)) {
-    if (MIXER_WARN_ENABLED) {
-      MIXER_WARN(
-          "Quota response referenced does not match request. Request "
-          "attributes: %s, Referenced attributes: %s",
-          attributes.DebugString().c_str(), referenced.DebugString().c_str());
-    }
+    MIXER_WARN(
+        "Quota response referenced does not match request. Request "
+        "attributes: %s, Referenced attributes: %s",
+        attributes.DebugString().c_str(), referenced.DebugString().c_str());
     return;
   }
 
@@ -247,10 +239,8 @@ void QuotaCache::SetResponse(const Attributes& attributes,
   utils::HashType hash = referenced.Hash();
   if (quota_ref.referenced_map.find(hash) == quota_ref.referenced_map.end()) {
     quota_ref.referenced_map[hash] = referenced;
-    if (MIXER_DEBUG_ENABLED) {
-      MIXER_DEBUG("Add a new Referenced for quota cache: %s, reference: %s",
-                  quota_name.c_str(), referenced.DebugString().c_str());
-    }
+    MIXER_DEBUG("Add a new Referenced for quota cache: %s, reference: %s",
+                quota_name.c_str(), referenced.DebugString().c_str());
   }
 
   cache_->Insert(signature, quota_ref.pending_item.release(), 1);

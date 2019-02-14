@@ -99,19 +99,16 @@ CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
     on_done(check_response_info);
   };
 
-  if (MIXER_DEBUG_ENABLED) {
-    MIXER_DEBUG("Check attributes: %s",
-                request->attributes->DebugString().c_str());
-  }
+  MIXER_DEBUG("Check attributes: %s",
+              request->attributes->DebugString().c_str());
 
   return mixer_client_->Check(*request->attributes, request->quotas, transport,
                               local_on_done);
 }
 
 void ClientContextBase::SendReport(const RequestContext& request) {
-  if (MIXER_DEBUG_ENABLED) {
-    MIXER_DEBUG("Report attributes: %s", request.attributes->DebugString().c_str());
-  }
+  MIXER_DEBUG("Report attributes: %s",
+              request.attributes->DebugString().c_str());
 
   mixer_client_->Report(*request.attributes);
 }

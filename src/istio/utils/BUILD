@@ -62,6 +62,16 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "logger_test",
+    size = "small",
+    srcs = ["logger_test.cc"],
+    deps = [
+        ":utils_lib",
+        "//external:googletest_main",
+    ],
+)
+
 cc_library(
     name = "attribute_names_lib",
     srcs = [

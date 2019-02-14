@@ -55,18 +55,39 @@ extern Logger &getLogger();
 #define MIXER_ERROR_ENABLED \
   (istio::utils::getLogger().isLoggable(istio::utils::Logger::Level::ERROR_))
 
-#define MIXER_TRACE(FORMAT, ...)                                     \
+#define MIXER_TRACE_INT(FORMAT, ...)                                 \
   istio::utils::getLogger().log(istio::utils::Logger::Level::TRACE_, \
                                 FILE_LINE FORMAT, ##__VA_ARGS__)
-#define MIXER_DEBUG(FORMAT, ...)                                     \
+#define MIXER_DEBUG_INT(FORMAT, ...)                                 \
   istio::utils::getLogger().log(istio::utils::Logger::Level::DEBUG_, \
                                 FILE_LINE FORMAT, ##__VA_ARGS__)
-#define MIXER_INFO(FORMAT, ...)                                     \
+#define MIXER_INFO_INT(FORMAT, ...)                                 \
   istio::utils::getLogger().log(istio::utils::Logger::Level::INFO_, \
                                 FILE_LINE FORMAT, ##__VA_ARGS__)
-#define MIXER_WARN(FORMAT, ...)                                     \
+#define MIXER_WARN_INT(FORMAT, ...)                                 \
   istio::utils::getLogger().log(istio::utils::Logger::Level::WARN_, \
                                 FILE_LINE FORMAT, ##__VA_ARGS__)
-#define MIXER_ERROR(FORMAT, ...)                                     \
+#define MIXER_ERROR_INT(FORMAT, ...)                                 \
   istio::utils::getLogger().log(istio::utils::Logger::Level::ERROR_, \
                                 FILE_LINE FORMAT, ##__VA_ARGS__)
+
+#define MIXER_TRACE(FORMAT, ...)            \
+  if (MIXER_TRACE_ENABLED) {                \
+    MIXER_TRACE_INT(FORMAT, ##__VA_ARGS__); \
+  }
+#define MIXER_DEBUG(FORMAT, ...)            \
+  if (MIXER_DEBUG_ENABLED) {                \
+    MIXER_DEBUG_INT(FORMAT, ##__VA_ARGS__); \
+  }
+#define MIXER_INFO(FORMAT, ...)            \
+  if (MIXER_INFO_ENABLED) {                \
+    MIXER_INFO_INT(FORMAT, ##__VA_ARGS__); \
+  }
+#define MIXER_WARN(FORMAT, ...)            \
+  if (MIXER_WARN_ENABLED) {                \
+    MIXER_WARN_INT(FORMAT, ##__VA_ARGS__); \
+  }
+#define MIXER_ERROR(FORMAT, ...)            \
+  if (MIXER_ERROR_ENABLED) {                \
+    MIXER_ERROR_INT(FORMAT, ##__VA_ARGS__); \
+  }
