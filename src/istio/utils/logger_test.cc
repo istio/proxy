@@ -22,9 +22,8 @@ namespace istio {
 namespace utils {
 
 class CountingArgument {
-public:
-
-  const char *toString() {
+ public:
+  const char* toString() {
     ++to_string_calls;
     return "logged entity";
   }
@@ -33,10 +32,10 @@ public:
 };
 
 class CountingLogger : public Logger {
-public:
-  CountingLogger(int& is_loggable_calls, int& write_buffer_calls) :
-  is_loggable_calls_(is_loggable_calls), write_buffer_calls_(write_buffer_calls){
-  }
+ public:
+  CountingLogger(int& is_loggable_calls, int& write_buffer_calls)
+      : is_loggable_calls_(is_loggable_calls),
+        write_buffer_calls_(write_buffer_calls) {}
 
   virtual bool isLoggable(Level level) override {
     ++is_loggable_calls_;
@@ -52,21 +51,20 @@ public:
     }
   }
 
-  virtual void writeBuffer(Level level, const char *buffer) override {
+  virtual void writeBuffer(Level level, const char* buffer) override {
     ++write_buffer_calls_;
   }
 
-private:
-
+ private:
   int& is_loggable_calls_;
   int& write_buffer_calls_;
 };
 
 class LoggerTest : public ::testing::Test {
-protected:
-
+ protected:
   virtual void SetUp() override {
-    std::unique_ptr<Logger> logger{new CountingLogger(is_loggable_calls_, write_buffer_calls_)};
+    std::unique_ptr<Logger> logger{
+        new CountingLogger(is_loggable_calls_, write_buffer_calls_)};
     setLogger(std::move(logger));
     // Set logger itself logs something, so clear the counters
     is_loggable_calls_ = 0;
@@ -83,7 +81,8 @@ TEST_F(LoggerTest, CallArgsOnlyIfLoggable) {
   int expected_is_loggable_calls = 0;
   int expected_write_buffer_calls = 0;
 
-  // TRACE and DEBUG shouldn't be logged and shouldn't have any affect on the arguments to be logged.
+  // TRACE and DEBUG shouldn't be logged and shouldn't have any affect on the
+  // arguments to be logged.
 
   MIXER_TRACE("%s", entity.toString());
   ++expected_is_loggable_calls;
@@ -99,7 +98,8 @@ TEST_F(LoggerTest, CallArgsOnlyIfLoggable) {
   EXPECT_EQ(expected_is_loggable_calls, is_loggable_calls_);
   EXPECT_EQ(expected_write_buffer_calls, write_buffer_calls_);
 
-  // INFO+ will invoke their arguments once, be logged, and call isLoggable twice due to a redundant/defensive isLoggable check.
+  // INFO+ will invoke their arguments once, be logged, and call isLoggable
+  // twice due to a redundant/defensive isLoggable check.
 
   MIXER_INFO("%s", entity.toString());
   expected_is_loggable_calls += 2;
