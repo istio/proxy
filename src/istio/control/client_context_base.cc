@@ -17,6 +17,7 @@
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
+#include "src/istio/utils/logger.h"
 
 using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::config::client::NetworkFailPolicy;
@@ -85,17 +86,15 @@ ClientContextBase::ClientContextBase(const TransportConfig& config,
 CancelFunc ClientContextBase::SendCheck(
     const TransportCheckFunc& transport, const CheckDoneFunc& on_done,
     ::istio::mixerclient::CheckContextSharedPtr& context) {
-  // TODO: add debug message
-  // GOOGLE_LOG(INFO) << "Check attributes: " <<
-  // request->attributes->DebugString();
+  MIXER_DEBUG("Check attributes: %s",
+              context->attributes()->DebugString().c_str());
   return mixer_client_->Check(context, transport, on_done);
 }
 
 void ClientContextBase::SendReport(
     const istio::mixerclient::SharedAttributesSharedPtr& attributes) {
-  // TODO: add debug message
-  // GOOGLE_LOG(INFO) << "Report attributes: " <<
-  // request.attributes->DebugString();
+  MIXER_DEBUG("Report attributes: %s",
+              attributes->attributes()->DebugString().c_str());
   mixer_client_->Report(attributes);
 }
 
