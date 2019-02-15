@@ -80,37 +80,22 @@ ClientContextBase::ClientContextBase(const TransportConfig& config,
   options.env = env;
   mixer_client_ = ::istio::mixerclient::CreateMixerClient(options);
   CreateLocalAttributes(local_node, &local_attributes_);
+  network_fail_open_ = options.check_options.network_fail_open;
 }
 
-CancelFunc ClientContextBase::SendCheck(TransportCheckFunc transport,
-                                        CheckDoneFunc on_done,
-                                        RequestContext* request) {
-  // Intercept the callback to save check status in request_context
-  auto local_on_done = [request,
-                        on_done](const CheckResponseInfo& check_response_info) {
-    // save the check status code
-    request->check_status = check_response_info.response_status;
-
-    utils::AttributesBuilder builder(request->attributes);
-    builder.AddBool(utils::AttributeName::kCheckCacheHit,
-                    check_response_info.is_check_cache_hit);
-    builder.AddBool(utils::AttributeName::kQuotaCacheHit,
-                    check_response_info.is_quota_cache_hit);
-    on_done(check_response_info);
-  };
-
+CancelFunc ClientContextBase::SendCheck(
+    const TransportCheckFunc& transport, const CheckDoneFunc& on_done,
+    ::istio::mixerclient::CheckContextSharedPtr& context) {
   MIXER_DEBUG("Check attributes: %s",
-              request->attributes->DebugString().c_str());
-
-  return mixer_client_->Check(*request->attributes, request->quotas, transport,
-                              local_on_done);
+              context->attributes()->DebugString().c_str());
+  return mixer_client_->Check(context, transport, on_done);
 }
 
-void ClientContextBase::SendReport(const RequestContext& request) {
+void ClientContextBase::SendReport(
+    const istio::mixerclient::SharedAttributesSharedPtr& attributes) {
   MIXER_DEBUG("Report attributes: %s",
-              request.attributes->DebugString().c_str());
-
-  mixer_client_->Report(*request.attributes);
+              attributes->attributes()->DebugString().c_str());
+  mixer_client_->Report(attributes);
 }
 
 void ClientContextBase::GetStatistics(Statistics* stat) const {

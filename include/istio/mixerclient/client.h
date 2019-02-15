@@ -19,6 +19,8 @@
 #include "environment.h"
 #include "include/istio/quota_config/requirement.h"
 #include "options.h"
+#include "src/istio/mixerclient/check_context.h"
+#include "src/istio/mixerclient/shared_attributes.h"
 
 #include <vector>
 
@@ -84,13 +86,13 @@ class MixerClient {
   // The response data from mixer will be consumed by mixer client.
 
   // A check call.
-  virtual CancelFunc Check(
-      const ::istio::mixer::v1::Attributes& attributes,
-      const std::vector<::istio::quota_config::Requirement>& quotas,
-      TransportCheckFunc transport, CheckDoneFunc on_done) = 0;
+  virtual CancelFunc Check(istio::mixerclient::CheckContextSharedPtr& context,
+                           TransportCheckFunc transport,
+                           CheckDoneFunc on_done) = 0;
 
   // A report call.
-  virtual void Report(const ::istio::mixer::v1::Attributes& attributes) = 0;
+  virtual void Report(
+      const istio::mixerclient::SharedAttributesSharedPtr& attributes) = 0;
 
   // Get statistics.
   virtual void GetStatistics(Statistics* stat) const = 0;

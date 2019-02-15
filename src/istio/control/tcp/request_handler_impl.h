@@ -17,8 +17,8 @@
 #define ISTIO_CONTROL_TCP_REQUEST_HANDLER_IMPL_H
 
 #include "include/istio/control/tcp/request_handler.h"
-#include "src/istio/control/request_context.h"
 #include "src/istio/control/tcp/client_context.h"
+#include "src/istio/mixerclient/check_context.h"
 
 namespace istio {
 namespace control {
@@ -39,8 +39,10 @@ class RequestHandlerImpl : public RequestHandler {
               ReportData::ConnectionEvent event) override;
 
  private:
-  // The request context object.
-  RequestContext request_context_;
+  // memory for telemetry reports and policy checks.  Telemetry only needs the
+  // shared attributes.
+  istio::mixerclient::SharedAttributesSharedPtr attributes_;
+  istio::mixerclient::CheckContextSharedPtr check_context_;
 
   // The client context object.
   std::shared_ptr<ClientContext> client_context_;

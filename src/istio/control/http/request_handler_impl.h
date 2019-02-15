@@ -19,7 +19,7 @@
 #include "include/istio/control/http/request_handler.h"
 #include "src/istio/control/http/client_context.h"
 #include "src/istio/control/http/service_context.h"
-#include "src/istio/control/request_context.h"
+#include "src/istio/mixerclient/check_context.h"
 
 namespace istio {
 namespace control {
@@ -45,16 +45,16 @@ class RequestHandlerImpl : public RequestHandler {
   // Add check attributes, allow re-entry
   void AddCheckAttributes(CheckData* check_data);
 
-  // The request context object.
-  RequestContext request_context_;
+  // memory for telemetry reports and policy checks.  Telemetry only needs the
+  // shared attributes.
+  istio::mixerclient::SharedAttributesSharedPtr attributes_;
+  istio::mixerclient::CheckContextSharedPtr check_context_;
 
   // The service context.
   std::shared_ptr<ServiceContext> service_context_;
 
-  // If true, request attributes are added
-  bool check_attributes_added_;
-  // If true, forward attributes are added
-  bool forward_attributes_added_;
+  bool check_attributes_added_{false};
+  bool forward_attributes_added_{false};
 };
 
 }  // namespace http

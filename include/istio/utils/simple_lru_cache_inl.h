@@ -497,7 +497,7 @@ class SimpleLRUCacheBase {
   // so we implement it in the derived SimpleLRUCache.
   virtual void RemoveElement(const Key& k, Value* value) = 0;
 
-  virtual void DebugIterator(const Key& k, const Value* value, int pin_count,
+  virtual void DebugIterator(const Key&, const Value* value, int pin_count,
                              int64_t last_timestamp, bool is_deferred,
                              std::string* output) const {
     std::stringstream ss;
@@ -1054,7 +1054,7 @@ class SimpleLRUCache
             EQ>(total_units) {}
 
  protected:
-  virtual void RemoveElement(const Key& k, Value* value) { delete value; }
+  virtual void RemoveElement(const Key&, Value* value) { delete value; }
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(SimpleLRUCache);
@@ -1077,7 +1077,7 @@ class SimpleLRUCacheWithDeleter
       : Base(total_units), deleter_(deleter) {}
 
  protected:
-  virtual void RemoveElement(const Key& k, Value* value) { deleter_(value); }
+  virtual void RemoveElement(const Key&, Value* value) { deleter_(value); }
 
  private:
   Deleter deleter_;

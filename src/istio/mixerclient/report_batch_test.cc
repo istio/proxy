@@ -83,7 +83,8 @@ TEST_F(ReportBatchTest, TestBatchDisabled) {
           Invoke([](const ReportRequest& request, ReportResponse* response,
                     DoneFunc on_done) { on_done(Status::OK); }));
 
-  Attributes report;
+  istio::mixerclient::SharedAttributesSharedPtr report{
+      new istio::mixerclient::SharedAttributes()};
   batch_->Report(report);
 }
 
@@ -96,7 +97,8 @@ TEST_F(ReportBatchTest, TestBatchReport) {
         on_done(Status::OK);
       }));
 
-  Attributes report;
+  istio::mixerclient::SharedAttributesSharedPtr report{
+      new istio::mixerclient::SharedAttributes()};
   for (int i = 0; i < 10; ++i) {
     batch_->Report(report);
   }
@@ -115,7 +117,8 @@ TEST_F(ReportBatchTest, TestBatchReportWithTimeout) {
         on_done(Status::OK);
       }));
 
-  Attributes report;
+  istio::mixerclient::SharedAttributesSharedPtr report{
+      new istio::mixerclient::SharedAttributes()};
   batch_->Report(report);
   EXPECT_EQ(report_call_count, 0);
 

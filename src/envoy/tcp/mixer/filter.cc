@@ -138,7 +138,7 @@ Network::FilterStatus Filter::onNewConnection() {
 }
 
 void Filter::completeCheck(const CheckResponseInfo &info) {
-  const auto &status = info.response_status;
+  const auto &status = info.status();
   ENVOY_LOG(debug, "Called tcp filter completeCheck: {}", status.ToString());
   cancel_check_ = nullptr;
   if (state_ == State::Closed) {

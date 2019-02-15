@@ -20,7 +20,6 @@
 #include "include/istio/quota_config/config_parser.h"
 #include "include/istio/utils/local_attributes.h"
 #include "src/istio/control/client_context_base.h"
-#include "src/istio/control/request_context.h"
 
 namespace istio {
 namespace control {
@@ -51,18 +50,20 @@ class ClientContext : public ClientContextBase {
   }
 
   // Add static mixer attributes.
-  void AddStaticAttributes(RequestContext* request) const {
-    AddLocalNodeAttributes(request->attributes);
+  void AddStaticAttributes(::istio::mixer::v1::Attributes* attributes) const {
+    AddLocalNodeAttributes(attributes);
 
     if (config_.has_mixer_attributes()) {
-      request->attributes->MergeFrom(config_.mixer_attributes());
+      attributes->MergeFrom(config_.mixer_attributes());
     }
   }
 
   // Add quota requirements from quota configs.
-  void AddQuotas(RequestContext* request) const {
+  void AddQuotas(
+      ::istio::mixer::v1::Attributes* attributes,
+      std::vector<::istio::quota_config::Requirement>& quotas) const {
     if (quota_parser_) {
-      quota_parser_->GetRequirements(*request->attributes, &request->quotas);
+      quota_parser_->GetRequirements(*attributes, &quotas);
     }
   }
 

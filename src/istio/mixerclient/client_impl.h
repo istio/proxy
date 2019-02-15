@@ -35,11 +35,10 @@ class MixerClientImpl : public MixerClient {
   // Destructor
   virtual ~MixerClientImpl();
 
-  CancelFunc Check(
-      const ::istio::mixer::v1::Attributes& attributes,
-      const std::vector<::istio::quota_config::Requirement>& quotas,
-      TransportCheckFunc transport, CheckDoneFunc on_done) override;
-  void Report(const ::istio::mixer::v1::Attributes& attributes) override;
+  CancelFunc Check(istio::mixerclient::CheckContextSharedPtr& context,
+                   TransportCheckFunc transport,
+                   CheckDoneFunc on_done) override;
+  void Report(const SharedAttributesSharedPtr& attributes) override;
 
   void GetStatistics(Statistics* stat) const override;
 

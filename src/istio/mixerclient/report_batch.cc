@@ -43,10 +43,11 @@ ReportBatch::ReportBatch(const ReportOptions& options,
 
 ReportBatch::~ReportBatch() { Flush(); }
 
-void ReportBatch::Report(const Attributes& request) {
+void ReportBatch::Report(
+    const istio::mixerclient::SharedAttributesSharedPtr& attributes) {
   std::lock_guard<std::mutex> lock(mutex_);
   ++total_report_calls_;
-  batch_compressor_->Add(request);
+  batch_compressor_->Add(*attributes->attributes());
   if (batch_compressor_->size() >= options_.max_batch_entries) {
     FlushWithLock();
   } else {

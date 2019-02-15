@@ -18,7 +18,7 @@
 
 #include "include/istio/control/tcp/check_data.h"
 #include "include/istio/control/tcp/report_data.h"
-#include "src/istio/control/request_context.h"
+#include "mixer/v1/attributes.pb.h"
 
 namespace istio {
 namespace control {
@@ -27,18 +27,19 @@ namespace tcp {
 // The builder class to add TCP attributes.
 class AttributesBuilder {
  public:
-  AttributesBuilder(RequestContext* request) : request_(request) {}
+  AttributesBuilder(istio::mixer::v1::Attributes* attributes)
+      : attributes_(attributes) {}
 
   // Extract attributes for Check.
   void ExtractCheckAttributes(CheckData* check_data);
   // Extract attributes for Report.
-  void ExtractReportAttributes(ReportData* report_data,
+  void ExtractReportAttributes(const ::google::protobuf::util::Status& status,
+                               ReportData* report_data,
                                ReportData::ConnectionEvent event,
                                ReportData::ReportInfo* last_report_info);
 
  private:
-  // The request context object.
-  RequestContext* request_;
+  istio::mixer::v1::Attributes* attributes_;
 };
 
 }  // namespace tcp

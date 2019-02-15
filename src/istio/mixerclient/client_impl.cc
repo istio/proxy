@@ -52,109 +52,121 @@ MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
 
 MixerClientImpl::~MixerClientImpl() {}
 
-CancelFunc MixerClientImpl::Check(
-    const Attributes &attributes,
-    const std::vector<::istio::quota_config::Requirement> &quotas,
-    TransportCheckFunc transport, CheckDoneFunc on_done) {
+CancelFunc MixerClientImpl::Check(CheckContextSharedPtr &context,
+                                  TransportCheckFunc transport,
+                                  CheckDoneFunc on_done) {
+  //
+  // Always check the policy cache
+  //
+
+  context->checkPolicyCache(*check_cache_);
   ++total_check_calls_;
 
-  std::unique_ptr<CheckCache::CheckResult> check_result(
-      new CheckCache::CheckResult);
-  check_cache_->Check(attributes, check_result.get());
-
-  CheckResponseInfo check_response_info;
-  check_response_info.is_check_cache_hit = check_result->IsCacheHit();
-  check_response_info.response_status = check_result->status();
-  check_response_info.route_directive = check_result->route_directive();
-
-  if (check_result->IsCacheHit() && !check_result->status().ok()) {
-    on_done(check_response_info);
+  if (context->policyCacheHit() &&
+      (!context->policyStatus().ok() || !context->quotaCheckRequired())) {
+    //
+    // If the policy cache denies the request, immediately fail the request
+    //
+    // If policy cache accepts the request and a quota check is not required,
+    // immediately accept the request.
+    //
+    context->setFinalStatus(context->policyStatus());
+    on_done(*context);
     return nullptr;
   }
 
-  if (!quotas.empty()) {
+  if (context->quotaCheckRequired()) {
+    context->checkQuotaCache(*quota_cache_);
     ++total_quota_calls_;
-  }
-  std::unique_ptr<QuotaCache::CheckResult> quota_result(
-      new QuotaCache::CheckResult);
-  // Only use quota cache if Check is using cache with OK status.
-  // Otherwise, a remote Check call may be rejected, but quota amounts were
-  // substracted from quota cache already.
-  quota_cache_->Check(attributes, quotas, check_result->IsCacheHit(),
-                      quota_result.get());
 
-  auto arena = new google::protobuf::Arena;
-  CheckRequest *request =
-      google::protobuf::Arena::CreateMessage<CheckRequest>(arena);
-  bool quota_call = quota_result->BuildRequest(request);
-  check_response_info.is_quota_cache_hit = quota_result->IsCacheHit();
-  check_response_info.response_status = quota_result->status();
-  if (check_result->IsCacheHit() && quota_result->IsCacheHit()) {
-    on_done(check_response_info);
-    on_done = nullptr;
-    if (!quota_call) {
-      delete arena;
-      return nullptr;
+    if (context->quotaCacheHit() && context->policyCacheHit()) {
+      //
+      // If both policy and quota caches are hit, we can call the completion
+      // handler now.  However sometimes the quota cache's prefetch
+      // implementation will still need to send a request to the Mixer server
+      // in the background.
+      //
+      context->setFinalStatus(context->quotaStatus());
+      on_done(*context);
+      on_done = nullptr;
+      if (!context->remoteQuotaRequestRequired()) {
+        return nullptr;
+      }
     }
   }
 
-  compressor_.Compress(attributes, request->mutable_attributes());
-  request->set_global_word_count(compressor_.global_word_count());
-  request->set_deduplication_id(deduplication_id_base_ +
-                                std::to_string(deduplication_id_.fetch_add(1)));
+  // TODO(jblatt) mjog thinks this is a big CPU hog.  Look into it.
+  context->compressRequest(
+      compressor_,
+      deduplication_id_base_ + std::to_string(deduplication_id_.fetch_add(1)));
 
-  // Need to make a copy for processing the response for check cache.
-  Attributes *attributes_copy =
-      google::protobuf::Arena::CreateMessage<Attributes>(arena);
-  CheckResponse *response =
-      google::protobuf::Arena::CreateMessage<CheckResponse>(arena);
-  *attributes_copy = attributes;
-  // Lambda capture could not pass unique_ptr, use raw pointer.
-  CheckCache::CheckResult *raw_check_result = check_result.release();
-  QuotaCache::CheckResult *raw_quota_result = quota_result.release();
   if (!transport) {
     transport = options_.env.check_transport;
   }
+
+  //
   // We are going to make a remote call now.
+  //
+
   ++total_remote_check_calls_;
-  if (!quotas.empty()) {
+
+  if (context->quotaCheckRequired()) {
     ++total_remote_quota_calls_;
   }
+
   if (on_done) {
     ++total_blocking_remote_check_calls_;
-    if (!quotas.empty()) {
+    if (context->quotaCheckRequired()) {
       ++total_blocking_remote_quota_calls_;
     }
   }
 
-  return transport(
-      *request, response,
-      [this, attributes_copy, response, raw_check_result, raw_quota_result,
-       on_done, arena](const Status &status) {
-        raw_check_result->SetResponse(status, *attributes_copy, *response);
-        raw_quota_result->SetResponse(status, *attributes_copy, *response);
-        CheckResponseInfo check_response_info;
-        if (on_done) {
-          if (!raw_check_result->status().ok()) {
-            check_response_info.response_status = raw_check_result->status();
-          } else {
-            check_response_info.response_status = raw_quota_result->status();
-          }
-          check_response_info.route_directive =
-              raw_check_result->route_directive();
-          on_done(check_response_info);
-        }
-        delete raw_check_result;
-        delete raw_quota_result;
-        delete arena;
+  return transport(context->request(), context->response(),
+                   [this, context, on_done](const Status &status) {
+                     //
+                     // Update caches.  This has the side-effect of updating
+                     // status, so track those too
+                     //
 
-        if (utils::InvalidDictionaryStatus(status)) {
-          compressor_.ShrinkGlobalDictionary();
-        }
-      });
+                     if (!context->policyCacheHit()) {
+                       context->updatePolicyCache(status, *context->response());
+                     }
+
+                     if (context->quotaCheckRequired()) {
+                       context->updateQuotaCache(status, *context->response());
+                     }
+
+                     //
+                     // Determine final status for Filter::completeCheck(). This
+                     // will send an error response to the downstream client if
+                     // the final status is not Status::OK
+                     //
+
+                     if (!status.ok()) {
+                       if (context->networkFailOpen()) {
+                         context->setFinalStatus(Status::OK);
+                       } else {
+                         context->setFinalStatus(status);
+                       }
+                     } else if (!context->quotaCheckRequired()) {
+                       context->setFinalStatus(context->policyStatus());
+                     } else if (!context->policyStatus().ok()) {
+                       context->setFinalStatus(context->policyStatus());
+                     } else {
+                       context->setFinalStatus(context->quotaStatus());
+                     }
+
+                     if (on_done) {
+                       on_done(*context);
+                     }
+
+                     if (utils::InvalidDictionaryStatus(status)) {
+                       compressor_.ShrinkGlobalDictionary();
+                     }
+                   });
 }
 
-void MixerClientImpl::Report(const Attributes &attributes) {
+void MixerClientImpl::Report(const SharedAttributesSharedPtr &attributes) {
   report_batch_->Report(attributes);
 }
 
