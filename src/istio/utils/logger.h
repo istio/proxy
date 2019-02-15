@@ -71,23 +71,37 @@ extern Logger &getLogger();
   istio::utils::getLogger().log(istio::utils::Logger::Level::ERROR_, \
                                 FILE_LINE FORMAT, ##__VA_ARGS__)
 
-#define MIXER_TRACE(FORMAT, ...)            \
-  if (MIXER_TRACE_ENABLED) {                \
-    MIXER_TRACE_INT(FORMAT, ##__VA_ARGS__); \
-  }
-#define MIXER_DEBUG(FORMAT, ...)            \
-  if (MIXER_DEBUG_ENABLED) {                \
-    MIXER_DEBUG_INT(FORMAT, ##__VA_ARGS__); \
-  }
-#define MIXER_INFO(FORMAT, ...)            \
-  if (MIXER_INFO_ENABLED) {                \
-    MIXER_INFO_INT(FORMAT, ##__VA_ARGS__); \
-  }
-#define MIXER_WARN(FORMAT, ...)            \
-  if (MIXER_WARN_ENABLED) {                \
-    MIXER_WARN_INT(FORMAT, ##__VA_ARGS__); \
-  }
-#define MIXER_ERROR(FORMAT, ...)            \
-  if (MIXER_ERROR_ENABLED) {                \
-    MIXER_ERROR_INT(FORMAT, ##__VA_ARGS__); \
-  }
+#define MIXER_TRACE(FORMAT, ...)              \
+  do {                                        \
+    if (MIXER_TRACE_ENABLED) {                \
+      MIXER_TRACE_INT(FORMAT, ##__VA_ARGS__); \
+    }                                         \
+  } while (0)
+
+#define MIXER_DEBUG(FORMAT, ...)              \
+  do {                                        \
+    if (MIXER_DEBUG_ENABLED) {                \
+      MIXER_DEBUG_INT(FORMAT, ##__VA_ARGS__); \
+    }                                         \
+  } while (0)
+
+#define MIXER_INFO(FORMAT, ...)              \
+  do {                                       \
+    if (MIXER_INFO_ENABLED) {                \
+      MIXER_INFO_INT(FORMAT, ##__VA_ARGS__); \
+    }                                        \
+  } while (0)
+
+#define MIXER_WARN(FORMAT, ...)              \
+  do {                                       \
+    if (MIXER_WARN_ENABLED) {                \
+      MIXER_WARN_INT(FORMAT, ##__VA_ARGS__); \
+    }                                        \
+  } while (0)
+
+#define MIXER_ERROR(FORMAT, ...)              \
+  do {                                        \
+    if (MIXER_ERROR_ENABLED) {                \
+      MIXER_ERROR_INT(FORMAT, ##__VA_ARGS__); \
+    }                                         \
+  } while (0)

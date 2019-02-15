@@ -23,7 +23,7 @@ namespace utils {
 
 class CountingArgument {
  public:
-  const char* toString() {
+  const char* c_str() {
     ++to_string_calls;
     return "logged entity";
   }
@@ -84,14 +84,14 @@ TEST_F(LoggerTest, CallArgsOnlyIfLoggable) {
   // TRACE and DEBUG shouldn't be logged and shouldn't have any affect on the
   // arguments to be logged.
 
-  MIXER_TRACE("%s", entity.toString());
+  MIXER_TRACE("%s", entity.c_str());
   ++expected_is_loggable_calls;
 
   EXPECT_EQ(expected_to_string_calls, entity.to_string_calls);
   EXPECT_EQ(expected_is_loggable_calls, is_loggable_calls_);
   EXPECT_EQ(expected_write_buffer_calls, write_buffer_calls_);
 
-  MIXER_DEBUG("%s", entity.toString());
+  MIXER_DEBUG("%s", entity.c_str());
   ++expected_is_loggable_calls;
 
   EXPECT_EQ(expected_to_string_calls, entity.to_string_calls);
@@ -101,7 +101,7 @@ TEST_F(LoggerTest, CallArgsOnlyIfLoggable) {
   // INFO+ will invoke their arguments once, be logged, and call isLoggable
   // twice due to a redundant/defensive isLoggable check.
 
-  MIXER_INFO("%s", entity.toString());
+  MIXER_INFO("%s", entity.c_str());
   expected_is_loggable_calls += 2;
   ++expected_to_string_calls;
   ++expected_write_buffer_calls;
@@ -110,7 +110,7 @@ TEST_F(LoggerTest, CallArgsOnlyIfLoggable) {
   EXPECT_EQ(expected_is_loggable_calls, is_loggable_calls_);
   EXPECT_EQ(expected_write_buffer_calls, write_buffer_calls_);
 
-  MIXER_WARN("%s", entity.toString());
+  MIXER_WARN("%s", entity.c_str());
   expected_is_loggable_calls += 2;
   ++expected_to_string_calls;
   ++expected_write_buffer_calls;
@@ -119,7 +119,7 @@ TEST_F(LoggerTest, CallArgsOnlyIfLoggable) {
   EXPECT_EQ(expected_is_loggable_calls, is_loggable_calls_);
   EXPECT_EQ(expected_write_buffer_calls, write_buffer_calls_);
 
-  MIXER_ERROR("%s", entity.toString());
+  MIXER_ERROR("%s", entity.c_str());
   expected_is_loggable_calls += 2;
   ++expected_to_string_calls;
   ++expected_write_buffer_calls;
