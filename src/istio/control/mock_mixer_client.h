@@ -29,8 +29,9 @@ class MockMixerClient : public ::istio::mixerclient::MixerClient {
                           ::istio::mixerclient::CheckContextSharedPtr& context,
                           ::istio::mixerclient::TransportCheckFunc transport,
                           ::istio::mixerclient::CheckDoneFunc on_done));
-  MOCK_METHOD1(Report,
-               void(const istio::mixerclient::SharedAttributesPtr& attributes));
+  MOCK_METHOD1(
+      Report,
+      void(const istio::mixerclient::SharedAttributesSharedPtr& attributes));
   MOCK_CONST_METHOD1(GetStatistics,
                      void(::istio::mixerclient::Statistics* stat));
 };

@@ -38,7 +38,7 @@ class MixerClientImpl : public MixerClient {
   CancelFunc Check(istio::mixerclient::CheckContextSharedPtr& context,
                    TransportCheckFunc transport,
                    CheckDoneFunc on_done) override;
-  void Report(const SharedAttributesPtr& context) override;
+  void Report(const SharedAttributesSharedPtr& context) override;
 
   void GetStatistics(Statistics* stat) const override;
 

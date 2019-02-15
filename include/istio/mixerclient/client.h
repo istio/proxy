@@ -92,7 +92,7 @@ class MixerClient {
 
   // A report call.
   virtual void Report(
-      const istio::mixerclient::SharedAttributesPtr& attributes) = 0;
+      const istio::mixerclient::SharedAttributesSharedPtr& attributes) = 0;
 
   // Get statistics.
   virtual void GetStatistics(Statistics* stat) const = 0;

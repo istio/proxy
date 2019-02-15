@@ -53,7 +53,8 @@ class ClientContextBase {
       ::istio::mixerclient::CheckContextSharedPtr& check_context);
 
   // Use mixer client object to make a Report call.
-  void SendReport(istio::mixerclient::SharedAttributesPtr& attributes);
+  void SendReport(
+      const istio::mixerclient::SharedAttributesSharedPtr& attributes);
 
   // Get statistics.
   void GetStatistics(::istio::mixerclient::Statistics* stat) const;

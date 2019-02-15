@@ -69,7 +69,8 @@ class MixerClientImplTest : public ::testing::Test {
 
   CheckContextSharedPtr CreateContext(int quota_request) {
     bool fail_open{false};
-    istio::mixerclient::SharedAttributesPtr attributes{new SharedAttributes()};
+    istio::mixerclient::SharedAttributesSharedPtr attributes{
+        new SharedAttributes()};
     istio::mixerclient::CheckContextSharedPtr context{
         new CheckContext(fail_open, attributes)};
     if (0 < quota_request) {

@@ -21,6 +21,10 @@
 namespace istio {
 namespace mixerclient {
 
+/**
+ * Attributes shared by the policy/quota check requests and telemetry requests
+ * sent to the Mixer server.
+ */
 class SharedAttributes {
  public:
   SharedAttributes()
@@ -39,7 +43,7 @@ class SharedAttributes {
   ::istio::mixer::v1::Attributes* attributes_;
 };
 
-typedef std::shared_ptr<SharedAttributes> SharedAttributesPtr;
+typedef std::shared_ptr<SharedAttributes> SharedAttributesSharedPtr;
 
 }  // namespace mixerclient
 }  // namespace istio

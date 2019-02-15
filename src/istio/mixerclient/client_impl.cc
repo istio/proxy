@@ -166,7 +166,7 @@ CancelFunc MixerClientImpl::Check(CheckContextSharedPtr &context,
                    });
 }
 
-void MixerClientImpl::Report(const SharedAttributesPtr &context) {
+void MixerClientImpl::Report(const SharedAttributesSharedPtr &context) {
   report_batch_->Report(context);
 }
 

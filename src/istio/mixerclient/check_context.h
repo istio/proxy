@@ -39,7 +39,7 @@ namespace mixerclient {
  */
 class CheckContext : public CheckResponseInfo {
  public:
-  CheckContext(bool fail_open, SharedAttributesPtr& shared_attributes)
+  CheckContext(bool fail_open, SharedAttributesSharedPtr& shared_attributes)
       : shared_attributes_(shared_attributes), fail_open_(fail_open) {}
 
   const istio::mixer::v1::Attributes* attributes() const {
@@ -171,7 +171,7 @@ class CheckContext : public CheckResponseInfo {
     return request_;
   }
 
-  istio::mixerclient::SharedAttributesPtr shared_attributes_;
+  istio::mixerclient::SharedAttributesSharedPtr shared_attributes_;
   std::vector<istio::quota_config::Requirement> quota_requirements_;
 
   bool quota_cache_hit_{false};

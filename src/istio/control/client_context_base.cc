@@ -92,7 +92,7 @@ CancelFunc ClientContextBase::SendCheck(
 }
 
 void ClientContextBase::SendReport(
-    istio::mixerclient::SharedAttributesPtr& attributes) {
+    const istio::mixerclient::SharedAttributesSharedPtr& attributes) {
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Report attributes: " <<
   // request.attributes->DebugString();

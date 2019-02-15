@@ -41,7 +41,7 @@ class RequestHandlerImpl : public RequestHandler {
  private:
   // memory for telemetry reports and policy checks.  Telemetry only needs the
   // shared attributes.
-  istio::mixerclient::SharedAttributesPtr attributes_;
+  istio::mixerclient::SharedAttributesSharedPtr attributes_;
   istio::mixerclient::CheckContextSharedPtr check_context_;
 
   // The client context object.
