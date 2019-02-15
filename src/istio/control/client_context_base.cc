@@ -83,7 +83,7 @@ ClientContextBase::ClientContextBase(const TransportConfig& config,
 }
 
 CancelFunc ClientContextBase::SendCheck(
-    TransportCheckFunc transport, CheckDoneFunc on_done,
+    const TransportCheckFunc& transport, const CheckDoneFunc& on_done,
     ::istio::mixerclient::CheckContextSharedPtr& context) {
   // TODO: add debug message
   // GOOGLE_LOG(INFO) << "Check attributes: " <<

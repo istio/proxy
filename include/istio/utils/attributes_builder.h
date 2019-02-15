@@ -162,6 +162,8 @@ class AttributesBuilder {
     return *filters;
   }
 
+  // TODO(jblatt) audit all uses of raw pointers and replace as many as possible
+  // with unique/shared pointers.
   ::istio::mixer::v1::Attributes *attributes_;
 };
 
