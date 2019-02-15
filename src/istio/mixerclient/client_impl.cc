@@ -171,7 +171,7 @@ CancelFunc MixerClientImpl::Check(CheckContextSharedPtr &context,
   }
 
   return transport(context->request(), context->response(),
-                   [this, context = context, on_done](const Status &status) {
+                   [this, context, on_done](const Status &status) {
                      //
                      // Classify and track transport errors
                      //
@@ -225,7 +225,7 @@ CancelFunc MixerClientImpl::Check(CheckContextSharedPtr &context,
                      //
 
                      if (result != TransportResult::SUCCESS) {
-                       if (context->failOpen()) {
+                       if (context->networkFailOpen()) {
                          context->setFinalStatus(Status::OK);
                        } else {
                          context->setFinalStatus(status);
@@ -248,8 +248,8 @@ CancelFunc MixerClientImpl::Check(CheckContextSharedPtr &context,
                    });
 }
 
-void MixerClientImpl::Report(const SharedAttributesSharedPtr &context) {
-  report_batch_->Report(context);
+void MixerClientImpl::Report(const SharedAttributesSharedPtr &attributes) {
+  report_batch_->Report(attributes);
 }
 
 void MixerClientImpl::GetStatistics(Statistics *stat) const {

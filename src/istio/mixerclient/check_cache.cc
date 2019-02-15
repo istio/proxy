@@ -15,6 +15,7 @@
 
 #include "src/istio/mixerclient/check_cache.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/utils/logger.h"
 
 using namespace std::chrono;
 using ::google::protobuf::util::Status;
@@ -147,9 +148,10 @@ Status CheckCache::CacheResponse(const Attributes &attributes,
   }
   utils::HashType signature;
   if (!referenced.Signature(attributes, "", &signature)) {
-    GOOGLE_LOG(ERROR) << "Response referenced mismatchs with request";
-    GOOGLE_LOG(ERROR) << "Request attributes: " << attributes.DebugString();
-    GOOGLE_LOG(ERROR) << "Referenced attributes: " << referenced.DebugString();
+    MIXER_WARN(
+        "Response referenced does not match request.  Request attributes: "
+        "%s.  Referenced attributes: %s",
+        attributes.DebugString().c_str(), referenced.DebugString().c_str());
     return ConvertRpcStatus(response.precondition().status());
   }
 
@@ -157,8 +159,8 @@ Status CheckCache::CacheResponse(const Attributes &attributes,
   utils::HashType hash = referenced.Hash();
   if (referenced_map_.find(hash) == referenced_map_.end()) {
     referenced_map_[hash] = referenced;
-    GOOGLE_LOG(INFO) << "Add a new Referenced for check cache: "
-                     << referenced.DebugString();
+    MIXER_DEBUG("Add a new Referenced for check cache: %s",
+                referenced.DebugString().c_str());
   }
 
   CheckLRUCache::ScopedLookup lookup(cache_.get(), signature);

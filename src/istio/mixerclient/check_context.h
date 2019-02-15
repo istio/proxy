@@ -125,7 +125,7 @@ class CheckContext : public CheckResponseInfo {
     request_->set_deduplication_id(deduplication_id);
   }
 
-  bool failOpen() const { return fail_open_; }
+  bool networkFailOpen() const { return fail_open_; }
 
   const istio::mixer::v1::CheckRequest& request() { return *request_; }
 
@@ -152,12 +152,11 @@ class CheckContext : public CheckResponseInfo {
   // CheckResponseInfo (exposed to the top-level filter)
   //
 
-  virtual const google::protobuf::util::Status& status() const override {
+  const google::protobuf::util::Status& status() const override {
     return final_status_;
   }
 
-  virtual const istio::mixer::v1::RouteDirective& routeDirective()
-      const override {
+  const istio::mixer::v1::RouteDirective& routeDirective() const override {
     return policy_cache_result_.route_directive();
   }
 
@@ -177,11 +176,9 @@ class CheckContext : public CheckResponseInfo {
   bool quota_cache_hit_{false};
   bool policy_cache_hit_{false};
 
- public:
   QuotaCache::CheckResult quota_cache_result_;
   CheckCache::CheckResult policy_cache_result_;
 
- private:
   istio::mixer::v1::CheckRequest* request_{nullptr};
   istio::mixer::v1::CheckResponse* response_{nullptr};
 
