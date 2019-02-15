@@ -15,6 +15,7 @@
 
 #include "src/istio/mixerclient/report_batch.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/utils/logger.h"
 
 using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
@@ -24,6 +25,9 @@ using ::istio::mixer::v1::ReportResponse;
 
 namespace istio {
 namespace mixerclient {
+
+static std::atomic<uint32_t> REPORT_FAIL_LOG_MESSAGES{0};
+static constexpr uint32_t REPORT_FAIL_LOG_MODULUS{100};
 
 ReportBatch::ReportBatch(const ReportOptions& options,
                          TransportReportFunc transport,
@@ -70,7 +74,12 @@ void ReportBatch::FlushWithLock() {
   transport_(request, response, [this, response](const Status& status) {
     delete response;
     if (!status.ok()) {
-      GOOGLE_LOG(ERROR) << "Mixer Report failed with: " << status.ToString();
+      if (MIXER_WARN_ENABLED &&
+          0 == REPORT_FAIL_LOG_MESSAGES++ % REPORT_FAIL_LOG_MODULUS) {
+        MIXER_WARN("Mixer Report failed with: %s", status.ToString().c_str());
+      } else {
+        MIXER_DEBUG("Mixer Report failed with: %s", status.ToString().c_str());
+      }
       if (utils::InvalidDictionaryStatus(status)) {
         compressor_.ShrinkGlobalDictionary();
       }
