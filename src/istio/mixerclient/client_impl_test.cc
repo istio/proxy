@@ -67,6 +67,66 @@ class MixerClientImplTest : public ::testing::Test {
     client_ = CreateMixerClient(options);
   }
 
+  void CheckStatisticsInvariants(const Statistics& stats) {
+    //
+    // Policy check counters.
+    //
+    // total_check_calls = total_check_hits + total_check_misses
+    // total_check_hits = total_check_hit_accepts + total_check_hit_denies
+    // total_remote_check_calls = total_check_misses
+    // total_remote_check_calls >= total_remote_check_accepts +
+    // total_remote_check_denies
+    //    ^ Transport errors are responsible for the >=
+    //
+
+    EXPECT_EQ(stats.total_check_calls_,
+              stats.total_check_cache_hits_ + stats.total_check_cache_misses_);
+    EXPECT_EQ(stats.total_check_cache_hits_,
+              stats.total_check_cache_hit_accepts_ +
+                  stats.total_check_cache_hit_denies_);
+    EXPECT_EQ(stats.total_remote_check_calls_, stats.total_check_cache_misses_);
+    EXPECT_GE(
+        stats.total_remote_check_calls_,
+        stats.total_remote_check_accepts_ + stats.total_remote_check_denies_);
+
+    //
+    // Quota check counters
+    //
+    // total_quota_calls = total_quota_hits + total_quota_misses
+    // total_quota_hits = total_quota_hit_accepts + total_quota_hit_denies
+    // total_remote_quota_calls = total_quota_misses +
+    // total_remote_quota_prefetch_calls total_remote_quota_calls >=
+    // total_remote_quota_accepts + total_remote_quota_denies
+    //    ^ Transport errors are responsible for the >=
+    //
+
+    EXPECT_EQ(stats.total_quota_calls_,
+              stats.total_quota_cache_hits_ + stats.total_quota_cache_misses_);
+    EXPECT_EQ(stats.total_quota_cache_hits_,
+              stats.total_quota_cache_hit_accepts_ +
+                  stats.total_quota_cache_hit_denies_);
+    EXPECT_EQ(stats.total_remote_quota_calls_,
+              stats.total_quota_cache_misses_ +
+                  stats.total_remote_quota_prefetch_calls_);
+    EXPECT_GE(
+        stats.total_remote_quota_calls_,
+        stats.total_remote_quota_accepts_ + stats.total_remote_quota_denies_);
+
+    //
+    // Counters for upstream requests to Mixer.
+    //
+    // total_remote_calls = SUM(total_remote_call_successes, ...,
+    // total_remote_call_other_errors) Total transport errors would be
+    // (total_remote_calls - total_remote_call_successes).
+    //
+
+    EXPECT_EQ(stats.total_remote_calls_,
+              stats.total_remote_call_successes_ +
+                  stats.total_remote_call_timeouts_ +
+                  stats.total_remote_call_send_errors_ +
+                  stats.total_remote_call_other_errors_);
+  }
+
   CheckContextSharedPtr CreateContext(int quota_request) {
     bool fail_open{false};
     istio::mixerclient::SharedAttributesSharedPtr attributes{
@@ -112,14 +172,33 @@ TEST_F(MixerClientImplTest, TestSuccessCheck) {
 
   Statistics stat;
   client_->GetStatistics(&stat);
-  EXPECT_EQ(stat.total_check_calls, 11);
-  // The first check call is a remote blocking check call.
-  EXPECT_EQ(stat.total_remote_check_calls, 1);
-  EXPECT_EQ(stat.total_blocking_remote_check_calls, 1);
+  CheckStatisticsInvariants(stat);
+
+  EXPECT_EQ(stat.total_check_calls_, 11);
+  // The first check call misses the policy cache, the rest hit and are accepted
+  EXPECT_EQ(stat.total_check_cache_hits_, 10);
+  EXPECT_EQ(stat.total_check_cache_misses_, 1);
+  EXPECT_EQ(stat.total_check_cache_hit_accepts_, 10);
+  EXPECT_EQ(stat.total_check_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_check_calls_, 1);
+  EXPECT_EQ(stat.total_remote_check_accepts_, 1);
+  EXPECT_EQ(stat.total_remote_check_denies_, 0);
   // Empty quota does not trigger any quota call.
-  EXPECT_EQ(stat.total_quota_calls, 0);
-  EXPECT_EQ(stat.total_remote_quota_calls, 0);
-  EXPECT_EQ(stat.total_blocking_remote_quota_calls, 0);
+  EXPECT_EQ(stat.total_quota_calls_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hits_, 0);
+  EXPECT_EQ(stat.total_quota_cache_misses_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hit_accepts_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_calls_, 0);
+  EXPECT_EQ(stat.total_remote_quota_accepts_, 0);
+  EXPECT_EQ(stat.total_remote_quota_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_prefetch_calls_, 0);
+  // Only one remote call and it succeeds
+  EXPECT_EQ(stat.total_remote_calls_, 1);
+  EXPECT_EQ(stat.total_remote_call_successes_, 1);
+  EXPECT_EQ(stat.total_remote_call_timeouts_, 0);
+  EXPECT_EQ(stat.total_remote_call_send_errors_, 0);
+  EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
 TEST_F(MixerClientImplTest, TestPerRequestTransport) {
@@ -155,14 +234,33 @@ TEST_F(MixerClientImplTest, TestPerRequestTransport) {
 
   Statistics stat;
   client_->GetStatistics(&stat);
-  EXPECT_EQ(stat.total_check_calls, 11);
-  // The first check call is a remote blocking check call.
-  EXPECT_EQ(stat.total_remote_check_calls, 1);
-  EXPECT_EQ(stat.total_blocking_remote_check_calls, 1);
+  CheckStatisticsInvariants(stat);
+
+  EXPECT_EQ(stat.total_check_calls_, 11);
+  // The first check call misses the policy cache, the rest hit and are accepted
+  EXPECT_EQ(stat.total_check_cache_hits_, 10);
+  EXPECT_EQ(stat.total_check_cache_misses_, 1);
+  EXPECT_EQ(stat.total_check_cache_hit_accepts_, 10);
+  EXPECT_EQ(stat.total_check_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_check_calls_, 1);
+  EXPECT_EQ(stat.total_remote_check_accepts_, 1);
+  EXPECT_EQ(stat.total_remote_check_denies_, 0);
   // Empty quota does not trigger any quota call.
-  EXPECT_EQ(stat.total_quota_calls, 0);
-  EXPECT_EQ(stat.total_remote_quota_calls, 0);
-  EXPECT_EQ(stat.total_blocking_remote_quota_calls, 0);
+  EXPECT_EQ(stat.total_quota_calls_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hits_, 0);
+  EXPECT_EQ(stat.total_quota_cache_misses_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hit_accepts_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_calls_, 0);
+  EXPECT_EQ(stat.total_remote_quota_accepts_, 0);
+  EXPECT_EQ(stat.total_remote_quota_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_prefetch_calls_, 0);
+  // Only one remote call and it succeeds
+  EXPECT_EQ(stat.total_remote_calls_, 1);
+  EXPECT_EQ(stat.total_remote_call_successes_, 1);
+  EXPECT_EQ(stat.total_remote_call_timeouts_, 0);
+  EXPECT_EQ(stat.total_remote_call_send_errors_, 0);
+  EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
 TEST_F(MixerClientImplTest, TestNoCheckCache) {
@@ -203,13 +301,35 @@ TEST_F(MixerClientImplTest, TestNoCheckCache) {
   EXPECT_EQ(call_counts, 11);
   Statistics stat;
   client_->GetStatistics(&stat);
-  // Because there is no check cache, we make remote blocking call every time.
-  EXPECT_EQ(stat.total_check_calls, 11);
-  EXPECT_EQ(stat.total_remote_check_calls, 11);
-  EXPECT_EQ(stat.total_blocking_remote_check_calls, 11);
-  EXPECT_EQ(stat.total_quota_calls, 11);
-  EXPECT_EQ(stat.total_remote_quota_calls, 11);
-  EXPECT_EQ(stat.total_blocking_remote_quota_calls, 11);
+  CheckStatisticsInvariants(stat);
+
+  EXPECT_EQ(stat.total_check_calls_, 11);
+  EXPECT_EQ(stat.total_check_cache_hits_, 0);
+  EXPECT_EQ(stat.total_check_cache_misses_, 11);
+  EXPECT_EQ(stat.total_check_cache_hit_accepts_, 0);
+  EXPECT_EQ(stat.total_check_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_check_calls_, 11);
+  EXPECT_EQ(stat.total_remote_check_accepts_, 11);
+  EXPECT_EQ(stat.total_remote_check_denies_, 0);
+  //
+  // The current quota cache impl forces a cache miss whenever the check cache
+  // is missed.
+  //
+  EXPECT_EQ(stat.total_quota_calls_, 11);
+  EXPECT_EQ(stat.total_quota_cache_hits_, 0);
+  EXPECT_EQ(stat.total_quota_cache_misses_, 11);
+  EXPECT_EQ(stat.total_quota_cache_hit_accepts_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_calls_, 11);
+  EXPECT_EQ(stat.total_remote_quota_accepts_, 11);
+  EXPECT_EQ(stat.total_remote_quota_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_prefetch_calls_, 0);
+  // And all remote quota calls succeed
+  EXPECT_EQ(stat.total_remote_calls_, 11);
+  EXPECT_EQ(stat.total_remote_call_successes_, 11);
+  EXPECT_EQ(stat.total_remote_call_timeouts_, 0);
+  EXPECT_EQ(stat.total_remote_call_send_errors_, 0);
+  EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
 TEST_F(MixerClientImplTest, TestNoQuotaCache) {
@@ -252,13 +372,32 @@ TEST_F(MixerClientImplTest, TestNoQuotaCache) {
   EXPECT_EQ(call_counts, 11);
   Statistics stat;
   client_->GetStatistics(&stat);
-  // Because there is no quota cache, we make remote blocking call every time.
-  EXPECT_EQ(stat.total_check_calls, 11);
-  EXPECT_EQ(stat.total_remote_check_calls, 11);
-  EXPECT_EQ(stat.total_blocking_remote_check_calls, 11);
-  EXPECT_EQ(stat.total_quota_calls, 11);
-  EXPECT_EQ(stat.total_remote_quota_calls, 11);
-  EXPECT_EQ(stat.total_blocking_remote_quota_calls, 11);
+  CheckStatisticsInvariants(stat);
+
+  EXPECT_EQ(stat.total_check_calls_, 11);
+  // The first check call misses the policy cache, the rest hit and are accepted
+  EXPECT_EQ(stat.total_check_cache_hits_, 10);
+  EXPECT_EQ(stat.total_check_cache_misses_, 1);
+  EXPECT_EQ(stat.total_check_cache_hit_accepts_, 10);
+  EXPECT_EQ(stat.total_check_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_check_calls_, 1);
+  EXPECT_EQ(stat.total_remote_check_accepts_, 1);
+  EXPECT_EQ(stat.total_remote_check_denies_, 0);
+  EXPECT_EQ(stat.total_quota_calls_, 11);
+  EXPECT_EQ(stat.total_quota_cache_hits_, 0);
+  EXPECT_EQ(stat.total_quota_cache_misses_, 11);
+  EXPECT_EQ(stat.total_quota_cache_hit_accepts_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_calls_, 11);
+  EXPECT_EQ(stat.total_remote_quota_accepts_, 11);
+  EXPECT_EQ(stat.total_remote_quota_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_prefetch_calls_, 0);
+  // And all remote quota calls succeed
+  EXPECT_EQ(stat.total_remote_calls_, 11);
+  EXPECT_EQ(stat.total_remote_call_successes_, 11);
+  EXPECT_EQ(stat.total_remote_call_timeouts_, 0);
+  EXPECT_EQ(stat.total_remote_call_send_errors_, 0);
+  EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
 TEST_F(MixerClientImplTest, TestSuccessCheckAndQuota) {
@@ -308,13 +447,33 @@ TEST_F(MixerClientImplTest, TestSuccessCheckAndQuota) {
   EXPECT_EQ(call_counts, 1 + expected_prefetchs);
   Statistics stat;
   client_->GetStatistics(&stat);
+  CheckStatisticsInvariants(stat);
 
-  EXPECT_EQ(stat.total_check_calls, 101);
-  EXPECT_EQ(stat.total_remote_check_calls, 1 + expected_prefetchs);
-  EXPECT_EQ(stat.total_blocking_remote_check_calls, 1);
-  EXPECT_EQ(stat.total_quota_calls, 101);
-  EXPECT_EQ(stat.total_remote_quota_calls, 1 + expected_prefetchs);
-  EXPECT_EQ(stat.total_blocking_remote_quota_calls, 1);
+  EXPECT_EQ(stat.total_check_calls_, 101);
+  // The first check call misses the policy cache, the rest hit and are accepted
+  EXPECT_EQ(stat.total_check_cache_hits_, 100);
+  EXPECT_EQ(stat.total_check_cache_misses_, 1);
+  EXPECT_EQ(stat.total_check_cache_hit_accepts_, 100);
+  EXPECT_EQ(stat.total_check_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_check_calls_, 1);
+  EXPECT_EQ(stat.total_remote_check_accepts_, 1);
+  EXPECT_EQ(stat.total_remote_check_denies_, 0);
+  // Quota cache is always hit because of the quota prefetch mechanism.
+  EXPECT_EQ(stat.total_quota_calls_, 101);
+  EXPECT_EQ(stat.total_quota_cache_hits_, 100);
+  EXPECT_EQ(stat.total_quota_cache_misses_, 1);
+  EXPECT_EQ(stat.total_quota_cache_hit_accepts_, 100);
+  EXPECT_EQ(stat.total_quota_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_calls_, 1 + expected_prefetchs);
+  EXPECT_EQ(stat.total_remote_quota_accepts_, 1 + expected_prefetchs);
+  EXPECT_EQ(stat.total_remote_quota_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_prefetch_calls_, expected_prefetchs);
+  // And all remote quota calls succeed
+  EXPECT_EQ(stat.total_remote_calls_, 1 + expected_prefetchs);
+  EXPECT_EQ(stat.total_remote_call_successes_, 1 + expected_prefetchs);
+  EXPECT_EQ(stat.total_remote_call_timeouts_, 0);
+  EXPECT_EQ(stat.total_remote_call_send_errors_, 0);
+  EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
 TEST_F(MixerClientImplTest, TestFailedCheckAndQuota) {
@@ -351,14 +510,34 @@ TEST_F(MixerClientImplTest, TestFailedCheckAndQuota) {
   }
   Statistics stat;
   client_->GetStatistics(&stat);
+  CheckStatisticsInvariants(stat);
+
+  EXPECT_EQ(stat.total_check_calls_, 11);
   // The first call is a remote blocking call, which returns failed precondition
   // in check response. Following calls only make check cache calls and return.
-  EXPECT_EQ(stat.total_check_calls, 11);
-  EXPECT_EQ(stat.total_remote_check_calls, 1);
-  EXPECT_EQ(stat.total_blocking_remote_check_calls, 1);
-  EXPECT_EQ(stat.total_quota_calls, 1);
-  EXPECT_EQ(stat.total_remote_quota_calls, 1);
-  EXPECT_EQ(stat.total_blocking_remote_quota_calls, 1);
+  EXPECT_EQ(stat.total_check_cache_hits_, 10);
+  EXPECT_EQ(stat.total_check_cache_misses_, 1);
+  EXPECT_EQ(stat.total_check_cache_hit_accepts_, 0);
+  EXPECT_EQ(stat.total_check_cache_hit_denies_, 10);
+  EXPECT_EQ(stat.total_remote_check_calls_, 1);
+  EXPECT_EQ(stat.total_remote_check_accepts_, 0);
+  EXPECT_EQ(stat.total_remote_check_denies_, 1);
+  // If the check cache denies the request, the quota cache never sees it.
+  EXPECT_EQ(stat.total_quota_calls_, 1);
+  EXPECT_EQ(stat.total_quota_cache_hits_, 0);
+  EXPECT_EQ(stat.total_quota_cache_misses_, 1);
+  EXPECT_EQ(stat.total_quota_cache_hit_accepts_, 0);
+  EXPECT_EQ(stat.total_quota_cache_hit_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_calls_, 1);
+  EXPECT_EQ(stat.total_remote_quota_accepts_, 1);
+  EXPECT_EQ(stat.total_remote_quota_denies_, 0);
+  EXPECT_EQ(stat.total_remote_quota_prefetch_calls_, 0);
+  // Only one remote call and it succeeds at the transport level
+  EXPECT_EQ(stat.total_remote_calls_, 1);
+  EXPECT_EQ(stat.total_remote_call_successes_, 1);
+  EXPECT_EQ(stat.total_remote_call_timeouts_, 0);
+  EXPECT_EQ(stat.total_remote_call_send_errors_, 0);
+  EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
 }  // namespace
