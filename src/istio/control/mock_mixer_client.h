@@ -25,10 +25,10 @@ namespace control {
 // The mock object for MixerClient interface.
 class MockMixerClient : public ::istio::mixerclient::MixerClient {
  public:
-  MOCK_METHOD3(Check, ::istio::mixerclient::CancelFunc(
-                          ::istio::mixerclient::CheckContextSharedPtr& context,
-                          ::istio::mixerclient::TransportCheckFunc transport,
-                          ::istio::mixerclient::CheckDoneFunc on_done));
+  MOCK_METHOD3(Check,
+               void(::istio::mixerclient::CheckContextSharedPtr& context,
+                    const ::istio::mixerclient::TransportCheckFunc& transport,
+                    const ::istio::mixerclient::CheckDoneFunc& on_done));
   MOCK_METHOD1(
       Report,
       void(const istio::mixerclient::SharedAttributesSharedPtr& attributes));

@@ -58,6 +58,20 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
+    name = "mixer_fault_test",
+    srcs = [
+        "mixer_fault_test.cc",
+    ],
+    repository = "@envoy",
+    deps = [
+        "//include/istio/utils:attribute_names_header",
+        "//src/envoy/http/mixer:filter_lib",
+        "//src/envoy/utils:filter_names_lib",
+        ":int_client_server",
+    ],
+)
+
+envoy_cc_test(
     name = "int_client_server_test",
     srcs = [
         "int_client_server_test.cc",

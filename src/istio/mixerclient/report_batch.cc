@@ -72,6 +72,9 @@ void ReportBatch::FlushWithLock() {
   ++total_remote_report_calls_;
   auto request = batch_compressor_->Finish();
   ReportResponse* response = new ReportResponse;
+
+  // TODO(jblatt) should an async call be made while this lock is held?  Can the
+  // request send block()?
   transport_(request, response, [this, response](const Status& status) {
     delete response;
     if (!status.ok()) {

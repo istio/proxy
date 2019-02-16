@@ -19,6 +19,7 @@
 #include "include/istio/mixerclient/client.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "src/istio/mixerclient/status_test_util.h"
+#include "src/istio/utils/logger.h"
 
 using ::google::protobuf::util::Status;
 using ::google::protobuf::util::error::Code;
@@ -128,11 +129,12 @@ class MixerClientImplTest : public ::testing::Test {
   }
 
   CheckContextSharedPtr CreateContext(int quota_request) {
+    uint32_t retries{0};
     bool fail_open{false};
     istio::mixerclient::SharedAttributesSharedPtr attributes{
         new SharedAttributes()};
     istio::mixerclient::CheckContextSharedPtr context{
-        new CheckContext(fail_open, attributes)};
+        new CheckContext(retries, fail_open, attributes)};
     if (0 < quota_request) {
       context->quotaRequirements().push_back({kRequestCount, quota_request});
     }

@@ -51,7 +51,7 @@ TEST(UtilsTest, ParseMessageWithUnknownField) {
 TEST(UtilsTest, CheckResponseInfoToStreamInfo) {
   auto attributes = std::make_shared<::istio::mixerclient::SharedAttributes>();
   ::istio::mixerclient::CheckContext check_response(
-      false /* fail_open */, attributes);  // by default status is unknown
+      0U, false /* fail_open */, attributes);  // by default status is unknown
   Envoy::StreamInfo::MockStreamInfo mock_stream_info;
 
   EXPECT_CALL(

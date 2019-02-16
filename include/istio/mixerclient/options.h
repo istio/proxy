@@ -39,7 +39,17 @@ struct CheckOptions {
   const int num_entries;
 
   // If true, Check is passed for any network failures.
-  bool network_fail_open = true;
+  bool network_fail_open{true};
+
+  // Number of retries on transport error
+  uint32_t retries{0};
+
+  // Base milliseconds to sleep between retries.  Will be adjusted by
+  // exponential backoff and jitter.
+  uint32_t base_retry_ms{80};
+
+  // Max milliseconds to sleep between retries.
+  uint32_t max_retry_ms{1000};
 };
 
 // Options controlling report batch.

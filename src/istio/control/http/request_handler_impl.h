@@ -30,11 +30,16 @@ class RequestHandlerImpl : public RequestHandler {
  public:
   RequestHandlerImpl(std::shared_ptr<ServiceContext> service_context);
 
+  virtual ~RequestHandlerImpl() = default;
+
   // Makes a Check call.
-  ::istio::mixerclient::CancelFunc Check(
-      CheckData* check_data, HeaderUpdate* header_update,
-      ::istio::mixerclient::TransportCheckFunc transport,
-      ::istio::mixerclient::CheckDoneFunc on_done) override;
+  void Check(CheckData* check_data, HeaderUpdate* header_update,
+             const ::istio::mixerclient::TransportCheckFunc& transport,
+             const ::istio::mixerclient::CheckDoneFunc& on_done) override;
+
+  void ResetCancel() override;
+
+  void CancelCheck() override;
 
   // Make a Report call.
   void Report(CheckData* check_data, ReportData* report_data) override;
