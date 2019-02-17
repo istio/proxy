@@ -1038,7 +1038,7 @@ TEST_F(MixerFaultTest, CancelCheck) {
                   connections_to_initiate / 2, 2 * connections_to_initiate);
   EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hits"], 0);
   EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_cancellations"],
-            connections_to_initiate * 0.8, connections_to_initiate);
+                  connections_to_initiate * 0.8, connections_to_initiate);
   EXPECT_GE(counters["http_mixer_filter.total_remote_calls"],
             connections_to_initiate);
   EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_accepts"], 0);
