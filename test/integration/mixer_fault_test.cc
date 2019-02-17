@@ -22,6 +22,10 @@
 #include "test/integration/http_integration.h"
 #include "test/test_common/network_utility.h"
 
+#define EXPECT_IN_RANGE(val, min, max) \
+  EXPECT_LE(val, max);                 \
+  EXPECT_GE(val, min)
+
 namespace Mixer {
 namespace Integration {
 
@@ -92,17 +96,22 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
     createGeneratedApiTestServer(bootstrap_path, named_ports);
   }
 
-  void extractMixerCounters(const Envoy::Stats::Store &stats,
-                            std::unordered_map<std::string, uint64_t> &map) {
-    const std::string prefix("http_mixer_filter");
-
-    for (auto counter : stats.counters()) {
+  // Must be called before Envoy is stopped
+  void extractCounters(const std::string &prefix,
+                       std::unordered_map<std::string, double> &counters) {
+    for (auto counter : test_server_->stat_store().counters()) {
       if (!std::equal(prefix.begin(), prefix.begin() + prefix.size(),
                       counter->name().begin())) {
         continue;
       }
 
-      map[counter->name()] = counter->value();
+      counters[counter->name()] = counter->value();
+    }
+  }
+
+  void dumpCounters(const std::unordered_map<std::string, double> &counters) {
+    for (auto it : counters) {
+      std::cerr << it.first << " = " << it.second << std::endl;
     }
   }
 
@@ -224,11 +233,15 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
           nanos: %u
         }
       }
+      stats_update_interval: {
+        seconds: %u,
+        nanos: %u
+      }
       report_cluster: %s
       check_cluster: %s
                   )EOF",
         sourceUID, networkFailPolicyToInt(fail_policy), retries, base_retry_sec,
-        base_retry_nanos, max_retry_sec, max_retry_nanos,
+        base_retry_nanos, max_retry_sec, max_retry_nanos, 0U, 1'000'000,
         telemetry_name.c_str(), policy_name.c_str())};
     config_helper_.addFilter(mixer_conf);
   }
@@ -294,7 +307,7 @@ TEST_F(MixerFaultTest, HappyPath) {
   Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
 
   constexpr NetworkFailPolicy fail_policy = NetworkFailPolicy::FAIL_CLOSED;
-  constexpr uint32_t connections_to_initiate = 300;
+  constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
 
   // Origin server immediately sends a simple 200 OK to every request
@@ -666,8 +679,8 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
   Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
 
   constexpr NetworkFailPolicy fail_policy = NetworkFailPolicy::FAIL_OPEN;
-  constexpr uint32_t connections_to_initiate = 30;
-  constexpr uint32_t requests_to_send = 3 * connections_to_initiate;
+  constexpr uint32_t connections_to_initiate = 30 * 30;
+  constexpr uint32_t requests_to_send = 1 * connections_to_initiate;
 
   // Origin server immediately sends a simple 200 OK to every request
   ServerCallbackHelper origin_callbacks;
@@ -823,6 +836,9 @@ TEST_F(MixerFaultTest, RetryOnTransportError) {
                                          {":authority", "host"}}};
   client->run(connections_to_initiate, requests_to_send, std::move(request));
 
+  std::unordered_map<std::string, double> counters;
+  extractCounters("http_mixer_filter", counters);
+
   // shutdown envoy by destroying it
   test_server_ = nullptr;
   // wait until the upstreams have closed all connections they accepted.
@@ -858,6 +874,43 @@ TEST_F(MixerFaultTest, RetryOnTransportError) {
   // assert that the policy request callback is called for every client request
   // sent
   EXPECT_EQ(policy_cluster.requestsReceived(), requests_to_send);
+
+  // Assertions against the mixer filter's internal counters.
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_other_errors"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_retries"],
+                  requests_to_send / 2 - requests_to_send / 10,
+                  requests_to_send / 2 + requests_to_send / 10);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hits"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_cancellations"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_misses"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_calls"], requests_to_send);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hits"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_successes"],
+            requests_to_send);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_timeouts"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_send_errors"],
+                  requests_to_send / 2 - requests_to_send / 10,
+                  requests_to_send / 2 + requests_to_send / 10);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_misses"],
+            requests_to_send);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_calls"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_report_calls"], 0,
+                  counters["http_mixer_filter.total_report_calls"] * 0.12);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_prefetch_calls"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_calls"],
+            requests_to_send);
+  EXPECT_EQ(counters["http_mixer_filter.total_report_calls"], requests_to_send);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hit_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_calls"], requests_to_send);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hit_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_calls"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_accepts"],
+            requests_to_send);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_denies"], 0);
 }
 
 TEST_F(MixerFaultTest, CancelCheck) {
@@ -934,6 +987,9 @@ TEST_F(MixerFaultTest, CancelCheck) {
   client->run(connections_to_initiate, requests_to_send, std::move(request),
               std::chrono::milliseconds(5'000));
 
+  std::unordered_map<std::string, double> counters;
+  extractCounters("http_mixer_filter", counters);
+
   // shutdown envoy by destroying it
   test_server_ = nullptr;
   // wait until the upstreams have closed all connections they accepted.
@@ -971,6 +1027,53 @@ TEST_F(MixerFaultTest, CancelCheck) {
   // assert that the policy request callback is called for every response
   // received by the client.
   EXPECT_GE(policy_cluster.requestsReceived(), client->responsesReceived());
+
+  // Assertions against the mixer filter's internal counters.  Many of these
+  // assertions rely on an implementational artifact of the load generator
+  // client - when a request is cancelled due to timeout the connection is
+  // closed.  With enough retries every connection we create will be closed due
+  // to cancellation/timeout.
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_other_errors"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_retries"],
+                  connections_to_initiate / 2, 2 * connections_to_initiate);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hits"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_cancellations"],
+            connections_to_initiate * 0.8, connections_to_initiate);
+  EXPECT_GE(counters["http_mixer_filter.total_remote_calls"],
+            connections_to_initiate);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_misses"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hits"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_successes"],
+                  connections_to_initiate / 2, 2 * connections_to_initiate);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_timeouts"], 0,
+                  connections_to_initiate);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_call_send_errors"],
+                  counters["http_mixer_filter.total_remote_calls"] / 4,
+                  counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_misses"],
+            counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_calls"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_report_calls"], 0,
+                  counters["http_mixer_filter.total_report_calls"] * 0.12);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_prefetch_calls"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_calls"],
+            counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_report_calls"],
+                  counters["http_mixer_filter.total_remote_calls"] * 0.75,
+                  counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hit_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_calls"],
+            counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hit_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_calls"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_check_accepts"],
+                  counters["http_mixer_filter.total_remote_calls"] / 4,
+                  counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_denies"], 0);
 }
 
 TEST_F(MixerFaultTest, CancelRetry) {
@@ -1029,6 +1132,9 @@ TEST_F(MixerFaultTest, CancelRetry) {
   client->run(connections_to_initiate, requests_to_send, std::move(request),
               std::chrono::milliseconds(500));
 
+  std::unordered_map<std::string, double> counters;
+  extractCounters("http_mixer_filter", counters);
+
   // shutdown envoy by destroying it
   test_server_ = nullptr;
   // wait until the upstreams have closed all connections they accepted.
@@ -1063,6 +1169,47 @@ TEST_F(MixerFaultTest, CancelRetry) {
 
   // The policy server receives no requests
   EXPECT_EQ(0, policy_cluster.requestsReceived());
+
+  // Assertions against the mixer filter's internal counters.  Many of these
+  // assertions rely on an implementational artifact of the load generator
+  // client - when a request is cancelled due to timeout the connection is
+  // closed.  With enough retries every connection we create will be closed due
+  // to cancellation/timeout.
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_other_errors"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_retries"],
+            connections_to_initiate);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hits"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_cancellations"], 0);
+  EXPECT_GE(counters["http_mixer_filter.total_remote_calls"],
+            connections_to_initiate);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_misses"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hits"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_successes"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_timeouts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_call_send_errors"],
+            connections_to_initiate);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_misses"],
+            counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_calls"], 0);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_report_calls"], 0,
+                  counters["http_mixer_filter.total_report_calls"] * 0.12);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_prefetch_calls"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_calls"],
+            counters["http_mixer_filter.total_remote_calls"]);
+  // TODO(jblatt) report calls are not made if client disconnects first.  Bug:
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_report_calls"], 0,
+                  counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hit_denies"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_calls"],
+            counters["http_mixer_filter.total_remote_calls"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_check_cache_hit_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_quota_calls"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_check_accepts"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_denies"], 0);
 }
 
 }  // namespace Integration
