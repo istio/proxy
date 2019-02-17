@@ -206,8 +206,12 @@ void MixerClientImpl::RemoteCheck(CheckContextSharedPtr context,
   // This lambda and any lambdas it creates for retry will inc the ref count
   // on the CheckContext shared pointer.
   //
-  // The other captures (this/MixerClientImpl, transport func, and on_done func
-  // are assumed to be long-lived objects that exist until shutdown.
+  // The CheckDoneFunc is valid as long as the Filter object is valid.  This
+  // has a lifespan similar to the CheckContext, but TODO(jblatt) it would be
+  // good to move this into the CheckContext anyways.
+  //
+  // The other captures (this/MixerClientImpl and TransportCheckFunc's
+  // references) have lifespans much greater than any individual transaction.
   //
   CancelFunc cancel_func = transport(
       context->request(), context->response(),
