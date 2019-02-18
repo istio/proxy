@@ -21,6 +21,8 @@ BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
 BAZEL_TEST_ARGS ?=
 BAZEL_TARGETS ?= //...
+# Some tests run so slowly under the santizers that they always timeout.
+SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
 ifeq "$(origin CC)" "default"
@@ -49,11 +51,11 @@ test:
 	@bazel shutdown
 
 test_asan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan $(BAZEL_TARGETS)
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 	@bazel shutdown
 
 test_tsan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan $(BAZEL_TARGETS)
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 	@bazel shutdown
 
 check:

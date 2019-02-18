@@ -14,6 +14,8 @@
  */
 
 #include <future>
+
+#include "absl/strings/match.h"
 #include "gtest/gtest.h"
 #include "include/istio/mixerclient/options.h"
 #include "int_client.h"
@@ -100,8 +102,7 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
   void extractCounters(const std::string &prefix,
                        std::unordered_map<std::string, double> &counters) {
     for (auto counter : test_server_->stat_store().counters()) {
-      if (!std::equal(prefix.begin(), prefix.begin() + prefix.size(),
-                      counter->name().begin())) {
+      if (absl::StartsWith(counter->name(), prefix)) {
         continue;
       }
 
