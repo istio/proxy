@@ -102,7 +102,7 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
   void extractCounters(const std::string &prefix,
                        std::unordered_map<std::string, double> &counters) {
     for (auto counter : test_server_->stat_store().counters()) {
-      if (absl::StartsWith(counter->name(), prefix)) {
+      if (!absl::StartsWith(counter->name(), prefix)) {
         continue;
       }
 
