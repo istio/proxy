@@ -30,12 +30,13 @@ RequestHandlerImpl::RequestHandlerImpl(
     std::shared_ptr<ClientContext> client_context)
     : attributes_(new istio::mixerclient::SharedAttributes()),
       check_context_(new istio::mixerclient::CheckContext(
-          client_context->NetworkFailOpen(), attributes_)),
+          client_context->Retries(), client_context->NetworkFailOpen(),
+          attributes_)),
       client_context_(client_context),
       last_report_info_{0ULL, 0ULL, std::chrono::nanoseconds::zero()} {}
 
-CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
-                                     CheckDoneFunc on_done) {
+void RequestHandlerImpl::Check(CheckData* check_data,
+                               const CheckDoneFunc& on_done) {
   if (client_context_->enable_mixer_check() ||
       client_context_->enable_mixer_report()) {
     client_context_->AddStaticAttributes(attributes_->attributes());
@@ -47,13 +48,25 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
   if (!client_context_->enable_mixer_check()) {
     check_context_->setFinalStatus(Status::OK, false);
     on_done(*check_context_);
-    return nullptr;
+    return;
   }
 
   client_context_->AddQuotas(attributes_->attributes(),
                              check_context_->quotaRequirements());
 
-  return client_context_->SendCheck(nullptr, on_done, check_context_);
+  client_context_->SendCheck(nullptr, on_done, check_context_);
+}
+
+void RequestHandlerImpl::ResetCancel() {
+  if (check_context_) {
+    check_context_->resetCancel();
+  }
+}
+
+void RequestHandlerImpl::CancelCheck() {
+  if (check_context_) {
+    check_context_->cancel();
+  }
 }
 
 void RequestHandlerImpl::Report(ReportData* report_data,

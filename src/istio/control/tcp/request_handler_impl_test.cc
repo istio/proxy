@@ -26,6 +26,7 @@ using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::TcpClientConfig;
 using ::istio::mixerclient::CancelFunc;
+using ::istio::mixerclient::CheckContextSharedPtr;
 using ::istio::mixerclient::CheckDoneFunc;
 using ::istio::mixerclient::CheckResponseInfo;
 using ::istio::mixerclient::DoneFunc;
@@ -124,15 +125,14 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["key1"].string_value(), "value1");
         EXPECT_EQ(context->quotaRequirements().size(), 1);
         EXPECT_EQ(context->quotaRequirements()[0].quota, "quota");
         EXPECT_EQ(context->quotaRequirements()[0].charge, 5);
-        return nullptr;
       }));
 
   auto handler = controller_->CreateRequestHandler();

@@ -18,6 +18,7 @@
 #include "google/protobuf/arena.h"
 #include "google/protobuf/stubs/status.h"
 #include "include/istio/mixerclient/check_response.h"
+#include "include/istio/mixerclient/environment.h"
 #include "include/istio/quota_config/requirement.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
@@ -27,6 +28,7 @@
 #include "src/istio/mixerclient/check_cache.h"
 #include "src/istio/mixerclient/quota_cache.h"
 #include "src/istio/mixerclient/shared_attributes.h"
+#include "src/istio/utils/logger.h"
 
 #include <vector>
 
@@ -39,8 +41,11 @@ namespace mixerclient {
  */
 class CheckContext : public CheckResponseInfo {
  public:
-  CheckContext(bool fail_open, SharedAttributesSharedPtr& shared_attributes)
-      : shared_attributes_(shared_attributes), fail_open_(fail_open) {}
+  CheckContext(uint32_t retries, bool fail_open,
+               SharedAttributesSharedPtr& shared_attributes)
+      : shared_attributes_(shared_attributes),
+        fail_open_(fail_open),
+        max_retries_(retries) {}
 
   const istio::mixer::v1::Attributes* attributes() const {
     return shared_attributes_->attributes();
@@ -149,6 +154,38 @@ class CheckContext : public CheckResponseInfo {
   }
 
   //
+  // Policy gRPC request attempt, retry, and cancellation
+  //
+
+  bool retryable() const { return retry_attempts_ < max_retries_; }
+
+  uint32_t retryAttempt() const { return retry_attempts_; }
+
+  void retry(uint32_t retry_ms, std::unique_ptr<Timer> timer) {
+    retry_attempts_++;
+    retry_timer_ = std::move(timer);
+    retry_timer_->Start(retry_ms);
+  }
+
+  void cancel() {
+    if (cancel_func_) {
+      MIXER_DEBUG("Cancelling check call");
+      cancel_func_();
+      cancel_func_ = nullptr;
+    }
+
+    if (retry_timer_) {
+      MIXER_DEBUG("Cancelling retry");
+      retry_timer_->Stop();
+      retry_timer_ = nullptr;
+    }
+  }
+
+  void setCancel(CancelFunc cancel_func) { cancel_func_ = cancel_func; }
+
+  void resetCancel() { cancel_func_ = nullptr; }
+
+  //
   // CheckResponseInfo (exposed to the top-level filter)
   //
 
@@ -161,6 +198,9 @@ class CheckContext : public CheckResponseInfo {
   }
 
  private:
+  CheckContext(const CheckContext&) = delete;
+  void operator=(const CheckContext&) = delete;
+
   istio::mixer::v1::CheckRequest* allocRequestOnce() {
     if (!request_) {
       request_ = google::protobuf::Arena::CreateMessage<
@@ -186,6 +226,14 @@ class CheckContext : public CheckResponseInfo {
   bool remote_quota_check_required_{false};
   google::protobuf::util::Status final_status_{
       google::protobuf::util::Status::UNKNOWN};
+  const uint32_t max_retries_;
+  uint32_t retry_attempts_{0};
+
+  // Calling this will cancel any currently outstanding gRPC request to mixer
+  // policy server.
+  CancelFunc cancel_func_{nullptr};
+
+  std::unique_ptr<Timer> retry_timer_{nullptr};
 };
 
 typedef std::shared_ptr<CheckContext> CheckContextSharedPtr;

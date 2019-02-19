@@ -17,6 +17,7 @@
 #define ISTIO_CONTROL_CLIENT_CONTEXT_BASE_H
 
 #include "include/istio/mixerclient/client.h"
+#include "include/istio/mixerclient/timer.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/local_attributes.h"
 #include "mixer/v1/config/client/client_config.pb.h"
@@ -42,15 +43,15 @@ class ClientContextBase {
       : mixer_client_(std::move(mixer_client)),
         outbound_(outbound),
         local_attributes_(local_attributes),
-        network_fail_open_(false) {}
+        network_fail_open_(false),
+        retries_(0) {}
   // virtual destrutor
   virtual ~ClientContextBase() {}
 
   // Use mixer client object to make a Check call.
-  ::istio::mixerclient::CancelFunc SendCheck(
-      const ::istio::mixerclient::TransportCheckFunc& transport,
-      const ::istio::mixerclient::CheckDoneFunc& on_done,
-      ::istio::mixerclient::CheckContextSharedPtr& check_context);
+  void SendCheck(const ::istio::mixerclient::TransportCheckFunc& transport,
+                 const ::istio::mixerclient::CheckDoneFunc& on_done,
+                 ::istio::mixerclient::CheckContextSharedPtr& check_context);
 
   // Use mixer client object to make a Report call.
   void SendReport(
@@ -66,6 +67,8 @@ class ClientContextBase {
 
   bool NetworkFailOpen() const { return network_fail_open_; }
 
+  uint32_t Retries() const { return retries_; }
+
  private:
   // The mixer client object with check cache and report batch features.
   std::unique_ptr<::istio::mixerclient::MixerClient> mixer_client_;
@@ -77,6 +80,7 @@ class ClientContextBase {
   ::istio::utils::LocalAttributes local_attributes_;
 
   bool network_fail_open_;
+  uint32_t retries_;
 };
 
 }  // namespace control

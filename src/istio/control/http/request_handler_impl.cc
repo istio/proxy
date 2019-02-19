@@ -20,6 +20,7 @@ using ::google::protobuf::util::Status;
 using ::istio::mixerclient::CancelFunc;
 using ::istio::mixerclient::CheckDoneFunc;
 using ::istio::mixerclient::CheckResponseInfo;
+using ::istio::mixerclient::TimerCreateFunc;
 using ::istio::mixerclient::TransportCheckFunc;
 using ::istio::quota_config::Requirement;
 
@@ -31,6 +32,7 @@ RequestHandlerImpl::RequestHandlerImpl(
     std::shared_ptr<ServiceContext> service_context)
     : attributes_(new istio::mixerclient::SharedAttributes()),
       check_context_(new istio::mixerclient::CheckContext(
+          service_context->client_context()->Retries(),
           service_context->client_context()->NetworkFailOpen(), attributes_)),
       service_context_(service_context) {}
 
@@ -61,10 +63,10 @@ void RequestHandlerImpl::AddCheckAttributes(CheckData* check_data) {
   }
 }
 
-CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
-                                     HeaderUpdate* header_update,
-                                     TransportCheckFunc transport,
-                                     CheckDoneFunc on_done) {
+void RequestHandlerImpl::Check(CheckData* check_data,
+                               HeaderUpdate* header_update,
+                               const TransportCheckFunc& transport,
+                               const CheckDoneFunc& on_done) {
   // Forwarded attributes need to be stored regardless Check is needed
   // or not since the header will be updated or removed.
   AddCheckAttributes(check_data);
@@ -75,14 +77,26 @@ CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
   if (!service_context_->enable_mixer_check()) {
     check_context_->setFinalStatus(Status::OK, false);
     on_done(*check_context_);
-    return nullptr;
+    return;
   }
 
   service_context_->AddQuotas(attributes_->attributes(),
                               check_context_->quotaRequirements());
 
-  return service_context_->client_context()->SendCheck(transport, on_done,
-                                                       check_context_);
+  service_context_->client_context()->SendCheck(transport, on_done,
+                                                check_context_);
+}
+
+void RequestHandlerImpl::ResetCancel() {
+  if (check_context_) {
+    check_context_->resetCancel();
+  }
+}
+
+void RequestHandlerImpl::CancelCheck() {
+  if (check_context_) {
+    check_context_->cancel();
+  }
 }
 
 // Make remote report call.

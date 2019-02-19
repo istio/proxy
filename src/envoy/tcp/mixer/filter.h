@@ -86,8 +86,6 @@ class Filter : public Network::Filter,
   // Cancel the pending Check call.
   void cancelCheck();
 
-  // the cancel check
-  istio::mixerclient::CancelFunc cancel_check_;
   // the control object.
   Control &control_;
   // pre-request handler

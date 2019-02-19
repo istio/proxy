@@ -28,6 +28,7 @@ using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::HttpClientConfig;
 using ::istio::mixer::v1::config::client::ServiceConfig;
 using ::istio::mixerclient::CancelFunc;
+using ::istio::mixerclient::CheckContextSharedPtr;
 using ::istio::mixerclient::CheckDoneFunc;
 using ::istio::mixerclient::CheckResponseInfo;
 using ::istio::mixerclient::DoneFunc;
@@ -253,13 +254,12 @@ TEST_F(RequestHandlerImplTest, TestPerRouteAttributes) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(map["per-route-key"].string_value(), "per-route-value");
-        return nullptr;
       }));
 
   ServiceConfig config;
@@ -280,13 +280,12 @@ TEST_F(RequestHandlerImplTest, TestDefaultRouteAttributes) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(map["route0-key"].string_value(), "route0-value");
-        return nullptr;
       }));
 
   // Attribute is forwarded: route override
@@ -318,13 +317,12 @@ TEST_F(RequestHandlerImplTest, TestRouteAttributes) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "service-value");
         EXPECT_EQ(map["route1-key"].string_value(), "route1-value");
-        return nullptr;
       }));
 
   // Attribute is forwarded: global
@@ -348,15 +346,14 @@ TEST_F(RequestHandlerImplTest, TestPerRouteQuota) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(context->quotaRequirements().size(), 1);
         EXPECT_EQ(context->quotaRequirements()[0].quota, "route0-quota");
         EXPECT_EQ(context->quotaRequirements()[0].charge, 10);
-        return nullptr;
       }));
 
   ServiceConfig config;
@@ -389,14 +386,13 @@ TEST_F(RequestHandlerImplTest, TestPerRouteApiSpec) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["global-key"].string_value(), "global-value");
         EXPECT_EQ(map["api.name"].string_value(), "test-name");
         EXPECT_EQ(map["api.operation"].string_value(), "test-method");
-        return nullptr;
       }));
 
   ServiceConfig config;
@@ -448,13 +444,12 @@ TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map[utils::AttributeName::kRequestApiKey].string_value(),
                   "test-api-key");
-        return nullptr;
       }));
 
   // destionation.server is empty, will use default one
@@ -548,13 +543,12 @@ TEST_F(OutboundRequestHandlerImplTest, TestLocalAttributes) {
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["source.uid"].string_value(),
                   "kubernetes://src-client-84469dc8d7-jbbxt.default");
-        return nullptr;
       }));
 
   ServiceConfig config;
@@ -581,13 +575,12 @@ TEST_F(OutboundRequestHandlerImplTest, TestLocalAttributesOverride) {
 
   // Check should be called.
   EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](istio::mixerclient::CheckContextSharedPtr &context,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["source.uid"].string_value(), "fwded");
         EXPECT_NE(map["destination.uid"].string_value(), "ignored");
-        return nullptr;
       }));
 
   ServiceConfig config;

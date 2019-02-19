@@ -23,6 +23,10 @@
 #include "src/istio/mixerclient/report_batch.h"
 
 #include <atomic>
+#include <random>
+
+using ::istio::mixerclient::CheckContextSharedPtr;
+using ::istio::mixerclient::SharedAttributesSharedPtr;
 
 namespace istio {
 namespace mixerclient {
@@ -35,27 +39,38 @@ class MixerClientImpl : public MixerClient {
   // Destructor
   virtual ~MixerClientImpl();
 
-  CancelFunc Check(istio::mixerclient::CheckContextSharedPtr& context,
-                   TransportCheckFunc transport,
-                   CheckDoneFunc on_done) override;
+  void Check(CheckContextSharedPtr& context,
+             const TransportCheckFunc& transport,
+             const CheckDoneFunc& on_done) override;
 
   void Report(const SharedAttributesSharedPtr& attributes) override;
 
   void GetStatistics(Statistics* stat) const override;
 
  private:
+  void RemoteCheck(CheckContextSharedPtr context,
+                   const TransportCheckFunc& transport,
+                   const CheckDoneFunc& on_done);
+
+  uint32_t RetryDelay(uint32_t retry_attempt);
+
   // Store the options
   MixerClientOptions options_;
 
   // To compress attributes.
   AttributeCompressor compressor_;
 
+  // timer create func
+  TimerCreateFunc timer_create_;
   // Cache for Check call.
   std::unique_ptr<CheckCache> check_cache_;
   // Report batch.
   std::unique_ptr<ReportBatch> report_batch_;
   // Cache for Quota call.
   std::unique_ptr<QuotaCache> quota_cache_;
+
+  // RNG for retry jitter
+  std::default_random_engine rand_;
 
   // for deduplication_id
   std::string deduplication_id_base_;

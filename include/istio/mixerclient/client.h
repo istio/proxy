@@ -133,9 +133,9 @@ class MixerClient {
   // The response data from mixer will be consumed by mixer client.
 
   // A check call.
-  virtual CancelFunc Check(istio::mixerclient::CheckContextSharedPtr& context,
-                           TransportCheckFunc transport,
-                           CheckDoneFunc on_done) = 0;
+  virtual void Check(istio::mixerclient::CheckContextSharedPtr& context,
+                     const TransportCheckFunc& transport,
+                     const CheckDoneFunc& on_done) = 0;
 
   // A report call.
   virtual void Report(

@@ -76,7 +76,7 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
                        decoder_callbacks_->connection());
   Utils::HeaderUpdate header_update(&headers);
   headers_ = &headers;
-  cancel_check_ = handler_->Check(
+  handler_->Check(
       &check_data, &header_update,
       control_.GetCheckTransport(decoder_callbacks_->activeSpan()),
       [this](const CheckResponseInfo& info) { completeCheck(info); });
@@ -203,14 +203,12 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
 
 void Filter::onDestroy() {
   ENVOY_LOG(debug, "Called Mixer::Filter : {} state: {}", __func__, state_);
-  if (state_ != Calling) {
-    cancel_check_ = nullptr;
+  if (state_ != Calling && handler_) {
+    handler_->ResetCancel();
   }
   state_ = Responded;
-  if (cancel_check_) {
-    ENVOY_LOG(debug, "Cancelling check call");
-    cancel_check_();
-    cancel_check_ = nullptr;
+  if (handler_) {
+    handler_->CancelCheck();
   }
 }
 
