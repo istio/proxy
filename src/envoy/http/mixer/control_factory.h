@@ -82,6 +82,7 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
         case istio::utils::Logger::Level::ERROR_:
           return ENVOY_LOG_CHECK_LEVEL(error);
       }
+      return false;
     }
 
     virtual void writeBuffer(istio::utils::Logger::Level level,
