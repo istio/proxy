@@ -27,6 +27,8 @@ namespace Envoy {
 namespace Server {
 namespace Configuration {
 
+namespace iaapi = istio::authentication::v1alpha1;
+
 class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                           public Logger::Loggable<Logger::Id::filter> {
  public:
@@ -75,7 +77,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     auto filter_config = std::make_shared<FilterConfig>(config_pb);
     // Print a log to remind user to upgrade to the mTLS setting. This will only
     // be called when a new config is received by Envoy.
-    warnPermissiveMode(filter_config);
+    warnPermissiveMode(*filter_config);
     return
         [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
           callbacks.addStreamDecoderFilter(
