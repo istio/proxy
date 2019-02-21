@@ -93,8 +93,10 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                 warn,
                 "mTLS PERMISSIVE mode is used, connection can be either "
                 "plaintext or TLS, and client cert can be omitted. "
-                "Please consider to upgrade to mTLS STRICT mode for more secure "
-                "configuration that only allows TLS connection with client cert. "
+                "Please consider to upgrade to mTLS STRICT mode for more "
+                "secure "
+                "configuration that only allows TLS connection with client "
+                "cert. "
                 "See https://istio.io/docs/tasks/security/mtls-migration/");
             return;
           }

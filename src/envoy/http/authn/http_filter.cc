@@ -34,8 +34,7 @@ namespace Istio {
 namespace AuthN {
 
 AuthenticationFilter::AuthenticationFilter(const FilterConfig& filter_config)
-    : filter_config_(filter_config) {
-}
+    : filter_config_(filter_config) {}
 
 AuthenticationFilter::~AuthenticationFilter() {}
 
