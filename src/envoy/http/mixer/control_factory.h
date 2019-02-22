@@ -81,6 +81,8 @@ class ControlFactory : public Logger::Loggable<Logger::Id::config> {
           return ENVOY_LOG_CHECK_LEVEL(warn);
         case istio::utils::Logger::Level::ERROR_:
           return ENVOY_LOG_CHECK_LEVEL(error);
+        default:
+          NOT_REACHED_GCOVR_EXCL_LINE;
       }
     }
 
