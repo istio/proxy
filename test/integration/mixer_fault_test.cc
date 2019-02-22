@@ -535,7 +535,8 @@ TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
   // Evaluate test
   //
 
-  // All client connections are successfully established.
+#ifndef __APPLE__
+  // All connections are successfully established
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
   EXPECT_EQ(0, client->connectFailures());
   // Client close callback called for every client connection.
@@ -545,15 +546,11 @@ TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
   // Every response was a 5xx class
   EXPECT_EQ(0, client->class2xxResponses());
   EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(requests_to_send, client->class5xxResponses());
+  EXPECT_EQ(client->class5xxResponses(), requests_to_send);
   EXPECT_EQ(0, client->responseTimeouts());
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
   EXPECT_EQ(0, client->remoteCloses());
-
-  // Origin server should see no requests since the mixer filter is configured
-  // to fail closed.
-  EXPECT_EQ(0, origin_callbacks.requestsReceived());
 
   // Policy server accept callback is called at least once (h2 socket reuse
   // means may only be called once)
@@ -563,6 +560,44 @@ TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
   // Policy server closes every connection
   EXPECT_EQ(policy_cluster.connectionsAccepted(),
             policy_cluster.localCloses() + policy_cluster.remoteCloses());
+#else
+  // Macos is a bit flakier than Linux, so broaden assetion ranges to reduce
+  // test flakes.
+
+  // Most connections are successfully established.
+  EXPECT_IN_RANGE(client->connectSuccesses(), 0.8 * connections_to_initiate,
+                  connections_to_initiate);
+  EXPECT_IN_RANGE(client->connectFailures(), 0, 0.2 * connections_to_initiate);
+  // Client close callback usually called for every client connection.
+  EXPECT_IN_RANGE(client->localCloses(), 0.8 * connections_to_initiate,
+                  connections_to_initiate);
+  // Client response callback is usually called for every request sent
+  EXPECT_IN_RANGE(client->responsesReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+  // Most responses are a 5xx class and none are successful
+  EXPECT_EQ(0, client->class2xxResponses());
+  EXPECT_EQ(0, client->class4xxResponses());
+  EXPECT_IN_RANGE(client->class5xxResponses(), 0.8 * requests_to_send,
+                  requests_to_send);
+  EXPECT_EQ(0, client->responseTimeouts());
+  // Almost no client sockets are rudely closed by server / almost no client
+  // sockets are reset.
+  EXPECT_IN_RANGE(client->remoteCloses(), 0, 0.2 * connections_to_initiate);
+
+  // Policy server accept callback is called at least once (h2 socket reuse
+  // means may only be called once)
+  EXPECT_GE(policy_cluster.connectionsAccepted(), 1);
+  // Policy server request callback sees most policy checks
+  EXPECT_IN_RANGE(policy_cluster.requestsReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+  // Policy server closes every connection
+  EXPECT_EQ(policy_cluster.connectionsAccepted(),
+            policy_cluster.localCloses() + policy_cluster.remoteCloses());
+#endif
+
+  // Origin server should see no requests since the mixer filter is
+  // configured to fail closed.
+  EXPECT_EQ(origin_callbacks.requestsReceived(), 0);
 }
 
 TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
@@ -642,7 +677,8 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
   // Evaluate test
   //
 
-  // All client connections are successfully established.
+#ifndef __APPLE__
+  // On Linux every connection will be successfully established.
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
   EXPECT_EQ(0, client->connectFailures());
   // Client close callback called for every client connection.
@@ -658,15 +694,47 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
   // reset.
   EXPECT_EQ(0, client->remoteCloses());
 
-  // assert that the origin request callback is called for every client request
-  // sent
+  // Origin server should see all requests
   EXPECT_EQ(origin_callbacks.requestsReceived(), requests_to_send);
+
+  // Policy server request callback sees every policy check
+  EXPECT_EQ(requests_to_send, policy_cluster.requestsReceived());
+#else
+  // Macos is a bit flakier than Linux, so broaden assetion ranges to reduce
+  // test flakes.
+
+  // Most connections are successfully established.
+  EXPECT_IN_RANGE(client->connectSuccesses(), 0.8 * connections_to_initiate,
+                  connections_to_initiate);
+  EXPECT_IN_RANGE(client->connectFailures(), 0, 0.2 * connections_to_initiate);
+  // Client close callback usually called for every client connection.
+  EXPECT_IN_RANGE(client->localCloses(), 0.8 * connections_to_initiate,
+                  connections_to_initiate);
+  // Client response callback is usually called for every request sent
+  EXPECT_IN_RANGE(client->responsesReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+  // Most responses were a 2xx class
+  EXPECT_IN_RANGE(client->class2xxResponses(), 0.8 * requests_to_send,
+                  requests_to_send);
+  EXPECT_EQ(0, client->class4xxResponses());
+  EXPECT_EQ(0, client->class5xxResponses());
+  EXPECT_EQ(0, client->responseTimeouts());
+  // Almost no client sockets are rudely closed by server / almost no client
+  // sockets are reset.
+  EXPECT_IN_RANGE(client->remoteCloses(), 0, 0.2 * connections_to_initiate);
+
+  // Origin server should see most requests
+  EXPECT_IN_RANGE(origin_callbacks.requestsReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+
+  // Policy server request callback sees most policy checks
+  EXPECT_IN_RANGE(policy_cluster.requestsReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+#endif
 
   // Policy server accept callback is called at least once (h2 socket reuse
   // means may only be called once)
   EXPECT_GE(policy_cluster.connectionsAccepted(), 1);
-  // Policy server request callback sees every policy check
-  EXPECT_EQ(requests_to_send, policy_cluster.requestsReceived());
   // Policy server closes every connection
   EXPECT_EQ(policy_cluster.connectionsAccepted(),
             policy_cluster.localCloses() + policy_cluster.remoteCloses());
@@ -736,7 +804,8 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
   // Evaluate test
   //
 
-  // All client connections are successfully established.
+#ifndef __APPLE__
+  // All connections are successfully established
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
   EXPECT_EQ(0, client->connectFailures());
   // Client close callback called for every client connection.
@@ -764,6 +833,45 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
   // Policy server closes every connection
   EXPECT_EQ(policy_cluster.connectionsAccepted(),
             policy_cluster.localCloses() + policy_cluster.remoteCloses());
+#else
+  // Macos is a bit flakier than Linux, so broaden assetion ranges to reduce
+  // test flakes.
+
+  // Most connections are successfully established.
+  EXPECT_IN_RANGE(client->connectSuccesses(), 0.8 * connections_to_initiate,
+                  connections_to_initiate);
+  EXPECT_IN_RANGE(client->connectFailures(), 0, 0.2 * connections_to_initiate);
+  // Client close callback usually called for every client connection.
+  EXPECT_IN_RANGE(client->localCloses(), 0.8 * connections_to_initiate,
+                  connections_to_initiate);
+  // Client response callback is usually called for every request sent
+  EXPECT_IN_RANGE(client->responsesReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+  // Most responses were a 2xx class
+  EXPECT_IN_RANGE(client->class2xxResponses(), 0.8 * requests_to_send,
+                  requests_to_send);
+  EXPECT_EQ(0, client->class4xxResponses());
+  EXPECT_EQ(0, client->class5xxResponses());
+  EXPECT_EQ(0, client->responseTimeouts());
+  // Almost no client sockets are rudely closed by server / almost no client
+  // sockets are reset.
+  EXPECT_IN_RANGE(client->remoteCloses(), 0, 0.2 * connections_to_initiate);
+
+  // Origin server should see most requests since the mixer filter is
+  // configured to fail open.
+  EXPECT_IN_RANGE(origin_callbacks.requestsReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+
+  // Policy server accept callback is called at least once (h2 socket reuse
+  // means may only be called once)
+  EXPECT_GE(policy_cluster.connectionsAccepted(), 1);
+  // Policy server request callback sees most policy checks
+  EXPECT_IN_RANGE(policy_cluster.requestsReceived(), 0.8 * requests_to_send,
+                  requests_to_send);
+  // Policy server closes every connection
+  EXPECT_EQ(policy_cluster.connectionsAccepted(),
+            policy_cluster.localCloses() + policy_cluster.remoteCloses());
+#endif
 }
 
 TEST_F(MixerFaultTest, RetryOnTransportError) {
@@ -1028,6 +1136,13 @@ TEST_F(MixerFaultTest, CancelCheck) {
   // assert that the policy request callback is called for every response
   // received by the client.
   EXPECT_GE(policy_cluster.requestsReceived(), client->responsesReceived());
+
+#ifdef __APPLE__
+  // Envoy doesn't detect client disconnects on macos so any outstanding
+  // requests to the policy server won't be cancelled.  See
+  // https://github.com/envoyproxy/envoy/issues/4294
+  return;
+#endif
 
   // Assertions against the mixer filter's internal counters.  Many of these
   // assertions rely on an implementational artifact of the load generator
