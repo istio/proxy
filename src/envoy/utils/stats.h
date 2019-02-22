@@ -53,7 +53,11 @@ namespace Utils {
   COUNTER(total_remote_call_retries)          \
   COUNTER(total_remote_call_cancellations)    \
   COUNTER(total_report_calls)                 \
-  COUNTER(total_remote_report_calls)
+  COUNTER(total_remote_report_calls)          \
+  COUNTER(total_remote_report_successes)      \
+  COUNTER(total_remote_report_timeouts)       \
+  COUNTER(total_remote_report_send_errors)    \
+  COUNTER(total_remote_report_other_errors)
 // clang-format on
 
 /**

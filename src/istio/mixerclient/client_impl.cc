@@ -18,6 +18,7 @@
 #include <cmath>
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/mixerclient/status_util.h"
 #include "src/istio/utils/logger.h"
 
 using ::google::protobuf::util::Status;
@@ -32,36 +33,6 @@ using ::istio::mixerclient::SharedAttributesSharedPtr;
 
 namespace istio {
 namespace mixerclient {
-
-static ::google::protobuf::StringPiece TIMEOUT_MESSAGE(
-    "upstream request timeout");
-static ::google::protobuf::StringPiece SEND_ERROR_MESSAGE(
-    "upstream connect error or disconnect/reset before headers");
-
-enum class TransportResult {
-  SUCCESS,           // Response received
-  SEND_ERROR,        // Cannot connect to peer or send request to peer.
-  RESPONSE_TIMEOUT,  // Connected to peer and sent request, but didn't receive a
-                     // response in time.
-  OTHER              // Something else went wrong
-};
-
-TransportResult TransportStatus(const Status &status) {
-  if (status.ok()) {
-    return TransportResult::SUCCESS;
-  }
-
-  if (Code::UNAVAILABLE == status.error_code()) {
-    if (TIMEOUT_MESSAGE == status.error_message()) {
-      return TransportResult::RESPONSE_TIMEOUT;
-    }
-    if (SEND_ERROR_MESSAGE == status.error_message()) {
-      return TransportResult::SEND_ERROR;
-    }
-  }
-
-  return TransportResult::OTHER;
-}
 
 MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
     : options_(options) {
@@ -359,6 +330,14 @@ void MixerClientImpl::GetStatistics(Statistics *stat) const {
 
   stat->total_report_calls_ = report_batch_->total_report_calls();
   stat->total_remote_report_calls_ = report_batch_->total_remote_report_calls();
+  stat->total_remote_report_successes_ =
+      report_batch_->total_remote_report_successes();
+  stat->total_remote_report_timeouts_ =
+      report_batch_->total_remote_report_timeouts();
+  stat->total_remote_report_send_errors_ =
+      report_batch_->total_remote_report_send_errors();
+  stat->total_remote_report_other_errors_ =
+      report_batch_->total_remote_report_other_errors();
 }
 
 // Creates a MixerClient object.

@@ -114,9 +114,17 @@ struct Statistics {
   //
 
   // Total number of report calls.
-  uint64_t total_report_calls_{0};
+  uint64_t total_report_calls_{0};  // 1.0
   // Total number of remote report calls.
-  uint64_t total_remote_report_calls_{0};
+  uint64_t total_remote_report_calls_{0};  // 1.0
+  // Remote report calls that are succeeed
+  uint64_t total_remote_report_successes_{0};  // 1.1
+  // Remote report calls that fail due to timeout waiting for the response
+  uint64_t total_remote_report_timeouts_{0};  // 1.1
+  // Remote report calls that fail sending the request (socket connect or write)
+  uint64_t total_remote_report_send_errors_{0};  // 1.1
+  // Remote report calls that fail do to some other error
+  uint64_t total_remote_report_other_errors_{0};  // 1.1
 };
 
 class MixerClient {

@@ -87,6 +87,10 @@ void MixerStatsObject::CheckAndUpdateStats(
 
   CHECK_AND_UPDATE_STATS(total_report_calls_);
   CHECK_AND_UPDATE_STATS(total_remote_report_calls_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_successes_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_timeouts_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_send_errors_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_other_errors_);
 
   // Copy new_stats to old_stats_ for next stats update.
   old_stats_ = new_stats;
