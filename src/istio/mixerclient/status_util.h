@@ -24,11 +24,12 @@ enum class TransportResult {
   SUCCESS,           // Response received
   SEND_ERROR,        // Cannot connect to peer or send request to peer.
   RESPONSE_TIMEOUT,  // Connected to peer and sent request, but didn't receive a
-  // response in time.
-      OTHER              // Something else went wrong
+                     // response in time.
+  OTHER              // Something else went wrong
 };
 
-extern TransportResult TransportStatus(const ::google::protobuf::util::Status &status);
+extern TransportResult TransportStatus(
+    const ::google::protobuf::util::Status &status);
 
-}
-}
+}  // namespace mixerclient
+}  // namespace istio

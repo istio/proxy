@@ -1,4 +1,4 @@
-/* Copyright 2017 Istio Authors. All Rights Reserved.
+/* Copyright 2019 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,14 @@ static ::google::protobuf::StringPiece TIMEOUT_MESSAGE(
 static ::google::protobuf::StringPiece SEND_ERROR_MESSAGE(
     "upstream connect error or disconnect/reset before headers");
 
-TransportResult TransportStatus(const ::google::protobuf::util::Status &status) {
+TransportResult TransportStatus(
+    const ::google::protobuf::util::Status &status) {
   if (status.ok()) {
     return TransportResult::SUCCESS;
   }
 
-  if (::google::protobuf::util::error::Code::UNAVAILABLE == status.error_code()) {
+  if (::google::protobuf::util::error::Code::UNAVAILABLE ==
+      status.error_code()) {
     if (TIMEOUT_MESSAGE == status.error_message()) {
       return TransportResult::RESPONSE_TIMEOUT;
     }
@@ -39,5 +41,5 @@ TransportResult TransportStatus(const ::google::protobuf::util::Status &status) 
 
   return TransportResult::OTHER;
 }
-}
-}
+}  // namespace mixerclient
+}  // namespace istio

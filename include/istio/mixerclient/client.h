@@ -117,7 +117,7 @@ struct Statistics {
   uint64_t total_report_calls_{0};  // 1.0
   // Total number of remote report calls.
   uint64_t total_remote_report_calls_{0};  // 1.0
-  // Remote report calls that are succeeed
+  // Remote report calls that succeeed
   uint64_t total_remote_report_successes_{0};  // 1.1
   // Remote report calls that fail due to timeout waiting for the response
   uint64_t total_remote_report_timeouts_{0};  // 1.1
