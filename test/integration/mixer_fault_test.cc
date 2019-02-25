@@ -630,6 +630,9 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
   client->run(connections_to_initiate, requests_to_send, std::move(request),
               std::chrono::milliseconds(10'000));
 
+  std::unordered_map<std::string, double> counters;
+  extractCounters("http_mixer_filter", counters);
+
   // shutdown envoy by destroying it
   test_server_ = nullptr;
   // wait until the upstreams have closed all connections they accepted.
@@ -674,6 +677,17 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
   // Telemetry server accept callback is called at least once (h2 socket reuse
   // means may only be called once)
   EXPECT_GE(telemetry_cluster.connectionsAccepted(), 1);
+
+  // Assertions against the mixer filter's internal counters.
+  EXPECT_EQ(counters["http_mixer_filter.total_report_calls"], requests_to_send);
+  EXPECT_IN_RANGE(counters["http_mixer_filter.total_remote_report_calls_"], 0,
+                  requests_to_send * 0.12);
+  // All remote reports should time out
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_report_timeouts_"],
+            counters["http_mixer_filter.total_remote_report_calls_"]);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_report_successes_"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_report_send_errors_"], 0);
+  EXPECT_EQ(counters["http_mixer_filter.total_remote_report_other_errors_"], 0);
 }
 
 TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {

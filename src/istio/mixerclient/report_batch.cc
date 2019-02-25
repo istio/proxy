@@ -15,6 +15,7 @@
 
 #include "src/istio/mixerclient/report_batch.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/mixerclient/status_util.h"
 #include "src/istio/utils/logger.h"
 
 using ::google::protobuf::util::Status;
@@ -71,12 +72,34 @@ void ReportBatch::FlushWithLock() {
 
   ++total_remote_report_calls_;
   auto request = batch_compressor_->Finish();
-  ReportResponse* response = new ReportResponse;
+  std::shared_ptr<ReportResponse> response{new ReportResponse()};
 
-  // TODO(jblatt) should an async call be made while this lock is held?  Can the
-  // request send block()?
-  transport_(request, response, [this, response](const Status& status) {
-    delete response;
+  // TODO(jblatt) I replaced a ReportResponse raw pointer with a shared
+  // pointer so at least the memory will be freed if this lambda is deleted
+  // without being called, but really this should be a unique_ptr that is
+  // moved into the transport_ and then moved into the lambda if invoked.
+  transport_(request, &*response, [this, response](const Status& status) {
+    //
+    // Classify and track transport errors
+    //
+
+    TransportResult result = TransportStatus(status);
+
+    switch (result) {
+      case TransportResult::SUCCESS:
+        ++total_remote_report_successes_;
+        break;
+      case TransportResult::RESPONSE_TIMEOUT:
+        ++total_remote_report_timeouts_;
+        break;
+      case TransportResult::SEND_ERROR:
+        ++total_remote_report_send_errors_;
+        break;
+      case TransportResult::OTHER:
+        ++total_remote_report_other_errors_;
+        break;
+    }
+
     if (!status.ok()) {
       if (MIXER_WARN_ENABLED &&
           0 == REPORT_FAIL_LOG_MESSAGES++ % REPORT_FAIL_LOG_MODULUS) {
