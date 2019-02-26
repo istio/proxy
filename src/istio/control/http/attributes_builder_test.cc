@@ -758,6 +758,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         *uid = "pod1.ns2";
         return true;
       }));
+  EXPECT_CALL(mock_data, IsUpstreamSecure()).WillOnce(testing::Return(true));
   EXPECT_CALL(mock_data, GetResponseHeaders())
       .WillOnce(Invoke([]() -> std::map<std::string, std::string> {
         std::map<std::string, std::string> map;
@@ -804,6 +805,9 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         .mutable_attributes())[utils::AttributeName::kDestinationUID]
       .set_string_value("pod1.ns2");
   (*expected_attributes
+        .mutable_attributes())[utils::AttributeName::kConnectionUpstreamSecure]
+      .set_bool_value(true);
+  (*expected_attributes
         .mutable_attributes())[utils::AttributeName::kResponseGrpcStatus]
       .set_string_value("grpc-status");
   (*expected_attributes
@@ -838,6 +842,7 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         return true;
       }));
   EXPECT_CALL(mock_data, GetDestinationUID(_)).WillOnce(testing::Return(false));
+  EXPECT_CALL(mock_data, IsUpstreamSecure()).WillOnce(testing::Return(false));
   EXPECT_CALL(mock_data, GetResponseHeaders())
       .WillOnce(Invoke([]() -> std::map<std::string, std::string> {
         std::map<std::string, std::string> map;

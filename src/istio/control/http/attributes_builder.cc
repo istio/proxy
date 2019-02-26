@@ -222,6 +222,10 @@ void AttributesBuilder::ExtractReportAttributes(
     builder.AddString(utils::AttributeName::kDestinationUID, uid);
   }
 
+  if (report_data->IsUpstreamSecure()) {
+    builder.AddBool(utils::AttributeName::kConnectionUpstreamSecure, true);
+  }
+
   std::map<std::string, std::string> headers =
       report_data->GetResponseHeaders();
   builder.AddStringMap(utils::AttributeName::kResponseHeaders, headers);

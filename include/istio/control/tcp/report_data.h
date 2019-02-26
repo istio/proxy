@@ -45,6 +45,9 @@ class ReportData {
   // Get upstream host UID. This value overrides the value in the report bag.
   virtual bool GetDestinationUID(std::string *uid) const = 0;
 
+  // Indicates whether the upstream connection is secure.
+  virtual bool IsUpstreamSecure() const = 0;
+
   // ConnectionEvent is used to indicates the tcp connection event in Report
   // call.
   enum ConnectionEvent {

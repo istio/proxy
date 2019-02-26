@@ -219,6 +219,16 @@ bool Filter::GetDestinationUID(std::string *uid) const {
   return false;
 }
 
+bool Filter::IsUpstreamSecure() const {
+  if (filter_callbacks_->upstreamHost()) {
+    return filter_callbacks_->upstreamHost()
+        ->cluster()
+        .transportSocketFactory()
+        .implementsSecureTransport();
+  }
+  return false;
+}
+
 const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
     &Filter::GetDynamicFilterState() const {
   return cached_filter_metadata_;
