@@ -60,7 +60,7 @@ void incrementCounter(Buffer::Instance& data, GrpcMessageCounter* counter) {
             static_cast<GrpcMessageCounter::GrpcReadState>(counter->state + 1);
         break;
       case GrpcMessageCounter::ExpectMessage:
-        uint32_t available = data.length() - pos;
+        uint64_t available = data.length() - pos;
         if (counter->current_size <= available) {
           pos += counter->current_size;
           counter->state = GrpcMessageCounter::ExpectByte0;
