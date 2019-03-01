@@ -682,19 +682,19 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
 #ifndef __APPLE__
   // On Linux every connection will be successfully established.
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Client response callback is called for every request sent
   EXPECT_EQ(client->responsesReceived(), requests_to_send);
   // Every response was a 2xx class
   EXPECT_EQ(client->class2xxResponses(), requests_to_send);
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // Origin server should see all requests
   EXPECT_EQ(origin_callbacks.requestsReceived(), requests_to_send);
@@ -809,19 +809,19 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
 #ifndef __APPLE__
   // All connections are successfully established
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Client response callback is called for every request sent
   EXPECT_EQ(client->responsesReceived(), requests_to_send);
   // Every response was a 2xx class
   EXPECT_EQ(client->class2xxResponses(), requests_to_send);
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // Origin server should see every requests since the mixer filter is
   // configured to fail open.
@@ -964,7 +964,7 @@ TEST_F(MixerFaultTest, RetryOnTransportError) {
 
   // All client connections are successfully established.
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Client response callback is called for every request sent
