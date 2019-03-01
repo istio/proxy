@@ -362,19 +362,19 @@ TEST_F(MixerFaultTest, HappyPath) {
 
   // All client connections are successfully established.
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Client response callback is called for every request sent
   EXPECT_EQ(client->responsesReceived(), requests_to_send);
   // Every response was a 2xx class
   EXPECT_EQ(client->class2xxResponses(), requests_to_send);
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // assert that the origin request callback is called for every client request
   // sent
@@ -449,32 +449,32 @@ TEST_F(MixerFaultTest, FailClosedAndClosePolicySocketAfterAccept) {
 
   // All client connections are successfully established.
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Client response callback is called for every request sent
   EXPECT_EQ(client->responsesReceived(), requests_to_send);
   // Every response was a 5xx class
-  EXPECT_EQ(0, client->class2xxResponses());
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(requests_to_send, client->class5xxResponses());
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->class2xxResponses(), 0);
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), requests_to_send);
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // Origin server should see no requests since the mixer filter is configured
   // to fail closed.
-  EXPECT_EQ(0, origin_callbacks.requestsReceived());
+  EXPECT_EQ(origin_callbacks.requestsReceived(), 0);
 
   // Policy server accept callback is called for every client connection
   // initiated.
   EXPECT_GE(policy_cluster.connectionsAccepted(), connections_to_initiate);
   // Policy server request callback is never called
-  EXPECT_EQ(0, policy_cluster.requestsReceived());
+  EXPECT_EQ(policy_cluster.requestsReceived(), 0);
   // Policy server closes every connection
   EXPECT_EQ(policy_cluster.connectionsAccepted(), policy_cluster.localCloses());
-  EXPECT_EQ(0, policy_cluster.remoteCloses());
+  EXPECT_EQ(policy_cluster.remoteCloses(), 0);
 }
 
 TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
@@ -538,19 +538,19 @@ TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
 #ifndef __APPLE__
   // All connections are successfully established
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Client response callback is called for every request sent
   EXPECT_EQ(client->responsesReceived(), requests_to_send);
   // Every response was a 5xx class
-  EXPECT_EQ(0, client->class2xxResponses());
-  EXPECT_EQ(0, client->class4xxResponses());
+  EXPECT_EQ(client->class2xxResponses(), 0);
+  EXPECT_EQ(client->class4xxResponses(), 0);
   EXPECT_EQ(client->class5xxResponses(), requests_to_send);
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // Policy server accept callback is called at least once (h2 socket reuse
   // means may only be called once)
@@ -561,13 +561,15 @@ TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
   EXPECT_EQ(policy_cluster.connectionsAccepted(),
             policy_cluster.localCloses() + policy_cluster.remoteCloses());
 #else
-  // Macos is a bit flakier than Linux, so broaden assetion ranges to reduce
+  // MacOS is a bit flakier than Linux, so broaden assetion ranges to reduce
   // test flakes.
 
   // Most connections are successfully established.
   EXPECT_IN_RANGE(client->connectSuccesses(), 0.8 * connections_to_initiate,
                   connections_to_initiate);
   EXPECT_IN_RANGE(client->connectFailures(), 0, 0.2 * connections_to_initiate);
+  EXPECT_EQ(client->connectSuccesses() + client->connectFailures(),
+            connections_to_initiate);
   // Client close callback usually called for every client connection.
   EXPECT_IN_RANGE(client->localCloses(), 0.8 * connections_to_initiate,
                   connections_to_initiate);
@@ -575,11 +577,11 @@ TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
   EXPECT_IN_RANGE(client->responsesReceived(), 0.8 * requests_to_send,
                   requests_to_send);
   // Most responses are a 5xx class and none are successful
-  EXPECT_EQ(0, client->class2xxResponses());
-  EXPECT_EQ(0, client->class4xxResponses());
+  EXPECT_EQ(client->class2xxResponses(), 0);
+  EXPECT_EQ(client->class4xxResponses(), 0);
   EXPECT_IN_RANGE(client->class5xxResponses(), 0.8 * requests_to_send,
                   requests_to_send);
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // Almost no client sockets are rudely closed by server / almost no client
   // sockets are reset.
   EXPECT_IN_RANGE(client->remoteCloses(), 0, 0.2 * connections_to_initiate);
@@ -700,7 +702,7 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
   // Policy server request callback sees every policy check
   EXPECT_EQ(requests_to_send, policy_cluster.requestsReceived());
 #else
-  // Macos is a bit flakier than Linux, so broaden assetion ranges to reduce
+  // MacOS is a bit flakier than Linux, so broaden assetion ranges to reduce
   // test flakes.
 
   // Most connections are successfully established.
@@ -716,9 +718,9 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
   // Most responses were a 2xx class
   EXPECT_IN_RANGE(client->class2xxResponses(), 0.8 * requests_to_send,
                   requests_to_send);
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // Almost no client sockets are rudely closed by server / almost no client
   // sockets are reset.
   EXPECT_IN_RANGE(client->remoteCloses(), 0, 0.2 * connections_to_initiate);
@@ -834,7 +836,7 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
   EXPECT_EQ(policy_cluster.connectionsAccepted(),
             policy_cluster.localCloses() + policy_cluster.remoteCloses());
 #else
-  // Macos is a bit flakier than Linux, so broaden assetion ranges to reduce
+  // MacOS is a bit flakier than Linux, so broaden assetion ranges to reduce
   // test flakes.
 
   // Most connections are successfully established.
@@ -850,9 +852,9 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
   // Most responses were a 2xx class
   EXPECT_IN_RANGE(client->class2xxResponses(), 0.8 * requests_to_send,
                   requests_to_send);
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // Almost no client sockets are rudely closed by server / almost no client
   // sockets are reset.
   EXPECT_IN_RANGE(client->remoteCloses(), 0, 0.2 * connections_to_initiate);
@@ -969,12 +971,12 @@ TEST_F(MixerFaultTest, RetryOnTransportError) {
   EXPECT_EQ(client->responsesReceived(), requests_to_send);
   // Every response was a 2xx class
   EXPECT_EQ(client->class2xxResponses(), requests_to_send);
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
-  EXPECT_EQ(0, client->responseTimeouts());
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
+  EXPECT_EQ(client->responseTimeouts(), 0);
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // assert that the origin request callback is called for every client request
   // sent
@@ -1113,7 +1115,7 @@ TEST_F(MixerFaultTest, CancelCheck) {
 
   // All client connections are successfully established.
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Not all responses are received due to timeouts
@@ -1121,13 +1123,13 @@ TEST_F(MixerFaultTest, CancelCheck) {
   EXPECT_GE(client->responsesReceived(), 1);
   // Every response was a 2xx class
   EXPECT_EQ(client->class2xxResponses(), client->responsesReceived());
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
   // Or a timeout.  Implementational artifact: timeouts kill the connection and
   // new connections are not created to take their place.
   EXPECT_EQ(connections_to_initiate, client->responseTimeouts());
   // No client sockets are rudely closed by server.  They timeout instead.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // assert that the origin request callback is called for every response
   // received by the client.
@@ -1138,7 +1140,7 @@ TEST_F(MixerFaultTest, CancelCheck) {
   EXPECT_GE(policy_cluster.requestsReceived(), client->responsesReceived());
 
 #ifdef __APPLE__
-  // Envoy doesn't detect client disconnects on macos so any outstanding
+  // Envoy doesn't detect client disconnects on MacOS so any outstanding
   // requests to the policy server won't be cancelled.  See
   // https://github.com/envoyproxy/envoy/issues/4294
   return;
@@ -1265,26 +1267,26 @@ TEST_F(MixerFaultTest, CancelRetry) {
 
   // All client connections are successfully established.
   EXPECT_EQ(client->connectSuccesses(), connections_to_initiate);
-  EXPECT_EQ(0, client->connectFailures());
+  EXPECT_EQ(client->connectFailures(), 0);
   // Client close callback called for every client connection.
   EXPECT_EQ(client->localCloses(), connections_to_initiate);
   // Client doesn't receive any responses
-  EXPECT_EQ(0, client->responsesReceived());
-  EXPECT_EQ(0, client->class2xxResponses());
-  EXPECT_EQ(0, client->class4xxResponses());
-  EXPECT_EQ(0, client->class5xxResponses());
+  EXPECT_EQ(client->responsesReceived(), 0);
+  EXPECT_EQ(client->class2xxResponses(), 0);
+  EXPECT_EQ(client->class4xxResponses(), 0);
+  EXPECT_EQ(client->class5xxResponses(), 0);
   // All requests timeout.  Implementational artifact: timeouts kill the
   // connection and new connections are not created to take their place.
   EXPECT_EQ(connections_to_initiate, client->responseTimeouts());
   // No client sockets are rudely closed by server / no client sockets are
   // reset.
-  EXPECT_EQ(0, client->remoteCloses());
+  EXPECT_EQ(client->remoteCloses(), 0);
 
   // The origin server receives no requests
-  EXPECT_EQ(0, origin_callbacks.requestsReceived());
+  EXPECT_EQ(origin_callbacks.requestsReceived(), 0);
 
   // The policy server receives no requests
-  EXPECT_EQ(0, policy_cluster.requestsReceived());
+  EXPECT_EQ(policy_cluster.requestsReceived(), 0);
 
   // Assertions against the mixer filter's internal counters.  Many of these
   // assertions rely on an implementational artifact of the load generator
