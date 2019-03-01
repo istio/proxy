@@ -774,6 +774,8 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         info->duration = std::chrono::nanoseconds(1);
         info->response_code = 404;
         info->response_flags = "NR";
+        info->request_grpc_message_count = 0;
+        info->response_grpc_message_count = 0;
       }));
   EXPECT_CALL(mock_data, GetGrpcStatus(_))
       .WillOnce(Invoke([](ReportData::GrpcStatus *status) -> bool {
@@ -854,6 +856,8 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         info->duration = std::chrono::nanoseconds(1);
         info->response_code = 404;
         info->response_flags = "NR";
+        info->request_grpc_message_count = 0;
+        info->response_grpc_message_count = 0;
       }));
   EXPECT_CALL(mock_data, GetGrpcStatus(_)).WillOnce(testing::Return(false));
   EXPECT_CALL(mock_data, GetRbacReportInfo(_))

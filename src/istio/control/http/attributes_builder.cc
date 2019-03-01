@@ -259,6 +259,15 @@ void AttributesBuilder::ExtractReportAttributes(
                       grpc_status.message);
   }
 
+  if (info.request_grpc_message_count > 0) {
+    builder.AddInt64(utils::AttributeName::kRequestGrpcMessageCount,
+                     info.request_grpc_message_count);
+  }
+  if (info.response_grpc_message_count > 0) {
+    builder.AddInt64(utils::AttributeName::kResponseGrpcMessageCount,
+                     info.response_grpc_message_count);
+  }
+
   builder.AddString(utils::AttributeName::kContextProxyErrorCode,
                     info.response_flags);
 

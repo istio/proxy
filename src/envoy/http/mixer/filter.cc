@@ -16,6 +16,7 @@
 #include "src/envoy/http/mixer/filter.h"
 
 #include "common/common/base64.h"
+#include "common/grpc/common.h"
 #include "common/protobuf/utility.h"
 #include "include/istio/utils/status.h"
 #include "src/envoy/http/mixer/check_data.h"
@@ -30,6 +31,48 @@ using ::istio::mixerclient::CheckResponseInfo;
 namespace Envoy {
 namespace Http {
 namespace Mixer {
+
+namespace {
+
+// detect gRPC message boundaries: each message is prefixed by 5 bytes
+// length-prefix https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
+void incrementCounter(Buffer::Instance& data, GrpcMessageCounter* counter) {
+  uint64_t pos = 0;
+  unsigned byte = 0;
+  while (pos < data.length()) {
+    switch (counter->state) {
+      case GrpcMessageCounter::ExpectByte0:
+        // skip compress flag, increment message count
+        counter->count += 1;
+        counter->current_size = 0;
+        pos += 1;
+        counter->state = GrpcMessageCounter::ExpectByte1;
+        break;
+      case GrpcMessageCounter::ExpectByte1:
+      case GrpcMessageCounter::ExpectByte2:
+      case GrpcMessageCounter::ExpectByte3:
+      case GrpcMessageCounter::ExpectByte4:
+        data.copyOut(pos, 1, &byte);
+        counter->current_size <<= 8;
+        counter->current_size = counter->current_size | byte;
+        pos += 1;
+        counter->state =
+            static_cast<GrpcMessageCounter::GrpcReadState>(counter->state + 1);
+        break;
+      case GrpcMessageCounter::ExpectMessage:
+        if (data.length() >= pos + counter->current_size) {
+          pos += counter->current_size;
+          counter->state = GrpcMessageCounter::ExpectByte0;
+        } else {
+          pos = data.length();
+          counter->current_size -= data.length() - pos;
+        }
+        break;
+    }
+  }
+}
+
+}  // namespace
 
 Filter::Filter(Control& control)
     : control_(control),
@@ -61,6 +104,7 @@ void Filter::ReadPerRouteConfig(
 FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
   request_total_size_ += headers.byteSize();
+  grpc_request_ = Grpc::Common::hasGrpcContentType(headers);
 
   ::istio::control::http::Controller::PerRouteConfig config;
   auto route = decoder_callbacks_->route();
@@ -92,6 +136,10 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
 FilterDataStatus Filter::decodeData(Buffer::Instance& data, bool end_stream) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {} ({}, {})", __func__,
             data.length(), end_stream);
+  if (grpc_request_) {
+    incrementCounter(data, &grpc_request_counter_);
+  }
+
   request_total_size_ += data.length();
   if (state_ == Calling) {
     return FilterDataStatus::StopIterationAndWatermark;
@@ -139,6 +187,13 @@ FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
     UpdateHeaders(headers, route_directive_.response_header_operations());
   }
   return FilterHeadersStatus::Continue;
+}
+
+FilterDataStatus Filter::encodeData(Buffer::Instance& data, bool) {
+  if (grpc_request_) {
+    incrementCounter(data, &grpc_response_counter_);
+  }
+  return FilterDataStatus::Continue;
 }
 
 void Filter::setDecoderFilterCallbacks(
@@ -233,7 +288,8 @@ void Filter::log(const HeaderMap* request_headers,
                        decoder_callbacks_->connection());
   // response trailer header is not counted to response total size.
   ReportData report_data(response_headers, response_trailers, stream_info,
-                         request_total_size_);
+                         request_total_size_, grpc_request_counter_.count,
+                         grpc_response_counter_.count);
   handler_->Report(&check_data, &report_data);
 }
 

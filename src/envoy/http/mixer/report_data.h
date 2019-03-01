@@ -57,15 +57,21 @@ class ReportData : public ::istio::control::http::ReportData,
   const StreamInfo::StreamInfo &info_;
   uint64_t response_total_size_;
   uint64_t request_total_size_;
+  uint64_t request_grpc_message_count_;
+  uint64_t response_grpc_message_count_;
 
  public:
   ReportData(const HeaderMap *headers, const HeaderMap *response_trailers,
-             const StreamInfo::StreamInfo &info, uint64_t request_total_size)
+             const StreamInfo::StreamInfo &info, uint64_t request_total_size,
+             uint64_t request_grpc_message_count,
+             uint64_t response_grpc_message_count)
       : headers_(headers),
         trailers_(response_trailers),
         info_(info),
         response_total_size_(info.bytesSent()),
-        request_total_size_(request_total_size) {
+        request_total_size_(request_total_size),
+        request_grpc_message_count_(request_grpc_message_count),
+        response_grpc_message_count_(response_grpc_message_count) {
     if (headers != nullptr) {
       response_total_size_ += headers->byteSize();
     }
@@ -98,6 +104,8 @@ class ReportData : public ::istio::control::http::ReportData,
     data->response_code = info_.responseCode().value_or(500);
 
     data->response_flags = StreamInfo::ResponseFlagUtils::toShortString(info_);
+    data->request_grpc_message_count = request_grpc_message_count_;
+    data->response_grpc_message_count = response_grpc_message_count_;
   }
 
   bool GetDestinationIpPort(std::string *str_ip, int *port) const override {

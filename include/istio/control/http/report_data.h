@@ -43,6 +43,8 @@ class ReportData {
     std::chrono::nanoseconds duration;
     int response_code;
     std::string response_flags;
+    uint64_t request_grpc_message_count;
+    uint64_t response_grpc_message_count;
   };
   virtual void GetReportInfo(ReportInfo *info) const = 0;
 

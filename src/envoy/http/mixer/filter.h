@@ -33,6 +33,30 @@ struct PerRouteServiceConfig : public Router::RouteSpecificFilterConfig {
   std::string hash;
 };
 
+// The struct to store gRPC message counter state.
+struct GrpcMessageCounter {
+  GrpcMessageCounter() : state(ExpectByte0), current_size(0), count(0){};
+
+  // gRPC uses 5 byte header to encode subsequent message length
+  enum GrpcReadState {
+    ExpectByte0 = 0,
+    ExpectByte1,
+    ExpectByte2,
+    ExpectByte3,
+    ExpectByte4,
+    ExpectMessage
+  };
+
+  // current read state
+  GrpcReadState state;
+
+  // current message size
+  uint32_t current_size;
+
+  // message counter
+  uint64_t count;
+};
+
 class Filter : public StreamFilter,
                public AccessLog::Instance,
                public Logger::Loggable<Logger::Id::filter> {
@@ -54,9 +78,7 @@ class Filter : public StreamFilter,
     return FilterHeadersStatus::Continue;
   }
   FilterHeadersStatus encodeHeaders(HeaderMap& headers, bool) override;
-  FilterDataStatus encodeData(Buffer::Instance&, bool) override {
-    return FilterDataStatus::Continue;
-  }
+  FilterDataStatus encodeData(Buffer::Instance&, bool) override;
   FilterTrailersStatus encodeTrailers(HeaderMap&) override {
     return FilterTrailersStatus::Continue;
   }
@@ -101,6 +123,11 @@ class Filter : public StreamFilter,
   // Total number of bytes received, including request headers, body, and
   // trailers.
   uint64_t request_total_size_{0};
+
+  // True for gRPC requests
+  bool grpc_request_{false};
+  GrpcMessageCounter grpc_request_counter_;
+  GrpcMessageCounter grpc_response_counter_;
 
   // The stream decoder filter callback.
   StreamDecoderFilterCallbacks* decoder_callbacks_{nullptr};

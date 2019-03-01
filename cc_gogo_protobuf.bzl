@@ -17,6 +17,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 GOGO_PROTO_SHA = "100ba4e885062801d56799d78530b73b178a78f3"
+
 GOGO_PROTO_SHA256 = "b04eb8eddd2d15d8b12d111d4ef7816fca6e5c5d495adf45fb8478278aa80f79"
 
 def cc_gogoproto_repositories(bind = True):

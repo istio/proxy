@@ -52,6 +52,9 @@ struct AttributeName {
   static const char kRequestUserAgent[];
   static const char kRequestApiKey[];
 
+  static const char kRequestGrpcMessageCount[];
+  static const char kResponseGrpcMessageCount[];
+
   static const char kResponseCode[];
   static const char kResponseDuration[];
   static const char kResponseHeaders[];
