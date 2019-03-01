@@ -49,6 +49,9 @@ class ReportData {
   // Get destination ip/port.
   virtual bool GetDestinationIpPort(std::string *ip, int *port) const = 0;
 
+  // Indicates whether the upstream connection is secure.
+  virtual bool IsUpstreamSecure() const = 0;
+
   // Get Rbac attributes.
   struct RbacReportInfo {
     std::string permissive_resp_code;

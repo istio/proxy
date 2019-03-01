@@ -139,6 +139,12 @@ attributes {
   }
 }
 attributes {
+  key: "connection.upstream_secure"
+  value {
+    bool_value: true
+  }
+}
+attributes {
   key: "context.time"
   value {
     timestamp_value {
@@ -257,6 +263,12 @@ attributes {
   }
 }
 attributes {
+  key: "connection.upstream_secure"
+  value {
+    bool_value: true
+  }
+}
+attributes {
   key: "foo.bar.com"
   value {
     string_map_value {
@@ -315,6 +327,12 @@ attributes {
   key: "destination.ip"
   value {
     bytes_value: "1.2.3.4"
+  }
+}
+attributes {
+  key: "connection.upstream_secure"
+  value {
+    bool_value: true
   }
 }
 attributes {
@@ -400,6 +418,12 @@ attributes {
   key: "destination.uid"
   value {
     string_value: "pod1.ns2"
+  }
+}
+attributes {
+  key: "connection.upstream_secure"
+  value {
+    bool_value: true
   }
 }
 attributes {
@@ -501,6 +525,8 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         *uid = "pod1.ns2";
         return true;
       }));
+  EXPECT_CALL(mock_data, IsUpstreamSecure())
+      .WillRepeatedly(testing::Return(true));
   EXPECT_CALL(mock_data, GetDynamicFilterState())
       .Times(4)
       .WillRepeatedly(ReturnRef(filter_metadata));

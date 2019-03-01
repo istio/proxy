@@ -20,6 +20,7 @@
 
 #include "envoy/http/header_map.h"
 #include "envoy/network/connection.h"
+#include "envoy/upstream/upstream.h"
 #include "google/protobuf/util/json_util.h"
 #include "include/istio/mixerclient/check_response.h"
 

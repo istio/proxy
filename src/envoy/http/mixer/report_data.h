@@ -115,6 +115,16 @@ class ReportData : public ::istio::control::http::ReportData,
     return false;
   }
 
+  bool IsUpstreamSecure() const override {
+    if (info_.upstreamHost()) {
+      return info_.upstreamHost()
+          ->cluster()
+          .transportSocketFactory()
+          .implementsSecureTransport();
+    }
+    return false;
+  }
+
   bool GetGrpcStatus(GrpcStatus *status) const override {
     // Check trailer first.
     // If not response body, grpc-status is in response headers.

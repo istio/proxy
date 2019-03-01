@@ -75,6 +75,8 @@ const char AttributeName::kConnectionDuration[] = "connection.duration";
 const char AttributeName::kConnectionMtls[] = "connection.mtls";
 const char AttributeName::kConnectionRequestedServerName[] =
     "connection.requested_server_name";
+const char AttributeName::kConnectionUpstreamSecure[] =
+    "connection.upstream_secure";
 
 // Downstream TCP connection id.
 const char AttributeName::kConnectionId[] = "connection.id";
