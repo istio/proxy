@@ -51,7 +51,7 @@ struct GrpcMessageCounter {
   GrpcReadState state;
 
   // current message size
-  uint32_t current_size;
+  uint64_t current_size;
 
   // message counter
   uint64_t count;

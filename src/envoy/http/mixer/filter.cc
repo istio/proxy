@@ -53,19 +53,20 @@ void incrementCounter(Buffer::Instance& data, GrpcMessageCounter* counter) {
       case GrpcMessageCounter::ExpectByte3:
       case GrpcMessageCounter::ExpectByte4:
         data.copyOut(pos, 1, &byte);
-        counter->current_size <<= 8;
+        counter->current_size = counter->current_size << 8;
         counter->current_size = counter->current_size | byte;
         pos += 1;
         counter->state =
             static_cast<GrpcMessageCounter::GrpcReadState>(counter->state + 1);
         break;
       case GrpcMessageCounter::ExpectMessage:
-        if (data.length() >= pos + counter->current_size) {
+        uint32_t available = data.length() - pos;
+        if (counter->current_size <= available) {
           pos += counter->current_size;
           counter->state = GrpcMessageCounter::ExpectByte0;
         } else {
           pos = data.length();
-          counter->current_size -= data.length() - pos;
+          counter->current_size = counter->current_size - available;
         }
         break;
     }
