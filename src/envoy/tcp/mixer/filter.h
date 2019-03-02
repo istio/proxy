@@ -60,7 +60,6 @@ class Filter : public Network::Filter,
   // ReportData virtual functions.
   bool GetDestinationIpPort(std::string *str_ip, int *port) const override;
   bool GetDestinationUID(std::string *uid) const override;
-  bool IsUpstreamSecure() const override;
   const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
       &GetDynamicFilterState() const override;
   void GetReportInfo(
