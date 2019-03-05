@@ -62,9 +62,8 @@ void JwtAuthenticator::Verify(HeaderMap &headers,
   // Per the spec
   // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0, CORS
   // pre-flight requests shouldn't include user credentials.
-  if (headers_->Method() &&
-      LowerCaseString(Http::Headers::get().MethodValues.Options) ==
-          LowerCaseString(headers_->Method()->value().c_str())) {
+  if (headers_->Method() && Http::Headers::get().MethodValues.Options ==
+                                headers_->Method()->value().c_str()) {
     ENVOY_LOG(debug, "CORS preflight request is passed through.");
     DoneWithStatus(Status::OK);
     return;
