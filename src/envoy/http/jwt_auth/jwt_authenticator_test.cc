@@ -530,6 +530,19 @@ TEST_F(JwtAuthenticatorTest, TestMissingJwtWhenAllowMissingOrFailedIsTrue) {
   auth_->Verify(headers, &mock_cb_);
 }
 
+TEST_F(JwtAuthenticatorTest, TestMissingJwtWhenHttpMethodIsCORS) {
+  // In this test, when JWT is missing, the status should still be OK
+  // because CORS preflight requests shouldn't include user credentials.
+  EXPECT_CALL(mock_cm_, httpAsyncClientForCluster(_)).Times(0);
+  EXPECT_CALL(mock_cb_, onDone(_)).WillOnce(Invoke([](const Status &status) {
+    ASSERT_EQ(status, Status::OK);
+  }));
+
+  auto cors_headers =
+      TestHeaderMapImpl{{":method", "OPTIONS"}, {":path", "/any/cors-path"}};
+  auth_->Verify(cors_headers, &mock_cb_);
+}
+
 TEST_F(JwtAuthenticatorTest, TestInValidJwtWhenAllowMissingOrFailedIsTrue) {
   // In this test, when JWT is invalid, the status should still be OK
   // because allow_missing_or_failed is true.
