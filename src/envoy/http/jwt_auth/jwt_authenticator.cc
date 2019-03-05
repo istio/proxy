@@ -62,6 +62,17 @@ void JwtAuthenticator::Verify(HeaderMap &headers,
   headers_ = &headers;
   callback_ = callback;
 
+  // Per the spec
+  // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0, CORS
+  // pre-flight requests shouldn't include user credentials.
+  if (headers_->Method() &&
+      LowerCaseString(kOptionsHttpMethod) ==
+          LowerCaseString(headers_->Method()->value().c_str())) {
+    ENVOY_LOG(debug, "CORS preflight requests are passed through.");
+    DoneWithStatus(Status::OK);
+    return;
+  }
+
   ENVOY_LOG(debug, "Jwt authentication starts");
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   store_.token_extractor().Extract(headers, &tokens);
@@ -214,15 +225,6 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem &issuer_item) {
 
 bool JwtAuthenticator::OkToBypass() {
   if (store_.config().allow_missing_or_failed()) {
-    return true;
-  }
-
-  // Per the spec
-  // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0, CORS
-  // pre-flight requests shouldn't include user credentials.
-  if (headers_->Method() &&
-      LowerCaseString(kOptionsHttpMethod) ==
-          LowerCaseString(headers_->Method()->value().c_str())) {
     return true;
   }
 
