@@ -25,9 +25,6 @@ namespace {
 // The HTTP header to pass verified token payload.
 const LowerCaseString kJwtPayloadKey("sec-istio-auth-userinfo");
 
-// The CORS OPTIONS HTTP method
-const LowerCaseString kOptionsHttpMethod("options");
-
 // Extract host and path from a URI
 void ExtractUriHostPath(const std::string &uri, std::string *host,
                         std::string *path) {
@@ -66,9 +63,9 @@ void JwtAuthenticator::Verify(HeaderMap &headers,
   // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0, CORS
   // pre-flight requests shouldn't include user credentials.
   if (headers_->Method() &&
-      LowerCaseString(kOptionsHttpMethod) ==
+      LowerCaseString(Http::Headers::get().MethodValues.Options) ==
           LowerCaseString(headers_->Method()->value().c_str())) {
-    ENVOY_LOG(debug, "CORS preflight requests are passed through.");
+    ENVOY_LOG(debug, "CORS preflight request is passed through.");
     DoneWithStatus(Status::OK);
     return;
   }
