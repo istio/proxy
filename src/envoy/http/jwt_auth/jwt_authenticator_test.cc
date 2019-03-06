@@ -539,7 +539,10 @@ TEST_F(JwtAuthenticatorTest, TestMissingJwtWhenHttpMethodIsCORS) {
   }));
 
   auto cors_headers =
-      TestHeaderMapImpl{{":method", "OPTIONS"}, {":path", "/any/cors-path"}};
+      TestHeaderMapImpl{{":method", "OPTIONS"},
+                        {"origin", "test-origin"},
+                        {"access-control-request-method", "GET"},
+                        {":path", "/any/cors-path"}};
   auth_->Verify(cors_headers, &mock_cb_);
 }
 
@@ -552,9 +555,12 @@ TEST_F(JwtAuthenticatorTest, TestInvalidJWTWhenHttpMethodIsCORS) {
   }));
 
   std::string token = "invalidToken";
-  auto cors_headers = TestHeaderMapImpl{{":method", "OPTIONS"},
-                                        {":path", "/any/cors-path"},
-                                        {"Authorization", "Bearer " + token}};
+  auto cors_headers =
+      TestHeaderMapImpl{{":method", "OPTIONS"},
+                        {"origin", "test-origin"},
+                        {"access-control-request-method", "GET"},
+                        {":path", "/any/cors-path"},
+                        {"Authorization", "Bearer " + token}};
   auth_->Verify(cors_headers, &mock_cb_);
 }
 
