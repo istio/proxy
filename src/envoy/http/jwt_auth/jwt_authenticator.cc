@@ -62,8 +62,18 @@ void JwtAuthenticator::Verify(HeaderMap &headers,
   // Per the spec
   // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0, CORS
   // pre-flight requests shouldn't include user credentials.
-  if (headers_->Method() && Http::Headers::get().MethodValues.Options ==
-                                headers_->Method()->value().c_str()) {
+  // From
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers:
+  // "... This header is required if the request has an
+  // Access-Control-Request-Headers header.", which indicates that
+  // Access-Control-Request-Headers header may not always be present in a CORS
+  // request.
+  if (headers.Method() &&
+      Http::Headers::get().MethodValues.Options ==
+          headers.Method()->value().c_str() &&
+      headers.Origin() && !headers.Origin()->value().empty() &&
+      headers.AccessControlRequestMethod() &&
+      !headers.AccessControlRequestMethod()->value().empty()) {
     ENVOY_LOG(debug, "CORS preflight request is passed through.");
     DoneWithStatus(Status::OK);
     return;
