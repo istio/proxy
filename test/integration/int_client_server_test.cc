@@ -47,8 +47,6 @@ class ClientServerTest : public testing::Test,
 };
 
 TEST_F(ClientServerTest, HappyPath) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::info);
-
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
 
@@ -116,8 +114,6 @@ TEST_F(ClientServerTest, HappyPath) {
 }
 
 TEST_F(ClientServerTest, AcceptAndClose) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::info);
-
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
 
@@ -188,8 +184,6 @@ TEST_F(ClientServerTest, AcceptAndClose) {
 }
 
 TEST_F(ClientServerTest, SlowResponse) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::info);
-
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
 
@@ -258,8 +252,6 @@ TEST_F(ClientServerTest, SlowResponse) {
 }
 
 TEST_F(ClientServerTest, NoServer) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::info);
-
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
 
@@ -315,8 +307,6 @@ TEST_F(ClientServerTest, NoServer) {
 }
 
 TEST_F(ClientServerTest, NoAccept) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::info);
-
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
 

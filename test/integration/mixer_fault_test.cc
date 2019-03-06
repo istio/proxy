@@ -305,8 +305,6 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
 };
 
 TEST_F(MixerFaultTest, HappyPath) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   constexpr NetworkFailPolicy fail_policy = NetworkFailPolicy::FAIL_CLOSED;
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
@@ -386,8 +384,6 @@ TEST_F(MixerFaultTest, HappyPath) {
 }
 
 TEST_F(MixerFaultTest, FailClosedAndClosePolicySocketAfterAccept) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   constexpr NetworkFailPolicy fail_policy = NetworkFailPolicy::FAIL_CLOSED;
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
@@ -478,8 +474,6 @@ TEST_F(MixerFaultTest, FailClosedAndClosePolicySocketAfterAccept) {
 }
 
 TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   constexpr NetworkFailPolicy fail_policy = NetworkFailPolicy::FAIL_CLOSED;
   constexpr uint32_t connections_to_initiate = 30 * 30;
   constexpr uint32_t requests_to_send = 1 * connections_to_initiate;
@@ -603,8 +597,6 @@ TEST_F(MixerFaultTest, FailClosedAndSendPolicyResponseSlowly) {
 }
 
 TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   constexpr NetworkFailPolicy fail_policy = NetworkFailPolicy::FAIL_CLOSED;
   constexpr uint32_t connections_to_initiate = 30;
   constexpr uint32_t requests_to_send = 30 * connections_to_initiate;
@@ -761,8 +753,6 @@ TEST_F(MixerFaultTest, TolerateTelemetryBlackhole) {
 }
 
 TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   constexpr NetworkFailPolicy fail_policy = NetworkFailPolicy::FAIL_OPEN;
   constexpr uint32_t connections_to_initiate = 30 * 30;
   constexpr uint32_t requests_to_send = 1 * connections_to_initiate;
@@ -891,8 +881,6 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
 }
 
 TEST_F(MixerFaultTest, RetryOnTransportError) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   uint32_t retries = 10;
   uint32_t base_retry_ms = 1;
   uint32_t max_retry_ms = 10;
@@ -1039,8 +1027,6 @@ TEST_F(MixerFaultTest, RetryOnTransportError) {
 }
 
 TEST_F(MixerFaultTest, CancelCheck) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   uint32_t retries = 10;
   uint32_t base_retry_ms = 1;
   uint32_t max_retry_ms = 10;
@@ -1209,8 +1195,6 @@ TEST_F(MixerFaultTest, CancelCheck) {
 }
 
 TEST_F(MixerFaultTest, CancelRetry) {
-  Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
-
   // Force client timeout while requests are waiting between retries.
   uint32_t retries = 1;
   uint32_t base_retry_ms = 10'000;
