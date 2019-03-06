@@ -47,6 +47,7 @@ envoy_cc_library(
     srcs = [
         "config.cc",
         "grpc_transport.cc",
+        "message_counter.cc",
         "mixer_control.cc",
         "stats.cc",
         "utils.cc",
@@ -55,6 +56,7 @@ envoy_cc_library(
         "config.h",
         "grpc_transport.h",
         "header_update.h",
+        "message_counter.h",
         "mixer_control.h",
         "stats.h",
         "utils.h",

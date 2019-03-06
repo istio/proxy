@@ -61,6 +61,7 @@ class ReportData : public ::istio::control::http::ReportData,
   uint64_t response_grpc_message_count_;
 
  public:
+  // TODO: avoid large constructor list with parameters objects
   ReportData(const HeaderMap *headers, const HeaderMap *response_trailers,
              const StreamInfo::StreamInfo &info, uint64_t request_total_size,
              uint64_t request_grpc_message_count,

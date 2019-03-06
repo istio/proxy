@@ -32,49 +32,6 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
-namespace {
-
-// detect gRPC message boundaries: each message is prefixed by 5 bytes
-// length-prefix https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
-void incrementCounter(Buffer::Instance& data, GrpcMessageCounter* counter) {
-  uint64_t pos = 0;
-  unsigned byte = 0;
-  while (pos < data.length()) {
-    switch (counter->state) {
-      case GrpcMessageCounter::ExpectByte0:
-        // skip compress flag, increment message count
-        counter->count += 1;
-        counter->current_size = 0;
-        pos += 1;
-        counter->state = GrpcMessageCounter::ExpectByte1;
-        break;
-      case GrpcMessageCounter::ExpectByte1:
-      case GrpcMessageCounter::ExpectByte2:
-      case GrpcMessageCounter::ExpectByte3:
-      case GrpcMessageCounter::ExpectByte4:
-        data.copyOut(pos, 1, &byte);
-        counter->current_size = counter->current_size << 8;
-        counter->current_size = counter->current_size | byte;
-        pos += 1;
-        counter->state =
-            static_cast<GrpcMessageCounter::GrpcReadState>(counter->state + 1);
-        break;
-      case GrpcMessageCounter::ExpectMessage:
-        uint64_t available = data.length() - pos;
-        if (counter->current_size <= available) {
-          pos += counter->current_size;
-          counter->state = GrpcMessageCounter::ExpectByte0;
-        } else {
-          pos = data.length();
-          counter->current_size = counter->current_size - available;
-        }
-        break;
-    }
-  }
-}
-
-}  // namespace
-
 Filter::Filter(Control& control)
     : control_(control),
       state_(NotStarted),
@@ -138,7 +95,7 @@ FilterDataStatus Filter::decodeData(Buffer::Instance& data, bool end_stream) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {} ({}, {})", __func__,
             data.length(), end_stream);
   if (grpc_request_) {
-    incrementCounter(data, &grpc_request_counter_);
+    Utils::IncrementMessageCounter(data, &grpc_request_counter_);
   }
 
   request_total_size_ += data.length();
@@ -192,7 +149,7 @@ FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
 
 FilterDataStatus Filter::encodeData(Buffer::Instance& data, bool) {
   if (grpc_request_) {
-    incrementCounter(data, &grpc_response_counter_);
+    Utils::IncrementMessageCounter(data, &grpc_response_counter_);
   }
   return FilterDataStatus::Continue;
 }
