@@ -18,7 +18,8 @@
 namespace Envoy {
 namespace Utils {
 
-void IncrementMessageCounter(Buffer::Instance& data, GrpcMessageCounter* counter) {
+void IncrementMessageCounter(Buffer::Instance& data,
+                             GrpcMessageCounter* counter) {
   uint64_t pos = 0;
   unsigned byte = 0;
   while (pos < data.length()) {

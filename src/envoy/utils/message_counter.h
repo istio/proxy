@@ -44,9 +44,11 @@ struct GrpcMessageCounter {
   uint64_t count;
 };
 
-// Detect gRPC message boundaries and increment the counters: each message is prefixed by 5 bytes
-// length-prefix https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
-void IncrementMessageCounter(Buffer::Instance& data, GrpcMessageCounter* counter);
+// Detect gRPC message boundaries and increment the counters: each message is
+// prefixed by 5 bytes length-prefix
+// https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
+void IncrementMessageCounter(Buffer::Instance& data,
+                             GrpcMessageCounter* counter);
 
 }  // namespace Utils
 }  // namespace Envoy
