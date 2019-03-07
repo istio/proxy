@@ -133,10 +133,6 @@ void AttributesBuilder::ExtractReportAttributes(
     builder.AddString(utils::AttributeName::kDestinationUID, uid);
   }
 
-  if (report_data->IsUpstreamSecure()) {
-    builder.AddBool(utils::AttributeName::kConnectionUpstreamSecure, true);
-  }
-
   builder.FlattenMapOfStringToStruct(report_data->GetDynamicFilterState());
 
   builder.AddTimestamp(utils::AttributeName::kContextTime,
