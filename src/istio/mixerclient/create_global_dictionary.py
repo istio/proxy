@@ -45,25 +45,45 @@ namespace {
  *    bazel-mixerclient/external/mixerapi_git/mixer/v1/global_dictionary.yaml \
  *      > src/global_dictionary.cc
  */
-
-const std::vector<std::string> kGlobalWords{
 """
 
-BOTTOM = r"""};
+INDENT = "    "
 
+FORWORD_INDEX_START = """const std::vector<std::string> kGlobalWords{
+""" + INDENT
+FORWORD_INDEX_END = "};\n"
+
+REVERSE_INDEX_START = """const std::unordered_map<std::string, int> kGlobalDictionary {
+""" + INDENT
+REVERSE_INDEX_END = "};"
+
+
+BOTTOM = r"""
 }  // namespace
 
 const std::vector<std::string>& GetGlobalWords() { return kGlobalWords; }
-
+const std::unordered_map<std::string, int>& GetGlobalDictionary() {
+  return kGlobalDictionary;
+}
 }  // namespace mixerclient
 }  // namespace istio"""
 
-all_words = ''
+all_words = []
+word_pairs = []
+index = 0
 with open(sys.argv[1]) as src_file:
     for line in src_file:
         if line.startswith("-"):
-            all_words += "    \"" + line[1:].strip().replace("\"", "\\\"") + "\",\n"
-
-print (TOP + all_words + BOTTOM)
-
-
+            # 'word"' => '"word\""'
+            string_literal = "\"" + line[1:].strip().replace("\"", "\\\"") + "\""
+            # 'word' => '   "word"'
+            all_words.append(INDENT + string_literal)
+            # '   { "word", 1}'
+            word_pairs.append(INDENT + "{" + string_literal + "," + str(index) + "}")
+            index = index + 1
+all_words_literal = ",\n".join(all_words)
+word_pairs_literal = ",\n".join(word_pairs)
+print (TOP
+       + FORWORD_INDEX_START + all_words_literal + FORWORD_INDEX_END
+       + REVERSE_INDEX_START + word_pairs_literal + REVERSE_INDEX_END
+       + BOTTOM)

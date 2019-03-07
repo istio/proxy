@@ -159,13 +159,8 @@ class BatchCompressorImpl : public BatchCompressor {
 
 }  // namespace
 
-GlobalDictionary::GlobalDictionary() {
-  const std::vector<std::string>& global_words = GetGlobalWords();
-  for (unsigned int i = 0; i < global_words.size(); i++) {
-    global_dict_[global_words[i]] = i;
-  }
-  top_index_ = global_words.size();
-}
+GlobalDictionary::GlobalDictionary()
+    : global_dict_(GetGlobalDictionary()), top_index_(global_dict_.size()) {}
 
 // Lookup the index, return true if found.
 bool GlobalDictionary::GetIndex(const std::string name, int* index) const {

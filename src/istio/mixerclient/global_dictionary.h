@@ -17,13 +17,17 @@
 #define ISTIO_MIXERCLIENT_GLOBAL_DICTIONARY_H
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace istio {
 namespace mixerclient {
 
-// Get automatically generated global words.
+// Get pre-compiled global words.
 const std::vector<std::string>& GetGlobalWords();
+
+// Get pre-compiled global dictionary. It is a reverse indexed global words.
+const std::unordered_map<std::string, int>& GetGlobalDictionary();
 
 }  // namespace mixerclient
 }  // namespace istio

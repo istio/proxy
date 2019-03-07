@@ -38,7 +38,7 @@ class GlobalDictionary {
   int size() const { return top_index_; }
 
  private:
-  std::unordered_map<std::string, int> global_dict_;
+  const std::unordered_map<std::string, int>& global_dict_;
   // the last index of the global dictionary.
   // If mis-matched with server, it will set to base
   int top_index_;
