@@ -97,6 +97,20 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
+    name = "message_counter_test",
+    srcs = [
+        "message_counter_test.cc",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":utils_lib",
+        "@envoy//source/common/buffer:buffer_lib",
+        "@envoy//test/common/buffer:utility_lib",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
     name = "mixer_control_test",
     srcs = [
         "mixer_control_test.cc",

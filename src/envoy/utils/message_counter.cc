@@ -21,7 +21,7 @@ namespace Utils {
 void IncrementMessageCounter(Buffer::Instance& data,
                              GrpcMessageCounter* counter) {
   uint64_t pos = 0;
-  unsigned byte = 0;
+  uint8_t byte = 0;
   while (pos < data.length()) {
     switch (counter->state) {
       case GrpcMessageCounter::ExpectByte0:
