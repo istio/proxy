@@ -87,6 +87,15 @@ TEST(MessageCounterTest, IncrementMessageCounter) {
     EXPECT_EQ(counter.state, GrpcMessageCounter::GrpcReadState::ExpectByte1);
     EXPECT_EQ(counter.count, 2);
   }
+
+  {
+    // two empty messages
+    Buffer::OwnedImpl buffer;
+    GrpcMessageCounter counter;
+    Buffer::addRepeated(buffer, 10, 0);
+    IncrementMessageCounter(buffer, &counter);
+    EXPECT_EQ(counter.count, 2);
+  }
 }
 
 }  // namespace
