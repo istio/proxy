@@ -287,8 +287,11 @@ class ServerCallbackHelper {
   void operator=(const ServerCallbackHelper &) = delete;
 
   ServerAcceptCallback accept_callback_;
+  ServerAcceptCallback instrumented_accept_callback_;
   ServerRequestCallback request_callback_;
+  ServerRequestCallback instrumented_request_callback_;
   ServerCloseCallback close_callback_;
+  ServerCloseCallback instrumented_close_callback_;
 
   std::atomic<uint32_t> accepts_{0};
   std::atomic<uint32_t> requests_received_{0};
