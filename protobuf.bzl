@@ -17,8 +17,8 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Match SHA used by Envoy
-PROTOBUF_SHA = "7492b5681231c79f0265793fa57dc780ae2481d6"
-PROTOBUF_SHA256 = "46f1da3a6a6db66dd240cf95a5553198f7c6e98e6ac942fceb8a1cf03291d96e"
+PROTOBUF_SHA = "582743bf40c5d3639a70f98f183914a2c0cd0680"
+PROTOBUF_SHA256 = "cf9e2fb1d2cd30ec9d51ff1749045208bd641f290f64b85046485934b0e03783"
 
 def protobuf_repositories(load_repo = True, bind = True):
     if load_repo:
