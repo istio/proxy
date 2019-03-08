@@ -33,10 +33,10 @@ Control::Control(ControlDataSharedPtr control_data,
       dispatcher_(dispatcher),
       check_client_factory_(Utils::GrpcClientFactoryForCluster(
           control_data_->config().check_cluster(), cm, scope,
-          dispatcher.timeSystem())),
+          dispatcher.timeSource())),
       report_client_factory_(Utils::GrpcClientFactoryForCluster(
           control_data_->config().report_cluster(), cm, scope,
-          dispatcher.timeSystem())),
+          dispatcher.timeSource())),
       stats_obj_(dispatcher, control_data_->stats(),
                  control_data_->config()
                      .config_pb()
