@@ -33,6 +33,10 @@ CXX := clang++-7
 endif
 PATH := /usr/lib/llvm-7/bin:$(PATH)
 
+ifneq ($(LOCAL_ENVOY),)
+BAZEL_BUILD_ARGS += "--override_repository=envoy=$(LOCAL_ENVOY)"
+endif
+
 build:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
 	@bazel shutdown
