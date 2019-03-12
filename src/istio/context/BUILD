@@ -26,7 +26,6 @@ envoy_proto_library(
     name = "context_proto",
     srcs = ["context.proto"],
     external_deps = [
-        "@mixerapi_git//:policy_cc_proto",
         "well_known_protos",
     ],
 )
