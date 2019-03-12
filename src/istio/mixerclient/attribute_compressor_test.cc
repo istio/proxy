@@ -259,6 +259,7 @@ attributes {
 }
 default_words: "JWT-Token"
 global_word_count: 221
+repeated_attributes_semantics: INDEPENDENT_ENCODING
 )";
 
 class AttributeCompressorTest : public ::testing::Test {

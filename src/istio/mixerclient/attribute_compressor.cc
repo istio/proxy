@@ -140,6 +140,9 @@ class BatchCompressorImpl : public BatchCompressor {
       report_.add_default_words(word);
     }
     report_.set_global_word_count(global_dict_.size());
+    report_.set_repeated_attributes_semantics(
+        mixer::v1::
+            ReportRequest_RepeatedAttributesSemantics_INDEPENDENT_ENCODING);
     return report_;
   }
 

@@ -27,15 +27,37 @@ namespace Utils {
  * All mixer filter stats. @see stats_macros.h
  */
 // clang-format off
-#define ALL_MIXER_FILTER_STATS(COUNTER)                                       \
-  COUNTER(total_check_calls)                                                  \
-  COUNTER(total_remote_check_calls)                                           \
-  COUNTER(total_blocking_remote_check_calls)                                  \
-  COUNTER(total_quota_calls)                                                  \
-  COUNTER(total_remote_quota_calls)                                           \
-  COUNTER(total_blocking_remote_quota_calls)                                  \
-  COUNTER(total_report_calls)                                                 \
-  COUNTER(total_remote_report_calls)
+#define ALL_MIXER_FILTER_STATS(COUNTER)       \
+  COUNTER(total_check_calls)                  \
+  COUNTER(total_check_cache_hits)             \
+  COUNTER(total_check_cache_misses)           \
+  COUNTER(total_check_cache_hit_accepts)      \
+  COUNTER(total_check_cache_hit_denies)       \
+  COUNTER(total_remote_check_calls)           \
+  COUNTER(total_remote_check_accepts)         \
+  COUNTER(total_remote_check_denies)          \
+  COUNTER(total_quota_calls)                  \
+  COUNTER(total_quota_cache_hits)             \
+  COUNTER(total_quota_cache_misses)           \
+  COUNTER(total_quota_cache_hit_accepts)      \
+  COUNTER(total_quota_cache_hit_denies)       \
+  COUNTER(total_remote_quota_calls)           \
+  COUNTER(total_remote_quota_accepts)         \
+  COUNTER(total_remote_quota_denies)          \
+  COUNTER(total_remote_quota_prefetch_calls)  \
+  COUNTER(total_remote_calls)                 \
+  COUNTER(total_remote_call_successes)        \
+  COUNTER(total_remote_call_timeouts)         \
+  COUNTER(total_remote_call_send_errors)      \
+  COUNTER(total_remote_call_other_errors)     \
+  COUNTER(total_remote_call_retries)          \
+  COUNTER(total_remote_call_cancellations)    \
+  COUNTER(total_report_calls)                 \
+  COUNTER(total_remote_report_calls)          \
+  COUNTER(total_remote_report_successes)      \
+  COUNTER(total_remote_report_timeouts)       \
+  COUNTER(total_remote_report_send_errors)    \
+  COUNTER(total_remote_report_other_errors)
 // clang-format on
 
 /**

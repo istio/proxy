@@ -15,6 +15,7 @@
 
 #include "src/envoy/utils/utils.h"
 #include "mixer/v1/config/client/client_config.pb.h"
+#include "src/istio/mixerclient/check_context.h"
 #include "test/mocks/stream_info/mocks.h"
 #include "test/test_common/utility.h"
 
@@ -48,8 +49,9 @@ TEST(UtilsTest, ParseMessageWithUnknownField) {
 }
 
 TEST(UtilsTest, CheckResponseInfoToStreamInfo) {
-  ::istio::mixerclient::CheckResponseInfo
-      check_response;  // by default status is unknown
+  auto attributes = std::make_shared<::istio::mixerclient::SharedAttributes>();
+  ::istio::mixerclient::CheckContext check_response(
+      0U, false /* fail_open */, attributes);  // by default status is unknown
   Envoy::StreamInfo::MockStreamInfo mock_stream_info;
 
   EXPECT_CALL(

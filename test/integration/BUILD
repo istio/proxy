@@ -19,11 +19,31 @@ package(default_visibility = ["//visibility:public"])
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_test",
+    "envoy_cc_test_library",
+)
+
+envoy_cc_test_library(
+    name = "int_client_server",
+    srcs = [
+        "int_server.cc",
+        "int_client.cc",
+    ],
+    hdrs = [
+        "int_server.h",
+        "int_client.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        "@envoy//source/server:server_lib",
+        "@envoy//test/integration:http_protocol_integration_lib",
+    ],
 )
 
 envoy_cc_test(
     name = "istio_http_integration_test",
-    srcs = ["istio_http_integration_test.cc"],
+    srcs = [
+        "istio_http_integration_test.cc",
+    ],
     repository = "@envoy",
     deps = [
         "//include/istio/utils:attribute_names_header",
@@ -34,6 +54,31 @@ envoy_cc_test(
         "//src/envoy/utils:filter_names_lib",
         "@envoy//source/common/common:utility_lib",
         "@envoy//test/integration:http_protocol_integration_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "mixer_fault_test",
+    srcs = [
+        "mixer_fault_test.cc",
+    ],
+    repository = "@envoy",
+    deps = [
+        "//include/istio/utils:attribute_names_header",
+        "//src/envoy/http/mixer:filter_lib",
+        "//src/envoy/utils:filter_names_lib",
+        ":int_client_server",
+    ],
+)
+
+envoy_cc_test(
+    name = "int_client_server_test",
+    srcs = [
+        "int_client_server_test.cc",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":int_client_server",
     ],
 )
 

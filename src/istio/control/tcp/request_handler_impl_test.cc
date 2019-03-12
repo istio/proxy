@@ -26,6 +26,7 @@ using ::google::protobuf::util::Status;
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::config::client::TcpClientConfig;
 using ::istio::mixerclient::CancelFunc;
+using ::istio::mixerclient::CheckContextSharedPtr;
 using ::istio::mixerclient::CheckDoneFunc;
 using ::istio::mixerclient::CheckResponseInfo;
 using ::istio::mixerclient::DoneFunc;
@@ -108,12 +109,12 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
   // Check should not be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _)).Times(0);
+  EXPECT_CALL(*mock_client_, Check(_, _, _)).Times(0);
 
   client_config_.set_disable_check_calls(true);
   auto handler = controller_->CreateRequestHandler();
   handler->Check(&mock_data, [](const CheckResponseInfo &info) {
-    EXPECT_TRUE(info.response_status.ok());
+    EXPECT_TRUE(info.status().ok());
   });
 }
 
@@ -123,17 +124,15 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
   EXPECT_CALL(mock_data, GetPrincipal(_, _)).Times(2);
 
   // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
-      .WillOnce(Invoke([](const Attributes &attributes,
-                          const std::vector<Requirement> &quotas,
-                          TransportCheckFunc transport,
-                          CheckDoneFunc on_done) -> CancelFunc {
-        auto map = attributes.attributes();
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
+        auto map = context->attributes()->attributes();
         EXPECT_EQ(map["key1"].string_value(), "value1");
-        EXPECT_EQ(quotas.size(), 1);
-        EXPECT_EQ(quotas[0].quota, "quota");
-        EXPECT_EQ(quotas[0].charge, 5);
-        return nullptr;
+        EXPECT_EQ(context->quotaRequirements().size(), 1);
+        EXPECT_EQ(context->quotaRequirements()[0].quota, "quota");
+        EXPECT_EQ(context->quotaRequirements()[0].charge, 5);
       }));
 
   auto handler = controller_->CreateRequestHandler();

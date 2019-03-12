@@ -34,7 +34,7 @@ class ReportBatch {
   virtual ~ReportBatch();
 
   // Make batched report call.
-  void Report(const ::istio::mixer::v1::Attributes& request);
+  void Report(const istio::mixerclient::SharedAttributesSharedPtr& attributes);
 
   // Flush out batched reports.
   void Flush();
@@ -42,6 +42,22 @@ class ReportBatch {
   uint64_t total_report_calls() const { return total_report_calls_; }
   uint64_t total_remote_report_calls() const {
     return total_remote_report_calls_;
+  }
+
+  uint64_t total_remote_report_successes() const {
+    return total_remote_report_successes_;
+  }
+
+  uint64_t total_remote_report_timeouts() const {
+    return total_remote_report_timeouts_;
+  }
+
+  uint64_t total_remote_report_send_errors() const {
+    return total_remote_report_send_errors_;
+  }
+
+  uint64_t total_remote_report_other_errors() const {
+    return total_remote_report_other_errors_;
   }
 
  private:
@@ -68,8 +84,12 @@ class ReportBatch {
   // batched report compressor
   std::unique_ptr<BatchCompressor> batch_compressor_;
 
-  std::atomic_int_fast64_t total_report_calls_;
-  std::atomic_int_fast64_t total_remote_report_calls_;
+  std::atomic<uint64_t> total_report_calls_{0};                // 1.0
+  std::atomic<uint64_t> total_remote_report_calls_{0};         // 1.0
+  std::atomic<uint64_t> total_remote_report_successes_{0};     // 1.1
+  std::atomic<uint64_t> total_remote_report_timeouts_{0};      // 1.1
+  std::atomic<uint64_t> total_remote_report_send_errors_{0};   // 1.1
+  std::atomic<uint64_t> total_remote_report_other_errors_{0};  // 1.1
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ReportBatch);
 };

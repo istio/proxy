@@ -18,11 +18,13 @@ cc_library(
     name = "utils_lib",
     srcs = [
         "local_attributes.cc",
+        "logger.cc",
         "protobuf.cc",
         "status.cc",
         "utils.cc",
     ],
     hdrs = [
+        "logger.h",
         "utils.h",
     ],
     visibility = ["//visibility:public"],
@@ -57,6 +59,16 @@ cc_test(
     deps = [
         "//external:googletest_main",
         "//include/istio/utils:simple_lru_cache",
+    ],
+)
+
+cc_test(
+    name = "logger_test",
+    size = "small",
+    srcs = ["logger_test.cc"],
+    deps = [
+        ":utils_lib",
+        "//external:googletest_main",
     ],
 )
 
