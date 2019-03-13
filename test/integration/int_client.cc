@@ -85,7 +85,8 @@ class ClientStream : public Envoy::Http::StreamDecoder,
   // Envoy::Http::StreamCallbacks
   //
 
-  virtual void onResetStream(Envoy::Http::StreamResetReason reason) override {
+  virtual void onResetStream(Envoy::Http::StreamResetReason reason,
+                             absl::string_view) override {
     // TODO test with h2 to see if we get any of these and whether the
     // connection error handling is enough to handle it.
     switch (reason) {
@@ -446,8 +447,7 @@ Client::Client(const std::string &name)
       stats_(),
       thread_(nullptr),
       time_system_(),
-      api_(std::chrono::milliseconds(1),
-           Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_),
+      api_(Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_),
       dispatcher_{api_.allocateDispatcher()} {}
 
 Client::~Client() {
@@ -565,8 +565,8 @@ LoadGenerator::LoadGenerator(
     ++responses_received_;
 
     uint64_t status = 0;
-    if (!Envoy::StringUtil::atoul(response->Status()->value().c_str(),
-                                  status)) {
+    if (!Envoy::StringUtil::atoull(response->Status()->value().c_str(),
+                                   status)) {
       ENVOY_LOG(error, "Connection({}:{}) received response with bad status",
                 connection.name(), connection.id());
     } else if (200 <= status && status < 300) {
