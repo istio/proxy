@@ -20,12 +20,13 @@
 
 #include "envoy/http/header_map.h"
 #include "envoy/network/connection.h"
+#include "envoy/stream_info/stream_info.h"
 #include "src/istio/context/context.pb.h"
 
 namespace istio {
 namespace context {
 
-void ExtractHeaders(Request& request, const ::Envoy::Http::HeaderMap& headers);
+void ExtractRequest(Request& request, const ::Envoy::Http::HeaderMap& headers);
 
 void ExtractContext(Context& context, const ::Envoy::Http::HeaderMap& headers);
 
@@ -34,6 +35,11 @@ void ExtractConnection(Connection& connection,
 
 void ExtractOrigin(Origin& origin,
                    const ::Envoy::Network::Connection& downstream);
+
+void ExtractReportData(Request& request, Response& response, Context& context,
+                       const ::Envoy::Http::HeaderMap& response_headers,
+                       const ::Envoy::Http::HeaderMap& response_trailers,
+                       const ::Envoy::StreamInfo::StreamInfo& info);
 
 }  // namespace context
 }  // namespace istio

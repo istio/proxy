@@ -15,7 +15,9 @@
 
 #include "src/istio/context/http_builder.h"
 
+#include "common/grpc/common.h"
 #include "common/http/utility.h"
+#include "common/stream_info/utility.h"
 
 using ::Envoy::Http::HeaderMap;
 using ::google::protobuf::StringValue;
@@ -24,17 +26,37 @@ namespace istio {
 namespace context {
 
 namespace {
-// Referer header
-const ::Envoy::Http::LowerCaseString kRefererHeaderKey("referer");
 
 // Set of headers excluded from request.headers attribute.
 const std::set<std::string> kRequestHeaderExclusives = {"x-istio-attributes"};
 
-// The gRPC content types.
-const std::set<std::string> kGrpcContentTypes{
-    "application/grpc", "application/grpc+proto", "application/grpc+json"};
+// Set of headers excluded from response.headers attribute.
+const std::set<std::string> kResponseHeaderExclusives = {};
 
-void extractTimestamp(
+void ExtractHeaders(::google::protobuf::Map<std::string, std::string>* out,
+                    const std::set<std::string>& exclusives,
+                    const HeaderMap& headers) {
+  struct Context {
+    Context(const std::set<std::string>& exclusives,
+            ::google::protobuf::Map<std::string, std::string>* out)
+        : exclusives(exclusives), out(out) {}
+    const std::set<std::string>& exclusives;
+    ::google::protobuf::Map<std::string, std::string>* out;
+  };
+  Context ctx(exclusives, out);
+  headers.iterate(
+      [](const ::Envoy::Http::HeaderEntry& header,
+         void* context) -> ::Envoy::Http::HeaderMap::Iterate {
+        Context* ctx = static_cast<Context*>(context);
+        if (ctx->exclusives.count(header.key().c_str()) == 0) {
+          (*ctx->out)[header.key().c_str()] = header.value().c_str();
+        }
+        return ::Envoy::Http::HeaderMap::Iterate::Continue;
+      },
+      &ctx);
+}
+
+void ExtractTimestamp(
     ::google::protobuf::Timestamp* time_stamp,
     const std::chrono::time_point<std::chrono::system_clock>& value) {
   long long nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -44,9 +66,30 @@ void extractTimestamp(
   time_stamp->set_nanos(nanos % 1000000000);
 }
 
+void ExtractDuration(::google::protobuf::Duration* duration,
+                     const std::chrono::nanoseconds& value) {
+  duration->set_seconds(value.count() / 1000000000);
+  duration->set_nanos(value.count() % 1000000000);
+}
+
+bool ExtractGrpcStatus(const HeaderMap& headers, Response& response) {
+  if (headers.GrpcStatus()) {
+    *response.mutable_grpc_status()->mutable_value() =
+        std::string(headers.GrpcStatus()->value().c_str(),
+                    headers.GrpcStatus()->value().size());
+    if (headers.GrpcMessage()) {
+      *response.mutable_grpc_message()->mutable_value() =
+          std::string(headers.GrpcMessage()->value().c_str(),
+                      headers.GrpcMessage()->value().size());
+    }
+    return true;
+  }
+  return false;
+}
+
 }  // namespace
 
-void ExtractHeaders(Request& request, const HeaderMap& headers) {
+void ExtractRequest(Request& request, const HeaderMap& headers) {
   if (headers.Path()) {
     const ::Envoy::Http::HeaderString& path = headers.Path()->value();
     *request.mutable_path()->mutable_value() =
@@ -82,44 +125,24 @@ void ExtractHeaders(Request& request, const HeaderMap& headers) {
     *request.mutable_method()->mutable_value() = std::string(
         headers.Method()->value().c_str(), headers.Method()->value().size());
   }
-
-  const ::Envoy::Http::HeaderEntry* referer = headers.get(kRefererHeaderKey);
-  if (referer) {
-    *request.mutable_referer()->mutable_value() =
-        std::string(referer->value().c_str(), referer->value().size());
+  if (headers.Referer()) {
+    *request.mutable_referer()->mutable_value() = std::string(
+        headers.Referer()->value().c_str(), headers.Referer()->value().size());
   }
 
-  struct Context {
-    Context(const std::set<std::string>& exclusives, Request& request)
-        : exclusives(exclusives), request(request) {}
-    const std::set<std::string>& exclusives;
-    Request& request;
-  };
-  Context ctx(kRequestHeaderExclusives, request);
-  headers.iterate(
-      [](const ::Envoy::Http::HeaderEntry& header,
-         void* context) -> ::Envoy::Http::HeaderMap::Iterate {
-        Context* ctx = static_cast<Context*>(context);
-        if (ctx->exclusives.count(header.key().c_str()) == 0) {
-          (*ctx->request.mutable_headers())[header.key().c_str()] =
-              header.value().c_str();
-        }
-        return ::Envoy::Http::HeaderMap::Iterate::Continue;
-      },
-      &ctx);
-
-  // Populate request.time
-  extractTimestamp(request.mutable_time(), std::chrono::system_clock::now());
+  ExtractHeaders(request.mutable_headers(), kRequestHeaderExclusives, headers);
+  ExtractTimestamp(request.mutable_time(), std::chrono::system_clock::now());
 }
 
 void ExtractContext(Context& context, const HeaderMap& headers) {
-  if (headers.ContentType() &&
-      kGrpcContentTypes.count(headers.ContentType()->value().c_str()) != 0) {
+  if (::Envoy::Grpc::Common::hasGrpcContentType(headers)) {
     *context.mutable_protocol()->mutable_value() = "grpc";
   } else {
     *context.mutable_protocol()->mutable_value() = "http";
   }
 }
+
+// TODO: check auth attributes
 
 void ExtractConnection(Connection& connection,
                        const ::Envoy::Network::Connection& downstream) {
@@ -146,6 +169,35 @@ void ExtractOrigin(Origin& origin,
       *origin.mutable_ip()->mutable_value() =
           std::string(reinterpret_cast<const char*>(&ipv6), 16);
     }
+  }
+}
+
+void ExtractReportData(Request& request, Response& response, Context& context,
+                       const HeaderMap& response_headers,
+                       const HeaderMap& response_trailers,
+                       const ::Envoy::StreamInfo::StreamInfo& info) {
+  // TODO: RBAC permissive info
+  // TODO: dynamic filter state
+  // TODO: total_size for request and response
+  // TODO: GetDestinationUID, IP, Port
+  // TODO: check_status
+  ExtractTimestamp(response.mutable_time(), std::chrono::system_clock::now());
+  ExtractHeaders(response.mutable_headers(), kResponseHeaderExclusives,
+                 response_headers);
+  ExtractHeaders(response.mutable_headers(), kResponseHeaderExclusives,
+                 response_trailers);
+
+  *context.mutable_proxy_error_code()->mutable_value() =
+      ::Envoy::StreamInfo::ResponseFlagUtils::toShortString(info);
+  request.mutable_size()->set_value(info.bytesReceived());
+  response.mutable_size()->set_value(info.bytesSent());
+  response.mutable_code()->set_value(info.responseCode().value_or(500));
+
+  ExtractDuration(response.mutable_duration(),
+                  info.requestComplete().value_or(std::chrono::nanoseconds{0}));
+
+  if (!ExtractGrpcStatus(response_trailers, response)) {
+    ExtractGrpcStatus(response_headers, response);
   }
 }
 
