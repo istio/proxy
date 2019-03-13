@@ -25,12 +25,12 @@ load(
 envoy_cc_test_library(
     name = "int_client_server",
     srcs = [
-        "int_server.cc",
         "int_client.cc",
+        "int_server.cc",
     ],
     hdrs = [
-        "int_server.h",
         "int_client.h",
+        "int_server.h",
     ],
     repository = "@envoy",
     deps = [
@@ -64,10 +64,10 @@ envoy_cc_test(
     ],
     repository = "@envoy",
     deps = [
+        ":int_client_server",
         "//include/istio/utils:attribute_names_header",
         "//src/envoy/http/mixer:filter_lib",
         "//src/envoy/utils:filter_names_lib",
-        ":int_client_server",
     ],
 )
 

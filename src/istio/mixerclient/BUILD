@@ -53,7 +53,7 @@ cc_library(
         "report_batch.h",
         "shared_attributes.h",
         "status_util.cc",
-        "status_util.h"
+        "status_util.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
