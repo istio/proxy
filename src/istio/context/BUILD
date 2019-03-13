@@ -17,8 +17,11 @@
 
 package(default_visibility = ["//visibility:public"])
 
+licenses(["notice"])
+
 load(
     "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
     "envoy_proto_library",
 )
 
@@ -27,5 +30,19 @@ envoy_proto_library(
     srcs = ["context.proto"],
     external_deps = [
         "well_known_protos",
+    ],
+)
+
+envoy_cc_library(
+    name = "context_lib",
+    srcs = [
+        "http_builder.cc",
+        "http_builder.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":context_proto_cc",
+        "//include/istio/control/http:headers_lib",
+        "@envoy//source/exe:envoy_common_lib",
     ],
 )
