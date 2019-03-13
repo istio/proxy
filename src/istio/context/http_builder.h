@@ -29,9 +29,11 @@ void ExtractHeaders(Request& request, const ::Envoy::Http::HeaderMap& headers);
 
 void ExtractContext(Context& context, const ::Envoy::Http::HeaderMap& headers);
 
-void ExtractConnection(Connection& connection, const ::Envoy::Network::Connection& downstream);
+void ExtractConnection(Connection& connection,
+                       const ::Envoy::Network::Connection& downstream);
 
-void ExtractOrigin(Origin& origin, const ::Envoy::Network::Connection& downstream);
+void ExtractOrigin(Origin& origin,
+                   const ::Envoy::Network::Connection& downstream);
 
 }  // namespace context
 }  // namespace istio
