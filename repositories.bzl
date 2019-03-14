@@ -105,8 +105,8 @@ cc_library(
 # 2) wget https://github.com/istio/api/archive/ISTIO_API_SHA.tar.gz
 # 3) sha256sum ISTIO_API_SHA.tar.gz
 #
-ISTIO_API = "0791ae64224c0c50dad4899d94c6d2e3f35d8d4a"
-ISTIO_API_SHA256 = "9387819d95bc1c291d7bcc687c61c7b7220966deec50ea21bf3c4802b8bdc11e"
+ISTIO_API = "a68257e399a822e1797317563da8cc78edbde8c1"
+ISTIO_API_SHA256 = "b72412bd3d8f0d2143dc84b434b69ee1f849fb37b6f91606d1ddfdb8d50b6bfd"
 
 def mixerapi_repositories(bind = True):
     BUILD = """
