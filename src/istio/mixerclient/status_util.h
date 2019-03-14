@@ -1,4 +1,4 @@
-/* Copyright 2018 Istio Authors. All Rights Reserved.
+/* Copyright 2019 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
-#define ISTIO_MIXERCLIENT_CHECK_RESPONSE_H
+#pragma once
 
 #include "google/protobuf/stubs/status.h"
-#include "mixer/v1/mixer.pb.h"
 
 namespace istio {
 namespace mixerclient {
 
-// The CheckResponseInfo exposes policy and quota check details to the check
-// callbacks.
-class CheckResponseInfo {
- public:
-  virtual ~CheckResponseInfo(){};
-
-  virtual const ::google::protobuf::util::Status& status() const = 0;
-
-  virtual const ::istio::mixer::v1::RouteDirective& routeDirective() const = 0;
+enum class TransportResult {
+  SUCCESS,           // Response received
+  SEND_ERROR,        // Cannot connect to peer or send request to peer.
+  RESPONSE_TIMEOUT,  // Connected to peer and sent request, but didn't receive a
+                     // response in time.
+  OTHER              // Something else went wrong
 };
+
+extern TransportResult TransportStatus(
+    const ::google::protobuf::util::Status &status);
 
 }  // namespace mixerclient
 }  // namespace istio
-
-#endif  // ISTIO_MIXERCLIENT_CHECK_RESPONSE_H

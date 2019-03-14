@@ -20,6 +20,7 @@ using ::google::protobuf::util::Status;
 using ::istio::mixerclient::CancelFunc;
 using ::istio::mixerclient::CheckDoneFunc;
 using ::istio::mixerclient::CheckResponseInfo;
+using ::istio::mixerclient::TimerCreateFunc;
 using ::istio::mixerclient::TransportCheckFunc;
 using ::istio::quota_config::Requirement;
 
@@ -29,9 +30,11 @@ namespace http {
 
 RequestHandlerImpl::RequestHandlerImpl(
     std::shared_ptr<ServiceContext> service_context)
-    : service_context_(service_context),
-      check_attributes_added_(false),
-      forward_attributes_added_(false) {}
+    : attributes_(new istio::mixerclient::SharedAttributes()),
+      check_context_(new istio::mixerclient::CheckContext(
+          service_context->client_context()->Retries(),
+          service_context->client_context()->NetworkFailOpen(), attributes_)),
+      service_context_(service_context) {}
 
 void RequestHandlerImpl::AddForwardAttributes(CheckData* check_data) {
   if (forward_attributes_added_) {
@@ -39,7 +42,7 @@ void RequestHandlerImpl::AddForwardAttributes(CheckData* check_data) {
   }
   forward_attributes_added_ = true;
 
-  AttributesBuilder builder(&request_context_);
+  AttributesBuilder builder(attributes_->attributes());
   builder.ExtractForwardedAttributes(check_data);
 }
 
@@ -51,38 +54,49 @@ void RequestHandlerImpl::AddCheckAttributes(CheckData* check_data) {
 
   if (service_context_->enable_mixer_check() ||
       service_context_->enable_mixer_report()) {
-    service_context_->AddStaticAttributes(&request_context_);
+    service_context_->AddStaticAttributes(attributes_->attributes());
 
-    AttributesBuilder builder(&request_context_);
+    AttributesBuilder builder(attributes_->attributes());
     builder.ExtractCheckAttributes(check_data);
 
-    service_context_->AddApiAttributes(check_data, &request_context_);
+    service_context_->AddApiAttributes(check_data, attributes_->attributes());
   }
 }
 
-CancelFunc RequestHandlerImpl::Check(CheckData* check_data,
-                                     HeaderUpdate* header_update,
-                                     TransportCheckFunc transport,
-                                     CheckDoneFunc on_done) {
+void RequestHandlerImpl::Check(CheckData* check_data,
+                               HeaderUpdate* header_update,
+                               const TransportCheckFunc& transport,
+                               const CheckDoneFunc& on_done) {
   // Forwarded attributes need to be stored regardless Check is needed
   // or not since the header will be updated or removed.
+  AddCheckAttributes(check_data);
   AddForwardAttributes(check_data);
   header_update->RemoveIstioAttributes();
   service_context_->InjectForwardedAttributes(header_update);
 
   if (!service_context_->enable_mixer_check()) {
-    CheckResponseInfo check_response_info;
-    check_response_info.response_status = Status::OK;
-    on_done(check_response_info);
-    return nullptr;
+    check_context_->setFinalStatus(Status::OK, false);
+    on_done(*check_context_);
+    return;
   }
 
-  AddCheckAttributes(check_data);
+  service_context_->AddQuotas(attributes_->attributes(),
+                              check_context_->quotaRequirements());
 
-  service_context_->AddQuotas(&request_context_);
+  service_context_->client_context()->SendCheck(transport, on_done,
+                                                check_context_);
+}
 
-  return service_context_->client_context()->SendCheck(transport, on_done,
-                                                       &request_context_);
+void RequestHandlerImpl::ResetCancel() {
+  if (check_context_) {
+    check_context_->resetCancel();
+  }
+}
+
+void RequestHandlerImpl::CancelCheck() {
+  if (check_context_) {
+    check_context_->cancel();
+  }
 }
 
 // Make remote report call.
@@ -95,10 +109,10 @@ void RequestHandlerImpl::Report(CheckData* check_data,
   AddForwardAttributes(check_data);
   AddCheckAttributes(check_data);
 
-  AttributesBuilder builder(&request_context_);
-  builder.ExtractReportAttributes(report_data);
+  AttributesBuilder builder(attributes_->attributes());
+  builder.ExtractReportAttributes(check_context_->status(), report_data);
 
-  service_context_->client_context()->SendReport(request_context_);
+  service_context_->client_context()->SendReport(attributes_);
 }
 
 }  // namespace http
