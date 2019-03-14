@@ -63,6 +63,7 @@ cc_library(
         "//include/istio/utils:simple_lru_cache",
         "//src/istio/prefetch:quota_prefetch_lib",
         "//src/istio/utils:utils_lib",
+        "@com_google_absl//absl/strings",
     ],
 )
 

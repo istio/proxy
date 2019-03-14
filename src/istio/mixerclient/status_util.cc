@@ -14,14 +14,15 @@
  */
 
 #include "src/istio/mixerclient/status_util.h"
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 
 namespace istio {
 namespace mixerclient {
 
-static ::google::protobuf::StringPiece TIMEOUT_MESSAGE(
-    "upstream request timeout");
-static ::google::protobuf::StringPiece SEND_ERROR_MESSAGE(
-    "upstream connect error or disconnect/reset before headers");
+static constexpr absl::string_view TIMEOUT_MESSAGE{"upstream request timeout"};
+static constexpr absl::string_view SEND_ERROR_MESSAGE{
+    "upstream connect error or disconnect/reset before headers"};
 
 TransportResult TransportStatus(
     const ::google::protobuf::util::Status &status) {
@@ -31,10 +32,13 @@ TransportResult TransportStatus(
 
   if (::google::protobuf::util::error::Code::UNAVAILABLE ==
       status.error_code()) {
-    if (TIMEOUT_MESSAGE == status.error_message()) {
+    absl::string_view error_message{status.error_message().data(),
+                                    static_cast<absl::string_view::size_type>(
+                                        status.error_message().length())};
+    if (absl::StartsWith(error_message, TIMEOUT_MESSAGE)) {
       return TransportResult::RESPONSE_TIMEOUT;
     }
-    if (SEND_ERROR_MESSAGE == status.error_message()) {
+    if (absl::StartsWith(error_message, SEND_ERROR_MESSAGE)) {
       return TransportResult::SEND_ERROR;
     }
   }
