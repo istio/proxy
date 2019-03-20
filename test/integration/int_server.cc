@@ -494,12 +494,9 @@ LocalListenSocket::~LocalListenSocket() {}
 
 ServerCallbackHelper::ServerCallbackHelper(
     ServerRequestCallback request_callback,
-    ServerAcceptCallback accept_callback, ServerCloseCallback close_callback)
-    : accept_callback_(accept_callback),
-      request_callback_(request_callback),
-      close_callback_(close_callback) {
+    ServerAcceptCallback accept_callback, ServerCloseCallback close_callback) {
   if (request_callback) {
-    request_callback_ = [this, &request_callback](
+    request_callback_ = [this, request_callback](
                             ServerConnection &connection, ServerStream &stream,
                             Envoy::Http::HeaderMapPtr request_headers) {
       ++requests_received_;
@@ -516,7 +513,7 @@ ServerCallbackHelper::ServerCallbackHelper(
 
   if (accept_callback) {
     accept_callback_ =
-        [this, &accept_callback](
+        [this, accept_callback](
             ServerConnection &connection) -> ServerCallbackResult {
       ++accepts_;
       return accept_callback(connection);
@@ -529,8 +526,8 @@ ServerCallbackHelper::ServerCallbackHelper(
   }
 
   if (close_callback) {
-    close_callback_ = [this, &close_callback](ServerConnection &connection,
-                                              ServerCloseReason reason) {
+    close_callback_ = [this, close_callback](ServerConnection &connection,
+                                             ServerCloseReason reason) {
       absl::MutexLock lock(&mutex_);
 
       switch (reason) {
