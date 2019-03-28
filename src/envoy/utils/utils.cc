@@ -94,18 +94,21 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
 bool GetPrincipal(const Network::Connection* connection, bool peer,
                   std::string* principal) {
   if (connection) {
-    Ssl::Connection* ssl = const_cast<Ssl::Connection*>(connection->ssl());
+    Ssl::ConnectionInfo* ssl = const_cast<Ssl::ConnectionInfo*>(connection->ssl());
     if (ssl != nullptr) {
-      std::string result;
+      std::vector<std::string> sans;
+
       if (peer) {
-        result = ssl->uriSanPeerCertificate();
+        sans = ssl->uriSanPeerCertificate();
       } else {
-        result = ssl->uriSanLocalCertificate();
+        sans = ssl->uriSanLocalCertificate();
       }
 
-      if (result.empty()) {  // empty result is not allowed
+      if (sans.empty()) {  // empty result is not allowed
         return false;
       }
+
+      std::string result = sans[0];
       if (result.length() >= kSPIFFEPrefix.length() &&
           result.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0) {
         // Strip out the prefix "spiffe://" in the identity.
