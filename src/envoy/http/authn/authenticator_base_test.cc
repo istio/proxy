@@ -142,7 +142,9 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerCert) {
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return(std::vector<std::string>{"foo"}));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(1)
+      .WillOnce(Return(std::vector<std::string>{"foo"}));
   EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
   // When client certificate is present on mTLS, authenticated attribute should
   // be extracted.

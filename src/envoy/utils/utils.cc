@@ -94,7 +94,8 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
 bool GetPrincipal(const Network::Connection* connection, bool peer,
                   std::string* principal) {
   if (connection) {
-    Ssl::ConnectionInfo* ssl = const_cast<Ssl::ConnectionInfo*>(connection->ssl());
+    Ssl::ConnectionInfo* ssl =
+        const_cast<Ssl::ConnectionInfo*>(connection->ssl());
     if (ssl != nullptr) {
       std::vector<std::string> sans;
 
