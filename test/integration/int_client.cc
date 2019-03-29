@@ -85,7 +85,8 @@ class ClientStream : public Envoy::Http::StreamDecoder,
   // Envoy::Http::StreamCallbacks
   //
 
-  virtual void onResetStream(Envoy::Http::StreamResetReason reason) override {
+  virtual void onResetStream(Envoy::Http::StreamResetReason reason,
+                             absl::string_view) override {
     // TODO test with h2 to see if we get any of these and whether the
     // connection error handling is enough to handle it.
     switch (reason) {
