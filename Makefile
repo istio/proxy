@@ -35,6 +35,7 @@ PATH := /usr/lib/llvm-7/bin:$(PATH)
 
 ifneq ($(LOCAL_ENVOY),)
 BAZEL_BUILD_ARGS += "--override_repository=envoy=$(LOCAL_ENVOY)"
+BAZEL_TEST_ARGS += "--override_repository=envoy=$(LOCAL_ENVOY)"
 endif
 
 build:
