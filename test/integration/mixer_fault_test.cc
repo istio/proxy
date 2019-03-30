@@ -890,7 +890,7 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
 #endif
 }
 
-TEST_F(MixerFaultTest, RetryOnTransportError) {
+TEST_F(MixerFaultTest, DISABLED_RetryOnTransportError) {
   Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
 
   uint32_t retries = 10;
@@ -1038,7 +1038,7 @@ TEST_F(MixerFaultTest, RetryOnTransportError) {
   EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_denies"], 0);
 }
 
-TEST_F(MixerFaultTest, CancelCheck) {
+TEST_F(MixerFaultTest, DISABLED_CancelCheck) {
   Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
 
   uint32_t retries = 10;
@@ -1208,7 +1208,7 @@ TEST_F(MixerFaultTest, CancelCheck) {
   EXPECT_EQ(counters["http_mixer_filter.total_quota_cache_hit_denies"], 0);
 }
 
-TEST_F(MixerFaultTest, CancelRetry) {
+TEST_F(MixerFaultTest, DISABLED_CancelRetry) {
   Envoy::Logger::Registry::setLogLevel(spdlog::level::err);
 
   // Force client timeout while requests are waiting between retries.
