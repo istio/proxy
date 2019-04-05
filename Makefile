@@ -13,7 +13,7 @@
 ## limitations under the License.
 
 TOP := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-
+BAZEL_BIN ?= bazel
 SHELL := /bin/bash
 LOCAL_ARTIFACTS_DIR ?= $(abspath artifacts)
 ARTIFACTS_DIR ?= $(LOCAL_ARTIFACTS_DIR)
@@ -24,23 +24,23 @@ HUB ?=
 TAG ?=
 
 build:
-	@bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //...
+	@${BAZEL_BIN} $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //...
 
 # Build only envoy - fast
 build_envoy:
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy/mixer:envoy
+	${BAZEL_BIN} $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy/tcp/mixer:filter_lib //src/envoy/http/mixer:filter_lib
 
 clean:
-	@bazel clean
+	@${BAZEL_BIN} clean
 
 test:
-	bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
+	${BAZEL_BIN} $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
 
 test_asan:
-	CC=clang-5.0 CXX=clang++-5.0 bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan //...
+	CC=clang-5.0 CXX=clang++-5.0 ${BAZEL_BIN} $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan //...
 
 test_tsan:
-	CC=clang-5.0 CXX=clang++-5.0 bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan //...
+	CC=clang-5.0 CXX=clang++-5.0 ${BAZEL_BIN} $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan //...
 
 check:
 	@script/check-license-headers
@@ -50,7 +50,7 @@ artifacts: build
 	@script/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
 
 deb:
-	@bazel build tools/deb:istio-proxy ${BAZEL_BUILD_ARGS}
+	@${BAZEL_BIN} build tools/deb:istio-proxy ${BAZEL_BUILD_ARGS}
 
 
 .PHONY: build clean test check artifacts
