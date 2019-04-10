@@ -49,9 +49,11 @@ http_archive(
     sha256 = ENVOY_SHA256,
 )
 
+# TODO(silentdai) Use bazel args to select envoy between local or http
+# Uncomment below and comment above http_archive to depends on local envoy.
 #local_repository(
 #     name = "envoy",
-#     path = LOCAL_ENVOY_PROJECT
+#     path = LOCAL_ENVOY_PROJECT,
 #)
 
 load("@envoy//bazel:api_repositories.bzl", "envoy_api_dependencies")
