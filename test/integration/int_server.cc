@@ -211,7 +211,8 @@ class ServerStreamImpl : public ServerStream,
   // Envoy::Http::StreamCallbacks
   //
 
-  virtual void onResetStream(Envoy::Http::StreamResetReason reason) override {
+  virtual void onResetStream(Envoy::Http::StreamResetReason reason,
+                             absl::string_view) override {
     // TODO test with h2 to see if we get these and whether the connection error
     // handling is enough to handle it.
     switch (reason) {
@@ -306,18 +307,19 @@ ServerConnection::ServerConnection(
       close_callback_(close_callback) {
   // TODO make use of network_connection_->socketOptions() and possibly http
   // settings;
+  constexpr uint32_t max_request_headers_kb = 2U;
 
   switch (http_type) {
     case Envoy::Http::CodecClient::Type::HTTP1:
       http_connection_ =
           std::make_unique<Envoy::Http::Http1::ServerConnectionImpl>(
-              network_connection, *this, Envoy::Http::Http1Settings());
+              network_connection, *this, Envoy::Http::Http1Settings(),
+              max_request_headers_kb);
       break;
     case Envoy::Http::CodecClient::Type::HTTP2: {
       Envoy::Http::Http2Settings settings;
       settings.allow_connect_ = true;
       settings.allow_metadata_ = true;
-      constexpr uint32_t max_request_headers_kb = 2U;
       http_connection_ =
           std::make_unique<Envoy::Http::Http2::ServerConnectionImpl>(
               network_connection, *this, scope, settings,
@@ -330,7 +332,8 @@ ServerConnection::ServerConnection(
                 name_, id_, static_cast<int>(http_type) + 1);
       http_connection_ =
           std::make_unique<Envoy::Http::Http1::ServerConnectionImpl>(
-              network_connection, *this, Envoy::Http::Http1Settings());
+              network_connection, *this, Envoy::Http::Http1Settings(),
+              max_request_headers_kb);
       break;
   }
 }
@@ -609,8 +612,8 @@ Server::Server(const std::string &name,
     : name_(name),
       stats_(),
       time_system_(),
-      api_(std::chrono::milliseconds(1),
-           Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_),
+      api_(Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_,
+           Envoy::Filesystem::fileSystemForTest()),
       dispatcher_(api_.allocateDispatcher()),
       connection_handler_(new Envoy::Server::ConnectionHandlerImpl(
           ENVOY_LOGGER(), *dispatcher_)),
@@ -712,8 +715,6 @@ Envoy::Stats::Scope &Server::listenerScope() { return stats_; }
 uint64_t Server::listenerTag() const { return 0; }
 
 const std::string &Server::name() const { return name_; }
-
-bool Server::reverseWriteFilterOrder() const { return true; }
 
 const Envoy::Network::FilterChain *Server::findFilterChain(
     const Envoy::Network::ConnectionSocket &) const {

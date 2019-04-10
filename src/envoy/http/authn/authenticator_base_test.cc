@@ -88,7 +88,7 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
   virtual ~ValidateX509Test() {}
 
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  NiceMock<Envoy::Ssl::MockConnectionInfo> ssl_{};
   Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{
@@ -142,7 +142,9 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerCert) {
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return("foo"));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(1)
+      .WillOnce(Return(std::vector<std::string>{"foo"}));
   EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
   // When client certificate is present on mTLS, authenticated attribute should
   // be extracted.
@@ -156,7 +158,7 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerSpiffeCert) {
       .WillOnce(Return(true));
   EXPECT_CALL(ssl_, uriSanPeerCertificate())
       .Times(1)
-      .WillOnce(Return("spiffe://foo"));
+      .WillOnce(Return(std::vector<std::string>{"spiffe://foo"}));
   EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
 
   // When client certificate is present on mTLS, authenticated attribute should
@@ -171,7 +173,7 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
       .WillOnce(Return(true));
   EXPECT_CALL(ssl_, uriSanPeerCertificate())
       .Times(1)
-      .WillOnce(Return("spiffe:foo"));
+      .WillOnce(Return(std::vector<std::string>{"spiffe:foo"}));
   EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
 
   // When client certificate is present on mTLS and the spiffe subject format is
@@ -193,7 +195,7 @@ class ValidateJwtTest : public testing::Test,
   // StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   envoy::api::v2::core::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  // NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  // NiceMock<Envoy::Ssl::MockConnectionInfo> ssl_{};
   Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{dynamic_metadata_, header_, &connection_,
