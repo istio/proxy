@@ -193,7 +193,7 @@ Quota cache is tied to Check cache. It is enabled automatically if Check cache i
 
 ## How to disable batch for Report calls
 
-Reports are batched up to 1 second or up to 1000 records. It is enabled by default.  It can be disabled with following config:
+Reports are batched up to 1 second or up to 100 records. It is enabled by default.  It can be disabled with following config:
 ```
          "disable_report_batch": true,
 ```
