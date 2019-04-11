@@ -29,8 +29,11 @@ bind(
     actual = "//external:ssl",
 )
 
+# envoy commit date 04/09/2019
+# bazel version: 0.15.0
+
 # When updating envoy sha manually please update the sha in istio.deps file also
-ENVOY_SHA = "2d8386532f68899ca1fe6476dc458b0df1260b29"
+ENVOY_SHA = "fb9e49cbc9f136f3c49a5daa8fcdc96b2f245a51"
 
 http_archive(
     name = "envoy",
