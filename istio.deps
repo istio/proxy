@@ -11,6 +11,6 @@
 		"name": "ENVOY_SHA",
 		"repoName": "istio/envoy",
 		"file": "WORKSPACE",
-		"lastStableSHA": "2d8386532f68899ca1fe6476dc458b0df1260b29"
+		"lastStableSHA": "fb9e49cbc9f136f3c49a5daa8fcdc96b2f245a51"
 	}
 ]
