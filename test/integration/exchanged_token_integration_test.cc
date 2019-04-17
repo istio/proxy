@@ -349,7 +349,7 @@ TEST_P(ExchangedTokenIntegrationTest, ValidExchangeToken) {
   sendTelemetryResponse();
 
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("200", response->headers().Status()->value().c_str());
+  EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(ExchangedTokenIntegrationTest, ValidExchangeTokenAtWrongHeader) {
@@ -370,7 +370,7 @@ TEST_P(ExchangedTokenIntegrationTest, ValidExchangeTokenAtWrongHeader) {
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+  EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(ExchangedTokenIntegrationTest, TokenWithoutOriginalClaims) {
@@ -391,7 +391,7 @@ TEST_P(ExchangedTokenIntegrationTest, TokenWithoutOriginalClaims) {
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+  EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(ExchangedTokenIntegrationTest, InvalidExchangeToken) {
@@ -412,7 +412,7 @@ TEST_P(ExchangedTokenIntegrationTest, InvalidExchangeToken) {
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+  EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
 }  // namespace

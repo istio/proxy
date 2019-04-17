@@ -135,14 +135,11 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
   return true;
 }
 
-bool AuthnUtils::MatchString(const char* const str,
+bool AuthnUtils::MatchString(absl::string_view str,
                              const iaapi::StringMatch& match) {
-  if (str == nullptr) {
-    return false;
-  }
   switch (match.match_type_case()) {
     case iaapi::StringMatch::kExact: {
-      return match.exact().compare(str) == 0;
+      return match.exact() == str;
     }
     case iaapi::StringMatch::kPrefix: {
       return absl::StartsWith(str, match.prefix());
@@ -151,14 +148,14 @@ bool AuthnUtils::MatchString(const char* const str,
       return absl::EndsWith(str, match.suffix());
     }
     case iaapi::StringMatch::kRegex: {
-      return std::regex_match(str, std::regex(match.regex()));
+      return std::regex_match(std::string(str), std::regex(match.regex()));
     }
     default:
       return false;
   }
 }
 
-static bool matchRule(const char* const path,
+static bool matchRule(absl::string_view path,
                       const iaapi::Jwt_TriggerRule& rule) {
   for (const auto& excluded : rule.excluded_paths()) {
     if (AuthnUtils::MatchString(path, excluded)) {
@@ -185,12 +182,12 @@ static bool matchRule(const char* const path,
   return true;
 }
 
-bool AuthnUtils::ShouldValidateJwtPerPath(const char* const path,
+bool AuthnUtils::ShouldValidateJwtPerPath(absl::string_view path,
                                           const iaapi::Jwt& jwt) {
-  // If the path is nullptr which shouldn't happen for a HTTP request or if
+  // If the path is empty which shouldn't happen for a HTTP request or if
   // there are no trigger rules at all, then simply return true as if there're
   // no per-path jwt support.
-  if (path == nullptr || jwt.trigger_rules_size() == 0) {
+  if (path == "" || jwt.trigger_rules_size() == 0) {
     return true;
   }
   for (const auto& rule : jwt.trigger_rules()) {

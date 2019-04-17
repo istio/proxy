@@ -70,7 +70,7 @@ void JwtAuthenticator::Verify(HeaderMap &headers,
   // request.
   if (headers.Method() &&
       Http::Headers::get().MethodValues.Options ==
-          headers.Method()->value().c_str() &&
+          headers.Method()->value().getStringView() &&
       headers.Origin() && !headers.Origin()->value().empty() &&
       headers.AccessControlRequestMethod() &&
       !headers.AccessControlRequestMethod()->value().empty()) {

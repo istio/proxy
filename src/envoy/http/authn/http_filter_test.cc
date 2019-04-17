@@ -130,7 +130,7 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
       .WillOnce(testing::Invoke([](Http::HeaderMap &headers, bool) {
-        EXPECT_STREQ("401", headers.Status()->value().c_str());
+        EXPECT_EQ("401", headers.Status()->value().getStringView());
       }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));
@@ -156,7 +156,7 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
       .WillOnce(testing::Invoke([](Http::HeaderMap &headers, bool) {
-        EXPECT_STREQ("401", headers.Status()->value().c_str());
+        EXPECT_EQ("401", headers.Status()->value().getStringView());
       }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));

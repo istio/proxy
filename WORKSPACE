@@ -46,6 +46,10 @@ http_archive(
     url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
+load("@envoy//bazel:api_repositories.bzl", "envoy_api_dependencies")
+
+envoy_api_dependencies()
+
 load("@envoy//bazel:repositories.bzl", "GO_VERSION", "envoy_dependencies")
 
 envoy_dependencies()
