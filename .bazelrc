@@ -1,12 +1,15 @@
 # Copied from https://github.com/envoyproxy/envoy/blob/master/tools/bazel.rc
 # Envoy specific Bazel build/test options.
 
-build --workspace_status_command=tools/bazel_get_workspace_status
 # Bazel doesn't need more than 200MB of memory based on memory profiling:
 # https://docs.bazel.build/versions/master/skylark/performance.html#memory-profiling
 # Limiting JVM heapsize here to let it do GC more when approaching the limit to
 # leave room for compiler/linker.
 startup --host_jvm_args=-Xmx512m
+
+build --workspace_status_command=tools/bazel_get_workspace_status
+# enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
+build --define path_normalization_by_default=true
 
 # Basic ASAN/UBSAN that works for gcc
 build:asan --define ENVOY_CONFIG_ASAN=1
@@ -54,6 +57,8 @@ build:clang-msan --copt -fsanitize-memory-track-origins=2
 
 # Test options
 test --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
+# enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
+test --define path_normalization_by_default=true
 
 # Release builds without debug symbols.
 build:release -c opt
