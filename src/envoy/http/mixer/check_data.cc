@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/mixer/check_data.h"
+#include "absl/strings/string_view.h"
 #include "common/common/base64.h"
 #include "src/envoy/http/jwt_auth/jwt.h"
 #include "src/envoy/http/jwt_auth/jwt_authenticator.h"
@@ -42,8 +43,8 @@ CheckData::CheckData(const HeaderMap& headers,
                      const Network::Connection* connection)
     : headers_(headers), metadata_(metadata), connection_(connection) {
   if (headers_.Path()) {
-    query_params_ = Utility::parseQueryString(std::string(
-        headers_.Path()->value().c_str(), headers_.Path()->value().size()));
+    query_params_ =
+        Utility::parseQueryString(headers_.Path()->value().getStringView());
   }
 }
 
@@ -52,8 +53,7 @@ bool CheckData::ExtractIstioAttributes(std::string* data) const {
   const HeaderEntry* entry =
       headers_.get(Utils::HeaderUpdate::IstioAttributeHeader());
   if (entry) {
-    *data = Base64::decode(
-        std::string(entry->value().c_str(), entry->value().size()));
+    *data = Base64::decode(std::string(entry->value().getStringView()));
     return true;
   }
   return false;
@@ -87,50 +87,44 @@ bool CheckData::FindHeaderByType(HttpCheckData::HeaderType header_type,
   switch (header_type) {
     case HttpCheckData::HEADER_PATH:
       if (headers_.Path()) {
-        *value = std::string(headers_.Path()->value().c_str(),
-                             headers_.Path()->value().size());
+        *value = std::string(headers_.Path()->value().getStringView());
         return true;
       }
       break;
     case HttpCheckData::HEADER_HOST:
       if (headers_.Host()) {
-        *value = std::string(headers_.Host()->value().c_str(),
-                             headers_.Host()->value().size());
+        *value = std::string(headers_.Host()->value().getStringView());
         return true;
       }
       break;
     case HttpCheckData::HEADER_SCHEME:
       if (headers_.Scheme()) {
-        *value = std::string(headers_.Scheme()->value().c_str(),
-                             headers_.Scheme()->value().size());
+        *value = std::string(headers_.Scheme()->value().getStringView());
         return true;
       }
       break;
     case HttpCheckData::HEADER_USER_AGENT:
       if (headers_.UserAgent()) {
-        *value = std::string(headers_.UserAgent()->value().c_str(),
-                             headers_.UserAgent()->value().size());
+        *value = std::string(headers_.UserAgent()->value().getStringView());
         return true;
       }
       break;
     case HttpCheckData::HEADER_METHOD:
       if (headers_.Method()) {
-        *value = std::string(headers_.Method()->value().c_str(),
-                             headers_.Method()->value().size());
+        *value = std::string(headers_.Method()->value().getStringView());
         return true;
       }
       break;
     case HttpCheckData::HEADER_CONTENT_TYPE:
       if (headers_.ContentType()) {
-        *value = std::string(headers_.ContentType()->value().c_str(),
-                             headers_.ContentType()->value().size());
+        *value = std::string(headers_.ContentType()->value().getStringView());
         return true;
       }
       break;
     case HttpCheckData::HEADER_REFERER: {
       const HeaderEntry* referer = headers_.get(kRefererHeaderKey);
       if (referer) {
-        *value = std::string(referer->value().c_str(), referer->value().size());
+        *value = std::string(referer->value().getStringView());
         return true;
       }
     } break;
@@ -142,7 +136,7 @@ bool CheckData::FindHeaderByName(const std::string& name,
                                  std::string* value) const {
   const HeaderEntry* entry = headers_.get(LowerCaseString(name));
   if (entry) {
-    *value = std::string(entry->value().c_str(), entry->value().size());
+    *value = std::string(entry->value().getStringView());
     return true;
   }
   return false;
@@ -176,11 +170,14 @@ bool CheckData::GetUrlPath(std::string* url_path) const {
     return false;
   }
   const HeaderString& path = headers_.Path()->value();
-  const char* query_start = Utility::findQueryStringStart(path);
-  if (query_start != nullptr) {
-    *url_path = std::string(path.c_str(), query_start - path.c_str());
+  const absl::string_view path_view = path.getStringView();
+  absl::string_view query_start = Utility::findQueryStringStart(path);
+  if (query_start.length() > 0) {
+    const size_t path_string_length = path.size() - query_start.length();
+    *url_path =
+        std::string(path_view.begin(), path_view.begin() + path_string_length);
   } else {
-    *url_path = std::string(path.c_str(), path.size());
+    *url_path = std::string(path_view);
   }
   return true;
 }
@@ -190,7 +187,8 @@ bool CheckData::GetRequestQueryParams(
   if (!headers_.Path()) {
     return false;
   }
-  *query_params = Utility::parseQueryString(headers_.Path()->value().c_str());
+  *query_params =
+      Utility::parseQueryString(headers_.Path()->value().getStringView());
   return true;
 }
 

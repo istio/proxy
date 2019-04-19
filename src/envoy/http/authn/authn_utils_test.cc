@@ -311,7 +311,7 @@ TEST(AuthnUtilsTest, ShouldValidateJwtPerPathDefault) {
   iaapi::Jwt jwt;
 
   // Always trigger when path is unavailable.
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath(nullptr, jwt));
+  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("", jwt));
 
   // Always trigger when there is no rules in jwt.
   EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/test", jwt));

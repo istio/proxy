@@ -447,7 +447,8 @@ Client::Client(const std::string &name)
       stats_(),
       thread_(nullptr),
       time_system_(),
-      api_(Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_),
+      api_(Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_,
+           Envoy::Filesystem::fileSystemForTest()),
       dispatcher_{api_.allocateDispatcher()} {}
 
 Client::~Client() {
@@ -565,8 +566,8 @@ LoadGenerator::LoadGenerator(
     ++responses_received_;
 
     uint64_t status = 0;
-    if (!Envoy::StringUtil::atoull(response->Status()->value().c_str(),
-                                   status)) {
+    auto str = std::string(response->Status()->value().getStringView());
+    if (!Envoy::StringUtil::atoull(str.c_str(), status)) {
       ENVOY_LOG(error, "Connection({}:{}) received response with bad status",
                 connection.name(), connection.id());
     } else if (200 <= status && status < 300) {

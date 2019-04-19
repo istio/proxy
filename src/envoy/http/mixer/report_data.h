@@ -37,11 +37,11 @@ const std::set<std::string> ResponseHeaderExclusives = {};
 bool ExtractGrpcStatus(const HeaderMap *headers,
                        ::istio::control::http::ReportData::GrpcStatus *status) {
   if (headers != nullptr && headers->GrpcStatus()) {
-    status->status = std::string(headers->GrpcStatus()->value().c_str(),
-                                 headers->GrpcStatus()->value().size());
+    status->status =
+        std::string(headers->GrpcStatus()->value().getStringView());
     if (headers->GrpcMessage()) {
-      status->message = std::string(headers->GrpcMessage()->value().c_str(),
-                                    headers->GrpcMessage()->value().size());
+      status->message =
+          std::string(headers->GrpcMessage()->value().getStringView());
     }
     return true;
   }
