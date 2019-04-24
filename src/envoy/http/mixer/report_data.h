@@ -22,6 +22,7 @@
 #include "extensions/filters/http/well_known_names.h"
 #include "google/protobuf/struct.pb.h"
 #include "include/istio/control/http/controller.h"
+#include "src/envoy/utils/trace_headers.h"
 #include "src/envoy/utils/utils.h"
 
 namespace Envoy {
@@ -52,22 +53,25 @@ bool ExtractGrpcStatus(const HeaderMap *headers,
 
 class ReportData : public ::istio::control::http::ReportData,
                    public Logger::Loggable<Logger::Id::filter> {
-  const HeaderMap *headers_;
+  const HeaderMap *request_headers_;
+  const HeaderMap *response_headers_;
   const HeaderMap *trailers_;
   const StreamInfo::StreamInfo &info_;
   uint64_t response_total_size_;
   uint64_t request_total_size_;
 
  public:
-  ReportData(const HeaderMap *headers, const HeaderMap *response_trailers,
+  ReportData(const HeaderMap *request_headers, const HeaderMap *response_headers,
+             const HeaderMap *response_trailers,
              const StreamInfo::StreamInfo &info, uint64_t request_total_size)
-      : headers_(headers),
+      : request_headers_(request_headers),
+        response_headers_(response_headers),
         trailers_(response_trailers),
         info_(info),
         response_total_size_(info.bytesSent()),
         request_total_size_(request_total_size) {
-    if (headers != nullptr) {
-      response_total_size_ += headers->byteSize();
+    if (response_headers != nullptr) {
+      response_total_size_ += response_headers->byteSize();
     }
     if (response_trailers != nullptr) {
       response_total_size_ += response_trailers->byteSize();
@@ -76,13 +80,17 @@ class ReportData : public ::istio::control::http::ReportData,
 
   std::map<std::string, std::string> GetResponseHeaders() const override {
     std::map<std::string, std::string> header_map;
-    if (headers_) {
-      Utils::ExtractHeaders(*headers_, ResponseHeaderExclusives, header_map);
+    if (response_headers_) {
+      Utils::ExtractHeaders(*response_headers_, ResponseHeaderExclusives, header_map);
     }
     if (trailers_) {
       Utils::ExtractHeaders(*trailers_, ResponseHeaderExclusives, header_map);
     }
     return header_map;
+  }
+
+  void GetTracingHeaders(std::map<std::string, std::string>& tracing_headers) const override {
+    Utils::FindHeaders(*request_headers_, Utils::TracingHeaderSet, tracing_headers);
   }
 
   void GetReportInfo(
@@ -119,7 +127,7 @@ class ReportData : public ::istio::control::http::ReportData,
     // Check trailer first.
     // If not response body, grpc-status is in response headers.
     return ExtractGrpcStatus(trailers_, status) ||
-           ExtractGrpcStatus(headers_, status);
+           ExtractGrpcStatus(response_headers_, status);
   }
 
   // Get Rbac related attributes.
