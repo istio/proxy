@@ -61,7 +61,8 @@ class ReportData : public ::istio::control::http::ReportData,
   uint64_t request_total_size_;
 
  public:
-  ReportData(const HeaderMap *request_headers, const HeaderMap *response_headers,
+  ReportData(const HeaderMap *request_headers,
+             const HeaderMap *response_headers,
              const HeaderMap *response_trailers,
              const StreamInfo::StreamInfo &info, uint64_t request_total_size)
       : request_headers_(request_headers),
@@ -81,7 +82,8 @@ class ReportData : public ::istio::control::http::ReportData,
   std::map<std::string, std::string> GetResponseHeaders() const override {
     std::map<std::string, std::string> header_map;
     if (response_headers_) {
-      Utils::ExtractHeaders(*response_headers_, ResponseHeaderExclusives, header_map);
+      Utils::ExtractHeaders(*response_headers_, ResponseHeaderExclusives,
+                            header_map);
     }
     if (trailers_) {
       Utils::ExtractHeaders(*trailers_, ResponseHeaderExclusives, header_map);
@@ -89,8 +91,10 @@ class ReportData : public ::istio::control::http::ReportData,
     return header_map;
   }
 
-  void GetTracingHeaders(std::map<std::string, std::string>& tracing_headers) const override {
-    Utils::FindHeaders(*request_headers_, Utils::TracingHeaderSet, tracing_headers);
+  void GetTracingHeaders(
+      std::map<std::string, std::string> &tracing_headers) const override {
+    Utils::FindHeaders(*request_headers_, Utils::TracingHeaderSet,
+                       tracing_headers);
   }
 
   void GetReportInfo(
