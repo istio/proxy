@@ -27,7 +27,10 @@ const std::string kParentSpanID = "x-b3-parentspanid";
 const std::string kSampled = "x-b3-sampled";
 
 const std::set<std::string> TracingHeaderSet = {
-    kTraceID, kSpanID, kParentSpanID, kSampled,
+    kTraceID,
+    kSpanID,
+    kParentSpanID,
+    kSampled,
 };
 
 }  // namespace Utils

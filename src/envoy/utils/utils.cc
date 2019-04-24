@@ -62,8 +62,8 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
 }
 
 void FindHeaders(const Http::HeaderMap& header_map,
-                      const std::set<std::string>& inclusives,
-                      std::map<std::string, std::string>& headers) {
+                 const std::set<std::string>& inclusives,
+                 std::map<std::string, std::string>& headers) {
   struct Context {
     Context(const std::set<std::string>& inclusives,
             std::map<std::string, std::string>& headers)

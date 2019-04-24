@@ -228,7 +228,8 @@ void AttributesBuilder::ExtractReportAttributes(
 
   std::map<std::string, std::string> tracing_headers;
   report_data->GetTracingHeaders(tracing_headers);
-  builder.InsertStringMap(utils::AttributeName::kRequestHeaders, tracing_headers);
+  builder.InsertStringMap(utils::AttributeName::kRequestHeaders,
+                          tracing_headers);
 
   builder.AddTimestamp(utils::AttributeName::kResponseTime,
                        std::chrono::system_clock::now());

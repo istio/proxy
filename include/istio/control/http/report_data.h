@@ -35,7 +35,8 @@ class ReportData {
   virtual std::map<std::string, std::string> GetResponseHeaders() const = 0;
 
   // Get tracing headers from HTTP request headers.
-  virtual void GetTracingHeaders(std::map<std::string, std::string> &) const = 0;
+  virtual void GetTracingHeaders(
+      std::map<std::string, std::string> &) const = 0;
 
   // Get additional report info.
   struct ReportInfo {
