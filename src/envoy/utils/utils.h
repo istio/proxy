@@ -31,6 +31,11 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
                     const std::set<std::string>& exclusives,
                     std::map<std::string, std::string>& headers);
 
+// Find the given headers from the header map and extract them out to the string map.
+void FindHeaders(const Http::HeaderMap& header_map,
+                    const std::set<std::string>& inclusives,
+                    std::map<std::string, std::string>& headers);
+
 // Get ip and port from Envoy ip.
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port);
 

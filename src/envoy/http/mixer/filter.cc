@@ -232,8 +232,8 @@ void Filter::log(const HeaderMap* request_headers,
   CheckData check_data(*request_headers, stream_info.dynamicMetadata(),
                        decoder_callbacks_->connection());
   // response trailer header is not counted to response total size.
-  ReportData report_data(response_headers, response_trailers, stream_info,
-                         request_total_size_);
+  ReportData report_data(request_headers, response_headers, response_trailers,
+                         stream_info, request_total_size_);
   handler_->Report(&check_data, &report_data);
 }
 

@@ -59,6 +59,29 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
       &ctx);
 }
 
+void FindHeaders(const Http::HeaderMap& header_map,
+                      const std::set<std::string>& inclusives,
+                      std::map<std::string, std::string>& headers) {
+  struct Context {
+    Context(const std::set<std::string>& inclusives,
+            std::map<std::string, std::string>& headers)
+        : inclusives(inclusives), headers(headers) {}
+    const std::set<std::string>& inclusives;
+    std::map<std::string, std::string>& headers;
+  };
+  Context ctx(inclusives, headers);
+  header_map.iterate(
+      [](const Http::HeaderEntry& header,
+         void* context) -> Http::HeaderMap::Iterate {
+        Context* ctx = static_cast<Context*>(context);
+        if (ctx->inclusives.count(header.key().c_str()) != 0) {
+          ctx->headers[header.key().c_str()] = header.value().c_str();
+        }
+        return Http::HeaderMap::Iterate::Continue;
+      },
+      &ctx);
+}
+
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
   if (ip) {
     *port = ip->port();
