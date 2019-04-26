@@ -506,7 +506,7 @@ TEST_P(IstioHttpIntegrationTest, TracingHeader) {
   EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kSpanID));
   EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kSampled));
 
-  // trace id should be included in default words of report request
+  // span id should be included in default words of report request
   EXPECT_THAT(
       report_request.default_words(),
       ::testing::AllOf(Contains(upstream_headers.get_(Envoy::Utils::kSpanID))));
