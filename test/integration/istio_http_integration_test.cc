@@ -279,17 +279,23 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
     return [](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
       auto* http_tracing = bootstrap.mutable_tracing()->mutable_http();
       http_tracing->set_name("envoy.zipkin");
-      auto* tracer_config_fields = http_tracing->mutable_config()->mutable_fields();
-      (*tracer_config_fields)["collector_cluster"].set_string_value(kZipkinBackend);
-      (*tracer_config_fields)["collector_endpoint"].set_string_value("/api/v1/spans");
+      auto* tracer_config_fields =
+          http_tracing->mutable_config()->mutable_fields();
+      (*tracer_config_fields)["collector_cluster"].set_string_value(
+          kZipkinBackend);
+      (*tracer_config_fields)["collector_endpoint"].set_string_value(
+          "/api/v1/spans");
     };
   }
 
   ConfigHelper::HttpModifierFunction addTracingRate() {
-    return [](envoy::config::filter::network::http_connection_manager::v2::HttpConnectionManager& hcm) {
+    return [](envoy::config::filter::network::http_connection_manager::v2::
+                  HttpConnectionManager& hcm) {
       auto* tracing = hcm.mutable_tracing();
       tracing->set_operation_name(
-        envoy::config::filter::network::http_connection_manager::v2::HttpConnectionManager_Tracing_OperationName::HttpConnectionManager_Tracing_OperationName_EGRESS);
+          envoy::config::filter::network::http_connection_manager::v2::
+              HttpConnectionManager_Tracing_OperationName::
+                  HttpConnectionManager_Tracing_OperationName_EGRESS);
       tracing->mutable_client_sampling()->set_value(100.0);
       tracing->mutable_random_sampling()->set_value(100.0);
       tracing->mutable_overall_sampling()->set_value(100.0);
@@ -501,7 +507,9 @@ TEST_P(IstioHttpIntegrationTest, TracingHeader) {
   EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kSampled));
 
   // trace id should be included in default words of report request
-  EXPECT_THAT(report_request.default_words(), ::testing::AllOf(Contains(upstream_headers.get_(Envoy::Utils::kSpanID))));
+  EXPECT_THAT(
+      report_request.default_words(),
+      ::testing::AllOf(Contains(upstream_headers.get_(Envoy::Utils::kSpanID))));
 }
 
 }  // namespace
