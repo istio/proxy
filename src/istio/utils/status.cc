@@ -21,7 +21,7 @@ using StatusCode = ::google::protobuf::util::error::Code;
 namespace istio {
 namespace utils {
 
-// Convert Status::code to HTTP code
+// Convert Status::code to HTTP code.
 int StatusHttpCode(int code) {
   // Map Canonical codes to HTTP status codes. This is based on the mapping
   // defined by the protobuf http error space.
