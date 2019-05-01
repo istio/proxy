@@ -68,7 +68,7 @@ artifacts: build
 
 deb:
 	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
-	@bazel shutdown
+	#@bazel shutdown
 
 
 .PHONY: build clean test check artifacts
