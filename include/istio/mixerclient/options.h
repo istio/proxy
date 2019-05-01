@@ -23,6 +23,9 @@
 namespace istio {
 namespace mixerclient {
 
+const int DEFAULT_BATCH_REPORT_MAX_ENTRIES=100;
+const int DEFAULT_BATCH_REPORT_MAX_TIME_MS=1000;
+
 // Options controlling check behavior.
 struct CheckOptions {
   // Default constructor.
@@ -56,7 +59,9 @@ struct CheckOptions {
 struct ReportOptions {
   // Default constructor.
   // Default to batch up to 100 reports or 1000 milliseconds (1 second).
-  ReportOptions() : max_batch_entries(100), max_batch_time_ms(1000) {}
+  ReportOptions() 
+      : max_batch_entries(DEFAULT_BATCH_REPORT_MAX_ENTRIES), 
+        max_batch_time_ms(DEFAULT_BATCH_REPORT_MAX_TIME_MS) {}
 
   // Constructor.
   ReportOptions(int max_batch_entries, int max_batch_time_ms)
