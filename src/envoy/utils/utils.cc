@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/utils/utils.h"
+#include "include/istio/utils/attributes_builder.h"
 #include "mixer/v1/attributes.pb.h"
 
 using ::google::protobuf::Message;
@@ -50,8 +51,10 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
       [](const Http::HeaderEntry& header,
          void* context) -> Http::HeaderMap::Iterate {
         Context* ctx = static_cast<Context*>(context);
-        if (ctx->exclusives.count(header.key().c_str()) == 0) {
-          ctx->headers[header.key().c_str()] = header.value().c_str();
+        auto key = std::string(header.key().getStringView());
+        auto value = std::string(header.value().getStringView());
+        if (ctx->exclusives.count(key) == 0) {
+          ctx->headers[key] = value;
         }
         return Http::HeaderMap::Iterate::Continue;
       },
@@ -93,18 +96,16 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
 bool GetPrincipal(const Network::Connection* connection, bool peer,
                   std::string* principal) {
   if (connection) {
-    Ssl::Connection* ssl = const_cast<Ssl::Connection*>(connection->ssl());
+    Ssl::ConnectionInfo* ssl =
+        const_cast<Ssl::ConnectionInfo*>(connection->ssl());
     if (ssl != nullptr) {
-      std::string result;
-      if (peer) {
-        result = ssl->uriSanPeerCertificate();
-      } else {
-        result = ssl->uriSanLocalCertificate();
-      }
-
-      if (result.empty()) {  // empty result is not allowed
+      const std::vector<std::string> sans =
+          (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
+      if (sans.empty()) {
+        // empty result is not allowed
         return false;
       }
+      const std::string result = sans[0];
       if (result.length() >= kSPIFFEPrefix.length() &&
           result.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0) {
         // Strip out the prefix "spiffe://" in the identity.
@@ -142,16 +143,13 @@ Status ParseJsonMessage(const std::string& json, Message* output) {
 void CheckResponseInfoToStreamInfo(
     const istio::mixerclient::CheckResponseInfo& check_response,
     StreamInfo::StreamInfo& stream_info) {
-  static std::string metadata_key = "istio.mixer";
-
-  if (!check_response.response_status.ok()) {
+  if (!check_response.status().ok()) {
     stream_info.setResponseFlag(
         StreamInfo::ResponseFlag::UnauthorizedExternalService);
     ProtobufWkt::Struct metadata;
     auto& fields = *metadata.mutable_fields();
-    fields["status"].set_string_value(
-        check_response.response_status.ToString());
-    stream_info.setDynamicMetadata(metadata_key, metadata);
+    fields["status"].set_string_value(check_response.status().ToString());
+    stream_info.setDynamicMetadata(istio::utils::kMixerMetadataKey, metadata);
   }
 }
 

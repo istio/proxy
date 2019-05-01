@@ -2,7 +2,7 @@ HUB ?=
 PROJECT ?= istio
 
 # Using same naming convention as istio/istio
-VERSION ?= go1.10-bazel0.18-clang6.0
+VERSION ?= go1.11-bazel0.22-clang7
 IMG ?= ci
 
 # Build a local image, can be used for testing with circleci command line.

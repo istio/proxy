@@ -26,8 +26,8 @@ namespace {
 const LowerCaseString kJwtPayloadKey("sec-istio-auth-userinfo");
 
 // Extract host and path from a URI
-void ExtractUriHostPath(const std::string& uri, std::string* host,
-                        std::string* path) {
+void ExtractUriHostPath(const std::string &uri, std::string *host,
+                        std::string *path) {
   // Example:
   // uri  = "https://example.com/certs"
   // pos  :          ^
@@ -49,15 +49,35 @@ void ExtractUriHostPath(const std::string& uri, std::string* host,
 
 }  // namespace
 
-JwtAuthenticator::JwtAuthenticator(Upstream::ClusterManager& cm,
-                                   JwtAuthStore& store)
+JwtAuthenticator::JwtAuthenticator(Upstream::ClusterManager &cm,
+                                   JwtAuthStore &store)
     : cm_(cm), store_(store) {}
 
 // Verify a JWT token.
-void JwtAuthenticator::Verify(HeaderMap& headers,
-                              JwtAuthenticator::Callbacks* callback) {
+void JwtAuthenticator::Verify(HeaderMap &headers,
+                              JwtAuthenticator::Callbacks *callback) {
   headers_ = &headers;
   callback_ = callback;
+
+  // Per the spec
+  // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0, CORS
+  // pre-flight requests shouldn't include user credentials.
+  // From
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers:
+  // "... This header is required if the request has an
+  // Access-Control-Request-Headers header.", which indicates that
+  // Access-Control-Request-Headers header may not always be present in a CORS
+  // request.
+  if (headers.Method() &&
+      Http::Headers::get().MethodValues.Options ==
+          headers.Method()->value().getStringView() &&
+      headers.Origin() && !headers.Origin()->value().empty() &&
+      headers.AccessControlRequestMethod() &&
+      !headers.AccessControlRequestMethod()->value().empty()) {
+    ENVOY_LOG(debug, "CORS preflight request is passed through.");
+    DoneWithStatus(Status::OK);
+    return;
+  }
 
   ENVOY_LOG(debug, "Jwt authentication starts");
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
@@ -119,7 +139,7 @@ void JwtAuthenticator::Verify(HeaderMap& headers,
   FetchPubkey(issuer);
 }
 
-void JwtAuthenticator::FetchPubkey(PubkeyCacheItem* issuer) {
+void JwtAuthenticator::FetchPubkey(PubkeyCacheItem *issuer) {
   uri_ = issuer->jwt_config().remote_jwks().http_uri().uri();
   std::string host, path;
   ExtractUriHostPath(uri_, &host, &path);
@@ -130,7 +150,7 @@ void JwtAuthenticator::FetchPubkey(PubkeyCacheItem* issuer) {
   message->headers().insertPath().value(path);
   message->headers().insertHost().value(host);
 
-  const auto& cluster = issuer->jwt_config().remote_jwks().http_uri().cluster();
+  const auto &cluster = issuer->jwt_config().remote_jwks().http_uri().cluster();
   if (cm_.get(cluster) == nullptr) {
     DoneWithStatus(Status::FAILED_FETCH_PUBKEY);
     return;
@@ -141,7 +161,7 @@ void JwtAuthenticator::FetchPubkey(PubkeyCacheItem* issuer) {
       std::move(message), *this, Http::AsyncClient::RequestOptions());
 }
 
-void JwtAuthenticator::onSuccess(MessagePtr&& response) {
+void JwtAuthenticator::onSuccess(MessagePtr &&response) {
   request_ = nullptr;
   uint64_t status_code = Http::Utility::getResponseStatus(response->headers());
   if (status_code == 200) {
@@ -149,7 +169,7 @@ void JwtAuthenticator::onSuccess(MessagePtr&& response) {
     std::string body;
     if (response->body()) {
       auto len = response->body()->length();
-      body = std::string(static_cast<char*>(response->body()->linearize(len)),
+      body = std::string(static_cast<char *>(response->body()->linearize(len)),
                          len);
     } else {
       ENVOY_LOG(debug, "fetch pubkey [uri = {}]: body is empty", uri_);
@@ -177,7 +197,7 @@ void JwtAuthenticator::onDestroy() {
 }
 
 // Handle the public key fetch done event.
-void JwtAuthenticator::OnFetchPubkeyDone(const std::string& pubkey) {
+void JwtAuthenticator::OnFetchPubkeyDone(const std::string &pubkey) {
   auto issuer = store_.pubkey_cache().LookupByIssuer(jwt_->Iss());
   Status status = issuer->SetRemoteJwks(pubkey);
   if (status != Status::OK) {
@@ -188,7 +208,7 @@ void JwtAuthenticator::OnFetchPubkeyDone(const std::string& pubkey) {
 }
 
 // Verify with a specific public key.
-void JwtAuthenticator::VerifyKey(const PubkeyCacheItem& issuer_item) {
+void JwtAuthenticator::VerifyKey(const PubkeyCacheItem &issuer_item) {
   JwtAuth::Verifier v;
   if (!v.Verify(*jwt_, *issuer_item.pubkey())) {
     DoneWithStatus(v.GetStatus());
@@ -218,7 +238,7 @@ bool JwtAuthenticator::OkToBypass() {
   return false;
 }
 
-void JwtAuthenticator::DoneWithStatus(const Status& status) {
+void JwtAuthenticator::DoneWithStatus(const Status &status) {
   ENVOY_LOG(debug, "Jwt authentication completed with: {}",
             JwtAuth::StatusToString(status));
   ENVOY_LOG(debug,
@@ -232,7 +252,7 @@ void JwtAuthenticator::DoneWithStatus(const Status& status) {
   callback_ = nullptr;
 }
 
-const LowerCaseString& JwtAuthenticator::JwtPayloadKey() {
+const LowerCaseString &JwtAuthenticator::JwtPayloadKey() {
   return kJwtPayloadKey;
 }
 

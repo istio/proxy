@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "google/protobuf/stubs/status.h"
-#include "include/istio/mixerclient/client.h"
 #include "include/istio/mixerclient/options.h"
 #include "include/istio/utils/simple_lru_cache.h"
 #include "include/istio/utils/simple_lru_cache_inl.h"
@@ -54,9 +53,9 @@ class CheckCache {
 
     bool IsCacheHit() const;
 
-    ::google::protobuf::util::Status status() const { return status_; }
+    const ::google::protobuf::util::Status& status() const { return status_; }
 
-    ::istio::mixer::v1::RouteDirective route_directive() const {
+    const ::istio::mixer::v1::RouteDirective& route_directive() const {
       return route_directive_;
     }
 

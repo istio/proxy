@@ -69,9 +69,10 @@ void JwtTokenExtractor::Extract(
     const HeaderEntry *entry = headers.Authorization();
     if (entry) {
       // Extract token from header.
-      const HeaderString &value = entry->value();
-      if (absl::StartsWith(value.getStringView(), kBearerPrefix)) {
-        tokens->emplace_back(new Token(value.c_str() + kBearerPrefix.length(),
+      auto value = entry->value().getStringView();
+      if (absl::StartsWith(value, kBearerPrefix)) {
+        value.remove_prefix(kBearerPrefix.length());
+        tokens->emplace_back(new Token(std::string(value),
                                        authorization_issuers_, true, nullptr));
         // Only take the first one.
         return;
@@ -88,9 +89,9 @@ void JwtTokenExtractor::Extract(
       size_t pos = val.find(' ');
       if (pos != absl::string_view::npos) {
         // If the header value has prefix, trim the prefix.
-        token = entry->value().c_str() + pos + 1;
+        token = std::string(val.substr(pos + 1));
       } else {
-        token = std::string(entry->value().c_str(), entry->value().size());
+        token = std::string(val);
       }
 
       tokens->emplace_back(
@@ -104,8 +105,8 @@ void JwtTokenExtractor::Extract(
     return;
   }
 
-  const auto &params = Utility::parseQueryString(std::string(
-      headers.Path()->value().c_str(), headers.Path()->value().size()));
+  const auto &params = Utility::parseQueryString(
+      std::string(headers.Path()->value().getStringView()));
   for (const auto &param_it : param_maps_) {
     const auto &it = params.find(param_it.first);
     if (it != params.end()) {

@@ -51,15 +51,15 @@ void ServiceContext::BuildParsers() {
 }
 
 // Add static mixer attributes.
-void ServiceContext::AddStaticAttributes(RequestContext *request) const {
-  client_context_->AddLocalNodeAttributes(request->attributes);
+void ServiceContext::AddStaticAttributes(
+    ::istio::mixer::v1::Attributes *attributes) const {
+  client_context_->AddLocalNodeAttributes(attributes);
 
   if (client_context_->config().has_mixer_attributes()) {
-    request->attributes->MergeFrom(
-        client_context_->config().mixer_attributes());
+    attributes->MergeFrom(client_context_->config().mixer_attributes());
   }
   if (service_config_ && service_config_->has_mixer_attributes()) {
-    request->attributes->MergeFrom(service_config_->mixer_attributes());
+    attributes->MergeFrom(service_config_->mixer_attributes());
   }
 }
 
@@ -82,8 +82,8 @@ void ServiceContext::InjectForwardedAttributes(
   }
 }
 
-void ServiceContext::AddApiAttributes(CheckData *check_data,
-                                      RequestContext *request) const {
+void ServiceContext::AddApiAttributes(
+    CheckData *check_data, ::istio::mixer::v1::Attributes *attributes) const {
   if (!api_spec_parser_) {
     return;
   }
@@ -91,21 +91,22 @@ void ServiceContext::AddApiAttributes(CheckData *check_data,
   std::string path;
   if (check_data->FindHeaderByType(CheckData::HEADER_METHOD, &http_method) &&
       check_data->FindHeaderByType(CheckData::HEADER_PATH, &path)) {
-    api_spec_parser_->AddAttributes(http_method, path, request->attributes);
+    api_spec_parser_->AddAttributes(http_method, path, attributes);
   }
 
   std::string api_key;
   if (api_spec_parser_->ExtractApiKey(check_data, &api_key)) {
-    (*request->attributes
-          ->mutable_attributes())[utils::AttributeName::kRequestApiKey]
+    (*attributes->mutable_attributes())[utils::AttributeName::kRequestApiKey]
         .set_string_value(api_key);
   }
 }
 
 // Add quota requirements from quota configs.
-void ServiceContext::AddQuotas(RequestContext *request) const {
+void ServiceContext::AddQuotas(
+    ::istio::mixer::v1::Attributes *attributes,
+    std::vector<::istio::quota_config::Requirement> &quotas) const {
   for (const auto &parser : quota_parsers_) {
-    parser->GetRequirements(*request->attributes, &request->quotas);
+    parser->GetRequirements(*attributes, &quotas);
   }
 }
 

@@ -20,39 +20,43 @@ ARTIFACTS_DIR ?= $(LOCAL_ARTIFACTS_DIR)
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
 BAZEL_TEST_ARGS ?=
+BAZEL_TARGETS ?= //...
+# Some tests run so slowly under the santizers that they always timeout.
+SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
 ifeq "$(origin CC)" "default"
-CC := clang-6.0
+CC := clang-7
 endif
 ifeq "$(origin CXX)" "default"
-CXX := clang++-6.0
+CXX := clang++-7
 endif
+PATH := /usr/lib/llvm-7/bin:$(PATH)
 
 build:
-	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
+	-@bazel shutdown
 
 # Build only envoy - fast
 build_envoy:
-	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
+	-@bazel shutdown
 
 clean:
 	@bazel clean
 	@bazel shutdown
 
 test:
-	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) $(BAZEL_TARGETS)
+	-@bazel shutdown
 
 test_asan:
-	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	-@bazel shutdown
 
 test_tsan:
-	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	-@bazel shutdown
 
 check:
 	@script/check-license-headers
@@ -64,7 +68,7 @@ artifacts: build
 
 deb:
 	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
-	@bazel shutdown
+	-@bazel shutdown
 
 
 .PHONY: build clean test check artifacts

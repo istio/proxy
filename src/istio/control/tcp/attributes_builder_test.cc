@@ -14,7 +14,7 @@
  */
 
 #include "src/istio/control/tcp/attributes_builder.h"
-
+#include "google/protobuf/stubs/status.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
@@ -419,9 +419,9 @@ attributes {
 }
 )";
 
-void ClearContextTime(RequestContext *request) {
+void ClearContextTime(istio::mixer::v1::Attributes *attributes) {
   // Override timestamp with -
-  utils::AttributesBuilder builder(request->attributes);
+  utils::AttributesBuilder builder(attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
   builder.AddTimestamp(utils::AttributeName::kContextTime, time0);
 }
@@ -452,21 +452,20 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
         *name = "www.google.com";
         return true;
       }));
-  RequestContext request;
-  AttributesBuilder builder(&request);
+  istio::mixer::v1::Attributes attributes;
+  AttributesBuilder builder(&attributes);
   builder.ExtractCheckAttributes(&mock_data);
 
-  ClearContextTime(&request);
+  ClearContextTime(&attributes);
 
   std::string out_str;
-  TextFormat::PrintToString(*request.attributes, &out_str);
+  TextFormat::PrintToString(attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kCheckAttributes, &expected_attributes));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(*request.attributes, expected_attributes));
+  EXPECT_TRUE(MessageDifferencer::Equals(attributes, expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
@@ -487,6 +486,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   listval.mutable_list_value()->add_values()->set_string_value("c");
   (*struct_obj.mutable_fields())["list"] = listval;
   filter_metadata["foo.bar.com"] = struct_obj;
+  filter_metadata["istio.mixer"] = struct_obj;  // to be ignored
 
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .Times(4)
@@ -527,77 +527,80 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         info->duration = std::chrono::nanoseconds(4);
       }));
 
-  RequestContext request;
-  request.check_status = ::google::protobuf::util::Status(
+  istio::mixer::v1::Attributes attributes;
+  AttributesBuilder builder(&attributes);
+  auto check_status = ::google::protobuf::util::Status(
       ::google::protobuf::util::error::INVALID_ARGUMENT, "Invalid argument");
-  AttributesBuilder builder(&request);
 
   ReportData::ReportInfo last_report_info{0ULL, 0ULL,
                                           std::chrono::nanoseconds::zero()};
   // Verify first open report
-  builder.ExtractReportAttributes(&mock_data, ReportData::ConnectionEvent::OPEN,
+  builder.ExtractReportAttributes(check_status, &mock_data,
+                                  ReportData::ConnectionEvent::OPEN,
                                   &last_report_info);
-  ClearContextTime(&request);
+  ClearContextTime(&attributes);
 
   std::string out_str;
-  TextFormat::PrintToString(*request.attributes, &out_str);
+  TextFormat::PrintToString(attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_open_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kFirstReportAttributes,
                                           &expected_open_attributes));
-  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
-                                         expected_open_attributes));
+  EXPECT_TRUE(MessageDifferencer::Equals(attributes, expected_open_attributes));
   EXPECT_EQ(0, last_report_info.received_bytes);
   EXPECT_EQ(0, last_report_info.send_bytes);
 
   // Verify delta one report
-  builder.ExtractReportAttributes(
-      &mock_data, ReportData::ConnectionEvent::CONTINUE, &last_report_info);
-  ClearContextTime(&request);
+  builder.ExtractReportAttributes(check_status, &mock_data,
+                                  ReportData::ConnectionEvent::CONTINUE,
+                                  &last_report_info);
+  ClearContextTime(&attributes);
 
-  TextFormat::PrintToString(*request.attributes, &out_str);
+  TextFormat::PrintToString(attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_delta_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kDeltaOneReportAttributes,
                                           &expected_delta_attributes));
-  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
-                                         expected_delta_attributes));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(attributes, expected_delta_attributes));
   EXPECT_EQ(100, last_report_info.received_bytes);
   EXPECT_EQ(200, last_report_info.send_bytes);
 
   // Verify delta two report
-  builder.ExtractReportAttributes(
-      &mock_data, ReportData::ConnectionEvent::CONTINUE, &last_report_info);
-  ClearContextTime(&request);
+  builder.ExtractReportAttributes(check_status, &mock_data,
+                                  ReportData::ConnectionEvent::CONTINUE,
+                                  &last_report_info);
+  ClearContextTime(&attributes);
 
   out_str.clear();
-  TextFormat::PrintToString(*request.attributes, &out_str);
+  TextFormat::PrintToString(attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   expected_delta_attributes.Clear();
   ASSERT_TRUE(TextFormat::ParseFromString(kDeltaTwoReportAttributes,
                                           &expected_delta_attributes));
-  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
-                                         expected_delta_attributes));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(attributes, expected_delta_attributes));
   EXPECT_EQ(201, last_report_info.received_bytes);
   EXPECT_EQ(404, last_report_info.send_bytes);
 
   // Verify final report
-  builder.ExtractReportAttributes(
-      &mock_data, ReportData::ConnectionEvent::CLOSE, &last_report_info);
-  ClearContextTime(&request);
+  builder.ExtractReportAttributes(check_status, &mock_data,
+                                  ReportData::ConnectionEvent::CLOSE,
+                                  &last_report_info);
+  ClearContextTime(&attributes);
 
   out_str.clear();
-  TextFormat::PrintToString(*request.attributes, &out_str);
+  TextFormat::PrintToString(attributes, &out_str);
   GOOGLE_LOG(INFO) << "===" << out_str << "===";
 
   ::istio::mixer::v1::Attributes expected_final_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kReportAttributes,
                                           &expected_final_attributes));
-  EXPECT_TRUE(MessageDifferencer::Equals(*request.attributes,
-                                         expected_final_attributes));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(attributes, expected_final_attributes));
 }
 
 }  // namespace

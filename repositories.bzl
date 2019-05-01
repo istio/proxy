@@ -99,8 +99,14 @@ cc_library(
             actual = "@googletest_git//:googletest_prod",
         )
 
-ISTIO_API = "056eb85d96f09441775d79283c149d93fcbd0982"
-ISTIO_API_SHA256 = "df491c399f0a06bb2b85f43f5328c880c8e5cb5b3ce972efbd1ce137f83ebc52"
+#
+# To update these...
+# 1) find the ISTIO_API SHA you want in git
+# 2) wget https://github.com/istio/api/archive/ISTIO_API_SHA.tar.gz
+# 3) sha256sum ISTIO_API_SHA.tar.gz
+#
+ISTIO_API = "6b8d1849e7f44ef523b4442af69b57ddc960d38b"
+ISTIO_API_SHA256 = "25407969bfecaebcac06b8e4bf855793f6af254d6b132947ff30c292d2843ccd"
 
 def mixerapi_repositories(bind = True):
     BUILD = """

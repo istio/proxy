@@ -22,21 +22,15 @@
 namespace istio {
 namespace mixerclient {
 
-// The CheckResponseInfo holds response information in detail.
-struct CheckResponseInfo {
-  // Whether this check response is from cache.
-  bool is_check_cache_hit{false};
+// The CheckResponseInfo exposes policy and quota check details to the check
+// callbacks.
+class CheckResponseInfo {
+ public:
+  virtual ~CheckResponseInfo(){};
 
-  // Whether this quota response is from cache.
-  bool is_quota_cache_hit{false};
+  virtual const ::google::protobuf::util::Status& status() const = 0;
 
-  // The check and quota response status.
-  ::google::protobuf::util::Status response_status{
-      ::google::protobuf::util::Status::UNKNOWN};
-
-  // Routing directive (applicable if the status is OK)
-  ::istio::mixer::v1::RouteDirective route_directive{
-      ::istio::mixer::v1::RouteDirective::default_instance()};
+  virtual const ::istio::mixer::v1::RouteDirective& routeDirective() const = 0;
 };
 
 }  // namespace mixerclient

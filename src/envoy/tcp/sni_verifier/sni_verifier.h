@@ -20,7 +20,6 @@
 
 #include "common/common/logger.h"
 
-#include "openssl/bytestring.h"
 #include "openssl/ssl.h"
 
 namespace Envoy {

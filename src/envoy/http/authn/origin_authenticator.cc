@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/origin_authenticator.h"
+#include "absl/strings/match.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "src/envoy/http/authn/authn_utils.h"
 
@@ -44,9 +45,10 @@ bool OriginAuthenticator::run(Payload* payload) {
     return false;
   }
 
-  const char* request_path = nullptr;
+  absl::string_view request_path;
   if (filter_context()->headerMap().Path() != nullptr) {
-    request_path = filter_context()->headerMap().Path()->value().c_str();
+    request_path =
+        filter_context()->headerMap().Path()->value().getStringView();
     ENVOY_LOG(debug, "Got request path {}", request_path);
   } else {
     ENVOY_LOG(error,

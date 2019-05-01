@@ -32,8 +32,12 @@ class RequestHandler {
   // Perform a Check call. It will:
   // * extract downstream tcp connection attributes
   // * check config, make a Check call if necessary.
-  virtual ::istio::mixerclient::CancelFunc Check(
-      CheckData* check_data, ::istio::mixerclient::CheckDoneFunc on_done) = 0;
+  virtual void Check(CheckData* check_data,
+                     const ::istio::mixerclient::CheckDoneFunc& on_done) = 0;
+
+  virtual void ResetCancel() = 0;
+
+  virtual void CancelCheck() = 0;
 
   // Make report call.
   virtual void Report(ReportData* report_data,

@@ -353,7 +353,7 @@ TEST_P(IstioHttpIntegrationTest, NoJwt) {
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+  EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(IstioHttpIntegrationTest, BadJwt) {
@@ -371,7 +371,7 @@ TEST_P(IstioHttpIntegrationTest, BadJwt) {
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+  EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(IstioHttpIntegrationTest, RbacDeny) {
@@ -393,7 +393,7 @@ TEST_P(IstioHttpIntegrationTest, RbacDeny) {
   EXPECT_TRUE(response->complete());
 
   // Expecting error code 403 for RBAC deny.
-  EXPECT_STREQ("403", response->headers().Status()->value().c_str());
+  EXPECT_EQ("403", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(IstioHttpIntegrationTest, GoodJwt) {
@@ -432,7 +432,7 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
   sendTelemetryResponse();
 
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("200", response->headers().Status()->value().c_str());
+  EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
 
 }  // namespace

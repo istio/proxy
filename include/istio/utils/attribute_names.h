@@ -31,6 +31,11 @@ struct AttributeName {
   static const char kSourceUID[];
   static const char kDestinationPrincipal[];
 
+  static const char kDestinationServiceName[];
+  static const char kDestinationServiceUID[];
+  static const char kDestinationServiceHost[];
+  static const char kDestinationServiceNamespace[];
+
   static const char kRequestHeaders[];
   static const char kRequestHost[];
   static const char kRequestMethod[];

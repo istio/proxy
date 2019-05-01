@@ -19,8 +19,8 @@
 set -ex
 
 # Use clang for the release builds.
-CC=${CC:-clang-6.0}
-CXX=${CXX:-clang++-6.0}
+CC=${CC:-clang-7}
+CXX=${CXX:-clang++-7}
 
 # The bucket name to store proxy binary
 DST="gs://istio-build/proxy"
