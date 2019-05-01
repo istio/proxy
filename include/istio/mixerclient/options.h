@@ -59,8 +59,8 @@ struct CheckOptions {
 struct ReportOptions {
   // Default constructor.
   // Default to batch up to 100 reports or 1000 milliseconds (1 second).
-  ReportOptions() 
-      : max_batch_entries(DEFAULT_BATCH_REPORT_MAX_ENTRIES), 
+  ReportOptions()
+      : max_batch_entries(DEFAULT_BATCH_REPORT_MAX_ENTRIES),
         max_batch_time_ms(DEFAULT_BATCH_REPORT_MAX_TIME_MS) {}
 
   // Constructor.
