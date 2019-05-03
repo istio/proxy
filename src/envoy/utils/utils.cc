@@ -76,8 +76,10 @@ void FindHeaders(const Http::HeaderMap& header_map,
       [](const Http::HeaderEntry& header,
          void* context) -> Http::HeaderMap::Iterate {
         Context* ctx = static_cast<Context*>(context);
-        if (ctx->inclusives.count(header.key().c_str()) != 0) {
-          ctx->headers[header.key().c_str()] = header.value().c_str();
+        auto key = std::string(header.key().getStringView());
+        auto value = std::string(header.value().getStringView());
+        if (ctx->inclusives.count(key) != 0) {
+          ctx->headers[key] = value;
         }
         return Http::HeaderMap::Iterate::Continue;
       },
