@@ -86,14 +86,14 @@ Status EncodeStaticField(absl::any* value, MessageEncoder* messageEncoder,
     }                                                                    \
   } break
 
-    SET_FIELD(STRING, String, std::string);
-    SET_FIELD(INT32, Int32, int32);
-    SET_FIELD(INT64, Int64, int64);
-    SET_FIELD(UINT32, UInt32, uint32);
-    SET_FIELD(UINT64, UInt64, uint64);
-    SET_FIELD(DOUBLE, Double, double);
-    SET_FIELD(FLOAT, Float, float);
-    SET_FIELD(BOOL, Bool, bool);
+      SET_FIELD(STRING, String, std::string);
+      SET_FIELD(INT32, Int32, int32);
+      SET_FIELD(INT64, Int64, int64);
+      SET_FIELD(UINT32, UInt32, uint32);
+      SET_FIELD(UINT64, UInt64, uint64);
+      SET_FIELD(DOUBLE, Double, double);
+      SET_FIELD(FLOAT, Float, float);
+      SET_FIELD(BOOL, Bool, bool);
 #undef SET_FIELD
     default:
       return GetFieldEncodingError(field_descriptor);
