@@ -47,21 +47,6 @@ Status EncodeStaticField(absl::any* value, MessageEncoder* messageEncoder,
     return GetFieldEncodingError(field_descriptor);
   }
   switch (field_descriptor->cpp_type()) {
-    case FieldDescriptor::CPPTYPE_STRING: {
-      std::string* str = absl::any_cast<std::string>(value);
-      if (str == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedString(
-            messageEncoder->GetMessage(), field_descriptor, index, *str);
-      } else {
-        messageEncoder->GetReflection()->SetString(messageEncoder->GetMessage(),
-                                                   field_descriptor, *str);
-      }
-
-      break;
-    }
     case FieldDescriptor::CPPTYPE_ENUM: {
       auto status_or_value = GetEnumescriptorValue(value, field_descriptor);
       if (!status_or_value.ok()) {
@@ -85,117 +70,31 @@ Status EncodeStaticField(absl::any* value, MessageEncoder* messageEncoder,
 
       break;
     }
-    case FieldDescriptor::CPPTYPE_INT32: {
-      int32* int32_value = absl::any_cast<int32>(value);
-      if (int32_value == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedInt32(
-            messageEncoder->GetMessage(), field_descriptor, index,
-            *int32_value);
-      } else {
-        messageEncoder->GetReflection()->SetInt32(
-            messageEncoder->GetMessage(), field_descriptor, *int32_value);
-      }
+#define SET_FIELD(CPPTYPE, METHOD, LTYPE)                                \
+  case FieldDescriptor::CPPTYPE_##CPPTYPE: {                             \
+    LTYPE* LTYPE_value = absl::any_cast<LTYPE>(value);                   \
+    if (LTYPE_value == nullptr) {                                        \
+      return GetFieldEncodingError(field_descriptor);                    \
+    }                                                                    \
+    if (!field_descriptor->is_repeated()) {                              \
+      messageEncoder->GetReflection()->Set##METHOD(                      \
+          messageEncoder->GetMessage(), field_descriptor, *LTYPE_value); \
+    } else {                                                             \
+      messageEncoder->GetReflection()->SetRepeated##METHOD(              \
+          messageEncoder->GetMessage(), field_descriptor, index,         \
+          *LTYPE_value);                                                 \
+    }                                                                    \
+  } break
 
-      break;
-    }
-    case FieldDescriptor::CPPTYPE_INT64: {
-      int64* int64_value = absl::any_cast<int64>(value);
-      if (int64_value == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedInt64(
-            messageEncoder->GetMessage(), field_descriptor, index,
-            *int64_value);
-      } else {
-        messageEncoder->GetReflection()->SetInt64(
-            messageEncoder->GetMessage(), field_descriptor, *int64_value);
-      }
-
-      break;
-    }
-    case FieldDescriptor::CPPTYPE_UINT32: {
-      uint32* uint32_value = absl::any_cast<uint32>(value);
-      if (uint32_value == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedUInt32(
-            messageEncoder->GetMessage(), field_descriptor, index,
-            *uint32_value);
-      } else {
-        messageEncoder->GetReflection()->SetUInt32(
-            messageEncoder->GetMessage(), field_descriptor, *uint32_value);
-      }
-
-      break;
-    }
-    case FieldDescriptor::CPPTYPE_UINT64: {
-      uint64* uint64_value = absl::any_cast<uint64>(value);
-      if (uint64_value == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedUInt64(
-            messageEncoder->GetMessage(), field_descriptor, index,
-            *uint64_value);
-      } else {
-        messageEncoder->GetReflection()->SetUInt64(
-            messageEncoder->GetMessage(), field_descriptor, *uint64_value);
-      }
-
-      break;
-    }
-    case FieldDescriptor::CPPTYPE_DOUBLE: {
-      double* double_value = absl::any_cast<double>(value);
-      if (double_value == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedDouble(
-            messageEncoder->GetMessage(), field_descriptor, index,
-            *double_value);
-      } else {
-        messageEncoder->GetReflection()->SetDouble(
-            messageEncoder->GetMessage(), field_descriptor, *double_value);
-      }
-
-      break;
-    }
-    case FieldDescriptor::CPPTYPE_FLOAT: {
-      float* float_value = absl::any_cast<float>(value);
-      if (float_value == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedFloat(
-            messageEncoder->GetMessage(), field_descriptor, index,
-            *float_value);
-      } else {
-        messageEncoder->GetReflection()->SetFloat(
-            messageEncoder->GetMessage(), field_descriptor, *float_value);
-      }
-
-      break;
-    }
-    case FieldDescriptor::CPPTYPE_BOOL: {
-      bool* bool_value = absl::any_cast<bool>(value);
-      if (bool_value == nullptr) {
-        return GetFieldEncodingError(field_descriptor);
-      }
-      if (field_descriptor->is_repeated()) {
-        messageEncoder->GetReflection()->SetRepeatedBool(
-            messageEncoder->GetMessage(), field_descriptor, index, *bool_value);
-      } else {
-        messageEncoder->GetReflection()->SetBool(messageEncoder->GetMessage(),
-                                                 field_descriptor, *bool_value);
-      }
-
-      break;
-    }
+    SET_FIELD(STRING, String, std::string);
+    SET_FIELD(INT32, Int32, int32);
+    SET_FIELD(INT64, Int64, int64);
+    SET_FIELD(UINT32, UInt32, uint32);
+    SET_FIELD(UINT64, UInt64, uint64);
+    SET_FIELD(DOUBLE, Double, double);
+    SET_FIELD(FLOAT, Float, float);
+    SET_FIELD(BOOL, Bool, bool);
+#undef SET_FIELD
     default:
       return GetFieldEncodingError(field_descriptor);
   }
