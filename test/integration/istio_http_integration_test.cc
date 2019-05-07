@@ -24,6 +24,7 @@
 #include "include/istio/utils/attribute_names.h"
 #include "mixer/v1/mixer.pb.h"
 #include "src/envoy/utils/filter_names.h"
+#include "src/envoy/utils/trace_headers.h"
 #include "test/integration/http_protocol_integration.h"
 
 using ::google::protobuf::util::error::Code;
@@ -102,6 +103,7 @@ constexpr char kDestinationUID[] = "kubernetes://dest.pod";
 constexpr char kSourceUID[] = "kubernetes://src.pod";
 constexpr char kTelemetryBackend[] = "telemetry-backend";
 constexpr char kPolicyBackend[] = "policy-backend";
+constexpr char kZipkinBackend[] = "zipkin-backend";
 
 // Generates basic test request header.
 Http::TestHeaderMapImpl BaseRequestHeaders() {
@@ -227,6 +229,10 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
     fake_upstreams_.emplace_back(new FakeUpstream(
         0, FakeHttpConnection::Type::HTTP2, version_, timeSystem()));
     policy_upstream_ = fake_upstreams_.back().get();
+
+    fake_upstreams_.emplace_back(new FakeUpstream(
+        0, FakeHttpConnection::Type::HTTP2, version_, timeSystem()));
+    zipkin_upstream_ = fake_upstreams_.back().get();
   }
 
   void SetUp() override {
@@ -239,6 +245,10 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
 
     config_helper_.addConfigModifier(addCluster(kTelemetryBackend));
     config_helper_.addConfigModifier(addCluster(kPolicyBackend));
+    config_helper_.addConfigModifier(addCluster(kZipkinBackend));
+
+    config_helper_.addConfigModifier(addTracer());
+    config_helper_.addConfigModifier(addTracingRate());
 
     HttpProtocolIntegrationTest::initialize();
   }
@@ -247,6 +257,7 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
     cleanupConnection(fake_upstream_connection_);
     cleanupConnection(telemetry_connection_);
     cleanupConnection(policy_connection_);
+    cleanupConnection(zipkin_connection_);
   }
 
   ConfigHelper::ConfigModifierFunction addNodeMetadata() {
@@ -261,6 +272,33 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
                        kDestinationUID, kDestinationNamespace),
           meta);
       bootstrap.mutable_node()->mutable_metadata()->MergeFrom(meta);
+    };
+  }
+
+  ConfigHelper::ConfigModifierFunction addTracer() {
+    return [](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+      auto* http_tracing = bootstrap.mutable_tracing()->mutable_http();
+      http_tracing->set_name("envoy.zipkin");
+      auto* tracer_config_fields =
+          http_tracing->mutable_config()->mutable_fields();
+      (*tracer_config_fields)["collector_cluster"].set_string_value(
+          kZipkinBackend);
+      (*tracer_config_fields)["collector_endpoint"].set_string_value(
+          "/api/v1/spans");
+    };
+  }
+
+  ConfigHelper::HttpModifierFunction addTracingRate() {
+    return [](envoy::config::filter::network::http_connection_manager::v2::
+                  HttpConnectionManager& hcm) {
+      auto* tracing = hcm.mutable_tracing();
+      tracing->set_operation_name(
+          envoy::config::filter::network::http_connection_manager::v2::
+              HttpConnectionManager_Tracing_OperationName::
+                  HttpConnectionManager_Tracing_OperationName_EGRESS);
+      tracing->mutable_client_sampling()->set_value(100.0);
+      tracing->mutable_random_sampling()->set_value(100.0);
+      tracing->mutable_overall_sampling()->set_value(100.0);
     };
   }
 
@@ -329,6 +367,10 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   FakeUpstream* policy_upstream_{};
   FakeHttpConnectionPtr policy_connection_{};
   FakeStreamPtr policy_request_{};
+
+  FakeUpstream* zipkin_upstream_{};
+  FakeHttpConnectionPtr zipkin_connection_{};
+  FakeStreamPtr zipkin_request_{};
 };
 
 INSTANTIATE_TEST_CASE_P(
@@ -433,6 +475,41 @@ TEST_P(IstioHttpIntegrationTest, GoodJwt) {
 
   EXPECT_TRUE(response->complete());
   EXPECT_STREQ("200", response->headers().Status()->value().c_str());
+}
+
+TEST_P(IstioHttpIntegrationTest, TracingHeader) {
+  codec_client_ =
+      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response =
+      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kGoodToken));
+
+  ::istio::mixer::v1::CheckRequest check_request;
+  waitForPolicyRequest(&check_request);
+  sendPolicyResponse();
+
+  waitForNextUpstreamRequest(0);
+  // Send backend response.
+  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
+                                   true);
+  response->waitForEndStream();
+
+  ::istio::mixer::v1::ReportRequest report_request;
+  waitForTelemetryRequest(&report_request);
+  sendTelemetryResponse();
+
+  response->waitForEndStream();
+
+  EXPECT_TRUE(response->complete());
+  Http::TestHeaderMapImpl upstream_headers(upstream_request_->headers());
+  // Trace headers should be added into upstream request
+  EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kTraceID));
+  EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kSpanID));
+  EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kSampled));
+
+  // span id should be included in default words of report request
+  EXPECT_THAT(
+      report_request.default_words(),
+      ::testing::AllOf(Contains(upstream_headers.get_(Envoy::Utils::kSpanID))));
 }
 
 }  // namespace
