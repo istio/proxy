@@ -35,28 +35,22 @@ PATH := /usr/lib/llvm-7/bin:$(PATH)
 
 build:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
-	@bazel shutdown
 
 # Build only envoy - fast
 build_envoy:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
-	@bazel shutdown
 
 clean:
 	@bazel clean
-	@bazel shutdown
 
 test:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) $(BAZEL_TARGETS)
-	@bazel shutdown
 
 test_asan:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-	@bazel shutdown
 
 test_tsan:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-	@bazel shutdown
 
 check:
 	@script/check-license-headers
@@ -68,7 +62,6 @@ artifacts: build
 
 deb:
 	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
-	@bazel shutdown
 
 
 .PHONY: build clean test check artifacts
