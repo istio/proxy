@@ -71,16 +71,18 @@ jobs:
             - /home/circleci/.cache/bazel
   macos:
     macos:
-      xcode: "9.3.0"
+      xcode: "9.3.1"
     environment:
       - BAZEL_STARTUP_ARGS: "--output_base /Users/distiller/.cache/bazel"
-      - BAZEL_BUILD_ARGS: "--local_resources=12288,5,1"
-      - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all --local_resources=12288,5,1 --local_test_jobs=8"
+      - BAZEL_BUILD_ARGS: "--local_resources=12288,5,1 --incompatible_bzl_disallow_load_after_statement=false"
+      - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all --local_resources=12288,5,1 --local_test_jobs=8 --incompatible_bzl_disallow_load_after_statement=false"
       - CC: clang
       - CXX: clang++
     steps:
       - run: sudo ntpdate -vu time.apple.com
-      - run: brew install bazel cmake coreutils go libtool ninja wget
+      - run: brew tap bazelbuild/tap
+      - run: brew tap-pin bazelbuild/tap
+      - run: brew install bazelbuild/tap/bazel cmake coreutils go libtool ninja wget
       - checkout
       - restore_cache:
           keys:
