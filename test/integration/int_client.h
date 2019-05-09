@@ -25,6 +25,7 @@
 #include "envoy/http/codec.h"
 #include "envoy/network/address.h"
 #include "envoy/thread/thread.h"
+#include "exe/platform_impl.h"
 #include "fmt/printf.h"
 #include "test/test_common/test_time.h"
 #include "test/test_common/utility.h"
@@ -232,6 +233,8 @@ class Client : Envoy::Logger::Loggable<Envoy::Logger::Id::testing> {
   std::mutex connections_lock_;
   std::unordered_map<uint32_t, ClientConnectionPtr> connections_;
   uint32_t connection_counter_{0U};
+
+  Envoy::PlatformImpl platform_impl_;
 };
 
 class LoadGenerator : Envoy::Logger::Loggable<Envoy::Logger::Id::testing> {

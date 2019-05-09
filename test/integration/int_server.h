@@ -415,7 +415,7 @@ class Server : public Envoy::Network::FilterChainManager,
   Envoy::Http::CodecClient::Type http_type_;
   std::atomic<uint32_t> connection_counter_{0U};
 
-  PlatformImpl platform_impl_;
+  Envoy::PlatformImpl platform_impl_;
 };
 
 typedef std::unique_ptr<Server> ServerPtr;
