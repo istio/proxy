@@ -19,6 +19,11 @@ build:asan --define tcmalloc=disabled
 build:asan --build_tag_filters=-no_asan
 build:asan --test_tag_filters=-no_asan
 build:asan --define signal_trace=disabled
+build:asan --copt -DADDRESS_SANITIZER=1
+build:asan --copt -D__SANITIZE_ADDRESS__
+build:asan --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:check_initialization_order=true:strict_init_order=true:detect_odr_violation=1
+build:asan --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1
+build:asan --test_env=ASAN_SYMBOLIZER_PATH
 
 # Clang 5.0 ASAN
 build:clang-asan --define ENVOY_CONFIG_ASAN=1
@@ -43,6 +48,7 @@ build:clang-tsan --copt -fsanitize=thread
 build:clang-tsan --linkopt -fsanitize=thread
 build:clang-tsan --define tcmalloc=disabled
 build:clang-tsan --linkopt -fuse-ld=lld
+# Needed due to https://github.com/libevent/libevent/issues/777
 build:clang-tsan --copt -DEVENT__DISABLE_DEBUG_MODE
 
 # Clang 5.0 MSAN - broken today since we need to rebuild lib[std]c++ and external deps with MSAN
