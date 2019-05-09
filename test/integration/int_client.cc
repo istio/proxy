@@ -447,6 +447,7 @@ Client::Client(const std::string &name)
       stats_(),
       thread_(nullptr),
       time_system_(),
+      platform_impl_(),
       api_(platform_impl_.threadFactory(), stats_, time_system_,
            Envoy::Filesystem::fileSystemForTest()),
       dispatcher_{api_.allocateDispatcher()} {}
