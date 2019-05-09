@@ -27,7 +27,6 @@
 #include "common/network/raw_buffer_socket.h"
 #include "envoy/http/codec.h"
 #include "envoy/network/transport_socket.h"
-#include "envoy/test/test_common/thread_factory_for_test.h"
 #include "fmt/printf.h"
 #include "server/connection_handler_impl.h"
 #include "test/test_common/network_utility.h"
@@ -613,7 +612,7 @@ Server::Server(const std::string &name,
     : name_(name),
       stats_(),
       time_system_(),
-      api_(Envoy::Thread::threadFactoryForTest(), stats_, time_system_,
+      api_(platform_impl_.threadFactory(), stats_, time_system_,
            Envoy::Filesystem::fileSystemForTest()),
       dispatcher_(api_.allocateDispatcher()),
       connection_handler_(new Envoy::Server::ConnectionHandlerImpl(

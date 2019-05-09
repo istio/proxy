@@ -36,7 +36,7 @@ envoy_cc_test_library(
     deps = [
         "@envoy//source/server:server_lib",
         "@envoy//test/integration:http_protocol_integration_lib",
-    ],
+    ] + envoy_cc_platform_dep("@envoy//source/exe:platform_impl_lib"),
 )
 
 envoy_cc_test(
