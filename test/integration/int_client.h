@@ -227,14 +227,13 @@ class Client : Envoy::Logger::Loggable<Envoy::Logger::Id::testing> {
   Envoy::Stats::IsolatedStoreImpl stats_;
   Envoy::Thread::ThreadPtr thread_;
   Envoy::Event::TestRealTimeSystem time_system_;
+  Envoy::PlatformImpl platform_impl_;
   Envoy::Api::Impl api_;
   std::shared_ptr<Envoy::Event::Dispatcher> dispatcher_;
 
   std::mutex connections_lock_;
   std::unordered_map<uint32_t, ClientConnectionPtr> connections_;
   uint32_t connection_counter_{0U};
-
-  Envoy::PlatformImpl platform_impl_;
 };
 
 class LoadGenerator : Envoy::Logger::Loggable<Envoy::Logger::Id::testing> {

@@ -385,6 +385,7 @@ class Server : public Envoy::Network::FilterChainManager,
   std::string name_;
   Envoy::Stats::IsolatedStoreImpl stats_;
   Envoy::Event::TestRealTimeSystem time_system_;
+  Envoy::PlatformImpl platform_impl_;
   Envoy::Api::Impl api_;
   Envoy::Event::DispatcherPtr dispatcher_;
   Envoy::Network::ConnectionHandlerPtr connection_handler_;
@@ -414,8 +415,6 @@ class Server : public Envoy::Network::FilterChainManager,
 
   Envoy::Http::CodecClient::Type http_type_;
   std::atomic<uint32_t> connection_counter_{0U};
-
-  Envoy::PlatformImpl platform_impl_;
 };
 
 typedef std::unique_ptr<Server> ServerPtr;
