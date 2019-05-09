@@ -41,7 +41,7 @@ cc_proto_library(
 
 """
     http_archive(
-        name = "com_github_googleapis_googleapis",
+        name = "googleapis",
         build_file_content = GOOGLEAPIS_BUILD_FILE,
         strip_prefix = "googleapis-" + GOOGLEAPIS_SHA,
         url = "https://github.com/googleapis/googleapis/archive/" + GOOGLEAPIS_SHA + ".tar.gz",
@@ -51,9 +51,9 @@ cc_proto_library(
     if bind:
         native.bind(
             name = "rpc_status_proto",
-            actual = "@com_github_googleapis_googleapis//:rpc_status_proto",
+            actual = "@googleapis//:rpc_status_proto",
         )
         native.bind(
             name = "rpc_status_proto_genproto",
-            actual = "@com_github_googleapis_googleapis//:rpc_status_proto_genproto",
+            actual = "@googleapis//:rpc_status_proto_genproto",
         )

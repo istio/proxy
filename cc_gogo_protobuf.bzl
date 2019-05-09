@@ -59,7 +59,7 @@ cc_proto_library(
 )
 """
     http_archive(
-        name = "gogoproto_git",
+        name = "com_github_gogo_protobuf",
         strip_prefix = "protobuf-" + GOGO_PROTO_SHA,
         url = "https://github.com/gogo/protobuf/archive/" + GOGO_PROTO_SHA + ".tar.gz",
         sha256 = GOGO_PROTO_SHA256,
@@ -69,10 +69,10 @@ cc_proto_library(
     if bind:
         native.bind(
             name = "cc_gogoproto",
-            actual = "@gogoproto_git//:cc_gogoproto",
+            actual = "@com_github_gogo_protobuf//:cc_gogoproto",
         )
 
         native.bind(
             name = "cc_gogoproto_genproto",
-            actual = "@gogoproto_git//:cc_gogoproto_genproto",
+            actual = "@com_github_gogo_protobuf//:cc_gogoproto_genproto",
         )
