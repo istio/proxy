@@ -86,12 +86,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - macos_fastbuild-bazel-cache-v1-{{ checksum "WORKSPACE" }}
+            - macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
       - run: rm ~/.gitconfig
       - run: make build_envoy
       - run: make test
       - save_cache:
-          key: macos_fastbuild-bazel-cache-v1-{{ checksum "WORKSPACE" }}
+          key: macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /Users/distiller/.cache/bazel
 
