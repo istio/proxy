@@ -20,9 +20,9 @@
 #include "common/http/codec_client.h"
 #include "common/network/listen_socket_impl.h"
 #include "common/stats/isolated_store_impl.h"
+#include "exe/platform_impl.h"
 #include "test/test_common/test_time.h"
 #include "test/test_common/utility.h"
-#include "exe/platform_impl.h"
 
 namespace Mixer {
 namespace Integration {
