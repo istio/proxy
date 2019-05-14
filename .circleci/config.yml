@@ -81,6 +81,7 @@ jobs:
     steps:
       - run: sudo ntpdate -vu time.apple.com
       - run: brew install bazel cmake coreutils go libtool ninja wget
+      - run: brew switch bazel 0.23.2
       - checkout
       - restore_cache:
           keys:
