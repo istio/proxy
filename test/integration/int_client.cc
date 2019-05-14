@@ -447,8 +447,7 @@ Client::Client(const std::string &name)
       stats_(),
       thread_(nullptr),
       time_system_(),
-      api_(Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_,
-           Envoy::Filesystem::fileSystemForTest()),
+      api_(Envoy::Thread::threadFactoryForTest(), stats_, time_system_, Envoy::Filesystem::fileSystemForTest()),
       dispatcher_{api_.allocateDispatcher()} {}
 
 Client::~Client() {
