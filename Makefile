@@ -51,7 +51,7 @@ test_asan:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
 test_tsan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan --test_env='TSAN_OPTIONS="supressions=$(TOP)/tsan.suppressions"' -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan --copt -DEVENT__DISALBE_DEBUG_MODE --test_env='TSAN_OPTIONS="supressions=$(TOP)/tsan.suppressions"' -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
 check:
 	@script/check-license-headers
