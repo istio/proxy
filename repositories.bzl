@@ -15,7 +15,6 @@
 ################################################################################
 #
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load(":protobuf.bzl", "protobuf_repositories")
 load(":x_tools_imports.bzl", "go_x_tools_imports_repositories")
 
 GOOGLETEST = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0"
@@ -140,7 +139,7 @@ cc_proto_library(
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_gogo_protobuf//:gogo_proto_cc",
-        "//external:cc_wkt_protos",
+        "@com_google_protobuf//:cc_wkt_protos",
         "@googleapis//:rpc_status_protos",
     ],
 )
@@ -237,6 +236,5 @@ filegroup(
         )
 
 def mixerapi_dependencies():
-    protobuf_repositories(load_repo = True, bind = True)
     go_x_tools_imports_repositories()
     mixerapi_repositories()
