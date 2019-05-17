@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
+
 #include "common/common/base64.h"
 #include "common/protobuf/protobuf.h"
 #include "envoy/api/v2/core/base.pb.h"
@@ -77,9 +78,9 @@ const std::string kExchangedTokenPayloadNoOriginalClaims =
 
 class MockAuthenticatorBase : public AuthenticatorBase {
  public:
-  MockAuthenticatorBase(FilterContext* filter_context)
+  MockAuthenticatorBase(FilterContext *filter_context)
       : AuthenticatorBase(filter_context) {}
-  MOCK_METHOD1(run, bool(Payload*));
+  MOCK_METHOD1(run, bool(Payload *));
 };
 
 class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
@@ -108,7 +109,7 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
  protected:
   iaapi::MutualTls mtls_params_;
   iaapi::Jwt jwt_;
-  Payload* payload_;
+  Payload *payload_;
   Payload default_payload_;
 };
 
@@ -206,7 +207,7 @@ class ValidateJwtTest : public testing::Test,
  protected:
   iaapi::MutualTls mtls_params_;
   iaapi::Jwt jwt_;
-  Payload* payload_;
+  Payload *payload_;
   Payload default_payload_;
 };
 
@@ -348,7 +349,7 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
   // "{\"email\":\"user@example.com\",\"sub\":\"example-subject\",\"iss\":\"https://accounts.example.com\"}"
   // Therefore, raw_claims is skipped to avoid a flaky test.
   MessageDifferencer diff;
-  const google::protobuf::FieldDescriptor* field =
+  const google::protobuf::FieldDescriptor *field =
       expected_payload.jwt().GetDescriptor()->FindFieldByName("raw_claims");
   diff.IgnoreField(field);
   EXPECT_TRUE(diff.Compare(expected_payload, *payload_));

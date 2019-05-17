@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/utils/utils.h"
+
 #include "include/istio/utils/attributes_builder.h"
 #include "mixer/v1/attributes.pb.h"
 
@@ -36,21 +37,21 @@ const std::string kMetadataDestinationUID("uid");
 
 }  // namespace
 
-void ExtractHeaders(const Http::HeaderMap& header_map,
-                    const std::set<std::string>& exclusives,
-                    std::map<std::string, std::string>& headers) {
+void ExtractHeaders(const Http::HeaderMap &header_map,
+                    const std::set<std::string> &exclusives,
+                    std::map<std::string, std::string> &headers) {
   struct Context {
-    Context(const std::set<std::string>& exclusives,
-            std::map<std::string, std::string>& headers)
+    Context(const std::set<std::string> &exclusives,
+            std::map<std::string, std::string> &headers)
         : exclusives(exclusives), headers(headers) {}
-    const std::set<std::string>& exclusives;
-    std::map<std::string, std::string>& headers;
+    const std::set<std::string> &exclusives;
+    std::map<std::string, std::string> &headers;
   };
   Context ctx(exclusives, headers);
   header_map.iterate(
-      [](const Http::HeaderEntry& header,
-         void* context) -> Http::HeaderMap::Iterate {
-        Context* ctx = static_cast<Context*>(context);
+      [](const Http::HeaderEntry &header,
+         void *context) -> Http::HeaderMap::Iterate {
+        Context *ctx = static_cast<Context *>(context);
         auto key = std::string(header.key().getStringView());
         auto value = std::string(header.value().getStringView());
         if (ctx->exclusives.count(key) == 0) {
@@ -61,21 +62,21 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
       &ctx);
 }
 
-void FindHeaders(const Http::HeaderMap& header_map,
-                 const std::set<std::string>& inclusives,
-                 std::map<std::string, std::string>& headers) {
+void FindHeaders(const Http::HeaderMap &header_map,
+                 const std::set<std::string> &inclusives,
+                 std::map<std::string, std::string> &headers) {
   struct Context {
-    Context(const std::set<std::string>& inclusives,
-            std::map<std::string, std::string>& headers)
+    Context(const std::set<std::string> &inclusives,
+            std::map<std::string, std::string> &headers)
         : inclusives(inclusives), headers(headers) {}
-    const std::set<std::string>& inclusives;
-    std::map<std::string, std::string>& headers;
+    const std::set<std::string> &inclusives;
+    std::map<std::string, std::string> &headers;
   };
   Context ctx(inclusives, headers);
   header_map.iterate(
-      [](const Http::HeaderEntry& header,
-         void* context) -> Http::HeaderMap::Iterate {
-        Context* ctx = static_cast<Context*>(context);
+      [](const Http::HeaderEntry &header,
+         void *context) -> Http::HeaderMap::Iterate {
+        Context *ctx = static_cast<Context *>(context);
         auto key = std::string(header.key().getStringView());
         auto value = std::string(header.value().getStringView());
         if (ctx->inclusives.count(key) != 0) {
@@ -86,30 +87,31 @@ void FindHeaders(const Http::HeaderMap& header_map,
       &ctx);
 }
 
-bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
+bool GetIpPort(const Network::Address::Ip *ip, std::string *str_ip, int *port) {
   if (ip) {
     *port = ip->port();
     if (ip->ipv4()) {
       uint32_t ipv4 = ip->ipv4()->address();
-      *str_ip = std::string(reinterpret_cast<const char*>(&ipv4), sizeof(ipv4));
+      *str_ip =
+          std::string(reinterpret_cast<const char *>(&ipv4), sizeof(ipv4));
       return true;
     }
     if (ip->ipv6()) {
       absl::uint128 ipv6 = ip->ipv6()->address();
-      *str_ip = std::string(reinterpret_cast<const char*>(&ipv6), 16);
+      *str_ip = std::string(reinterpret_cast<const char *>(&ipv6), 16);
       return true;
     }
   }
   return false;
 }
 
-bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
-                       std::string* uid) {
+bool GetDestinationUID(const envoy::api::v2::core::Metadata &metadata,
+                       std::string *uid) {
   const auto filter_it = metadata.filter_metadata().find(kPerHostMetadataKey);
   if (filter_it == metadata.filter_metadata().end()) {
     return false;
   }
-  const Struct& struct_pb = filter_it->second;
+  const Struct &struct_pb = filter_it->second;
   const auto fields_it = struct_pb.fields().find(kMetadataDestinationUID);
   if (fields_it == struct_pb.fields().end()) {
     return false;
@@ -118,11 +120,11 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
   return true;
 }
 
-bool GetPrincipal(const Network::Connection* connection, bool peer,
-                  std::string* principal) {
+bool GetPrincipal(const Network::Connection *connection, bool peer,
+                  std::string *principal) {
   if (connection) {
-    Ssl::ConnectionInfo* ssl =
-        const_cast<Ssl::ConnectionInfo*>(connection->ssl());
+    Ssl::ConnectionInfo *ssl =
+        const_cast<Ssl::ConnectionInfo *>(connection->ssl());
     if (ssl != nullptr) {
       const std::vector<std::string> sans =
           (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
@@ -144,13 +146,13 @@ bool GetPrincipal(const Network::Connection* connection, bool peer,
   return false;
 }
 
-bool IsMutualTLS(const Network::Connection* connection) {
+bool IsMutualTLS(const Network::Connection *connection) {
   return connection != nullptr && connection->ssl() != nullptr &&
          connection->ssl()->peerCertificatePresented();
 }
 
-bool GetRequestedServerName(const Network::Connection* connection,
-                            std::string* name) {
+bool GetRequestedServerName(const Network::Connection *connection,
+                            std::string *name) {
   if (connection && !connection->requestedServerName().empty()) {
     *name = std::string(connection->requestedServerName());
     return true;
@@ -159,20 +161,20 @@ bool GetRequestedServerName(const Network::Connection* connection,
   return false;
 }
 
-Status ParseJsonMessage(const std::string& json, Message* output) {
+Status ParseJsonMessage(const std::string &json, Message *output) {
   ::google::protobuf::util::JsonParseOptions options;
   options.ignore_unknown_fields = true;
   return ::google::protobuf::util::JsonStringToMessage(json, output, options);
 }
 
 void CheckResponseInfoToStreamInfo(
-    const istio::mixerclient::CheckResponseInfo& check_response,
-    StreamInfo::StreamInfo& stream_info) {
+    const istio::mixerclient::CheckResponseInfo &check_response,
+    StreamInfo::StreamInfo &stream_info) {
   if (!check_response.status().ok()) {
     stream_info.setResponseFlag(
         StreamInfo::ResponseFlag::UnauthorizedExternalService);
     ProtobufWkt::Struct metadata;
-    auto& fields = *metadata.mutable_fields();
+    auto &fields = *metadata.mutable_fields();
     fields["status"].set_string_value(check_response.status().ToString());
     stream_info.setDynamicMetadata(istio::utils::kMixerMetadataKey, metadata);
   }
