@@ -351,6 +351,21 @@ attributes {
   }
 }
 attributes {
+  key: "request.headers"
+  value {
+    string_map_value {
+      entries {
+        key: "x-b3-traceid"
+        value: "abc"
+      }
+      entries {
+        key: "x-b3-spanid"
+        value: "def"
+      }
+    }
+  }
+}
+attributes {
   key: "response.headers"
   value {
     string_map_value {
@@ -765,6 +780,11 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         map["server"] = "my-server";
         return map;
       }));
+  EXPECT_CALL(mock_data, GetTracingHeaders(_))
+      .WillOnce(Invoke([](std::map<std::string, std::string> &m) {
+        m["x-b3-traceid"] = "abc";
+        m["x-b3-spanid"] = "def";
+      }));
   EXPECT_CALL(mock_data, GetReportInfo(_))
       .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->request_body_size = 100;
@@ -844,6 +864,11 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         map["content-length"] = "123456";
         map["server"] = "my-server";
         return map;
+      }));
+  EXPECT_CALL(mock_data, GetTracingHeaders(_))
+      .WillOnce(Invoke([](std::map<std::string, std::string> &m) {
+        m["x-b3-traceid"] = "abc";
+        m["x-b3-spanid"] = "def";
       }));
   EXPECT_CALL(mock_data, GetReportInfo(_))
       .WillOnce(Invoke([](ReportData::ReportInfo *info) {

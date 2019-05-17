@@ -91,6 +91,19 @@ class AttributesBuilder {
     }
   }
 
+  void InsertStringMap(const std::string &key,
+                       const std::map<std::string, std::string> &string_map) {
+    if (string_map.size() == 0) {
+      return;
+    }
+    auto entries = (*attributes_->mutable_attributes())[key]
+                       .mutable_string_map_value()
+                       ->mutable_entries();
+    for (const auto &map_it : string_map) {
+      (*entries)[map_it.first] = map_it.second;
+    }
+  }
+
   void AddProtoStructStringMap(const std::string &key,
                                const google::protobuf::Struct &struct_map) {
     if (struct_map.fields().empty()) {

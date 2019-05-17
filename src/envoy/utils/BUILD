@@ -57,6 +57,7 @@ envoy_cc_library(
         "header_update.h",
         "mixer_control.h",
         "stats.h",
+        "trace_headers.h",
         "utils.h",
     ],
     repository = "@envoy",
