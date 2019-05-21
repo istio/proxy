@@ -31,6 +31,14 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
+struct RcDetailsValues {
+  // The Mixer filter sent direct response.
+  const std::string MixerDirectResponse = "mixer_direct_response";
+  // The Mixer filter rejected the request.
+  const std::string MixerAccessDenied = "mixer_access_denied";
+};
+typedef ConstSingleton<RcDetailsValues> RcDetails;
+
 Filter::Filter(Control& control)
     : control_(control),
       state_(NotStarted),
@@ -171,7 +179,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
         [this](HeaderMap& headers) {
           UpdateHeaders(headers, route_directive_.response_header_operations());
         },
-        absl::nullopt);
+        absl::nullopt, RcDetails::get().MixerDirectResponse);
     return;
   }
 
@@ -181,7 +189,8 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
 
     int status_code = ::istio::utils::StatusHttpCode(status.error_code());
     decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
-                                       nullptr, absl::nullopt);
+                                       nullptr, absl::nullopt,
+                                       RcDetails::get().MixerAccessDenied);
     return;
   }
 
