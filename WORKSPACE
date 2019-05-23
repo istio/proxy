@@ -82,3 +82,16 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 go_rules_dependencies()
 
 go_register_toolchains(go_version = GO_VERSION)
+
+# TODO(bianpengyuan): remove this googleapis dep when upstream imports it in
+# https://github.com/envoyproxy/envoy/pull/5387
+load("//extensions/stackdriver/opencensus:opencensus.bzl", "telemetry_googleapis")
+
+telemetry_googleapis()
+
+load("@telemetry_googleapis//:repository_rules.bzl", "switched_rules_by_language")
+
+switched_rules_by_language(
+    name = "com_google_googleapis_imports",
+    cc = True,
+)
