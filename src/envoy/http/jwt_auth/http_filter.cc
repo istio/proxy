@@ -26,6 +26,12 @@
 namespace Envoy {
 namespace Http {
 
+struct RcDetailsValues {
+  // The jwt_auth filter rejected the request.
+  const std::string JwtAuthAccessDenied = "jwt_auth_access_denied";
+};
+typedef ConstSingleton<RcDetailsValues> RcDetails;
+
 JwtVerificationFilter::JwtVerificationFilter(Upstream::ClusterManager& cm,
                                              JwtAuth::JwtAuthStore& store)
     : jwt_auth_(cm, store) {}
@@ -63,7 +69,8 @@ void JwtVerificationFilter::onDone(const JwtAuth::Status& status) {
     Code code = Code(401);  // Unauthorized
     // return failure reason as message body
     decoder_callbacks_->sendLocalReply(code, JwtAuth::StatusToString(status),
-                                       nullptr, absl::nullopt);
+                                       nullptr, absl::nullopt,
+                                       RcDetails::get().JwtAuthAccessDenied);
     return;
   }
 

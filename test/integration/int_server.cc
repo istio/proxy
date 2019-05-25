@@ -118,7 +118,7 @@ class ServerStreamImpl : public ServerStream,
     }
 
     response_status_ = status;
-    response_body_ = Envoy::Grpc::Common::serializeBody(message);
+    response_body_ = Envoy::Grpc::Common::serializeToGrpcFrame(message);
     Envoy::Event::TimerCb send_grpc_response = [this, delay]() {
       ENVOY_LOG(
           debug,
@@ -612,7 +612,7 @@ Server::Server(const std::string &name,
     : name_(name),
       stats_(),
       time_system_(),
-      api_(Envoy::Thread::ThreadFactorySingleton::get(), stats_, time_system_,
+      api_(Envoy::Thread::threadFactoryForTest(), stats_, time_system_,
            Envoy::Filesystem::fileSystemForTest()),
       dispatcher_(api_.allocateDispatcher()),
       connection_handler_(new Envoy::Server::ConnectionHandlerImpl(

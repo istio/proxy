@@ -33,6 +33,12 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
+struct RcDetailsValues {
+  // The Istio AuthN filter rejected the request.
+  const std::string IstioAuthnAccessDenied = "istio_authn_access_denied";
+};
+typedef ConstSingleton<RcDetailsValues> RcDetails;
+
 AuthenticationFilter::AuthenticationFilter(const FilterConfig& filter_config)
     : filter_config_(filter_config) {}
 
@@ -109,7 +115,8 @@ void AuthenticationFilter::rejectRequest(const std::string& message) {
   }
   state_ = State::REJECTED;
   decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message, nullptr,
-                                     absl::nullopt);
+                                     absl::nullopt,
+                                     RcDetails::get().IstioAuthnAccessDenied);
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>

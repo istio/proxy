@@ -15,6 +15,7 @@
 ################################################################################
 #
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load(":x_tools_imports.bzl", "go_x_tools_imports_repositories")
 
 GOOGLETEST = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0"
 GOOGLETEST_SHA256 = "01508c8f47c99509130f128924f07f3a60be05d039cff571bb11d60bb11a3581"
@@ -105,8 +106,8 @@ cc_library(
 # 2) wget https://github.com/istio/api/archive/ISTIO_API_SHA.tar.gz
 # 3) sha256sum ISTIO_API_SHA.tar.gz
 #
-ISTIO_API = "6b8d1849e7f44ef523b4442af69b57ddc960d38b"
-ISTIO_API_SHA256 = "25407969bfecaebcac06b8e4bf855793f6af254d6b132947ff30c292d2843ccd"
+ISTIO_API = "820986f2947c3f83154cf3f157d6145bb584830b"
+ISTIO_API_SHA256 = "453bf2257291ccd831b6fbdef350cb8a7d8f80a68f0a83beb024dc7cd64a4b95"
 
 def mixerapi_repositories(bind = True):
     BUILD = """
@@ -137,9 +138,9 @@ cc_proto_library(
     protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "//external:cc_gogoproto",
-        "//external:cc_wkt_protos",
-        "//external:rpc_status_proto",
+        "@com_github_gogo_protobuf//:gogo_proto_cc",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@googleapis//:rpc_status_protos",
     ],
 )
 
@@ -168,7 +169,7 @@ cc_proto_library(
     protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "//external:cc_gogoproto",
+        "@com_github_gogo_protobuf//:gogo_proto_cc",
     ],
 )
 
@@ -181,7 +182,7 @@ cc_proto_library(
     protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "//external:cc_gogoproto",
+        "@com_github_gogo_protobuf//:gogo_proto_cc",
     ],
 )
 
@@ -194,7 +195,7 @@ cc_proto_library(
     protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "//external:cc_gogoproto",
+        "@com_github_gogo_protobuf//:gogo_proto_cc",
     ],
 )
 
@@ -234,14 +235,6 @@ filegroup(
             actual = "@mixerapi_git//:tcp_cluster_rewrite_config_cc_proto",
         )
 
-load(":protobuf.bzl", "protobuf_repositories")
-load(":cc_gogo_protobuf.bzl", "cc_gogoproto_repositories")
-load(":x_tools_imports.bzl", "go_x_tools_imports_repositories")
-load(":googleapis.bzl", "googleapis_repositories")
-
 def mixerapi_dependencies():
-    protobuf_repositories(load_repo = True, bind = True)
-    cc_gogoproto_repositories()
     go_x_tools_imports_repositories()
-    googleapis_repositories()
     mixerapi_repositories()
