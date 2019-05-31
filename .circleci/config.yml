@@ -82,10 +82,10 @@ jobs:
     steps:
       - run: sudo ntpdate -vu time.apple.com
       - run: brew install cmake coreutils go libtool ninja wget
+      - checkout
       - run: wget https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
       - run: chmod +x bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
-      - run: ./bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh --user
-      - checkout
+      - run: sudo ./bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
       - restore_cache:
           keys:
             - macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
