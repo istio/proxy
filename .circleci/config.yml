@@ -76,11 +76,15 @@ jobs:
       - BAZEL_STARTUP_ARGS: "--output_base /Users/distiller/.cache/bazel"
       - BAZEL_BUILD_ARGS: "--local_resources=12288,5,1"
       - BAZEL_TEST_ARGS: "--test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all --local_resources=12288,5,1 --local_test_jobs=8"
+      - BAZEL_VERSION: "0.25.0"
       - CC: clang
       - CXX: clang++
     steps:
       - run: sudo ntpdate -vu time.apple.com
-      - run: brew install bazel cmake coreutils go libtool ninja wget
+      - run: brew install cmake coreutils go libtool ninja wget
+      - run: wget https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
+      - run: chmod +x bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
+      - run: ./bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh --user
       - checkout
       - restore_cache:
           keys:
