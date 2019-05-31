@@ -45,5 +45,5 @@ GIT_SHA="$(git rev-parse --verify HEAD)"
 cd $ROOT
 
 echo 'Create and push artifacts'
-script/release-binary
+scripts/release-binary.sh
 ARTIFACTS_DIR="gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs" make artifacts

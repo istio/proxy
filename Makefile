@@ -53,16 +53,18 @@ test_asan:
 test_tsan:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
-check:
-	@script/check-license-headers
-	@script/check-repositories
-	@script/check-style
+lint:
+	@scripts/check_licenses.sh
+	@scripts/check-repositories.sh
+	@scripts/check-style.sh
 
 artifacts: build
-	@script/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
+	@scripts/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
 
 deb:
 	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
 
 
 .PHONY: build clean test check artifacts
+
+include Makefile.common.mk
