@@ -108,7 +108,11 @@ func newEnvoy(port uint16, confTmpl,baseID string, s *TestSetup) (*Envoy, error)
 		return nil, err
 	}
 
-	debugLevel := RegisterStringVar("ENVOY_DEBUG", "info", "").Get()
+
+	debugLevel, ok := os.LookupEnv("ENVOY_DEBUG")
+	if !ok {
+		debugLevel = "info"
+	}
 
 	args := []string{"-c", confPath,
 		"--drain-time-s", "1",
@@ -133,7 +137,7 @@ func newEnvoy(port uint16, confTmpl,baseID string, s *TestSetup) (*Envoy, error)
 	}
 	/* #nosec */
 	envoyPath := filepath.Join(GetDefaultIstioBin(), "envoy")
-	if path, exists := RegisterStringVar("ENVOY_PATH", "", "").Lookup(); exists {
+	if path, exists := os.LookupEnv("ENVOY_PATH"); exists {
 		envoyPath = path
 	}
 	cmd := exec.Command(envoyPath, args...)
