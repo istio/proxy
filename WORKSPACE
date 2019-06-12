@@ -47,7 +47,7 @@ http_archive(
     name = "envoy",
     sha256 = ENVOY_SHA256,
     strip_prefix = "envoy-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".tar.gz",
+    url = "https://github.com/istio/envoy/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
 # TODO(silentdai) Use bazel args to select envoy between local or http
