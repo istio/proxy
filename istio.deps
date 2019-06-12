@@ -9,7 +9,7 @@
 	{
 		"_comment": "",
 		"name": "ENVOY_SHA",
-		"repoName": "envoyproxy/envoy",
+		"repoName": "istio/envoy",
 		"file": "WORKSPACE",
 		"lastStableSHA": "829b905ca0fdc85233c3969247e53a62a52ac627"
 	}
