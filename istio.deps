@@ -9,8 +9,8 @@
 	{
 		"_comment": "",
 		"name": "ENVOY_SHA",
-		"repoName": "envoyproxy/envoy",
+		"repoName": "envoyproxy/envoy-wasm",
 		"file": "WORKSPACE",
-		"lastStableSHA": "829b905ca0fdc85233c3969247e53a62a52ac627"
+		"lastStableSHA": "72ac3212de661d2ef7c9210e78fedf76d5cbe9f0"
 	}
 ]
