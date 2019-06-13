@@ -112,8 +112,10 @@ Network::FilterStatus Filter::onData(Buffer::Instance &data, bool) {
                           .dynamicMetadata()
                           .filter_metadata());
 
-  return state_ == State::Calling ? Network::FilterStatus::StopIteration
-                                  : Network::FilterStatus::Continue;
+  return (state_ == State::Calling ||
+          filter_callbacks_->connection().state() != Network::Connection::State::Open)
+             ? Network::FilterStatus::StopIteration
+             : Network::FilterStatus::Continue;
 }
 
 // Network::WriteFilter
@@ -167,6 +169,7 @@ void Filter::completeCheck(const CheckResponseInfo &info) {
 void Filter::onEvent(Network::ConnectionEvent event) {
   if (filter_callbacks_->upstreamHost()) {
     ENVOY_LOG(debug, "Called tcp filter onEvent: {} upstream {}",
+              filter_callbacks_->connection(),
               enumToInt(event),
               filter_callbacks_->upstreamHost()->address()->asString());
   } else {
