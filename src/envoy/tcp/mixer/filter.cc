@@ -168,12 +168,14 @@ void Filter::completeCheck(const CheckResponseInfo &info) {
 // Network::ConnectionCallbacks
 void Filter::onEvent(Network::ConnectionEvent event) {
   if (filter_callbacks_->upstreamHost()) {
-    ENVOY_LOG(debug, "Called tcp filter onEvent: {} upstream {}",
+    ENVOY_CONN_LOG(debug, "Called tcp filter onEvent: {} upstream {}",
               filter_callbacks_->connection(),
               enumToInt(event),
               filter_callbacks_->upstreamHost()->address()->asString());
   } else {
-    ENVOY_LOG(debug, "Called tcp filter onEvent: {}", enumToInt(event));
+    ENVOY_CONN_LOG(debug, "Called tcp filter onEvent: {}", 
+              filter_callbacks_->connection(),
+              enumToInt(event));
   }
 
   if (event == Network::ConnectionEvent::RemoteClose ||
