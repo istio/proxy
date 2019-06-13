@@ -83,7 +83,7 @@ go_rules_dependencies()
 
 go_register_toolchains(go_version = GO_VERSION)
 
-# TODO(bianpengyuan): remove this googleapis dep when upstream imports it in
+# TODO(bianpengyuan): remove this googleapis dep when upstream envoy-wasm repo merges
 # https://github.com/envoyproxy/envoy/pull/5387
 load("//extensions/stackdriver/opencensus:opencensus.bzl", "telemetry_googleapis")
 
