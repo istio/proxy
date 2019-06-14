@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/tcp/mixer/filter.h"
+
 #include "common/common/enum_to_int.h"
 #include "extensions/filters/network/well_known_names.h"
 #include "src/envoy/utils/utils.h"
@@ -112,8 +113,10 @@ Network::FilterStatus Filter::onData(Buffer::Instance &data, bool) {
                           .dynamicMetadata()
                           .filter_metadata());
 
-  return state_ == State::Calling ? Network::FilterStatus::StopIteration
-                                  : Network::FilterStatus::Continue;
+  return (state_ == State::Calling || filter_callbacks_->connection().state() !=
+                                          Network::Connection::State::Open)
+             ? Network::FilterStatus::StopIteration
+             : Network::FilterStatus::Continue;
 }
 
 // Network::WriteFilter
@@ -166,11 +169,12 @@ void Filter::completeCheck(const CheckResponseInfo &info) {
 // Network::ConnectionCallbacks
 void Filter::onEvent(Network::ConnectionEvent event) {
   if (filter_callbacks_->upstreamHost()) {
-    ENVOY_LOG(debug, "Called tcp filter onEvent: {} upstream {}",
-              enumToInt(event),
-              filter_callbacks_->upstreamHost()->address()->asString());
+    ENVOY_CONN_LOG(debug, "Called tcp filter onEvent: {} upstream {}",
+                   filter_callbacks_->connection(), enumToInt(event),
+                   filter_callbacks_->upstreamHost()->address()->asString());
   } else {
-    ENVOY_LOG(debug, "Called tcp filter onEvent: {}", enumToInt(event));
+    ENVOY_CONN_LOG(debug, "Called tcp filter onEvent: {}",
+                   filter_callbacks_->connection(), enumToInt(event));
   }
 
   if (event == Network::ConnectionEvent::RemoteClose ||
