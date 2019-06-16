@@ -15,16 +15,9 @@
 ################################################################################
 #
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+WERROR = ["-Werror=return-type", "-Werror=switch"]
 
-TELEMETRY_GOOGLEAPIS_SHA="c39b7e880e6db2ce61704da2a55083ea17fdb14b"
-TELEMETRY_GOOGLEAPIS_SHA256="ee05b85961aa721671d85c111c6287e9667e69b616d97959588b1a991ef44a2d"
-TELEMETRY_GOOGLEAPIS_URLS=["https://github.com/googleapis/googleapis/archive/" + TELEMETRY_GOOGLEAPIS_SHA + ".tar.gz"]
-
-def telemetry_googleapis():
-    http_archive(
-        name = "telemetry_googleapis",
-        urls = TELEMETRY_GOOGLEAPIS_URLS,
-        sha256 = TELEMETRY_GOOGLEAPIS_SHA256,
-        strip_prefix = "googleapis-" + TELEMETRY_GOOGLEAPIS_SHA,
-    )
+DEFAULT_COPTS = [
+    "-DNULL_PLUGIN=1",
+    "-Iextensions/stackdriver",
+]

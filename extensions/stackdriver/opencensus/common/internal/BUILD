@@ -19,15 +19,17 @@ load(
     "envoy_cc_library",
 )
 
+load(
+    "//extensions/stackdriver/opencensus:copts.bzl",
+    "DEFAULT_COPTS",
+)
+
 licenses(["notice"])  # Apache 2.0
 
 envoy_cc_library(
     name = "hash_mix",
     hdrs = ["hash_mix.h"],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     visibility = ["//extensions/stackdriver:__subpackages__"],
 )
@@ -36,10 +38,7 @@ envoy_cc_library(
     name = "random_lib",
     srcs = ["random.cc"],
     hdrs = ["random.h"],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     visibility = ["//extensions/stackdriver:__subpackages__"],
     deps = [
@@ -50,10 +49,7 @@ envoy_cc_library(
 envoy_cc_library(
     name = "string_vector_hash",
     hdrs = ["string_vector_hash.h"],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     visibility = ["//extensions/stackdriver:__subpackages__"],
     deps = [":hash_mix"],

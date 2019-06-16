@@ -20,6 +20,11 @@ load(
     "envoy_cc_library",
 )
 
+load(
+    "//extensions/stackdriver/opencensus:copts.bzl",
+    "DEFAULT_COPTS",
+)
+
 envoy_cc_library(
     name = "context",
     srcs = [
@@ -30,10 +35,7 @@ envoy_cc_library(
         "context.h",
         "with_context.h",
     ],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     visibility = ["//extensions/stackdriver:__subpackages__"],
     deps = [

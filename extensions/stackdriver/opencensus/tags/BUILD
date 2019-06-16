@@ -19,6 +19,11 @@ load(
     "envoy_cc_library",
 )
 
+load(
+    "//extensions/stackdriver/opencensus:copts.bzl",
+    "DEFAULT_COPTS",
+)
+
 envoy_cc_library(
     name = "tags",
     srcs = [
@@ -29,10 +34,7 @@ envoy_cc_library(
         "tag_key.h",
         "tag_map.h",
     ],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     visibility = ["//extensions/stackdriver:__subpackages__"],
     deps = [
@@ -44,10 +46,7 @@ envoy_cc_library(
     name = "context_util",
     srcs = ["internal/context_util.cc"],
     hdrs = ["context_util.h"],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     visibility = ["//extensions/stackdriver:__subpackages__"],
     deps = [

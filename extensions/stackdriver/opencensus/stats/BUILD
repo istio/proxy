@@ -19,6 +19,11 @@ load(
     "envoy_cc_library",
 )
 
+load(
+    "//extensions/stackdriver/opencensus:copts.bzl",
+    "DEFAULT_COPTS",
+)
+
 envoy_cc_library(
     name = "stats",
     hdrs = [
@@ -27,10 +32,7 @@ envoy_cc_library(
         "stats.h",
         "stats_exporter.h",
     ],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     visibility = ["//extensions/stackdriver:__subpackages__"],
     deps = [
@@ -82,10 +84,7 @@ envoy_cc_library(
         "view_data.h",
         "view_descriptor.h",
     ],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     deps = [
         "//extensions/stackdriver/opencensus/common/internal:string_vector_hash",
@@ -98,10 +97,7 @@ envoy_cc_library(
     name = "recording",
     srcs = ["internal/recording.cc"],
     hdrs = ["recording.h"],
-    copts = [
-        "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
-    ],
+    copts = DEFAULT_COPTS,
     repository = "@envoy",
     deps = [
         ":core",
