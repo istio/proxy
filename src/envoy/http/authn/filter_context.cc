@@ -74,24 +74,20 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
 
 bool FilterContext::getJwtPayload(const std::string& issuer,
                                   std::string* payload) const {
+  return getJwtPayloadFromEnvoyJwtFilter(issuer, payload) ||
+         getJwtPayloadFromIstioJwtFilter(issuer, payload);
+}
+
+bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
+                                  std::string* payload) const {
   // Try getting the Jwt payload from Envoy jwt_authn filter.
-  // If not found, try getting the Jwt payload from Istio jwt-auth filter.
-  bool isUsingEnvoyJwtFilter = false;
   auto filter_it =
-      dynamic_metadata_.filter_metadata().find(Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+      dynamic_metadata_.filter_metadata().find(
+        Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
     ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
               Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
-    ENVOY_LOG(debug, "Now try fetching dynamic_metadata for filter {}",
-             Utils::IstioFilterName::kJwt);
-    filter_it = dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
-    if (filter_it == dynamic_metadata_.filter_metadata().end()) {
-      ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
-                Utils::IstioFilterName::kJwt);
-      return false;
-    }
-  } else {
-    isUsingEnvoyJwtFilter = true;
+    return false;
   }
 
   const auto& data_struct = filter_it->second;
@@ -101,20 +97,38 @@ bool FilterContext::getJwtPayload(const std::string& issuer,
     return false;
   }
 
-  // The Jwt payload from Istio jwt filter is serialized into JSON string, but the jwt payload
-  // from Envoy jwt filter is in protobuf Struct format.
-  if ((!isUsingEnvoyJwtFilter && entry_it->second.string_value().empty()) ||
-     (isUsingEnvoyJwtFilter && entry_it->second.struct_value().fields().empty())) {
+  if (entry_it->second.struct_value().fields().empty()) {
     return false;
   }
 
-  std::string extractedPayload = entry_it->second.string_value();
-  if (isUsingEnvoyJwtFilter) {
-    // Serialize the payload if needed.
-    Protobuf::util::MessageToJsonString(entry_it->second.struct_value(), &extractedPayload);
+  // Serialize the payload from Envoy jwt filter first before writing it to |payload|.
+  Protobuf::util::MessageToJsonString(entry_it->second.struct_value(), payload);
+  return true;
+}
+
+bool FilterContext::getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
+                                  std::string* payload) const {
+  // Try getting the Jwt payload from Istio jwt-auth filter.
+  auto filter_it =
+      dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
+  if (filter_it == dynamic_metadata_.filter_metadata().end()) {
+    ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
+              Utils::IstioFilterName::kJwt);
+    return false;
   }
 
-  *payload = extractedPayload;
+  const auto& data_struct = filter_it->second;
+
+  const auto entry_it = data_struct.fields().find(issuer);
+  if (entry_it == data_struct.fields().end()) {
+    return false;
+  }
+
+  if (entry_it->second.string_value().empty()) {
+    return false;
+  }
+
+  *payload = entry_it->second.string_value();
   return true;
 }
 

@@ -146,14 +146,9 @@ std::string MakeEnvoyJwtFilterConfig() {
       requires:
         requires_any:
           requirements: 
-          - requires_all:
-              requirements: 
-              - allow_missing_or_failed:
-              - provider_name: testing
-          - requires_all:
-              requirements: 
-              - allow_missing_or_failed:
-              - provider_name: testing-rbac
+          - provider_name: testing
+          - provider_name: testing-rbac
+          - allow_missing_or_failed:
   )";
   // From
   // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json
