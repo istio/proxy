@@ -216,7 +216,7 @@ void JwtAuthenticator::VerifyKey(const PubkeyCacheItem &issuer_item) {
   }
 
   // TODO: can we save as proto or json object directly?
-  // User the issuer as the entry key for simplicity. The forward_payload_header
+  // Use the issuer as the entry key for simplicity. The forward_payload_header
   // field can be removed or replace by a boolean (to make `save` is
   // conditional)
   callback_->savePayload(issuer_item.jwt_config().issuer(), jwt_->PayloadStr());

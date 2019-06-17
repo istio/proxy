@@ -22,6 +22,7 @@
 #include "envoy/http/filter.h"
 #include "envoy/network/connection.h"
 #include "src/istio/authn/context.pb.h"
+#include "extensions/filters/http/well_known_names.h"
 
 namespace Envoy {
 namespace Http {
