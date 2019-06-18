@@ -74,6 +74,7 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
 
 bool FilterContext::getJwtPayload(const std::string& issuer,
                                   std::string* payload) const {
+  // Prefer to use the jwt payload from Envoy jwt filter over the Istio jwt filter's one.
   return getJwtPayloadFromEnvoyJwtFilter(issuer, payload) ||
          getJwtPayloadFromIstioJwtFilter(issuer, payload);
 }
@@ -102,6 +103,8 @@ bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
   }
 
   // Serialize the payload from Envoy jwt filter first before writing it to |payload|.
+  // TODO (pitlv2109): Return protobuf Struct instead of string, once Istio jwt filter is removed.
+  // Also need to change how Istio authn filter processes the jwt payload.
   Protobuf::util::MessageToJsonString(entry_it->second.struct_value(), payload);
   return true;
 }
