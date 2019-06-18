@@ -74,7 +74,45 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
 
 bool FilterContext::getJwtPayload(const std::string& issuer,
                                   std::string* payload) const {
-  const auto filter_it =
+  // Prefer to use the jwt payload from Envoy jwt filter over the Istio jwt filter's one.
+  return getJwtPayloadFromEnvoyJwtFilter(issuer, payload) ||
+         getJwtPayloadFromIstioJwtFilter(issuer, payload);
+}
+
+bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
+                                  std::string* payload) const {
+  // Try getting the Jwt payload from Envoy jwt_authn filter.
+  auto filter_it =
+      dynamic_metadata_.filter_metadata().find(
+        Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+  if (filter_it == dynamic_metadata_.filter_metadata().end()) {
+    ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
+              Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+    return false;
+  }
+
+  const auto& data_struct = filter_it->second;
+
+  const auto entry_it = data_struct.fields().find(issuer);
+  if (entry_it == data_struct.fields().end()) {
+    return false;
+  }
+
+  if (entry_it->second.struct_value().fields().empty()) {
+    return false;
+  }
+
+  // Serialize the payload from Envoy jwt filter first before writing it to |payload|.
+  // TODO (pitlv2109): Return protobuf Struct instead of string, once Istio jwt filter is removed.
+  // Also need to change how Istio authn filter processes the jwt payload.
+  Protobuf::util::MessageToJsonString(entry_it->second.struct_value(), payload);
+  return true;
+}
+
+bool FilterContext::getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
+                                  std::string* payload) const {
+  // Try getting the Jwt payload from Istio jwt-auth filter.
+  auto filter_it =
       dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
     ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
@@ -83,10 +121,12 @@ bool FilterContext::getJwtPayload(const std::string& issuer,
   }
 
   const auto& data_struct = filter_it->second;
+
   const auto entry_it = data_struct.fields().find(issuer);
   if (entry_it == data_struct.fields().end()) {
     return false;
   }
+
   if (entry_it->second.string_value().empty()) {
     return false;
   }
