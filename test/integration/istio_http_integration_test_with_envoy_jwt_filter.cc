@@ -19,6 +19,7 @@
 // metadata) and that information can only be observed at the end (i.e from
 // request to mixer backends).
 
+#include "extensions/filters/http/well_known_names.h"
 #include "fmt/printf.h"
 #include "gmock/gmock.h"
 #include "include/istio/utils/attribute_names.h"
@@ -26,7 +27,6 @@
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/trace_headers.h"
 #include "test/integration/http_protocol_integration.h"
-#include "extensions/filters/http/well_known_names.h"
 
 using ::google::protobuf::util::error::Code;
 using ::testing::Contains;
@@ -163,7 +163,8 @@ std::string MakeEnvoyJwtFilterConfig() {
       "4WTiULmmHSGZHOjzwa8WtrtOQGsAFjIbno85jp6MnGGGZPYZbDAa_b3y5u-"
       "YpW7ypZrvD8BgtKVjgtQgZhLAGezMt0ua3DRrWnKqTZ0BJ_EyxOGuHJrLsn00fnMQ\"}]}";
 
-  return fmt::sprintf(kJwtFilterTemplate, Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn,
+  return fmt::sprintf(kJwtFilterTemplate,
+                      Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn,
                       StringUtil::escape(kJwksInline),
                       StringUtil::escape(kJwksInline));
 }
@@ -234,32 +235,34 @@ std::string MakeMixerFilterConfig() {
                       kPolicyBackend);
 }
 
-
-// checkJwtRawClaim finds the serialized jwt payload and check to see if all key-value pairs
-// from the jwt claim is there.
-// Returns false if it cannot find the serialized jwt payload or if any key-value pair does not
-// matched the expectation.
-bool checkJwtRawClaim(const ::google::protobuf::RepeatedPtrField<::std::string>& words) {
+// checkJwtRawClaim finds the serialized jwt payload and check to see if all
+// key-value pairs from the jwt claim is there. Returns false if it cannot find
+// the serialized jwt payload or if any key-value pair does not matched the
+// expectation.
+bool checkJwtRawClaim(
+    const ::google::protobuf::RepeatedPtrField<::std::string>& words) {
   for (auto& word : words) {
-    google::protobuf::Struct payload; 
-    Protobuf::util::Status status =  Protobuf::util::JsonStringToMessage(word.data(), &payload);
+    google::protobuf::Struct payload;
+    Protobuf::util::Status status =
+        Protobuf::util::JsonStringToMessage(word.data(), &payload);
     if (status.ok()) {
-      if ((word.find(kExpectedIss) == std::string::npos) || 
-          (word.find(kExpectedIat) == std::string::npos) || 
-          (word.find(kExpectedExp) == std::string::npos) || 
-          (word.find(kExpectedSub) == std::string::npos) || 
+      if ((word.find(kExpectedIss) == std::string::npos) ||
+          (word.find(kExpectedIat) == std::string::npos) ||
+          (word.find(kExpectedExp) == std::string::npos) ||
+          (word.find(kExpectedSub) == std::string::npos) ||
           (word.find(kExpectedFoo) == std::string::npos)) {
-        return false; 
+        return false;
       }
       return true;
     }
   }
-  return false; 
+  return false;
 }
 
 // This integration is exact the same as one in istio_http_integration_test.cc,
 // except this test uses Envoy jwt filter, rather than Istio jwt filter.
-class IstioHttpIntegrationTestWithEnvoyJwtFilter : public HttpProtocolIntegrationTest {
+class IstioHttpIntegrationTestWithEnvoyJwtFilter
+    : public HttpProtocolIntegrationTest {
  public:
   void createUpstreams() override {
     HttpProtocolIntegrationTest::createUpstreams();
@@ -488,12 +491,12 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, GoodJwt) {
   ::istio::mixer::v1::CheckRequest check_request;
   waitForPolicyRequest(&check_request);
   // Check request should see authn attributes.
-  EXPECT_THAT(check_request.attributes().words(),
-              ::testing::AllOf(
-                  Contains(kDestinationUID), Contains("10.0.0.1"),
-                  Contains(kExpectedPrincipal),
-                  Contains("testing@secure.istio.io"), Contains("sub"),
-                  Contains("iss"), Contains("foo"), Contains("bar")));
+  EXPECT_THAT(
+      check_request.attributes().words(),
+      ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
+                       Contains(kExpectedPrincipal),
+                       Contains("testing@secure.istio.io"), Contains("sub"),
+                       Contains("iss"), Contains("foo"), Contains("bar")));
   EXPECT_TRUE(checkJwtRawClaim(check_request.attributes().words()));
   sendPolicyResponse();
 
@@ -507,12 +510,12 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, GoodJwt) {
   ::istio::mixer::v1::ReportRequest report_request;
   waitForTelemetryRequest(&report_request);
   // Report request should also see the same authn attributes.
-  EXPECT_THAT(report_request.default_words(),
-              ::testing::AllOf(
-                  Contains(kDestinationUID), Contains("10.0.0.1"),
-                  Contains("testing@secure.istio.io"), Contains("sub"),
-                  Contains("iss"), Contains("foo"), Contains("bar")));
-	EXPECT_TRUE(checkJwtRawClaim(check_request.attributes().words()));
+  EXPECT_THAT(
+      report_request.default_words(),
+      ::testing::AllOf(Contains(kDestinationUID), Contains("10.0.0.1"),
+                       Contains("testing@secure.istio.io"), Contains("sub"),
+                       Contains("iss"), Contains("foo"), Contains("bar")));
+  EXPECT_TRUE(checkJwtRawClaim(check_request.attributes().words()));
   sendTelemetryResponse();
 
   EXPECT_TRUE(response->complete());

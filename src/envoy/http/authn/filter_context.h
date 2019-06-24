@@ -21,8 +21,8 @@
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "envoy/http/filter.h"
 #include "envoy/network/connection.h"
-#include "src/istio/authn/context.pb.h"
 #include "extensions/filters/http/well_known_names.h"
+#include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
 namespace Http {
@@ -76,12 +76,14 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   const HeaderMap& headerMap() const { return header_map_; }
 
  private:
-  // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt filter metadata
-  // and write to |payload|.
-  bool getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer, std::string* payload) const;
-  // Helper function for getJwtPayload(). It gets the jwt payload from Istio jwt filter metadata
-  // and write to |payload|.
-  bool getJwtPayloadFromIstioJwtFilter(const std::string& issuer, std::string* payload) const;
+  // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
+  // filter metadata and write to |payload|.
+  bool getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
+                                       std::string* payload) const;
+  // Helper function for getJwtPayload(). It gets the jwt payload from Istio jwt
+  // filter metadata and write to |payload|.
+  bool getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
+                                       std::string* payload) const;
 
   // Const reference to request info dynamic metadata. This provides data that
   // output from other filters, e.g JWT.

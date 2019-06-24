@@ -16,7 +16,7 @@ jobs:
       # To build docker containers or run tests in a docker
       - setup_remote_docker
       - run: rm ~/.gitconfig
-      - run: make check
+      - run: make lint
       - run: make deb
       - run: make test
       - save_cache:

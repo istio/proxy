@@ -51,7 +51,7 @@ cd $ROOT
 export BAZEL_TEST_ARGS="--test_output=errors"
 
 echo 'Code Check'
-make check
+make lint
 
 echo 'Bazel Build'
 make build
