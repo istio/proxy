@@ -43,8 +43,8 @@ class GrpcTransport : public Grpc::AsyncRequestCallbacks<ResponseType>,
                       const std::string& serialized_forward_attributes);
 
   GrpcTransport(Grpc::AsyncClient<RequestType, ResponseType> async_client,
-                const RequestType& request,
-                ResponseType* response, Tracing::Span& parent_span,
+                const RequestType& request, ResponseType* response,
+                Tracing::Span& parent_span,
                 const std::string& serialized_forward_attributes,
                 istio::mixerclient::DoneFunc on_done);
 

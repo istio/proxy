@@ -749,8 +749,8 @@ bool Server::createListenerFilterChain(
 }
 
 bool Server::createUdpListenerFilterChain(
-      Envoy::Network::UdpListenerFilterManager &,
-      Envoy::Network::UdpReadFilterCallbacks &) {
+    Envoy::Network::UdpListenerFilterManager &,
+    Envoy::Network::UdpReadFilterCallbacks &) {
   return true;
 }
 
