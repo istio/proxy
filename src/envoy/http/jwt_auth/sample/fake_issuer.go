@@ -22,12 +22,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"os"
+	"strconv"
 )
 
 var (
-	port = flag.Int("port", 8081, "default http port")
+	port   = flag.Int("port", 8081, "default http port")
 	pubkey = ""
 )
 
@@ -41,7 +41,7 @@ func main() {
 		fmt.Print(err)
 	}
 	pubkey = string(b) // convert content to a 'string'
-	
+
 	flag.Parse()
 	fmt.Printf("Listening on port %v\n", *port)
 

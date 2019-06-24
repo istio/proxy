@@ -15,11 +15,12 @@
 package client_test
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"net"
 	"testing"
 	"text/template"
-
-	"bytes"
 
 	"istio.io/proxy/test/envoye2e/env"
 )
@@ -27,38 +28,37 @@ import (
 // Stats in Client Envoy proxy.
 var expectedClientStats = map[string]int{
 	// http listener stats
-	"listener.127.0.0.1_{{.Ports.AppToClientProxyPort}}.http.inbound_http.downstream_rq_completed":     10,
-	"listener.127.0.0.1_{{.Ports.AppToClientProxyPort}}.http.inbound_http.downstream_rq_2xx":           10,
-	"listener.127.0.0.1_{{.Ports.ClientToServerProxyPort}}.http.outbound_http.downstream_rq_completed": 10,
-	"listener.127.0.0.1_{{.Ports.ClientToServerProxyPort}}.http.outbound_http.downstream_rq_2xx":       10,
+	"tcp.inbound_tcp.downstream_cx_total":  1,
+	"tcp.outbound_tcp.downstream_cx_total": 1,
 }
 
 // Stats in Server Envoy proxy.
 var expectedServerStats = map[string]int{
 	// http listener stats
-	"listener.127.0.0.1_{{.Ports.ProxyToServerProxyPort}}.http.inbound_http.downstream_rq_completed": 10,
-	"listener.127.0.0.1_{{.Ports.ProxyToServerProxyPort}}.http.inbound_http.downstream_rq_2xx":       10,
-	"listener.127.0.0.1_{{.Ports.ClientToAppProxyPort}}.http.outbound_http.downstream_rq_completed":  10,
-	"listener.127.0.0.1_{{.Ports.ClientToAppProxyPort}}.http.outbound_http.downstream_rq_2xx":        10,
+	"tcp.inbound_tcp.downstream_cx_total":  1,
+	"tcp.outbound_tcp.downstream_cx_total": 1,
 }
 
-func TestBasicFlow(t *testing.T) {
+func TestTcpBasicFlow(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.BasicFlowTest, t)
+	s.SetNoBackend(true)
+	s.SetStartTcpBackend(true)
+	s.ClientEnvoyTemplate = env.GetTcpClientEnvoyConfTmp()
+	s.ServerEnvoyTemplate = env.GetTcpServerEnvoyConfTmp()
 	if err := s.SetUpClientServerEnvoy(); err != nil {
 		t.Fatalf("Failed to setup test: %v", err)
 	}
 	defer s.TearDownClientServerEnvoy()
 
-	url := fmt.Sprintf("http://localhost:%d/echo", s.Ports().AppToClientProxyPort)
+	conn, _ := net.Dial("tcp", fmt.Sprintf("localhost:%d", s.Ports().AppToClientProxyPort))
+	// send to socket
+	fmt.Fprintf(conn, "world"+"\n")
+	// listen for reply
+	message, _ := bufio.NewReader(conn).ReadString('\n')
 
-	// Issues a GET echo request with 0 size body
-	tag := "OKGet"
-	for i := 0; i < 10; i++ {
-		if _, _, err := env.HTTPGet(url); err != nil {
-			t.Errorf("Failed in request %s: %v", tag, err)
-		}
+	if message != "hello world\n" {
+		t.Fatalf("Verification Failed. Expected: hello world. Got: %v", message)
 	}
-
 	s.VerifyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
 	s.VerifyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
 }

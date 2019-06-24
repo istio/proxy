@@ -25,21 +25,22 @@ import (
 
 // TestSetup store data for a test.
 type TestSetup struct {
-	t      *testing.T
-	epoch  int
-	ports  *Ports
+	t     *testing.T
+	epoch int
+	ports *Ports
 
 	envoy             *Envoy
 	clientEnvoy       *Envoy
 	serverEnvoy       *Envoy
 	backend           *HTTPServer
+	tcpBackend        *TCPServer
 	testName          uint16
 	stress            bool
 	noProxy           bool
 	noBackend         bool
-	noBackedn2        bool
 	disableHotRestart bool
 	checkDict         bool
+	startTcpBackend   bool
 
 	FiltersBeforeMixer string
 
@@ -71,8 +72,21 @@ type TestSetup struct {
 	// AccessLogPath is the access log path for Envoy
 	ServerAccessLogPath string
 
-	// expected source.uid attribute at the mixer gRPC metadata
-	mixerSourceUID string
+	// FiltersBeforeEnvoyRouterInAppToClient are the filters that come before envoy.router http filter in AppToClient
+	// listener.
+	FiltersBeforeEnvoyRouterInAppToClient string
+
+	// FiltersBeforeEnvoyRouterInClientToProxy are the filters that come before envoy.router http filter in
+	// ClientToProxy listener.
+	FiltersBeforeEnvoyRouterInClientToProxy string
+
+	// FiltersBeforeEnvoyRouterInProxyToServer are the filters that come before envoy.router http filter in
+	// ProxyToServer listener.
+	FiltersBeforeEnvoyRouterInProxyToServer string
+
+	// FiltersBeforeEnvoyRouterInClientToApp are the filters that come before envoy.router http filter in ClientToApp
+	// listener.
+	FiltersBeforeEnvoyRouterInClientToApp string
 
 	// Dir is the working dir for envoy
 	Dir string
@@ -80,9 +94,9 @@ type TestSetup struct {
 
 func NewClientServerEnvoyTestSetup(name uint16, t *testing.T) *TestSetup {
 	return &TestSetup{
-		t:             t,
-		ports:         NewPorts(name),
-		testName:      name,
+		t:                   t,
+		ports:               NewPorts(name),
+		testName:            name,
 		ClientAccessLogPath: "/tmp/envoy-client-access.log",
 		ServerAccessLogPath: "/tmp/envoy-server-access.log",
 	}
@@ -116,6 +130,35 @@ func (s *TestSetup) SetNoProxy(no bool) {
 // SetNoBackend set NoBackend flag
 func (s *TestSetup) SetNoBackend(no bool) {
 	s.noBackend = no
+}
+
+// SetNoBackend set NoBackend flag
+func (s *TestSetup) SetStartTcpBackend(yes bool) {
+	s.startTcpBackend = yes
+}
+
+// SetFiltersBeforeEnvoyRouterInAppToClient sets the configurations of the filters that come before envoy.router http
+// filter in AppToClient listener.
+func (s *TestSetup) SetFiltersBeforeEnvoyRouterInAppToClient(filters string) {
+	s.FiltersBeforeEnvoyRouterInAppToClient = filters
+}
+
+// SetFiltersBeforeEnvoyRouterInClientToProxy sets the configurations of the filters that come before envoy.router http
+// filter in ClientToProxy listener.
+func (s *TestSetup) SetFiltersBeforeEnvoyRouterInClientToProxy(filters string) {
+	s.FiltersBeforeEnvoyRouterInClientToProxy = filters
+}
+
+// SetFiltersBeforeEnvoyRouterInProxyToServer sets the configurations of the filters tthat come before envoy.router http
+// filter in ProxyToServer listener.
+func (s *TestSetup) SetFiltersBeforeEnvoyRouterInProxyToServer(filters string) {
+	s.FiltersBeforeEnvoyRouterInProxyToServer = filters
+}
+
+// SetFiltersBeforeEnvoyRouterInClientToApp sets the configurations of the filters that come before envoy.router http
+// filter in ClientToApp listener.
+func (s *TestSetup) SetFiltersBeforeEnvoyRouterInClientToApp(filters string) {
+	s.FiltersBeforeEnvoyRouterInClientToApp = filters
 }
 
 func (s *TestSetup) SetUpClientServerEnvoy() error {
@@ -158,6 +201,17 @@ func (s *TestSetup) SetUpClientServerEnvoy() error {
 			}
 		}
 	}
+	if s.startTcpBackend {
+		s.tcpBackend, err = NewTCPServer(s.ports.BackendPort, "hello")
+		if err != nil {
+			log.Printf("unable to create TCP server %v", err)
+		} else {
+			errCh := s.tcpBackend.Start()
+			if err = <-errCh; err != nil {
+				log.Fatalf("backend server start failed %v", err)
+			}
+		}
+	}
 
 	s.WaitClientEnvoyReady()
 	s.WaitServerEnvoyReady()
@@ -178,6 +232,9 @@ func (s *TestSetup) TearDownClientServerEnvoy() {
 
 	if s.backend != nil {
 		s.backend.Stop()
+	}
+	if s.tcpBackend != nil {
+		s.tcpBackend.Start()
 	}
 }
 

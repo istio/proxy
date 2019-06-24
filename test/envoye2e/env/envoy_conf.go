@@ -61,6 +61,7 @@ static_resources:
             config:
               path: {{.ClientAccessLogPath}}
           http_filters:
+{{.FiltersBeforeEnvoyRouterInAppToClient | indent 10 }}
           - name: envoy.router
           route_config:
             name: app-to-client-route
@@ -89,6 +90,7 @@ static_resources:
             config:
               path: {{.ClientAccessLogPath}}
           http_filters:
+{{.FiltersBeforeEnvoyRouterInClientToProxy | indent 10 }}
           - name: envoy.router
           route_config:
             name: client-to-proxy-route
@@ -143,6 +145,7 @@ static_resources:
             config:
               path: {{.ServerAccessLogPath}}
           http_filters:
+{{.FiltersBeforeEnvoyRouterInProxyToServer | indent 10 }}
           - name: envoy.router
           route_config:
             name: proxy-to-server-route
@@ -171,6 +174,7 @@ static_resources:
             config:
               path: {{.ServerAccessLogPath}}
           http_filters:
+{{.FiltersBeforeEnvoyRouterInClientToApp | indent 10 }}
           - name: envoy.router
           route_config:
             name: client-to-app-route
@@ -186,7 +190,7 @@ static_resources:
 `
 
 // CreateEnvoyConf create envoy config.
-func (s *TestSetup) CreateEnvoyConf(path, confTmpl  string) error {
+func (s *TestSetup) CreateEnvoyConf(path, confTmpl string) error {
 	if s.stress {
 		s.AccessLogPath = "/dev/null"
 	}
