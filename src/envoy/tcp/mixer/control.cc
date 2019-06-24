@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "include/istio/mixerclient/client.h"
 #include "src/envoy/tcp/mixer/control.h"
 #include "include/istio/utils/local_attributes.h"
 #include "src/envoy/utils/mixer_control.h"

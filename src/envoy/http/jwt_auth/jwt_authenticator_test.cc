@@ -625,7 +625,7 @@ TEST_F(JwtAuthenticatorTest, TestWrongCluster) {
   // Get returns nullptr
   EXPECT_CALL(mock_cm_, get(_))
       .WillOnce(Invoke(
-          [](const std::string &cluster) -> Upstream::ThreadLocalCluster * {
+          [](absl::string_view cluster) -> Upstream::ThreadLocalCluster * {
             EXPECT_EQ(cluster, "pubkey_cluster");
             return nullptr;
           }));

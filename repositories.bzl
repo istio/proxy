@@ -108,6 +108,8 @@ cc_library(
 #
 ISTIO_API = "820986f2947c3f83154cf3f157d6145bb584830b"
 ISTIO_API_SHA256 = "453bf2257291ccd831b6fbdef350cb8a7d8f80a68f0a83beb024dc7cd64a4b95"
+GOGOPROTO_RELEASE = "1.2.1"
+GOGOPROTO_SHA256 = "99e423905ba8921e86817607a5294ffeedb66fdd4a85efce5eb2848f715fdb3a"
 
 def mixerapi_repositories(bind = True):
     BUILD = """
@@ -127,75 +129,112 @@ def mixerapi_repositories(bind = True):
 #
 ################################################################################
 #
-load("@com_google_protobuf//:protobuf.bzl", "cc_proto_library")
+
+proto_library(
+    name = "mixer_api_protos_lib",
+    srcs = glob(
+        [
+            "mixer/v1/*.proto",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@googleapis//:rpc_status_protos_lib",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
 
 cc_proto_library(
     name = "mixer_api_cc_proto",
+    deps = [
+        ":mixer_api_protos_lib",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "mixer_client_config_proto_lib",
     srcs = glob(
-        ["mixer/v1/*.proto"],
+        [
+        "mixer/v1/config/client/*.proto",
+        ],
     ),
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_gogo_protobuf//:gogo_proto_cc",
-        "@com_google_protobuf//:cc_wkt_protos",
-        "@googleapis//:rpc_status_protos",
+        ":mixer_api_protos_lib",
+        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@com_google_protobuf//:duration_proto",
     ],
 )
 
 cc_proto_library(
     name = "mixer_client_config_cc_proto",
-    srcs = glob(
-        ["mixer/v1/config/client/*.proto"],
-    ),
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        ":mixer_api_cc_proto",
+        ":mixer_client_config_proto_lib",
     ],
 )
 
-cc_proto_library(
-    name = "authentication_policy_config_cc_proto",
+proto_library(
+    name = "authentication_policy_config_proto_lib",
     srcs = glob(
         ["envoy/config/filter/http/authn/v2alpha1/*.proto",
          "authentication/v1alpha1/*.proto",
          "common/v1alpha1/*.proto",
         ],
     ),
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_gogo_protobuf//:gogo_proto_cc",
+        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+    ],
+)
+
+cc_proto_library(
+    name = "authentication_policy_config_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":authentication_policy_config_proto_lib",
+    ],
+)
+
+proto_library(
+    name = "jwt_auth_config_proto_lib",
+    srcs = glob(
+        ["envoy/config/filter/http/jwt_auth/v2alpha1/*.proto", ],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@com_google_protobuf//:duration_proto",
     ],
 )
 
 cc_proto_library(
     name = "jwt_auth_config_cc_proto",
-    srcs = glob(
-        ["envoy/config/filter/http/jwt_auth/v2alpha1/*.proto", ],
-    ),
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_gogo_protobuf//:gogo_proto_cc",
+        ":jwt_auth_config_proto_lib",
+    ],
+)
+
+proto_library(
+    name = "tcp_cluster_rewrite_config_proto_lib",
+    srcs = glob(
+        ["envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1/*.proto", ],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
     ],
 )
 
 cc_proto_library(
     name = "tcp_cluster_rewrite_config_cc_proto",
-    srcs = glob(
-        ["envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1/*.proto", ],
-    ),
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_gogo_protobuf//:gogo_proto_cc",
+        ":tcp_cluster_rewrite_config_proto_lib",
     ],
 )
 
@@ -206,6 +245,28 @@ filegroup(
 )
 
 """
+    GOGOPROTO_BUILD = """
+proto_library(
+    name = "gogoprotobuf_protos_lib",
+    srcs = ["gogoproto/gogo.proto"],
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+    visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "gogo_proto_cc",
+    deps = [":gogoprotobuf_protos_lib"],
+    visibility = ["//visibility:public"],
+)
+
+"""
+    http_archive(
+        name = "gogoprotobuf_git",
+        build_file_content = GOGOPROTO_BUILD,
+        strip_prefix = "protobuf-" + GOGOPROTO_RELEASE,
+        url = "https://github.com/gogo/protobuf/archive/v" + GOGOPROTO_RELEASE + ".tar.gz",
+        sha256 = GOGOPROTO_SHA256,
+    )
     http_archive(
         name = "mixerapi_git",
         build_file_content = BUILD,

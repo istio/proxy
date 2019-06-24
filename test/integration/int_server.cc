@@ -748,6 +748,12 @@ bool Server::createListenerFilterChain(
   return true;
 }
 
+bool Server::createUdpListenerFilterChain(
+      Envoy::Network::UdpListenerFilterManager &,
+      Envoy::Network::UdpReadFilterCallbacks &) {
+  return true;
+}
+
 ClusterHelper::ClusterHelper(
     std::initializer_list<ServerCallbackHelper *> server_callbacks) {
   for (auto it = server_callbacks.begin(); it != server_callbacks.end(); ++it) {

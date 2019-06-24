@@ -31,7 +31,8 @@ const std::chrono::milliseconds kGrpcRequestTimeoutMs(5000);
 
 template <class RequestType, class ResponseType>
 GrpcTransport<RequestType, ResponseType>::GrpcTransport(
-    Grpc::AsyncClientPtr async_client, const RequestType &request,
+    Grpc::AsyncClient<RequestType, ResponseType> async_client,
+    const RequestType &request,
     ResponseType *response, Tracing::Span &parent_span,
     const std::string &serialized_forward_attributes,
     istio::mixerclient::DoneFunc on_done)

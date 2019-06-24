@@ -377,6 +377,10 @@ class Server : public Envoy::Network::FilterChainManager,
   virtual bool createListenerFilterChain(
       Envoy::Network::ListenerFilterManager &) override;
 
+  virtual bool createUdpListenerFilterChain(
+      Envoy::Network::UdpListenerFilterManager &,
+      Envoy::Network::UdpReadFilterCallbacks &) override;
+
  private:
   Server(const Server &) = delete;
   void operator=(const Server &) = delete;
