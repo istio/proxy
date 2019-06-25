@@ -139,7 +139,7 @@ proto_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@com_github_gogo_protobuf//:gogo_proto",
         "@googleapis//:rpc_status_protos_lib",
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
@@ -164,7 +164,7 @@ proto_library(
     visibility = ["//visibility:public"],
     deps = [
         ":mixer_api_protos_lib",
-        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@com_github_gogo_protobuf//:gogo_proto",
         "@com_google_protobuf//:duration_proto",
     ],
 )
@@ -187,7 +187,7 @@ proto_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@com_github_gogo_protobuf//:gogo_proto",
     ],
 )
 
@@ -206,7 +206,7 @@ proto_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@com_github_gogo_protobuf//:gogo_proto",
         "@com_google_protobuf//:duration_proto",
     ],
 )
@@ -226,7 +226,7 @@ proto_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "@gogoprotobuf_git//:gogoprotobuf_protos_lib",
+        "@com_github_gogo_protobuf//:gogo_proto",
     ],
 )
 
@@ -246,22 +246,52 @@ filegroup(
 
 """
     GOGOPROTO_BUILD = """
+load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
 proto_library(
-    name = "gogoprotobuf_protos_lib",
+    name = "gogo_proto",
     srcs = ["gogoproto/gogo.proto"],
     deps = ["@com_google_protobuf//:descriptor_proto"],
     visibility = ["//visibility:public"],
 )
 
-cc_proto_library(
-    name = "gogo_proto_cc",
-    deps = [":gogoprotobuf_protos_lib"],
+go_proto_library(
+    name = "descriptor_go_proto",
+    importpath = "github.com/golang/protobuf/protoc-gen-go/descriptor",
+    proto = "@com_google_protobuf//:descriptor_proto",
     visibility = ["//visibility:public"],
 )
 
+cc_proto_library(
+    name = "gogo_proto_cc",
+    deps = [":gogo_proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "gogo_proto_go",
+    importpath = "gogoproto",
+    proto = ":gogo_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":descriptor_go_proto",
+    ],
+)
+
+py_proto_library(
+    name = "gogo_proto_py",
+    srcs = [
+        "gogoproto/gogo.proto",
+    ],
+    default_runtime = "@com_google_protobuf//:protobuf_python",
+    protoc = "@com_google_protobuf//:protoc",
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:protobuf_python"],
+)
 """
     http_archive(
-        name = "gogoprotobuf_git",
+        name = "com_github_gogo_protobuf",
         build_file_content = GOGOPROTO_BUILD,
         strip_prefix = "protobuf-" + GOGOPROTO_RELEASE,
         url = "https://github.com/gogo/protobuf/archive/v" + GOGOPROTO_RELEASE + ".tar.gz",
