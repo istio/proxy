@@ -80,7 +80,7 @@ jobs:
       - CC: clang
       - CXX: clang++
     steps:
-      - run: sudo sntp -vu time.apple.com
+      - run: sudo sntp -sS time.apple.com
       - run: brew install cmake coreutils go libtool ninja wget
       - checkout
       - run: wget https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
