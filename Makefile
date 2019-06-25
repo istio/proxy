@@ -53,9 +53,13 @@ test_asan:
 test_tsan:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
+check:
+	@echo >&2 "Please use \"make lint\" instead."
+	@false
+
 lint:
-	@scripts/check_licenses.sh
-	@scripts/check-repositories.sh
+	@scripts/check_license.sh
+	@scripts/check-repository.sh
 	@scripts/check-style.sh
 
 artifacts: build
