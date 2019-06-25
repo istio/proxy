@@ -14,13 +14,13 @@ RUN sudo sh -c 'echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 
 
 RUN sudo apt-get update && \
     sudo apt-get -y install \
-    wget software-properties-common make python3 python-pip pkg-config \
+    wget software-properties-common make python python-pip pkg-config \
     zlib1g-dev bash-completion bc libtool automake zip time g++-6 gcc-6 \
     clang-7 clang-format-7 clang-tidy-7 lld-7 libc++-7-dev libc++abi-7-dev \
     rsync ninja-build
 
 # ~100M, depends on g++, zlib1g-dev, bash-completions
-RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.27.0/bazel_0.27.0-linux-x86_64.deb && \
+RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.26.0/bazel_0.26.0-linux-x86_64.deb && \
     sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
 
 
