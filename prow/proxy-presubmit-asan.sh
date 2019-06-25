@@ -36,19 +36,19 @@ if [ "${CI:-}" == 'bootstrap' ]; then
   ROOT=${GOPATH}/src/istio.io/proxy
   cd ${GOPATH}/src/istio.io/proxy
 
-  # Setup bazel.rc
-  cp "${ROOT}/tools/bazel.rc.ci" "${HOME}/.bazelrc"
-
   # Use the provided pull head sha, from prow.
   GIT_SHA="${PULL_PULL_SHA}"
 else
+  # Remove old bazel.rc.ci
+  rm -f "${HOME}/.bazelrc"
+
   # Use the current commit.
   GIT_SHA="$(git rev-parse --verify HEAD)"
 fi
 
 cd $ROOT
 
-export BAZEL_TEST_ARGS="--test_output=errors"
+export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_output=errors"
 
 echo 'Bazel Tests'
 make test_asan
