@@ -71,7 +71,7 @@ jobs:
             - /home/circleci/.cache/bazel
   macos:
     macos:
-      xcode: "9.3.0"
+      xcode: "10.2.1"
     environment:
       - BAZEL_STARTUP_ARGS: "--output_base /Users/distiller/.cache/bazel"
       - BAZEL_BUILD_ARGS: "--local_resources=12288,5,1"
