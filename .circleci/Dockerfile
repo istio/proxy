@@ -14,7 +14,7 @@ RUN sudo sh -c 'echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 
 
 RUN sudo apt-get update && \
     sudo apt-get -y install \
-    wget software-properties-common make python python-pip pkg-config \
+    wget software-properties-common make python3 python-pip pkg-config \
     zlib1g-dev bash-completion bc libtool automake zip time g++-6 gcc-6 \
     clang-7 clang-format-7 clang-tidy-7 lld-7 libc++-7-dev libc++abi-7-dev \
     rsync ninja-build
