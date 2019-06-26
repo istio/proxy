@@ -273,13 +273,7 @@ Jwt::Jwt(const std::string &jwt) {
     return;
   }
 
-  // Prepare EVP_MD object.
-  if (alg_ == "RS256") {
-    // may use
-    // EVP_sha384() if alg == "RS384" and
-    // EVP_sha512() if alg == "RS512"
-    md_ = EVP_sha256();
-  } else if (alg_ != "ES256") {
+  if (alg_ != "RS256" && alg_ != "ES256") {
     UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
     return;
   }
@@ -416,7 +410,7 @@ bool Verifier::Verify(const Jwt &jwt, const Pubkeys &pubkeys) {
       // Verification succeeded.
       return true;
     } else if ((pubkey->pem_format_ || pubkey->kty_ == "RSA") &&
-               VerifySignatureRSA(pubkey->evp_pkey_.get(), jwt.md_,
+               VerifySignatureRSA(pubkey->evp_pkey_.get(), EVP_sha256(),
                                   jwt.signature_, signed_data)) {
       // Verification succeeded.
       return true;

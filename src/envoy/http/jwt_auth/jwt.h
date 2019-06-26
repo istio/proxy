@@ -231,8 +231,6 @@ class Jwt : public WithStatus {
   int64_t Exp();
 
  private:
-  const EVP_MD* md_;
-
   Json::ObjectSharedPtr header_;
   std::string header_str_;
   std::string header_str_base64url_;

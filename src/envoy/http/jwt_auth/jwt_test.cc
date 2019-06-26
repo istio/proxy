@@ -187,6 +187,21 @@ class DatasetPem {
       "YjAxMGQ4MjYyYmUKM2U1MjMyMTE4MzUxY2U5M2VkNmY1NWJhYTFmNmU5M2NmMzVlZjJiNjRi"
       "MDYxNzU4YWJmYzdkNzUzYzAxMWVhNgo3NTg1N2MwMGY3YTE3Y2E3YWI2NGJlMWIyYjdkNzZl"
       "NWJlMThhZWFmZWY5NDU5MjAxY2RkY2NkZGZiZjczMjQ2";
+
+  /*
+   * jwt with header replaced by
+   * "{"alg":"ES256","typ":"JWT"}"
+   */
+  const std::string kJwtWithES256Alg =
+      "eyJhbGciOiJFUzI1NiIsImtpZCI6IjYyYTkzNTEyYzllZTRjN2Y4MDY3YjVhMjE2ZGFkZTI3"
+      "NjNkMzJhNDciLCJ0eXAiOiJKV1QifQ.eyJleHAiOjE1NzE0MTkyNTIsImZvbyI6ImJsYWJsY"
+      "SIsImlhdCI6MTU2MTQxOTI1MiwiaXNzIjoidGVzdGluZ0BzZWN1cmUuaXN0aW8uaW8iLCJzd"
+      "WIiOiJ0ZXN0aW5nQHNlY3VyZS5pc3Rpby5pbyJ9.JJnYan0ItEmTSPC9sETO5j46Ve0yQkC0"
+      "_4uEyfShbhDzejhVavlUdrL5sE2JEq9W-SYUhwGt2eIPMxKl1E1sQn0a_4f6iU6ZxhXnXU91"
+      "g2SB8-JF6wrc_I3iybrUrj39kxUZQNr-w8MRp1YBDMmKg1har98AeL0xHzdyF_gf3K57u-9_"
+      "yyBoymCjQraMQPWX-MuOI18i7w9MmwfIplxD3sGpnivAma1hSAJWfRFuz_rHst08cZOl_6ZK"
+      "8ineqqYL19lHLLJns3dzYIvVxdOdRs87Z5UwCyYjLlxupiLo6MHFBWNMFNgZ"
+      "is7wsUauWH47D-ga0JjcmVL4MRgyoP43mA";
 };
 
 class DatasetJwk {
@@ -549,6 +564,11 @@ TEST_F(JwtTestPem, AlgIsNotString) {
 TEST_F(JwtTestPem, InvalidAlg) {
   DoTest(ds.kJwtWithInvalidAlg, ds.kPublicKey, "pem", false,
          Status::ALG_NOT_IMPLEMENTED, nullptr);
+}
+
+TEST_F(JwtTestPem, Es256Alg) {
+  DoTest(ds.kJwtWithES256Alg, ds.kPublicKey, "pem", false,
+         Status::JWT_INVALID_SIGNATURE, nullptr);
 }
 
 TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldEqual) {
