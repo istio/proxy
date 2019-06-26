@@ -567,8 +567,8 @@ TEST_F(JwtTestPem, InvalidAlg) {
 }
 
 TEST_F(JwtTestPem, Es256Alg) {
- DoTest(ds.kJwtWithES256Alg, ds.kPublicKey, "pem", false,
-        Status::JWT_INVALID_SIGNATURE, nullptr);
+  DoTest(ds.kJwtWithES256Alg, ds.kPublicKey, "pem", false,
+         Status::JWT_INVALID_SIGNATURE, nullptr);
 }
 
 TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldEqual) {
