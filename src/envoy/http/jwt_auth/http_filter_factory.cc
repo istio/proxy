@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "common/protobuf/message_validator_impl.h"
 #include "envoy/registry/registry.h"
 #include "google/protobuf/util/json_util.h"
 #include "src/envoy/http/jwt_auth/auth_store.h"
@@ -32,7 +33,8 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
                                             const std::string&,
                                             FactoryContext& context) override {
     JwtAuthentication proto_config;
-    MessageUtil::loadFromJson(config.asJsonString(), proto_config);
+    MessageUtil::loadFromJson(config.asJsonString(), proto_config,
+                              ProtobufMessage::getNullValidationVisitor());
     return createFilter(proto_config, context);
   }
 

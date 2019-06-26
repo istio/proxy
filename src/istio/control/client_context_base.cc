@@ -65,9 +65,7 @@ CheckOptions GetCheckOptions(const TransportConfig& config) {
       options.network_fail_open = false;
     }
 
-    if (0 <= config.network_fail_policy().max_retry()) {
-      options.retries = config.network_fail_policy().max_retry();
-    }
+    options.retries = config.network_fail_policy().max_retry();
 
     if (config.network_fail_policy().has_base_retry_wait()) {
       options.base_retry_ms =
