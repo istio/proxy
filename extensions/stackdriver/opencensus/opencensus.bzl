@@ -18,9 +18,9 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def io_opencensus_cpp():
-    OPENCENSUS_CPP_SHA="a506cf846edca75b93e5457aca51c568378201be"
-    OPENCENSUS_CPP_SHA256="3bffa3b48b415f94b1a7bb36f7a0ccebdf29cd2281731864a90f80be50be776c"
-    OPENCENSUS_CPP_URL="https://github.com/census-instrumentation/opencensus-cpp/archive/" + OPENCENSUS_CPP_SHA + ".tar.gz"
+    OPENCENSUS_CPP_SHA = "a506cf846edca75b93e5457aca51c568378201be"
+    OPENCENSUS_CPP_SHA256 = "3bffa3b48b415f94b1a7bb36f7a0ccebdf29cd2281731864a90f80be50be776c"
+    OPENCENSUS_CPP_URL = "https://github.com/census-instrumentation/opencensus-cpp/archive/" + OPENCENSUS_CPP_SHA + ".tar.gz"
 
     http_archive(
         name = "io_opencensus_cpp",
