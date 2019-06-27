@@ -20,7 +20,7 @@ RUN sudo apt-get update && \
     rsync ninja-build
 
 # ~100M, depends on g++, zlib1g-dev, bash-completions
-RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.26.0/bazel_0.26.0-linux-x86_64.deb && \
+RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.27.0/bazel_0.27.0-linux-x86_64.deb && \
     sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
 
 
