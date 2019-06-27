@@ -10,6 +10,7 @@ startup --host_jvm_args=-Xmx512m
 build --workspace_status_command=tools/bazel_get_workspace_status
 # enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
 build --define path_normalization_by_default=true
+build --host_force_python=PY2
 
 # Basic ASAN/UBSAN that works for gcc
 build:asan --define ENVOY_CONFIG_ASAN=1

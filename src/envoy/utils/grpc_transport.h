@@ -42,7 +42,7 @@ class GrpcTransport : public Grpc::AsyncRequestCallbacks<ResponseType>,
                       Tracing::Span& parent_span,
                       const std::string& serialized_forward_attributes);
 
-  GrpcTransport(Grpc::AsyncClient<RequestType, ResponseType> async_client,
+  GrpcTransport(Grpc::RawAsyncClientPtr&& async_client,
                 const RequestType& request, ResponseType* response,
                 Tracing::Span& parent_span,
                 const std::string& serialized_forward_attributes,
