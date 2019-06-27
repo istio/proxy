@@ -173,12 +173,13 @@ void QuotaPrefetchImpl::Prefetch(int req_amount, bool use_not_granted, Tick t) {
 
   last_prefetch_time_ = t;
   ++inflight_count_;
-  transport_(req_amount,
-             [this, slot_id, req_amount](int resp_amount,
-                                         milliseconds expiration, Tick t1) {
-               OnResponse(slot_id, req_amount, resp_amount, expiration, t1);
-             },
-             t);
+  transport_(
+      req_amount,
+      [this, slot_id, req_amount](int resp_amount, milliseconds expiration,
+                                  Tick t1) {
+        OnResponse(slot_id, req_amount, resp_amount, expiration, t1);
+      },
+      t);
 }
 
 QuotaPrefetchImpl::Slot* QuotaPrefetchImpl::FindSlotById(SlotId id) {

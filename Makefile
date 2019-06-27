@@ -25,12 +25,12 @@ SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
 ifeq "$(origin CC)" "default"
-CC := clang-7
+CC := clang-8
 endif
 ifeq "$(origin CXX)" "default"
-CXX := clang++-7
+CXX := clang++-8
 endif
-PATH := /usr/lib/llvm-7/bin:$(PATH)
+PATH := /usr/lib/llvm-8/bin:$(PATH)
 
 # Removed 'bazel shutdown' as it could cause CircleCI to hang
 build:

@@ -43,9 +43,6 @@ class ServerStream {
 
   virtual ~ServerStream();
 
-  ServerStream(ServerStream &&) = default;
-  ServerStream &operator=(ServerStream &&) = default;
-
   /**
    * Send a HTTP header-only response and close the stream.
    *
@@ -108,9 +105,6 @@ class ServerConnection : public Envoy::Network::ReadFilter,
                    Envoy::Stats::Scope &scope);
 
   virtual ~ServerConnection();
-
-  ServerConnection(ServerConnection &&) = default;
-  ServerConnection &operator=(ServerConnection &&) = default;
 
   const std::string &name() const;
 
@@ -192,9 +186,6 @@ class ServerFilterChain : public Envoy::Network::FilterChain {
 
   virtual ~ServerFilterChain();
 
-  ServerFilterChain(ServerFilterChain &&) = default;
-  ServerFilterChain &operator=(ServerFilterChain &&) = default;
-
   //
   // Envoy::Network::FilterChain
   //
@@ -237,9 +228,6 @@ class LocalListenSocket : public Envoy::Network::TcpListenSocket {
 
   virtual ~LocalListenSocket();
 
-  LocalListenSocket(LocalListenSocket &&) = default;
-  LocalListenSocket &operator=(LocalListenSocket &&) = default;
-
  private:
   LocalListenSocket(const LocalListenSocket &) = delete;
   void operator=(const LocalListenSocket &) = delete;
@@ -258,9 +246,6 @@ class ServerCallbackHelper {
                        ServerCloseCallback close_callback = nullptr);
 
   virtual ~ServerCallbackHelper();
-
-  ServerCallbackHelper(ServerCallbackHelper &&) = default;
-  ServerCallbackHelper &operator=(ServerCallbackHelper &&) = default;
 
   uint32_t connectionsAccepted() const;
   uint32_t requestsReceived() const;
@@ -311,9 +296,6 @@ class Server : public Envoy::Network::FilterChainManager,
          Envoy::Http::CodecClient::Type http_type);
 
   virtual ~Server();
-
-  Server(Server &&) = default;
-  Server &operator=(Server &&) = default;
 
   void start(ServerAcceptCallback accept_callback,
              ServerRequestCallback request_callback,
