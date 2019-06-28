@@ -59,9 +59,6 @@ class ServerStreamImpl : public ServerStream,
               connection_.id(), id_);
   }
 
-  ServerStreamImpl(ServerStreamImpl &&) = default;
-  ServerStreamImpl &operator=(ServerStreamImpl &&) = default;
-
   //
   // ServerStream
   //
