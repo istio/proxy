@@ -435,6 +435,51 @@ class DatasetJwk {
       "jb20iLCJhdWQiOiJodHRwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9.zlFcET8Fi"
       "OYcKe30A7qOD4TIBvtb9zIVhDcM8pievKs1Te-UOBcklQxhwXMnRSSEBY4P0pfZ"
       "qWJT_V5IVrKrdQ";
+
+  const std::string kBadPublicKeyRSA =
+      "{\n"
+      " \"keys\": [\n"
+      " {\n"
+      " \"alg\": \"RS256\",\n"
+      " \"kty\": \"RSA\",\n"
+      " \"use\": \"sig\",\n"
+      " \"x5c\": "
+      "[\"MIIDjjCCAnYCCQDM2dGMrJDL3TANBgkqhkiG9w0BAQUFADCBiDEVMBMGA1UEAwwMd3d3L"
+      "mRlbGwuY29tMQ0wCwYDVQQKDARkZWxsMQ0wCwYDVQQLDARkZWxsMRIwEAYDVQQHDAlCYW5nY"
+      "WxvcmUxEjAQBgNVBAgMCUthcm5hdGFrYTELMAkGA1UEBhMCSU4xHDAaBgkqhkiG9w0BCQEWD"
+      "WFiaGlAZGVsbC5jb20wHhcNMTkwNjI1MDcwNjM1WhcNMjAwNjI0MDcwNjM1WjCBiDEVMBMGA"
+      "1UEAwwMd3d3LmRlbGwuY29tMQ0wCwYDVQQKDARkZWxsMQ0wCwYDVQQLDARkZWxsMRIwEAYDV"
+      "QQHDAlCYW5nYWxvcmUxEjAQBgNVBAgMCUthcm5hdGFrYTELMAkGA1UEBhMCSU4xHDAaBgkqh"
+      "kiG9w0BCQEWDWFiaGlAZGVsbC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBA"
+      "QDlE7W15NCXoIZX+"
+      "uE7HF0LTnfgBpaqoYyQFDmVUNEd0WWV9nX04c3iyxZSpoTsoUZktNd0CUyC8oVRg2xxdPxA2"
+      "aRVpNMwsDkuDnOZPNZZCS64QmMD7V5ebSAi4vQ7LH6zo9DCVwjzW10ZOZ3WHAyoKuNVGeb5w"
+      "2+xDQM1mFqApy6KB7M/b3KG7cqpZfPn9Ebd1Uyk+8WY/"
+      "IxJvb7EHt06Z+8b3F+LkRp7UI4ykkVkl3XaiBlG56ZyHfvH6R5Jy+"
+      "8P0vl4wtX86N6MS48TZPhGAoo2KwWsOEGxve005ZK6LkHwxMsOD98yvLM7AG0SBxVF8O8KeZ"
+      "/nbTP1oVSq6aEFAgMBAAEwDQYJKoZIhvcNAQEFBQADggEBAGEhT6xuZqyZb/"
+      "K6aI61RYy4tnR92d97H+zcL9t9/"
+      "8FyH3qIAjIM9+qdr7dLLnVcNMmwiKzZpsBywno72z5gG4l6/TicBIJfI2BaG9JVdU3/"
+      "wscPlqazwI/"
+      "d1LvIkWSzrFQ2VdTPSYactPzGWddlx9QKU9cIKcNPcWdg0S0q1Khu8kejpJ+"
+      "EUtSMc8OonFV99r1juFzVPtwGihuc6R7T/"
+      "GnWgYLmhoCCaQKdLWn7FIyQH2WZ10CI6as+"
+      "zKkylDkVnbsJYFabvbgRrNNl4RGXXm5D0lk9cwo1Srd28wEhi35b8zb1p0eTamS6qTpjHtc6"
+      "DpgZK3MavFVdaFfR9bEYpHc=\"],\n"
+      " \"n\": "
+      "\"5RO1teTQl6CGV/"
+      "rhOxxdC0534AaWqqGMkBQ5lVDRHdFllfZ19OHN4ssWUqaE7KFGZLTXdAlMgvKFUYNscXT8QN"
+      "mkVaTTMLA5Lg5zmTzWWQkuuEJjA+1eXm0gIuL0Oyx+s6PQwlcI81tdGTmd1hwMqCrjVRnm+"
+      "cNvsQ0DNZhagKcuigezP29yhu3KqWXz5/"
+      "RG3dVMpPvFmPyMSb2+xB7dOmfvG9xfi5Eae1COMpJFZJd12ogZRuemch37x+"
+      "keScvvD9L5eMLV/OjejEuPE2T4RgKKNisFrDhBsb3tNOWSui5B8MTLDg/"
+      "fMryzOwBtEgcVRfDvCnmf520z9aFUqumhBQ==\",\n"
+      " \"e\": \"AQAB\",\n"
+      " \"kid\": \"F46BB2F600BF3BBB53A324F12B290846\",\n"
+      " \"x5t\": \"F46BB2F600BF3BBB53A324F12B290846\"\n"
+      " }\n"
+      " ]\n"
+      "}";
 };
 
 namespace {
@@ -712,6 +757,11 @@ TEST_F(JwtTestJwks, InvalidPublicKeyEC) {
   invalid_pubkey.replace(12, 9, "kty\":\"RSA");
   DoTest(ds.kTokenEC, invalid_pubkey, "jwks", false, Status::KID_ALG_UNMATCH,
          nullptr);
+}
+
+TEST_F(JwtTestJwks, DebugSegFault) {
+  DoTest(ds.kJwtNoKid, ds.kBadPublicKeyRSA, "jwks", false,
+         Status::JWT_INVALID_SIGNATURE, nullptr);
 }
 
 }  // namespace JwtAuth
