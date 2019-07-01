@@ -82,6 +82,9 @@ class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
       if (status != Status::OK) {
         ENVOY_LOG(warn, "Invalid inline jwks for issuer: {}, jwks: {}",
                   jwt_config_.issuer(), inline_jwks);
+        throw EnvoyException(
+            fmt::format("Invalid inline jwks for issuer: {}, jwks: {}",
+                        jwt_config_.issuer(), inline_jwks));
       }
     }
   }
