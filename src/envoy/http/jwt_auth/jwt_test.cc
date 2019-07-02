@@ -761,7 +761,7 @@ TEST_F(JwtTestJwks, InvalidPublicKeyEC) {
 
 TEST_F(JwtTestJwks, DebugSegFault) {
   DoTest(ds.kJwtNoKid, ds.kBadPublicKeyRSA, "jwks", false,
-         Status::JWT_INVALID_SIGNATURE, nullptr);
+         Status::JWK_RSA_PUBKEY_PARSE_ERROR, nullptr);
 }
 
 }  // namespace JwtAuth

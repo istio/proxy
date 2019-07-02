@@ -537,7 +537,11 @@ void Pubkeys::ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json) {
 
   EvpPkeyGetter e;
   pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
-  keys_.push_back(std::move(pubkey));
+  if (e.GetStatus() == Status::OK) {
+    keys_.push_back(std::move(pubkey));
+  } else {
+    UpdateStatus(e.GetStatus());
+  }
 }
 
 void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
@@ -567,7 +571,11 @@ void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
 
   EvpPkeyGetter e;
   pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
-  keys_.push_back(std::move(pubkey));
+  if (e.GetStatus() == Status::OK) {
+    keys_.push_back(std::move(pubkey));
+  } else {
+    UpdateStatus(e.GetStatus());
+  }
 }
 
 std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,
