@@ -86,6 +86,30 @@ const std::string kPublicKey =
     "  \"e\": \"AQAB\","
     "  \"alg\": \"RS256\","
     "  \"kid\": \"b3319a147514df7ee5e4bcdee51350cc890cc89e\""
+    "},"
+    "{"
+    "  \"kty\": \"RSA\","
+    "  \"n\": "
+    "\"up97uqrF9MWOPaPkwSaBeuAPLOr9FKcaWGdVEGzQ4f3Zq5WKVZowx9TCBxmImNJ1q"
+    "mUi13pB8otwM_l5lfY1AFBMxVbQCUXntLovhDaiSvYp4wGDjFzQiYA-pUq8h6MUZBnhleYrk"
+    "U7XlCBwNVyN8qNMkpLA7KFZYz-486GnV2NIJJx_4BGa3HdKwQGxi2tjuQsQvao5W4xmSVaaE"
+    "WopBwMy2QmlhSFQuPUpTaywTqUcUq_6SfAHhZ4IDa_FxEd2c2z8gFGtfst9cY3lRYf-c_Zdb"
+    "oY3mqN9Su3-j3z5r2SHWlhB_LNAjyWlBGsvbGPlTqDziYQwZN4aGsqVKQb9Vw\","
+    "  \"e\": \"AQAB\","
+    "  \"alg\": \"RS384\","
+    "  \"kid\": \"98e3f54edc2042ed879047e9e077bb2d9824f952\""
+    "},"
+    "{"
+    "  \"kty\": \"RSA\","
+    "  \"n\": "
+    "\"up97uqrF9MWOPaPkwSaBeuAPLOr9FKcaWGdVEGzQ4f3Zq5WKVZowx9TCBxmImNJ1q"
+    "mUi13pB8otwM_l5lfY1AFBMxVbQCUXntLovhDaiSvYp4wGDjFzQiYA-pUq8h6MUZBnhleYrk"
+    "U7XlCBwNVyN8qNMkpLA7KFZYz-486GnV2NIJJx_4BGa3HdKwQGxi2tjuQsQvao5W4xmSVaaE"
+    "WopBwMy2QmlhSFQuPUpTaywTqUcUq_6SfAHhZ4IDa_FxEd2c2z8gFGtfst9cY3lRYf-c_Zdb"
+    "oY3mqN9Su3-j3z5r2SHWlhB_LNAjyWlBGsvbGPlTqDziYQwZN4aGsqVKQb9Vw\","
+    "  \"e\": \"AQAB\","
+    "  \"alg\": \"RS512\","
+    "  \"kid\": \"ba69c7f5dd954a5e89ba1a1be72c4b32a5bb6880\""
     "}]}";
 
 // Keep this same as issuer field in the config below.
@@ -205,7 +229,7 @@ const std::string kInvalidAudToken =
     "WFIPUGmPy3aM0TiF2oFOuuMxdPR3HNdSG7EWWRwoXv7n__jA";
 
 // Payload:
-// {"iss":"https://example.com","sub":"test@example.com","aud":"example_service","exp":2001001001}
+// {"iss":"https://example.com","sub":"test@example.com","exp":2001001001,"aud":"example_service"}
 const std::string kGoodToken =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUu"
     "Y29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIsImV4cCI6MjAwMTAwMTAwMSwiY"
@@ -221,6 +245,32 @@ const std::string kGoodTokenPayload =
     "{\"iss\":\"https://"
     "example.com\",\"sub\":\"test@example.com\",\"exp\":2001001001,"
     "\"aud\":\"example_service\"}";
+
+// Payload:
+// {"iss":"https://example.com","sub":"test@example.com","exp":2001001001,"aud":"example_service"}
+const std::string kGoodTokenRs384 =
+    "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
+    "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlL"
+    "mNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbXBsZV9zZXJ2aWNlIn0.hm"
+    "qJlnvohmHI3QzO_f79Jl6Af2JNlRYILtdY4bSnhCAHBUh3dVaAlkb7GZIXsGjzMRS"
+    "dQsIp2M9lhykBy9Bz-Mt5jmcfVHLQ80kdFa9sqT427Zt1pv4cybvUp32ZHiPznlPi"
+    "rZiRibnhn4kkX4IQetbc8ch4SW-YXPxh0Biv9rxX4Kwl8KaSVxtVliCnd6AHUorJS"
+    "varIXxb0uvgum6zhtNdqpjXiNMx4EX-tRE_IzdGNcF2IVIFew3vQC_9j5iQtp3j-p"
+    "BxBW4i2S0CZXkkT70QnOJRj7viNFGn8NfZrxxym_mkcQrmYhsq2BEJskIeECawqSH"
+    "hvETurikInzh3Cg";
+
+// Payload:
+// {"iss":"https://example.com","sub":"test@example.com","exp":2001001001,"aud":"example_service"}
+const std::string kGoodTokenRs512 =
+    "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9."
+    "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlL"
+    "mNvbSIsImV4cCI6MjAwMTAwMTAwMSwiYXVkIjoiZXhhbXBsZV9zZXJ2aWNlIn0.TP"
+    "4KzwU-V26xeGpbQ-kR0DZfFytSHFuM_anxHmoSFOy1YtU7w1sDQYS1V-dZ4R6sHvR"
+    "EbtGPzdU-Z75DXxnqyf9lY_8QQqO-ys8whInOMxJZPAV-VtX8QZWGcITGULGPCnZ3"
+    "bSGHiOKXkXFpiymcaia9wXEdl4ZIIX9KFANa-AkGExzBGR-8Xez5GoVIS6Ii8xdzH"
+    "PFplRgjmvYOt2rM4au9pP-eio04GaZVHCk0FbzXB4edGmKl359CWiBYZ2A74eWY8v"
+    "OZlE6wDqzbf4-xTHBP-d-dveWN1QSAka0mBxDgvIfTz2lxxH8cuo_O99nj4QYIR5B"
+    "Io1JSe02mS2wmnw";
 
 // Payload:
 // {"iss":"https://example.com","sub":"test@example.com","aud":"http://example_service/","exp":2001001001}
@@ -408,6 +458,40 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTPubkeyNoKid) {
   EXPECT_FALSE(headers.Authorization());
 
   EXPECT_EQ(mock_pubkey.called_count(), 1);
+}
+
+// Verifies that a JWT with alg=RS384 is verified successfully
+TEST_F(JwtAuthenticatorTest, TestOKJWTAlgRs384) {
+  MockUpstream mock_pubkey(mock_cm_, kPublicKey);
+
+  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenRs384}};
+
+  MockJwtAuthenticatorCallbacks mock_cb;
+  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
+    ASSERT_EQ(status, Status::OK);
+  }));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
+  auth_->Verify(headers, &mock_cb);
+
+  // Verify the token is removed.
+  EXPECT_FALSE(headers.Authorization());
+}
+
+// Verifies that a JWT with alg=RS512 is verified successfully
+TEST_F(JwtAuthenticatorTest, TestOKJWTAlgRs512) {
+  MockUpstream mock_pubkey(mock_cm_, kPublicKey);
+
+  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenRs512}};
+
+  MockJwtAuthenticatorCallbacks mock_cb;
+  EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
+    ASSERT_EQ(status, Status::OK);
+  }));
+  EXPECT_CALL(mock_cb, savePayload(kJwtIssuer, kGoodTokenPayload));
+  auth_->Verify(headers, &mock_cb);
+
+  // Verify the token is removed.
+  EXPECT_FALSE(headers.Authorization());
 }
 
 // Verifies that a JWT with aud: http://example_service/ is matched to
