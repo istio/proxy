@@ -464,7 +464,8 @@ TEST_F(JwtAuthenticatorTest, TestOkJWTPubkeyNoKid) {
 TEST_F(JwtAuthenticatorTest, TestOKJWTAlgRs384) {
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenRs384}};
+  auto headers =
+      TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenRs384}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
@@ -481,7 +482,8 @@ TEST_F(JwtAuthenticatorTest, TestOKJWTAlgRs384) {
 TEST_F(JwtAuthenticatorTest, TestOKJWTAlgRs512) {
   MockUpstream mock_pubkey(mock_cm_, kPublicKey);
 
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenRs512}};
+  auto headers =
+      TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodTokenRs512}};
 
   MockJwtAuthenticatorCallbacks mock_cb;
   EXPECT_CALL(mock_cb, onDone(_)).WillOnce(Invoke([](const Status &status) {
