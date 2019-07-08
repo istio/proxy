@@ -71,6 +71,7 @@ class JwtAuthStoreFactory : public Logger::Loggable<Logger::Id::config> {
       : config_(std::make_shared<const ::istio::envoy::config::filter::http::
                                      jwt_auth::v2alpha1::JwtAuthentication>(
             config)),
+        dummy_store_(config_),
         tls_(context.threadLocal().allocateSlot()) {
     tls_->set([config = this->config_](Event::Dispatcher&)
                   -> ThreadLocal::ThreadLocalObjectSharedPtr {
@@ -86,6 +87,8 @@ class JwtAuthStoreFactory : public Logger::Loggable<Logger::Id::config> {
  private:
   // The auth config.
   JwtAuthenticationConstSharedPtr config_;
+  // A dummy Auth store to verify config is valid
+  JwtAuthStore dummy_store_;
   // Thread local slot to store per-thread auth store
   ThreadLocal::SlotPtr tls_;
 };
