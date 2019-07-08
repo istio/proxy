@@ -26,17 +26,27 @@ static_resources:
   - name: client
     connect_timeout: 5s
     type: STATIC
-    hosts:
-    - socket_address:
-        address: 127.0.0.1
-        port_value: {{.Ports.ClientToServerProxyPort}}
+    load_assignment:
+      cluster_name: client
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{.Ports.ClientToServerProxyPort}}
   - name: server
     connect_timeout: 5s
     type: STATIC
-    hosts:
-    - socket_address:
-        address: 127.0.0.1
-        port_value: {{.Ports.ProxyToServerProxyPort}}
+    load_assignment:
+      cluster_name: server
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{.Ports.ProxyToServerProxyPort}}
   listeners:
   - name: app-to-client
     address:
@@ -82,17 +92,27 @@ static_resources:
   - name: backend
     connect_timeout: 5s
     type: STATIC
-    hosts:
-    - socket_address:
-        address: 127.0.0.1
-        port_value: {{.Ports.BackendPort}}
+    load_assignment:
+      cluster_name: backend
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{.Ports.BackendPort}}
   - name: server
     connect_timeout: 5s
     type: STATIC
-    hosts:
-    - socket_address:
-        address: 127.0.0.1
-        port_value: {{.Ports.ClientToAppProxyPort}}
+    load_assignment:
+      cluster_name: server
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{.Ports.ClientToAppProxyPort}}
   listeners:
   - name: proxy-to-server
     address:

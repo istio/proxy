@@ -95,7 +95,7 @@ func Serve(l net.Listener, prefix string) error {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			return fmt.Errorf("failed to accept connection, err:", err)
+			return fmt.Errorf("failed to accept connection, err:%v", err)
 		}
 
 		// pass an accepted connection to a handler goroutine
