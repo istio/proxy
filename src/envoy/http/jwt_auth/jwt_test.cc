@@ -41,6 +41,34 @@ class DatasetPem {
       "N09hdvlCtAF87Fu1qqfwEQ93A-J7m08bZJoyIPcNmTcYGHwfMR4-lcI5cC_93C_"
       "5BGE1FHPLOHpNghLuM6-rhOtgwZc9ywupn_bBK3QzuAoDnYwpqQhgQL_CdUD_bSHcmWFkw";
 
+  // JWT with
+  // Header:  {"alg":"RS384","typ":"JWT"}
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058}
+  const std::string kJwtRs384 =
+      "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0.NvinWcCVmBAmbK5FnAPt8gMBSWOU9kjTEIxcDqJBzjB6nKGj"
+      "sUYF05RC69F4POrJKLl3ak9LQUFPAwn732xEavbQunl-MreZCtRKrTX2xdwod0_u3gvSakcc"
+      "N9kEkbXMqJ5DhFUH0Viv7oVQtbRzwB7hr0ip-Yi8RAbrKfk8qDX0bT2TOlqzbLDnIp3M5btX"
+      "vO1GfOirIiz0YDfzEmSbkhZAnz4D062LWwyfIfM1ZhFusSyYBaNjib1vBfjIGsiYW-ot9dRY"
+      "X0YZP1YF-XxalyUGalD6pn-5nOkd86KL8ch0OkxBpHc1XqBrrsw0Pjax6Sv-nYYUb9qN6p69"
+      "q9YstA";
+
+  // JWT with
+  // Header:  {"alg":"RS512","typ":"JWT"}
+  // Payload:
+  // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058}
+  const std::string kJwtRs512 =
+      "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9."
+      "eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSIs"
+      "ImV4cCI6MTUwMTI4MTA1OH0.BaBGWBS5ZhOX7o0LlAYqnnS-rME0E_eAjnCzPolSY5oh-Mic"
+      "WFN3B1AW-iCeAW3fHf7GhlbshKoybLaj7Cj87m9T-w015WGyIBIwWKQVjfT62RJ1hrKzoyM5"
+      "flVbwMPG70vqV9xfOTpZ4iZ9QomAut4yMDSBTINeeQLRVckYUN-IQVLU-bMnnvabsIQeNxhs"
+      "sG6S61cOD234mGdgkxoaZhHDprvEtAaYAuuKsIlaNIbp8r5hYFv09SMjAELlneObiMI3m5IG"
+      "yx3cF3odgb8PPLRBEOxD6HwJzmvbYmkjmgLuE5vb5lLEacyn2I1ko7e-Hlzvp_ezST0wknz5"
+      "wadrCQ";
+
   // {"iss":"https://example.com","sub":"test@example.com","exp":1501281058,
   // aud: [aud1, aud2] }
   // signature part is invalid.
@@ -522,6 +550,16 @@ class JwtTestPem : public JwtTest {
 TEST_F(JwtTestPem, OK) {
   auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
   DoTest(ds.kJwt, ds.kPublicKey, "pem", true, Status::OK, payload);
+}
+
+TEST_F(JwtTestPem, OKWithAlgRs384) {
+  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  DoTest(ds.kJwtRs384, ds.kPublicKey, "pem", true, Status::OK, payload);
+}
+
+TEST_F(JwtTestPem, OKWithAlgRs512) {
+  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  DoTest(ds.kJwtRs512, ds.kPublicKey, "pem", true, Status::OK, payload);
 }
 
 TEST_F(JwtTestPem, MultiAudiences) {
