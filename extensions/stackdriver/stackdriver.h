@@ -30,7 +30,6 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
-using namespace Plugin;
 #endif
 
 namespace Stackdriver {
@@ -46,14 +45,14 @@ class StackdriverRootContext : public RootContext {
  public:
   StackdriverRootContext(uint32_t id, StringView root_id)
       : RootContext(id, root_id) {}
-  ~StackdriverRootContext() {}
+  ~StackdriverRootContext() = default;
 
-  void onConfigure(std::unique_ptr<WasmData> /* configuration */) override;
+  void onConfigure(std::unique_ptr<WasmData> configuration) override;
   void onStart() override;
   void onTick() override;
 
  private:
-  opencensus::exporters::stats::StackdriverOptions GetStackdriverOptions();
+  opencensus::exporters::stats::StackdriverOptions getStackdriverOptions();
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

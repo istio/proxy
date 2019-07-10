@@ -43,19 +43,20 @@ constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
 
 void StackdriverRootContext::onConfigure(
-    std::unique_ptr<WasmData> /* configuration */) {
+    std::unique_ptr<WasmData> configuration) {
   // TODO: Add config for Stackdriver plugin, such as reporter kind.
+  UNREFERENCED_PARAMETER(configuration);
 
   // Only register exporter once in main thread when initiating base WASM
   // module.
   auto registered = getSharedData(kStackdriverExporter);
-  if (registered->view().size() != 0) {
+  if (registered->view().empty()) {
     return;
   }
   setSharedData(kStackdriverExporter, kExporterRegistered);
 
   opencensus::exporters::stats::StackdriverExporter::Register(
-      GetStackdriverOptions());
+      getStackdriverOptions());
 
   // TODO: Register opencensus measures, tags and views.
 }
@@ -72,7 +73,7 @@ void StackdriverRootContext::onTick(){
 #endif
 }
 
-StackdriverOptions StackdriverRootContext::GetStackdriverOptions() {
+StackdriverOptions StackdriverRootContext::getStackdriverOptions() {
   StackdriverOptions options;
   // TODO: Fill in project ID and monitored resource labels either from node
   // metadata or from metadata server.
