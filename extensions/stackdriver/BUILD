@@ -33,7 +33,6 @@ envoy_cc_library(
     ],
     copts = [
         "-DNULL_PLUGIN=1",
-        "-Iextensions/stackdriver",
     ],
     repository = "@envoy",
     deps = [
