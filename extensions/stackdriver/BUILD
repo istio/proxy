@@ -31,9 +31,6 @@ envoy_cc_library(
     hdrs = [
         "stackdriver.h",
     ],
-    copts = [
-        "-DNULL_PLUGIN=1",
-    ],
     repository = "@envoy",
     deps = [
         "@envoy//source/extensions/common/wasm/null:null_lib",

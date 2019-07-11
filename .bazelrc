@@ -72,3 +72,6 @@ build:release-symbol -c opt
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
+
+# Compile all extension plugin as native
+common --copt -DNULL_PLUGIN
