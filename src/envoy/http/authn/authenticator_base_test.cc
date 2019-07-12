@@ -180,9 +180,9 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
   EXPECT_EQ(payload_->x509().user(), "spiffe:foo");
 }
 
-INSTANTIATE_TEST_CASE_P(ValidateX509Tests, ValidateX509Test,
-                        testing::Values(iaapi::MutualTls::STRICT,
-                                        iaapi::MutualTls::PERMISSIVE));
+INSTANTIATE_TEST_SUITE_P(ValidateX509Tests, ValidateX509Test,
+                         testing::Values(iaapi::MutualTls::STRICT,
+                                         iaapi::MutualTls::PERMISSIVE));
 
 class ValidateJwtTest : public testing::Test,
                         public Logger::Loggable<Logger::Id::filter> {
