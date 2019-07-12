@@ -373,7 +373,7 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   FakeStreamPtr zipkin_request_{};
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Protocols, IstioHttpIntegrationTest,
     testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
     HttpProtocolIntegrationTest::protocolTestParamsToString);

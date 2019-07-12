@@ -417,7 +417,7 @@ class IstioHttpIntegrationTestWithEnvoyJwtFilter
   FakeStreamPtr zipkin_request_{};
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Protocols, IstioHttpIntegrationTestWithEnvoyJwtFilter,
     testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
     HttpProtocolIntegrationTest::protocolTestParamsToString);

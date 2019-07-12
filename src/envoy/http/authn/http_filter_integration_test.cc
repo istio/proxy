@@ -79,7 +79,7 @@ std::string MakeHeaderToMetadataConfig() {
 
 typedef HttpProtocolIntegrationTest AuthenticationFilterIntegrationTest;
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Protocols, AuthenticationFilterIntegrationTest,
     testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
     HttpProtocolIntegrationTest::protocolTestParamsToString);

@@ -303,7 +303,7 @@ class ExchangedTokenIntegrationTest : public HttpProtocolIntegrationTest {
   FakeStreamPtr policy_request_{};
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Protocols, ExchangedTokenIntegrationTest,
     testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
     HttpProtocolIntegrationTest::protocolTestParamsToString);
