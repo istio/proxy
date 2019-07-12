@@ -434,8 +434,8 @@ TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
                                       filter_context_.authenticationResult()));
 }
 
-INSTANTIATE_TEST_CASE_P(OriginAuthenticatorTests, OriginAuthenticatorTest,
-                        testing::Bool());
+INSTANTIATE_TEST_SUITE_P(OriginAuthenticatorTests, OriginAuthenticatorTest,
+                         testing::Bool());
 
 }  // namespace
 }  // namespace AuthN

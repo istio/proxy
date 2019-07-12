@@ -244,7 +244,7 @@ class JwtVerificationFilterIntegrationTestWithJwks
       "]}";
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     IpVersions, JwtVerificationFilterIntegrationTestWithJwks,
     testing::ValuesIn(TestEnvironment::getIpVersionsForTest()));
 
@@ -358,7 +358,7 @@ class JwtVerificationFilterIntegrationTestWithInjectedJwtResult
   }
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     IpVersions, JwtVerificationFilterIntegrationTestWithInjectedJwtResult,
     testing::ValuesIn(TestEnvironment::getIpVersionsForTest()));
 
