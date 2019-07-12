@@ -26,7 +26,7 @@ namespace Stackdriver {
 NullVmPluginRootRegistry* context_registry_{};
 }  // namespace Stackdriver
 
-const std::string kStackdriverPluginName = "envoy.wasm.null.stackdriver";
+constexpr char kStackdriverPluginName[] = "envoy.wasm.null.stackdriver";
 
 /**
  * Config registration for a Wasm filter plugin. @see

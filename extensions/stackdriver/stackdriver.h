@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef STACKDRIVER_H
-#define STACKDRIVER_H
+#pragma once
 
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 
@@ -78,5 +77,3 @@ static RegisterContextFactory register_StackdriverContext(
 }  // namespace Extensions
 }  // namespace Envoy
 #endif
-
-#endif  // STACKDRIVER_H

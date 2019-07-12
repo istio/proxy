@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-// NOLINT(namespace-envoy)
 #include <google/protobuf/util/json_util.h>
 #include <random>
 #include <string>
@@ -27,8 +26,6 @@
 
 #include "extensions/common/wasm/null/null.h"
 
-using namespace opencensus::exporters::stats;
-
 namespace Envoy {
 namespace Extensions {
 namespace Common {
@@ -36,8 +33,9 @@ namespace Wasm {
 namespace Null {
 namespace Plugin {
 #endif
-
 namespace Stackdriver {
+
+using namespace opencensus::exporters::stats;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
