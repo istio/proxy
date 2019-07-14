@@ -31,6 +31,11 @@ namespace Envoy {
 namespace Http {
 namespace Mixer {
 
+namespace {
+//  HTTP 'Set-Cookie' header key.
+const Http::LowerCaseString kSetCookieHeader("set-cookie");
+};  // namespace
+
 struct RcDetailsValues {
   // The Mixer filter sent direct response.
   const std::string MixerDirectResponse = "mixer_direct_response";
@@ -120,21 +125,30 @@ void Filter::UpdateHeaders(
     HeaderMap& headers, const ::google::protobuf::RepeatedPtrField<
                             ::istio::mixer::v1::HeaderOperation>& operations) {
   for (auto const iter : operations) {
+    auto name = LowerCaseString(iter.name());
     switch (iter.operation()) {
       case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
-        headers.remove(LowerCaseString(iter.name()));
-        headers.addCopy(LowerCaseString(iter.name()), iter.value());
+        headers.remove(name);
+        headers.addCopy(name, iter.value());
         break;
       case ::istio::mixer::v1::HeaderOperation_Operation_REMOVE:
-        headers.remove(LowerCaseString(iter.name()));
+        headers.remove(name);
         break;
       case ::istio::mixer::v1::HeaderOperation_Operation_APPEND:
-        headers.addCopy(LowerCaseString(iter.name()), iter.value());
+        if (kSetCookieHeader == name) {
+          UnfoldSetCookieHeader(headers, iter.value());
+        } else {
+          headers.addCopy(name, iter.value());
+        }
         break;
       default:
         PANIC("unreachable header operation");
     }
   }
+}
+
+void Filter::UnfoldSetCookieHeader(HeaderMap& headers, const std::string value) {
+  headers.addCopy(kSetCookieHeader, value);
 }
 
 FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {

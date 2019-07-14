@@ -85,6 +85,9 @@ class Filter : public StreamFilter,
                      const ::google::protobuf::RepeatedPtrField<
                          ::istio::mixer::v1::HeaderOperation>& operations);
 
+  // Unfold Set-Cookie into multiple header lines, if needed
+  void UnfoldSetCookieHeader(HeaderMap& headers, const std::string value);
+
   // The control object.
   Control& control_;
   // The request handler.
