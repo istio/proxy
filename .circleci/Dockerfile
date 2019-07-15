@@ -10,17 +10,17 @@ FROM circleci/openjdk:latest
 
 # clang is used for TSAN and ASAN tests
 RUN sudo sh -c 'curl http://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -'
-RUN sudo sh -c 'echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" > /etc/apt/sources.list.d/llvm.list'
+RUN sudo sh -c 'echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-8 main" > /etc/apt/sources.list.d/llvm.list'
 
 RUN sudo apt-get update && \
     sudo apt-get -y install \
-    wget software-properties-common make cmake python python-pip pkg-config \
+    wget software-properties-common make python python-pip pkg-config \
     zlib1g-dev bash-completion bc libtool automake zip time g++-6 gcc-6 \
-    clang-7 clang-format-7 clang-tidy-7 lld-7 libc++-7-dev libc++abi-7-dev \
+    clang-8 clang-format-8 clang-tidy-8 lld-8 libc++-8-dev libc++abi-8-dev \
     rsync ninja-build
 
 # ~100M, depends on g++, zlib1g-dev, bash-completions
-RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.22.0/bazel_0.22.0-linux-x86_64.deb && \
+RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.27.0/bazel_0.27.0-linux-x86_64.deb && \
     sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
 
 
@@ -31,6 +31,13 @@ RUN cd /tmp && \
     sudo tar -C /usr/local -xzf go1.11.5.linux-amd64.tar.gz && \
     sudo chown -R circleci /usr/local/go && \
     sudo ln -s /usr/local/go/bin/go /usr/local/bin
+
+# instead of "apt-get -y install cmake", pin cmake version to 3.8.0
+RUN cd /tmp && \
+    wget https://github.com/Kitware/CMake/releases/download/v3.8.0/cmake-3.8.0-Linux-x86_64.tar.gz && \
+    sudo tar -C /usr/local/ -xzf cmake-3.8.0-Linux-x86_64.tar.gz && \
+    sudo chown -R circleci /usr/local/cmake-3.8.0-Linux-x86_64 && \
+    sudo ln -s /usr/local/cmake-3.8.0-Linux-x86_64/bin/cmake /usr/local/bin
 
 RUN bazel version
 

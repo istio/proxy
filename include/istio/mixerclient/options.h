@@ -39,14 +39,29 @@ struct CheckOptions {
   const int num_entries;
 
   // If true, Check is passed for any network failures.
-  bool network_fail_open = true;
+  bool network_fail_open{true};
+
+  // Number of retries on transport error
+  uint32_t retries{0};
+
+  // Base milliseconds to sleep between retries.  Will be adjusted by
+  // exponential backoff and jitter.
+  uint32_t base_retry_ms{80};
+
+  // Max milliseconds to sleep between retries.
+  uint32_t max_retry_ms{1000};
 };
+
+const int DEFAULT_BATCH_REPORT_MAX_ENTRIES = 100;
+const int DEFAULT_BATCH_REPORT_MAX_TIME_MS = 1000;
 
 // Options controlling report batch.
 struct ReportOptions {
   // Default constructor.
-  // Default to batch up to 500 reports or 1 seconds.
-  ReportOptions() : max_batch_entries(100), max_batch_time_ms(1000) {}
+  // Default to batch up to 100 reports or 1000 milliseconds (1 second).
+  ReportOptions()
+      : max_batch_entries(DEFAULT_BATCH_REPORT_MAX_ENTRIES),
+        max_batch_time_ms(DEFAULT_BATCH_REPORT_MAX_TIME_MS) {}
 
   // Constructor.
   ReportOptions(int max_batch_entries, int max_batch_time_ms)

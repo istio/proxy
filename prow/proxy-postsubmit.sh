@@ -35,15 +35,17 @@ if [ "${CI:-}" == 'bootstrap' ]; then
   ln -sf ${GOPATH}/src/github.com/istio ${GOPATH}/src/istio.io
   ROOT=${GOPATH}/src/istio.io/proxy
   cd ${GOPATH}/src/istio.io/proxy
-
-  # Setup bazel.rc
-  cp "${ROOT}/tools/bazel.rc.ci" "${HOME}/.bazelrc"
+else
+  # Remove old bazel.rc.ci
+  rm -f "${HOME}/.bazelrc"
 fi
 
 GIT_SHA="$(git rev-parse --verify HEAD)"
 
 cd $ROOT
 
+export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures"
+
 echo 'Create and push artifacts'
-script/release-binary
+scripts/release-binary.sh
 ARTIFACTS_DIR="gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs" make artifacts

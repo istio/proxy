@@ -26,6 +26,8 @@
 namespace istio {
 namespace utils {
 
+const char kMixerMetadataKey[] = "istio.mixer";
+
 // Builder class to add attribute to protobuf Attributes.
 // Its usage:
 //    builder(attribute).Add("key", value)
@@ -89,6 +91,19 @@ class AttributesBuilder {
     }
   }
 
+  void InsertStringMap(const std::string &key,
+                       const std::map<std::string, std::string> &string_map) {
+    if (string_map.size() == 0) {
+      return;
+    }
+    auto entries = (*attributes_->mutable_attributes())[key]
+                       .mutable_string_map_value()
+                       ->mutable_entries();
+    for (const auto &map_it : string_map) {
+      (*entries)[map_it.first] = map_it.second;
+    }
+  }
+
   void AddProtoStructStringMap(const std::string &key,
                                const google::protobuf::Struct &struct_map) {
     if (struct_map.fields().empty()) {
@@ -142,7 +157,9 @@ class AttributesBuilder {
     }
 
     for (const auto &filter : filter_state) {
-      AddProtoStructStringMap(filter.first, filter.second);
+      if (FiltersToIgnore().find(filter.first) == FiltersToIgnore().end()) {
+        AddProtoStructStringMap(filter.first, filter.second);
+      }
     }
   }
 
@@ -152,6 +169,14 @@ class AttributesBuilder {
   }
 
  private:
+  const std::unordered_set<std::string> &FiltersToIgnore() {
+    static const auto *filters =
+        new std::unordered_set<std::string>{kMixerMetadataKey};
+    return *filters;
+  }
+
+  // TODO(jblatt) audit all uses of raw pointers and replace as many as possible
+  // with unique/shared pointers.
   ::istio::mixer::v1::Attributes *attributes_;
 };
 

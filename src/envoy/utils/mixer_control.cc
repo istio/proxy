@@ -52,7 +52,7 @@ class EnvoyGrpcAsyncClientFactory : public Grpc::AsyncClientFactory {
                               TimeSource &time_source)
       : cm_(cm), config_(config), time_source_(time_source) {}
 
-  Grpc::AsyncClientPtr create() override {
+  Grpc::RawAsyncClientPtr create() override {
     return std::make_unique<Grpc::AsyncClientImpl>(cm_, config_, time_source_);
   }
 

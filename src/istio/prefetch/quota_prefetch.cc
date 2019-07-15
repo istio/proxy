@@ -16,27 +16,11 @@
 #include "include/istio/prefetch/quota_prefetch.h"
 #include "src/istio/prefetch/circular_queue.h"
 #include "src/istio/prefetch/time_based_counter.h"
+#include "src/istio/utils/logger.h"
 
 #include <mutex>
 
 using namespace std::chrono;
-
-// Turn this on to debug for quota_prefetch_test.cc
-// Not for debugging in production.
-#if 0
-#include <iostream>
-#define LOG(t)                                                           \
-  std::cerr << "("                                                       \
-            << duration_cast<milliseconds>(t.time_since_epoch()).count() \
-            << "):"
-#else
-// Pipe to stringstream to disable logging.
-#include <sstream>
-std::ostringstream os;
-#define LOG(t) \
-  os.clear();  \
-  os
-#endif
 
 namespace istio {
 namespace prefetch {
@@ -168,6 +152,10 @@ void QuotaPrefetchImpl::AttemptPrefetch(int amount, Tick t) {
   int avail = CountAvailable(t);
   int pass_count = counter_.Count(t);
   int desired = std::max(pass_count, options_.min_prefetch_amount);
+  MIXER_TRACE(
+      "Prefetch decision: available=%d, desired=%d, inflight_count=%d, "
+      "requested=%d",
+      avail, desired, inflight_count_, amount);
   if ((avail < desired / 2 && inflight_count_ == 0) || avail < amount) {
     bool use_not_granted = (avail == 0 && mode_ == OPEN);
     Prefetch(std::max(amount, desired), use_not_granted, t);
@@ -181,16 +169,17 @@ void QuotaPrefetchImpl::Prefetch(int req_amount, bool use_not_granted, Tick t) {
     slot_id = Add(req_amount, t + milliseconds(kMaxExpirationInMs));
   }
 
-  LOG(t) << "Prefetch: " << req_amount << ", id: " << slot_id << std::endl;
+  MIXER_DEBUG("Prefetch amount %d for slotid: %lu", req_amount, slot_id);
 
   last_prefetch_time_ = t;
   ++inflight_count_;
-  transport_(req_amount,
-             [this, slot_id, req_amount](int resp_amount,
-                                         milliseconds expiration, Tick t1) {
-               OnResponse(slot_id, req_amount, resp_amount, expiration, t1);
-             },
-             t);
+  transport_(
+      req_amount,
+      [this, slot_id, req_amount](int resp_amount, milliseconds expiration,
+                                  Tick t1) {
+        OnResponse(slot_id, req_amount, resp_amount, expiration, t1);
+      },
+      t);
 }
 
 QuotaPrefetchImpl::Slot* QuotaPrefetchImpl::FindSlotById(SlotId id) {
@@ -225,7 +214,7 @@ int QuotaPrefetchImpl::Substract(int delta, Tick t) {
       }
     } else {
       if (n->available > 0) {
-        LOG(t) << "Expired:" << n->available << std::endl;
+        MIXER_DEBUG("Expired: %d", n->available);
       }
     }
     queue_.Pop();
@@ -240,9 +229,8 @@ void QuotaPrefetchImpl::OnResponse(SlotId slot_id, int req_amount,
   std::lock_guard<std::mutex> lock(mutex_);
   --inflight_count_;
 
-  LOG(t) << "OnResponse: req:" << req_amount << ", resp: " << resp_amount
-         << ", expire: " << expiration.count() << ", id: " << slot_id
-         << std::endl;
+  MIXER_DEBUG("OnResponse: req: %d, resp: %d, expire: %ld, id: %lu", req_amount,
+              resp_amount, expiration.count(), slot_id);
 
   // resp_amount of -1 indicates any network failures.
   // Use fail open policy to handle any netowrk failures.
@@ -301,7 +289,7 @@ bool QuotaPrefetchImpl::Check(int amount, Tick t) {
     }
   }
   if (!ret) {
-    LOG(t) << "Rejected amount: " << amount << std::endl;
+    MIXER_DEBUG("Rejected amount: %d", amount);
   }
   return ret;
 }

@@ -40,6 +40,7 @@ cc_library(
         "attribute_compressor.h",
         "check_cache.cc",
         "check_cache.h",
+        "check_context.h",
         "client_impl.cc",
         "client_impl.h",
         "global_dictionary.cc",
@@ -50,6 +51,9 @@ cc_library(
         "referenced.h",
         "report_batch.cc",
         "report_batch.h",
+        "shared_attributes.h",
+        "status_util.cc",
+        "status_util.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -59,6 +63,7 @@ cc_library(
         "//include/istio/utils:simple_lru_cache",
         "//src/istio/prefetch:quota_prefetch_lib",
         "//src/istio/utils:utils_lib",
+        "@com_google_absl//absl/strings",
     ],
 )
 

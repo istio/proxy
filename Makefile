@@ -19,53 +19,55 @@ LOCAL_ARTIFACTS_DIR ?= $(abspath artifacts)
 ARTIFACTS_DIR ?= $(LOCAL_ARTIFACTS_DIR)
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
-BAZEL_TEST_ARGS ?=
+BAZEL_TARGETS ?= //...
+# Some tests run so slowly under the santizers that they always timeout.
+SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
 ifeq "$(origin CC)" "default"
-CC := clang-7
+CC := clang-8
 endif
 ifeq "$(origin CXX)" "default"
-CXX := clang++-7
+CXX := clang++-8
 endif
-PATH := /usr/lib/llvm-7/bin:$(PATH)
+PATH := /usr/lib/llvm-8/bin:$(PATH)
 
+# Removed 'bazel shutdown' as it could cause CircleCI to hang
 build:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
 
 # Build only envoy - fast
 build_envoy:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
-	@bazel shutdown
 
 clean:
 	@bazel clean
-	@bazel shutdown
 
 test:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
 
 test_asan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
 test_tsan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan //...
-	@bazel shutdown
+	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) --config=clang-tsan --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
 check:
-	@script/check-license-headers
-	@script/check-repositories
-	@script/check-style
+	@echo >&2 "Please use \"make lint\" instead."
+	@false
+
+lint:
+	@scripts/check_license.sh
+	@scripts/check-repository.sh
+	@scripts/check-style.sh
 
 artifacts: build
-	@script/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
+	@scripts/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
 
 deb:
 	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
-	@bazel shutdown
 
 
 .PHONY: build clean test check artifacts
+
+include Makefile.common.mk

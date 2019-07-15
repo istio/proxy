@@ -16,6 +16,7 @@
 #include "src/istio/control/http/attributes_builder.h"
 
 #include "gmock/gmock.h"
+#include "google/protobuf/stubs/status.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
@@ -350,6 +351,21 @@ attributes {
   }
 }
 attributes {
+  key: "request.headers"
+  value {
+    string_map_value {
+      entries {
+        key: "x-b3-traceid"
+        value: "abc"
+      }
+      entries {
+        key: "x-b3-spanid"
+        value: "def"
+      }
+    }
+  }
+}
+attributes {
   key: "response.headers"
   value {
     string_map_value {
@@ -531,21 +547,23 @@ fields {
 }
 )";
 
-void ClearContextTime(const std::string &name, RequestContext *request) {
+void ClearContextTime(const std::string &name,
+                      istio::mixer::v1::Attributes *attributes) {
   // Override timestamp with -
-  utils::AttributesBuilder builder(request->attributes);
+  utils::AttributesBuilder builder(attributes);
   std::chrono::time_point<std::chrono::system_clock> time0;
   builder.AddTimestamp(name, time0);
 }
 
-void SetDestinationIp(RequestContext *request, const std::string &ip) {
-  utils::AttributesBuilder builder(request->attributes);
+void SetDestinationIp(istio::mixer::v1::Attributes *attributes,
+                      const std::string &ip) {
+  utils::AttributesBuilder builder(attributes);
   builder.AddBytes(utils::AttributeName::kDestinationIp, ip);
 }
 
 TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
   Attributes attr;
-  (*attr.mutable_attributes())["test_key"].set_string_value("test_value");
+  (*attr.mutable_attributes())["source.uid"].set_string_value("test_value");
 
   ::testing::StrictMock<MockCheckData> mock_data;
   EXPECT_CALL(mock_data, ExtractIstioAttributes(_))
@@ -554,10 +572,10 @@ TEST(AttributesBuilderTest, TestExtractForwardedAttributes) {
         return true;
       }));
 
-  RequestContext request;
-  AttributesBuilder builder(&request);
+  istio::mixer::v1::Attributes attributes;
+  AttributesBuilder builder(&attributes);
   builder.ExtractForwardedAttributes(&mock_data);
-  EXPECT_THAT(*request.attributes, EqualsAttribute(attr));
+  EXPECT_THAT(attributes, EqualsAttribute(attr));
 }
 
 TEST(AttributesBuilderTest, TestForwardAttributes) {
@@ -638,16 +656,16 @@ TEST(AttributesBuilderTest, TestCheckAttributesWithoutAuthnFilter) {
         return true;
       }));
 
-  RequestContext request;
-  AttributesBuilder builder(&request);
+  istio::mixer::v1::Attributes attributes;
+  AttributesBuilder builder(&attributes);
   builder.ExtractCheckAttributes(&mock_data);
 
-  ClearContextTime(utils::AttributeName::kRequestTime, &request);
+  ClearContextTime(utils::AttributeName::kRequestTime, &attributes);
 
   Attributes expected_attributes;
   ASSERT_TRUE(TextFormat::ParseFromString(kCheckAttributesWithoutAuthnFilter,
                                           &expected_attributes));
-  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestCheckAttributes) {
@@ -712,16 +730,16 @@ TEST(AttributesBuilderTest, TestCheckAttributes) {
         return true;
       }));
 
-  RequestContext request;
-  AttributesBuilder builder(&request);
+  istio::mixer::v1::Attributes attributes;
+  AttributesBuilder builder(&attributes);
   builder.ExtractCheckAttributes(&mock_data);
 
-  ClearContextTime(utils::AttributeName::kRequestTime, &request);
+  ClearContextTime(utils::AttributeName::kRequestTime, &attributes);
 
   Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kCheckAttributes, &expected_attributes));
-  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributes) {
@@ -742,6 +760,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   listval.mutable_list_value()->add_values()->set_string_value("c");
   (*struct_obj.mutable_fields())["list"] = listval;
   filter_metadata["foo.bar.com"] = struct_obj;
+  filter_metadata["istio.mixer"] = struct_obj;  // to be ignored
 
   EXPECT_CALL(mock_data, GetDestinationIpPort(_, _))
       .WillOnce(Invoke([](std::string *ip, int *port) -> bool {
@@ -760,6 +779,11 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         map["content-length"] = "123456";
         map["server"] = "my-server";
         return map;
+      }));
+  EXPECT_CALL(mock_data, GetTracingHeaders(_))
+      .WillOnce(Invoke([](std::map<std::string, std::string> &m) {
+        m["x-b3-traceid"] = "abc";
+        m["x-b3-spanid"] = "def";
       }));
   EXPECT_CALL(mock_data, GetReportInfo(_))
       .WillOnce(Invoke([](ReportData::ReportInfo *info) {
@@ -786,11 +810,12 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   EXPECT_CALL(mock_data, GetDynamicFilterState())
       .WillOnce(ReturnRef(filter_metadata));
 
-  RequestContext request;
-  AttributesBuilder builder(&request);
-  builder.ExtractReportAttributes(&mock_data);
+  istio::mixer::v1::Attributes attributes;
+  AttributesBuilder builder(&attributes);
+  builder.ExtractReportAttributes(::google::protobuf::util::Status::OK,
+                                  &mock_data);
 
-  ClearContextTime(utils::AttributeName::kResponseTime, &request);
+  ClearContextTime(utils::AttributeName::kResponseTime, &attributes);
 
   Attributes expected_attributes;
   ASSERT_TRUE(
@@ -804,7 +829,7 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
   (*expected_attributes
         .mutable_attributes())[utils::AttributeName::kResponseGrpcMessage]
       .set_string_value("grpc-message");
-  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(attributes, EqualsAttribute(expected_attributes));
 }
 
 TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
@@ -840,6 +865,11 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
         map["server"] = "my-server";
         return map;
       }));
+  EXPECT_CALL(mock_data, GetTracingHeaders(_))
+      .WillOnce(Invoke([](std::map<std::string, std::string> &m) {
+        m["x-b3-traceid"] = "abc";
+        m["x-b3-spanid"] = "def";
+      }));
   EXPECT_CALL(mock_data, GetReportInfo(_))
       .WillOnce(Invoke([](ReportData::ReportInfo *info) {
         info->request_body_size = 100;
@@ -860,17 +890,18 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
   EXPECT_CALL(mock_data, GetDynamicFilterState())
       .WillOnce(ReturnRef(filter_metadata));
 
-  RequestContext request;
-  SetDestinationIp(&request, "1.2.3.4");
-  AttributesBuilder builder(&request);
-  builder.ExtractReportAttributes(&mock_data);
+  istio::mixer::v1::Attributes attributes;
+  SetDestinationIp(&attributes, "1.2.3.4");
+  AttributesBuilder builder(&attributes);
+  builder.ExtractReportAttributes(::google::protobuf::util::Status::OK,
+                                  &mock_data);
 
-  ClearContextTime(utils::AttributeName::kResponseTime, &request);
+  ClearContextTime(utils::AttributeName::kResponseTime, &attributes);
 
   Attributes expected_attributes;
   ASSERT_TRUE(
       TextFormat::ParseFromString(kReportAttributes, &expected_attributes));
-  EXPECT_THAT(*request.attributes, EqualsAttribute(expected_attributes));
+  EXPECT_THAT(attributes, EqualsAttribute(expected_attributes));
 }
 
 }  // namespace

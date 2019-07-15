@@ -89,8 +89,6 @@ class Filter : public StreamFilter,
   Control& control_;
   // The request handler.
   std::unique_ptr<::istio::control::http::RequestHandler> handler_;
-  // The pending callback object.
-  istio::mixerclient::CancelFunc cancel_check_;
 
   enum State { NotStarted, Calling, Complete, Responded };
   // The state

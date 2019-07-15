@@ -88,7 +88,7 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
   virtual ~ValidateX509Test() {}
 
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  NiceMock<Envoy::Ssl::MockConnectionInfo> ssl_{};
   Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{
@@ -142,7 +142,8 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerCert) {
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return("foo"));
+  const std::vector<std::string> sans{"foo", "bad"};
+  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return(sans));
   EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
   // When client certificate is present on mTLS, authenticated attribute should
   // be extracted.
@@ -154,9 +155,8 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerSpiffeCert) {
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  EXPECT_CALL(ssl_, uriSanPeerCertificate())
-      .Times(1)
-      .WillOnce(Return("spiffe://foo"));
+  const std::vector<std::string> sans{"spiffe://foo", "bad"};
+  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return(sans));
   EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
 
   // When client certificate is present on mTLS, authenticated attribute should
@@ -169,9 +169,8 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  EXPECT_CALL(ssl_, uriSanPeerCertificate())
-      .Times(1)
-      .WillOnce(Return("spiffe:foo"));
+  const std::vector<std::string> sans{"spiffe:foo", "bad"};
+  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return(sans));
   EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
 
   // When client certificate is present on mTLS and the spiffe subject format is
@@ -181,9 +180,9 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
   EXPECT_EQ(payload_->x509().user(), "spiffe:foo");
 }
 
-INSTANTIATE_TEST_CASE_P(ValidateX509Tests, ValidateX509Test,
-                        testing::Values(iaapi::MutualTls::STRICT,
-                                        iaapi::MutualTls::PERMISSIVE));
+INSTANTIATE_TEST_SUITE_P(ValidateX509Tests, ValidateX509Test,
+                         testing::Values(iaapi::MutualTls::STRICT,
+                                         iaapi::MutualTls::PERMISSIVE));
 
 class ValidateJwtTest : public testing::Test,
                         public Logger::Loggable<Logger::Id::filter> {
@@ -193,7 +192,7 @@ class ValidateJwtTest : public testing::Test,
   // StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   envoy::api::v2::core::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  // NiceMock<Envoy::Ssl::MockConnection> ssl_{};
+  // NiceMock<Envoy::Ssl::MockConnectionInfo> ssl_{};
   Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{dynamic_metadata_, header_, &connection_,

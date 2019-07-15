@@ -79,7 +79,7 @@ std::string MakeHeaderToMetadataConfig() {
 
 typedef HttpProtocolIntegrationTest AuthenticationFilterIntegrationTest;
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Protocols, AuthenticationFilterIntegrationTest,
     testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
     HttpProtocolIntegrationTest::protocolTestParamsToString);
@@ -99,7 +99,7 @@ TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("200", response->headers().Status()->value().c_str());
+  EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
@@ -121,7 +121,7 @@ TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
   // waitForNextUpstreamRequest).
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+  EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
 // TODO (diemtvu/lei-tang): add test for MTls success.
@@ -140,7 +140,7 @@ TEST_P(AuthenticationFilterIntegrationTest, OriginJwtRequiredHeaderNoJwtFail) {
   // waitForNextUpstreamRequest).
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("401", response->headers().Status()->value().c_str());
+  EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
 TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
@@ -162,7 +162,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
-  EXPECT_STREQ("200", response->headers().Status()->value().c_str());
+  EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
 
 }  // namespace

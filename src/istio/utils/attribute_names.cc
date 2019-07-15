@@ -25,6 +25,14 @@ const char AttributeName::kSourceNamespace[] = "source.namespace";
 const char AttributeName::kSourceUID[] = "source.uid";
 const char AttributeName::kDestinationPrincipal[] = "destination.principal";
 
+const char AttributeName::kDestinationServiceName[] =
+    "destination.service.name";
+const char AttributeName::kDestinationServiceUID[] = "destination.service.uid";
+const char AttributeName::kDestinationServiceHost[] =
+    "destination.service.host";
+const char AttributeName::kDestinationServiceNamespace[] =
+    "destination.service.namespace";
+
 const char AttributeName::kRequestHeaders[] = "request.headers";
 const char AttributeName::kRequestHost[] = "request.host";
 const char AttributeName::kRequestMethod[] = "request.method";

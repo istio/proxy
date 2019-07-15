@@ -273,13 +273,8 @@ Jwt::Jwt(const std::string &jwt) {
     return;
   }
 
-  // Prepare EVP_MD object.
-  if (alg_ == "RS256") {
-    // may use
-    // EVP_sha384() if alg == "RS384" and
-    // EVP_sha512() if alg == "RS512"
-    md_ = EVP_sha256();
-  } else if (alg_ != "ES256") {
+  if (alg_ != "RS256" && alg_ != "ES256" && alg_ != "RS384" &&
+      alg_ != "RS512") {
     UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
     return;
   }
@@ -339,8 +334,12 @@ bool Verifier::VerifySignatureRSA(EVP_PKEY *key, const EVP_MD *md,
                                   size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
 
-  EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
-  EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
+  if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key) != 1) {
+    return false;
+  }
+  if (EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len) != 1) {
+    return false;
+  }
   return (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) == 1);
 }
 
@@ -415,14 +414,23 @@ bool Verifier::Verify(const Jwt &jwt, const Pubkeys &pubkeys) {
         VerifySignatureEC(pubkey->ec_key_.get(), jwt.signature_, signed_data)) {
       // Verification succeeded.
       return true;
-    } else if ((pubkey->pem_format_ || pubkey->kty_ == "RSA") &&
-               VerifySignatureRSA(pubkey->evp_pkey_.get(), jwt.md_,
-                                  jwt.signature_, signed_data)) {
-      // Verification succeeded.
-      return true;
+    } else if (pubkey->pem_format_ || pubkey->kty_ == "RSA") {
+      const EVP_MD *md;
+      if (jwt.alg_ == "RS384") {
+        md = EVP_sha384();
+      } else if (jwt.alg_ == "RS512") {
+        md = EVP_sha512();
+      } else {
+        // default to SHA256
+        md = EVP_sha256();
+      }
+      if (VerifySignatureRSA(pubkey->evp_pkey_.get(), md, jwt.signature_,
+                             signed_data)) {
+        // Verification succeeded.
+        return true;
+      }
     }
   }
-
   // Verification failed.
   if (kid_alg_matched) {
     UpdateStatus(Status::JWT_INVALID_SIGNATURE);
@@ -539,7 +547,11 @@ void Pubkeys::ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json) {
 
   EvpPkeyGetter e;
   pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
-  keys_.push_back(std::move(pubkey));
+  if (e.GetStatus() == Status::OK) {
+    keys_.push_back(std::move(pubkey));
+  } else {
+    UpdateStatus(e.GetStatus());
+  }
 }
 
 void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
@@ -569,7 +581,11 @@ void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
 
   EvpPkeyGetter e;
   pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
-  keys_.push_back(std::move(pubkey));
+  if (e.GetStatus() == Status::OK) {
+    keys_.push_back(std::move(pubkey));
+  } else {
+    UpdateStatus(e.GetStatus());
+  }
 }
 
 std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,

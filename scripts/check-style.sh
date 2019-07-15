@@ -18,8 +18,8 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_VERSION_REQUIRED="6.0.0"
-CLANG_FORMAT=$(which clang-format-${CLANG_VERSION_REQUIRED%.*})
+CLANG_VERSION_REQUIRED="8.0.0"
+CLANG_FORMAT=$(which clang-format-${CLANG_VERSION_REQUIRED%%.*})
 if [[ ! -x "${CLANG_FORMAT}" ]]; then
   # Install required clang version to a folder and cache it.
   CLANG_DIRECTORY="${HOME}/clang"
@@ -33,14 +33,14 @@ if [[ ! -x "${CLANG_FORMAT}" ]]; then
     echo "Unsupported environment." ; exit 1 ;
   fi
 
-  echo "Downloading clang-format: http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
-
-  CLANG_VERSION="$(${CLANG_FORMAT} -version | cut -d ' ' -f 3)"
+  CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
   if [[ "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
+    echo "Downloading clang-format: https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
     echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
+
     mkdir -p ${CLANG_DIRECTORY}
     curl --silent --show-error --retry 10 \
-      "http://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
+      "https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
       | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
     || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
   fi

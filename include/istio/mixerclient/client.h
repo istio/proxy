@@ -19,6 +19,8 @@
 #include "environment.h"
 #include "include/istio/quota_config/requirement.h"
 #include "options.h"
+#include "src/istio/mixerclient/check_context.h"
+#include "src/istio/mixerclient/shared_attributes.h"
 
 #include <vector>
 
@@ -50,24 +52,79 @@ struct MixerClientOptions {
 
 // The statistics recorded by mixerclient library.
 struct Statistics {
-  // Total number of check calls.
-  uint64_t total_check_calls;
-  // Total number of remote check calls.
-  uint64_t total_remote_check_calls;
-  // Total number of remote check calls that blocking origin requests.
-  uint64_t total_blocking_remote_check_calls;
+  //
+  // Policy check counters.
+  //
+  // total_check_calls = total_check_hits + total_check_misses
+  // total_check_hits = total_check_hit_accepts + total_check_hit_denies
+  // total_remote_check_calls = total_check_misses
+  // total_remote_check_calls >= total_remote_check_accepts +
+  // total_remote_check_denies
+  //    ^ Transport errors are responsible for the >=
+  //
 
-  // Total number of quota calls.
-  uint64_t total_quota_calls;
-  // Total number of remote quota calls.
-  uint64_t total_remote_quota_calls;
-  // Total number of remote quota calls that blocking origin requests.
-  uint64_t total_blocking_remote_quota_calls;
+  uint64_t total_check_calls_{0};              // 1.0
+  uint64_t total_check_cache_hits_{0};         // 1.1
+  uint64_t total_check_cache_misses_{0};       // 1.1
+  uint64_t total_check_cache_hit_accepts_{0};  // 1.1
+  uint64_t total_check_cache_hit_denies_{0};   // 1.1
+  uint64_t total_remote_check_calls_{0};       // 1.0
+  uint64_t total_remote_check_accepts_{0};     // 1.1
+  uint64_t total_remote_check_denies_{0};      // 1.1
+
+  //
+  // Quota check counters
+  //
+  // total_quota_calls = total_quota_hits + total_quota_misses
+  // total_quota_hits = total_quota_hit_accepts + total_quota_hit_denies
+  // total_remote_quota_calls = total_quota_misses +
+  // total_remote_quota_prefetch_calls total_remote_quota_calls >=
+  // total_remote_quota_accepts + total_remote_quota_denies
+  //    ^ Transport errors are responsible for the >=
+  //
+
+  uint64_t total_quota_calls_{0};                  // 1.0
+  uint64_t total_quota_cache_hits_{0};             // 1.1
+  uint64_t total_quota_cache_misses_{0};           // 1.1
+  uint64_t total_quota_cache_hit_accepts_{0};      // 1.1
+  uint64_t total_quota_cache_hit_denies_{0};       // 1.1
+  uint64_t total_remote_quota_calls_{0};           // 1.0
+  uint64_t total_remote_quota_accepts_{0};         // 1.1
+  uint64_t total_remote_quota_denies_{0};          // 1.1
+  uint64_t total_remote_quota_prefetch_calls_{0};  // 1.1
+
+  //
+  // Counters for upstream requests to Mixer.
+  //
+  // total_remote_calls = SUM(total_remote_call_successes, ...,
+  // total_remote_call_other_errors) Total transport errors would be
+  // (total_remote_calls - total_remote_call_successes).
+  //
+
+  uint64_t total_remote_calls_{0};               // 1.1
+  uint64_t total_remote_call_successes_{0};      // 1.1
+  uint64_t total_remote_call_timeouts_{0};       // 1.1
+  uint64_t total_remote_call_send_errors_{0};    // 1.1
+  uint64_t total_remote_call_other_errors_{0};   // 1.1
+  uint64_t total_remote_call_retries_{0};        // 1.1
+  uint64_t total_remote_call_cancellations_{0};  // 1.1
+
+  //
+  // Telemetry report counters
+  //
 
   // Total number of report calls.
-  uint64_t total_report_calls;
+  uint64_t total_report_calls_{0};  // 1.0
   // Total number of remote report calls.
-  uint64_t total_remote_report_calls;
+  uint64_t total_remote_report_calls_{0};  // 1.0
+  // Remote report calls that succeeed
+  uint64_t total_remote_report_successes_{0};  // 1.1
+  // Remote report calls that fail due to timeout waiting for the response
+  uint64_t total_remote_report_timeouts_{0};  // 1.1
+  // Remote report calls that fail sending the request (socket connect or write)
+  uint64_t total_remote_report_send_errors_{0};  // 1.1
+  // Remote report calls that fail do to some other error
+  uint64_t total_remote_report_other_errors_{0};  // 1.1
 };
 
 class MixerClient {
@@ -84,13 +141,13 @@ class MixerClient {
   // The response data from mixer will be consumed by mixer client.
 
   // A check call.
-  virtual CancelFunc Check(
-      const ::istio::mixer::v1::Attributes& attributes,
-      const std::vector<::istio::quota_config::Requirement>& quotas,
-      TransportCheckFunc transport, CheckDoneFunc on_done) = 0;
+  virtual void Check(istio::mixerclient::CheckContextSharedPtr& context,
+                     const TransportCheckFunc& transport,
+                     const CheckDoneFunc& on_done) = 0;
 
   // A report call.
-  virtual void Report(const ::istio::mixer::v1::Attributes& attributes) = 0;
+  virtual void Report(
+      const istio::mixerclient::SharedAttributesSharedPtr& attributes) = 0;
 
   // Get statistics.
   virtual void GetStatistics(Statistics* stat) const = 0;
