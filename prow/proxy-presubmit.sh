@@ -29,29 +29,15 @@ set -u
 # Print commands
 set -x
 
-if [ "${CI:-}" == 'bootstrap' ]; then
-  # Test harness will checkout code to directory $GOPATH/src/github.com/istio/proxy
-  # but we depend on being at path $GOPATH/src/istio.io/proxy for imports
-  ln -sf ${GOPATH}/src/github.com/istio ${GOPATH}/src/istio.io
-  ROOT=${GOPATH}/src/istio.io/proxy
-  cd ${GOPATH}/src/istio.io/proxy
+GOPATH=/go
+ROOT=/go/src
+# Remove old bazel.rc.ci
+rm -f "${HOME}/.bazelrc"
 
-  # Setup bazel.rc
-  cp "${ROOT}/tools/bazel.rc.ci" "${HOME}/.bazelrc"
-
-  # Use the provided pull head sha, from prow.
-  GIT_SHA="${PULL_PULL_SHA}"
-else
-  # Use the current commit.
-  GIT_SHA="$(git rev-parse --verify HEAD)"
-fi
-
-cd $ROOT
-
-export BAZEL_TEST_ARGS="--test_output=errors"
+export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_output=errors"
 
 echo 'Code Check'
-make check
+make lint
 
 echo 'Bazel Build'
 make build
