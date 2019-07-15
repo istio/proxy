@@ -48,6 +48,10 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
 bool GetPrincipal(const Network::Connection* connection, bool peer,
                   std::string* principal);
 
+// Get peer or local trust domain.
+bool GetTrustDomain(const Network::Connection* connection, bool peer,
+                    std::string* trust_domain);
+
 // Returns true if connection is mutual TLS enabled.
 bool IsMutualTLS(const Network::Connection* connection);
 

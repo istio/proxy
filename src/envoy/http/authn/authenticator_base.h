@@ -55,6 +55,8 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
  private:
   // Pointer to filter state. Do not own.
   FilterContext& filter_context_;
+
+  bool validateTrustDomain(const Network::Connection* connection) const;
 };
 
 }  // namespace AuthN

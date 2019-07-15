@@ -34,6 +34,29 @@ const std::string kPerHostMetadataKey("istio");
 // Attribute field for per-host data override
 const std::string kMetadataDestinationUID("uid");
 
+bool getRawPrincipal(const Network::Connection* connection, bool peer,
+                     std::string* principal) {
+  if (connection) {
+    Ssl::ConnectionInfo* ssl =
+        const_cast<Ssl::ConnectionInfo*>(connection->ssl());
+    if (ssl != nullptr) {
+      const std::vector<std::string> sans =
+          (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
+      if (sans.empty()) {
+        // empty result is not allowed.
+        return false;
+      }
+      *principal = sans[0];
+      return true;
+    }
+  }
+  return false;
+}
+
+bool hasSPIFFEPrefix(const std::string& result) {
+  return result.length() >= kSPIFFEPrefix.length() &&
+         result.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0;
+}
 }  // namespace
 
 void ExtractHeaders(const Http::HeaderMap& header_map,
@@ -120,28 +143,35 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
 
 bool GetPrincipal(const Network::Connection* connection, bool peer,
                   std::string* principal) {
-  if (connection) {
-    Ssl::ConnectionInfo* ssl =
-        const_cast<Ssl::ConnectionInfo*>(connection->ssl());
-    if (ssl != nullptr) {
-      const std::vector<std::string> sans =
-          (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
-      if (sans.empty()) {
-        // empty result is not allowed
-        return false;
-      }
-      const std::string result = sans[0];
-      if (result.length() >= kSPIFFEPrefix.length() &&
-          result.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0) {
-        // Strip out the prefix "spiffe://" in the identity.
-        *principal = result.substr(kSPIFFEPrefix.size());
-      } else {
-        *principal = result;
-      }
-      return true;
+  std::string result;
+  if (getRawPrincipal(connection, peer, &result)) {
+    if (hasSPIFFEPrefix(result)) {
+      // Strip out the prefix "spiffe://" in the identity.
+      *principal = result.substr(kSPIFFEPrefix.size());
+    } else {
+      *principal = result;
     }
+    return true;
   }
   return false;
+}
+
+bool GetTrustDomain(const Network::Connection* connection, bool peer,
+                    std::string* trust_domain) {
+  std::string result;
+  if (!getRawPrincipal(connection, peer, &result) || !hasSPIFFEPrefix(result)) {
+    return false;
+  }
+
+  // Strip out the prefix "spiffe://" before getting trust domain.
+  result = result.substr(kSPIFFEPrefix.size());
+  std::size_t slash = result.find('/');
+  if (slash == std::string::npos) {
+    return false;
+  }
+
+  *trust_domain = result.substr(0, slash);
+  return true;
 }
 
 bool IsMutualTLS(const Network::Connection* connection) {
