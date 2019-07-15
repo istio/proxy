@@ -48,7 +48,7 @@ void StackdriverRootContext::onConfigure(
   // Only register exporter once in main thread when initiating base WASM
   // module.
   auto registered = getSharedData(kStackdriverExporter);
-  if (registered->view().empty()) {
+  if (!registered->view().empty()) {
     return;
   }
   setSharedData(kStackdriverExporter, kExporterRegistered);
