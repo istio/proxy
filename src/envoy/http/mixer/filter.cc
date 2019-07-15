@@ -148,7 +148,29 @@ void Filter::UpdateHeaders(
 }
 
 void Filter::UnfoldSetCookieHeader(HeaderMap& headers, const std::string value) {
-  headers.addCopy(kSetCookieHeader, value);
+  // Folded cookie syntax can be complicated. See, for example,
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#Syntax.
+  // Unfortunately, the http2 library does not expose/support cookie parsing.
+  // Here we handle a much simpler syntax - a comma separated list of cookies.
+  // The simplification comes at the cost of preventing the use of 'Expires'
+  // cookie attribute. A more robust parser would require 100-150 LOC and could be
+  // modeled after the following JS or Java code:
+  // https://github.com/nfriedly/set-cookie-parser/blob/master/lib/set-cookie.js
+  // or https://github.com/google/j2objc/commit/16820fdbc8f76ca0c33472810ce0cb03d20efe25
+  std::istringstream iss(value);
+  std::vector<std::string> cookies;
+  std::string cookie;
+
+  while (std::getline(iss, cookie, ',')) {
+    cookies.push_back(cookie);
+  }
+  if (iss.eof()) {
+    for (std::string c : cookies) {
+      headers.addReference(kSetCookieHeader, c);
+    }
+  } else { // failure, just copy the original header value
+    headers.addCopy(kSetCookieHeader, value);
+  }
 }
 
 FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
