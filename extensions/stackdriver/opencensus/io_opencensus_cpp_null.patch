@@ -1,0 +1,98 @@
+diff --git a/opencensus/exporters/stats/stackdriver/internal/stackdriver_exporter.cc b/opencensus/exporters/stats/stackdriver/internal/stackdriver_exporter.cc
+index 694b930..f1d8e39 100644
+--- a/opencensus/exporters/stats/stackdriver/internal/stackdriver_exporter.cc
++++ b/opencensus/exporters/stats/stackdriver/internal/stackdriver_exporter.cc
+@@ -86,15 +86,16 @@ void Handler::ExportViewData(
+   absl::MutexLock l(&mu_);
+   std::vector<google::monitoring::v3::TimeSeries> time_series;
+   for (const auto& datum : data) {
+-    if (!MaybeRegisterView(datum.first)) {
+-      continue;
+-    }
++    // if (!MaybeRegisterView(datum.first)) {
++    //   continue;
++    // }
+     const auto view_time_series =
+-        MakeTimeSeries(datum.first, datum.second, opts_.opencensus_task);
++        MakeTimeSeries(datum.first, datum.second,
++                       opts_.monitored_resource_type,
++                       opts_.monitored_resource_labels);
+     time_series.insert(time_series.end(), view_time_series.begin(),
+                        view_time_series.end());
+   }
+-
+   const int num_rpcs =
+       ceil(static_cast<double>(time_series.size()) / kTimeSeriesBatchSize);
+ 
+diff --git a/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.cc b/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.cc
+index b734159..ec95201 100644
+--- a/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.cc
++++ b/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.cc
+@@ -177,11 +177,15 @@ void SetMetricDescriptor(
+ std::vector<google::monitoring::v3::TimeSeries> MakeTimeSeries(
+     const opencensus::stats::ViewDescriptor& view_descriptor,
+     const opencensus::stats::ViewData& data,
+-    absl::string_view opencensus_task) {
++    const std::string& monitored_resource_type,
++    const std::unordered_map<std::string, std::string>& mr_labels) {
+   // Set values that are common across all the rows.
+   auto base_time_series = google::monitoring::v3::TimeSeries();
+-  base_time_series.mutable_metric()->set_type(MakeType(view_descriptor.name()));
+-  base_time_series.mutable_resource()->set_type(kDefaultResourceType);
++  base_time_series.mutable_metric()->set_type(view_descriptor.name());
++  base_time_series.mutable_resource()->set_type(monitored_resource_type);
++  for (auto it = mr_labels.begin() ; it != mr_labels.end(); ++it) {
++    (*base_time_series.mutable_resource()->mutable_labels())[it->first] = it->second;
++  }
+   auto* interval = base_time_series.add_points()->mutable_interval();
+   // Stackdriver doesn't like start_time and end_time being different for GAUGE
+   // metrics.
+@@ -190,8 +194,6 @@ std::vector<google::monitoring::v3::TimeSeries> MakeTimeSeries(
+     SetTimestamp(data.start_time(), interval->mutable_start_time());
+   }
+   SetTimestamp(data.end_time(), interval->mutable_end_time());
+-  (*base_time_series.mutable_metric()->mutable_labels())[kOpenCensusTaskKey] =
+-      std::string(opencensus_task);
+ 
+   switch (data.type()) {
+     case opencensus::stats::ViewData::Type::kDouble:
+diff --git a/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.h b/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.h
+index 4d00d8d..a55515c 100644
+--- a/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.h
++++ b/opencensus/exporters/stats/stackdriver/internal/stackdriver_utils.h
+@@ -37,7 +37,9 @@ void SetMetricDescriptor(
+ // Converts each row of 'data' into TimeSeries.
+ std::vector<google::monitoring::v3::TimeSeries> MakeTimeSeries(
+     const opencensus::stats::ViewDescriptor& view_descriptor,
+-    const opencensus::stats::ViewData& data, absl::string_view opencensus_task);
++    const opencensus::stats::ViewData& data,
++    const std::string& monitored_resource_type,
++    const std::unordered_map<std::string, std::string>& mr_labels);
+ 
+ void SetTimestamp(absl::Time time, google::protobuf::Timestamp* proto);
+ 
+diff --git a/opencensus/exporters/stats/stackdriver/stackdriver_exporter.h b/opencensus/exporters/stats/stackdriver/stackdriver_exporter.h
+index bbe70ac..9e1031b 100644
+--- a/opencensus/exporters/stats/stackdriver/stackdriver_exporter.h
++++ b/opencensus/exporters/stats/stackdriver/stackdriver_exporter.h
+@@ -16,6 +16,7 @@
+ #define OPENCENSUS_EXPORTERS_STATS_STACKDRIVER_STACKDRIVER_EXPORTER_H_
+ 
+ #include <string>
++#include <unordered_map>
+ 
+ #include "absl/base/macros.h"
+ #include "absl/strings/string_view.h"
+@@ -36,6 +37,12 @@ struct StackdriverOptions {
+ 
+   // The RPC deadline to use when exporting to Stackdriver.
+   absl::Duration rpc_deadline = absl::Seconds(5);
++
++  // lables for monitored resource.
++  std::unordered_map<std::string, std::string> monitored_resource_labels;
++
++  // type of monitored resource that metrics should attach to, such as k8s_pod, k8s_container.
++  std::string monitored_resource_type;
+ };
+ 
+ // Exports stats for registered views (see opencensus/stats/stats_exporter.h) to
