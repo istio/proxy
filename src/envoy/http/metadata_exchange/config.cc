@@ -46,21 +46,21 @@ void PluginContext::onCreate() {
         Base64::encode(metadata_bytes.data(), metadata_bytes.size());
   }
 
-  logDebug("metadata_value_ id:" + std::to_string(id()) +
-           " value:" + metadata_value_);
+  logDebug(
+      absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_));
 }
 
 Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
   // strip and store downstream peer metadata
   auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
   if (downstream_metadata_value != nullptr &&
-      downstream_metadata_value->view().size() > 0) {
+      !downstream_metadata_value->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeader);
     auto downstream_metadata_bytes =
-        Base64::decode(downstream_metadata_value->toString());
+        Base64::decodeWithoutPadding(downstream_metadata_value->view());
     proxy_setMetadataStruct(
-        Common::Wasm::MetadataType::Request, DownstreamMetadataKey,
-        strlen(DownstreamMetadataKey), downstream_metadata_bytes.data(),
+        Common::Wasm::MetadataType::Request, DownstreamMetadataKey.data(),
+        DownstreamMetadataKey.size(), downstream_metadata_bytes.data(),
         downstream_metadata_bytes.size());
   }
 
@@ -76,14 +76,14 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
   // strip and store upstream peer metadata
   auto upstream_metadata_value = getResponseHeader(ExchangeMetadataHeader);
   if (upstream_metadata_value != nullptr &&
-      upstream_metadata_value->view().size() > 0) {
+      !upstream_metadata_value->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
         Base64::decode(upstream_metadata_value->toString());
-    proxy_setMetadataStruct(Common::Wasm::MetadataType::Request,
-                            UpstreamMetadataKey, strlen(UpstreamMetadataKey),
-                            upstream_metadata_bytes.data(),
-                            upstream_metadata_bytes.size());
+    proxy_setMetadataStruct(
+        Common::Wasm::MetadataType::Request, UpstreamMetadataKey.data(),
+        UpstreamMetadataKey.size(), upstream_metadata_bytes.data(),
+        upstream_metadata_bytes.size());
   }
 
   // insert peer metadata struct for downstream

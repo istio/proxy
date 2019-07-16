@@ -22,20 +22,21 @@ namespace Extensions {
 namespace Wasm {
 namespace MetadataExchange {
 
-constexpr char ExchangeMetadataHeader[] = "x-envoy-peer-metadata";
+constexpr absl::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
 
 // NodeMetadata key is the key in the node metadata struct that is passed
 // between peers.
-constexpr char NodeMetadataKey[] = "istio.io/metadata";
+constexpr absl::string_view NodeMetadataKey = "istio.io/metadata";
 
 // DownstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
-constexpr char DownstreamMetadataKey[] =
+constexpr absl::string_view DownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
 
 // UpstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
-constexpr char UpstreamMetadataKey[] = "envoy.wasm.metadata_exchange.upstream";
+constexpr absl::string_view UpstreamMetadataKey =
+    "envoy.wasm.metadata_exchange.upstream";
 
 using StringView = absl::string_view;
 using Common::Wasm::Null::NullVmPluginRootRegistry;
