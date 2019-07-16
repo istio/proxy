@@ -19,7 +19,7 @@
 #include "include/istio/control/http/request_handler.h"
 #include "src/istio/control/http/client_context.h"
 #include "src/istio/control/http/service_context.h"
-#include "src/istio/control/request_context.h"
+#include "src/istio/mixerclient/check_context.h"
 
 namespace istio {
 namespace control {
@@ -30,11 +30,16 @@ class RequestHandlerImpl : public RequestHandler {
  public:
   RequestHandlerImpl(std::shared_ptr<ServiceContext> service_context);
 
+  virtual ~RequestHandlerImpl() = default;
+
   // Makes a Check call.
-  ::istio::mixerclient::CancelFunc Check(
-      CheckData* check_data, HeaderUpdate* header_update,
-      ::istio::mixerclient::TransportCheckFunc transport,
-      ::istio::mixerclient::CheckDoneFunc on_done) override;
+  void Check(CheckData* check_data, HeaderUpdate* header_update,
+             const ::istio::mixerclient::TransportCheckFunc& transport,
+             const ::istio::mixerclient::CheckDoneFunc& on_done) override;
+
+  void ResetCancel() override;
+
+  void CancelCheck() override;
 
   // Make a Report call.
   void Report(CheckData* check_data, ReportData* report_data) override;
@@ -45,16 +50,16 @@ class RequestHandlerImpl : public RequestHandler {
   // Add check attributes, allow re-entry
   void AddCheckAttributes(CheckData* check_data);
 
-  // The request context object.
-  RequestContext request_context_;
+  // memory for telemetry reports and policy checks.  Telemetry only needs the
+  // shared attributes.
+  istio::mixerclient::SharedAttributesSharedPtr attributes_;
+  istio::mixerclient::CheckContextSharedPtr check_context_;
 
   // The service context.
   std::shared_ptr<ServiceContext> service_context_;
 
-  // If true, request attributes are added
-  bool check_attributes_added_;
-  // If true, forward attributes are added
-  bool forward_attributes_added_;
+  bool check_attributes_added_{false};
+  bool forward_attributes_added_{false};
 };
 
 }  // namespace http

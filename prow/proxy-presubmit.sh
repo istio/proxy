@@ -34,10 +34,10 @@ ROOT=/go/src
 # Remove old bazel.rc.ci
 rm -f "${HOME}/.bazelrc"
 
-export BAZEL_TEST_ARGS="--test_output=errors"
+export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_output=errors"
 
 echo 'Code Check'
-make check
+make lint
 
 echo 'Bazel Build'
 make build

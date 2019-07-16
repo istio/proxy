@@ -90,9 +90,10 @@ class JwtVerificationFilterIntegrationTest
         [](const Http::HeaderEntry& entry,
            void* context) -> Http::HeaderMap::Iterate {
           auto ret = static_cast<std::map<std::string, std::string>*>(context);
-          Http::LowerCaseString lower_key{entry.key().c_str()};
+          const auto key = std::string(entry.key().getStringView());
+          Http::LowerCaseString lower_key{key};
           (*ret)[std::string(lower_key.get())] =
-              std::string(entry.value().c_str());
+              std::string(entry.value().getStringView());
           return Http::HeaderMap::Iterate::Continue;
         },
         &ret);
@@ -243,7 +244,7 @@ class JwtVerificationFilterIntegrationTestWithJwks
       "]}";
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     IpVersions, JwtVerificationFilterIntegrationTestWithJwks,
     testing::ValuesIn(TestEnvironment::getIpVersionsForTest()));
 
@@ -357,7 +358,7 @@ class JwtVerificationFilterIntegrationTestWithInjectedJwtResult
   }
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     IpVersions, JwtVerificationFilterIntegrationTestWithInjectedJwtResult,
     testing::ValuesIn(TestEnvironment::getIpVersionsForTest()));
 

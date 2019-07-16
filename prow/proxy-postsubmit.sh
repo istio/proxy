@@ -29,10 +29,13 @@ set -u
 # Print commands
 set -x
 
+
 GOPATH=/go
 ROOT=/go/src
 rm -f "${HOME}/.bazelrc"
 
+export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures"
+
 echo 'Create and push artifacts'
-script/release-binary
+scripts/release-binary.sh
 ARTIFACTS_DIR="gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs" make artifacts

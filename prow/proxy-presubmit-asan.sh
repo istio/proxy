@@ -29,11 +29,12 @@ set -u
 # Print commands
 set -x
 
+
 GOPATH=/go
 ROOT=/go/src
 rm -f "${HOME}/.bazelrc"
 
-export BAZEL_TEST_ARGS="--test_output=errors"
+export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_output=errors"
 
 echo 'Bazel Tests'
 make test_asan

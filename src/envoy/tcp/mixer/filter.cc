@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/tcp/mixer/filter.h"
+
 #include "common/common/enum_to_int.h"
 #include "extensions/filters/network/well_known_names.h"
 #include "src/envoy/utils/utils.h"
@@ -43,14 +44,12 @@ void Filter::initializeReadFilterCallbacks(
 }
 
 void Filter::cancelCheck() {
-  if (state_ != State::Calling) {
-    cancel_check_ = nullptr;
+  if (state_ != State::Calling && handler_) {
+    handler_->ResetCancel();
   }
   state_ = State::Closed;
-  if (cancel_check_) {
-    ENVOY_LOG(debug, "Cancelling check call");
-    cancel_check_();
-    cancel_check_ = nullptr;
+  if (handler_) {
+    handler_->CancelCheck();
   }
 }
 
@@ -61,7 +60,7 @@ void Filter::callCheck() {
   state_ = State::Calling;
   filter_callbacks_->connection().readDisable(true);
   calling_check_ = true;
-  cancel_check_ = handler_->Check(
+  handler_->Check(
       this, [this](const CheckResponseInfo &info) { completeCheck(info); });
   calling_check_ = false;
 }
@@ -114,8 +113,10 @@ Network::FilterStatus Filter::onData(Buffer::Instance &data, bool) {
                           .dynamicMetadata()
                           .filter_metadata());
 
-  return state_ == State::Calling ? Network::FilterStatus::StopIteration
-                                  : Network::FilterStatus::Continue;
+  return (state_ == State::Calling || filter_callbacks_->connection().state() !=
+                                          Network::Connection::State::Open)
+             ? Network::FilterStatus::StopIteration
+             : Network::FilterStatus::Continue;
 }
 
 // Network::WriteFilter
@@ -138,9 +139,9 @@ Network::FilterStatus Filter::onNewConnection() {
 }
 
 void Filter::completeCheck(const CheckResponseInfo &info) {
-  const auto &status = info.response_status;
+  const auto &status = info.status();
   ENVOY_LOG(debug, "Called tcp filter completeCheck: {}", status.ToString());
-  cancel_check_ = nullptr;
+  handler_->ResetCancel();
   if (state_ == State::Closed) {
     return;
   }
@@ -168,11 +169,12 @@ void Filter::completeCheck(const CheckResponseInfo &info) {
 // Network::ConnectionCallbacks
 void Filter::onEvent(Network::ConnectionEvent event) {
   if (filter_callbacks_->upstreamHost()) {
-    ENVOY_LOG(debug, "Called tcp filter onEvent: {} upstream {}",
-              enumToInt(event),
-              filter_callbacks_->upstreamHost()->address()->asString());
+    ENVOY_CONN_LOG(debug, "Called tcp filter onEvent: {} upstream {}",
+                   filter_callbacks_->connection(), enumToInt(event),
+                   filter_callbacks_->upstreamHost()->address()->asString());
   } else {
-    ENVOY_LOG(debug, "Called tcp filter onEvent: {}", enumToInt(event));
+    ENVOY_CONN_LOG(debug, "Called tcp filter onEvent: {}",
+                   filter_callbacks_->connection(), enumToInt(event));
   }
 
   if (event == Network::ConnectionEvent::RemoteClose ||

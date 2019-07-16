@@ -38,16 +38,18 @@ class ServiceContext {
   }
 
   // Add static mixer attributes.
-  void AddStaticAttributes(RequestContext* request) const;
+  void AddStaticAttributes(::istio::mixer::v1::Attributes* attributes) const;
 
   // Inject a header that contains the static forwarded attributes.
   void InjectForwardedAttributes(HeaderUpdate* header_update) const;
 
   // Add api attributes from api_spec.
-  void AddApiAttributes(CheckData* check_data, RequestContext* request) const;
+  void AddApiAttributes(CheckData* check_data,
+                        ::istio::mixer::v1::Attributes* attributes) const;
 
   // Add quota requirements from quota configs.
-  void AddQuotas(RequestContext* request) const;
+  void AddQuotas(::istio::mixer::v1::Attributes* attributes,
+                 std::vector<::istio::quota_config::Requirement>& quotas) const;
 
   bool enable_mixer_check() const {
     return service_config_ && !service_config_->disable_check_calls();

@@ -24,11 +24,20 @@
 #include "src/envoy/utils/header_update.h"
 
 using ::google::protobuf::util::Status;
+using ::istio::mixer::v1::RouteDirective;
 using ::istio::mixerclient::CheckResponseInfo;
 
 namespace Envoy {
 namespace Http {
 namespace Mixer {
+
+struct RcDetailsValues {
+  // The Mixer filter sent direct response.
+  const std::string MixerDirectResponse = "mixer_direct_response";
+  // The Mixer filter rejected the request.
+  const std::string MixerAccessDenied = "mixer_access_denied";
+};
+typedef ConstSingleton<RcDetailsValues> RcDetails;
 
 Filter::Filter(Control& control)
     : control_(control),
@@ -75,7 +84,7 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
                        decoder_callbacks_->connection());
   Utils::HeaderUpdate header_update(&headers);
   headers_ = &headers;
-  cancel_check_ = handler_->Check(
+  handler_->Check(
       &check_data, &header_update,
       control_.GetCheckTransport(decoder_callbacks_->activeSpan()),
       [this](const CheckResponseInfo& info) { completeCheck(info); });
@@ -147,7 +156,8 @@ void Filter::setDecoderFilterCallbacks(
 }
 
 void Filter::completeCheck(const CheckResponseInfo& info) {
-  auto status = info.response_status;
+  const Status& status = info.status();
+
   ENVOY_LOG(debug, "Called Mixer::Filter : check complete {}",
             status.ToString());
   // This stream has been reset, abort the callback.
@@ -155,7 +165,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     return;
   }
 
-  route_directive_ = info.route_directive;
+  route_directive_ = info.routeDirective();
 
   Utils::CheckResponseInfoToStreamInfo(info, decoder_callbacks_->streamInfo());
 
@@ -169,7 +179,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
         [this](HeaderMap& headers) {
           UpdateHeaders(headers, route_directive_.response_header_operations());
         },
-        absl::nullopt);
+        absl::nullopt, RcDetails::get().MixerDirectResponse);
     return;
   }
 
@@ -179,7 +189,8 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
 
     int status_code = ::istio::utils::StatusHttpCode(status.error_code());
     decoder_callbacks_->sendLocalReply(Code(status_code), status.ToString(),
-                                       nullptr, absl::nullopt);
+                                       nullptr, absl::nullopt,
+                                       RcDetails::get().MixerAccessDenied);
     return;
   }
 
@@ -201,14 +212,12 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
 
 void Filter::onDestroy() {
   ENVOY_LOG(debug, "Called Mixer::Filter : {} state: {}", __func__, state_);
-  if (state_ != Calling) {
-    cancel_check_ = nullptr;
+  if (state_ != Calling && handler_) {
+    handler_->ResetCancel();
   }
   state_ = Responded;
-  if (cancel_check_) {
-    ENVOY_LOG(debug, "Cancelling check call");
-    cancel_check_();
-    cancel_check_ = nullptr;
+  if (handler_) {
+    handler_->CancelCheck();
   }
 }
 
@@ -232,8 +241,8 @@ void Filter::log(const HeaderMap* request_headers,
   CheckData check_data(*request_headers, stream_info.dynamicMetadata(),
                        decoder_callbacks_->connection());
   // response trailer header is not counted to response total size.
-  ReportData report_data(response_headers, response_trailers, stream_info,
-                         request_total_size_);
+  ReportData report_data(request_headers, response_headers, response_trailers,
+                         stream_info, request_total_size_);
   handler_->Report(&check_data, &report_data);
 }
 

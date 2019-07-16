@@ -15,6 +15,7 @@
 
 #include "src/istio/mixerclient/quota_cache.h"
 #include "include/istio/utils/protobuf.h"
+#include "src/istio/utils/logger.h"
 
 using namespace std::chrono;
 using ::google::protobuf::util::Status;
@@ -96,6 +97,7 @@ bool QuotaCache::CheckResult::BuildRequest(CheckRequest* request) {
     }
   }
   if (!rejected_quota_names.empty()) {
+    MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
     status_ =
         Status(Code::RESOURCE_EXHAUSTED,
                std::string("Quota is exhausted for: ") + rejected_quota_names);
@@ -118,8 +120,8 @@ void QuotaCache::CheckResult::SetResponse(const Status& status,
         if (it != quotas.end()) {
           result = &it->second;
         } else {
-          GOOGLE_LOG(ERROR)
-              << "Quota response did not have quota for: " << quota.name;
+          MIXER_WARN("Quota response did not have quota for: %s",
+                     quota.name.c_str());
         }
       }
       if (!quota.response_func(attributes, result)) {
@@ -131,6 +133,7 @@ void QuotaCache::CheckResult::SetResponse(const Status& status,
     }
   }
   if (!rejected_quota_names.empty()) {
+    MIXER_DEBUG("Quota is exhausted for: %s", rejected_quota_names.c_str());
     status_ =
         Status(Code::RESOURCE_EXHAUSTED,
                std::string("Quota is exhausted for: ") + rejected_quota_names);
@@ -218,9 +221,10 @@ void QuotaCache::SetResponse(const Attributes& attributes,
 
   utils::HashType signature;
   if (!referenced.Signature(attributes, quota_name, &signature)) {
-    GOOGLE_LOG(ERROR) << "Quota response referenced mismatchs with request";
-    GOOGLE_LOG(ERROR) << "Request attributes: " << attributes.DebugString();
-    GOOGLE_LOG(ERROR) << "Referenced attributes: " << referenced.DebugString();
+    MIXER_WARN(
+        "Quota response referenced does not match request. Request "
+        "attributes: %s, Referenced attributes: %s",
+        attributes.DebugString().c_str(), referenced.DebugString().c_str());
     return;
   }
 
@@ -235,8 +239,8 @@ void QuotaCache::SetResponse(const Attributes& attributes,
   utils::HashType hash = referenced.Hash();
   if (quota_ref.referenced_map.find(hash) == quota_ref.referenced_map.end()) {
     quota_ref.referenced_map[hash] = referenced;
-    GOOGLE_LOG(INFO) << "Add a new Referenced for quota cache: " << quota_name
-                     << ", reference: " << referenced.DebugString();
+    MIXER_DEBUG("Add a new Referenced for quota cache: %s, reference: %s",
+                quota_name.c_str(), referenced.DebugString().c_str());
   }
 
   cache_->Insert(signature, quota_ref.pending_item.release(), 1);

@@ -53,47 +53,44 @@ void MixerStatsObject::OnTimer() {
   timer_->enableTimer(std::chrono::milliseconds(stats_update_interval_));
 }
 
+#define CHECK_AND_UPDATE_STATS(NAME)                   \
+  if (new_stats.NAME > old_stats_.NAME) {              \
+    stats_.NAME.add(new_stats.NAME - old_stats_.NAME); \
+  }
+
 void MixerStatsObject::CheckAndUpdateStats(
     const ::istio::mixerclient::Statistics& new_stats) {
-  if (new_stats.total_check_calls > old_stats_.total_check_calls) {
-    stats_.total_check_calls_.add(new_stats.total_check_calls -
-                                  old_stats_.total_check_calls);
-  }
-  if (new_stats.total_remote_check_calls >
-      old_stats_.total_remote_check_calls) {
-    stats_.total_remote_check_calls_.add(new_stats.total_remote_check_calls -
-                                         old_stats_.total_remote_check_calls);
-  }
-  if (new_stats.total_blocking_remote_check_calls >
-      old_stats_.total_blocking_remote_check_calls) {
-    stats_.total_blocking_remote_check_calls_.add(
-        new_stats.total_blocking_remote_check_calls -
-        old_stats_.total_blocking_remote_check_calls);
-  }
-  if (new_stats.total_quota_calls > old_stats_.total_quota_calls) {
-    stats_.total_quota_calls_.add(new_stats.total_quota_calls -
-                                  old_stats_.total_quota_calls);
-  }
-  if (new_stats.total_remote_quota_calls >
-      old_stats_.total_remote_quota_calls) {
-    stats_.total_remote_quota_calls_.add(new_stats.total_remote_quota_calls -
-                                         old_stats_.total_remote_quota_calls);
-  }
-  if (new_stats.total_blocking_remote_quota_calls >
-      old_stats_.total_blocking_remote_quota_calls) {
-    stats_.total_blocking_remote_quota_calls_.add(
-        new_stats.total_blocking_remote_quota_calls -
-        old_stats_.total_blocking_remote_quota_calls);
-  }
-  if (new_stats.total_report_calls > old_stats_.total_report_calls) {
-    stats_.total_report_calls_.add(new_stats.total_report_calls -
-                                   old_stats_.total_report_calls);
-  }
-  if (new_stats.total_remote_report_calls >
-      old_stats_.total_remote_report_calls) {
-    stats_.total_remote_report_calls_.add(new_stats.total_remote_report_calls -
-                                          old_stats_.total_remote_report_calls);
-  }
+  CHECK_AND_UPDATE_STATS(total_check_calls_);
+  CHECK_AND_UPDATE_STATS(total_check_cache_hits_);
+  CHECK_AND_UPDATE_STATS(total_check_cache_misses_);
+  CHECK_AND_UPDATE_STATS(total_check_cache_hit_accepts_);
+  CHECK_AND_UPDATE_STATS(total_check_cache_hit_denies_);
+  CHECK_AND_UPDATE_STATS(total_remote_check_calls_);
+  CHECK_AND_UPDATE_STATS(total_remote_check_accepts_);
+  CHECK_AND_UPDATE_STATS(total_remote_check_denies_);
+  CHECK_AND_UPDATE_STATS(total_quota_calls_);
+  CHECK_AND_UPDATE_STATS(total_quota_cache_hits_);
+  CHECK_AND_UPDATE_STATS(total_quota_cache_misses_);
+  CHECK_AND_UPDATE_STATS(total_quota_cache_hit_accepts_);
+  CHECK_AND_UPDATE_STATS(total_quota_cache_hit_denies_);
+  CHECK_AND_UPDATE_STATS(total_remote_quota_calls_);
+  CHECK_AND_UPDATE_STATS(total_remote_quota_accepts_);
+  CHECK_AND_UPDATE_STATS(total_remote_quota_denies_);
+  CHECK_AND_UPDATE_STATS(total_remote_quota_prefetch_calls_);
+  CHECK_AND_UPDATE_STATS(total_remote_calls_);
+  CHECK_AND_UPDATE_STATS(total_remote_call_successes_);
+  CHECK_AND_UPDATE_STATS(total_remote_call_timeouts_);
+  CHECK_AND_UPDATE_STATS(total_remote_call_send_errors_);
+  CHECK_AND_UPDATE_STATS(total_remote_call_other_errors_);
+  CHECK_AND_UPDATE_STATS(total_remote_call_retries_);
+  CHECK_AND_UPDATE_STATS(total_remote_call_cancellations_);
+
+  CHECK_AND_UPDATE_STATS(total_report_calls_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_calls_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_successes_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_timeouts_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_send_errors_);
+  CHECK_AND_UPDATE_STATS(total_remote_report_other_errors_);
 
   // Copy new_stats to old_stats_ for next stats update.
   old_stats_ = new_stats;
