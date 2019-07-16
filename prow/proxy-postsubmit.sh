@@ -29,20 +29,9 @@ set -u
 # Print commands
 set -x
 
-if [ "${CI:-}" == 'bootstrap' ]; then
-  # Test harness will checkout code to directory $GOPATH/src/github.com/istio/proxy
-  # but we depend on being at path $GOPATH/src/istio.io/proxy for imports
-  ln -sf ${GOPATH}/src/github.com/istio ${GOPATH}/src/istio.io
-  ROOT=${GOPATH}/src/istio.io/proxy
-  cd ${GOPATH}/src/istio.io/proxy
-
-  # Setup bazel.rc
-  cp "${ROOT}/tools/bazel.rc.ci" "${HOME}/.bazelrc"
-fi
-
-GIT_SHA="$(git rev-parse --verify HEAD)"
-
-cd $ROOT
+GOPATH=/go
+ROOT=/go/src
+rm -f "${HOME}/.bazelrc"
 
 echo 'Create and push artifacts'
 script/release-binary
