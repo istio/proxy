@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: istio/ci:go1.11-bazel0.27-clang8-cmake3.8.0
+      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
     environment:
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
@@ -30,7 +30,7 @@ jobs:
           destination: /proxy/bin
   linux_asan:
     docker:
-      - image: istio/ci:go1.11-bazel0.27-clang8-cmake3.8.0
+      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
     environment:
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
@@ -49,7 +49,7 @@ jobs:
             - /home/circleci/.cache/bazel
   linux_tsan:
     docker:
-      - image: istio/ci:go1.11-bazel0.27-clang8-cmake3.8.0
+      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
     environment:
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
@@ -72,7 +72,7 @@ jobs:
     environment:
       - BAZEL_STARTUP_ARGS: "--output_base /Users/distiller/.cache/bazel"
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
-      - BAZEL_VERSION: "0.27.0"
+      - BAZEL_VERSION: "0.28.0"
       - CC: clang
       - CXX: clang++
     steps:

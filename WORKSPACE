@@ -39,11 +39,11 @@ bind(
 # When updating envoy sha manually please update the sha in istio.deps file also
 #
 # Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/COMMIT.tar.gz && sha256sum COMMIT.tar.gz`
-# envoy-wasm commit date  07/11/2019
-# bazel version: 0.27.0
-ENVOY_SHA = "cdece58fd46f6060cb32e5b0e87052c7bcd7bfa5"
+# envoy-wasm commit date: 07/18/2019
+# bazel version: 0.28.0
+ENVOY_SHA = "cea33f136d22e36e3a18dc93e672a871d4333517"
 
-ENVOY_SHA256 = "7b4ac7cf79810a29593939b5eee82d3714bdfe665a3b7f098d1e95404868b33b"
+ENVOY_SHA256 = "ca9cda606a32e83b0eba2403813a12c1935c76a4b6f0b6c2652b20c8efbecdf9"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
@@ -72,10 +72,6 @@ envoy_dependencies()
 load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
 
 rules_foreign_cc_dependencies()
-
-load("@envoy//bazel:cc_configure.bzl", "cc_configure")
-
-cc_configure()
 
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 
