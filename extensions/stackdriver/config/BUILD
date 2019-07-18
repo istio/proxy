@@ -15,26 +15,15 @@
 ################################################################################
 #
 
-package(default_visibility = ["//visibility:public"])
-
-load(
-    "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_library",
+cc_proto_library(
+    name = "stackdriver_plugin_config_cc_proto",
+    visibility = [
+        "//extensions/stackdriver:__pkg__",
+    ],
+    deps = ["stackdriver_plugin_config_proto"],
 )
 
-envoy_cc_library(
-    name = "stackdriver_plugin",
-    srcs = [
-        "stackdriver.cc",
-        "stackdriver_plugin_factory.cc",
-    ],
-    hdrs = [
-        "stackdriver.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        "//extensions/stackdriver/config:stackdriver_plugin_config_cc_proto",
-        "@envoy//source/extensions/common/wasm/null:null_lib",
-        "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
-    ],
+proto_library(
+    name = "stackdriver_plugin_config_proto",
+    srcs = ["stackdriver_plugin_config.proto"],
 )

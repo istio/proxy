@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "extensions/stackdriver/config/stackdriver_plugin_config.pb.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 
 #ifndef NULL_PLUGIN
@@ -50,8 +51,14 @@ class StackdriverRootContext : public RootContext {
   void onStart() override;
   void onTick() override;
 
+  // Get reporter kind of this filter from plugin config.
+  stackdriver::config::PluginConfig::ReporterKind reporterKind();
+
  private:
   opencensus::exporters::stats::StackdriverOptions getStackdriverOptions();
+
+  // Config for Stackdriver plugin.
+  stackdriver::config::PluginConfig config_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
