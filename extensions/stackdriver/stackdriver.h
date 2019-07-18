@@ -52,7 +52,7 @@ class StackdriverRootContext : public RootContext {
   void onTick() override;
 
   // Get reporter kind of this filter from plugin config.
-  stackdriver::config::PluginConfig::ReporterKind ReporterKind();
+  stackdriver::config::PluginConfig::ReporterKind reporterKind();
 
  private:
   opencensus::exporters::stats::StackdriverOptions getStackdriverOptions();

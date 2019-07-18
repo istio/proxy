@@ -68,7 +68,7 @@ void StackdriverRootContext::onConfigure(
   // TODO: Register opencensus measures, tags and views.
 }
 
-PluginConfig::ReporterKind StackdriverRootContext::ReporterKind() {
+PluginConfig::ReporterKind StackdriverRootContext::reporterKind() {
   return config_.kind();
 }
 
