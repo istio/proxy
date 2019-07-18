@@ -36,14 +36,23 @@ namespace Plugin {
 namespace Stackdriver {
 
 using namespace opencensus::exporters::stats;
+using namespace google::protobuf::util;
+using namespace stackdriver::config;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
 
 void StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
-  // TODO: Add config for Stackdriver plugin, such as reporter kind.
-  UNREFERENCED_PARAMETER(configuration);
+  // Parse configuration JSON string.
+  JsonParseOptions json_options;
+  Status status =
+      JsonStringToMessage(configuration->toString(), &config_, json_options);
+  if (status != Status::OK) {
+    logWarn("Cannot parse Stackdriver plugin configuraiton JSON string " +
+            configuration->toString());
+    return;
+  }
 
   // Only register exporter once in main thread when initiating base WASM
   // module.
@@ -57,6 +66,10 @@ void StackdriverRootContext::onConfigure(
       getStackdriverOptions());
 
   // TODO: Register opencensus measures, tags and views.
+}
+
+PluginConfig::ReporterKind StackdriverRootContext::ReporterKind() {
+  return config_.kind();
 }
 
 void StackdriverRootContext::onStart() {
