@@ -34,8 +34,8 @@ const std::string kPerHostMetadataKey("istio");
 // Attribute field for per-host data override
 const std::string kMetadataDestinationUID("uid");
 
-bool getRawPrincipal(const Network::Connection* connection, bool peer,
-                     std::string* principal) {
+bool getCertSAN(const Network::Connection* connection, bool peer,
+                std::string* principal) {
   if (connection) {
     Ssl::ConnectionInfo* ssl =
         const_cast<Ssl::ConnectionInfo*>(connection->ssl());
@@ -53,9 +53,9 @@ bool getRawPrincipal(const Network::Connection* connection, bool peer,
   return false;
 }
 
-bool hasSPIFFEPrefix(const std::string& result) {
-  return result.length() >= kSPIFFEPrefix.length() &&
-         result.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0;
+bool hasSPIFFEPrefix(const std::string& san) {
+  return san.length() >= kSPIFFEPrefix.length() &&
+         san.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0;
 }
 }  // namespace
 
@@ -143,13 +143,13 @@ bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
 
 bool GetPrincipal(const Network::Connection* connection, bool peer,
                   std::string* principal) {
-  std::string result;
-  if (getRawPrincipal(connection, peer, &result)) {
-    if (hasSPIFFEPrefix(result)) {
+  std::string cert_san;
+  if (getCertSAN(connection, peer, &cert_san)) {
+    if (hasSPIFFEPrefix(cert_san)) {
       // Strip out the prefix "spiffe://" in the identity.
-      *principal = result.substr(kSPIFFEPrefix.size());
+      *principal = cert_san.substr(kSPIFFEPrefix.size());
     } else {
-      *principal = result;
+      *principal = cert_san;
     }
     return true;
   }
@@ -158,19 +158,18 @@ bool GetPrincipal(const Network::Connection* connection, bool peer,
 
 bool GetTrustDomain(const Network::Connection* connection, bool peer,
                     std::string* trust_domain) {
-  std::string result;
-  if (!getRawPrincipal(connection, peer, &result) || !hasSPIFFEPrefix(result)) {
+  std::string cert_san;
+  if (!getCertSAN(connection, peer, &cert_san) || !hasSPIFFEPrefix(cert_san)) {
     return false;
   }
 
   // Strip out the prefix "spiffe://" before getting trust domain.
-  result = result.substr(kSPIFFEPrefix.size());
-  std::size_t slash = result.find('/');
+  std::size_t slash = cert_san.find('/', kSPIFFEPrefix.size());
   if (slash == std::string::npos) {
     return false;
   }
 
-  *trust_domain = result.substr(0, slash);
+  *trust_domain = cert_san.substr(kSPIFFEPrefix.size(), slash);
   return true;
 }
 
