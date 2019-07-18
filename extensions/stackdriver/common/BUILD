@@ -15,27 +15,39 @@
 ################################################################################
 #
 
-package(default_visibility = ["//visibility:public"])
+licenses(["notice"])
 
-load(
-    "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_library",
-)
-
-envoy_cc_library(
-    name = "stackdriver_plugin",
+cc_library(
+    name = "context",
     srcs = [
-        "stackdriver.cc",
-        "stackdriver_plugin_factory.cc",
+        "context.cc",
     ],
     hdrs = [
-        "stackdriver.h",
+        "context.h",
     ],
-    repository = "@envoy",
+    visibility = [
+        "//extensions/stackdriver:__pkg__",
+    ],
     deps = [
-        "//extensions/stackdriver/common:context",
-        "//extensions/stackdriver/config:stackdriver_plugin_config_cc_proto",
-        "@envoy//source/extensions/common/wasm/null:null_lib",
-        "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
+        ":constants",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
+    name = "constants",
+    hdrs = [
+        "constants.h",
+    ],
+)
+
+cc_test(
+    name = "context_test",
+    size = "small",
+    srcs = ["context_test.cc"],
+    linkstatic = 1,
+    deps = [
+        ":context",
+        "//external:googletest_main",
     ],
 )

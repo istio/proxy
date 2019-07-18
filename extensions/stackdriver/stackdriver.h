@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "extensions/stackdriver/common/context.h"
 #include "extensions/stackdriver/config/stackdriver_plugin_config.pb.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 
@@ -59,6 +60,9 @@ class StackdriverRootContext : public RootContext {
 
   // Config for Stackdriver plugin.
   stackdriver::config::PluginConfig config_;
+
+  // Local node info extracted from node metadata.
+  ::Extensions::Stackdriver::Common::NodeInfo local_node_info_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
@@ -68,7 +72,22 @@ class StackdriverContext : public Context {
   StackdriverContext(uint32_t id, RootContext* root) : Context(id, root) {}
   void onLog() override;
 
-  // TODO: add other WASM filter hooks.
+  // Stream filter callbacks.
+  FilterHeadersStatus onRequestHeaders() override;
+  FilterDataStatus onRequestBody(size_t body_buffer_length,
+                                 bool end_of_stream) override;
+  FilterHeadersStatus onResponseHeaders() override;
+  FilterDataStatus onResponseBody(size_t body_buffer_length,
+                                  bool end_of_stream) override;
+
+ private:
+  // Request information collected from stream callbacks, used when record
+  // metrics and access logs.
+  ::Extensions::Stackdriver::Common::RequestInfo request_info_;
+
+  // Gets root Stackdriver context that this stream Stackdriver context
+  // associated with.
+  StackdriverRootContext* getRootContext();
 };
 
 static RegisterContextFactory register_StackdriverContext(

@@ -18,7 +18,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "stackdriver.h"
+#include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/stackdriver.h"
 
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -38,6 +39,7 @@ namespace Stackdriver {
 using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
 using namespace stackdriver::config;
+using namespace ::Extensions::Stackdriver::Common;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
@@ -54,8 +56,14 @@ void StackdriverRootContext::onConfigure(
     return;
   }
 
-  // Only register exporter once in main thread when initiating base WASM
-  // module.
+  // Get node metadata.
+  auto metadata =
+      getMetadataStruct(Common::Wasm::MetadataType::Node, kIstioMetadataKey);
+  ExtractNodeMetadata(metadata, &local_node_info_);
+
+  // Register OC Stackdriver exporter and views to be exported.
+  // Note exporter and views are global singleton so they should only be
+  // registered once.
   auto registered = getSharedData(kStackdriverExporter);
   if (!registered->view().empty()) {
     return;
@@ -89,6 +97,52 @@ StackdriverOptions StackdriverRootContext::getStackdriverOptions() {
   // TODO: Fill in project ID and monitored resource labels either from node
   // metadata or from metadata server.
   return options;
+}
+
+FilterHeadersStatus StackdriverContext::onRequestHeaders() {
+  request_info_.start_timestamp = proxy_getCurrentTimeNanoseconds();
+  request_info_.request_protocol = getProtocol(StreamType::Request)->toString();
+  request_info_.destination_service_host =
+      getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
+          ->toString();
+  request_info_.request_operation =
+      getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
+          ->toString();
+  if (getRootContext()->reporterKind() ==
+      PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
+    auto downstream_metadata = getMetadataStruct(
+        Common::Wasm::MetadataType::Request, kDownstreamMetadataKey);
+    ExtractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
+  }
+  return FilterHeadersStatus::Continue;
+}
+
+FilterDataStatus StackdriverContext::onRequestBody(size_t body_buffer_length,
+                                                   bool) {
+  request_info_.request_size += body_buffer_length;
+  return FilterDataStatus::Continue;
+}
+
+FilterHeadersStatus StackdriverContext::onResponseHeaders() {
+  if (getRootContext()->reporterKind() ==
+      PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
+    auto upstream_metadata = getMetadataStruct(
+        Common::Wasm::MetadataType::Request, kUpstreamMetadataKey);
+    ExtractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
+  }
+  request_info_.end_timestamp = proxy_getCurrentTimeNanoseconds();
+  return FilterHeadersStatus::Continue;
+}
+
+FilterDataStatus StackdriverContext::onResponseBody(size_t body_buffer_length,
+                                                    bool) {
+  request_info_.response_size += body_buffer_length;
+  return FilterDataStatus::Continue;
+}
+
+StackdriverRootContext *StackdriverContext::getRootContext() {
+  RootContext *root = this->root();
+  return static_cast<StackdriverRootContext *>(root);
 }
 
 void StackdriverContext::onLog() {
