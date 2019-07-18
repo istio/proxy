@@ -17,13 +17,13 @@
 
 cc_proto_library(
     name = "stackdriver_plugin_config_cc_proto",
-    deps = ["stackdriver_plugin_config_proto"],
     visibility = [
         "//extensions/stackdriver:__pkg__",
     ],
+    deps = ["stackdriver_plugin_config_proto"],
 )
 
 proto_library(
-  name = "stackdriver_plugin_config_proto",
-  srcs = ["stackdriver_plugin_config.proto"],
+    name = "stackdriver_plugin_config_proto",
+    srcs = ["stackdriver_plugin_config.proto"],
 )
