@@ -93,8 +93,7 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
   FilterConfig filter_config_{};
   FilterContext filter_context_{
       envoy::api::v2::core::Metadata::default_instance(), header_, &connection_,
-      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
-          default_instance()};
+      filter_config_};
 
   MockAuthenticatorBase authenticator_{&filter_context_};
 
@@ -142,37 +141,88 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerCert) {
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  const std::vector<std::string> sans{"foo", "bad"};
-  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return(sans));
-  EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(2)
+      .WillRepeatedly(Return(std::vector<std::string>{"foo"}));
+
+  // Should return false due to unable to extract trust domain from principal.
+  EXPECT_FALSE(authenticator_.validateX509(mtls_params_, payload_));
   // When client certificate is present on mTLS, authenticated attribute should
   // be extracted.
   EXPECT_EQ(payload_->x509().user(), "foo");
 }
 
-TEST_P(ValidateX509Test, SslConnectionWithPeerSpiffeCert) {
+TEST_P(ValidateX509Test, SslConnectionWithCertsSkipTrustDomainValidation) {
+  // skip trust domain validation.
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_,
+                      options);
+
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  const std::vector<std::string> sans{"spiffe://foo", "bad"};
-  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return(sans));
-  EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(1)
+      .WillRepeatedly(Return(std::vector<std::string>{"foo"}));
 
+  // Should return true due to trust domain validation skipped.
+  EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
+  EXPECT_EQ(payload_->x509().user(), "foo");
+}
+
+TEST_P(ValidateX509Test, SslConnectionWithSpiffeCertsSameTrustDomain) {
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(Const(ssl_), peerCertificatePresented())
+      .Times(1)
+      .WillOnce(Return(true));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(2)
+      .WillRepeatedly(Return(std::vector<std::string>{"spiffe://td/foo"}));
+  EXPECT_CALL(ssl_, uriSanLocalCertificate())
+      .Times(1)
+      .WillOnce(Return(std::vector<std::string>{"spiffe://td/bar"}));
+
+  EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
   // When client certificate is present on mTLS, authenticated attribute should
   // be extracted.
-  EXPECT_EQ(payload_->x509().user(), "foo");
+  EXPECT_EQ(payload_->x509().user(), "td/foo");
+}
+
+TEST_P(ValidateX509Test, SslConnectionWithSpiffeCertsDifferentTrustDomain) {
+  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+  EXPECT_CALL(Const(ssl_), peerCertificatePresented())
+      .Times(1)
+      .WillOnce(Return(true));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(2)
+      .WillRepeatedly(Return(std::vector<std::string>{"spiffe://td-1/foo"}));
+  EXPECT_CALL(ssl_, uriSanLocalCertificate())
+      .Times(1)
+      .WillRepeatedly(Return(std::vector<std::string>{"spiffe://td-2/bar"}));
+
+  // Should return false due to trust domain validation failed.
+  EXPECT_FALSE(authenticator_.validateX509(mtls_params_, payload_));
+  // When client certificate is present on mTLS, authenticated attribute should
+  // be extracted.
+  EXPECT_EQ(payload_->x509().user(), "td-1/foo");
 }
 
 TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
+  // skip trust domain validation.
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_,
+                      options);
+
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
   EXPECT_CALL(Const(ssl_), peerCertificatePresented())
       .Times(1)
       .WillOnce(Return(true));
-  const std::vector<std::string> sans{"spiffe:foo", "bad"};
-  EXPECT_CALL(ssl_, uriSanPeerCertificate()).Times(1).WillOnce(Return(sans));
-  EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
+  EXPECT_CALL(ssl_, uriSanPeerCertificate())
+      .Times(1)
+      .WillRepeatedly(Return(std::vector<std::string>{"spiffe:foo"}));
 
+  EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
   // When client certificate is present on mTLS and the spiffe subject format is
   // wrong
   // ("spiffe:foo" instead of "spiffe://foo"), the user attribute should be

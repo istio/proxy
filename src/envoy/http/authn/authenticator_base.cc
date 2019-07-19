@@ -47,11 +47,42 @@ AuthenticatorBase::AuthenticatorBase(FilterContext* filter_context)
 
 AuthenticatorBase::~AuthenticatorBase() {}
 
+bool AuthenticatorBase::validateTrustDomain(
+    const Network::Connection* connection) const {
+  std::string peer_trust_domain;
+  if (!Utils::GetTrustDomain(connection, true, &peer_trust_domain)) {
+    ENVOY_CONN_LOG(
+        error, "trust domain validation failed: cannot get peer trust domain",
+        *connection);
+    return false;
+  }
+
+  std::string local_trust_domain;
+  if (!Utils::GetTrustDomain(connection, false, &local_trust_domain)) {
+    ENVOY_CONN_LOG(
+        error, "trust domain validation failed: cannot get local trust domain",
+        *connection);
+    return false;
+  }
+
+  if (peer_trust_domain != local_trust_domain) {
+    ENVOY_CONN_LOG(error,
+                   "trust domain validation failed: peer trust domain {} "
+                   "different from local trust domain {}",
+                   *connection, peer_trust_domain, local_trust_domain);
+    return false;
+  }
+
+  ENVOY_CONN_LOG(error, "trust domain validation succeeded", *connection);
+  return true;
+}
+
 bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
                                      Payload* payload) const {
   const Network::Connection* connection = filter_context_.connection();
   if (connection == nullptr) {
     // It's wrong if connection does not exist.
+    ENVOY_LOG(error, "validateX509 failed: null connection.");
     return false;
   }
   // Always try to get principal and set to output if available.
@@ -61,21 +92,32 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
       Utils::GetPrincipal(connection, true,
                           payload->mutable_x509()->mutable_user());
 
-  ENVOY_LOG(debug, "validateX509 mode {}: ssl={}, has_user={}",
-            iaapi::MutualTls::Mode_Name(mtls.mode()),
-            connection->ssl() != nullptr, has_user);
-  // Return value depend on mode:
-  // - PERMISSIVE: plaintext connection is acceptable, thus return true
-  // regardless.
-  // - STRICT: must be TLS with valid certificate.
-  switch (mtls.mode()) {
-    case iaapi::MutualTls::PERMISSIVE:
-      return true;
-    case iaapi::MutualTls::STRICT:
-      return has_user;
-    default:
-      NOT_REACHED_GCOVR_EXCL_LINE;
+  ENVOY_CONN_LOG(debug, "validateX509 mode {}: ssl={}, has_user={}",
+                 *connection, iaapi::MutualTls::Mode_Name(mtls.mode()),
+                 connection->ssl() != nullptr, has_user);
+
+  if (!has_user) {
+    // For plaintext connection, return value depend on mode:
+    // - PERMISSIVE: always true.
+    // - STRICT: always false.
+    switch (mtls.mode()) {
+      case iaapi::MutualTls::PERMISSIVE:
+        return true;
+      case iaapi::MutualTls::STRICT:
+        return false;
+      default:
+        NOT_REACHED_GCOVR_EXCL_LINE;
+    }
   }
+
+  if (filter_context_.filter_config().skip_validate_trust_domain()) {
+    ENVOY_CONN_LOG(debug, "trust domain validation skipped", *connection);
+    return true;
+  }
+
+  // For TLS connection with valid certificate, validate trust domain for both
+  // PERMISSIVE and STRICT mode.
+  return validateTrustDomain(connection);
 }
 
 bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {

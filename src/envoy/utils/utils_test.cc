@@ -14,8 +14,11 @@
  */
 
 #include "src/envoy/utils/utils.h"
+#include "gmock/gmock.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 #include "src/istio/mixerclient/check_context.h"
+#include "test/mocks/network/mocks.h"
+#include "test/mocks/ssl/mocks.h"
 #include "test/mocks/stream_info/mocks.h"
 #include "test/test_common/utility.h"
 
@@ -23,6 +26,55 @@ namespace {
 
 using Envoy::Utils::CheckResponseInfoToStreamInfo;
 using Envoy::Utils::ParseJsonMessage;
+using testing::NiceMock;
+using testing::Return;
+
+class UtilsTest : public testing::TestWithParam<bool> {
+ public:
+  void testGetPrincipal(const std::vector<std::string>& sans,
+                        const std::string& want, bool success) {
+    setMockSan(sans);
+    std::string actual;
+    if (success) {
+      EXPECT_TRUE(Envoy::Utils::GetPrincipal(&connection_, peer_, &actual));
+    } else {
+      EXPECT_FALSE(Envoy::Utils::GetPrincipal(&connection_, peer_, &actual));
+    }
+    EXPECT_EQ(actual, want);
+  }
+
+  void testGetTrustDomain(const std::vector<std::string>& sans,
+                          const std::string& want, bool success) {
+    setMockSan(sans);
+    std::string actual;
+    if (success) {
+      EXPECT_TRUE(Envoy::Utils::GetTrustDomain(&connection_, peer_, &actual));
+    } else {
+      EXPECT_FALSE(Envoy::Utils::GetTrustDomain(&connection_, peer_, &actual));
+    }
+    EXPECT_EQ(actual, want);
+  }
+
+  void SetUp() override { peer_ = GetParam(); }
+
+ protected:
+  NiceMock<Envoy::Network::MockConnection> connection_{};
+  NiceMock<Envoy::Ssl::MockConnectionInfo> ssl_{};
+  bool peer_;
+
+  void setMockSan(const std::vector<std::string>& sans) {
+    EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+    if (peer_) {
+      EXPECT_CALL(ssl_, uriSanPeerCertificate())
+          .Times(1)
+          .WillOnce(Return(sans));
+    } else {
+      EXPECT_CALL(ssl_, uriSanLocalCertificate())
+          .Times(1)
+          .WillOnce(Return(sans));
+    }
+  }
+};
 
 TEST(UtilsTest, ParseNormalMessage) {
   std::string config_str = R"({
@@ -68,5 +120,46 @@ TEST(UtilsTest, CheckResponseInfoToStreamInfo) {
 
   CheckResponseInfoToStreamInfo(check_response, mock_stream_info);
 }
+
+TEST_P(UtilsTest, GetPrincipal) {
+  std::vector<std::string> sans{"spiffe://foo/bar", "bad"};
+  testGetPrincipal(sans, "foo/bar", true);
+}
+
+TEST_P(UtilsTest, GetPrincipalNoSpiffePrefix) {
+  std::vector<std::string> sans{"spiffe:foo/bar", "bad"};
+  testGetPrincipal(sans, "spiffe:foo/bar", true);
+}
+
+TEST_P(UtilsTest, GetPrincipalEmpty) {
+  std::vector<std::string> sans;
+  testGetPrincipal(sans, "", false);
+}
+
+TEST_P(UtilsTest, GetTrustDomain) {
+  std::vector<std::string> sans{"spiffe://td/bar", "bad"};
+  testGetTrustDomain(sans, "td", true);
+}
+
+TEST_P(UtilsTest, GetTrustDomainEmpty) {
+  std::vector<std::string> sans;
+  testGetTrustDomain(sans, "", false);
+}
+
+TEST_P(UtilsTest, GetTrustDomainNoSpiffePrefix) {
+  std::vector<std::string> sans{"spiffe:td/bar", "bad"};
+  testGetTrustDomain(sans, "", false);
+}
+
+TEST_P(UtilsTest, GetTrustDomainNoSlash) {
+  std::vector<std::string> sans{"spiffe://td", "bad"};
+  testGetTrustDomain(sans, "", false);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    UtilsTestPrincipalAndTrustDomain, UtilsTest, testing::Values(true, false),
+    [](const testing::TestParamInfo<UtilsTest::ParamType>& info) {
+      return info.param ? "peer" : "local";
+    });
 
 }  // namespace
