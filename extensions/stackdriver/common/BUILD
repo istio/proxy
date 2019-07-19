@@ -30,6 +30,7 @@ cc_library(
     ],
     deps = [
         ":constants",
+        ":node_info_cc_proto",
         "@com_google_protobuf//:protobuf",
     ],
 )
@@ -39,6 +40,19 @@ cc_library(
     hdrs = [
         "constants.h",
     ],
+)
+
+cc_proto_library(
+    name = "node_info_cc_proto",
+    visibility = [
+        "//extensions/stackdriver:__pkg__",
+    ],
+    deps = ["node_info_proto"],
+)
+
+proto_library(
+    name = "node_info_proto",
+    srcs = ["node_info.proto"],
 )
 
 cc_test(

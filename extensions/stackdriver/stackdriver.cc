@@ -56,10 +56,19 @@ void StackdriverRootContext::onConfigure(
     return;
   }
 
-  // Get node metadata.
-  auto metadata =
-      getMetadataStruct(Common::Wasm::MetadataType::Node, kIstioMetadataKey);
-  ExtractNodeMetadata(metadata, &local_node_info_);
+  // Get node metadata. GetMetadataStruct always returns the whole node metadata
+  // even with a key passed in.
+  // TODO: clean this up after fixing upstream API to respect node metadata key.
+  auto node_metadata = getMetadataStruct(Common::Wasm::MetadataType::Node, "");
+  auto istio_metadata = node_metadata.fields().find(kIstioMetadataKey);
+  if (istio_metadata != node_metadata.fields().end()) {
+    auto status = ExtractNodeMetadata(istio_metadata->second.struct_value(),
+                                      &local_node_info_);
+    if (status != Status::OK) {
+      logWarn("cannot parse local node metadata " +
+              node_metadata.DebugString() + ": " + status.ToString());
+    }
+  }
 
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
@@ -112,7 +121,12 @@ FilterHeadersStatus StackdriverContext::onRequestHeaders() {
       PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
     auto downstream_metadata = getMetadataStruct(
         Common::Wasm::MetadataType::Request, kDownstreamMetadataKey);
-    ExtractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
+    auto status =
+        ExtractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
+    if (status != Status::OK) {
+      logWarn("cannot parse downstream peer node metadata " +
+              downstream_metadata.DebugString() + ": " + status.ToString());
+    }
   }
   return FilterHeadersStatus::Continue;
 }
@@ -128,7 +142,12 @@ FilterHeadersStatus StackdriverContext::onResponseHeaders() {
       PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
     auto upstream_metadata = getMetadataStruct(
         Common::Wasm::MetadataType::Request, kUpstreamMetadataKey);
-    ExtractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
+    auto status =
+        ExtractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
+    if (status != Status::OK) {
+      logWarn("cannot parse upstream peer node metadata " +
+              upstream_metadata.DebugString() + ": " + status.ToString());
+    }
   }
   request_info_.end_timestamp = proxy_getCurrentTimeNanoseconds();
   return FilterHeadersStatus::Continue;

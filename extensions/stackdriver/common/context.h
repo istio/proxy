@@ -18,32 +18,12 @@
 #include <string>
 #include <unordered_map>
 
+#include "extensions/stackdriver/common/node_info.pb.h"
 #include "google/protobuf/struct.pb.h"
 
 namespace Extensions {
 namespace Stackdriver {
 namespace Common {
-
-// NodeInfo represents the information extracted from proxy node metadata, or
-// peer node metadata header. This is used to fill metrics and log labels.
-struct NodeInfo {
-  // Name of the node. e.g. pod name in k8s.
-  std::string name;
-
-  // Namespaace that the node runs in.
-  std::string namespace_name;
-
-  // Workload attributes that are k8s specific.
-  std::unordered_map<std::string, std::string> port_to_container;
-  std::string owner;
-  std::string workload_name;
-
-  // GCP project and cluster metadata, used to fill in metric monitored
-  // resource.
-  std::string project_id;
-  std::string cluster_name;
-  std::string location;
-};
 
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
@@ -61,7 +41,7 @@ struct RequestInfo {
   int64_t response_size = 0;
 
   // Node information of the peer that the request sent to or came from.
-  NodeInfo peer_node_info;
+  stackdriver::common::NodeInfo peer_node_info;
 
   // Destination port that the request targets.
   int64_t destination_port = 0;
@@ -88,8 +68,10 @@ struct RequestInfo {
 };
 
 // Extracts NodeInfo from proxy node metadata as a proto struct.
-void ExtractNodeMetadata(const google::protobuf::Struct &metadata,
-                         NodeInfo *node_info);
+// Returns status of node metadata parsing.
+google::protobuf::util::Status ExtractNodeMetadata(
+    const google::protobuf::Struct &metadata,
+    stackdriver::common::NodeInfo *node_info);
 
 }  // namespace Common
 }  // namespace Stackdriver

@@ -13,84 +13,31 @@
  * limitations under the License.
  */
 
-#include "extensions/stackdriver/common/context.h"
+#include <google/protobuf/util/json_util.h>
+
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/context.h"
 
 namespace Extensions {
 namespace Stackdriver {
 namespace Common {
 
-// Find value of the given key from the metadata proto map and copy it into the
-// field. If the given key cannot be found, field remains unset.
-void FillNodeMetadataField(
-    const google::protobuf::Map<std::string, google::protobuf::Value> &metadata,
-    const std::string &key, std::string *field) {
-  auto iter = metadata.find(key);
-  if (iter == metadata.end()) {
-    return;
-  }
-  *field = iter->second.string_value();
-}
+using namespace google::protobuf::util;
+using namespace stackdriver::common;
 
-// Same as above, but instead of finding a string value, find a string map value
-// and copy it into the given field.
-void FillNodeMetadataField(
-    const google::protobuf::Map<std::string, google::protobuf::Value> &metadata,
-    const std::string &key,
-    std::unordered_map<std::string, std::string> *map_field) {
-  auto iter = metadata.find(key);
-  if (iter == metadata.end()) {
-    return;
+Status ExtractNodeMetadata(const google::protobuf::Struct &metadata,
+                           NodeInfo *node_info) {
+  JsonOptions json_options;
+  std::string metadata_json_struct;
+  auto status =
+      MessageToJsonString(metadata, &metadata_json_struct, json_options);
+  if (status != Status::OK) {
+    return status;
   }
-  if (iter->second.kind_case() != google::protobuf::Value::kStructValue) {
-    // expect the value to be a struct proto.
-    return;
-  }
-  auto m = iter->second.struct_value().fields();
-  for (const auto &elem : m) {
-    if (elem.second.kind_case() != google::protobuf::Value::kStringValue) {
-      // The map should be a string map. Skip the elem if it is not the case.
-      continue;
-    }
-    (*map_field)[elem.first] = elem.second.string_value();
-  }
-}
-
-void ExtractNodeMetadata(const google::protobuf::Struct &metadata,
-                         NodeInfo *node_info) {
-  const auto &istio_metadata_fields = metadata.fields();
-  if (istio_metadata_fields.empty()) {
-    return;
-  }
-  FillNodeMetadataField(istio_metadata_fields, kMetadataPodNameKey,
-                        &node_info->name);
-  FillNodeMetadataField(istio_metadata_fields, kMetadataNamespaceKey,
-                        &node_info->namespace_name);
-  FillNodeMetadataField(istio_metadata_fields, kMetadataOwnerKey,
-                        &node_info->owner);
-  FillNodeMetadataField(istio_metadata_fields, kMetadataWorkloadNameKey,
-                        &node_info->workload_name);
-  FillNodeMetadataField(istio_metadata_fields, kMetadataContainersKey,
-                        &node_info->port_to_container);
-
-  // Fill GCP project metadata
-  auto iter = istio_metadata_fields.find(kPlatformMetadataKey);
-  if (iter == istio_metadata_fields.end()) {
-    return;
-  }
-  const auto &platform_metadata_struct = iter->second.struct_value();
-  if (platform_metadata_struct.fields().empty()) {
-    return;
-  }
-  const auto &platform_metadata_fields = platform_metadata_struct.fields();
-  FillNodeMetadataField(platform_metadata_fields, kGCPProjectKey,
-                        &node_info->project_id);
-  FillNodeMetadataField(platform_metadata_fields, kGCPClusterLocationKey,
-                        &node_info->location);
-  FillNodeMetadataField(platform_metadata_fields, kGCPClusterNameKey,
-                        &node_info->cluster_name);
-
-  return;
+  JsonParseOptions json_parse_options;
+  json_parse_options.ignore_unknown_fields = true;
+  return JsonStringToMessage(metadata_json_struct, node_info,
+                             json_parse_options);
 }
 
 }  // namespace Common

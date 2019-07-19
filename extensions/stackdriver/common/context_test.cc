@@ -16,113 +16,186 @@
 #include "extensions/stackdriver/common/context.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "google/protobuf/struct.pb.h"
+#include "google/protobuf/stubs/status.h"
+#include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 
 namespace Extensions {
 namespace Stackdriver {
 namespace Common {
 
-// Test ExtraceNodeMetadata with all possible metadata field.
-TEST(ContextTest, ExtractNodeMetadata) {
-  google::protobuf::Struct metadata_struct;
-  auto metadata_fields = metadata_struct.mutable_fields();
-  google::protobuf::Value pod_name;
-  *pod_name.mutable_string_value() = "test_pod";
-  (*metadata_fields)[kMetadataPodNameKey] = pod_name;
-  google::protobuf::Value namespace_name;
-  *namespace_name.mutable_string_value() = "test_namespace";
-  (*metadata_fields)[kMetadataNamespaceKey] = namespace_name;
-  google::protobuf::Value workload_name;
-  *workload_name.mutable_string_value() = "test_workload";
-  (*metadata_fields)[kMetadataWorkloadNameKey] = workload_name;
-  google::protobuf::Value owner;
-  *owner.mutable_string_value() = "test_owner";
-  (*metadata_fields)[kMetadataOwnerKey] = owner;
-  google::protobuf::Value project_id;
-  *project_id.mutable_string_value() = "test_project";
-  auto *gcp_fields = (*metadata_fields)[kPlatformMetadataKey]
-                         .mutable_struct_value()
-                         ->mutable_fields();
-  (*gcp_fields)[kGCPProjectKey] = project_id;
-  google::protobuf::Value cluster_location;
-  *cluster_location.mutable_string_value() = "test_location";
-  (*gcp_fields)[kGCPClusterLocationKey] = cluster_location;
-  google::protobuf::Value cluster_name;
-  *cluster_name.mutable_string_value() = "test_cluster";
-  (*gcp_fields)[kGCPClusterNameKey] = cluster_name;
-  google::protobuf::Value container_name;
-  *container_name.mutable_string_value() = "test_container";
-  auto *container_map =
-      (*metadata_fields)[kMetadataContainersKey].mutable_struct_value();
-  (*container_map->mutable_fields())["80"] = container_name;
+using namespace google::protobuf;
+using namespace google::protobuf::util;
+using namespace stackdriver::common;
 
+// Test all possible metadata field.
+TEST(ContextTest, ExtractNodeMetadata) {
+  std::string node_metadata = R"###(
+fields {
+  key: "name"
+  value {
+    string_value: "test_pod"
+  }
+}
+fields {
+  key: "namespace"
+  value {
+    string_value: "test_namespace"
+  }
+}
+fields {
+  key: "owner"
+  value {
+    string_value: "test_owner"
+  }
+}
+fields {
+  key: "platform_metadata"
+  value {
+    struct_value {
+      fields {
+        key: "gcp_cluster_location"
+        value {
+          string_value: "test_location"
+        }
+      }
+      fields {
+        key: "gcp_cluster_name"
+        value {
+          string_value: "test_cluster"
+        }
+      }
+      fields {
+        key: "gcp_project"
+        value {
+          string_value: "test_project"
+        }
+      }
+    }
+  }
+}
+fields {
+  key: "ports_to_containers"
+  value {
+    struct_value {
+      fields {
+        key: "80"
+        value {
+          string_value: "test_container"
+        }
+      }
+    }
+  }
+}
+fields {
+  key: "workload_name"
+  value {
+    string_value: "test_workload"
+  }
+}
+)###";
+  google::protobuf::Struct metadata_struct;
+  TextFormat::ParseFromString(node_metadata, &metadata_struct);
   NodeInfo node_info;
-  ExtractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_EQ(node_info.name, "test_pod");
-  EXPECT_EQ(node_info.namespace_name, "test_namespace");
-  EXPECT_EQ(node_info.owner, "test_owner");
-  EXPECT_EQ(node_info.workload_name, "test_workload");
-  EXPECT_EQ(node_info.project_id, "test_project");
-  EXPECT_EQ(node_info.cluster_name, "test_cluster");
-  EXPECT_EQ(node_info.location, "test_location");
-  EXPECT_EQ(node_info.port_to_container.size(), 1);
-  EXPECT_EQ(node_info.port_to_container.at("80"), "test_container");
+  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  EXPECT_EQ(status, Status::OK);
+  EXPECT_EQ(node_info.name(), "test_pod");
+  EXPECT_EQ(node_info.namespace_(), "test_namespace");
+  EXPECT_EQ(node_info.owner(), "test_owner");
+  EXPECT_EQ(node_info.workload_name(), "test_workload");
+  EXPECT_EQ(node_info.platform_metadata().gcp_project(), "test_project");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "test_cluster");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(),
+            "test_location");
+  EXPECT_EQ(node_info.ports_to_containers().size(), 1);
+  EXPECT_EQ(node_info.ports_to_containers().at("80"), "test_container");
 }
 
-// Test empty node Istio metadata.
+// Test empty node metadata.
 TEST(ContextTest, ExtractNodeMetadataNoMetadataField) {
   google::protobuf::Struct metadata_struct;
   NodeInfo node_info;
 
-  ExtractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_EQ(node_info.name, "");
-  EXPECT_EQ(node_info.namespace_name, "");
-  EXPECT_EQ(node_info.owner, "");
-  EXPECT_EQ(node_info.workload_name, "");
-  EXPECT_EQ(node_info.project_id, "");
-  EXPECT_EQ(node_info.location, "");
-  EXPECT_EQ(node_info.cluster_name, "");
-  EXPECT_TRUE(node_info.port_to_container.empty());
+  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  EXPECT_EQ(status, Status::OK);
+  EXPECT_EQ(node_info.name(), "");
+  EXPECT_EQ(node_info.namespace_(), "");
+  EXPECT_EQ(node_info.owner(), "");
+  EXPECT_EQ(node_info.workload_name(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
+  EXPECT_EQ(node_info.ports_to_containers().size(), 0);
+}
+
+// Test missing metadata.
+TEST(ContextTest, ExtractNodeMetadataMissingMetadata) {
+  std::string node_metadata = R"###(
+fields {
+  key: "name"
+  value {
+    string_value: "test_pod"
+  }
+}
+fields {
+  key: "namespace"
+  value {
+    string_value: "test_namespace"
+  }
+}
+)###";
+  ;
+  google::protobuf::Struct metadata_struct;
+  TextFormat::ParseFromString(node_metadata, &metadata_struct);
+  NodeInfo node_info;
+  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  EXPECT_EQ(status, Status::OK);
+  EXPECT_EQ(node_info.name(), "test_pod");
+  EXPECT_EQ(node_info.namespace_(), "test_namespace");
+  EXPECT_EQ(node_info.owner(), "");
+  EXPECT_EQ(node_info.workload_name(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
+  EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 
 // Test wrong type of GCP metadata.
 TEST(ContextTest, ExtractNodeMetadataWrongGCPMetadata) {
-  google::protobuf::Value metadata_string;
-  *metadata_string.mutable_string_value() = "some_string_metadata";
+  std::string node_metadata = R"###(
+fields {
+  key: "platform_metadata"
+  value {
+    string_value: "some string"
+  }
+}
+)###";
   google::protobuf::Struct metadata_struct;
-  (*metadata_struct.mutable_fields())[kPlatformMetadataKey] = metadata_string;
-
+  TextFormat::ParseFromString(node_metadata, &metadata_struct);
   NodeInfo node_info;
-  ExtractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_EQ(node_info.project_id, "");
-  EXPECT_EQ(node_info.location, "");
-  EXPECT_EQ(node_info.cluster_name, "");
-  EXPECT_TRUE(node_info.port_to_container.empty());
+  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  EXPECT_NE(status, Status::OK);
+  EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
+  EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
+  EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 
-// Test missing Istio metadata fields.
-TEST(ContextTest, ExtractNodeMetadataFieldNotFound) {
+// Test unknown field.
+TEST(ContextTest, ExtractNodeMetadataUnknownField) {
+  std::string node_metadata = R"###(
+fields {
+  key: "some metadat"
+  value {
+    string_value: "some string"
+  }
+}
+)###";
   google::protobuf::Struct metadata_struct;
-  auto metadata_fields = metadata_struct.mutable_fields();
-
-  google::protobuf::Value pod_name;
-  *pod_name.mutable_string_value() = "test_pod";
-  (*metadata_fields)[kMetadataPodNameKey] = pod_name;
-  google::protobuf::Value namespace_name;
-  *namespace_name.mutable_string_value() = "test_namespace";
-  (*metadata_fields)[kMetadataNamespaceKey] = namespace_name;
-
+  TextFormat::ParseFromString(node_metadata, &metadata_struct);
   NodeInfo node_info;
-  ExtractNodeMetadata(metadata_struct, &node_info);
-  // For the missing fields, the value should just be empty string.
-  EXPECT_EQ(node_info.name, "test_pod");
-  EXPECT_EQ(node_info.namespace_name, "test_namespace");
-  EXPECT_EQ(node_info.owner, "");
-  EXPECT_EQ(node_info.workload_name, "");
-  EXPECT_EQ(node_info.project_id, "");
-  EXPECT_EQ(node_info.location, "");
-  EXPECT_EQ(node_info.cluster_name, "");
-  EXPECT_TRUE(node_info.port_to_container.empty());
+  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  EXPECT_EQ(status, Status::OK);
 }
 
 }  // namespace Common

@@ -62,7 +62,7 @@ class StackdriverRootContext : public RootContext {
   stackdriver::config::PluginConfig config_;
 
   // Local node info extracted from node metadata.
-  ::Extensions::Stackdriver::Common::NodeInfo local_node_info_;
+  stackdriver::common::NodeInfo local_node_info_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
