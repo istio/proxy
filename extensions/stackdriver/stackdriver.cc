@@ -58,13 +58,14 @@ void StackdriverRootContext::onConfigure(
 
   // Get node metadata. GetMetadataStruct always returns the whole node metadata
   // even with a key passed in.
-  // TODO: change to GetMetadataStruct after fixing upstream API to respect node metadata key.
-  auto node_metadata = getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey);
-  status = ExtractNodeMetadata(node_metadata.struct_value(),
-                                    &local_node_info_);
+  // TODO: change to GetMetadataStruct after fixing upstream API to respect node
+  // metadata key.
+  auto node_metadata =
+      getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey);
+  status = ExtractNodeMetadata(node_metadata.struct_value(), &local_node_info_);
   if (status != Status::OK) {
-    logWarn("cannot parse local node metadata " +
-            node_metadata.DebugString() + ": " + status.ToString());
+    logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
+            ": " + status.ToString());
   }
 
   // Register OC Stackdriver exporter and views to be exported.
