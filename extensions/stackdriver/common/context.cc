@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-#include <google/protobuf/util/json_util.h>
-
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/context.h"
+#include "google/protobuf/util/json_util.h"
 
 namespace Extensions {
 namespace Stackdriver {

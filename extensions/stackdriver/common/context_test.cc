@@ -18,6 +18,7 @@
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/stubs/status.h"
 #include "google/protobuf/text_format.h"
+#include "google/protobuf/util/json_util.h"
 #include "gtest/gtest.h"
 
 namespace Extensions {
@@ -30,72 +31,25 @@ using namespace stackdriver::common;
 
 // Test all possible metadata field.
 TEST(ContextTest, ExtractNodeMetadata) {
-  std::string node_metadata = R"###(
-fields {
-  key: "name"
-  value {
-    string_value: "test_pod"
-  }
-}
-fields {
-  key: "namespace"
-  value {
-    string_value: "test_namespace"
-  }
-}
-fields {
-  key: "owner"
-  value {
-    string_value: "test_owner"
-  }
-}
-fields {
-  key: "platform_metadata"
-  value {
-    struct_value {
-      fields {
-        key: "gcp_cluster_location"
-        value {
-          string_value: "test_location"
-        }
-      }
-      fields {
-        key: "gcp_cluster_name"
-        value {
-          string_value: "test_cluster"
-        }
-      }
-      fields {
-        key: "gcp_project"
-        value {
-          string_value: "test_project"
-        }
-      }
-    }
-  }
-}
-fields {
-  key: "ports_to_containers"
-  value {
-    struct_value {
-      fields {
-        key: "80"
-        value {
-          string_value: "test_container"
-        }
-      }
-    }
-  }
-}
-fields {
-  key: "workload_name"
-  value {
-    string_value: "test_workload"
-  }
+  std::string node_metadata_json = R"###(
+{
+   "namespace":"test_namespace",
+   "ports_to_containers":{
+      "80":"test_container"
+   },
+   "platform_metadata":{
+      "gcp_project":"test_project",
+      "gcp_cluster_location":"test_location",
+      "gcp_cluster_name":"test_cluster"
+   },
+   "workload_name":"test_workload",
+   "owner":"test_owner",
+   "name":"test_pod"
 }
 )###";
   google::protobuf::Struct metadata_struct;
-  TextFormat::ParseFromString(node_metadata, &metadata_struct);
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
   NodeInfo node_info;
   Status status = ExtractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
@@ -130,23 +84,15 @@ TEST(ContextTest, ExtractNodeMetadataNoMetadataField) {
 
 // Test missing metadata.
 TEST(ContextTest, ExtractNodeMetadataMissingMetadata) {
-  std::string node_metadata = R"###(
-fields {
-  key: "name"
-  value {
-    string_value: "test_pod"
-  }
-}
-fields {
-  key: "namespace"
-  value {
-    string_value: "test_namespace"
-  }
+  std::string node_metadata_json = R"###(
+{
+   "namespace":"test_namespace",
+   "name":"test_pod"
 }
 )###";
-  ;
   google::protobuf::Struct metadata_struct;
-  TextFormat::ParseFromString(node_metadata, &metadata_struct);
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
   NodeInfo node_info;
   Status status = ExtractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
@@ -162,16 +108,14 @@ fields {
 
 // Test wrong type of GCP metadata.
 TEST(ContextTest, ExtractNodeMetadataWrongGCPMetadata) {
-  std::string node_metadata = R"###(
-fields {
-  key: "platform_metadata"
-  value {
-    string_value: "some string"
-  }
+  std::string node_metadata_json = R"###(
+{
+   "platform_metadata":"some string",
 }
 )###";
   google::protobuf::Struct metadata_struct;
-  TextFormat::ParseFromString(node_metadata, &metadata_struct);
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
   NodeInfo node_info;
   Status status = ExtractNodeMetadata(metadata_struct, &node_info);
   EXPECT_NE(status, Status::OK);
@@ -183,16 +127,13 @@ fields {
 
 // Test unknown field.
 TEST(ContextTest, ExtractNodeMetadataUnknownField) {
-  std::string node_metadata = R"###(
-fields {
-  key: "some metadat"
-  value {
-    string_value: "some string"
-  }
+  std::string node_metadata_json = R"###(
+{
+   "some_key":"some string",
 }
 )###";
   google::protobuf::Struct metadata_struct;
-  TextFormat::ParseFromString(node_metadata, &metadata_struct);
+  TextFormat::ParseFromString(node_metadata_json, &metadata_struct);
   NodeInfo node_info;
   Status status = ExtractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
