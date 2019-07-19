@@ -169,7 +169,8 @@ bool GetTrustDomain(const Network::Connection* connection, bool peer,
     return false;
   }
 
-  *trust_domain = cert_san.substr(kSPIFFEPrefix.size(), slash);
+  std::size_t len = slash - kSPIFFEPrefix.size();
+  *trust_domain = cert_san.substr(kSPIFFEPrefix.size(), len);
   return true;
 }
 
