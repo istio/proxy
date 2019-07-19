@@ -162,7 +162,7 @@ FilterDataStatus StackdriverContext::onResponseBody(size_t body_buffer_length,
 
 StackdriverRootContext *StackdriverContext::getRootContext() {
   RootContext *root = this->root();
-  return static_cast<StackdriverRootContext *>(root);
+  return dynamic_cast<StackdriverRootContext *>(root);
 }
 
 void StackdriverContext::onLog() {
