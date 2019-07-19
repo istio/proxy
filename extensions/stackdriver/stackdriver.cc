@@ -58,16 +58,13 @@ void StackdriverRootContext::onConfigure(
 
   // Get node metadata. GetMetadataStruct always returns the whole node metadata
   // even with a key passed in.
-  // TODO: clean this up after fixing upstream API to respect node metadata key.
-  auto node_metadata = getMetadataStruct(Common::Wasm::MetadataType::Node, "");
-  auto istio_metadata = node_metadata.fields().find(kIstioMetadataKey);
-  if (istio_metadata != node_metadata.fields().end()) {
-    auto status = ExtractNodeMetadata(istio_metadata->second.struct_value(),
-                                      &local_node_info_);
-    if (status != Status::OK) {
-      logWarn("cannot parse local node metadata " +
-              node_metadata.DebugString() + ": " + status.ToString());
-    }
+  // TODO: change to GetMetadataStruct after fixing upstream API to respect node metadata key.
+  auto node_metadata = getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey);
+  status = ExtractNodeMetadata(node_metadata.struct_value(),
+                                    &local_node_info_);
+  if (status != Status::OK) {
+    logWarn("cannot parse local node metadata " +
+            node_metadata.DebugString() + ": " + status.ToString());
   }
 
   // Register OC Stackdriver exporter and views to be exported.
@@ -117,6 +114,7 @@ FilterHeadersStatus StackdriverContext::onRequestHeaders() {
   request_info_.request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
+  request_info_.destination_port = getDestinationPort(StreamType::Request);
   if (getRootContext()->reporterKind() ==
       PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
     auto downstream_metadata = getMetadataStruct(
@@ -133,11 +131,13 @@ FilterHeadersStatus StackdriverContext::onRequestHeaders() {
 
 FilterDataStatus StackdriverContext::onRequestBody(size_t body_buffer_length,
                                                    bool) {
+  // TODO: switch to stream_info.bytesSent/bytesReceived to avoid extra compute.
   request_info_.request_size += body_buffer_length;
   return FilterDataStatus::Continue;
 }
 
 FilterHeadersStatus StackdriverContext::onResponseHeaders() {
+  request_info_.response_code = getResponseCode(StreamType::Response);
   if (getRootContext()->reporterKind() ==
       PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
     auto upstream_metadata = getMetadataStruct(
@@ -149,12 +149,12 @@ FilterHeadersStatus StackdriverContext::onResponseHeaders() {
               upstream_metadata.DebugString() + ": " + status.ToString());
     }
   }
-  request_info_.end_timestamp = proxy_getCurrentTimeNanoseconds();
   return FilterHeadersStatus::Continue;
 }
 
 FilterDataStatus StackdriverContext::onResponseBody(size_t body_buffer_length,
                                                     bool) {
+  // TODO: switch to stream_info.bytesSent/bytesReceived to avoid extra compute.
   request_info_.response_size += body_buffer_length;
   return FilterDataStatus::Continue;
 }
@@ -165,6 +165,8 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
+  // TODO: switch to stream_info.requestComplete() to avoid extra compute.
+  request_info_.end_timestamp = proxy_getCurrentTimeNanoseconds();
   // TODO: Record Istio metrics.
 }
 
