@@ -67,8 +67,10 @@ struct RequestInfo {
   std::string destination_principal;
 };
 
-// Extracts NodeInfo from proxy node metadata as a proto struct.
-// Returns status of node metadata parsing.
+// Extracts NodeInfo from proxy node metadata passed in as a protobuf struct.
+// It converts the metadata struct to a JSON struct and parse NodeInfo proto
+// from that JSON struct.
+// Returns status of protocol/JSON operations.
 google::protobuf::util::Status ExtractNodeMetadata(
     const google::protobuf::Struct &metadata,
     stackdriver::common::NodeInfo *node_info);
