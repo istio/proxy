@@ -108,25 +108,6 @@ StackdriverOptions StackdriverRootContext::getStackdriverOptions() {
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
   request_info_.start_timestamp = proxy_getCurrentTimeNanoseconds();
-  request_info_.request_protocol = getProtocol(StreamType::Request)->toString();
-  request_info_.destination_service_host =
-      getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
-          ->toString();
-  request_info_.request_operation =
-      getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
-          ->toString();
-  request_info_.destination_port = getDestinationPort(StreamType::Request);
-  if (getRootContext()->reporterKind() ==
-      PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
-    auto downstream_metadata = getMetadataStruct(
-        Common::Wasm::MetadataType::Request, kDownstreamMetadataKey);
-    auto status =
-        extractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
-    if (status != Status::OK) {
-      logWarn("cannot parse downstream peer node metadata " +
-              downstream_metadata.DebugString() + ": " + status.ToString());
-    }
-  }
   return FilterHeadersStatus::Continue;
 }
 
@@ -135,22 +116,6 @@ FilterDataStatus StackdriverContext::onRequestBody(size_t body_buffer_length,
   // TODO: switch to stream_info.bytesSent/bytesReceived to avoid extra compute.
   request_info_.request_size += body_buffer_length;
   return FilterDataStatus::Continue;
-}
-
-FilterHeadersStatus StackdriverContext::onResponseHeaders() {
-  request_info_.response_code = getResponseCode(StreamType::Response);
-  if (getRootContext()->reporterKind() ==
-      PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
-    auto upstream_metadata = getMetadataStruct(
-        Common::Wasm::MetadataType::Request, kUpstreamMetadataKey);
-    auto status =
-        extractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
-    if (status != Status::OK) {
-      logWarn("cannot parse upstream peer node metadata " +
-              upstream_metadata.DebugString() + ": " + status.ToString());
-    }
-  }
-  return FilterHeadersStatus::Continue;
 }
 
 FilterDataStatus StackdriverContext::onResponseBody(size_t body_buffer_length,
@@ -168,6 +133,41 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 void StackdriverContext::onLog() {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info_.end_timestamp = proxy_getCurrentTimeNanoseconds();
+
+  // Fill in request info.
+  request_info_.response_code = getResponseCode(StreamType::Response);
+  request_info_.request_protocol = getProtocol(StreamType::Request)->toString();
+  request_info_.destination_service_host =
+      getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
+          ->toString();
+  request_info_.request_operation =
+      getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
+          ->toString();
+  request_info_.destination_port = getDestinationPort(StreamType::Request);
+
+  // Fill in peer node metadata in request info.
+  if (getRootContext()->reporterKind() ==
+      PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
+    auto downstream_metadata = getMetadataStruct(
+        Common::Wasm::MetadataType::Request, kDownstreamMetadataKey);
+    auto status =
+        extractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
+    if (status != Status::OK) {
+      logWarn("cannot parse downstream peer node metadata " +
+              downstream_metadata.DebugString() + ": " + status.ToString());
+    }
+  } else if (getRootContext()->reporterKind() ==
+             PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
+    auto upstream_metadata = getMetadataStruct(
+        Common::Wasm::MetadataType::Request, kUpstreamMetadataKey);
+    auto status =
+        extractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
+    if (status != Status::OK) {
+      logWarn("cannot parse upstream peer node metadata " +
+              upstream_metadata.DebugString() + ": " + status.ToString());
+    }
+  }
+
   // TODO: Record Istio metrics.
 }
 

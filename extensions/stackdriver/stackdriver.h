@@ -76,7 +76,6 @@ class StackdriverContext : public Context {
   FilterHeadersStatus onRequestHeaders() override;
   FilterDataStatus onRequestBody(size_t body_buffer_length,
                                  bool end_of_stream) override;
-  FilterHeadersStatus onResponseHeaders() override;
   FilterDataStatus onResponseBody(size_t body_buffer_length,
                                   bool end_of_stream) override;
 
