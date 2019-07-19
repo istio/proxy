@@ -31,7 +31,6 @@ constexpr char kGCPProjectKey[] = "gcp_project";
 constexpr char kUpstreamMetadataKey[] = "envoy.wasm.metadata_exchange.upstream";
 constexpr char kDownstreamMetadataKey[] =
     "envoy.wasm.metadata_exchange.downstream";
-constexpr char kIstioProxyContainerName[] = "istio-proxy";
 
 // Header keys
 constexpr char kAuthorityHeaderKey[] = ":authority";
