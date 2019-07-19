@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/utils/utils.h"
+#include "absl/strings/match.h"
 #include "include/istio/utils/attributes_builder.h"
 #include "mixer/v1/attributes.pb.h"
 
@@ -37,10 +38,9 @@ const std::string kMetadataDestinationUID("uid");
 bool getCertSAN(const Network::Connection* connection, bool peer,
                 std::string* principal) {
   if (connection) {
-    Ssl::ConnectionInfo* ssl =
-        const_cast<Ssl::ConnectionInfo*>(connection->ssl());
+    const Ssl::ConnectionInfo* ssl = connection->ssl();
     if (ssl != nullptr) {
-      const std::vector<std::string> sans =
+      const auto& sans =
           (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
       if (sans.empty()) {
         // empty result is not allowed.
@@ -54,8 +54,7 @@ bool getCertSAN(const Network::Connection* connection, bool peer,
 }
 
 bool hasSPIFFEPrefix(const std::string& san) {
-  return san.length() >= kSPIFFEPrefix.length() &&
-         san.compare(0, kSPIFFEPrefix.length(), kSPIFFEPrefix) == 0;
+  return absl::StartsWith(san, kSPIFFEPrefix);
 }
 }  // namespace
 
@@ -163,7 +162,7 @@ bool GetTrustDomain(const Network::Connection* connection, bool peer,
     return false;
   }
 
-  // Strip out the prefix "spiffe://" before getting trust domain.
+  // Skip the prefix "spiffe://" before getting trust domain.
   std::size_t slash = cert_san.find('/', kSPIFFEPrefix.size());
   if (slash == std::string::npos) {
     return false;
