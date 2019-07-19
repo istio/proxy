@@ -24,7 +24,7 @@ namespace Common {
 using namespace google::protobuf::util;
 using namespace stackdriver::common;
 
-Status ExtractNodeMetadata(const google::protobuf::Struct &metadata,
+Status extractNodeMetadata(const google::protobuf::Struct &metadata,
                            NodeInfo *node_info) {
   JsonOptions json_options;
   std::string metadata_json_struct;

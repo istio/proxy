@@ -62,7 +62,7 @@ void StackdriverRootContext::onConfigure(
   // metadata key.
   auto node_metadata =
       getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey);
-  status = ExtractNodeMetadata(node_metadata.struct_value(), &local_node_info_);
+  status = extractNodeMetadata(node_metadata.struct_value(), &local_node_info_);
   if (status != Status::OK) {
     logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
             ": " + status.ToString());
@@ -121,7 +121,7 @@ FilterHeadersStatus StackdriverContext::onRequestHeaders() {
     auto downstream_metadata = getMetadataStruct(
         Common::Wasm::MetadataType::Request, kDownstreamMetadataKey);
     auto status =
-        ExtractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
+        extractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
     if (status != Status::OK) {
       logWarn("cannot parse downstream peer node metadata " +
               downstream_metadata.DebugString() + ": " + status.ToString());
@@ -144,7 +144,7 @@ FilterHeadersStatus StackdriverContext::onResponseHeaders() {
     auto upstream_metadata = getMetadataStruct(
         Common::Wasm::MetadataType::Request, kUpstreamMetadataKey);
     auto status =
-        ExtractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
+        extractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
     if (status != Status::OK) {
       logWarn("cannot parse upstream peer node metadata " +
               upstream_metadata.DebugString() + ": " + status.ToString());

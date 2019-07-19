@@ -30,7 +30,7 @@ using namespace google::protobuf::util;
 using namespace stackdriver::common;
 
 // Test all possible metadata field.
-TEST(ContextTest, ExtractNodeMetadata) {
+TEST(ContextTest, extractNodeMetadata) {
   std::string node_metadata_json = R"###(
 {
    "namespace":"test_namespace",
@@ -51,7 +51,7 @@ TEST(ContextTest, ExtractNodeMetadata) {
   JsonParseOptions json_parse_options;
   JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
   NodeInfo node_info;
-  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
   EXPECT_EQ(node_info.name(), "test_pod");
   EXPECT_EQ(node_info.namespace_(), "test_namespace");
@@ -66,11 +66,11 @@ TEST(ContextTest, ExtractNodeMetadata) {
 }
 
 // Test empty node metadata.
-TEST(ContextTest, ExtractNodeMetadataNoMetadataField) {
+TEST(ContextTest, extractNodeMetadataNoMetadataField) {
   google::protobuf::Struct metadata_struct;
   NodeInfo node_info;
 
-  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
   EXPECT_EQ(node_info.name(), "");
   EXPECT_EQ(node_info.namespace_(), "");
@@ -83,7 +83,7 @@ TEST(ContextTest, ExtractNodeMetadataNoMetadataField) {
 }
 
 // Test missing metadata.
-TEST(ContextTest, ExtractNodeMetadataMissingMetadata) {
+TEST(ContextTest, extractNodeMetadataMissingMetadata) {
   std::string node_metadata_json = R"###(
 {
    "namespace":"test_namespace",
@@ -94,7 +94,7 @@ TEST(ContextTest, ExtractNodeMetadataMissingMetadata) {
   JsonParseOptions json_parse_options;
   JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
   NodeInfo node_info;
-  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
   EXPECT_EQ(node_info.name(), "test_pod");
   EXPECT_EQ(node_info.namespace_(), "test_namespace");
@@ -107,7 +107,7 @@ TEST(ContextTest, ExtractNodeMetadataMissingMetadata) {
 }
 
 // Test wrong type of GCP metadata.
-TEST(ContextTest, ExtractNodeMetadataWrongGCPMetadata) {
+TEST(ContextTest, extractNodeMetadataWrongGCPMetadata) {
   std::string node_metadata_json = R"###(
 {
    "platform_metadata":"some string",
@@ -117,7 +117,7 @@ TEST(ContextTest, ExtractNodeMetadataWrongGCPMetadata) {
   JsonParseOptions json_parse_options;
   JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
   NodeInfo node_info;
-  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_NE(status, Status::OK);
   EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
   EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
@@ -126,7 +126,7 @@ TEST(ContextTest, ExtractNodeMetadataWrongGCPMetadata) {
 }
 
 // Test unknown field.
-TEST(ContextTest, ExtractNodeMetadataUnknownField) {
+TEST(ContextTest, extractNodeMetadataUnknownField) {
   std::string node_metadata_json = R"###(
 {
    "some_key":"some string",
@@ -135,7 +135,7 @@ TEST(ContextTest, ExtractNodeMetadataUnknownField) {
   google::protobuf::Struct metadata_struct;
   TextFormat::ParseFromString(node_metadata_json, &metadata_struct);
   NodeInfo node_info;
-  Status status = ExtractNodeMetadata(metadata_struct, &node_info);
+  Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
 }
 

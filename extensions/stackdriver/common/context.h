@@ -71,7 +71,7 @@ struct RequestInfo {
 // It converts the metadata struct to a JSON struct and parse NodeInfo proto
 // from that JSON struct.
 // Returns status of protocol/JSON operations.
-google::protobuf::util::Status ExtractNodeMetadata(
+google::protobuf::util::Status extractNodeMetadata(
     const google::protobuf::Struct &metadata,
     stackdriver::common::NodeInfo *node_info);
 
