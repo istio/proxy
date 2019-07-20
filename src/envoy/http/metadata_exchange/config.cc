@@ -15,7 +15,6 @@
 
 #include "src/envoy/http/metadata_exchange/config.h"
 #include "common/common/base64.h"
-#include "config.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -124,8 +123,8 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
         Base64::decode(upstream_metadata_value->toString());
-    setMetadataStruct(Common::Wasm::MetadataType::Request,
-      UpstreamMetadataKey, upstream_metadata_bytes);
+    setMetadataStruct(Common::Wasm::MetadataType::Request, UpstreamMetadataKey,
+                      upstream_metadata_bytes);
   }
 
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
