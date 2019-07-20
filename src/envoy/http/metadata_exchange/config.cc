@@ -51,9 +51,10 @@ void PluginRootContext::onConfigure(
         Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 
     // magic "." to get the whole node.
-    auto node = getMetadataStruct(Common::Wasm::MetadataType::Node, ".");
+    auto node =
+        getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey);
     for (auto& f : node.fields()) {
-      if (f.first == "id" &&
+      if (f.first == NodeIdKey &&
           f.second.kind_case() == google::protobuf::Value::kStringValue) {
         node_id_ = f.second.string_value();
         break;
@@ -66,7 +67,7 @@ void PluginRootContext::onConfigure(
 }
 
 PluginRootContext* PluginContext::rootContext() {
-  return static_cast<PluginRootContext*>(this->root());
+  return dynamic_cast<PluginRootContext*>(this->root());
 }
 
 std::string PluginContext::node_id() { return rootContext()->node_id(); }
@@ -101,15 +102,15 @@ Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
                       DownstreamMetadataIdKey, downstream_metadata_id->view());
   }
 
-  auto mv = metadata_value();
+  auto metadata = metadata_value();
   // insert peer metadata struct for upstream
-  if (mv.size() > 0) {
-    replaceRequestHeader(ExchangeMetadataHeader, mv);
+  if (metadata.size() > 0) {
+    replaceRequestHeader(ExchangeMetadataHeader, metadata);
   }
 
-  auto nid = node_id();
-  if (nid.size() > 0) {
-    replaceRequestHeader(ExchangeMetadataHeaderId, nid);
+  auto nodeid = node_id();
+  if (nodeid.size() > 0) {
+    replaceRequestHeader(ExchangeMetadataHeaderId, nodeid);
   }
 
   return Http::FilterHeadersStatus::Continue;
@@ -134,15 +135,15 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
                       UpstreamMetadataIdKey, upstream_metadata_id->view());
   }
 
-  auto mv = metadata_value();
+  auto metadata = metadata_value();
   // insert peer metadata struct for downstream
-  if (mv.size() > 0) {
-    replaceResponseHeader(ExchangeMetadataHeader, mv);
+  if (metadata.size() > 0) {
+    replaceResponseHeader(ExchangeMetadataHeader, metadata);
   }
 
-  auto nid = node_id();
-  if (nid.size() > 0) {
-    replaceResponseHeader(ExchangeMetadataHeaderId, nid);
+  auto nodeid = node_id();
+  if (nodeid.size() > 0) {
+    replaceResponseHeader(ExchangeMetadataHeaderId, nodeid);
   }
 
   return Http::FilterHeadersStatus::Continue;

@@ -30,6 +30,8 @@ constexpr absl::string_view ExchangeMetadataHeaderId =
 // NodeMetadata key is the key in the node metadata struct that is passed
 // between peers.
 constexpr absl::string_view NodeMetadataKey = "istio.io/metadata";
+constexpr absl::string_view NodeIdKey = "id";
+constexpr absl::string_view WholeNodeKey = ".";
 
 // DownstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
