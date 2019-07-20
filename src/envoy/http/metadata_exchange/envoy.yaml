@@ -11,7 +11,7 @@ static_resources:
     address:
       socket_address:
         address: 0.0.0.0
-        port_value: 8080
+        port_value: 8090
     filter_chains:
     - filters:
       - name: envoy.http_connection_manager
@@ -48,7 +48,7 @@ static_resources:
     address:
       socket_address:
         address: 0.0.0.0
-        port_value: 8081
+        port_value: 8091
     filter_chains:
     - filters:
       - name: envoy.http_connection_manager
@@ -124,7 +124,7 @@ static_resources:
     hosts:
     - socket_address:
         address: 127.0.0.1
-        port_value: 8081
+        port_value: 8091
     http2_protocol_options: {}
 admin:
   access_log_path: "/dev/null"
