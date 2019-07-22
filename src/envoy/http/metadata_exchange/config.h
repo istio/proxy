@@ -22,21 +22,32 @@ namespace Extensions {
 namespace Wasm {
 namespace MetadataExchange {
 
+using Common::Wasm::Null::Plugin::proxy_setMetadataStruct;
+
 constexpr absl::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
+
+constexpr absl::string_view ExchangeMetadataHeaderId =
+    "x-envoy-peer-metadata-id";
 
 // NodeMetadata key is the key in the node metadata struct that is passed
 // between peers.
 constexpr absl::string_view NodeMetadataKey = "istio.io/metadata";
+constexpr absl::string_view NodeIdKey = "id";
+constexpr absl::string_view WholeNodeKey = ".";
 
 // DownstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
 constexpr absl::string_view DownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
+constexpr absl::string_view DownstreamMetadataIdKey =
+    "envoy.wasm.metadata_exchange.downstream_id";
 
 // UpstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
 constexpr absl::string_view UpstreamMetadataKey =
     "envoy.wasm.metadata_exchange.upstream";
+constexpr absl::string_view UpstreamMetadataIdKey =
+    "envoy.wasm.metadata_exchange.upstream_id";
 
 using StringView = absl::string_view;
 using Common::Wasm::Null::NullVmPluginRootRegistry;
@@ -55,9 +66,16 @@ class PluginRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~PluginRootContext() = default;
 
-  void onConfigure(std::unique_ptr<WasmData>) override{};
+  void onConfigure(std::unique_ptr<WasmData>) override;
   void onStart() override{};
   void onTick() override{};
+
+  std::string metadata_value() { return metadata_value_; };
+  std::string node_id() { return node_id_; };
+
+ private:
+  std::string metadata_value_;
+  std::string node_id_;
 };
 
 // Per-stream context.
@@ -65,13 +83,26 @@ class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
-  void onCreate() override;
+  void onCreate() override{};
   Http::FilterHeadersStatus onRequestHeaders() override;
   Http::FilterHeadersStatus onResponseHeaders() override;
 
  private:
-  std::string metadata_value_;
+  inline PluginRootContext* rootContext() {
+    return dynamic_cast<PluginRootContext*>(this->root());
+  };
+  inline std::string metadata_value() {
+    return rootContext()->metadata_value();
+  };
+  inline std::string node_id() { return rootContext()->node_id(); }
 };
+
+// TODO(mjog) move this to proxy_wasm_impl.h
+inline void setMetadataStruct(Common::Wasm::MetadataType type, StringView key,
+                              StringView value) {
+  proxy_setMetadataStruct(type, key.data(), key.size(), value.data(),
+                          value.size());
+}
 
 NULL_PLUGIN_ROOT_REGISTRY;
 
