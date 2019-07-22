@@ -39,7 +39,7 @@ func (s *TestSetup) NewClientEnvoy() (*Envoy, error) {
 	}
 	baseID := strconv.Itoa(int(s.testName))
 
-	return  newEnvoy(s.ports.ClientAdminPort, confTmpl, baseID, s)
+	return newEnvoy(s.ports.ClientAdminPort, confTmpl, baseID, s)
 }
 
 // NewServerEnvoy creates a new Server Envoy struct and starts envoy.
@@ -50,7 +50,7 @@ func (s *TestSetup) NewServerEnvoy() (*Envoy, error) {
 	}
 	baseID := strconv.Itoa(int(s.testName) + 1)
 
-	return  newEnvoy(s.ports.ServerAdminPort, confTmpl, baseID, s)
+	return newEnvoy(s.ports.ServerAdminPort, confTmpl, baseID, s)
 }
 
 // Start starts the envoy process
@@ -101,13 +101,12 @@ func (s *Envoy) TearDown() {
 }
 
 // NewEnvoy creates a new Envoy struct and starts envoy at the specified port.
-func newEnvoy(port uint16, confTmpl,baseID string, s *TestSetup) (*Envoy, error) {
+func newEnvoy(port uint16, confTmpl, baseID string, s *TestSetup) (*Envoy, error) {
 	confPath := filepath.Join(GetDefaultIstioOut(), fmt.Sprintf("config.conf.%v.yaml", port))
 	log.Printf("Envoy config: in %v\n", confPath)
 	if err := s.CreateEnvoyConf(confPath, confTmpl); err != nil {
 		return nil, err
 	}
-
 
 	debugLevel, ok := os.LookupEnv("ENVOY_DEBUG")
 	if !ok {

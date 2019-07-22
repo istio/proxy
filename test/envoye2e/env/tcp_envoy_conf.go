@@ -14,14 +14,7 @@
 
 package env
 
-import (
-	"fmt"
-	"os"
-	"strings"
-	"text/template"
-)
-
-const envoyClientConfTemplYAML = `
+const tcpEnvoyClientConfTemplYAML = `
 admin:
   access_log_path: {{.ClientAccessLogPath}}
   address:
@@ -62,28 +55,14 @@ static_resources:
         port_value: {{.Ports.AppToClientProxyPort}}
     filter_chains:
     - filters:
-      - name: envoy.http_connection_manager
+      - name: envoy.tcp_proxy
         config:
-          codec_type: AUTO
-          stat_prefix: inbound_http
+          stat_prefix: inbound_tcp
+          cluster: client
           access_log:
           - name: envoy.file_access_log
             config:
               path: {{.ClientAccessLogPath}}
-          http_filters:
-{{.FiltersBeforeEnvoyRouterInAppToClient | indent 10 }}
-          - name: envoy.router
-          route_config:
-            name: app-to-client-route
-            virtual_hosts:
-            - name: app-to-client-route
-              domains: ["*"]
-              routes:
-              - match:
-                  prefix: /
-                route:
-                  cluster: client
-                  timeout: 0s
   - name: client-to-proxy
     address:
       socket_address:
@@ -91,31 +70,17 @@ static_resources:
         port_value: {{.Ports.ClientToServerProxyPort}}
     filter_chains:
     - filters:
-      - name: envoy.http_connection_manager
+      - name: envoy.tcp_proxy
         config:
-          codec_type: AUTO
-          stat_prefix: outbound_http
+          stat_prefix: outbound_tcp
+          cluster: server
           access_log:
           - name: envoy.file_access_log
             config:
               path: {{.ClientAccessLogPath}}
-          http_filters:
-{{.FiltersBeforeEnvoyRouterInClientToProxy | indent 10 }}
-          - name: envoy.router
-          route_config:
-            name: client-to-proxy-route
-            virtual_hosts:
-            - name: client-to-proxy-route
-              domains: ["*"]
-              routes:
-              - match:
-                  prefix: /
-                route:
-                  cluster: server
-                  timeout: 0s
 `
 
-const envoyServerConfTemplYAML = `
+const tcpEnvoyServerConfTemplYAML = `
 admin:
   access_log_path: {{.ServerAccessLogPath}}
   address:
@@ -156,28 +121,14 @@ static_resources:
         port_value: {{.Ports.ProxyToServerProxyPort}}
     filter_chains:
     - filters:
-      - name: envoy.http_connection_manager
+      - name: envoy.tcp_proxy
         config:
-          codec_type: AUTO
-          stat_prefix: inbound_http
+          stat_prefix: inbound_tcp
+          cluster: server
           access_log:
           - name: envoy.file_access_log
             config:
               path: {{.ServerAccessLogPath}}
-          http_filters:
-{{.FiltersBeforeEnvoyRouterInProxyToServer | indent 10 }}
-          - name: envoy.router
-          route_config:
-            name: proxy-to-server-route
-            virtual_hosts:
-            - name: proxy-to-server-route
-              domains: ["*"]
-              routes:
-              - match:
-                  prefix: /
-                route:
-                  cluster: server
-                  timeout: 0s
   - name: client-to-app
     address:
       socket_address:
@@ -185,56 +136,20 @@ static_resources:
         port_value: {{.Ports.ClientToAppProxyPort}}
     filter_chains:
     - filters:
-      - name: envoy.http_connection_manager
+      - name: envoy.tcp_proxy
         config:
-          codec_type: AUTO
-          stat_prefix: outbound_http
+          stat_prefix: outbound_tcp
+          cluster: backend
           access_log:
           - name: envoy.file_access_log
             config:
               path: {{.ServerAccessLogPath}}
-          http_filters:
-{{.FiltersBeforeEnvoyRouterInClientToApp | indent 10 }}
-          - name: envoy.router
-          route_config:
-            name: client-to-app-route
-            virtual_hosts:
-            - name: client-to-app-route
-              domains: ["*"]
-              routes:
-              - match:
-                  prefix: /
-                route:
-                  cluster: backend
-                  timeout: 0s
 `
 
-// CreateEnvoyConf create envoy config.
-func (s *TestSetup) CreateEnvoyConf(path, confTmpl string) error {
-	if s.stress {
-		s.AccessLogPath = "/dev/null"
-	}
-
-	tmpl, err := template.New("test").Funcs(template.FuncMap{
-		"indent": indent,
-	}).Parse(confTmpl)
-	if err != nil {
-		return fmt.Errorf("failed to parse config template: %v", err)
-	}
-	tmpl.Funcs(template.FuncMap{})
-
-	f, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("failed to create file %v: %v", path, err)
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	return tmpl.Execute(f, s)
+func GetTcpClientEnvoyConfTmp() string {
+	return tcpEnvoyClientConfTemplYAML
 }
 
-func indent(n int, s string) string {
-	pad := strings.Repeat(" ", n)
-	return pad + strings.Replace(s, "\n", "\n"+pad, -1)
+func GetTcpServerEnvoyConfTmp() string {
+	return tcpEnvoyServerConfTemplYAML
 }

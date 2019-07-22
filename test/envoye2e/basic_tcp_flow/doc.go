@@ -12,19 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
-
-import (
-	"fmt"
-	"go/build"
-
-	"runtime"
-)
-
-func GetDefaultIstioOut() string {
-	return fmt.Sprintf("%s/out/%s_%s", build.Default.GOPATH, runtime.GOOS, runtime.GOARCH)
-}
-
-func GetDefaultIstioBin() string {
-	return fmt.Sprintf("%s/bin", build.Default.GOPATH)
-}
+// Package client contains an integration test for envoy proxy.
+package client
