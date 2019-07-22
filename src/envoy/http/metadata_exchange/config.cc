@@ -29,7 +29,6 @@ using Common::Wasm::Null::Plugin::getRequestHeader;
 using Common::Wasm::Null::Plugin::getResponseHeader;
 using Common::Wasm::Null::Plugin::logDebug;
 using Common::Wasm::Null::Plugin::logInfo;
-using Common::Wasm::Null::Plugin::proxy_setMetadataStruct;
 using Common::Wasm::Null::Plugin::removeRequestHeader;
 using Common::Wasm::Null::Plugin::removeResponseHeader;
 using Common::Wasm::Null::Plugin::replaceRequestHeader;
@@ -66,23 +65,6 @@ void PluginRootContext::onConfigure(
       absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_));
 }
 
-PluginRootContext* PluginContext::rootContext() {
-  return dynamic_cast<PluginRootContext*>(this->root());
-}
-
-std::string PluginContext::node_id() { return rootContext()->node_id(); }
-
-std::string PluginContext::metadata_value() {
-  return rootContext()->metadata_value();
-}
-
-// TODO(mjog) move this to proxy_wasm_impl.h
-inline void setMetadataStruct(Common::Wasm::MetadataType type, StringView key,
-                              StringView value) {
-  proxy_setMetadataStruct(type, key.data(), key.size(), value.data(),
-                          value.size());
-}
-
 Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
   // strip and store downstream peer metadata
   auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
@@ -96,7 +78,8 @@ Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
   }
 
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
-  if (downstream_metadata_id != nullptr) {
+  if (downstream_metadata_id != nullptr &&
+      !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
     setMetadataStruct(Common::Wasm::MetadataType::Request,
                       DownstreamMetadataIdKey, downstream_metadata_id->view());
@@ -129,7 +112,8 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
   }
 
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
-  if (upstream_metadata_id != nullptr) {
+  if (upstream_metadata_id != nullptr &&
+      !upstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
     setMetadataStruct(Common::Wasm::MetadataType::Request,
                       UpstreamMetadataIdKey, upstream_metadata_id->view());

@@ -22,6 +22,8 @@ namespace Extensions {
 namespace Wasm {
 namespace MetadataExchange {
 
+using Common::Wasm::Null::Plugin::proxy_setMetadataStruct;
+
 constexpr absl::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
 
 constexpr absl::string_view ExchangeMetadataHeaderId =
@@ -86,10 +88,21 @@ class PluginContext : public Context {
   Http::FilterHeadersStatus onResponseHeaders() override;
 
  private:
-  PluginRootContext* rootContext();
-  std::string metadata_value();
-  std::string node_id();
+  inline PluginRootContext* rootContext() {
+    return dynamic_cast<PluginRootContext*>(this->root());
+  };
+  inline std::string metadata_value() {
+    return rootContext()->metadata_value();
+  };
+  inline std::string node_id() { return rootContext()->node_id(); }
 };
+
+// TODO(mjog) move this to proxy_wasm_impl.h
+inline void setMetadataStruct(Common::Wasm::MetadataType type, StringView key,
+                              StringView value) {
+  proxy_setMetadataStruct(type, key.data(), key.size(), value.data(),
+                          value.size());
+}
 
 NULL_PLUGIN_ROOT_REGISTRY;
 
