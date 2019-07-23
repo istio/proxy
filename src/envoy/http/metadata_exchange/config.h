@@ -86,28 +86,21 @@ class PluginContext : public Context {
   Http::FilterHeadersStatus onRequestHeaders() override;
   Http::FilterHeadersStatus onResponseHeaders() override;
 
+  void onLog() override;
+
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
-  inline StringView metadataValue() {
-    return rootContext()->metadataValue();
-  };
+  inline StringView metadataValue() { return rootContext()->metadataValue(); };
   inline StringView nodeId() { return rootContext()->nodeId(); }
 };
 
 // TODO(mjog) move this to proxy_wasm_impl.h
 inline void setMetadataStruct(MetadataType type, StringView key,
                               StringView value) {
-  Common::Wasm::Null::Plugin::proxy_setMetadataStruct(type, key.data(), key.size(), value.data(),
-                          value.size());
-}
-
-// TODO(mjog) move this to proxy_wasm_impl.h
-inline void setMetadata(MetadataType type, StringView key,
-                              StringView value) {
-  Common::Wasm::Null::Plugin::proxy_setMetadata(type, key.data(), key.size(), value.data(),
-                          value.size());
+  Common::Wasm::Null::Plugin::proxy_setMetadataStruct(
+      type, key.data(), key.size(), value.data(), value.size());
 }
 
 NULL_PLUGIN_ROOT_REGISTRY;

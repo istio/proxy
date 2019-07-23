@@ -23,16 +23,19 @@ namespace MetadataExchange {
 
 // imports from the low-level API
 using Common::Wasm::Null::NullVmPluginFactory;
+using Common::Wasm::Null::Plugin::getMetadataStringValue;
 using Common::Wasm::Null::Plugin::getMetadataStruct;
 using Common::Wasm::Null::Plugin::getMetadataValue;
 using Common::Wasm::Null::Plugin::getRequestHeader;
 using Common::Wasm::Null::Plugin::getResponseHeader;
 using Common::Wasm::Null::Plugin::logDebug;
 using Common::Wasm::Null::Plugin::logInfo;
+using Common::Wasm::Null::Plugin::logWarn;
 using Common::Wasm::Null::Plugin::removeRequestHeader;
 using Common::Wasm::Null::Plugin::removeResponseHeader;
 using Common::Wasm::Null::Plugin::replaceRequestHeader;
 using Common::Wasm::Null::Plugin::replaceResponseHeader;
+using Common::Wasm::Null::Plugin::setMetadataStringValue;
 
 void PluginRootContext::onConfigure(
     std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {
@@ -45,9 +48,10 @@ void PluginRootContext::onConfigure(
 
     mcs.SetSerializationDeterministic(true);
     if (!metadata.struct_value().SerializeToCodedStream(&mcs)) {
-      logInfo(absl::StrCat("unable to write serialize struct"));
+      logWarn(absl::StrCat("unable to serialize Nodemetadata key=",
+                           NodeMetadataKey));
     }
-    mcs.Trim(); // trim buffer to the actual size needed.
+    mcs.Trim();  // trim buffer to the actual size needed.
 
     metadata_value_ =
         Base64::encode(metadata_bytes.data(), metadata_bytes.size());
@@ -84,8 +88,9 @@ Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadata(Common::Wasm::MetadataType::Request,
-                      DownstreamMetadataIdKey, downstream_metadata_id->view());
+    setMetadataStringValue(Common::Wasm::MetadataType::Request,
+                           DownstreamMetadataIdKey,
+                           downstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();
@@ -118,8 +123,8 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadata(Common::Wasm::MetadataType::Request,
-                      UpstreamMetadataIdKey, upstream_metadata_id->view());
+    setMetadataStringValue(Common::Wasm::MetadataType::Request,
+                           UpstreamMetadataIdKey, upstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();
@@ -135,6 +140,18 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
 
   return Http::FilterHeadersStatus::Continue;
 }
+
+inline void logRequestMetadata(StringView key) {
+  auto val = getMetadataStringValue(Common::Wasm::MetadataType::Request, key);
+  if (!val.empty()) {
+    logDebug(absl::StrCat(key, "=", val));
+  }
+}
+
+void PluginContext::onLog() {
+  logRequestMetadata(UpstreamMetadataIdKey);
+  logRequestMetadata(DownstreamMetadataIdKey);
+};
 
 // Registration glue
 
