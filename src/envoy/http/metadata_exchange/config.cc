@@ -37,21 +37,27 @@ using Common::Wasm::Null::Plugin::replaceRequestHeader;
 using Common::Wasm::Null::Plugin::replaceResponseHeader;
 using Common::Wasm::Null::Plugin::setMetadataStringValue;
 
+bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
+                                    std::string* metadata_bytes) {
+  google::protobuf::io::StringOutputStream md(metadata_bytes);
+  google::protobuf::io::CodedOutputStream mcs(&md);
+
+  mcs.SetSerializationDeterministic(true);
+  if (!metadata.SerializeToCodedStream(&mcs)) {
+    logWarn(
+        absl::StrCat("unable to serialize Nodemetadata key=", NodeMetadataKey));
+    return false;
+  }
+  return true;
+}
+
 void PluginRootContext::onConfigure(
     std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {
   auto metadata =
       getMetadataValue(Common::Wasm::MetadataType::Node, NodeMetadataKey);
   if (metadata.kind_case() == google::protobuf::Value::kStructValue) {
     std::string metadata_bytes;
-    google::protobuf::io::StringOutputStream md(&metadata_bytes);
-    google::protobuf::io::CodedOutputStream mcs(&md);
-
-    mcs.SetSerializationDeterministic(true);
-    if (!metadata.struct_value().SerializeToCodedStream(&mcs)) {
-      logWarn(absl::StrCat("unable to serialize Nodemetadata key=",
-                           NodeMetadataKey));
-    }
-    mcs.Trim();  // trim buffer to the actual size needed.
+    serializeToStringDeterministic(metadata.struct_value(), &metadata_bytes);
 
     metadata_value_ =
         Base64::encode(metadata_bytes.data(), metadata_bytes.size());
@@ -114,7 +120,7 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
       !upstream_metadata_value->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
-        Base64::decodeWithoutPadding(upstream_metadata_value->toString());
+        Base64::decodeWithoutPadding(upstream_metadata_value->view());
     setMetadataStruct(Common::Wasm::MetadataType::Request, UpstreamMetadataKey,
                       upstream_metadata_bytes);
   }
@@ -140,18 +146,6 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
 
   return Http::FilterHeadersStatus::Continue;
 }
-
-inline void logRequestMetadata(StringView key) {
-  auto val = getMetadataStringValue(Common::Wasm::MetadataType::Request, key);
-  if (!val.empty()) {
-    logDebug(absl::StrCat(key, "=", val));
-  }
-}
-
-void PluginContext::onLog() {
-  logRequestMetadata(UpstreamMetadataIdKey);
-  logRequestMetadata(DownstreamMetadataIdKey);
-};
 
 // Registration glue
 

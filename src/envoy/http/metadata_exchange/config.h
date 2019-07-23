@@ -86,8 +86,6 @@ class PluginContext : public Context {
   Http::FilterHeadersStatus onRequestHeaders() override;
   Http::FilterHeadersStatus onResponseHeaders() override;
 
-  void onLog() override;
-
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
