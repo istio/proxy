@@ -44,7 +44,10 @@ void PluginRootContext::onConfigure(
     google::protobuf::io::CodedOutputStream mcs(&md);
 
     mcs.SetSerializationDeterministic(true);
-    metadata.struct_value().SerializeToCodedStream(&mcs);
+    if (!metadata.struct_value().SerializeToCodedStream(&mcs)) {
+      logInfo(absl::StrCat("unable to write serialize struct"));
+    }
+    mcs.Trim(); // trim buffer to the actual size needed.
 
     metadata_value_ =
         Base64::encode(metadata_bytes.data(), metadata_bytes.size());
@@ -52,7 +55,7 @@ void PluginRootContext::onConfigure(
     // magic "." to get the whole node.
     auto node =
         getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey);
-    for (auto& f : node.fields()) {
+    for (const auto& f : node.fields()) {
       if (f.first == NodeIdKey &&
           f.second.kind_case() == google::protobuf::Value::kStringValue) {
         node_id_ = f.second.string_value();
@@ -81,18 +84,18 @@ Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadataStruct(Common::Wasm::MetadataType::Request,
+    setMetadata(Common::Wasm::MetadataType::Request,
                       DownstreamMetadataIdKey, downstream_metadata_id->view());
   }
 
-  auto metadata = metadata_value();
+  auto metadata = metadataValue();
   // insert peer metadata struct for upstream
-  if (metadata.size() > 0) {
+  if (!metadata.empty()) {
     replaceRequestHeader(ExchangeMetadataHeader, metadata);
   }
 
-  auto nodeid = node_id();
-  if (nodeid.size() > 0) {
+  auto nodeid = nodeId();
+  if (!nodeid.empty()) {
     replaceRequestHeader(ExchangeMetadataHeaderId, nodeid);
   }
 
@@ -106,7 +109,7 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
       !upstream_metadata_value->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
-        Base64::decode(upstream_metadata_value->toString());
+        Base64::decodeWithoutPadding(upstream_metadata_value->toString());
     setMetadataStruct(Common::Wasm::MetadataType::Request, UpstreamMetadataKey,
                       upstream_metadata_bytes);
   }
@@ -115,18 +118,18 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadataStruct(Common::Wasm::MetadataType::Request,
+    setMetadata(Common::Wasm::MetadataType::Request,
                       UpstreamMetadataIdKey, upstream_metadata_id->view());
   }
 
-  auto metadata = metadata_value();
+  auto metadata = metadataValue();
   // insert peer metadata struct for downstream
-  if (metadata.size() > 0) {
+  if (!metadata.empty()) {
     replaceResponseHeader(ExchangeMetadataHeader, metadata);
   }
 
-  auto nodeid = node_id();
-  if (nodeid.size() > 0) {
+  auto nodeid = nodeId();
+  if (!nodeid.empty()) {
     replaceResponseHeader(ExchangeMetadataHeaderId, nodeid);
   }
 
