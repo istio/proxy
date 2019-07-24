@@ -1,0 +1,146 @@
+node:
+  id: test
+  metadata:
+    "istio.io/metadata": {
+      namespace: default,
+      labels: { app: productpage },
+    }
+static_resources:
+  listeners:
+  - name: client
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 8090
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          stat_prefix: ingress_http
+          codec_type: auto
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: local_service
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: server
+          http_filters:
+          - name: envoy.router
+            config: {}
+          access_log:
+          - name: envoy.file_access_log
+            config:
+              path: "/dev/stdout"
+              format: "client %RESPONSE_CODE% downstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.downstream:labels)% upstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.upstream:labels)%\n"
+  - name: server
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 8091
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          stat_prefix: ingress_http
+          codec_type: auto
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: local_service
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: web_service
+          http_filters:
+          - name: envoy.wasm
+            config:
+              vm_config:
+                vm: "envoy.wasm.vm.null"
+                code:
+                  inline_string: "envoy.wasm.authn"
+              configuration: >
+                {
+                  "policy": {
+                    "peers": [
+                      {
+                        "mtls": {
+                          "mode": "PERMISSIVE"
+                        }
+                      }
+                    ],
+                    "origins": [
+                      {
+                        "jwt": {
+                          "issuer": "testing@istio.io",
+                          "jwks_uri": "http://testing.istio.io/"
+                        }
+                      }
+                    ]
+                  }
+                }
+          - name: envoy.router
+            config: {}
+          access_log:
+          - name: envoy.file_access_log
+            config:
+              path: "/dev/stdout"
+              format: "server %RESPONSE_CODE% downstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.downstream:labels)% upstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.upstream:labels)%\n"
+  - name: staticreply
+    address:
+      socket_address:
+        address: 127.0.0.1
+        port_value: 8099
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          stat_prefix: ingress_http
+          codec_type: auto
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: local_service
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/"
+                direct_response:
+                  status: 200
+                  body:
+                    inline_string: "example body\n"
+          http_filters:
+          - name: envoy.router
+            config: {}
+  clusters:
+  - name: web_service
+    connect_timeout: 0.25s
+    type: static
+    lb_policy: round_robin
+    hosts:
+    - socket_address:
+        address: 127.0.0.1
+        port_value: 8099
+  - name: server
+    connect_timeout: 0.25s
+    type: static
+    lb_policy: round_robin
+    hosts:
+    - socket_address:
+        address: 127.0.0.1
+        port_value: 8091
+    http2_protocol_options: {}
+admin:
+  access_log_path: "/dev/null"
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 8001

@@ -27,6 +27,7 @@ envoy_cc_binary(
     deps = [
         "//extensions/stackdriver:stackdriver_plugin",
         "//src/envoy/http/authn:filter_lib",
+        "//src/envoy/http/authn_wasm:authn_wasm_lib",
         "//src/envoy/http/jwt_auth:http_filter_factory",
         "//src/envoy/http/metadata_exchange:metadata_exchange_lib",
         "//src/envoy/http/mixer:filter_lib",
