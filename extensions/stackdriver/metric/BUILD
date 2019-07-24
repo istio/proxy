@@ -44,7 +44,7 @@ cc_test(
     srcs = ["registry_test.cc"],
     linkstatic = 1,
     deps = [
-        ":registry",
+        ":metric",
         "//external:googletest_main",
     ],
 )
