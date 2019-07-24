@@ -80,8 +80,12 @@ class PubkeyCacheItem : public Logger::Loggable<Logger::Id::filter> {
                              // inline jwks never expires.
                              std::chrono::steady_clock::time_point::max());
       if (status != Status::OK) {
-        ENVOY_LOG(warn, "Invalid inline jwks for issuer: {}, jwks: {}",
-                  jwt_config_.issuer(), inline_jwks);
+        ENVOY_LOG(warn,
+                  "Invalid inline jwks for issuer: {}, jwks: {}, error: {}",
+                  jwt_config_.issuer(), inline_jwks, StatusToString(status));
+        throw EnvoyException(fmt::format(
+            "Invalid inline jwks for issuer: {}, jwks: {}, error: {}",
+            jwt_config_.issuer(), inline_jwks, StatusToString(status)));
       }
     }
   }

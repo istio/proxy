@@ -334,8 +334,12 @@ bool Verifier::VerifySignatureRSA(EVP_PKEY *key, const EVP_MD *md,
                                   size_t signed_data_len) {
   bssl::UniquePtr<EVP_MD_CTX> md_ctx(EVP_MD_CTX_create());
 
-  EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key);
-  EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len);
+  if (EVP_DigestVerifyInit(md_ctx.get(), nullptr, md, nullptr, key) != 1) {
+    return false;
+  }
+  if (EVP_DigestVerifyUpdate(md_ctx.get(), signed_data, signed_data_len) != 1) {
+    return false;
+  }
   return (EVP_DigestVerifyFinal(md_ctx.get(), signature, signature_len) == 1);
 }
 
@@ -543,7 +547,11 @@ void Pubkeys::ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json) {
 
   EvpPkeyGetter e;
   pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
-  keys_.push_back(std::move(pubkey));
+  if (e.GetStatus() == Status::OK) {
+    keys_.push_back(std::move(pubkey));
+  } else {
+    UpdateStatus(e.GetStatus());
+  }
 }
 
 void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
@@ -573,7 +581,11 @@ void Pubkeys::ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json) {
 
   EvpPkeyGetter e;
   pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
-  keys_.push_back(std::move(pubkey));
+  if (e.GetStatus() == Status::OK) {
+    keys_.push_back(std::move(pubkey));
+  } else {
+    UpdateStatus(e.GetStatus());
+  }
 }
 
 std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,
