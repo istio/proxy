@@ -59,7 +59,7 @@ void StackdriverRootContext::onConfigure(
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
     logWarn("Cannot parse Stackdriver plugin configuraiton JSON string " +
-            configuration->toString());
+            configuration->toString() + ", " + status.message().ToString());
     return;
   }
 
@@ -90,9 +90,8 @@ void StackdriverRootContext::onConfigure(
     return;
   }
   setSharedData(kStackdriverExporter, kExporterRegistered);
-
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_));
+      getStackdriverOptions(local_node_info_, config_.monitoring_endpoint()));
 
   // Register opencensus measures and views.
   registerViews();

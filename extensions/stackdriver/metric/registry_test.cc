@@ -15,28 +15,146 @@
 
 #include "extensions/stackdriver/metric/registry.h"
 #include "extensions/stackdriver/common/constants.h"
+#include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
 
 namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-TEST(RegistryTest, getStackdriverOptions) {
+using google::protobuf::util::MessageDifferencer;
+
+wasm::common::NodeInfo nodeInfo() {
   wasm::common::NodeInfo node_info;
   (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
       "test_project";
-  auto option = getStackdriverOptions(node_info);
-  EXPECT_EQ(option.project_id, "test_project");
+  (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
+      "test_cluster";
+  (*node_info.mutable_platform_metadata())[Common::kGCPClusterLocationKey] =
+      "test_location";
+  node_info.set_namespace_("test_namespace");
+  node_info.set_name("test_pod");
+  (*node_info.mutable_ports_to_containers())["111"] = "test_container";
+  return node_info;
 }
 
-TEST(RegistryTest, getStackdriverOptionsNoProjectID) {
+google::api::MonitoredResource serverMonitoredResource() {
+  google::api::MonitoredResource monitored_resource;
+  monitored_resource.set_type(Common::kContainerMonitoredResource);
+  (*monitored_resource.mutable_labels())[Common::kProjectIDLabel] =
+      "test_project";
+  (*monitored_resource.mutable_labels())[Common::kLocationLabel] =
+      "test_location";
+  (*monitored_resource.mutable_labels())[Common::kClusterNameLabel] =
+      "test_cluster";
+  (*monitored_resource.mutable_labels())[Common::kNamespaceNameLabel] =
+      "test_namespace";
+  (*monitored_resource.mutable_labels())[Common::kPodNameLabel] = "test_pod";
+  (*monitored_resource.mutable_labels())[Common::kContainerNameLabel] =
+      "test_container";
+  return monitored_resource;
+}
+
+google::api::MonitoredResource clientMonitoredResource() {
+  google::api::MonitoredResource monitored_resource;
+  monitored_resource.set_type(Common::kPodMonitoredResource);
+  (*monitored_resource.mutable_labels())[Common::kProjectIDLabel] =
+      "test_project";
+  (*monitored_resource.mutable_labels())[Common::kLocationLabel] =
+      "test_location";
+  (*monitored_resource.mutable_labels())[Common::kClusterNameLabel] =
+      "test_cluster";
+  (*monitored_resource.mutable_labels())[Common::kNamespaceNameLabel] =
+      "test_namespace";
+  (*monitored_resource.mutable_labels())[Common::kPodNameLabel] = "test_pod";
+  return monitored_resource;
+}
+
+TEST(RegistryTest, getStackdriverOptionsProjectID) {
   wasm::common::NodeInfo node_info;
-  auto option = getStackdriverOptions(node_info);
-  EXPECT_EQ(option.project_id, "");
+  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
+      "test_project";
+  auto options = getStackdriverOptions(node_info);
+  EXPECT_EQ(options.project_id, "test_project");
 }
 
-// TODO: add more test once https://github.com/envoyproxy/envoy/pull/7622
-// reaches istio/proxy.
+TEST(RegistryTest, getStackdriverOptionsMonitoredResource) {
+  auto node_info = nodeInfo();
+  auto expected_server_monitored_resource = serverMonitoredResource();
+  auto expected_client_monitored_resource = clientMonitoredResource();
+
+  auto options = getStackdriverOptions(node_info);
+  EXPECT_EQ(options.project_id, "test_project");
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kServerRequestCountView),
+      expected_server_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kServerRequestBytesView),
+      expected_server_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kServerResponseLatenciesView),
+                                 expected_server_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kServerResponseBytesView),
+                                 expected_server_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kClientRequestCountView),
+      expected_client_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kClientRequestBytesView),
+      expected_client_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kClientResponseBytesView),
+                                 expected_client_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kClientRoundtripLatenciesView),
+                                 expected_client_monitored_resource));
+}
+
+TEST(RegistryTest, getStackdriverOptionsMonitoredResourceNoContainer) {
+  auto node_info = nodeInfo();
+  node_info.clear_ports_to_containers();
+  auto expected_server_monitored_resource = serverMonitoredResource();
+  (*expected_server_monitored_resource
+        .mutable_labels())[Common::kContainerNameLabel] =
+      Common::kIstioProxyContainerName;
+  auto expected_client_monitored_resource = clientMonitoredResource();
+
+  auto options = getStackdriverOptions(node_info);
+  EXPECT_EQ(options.project_id, "test_project");
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kServerRequestCountView),
+      expected_server_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kServerRequestBytesView),
+      expected_server_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kServerResponseLatenciesView),
+                                 expected_server_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kServerResponseBytesView),
+                                 expected_server_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kClientRequestCountView),
+      expected_client_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kClientRequestBytesView),
+      expected_client_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kClientResponseBytesView),
+                                 expected_client_monitored_resource));
+  EXPECT_TRUE(
+      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
+                                     Common::kClientRoundtripLatenciesView),
+                                 expected_client_monitored_resource));
+}
 
 }  // namespace Metric
 }  // namespace Stackdriver

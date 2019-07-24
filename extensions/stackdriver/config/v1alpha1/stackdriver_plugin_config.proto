@@ -33,4 +33,12 @@ message PluginConfig {
 
   // FQDN of destination service that the request routed to.
   string destination_service_name = 3;
+
+  // The endpoint that plugin targets for metric reporting. If not specified,
+  // the default Stackdriver monitoring endpoint will be used.
+  string monitoring_endpoint = 4;
+
+  // The endpoint that plugin targets for access log reporting. If not
+  // specified, the default Stackdriver monitoring endpoint will be used.
+  string logging_endpoint = 5;
 }
