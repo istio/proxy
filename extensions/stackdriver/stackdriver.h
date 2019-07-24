@@ -56,8 +56,6 @@ class StackdriverRootContext : public RootContext {
   stackdriver::config::PluginConfig::ReporterKind reporterKind();
 
  private:
-  opencensus::exporters::stats::StackdriverOptions getStackdriverOptions();
-
   // Config for Stackdriver plugin.
   stackdriver::config::PluginConfig config_;
 
