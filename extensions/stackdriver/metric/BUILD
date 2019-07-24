@@ -18,11 +18,13 @@
 licenses(["notice"])
 
 cc_library(
-    name = "registry",
+    name = "metric",
     srcs = [
+        "record.cc",
         "registry.cc",
     ],
     hdrs = [
+        "record.h",
         "registry.h",
     ],
     visibility = [

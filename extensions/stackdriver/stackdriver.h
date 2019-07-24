@@ -17,6 +17,7 @@
 
 #include "extensions/stackdriver/common/context.h"
 #include "extensions/stackdriver/config/stackdriver_plugin_config.pb.h"
+#include "extensions/stackdriver/metric/record.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 
 #ifndef NULL_PLUGIN
@@ -54,6 +55,10 @@ class StackdriverRootContext : public RootContext {
 
   // Get reporter kind of this filter from plugin config.
   stackdriver::config::PluginConfig::ReporterKind reporterKind();
+
+  // Records telemetry based on the given request info.
+  void record(
+      const ::Extensions::Stackdriver::Common::RequestInfo& request_info);
 
  private:
   // Config for Stackdriver plugin.
