@@ -14,13 +14,13 @@
  */
 
 #include "extensions/stackdriver/metric/record.h"
+#include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/metric/registry.h"
 
 namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-constexpr double kNanosecondsPerMillisecond = 1000000.0;
 constexpr char kMutualTLS[] = "MUTUAL_TLS";
 constexpr char kNone[] = "NONE";
 
@@ -29,7 +29,7 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
             const ::Wasm::Common::RequestInfo &request_info) {
   double latency_ms =
       double(request_info.end_timestamp - request_info.start_timestamp) /
-      kNanosecondsPerMillisecond;
+      Stackdriver::Common::kNanosecondsPerMillisecond;
   if (is_outbound) {
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},

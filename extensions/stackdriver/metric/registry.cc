@@ -15,6 +15,7 @@
 
 #include "extensions/stackdriver/metric/registry.h"
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/utils.h"
 #include "google/api/monitored_resource.pb.h"
 #include "grpcpp/grpcpp.h"
 
@@ -25,40 +26,7 @@ namespace Metric {
 using namespace Extensions::Stackdriver::Common;
 using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
-using namespace google::api;
 using wasm::common::NodeInfo;
-
-// Gets monitored resource proto based on the type and node metadata info.
-// Only two types of monitored resource could be returned: k8s_container or
-// k8s_pod.
-MonitoredResource getMonitoredResource(
-    const std::string &monitored_resource_type,
-    const NodeInfo &local_node_info) {
-  google::api::MonitoredResource monitored_resource;
-  monitored_resource.set_type(monitored_resource_type);
-  auto platform_metadata = local_node_info.platform_metadata();
-  (*monitored_resource.mutable_labels())[kProjectIDLabel] =
-      platform_metadata[kGCPProjectKey];
-  (*monitored_resource.mutable_labels())[kLocationLabel] =
-      platform_metadata[kGCPClusterLocationKey];
-  (*monitored_resource.mutable_labels())[kClusterNameLabel] =
-      platform_metadata[kGCPClusterNameKey];
-  (*monitored_resource.mutable_labels())[kNamespaceNameLabel] =
-      local_node_info.namespace_();
-  (*monitored_resource.mutable_labels())[kPodNameLabel] =
-      local_node_info.name();
-
-  if (monitored_resource_type == kPodMonitoredResource) {
-    // no need to fill in container_name for pod monitored resource.
-    return monitored_resource;
-  }
-
-  // Fill in container_name of k8s_container monitored resource.
-  (*monitored_resource.mutable_labels())[kContainerNameLabel] =
-      kIstioProxyContainerName;
-
-  return monitored_resource;
-}
 
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
@@ -76,10 +44,10 @@ StackdriverOptions getStackdriverOptions(
   }
 
   // Get server and client monitored resource.
-  auto server_monitored_resource =
-      getMonitoredResource(kContainerMonitoredResource, local_node_info);
+  auto server_monitored_resource = Common::getMonitoredResource(
+      kContainerMonitoredResource, local_node_info);
   auto client_monitored_resource =
-      getMonitoredResource(kPodMonitoredResource, local_node_info);
+      Common::getMonitoredResource(kPodMonitoredResource, local_node_info);
   options.per_metric_monitored_resource[kServerRequestCountView] =
       server_monitored_resource;
   options.per_metric_monitored_resource[kServerRequestBytesView] =

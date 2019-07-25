@@ -59,6 +59,7 @@ constexpr char kGCPProjectKey[] = "gcp_project";
 
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
+constexpr double kNanosecondsPerMillisecond = 1000000.0;
 
 }  // namespace Common
 }  // namespace Stackdriver

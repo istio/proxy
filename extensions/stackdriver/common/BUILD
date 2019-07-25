@@ -24,6 +24,27 @@ cc_library(
     ],
     visibility = [
         "//extensions/stackdriver:__pkg__",
+        "//extensions/stackdriver/log:__pkg__",
         "//extensions/stackdriver/metric:__pkg__",
+    ],
+)
+
+cc_library(
+    name = "utils",
+    srcs = [
+        "utils.cc",
+    ],
+    hdrs = [
+        "utils.h",
+    ],
+    visibility = [
+        "//extensions/stackdriver:__pkg__",
+        "//extensions/stackdriver/log:__pkg__",
+        "//extensions/stackdriver/metric:__pkg__",
+    ],
+    deps = [
+        ":constants",
+        "//extensions/common:context",
+        "@com_google_googleapis//google/monitoring/v3:monitoring_cc_proto",
     ],
 )
