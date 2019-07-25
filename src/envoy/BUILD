@@ -26,6 +26,7 @@ envoy_cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         "//extensions/stackdriver:stackdriver_plugin",
+        "//extensions/stats:stats_plugin",
         "//src/envoy/http/authn:filter_lib",
         "//src/envoy/http/jwt_auth:http_filter_factory",
         "//src/envoy/http/metadata_exchange:metadata_exchange_lib",
