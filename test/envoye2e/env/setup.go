@@ -96,6 +96,21 @@ type TestSetup struct {
 
 	// Client side Envoy node metadata.
 	ClientNodeMetadata string
+
+	// Whether Tls is Enabled or not.
+	EnableTls bool
+
+	// Format for accesslog
+	AccesslogFormat string
+
+	// TlsContext to be used.
+	TlsContext string
+
+	// ClusterTlsContext to be used.
+	ClusterTlsContext string
+
+	// UpstreamFilters chain in client.
+	UpstreamFiltersInClient string
 }
 
 func NewClientServerEnvoyTestSetup(name uint16, t *testing.T) *TestSetup {
@@ -149,6 +164,21 @@ func (s *TestSetup) SetFiltersBeforeEnvoyRouterInAppToClient(filters string) {
 	s.FiltersBeforeEnvoyRouterInAppToClient = filters
 }
 
+// SetEnableTls sets EnableTls.
+func (s *TestSetup) SetEnableTls(enableTls bool) {
+	s.EnableTls = enableTls
+}
+
+// SetTlsContext sets TLS COntext.
+func (s *TestSetup) SetTlsContext(tlsContext string) {
+	s.TlsContext = tlsContext
+}
+
+// SetTlsContext sets TLS COntext.
+func (s *TestSetup) SetClusterTlsContext(clusterTlsContext string) {
+	s.ClusterTlsContext = clusterTlsContext
+}
+
 // SetFiltersBeforeEnvoyRouterInClientToProxy sets the configurations of the filters that come before envoy.router http
 // filter in ClientToProxy listener.
 func (s *TestSetup) SetFiltersBeforeEnvoyRouterInClientToProxy(filters string) {
@@ -175,6 +205,16 @@ func (s *TestSetup) SetServerNodeMetadata(metadata string) {
 // SetClientNodeMetadata sets envoy's node metadata.
 func (s *TestSetup) SetClientNodeMetadata(metadata string) {
 	s.ClientNodeMetadata = metadata
+}
+
+// SetAccessLogFormat sets the accesslogformat.
+func (s *TestSetup) SetAccessLogFormat(accesslogformat string) {
+	s.AccesslogFormat = accesslogformat
+}
+
+// SetUpstreamFiltersInClient sets upstream filters chain in client envoy..
+func (s *TestSetup) SetUpstreamFiltersInClient(upstreamFiltersInClient string) {
+	s.UpstreamFiltersInClient = upstreamFiltersInClient
 }
 
 func (s *TestSetup) SetUpClientServerEnvoy() error {
@@ -218,7 +258,7 @@ func (s *TestSetup) SetUpClientServerEnvoy() error {
 		}
 	}
 	if s.startTcpBackend {
-		s.tcpBackend, err = NewTCPServer(s.ports.BackendPort, "hello")
+		s.tcpBackend, err = NewTCPServer(s.ports.BackendPort, "hello", s.EnableTls)
 		if err != nil {
 			log.Printf("unable to create TCP server %v", err)
 		} else {
@@ -250,7 +290,7 @@ func (s *TestSetup) TearDownClientServerEnvoy() {
 		s.backend.Stop()
 	}
 	if s.tcpBackend != nil {
-		s.tcpBackend.Start()
+		s.tcpBackend.Stop()
 	}
 }
 

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+
 	"istio.io/proxy/test/envoye2e/env"
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
