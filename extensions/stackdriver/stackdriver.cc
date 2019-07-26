@@ -19,6 +19,7 @@
 #include <unordered_map>
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/metric/registry.h"
 #include "extensions/stackdriver/stackdriver.h"
 
 #ifndef NULL_PLUGIN
@@ -40,6 +41,7 @@ using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
 using namespace stackdriver::config;
 using namespace ::Extensions::Stackdriver::Common;
+using namespace ::Extensions::Stackdriver::Metric;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
@@ -78,9 +80,10 @@ void StackdriverRootContext::onConfigure(
   setSharedData(kStackdriverExporter, kExporterRegistered);
 
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions());
+      getStackdriverOptions(local_node_info_));
 
-  // TODO: Register opencensus measures, tags and views.
+  // Register opencensus measures and views.
+  registerViews();
 }
 
 PluginConfig::ReporterKind StackdriverRootContext::reporterKind() {
@@ -97,13 +100,6 @@ void StackdriverRootContext::onTick(){
 #ifndef NULL_PLUGIN
 // TODO: Add exporting logic with WASM gRPC API
 #endif
-}
-
-StackdriverOptions StackdriverRootContext::getStackdriverOptions() {
-  StackdriverOptions options;
-  // TODO: Fill in project ID and monitored resource labels either from node
-  // metadata or from metadata server.
-  return options;
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {

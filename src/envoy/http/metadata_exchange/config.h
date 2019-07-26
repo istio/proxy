@@ -22,8 +22,6 @@ namespace Extensions {
 namespace Wasm {
 namespace MetadataExchange {
 
-using Common::Wasm::Null::Plugin::proxy_setMetadataStruct;
-
 constexpr absl::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
 
 constexpr absl::string_view ExchangeMetadataHeaderId =
@@ -50,6 +48,7 @@ constexpr absl::string_view UpstreamMetadataIdKey =
     "envoy.wasm.metadata_exchange.upstream_id";
 
 using StringView = absl::string_view;
+using Common::Wasm::MetadataType;
 using Common::Wasm::Null::NullVmPluginRootRegistry;
 using Common::Wasm::Null::Plugin::Context;
 using Common::Wasm::Null::Plugin::ContextFactory;
@@ -70,8 +69,8 @@ class PluginRootContext : public RootContext {
   void onStart() override{};
   void onTick() override{};
 
-  std::string metadata_value() { return metadata_value_; };
-  std::string node_id() { return node_id_; };
+  StringView metadataValue() { return metadata_value_; };
+  StringView nodeId() { return node_id_; };
 
  private:
   std::string metadata_value_;
@@ -91,17 +90,15 @@ class PluginContext : public Context {
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
-  inline std::string metadata_value() {
-    return rootContext()->metadata_value();
-  };
-  inline std::string node_id() { return rootContext()->node_id(); }
+  inline StringView metadataValue() { return rootContext()->metadataValue(); };
+  inline StringView nodeId() { return rootContext()->nodeId(); }
 };
 
 // TODO(mjog) move this to proxy_wasm_impl.h
-inline void setMetadataStruct(Common::Wasm::MetadataType type, StringView key,
+inline void setMetadataStruct(MetadataType type, StringView key,
                               StringView value) {
-  proxy_setMetadataStruct(type, key.data(), key.size(), value.data(),
-                          value.size());
+  Common::Wasm::Null::Plugin::proxy_setMetadataStruct(
+      type, key.data(), key.size(), value.data(), value.size());
 }
 
 NULL_PLUGIN_ROOT_REGISTRY;

@@ -15,16 +15,34 @@
 ################################################################################
 #
 
-cc_proto_library(
-    name = "stackdriver_plugin_config_cc_proto",
+licenses(["notice"])
+
+cc_library(
+    name = "registry",
+    srcs = [
+        "registry.cc",
+    ],
+    hdrs = [
+        "registry.h",
+    ],
     visibility = [
         "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/metric:__pkg__",
     ],
-    deps = ["stackdriver_plugin_config_proto"],
+    deps = [
+        "//extensions/stackdriver/common:context",
+        "//extensions/stackdriver/config:stackdriver_plugin_config_cc_proto",
+        "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
+        "@io_opencensus_cpp//opencensus/stats",
+    ],
 )
 
-proto_library(
-    name = "stackdriver_plugin_config_proto",
-    srcs = ["stackdriver_plugin_config.proto"],
+cc_test(
+    name = "registry_test",
+    size = "small",
+    srcs = ["registry_test.cc"],
+    linkstatic = 1,
+    deps = [
+        ":registry",
+        "//external:googletest_main",
+    ],
 )
