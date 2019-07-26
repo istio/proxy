@@ -79,13 +79,13 @@ class PluginRootContext : public RootContext {
   void onTick() override{};
 
   void onLog() {
-    std::string aa = "id1";
+    std::string id = "id1";
 
-    auto counter_it = counter_map_.find(aa);
+    auto counter_it = counter_map_.find(id);
     if (counter_it == counter_map_.end()) {
       auto counter = istio_requests_total_metric_->resolve("SRC_A", "SRC_V",
                                                            "DEST_A", "DEST_B");
-      counter_map_.emplace(aa, counter);
+      counter_map_.emplace(id, counter);
       counter++;
     } else {
       counter_it->second++;
