@@ -16,12 +16,11 @@
 #include "extensions/common/context.h"
 #include "google/protobuf/util/json_util.h"
 
-
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 
-#else // NULL_PLUGIN
+#else  // NULL_PLUGIN
 
 #include "extensions/common/wasm/null/null.h"
 
@@ -31,7 +30,7 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
-#endif // NULL_PLUGIN
+#endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -54,8 +53,7 @@ Status extractNodeMetadata(const google::protobuf::Struct &metadata,
                              json_parse_options);
 }
 
-
-void initializeRequestInfo(RequestInfo* request_info) {
+void initializeRequestInfo(RequestInfo *request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info->end_timestamp = proxy_getCurrentTimeNanoseconds();
 
@@ -63,26 +61,26 @@ void initializeRequestInfo(RequestInfo* request_info) {
   request_info->response_code = getResponseCode(StreamType::Response);
   request_info->request_protocol = getProtocol(StreamType::Request)->toString();
   request_info->destination_service_host =
-    getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
-      ->toString();
+      getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
+          ->toString();
   request_info->request_operation =
-    getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
-      ->toString();
+      getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
+          ->toString();
   request_info->destination_port = getDestinationPort(StreamType::Request);
 
   // Fill in peer node metadata in request info.
-  auto downstream_metadata = getMetadataStruct(
-    MetadataType::Request, kDownstreamMetadataKey);
-  auto status =
-    extractNodeMetadata(downstream_metadata, &(request_info->downstream_node_info));
+  auto downstream_metadata =
+      getMetadataStruct(MetadataType::Request, kDownstreamMetadataKey);
+  auto status = extractNodeMetadata(downstream_metadata,
+                                    &(request_info->downstream_node_info));
   if (status != Status::OK) {
     logWarn("cannot parse downstream peer node metadata " +
             downstream_metadata.DebugString() + ": " + status.ToString());
   }
-  auto upstream_metadata = getMetadataStruct(
-    MetadataType::Request, kUpstreamMetadataKey);
-  status =
-    extractNodeMetadata(upstream_metadata, &(request_info->upstream_node_info));
+  auto upstream_metadata =
+      getMetadataStruct(MetadataType::Request, kUpstreamMetadataKey);
+  status = extractNodeMetadata(upstream_metadata,
+                               &(request_info->upstream_node_info));
   if (status != Status::OK) {
     logWarn("cannot parse upstream peer node metadata " +
             upstream_metadata.DebugString() + ": " + status.ToString());

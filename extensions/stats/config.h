@@ -22,7 +22,7 @@
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 
-#else // NULL_PLUGIN
+#else  // NULL_PLUGIN
 
 #include "extensions/common/wasm/null/null.h"
 
@@ -32,7 +32,7 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
-#endif // NULL_PLUGIN
+#endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -80,8 +80,6 @@ class PluginRootContext : public RootContext {
   void onStart() override{};
   void onTick() override{};
 
-
-
  private:
   Counter<std::string, std::string, std::string, std::string>*
       istio_requests_total_metric_;
@@ -96,9 +94,8 @@ class PluginContext : public Context {
   void onCreate() override{};
   void onLog() override;
 
-
-  // TODO remove the following 3 functions when streamInfo adds support for response_duration,
-  // request_size and response_size.
+  // TODO remove the following 3 functions when streamInfo adds support for
+  // response_duration, request_size and response_size.
   FilterHeadersStatus onRequestHeaders() override {
     request_info_.start_timestamp = proxy_getCurrentTimeNanoseconds();
     return FilterHeadersStatus::Continue;
@@ -114,14 +111,12 @@ class PluginContext : public Context {
     return FilterDataStatus::Continue;
   };
 
-
-private:
+ private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
 
   Common::RequestInfo request_info_;
-
 };
 
 NULL_PLUGIN_ROOT_REGISTRY;

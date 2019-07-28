@@ -21,7 +21,7 @@
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 
-#else // NULL_PLUGIN
+#else  // NULL_PLUGIN
 
 #include "extensions/common/wasm/null/null.h"
 
@@ -31,37 +31,37 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
-#endif // NULL_PLUGIN
+#endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
 
 namespace Common {
 
-  using StringView = absl::string_view;
+using StringView = absl::string_view;
 
-  // Node metadata
-  constexpr StringView kIstioMetadataKey = "istio.io/metadata";
-  constexpr StringView kMetadataPodNameKey = "name";
-  constexpr StringView kMetadataNamespaceKey = "namespace";
-  constexpr StringView kMetadataOwnerKey = "owner";
-  constexpr StringView kMetadataWorkloadNameKey = "workload_name";
-  constexpr StringView kMetadataContainersKey = "ports_to_containers";
-  constexpr StringView kPlatformMetadataKey = "platform_metadata";
+// Node metadata
+constexpr StringView kIstioMetadataKey = "istio.io/metadata";
+constexpr StringView kMetadataPodNameKey = "name";
+constexpr StringView kMetadataNamespaceKey = "namespace";
+constexpr StringView kMetadataOwnerKey = "owner";
+constexpr StringView kMetadataWorkloadNameKey = "workload_name";
+constexpr StringView kMetadataContainersKey = "ports_to_containers";
+constexpr StringView kPlatformMetadataKey = "platform_metadata";
 
-
-  constexpr StringView kUpstreamMetadataKey = "envoy.wasm.metadata_exchange.upstream";
-  constexpr StringView kDownstreamMetadataKey =
+constexpr StringView kUpstreamMetadataKey =
+    "envoy.wasm.metadata_exchange.upstream";
+constexpr StringView kDownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
 
-  // Header keys
-  constexpr StringView kAuthorityHeaderKey = ":authority";
-  constexpr StringView kMethodHeaderKey = ":method";
+// Header keys
+constexpr StringView kAuthorityHeaderKey = ":authority";
+constexpr StringView kMethodHeaderKey = ":method";
 
-  // Misc
-  constexpr double kNanosecondsPerMillisecond = 1000000.0;
-  constexpr StringView kIstioProxyContainerName = "istio-proxy";
-  constexpr StringView kMutualTLS = "MUTUAL_TLS";
-  constexpr StringView kNone = "NONE";
+// Misc
+constexpr double kNanosecondsPerMillisecond = 1000000.0;
+constexpr StringView kIstioProxyContainerName = "istio-proxy";
+constexpr StringView kMutualTLS = "MUTUAL_TLS";
+constexpr StringView kNone = "NONE";
 
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
@@ -111,11 +111,11 @@ struct RequestInfo {
 // from that JSON struct.
 // Returns status of protocol/JSON operations.
 google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct &metadata,
-    common::NodeInfo *node_info);
+    const google::protobuf::Struct &metadata, common::NodeInfo *node_info);
 
-// initializeRequestInfo initializes the RequestInfo struct. It needs access to the request context.
-void initializeRequestInfo(RequestInfo* request_info);
+// initializeRequestInfo initializes the RequestInfo struct. It needs access to
+// the request context.
+void initializeRequestInfo(RequestInfo *request_info);
 
 }  // namespace Common
 

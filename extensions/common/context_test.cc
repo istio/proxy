@@ -20,12 +20,11 @@
 #include "google/protobuf/util/json_util.h"
 #include "gtest/gtest.h"
 
-
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 
-#else // NULL_PLUGIN
+#else  // NULL_PLUGIN
 
 #include "extensions/common/wasm/null/null.h"
 
@@ -35,7 +34,7 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
-#endif // NULL_PLUGIN
+#endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -73,10 +72,11 @@ TEST(ContextTest, extractNodeMetadata) {
   EXPECT_EQ(node_info.namespace_(), "test_namespace");
   EXPECT_EQ(node_info.owner(), "test_owner");
   EXPECT_EQ(node_info.workload_name(), "test_workload");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_project(), "test_project");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "test_cluster");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(),
-   //         "test_location");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_project(), "test_project");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(),
+  // "test_cluster");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(),
+  //         "test_location");
   EXPECT_EQ(node_info.ports_to_containers().size(), 1);
   EXPECT_EQ(node_info.ports_to_containers().at("80"), "test_container");
 }
@@ -92,9 +92,9 @@ TEST(ContextTest, extractNodeMetadataNoMetadataField) {
   EXPECT_EQ(node_info.namespace_(), "");
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
   EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 
@@ -116,9 +116,9 @@ TEST(ContextTest, extractNodeMetadataMissingMetadata) {
   EXPECT_EQ(node_info.namespace_(), "test_namespace");
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
   EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 
@@ -135,9 +135,9 @@ TEST(ContextTest, extractNodeMetadataWrongGCPMetadata) {
   NodeInfo node_info;
   Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_NE(status, Status::OK);
-  //EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
-  //EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
+  // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");
   EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 

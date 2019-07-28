@@ -33,7 +33,7 @@ message NodeInfo {
 
   // Platform metadata uses prefixed keys
   // GCP uses gcp_* keys
-  map <string, string> platform_metadata = 6;
+  map<string, string> platform_metadata = 6;
 
   map<string, string> ports_to_containers = 7;
 }
