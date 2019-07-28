@@ -16,12 +16,26 @@
 #pragma once
 
 #include "absl/container/flat_hash_map.h"
+#include "extensions/common/context.h"
+
+// WASM_PROLOG
+#ifndef NULL_PLUGIN
+#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+
+#else // NULL_PLUGIN
+
 #include "extensions/common/wasm/null/null.h"
 
 namespace Envoy {
 namespace Extensions {
+namespace Common {
 namespace Wasm {
+namespace Null {
 namespace Plugin {
+#endif // NULL_PLUGIN
+
+// END WASM_PROLOG
+
 namespace Stats {
 
 constexpr absl::string_view ExchangeMetadataHeaderId =
@@ -48,18 +62,6 @@ constexpr absl::string_view UpstreamMetadataIdKey =
     "envoy.wasm.metadata_exchange.upstream_id";
 
 using StringView = absl::string_view;
-using Common::Wasm::MetadataType;
-using Common::Wasm::Null::NullVmPluginRootRegistry;
-using Common::Wasm::Null::Plugin::Context;
-using Common::Wasm::Null::Plugin::ContextFactory;
-using Common::Wasm::Null::Plugin::Counter;
-using Common::Wasm::Null::Plugin::Metric;
-using Common::Wasm::Null::Plugin::MetricTag;
-using Common::Wasm::Null::Plugin::MetricType;
-using Common::Wasm::Null::Plugin::RootContext;
-using Common::Wasm::Null::Plugin::RootFactory;
-using Common::Wasm::Null::Plugin::SimpleCounter;
-using Common::Wasm::Null::Plugin::WasmData;
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
@@ -78,19 +80,7 @@ class PluginRootContext : public RootContext {
   void onStart() override{};
   void onTick() override{};
 
-  void onLog() {
-    std::string id = "id1";
 
-    auto counter_it = counter_map_.find(id);
-    if (counter_it == counter_map_.end()) {
-      auto counter = istio_requests_total_metric_->resolve("SRC_A", "SRC_V",
-                                                           "DEST_A", "DEST_B");
-      counter_map_.emplace(id, counter);
-      counter++;
-    } else {
-      counter_it->second++;
-    }
-  }
 
  private:
   Counter<std::string, std::string, std::string, std::string>*
@@ -104,12 +94,34 @@ class PluginContext : public Context {
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   void onCreate() override{};
-  void onLog() override { rootContext()->onLog(); };
+  void onLog() override;
 
- private:
+
+  // TODO remove the following 3 functions when streamInfo adds support for response_duration,
+  // request_size and response_size.
+  FilterHeadersStatus onRequestHeaders() override {
+    request_info_.start_timestamp = proxy_getCurrentTimeNanoseconds();
+    return FilterHeadersStatus::Continue;
+  };
+
+  FilterDataStatus onRequestBody(size_t body_buffer_length, bool) override {
+    request_info_.request_size += body_buffer_length;
+    return FilterDataStatus::Continue;
+  };
+
+  FilterDataStatus onResponseBody(size_t body_buffer_length, bool) override {
+    request_info_.response_size += body_buffer_length;
+    return FilterDataStatus::Continue;
+  };
+
+
+private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
+
+  Common::RequestInfo request_info_;
+
 };
 
 NULL_PLUGIN_ROOT_REGISTRY;
@@ -118,7 +130,13 @@ static RegisterContextFactory register_Stats(CONTEXT_FACTORY(PluginContext),
                                              ROOT_FACTORY(PluginRootContext));
 
 }  // namespace Stats
+
+// WASM_EPILOG
+#ifdef NULL_PLUGIN
 }  // namespace Plugin
+}  // namespace Null
 }  // namespace Wasm
+}  // namespace Common
 }  // namespace Extensions
 }  // namespace Envoy
+#endif

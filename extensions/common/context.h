@@ -16,6 +16,7 @@
 #pragma once
 
 #include "extensions/common/node_info.pb.h"
+
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -36,30 +37,31 @@ namespace Plugin {
 
 namespace Common {
 
+  using StringView = absl::string_view;
+
   // Node metadata
-  constexpr char kIstioMetadataKey[] = "istio.io/metadata";
-  constexpr char kMetadataPodNameKey[] = "name";
-  constexpr char kMetadataNamespaceKey[] = "namespace";
-  constexpr char kMetadataOwnerKey[] = "owner";
-  constexpr char kMetadataWorkloadNameKey[] = "workload_name";
-  constexpr char kMetadataContainersKey[] = "ports_to_containers";
-  constexpr char kPlatformMetadataKey[] = "platform_metadata";
+  constexpr StringView kIstioMetadataKey = "istio.io/metadata";
+  constexpr StringView kMetadataPodNameKey = "name";
+  constexpr StringView kMetadataNamespaceKey = "namespace";
+  constexpr StringView kMetadataOwnerKey = "owner";
+  constexpr StringView kMetadataWorkloadNameKey = "workload_name";
+  constexpr StringView kMetadataContainersKey = "ports_to_containers";
+  constexpr StringView kPlatformMetadataKey = "platform_metadata";
 
 
-  constexpr char kUpstreamMetadataKey[] = "envoy.wasm.metadata_exchange.upstream";
-  constexpr char kDownstreamMetadataKey[] =
+  constexpr StringView kUpstreamMetadataKey = "envoy.wasm.metadata_exchange.upstream";
+  constexpr StringView kDownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
 
   // Header keys
-  constexpr char kAuthorityHeaderKey[] = ":authority";
-  constexpr char kMethodHeaderKey[] = ":method";
+  constexpr StringView kAuthorityHeaderKey = ":authority";
+  constexpr StringView kMethodHeaderKey = ":method";
 
   // Misc
   constexpr double kNanosecondsPerMillisecond = 1000000.0;
-  constexpr char kIstioProxyContainerName[] = "istio-proxy";
-  constexpr char kMutualTLS[] = "MUTUAL_TLS";
-  constexpr char kNone[] = "NONE";
-
+  constexpr StringView kIstioProxyContainerName = "istio-proxy";
+  constexpr StringView kMutualTLS = "MUTUAL_TLS";
+  constexpr StringView kNone = "NONE";
 
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
@@ -117,7 +119,7 @@ void initializeRequestInfo(RequestInfo* request_info);
 
 }  // namespace Common
 
-// WASM_PROLOG
+// WASM_EPILOG
 #ifdef NULL_PLUGIN
 }  // namespace Plugin
 }  // namespace Null

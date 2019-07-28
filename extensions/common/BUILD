@@ -20,6 +20,7 @@ licenses(["notice"])
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
+    "envoy_cc_test",
     "envoy_package",
 )
 
@@ -42,13 +43,6 @@ envoy_cc_library(
     ],
 )
 
-cc_library(
-    name = "constants",
-    hdrs = [
-        "constants.h",
-    ],
-)
-
 cc_proto_library(
     name = "node_info_cc_proto",
     visibility = ["//visibility:public"],
@@ -60,13 +54,15 @@ proto_library(
     srcs = ["node_info.proto"],
 )
 
-cc_test(
+envoy_cc_test(
     name = "context_test",
     size = "small",
     srcs = ["context_test.cc"],
-    linkstatic = 1,
+    #linkstatic = 1,
+    repository = "@envoy",
     deps = [
         ":context",
         "//external:googletest_main",
+        "@envoy//source/extensions/common/wasm/null:null_lib",
     ],
 )

@@ -14,41 +14,78 @@
  */
 
 #include "extensions/stats/config.h"
-#include "common/common/base64.h"
+
+// WASM_PROLOG
+#ifndef NULL_PLUGIN
+#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+
+#else // NULL_PLUGIN
+
+#include "extensions/common/wasm/null/null.h"
 
 namespace Envoy {
 namespace Extensions {
+namespace Common {
 namespace Wasm {
+namespace Null {
 namespace Plugin {
+#endif // NULL_PLUGIN
+
+// END WASM_PROLOG
+
 namespace Stats {
 
-// imports from the low-level API
-using Common::Wasm::Null::NullVmPluginFactory;
-using Common::Wasm::Null::Plugin::logDebug;
-using Common::Wasm::Null::Plugin::logInfo;
-using Common::Wasm::Null::Plugin::logWarn;
 
 void PluginRootContext::onConfigure(
-    std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {}
+  std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {};
+
+void PluginContext::onLog()  {
+
+  Common::RequestInfo requestInfo;
+
+  Common::initializeRequestInfo(&requestInfo);
+
+  std::string id = "id1";
+
+  auto counter_it = counter_map_.find(id);
+  if (counter_it == counter_map_.end()) {
+  auto counter = istio_requests_total_metric_->resolve("SRC_A", "SRC_V",
+                                                       "DEST_A", "DEST_B");
+  counter_map_.
+  emplace(id, counter
+  );
+  counter++;
+  }
+  else {
+  counter_it->second++;
+  }
+}
 
 // Registration glue
 
-Common::Wasm::Null::NullVmPluginRootRegistry *context_registry_{};
+NullVmPluginRootRegistry *context_registry_{};
 
-class MetadataExchangeFactory : public Common::Wasm::Null::NullVmPluginFactory {
- public:
+class StatsFactory : public NullVmPluginFactory {
+public:
   const std::string name() const override { return "envoy.wasm.stats"; }
 
-  std::unique_ptr<Common::Wasm::Null::NullVmPlugin> create() const override {
-    return std::make_unique<Common::Wasm::Null::NullVmPlugin>(
-        Envoy::Extensions::Wasm::Plugin::Stats::context_registry_);
+  std::unique_ptr<NullVmPlugin> create() const override {
+    return std::make_unique<NullVmPlugin>(
+      context_registry_);
   }
 };
 
-static Registry::RegisterFactory<MetadataExchangeFactory, NullVmPluginFactory>
-    register_;
+static Registry::RegisterFactory<StatsFactory, NullVmPluginFactory>
+  register_;
+
 }  // namespace Stats
+
+// WASM_EPILOG
+#ifdef NULL_PLUGIN
 }  // namespace Plugin
+}  // namespace Null
 }  // namespace Wasm
+}  // namespace Common
 }  // namespace Extensions
 }  // namespace Envoy
+#endif
