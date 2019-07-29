@@ -140,7 +140,7 @@ proto_library(
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_gogo_protobuf//:gogo_proto",
-        "@googleapis//:rpc_status_protos_lib",
+        "@com_google_googleapis//google/rpc:status_proto",
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
