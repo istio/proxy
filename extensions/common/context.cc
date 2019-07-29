@@ -53,7 +53,7 @@ Status extractNodeMetadata(const google::protobuf::Struct &metadata,
                              json_parse_options);
 }
 
-void initializeRequestInfo(RequestInfo *request_info) {
+void populateRequestInfo(RequestInfo *request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info->end_timestamp = proxy_getCurrentTimeNanoseconds();
 
@@ -67,24 +67,6 @@ void initializeRequestInfo(RequestInfo *request_info) {
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
   request_info->destination_port = getDestinationPort(StreamType::Request);
-
-  // Fill in peer node metadata in request info.
-  auto downstream_metadata =
-      getMetadataStruct(MetadataType::Request, kDownstreamMetadataKey);
-  auto status = extractNodeMetadata(downstream_metadata,
-                                    &(request_info->downstream_node_info));
-  if (status != Status::OK) {
-    logWarn("cannot parse downstream peer node metadata " +
-            downstream_metadata.DebugString() + ": " + status.ToString());
-  }
-  auto upstream_metadata =
-      getMetadataStruct(MetadataType::Request, kUpstreamMetadataKey);
-  status = extractNodeMetadata(upstream_metadata,
-                               &(request_info->upstream_node_info));
-  if (status != Status::OK) {
-    logWarn("cannot parse upstream peer node metadata " +
-            upstream_metadata.DebugString() + ": " + status.ToString());
-  }
 }
 
 }  // namespace Common

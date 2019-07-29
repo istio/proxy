@@ -89,7 +89,8 @@ static_resources:
                 vm: "envoy.wasm.vm.null"
                 code:
                   inline_string: "envoy.wasm.stats"
-              configuration: "test"
+              configuration: |
+                { "direction": "OUTBOUND" }
           - name: envoy.router
             config: {}
           access_log:

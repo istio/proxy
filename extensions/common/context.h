@@ -48,8 +48,13 @@ constexpr StringView kMetadataWorkloadNameKey = "workload_name";
 constexpr StringView kMetadataContainersKey = "ports_to_containers";
 constexpr StringView kPlatformMetadataKey = "platform_metadata";
 
+constexpr StringView kUpstreamMetadataIdKey =
+    "envoy.wasm.metadata_exchange.upstream_id";
 constexpr StringView kUpstreamMetadataKey =
     "envoy.wasm.metadata_exchange.upstream";
+
+constexpr StringView kDownstreamMetadataIdKey =
+    "envoy.wasm.metadata_exchange.downstream_id";
 constexpr StringView kDownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
 
@@ -113,10 +118,9 @@ struct RequestInfo {
 google::protobuf::util::Status extractNodeMetadata(
     const google::protobuf::Struct &metadata, common::NodeInfo *node_info);
 
-// initializeRequestInfo initializes the RequestInfo struct. It needs access to
+// populateRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void initializeRequestInfo(RequestInfo *request_info);
-
+void populateRequestInfo(RequestInfo *request_info);
 }  // namespace Common
 
 // WASM_EPILOG

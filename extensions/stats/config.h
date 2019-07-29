@@ -15,8 +15,11 @@
 
 #pragma once
 
+#include <google/protobuf/util/json_util.h>
 #include "absl/container/flat_hash_map.h"
 #include "extensions/common/context.h"
+#include "extensions/common/node_info.pb.h"
+#include "extensions/stats/config.pb.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -35,6 +38,31 @@ namespace Plugin {
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
+
+// Standard Istio metrics have the following dimensions
+//
+//- reporter
+//    --> Peer info
+//- source_app
+//- source_namespace
+//- source_workload
+//- source_workload_namespace
+//- source_version
+//- destination_app
+//- destination_namespace
+//- destination_workload
+//- destination_workload_namespace
+//- destination_version
+// --> service
+//- destination_service
+//- destination_service_name
+//- destination_service_namespace
+//    --> request bound
+//- source_principal
+//- destination_principal
+//- request_protocol
+//- response_code
+//- connection_mtls
 
 namespace Stats {
 
@@ -63,6 +91,39 @@ constexpr absl::string_view UpstreamMetadataIdKey =
 
 using StringView = absl::string_view;
 
+constexpr StringView Sep = "#";
+
+using google::protobuf::util::JsonParseOptions;
+using google::protobuf::util::Status;
+
+struct Node {
+  common::NodeInfo node_info;
+  // key computed from the
+  std::string key;
+
+  Node(common::NodeInfo nodeInfo) {
+    auto labels = nodeInfo.labels();
+    absl::StrAppend(&key, nodeInfo.workload_name(), Sep, nodeInfo.namespace_(),
+                    Sep, labels["app"], Sep, labels["version"]);
+    node_info = nodeInfo;
+  }
+};
+
+using NodeSharedPtr = std::shared_ptr<Node>;
+
+class NodeInfoCache {
+ public:
+  // Fetches and caches Peer information by peerId
+  // TODO Remove this when it is cheap to directly get things from StreamInfo.
+  // At present this involves de-serializing to google.Protobuf.Struct and then
+  // another round trip to NodeInfo. This Should at most hold N entries.
+  const NodeSharedPtr getPeerById(StringView peerMetadataIdKey,
+                                  StringView peerMetadataKey);
+
+ private:
+  absl::flat_hash_map<std::string, NodeSharedPtr> cache_;
+};
+
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
@@ -80,10 +141,20 @@ class PluginRootContext : public RootContext {
   void onStart() override{};
   void onTick() override{};
 
+  void report(const Common::RequestInfo& requestInfo);
+
+  inline stats::PluginConfig::Direction direction() {
+    return config_.direction();
+  };
+
  private:
   Counter<std::string, std::string, std::string, std::string>*
       istio_requests_total_metric_;
   absl::flat_hash_map<std::string, SimpleCounter> counter_map_;
+
+  stats::PluginConfig config_;
+  common::NodeInfo local_node_info_;
+  NodeInfoCache node_info_cache_;
 };
 
 // Per-stream context.
@@ -92,7 +163,10 @@ class PluginContext : public Context {
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   void onCreate() override{};
-  void onLog() override;
+  void onLog() override {
+    Common::populateRequestInfo(&request_info_);
+    rootContext()->report(request_info_);
+  };
 
   // TODO remove the following 3 functions when streamInfo adds support for
   // response_duration, request_size and response_size.
@@ -118,6 +192,15 @@ class PluginContext : public Context {
 
   Common::RequestInfo request_info_;
 };
+
+/*
+// StandardStat is dimensioned using standard Istio dimensions.
+class StandardStat {
+  public:
+  void initialize() virtual = 0;
+  void record(Common::RequestInfo& requestInfo) virtual  = 0;
+};
+*/
 
 NULL_PLUGIN_ROOT_REGISTRY;
 

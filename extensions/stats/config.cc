@@ -35,14 +35,58 @@ namespace Plugin {
 
 namespace Stats {
 
-void PluginRootContext::onConfigure(
-    std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration){};
+void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
+  // Parse configuration JSON string.
+  JsonParseOptions json_options;
+  Status status =
+      JsonStringToMessage(configuration->toString(), &config_, json_options);
+  if (status != Status::OK) {
+    logWarn("Cannot parse plugin configuration JSON string " +
+            configuration->toString());
+    return;
+  }
 
-void PluginContext::onLog() {
-  Common::RequestInfo requestInfo;
+  auto node_metadata =
+      getMetadataValue(MetadataType::Node, Common::kIstioMetadataKey);
+  status = Common::extractNodeMetadata(node_metadata.struct_value(),
+                                       &local_node_info_);
+  if (status != Status::OK) {
+    logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
+            ": " + status.ToString());
+  }
+}
 
-  Common::initializeRequestInfo(&requestInfo);
+void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
+  auto dir = direction();
 
+  auto metadataIdKey = Common::kDownstreamMetadataIdKey;
+  auto metadataKey = Common::kDownstreamMetadataKey;
+  std::string reporter = "server";
+
+  if (dir == stats::PluginConfig_Direction_OUTBOUND) {
+    metadataIdKey = Common::kUpstreamMetadataIdKey;
+    metadataKey = Common::kUpstreamMetadataKey;
+    reporter = "client";
+  }
+
+  auto peer = node_info_cache_.getPeerById(metadataIdKey, metadataKey);
+
+  // check if this peer has associated metrics
+  //- source_principal
+  //- destination_principal
+  //- request_protocol
+  //- response_code
+  //- connection_mtls
+  auto metric_base_key = absl::StrCat(
+      peer->key, Sep, requestInfo.source_principal, Sep,
+      requestInfo.destination_principal, Sep, requestInfo.request_protocol, Sep,
+      requestInfo.response_code, Sep, requestInfo.mTLS);
+
+  logInfo(metric_base_key);
+
+  // remove peer processing from populateRequestInfo
+
+  /*
   std::string id = "id1";
 
   auto counter_it = counter_map_.find(id);
@@ -54,11 +98,37 @@ void PluginContext::onLog() {
   } else {
     counter_it->second++;
   }
+  */
+}
+
+const NodeSharedPtr NodeInfoCache::getPeerById(StringView peerMetadataIdKey,
+                                               StringView peerMetadataKey) {
+  auto peerId =
+      getMetadataStringValue(MetadataType::Request, peerMetadataIdKey);
+  auto nodeinfo_it = cache_.find(peerId);
+  if (nodeinfo_it != cache_.end()) {
+    return nodeinfo_it->second;
+  }
+
+  // TODO kick out some elements from cache here if size == MAX
+
+  common::NodeInfo nodeInfo;
+  // Missed the cache
+  auto metadata = getMetadataStruct(MetadataType::Request, peerMetadataKey);
+  auto status = Common::extractNodeMetadata(metadata, &nodeInfo);
+  if (status != Status::OK) {
+    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
+            status.ToString());
+  }
+
+  auto new_nodeinfo = std::make_shared<Node>(nodeInfo);
+  cache_[peerId] = new_nodeinfo;
+  return new_nodeinfo;
 }
 
 // Registration glue
 
-NullVmPluginRootRegistry *context_registry_{};
+NullVmPluginRootRegistry* context_registry_{};
 
 class StatsFactory : public NullVmPluginFactory {
  public:
