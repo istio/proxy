@@ -67,6 +67,8 @@ struct Node {
                     Sep, labels["app"], Sep, labels["version"]);
     node_info = nodeInfo;
   }
+
+  Node() = delete;
 };
 
 using NodeSharedPtr = std::shared_ptr<Node>;
@@ -101,11 +103,77 @@ class SimpleStat {
 };
 
 using SimpleStatSharedPtr = std::shared_ptr<SimpleStat>;
+using MetricSharedPtr = std::shared_ptr<Metric>;
 
 #define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
 
-#define UNKNOWNIFEMPTY(ex) SYMIFEMPTY((ex), unknown)
+using mapperFn = std::function<std::string(
+    bool outbound, const common::NodeInfo& source, const common::NodeInfo& dest,
+    const Common::RequestInfo& requestInfo)>;
 
+struct Mapping {
+ public:
+  Mapping(std::string name, mapperFn mapper) : name_(name), mapper_(mapper){};
+
+  Mapping() = delete;
+
+  std::string name_;
+  mapperFn mapper_;
+};
+std::vector<Mapping> getStandardMappings();
+
+class Mappings {
+ public:
+  Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
+
+  Mappings() : Mappings(getStandardMappings()) {}
+
+  // metricTags converts mappings into ordered tags
+  std::vector<MetricTag> metricTags() {
+    std::vector<MetricTag> ret;
+
+    ret.reserve(mappings_.size());
+    for (const auto& mapping : mappings_) {
+      ret.push_back({mapping.name_, MetricTag::TagType::String});
+    }
+    return ret;
+  }
+
+  std::vector<std::string> eval(bool outbound, const common::NodeInfo& source,
+                                const common::NodeInfo& dest,
+                                const Common::RequestInfo& requestInfo) {
+    std::vector<std::string> vals;
+
+    vals.reserve(mappings_.size());
+    for (const auto& mapping : mappings_) {
+      vals.push_back(mapping.mapper_(outbound, source, dest, requestInfo));
+    }
+    return vals;
+  }
+
+ private:
+  std::vector<Mapping> mappings_;
+};
+
+#define MAPPING_SYM(key, expr, sym)                                      \
+  {                                                                      \
+    (key),                                                               \
+        [](bool ABSL_ATTRIBUTE_UNUSED outbound,                          \
+           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED source,         \
+           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED dest,           \
+           const Common::RequestInfo& ABSL_ATTRIBUTE_UNUSED requestInfo) \
+            -> std::string {                                             \
+          auto source_labels = source.labels();                          \
+          auto dest_labels = dest.labels();                              \
+          auto val = (expr);                                             \
+          logDebug(absl::StrCat((key), "=", ToString(val)));             \
+          return (SYMIFEMPTY(ToString(val), (sym)));                     \
+        }                                                                \
+  }
+#define MAPPING(key, expr) MAPPING_SYM((key), (expr), unknown)
+
+// Example Prometheus output
+//
 // istio_requests_total{
 // connection_security_policy="unknown",
 // destination_app="svc01-0-8",
@@ -128,68 +196,6 @@ using SimpleStatSharedPtr = std::shared_ptr<SimpleStat>;
 // source_workload="svc01-0v2",
 // source_workload_namespace="service-graph01"
 // }
-
-using mapperFn = std::function<std::string(
-    bool outbound, const common::NodeInfo& source, const common::NodeInfo& dest,
-    const Common::RequestInfo& requestInfo)>;
-
-class Mapping {
- public:
-  Mapping(std::string name, mapperFn mapper) : name_(name), mapper_(mapper){};
-
-  Mapping() = delete;
-
-  std::string name_;
-  mapperFn mapper_;
-};
-
-class Mappings {
- public:
-  Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
-
-  Mappings() = delete;
-
-  // metricTags converts mappings into ordered tags
-  std::vector<MetricTag> metricTags() {
-    std::vector<MetricTag> ret;
-    ret.reserve(mappings_.size());
-    for (const auto& mapping : mappings_) {
-      ret.push_back({mapping.name_, MetricTag::TagType::String});
-    }
-    return ret;
-  }
-
-  std::vector<std::string> eval(bool outbound, const common::NodeInfo& source,
-                                const common::NodeInfo& dest,
-                                const Common::RequestInfo& requestInfo) {
-    std::vector<std::string> vals;
-
-    vals.reserve(mappings_.size());
-
-    for (const auto& mapping : mappings_) {
-      vals.push_back(mapping.mapper_(outbound, source, dest, requestInfo));
-    }
-    return vals;
-  }
-
- private:
-  std::vector<Mapping> mappings_;
-};
-
-#define MAPPING_SYM(key, expr, sym)                                      \
-  {                                                                      \
-    (key),                                                               \
-        [](bool ABSL_ATTRIBUTE_UNUSED outbound,                          \
-           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED source,         \
-           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED dest,           \
-           const Common::RequestInfo& ABSL_ATTRIBUTE_UNUSED requestInfo) \
-            -> std::string {                                             \
-          auto source_labels = source.labels();                          \
-          auto dest_labels = dest.labels();                              \
-          return (SYMIFEMPTY((sym), ToString((expr))));                  \
-        }                                                                \
-  }
-#define MAPPING(key, expr) MAPPING_SYM((key), (expr), unknown)
 
 std::vector<Mapping> getStandardMappings() {
   return {
@@ -215,7 +221,7 @@ std::vector<Mapping> getStandardMappings() {
 
       MAPPING("request_protocol", requestInfo.request_protocol),
       MAPPING("response_code", requestInfo.response_code),
-      MAPPING_SYM("response_code", requestInfo.response_flag, vDash),
+      MAPPING_SYM("response_flags", requestInfo.response_flag, vDash),
 
       MAPPING("connection_security_policy",
               (outbound ? unknown : (requestInfo.mTLS ? vMTLS : vNone))),
@@ -230,72 +236,65 @@ std::vector<Mapping> getStandardMappings() {
 class StatGen {
  public:
   StatGen(std::string name, MetricType metricType, valueExtractorFn valueFn)
-      : name_(name),
-        valueFn_(valueFn),
-        metric_(
-            metricType, name,
-            {MetricTag{"reporter", MetricTag::TagType::String},
-             MetricTag{"source_app", MetricTag::TagType::String},
-             MetricTag{"source_namespace", MetricTag::TagType::String},
-             MetricTag{"source_workload", MetricTag::TagType::String},
-             MetricTag{"source_workload_namespace", MetricTag::TagType::String},
-             MetricTag{"source_version", MetricTag::TagType::String},
-             MetricTag{"destination_app", MetricTag::TagType::String},
-             MetricTag{"destination_namespace", MetricTag::TagType::String},
-             MetricTag{"destination_workload", MetricTag::TagType::String},
-             MetricTag{"destination_workload_namespace",
-                       MetricTag::TagType::String},
-             MetricTag{"destination_version", MetricTag::TagType::String},
-             MetricTag{"destination_service", MetricTag::TagType::String},
-             MetricTag{"destination_service_name", MetricTag::TagType::String},
-             MetricTag{"destination_service_namespace",
-                       MetricTag::TagType::String},
-             MetricTag{"source_principal", MetricTag::TagType::String},
-             MetricTag{"destination_principal", MetricTag::TagType::String},
-             MetricTag{"request_protocol", MetricTag::TagType::String},
-             MetricTag{"response_code", MetricTag::TagType::Int},
-             MetricTag{"connection_mtls", MetricTag::TagType::Bool}}){};
+      : name_(name), valueFn_(valueFn) {
+    metric_ =
+        std::make_shared<Metric>(metricType, name, mappings_.metricTags());
+  };
 
   StatGen() = delete;
   inline StringView name() const { return name_; };
 
   // return a SimpleSharedPtr
-  SimpleStatSharedPtr resolve(std::string reporter,
-                              const common::NodeInfo& source,
+  SimpleStatSharedPtr resolve(bool outbound, const common::NodeInfo& source,
                               const common::NodeInfo& dest,
                               const Common::RequestInfo& requestInfo) {
-    logInfo(absl::StrCat(__FUNCTION__, ":", __LINE__, ":", reporter,
-                         source.DebugString(), dest.DebugString()));
-    auto source_labels = source.labels();
-    auto dest_labels = dest.labels();
-    auto metric_id = metric_.resolve(
-        reporter, source_labels["app"], source.namespace_(),
-        source.workload_name(), source.namespace_(), source_labels["version"],
-        UNKNOWNIFEMPTY(dest_labels["app"]), UNKNOWNIFEMPTY(dest.namespace_()),
-        dest.workload_name(), UNKNOWNIFEMPTY(dest.namespace_()),
-        dest_labels["version"], requestInfo.destination_service_host,
-        dest.workload_name(), dest.namespace_(),
-        UNKNOWNIFEMPTY(requestInfo.source_principal),
-        UNKNOWNIFEMPTY(requestInfo.destination_principal),
-        requestInfo.request_protocol, requestInfo.response_code,
-        requestInfo.mTLS);
-
-    logInfo(absl::StrCat(__FUNCTION__, ":", __LINE__, ":", metric_id, "/",
-                         source.name(), dest.name(), requestInfo.mTLS));
+    auto vals = mappings_.eval(outbound, source, dest, requestInfo);
+    auto metric_id = metric_->resolveWithFields(vals);
+    logDebug(absl::StrCat(__FUNCTION__, ":", __LINE__, ":", metric_id, "/",
+                          source.name(), dest.name(), requestInfo.mTLS));
     return std::make_shared<SimpleStat>(metric_id, valueFn_);
   };
 
  private:
   std::string name_;
   valueExtractorFn valueFn_;
-  Metric metric_;
+  MetricSharedPtr metric_;
+  Mappings mappings_;
 };
 
-class IstioRequestsTotal : public StatGen {
+class RequestsTotal : public StatGen {
  public:
-  IstioRequestsTotal()
+  RequestsTotal()
       : StatGen("istio_requests_total", MetricType::Counter, value) {}
   static uint64_t value(const Common::RequestInfo&) { return 1; }
+};
+
+class RequestDuration : public StatGen {
+ public:
+  RequestDuration()
+      : StatGen("istio_request_duration_seconds", MetricType::Histogram,
+                value) {}
+  static uint64_t value(const Common::RequestInfo& request_info) {
+    return request_info.end_timestamp - request_info.start_timestamp;
+  }
+};
+
+class RequestBytes : public StatGen {
+ public:
+  RequestBytes()
+      : StatGen("istio_request_bytes", MetricType::Histogram, value) {}
+  static uint64_t value(const Common::RequestInfo& request_info) {
+    return request_info.request_size;
+  }
+};
+
+class ResponseBytes : public StatGen {
+ public:
+  ResponseBytes()
+      : StatGen("istio_response_bytes", MetricType::Histogram, value) {}
+  static uint64_t value(const Common::RequestInfo& request_info) {
+    return request_info.response_size;
+  }
 };
 
 // PluginRootContext is the root context for all streams processed by the
@@ -304,11 +303,8 @@ class IstioRequestsTotal : public StatGen {
 class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
-      : RootContext(id, root_id),
-        istio_requests_total_metric_(
-            Counter<std::string, std::string, std::string, std::string>::New(
-                "istio_requests_total", "source_app", "source_version",
-                "destination_app", "destination_version")) {}
+      : RootContext(id, root_id) {}
+
   ~PluginRootContext() = default;
 
   void onConfigure(std::unique_ptr<WasmData>) override;
@@ -322,15 +318,16 @@ class PluginRootContext : public RootContext {
   };
 
  private:
-  Counter<std::string, std::string, std::string, std::string>*
-      istio_requests_total_metric_;
-  absl::flat_hash_map<std::string, SimpleCounter> counter_map_;
-
   stats::PluginConfig config_;
   common::NodeInfo local_node_info_;
   NodeInfoCache node_info_cache_;
+
+  // Resolved metric where value can be recorded.
   absl::flat_hash_map<std::string, SimpleStatSharedPtr> metric_map_;
-  std::vector<StatGen> stats_ = {IstioRequestsTotal()};
+
+  // Peer stats to be generated for dimensioned pair.
+  std::vector<StatGen> stats_ = {RequestsTotal(), RequestDuration(),
+                                 RequestBytes(), ResponseBytes()};
 };
 
 // Per-stream context.

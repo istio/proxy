@@ -90,10 +90,10 @@ void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
     SimpleStatSharedPtr stat;
     if (metric_it == metric_map_.end()) {
       if (outbound) {
-        stat = statgen.resolve(reporter, local_node_info_, peer->node_info,
+        stat = statgen.resolve(outbound, local_node_info_, peer->node_info,
                                requestInfo);
       } else {
-        stat = statgen.resolve(reporter, peer->node_info, local_node_info_,
+        stat = statgen.resolve(outbound, peer->node_info, local_node_info_,
                                requestInfo);
       }
       metric_map_[key] = stat;
