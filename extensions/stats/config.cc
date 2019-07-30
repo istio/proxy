@@ -103,20 +103,6 @@ void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
 
     stat->record(requestInfo);
   }
-
-  /*
-  std::string id = "id1";
-
-  auto counter_it = counter_map_.find(id);
-  if (counter_it == counter_map_.end()) {
-    auto counter = istio_requests_total_metric_->resolve("SRC_A", "SRC_V",
-                                                         "DEST_A", "DEST_B");
-    counter_map_.emplace(id, counter);
-    counter++;
-  } else {
-    counter_it->second++;
-  }
-  */
 }
 
 const NodeSharedPtr NodeInfoCache::getPeerById(StringView peerMetadataIdKey,
@@ -141,6 +127,8 @@ const NodeSharedPtr NodeInfoCache::getPeerById(StringView peerMetadataIdKey,
 
   auto new_nodeinfo = std::make_shared<Node>(nodeInfo);
   cache_[peerId] = new_nodeinfo;
+
+  logInfo(absl::StrCat("created: ", new_nodeinfo->node_info.DebugString()));
   return new_nodeinfo;
 }
 

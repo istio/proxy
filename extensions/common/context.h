@@ -83,10 +83,6 @@ struct RequestInfo {
   // Response total size in bytes, include header, body, and trailer.
   int64_t response_size = 0;
 
-  // Node information of the peer that the request sent to or came from.
-  common::NodeInfo downstream_node_info;
-  common::NodeInfo upstream_node_info;
-
   // Destination port that the request targets.
   int64_t destination_port = 0;
 
@@ -95,6 +91,9 @@ struct RequestInfo {
 
   // Response code of the request.
   int64_t response_code = 0;
+
+  // Response flag giving additional information - NR, UAEX etc.
+  std::string response_flag;
 
   // Host name of destination service.
   std::string destination_service_host;
