@@ -57,13 +57,13 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
 }
 
 void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
-  auto dir = direction();
+  auto outbound = stats::PluginConfig_Direction_OUTBOUND == direction();
 
   auto metadataIdKey = Common::kDownstreamMetadataIdKey;
   auto metadataKey = Common::kDownstreamMetadataKey;
   std::string reporter = "server";
 
-  if (dir == stats::PluginConfig_Direction_OUTBOUND) {
+  if (outbound) {
     metadataIdKey = Common::kUpstreamMetadataIdKey;
     metadataKey = Common::kUpstreamMetadataKey;
     reporter = "client";
@@ -84,7 +84,25 @@ void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
 
   logInfo(metric_base_key);
 
-  // remove peer processing from populateRequestInfo
+  for (auto& statgen : stats_) {
+    auto key = absl::StrCat(metric_base_key, Sep, statgen.name());
+    auto metric_it = metric_map_.find(key);
+    SimpleStatSharedPtr stat;
+    if (metric_it == metric_map_.end()) {
+      if (outbound) {
+        stat = statgen.resolve(reporter, local_node_info_, peer->node_info,
+                               requestInfo);
+      } else {
+        stat = statgen.resolve(reporter, peer->node_info, local_node_info_,
+                               requestInfo);
+      }
+      metric_map_[key] = stat;
+    } else {
+      stat = metric_it->second;
+    }
+
+    stat->record(requestInfo);
+  }
 
   /*
   std::string id = "id1";

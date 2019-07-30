@@ -3,7 +3,7 @@ node:
   metadata:
     "istio.io/metadata": {
       namespace: default,
-      labels: { app: productpage },
+      labels: { app: productpage, version: V11 },
     }
 stats_config:
   use_all_default_tags: false
@@ -96,7 +96,7 @@ static_resources:
           access_log:
           - name: envoy.file_access_log
             config:
-              path: "/dev/stdout"
+              path: "/tmp/stdout"
               format: "client %RESPONSE_CODE% downstream_id:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.downstream_id)% downstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.downstream)% upstream_id:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.upstream_id)% upstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.upstream)%\n"
   clusters:
   - name: server

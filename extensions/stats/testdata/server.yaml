@@ -3,7 +3,7 @@ node:
   metadata:
     "istio.io/metadata": {
       namespace: default,
-      labels: { app: ratings },
+      labels: { app: ratings, version: V22 },
     }
 stats_config:
   use_all_default_tags: false

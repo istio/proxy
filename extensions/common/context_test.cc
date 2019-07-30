@@ -92,6 +92,7 @@ TEST(ContextTest, extractNodeMetadataNoMetadataField) {
   EXPECT_EQ(node_info.namespace_(), "");
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
+  auto platform_metadata = node_info.platform_metadata();
   // EXPECT_EQ(node_info.platform_metadata().gcp_project(), "");
   // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_name(), "");
   // EXPECT_EQ(node_info.platform_metadata().gcp_cluster_location(), "");

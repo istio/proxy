@@ -39,35 +39,7 @@ namespace Plugin {
 
 // END WASM_PROLOG
 
-// Standard Istio metrics have the following dimensions
-//
-//- reporter
-//    --> Peer info
-//- source_app
-//- source_namespace
-//- source_workload
-//- source_workload_namespace
-//- source_version
-//- destination_app
-//- destination_namespace
-//- destination_workload
-//- destination_workload_namespace
-//- destination_version
-// --> service
-//- destination_service
-//- destination_service_name
-//- destination_service_namespace
-//    --> request bound
-//- source_principal
-//- destination_principal
-//- request_protocol
-//- response_code
-//- connection_mtls
-
 namespace Stats {
-
-constexpr absl::string_view ExchangeMetadataHeaderId =
-    "x-envoy-peer-metadata-id";
 
 // NodeMetadata key is the key in the node metadata struct that is passed
 // between peers.
@@ -92,6 +64,7 @@ constexpr absl::string_view UpstreamMetadataIdKey =
 using StringView = absl::string_view;
 
 constexpr StringView Sep = "#";
+const std::string unknown = "unknown";
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
@@ -122,6 +95,143 @@ class NodeInfoCache {
 
  private:
   absl::flat_hash_map<std::string, NodeSharedPtr> cache_;
+};
+
+using valueExtractorFn = uint64_t (*)(const Common::RequestInfo& request_info);
+
+class SimpleStat {
+ public:
+  SimpleStat(uint32_t metric_id, valueExtractorFn value)
+      : metric_id_(metric_id), valueFn_(value){};
+
+  inline void record(const Common::RequestInfo& request_info) {
+    recordMetric(metric_id_, valueFn_(request_info));
+  };
+
+ private:
+  uint32_t metric_id_;
+  valueExtractorFn valueFn_;
+};
+
+using SimpleStatSharedPtr = std::shared_ptr<SimpleStat>;
+
+#define UNKNOWNIFEMPTY(ex) (ex).empty() ? unknown : (ex)
+
+// istio_requests_total{connection_security_policy="unknown",
+// destination_app="svc01-0-8",
+// destination_principal="unknown",
+// destination_service="svc01-0-8.service-graph01.svc.cluster.local",
+// destination_service_name="svc01-0-8",
+// destination_service_namespace="service-graph01",
+// destination_version="v1",
+// destination_workload="svc01-0-8",
+// destination_workload_namespace="service-graph01",
+// permissive_response_code="none",
+// permissive_response_policyid="none",
+// reporter="source",
+// request_protocol="http",
+// response_code="200",
+// response_flags="-",
+// source_app="svc01-0",
+// source_principal="unknown",
+// source_version="v2",
+// source_workload="svc01-0v2",
+// source_workload_namespace="service-graph01"}
+
+// StatGen is dimensioned using standard Istio dimensions.
+// Standard Istio metrics have the following dimensions
+//
+//- reporter
+//    --> Peer info
+//- source_app
+//- source_namespace
+//- source_workload
+//- source_workload_namespace
+//- source_version
+//- destination_app
+//- destination_namespace
+//- destination_workload
+//- destination_workload_namespace
+//- destination_version
+// --> service
+//- destination_service
+//- destination_service_name
+//- destination_service_namespace
+//    --> request bound
+//- source_principal
+//- destination_principal
+//- request_protocol
+//- response_code
+//- connection_mtls
+class StatGen {
+ public:
+  StatGen(std::string name, MetricType metricType, valueExtractorFn valueFn)
+      : name_(name),
+        valueFn_(valueFn),
+        metric_(
+            metricType, name,
+            {MetricTag{"reporter", MetricTag::TagType::String},
+             MetricTag{"source_app", MetricTag::TagType::String},
+             MetricTag{"source_namespace", MetricTag::TagType::String},
+             MetricTag{"source_workload", MetricTag::TagType::String},
+             MetricTag{"source_workload_namespace", MetricTag::TagType::String},
+             MetricTag{"source_version", MetricTag::TagType::String},
+             MetricTag{"destination_app", MetricTag::TagType::String},
+             MetricTag{"destination_namespace", MetricTag::TagType::String},
+             MetricTag{"destination_workload", MetricTag::TagType::String},
+             MetricTag{"destination_workload_namespace",
+                       MetricTag::TagType::String},
+             MetricTag{"destination_version", MetricTag::TagType::String},
+             MetricTag{"destination_service", MetricTag::TagType::String},
+             MetricTag{"destination_service_name", MetricTag::TagType::String},
+             MetricTag{"destination_service_namespace",
+                       MetricTag::TagType::String},
+             MetricTag{"source_principal", MetricTag::TagType::String},
+             MetricTag{"destination_principal", MetricTag::TagType::String},
+             MetricTag{"request_protocol", MetricTag::TagType::String},
+             MetricTag{"response_code", MetricTag::TagType::Int},
+             MetricTag{"connection_mtls", MetricTag::TagType::Bool}}){};
+
+  StatGen() = delete;
+  inline StringView name() const { return name_; };
+
+  // return a SimpleSharedPtr
+  SimpleStatSharedPtr resolve(std::string reporter,
+                              const common::NodeInfo& source,
+                              const common::NodeInfo& dest,
+                              const Common::RequestInfo& requestInfo) {
+    logInfo(absl::StrCat(__FUNCTION__, ":", __LINE__, ":", reporter,
+                         source.DebugString(), dest.DebugString()));
+    auto source_labels = source.labels();
+    auto dest_labels = dest.labels();
+    auto metric_id = metric_.resolve(
+        reporter, source_labels["app"], source.namespace_(),
+        source.workload_name(), source.namespace_(), source_labels["version"],
+        UNKNOWNIFEMPTY(dest_labels["app"]), UNKNOWNIFEMPTY(dest.namespace_()),
+        dest.workload_name(), UNKNOWNIFEMPTY(dest.namespace_()),
+        dest_labels["version"], requestInfo.destination_service_host,
+        dest.workload_name(), dest.namespace_(),
+        UNKNOWNIFEMPTY(requestInfo.source_principal),
+        UNKNOWNIFEMPTY(requestInfo.destination_principal),
+        requestInfo.request_protocol, requestInfo.response_code,
+        requestInfo.mTLS);
+
+    logInfo(absl::StrCat(__FUNCTION__, ":", __LINE__, ":", metric_id, "/",
+                         source.name(), dest.name(), requestInfo.mTLS));
+    return std::make_shared<SimpleStat>(metric_id, valueFn_);
+  };
+
+ private:
+  std::string name_;
+  valueExtractorFn valueFn_;
+  Metric metric_;
+};
+
+class IstioRequestsTotal : public StatGen {
+ public:
+  IstioRequestsTotal()
+      : StatGen("istio_requests_total", MetricType::Counter, value) {}
+  static uint64_t value(const Common::RequestInfo&) { return 1; }
 };
 
 // PluginRootContext is the root context for all streams processed by the
@@ -155,6 +265,8 @@ class PluginRootContext : public RootContext {
   stats::PluginConfig config_;
   common::NodeInfo local_node_info_;
   NodeInfoCache node_info_cache_;
+  absl::flat_hash_map<std::string, SimpleStatSharedPtr> metric_map_;
+  std::vector<StatGen> stats_ = {IstioRequestsTotal()};
 };
 
 // Per-stream context.
@@ -192,15 +304,6 @@ class PluginContext : public Context {
 
   Common::RequestInfo request_info_;
 };
-
-/*
-// StandardStat is dimensioned using standard Istio dimensions.
-class StandardStat {
-  public:
-  void initialize() virtual = 0;
-  void record(Common::RequestInfo& requestInfo) virtual  = 0;
-};
-*/
 
 NULL_PLUGIN_ROOT_REGISTRY;
 
