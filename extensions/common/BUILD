@@ -54,15 +54,13 @@ proto_library(
     srcs = ["node_info.proto"],
 )
 
-#envoy_cc_test(
-#    name = "context_test",
-#    size = "small",
-#    srcs = ["context_test.cc"],
-#    #linkstatic = 1,
-#    repository = "@envoy",
-#    deps = [
-#        ":context",
-#        "//external:googletest_main",
-#        "@envoy//source/extensions/common/wasm/null:null_lib",
-#    ],
-#)
+envoy_cc_test(
+    name = "context_test",
+    size = "small",
+    srcs = ["context_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":context",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
+)
