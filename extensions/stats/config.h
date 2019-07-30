@@ -64,7 +64,14 @@ constexpr absl::string_view UpstreamMetadataIdKey =
 using StringView = absl::string_view;
 
 constexpr StringView Sep = "#";
+
+// The following need to be std::strings because the receiver expects a string.
 const std::string unknown = "unknown";
+const std::string vSource = "source";
+const std::string vDest = "destination";
+const std::string vMTLS = "mutual_tls";
+const std::string vNone = "none";
+const std::string vDash = "-";
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
@@ -115,9 +122,12 @@ class SimpleStat {
 
 using SimpleStatSharedPtr = std::shared_ptr<SimpleStat>;
 
-#define UNKNOWNIFEMPTY(ex) (ex).empty() ? unknown : (ex)
+#define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
 
-// istio_requests_total{connection_security_policy="unknown",
+#define UNKNOWNIFEMPTY(ex) SYMIFEMPTY((ex), unknown)
+
+// istio_requests_total{
+// connection_security_policy="unknown",
 // destination_app="svc01-0-8",
 // destination_principal="unknown",
 // destination_service="svc01-0-8.service-graph01.svc.cluster.local",
@@ -136,33 +146,98 @@ using SimpleStatSharedPtr = std::shared_ptr<SimpleStat>;
 // source_principal="unknown",
 // source_version="v2",
 // source_workload="svc01-0v2",
-// source_workload_namespace="service-graph01"}
+// source_workload_namespace="service-graph01"
+// }
+
+using mapperFn = std::function<std::string(
+    bool outbound, const common::NodeInfo& source, const common::NodeInfo& dest,
+    const Common::RequestInfo& requestInfo)>;
+
+class Mapping {
+ public:
+  Mapping(std::string name, mapperFn mapper) : name_(name), mapper_(mapper){};
+
+  Mapping() = delete;
+
+  std::string name_;
+  mapperFn mapper_;
+};
+
+#define MAPPING_SYM(k, f, sym)                                           \
+  {                                                                      \
+    (k),                                                                 \
+        [](bool ABSL_ATTRIBUTE_UNUSED outbound,                          \
+           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED source,         \
+           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED dest,           \
+           const Common::RequestInfo& ABSL_ATTRIBUTE_UNUSED requestInfo) \
+            -> std::string {                                             \
+          auto source_labels = source.labels();                          \
+          auto dest_labels = dest.labels();                              \
+          return (SYMIFEMPTY((sym), ToString((f))));                     \
+        }                                                                \
+  }
+#define MAPPING(k, f) MAPPING_SYM((k), (f), unknown)
+
+std::vector<Mapping> getStandardMappings() {
+  return {
+      MAPPING("reporter", (outbound ? vSource : vDest)),
+      // --> Peer info source
+      MAPPING("source_workload", source.workload_name()),
+      MAPPING("source_workload_namespace", source.namespace_()),
+      MAPPING("source_principal", requestInfo.source_principal),
+      MAPPING("source_app", source_labels["app"]),
+      MAPPING("source_version", source_labels["version"]),
+
+      // --> Peer info destination
+      MAPPING("destination_workload", dest.workload_name()),
+      MAPPING("destination_workload_namespace", dest.namespace_()),
+      MAPPING("destination_principal", requestInfo.destination_principal),
+      MAPPING("destination_app", dest_labels["app"]),
+      MAPPING("destination_version", dest_labels["version"]),
+
+      // --> Service info
+      MAPPING("destination_service_host", requestInfo.destination_service_host),
+      MAPPING("destination_service_name", dest.workload_name()),
+      MAPPING("destination_service_namespace", dest.namespace_()),
+
+      MAPPING("request_protocol", requestInfo.request_protocol),
+      MAPPING("response_code", requestInfo.response_code),
+      MAPPING_SYM("response_code", requestInfo.response_flag, vDash),
+
+      MAPPING("connection_security_policy",
+              (outbound ? unknown : (requestInfo.mTLS ? vMTLS : vNone)))
+
+  };
+}
 
 // StatGen is dimensioned using standard Istio dimensions.
 // Standard Istio metrics have the following dimensions
-//
-//- reporter
+//  reporter: conditional((context.reporter.kind | "inbound") == "outbound",
+//  "source", "destination")
 //    --> Peer info
-//- source_app
-//- source_namespace
-//- source_workload
-//- source_workload_namespace
-//- source_version
-//- destination_app
-//- destination_namespace
-//- destination_workload
-//- destination_workload_namespace
-//- destination_version
+//  source_workload: source.workload.name | "unknown"
+//  source_workload_namespace: source.workload.namespace | "unknown"
+//  source_principal: source.principal | "unknown"
+//  source_app: source.labels["app"] | "unknown"
+//  source_version: source.labels["version"] | "unknown"
+//  destination_workload: destination.workload.name | "unknown"
+//  destination_workload_namespace: destination.workload.namespace | "unknown"
+//  destination_principal: destination.principal | "unknown"
+//  destination_app: destination.labels["app"] | "unknown"
+//  destination_version: destination.labels["version"] | "unknown"
 // --> service
-//- destination_service
-//- destination_service_name
-//- destination_service_namespace
-//    --> request bound
-//- source_principal
-//- destination_principal
-//- request_protocol
-//- response_code
-//- connection_mtls
+//  destination_service: destination.service.host | "unknown"
+//  destination_service_name: destination.service.name | "unknown"
+//  destination_service_namespace: destination.service.namespace | "unknown"
+// --> request
+//  request_protocol: api.protocol | context.protocol | "unknown"
+//  response_code: response.code | 200
+//  response_flags: context.proxy_error_code | "-"
+//  permissive_response_code: rbac.permissive.response_code | "none"
+//  permissive_response_policyid: rbac.permissive.effective_policy_id | "none"
+//  connection_security_policy: conditional((context.reporter.kind | "inbound")
+//  == "outbound", "unknown", conditional(connection.mtls | false, "mutual_tls",
+//  "none"))
 class StatGen {
  public:
   StatGen(std::string name, MetricType metricType, valueExtractorFn valueFn)
