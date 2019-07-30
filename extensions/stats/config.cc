@@ -72,17 +72,12 @@ void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
   auto peer = node_info_cache_.getPeerById(metadataIdKey, metadataKey);
 
   // check if this peer has associated metrics
-  //- source_principal
-  //- destination_principal
-  //- request_protocol
-  //- response_code
-  //- connection_mtls
-  auto metric_base_key = absl::StrCat(
-      peer->key, Sep, requestInfo.source_principal, Sep,
-      requestInfo.destination_principal, Sep, requestInfo.request_protocol, Sep,
-      requestInfo.response_code, Sep, requestInfo.mTLS);
-
-  logInfo(metric_base_key);
+  // These fields should vary independently of peer properties.
+  // TODO derive this from the mapper
+  auto metric_base_key =
+      absl::StrCat(peer->key, Sep, requestInfo.request_protocol, Sep,
+                   requestInfo.response_code, Sep, requestInfo.response_flag,
+                   Sep, requestInfo.mTLS);
 
   for (auto& statgen : stats_) {
     auto key = absl::StrCat(metric_base_key, Sep, statgen.name());
