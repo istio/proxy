@@ -93,6 +93,7 @@ struct RequestInfo {
   int64_t response_code = 0;
 
   // Response flag giving additional information - NR, UAEX etc.
+  // TODO populate
   std::string response_flag;
 
   // Host name of destination service.
@@ -103,6 +104,11 @@ struct RequestInfo {
 
   // Indicates if the request uses mTLS.
   bool mTLS = false;
+
+  // TODO describe these 2 fields
+  // TODO populate
+  std::string permissive_response_code;
+  std::string permissive_response_policyid;
 
   // Principal of source and destination workload extracted from TLS
   // certificate.

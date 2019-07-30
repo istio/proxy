@@ -41,26 +41,6 @@ namespace Plugin {
 
 namespace Stats {
 
-// NodeMetadata key is the key in the node metadata struct that is passed
-// between peers.
-constexpr absl::string_view NodeMetadataKey = "istio.io/metadata";
-constexpr absl::string_view NodeIdKey = "id";
-constexpr absl::string_view WholeNodeKey = ".";
-
-// DownstreamMetadataKey is the key in the request metadata for downstream peer
-// metadata
-constexpr absl::string_view DownstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.downstream";
-constexpr absl::string_view DownstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.downstream_id";
-
-// UpstreamMetadataKey is the key in the request metadata for downstream peer
-// metadata
-constexpr absl::string_view UpstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.upstream";
-constexpr absl::string_view UpstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.upstream_id";
-
 using StringView = absl::string_view;
 
 constexpr StringView Sep = "#";
@@ -163,9 +143,42 @@ class Mapping {
   mapperFn mapper_;
 };
 
-#define MAPPING_SYM(k, f, sym)                                           \
+class Mappings {
+ public:
+  Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
+
+  Mappings() = delete;
+
+  // metricTags converts mappings into ordered tags
+  std::vector<MetricTag> metricTags() {
+    std::vector<MetricTag> ret;
+    ret.reserve(mappings_.size());
+    for (const auto& mapping : mappings_) {
+      ret.push_back({mapping.name_, MetricTag::TagType::String});
+    }
+    return ret;
+  }
+
+  std::vector<std::string> eval(bool outbound, const common::NodeInfo& source,
+                                const common::NodeInfo& dest,
+                                const Common::RequestInfo& requestInfo) {
+    std::vector<std::string> vals;
+
+    vals.reserve(mappings_.size());
+
+    for (const auto& mapping : mappings_) {
+      vals.push_back(mapping.mapper_(outbound, source, dest, requestInfo));
+    }
+    return vals;
+  }
+
+ private:
+  std::vector<Mapping> mappings_;
+};
+
+#define MAPPING_SYM(key, expr, sym)                                      \
   {                                                                      \
-    (k),                                                                 \
+    (key),                                                               \
         [](bool ABSL_ATTRIBUTE_UNUSED outbound,                          \
            const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED source,         \
            const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED dest,           \
@@ -173,10 +186,10 @@ class Mapping {
             -> std::string {                                             \
           auto source_labels = source.labels();                          \
           auto dest_labels = dest.labels();                              \
-          return (SYMIFEMPTY((sym), ToString((f))));                     \
+          return (SYMIFEMPTY((sym), ToString((expr))));                  \
         }                                                                \
   }
-#define MAPPING(k, f) MAPPING_SYM((k), (f), unknown)
+#define MAPPING(key, expr) MAPPING_SYM((key), (expr), unknown)
 
 std::vector<Mapping> getStandardMappings() {
   return {
@@ -205,39 +218,15 @@ std::vector<Mapping> getStandardMappings() {
       MAPPING_SYM("response_code", requestInfo.response_flag, vDash),
 
       MAPPING("connection_security_policy",
-              (outbound ? unknown : (requestInfo.mTLS ? vMTLS : vNone)))
-
-  };
+              (outbound ? unknown : (requestInfo.mTLS ? vMTLS : vNone))),
+      MAPPING_SYM("permissive_response_code",
+                  requestInfo.permissive_response_code, vNone),
+      MAPPING_SYM("permissive_response_policyid",
+                  requestInfo.permissive_response_policyid, vNone)};
 }
 
 // StatGen is dimensioned using standard Istio dimensions.
 // Standard Istio metrics have the following dimensions
-//  reporter: conditional((context.reporter.kind | "inbound") == "outbound",
-//  "source", "destination")
-//    --> Peer info
-//  source_workload: source.workload.name | "unknown"
-//  source_workload_namespace: source.workload.namespace | "unknown"
-//  source_principal: source.principal | "unknown"
-//  source_app: source.labels["app"] | "unknown"
-//  source_version: source.labels["version"] | "unknown"
-//  destination_workload: destination.workload.name | "unknown"
-//  destination_workload_namespace: destination.workload.namespace | "unknown"
-//  destination_principal: destination.principal | "unknown"
-//  destination_app: destination.labels["app"] | "unknown"
-//  destination_version: destination.labels["version"] | "unknown"
-// --> service
-//  destination_service: destination.service.host | "unknown"
-//  destination_service_name: destination.service.name | "unknown"
-//  destination_service_namespace: destination.service.namespace | "unknown"
-// --> request
-//  request_protocol: api.protocol | context.protocol | "unknown"
-//  response_code: response.code | 200
-//  response_flags: context.proxy_error_code | "-"
-//  permissive_response_code: rbac.permissive.response_code | "none"
-//  permissive_response_policyid: rbac.permissive.effective_policy_id | "none"
-//  connection_security_policy: conditional((context.reporter.kind | "inbound")
-//  == "outbound", "unknown", conditional(connection.mtls | false, "mutual_tls",
-//  "none"))
 class StatGen {
  public:
   StatGen(std::string name, MetricType metricType, valueExtractorFn valueFn)
