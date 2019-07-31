@@ -56,15 +56,15 @@ const std::string vDash = "-";
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
-using NodeInfoSharedPtr = std::shared_ptr<common::NodeInfo>;
-
+// Node holds node_info proto and a computed key
 struct Node {
+  // node_info is obtained from local node or metadata exchange header.
   common::NodeInfo node_info;
-  // key computed from the
+  // key computed from the node_info;
   std::string key;
 };
 
-// InitializeNode loads the Node object and initializes key
+// InitializeNode loads the Node object and initializes the key
 static bool InitializeNode(StringView peer_metadata_key, Node* node) {
   // Missed the cache
   auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
@@ -99,6 +99,7 @@ class NodeInfoCache {
 
 using ValueExtractorFn = uint64_t (*)(const Common::RequestInfo& request_info);
 
+// SimpleStat record a pre-resolved metric based on the values function.
 class SimpleStat {
  public:
   SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn)
@@ -113,14 +114,15 @@ class SimpleStat {
   ValueExtractorFn value_fn_;
 };
 
-using MetricSharedPtr = std::shared_ptr<Metric>;
-
 #define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
 
 using MapperFn = std::function<std::string(
     bool outbound, const common::NodeInfo& source, const common::NodeInfo& dest,
     const Common::RequestInfo& request_info)>;
 
+// Mapping stores a key name and the associated mapper function.
+// The mapping order is important during evaluation since it must match the
+// order of declared dimensions.
 struct Mapping {
  public:
   Mapping(std::string name, MapperFn mapper) : name_(name), mapper_(mapper){};
@@ -130,11 +132,11 @@ struct Mapping {
   std::string name_;
   MapperFn mapper_;
 };
-std::vector<Mapping> istioStandardDimensionsMappings();
 
+// Mappings is an ordered list of Mapping objects.
 class Mappings {
  public:
-  Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
+  explicit Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
 
   Mappings() = delete;
 
@@ -245,19 +247,17 @@ class StatGen {
                    ValueExtractorFn value_fn)
       : name_(name),
         value_fn_(value_fn),
-        mappings_(istioStandardDimensionsMappings()) {
-    metric_ =
-        std::make_shared<Metric>(metric_type, name, mappings_.metricTags());
-  };
+        mappings_(istioStandardDimensionsMappings()),
+        metric_(metric_type, name, mappings_.metricTags()){};
 
   StatGen() = delete;
   inline StringView name() const { return name_; };
 
   SimpleStat resolve(bool outbound, const common::NodeInfo& source,
                      const common::NodeInfo& dest,
-                     const Common::RequestInfo& request_info) const {
+                     const Common::RequestInfo& request_info) {
     auto vals = mappings_.eval(outbound, source, dest, request_info);
-    auto metric_id = metric_->resolveWithFields(vals);
+    auto metric_id = metric_.resolveWithFields(vals);
     logDebug(absl::StrCat(__FILE__, "::", __FUNCTION__, ":", __LINE__, ":",
                           metric_id, "/", source.name(), dest.name(),
                           request_info.mTLS));
@@ -268,9 +268,7 @@ class StatGen {
   std::string name_;
   ValueExtractorFn value_fn_;
   Mappings mappings_;
-  // TODO convert shared pointer to a direct struct once Metric has a
-  // constructor.
-  MetricSharedPtr metric_;
+  Metric metric_;
 };
 
 class RequestsTotal : public StatGen {

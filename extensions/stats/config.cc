@@ -76,7 +76,7 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
   auto metric_base_key =
       absl::StrCat(peer.key, Sep, request_info.request_protocol, Sep,
                    request_info.response_code, Sep, request_info.response_flag,
-                   Sep, request_info.mTLS);
+                   Sep, request_info.mTLS, Sep, request_info.request_protocol);
 
   for (auto& statgen : stats_) {
     auto key = absl::StrCat(metric_base_key, Sep, statgen.name());
@@ -110,10 +110,7 @@ const Node& NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
 
   // TODO kick out some elements from cache here if size == MAX
 
-  Node node;
-  InitializeNode(peer_metadata_key, &node);
-  cache_[peer_id] = node;
-
+  InitializeNode(peer_metadata_key, &(cache_[peer_id]));
   return cache_[peer_id];
 }
 
