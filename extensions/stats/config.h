@@ -56,6 +56,98 @@ const std::string vDash = "-";
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
+// AttributeContext used as an input to map keys.
+struct AttributeContext {
+  const bool outbound;
+  const common::NodeInfo& source;
+  const common::NodeInfo& destination;
+  const Common::RequestInfo& request;
+};
+
+#define ISTIO_DIMENSIONS            \
+  X(reporter)                       \
+  X(source_workload)                \
+  X(source_workload_namespace)      \
+  X(source_principal)               \
+  X(source_app)                     \
+  X(source_version)                 \
+  X(destination_workload)           \
+  X(destination_workload_namespace) \
+  X(destination_principal)          \
+  X(destination_app)                \
+  X(destination_version)            \
+  X(destination_service_host)       \
+  X(destination_service_name)       \
+  X(destination_service_namespace)  \
+  X(request_protocol)               \
+  X(response_code)                  \
+  X(response_flags)                 \
+  X(connection_security_policy)
+
+struct IstioDimensions {
+#define X(name) std::string(name);
+  ISTIO_DIMENSIONS
+#undef X
+
+  // dimension_list is used
+  static const std::vector<std::string> List() {
+    return std::vector<std::string>{
+#define X(name) #name,
+        ISTIO_DIMENSIONS
+#undef X
+    };
+  }
+
+  // Ordered metric list.
+  static std::vector<MetricTag> metricTags() {
+    return std::vector<MetricTag>{
+#define X(name) {#name, MetricTag::TagType::String},
+        ISTIO_DIMENSIONS
+#undef X
+    };
+  }
+
+  // values is used on the datapath, only when new dimensions have been found.
+  std::vector<std::string> values() {
+    return std::vector<std::string>{
+#define X(name) name,
+        ISTIO_DIMENSIONS
+#undef X
+    };
+  }
+
+  // maps from attribute context to dimensions.
+  void map(AttributeContext& ctx) {
+    reporter = ctx.outbound ? vSource : vDest;
+
+    source_workload = ctx.source.workload_name();
+    source_workload_namespace = ctx.source.namespace_();
+    source_principal = ctx.request.source_principal;
+
+    auto source_labels = ctx.source.labels();
+
+    source_app = source_labels["app"];
+    source_version = source_labels["version"];
+
+    destination_workload = ctx.destination.workload_name();
+    destination_workload_namespace = ctx.destination.namespace_();
+    destination_principal = ctx.request.destination_principal;
+
+    auto destination_labels = ctx.destination.labels();
+
+    destination_app = destination_labels["app"];
+    destination_version = destination_labels["version"];
+
+    destination_service_host = ctx.request.destination_service_host;
+    destination_service_name = ctx.destination.workload_name();
+    destination_service_namespace = ctx.destination.namespace_();
+
+    request_protocol = ctx.request.request_protocol;
+    response_code = std::to_string(ctx.request.response_code);
+    response_flags = ctx.request.response_flag;
+  }
+};
+
 // Node holds node_info proto and a computed key
 struct Node {
   // node_info is obtained from local node or metadata exchange header.
