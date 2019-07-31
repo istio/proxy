@@ -127,7 +127,7 @@ class Mappings {
  public:
   Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
 
-  Mappings() : Mappings(istioStandardDimensionsMappings()) {}
+  Mappings() = delete;
 
   // metricTags converts mappings into ordered tags
   std::vector<MetricTag> metricTags() const {
@@ -234,7 +234,9 @@ class StatGen {
  public:
   explicit StatGen(std::string name, MetricType metric_type,
                    ValueExtractorFn value_fn)
-      : name_(name), value_fn_(value_fn) {
+      : name_(name),
+        value_fn_(value_fn),
+        mappings_(istioStandardDimensionsMappings()) {
     metric_ =
         std::make_shared<Metric>(metric_type, name, mappings_.metricTags());
   };
@@ -256,8 +258,10 @@ class StatGen {
  private:
   std::string name_;
   ValueExtractorFn value_fn_;
-  MetricSharedPtr metric_;
   Mappings mappings_;
+  // TODO convert shared pointer to a direct struct once Metric has a
+  // constructor.
+  MetricSharedPtr metric_;
 };
 
 class RequestsTotal : public StatGen {
