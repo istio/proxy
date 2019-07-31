@@ -108,11 +108,6 @@ struct RequestInfo {
   // Indicates if the request uses mTLS.
   bool mTLS = false;
 
-  // TODO describe these 2 fields
-  // TODO populate
-  std::string permissive_response_code;
-  std::string permissive_response_policyid;
-
   // Principal of source and destination workload extracted from TLS
   // certificate.
   std::string source_principal;

@@ -29,6 +29,7 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
+
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
@@ -54,18 +55,6 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
             ": " + status.ToString());
   }
-}
-
-inline SimpleStat resolve(bool outbound, StatGen& statgen,
-                          const common::NodeInfo& local_node_info,
-                          const common::NodeInfo& peer_node_info,
-                          const Common::RequestInfo& request_info) {
-  if (outbound) {
-    return statgen.resolve(outbound, local_node_info, peer_node_info,
-                           request_info);
-  }
-  return statgen.resolve(outbound, peer_node_info, local_node_info,
-                         request_info);
 }
 
 void PluginRootContext::report(const Common::RequestInfo& request_info) {
@@ -99,8 +88,15 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
       continue;
     }
 
-    auto stat = resolve(outbound, statgen, local_node_info_, *peer->node_info,
-                        request_info);
+    // missed cache
+    const auto& source_node_info =
+        outbound ? local_node_info_ : *peer->node_info;
+    const auto& destination_node_info =
+        outbound ? *peer->node_info : local_node_info_;
+
+    auto stat = statgen.resolve(outbound, source_node_info,
+                                destination_node_info, request_info);
+
     metric_map_.insert({key, stat});
     stat.record(request_info);
   }
@@ -129,7 +125,7 @@ const NodeSharedPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
   auto new_nodeinfo = std::make_shared<Node>(node_info);
   cache_[peer_id] = new_nodeinfo;
 
-  logInfo(absl::StrCat("created: ", new_nodeinfo->node_info->DebugString()));
+  logDebug(absl::StrCat("created: ", new_nodeinfo->node_info->DebugString()));
   return new_nodeinfo;
 }
 

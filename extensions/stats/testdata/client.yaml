@@ -34,8 +34,8 @@ stats_config:
     regex: "(destination_app\\.(.+?)\\.)"
   - tag_name: "destination_version"
     regex: "(destination_version\\.(.+?)\\.)"
-  - tag_name: "destination_service"
-    regex: "(destination_service\\.(.+?)\\.)"
+  - tag_name: "destination_service_host"
+    regex: "(destination_service_host\\.(.+?)\\.)"
   - tag_name: "destination_service_name"
     regex: "(destination_service_name\\.(.+?)\\.)"
   - tag_name: "destination_service_namespace"
@@ -43,9 +43,11 @@ stats_config:
   - tag_name: "request_protocol"
     regex: "(request_protocol\\.(.+?)\\.)"
   - tag_name: "response_code"
-    regex: "(response_code\\.(.+?)\\.)"
-  - tag_name: "connection_mtls"
-    regex: "(connection_mtls\\.(.+?)\\.)"
+    regex: "(response_code\\.(.+?)\\.)|_rq(_(\\d{3}))$"
+  - tag_name: "response_flags"
+    regex: "(response_flags\\.(.+?)\\.)"
+  - tag_name: "connection_security_policy"
+    regex: "(connection_security_policy\\.(.+?)\\.)"
 static_resources:
   listeners:
   - name: client
