@@ -36,30 +36,42 @@ namespace Plugin {
 
 namespace Common {
 
-using namespace google::protobuf::util;
+using google::protobuf::util::JsonStringToMessage;
+using google::protobuf::util::MessageToJsonString;
 
-Status extractNodeMetadata(const google::protobuf::Struct &metadata,
-                           common::NodeInfo *node_info) {
-  JsonOptions json_options;
+google::protobuf::util::Status extractNodeMetadata(
+    const google::protobuf::Struct &metadata, common::NodeInfo *node_info) {
+  google::protobuf::util::JsonOptions json_options;
   std::string metadata_json_struct;
   auto status =
       MessageToJsonString(metadata, &metadata_json_struct, json_options);
-  if (status != Status::OK) {
+  if (status != google::protobuf::util::Status::OK) {
     return status;
   }
-  JsonParseOptions json_parse_options;
+  google::protobuf::util::JsonParseOptions json_parse_options;
   json_parse_options.ignore_unknown_fields = true;
   return JsonStringToMessage(metadata_json_struct, node_info,
                              json_parse_options);
 }
 
-void populateRequestInfo(RequestInfo *request_info) {
+void populateHTTPRequestInfo(RequestInfo *request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info->end_timestamp = proxy_getCurrentTimeNanoseconds();
 
   // Fill in request info.
   request_info->response_code = getResponseCode(StreamType::Response);
-  request_info->request_protocol = getProtocol(StreamType::Request)->toString();
+
+  if (kGrpcContentTypes.contains(
+          getHeaderMapValue(HeaderMapType::RequestHeaders,
+                            kContentTypeHeaderKey)
+              ->toString())) {
+    request_info->request_protocol = kProtocolGRPC;
+  } else {
+    // TODO Add http/1.1, http/1.0, http/2 in a separate attribute.
+    // http|grpc classification is compatible with Mixerclient
+    request_info->request_protocol = kProtocolHTTP;
+  }
+
   request_info->destination_service_host =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
           ->toString();

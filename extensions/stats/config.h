@@ -339,7 +339,7 @@ class PluginContext : public Context {
 
   void onCreate() override{};
   void onLog() override {
-    Common::populateRequestInfo(&request_info_);
+    Common::populateHTTPRequestInfo(&request_info_);
     rootContext()->report(request_info_);
   };
 

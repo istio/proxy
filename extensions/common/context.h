@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/string_view.h"
 #include "extensions/common/node_info.pb.h"
 
 // WASM_PROLOG
@@ -61,12 +63,13 @@ constexpr StringView kDownstreamMetadataKey =
 // Header keys
 constexpr StringView kAuthorityHeaderKey = ":authority";
 constexpr StringView kMethodHeaderKey = ":method";
+constexpr StringView kContentTypeHeaderKey = "content-type";
 
-// Misc
-constexpr double kNanosecondsPerMillisecond = 1000000.0;
-constexpr StringView kIstioProxyContainerName = "istio-proxy";
-constexpr StringView kMutualTLS = "MUTUAL_TLS";
-constexpr StringView kNone = "NONE";
+const std::string kProtocolHTTP = "http";
+const std::string kProtocolGRPC = "grpc";
+
+const absl::flat_hash_set<std::string> kGrpcContentTypes{
+    "application/grpc", "application/grpc+proto", "application/grpc+json"};
 
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
@@ -123,9 +126,9 @@ struct RequestInfo {
 google::protobuf::util::Status extractNodeMetadata(
     const google::protobuf::Struct &metadata, common::NodeInfo *node_info);
 
-// populateRequestInfo populates the RequestInfo struct. It needs access to
+// populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void populateRequestInfo(RequestInfo *request_info);
+void populateHTTPRequestInfo(RequestInfo *request_info);
 }  // namespace Common
 
 // WASM_EPILOG
