@@ -62,12 +62,10 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
 
   auto metadataIdKey = Common::kDownstreamMetadataIdKey;
   auto metadataKey = Common::kDownstreamMetadataKey;
-  std::string reporter = "server";
 
   if (outbound) {
     metadataIdKey = Common::kUpstreamMetadataIdKey;
     metadataKey = Common::kUpstreamMetadataKey;
-    reporter = "client";
   }
 
   auto peer = node_info_cache_.getPeerById(metadataIdKey, metadataKey);
@@ -76,7 +74,7 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
   // These fields should vary independently of peer properties.
   // TODO derive this from the mapper
   auto metric_base_key =
-      absl::StrCat(peer->key, Sep, request_info.request_protocol, Sep,
+      absl::StrCat(peer.key, Sep, request_info.request_protocol, Sep,
                    request_info.response_code, Sep, request_info.response_flag,
                    Sep, request_info.mTLS);
 
@@ -89,10 +87,9 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
     }
 
     // missed cache
-    const auto& source_node_info =
-        outbound ? local_node_info_ : *peer->node_info;
+    const auto& source_node_info = outbound ? local_node_info_ : peer.node_info;
     const auto& destination_node_info =
-        outbound ? *peer->node_info : local_node_info_;
+        outbound ? peer.node_info : local_node_info_;
 
     auto stat = statgen.resolve(outbound, source_node_info,
                                 destination_node_info, request_info);
@@ -102,8 +99,8 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
   }
 }
 
-const NodeSharedPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
-                                               StringView peer_metadata_key) {
+const Node& NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
+                                       StringView peer_metadata_key) {
   auto peer_id =
       getMetadataStringValue(MetadataType::Request, peer_metadata_id_key);
   auto nodeinfo_it = cache_.find(peer_id);
@@ -113,20 +110,11 @@ const NodeSharedPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
 
   // TODO kick out some elements from cache here if size == MAX
 
-  NodeInfoSharedPtr node_info = std::make_shared<common::NodeInfo>();
-  // Missed the cache
-  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
-  auto status = Common::extractNodeMetadata(metadata, node_info.get());
-  if (status != Status::OK) {
-    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
-            status.ToString());
-  }
+  Node node;
+  InitializeNode(peer_metadata_key, &node);
+  cache_[peer_id] = node;
 
-  auto new_nodeinfo = std::make_shared<Node>(node_info);
-  cache_[peer_id] = new_nodeinfo;
-
-  logDebug(absl::StrCat("created: ", new_nodeinfo->node_info->DebugString()));
-  return new_nodeinfo;
+  return cache_[peer_id];
 }
 
 // Registration glue

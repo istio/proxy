@@ -59,21 +59,29 @@ using google::protobuf::util::Status;
 using NodeInfoSharedPtr = std::shared_ptr<common::NodeInfo>;
 
 struct Node {
-  NodeInfoSharedPtr node_info;
+  common::NodeInfo node_info;
   // key computed from the
   std::string key;
-
-  explicit Node(NodeInfoSharedPtr node_info) : node_info(node_info) {
-    auto labels = node_info->labels();
-    absl::StrAppend(&key, node_info->workload_name(), Sep,
-                    node_info->namespace_(), Sep, labels["app"], Sep,
-                    labels["version"]);
-  }
-
-  Node() = delete;
 };
 
-using NodeSharedPtr = std::shared_ptr<Node>;
+// InitializeNode loads the Node object and initializes key
+static bool InitializeNode(StringView peer_metadata_key, Node* node) {
+  // Missed the cache
+  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
+  auto status = Common::extractNodeMetadata(metadata, &node->node_info);
+  if (status != Status::OK) {
+    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
+            status.ToString());
+    return false;
+  }
+
+  auto labels = node->node_info.labels();
+  node->key = absl::StrCat(node->node_info.workload_name(), Sep,
+                           node->node_info.namespace_(), Sep, labels["app"],
+                           Sep, labels["version"]);
+
+  return true;
+}
 
 class NodeInfoCache {
  public:
@@ -81,11 +89,12 @@ class NodeInfoCache {
   // TODO Remove this when it is cheap to directly get things from StreamInfo.
   // At present this involves de-serializing to google.Protobuf.Struct and then
   // another round trip to NodeInfo. This Should at most hold N entries.
-  const NodeSharedPtr getPeerById(StringView peerMetadataIdKey,
-                                  StringView peerMetadataKey);
+  // Node is owned by the cache. Do not store a pointer.
+  const Node& getPeerById(StringView peerMetadataIdKey,
+                          StringView peerMetadataKey);
 
  private:
-  absl::flat_hash_map<std::string, NodeSharedPtr> cache_;
+  absl::flat_hash_map<std::string, Node> cache_;
 };
 
 using ValueExtractorFn = uint64_t (*)(const Common::RequestInfo& request_info);
