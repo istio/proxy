@@ -35,8 +35,7 @@ RequestHandlerImpl::RequestHandlerImpl(
       client_context_(client_context),
       last_report_info_{0ULL, 0ULL, std::chrono::nanoseconds::zero()} {}
 
-void RequestHandlerImpl::Check(CheckData* check_data,
-                               const CheckDoneFunc& on_done) {
+void RequestHandlerImpl::BuildCheckAttributes(CheckData* check_data) {
   if (client_context_->enable_mixer_check() ||
       client_context_->enable_mixer_report()) {
     client_context_->AddStaticAttributes(attributes_->attributes());
@@ -44,7 +43,10 @@ void RequestHandlerImpl::Check(CheckData* check_data,
     AttributesBuilder builder(attributes_->attributes());
     builder.ExtractCheckAttributes(check_data);
   }
+}
 
+void RequestHandlerImpl::Check(CheckData* check_data,
+                               const CheckDoneFunc& on_done) {
   if (!client_context_->enable_mixer_check()) {
     check_context_->setFinalStatus(Status::OK, false);
     on_done(*check_context_);
