@@ -64,6 +64,9 @@ struct AttributeContext {
   const Common::RequestInfo& request;
 };
 
+#define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
+#define UNKNOWNIFEMPTY(ex) SYMIFEMPTY((ex), unknown)
+
 #define ISTIO_DIMENSIONS            \
   X(reporter)                       \
   X(source_workload)                \
@@ -116,6 +119,40 @@ struct IstioDimensions {
     };
   }
 
+  void SetFieldsUnknownIfEmpty() {
+#define X(name)         \
+  if ((name).empty()) { \
+    (name) = unknown;   \
+  }
+    ISTIO_DIMENSIONS
+#undef X
+  }
+
+  // Example Prometheus output
+  //
+  // istio_requests_total{
+  // connection_security_policy="unknown",
+  // destination_app="svc01-0-8",
+  // destination_principal="unknown",
+  // destination_service="svc01-0-8.service-graph01.svc.cluster.local",
+  // destination_service_name="svc01-0-8",
+  // destination_service_namespace="service-graph01",
+  // destination_version="v1",
+  // destination_workload="svc01-0-8",
+  // destination_workload_namespace="service-graph01",
+  // permissive_response_code="none",
+  // permissive_response_policyid="none",
+  // reporter="source",
+  // request_protocol="http",
+  // response_code="200",
+  // response_flags="-",
+  // source_app="svc01-0",
+  // source_principal="unknown",
+  // source_version="v2",
+  // source_workload="svc01-0v2",
+  // source_workload_namespace="service-graph01"
+  // }
+
   // maps from attribute context to dimensions.
   void map(AttributeContext& ctx) {
     reporter = ctx.outbound ? vSource : vDest;
@@ -144,7 +181,10 @@ struct IstioDimensions {
 
     request_protocol = ctx.request.request_protocol;
     response_code = std::to_string(ctx.request.response_code);
-    response_flags = ctx.request.response_flag;
+    response_flags =
+        ctx.request.response_flag.empty() ? vDash : ctx.request.response_flag;
+
+    SetFieldsUnknownIfEmpty();
   }
 };
 
@@ -206,132 +246,6 @@ class SimpleStat {
   ValueExtractorFn value_fn_;
 };
 
-#define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
-
-using MapperFn = std::function<std::string(
-    bool outbound, const common::NodeInfo& source, const common::NodeInfo& dest,
-    const Common::RequestInfo& request_info)>;
-
-// Mapping stores a key name and the associated mapper function.
-// The mapping order is important during evaluation since it must match the
-// order of declared dimensions.
-struct Mapping {
- public:
-  Mapping(std::string name, MapperFn mapper) : name_(name), mapper_(mapper){};
-
-  Mapping() = delete;
-
-  std::string name_;
-  MapperFn mapper_;
-};
-
-// Mappings is an ordered list of Mapping objects.
-class Mappings {
- public:
-  explicit Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
-
-  Mappings() = delete;
-
-  // metricTags converts mappings into ordered tags
-  std::vector<MetricTag> metricTags() const {
-    std::vector<MetricTag> ret;
-
-    ret.reserve(mappings_.size());
-    for (const auto& mapping : mappings_) {
-      ret.push_back({mapping.name_, MetricTag::TagType::String});
-    }
-    return ret;
-  }
-
-  std::vector<std::string> eval(bool outbound, const common::NodeInfo& source,
-                                const common::NodeInfo& dest,
-                                const Common::RequestInfo& requestInfo) const {
-    std::vector<std::string> vals;
-
-    vals.reserve(mappings_.size());
-    for (const auto& mapping : mappings_) {
-      vals.push_back(mapping.mapper_(outbound, source, dest, requestInfo));
-    }
-    return vals;
-  }
-
- private:
-  std::vector<Mapping> mappings_;
-};
-
-#define MAPPING_SYM(key, expr, sym)                                      \
-  {                                                                      \
-    (key),                                                               \
-        [](bool ABSL_ATTRIBUTE_UNUSED outbound,                          \
-           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED source,         \
-           const common::NodeInfo& ABSL_ATTRIBUTE_UNUSED dest,           \
-           const Common::RequestInfo& ABSL_ATTRIBUTE_UNUSED requestInfo) \
-            -> std::string {                                             \
-          auto source_labels = source.labels();                          \
-          auto dest_labels = dest.labels();                              \
-          auto val = ToString((expr));                                   \
-          logDebug(absl::StrCat((key), "=", val));                       \
-          return (SYMIFEMPTY(ToString(val), (sym)));                     \
-        }                                                                \
-  }
-#define MAPPING(key, expr) MAPPING_SYM((key), (expr), unknown)
-
-// Example Prometheus output
-//
-// istio_requests_total{
-// connection_security_policy="unknown",
-// destination_app="svc01-0-8",
-// destination_principal="unknown",
-// destination_service="svc01-0-8.service-graph01.svc.cluster.local",
-// destination_service_name="svc01-0-8",
-// destination_service_namespace="service-graph01",
-// destination_version="v1",
-// destination_workload="svc01-0-8",
-// destination_workload_namespace="service-graph01",
-// permissive_response_code="none",
-// permissive_response_policyid="none",
-// reporter="source",
-// request_protocol="http",
-// response_code="200",
-// response_flags="-",
-// source_app="svc01-0",
-// source_principal="unknown",
-// source_version="v2",
-// source_workload="svc01-0v2",
-// source_workload_namespace="service-graph01"
-// }
-
-std::vector<Mapping> istioStandardDimensionsMappings() {
-  return {
-      MAPPING("reporter", (outbound ? vSource : vDest)),
-      // --> Peer info source
-      MAPPING("source_workload", source.workload_name()),
-      MAPPING("source_workload_namespace", source.namespace_()),
-      MAPPING("source_principal", requestInfo.source_principal),
-      MAPPING("source_app", source_labels["app"]),
-      MAPPING("source_version", source_labels["version"]),
-
-      // --> Peer info destination
-      MAPPING("destination_workload", dest.workload_name()),
-      MAPPING("destination_workload_namespace", dest.namespace_()),
-      MAPPING("destination_principal", requestInfo.destination_principal),
-      MAPPING("destination_app", dest_labels["app"]),
-      MAPPING("destination_version", dest_labels["version"]),
-
-      // --> Service info
-      MAPPING("destination_service_host", requestInfo.destination_service_host),
-      MAPPING("destination_service_name", dest.workload_name()),
-      MAPPING("destination_service_namespace", dest.namespace_()),
-
-      MAPPING("request_protocol", requestInfo.request_protocol),
-      MAPPING("response_code", requestInfo.response_code),
-      MAPPING_SYM("response_flags", requestInfo.response_flag, vDash),
-
-      MAPPING("connection_security_policy",
-              (outbound ? unknown : (requestInfo.mTLS ? vMTLS : vNone)))};
-}
-
-// StatGen is dimensioned using standard Istio dimensions.
 // The standard dimensions are defined in istioStandardDimensionsMappings.
 class StatGen {
  public:
@@ -339,27 +253,20 @@ class StatGen {
                    ValueExtractorFn value_fn)
       : name_(name),
         value_fn_(value_fn),
-        mappings_(istioStandardDimensionsMappings()),
-        metric_(metric_type, name, mappings_.metricTags()){};
+        metric_(metric_type, name, IstioDimensions::metricTags()){};
 
   StatGen() = delete;
   inline StringView name() const { return name_; };
 
-  SimpleStat resolve(bool outbound, const common::NodeInfo& source,
-                     const common::NodeInfo& dest,
-                     const Common::RequestInfo& request_info) {
-    auto vals = mappings_.eval(outbound, source, dest, request_info);
+  // Resolve metric based on provided dimension values.
+  SimpleStat resolve(std::vector<std::string> vals) {
     auto metric_id = metric_.resolveWithFields(vals);
-    logDebug(absl::StrCat(__FILE__, "::", __FUNCTION__, ":", __LINE__, ":",
-                          metric_id, "/", source.name(), dest.name(),
-                          request_info.mTLS));
     return SimpleStat(metric_id, value_fn_);
   };
 
  private:
   std::string name_;
   ValueExtractorFn value_fn_;
-  Mappings mappings_;
   Metric metric_;
 };
 

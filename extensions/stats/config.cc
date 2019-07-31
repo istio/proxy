@@ -70,6 +70,13 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
 
   auto peer = node_info_cache_.getPeerById(metadataIdKey, metadataKey);
 
+  const auto& source_node_info = outbound ? local_node_info_ : peer.node_info;
+  const auto& destination_node_info =
+      outbound ? peer.node_info : local_node_info_;
+
+  AttributeContext ctx{outbound, source_node_info, destination_node_info,
+                       request_info};
+
   // check if this peer has associated metrics
   // These fields should vary independently of peer properties.
   // TODO derive this from the mapper
@@ -77,6 +84,10 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
       absl::StrCat(peer.key, Sep, request_info.request_protocol, Sep,
                    request_info.response_code, Sep, request_info.response_flag,
                    Sep, request_info.mTLS, Sep, request_info.request_protocol);
+
+  IstioDimensions dimensions;
+  dimensions.map(ctx);
+  auto dimension_values = dimensions.values();
 
   for (auto& statgen : stats_) {
     auto key = absl::StrCat(metric_base_key, Sep, statgen.name());
@@ -87,12 +98,7 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
     }
 
     // missed cache
-    const auto& source_node_info = outbound ? local_node_info_ : peer.node_info;
-    const auto& destination_node_info =
-        outbound ? peer.node_info : local_node_info_;
-
-    auto stat = statgen.resolve(outbound, source_node_info,
-                                destination_node_info, request_info);
+    auto stat = statgen.resolve(dimension_values);
 
     metric_map_.insert({key, stat});
     stat.record(request_info);
