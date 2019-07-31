@@ -56,7 +56,19 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
 }
 
-void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
+inline SimpleStat resolve(bool outbound, StatGen& statgen,
+                          const common::NodeInfo& local_node_info,
+                          const common::NodeInfo& peer_node_info,
+                          const Common::RequestInfo& request_info) {
+  if (outbound) {
+    return statgen.resolve(outbound, local_node_info, peer_node_info,
+                           request_info);
+  }
+  return statgen.resolve(outbound, peer_node_info, local_node_info,
+                         request_info);
+}
+
+void PluginRootContext::report(const Common::RequestInfo& request_info) {
   auto outbound = stats::PluginConfig_Direction_OUTBOUND == direction();
 
   auto metadataIdKey = Common::kDownstreamMetadataIdKey;
@@ -75,55 +87,49 @@ void PluginRootContext::report(const Common::RequestInfo& requestInfo) {
   // These fields should vary independently of peer properties.
   // TODO derive this from the mapper
   auto metric_base_key =
-      absl::StrCat(peer->key, Sep, requestInfo.request_protocol, Sep,
-                   requestInfo.response_code, Sep, requestInfo.response_flag,
-                   Sep, requestInfo.mTLS);
+      absl::StrCat(peer->key, Sep, request_info.request_protocol, Sep,
+                   request_info.response_code, Sep, request_info.response_flag,
+                   Sep, request_info.mTLS);
 
   for (auto& statgen : stats_) {
     auto key = absl::StrCat(metric_base_key, Sep, statgen.name());
     auto metric_it = metric_map_.find(key);
-    SimpleStatSharedPtr stat;
-    if (metric_it == metric_map_.end()) {
-      if (outbound) {
-        stat = statgen.resolve(outbound, local_node_info_, peer->node_info,
-                               requestInfo);
-      } else {
-        stat = statgen.resolve(outbound, peer->node_info, local_node_info_,
-                               requestInfo);
-      }
-      metric_map_[key] = stat;
-    } else {
-      stat = metric_it->second;
+    if (metric_it != metric_map_.end()) {
+      metric_it->second.record(request_info);
+      continue;
     }
 
-    stat->record(requestInfo);
+    auto stat = resolve(outbound, statgen, local_node_info_, *peer->node_info,
+                        request_info);
+    metric_map_.insert({key, stat});
+    stat.record(request_info);
   }
 }
 
-const NodeSharedPtr NodeInfoCache::getPeerById(StringView peerMetadataIdKey,
-                                               StringView peerMetadataKey) {
-  auto peerId =
-      getMetadataStringValue(MetadataType::Request, peerMetadataIdKey);
-  auto nodeinfo_it = cache_.find(peerId);
+const NodeSharedPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
+                                               StringView peer_metadata_key) {
+  auto peer_id =
+      getMetadataStringValue(MetadataType::Request, peer_metadata_id_key);
+  auto nodeinfo_it = cache_.find(peer_id);
   if (nodeinfo_it != cache_.end()) {
     return nodeinfo_it->second;
   }
 
   // TODO kick out some elements from cache here if size == MAX
 
-  common::NodeInfo nodeInfo;
+  NodeInfoSharedPtr node_info = std::make_shared<common::NodeInfo>();
   // Missed the cache
-  auto metadata = getMetadataStruct(MetadataType::Request, peerMetadataKey);
-  auto status = Common::extractNodeMetadata(metadata, &nodeInfo);
+  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
+  auto status = Common::extractNodeMetadata(metadata, node_info.get());
   if (status != Status::OK) {
     logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
             status.ToString());
   }
 
-  auto new_nodeinfo = std::make_shared<Node>(nodeInfo);
-  cache_[peerId] = new_nodeinfo;
+  auto new_nodeinfo = std::make_shared<Node>(node_info);
+  cache_[peer_id] = new_nodeinfo;
 
-  logInfo(absl::StrCat("created: ", new_nodeinfo->node_info.DebugString()));
+  logInfo(absl::StrCat("created: ", new_nodeinfo->node_info->DebugString()));
   return new_nodeinfo;
 }
 

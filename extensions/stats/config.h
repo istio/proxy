@@ -56,16 +56,18 @@ const std::string vDash = "-";
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
+using NodeInfoSharedPtr = std::shared_ptr<common::NodeInfo>;
+
 struct Node {
-  common::NodeInfo node_info;
+  NodeInfoSharedPtr node_info;
   // key computed from the
   std::string key;
 
-  Node(common::NodeInfo nodeInfo) {
-    auto labels = nodeInfo.labels();
-    absl::StrAppend(&key, nodeInfo.workload_name(), Sep, nodeInfo.namespace_(),
-                    Sep, labels["app"], Sep, labels["version"]);
-    node_info = nodeInfo;
+  explicit Node(NodeInfoSharedPtr node_info) : node_info(node_info) {
+    auto labels = node_info->labels();
+    absl::StrAppend(&key, node_info->workload_name(), Sep,
+                    node_info->namespace_(), Sep, labels["app"], Sep,
+                    labels["version"]);
   }
 
   Node() = delete;
@@ -86,50 +88,49 @@ class NodeInfoCache {
   absl::flat_hash_map<std::string, NodeSharedPtr> cache_;
 };
 
-using valueExtractorFn = uint64_t (*)(const Common::RequestInfo& request_info);
+using ValueExtractorFn = uint64_t (*)(const Common::RequestInfo& request_info);
 
 class SimpleStat {
  public:
-  SimpleStat(uint32_t metric_id, valueExtractorFn value)
-      : metric_id_(metric_id), valueFn_(value){};
+  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn)
+      : metric_id_(metric_id), value_fn_(value_fn){};
 
   inline void record(const Common::RequestInfo& request_info) {
-    recordMetric(metric_id_, valueFn_(request_info));
+    recordMetric(metric_id_, value_fn_(request_info));
   };
 
  private:
   uint32_t metric_id_;
-  valueExtractorFn valueFn_;
+  ValueExtractorFn value_fn_;
 };
 
-using SimpleStatSharedPtr = std::shared_ptr<SimpleStat>;
 using MetricSharedPtr = std::shared_ptr<Metric>;
 
 #define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
 
-using mapperFn = std::function<std::string(
+using MapperFn = std::function<std::string(
     bool outbound, const common::NodeInfo& source, const common::NodeInfo& dest,
-    const Common::RequestInfo& requestInfo)>;
+    const Common::RequestInfo& request_info)>;
 
 struct Mapping {
  public:
-  Mapping(std::string name, mapperFn mapper) : name_(name), mapper_(mapper){};
+  Mapping(std::string name, MapperFn mapper) : name_(name), mapper_(mapper){};
 
   Mapping() = delete;
 
   std::string name_;
-  mapperFn mapper_;
+  MapperFn mapper_;
 };
-std::vector<Mapping> getStandardMappings();
+std::vector<Mapping> istioStandardDimensionsMappings();
 
 class Mappings {
  public:
   Mappings(std::vector<Mapping> mappings) : mappings_(mappings){};
 
-  Mappings() : Mappings(getStandardMappings()) {}
+  Mappings() : Mappings(istioStandardDimensionsMappings()) {}
 
   // metricTags converts mappings into ordered tags
-  std::vector<MetricTag> metricTags() {
+  std::vector<MetricTag> metricTags() const {
     std::vector<MetricTag> ret;
 
     ret.reserve(mappings_.size());
@@ -141,7 +142,7 @@ class Mappings {
 
   std::vector<std::string> eval(bool outbound, const common::NodeInfo& source,
                                 const common::NodeInfo& dest,
-                                const Common::RequestInfo& requestInfo) {
+                                const Common::RequestInfo& requestInfo) const {
     std::vector<std::string> vals;
 
     vals.reserve(mappings_.size());
@@ -165,8 +166,8 @@ class Mappings {
             -> std::string {                                             \
           auto source_labels = source.labels();                          \
           auto dest_labels = dest.labels();                              \
-          auto val = (expr);                                             \
-          logDebug(absl::StrCat((key), "=", ToString(val)));             \
+          auto val = ToString((expr));                                   \
+          logDebug(absl::StrCat((key), "=", val));                       \
           return (SYMIFEMPTY(ToString(val), (sym)));                     \
         }                                                                \
   }
@@ -197,7 +198,7 @@ class Mappings {
 // source_workload_namespace="service-graph01"
 // }
 
-std::vector<Mapping> getStandardMappings() {
+std::vector<Mapping> istioStandardDimensionsMappings() {
   return {
       MAPPING("reporter", (outbound ? vSource : vDest)),
       // --> Peer info source
@@ -224,40 +225,37 @@ std::vector<Mapping> getStandardMappings() {
       MAPPING_SYM("response_flags", requestInfo.response_flag, vDash),
 
       MAPPING("connection_security_policy",
-              (outbound ? unknown : (requestInfo.mTLS ? vMTLS : vNone))),
-      MAPPING_SYM("permissive_response_code",
-                  requestInfo.permissive_response_code, vNone),
-      MAPPING_SYM("permissive_response_policyid",
-                  requestInfo.permissive_response_policyid, vNone)};
+              (outbound ? unknown : (requestInfo.mTLS ? vMTLS : vNone)))};
 }
 
 // StatGen is dimensioned using standard Istio dimensions.
-// Standard Istio metrics have the following dimensions
+// The standard dimensions are defined in istioStandardDimensionsMappings.
 class StatGen {
  public:
-  StatGen(std::string name, MetricType metricType, valueExtractorFn valueFn)
-      : name_(name), valueFn_(valueFn) {
+  explicit StatGen(std::string name, MetricType metric_type,
+                   ValueExtractorFn value_fn)
+      : name_(name), value_fn_(value_fn) {
     metric_ =
-        std::make_shared<Metric>(metricType, name, mappings_.metricTags());
+        std::make_shared<Metric>(metric_type, name, mappings_.metricTags());
   };
 
   StatGen() = delete;
   inline StringView name() const { return name_; };
 
-  // return a SimpleSharedPtr
-  SimpleStatSharedPtr resolve(bool outbound, const common::NodeInfo& source,
-                              const common::NodeInfo& dest,
-                              const Common::RequestInfo& requestInfo) {
-    auto vals = mappings_.eval(outbound, source, dest, requestInfo);
+  SimpleStat resolve(bool outbound, const common::NodeInfo& source,
+                     const common::NodeInfo& dest,
+                     const Common::RequestInfo& request_info) const {
+    auto vals = mappings_.eval(outbound, source, dest, request_info);
     auto metric_id = metric_->resolveWithFields(vals);
-    logDebug(absl::StrCat(__FUNCTION__, ":", __LINE__, ":", metric_id, "/",
-                          source.name(), dest.name(), requestInfo.mTLS));
-    return std::make_shared<SimpleStat>(metric_id, valueFn_);
+    logDebug(absl::StrCat(__FILE__, "::", __FUNCTION__, ":", __LINE__, ":",
+                          metric_id, "/", source.name(), dest.name(),
+                          request_info.mTLS));
+    return SimpleStat(metric_id, value_fn_);
   };
 
  private:
   std::string name_;
-  valueExtractorFn valueFn_;
+  ValueExtractorFn value_fn_;
   MetricSharedPtr metric_;
   Mappings mappings_;
 };
@@ -323,7 +321,7 @@ class PluginRootContext : public RootContext {
   NodeInfoCache node_info_cache_;
 
   // Resolved metric where value can be recorded.
-  absl::flat_hash_map<std::string, SimpleStatSharedPtr> metric_map_;
+  absl::flat_hash_map<std::string, SimpleStat> metric_map_;
 
   // Peer stats to be generated for dimensioned pair.
   std::vector<StatGen> stats_ = {RequestsTotal(), RequestDuration(),
