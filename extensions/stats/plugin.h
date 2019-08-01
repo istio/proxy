@@ -17,6 +17,8 @@
 
 #include <google/protobuf/util/json_util.h>
 #include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
+#include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
 #include "extensions/common/node_info.pb.h"
 #include "extensions/stats/config.pb.h"
@@ -53,14 +55,19 @@ const std::string vMTLS = "mutual_tls";
 const std::string vNone = "none";
 const std::string vDash = "-";
 
+const std::vector<std::pair<const absl::string_view, std::string>>
+    replacements = {{".", "/"}};
+
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
-#define CTXDEBUG(...)                                                       \
-  if (debug_) {                                                             \
+#define DBG(dbgsym, ...)                                                    \
+  if ((dbgsym)) {                                                           \
     logInfo(absl::StrCat(__FILE__, ":", __LINE__, ":", __FUNCTION__, "() ", \
                          __VA_ARGS__));                                     \
   }
+
+#define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
 
 #define ISTIO_DIMENSIONS            \
   X(reporter)                       \
@@ -110,9 +117,10 @@ struct IstioDimensions {
   }
 
   // values is used on the datapath, only when new dimensions are found.
+  // "." character from value needs to replaced with something.
   std::vector<std::string> values() {
     return std::vector<std::string>{
-#define X(name) name,
+#define X(name) absl::StrReplaceAll(name, replacements),
         ISTIO_DIMENSIONS
 #undef X
     };
@@ -186,11 +194,20 @@ struct IstioDimensions {
     response_flags =
         ctx.request.response_flag.empty() ? vDash : ctx.request.response_flag;
 
+    connection_security_policy =
+        ctx.outbound ? unknown : (ctx.request.mTLS ? vMTLS : vNone);
+
     setFieldsUnknownIfEmpty();
 
     mapped = true;
     vals = values();
     return vals;
+  }
+
+  template <typename H>
+  friend H AbslHashValue(H h, const IstioDimensions& c) {
+    return H::combine(std::move(h), c.request_protocol, c.response_code,
+                      c.response_flags, c.connection_security_policy);
   }
 };
 
@@ -202,7 +219,8 @@ struct Node {
   std::string key;
 };
 
-// InitializeNode loads the Node object and initializes the key
+// InitializeNode loads the Node object and initializes the key.
+// Only called when a new peer is found.
 static bool InitializeNode(StringView peer_metadata_key, Node* node) {
   // Missed the cache
   auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
