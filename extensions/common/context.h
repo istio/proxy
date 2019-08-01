@@ -18,25 +18,9 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "extensions/common/node_info.pb.h"
+#include "google/protobuf/struct.pb.h"
 
-// WASM_PROLOG
-#ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
-
-#else  // NULL_PLUGIN
-
-#include "extensions/common/wasm/null/null.h"
-
-namespace Envoy {
-namespace Extensions {
-namespace Common {
 namespace Wasm {
-namespace Null {
-namespace Plugin {
-#endif  // NULL_PLUGIN
-
-// END WASM_PROLOG
-
 namespace Common {
 
 using StringView = absl::string_view;
@@ -133,14 +117,6 @@ google::protobuf::util::Status extractNodeMetadata(
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
 void populateHTTPRequestInfo(RequestInfo* request_info);
-}  // namespace Common
 
-// WASM_EPILOG
-#ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
 }  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
-#endif
+}  // namespace Wasm

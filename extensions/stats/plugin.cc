@@ -48,9 +48,9 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
 
   auto node_metadata =
-      getMetadataValue(MetadataType::Node, Common::kIstioMetadataKey);
-  status = Common::extractNodeMetadata(node_metadata.struct_value(),
-                                       &local_node_info_);
+      getMetadataValue(MetadataType::Node, ::Wasm::Common::kIstioMetadataKey);
+  status = ::Wasm::Common::extractNodeMetadata(node_metadata.struct_value(),
+                                               &local_node_info_);
   if (status != Status::OK) {
     logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
             ": " + status.ToString());
@@ -58,15 +58,16 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
 
   outbound_ = stats::PluginConfig_Direction_OUTBOUND == direction();
   if (outbound_) {
-    peer_metadata_id_key_ = Common::kUpstreamMetadataIdKey;
-    peer_metadata_key_ = Common::kUpstreamMetadataKey;
+    peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
+    peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
   } else {
-    peer_metadata_id_key_ = Common::kDownstreamMetadataIdKey;
-    peer_metadata_key_ = Common::kDownstreamMetadataKey;
+    peer_metadata_id_key_ = ::Wasm::Common::kDownstreamMetadataIdKey;
+    peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
 }
 
-void PluginRootContext::report(const Common::RequestInfo& request_info) {
+void PluginRootContext::report(
+    const ::Wasm::Common::RequestInfo& request_info) {
   auto peer =
       node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
 
@@ -74,8 +75,8 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
   const auto& destination_node_info =
       outbound_ ? peer.node_info : local_node_info_;
 
-  Common::RequestContext ctx{outbound_, source_node_info, destination_node_info,
-                             request_info};
+  ::Wasm::Common::RequestContext ctx{outbound_, source_node_info,
+                                     destination_node_info, request_info};
 
   // check if this peer has associated metrics
   // These fields should vary independently of peer properties.
@@ -83,11 +84,9 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
   auto metric_base_key =
       absl::StrCat(peer.key, Sep, request_info.request_protocol, Sep,
                    request_info.response_code, Sep, request_info.response_flag,
-                   Sep, request_info.mTLS, Sep, request_info.request_protocol);
+                   Sep, request_info.mTLS);
 
-  IstioDimensions dimensions;
-  dimensions.map(ctx);
-  auto dimension_values = dimensions.values();
+  IstioDimensions istio_dimensions;
 
   for (auto& statgen : stats_) {
     auto key = absl::StrCat(metric_base_key, Sep, statgen.name());
@@ -98,7 +97,7 @@ void PluginRootContext::report(const Common::RequestInfo& request_info) {
     }
 
     // missed cache
-    auto stat = statgen.resolve(dimension_values);
+    auto stat = statgen.resolve(istio_dimensions.mapOnce(ctx));
 
     metric_map_.insert({key, stat});
     stat.record(request_info);

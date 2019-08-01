@@ -24,16 +24,21 @@
 
 #include "extensions/common/wasm/null/null.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
+
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getDestinationPort;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseCode;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::
+    proxy_getCurrentTimeNanoseconds;
+
+using Envoy::Extensions::Common::Wasm::HeaderMapType;
+using Envoy::Extensions::Common::Wasm::StreamType;
+
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
 
+namespace Wasm {
 namespace Common {
 
 using google::protobuf::util::JsonStringToMessage;
@@ -82,13 +87,4 @@ void populateHTTPRequestInfo(RequestInfo *request_info) {
 }
 
 }  // namespace Common
-
-// WASM_EPILOG
-#ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
 }  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
-#endif

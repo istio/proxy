@@ -43,7 +43,7 @@ namespace Stats {
 
 using StringView = absl::string_view;
 
-constexpr StringView Sep = "#";
+constexpr StringView Sep = "#@";
 
 // The following need to be std::strings because the receiver expects a string.
 const std::string unknown = "unknown";
@@ -55,9 +55,6 @@ const std::string vDash = "-";
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
-
-#define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
-#define UNKNOWNIFEMPTY(ex) SYMIFEMPTY((ex), unknown)
 
 #define ISTIO_DIMENSIONS            \
   X(reporter)                       \
@@ -79,13 +76,17 @@ using google::protobuf::util::Status;
   X(response_flags)                 \
   X(connection_security_policy)
 
+// utility fields
+std::vector<std::string> vals;
+bool mapped = false;
+
 struct IstioDimensions {
 #define X(name) std::string(name);
   ISTIO_DIMENSIONS
 #undef X
 
   // dimension_list is used
-  static const std::vector<std::string> List() {
+  static const std::vector<std::string> list() {
     return std::vector<std::string>{
 #define X(name) #name,
         ISTIO_DIMENSIONS
@@ -102,7 +103,7 @@ struct IstioDimensions {
     };
   }
 
-  // values is used on the datapath, only when new dimensions have been found.
+  // values is used on the datapath, only when new dimensions are found.
   std::vector<std::string> values() {
     return std::vector<std::string>{
 #define X(name) name,
@@ -111,7 +112,7 @@ struct IstioDimensions {
     };
   }
 
-  void SetFieldsUnknownIfEmpty() {
+  void setFieldsUnknownIfEmpty() {
 #define X(name)         \
   if ((name).empty()) { \
     (name) = unknown;   \
@@ -146,7 +147,10 @@ struct IstioDimensions {
   // }
 
   // maps from attribute context to dimensions.
-  void map(Common::RequestContext& ctx) {
+  std::vector<std::string>& mapOnce(::Wasm::Common::RequestContext& ctx) {
+    if (mapped) {
+      return vals;
+    }
     reporter = ctx.outbound ? vSource : vDest;
 
     source_workload = ctx.source.workload_name();
@@ -176,7 +180,11 @@ struct IstioDimensions {
     response_flags =
         ctx.request.response_flag.empty() ? vDash : ctx.request.response_flag;
 
-    SetFieldsUnknownIfEmpty();
+    setFieldsUnknownIfEmpty();
+
+    mapped = true;
+    vals = values();
+    return vals;
   }
 };
 
@@ -192,7 +200,7 @@ struct Node {
 static bool InitializeNode(StringView peer_metadata_key, Node* node) {
   // Missed the cache
   auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
-  auto status = Common::extractNodeMetadata(metadata, &node->node_info);
+  auto status = ::Wasm::Common::extractNodeMetadata(metadata, &node->node_info);
   if (status != Status::OK) {
     logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
             status.ToString());
@@ -210,10 +218,10 @@ static bool InitializeNode(StringView peer_metadata_key, Node* node) {
 class NodeInfoCache {
  public:
   // Fetches and caches Peer information by peerId
-  // TODO Remove this when it is cheap to directly get things from StreamInfo.
+  // TODO Remove this when it is cheap to directly get it from StreamInfo.
   // At present this involves de-serializing to google.Protobuf.Struct and then
   // another round trip to NodeInfo. This Should at most hold N entries.
-  // Node is owned by the cache. Do not store a pointer.
+  // Node is owned by the cache. Do not store a reference.
   const Node& getPeerById(StringView peerMetadataIdKey,
                           StringView peerMetadataKey);
 
@@ -221,7 +229,8 @@ class NodeInfoCache {
   absl::flat_hash_map<std::string, Node> cache_;
 };
 
-using ValueExtractorFn = uint64_t (*)(const Common::RequestInfo& request_info);
+using ValueExtractorFn =
+    uint64_t (*)(const ::Wasm::Common::RequestInfo& request_info);
 
 // SimpleStat record a pre-resolved metric based on the values function.
 class SimpleStat {
@@ -229,7 +238,7 @@ class SimpleStat {
   SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn)
       : metric_id_(metric_id), value_fn_(value_fn){};
 
-  inline void record(const Common::RequestInfo& request_info) {
+  inline void record(const ::Wasm::Common::RequestInfo& request_info) {
     recordMetric(metric_id_, value_fn_(request_info));
   };
 
@@ -238,7 +247,6 @@ class SimpleStat {
   ValueExtractorFn value_fn_;
 };
 
-// The standard dimensions are defined in istioStandardDimensionsMappings.
 class StatGen {
  public:
   explicit StatGen(std::string name, MetricType metric_type,
@@ -251,7 +259,7 @@ class StatGen {
   inline StringView name() const { return name_; };
 
   // Resolve metric based on provided dimension values.
-  SimpleStat resolve(std::vector<std::string> vals) {
+  SimpleStat resolve(std::vector<std::string>& vals) {
     auto metric_id = metric_.resolveWithFields(vals);
     return SimpleStat(metric_id, value_fn_);
   };
@@ -260,41 +268,6 @@ class StatGen {
   std::string name_;
   ValueExtractorFn value_fn_;
   Metric metric_;
-};
-
-class RequestsTotal : public StatGen {
- public:
-  RequestsTotal()
-      : StatGen("istio_requests_total", MetricType::Counter, value) {}
-  static uint64_t value(const Common::RequestInfo&) { return 1; }
-};
-
-class RequestDuration : public StatGen {
- public:
-  RequestDuration()
-      : StatGen("istio_request_duration_seconds", MetricType::Histogram,
-                value) {}
-  static uint64_t value(const Common::RequestInfo& request_info) {
-    return request_info.end_timestamp - request_info.start_timestamp;
-  }
-};
-
-class RequestBytes : public StatGen {
- public:
-  RequestBytes()
-      : StatGen("istio_request_bytes", MetricType::Histogram, value) {}
-  static uint64_t value(const Common::RequestInfo& request_info) {
-    return request_info.request_size;
-  }
-};
-
-class ResponseBytes : public StatGen {
- public:
-  ResponseBytes()
-      : StatGen("istio_response_bytes", MetricType::Histogram, value) {}
-  static uint64_t value(const Common::RequestInfo& request_info) {
-    return request_info.response_size;
-  }
 };
 
 // PluginRootContext is the root context for all streams processed by the
@@ -311,7 +284,7 @@ class PluginRootContext : public RootContext {
   void onStart() override{};
   void onTick() override{};
 
-  void report(const Common::RequestInfo& requestInfo);
+  void report(const ::Wasm::Common::RequestInfo& requestInfo);
 
   inline stats::PluginConfig::Direction direction() {
     return config_.direction();
@@ -329,9 +302,23 @@ class PluginRootContext : public RootContext {
   // Resolved metric where value can be recorded.
   absl::flat_hash_map<std::string, SimpleStat> metric_map_;
 
-  // Peer stats to be generated for dimensioned pair.
-  std::vector<StatGen> stats_ = {RequestsTotal(), RequestDuration(),
-                                 RequestBytes(), ResponseBytes()};
+  // Peer stats to be generated for a dimensioned metrics set.
+  std::vector<StatGen> stats_ = {
+      StatGen("istio_requests_total", MetricType::Counter,
+              [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; }),
+      StatGen("istio_request_duration_seconds", MetricType::Histogram,
+              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                return request_info.end_timestamp -
+                       request_info.start_timestamp;
+              }),
+      StatGen("istio_request_bytes", MetricType::Histogram,
+              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                return request_info.request_size;
+              }),
+      StatGen("istio_response_bytes", MetricType::Histogram,
+              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                return request_info.response_size;
+              })};
 };
 
 // Per-stream context.
@@ -341,7 +328,7 @@ class PluginContext : public Context {
 
   void onCreate() override{};
   void onLog() override {
-    Common::populateHTTPRequestInfo(&request_info_);
+    ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
     rootContext()->report(request_info_);
   };
 
@@ -367,7 +354,7 @@ class PluginContext : public Context {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
 
-  Common::RequestInfo request_info_;
+  ::Wasm::Common::RequestInfo request_info_;
 };
 
 NULL_PLUGIN_ROOT_REGISTRY;
