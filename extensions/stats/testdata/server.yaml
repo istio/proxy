@@ -71,10 +71,6 @@ static_resources:
               - "*"
               routes:
               - match:
-                  prefix: "/status"
-                route:
-                  cluster: httpbin
-              - match:
                   prefix: "/"
                 route:
                   cluster: web_service
@@ -127,6 +123,21 @@ static_resources:
                   body:
                     inline_string: "example body\n"
           http_filters:
+          - name: envoy.lua
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.filter.http.lua.v2.Lua
+              inline_code: |
+                --- trivial httpbin implementation
+
+                function envoy_on_request(request_handle)
+                  local headers = request_handle:headers()
+                  local path = headers:get(":path")
+                  local start, _ = path:find("/[^/]*$")
+                  local last_segment = path:sub(start+1)
+
+                  request_handle:respond(
+                      {[":status"] = last_segment})
+                end
           - name: envoy.router
             config: {}
           access_log:
