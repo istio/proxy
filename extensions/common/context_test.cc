@@ -28,12 +28,7 @@
 
 #include "extensions/common/wasm/null/null.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Common {
 namespace Wasm {
-namespace Null {
-namespace Plugin {
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
@@ -152,10 +147,5 @@ TEST(ContextTest, extractNodeMetadataUnknownField) {
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
 }  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
 #endif
