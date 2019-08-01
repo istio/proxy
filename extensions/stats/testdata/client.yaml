@@ -3,6 +3,8 @@ node:
   metadata:
     "istio.io/metadata": {
       namespace: default,
+      workload_name: productpage,
+      owner: /api/ns/deployment/product-deployment,
       labels: { app: productpage, version: V11 },
     }
 stats_config:
@@ -87,7 +89,7 @@ static_resources:
                 code:
                   inline_string: "envoy.wasm.stats"
               configuration: |
-                { "direction": "OUTBOUND" }
+                { "direction": "OUTBOUND", "debug": "true" }
           - name: envoy.router
             config: {}
           access_log:

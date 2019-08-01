@@ -56,6 +56,12 @@ const std::string vDash = "-";
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
+#define CTXDEBUG(...)                                                       \
+  if (debug_) {                                                             \
+    logInfo(absl::StrCat(__FILE__, ":", __LINE__, ":", __FUNCTION__, "() ", \
+                         __VA_ARGS__));                                     \
+  }
+
 #define ISTIO_DIMENSIONS            \
   X(reporter)                       \
   X(source_workload)                \
@@ -76,14 +82,14 @@ using google::protobuf::util::Status;
   X(response_flags)                 \
   X(connection_security_policy)
 
-// utility fields
-std::vector<std::string> vals;
-bool mapped = false;
-
 struct IstioDimensions {
 #define X(name) std::string(name);
   ISTIO_DIMENSIONS
 #undef X
+
+  // utility fields
+  std::vector<std::string> vals;
+  bool mapped = false;
 
   // dimension_list is used
   static const std::vector<std::string> list() {
@@ -242,6 +248,8 @@ class SimpleStat {
     recordMetric(metric_id_, value_fn_(request_info));
   };
 
+  uint32_t metric_id() const { return metric_id_; };
+
  private:
   uint32_t metric_id_;
   ValueExtractorFn value_fn_;
@@ -286,9 +294,11 @@ class PluginRootContext : public RootContext {
 
   void report(const ::Wasm::Common::RequestInfo& requestInfo);
 
-  inline stats::PluginConfig::Direction direction() {
+  inline stats::PluginConfig::Direction direction() const {
     return config_.direction();
   };
+
+  inline bool debug() const { return config_.debug(); }
 
  private:
   stats::PluginConfig config_;
@@ -298,6 +308,7 @@ class PluginRootContext : public RootContext {
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;
   bool outbound_;
+  bool debug_;
 
   // Resolved metric where value can be recorded.
   absl::flat_hash_map<std::string, SimpleStat> metric_map_;
@@ -326,7 +337,7 @@ class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
-  void onCreate() override{};
+  void onCreate() override { debug_ = rootContext()->debug(); };
   void onLog() override {
     ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
     rootContext()->report(request_info_);
@@ -355,6 +366,7 @@ class PluginContext : public Context {
   };
 
   ::Wasm::Common::RequestInfo request_info_;
+  bool debug_;
 };
 
 NULL_PLUGIN_ROOT_REGISTRY;

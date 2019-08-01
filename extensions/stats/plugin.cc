@@ -64,6 +64,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     peer_metadata_id_key_ = ::Wasm::Common::kDownstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
+  debug_ = config_.debug();
 }
 
 void PluginRootContext::report(
@@ -93,12 +94,15 @@ void PluginRootContext::report(
     auto metric_it = metric_map_.find(key);
     if (metric_it != metric_map_.end()) {
       metric_it->second.record(request_info);
+      CTXDEBUG("metricKey cache hit ", key,
+               ", stat=", metric_it->second.metric_id());
       continue;
     }
 
     // missed cache
     auto stat = statgen.resolve(istio_dimensions.mapOnce(ctx));
 
+    CTXDEBUG("metricKey cache miss ", key, ", stat=", stat.metric_id());
     metric_map_.insert({key, stat});
     stat.record(request_info);
   }

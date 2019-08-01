@@ -24,4 +24,5 @@ message PluginConfig {
     OUTBOUND = 1;
   }
   Direction direction = 1;
+  bool debug = 2;
 }

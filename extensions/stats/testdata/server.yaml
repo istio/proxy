@@ -3,11 +3,12 @@ node:
   metadata:
     "istio.io/metadata": {
       namespace: default,
+      workload_name: ratings,
+      owner: /api/ns/deployment/ratings-deployment,
       labels: { app: ratings, version: V22 },
     }
 stats_config:
   use_all_default_tags: false
-  # listener.0.0.0.0_8080.downstream_cx_active: 0 "^listener\\.(((?:[_.[:digit:]]*|[_\\[\\]aAbBcCdDeEfF[:digit:]]*))\\.)"
   stats_tags:
   - tag_name: "reporter"
     regex: "(reporter\\.(.+?)\\.)"
@@ -70,8 +71,12 @@ static_resources:
               - "*"
               routes:
               - match:
+                  prefix: "/status"
+                route:
+                  cluster: httpbin
+              - match:
                   prefix: "/"
-                route: 
+                route:
                   cluster: web_service
           http_filters:
           - name: envoy.wasm
@@ -88,7 +93,7 @@ static_resources:
                 code:
                   inline_string: "envoy.wasm.stats"
               configuration: |
-                { "direction": "INBOUND" }
+                { "direction": "INBOUND", "debug": "true" }
           - name: envoy.router
           - name: envoy.router
             config: {}
@@ -139,6 +144,14 @@ static_resources:
     - socket_address:
         address: 127.0.0.1
         port_value: 8099
+  - name: httpbin
+    connect_timeout: 0.25s
+    type: strict_dns
+    lb_policy: round_robin
+    hosts:
+    - socket_address:
+        address: httpbin.org
+        port_value: 80
 admin:
   access_log_path: "/dev/null"
   address:
