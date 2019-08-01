@@ -28,10 +28,10 @@ envoy_package()
 envoy_cc_library(
     name = "stats_plugin",
     srcs = [
-        "config.cc",
+        "plugin.cc",
     ],
     hdrs = [
-        "config.h",
+        "plugin.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],

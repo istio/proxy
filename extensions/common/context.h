@@ -114,16 +114,25 @@ struct RequestInfo {
   std::string destination_principal;
 };
 
+// RequestContext contains all the information available in the request.
+// Some or all part may be populated depending on need.
+struct RequestContext {
+  const bool outbound;
+  const common::NodeInfo& source;
+  const common::NodeInfo& destination;
+  const Common::RequestInfo& request;
+};
+
 // Extracts NodeInfo from proxy node metadata passed in as a protobuf struct.
 // It converts the metadata struct to a JSON struct and parse NodeInfo proto
 // from that JSON struct.
 // Returns status of protocol/JSON operations.
 google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct &metadata, common::NodeInfo *node_info);
+    const google::protobuf::Struct& metadata, common::NodeInfo* node_info);
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void populateHTTPRequestInfo(RequestInfo *request_info);
+void populateHTTPRequestInfo(RequestInfo* request_info);
 }  // namespace Common
 
 // WASM_EPILOG

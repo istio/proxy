@@ -56,14 +56,6 @@ const std::string vDash = "-";
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
-// AttributeContext used as an input to map keys.
-struct AttributeContext {
-  const bool outbound;
-  const common::NodeInfo& source;
-  const common::NodeInfo& destination;
-  const Common::RequestInfo& request;
-};
-
 #define SYMIFEMPTY(ex, sym) (ex).empty() ? (sym) : (ex)
 #define UNKNOWNIFEMPTY(ex) SYMIFEMPTY((ex), unknown)
 
@@ -154,7 +146,7 @@ struct IstioDimensions {
   // }
 
   // maps from attribute context to dimensions.
-  void map(AttributeContext& ctx) {
+  void map(Common::RequestContext& ctx) {
     reporter = ctx.outbound ? vSource : vDest;
 
     source_workload = ctx.source.workload_name();
@@ -329,6 +321,10 @@ class PluginRootContext : public RootContext {
   stats::PluginConfig config_;
   common::NodeInfo local_node_info_;
   NodeInfoCache node_info_cache_;
+
+  StringView peer_metadata_id_key_;
+  StringView peer_metadata_key_;
+  bool outbound_;
 
   // Resolved metric where value can be recorded.
   absl::flat_hash_map<std::string, SimpleStat> metric_map_;

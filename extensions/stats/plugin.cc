@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "extensions/stats/config.h"
+#include "extensions/stats/plugin.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -55,27 +55,27 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
             ": " + status.ToString());
   }
+
+  outbound_ = stats::PluginConfig_Direction_OUTBOUND == direction();
+  if (outbound_) {
+    peer_metadata_id_key_ = Common::kUpstreamMetadataIdKey;
+    peer_metadata_key_ = Common::kUpstreamMetadataKey;
+  } else {
+    peer_metadata_id_key_ = Common::kDownstreamMetadataIdKey;
+    peer_metadata_key_ = Common::kDownstreamMetadataKey;
+  }
 }
 
 void PluginRootContext::report(const Common::RequestInfo& request_info) {
-  auto outbound = stats::PluginConfig_Direction_OUTBOUND == direction();
+  auto peer =
+      node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
 
-  auto metadataIdKey = Common::kDownstreamMetadataIdKey;
-  auto metadataKey = Common::kDownstreamMetadataKey;
-
-  if (outbound) {
-    metadataIdKey = Common::kUpstreamMetadataIdKey;
-    metadataKey = Common::kUpstreamMetadataKey;
-  }
-
-  auto peer = node_info_cache_.getPeerById(metadataIdKey, metadataKey);
-
-  const auto& source_node_info = outbound ? local_node_info_ : peer.node_info;
+  const auto& source_node_info = outbound_ ? local_node_info_ : peer.node_info;
   const auto& destination_node_info =
-      outbound ? peer.node_info : local_node_info_;
+      outbound_ ? peer.node_info : local_node_info_;
 
-  AttributeContext ctx{outbound, source_node_info, destination_node_info,
-                       request_info};
+  Common::RequestContext ctx{outbound_, source_node_info, destination_node_info,
+                             request_info};
 
   // check if this peer has associated metrics
   // These fields should vary independently of peer properties.
