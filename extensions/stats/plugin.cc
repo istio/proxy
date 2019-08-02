@@ -56,7 +56,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
             ": " + status.ToString());
   }
 
-  outbound_ = stats::PluginConfig_Direction_OUTBOUND == direction();
+  outbound_ = stats::PluginConfig_Direction_OUTBOUND == config_.direction();
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
@@ -65,6 +65,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
   debug_ = config_.debug();
+  node_info_cache_.set_max_cache_size(config_.max_peer_cache_size());
 }
 
 void PluginRootContext::report(
@@ -136,7 +137,14 @@ const Node& NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
     return nodeinfo_it->second;
   }
 
-  // TODO kick out some elements from cache here if size == MAX
+  // Do not let the cache grow beyond max_cache_size_.
+  if (cache_.size() > max_cache_size_) {
+    auto it = cache_.begin();
+    for (int i = 0; i < int(max_cache_size_ / 4); ++i, ++it) {
+    }
+    cache_.erase(cache_.begin(), it);
+    logInfo(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+  }
 
   initializeNode(peer_metadata_key, &(cache_[peer_id]));
   return cache_[peer_id];

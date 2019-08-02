@@ -268,6 +268,8 @@ struct Node {
   std::string key;
 };
 
+const size_t DEFAULT_NODECACHE_MAX_SIZE = 500;
+
 class NodeInfoCache {
  public:
   // Fetches and caches Peer information by peerId
@@ -278,8 +280,17 @@ class NodeInfoCache {
   const Node& getPeerById(StringView peerMetadataIdKey,
                           StringView peerMetadataKey);
 
+  inline void set_max_cache_size(size_t size) {
+    if (size == 0) {
+      max_cache_size_ = DEFAULT_NODECACHE_MAX_SIZE;
+    } else {
+      max_cache_size_ = size;
+    }
+  }
+
  private:
   absl::flat_hash_map<std::string, Node> cache_;
+  size_t max_cache_size_ = 10;
 };
 
 using ValueExtractorFn =
@@ -341,14 +352,7 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   void onConfigure(std::unique_ptr<WasmData>) override;
-  void onStart() override{};
-  void onTick() override{};
-
-  void report(const ::Wasm::Common::RequestInfo& requestInfo);
-
-  inline stats::PluginConfig::Direction direction() const {
-    return config_.direction();
-  };
+  void report(const ::Wasm::Common::RequestInfo& request_info);
 
  private:
   stats::PluginConfig config_;

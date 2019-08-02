@@ -24,5 +24,14 @@ message PluginConfig {
     OUTBOUND = 1;
   }
   Direction direction = 1;
+
+  // The following settings should be rarely used.
+
+  // it will enable debug for this filter.
   bool debug = 2;
+
+  // maximum size of the peer metadata cache.
+  // A long lived proxy that connects with many transient peers can build up a
+  // large cache.
+  int32 max_peer_cache_size = 3;
 }
