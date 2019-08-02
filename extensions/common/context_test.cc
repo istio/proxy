@@ -21,13 +21,7 @@
 #include "gtest/gtest.h"
 
 // WASM_PROLOG
-#ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
-
-#else  // NULL_PLUGIN
-
-#include "extensions/common/wasm/null/null.h"
-
+#ifdef NULL_PLUGIN
 namespace Wasm {
 #endif  // NULL_PLUGIN
 
@@ -37,7 +31,7 @@ namespace Common {
 
 using namespace google::protobuf;
 using namespace google::protobuf::util;
-using namespace common;
+using namespace wasm::common;
 
 // Test all possible metadata field.
 TEST(ContextTest, extractNodeMetadata) {

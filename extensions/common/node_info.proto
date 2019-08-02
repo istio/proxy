@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package common;
+package wasm.common;
 
 // NodeInfo represents the information extracted from proxy node metadata, or
 // peer node metadata header This is used to fill metrics and log labels.

@@ -24,15 +24,13 @@
 
 #include "extensions/common/wasm/null/null.h"
 
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
-
+using Envoy::Extensions::Common::Wasm::HeaderMapType;
+using Envoy::Extensions::Common::Wasm::StreamType;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getDestinationPort;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseCode;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::
     proxy_getCurrentTimeNanoseconds;
-
-using Envoy::Extensions::Common::Wasm::HeaderMapType;
-using Envoy::Extensions::Common::Wasm::StreamType;
 
 #endif  // NULL_PLUGIN
 
@@ -45,7 +43,8 @@ using google::protobuf::util::JsonStringToMessage;
 using google::protobuf::util::MessageToJsonString;
 
 google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct &metadata, common::NodeInfo *node_info) {
+    const google::protobuf::Struct &metadata,
+    wasm::common::NodeInfo *node_info) {
   google::protobuf::util::JsonOptions json_options;
   std::string metadata_json_struct;
   auto status =

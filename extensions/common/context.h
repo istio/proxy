@@ -102,8 +102,8 @@ struct RequestInfo {
 // Some or all part may be populated depending on need.
 struct RequestContext {
   const bool outbound;
-  const common::NodeInfo& source;
-  const common::NodeInfo& destination;
+  const wasm::common::NodeInfo& source;
+  const wasm::common::NodeInfo& destination;
   const Common::RequestInfo& request;
 };
 
@@ -112,7 +112,8 @@ struct RequestContext {
 // from that JSON struct.
 // Returns status of protocol/JSON operations.
 google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct& metadata, common::NodeInfo* node_info);
+    const google::protobuf::Struct& metadata,
+    wasm::common::NodeInfo* node_info);
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.

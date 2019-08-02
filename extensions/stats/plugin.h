@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include <google/protobuf/util/json_util.h>
 #include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
 #include "absl/strings/str_join.h"
@@ -23,6 +22,7 @@
 #include "extensions/common/context.h"
 #include "extensions/common/node_info.pb.h"
 #include "extensions/stats/config.pb.h"
+#include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -104,7 +104,7 @@ struct IstioDimensions {
   bool mapped = false;
   bool outbound = false;
 
-  // dimension_list is used
+  // ordered dimension list is used by the metrics API.
   static const std::vector<std::string> list() {
     return std::vector<std::string>{
 #define DIMENSION(name) #name,
@@ -113,7 +113,7 @@ struct IstioDimensions {
     };
   }
 
-  // Ordered metric list.
+  // Ordered dimension list is used by the metrics API.
   static std::vector<MetricTag> metricTags() {
     return std::vector<MetricTag>{
 #define DIMENSION(name) {#name, MetricTag::TagType::String},
@@ -165,7 +165,7 @@ struct IstioDimensions {
   // source_workload_namespace="service-graph01"
   // }
 
-  // maps from attribute context to dimensions.
+  // maps from request context to dimensions.
   void mapOnce(::Wasm::Common::RequestContext& ctx) {
     if (mapped) {
       return;
@@ -232,7 +232,8 @@ struct IstioDimensions {
     }
   }
 
-  // smart hash should use fields based on context
+  // smart hash uses fields based on context.
+  // This function is required to make IstioDimensions type hashable.
   template <typename H>
   friend H AbslHashValue(H h, const IstioDimensions& c) {
     h = H::combine(std::move(h), c.request_protocol, c.response_code,
@@ -248,6 +249,7 @@ struct IstioDimensions {
     }
   }
 
+  // This function is required to make IstioDimensions type hashable.
   friend bool operator==(const IstioDimensions& lhs,
                          const IstioDimensions& rhs) {
     return (
@@ -256,16 +258,12 @@ struct IstioDimensions {
 #undef DIMENSION
             lhs.outbound == rhs.outbound);
   }
-
-  void operator()(std::string* out, IstioDimensions& d) const {
-    out->append(d.to_string());
-  }
 };
 
 // Node holds node_info proto and a computed key
 struct Node {
   // node_info is obtained from local node or metadata exchange header.
-  common::NodeInfo node_info;
+  wasm::common::NodeInfo node_info;
   // key computed from the node_info;
   std::string key;
 };
@@ -303,6 +301,7 @@ class SimpleStat {
   ValueExtractorFn value_fn_;
 };
 
+// StatGen creates a SimpleStat based on resolved metric_id.
 class StatGen {
  public:
   explicit StatGen(std::string name, MetricType metric_type,
@@ -351,11 +350,9 @@ class PluginRootContext : public RootContext {
     return config_.direction();
   };
 
-  inline bool debug() const { return config_.debug(); }
-
  private:
   stats::PluginConfig config_;
-  common::NodeInfo local_node_info_;
+  wasm::common::NodeInfo local_node_info_;
   NodeInfoCache node_info_cache_;
 
   StringView peer_metadata_id_key_;
@@ -367,7 +364,7 @@ class PluginRootContext : public RootContext {
   uint32_t cache_misses_;
 
   // Resolved metric where value can be recorded.
-  // Maps resolved dimensions to a set of metrics.
+  // Maps resolved dimensions to a set of related metrics.
   absl::flat_hash_map<IstioDimensions, std::vector<SimpleStat>> metrics_;
 
   // Peer stats to be generated for a dimensioned metrics set.
@@ -394,7 +391,6 @@ class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
-  void onCreate() override { debug_ = rootContext()->debug(); };
   void onLog() override {
     ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
     rootContext()->report(request_info_);
@@ -423,7 +419,6 @@ class PluginContext : public Context {
   };
 
   ::Wasm::Common::RequestInfo request_info_;
-  bool debug_;
 };
 
 NULL_PLUGIN_ROOT_REGISTRY;
