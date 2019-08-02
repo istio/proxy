@@ -18,6 +18,7 @@
 #include <google/protobuf/util/json_util.h>
 #include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
 #include "extensions/common/node_info.pb.h"
@@ -55,12 +56,16 @@ const std::string vMTLS = "mutual_tls";
 const std::string vNone = "none";
 const std::string vDash = "-";
 
+// A "." in the values makes prometheus tag pattern fail. This replaces
+// a "." with a "/" until we support alternate tag and field separators.
 const std::vector<std::pair<const absl::string_view, std::string>>
-    replacements = {{".", "/"}};
+    HACK_VALUES_REPLACEMENTS = {{".", "~"}};
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
+// Useful logs that print local line numbers.
+// TODO remove this when the framework support this logging.
 #define DBG(dbgsym, ...)                                                    \
   if ((dbgsym)) {                                                           \
     logInfo(absl::StrCat(__FILE__, ":", __LINE__, ":", __FUNCTION__, "() ", \
@@ -69,70 +74,70 @@ using google::protobuf::util::Status;
 
 #define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
 
-#define ISTIO_DIMENSIONS            \
-  X(reporter)                       \
-  X(source_workload)                \
-  X(source_workload_namespace)      \
-  X(source_principal)               \
-  X(source_app)                     \
-  X(source_version)                 \
-  X(destination_workload)           \
-  X(destination_workload_namespace) \
-  X(destination_principal)          \
-  X(destination_app)                \
-  X(destination_version)            \
-  X(destination_service_host)       \
-  X(destination_service_name)       \
-  X(destination_service_namespace)  \
-  X(request_protocol)               \
-  X(response_code)                  \
-  X(response_flags)                 \
-  X(connection_security_policy)
+#define ISTIO_DIMENSIONS                    \
+  DIMENSION(reporter)                       \
+  DIMENSION(source_workload)                \
+  DIMENSION(source_workload_namespace)      \
+  DIMENSION(source_principal)               \
+  DIMENSION(source_app)                     \
+  DIMENSION(source_version)                 \
+  DIMENSION(destination_workload)           \
+  DIMENSION(destination_workload_namespace) \
+  DIMENSION(destination_principal)          \
+  DIMENSION(destination_app)                \
+  DIMENSION(destination_version)            \
+  DIMENSION(destination_service_host)       \
+  DIMENSION(destination_service_name)       \
+  DIMENSION(destination_service_namespace)  \
+  DIMENSION(request_protocol)               \
+  DIMENSION(response_code)                  \
+  DIMENSION(response_flags)                 \
+  DIMENSION(connection_security_policy)
 
 struct IstioDimensions {
-#define X(name) std::string(name);
+#define DIMENSION(name) std::string(name);
   ISTIO_DIMENSIONS
-#undef X
+#undef DIMENSION
 
   // utility fields
   std::vector<std::string> vals;
   bool mapped = false;
+  bool outbound = false;
 
   // dimension_list is used
   static const std::vector<std::string> list() {
     return std::vector<std::string>{
-#define X(name) #name,
+#define DIMENSION(name) #name,
         ISTIO_DIMENSIONS
-#undef X
+#undef DIMENSION
     };
   }
 
   // Ordered metric list.
   static std::vector<MetricTag> metricTags() {
     return std::vector<MetricTag>{
-#define X(name) {#name, MetricTag::TagType::String},
+#define DIMENSION(name) {#name, MetricTag::TagType::String},
         ISTIO_DIMENSIONS
-#undef X
+#undef DIMENSION
     };
   }
 
   // values is used on the datapath, only when new dimensions are found.
-  // "." character from value needs to replaced with something.
   std::vector<std::string> values() {
     return std::vector<std::string>{
-#define X(name) absl::StrReplaceAll(name, replacements),
+#define DIMENSION(name) absl::StrReplaceAll(name, HACK_VALUES_REPLACEMENTS),
         ISTIO_DIMENSIONS
-#undef X
+#undef DIMENSION
     };
   }
 
   void setFieldsUnknownIfEmpty() {
-#define X(name)         \
+#define DIMENSION(name) \
   if ((name).empty()) { \
     (name) = unknown;   \
   }
     ISTIO_DIMENSIONS
-#undef X
+#undef DIMENSION
   }
 
   // Example Prometheus output
@@ -161,9 +166,9 @@ struct IstioDimensions {
   // }
 
   // maps from attribute context to dimensions.
-  std::vector<std::string>& mapOnce(::Wasm::Common::RequestContext& ctx) {
+  void mapOnce(::Wasm::Common::RequestContext& ctx) {
     if (mapped) {
-      return vals;
+      return;
     }
     reporter = ctx.outbound ? vSource : vDest;
 
@@ -199,15 +204,61 @@ struct IstioDimensions {
 
     setFieldsUnknownIfEmpty();
 
+    outbound = ctx.outbound;
     mapped = true;
-    vals = values();
-    return vals;
   }
 
+  std::string to_string() const {
+#define DIMENSION(name) "\"", #name, "\":\"", name, "\" ,",
+    return absl::StrCat("{" ISTIO_DIMENSIONS "}");
+#undef DIMENSION
+  }
+
+  // debug function to specify a textual key.
+  // must match HashValue
+  std::string debug_key() {
+    auto key = absl::StrJoin({reporter, request_protocol, response_code,
+                              response_flags, connection_security_policy},
+                             "#");
+    if (outbound) {
+      return absl::StrJoin(
+          {key, destination_app, destination_version, destination_service_name,
+           destination_service_namespace},
+          "#");
+    } else {
+      return absl::StrJoin({key, source_app, source_version, source_workload,
+                            source_workload_namespace},
+                           "#");
+    }
+  }
+
+  // smart hash should use fields based on context
   template <typename H>
   friend H AbslHashValue(H h, const IstioDimensions& c) {
-    return H::combine(std::move(h), c.request_protocol, c.response_code,
-                      c.response_flags, c.connection_security_policy);
+    h = H::combine(std::move(h), c.request_protocol, c.response_code,
+                   c.response_flags, c.connection_security_policy, c.outbound);
+
+    if (c.outbound) {  // only care about dest properties
+      return H::combine(std::move(h), c.destination_service_namespace,
+                        c.destination_service_name, c.destination_app,
+                        c.destination_version);
+    } else {  // only care about source properties
+      return H::combine(std::move(h), c.source_workload_namespace,
+                        c.source_workload, c.source_app, c.source_version);
+    }
+  }
+
+  friend bool operator==(const IstioDimensions& lhs,
+                         const IstioDimensions& rhs) {
+    return (
+#define DIMENSION(name) lhs.name == rhs.name&&
+        ISTIO_DIMENSIONS
+#undef DIMENSION
+            lhs.outbound == rhs.outbound);
+  }
+
+  void operator()(std::string* out, IstioDimensions& d) const {
+    out->append(d.to_string());
   }
 };
 
@@ -218,26 +269,6 @@ struct Node {
   // key computed from the node_info;
   std::string key;
 };
-
-// InitializeNode loads the Node object and initializes the key.
-// Only called when a new peer is found.
-static bool InitializeNode(StringView peer_metadata_key, Node* node) {
-  // Missed the cache
-  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
-  auto status = ::Wasm::Common::extractNodeMetadata(metadata, &node->node_info);
-  if (status != Status::OK) {
-    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
-            status.ToString());
-    return false;
-  }
-
-  auto labels = node->node_info.labels();
-  node->key = absl::StrCat(node->node_info.workload_name(), Sep,
-                           node->node_info.namespace_(), Sep, labels["app"],
-                           Sep, labels["version"]);
-
-  return true;
-}
 
 class NodeInfoCache {
  public:
@@ -266,10 +297,9 @@ class SimpleStat {
     recordMetric(metric_id_, value_fn_(request_info));
   };
 
-  uint32_t metric_id() const { return metric_id_; };
+  uint32_t metric_id_;
 
  private:
-  uint32_t metric_id_;
   ValueExtractorFn value_fn_;
 };
 
@@ -302,7 +332,12 @@ class StatGen {
 class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
-      : RootContext(id, root_id) {}
+      : RootContext(id, root_id) {
+    Metric cache_count(MetricType::Counter, "statsfilter",
+                       {MetricTag{"cache", MetricTag::TagType::String}});
+    cache_hits_ = cache_count.resolve("hit");
+    cache_misses_ = cache_count.resolve("miss");
+  }
 
   ~PluginRootContext() = default;
 
@@ -328,8 +363,12 @@ class PluginRootContext : public RootContext {
   bool outbound_;
   bool debug_;
 
+  uint32_t cache_hits_;
+  uint32_t cache_misses_;
+
   // Resolved metric where value can be recorded.
-  absl::flat_hash_map<std::string, SimpleStat> metric_map_;
+  // Maps resolved dimensions to a set of metrics.
+  absl::flat_hash_map<IstioDimensions, std::vector<SimpleStat>> metrics_;
 
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_ = {

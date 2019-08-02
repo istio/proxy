@@ -79,33 +79,52 @@ void PluginRootContext::report(
   ::Wasm::Common::RequestContext ctx{outbound_, source_node_info,
                                      destination_node_info, request_info};
 
-  // check if this peer has associated metrics
-  // These fields should vary independently of peer properties.
-  // TODO derive this from the mapper
-  auto metric_base_key =
-      absl::StrCat(peer.key, Sep, request_info.request_protocol, Sep,
-                   request_info.response_code, Sep, request_info.response_flag,
-                   Sep, request_info.mTLS);
-
   IstioDimensions istio_dimensions;
+  istio_dimensions.mapOnce(ctx);
 
-  for (auto& statgen : stats_) {
-    auto key = absl::StrCat(metric_base_key, Sep, statgen.name());
-    auto metric_it = metric_map_.find(key);
-    if (metric_it != metric_map_.end()) {
-      metric_it->second.record(request_info);
-      CTXDEBUG("metricKey cache hit ", key,
-               ", stat=", metric_it->second.metric_id());
-      continue;
+  auto stats_it = metrics_.find(istio_dimensions);
+  if (stats_it != metrics_.end()) {
+    for (auto& stat : stats_it->second) {
+      stat.record(request_info);
+      CTXDEBUG("metricKey cache hit ", istio_dimensions.debug_key(),
+               ", stat=", stat.metric_id_, stats_it->first.to_string());
     }
-
-    // missed cache
-    auto stat = statgen.resolve(istio_dimensions.mapOnce(ctx));
-
-    CTXDEBUG("metricKey cache miss ", key, ", stat=", stat.metric_id());
-    metric_map_.insert({key, stat});
-    stat.record(request_info);
+    incrementMetric(cache_hits_, 1);
+    return;
   }
+
+  incrementMetric(cache_misses_, 1);
+  std::vector<SimpleStat> stats;
+  auto values = istio_dimensions.values();
+  for (auto& statgen : stats_) {
+    auto stat = statgen.resolve(values);
+    CTXDEBUG("metricKey cache miss ", statgen.name(), " ",
+             istio_dimensions.debug_key(), ", stat=", stat.metric_id_);
+    stat.record(request_info);
+    stats.push_back(stat);
+  }
+
+  metrics_.try_emplace(istio_dimensions, stats);
+}
+
+// InitializeNode loads the Node object and initializes the key.
+// Only called when a new peer is found.
+static bool InitializeNode(StringView peer_metadata_key, Node* node) {
+  // Missed the cache
+  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
+  auto status = ::Wasm::Common::extractNodeMetadata(metadata, &node->node_info);
+  if (status != Status::OK) {
+    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
+            status.ToString());
+    return false;
+  }
+
+  auto labels = node->node_info.labels();
+  node->key = absl::StrCat(node->node_info.workload_name(), Sep,
+                           node->node_info.namespace_(), Sep, labels["app"],
+                           Sep, labels["version"]);
+
+  return true;
 }
 
 const Node& NodeInfoCache::getPeerById(StringView peer_metadata_id_key,

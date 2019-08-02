@@ -20,6 +20,7 @@ licenses(["notice"])  # Apache 2
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
+    "envoy_cc_test",
     "envoy_package",
 )
 
@@ -51,4 +52,16 @@ cc_proto_library(
 proto_library(
     name = "config_proto",
     srcs = ["config.proto"],
+)
+
+envoy_cc_test(
+    name = "plugin_test",
+    size = "small",
+    srcs = ["plugin_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":stats_plugin",
+        "//external:abseil_hash_testing",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
 )

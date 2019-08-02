@@ -50,6 +50,8 @@ stats_config:
     regex: "(response_flags\\.(.+?)\\.)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy\\.(.+?)\\.)"
+  - tag_name: "cache"
+    regex: "(cache\\.(.+?)\\.)"
 static_resources:
   listeners:
   - name: server
@@ -96,7 +98,7 @@ static_resources:
           access_log:
           - name: envoy.file_access_log
             config:
-              path: "/dev/stdout"
+              path: "/dev/null"
               format: "server %RESPONSE_CODE% downstream_id:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.downstream_id)% downstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.downstream)% upstream_id:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.upstream_id)% upstream:%DYNAMIC_METADATA(envoy.wasm.metadata_exchange.upstream)%\n"
   - name: staticreply
     address:
@@ -143,7 +145,7 @@ static_resources:
           access_log:
           - name: envoy.file_access_log
             config:
-              path: "/dev/stdout"
+              path: "/dev/null"
               format: "origin %RESPONSE_CODE% downstream:%REQ(x-envoy-peer-metadata-id)% downstream:%REQ(x-envoy-peer-metadata)%\n"
  
   clusters:
