@@ -29,6 +29,7 @@ set -u
 # Print commands
 set -x
 
+gcloud auth activate-service-account --key-file=/etc/service-account/service-account.json
 
 GOPATH=/go
 ROOT=/go/src
