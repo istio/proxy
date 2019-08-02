@@ -109,7 +109,7 @@ void PluginRootContext::report(
 
 // InitializeNode loads the Node object and initializes the key.
 // Only called when a new peer is found.
-static bool InitializeNode(StringView peer_metadata_key, Node* node) {
+static bool initializeNode(StringView peer_metadata_key, Node* node) {
   // Missed the cache
   auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
   auto status = ::Wasm::Common::extractNodeMetadata(metadata, &node->node_info);
@@ -138,7 +138,7 @@ const Node& NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
 
   // TODO kick out some elements from cache here if size == MAX
 
-  InitializeNode(peer_metadata_key, &(cache_[peer_id]));
+  initializeNode(peer_metadata_key, &(cache_[peer_id]));
   return cache_[peer_id];
 }
 

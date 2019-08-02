@@ -38,7 +38,6 @@ ifeq "$(VERBOSE)" "1"
 BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
 BAZEL_BUILD_ARGS := -s $(BAZEL_BUILD_ARGS)
 endif
-# add --client_debug to BAZEL_STARTUP_ARGS and -s to BAZEL_BUILD_ARGS
 
 # Removed 'bazel shutdown' as it could cause CircleCI to hang
 build:
