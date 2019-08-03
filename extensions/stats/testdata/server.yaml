@@ -91,7 +91,7 @@ static_resources:
                 code:
                   inline_string: "envoy.wasm.stats"
               configuration: |
-                { "direction": "INBOUND", "debug": "true", max_peer_cache_size: 10 }
+                { "direction": "INBOUND", "debug": "false", max_peer_cache_size: 20 }
           - name: envoy.router
             config: {}
           access_log:

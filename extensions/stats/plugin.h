@@ -96,8 +96,8 @@ using google::protobuf::util::Status;
 
 struct IstioDimensions {
 #define DEFINE_FIELD(name) std::string(name);
-
   STD_ISTIO_DIMENSIONS(DEFINE_FIELD)
+#undef DEFINE_FIELD
 
   // utility fields
   std::vector<std::string> vals;
@@ -108,6 +108,7 @@ struct IstioDimensions {
   static std::vector<MetricTag> metricTags() {
 #define DEFINE_METRIC(name) {#name, MetricTag::TagType::String},
     return std::vector<MetricTag>{STD_ISTIO_DIMENSIONS(DEFINE_METRIC)};
+#undef DEFINE_METRIC
   }
 
   // values is used on the datapath, only when new dimensions are found.
@@ -115,6 +116,7 @@ struct IstioDimensions {
 #define REPLACE_VALUES(name) \
   absl::StrReplaceAll(name, HACK_VALUES_REPLACEMENTS),
     return std::vector<std::string>{STD_ISTIO_DIMENSIONS(REPLACE_VALUES)};
+#undef REPLACE_VALUES
   }
 
   void setFieldsUnknownIfEmpty() {
@@ -123,6 +125,7 @@ struct IstioDimensions {
     (name) = unknown;      \
   }
     STD_ISTIO_DIMENSIONS(SET_IF_EMPTY)
+#undef SET_IF_EMPTY
   }
 
   // Example Prometheus output
@@ -216,6 +219,7 @@ struct IstioDimensions {
   std::string to_string() const {
 #define TO_STRING(name) "\"", #name, "\":\"", name, "\" ,",
     return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING) "}");
+#undef TO_STRING
   }
 
   // debug function to specify a textual key.
@@ -259,15 +263,8 @@ struct IstioDimensions {
     return (
 #define COMPARE(name) lhs.name == rhs.name&&
         STD_ISTIO_DIMENSIONS(COMPARE) lhs.outbound == rhs.outbound);
+#undef COMPARE
   }
-};
-
-// Node holds node_info proto and a computed key
-struct Node {
-  // node_info is obtained from local node or metadata exchange header.
-  wasm::common::NodeInfo node_info;
-  // key computed from the node_info;
-  std::string key;
 };
 
 const size_t DEFAULT_NODECACHE_MAX_SIZE = 500;
@@ -279,8 +276,8 @@ class NodeInfoCache {
   // At present this involves de-serializing to google.Protobuf.Struct and then
   // another round trip to NodeInfo. This Should at most hold N entries.
   // Node is owned by the cache. Do not store a reference.
-  const Node& getPeerById(StringView peerMetadataIdKey,
-                          StringView peerMetadataKey);
+  const wasm::common::NodeInfo& getPeerById(StringView peer_metadata_id_key,
+                                            StringView peer_metadata_key);
 
   inline void set_max_cache_size(size_t size) {
     if (size == 0) {
@@ -291,7 +288,7 @@ class NodeInfoCache {
   }
 
  private:
-  absl::flat_hash_map<std::string, Node> cache_;
+  absl::flat_hash_map<std::string, wasm::common::NodeInfo> cache_;
   size_t max_cache_size_ = 10;
 };
 
@@ -368,6 +365,7 @@ class PluginRootContext : public RootContext {
   bool outbound_;
   bool debug_;
 
+  int64_t cache_hits_accumulator_ = 0;
   uint32_t cache_hits_;
   uint32_t cache_misses_;
 

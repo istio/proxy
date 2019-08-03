@@ -74,11 +74,11 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
 
 void PluginRootContext::report(
     const ::Wasm::Common::RequestInfo& request_info) {
-  auto peer =
+  const auto& peer_node =
       node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
 
   // map and overwrite previous mapping.
-  istio_dimensions_.map(peer.node_info, request_info);
+  istio_dimensions_.map(peer_node, request_info);
 
   auto stats_it = metrics_.find(istio_dimensions_);
   if (stats_it != metrics_.end()) {
@@ -87,13 +87,18 @@ void PluginRootContext::report(
       CTXDEBUG("metricKey cache hit ", istio_dimensions_.debug_key(),
                ", stat=", stat.metric_id_, stats_it->first.to_string());
     }
-    incrementMetric(cache_hits_, 1);
+    cache_hits_accumulator_++;
+    if (cache_hits_accumulator_ == 100) {
+      incrementMetric(cache_hits_, cache_hits_accumulator_);
+      cache_hits_accumulator_ = 0;
+    }
     return;
   }
 
-  incrementMetric(cache_misses_, 1);
-  std::vector<SimpleStat> stats;
+  // fetch dimensions in the required form for resolve.
   auto values = istio_dimensions_.values();
+
+  std::vector<SimpleStat> stats;
   for (auto& statgen : stats_) {
     auto stat = statgen.resolve(values);
     CTXDEBUG("metricKey cache miss ", statgen.name(), " ",
@@ -102,31 +107,12 @@ void PluginRootContext::report(
     stats.push_back(stat);
   }
 
+  incrementMetric(cache_misses_, 1);
   metrics_.try_emplace(istio_dimensions_, stats);
 }
 
-// InitializeNode loads the Node object and initializes the key.
-// Only called when a new peer is found.
-static bool initializeNode(StringView peer_metadata_key, Node* node) {
-  // Missed the cache
-  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
-  auto status = ::Wasm::Common::extractNodeMetadata(metadata, &node->node_info);
-  if (status != Status::OK) {
-    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
-            status.ToString());
-    return false;
-  }
-
-  auto labels = node->node_info.labels();
-  node->key = absl::StrCat(node->node_info.workload_name(), Sep,
-                           node->node_info.namespace_(), Sep, labels["app"],
-                           Sep, labels["version"]);
-
-  return true;
-}
-
-const Node& NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
-                                       StringView peer_metadata_key) {
+const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
+    StringView peer_metadata_id_key, StringView peer_metadata_key) {
   auto peer_id =
       getMetadataStringValue(MetadataType::Request, peer_metadata_id_key);
   auto nodeinfo_it = cache_.find(peer_id);
@@ -137,13 +123,18 @@ const Node& NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
   // Do not let the cache grow beyond max_cache_size_.
   if (cache_.size() > max_cache_size_) {
     auto it = cache_.begin();
-    for (int i = 0; i < int(max_cache_size_ / 4); ++i, ++it) {
-    }
-    cache_.erase(cache_.begin(), it);
+    cache_.erase(cache_.begin(), std::next(it, max_cache_size_ / 4));
     logInfo(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
 
-  initializeNode(peer_metadata_key, &(cache_[peer_id]));
+  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
+  auto status =
+      ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
+  if (status != Status::OK) {
+    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
+            status.ToString());
+  }
+
   return cache_[peer_id];
 }
 
