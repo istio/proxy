@@ -57,6 +57,10 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
 
   outbound_ = stats::PluginConfig_Direction_OUTBOUND == config_.direction();
+
+  // Local data does not change, so populate it on config load.
+  istio_dimensions_.init(outbound_, local_node_info_);
+
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
@@ -73,21 +77,14 @@ void PluginRootContext::report(
   auto peer =
       node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
 
-  const auto& source_node_info = outbound_ ? local_node_info_ : peer.node_info;
-  const auto& destination_node_info =
-      outbound_ ? peer.node_info : local_node_info_;
+  // map and overwrite previous mapping.
+  istio_dimensions_.map(peer.node_info, request_info);
 
-  ::Wasm::Common::RequestContext ctx{outbound_, source_node_info,
-                                     destination_node_info, request_info};
-
-  IstioDimensions istio_dimensions;
-  istio_dimensions.mapOnce(ctx);
-
-  auto stats_it = metrics_.find(istio_dimensions);
+  auto stats_it = metrics_.find(istio_dimensions_);
   if (stats_it != metrics_.end()) {
     for (auto& stat : stats_it->second) {
       stat.record(request_info);
-      CTXDEBUG("metricKey cache hit ", istio_dimensions.debug_key(),
+      CTXDEBUG("metricKey cache hit ", istio_dimensions_.debug_key(),
                ", stat=", stat.metric_id_, stats_it->first.to_string());
     }
     incrementMetric(cache_hits_, 1);
@@ -96,16 +93,16 @@ void PluginRootContext::report(
 
   incrementMetric(cache_misses_, 1);
   std::vector<SimpleStat> stats;
-  auto values = istio_dimensions.values();
+  auto values = istio_dimensions_.values();
   for (auto& statgen : stats_) {
     auto stat = statgen.resolve(values);
     CTXDEBUG("metricKey cache miss ", statgen.name(), " ",
-             istio_dimensions.debug_key(), ", stat=", stat.metric_id_);
+             istio_dimensions_.debug_key(), ", stat=", stat.metric_id_);
     stat.record(request_info);
     stats.push_back(stat);
   }
 
-  metrics_.try_emplace(istio_dimensions, stats);
+  metrics_.try_emplace(istio_dimensions_, stats);
 }
 
 // InitializeNode loads the Node object and initializes the key.

@@ -74,70 +74,55 @@ using google::protobuf::util::Status;
 
 #define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
 
-#define ISTIO_DIMENSIONS                    \
-  DIMENSION(reporter)                       \
-  DIMENSION(source_workload)                \
-  DIMENSION(source_workload_namespace)      \
-  DIMENSION(source_principal)               \
-  DIMENSION(source_app)                     \
-  DIMENSION(source_version)                 \
-  DIMENSION(destination_workload)           \
-  DIMENSION(destination_workload_namespace) \
-  DIMENSION(destination_principal)          \
-  DIMENSION(destination_app)                \
-  DIMENSION(destination_version)            \
-  DIMENSION(destination_service_host)       \
-  DIMENSION(destination_service_name)       \
-  DIMENSION(destination_service_namespace)  \
-  DIMENSION(request_protocol)               \
-  DIMENSION(response_code)                  \
-  DIMENSION(response_flags)                 \
-  DIMENSION(connection_security_policy)
+#define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
+  FIELD_FUNC(reporter)                       \
+  FIELD_FUNC(source_workload)                \
+  FIELD_FUNC(source_workload_namespace)      \
+  FIELD_FUNC(source_principal)               \
+  FIELD_FUNC(source_app)                     \
+  FIELD_FUNC(source_version)                 \
+  FIELD_FUNC(destination_workload)           \
+  FIELD_FUNC(destination_workload_namespace) \
+  FIELD_FUNC(destination_principal)          \
+  FIELD_FUNC(destination_app)                \
+  FIELD_FUNC(destination_version)            \
+  FIELD_FUNC(destination_service_host)       \
+  FIELD_FUNC(destination_service_name)       \
+  FIELD_FUNC(destination_service_namespace)  \
+  FIELD_FUNC(request_protocol)               \
+  FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(response_flags)                 \
+  FIELD_FUNC(connection_security_policy)
 
 struct IstioDimensions {
-#define DIMENSION(name) std::string(name);
-  ISTIO_DIMENSIONS
-#undef DIMENSION
+#define DEFINE_FIELD(name) std::string(name);
+
+  STD_ISTIO_DIMENSIONS(DEFINE_FIELD)
 
   // utility fields
   std::vector<std::string> vals;
   bool mapped = false;
   bool outbound = false;
 
-  // ordered dimension list is used by the metrics API.
-  static const std::vector<std::string> list() {
-    return std::vector<std::string>{
-#define DIMENSION(name) #name,
-        ISTIO_DIMENSIONS
-#undef DIMENSION
-    };
-  }
-
   // Ordered dimension list is used by the metrics API.
   static std::vector<MetricTag> metricTags() {
-    return std::vector<MetricTag>{
-#define DIMENSION(name) {#name, MetricTag::TagType::String},
-        ISTIO_DIMENSIONS
-#undef DIMENSION
-    };
+#define DEFINE_METRIC(name) {#name, MetricTag::TagType::String},
+    return std::vector<MetricTag>{STD_ISTIO_DIMENSIONS(DEFINE_METRIC)};
   }
 
   // values is used on the datapath, only when new dimensions are found.
   std::vector<std::string> values() {
-    return std::vector<std::string>{
-#define DIMENSION(name) absl::StrReplaceAll(name, HACK_VALUES_REPLACEMENTS),
-        ISTIO_DIMENSIONS
-#undef DIMENSION
-    };
+#define REPLACE_VALUES(name) \
+  absl::StrReplaceAll(name, HACK_VALUES_REPLACEMENTS),
+    return std::vector<std::string>{STD_ISTIO_DIMENSIONS(REPLACE_VALUES)};
   }
 
   void setFieldsUnknownIfEmpty() {
-#define DIMENSION(name) \
-  if ((name).empty()) { \
-    (name) = unknown;   \
+#define SET_IF_EMPTY(name) \
+  if ((name).empty()) {    \
+    (name) = unknown;      \
   }
-    ISTIO_DIMENSIONS
-#undef DIMENSION
+    STD_ISTIO_DIMENSIONS(SET_IF_EMPTY)
   }
 
   // Example Prometheus output
@@ -165,53 +150,72 @@ struct IstioDimensions {
   // source_workload_namespace="service-graph01"
   // }
 
-  // maps from request context to dimensions.
-  void mapOnce(::Wasm::Common::RequestContext& ctx) {
-    if (mapped) {
-      return;
+ private:
+  void map_node(bool is_source, const wasm::common::NodeInfo& node) {
+    if (is_source) {
+      source_workload = node.workload_name();
+      source_workload_namespace = node.namespace_();
+
+      auto source_labels = node.labels();
+      source_app = source_labels["app"];
+      source_version = source_labels["version"];
+    } else {
+      destination_workload = node.workload_name();
+      destination_workload_namespace = node.namespace_();
+
+      auto destination_labels = node.labels();
+      destination_app = destination_labels["app"];
+      destination_version = destination_labels["version"];
+
+      destination_service_name = node.workload_name();
+      destination_service_namespace = node.namespace_();
     }
-    reporter = ctx.outbound ? vSource : vDest;
+  }
 
-    source_workload = ctx.source.workload_name();
-    source_workload_namespace = ctx.source.namespace_();
-    source_principal = ctx.request.source_principal;
+  // Called during request processing.
+  void map_peer(const wasm::common::NodeInfo& peer_node) {
+    map_node(!outbound, peer_node);
+  }
 
-    auto source_labels = ctx.source.labels();
+  // maps from request context to dimensions.
+  // local node derived dimensions are already filled in.
+  void map_request(const ::Wasm::Common::RequestInfo& request) {
+    source_principal = request.source_principal;
+    destination_principal = request.destination_principal;
+    destination_service_host = request.destination_service_host;
 
-    source_app = source_labels["app"];
-    source_version = source_labels["version"];
-
-    destination_workload = ctx.destination.workload_name();
-    destination_workload_namespace = ctx.destination.namespace_();
-    destination_principal = ctx.request.destination_principal;
-
-    auto destination_labels = ctx.destination.labels();
-
-    destination_app = destination_labels["app"];
-    destination_version = destination_labels["version"];
-
-    destination_service_host = ctx.request.destination_service_host;
-    destination_service_name = ctx.destination.workload_name();
-    destination_service_namespace = ctx.destination.namespace_();
-
-    request_protocol = ctx.request.request_protocol;
-    response_code = std::to_string(ctx.request.response_code);
+    request_protocol = request.request_protocol;
+    response_code = std::to_string(request.response_code);
     response_flags =
-        ctx.request.response_flag.empty() ? vDash : ctx.request.response_flag;
+        request.response_flag.empty() ? vDash : request.response_flag;
 
     connection_security_policy =
-        ctx.outbound ? unknown : (ctx.request.mTLS ? vMTLS : vNone);
+        outbound ? unknown : (request.mTLS ? vMTLS : vNone);
 
     setFieldsUnknownIfEmpty();
+  }
 
-    outbound = ctx.outbound;
-    mapped = true;
+ public:
+  // Called during intialization.
+  // initialize properties that do not vary by requests.
+  // Properties are different based on inbound / outbound.
+  void init(bool out_bound, wasm::common::NodeInfo& local_node) {
+    outbound = out_bound;
+    reporter = out_bound ? vSource : vDest;
+
+    map_node(out_bound, local_node);
+  }
+
+  // maps peer_node and request to dimensions.
+  void map(const wasm::common::NodeInfo& peer_node,
+           const ::Wasm::Common::RequestInfo& request) {
+    map_peer(peer_node);
+    map_request(request);
   }
 
   std::string to_string() const {
-#define DIMENSION(name) "\"", #name, "\":\"", name, "\" ,",
-    return absl::StrCat("{" ISTIO_DIMENSIONS "}");
-#undef DIMENSION
+#define TO_STRING(name) "\"", #name, "\":\"", name, "\" ,",
+    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING) "}");
   }
 
   // debug function to specify a textual key.
@@ -253,10 +257,8 @@ struct IstioDimensions {
   friend bool operator==(const IstioDimensions& lhs,
                          const IstioDimensions& rhs) {
     return (
-#define DIMENSION(name) lhs.name == rhs.name&&
-        ISTIO_DIMENSIONS
-#undef DIMENSION
-            lhs.outbound == rhs.outbound);
+#define COMPARE(name) lhs.name == rhs.name&&
+        STD_ISTIO_DIMENSIONS(COMPARE) lhs.outbound == rhs.outbound);
   }
 };
 
@@ -358,6 +360,8 @@ class PluginRootContext : public RootContext {
   stats::PluginConfig config_;
   wasm::common::NodeInfo local_node_info_;
   NodeInfoCache node_info_cache_;
+
+  IstioDimensions istio_dimensions_;
 
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;
