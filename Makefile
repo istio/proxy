@@ -25,6 +25,8 @@ BAZEL_TARGETS ?= //...
 SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
+GCS_BUCKET ?= gs://istio-build/proxy
+
 ifeq "$(origin CC)" "default"
 CC := clang
 endif
@@ -63,6 +65,12 @@ artifacts: build
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
+
+test_release:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && ./script/release-binary -d none -i
+
+push_release:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && ./script/release-binary -d ${GCS_BUCKET}
 
 
 .PHONY: build clean test check artifacts
