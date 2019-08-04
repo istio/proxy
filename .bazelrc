@@ -8,6 +8,12 @@
 startup --host_jvm_args=-Xmx512m
 
 build --workspace_status_command=tools/bazel_get_workspace_status
+
+# Pass PATH, CC and CXX variables from the environment.
+build --action_env=PATH
+build --action_env=CC
+build --action_env=CXX
+
 # enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
 build --define path_normalization_by_default=true
 
