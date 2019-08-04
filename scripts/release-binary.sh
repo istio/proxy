@@ -23,6 +23,11 @@ export PATH=/usr/lib/llvm-8/bin:$PATH
 export CC=${CC:-clang}
 export CXX=${CXX:-clang++}
 
+# Add --config=libc++ if wasn't passed already.
+if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
+fi
+
 # The bucket name to store proxy binaries.
 DST=""
 

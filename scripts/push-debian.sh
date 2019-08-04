@@ -30,6 +30,11 @@ ISTIO_VERSION=''
 GCS_PATH=""
 OUTPUT_DIR=""
 
+# Add --config=libc++ if wasn't passed already.
+if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
+fi
+
 set -o errexit
 set -o nounset
 set -o pipefail
