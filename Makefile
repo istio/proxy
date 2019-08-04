@@ -18,8 +18,8 @@ SHELL := /bin/bash
 LOCAL_ARTIFACTS_DIR ?= $(abspath artifacts)
 ARTIFACTS_DIR ?= $(LOCAL_ARTIFACTS_DIR)
 BAZEL_STARTUP_ARGS ?=
-BAZEL_BUILD_ARGS ?=
-BAZEL_TEST_ARGS ?=
+BAZEL_BUILD_ARGS ?= --config=libc++
+BAZEL_TEST_ARGS ?= --config=libc++
 BAZEL_TARGETS ?= //...
 # Some tests run so slowly under the santizers that they always timeout.
 SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
@@ -67,10 +67,10 @@ deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
 
 test_release:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && ./script/release-binary -d none -i
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS}" && ./script/release-binary -d none -i
 
 push_release:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && ./script/release-binary -d ${GCS_BUCKET}
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS}" && ./script/release-binary -d ${GCS_BUCKET}
 
 
 .PHONY: build clean test check artifacts

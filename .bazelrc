@@ -61,6 +61,10 @@ build:clang-msan --linkopt -fsanitize=memory
 build:clang-msan --define tcmalloc=disabled
 build:clang-msan --copt -fsanitize-memory-track-origins=2
 
+# Link (dynamically) against libc++.
+build:libc++ --action_env=CXXFLAGS=-stdlib=libc++
+build:libc++ --define force_libcpp=enabled
+
 # Test options
 test --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
 # enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519

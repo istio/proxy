@@ -23,6 +23,9 @@ export PATH=/usr/lib/llvm-7/bin:$PATH
 export CC=${CC:-clang}
 export CXX=${CXX:-clang++}
 
+# Common build flags for the bazel build command.
+BAZEL_BUILD_ARGS=${BAZEL_BUILD_ARGS:---config=libc++}
+
 # The bucket name to store proxy binaries.
 DST="gs://istio-build/proxy"
 
@@ -77,7 +80,7 @@ if [ -n "${DST}" ]; then
 fi
 
 # Build the release binary with symbols.
-bazel build --config=release-symbol //src/envoy:envoy_tar
+bazel build ${BAZEL_BUILD_ARGS} --config=release-symbol //src/envoy:envoy_tar
 BAZEL_TARGET="bazel-bin/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -91,7 +94,7 @@ fi
 # Build the release binary.
 BINARY_NAME="envoy-alpha-${SHA}.tar.gz"
 SHA256_NAME="envoy-alpha-${SHA}.sha256"
-bazel build --config=release //src/envoy:envoy_tar
+bazel build ${BAZEL_BUILD_ARGS} --config=release //src/envoy:envoy_tar
 BAZEL_TARGET="bazel-bin/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -105,7 +108,7 @@ fi
 # Build the release package.
 BINARY_NAME="istio-proxy-${SHA}.deb"
 SHA256_NAME="istio-proxy-${SHA}.sha256"
-bazel build --config=release //tools/deb:istio-proxy
+bazel build ${BAZEL_BUILD_ARGS} --config=release //tools/deb:istio-proxy
 BAZEL_TARGET="bazel-bin/tools/deb/istio-proxy.deb"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -119,7 +122,7 @@ fi
 # Build the debug binary.
 BINARY_NAME="envoy-debug-${SHA}.tar.gz"
 SHA256_NAME="envoy-debug-${SHA}.sha256"
-bazel build -c dbg //src/envoy:envoy_tar
+bazel build ${BAZEL_BUILD_ARGS} -c dbg //src/envoy:envoy_tar
 BAZEL_TARGET="bazel-bin/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -133,7 +136,7 @@ fi
 # Build the debug package.
 BINARY_NAME="istio-proxy-debug-${SHA}.deb"
 SHA256_NAME="istio-proxy-debug-${SHA}.sha256"
-bazel build -c dbg //tools/deb:istio-proxy
+bazel build ${BAZEL_BUILD_ARGS} -c dbg //tools/deb:istio-proxy
 BAZEL_TARGET="bazel-bin/tools/deb/istio-proxy.deb"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
