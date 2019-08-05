@@ -18,40 +18,42 @@ SHELL := /bin/bash
 LOCAL_ARTIFACTS_DIR ?= $(abspath artifacts)
 ARTIFACTS_DIR ?= $(LOCAL_ARTIFACTS_DIR)
 BAZEL_STARTUP_ARGS ?=
-BAZEL_BUILD_ARGS ?=
-BAZEL_TEST_ARGS ?=
+BAZEL_BUILD_ARGS ?= --config=libc++
+BAZEL_TEST_ARGS ?= --config=libc++
 BAZEL_TARGETS ?= //...
 # Some tests run so slowly under the santizers that they always timeout.
 SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
+GCS_BUCKET ?= gs://istio-build/proxy
+
 ifeq "$(origin CC)" "default"
-CC := clang-7
+CC := clang
 endif
 ifeq "$(origin CXX)" "default"
-CXX := clang++-7
+CXX := clang++
 endif
 PATH := /usr/lib/llvm-7/bin:$(PATH)
 
 # Removed 'bazel shutdown' as it could cause CircleCI to hang
 build:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
 
 # Build only envoy - fast
 build_envoy:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
 
 clean:
 	@bazel clean
 
 test:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) $(BAZEL_TARGETS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) $(BAZEL_TARGETS)
 
 test_asan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
 test_tsan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
 
 check:
 	@script/check-license-headers
@@ -62,7 +64,13 @@ artifacts: build
 	@script/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
 
 deb:
-	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
+
+test_release:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS}" && ./script/release-binary -d none -i
+
+push_release:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS}" && ./script/release-binary -d ${GCS_BUCKET}
 
 
 .PHONY: build clean test check artifacts
