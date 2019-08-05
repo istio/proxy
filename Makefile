@@ -32,6 +32,13 @@ CXX := clang++-8
 endif
 PATH := /usr/lib/llvm-8/bin:$(PATH)
 
+VERBOSE ?=
+
+ifeq "$(VERBOSE)" "1"
+BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
+BAZEL_BUILD_ARGS := -s $(BAZEL_BUILD_ARGS)
+endif
+
 # Removed 'bazel shutdown' as it could cause CircleCI to hang
 build:
 	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
