@@ -127,7 +127,8 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     logInfo(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
 
-  auto metadata = getMetadataStruct(MetadataType::Request, peer_metadata_key);
+  const auto& metadata =
+      getMetadataStruct(MetadataType::Request, peer_metadata_key);
   auto status =
       ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
   if (status != Status::OK) {
