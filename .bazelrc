@@ -63,6 +63,8 @@ build:clang-msan --copt -fsanitize-memory-track-origins=2
 
 # Link (dynamically) against libc++.
 build:libc++ --action_env=CXXFLAGS=-stdlib=libc++
+build:libc++ --linkopt=-fuse-ld=lld
+build:libc++ --host_linkopt=-fuse-ld=lld
 build:libc++ --define force_libcpp=enabled
 
 # Test options
