@@ -1,80 +1,52 @@
-## Copyright 2017 Istio Authors
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##     http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
+# WARNING: DO NOT EDIT, THIS FILE IS PROBABLY A COPY
+#
+# The original version of this file is located in the https://github.com/istio/common-files repo.
+# If you're looking at this file in a different repo and want to make a change, please go to the
+# common-files repo, make the change there and check it in. Then come back to this repo and run
+# "make updatecommon".
 
-TOP := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+# Copyright 2019 Istio Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-SHELL := /bin/bash
-LOCAL_ARTIFACTS_DIR ?= $(abspath artifacts)
-ARTIFACTS_DIR ?= $(LOCAL_ARTIFACTS_DIR)
-BAZEL_STARTUP_ARGS ?=
-BAZEL_BUILD_ARGS ?=
-BAZEL_TARGETS ?= //...
-# Some tests run so slowly under the santizers that they always timeout.
-SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
-HUB ?=
-TAG ?=
-ifeq "$(origin CC)" "default"
-CC := clang-8
+RUN =
+
+# Set the enviornment variable BUILD_WITH_CONTAINER to use a container
+# to build the repo. The only dependencies in this mode are to have make and
+# docker. If you'd rather build with a local tool chain instead, you'll need to
+# figure out all the tools you need in your environment to make that work.
+export BUILD_WITH_CONTAINER ?= 0
+ifeq ($(BUILD_WITH_CONTAINER),1)
+IMG = gcr.io/istio-testing/build-tools:2019-08-05
+UID = $(shell id -u)
+PWD = $(shell pwd)
+GOBIN_SOURCE ?= $(GOPATH)/bin
+GOBIN ?= /work/out/bin
+
+RUN = docker run -t --sig-proxy=true -u $(UID) --rm \
+	-v /etc/passwd:/etc/passwd:ro \
+	-v $(readlink /etc/localtime):/etc/localtime:ro \
+	--mount type=bind,source="$(PWD)",destination="/work" \
+	--mount type=volume,source=istio-go-mod,destination="/go/pkg/mod" \
+	--mount type=volume,source=istio-go-cache,destination="/gocache" \
+	--mount type=bind,source="$(GOBIN_SOURCE)",destination="/go/out/bin" \
+	-w /work $(IMG)
 endif
-ifeq "$(origin CXX)" "default"
-CXX := clang++-8
-endif
-PATH := /usr/lib/llvm-8/bin:$(PATH)
 
-VERBOSE ?=
+MAKE = $(RUN) make -f Makefile.core.mk
 
-ifeq "$(VERBOSE)" "1"
-BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
-BAZEL_BUILD_ARGS := -s $(BAZEL_BUILD_ARGS)
-endif
+%:
+	@$(MAKE) $@
 
-# Removed 'bazel shutdown' as it could cause CircleCI to hang
-build:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
-
-# Build only envoy - fast
-build_envoy:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //src/envoy:envoy
-
-clean:
-	@bazel clean
-
-test:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_TARGETS)
-
-test_asan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-
-test_tsan:
-	PATH=$(PATH) CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) --config=clang-tsan --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-
-check:
-	@echo >&2 "Please use \"make lint\" instead."
-	@false
-
-lint:
-	@scripts/check_license.sh
-	@scripts/check-repository.sh
-	@scripts/check-style.sh
-
-artifacts: build
-	@scripts/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
-
-deb:
-	CC=$(CC) CXX=$(CXX) bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
-
-
-.PHONY: build clean test check artifacts
-
-include Makefile.common.mk
+default:
+	@$(MAKE)
