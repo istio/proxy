@@ -38,6 +38,7 @@ fi
 GOPATH=/go
 ROOT=/go/src
 rm -f "${HOME}/.bazelrc"
+GIT_SHA="$(git rev-parse --verify HEAD)"
 
 export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures"
 
