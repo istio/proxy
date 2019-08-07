@@ -32,13 +32,13 @@ static const Envoy::Http::LowerCaseString kSecIstioAuthnPayloadHeaderKey(
     "sec-istio-authn-payload");
 
 // Default request for testing.
-static const Http::TestHeaderMapImpl kSimpleRequestHeader{{
-    {":method", "GET"},
-    {":path", "/"},
-    {":scheme", "http"},
-    {":authority", "host"},
-    {"x-forwarded-for", "10.0.0.1"},
-}};
+Http::TestHeaderMapImpl SimpleRequestHeaders() {
+  return Http::TestHeaderMapImpl{{":method", "GET"},
+                                 {":path", "/"},
+                                 {":scheme", "http"},
+                                 {":authority", "host"},
+                                 {"x-forwarded-for", "10.0.0.1"}};
+}
 
 // Keep the same as issuer in the policy below.
 static const char kJwtIssuer[] = "some@issuer";
@@ -89,7 +89,7 @@ TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
   initialize();
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response = codec_client_->makeHeaderOnlyRequest(kSimpleRequestHeader);
+  auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
   // Wait for request to upstream (backend)
   waitForNextUpstreamRequest();
 
@@ -115,7 +115,7 @@ TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
   // would be rejected.
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response = codec_client_->makeHeaderOnlyRequest(kSimpleRequestHeader);
+  auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
 
   // Request is rejected, there will be no upstream request (thus no
   // waitForNextUpstreamRequest).
@@ -134,7 +134,7 @@ TEST_P(AuthenticationFilterIntegrationTest, OriginJwtRequiredHeaderNoJwtFail) {
   // would be rejected.
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response = codec_client_->makeHeaderOnlyRequest(kSimpleRequestHeader);
+  auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
 
   // Request is rejected, there will be no upstream request (thus no
   // waitForNextUpstreamRequest).
@@ -152,7 +152,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
   // the authentication should succeed.
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response = codec_client_->makeHeaderOnlyRequest(kSimpleRequestHeader);
+  auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
 
   // Wait for request to upstream (backend)
   waitForNextUpstreamRequest();
