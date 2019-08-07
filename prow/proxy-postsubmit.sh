@@ -29,10 +29,16 @@ set -u
 # Print commands
 set -x
 
+if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
+  gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+  gcloud auth configure-docker
+fi
 
 GOPATH=/go
 ROOT=/go/src
 rm -f "${HOME}/.bazelrc"
+GIT_SHA="$(git rev-parse --verify HEAD)"
 
 export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures"
 

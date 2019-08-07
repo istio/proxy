@@ -310,7 +310,7 @@ ServerConnection::ServerConnection(
     case Envoy::Http::CodecClient::Type::HTTP1:
       http_connection_ =
           std::make_unique<Envoy::Http::Http1::ServerConnectionImpl>(
-              network_connection, *this, Envoy::Http::Http1Settings(),
+              network_connection, scope, *this, Envoy::Http::Http1Settings(),
               max_request_headers_kb);
       break;
     case Envoy::Http::CodecClient::Type::HTTP2: {
@@ -329,7 +329,7 @@ ServerConnection::ServerConnection(
                 name_, id_, static_cast<int>(http_type) + 1);
       http_connection_ =
           std::make_unique<Envoy::Http::Http1::ServerConnectionImpl>(
-              network_connection, *this, Envoy::Http::Http1Settings(),
+              network_connection, scope, *this, Envoy::Http::Http1Settings(),
               max_request_headers_kb);
       break;
   }

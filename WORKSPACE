@@ -22,10 +22,6 @@ load(
     "googletest_repositories",
     "mixerapi_dependencies",
 )
-load(
-    "//extensions/stackdriver:opencensus/opencensus.bzl",
-    "io_opencensus_cpp",
-)
 
 googletest_repositories()
 
@@ -39,11 +35,11 @@ bind(
 # When updating envoy sha manually please update the sha in istio.deps file also
 #
 # Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/COMMIT.tar.gz && sha256sum COMMIT.tar.gz`
-# envoy-wasm commit date: 07/18/2019
-# bazel version: 0.28.0
-ENVOY_SHA = "cea33f136d22e36e3a18dc93e672a871d4333517"
+# envoy-wasm commit date: 08/06/2019
+# bazel version: 0.28.1
+ENVOY_SHA = "e3dd8c1ae710b7444b86b7e57d4322c8b2bed4ce"
 
-ENVOY_SHA256 = "ca9cda606a32e83b0eba2403813a12c1935c76a4b6f0b6c2652b20c8efbecdf9"
+ENVOY_SHA256 = "bbc62afb9bd8b3c00c237a71c60e9bf4da46a8543b6f0feff525f472bf632f1e"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
@@ -61,28 +57,18 @@ http_archive(
 #     path = LOCAL_ENVOY_PROJECT,
 #)
 
+load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
+
+envoy_api_binding()
+
 load("@envoy//bazel:api_repositories.bzl", "envoy_api_dependencies")
 
 envoy_api_dependencies()
 
-load("@envoy//bazel:repositories.bzl", "GO_VERSION", "envoy_dependencies")
+load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
 envoy_dependencies()
 
-load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
+load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
-rules_foreign_cc_dependencies()
-
-load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
-
-api_dependencies()
-
-load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
-
-go_rules_dependencies()
-
-go_register_toolchains(go_version = GO_VERSION)
-
-# TODO(bianpengyuan): remove this when https://github.com/census-instrumentation/opencensus-cpp/issues/334
-# is fixed and merged into upstream.
-io_opencensus_cpp()
+envoy_dependency_imports()

@@ -66,7 +66,7 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   void onConfigure(std::unique_ptr<WasmData>) override;
-  void onStart() override{};
+  void onStart(std::unique_ptr<WasmData>) override{};
   void onTick() override{};
 
   StringView metadataValue() { return metadata_value_; };
