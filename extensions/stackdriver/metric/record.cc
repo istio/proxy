@@ -24,13 +24,13 @@ constexpr double kNanosecondsPerMillisecond = 1000000.0;
 constexpr char kMutualTLS[] = "MUTUAL_TLS";
 constexpr char kNone[] = "NONE";
 
-void record(const stackdriver::config::PluginConfig::ReporterKind &kind,
+void record(const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
             const stackdriver::common::NodeInfo &local_node_info,
             const Extensions::Stackdriver::Common::RequestInfo &request_info) {
   double latency_ms =
       double(request_info.end_timestamp - request_info.start_timestamp) /
       kNanosecondsPerMillisecond;
-  if (kind == stackdriver::config::PluginConfig::ReporterKind::
+  if (kind == stackdriver::config::v1alpha1::PluginConfig::ReporterKind::
                   PluginConfig_ReporterKind_INBOUND) {
     opencensus::stats::Record(
         {{serverRequestCountMeasure(), 1},
@@ -55,7 +55,7 @@ void record(const stackdriver::config::PluginConfig::ReporterKind &kind,
          {destinationWorkloadNamespaceKey(), local_node_info.namespace_()},
          {destinationOwnerKey(), local_node_info.owner()}});
   }
-  if (kind == stackdriver::config::PluginConfig::ReporterKind::
+  if (kind == stackdriver::config::v1alpha1::PluginConfig::ReporterKind::
                   PluginConfig_ReporterKind_OUTBOUND) {
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},

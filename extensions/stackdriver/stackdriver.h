@@ -16,7 +16,7 @@
 #pragma once
 
 #include "extensions/stackdriver/common/context.h"
-#include "extensions/stackdriver/config/stackdriver_plugin_config.pb.h"
+#include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
 #include "extensions/stackdriver/metric/record.h"
 
 // OpenCensus is full of unused parameters in metric_service.
@@ -59,7 +59,7 @@ class StackdriverRootContext : public RootContext {
   void onTick() override;
 
   // Get reporter kind of this filter from plugin config.
-  stackdriver::config::PluginConfig::ReporterKind reporterKind();
+  stackdriver::config::v1alpha1::PluginConfig::ReporterKind reporterKind();
 
   // Records telemetry based on the given request info.
   void record(
@@ -67,7 +67,7 @@ class StackdriverRootContext : public RootContext {
 
  private:
   // Config for Stackdriver plugin.
-  stackdriver::config::PluginConfig config_;
+  stackdriver::config::v1alpha1::PluginConfig config_;
 
   // Local node info extracted from node metadata.
   stackdriver::common::NodeInfo local_node_info_;

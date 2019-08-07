@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package stackdriver.config;
+package stackdriver.config.v1alpha1;
 
 message PluginConfig {
   // Indicates whether the module should act as inbound or outbound reporter.

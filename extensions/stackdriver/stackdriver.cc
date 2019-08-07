@@ -39,9 +39,9 @@ namespace Stackdriver {
 
 using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
-using namespace stackdriver::config;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
+using stackdriver::config::v1alpha1::PluginConfig;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";

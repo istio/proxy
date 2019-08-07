@@ -32,7 +32,7 @@ cc_library(
     ],
     deps = [
         "//extensions/stackdriver/common:context",
-        "//extensions/stackdriver/config:stackdriver_plugin_config_cc_proto",
+        "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",
         "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
         "@io_opencensus_cpp//opencensus/stats",
     ],
