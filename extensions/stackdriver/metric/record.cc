@@ -24,9 +24,10 @@ constexpr double kNanosecondsPerMillisecond = 1000000.0;
 constexpr char kMutualTLS[] = "MUTUAL_TLS";
 constexpr char kNone[] = "NONE";
 
-void record(const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
-            const stackdriver::common::NodeInfo &local_node_info,
-            const Extensions::Stackdriver::Common::RequestInfo &request_info) {
+void record(
+    const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
+    const stackdriver::common::NodeInfo &local_node_info,
+    const Extensions::Stackdriver::Common::RequestInfo &request_info) {
   double latency_ms =
       double(request_info.end_timestamp - request_info.start_timestamp) /
       kNanosecondsPerMillisecond;

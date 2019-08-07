@@ -24,9 +24,10 @@ namespace Metric {
 
 // Record metrics based on local node info and request info.
 // Reporter kind deceides the type of metrics to record.
-void record(const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
-            const stackdriver::common::NodeInfo &local_node_info,
-            const Extensions::Stackdriver::Common::RequestInfo &request_info);
+void record(
+    const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
+    const stackdriver::common::NodeInfo &local_node_info,
+    const Extensions::Stackdriver::Common::RequestInfo &request_info);
 
 }  // namespace Metric
 }  // namespace Stackdriver
