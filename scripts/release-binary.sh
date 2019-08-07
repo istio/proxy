@@ -47,6 +47,12 @@ echo "Destination bucket: $DST"
 UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
 [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'must run on Ubuntu Xenial'; exit 1; }
 
+# Symlinks don't work, use full path as a temporary workaround.
+# See: https://github.com/istio/istio/issues/15714 for details.
+# k8-opt is output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
+# 45ae47b4a0e12d1e81c831ece04d820d is md5 hash of /home/prow/go/src/istio.io/proxy
+BAZEL_OUT="/home/bootstrap/.cache/bazel/_bazel_bootstrap/45ae47b4a0e12d1e81c831ece04d820d/execroot/__main__/bazel-out/k8-opt/bin"
+
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"
 
@@ -57,8 +63,7 @@ SHA256_NAME="${HOME}/envoy-symbol-${SHA}.sha256"
 gsutil stat "${DST}/${BINARY_NAME}" \
   && { echo 'Binary already exists'; exit 0; } \
   || echo 'Building a new binary.'
-# 45ae47b4a0e12d1e81c831ece04d820d is md5 hash of /home/prow/go/src/istio.io/proxy
-BAZEL_OUT='/home/bootstrap/.cache/bazel/_bazel_bootstrap/45ae47b4a0e12d1e81c831ece04d820d/execroot/__main__/bazel-out/k8-opt/bin'
+
 # Build the release binary with symbol
 CC=${CC} CXX=${CXX} bazel build ${BAZEL_BUILD_ARGS} --config=release-symbol //src/envoy:envoy_tar
 BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
@@ -93,6 +98,11 @@ sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
 gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 
+# Symlinks don't work, use full path as a temporary workaround.
+# See: https://github.com/istio/istio/issues/15714 for details.
+# k8-dbg is output directory for x86_64 debug builds (-c dbg).
+# 45ae47b4a0e12d1e81c831ece04d820d is md5 hash of /home/prow/go/src/istio.io/proxy
+BAZEL_OUT="/home/bootstrap/.cache/bazel/_bazel_bootstrap/45ae47b4a0e12d1e81c831ece04d820d/execroot/__main__/bazel-out/k8-dbg/bin"
 
 # Build the debug binary
 BINARY_NAME="${HOME}/envoy-debug-${SHA}.tar.gz"
