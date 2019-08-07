@@ -69,6 +69,11 @@ build --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
 # enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
 build --define path_normalization_by_default=true
 
+# Pass PATH, CC and CXX variables from the environment.
+build --action_env=PATH
+build --action_env=CC
+build --action_env=CXX
+
 # Release builds without debug symbols.
 build:release -c opt
 build:release --strip=always
