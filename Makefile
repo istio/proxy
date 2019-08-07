@@ -68,8 +68,8 @@ lint:
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 
-artifacts: build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && ./scripts/push-debian.sh -c opt -p $(ARTIFACTS_DIR)
+artifacts:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS=$(BAZEL_BUILD_ARGS) && ./scripts/push-debian.sh -p $(ARTIFACTS_DIR)
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //tools/deb:istio-proxy
