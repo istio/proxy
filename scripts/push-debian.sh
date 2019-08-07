@@ -61,6 +61,13 @@ fi
 
 [[ -z "${GCS_PATH}" ]] && [[ -z "${OUTPUT_DIR}" ]] && usage
 
+# Symlinks don't work, use full path as a temporary workaround.
+# See: https://github.com/istio/istio/issues/15714 for details.
+# k8-opt is output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
+# 45ae47b4a0e12d1e81c831ece04d820d is md5 hash of /home/prow/go/src/istio.io/proxy
+BAZEL_OUT="/home/bootstrap/.cache/bazel/_bazel_bootstrap/45ae47b4a0e12d1e81c831ece04d820d/execroot/__main__/bazel-out/k8-opt/bin"
+BAZEL_BINARY="${BAZEL_OUT}/tools/deb/istio-proxy"
+
 bazel build ${BAZEL_ARGS} ${BAZEL_TARGET}
 
 if [[ -n "${GCS_PATH}" ]]; then
