@@ -5,7 +5,7 @@
 # common-files repo, make the change there and check it in. Then come back to this repo and run
 # "make updatecommon".
 
-# Copyright 2019 Istio Authors
+# Copyright 2018 Istio Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 # limitations under the License.
 
 updatecommon:
-	@git clone --depth 1 --single-branch --branch master https://github.com/istio/common-files
+	@git clone https://github.com/istio/common-files
 	@cd common-files
 	@git rev-parse HEAD >.commonfiles.sha
 	@cp -r common-files/files/* common-files/files/.[^.]* .
