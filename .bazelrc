@@ -1,5 +1,7 @@
-# Copied from https://github.com/envoyproxy/envoy/blob/master/tools/bazel.rc
+# =====================================================================
 # Envoy specific Bazel build/test options.
+# Copied from: https://github.com/envoyproxy/envoy/blob/master/.bazelrc
+# =====================================================================
 
 # Bazel doesn't need more than 200MB of memory based on memory profiling:
 # https://docs.bazel.build/versions/master/skylark/performance.html#memory-profiling
@@ -8,11 +10,15 @@
 startup --host_jvm_args=-Xmx512m
 
 build --workspace_status_command=tools/bazel_get_workspace_status
-# enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
-build --define path_normalization_by_default=true
 build --host_force_python=PY2
 
+# Link (statically) against libstdc++.
+build --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
+build --action_env=BAZEL_LINKOPTS=-lm:-static-libgcc
+
 # Basic ASAN/UBSAN that works for gcc
+build:asan --action_env=BAZEL_LINKLIBS=
+build:asan --action_env=BAZEL_LINKOPTS=-lstdc++:-lm
 build:asan --define ENVOY_CONFIG_ASAN=1
 build:asan --copt -fsanitize=address,undefined
 build:asan --linkopt -fsanitize=address,undefined
@@ -23,43 +29,45 @@ build:asan --define tcmalloc=disabled
 build:asan --build_tag_filters=-no_asan
 build:asan --test_tag_filters=-no_asan
 build:asan --define signal_trace=disabled
+build:asan --copt -DADDRESS_SANITIZER=1
+build:asan --copt -D__SANITIZE_ADDRESS__
+build:asan --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:check_initialization_order=true:strict_init_order=true:detect_odr_violation=1
+build:asan --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1
+build:asan --test_env=ASAN_SYMBOLIZER_PATH
 
-# Clang 5.0 ASAN
-build:clang-asan --define ENVOY_CONFIG_ASAN=1
-build:clang-asan --copt -D__SANITIZE_ADDRESS__
-build:clang-asan --copt -DADDRESS_SANITIZER=1
-build:clang-asan --copt -fsanitize=address,undefined
-build:clang-asan --linkopt -fsanitize=address,undefined
-build:clang-asan --copt -fno-sanitize=vptr
-build:clang-asan --linkopt -fno-sanitize=vptr
-build:clang-asan --copt -fno-sanitize-recover=all
-build:clang-asan --linkopt -ldl
-build:clang-asan --define tcmalloc=disabled
-build:clang-asan --build_tag_filters=-no_asan
-build:clang-asan --test_tag_filters=-no_asan
-build:clang-asan --define signal_trace=disabled
-build:clang-asan --test_env=ASAN_SYMBOLIZER_PATH
+# Clang ASAN/UBSAN
+build:clang-asan --config=asan
 build:clang-asan --linkopt -fuse-ld=lld
 
-# Clang 5.0 TSAN
+# macOS ASAN/UBSAN
+build:macos-asan --config=asan
+# Workaround, see https://github.com/bazelbuild/bazel/issues/6932
+build:macos-asan --copt -Wno-macro-redefined
+build:macos-asan --copt -D_FORTIFY_SOURCE=0
+# Workaround, see https://github.com/bazelbuild/bazel/issues/4341
+build:macos-asan --copt -DGRPC_BAZEL_BUILD
+# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
+build:macos-asan --dynamic_mode=off
+
+# Clang TSAN
 build:clang-tsan --define ENVOY_CONFIG_TSAN=1
 build:clang-tsan --copt -fsanitize=thread
 build:clang-tsan --linkopt -fsanitize=thread
-build:clang-tsan --define tcmalloc=disabled
 build:clang-tsan --linkopt -fuse-ld=lld
-
-# Clang 5.0 MSAN - broken today since we need to rebuild lib[std]c++ and external deps with MSAN
-# support (see https://github.com/envoyproxy/envoy/issues/443).
-build:clang-msan --define ENVOY_CONFIG_MSAN=1
-build:clang-msan --copt -fsanitize=memory
-build:clang-msan --linkopt -fsanitize=memory
-build:clang-msan --define tcmalloc=disabled
-build:clang-msan --copt -fsanitize-memory-track-origins=2
+build:clang-tsan --linkopt -static-libsan
+build:clang-tsan --define tcmalloc=disabled
+# Needed due to https://github.com/libevent/libevent/issues/777
+build:clang-tsan --copt -DEVENT__DISABLE_DEBUG_MODE
 
 # Test options
-test --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
+build --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
+
+# ========================================
+# Istio specific Bazel build/test options.
+# ========================================
+
 # enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
-test --define path_normalization_by_default=true
+build --define path_normalization_by_default=true
 
 # Release builds without debug symbols.
 build:release -c opt
