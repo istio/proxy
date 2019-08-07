@@ -71,13 +71,13 @@ struct RequestInfo {
   int64_t response_size = 0;
 
   // Destination port that the request targets.
-  int64_t destination_port = 0;
+  uint32_t destination_port = 0;
 
   // Protocol used the request (HTTP/1.1, gRPC, etc).
   std::string request_protocol;
 
   // Response code of the request.
-  int64_t response_code = 0;
+  uint32_t response_code = 0;
 
   // Response flag giving additional information - NR, UAEX etc.
   // TODO populate

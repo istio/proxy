@@ -26,9 +26,9 @@
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
 using Envoy::Extensions::Common::Wasm::StreamType;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getDestinationPort;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseCode;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestDestinationPort;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseResponseCode;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::
     proxy_getCurrentTimeNanoseconds;
 
@@ -63,7 +63,7 @@ void populateHTTPRequestInfo(RequestInfo *request_info) {
   request_info->end_timestamp = proxy_getCurrentTimeNanoseconds();
 
   // Fill in request info.
-  request_info->response_code = getResponseCode(StreamType::Response);
+  getResponseResponseCode(&request_info->response_code);
 
   if (kGrpcContentTypes.contains(
           getHeaderMapValue(HeaderMapType::RequestHeaders,
@@ -82,7 +82,7 @@ void populateHTTPRequestInfo(RequestInfo *request_info) {
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
-  request_info->destination_port = getDestinationPort(StreamType::Request);
+  getRequestDestinationPort(&request_info->destination_port);
 }
 
 }  // namespace Common

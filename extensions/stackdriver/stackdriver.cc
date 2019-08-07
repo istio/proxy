@@ -62,12 +62,18 @@ void StackdriverRootContext::onConfigure(
   // even with a key passed in.
   // TODO: change to GetMetadataStruct after fixing upstream API to respect node
   // metadata key.
-  auto node_metadata =
-      getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey);
+  google::protobuf::Value node_metadata;
+  if (getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey,
+                       &node_metadata) != Common::Wasm::MetadataResult::Ok) {
+    logWarn(absl::StrCat("cannot get metadata for: ", kIstioMetadataKey));
+    return;
+  }
+
   status = extractNodeMetadata(node_metadata.struct_value(), &local_node_info_);
   if (status != Status::OK) {
     logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
             ": " + status.ToString());
+    return;
   }
 
   // Register OC Stackdriver exporter and views to be exported.
@@ -90,7 +96,7 @@ PluginConfig::ReporterKind StackdriverRootContext::reporterKind() {
   return config_.kind();
 }
 
-void StackdriverRootContext::onStart() {
+void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
 #ifndef NULL_PLUGIN
 // TODO: Start a timer to trigger exporting
 #endif
@@ -131,21 +137,28 @@ void StackdriverContext::onLog() {
   request_info_.end_timestamp = proxy_getCurrentTimeNanoseconds();
 
   // Fill in request info.
-  request_info_.response_code = getResponseCode(StreamType::Response);
-  request_info_.request_protocol = getProtocol(StreamType::Request)->toString();
+  getResponseResponseCode(&request_info_.response_code);
+  getRequestProtocol(&request_info_.request_protocol);
   request_info_.destination_service_host =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
           ->toString();
   request_info_.request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
-  request_info_.destination_port = getDestinationPort(StreamType::Request);
+  getRequestDestinationPort(&request_info_.destination_port);
 
   // Fill in peer node metadata in request info.
   if (getRootContext()->reporterKind() ==
       PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
-    auto downstream_metadata = getMetadataStruct(
-        Common::Wasm::MetadataType::Request, kDownstreamMetadataKey);
+    google::protobuf::Struct downstream_metadata;
+    if (getMetadataStruct(Common::Wasm::MetadataType::Request,
+                          kDownstreamMetadataKey, &downstream_metadata) !=
+        Common::Wasm::MetadataResult::Ok) {
+      logWarn(
+          absl::StrCat("cannot get metadata for: ", kDownstreamMetadataKey));
+      return;
+    }
+
     auto status =
         extractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
     if (status != Status::OK) {
@@ -154,8 +167,14 @@ void StackdriverContext::onLog() {
     }
   } else if (getRootContext()->reporterKind() ==
              PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
-    auto upstream_metadata = getMetadataStruct(
-        Common::Wasm::MetadataType::Request, kUpstreamMetadataKey);
+    google::protobuf::Struct upstream_metadata;
+    if (getMetadataStruct(Common::Wasm::MetadataType::Request,
+                          kUpstreamMetadataKey, &upstream_metadata) !=
+        Common::Wasm::MetadataResult::Ok) {
+      logWarn(absl::StrCat("cannot get metadata for: ", kUpstreamMetadataKey));
+      return;
+    }
+
     auto status =
         extractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
     if (status != Status::OK) {
