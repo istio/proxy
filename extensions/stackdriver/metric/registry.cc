@@ -17,6 +17,8 @@
 #include "extensions/stackdriver/common/constants.h"
 #include "google/api/monitored_resource.pb.h"
 
+#include <typeinfo>
+
 namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
@@ -24,8 +26,8 @@ namespace Metric {
 using namespace Extensions::Stackdriver::Common;
 using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
-using namespace stackdriver::common;
 using namespace google::api;
+using wasm::common::NodeInfo;
 
 // Gets monitored resource proto based on the type and node metadata info.
 // Only two types of monitored resource could be returned: k8s_container or
@@ -34,13 +36,14 @@ MonitoredResource getMonitoredResource(
     const std::string &monitored_resource_type,
     const NodeInfo &local_node_info) {
   google::api::MonitoredResource monitored_resource;
-  monitored_resource.set_type(kContainerMonitoredResource);
+  monitored_resource.set_type(monitored_resource_type);
+  auto platform_metadata = local_node_info.platform_metadata();
   (*monitored_resource.mutable_labels())[kProjectIDLabel] =
-      local_node_info.platform_metadata().gcp_project();
+      platform_metadata[kGCPProjectKey];
   (*monitored_resource.mutable_labels())[kLocationLabel] =
-      local_node_info.platform_metadata().gcp_cluster_location();
+      platform_metadata[kGCPClusterLocationKey];
   (*monitored_resource.mutable_labels())[kClusterNameLabel] =
-      local_node_info.platform_metadata().gcp_cluster_name();
+      platform_metadata[kGCPClusterNameKey];
   (*monitored_resource.mutable_labels())[kNamespaceNameLabel] =
       local_node_info.namespace_();
   (*monitored_resource.mutable_labels())[kPodNameLabel] =
@@ -67,7 +70,8 @@ MonitoredResource getMonitoredResource(
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(const NodeInfo &local_node_info) {
   StackdriverOptions options;
-  options.project_id = local_node_info.platform_metadata().gcp_project();
+  auto platform_metadata = local_node_info.platform_metadata();
+  options.project_id = platform_metadata[kGCPProjectKey];
 
   // Get server and client monitored resource.
   auto server_monitored_resource =

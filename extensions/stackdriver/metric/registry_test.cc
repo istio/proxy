@@ -14,6 +14,7 @@
  */
 
 #include "extensions/stackdriver/metric/registry.h"
+#include "extensions/stackdriver/common/constants.h"
 #include "gtest/gtest.h"
 
 namespace Extensions {
@@ -21,10 +22,17 @@ namespace Stackdriver {
 namespace Metric {
 
 TEST(RegistryTest, getStackdriverOptions) {
-  stackdriver::common::NodeInfo node_info;
-  node_info.mutable_platform_metadata()->set_gcp_project("test_project");
+  wasm::common::NodeInfo node_info;
+  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
+      "test_project";
   auto option = getStackdriverOptions(node_info);
   EXPECT_EQ(option.project_id, "test_project");
+}
+
+TEST(RegistryTest, getStackdriverOptionsNoProjectID) {
+  wasm::common::NodeInfo node_info;
+  auto option = getStackdriverOptions(node_info);
+  EXPECT_EQ(option.project_id, "");
 }
 
 // TODO: add more test once https://github.com/envoyproxy/envoy/pull/7622

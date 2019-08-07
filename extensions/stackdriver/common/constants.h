@@ -63,24 +63,10 @@ constexpr char kNamespaceNameLabel[] = "namespace_name";
 constexpr char kPodNameLabel[] = "pod_name";
 constexpr char kContainerNameLabel[] = "container_name";
 
-// Node metadata
-constexpr char kIstioMetadataKey[] = "istio.io/metadata";
-constexpr char kMetadataPodNameKey[] = "name";
-constexpr char kMetadataNamespaceKey[] = "namespace";
-constexpr char kMetadataOwnerKey[] = "owner";
-constexpr char kMetadataWorkloadNameKey[] = "workload_name";
-constexpr char kMetadataContainersKey[] = "ports_to_containers";
-constexpr char kPlatformMetadataKey[] = "platform_metadata";
+// GCP node metadata key
 constexpr char kGCPClusterLocationKey[] = "gcp_cluster_location";
 constexpr char kGCPClusterNameKey[] = "gcp_cluster_name";
 constexpr char kGCPProjectKey[] = "gcp_project";
-constexpr char kUpstreamMetadataKey[] = "envoy.wasm.metadata_exchange.upstream";
-constexpr char kDownstreamMetadataKey[] =
-    "envoy.wasm.metadata_exchange.downstream";
-
-// Header keys
-constexpr char kAuthorityHeaderKey[] = ":authority";
-constexpr char kMethodHeaderKey[] = ":method";
 
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";

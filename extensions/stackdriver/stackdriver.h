@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "extensions/stackdriver/common/context.h"
+#include "extensions/common/context.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
 #include "extensions/stackdriver/metric/record.h"
 
@@ -62,15 +62,15 @@ class StackdriverRootContext : public RootContext {
   stackdriver::config::v1alpha1::PluginConfig::ReporterKind reporterKind();
 
   // Records telemetry based on the given request info.
-  void record(
-      const ::Extensions::Stackdriver::Common::RequestInfo& request_info);
+  void record(const ::Wasm::Common::RequestInfo& request_info,
+              const ::wasm::common::NodeInfo& peer_node_info);
 
  private:
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
 
   // Local node info extracted from node metadata.
-  stackdriver::common::NodeInfo local_node_info_;
+  wasm::common::NodeInfo local_node_info_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
@@ -90,7 +90,10 @@ class StackdriverContext : public Context {
  private:
   // Request information collected from stream callbacks, used when record
   // metrics and access logs.
-  ::Extensions::Stackdriver::Common::RequestInfo request_info_;
+  ::Wasm::Common::RequestInfo request_info_;
+
+  // Peer node information extracted from peer node metadata header.
+  ::wasm::common::NodeInfo peer_node_info_;
 
   // Gets root Stackdriver context that this stream Stackdriver context
   // associated with.

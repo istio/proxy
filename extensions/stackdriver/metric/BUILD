@@ -17,6 +17,11 @@
 
 licenses(["notice"])
 
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_test",
+)
+
 cc_library(
     name = "metric",
     srcs = [
@@ -31,20 +36,21 @@ cc_library(
         "//extensions/stackdriver:__pkg__",
     ],
     deps = [
-        "//extensions/stackdriver/common:context",
+        "//extensions/common:context",
+        "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",
         "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
         "@io_opencensus_cpp//opencensus/stats",
     ],
 )
 
-cc_test(
+envoy_cc_test(
     name = "registry_test",
     size = "small",
     srcs = ["registry_test.cc"],
-    linkstatic = 1,
+    repository = "@envoy",
     deps = [
         ":metric",
-        "//external:googletest_main",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )

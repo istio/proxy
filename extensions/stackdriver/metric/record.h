@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "extensions/stackdriver/common/context.h"
+#include "extensions/common/context.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
 
 namespace Extensions {
@@ -26,8 +26,9 @@ namespace Metric {
 // Reporter kind deceides the type of metrics to record.
 void record(
     const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
-    const stackdriver::common::NodeInfo &local_node_info,
-    const Extensions::Stackdriver::Common::RequestInfo &request_info);
+    const ::wasm::common::NodeInfo &local_node_info,
+    const ::wasm::common::NodeInfo &peer_node_info,
+    const ::Wasm::Common::RequestInfo &request_info);
 
 }  // namespace Metric
 }  // namespace Stackdriver
