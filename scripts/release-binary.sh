@@ -19,8 +19,9 @@
 set -ex
 
 # Use clang for the release builds.
-CC=${CC:-clang-8}
-CXX=${CXX:-clang++-8}
+export PATH=/usr/lib/llvm-8/bin:$PATH
+export CC=${CC:-clang}
+export CXX=${CXX:-clang++}
 
 # The bucket name to store proxy binary
 DST="gs://istio-build/proxy"
@@ -63,8 +64,8 @@ gsutil stat "${DST}/${BINARY_NAME}" \
   && { echo 'Binary already exists'; exit 0; } \
   || echo 'Building a new binary.'
 
-# Build the release binary with symbol
-CC=${CC} CXX=${CXX} bazel build ${BAZEL_BUILD_ARGS} --config=release-symbol //src/envoy:envoy_tar
+# Build the release binary with symbols.
+bazel build ${BAZEL_BUILD_ARGS} --config=release-symbol //src/envoy:envoy_tar
 BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -73,11 +74,10 @@ sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
 gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 
+# Build the release binary.
 BINARY_NAME="${HOME}/envoy-alpha-${SHA}.tar.gz"
 SHA256_NAME="${HOME}/envoy-alpha-${SHA}.sha256"
-
-# Build the release binary
-CC=${CC} CXX=${CXX} bazel build ${BAZEL_BUILD_ARGS} --config=release //src/envoy:envoy_tar
+bazel build ${BAZEL_BUILD_ARGS} --config=release //src/envoy:envoy_tar
 BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -86,9 +86,10 @@ sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
 gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 
+# Build the release package.
 BINARY_NAME="${HOME}/istio-proxy-${SHA}.deb"
 SHA256_NAME="${HOME}/istio-proxy-${SHA}.sha256"
-CC=${CC} CXX=${CXX} bazel build ${BAZEL_BUILD_ARGS} --config=release //tools/deb:istio-proxy
+bazel build ${BAZEL_BUILD_ARGS} --config=release //tools/deb:istio-proxy
 BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -102,10 +103,10 @@ gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 # k8-dbg is the output directory for x86_64 debug builds (-c dbg).
 BAZEL_OUT="$(bazel info output_path)/k8-dbg/bin"
 
-# Build the debug binary
+# Build the debug binary.
 BINARY_NAME="${HOME}/envoy-debug-${SHA}.tar.gz"
 SHA256_NAME="${HOME}/envoy-debug-${SHA}.sha256"
-CC=${CC} CXX=${CXX} bazel build ${BAZEL_BUILD_ARGS} -c dbg //src/envoy:envoy_tar
+bazel build ${BAZEL_BUILD_ARGS} -c dbg //src/envoy:envoy_tar
 BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -114,9 +115,10 @@ sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
 gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 
+# Build the debug package.
 BINARY_NAME="${HOME}/istio-proxy-debug-${SHA}.deb"
 SHA256_NAME="${HOME}/istio-proxy-debug-${SHA}.sha256"
-CC=${CC} CXX=${CXX} bazel build ${BAZEL_BUILD_ARGS} -c dbg //tools/deb:istio-proxy
+bazel build ${BAZEL_BUILD_ARGS} -c dbg //tools/deb:istio-proxy
 BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 exit
