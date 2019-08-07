@@ -17,7 +17,12 @@
 
 #include "extensions/stackdriver/common/context.h"
 #include "extensions/stackdriver/config/stackdriver_plugin_config.pb.h"
+
+// OpenCensus is full of unused parameters in metric_service.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
+#pragma GCC diagnostic pop
 
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -49,7 +54,7 @@ class StackdriverRootContext : public RootContext {
   ~StackdriverRootContext() = default;
 
   void onConfigure(std::unique_ptr<WasmData> configuration) override;
-  void onStart() override;
+  void onStart(std::unique_ptr<WasmData>) override;
   void onTick() override;
 
   // Get reporter kind of this filter from plugin config.

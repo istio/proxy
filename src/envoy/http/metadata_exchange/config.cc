@@ -53,8 +53,13 @@ bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
 
 void PluginRootContext::onConfigure(
     std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {
-  auto metadata =
-      getMetadataValue(Common::Wasm::MetadataType::Node, NodeMetadataKey);
+  google::protobuf::Value metadata;
+  if (getMetadataValue(Common::Wasm::MetadataType::Node, NodeMetadataKey,
+                       &metadata) != Common::Wasm::MetadataResult::Ok) {
+    logWarn(absl::StrCat("cannot get metadata for: ", NodeMetadataKey));
+    return;
+  }
+
   if (metadata.kind_case() == google::protobuf::Value::kStructValue) {
     std::string metadata_bytes;
     serializeToStringDeterministic(metadata.struct_value(), &metadata_bytes);
@@ -63,8 +68,13 @@ void PluginRootContext::onConfigure(
         Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 
     // magic "." to get the whole node.
-    auto node =
-        getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey);
+    google::protobuf::Struct node;
+    if (getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey,
+                          &node) != Common::Wasm::MetadataResult::Ok) {
+      logWarn(absl::StrCat("cannot get metadata for: ", WholeNodeKey));
+      return;
+    }
+
     for (const auto& f : node.fields()) {
       if (f.first == NodeIdKey &&
           f.second.kind_case() == google::protobuf::Value::kStringValue) {

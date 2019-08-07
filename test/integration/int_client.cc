@@ -252,8 +252,9 @@ class Http1ClientConnection : public ClientConnection {
                         Envoy::Network::ClientConnectionPtr network_connection)
       : ClientConnection(client, id, connect_callback, close_callback,
                          dispatcher),
+        stats_(),
         network_connection_(std::move(network_connection)),
-        http_connection_(*network_connection_, *this),
+        http_connection_(*network_connection_, stats_, *this),
         read_filter_{std::make_shared<HttpClientReadFilter>(client.name(), id,
                                                             http_connection_)} {
     network_connection_->addReadFilter(read_filter_);
@@ -275,6 +276,7 @@ class Http1ClientConnection : public ClientConnection {
 
   Http1ClientConnection &operator=(const Http1ClientConnection &) = delete;
 
+  Envoy::Stats::IsolatedStoreImpl stats_;
   Envoy::Network::ClientConnectionPtr network_connection_;
   Envoy::Http::Http1::ClientConnectionImpl http_connection_;
   HttpClientReadFilterSharedPtr read_filter_;

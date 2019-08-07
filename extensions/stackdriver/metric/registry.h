@@ -16,7 +16,13 @@
 #pragma once
 
 #include "extensions/stackdriver/common/context.h"
+
+// OpenCensus is full of unused parameters in metric_service.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
+#pragma GCC diagnostic pop
+
 #include "opencensus/stats/measure.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/tag_key.h"
