@@ -39,9 +39,9 @@ namespace Stackdriver {
 
 using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
-using namespace stackdriver::config;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
+using stackdriver::config::v1alpha1::PluginConfig;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
@@ -102,10 +102,15 @@ void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
 #endif
 }
 
-void StackdriverRootContext::onTick(){
+void StackdriverRootContext::onTick() {
 #ifndef NULL_PLUGIN
 // TODO: Add exporting logic with WASM gRPC API
 #endif
+}
+
+void StackdriverRootContext::record(const RequestInfo &request_info) {
+  ::Extensions::Stackdriver::Metric::record(config_.kind(), local_node_info_,
+                                            request_info);
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
@@ -183,7 +188,8 @@ void StackdriverContext::onLog() {
     }
   }
 
-  // TODO: Record Istio metrics.
+  // Record telemetry based on request info.
+  getRootContext()->record(request_info_);
 }
 
 }  // namespace Stackdriver

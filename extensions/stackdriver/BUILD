@@ -34,8 +34,8 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         "//extensions/stackdriver/common:context",
-        "//extensions/stackdriver/config:stackdriver_plugin_config_cc_proto",
-        "//extensions/stackdriver/metric:registry",
+        "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",
+        "//extensions/stackdriver/metric",
         "@envoy//source/extensions/common/wasm/null:null_lib",
         "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
     ],

@@ -83,10 +83,7 @@ constexpr char kAuthorityHeaderKey[] = ":authority";
 constexpr char kMethodHeaderKey[] = ":method";
 
 // Misc
-constexpr double kNanosecondsPerMillisecond = 1000000.0;
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
-constexpr char kMutualTLS[] = "MUTUAL_TLS";
-constexpr char kNone[] = "NONE";
 
 }  // namespace Common
 }  // namespace Stackdriver

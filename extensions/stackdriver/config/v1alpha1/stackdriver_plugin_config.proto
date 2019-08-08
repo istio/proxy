@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package stackdriver.config;
+package stackdriver.config.v1alpha1;
 
 message PluginConfig {
   // Indicates whether the module should act as inbound or outbound reporter.
@@ -29,7 +29,7 @@ message PluginConfig {
   ReporterKind kind = 1;
 
   // Controls whether to export access log.
-  bool export_access_log = 2;
+  bool disable_access_logging = 2;
 
   // FQDN of destination service that the request routed to.
   string destination_service_name = 3;
