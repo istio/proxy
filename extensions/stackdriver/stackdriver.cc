@@ -42,6 +42,11 @@ using namespace google::protobuf::util;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
 using stackdriver::config::v1alpha1::PluginConfig;
+using ::Wasm::Common::kDownstreamMetadataKey;
+using ::Wasm::Common::kIstioMetadataKey;
+using ::Wasm::Common::kUpstreamMetadataKey;
+using ::wasm::common::NodeInfo;
+using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
@@ -69,7 +74,8 @@ void StackdriverRootContext::onConfigure(
     return;
   }
 
-  status = extractNodeMetadata(node_metadata.struct_value(), &local_node_info_);
+  status = ::Wasm::Common::extractNodeMetadata(node_metadata.struct_value(),
+                                               &local_node_info_);
   if (status != Status::OK) {
     logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
             ": " + status.ToString());
@@ -108,9 +114,10 @@ void StackdriverRootContext::onTick() {
 #endif
 }
 
-void StackdriverRootContext::record(const RequestInfo &request_info) {
+void StackdriverRootContext::record(const RequestInfo &request_info,
+                                    const NodeInfo &peer_node_info) {
   ::Extensions::Stackdriver::Metric::record(config_.kind(), local_node_info_,
-                                            request_info);
+                                            peer_node_info, request_info);
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
@@ -138,19 +145,7 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
-  // TODO: switch to stream_info.requestComplete() to avoid extra compute.
-  request_info_.end_timestamp = proxy_getCurrentTimeNanoseconds();
-
-  // Fill in request info.
-  getResponseResponseCode(&request_info_.response_code);
-  getRequestProtocol(&request_info_.request_protocol);
-  request_info_.destination_service_host =
-      getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
-          ->toString();
-  request_info_.request_operation =
-      getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
-          ->toString();
-  getRequestDestinationPort(&request_info_.destination_port);
+  ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
 
   // Fill in peer node metadata in request info.
   if (getRootContext()->reporterKind() ==
@@ -164,8 +159,8 @@ void StackdriverContext::onLog() {
       return;
     }
 
-    auto status =
-        extractNodeMetadata(downstream_metadata, &request_info_.peer_node_info);
+    auto status = ::Wasm::Common::extractNodeMetadata(downstream_metadata,
+                                                      &peer_node_info_);
     if (status != Status::OK) {
       logWarn("cannot parse downstream peer node metadata " +
               downstream_metadata.DebugString() + ": " + status.ToString());
@@ -180,8 +175,8 @@ void StackdriverContext::onLog() {
       return;
     }
 
-    auto status =
-        extractNodeMetadata(upstream_metadata, &request_info_.peer_node_info);
+    auto status = ::Wasm::Common::extractNodeMetadata(upstream_metadata,
+                                                      &peer_node_info_);
     if (status != Status::OK) {
       logWarn("cannot parse upstream peer node metadata " +
               upstream_metadata.DebugString() + ": " + status.ToString());
@@ -189,7 +184,7 @@ void StackdriverContext::onLog() {
   }
 
   // Record telemetry based on request info.
-  getRootContext()->record(request_info_);
+  getRootContext()->record(request_info_, peer_node_info_);
 }
 
 }  // namespace Stackdriver
