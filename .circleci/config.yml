@@ -38,7 +38,7 @@ jobs:
       - setup_remote_docker
       - run: rm ~/.gitconfig
       - run: make deb
-      - run: make artifacts
+      - run: make artifacts ARTIFACTS_DIR="/home/circleci/project/artifacts"
       - run: make test_release
       - save_cache:
           key: linux_release-bazel-cache-{{ checksum "WORKSPACE" }}
