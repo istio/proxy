@@ -23,7 +23,7 @@
 #   -p gs://istio-release/release/0.2.1/deb
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-BAZEL_ARGS=""
+BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS}"
 BAZEL_TARGET='//tools/deb:istio-proxy'
 BAZEL_BINARY="${ROOT}/bazel-bin/tools/deb/istio-proxy"
 ISTIO_VERSION=''
@@ -36,17 +36,15 @@ set -o pipefail
 set -x
 
 function usage() {
-  echo "$0 \
-    -c <bazel config to use> \
-    -o directory to copy files \
-    -p <GCS path, e.g. gs://istio-release/release/0.2.1/deb> \
+  echo "$0
+    -o directory to copy files
+    -p <GCS path, e.g. gs://istio-release/release/0.2.1/deb>
     -v <istio version number>"
   exit 1
 }
 
-while getopts ":c:o:p:v:" arg; do
+while getopts ":o:p:v:" arg; do
   case ${arg} in
-    c) BAZEL_ARGS+=" -c ${OPTARG}";;
     o) OUTPUT_DIR="${OPTARG}";;
     p) GCS_PATH="${OPTARG}";;
     v) ISTIO_VERSION="${OPTARG}";;
@@ -55,7 +53,7 @@ while getopts ":c:o:p:v:" arg; do
 done
 
 if [[ -n "${ISTIO_VERSION}" ]]; then
-  BAZEL_ARGS+=" --action_env=ISTIO_VERSION"
+  BAZEL_BUILD_ARGS+=" --action_env=ISTIO_VERSION"
   export ISTIO_VERSION
 fi
 
@@ -67,7 +65,7 @@ fi
 BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
 BAZEL_BINARY="${BAZEL_OUT}/tools/deb/istio-proxy"
 
-bazel build ${BAZEL_ARGS} ${BAZEL_TARGET}
+bazel build ${BAZEL_BUILD_ARGS} --config=release ${BAZEL_TARGET}
 
 if [[ -n "${GCS_PATH}" ]]; then
   gsutil -m cp -r "${BAZEL_BINARY}.deb" ${GCS_PATH}/
