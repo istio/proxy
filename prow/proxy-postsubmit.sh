@@ -44,4 +44,4 @@ export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --v
 
 echo 'Create and push artifacts'
 scripts/release-binary.sh
-ARTIFACTS_DIR="gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs" make artifacts
+ARTIFACTS_GCS_PATH="gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs" make artifacts
