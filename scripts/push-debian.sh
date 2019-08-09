@@ -72,5 +72,6 @@ if [[ -n "${GCS_PATH}" ]]; then
 fi
 
 if [[ -n "${OUTPUT_DIR}" ]]; then
-  cp "${BAZEL_BINARY}.deb" "${OUTPUT_DIR}/"
+  mkdir -p "${OUTPUT_DIR}/"
+  cp -f "${BAZEL_BINARY}.deb" "${OUTPUT_DIR}/"
 fi
