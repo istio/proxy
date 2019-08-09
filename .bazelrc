@@ -16,6 +16,11 @@ build --host_force_python=PY2
 build --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
 build --action_env=BAZEL_LINKOPTS=-lm:-static-libgcc
 
+# Pass PATH, CC and CXX variables from the environment.
+build --action_env=CC
+build --action_env=CXX
+build --action_env=PATH
+
 # Basic ASAN/UBSAN that works for gcc
 build:asan --action_env=BAZEL_LINKLIBS=
 build:asan --action_env=BAZEL_LINKOPTS=-lstdc++:-lm
@@ -68,11 +73,6 @@ build --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
 
 # enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
 build --define path_normalization_by_default=true
-
-# Pass PATH, CC and CXX variables from the environment.
-build --action_env=PATH
-build --action_env=CC
-build --action_env=CXX
 
 # Release builds without debug symbols.
 build:release -c opt
