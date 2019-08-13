@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "extensions/common/wasm/null/null.h"
+#include "extensions/common/wasm/null/null_plugin.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -49,7 +49,7 @@ constexpr absl::string_view UpstreamMetadataIdKey =
 
 using StringView = absl::string_view;
 using Common::Wasm::MetadataType;
-using Common::Wasm::Null::NullVmPluginRootRegistry;
+using Common::Wasm::Null::NullPluginRootRegistry;
 using Common::Wasm::Null::Plugin::Context;
 using Common::Wasm::Null::Plugin::ContextFactory;
 using Common::Wasm::Null::Plugin::RootContext;
