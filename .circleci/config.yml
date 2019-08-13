@@ -18,6 +18,7 @@ jobs:
       - run: make lint
       - run: make build
       - run: make test
+      - run: make upstream_test
       - save_cache:
           key: linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
