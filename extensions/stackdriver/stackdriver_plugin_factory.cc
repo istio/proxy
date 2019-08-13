@@ -23,7 +23,7 @@ namespace Wasm {
 namespace Null {
 namespace Plugin {
 namespace Stackdriver {
-NullVmPluginRootRegistry* context_registry_{};
+NullPluginRootRegistry* context_registry_{};
 }  // namespace Stackdriver
 
 constexpr char kStackdriverPluginName[] = "envoy.wasm.null.stackdriver";
@@ -32,13 +32,13 @@ constexpr char kStackdriverPluginName[] = "envoy.wasm.null.stackdriver";
  * Config registration for a Wasm filter plugin. @see
  * NamedHttpFilterConfigFactory.
  */
-class StackdriverPluginFactory : public NullVmPluginFactory {
+class StackdriverPluginFactory : public NullPluginFactory {
  public:
   StackdriverPluginFactory() {}
 
   const std::string name() const override { return kStackdriverPluginName; }
   std::unique_ptr<NullVmPlugin> create() const override {
-    return std::make_unique<NullVmPlugin>(
+    return std::make_unique<NullPlugin>(
         Envoy::Extensions::Common::Wasm::Null::Plugin::Stackdriver::
             context_registry_);
   }
@@ -47,7 +47,7 @@ class StackdriverPluginFactory : public NullVmPluginFactory {
 /**
  * Static registration for the null Wasm filter. @see RegisterFactory.
  */
-static Registry::RegisterFactory<StackdriverPluginFactory, NullVmPluginFactory>
+static Registry::RegisterFactory<StackdriverPluginFactory, NullPluginFactory>
     register_;
 
 }  // namespace Plugin

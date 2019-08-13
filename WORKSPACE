@@ -35,11 +35,11 @@ bind(
 # When updating envoy sha manually please update the sha in istio.deps file also
 #
 # Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/COMMIT.tar.gz && sha256sum COMMIT.tar.gz`
-# envoy-wasm commit date: 08/08/2019
+# envoy-wasm commit date: 08/13/2019
 # bazel version: 0.28.1
-ENVOY_SHA = "37c612411ce0812466a1aa14dc201300f7f0a6df"
+ENVOY_SHA = "3f90336c39250c472cfd51b157c305582b7a6725"
 
-ENVOY_SHA256 = "281662f0bb5d609aac838e58a838d24e9da3033be98e9bf8d2dd9054ffec04cd"
+ENVOY_SHA256 = "1ed52a4f6275056ad3d5aad547035bd02bab68891ec8b8c61234da15c72175fb"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
