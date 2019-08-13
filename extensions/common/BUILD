@@ -39,7 +39,7 @@ envoy_cc_library(
     deps = [
         ":node_info_cc_proto",
         "@com_google_protobuf//:protobuf",
-        "@envoy//source/extensions/common/wasm/null:null_lib",
+        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )
 

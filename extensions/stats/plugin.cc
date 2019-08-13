@@ -159,18 +159,18 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
 
 // Registration glue
 
-NullVmPluginRootRegistry* context_registry_{};
+NullPluginRootRegistry* context_registry_{};
 
-class StatsFactory : public NullVmPluginFactory {
+class StatsFactory : public NullPluginFactory {
  public:
   const std::string name() const override { return "envoy.wasm.stats"; }
 
   std::unique_ptr<NullVmPlugin> create() const override {
-    return std::make_unique<NullVmPlugin>(context_registry_);
+    return std::make_unique<NullPlugin>(context_registry_);
   }
 };
 
-static Registry::RegisterFactory<StatsFactory, NullVmPluginFactory> register_;
+static Registry::RegisterFactory<StatsFactory, NullPluginFactory> register_;
 
 }  // namespace Stats
 

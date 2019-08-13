@@ -4,7 +4,7 @@
 		"name": "ISTIO_API",
 		"repoName": "api",
 		"file": "repositories.bzl",
-		"lastStableSHA": "37c612411ce0812466a1aa14dc201300f7f0a6df"
+		"lastStableSHA": "3f90336c39250c472cfd51b157c305582b7a6725"
 	},
 	{
 		"_comment": "",

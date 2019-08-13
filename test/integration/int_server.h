@@ -335,6 +335,8 @@ class Server : public Envoy::Network::FilterChainManager,
 
   virtual std::chrono::milliseconds listenerFiltersTimeout() const override;
 
+  virtual bool continueOnListenerFiltersTimeout() const override;
+
   virtual Envoy::Stats::Scope &listenerScope() override;
 
   virtual uint64_t listenerTag() const override;
