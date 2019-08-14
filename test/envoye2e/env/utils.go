@@ -28,9 +28,14 @@ func GetDefaultIstioOut() string {
 }
 
 func GetDefaultEnvoyBin() string {
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
+	bazelDir := os.Getenv("BAZEL_OUT")
+	if bazelDir == "" {
+		// fall back to symbolic link of bazel output
+		d, err := os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+		bazelDir = d + "/../../../bazel-bin/"
 	}
-	return dir + "/../../../bazel-bin/src/envoy/"
+	return bazelDir + "/src/envoy/"
 }
