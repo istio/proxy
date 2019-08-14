@@ -42,7 +42,7 @@ ifeq ($(UNAME),Linux)
 BAZEL_CONFIG_DEV  = --config=libc++
 BAZEL_CONFIG_REL  = --config=libc++ --config=release
 BAZEL_CONFIG_ASAN = --config=clang-asan --config=libc++
-BAZEL_CONFIG_TSAN = --config=clang-tsan --config=libc++
+BAZEL_CONFIG_TSAN = --config=clang-tsan # no libc++ until envoyproxy/envoy#7927 and #7928 are fixed
 endif
 ifeq ($(UNAME),Darwin)
 BAZEL_CONFIG_DEV  = # macOS always links against libc++
