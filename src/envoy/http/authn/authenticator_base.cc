@@ -73,7 +73,7 @@ bool AuthenticatorBase::validateTrustDomain(
     return false;
   }
 
-  ENVOY_CONN_LOG(error, "trust domain validation succeeded", *connection);
+  ENVOY_CONN_LOG(debug, "trust domain validation succeeded", *connection);
   return true;
 }
 
