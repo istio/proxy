@@ -26,6 +26,8 @@ import (
 const (
 	BasicFlowTest uint16 = iota
 
+	BasicTCPFlowTest uint16 = iota
+
 	StackdriverPluginTest uint16 = iota
 
 	// The number of total tests. has to be the last one.

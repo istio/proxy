@@ -15,14 +15,14 @@
 package fakestackdriver
 
 // ServerRequestCountJSON is a JSON string of server request count metric protocol.
-const ServerRequestCountJSON = `{  
-	"metric":{  
+const ServerRequestCountJSON = `{
+	"metric":{
 	   "type":"istio.io/service/server/request_count",
-	   "labels":{  
+	   "labels":{
 		  "destination_owner":"kubernetes://apis/v1/namespaces/server-namespace/pod/server",
-		  "destination_port":"20013",
+		  "destination_port":"20020",
 		  "destination_principal":"",
-		  "destination_service_name":"localhost:20009",
+		  "destination_service_name":"localhost:20016",
 		  "destination_service_namespace":"server-namespace",
 		  "destination_workload_name":"server",
 		  "destination_workload_namespace":"server-namespace",
@@ -37,9 +37,9 @@ const ServerRequestCountJSON = `{
 		  "source_workload_namespace":"client-namespace"
 	   }
 	},
-	"resource":{  
+	"resource":{
 	   "type":"k8s_container",
-	   "labels":{  
+	   "labels":{
 		  "cluster_name":"test-cluster",
 		  "container_name":"server-container",
 		  "location":"test-location",
@@ -48,9 +48,9 @@ const ServerRequestCountJSON = `{
 		  "project_id":"test-project"
 	   }
 	},
-	"points":[  
-	   {  
-		  "value":{  
+	"points":[
+	   {
+		  "value":{
 			 "int64Value":"10"
 		  }
 	   }
@@ -58,14 +58,14 @@ const ServerRequestCountJSON = `{
  }`
 
 // ClientRequestCountJSON is a JSON string of client request count metric protocol.
-const ClientRequestCountJSON = `{  
-	"metric":{  
+const ClientRequestCountJSON = `{
+	"metric":{
 	   "type":"istio.io/service/client/request_count",
-	   "labels":{  
+	   "labels":{
 		  "destination_owner":"kubernetes://apis/v1/namespaces/server-namespace/pod/server",
-		  "destination_port":"20012",
+		  "destination_port":"20019",
 		  "destination_principal":"",
-		  "destination_service_name":"localhost:20009",
+		  "destination_service_name":"localhost:20016",
 		  "destination_service_namespace":"server-namespace",
 		  "destination_workload_name":"server",
 		  "destination_workload_namespace":"server-namespace",
@@ -80,9 +80,9 @@ const ClientRequestCountJSON = `{
 		  "source_workload_namespace":"client-namespace"
 	   }
 	},
-	"resource":{  
+	"resource":{
 	   "type":"k8s_pod",
-	   "labels":{  
+	   "labels":{
 		  "cluster_name":"test-cluster",
 		  "location":"test-location",
 		  "namespace_name":"client-namespace",
@@ -90,9 +90,9 @@ const ClientRequestCountJSON = `{
 		  "project_id":"test-project"
 	   }
 	},
-	"points":[  
-	   {  
-		  "value":{  
+	"points":[
+	   {
+		  "value":{
 			 "int64Value":"10"
 		  }
 	   }

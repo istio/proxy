@@ -102,21 +102,20 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// TODO: remove this after https://github.com/census-instrumentation/opencensus-cpp/issues/372
 	delete(got.Metric.Labels, "opencensus_task")
 	if !proto.Equal(want, got) {
-		return fmt.Errorf("client request count timeseries is not expected, got %v \nwant %v\n", got, want)
+		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v\n", got, want)
 	}
 	return nil
 }
 
 func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) error {
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
-
+	jsonpb.UnmarshalString(fs.ServerRequestCountJSON, &srvReqCount)
+	jsonpb.UnmarshalString(fs.ClientRequestCountJSON, &cltReqCount)
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type == srvReqCount.Metric.Type {
-			jsonpb.UnmarshalString(fs.ServerRequestCountJSON, &srvReqCount)
 			return compareTimeSeries(t, &srvReqCount)
 		}
 		if t.Metric.Type == cltReqCount.Metric.Type {
-			jsonpb.UnmarshalString(fs.ClientRequestCountJSON, &cltReqCount)
 			return compareTimeSeries(t, &cltReqCount)
 		}
 	}

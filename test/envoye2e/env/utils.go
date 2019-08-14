@@ -17,6 +17,8 @@ package env
 import (
 	"fmt"
 	"go/build"
+	"log"
+	"os"
 
 	"runtime"
 )
@@ -25,6 +27,10 @@ func GetDefaultIstioOut() string {
 	return fmt.Sprintf("%s/out/%s_%s", build.Default.GOPATH, runtime.GOOS, runtime.GOARCH)
 }
 
-func GetDefaultIstioBin() string {
-	return fmt.Sprintf("%s/bin", build.Default.GOPATH)
+func GetDefaultEnvoyBin() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return dir + "/../../../bazel-bin/src/envoy/"
 }
