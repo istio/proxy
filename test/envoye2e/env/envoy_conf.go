@@ -17,6 +17,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
@@ -231,6 +232,10 @@ func (s *TestSetup) CreateEnvoyConf(path, confTmpl string) error {
 	}
 	tmpl.Funcs(template.FuncMap{})
 
+	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create dir %v: %v", filepath.Dir(path), err)
+	}
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create file %v: %v", path, err)
