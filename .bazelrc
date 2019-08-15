@@ -64,6 +64,15 @@ build:clang-tsan --define tcmalloc=disabled
 # Needed due to https://github.com/libevent/libevent/issues/777
 build:clang-tsan --copt -DEVENT__DISABLE_DEBUG_MODE
 
+# Link (statically) against libc++.
+build:libc++ --action_env=CXXFLAGS=-stdlib=libc++
+build:libc++ --action_env=BAZEL_CXXOPTS=-stdlib=libc++
+build:libc++ --action_env=BAZEL_LINKLIBS=-l%:libc++.a:-l%:libc++abi.a
+build:libc++ --action_env=BAZEL_LINKOPTS=-lm:-static-libgcc
+build:libc++ --linkopt=-fuse-ld=lld
+build:libc++ --host_linkopt=-fuse-ld=lld
+build:libc++ --define force_libcpp=enabled
+
 # Test options
 build --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
 
