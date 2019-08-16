@@ -113,6 +113,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledCheck) {
 
   client_config_.set_disable_check_calls(true);
   auto handler = controller_->CreateRequestHandler();
+  handler->BuildCheckAttributes(&mock_data);
   handler->Check(&mock_data, [](const CheckResponseInfo &info) {
     EXPECT_TRUE(info.status().ok());
   });
@@ -136,6 +137,7 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
       }));
 
   auto handler = controller_->CreateRequestHandler();
+  handler->BuildCheckAttributes(&mock_data);
   handler->Check(&mock_data, nullptr);
 }
 
