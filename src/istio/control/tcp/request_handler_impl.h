@@ -29,6 +29,9 @@ class RequestHandlerImpl : public RequestHandler {
  public:
   RequestHandlerImpl(std::shared_ptr<ClientContext> client_context);
 
+  // Build shared attributes
+  void BuildCheckAttributes(CheckData* check_data) override;
+
   // Make a Check call.
   void Check(CheckData* check_data,
              const ::istio::mixerclient::CheckDoneFunc& on_done) override;

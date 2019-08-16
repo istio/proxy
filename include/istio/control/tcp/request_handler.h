@@ -29,6 +29,9 @@ class RequestHandler {
  public:
   virtual ~RequestHandler() {}
 
+  // Builds shared attributes required for both Check and Report calls
+  virtual void BuildCheckAttributes(CheckData* check_data) = 0;
+
   // Perform a Check call. It will:
   // * extract downstream tcp connection attributes
   // * check config, make a Check call if necessary.
