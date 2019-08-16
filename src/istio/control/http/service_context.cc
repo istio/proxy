@@ -37,12 +37,6 @@ void ServiceContext::BuildParsers() {
   if (!service_config_) {
     return;
   }
-  // Build api_spec parsers
-  for (const auto &api_spec : service_config_->http_api_spec()) {
-    api_spec_.MergeFrom(api_spec);
-  }
-  api_spec_parser_ = ::istio::api_spec::HttpApiSpecParser::Create(api_spec_);
-
   // Build quota parser
   for (const auto &quota : service_config_->quota_spec()) {
     quota_parsers_.push_back(
@@ -79,25 +73,6 @@ void ServiceContext::InjectForwardedAttributes(
 
   if (!attributes.attributes().empty()) {
     AttributesBuilder::ForwardAttributes(attributes, header_update);
-  }
-}
-
-void ServiceContext::AddApiAttributes(
-    CheckData *check_data, ::istio::mixer::v1::Attributes *attributes) const {
-  if (!api_spec_parser_) {
-    return;
-  }
-  std::string http_method;
-  std::string path;
-  if (check_data->FindHeaderByType(CheckData::HEADER_METHOD, &http_method) &&
-      check_data->FindHeaderByType(CheckData::HEADER_PATH, &path)) {
-    api_spec_parser_->AddAttributes(http_method, path, attributes);
-  }
-
-  std::string api_key;
-  if (api_spec_parser_->ExtractApiKey(check_data, &api_key)) {
-    (*attributes->mutable_attributes())[utils::AttributeName::kRequestApiKey]
-        .set_string_value(api_key);
   }
 }
 

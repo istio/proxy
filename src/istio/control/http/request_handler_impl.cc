@@ -58,8 +58,6 @@ void RequestHandlerImpl::AddCheckAttributes(CheckData* check_data) {
 
     AttributesBuilder builder(attributes_->attributes());
     builder.ExtractCheckAttributes(check_data);
-
-    service_context_->AddApiAttributes(check_data, attributes_->attributes());
   }
 }
 

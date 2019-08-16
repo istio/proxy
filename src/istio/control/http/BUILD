@@ -32,7 +32,6 @@ cc_library(
     deps = [
         "//include/istio/control/http:headers_lib",
         "//include/istio/utils:attribute_names_header",
-        "//src/istio/api_spec:api_spec_lib",
         "//src/istio/authn:context_proto_cc",
         "//src/istio/control:common_lib",
         "//src/istio/utils:attribute_names_lib",
