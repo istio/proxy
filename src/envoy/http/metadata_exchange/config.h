@@ -23,13 +23,10 @@ namespace Wasm {
 namespace MetadataExchange {
 
 constexpr absl::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
-
 constexpr absl::string_view ExchangeMetadataHeaderId =
     "x-envoy-peer-metadata-id";
 
-// NodeMetadata key is the key in the node metadata struct that is passed
-// between peers.
-constexpr absl::string_view NodeMetadataKey = "istio.io/metadata";
+constexpr absl::string_view NodeMetadataExchangeKeys = "EXCHANGE_KEYS";
 constexpr absl::string_view NodeIdKey = "id";
 constexpr absl::string_view WholeNodeKey = ".";
 
@@ -73,6 +70,7 @@ class PluginRootContext : public RootContext {
   StringView nodeId() { return node_id_; };
 
  private:
+  void updateMetadataValue();
   std::string metadata_value_;
   std::string node_id_;
 };
