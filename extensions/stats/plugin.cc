@@ -62,9 +62,13 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
             ": " + status.ToString());
     return;
   }
-
-  outbound_ = stats::PluginConfig_Direction_OUTBOUND == config_.direction();
-
+  PluginDirection direction;
+  auto dirn_result = getPluginDirection(&direction);
+  if (MetadataResult::Ok == dirn_result) {
+    outbound_ = PluginDirection::Outbound == direction;
+  } else {
+    logWarn(absl::StrCat("Unable to get plugin direction: ", dirn_result));
+  }
   // Local data does not change, so populate it on config load.
   istio_dimensions_.init(outbound_, local_node_info_);
 
@@ -77,6 +81,40 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
   debug_ = config_.debug();
   node_info_cache_.set_max_cache_size(config_.max_peer_cache_size());
+
+  auto field_separator = default_field_separator;
+  if (!config_.field_separator().empty()) {
+    field_separator = config_.field_separator();
+  }
+
+  auto value_separator = default_value_separator;
+  if (!config_.value_separator().empty()) {
+    value_separator = config_.value_separator();
+  }
+
+  stats_ = std::vector<StatGen>{
+      StatGen(
+          "requests_total", MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
+          field_separator, value_separator),
+      StatGen(
+          "request_duration_seconds", MetricType::Histogram,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.end_timestamp - request_info.start_timestamp;
+          },
+          field_separator, value_separator),
+      StatGen(
+          "request_bytes", MetricType::Histogram,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.request_size;
+          },
+          field_separator, value_separator),
+      StatGen(
+          "response_bytes", MetricType::Histogram,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.response_size;
+          },
+          field_separator, value_separator)};
 }
 
 void PluginRootContext::report(

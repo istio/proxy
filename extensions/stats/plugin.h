@@ -56,14 +56,8 @@ const std::string vMTLS = "mutual_tls";
 const std::string vNone = "none";
 const std::string vDash = "-";
 
-const std::string field_separator = ";;";
-const std::string value_separator = "==";
-
-
-// A "." in the values makes prometheus tag pattern fail. This replaces
-// a "." with a "/" until we support alternate tag and field separators.
-const std::vector<std::pair<const absl::string_view, std::string>>
-    HACK_VALUES_REPLACEMENTS = {{".", "~"}};
+const std::string default_field_separator = ";;";
+const std::string default_value_separator = "==";
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
@@ -316,10 +310,12 @@ class SimpleStat {
 class StatGen {
  public:
   explicit StatGen(std::string name, MetricType metric_type,
-                   ValueExtractorFn value_fn)
+                   ValueExtractorFn value_fn, std::string field_separator,
+                   std::string value_separator)
       : name_(name),
         value_fn_(value_fn),
-        metric_(metric_type, name, IstioDimensions::metricTags(), field_separator, value_separator){};
+        metric_(metric_type, name, IstioDimensions::metricTags(),
+                field_separator, value_separator){};
 
   StatGen() = delete;
   inline StringView name() const { return name_; };
@@ -375,22 +371,7 @@ class PluginRootContext : public RootContext {
   absl::flat_hash_map<IstioDimensions, std::vector<SimpleStat>> metrics_;
 
   // Peer stats to be generated for a dimensioned metrics set.
-  std::vector<StatGen> stats_ = {
-      StatGen("istio_requests_total", MetricType::Counter,
-              [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; }),
-      StatGen("istio_request_duration_seconds", MetricType::Histogram,
-              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-                return request_info.end_timestamp -
-                       request_info.start_timestamp;
-              }),
-      StatGen("istio_request_bytes", MetricType::Histogram,
-              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-                return request_info.request_size;
-              }),
-      StatGen("istio_response_bytes", MetricType::Histogram,
-              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-                return request_info.response_size;
-              })};
+  std::vector<StatGen> stats_;
 };
 
 // Per-stream context.
