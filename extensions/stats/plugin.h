@@ -56,6 +56,10 @@ const std::string vMTLS = "mutual_tls";
 const std::string vNone = "none";
 const std::string vDash = "-";
 
+const std::string field_separator = ";;";
+const std::string value_separator = "==";
+
+
 // A "." in the values makes prometheus tag pattern fail. This replaces
 // a "." with a "/" until we support alternate tag and field separators.
 const std::vector<std::pair<const absl::string_view, std::string>>
@@ -100,8 +104,6 @@ struct IstioDimensions {
 #undef DEFINE_FIELD
 
   // utility fields
-  std::vector<std::string> vals;
-  bool mapped = false;
   bool outbound = false;
 
   // Ordered dimension list is used by the metrics API.
@@ -113,10 +115,9 @@ struct IstioDimensions {
 
   // values is used on the datapath, only when new dimensions are found.
   std::vector<std::string> values() {
-#define REPLACE_VALUES(name) \
-  absl::StrReplaceAll(name, HACK_VALUES_REPLACEMENTS),
-    return std::vector<std::string>{STD_ISTIO_DIMENSIONS(REPLACE_VALUES)};
-#undef REPLACE_VALUES
+#define VALUES(name) name,
+    return std::vector<std::string>{STD_ISTIO_DIMENSIONS(VALUES)};
+#undef VALUES
   }
 
   void setFieldsUnknownIfEmpty() {
@@ -318,7 +319,7 @@ class StatGen {
                    ValueExtractorFn value_fn)
       : name_(name),
         value_fn_(value_fn),
-        metric_(metric_type, name, IstioDimensions::metricTags()){};
+        metric_(metric_type, name, IstioDimensions::metricTags(), field_separator, value_separator){};
 
   StatGen() = delete;
   inline StringView name() const { return name_; };

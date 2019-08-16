@@ -34,4 +34,12 @@ message PluginConfig {
   // A long lived proxy that connects with many transient peers can build up a
   // large cache.
   int32 max_peer_cache_size = 3;
+
+  // Stats api squashes dimensions in a single string.
+  // The squashed string is parsed at prometheus scrape time to recover dimensions.
+  // The following 2 fields set the field and value separators
+  // {key: value} -->  key{value_separator}value{field_separator}
+  string field_separator = 4; // default: ";;"
+
+  string value_separator = 5; // default: "=="
 }
