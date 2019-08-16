@@ -22,7 +22,7 @@
 
 #else  // NULL_PLUGIN
 
-#include "extensions/common/wasm/null/null.h"
+#include "extensions/common/wasm/null/null_plugin.h"
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
 using Envoy::Extensions::Common::Wasm::StreamType;

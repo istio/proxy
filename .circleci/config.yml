@@ -16,18 +16,38 @@ jobs:
       - setup_remote_docker
       - run: rm ~/.gitconfig
       - run: make lint
-      - run: make deb
+      - run: make build
       - run: make test
       - save_cache:
           key: linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+
+  linux_release:
+    docker:
+      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
+    environment:
+      - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
+    resource_class: xlarge
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - linux_release-bazel-cache-{{ checksum "WORKSPACE" }}
+      # To build docker containers or run tests in a docker
+      - setup_remote_docker
+      - run: rm ~/.gitconfig
+      - run: make deb
+      - run: make artifacts ARTIFACTS_DIR="/home/circleci/project/artifacts"
+      - run: make test_release
+      - save_cache:
+          key: linux_release-bazel-cache-{{ checksum "WORKSPACE" }}
+          paths:
+            - /home/circleci/.cache/bazel
       - store_artifacts:
-          path: /home/circleci/project/bazel-bin/tools/deb/istio-proxy.deb
-          destination: /proxy/deb
-      - store_artifacts:
-          path: /home/circleci/project/bazel-bin/src/envoy/envoy
-          destination: /proxy/bin
+          path: /home/circleci/project/artifacts/istio-proxy.deb
+          destination: /proxy/istio-proxy.deb
+
   linux_asan:
     docker:
       - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
@@ -47,6 +67,7 @@ jobs:
           key: linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+
   linux_tsan:
     docker:
       - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
@@ -66,6 +87,7 @@ jobs:
           key: linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+
   macos:
     macos:
       xcode: "10.2.1"
@@ -98,6 +120,7 @@ workflows:
   all:
     jobs:
       - build
+      - linux_release
       - linux_asan
       - linux_tsan
       - macos
