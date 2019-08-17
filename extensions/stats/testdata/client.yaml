@@ -87,6 +87,7 @@ static_resources:
               configuration: "test"
           - name: envoy.wasm
             config:
+              stat_prefix: "istio"
               vm_config:
                 vm: "envoy.wasm.vm.null"
                 code:
