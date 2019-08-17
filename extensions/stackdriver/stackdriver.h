@@ -29,7 +29,7 @@
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 #else
 
-#include "extensions/common/wasm/null/null.h"
+#include "extensions/common/wasm/null/null_plugin.h"
 
 namespace Envoy {
 namespace Extensions {

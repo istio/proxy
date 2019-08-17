@@ -22,7 +22,7 @@ namespace Wasm {
 namespace MetadataExchange {
 
 // imports from the low-level API
-using Common::Wasm::Null::NullVmPluginFactory;
+using Common::Wasm::Null::NullPluginFactory;
 using Common::Wasm::Null::Plugin::getMetadataStringValue;
 using Common::Wasm::Null::Plugin::getMetadataStruct;
 using Common::Wasm::Null::Plugin::getMetadataValue;
@@ -159,20 +159,20 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
 
 // Registration glue
 
-Common::Wasm::Null::NullVmPluginRootRegistry* context_registry_{};
+Common::Wasm::Null::NullPluginRootRegistry* context_registry_{};
 
-class MetadataExchangeFactory : public Common::Wasm::Null::NullVmPluginFactory {
+class MetadataExchangeFactory : public Common::Wasm::Null::NullPluginFactory {
  public:
   const std::string name() const override {
     return "envoy.wasm.metadata_exchange";
   }
   std::unique_ptr<Common::Wasm::Null::NullVmPlugin> create() const override {
-    return std::make_unique<Common::Wasm::Null::NullVmPlugin>(
+    return std::make_unique<Common::Wasm::Null::NullPlugin>(
         Envoy::Extensions::Wasm::MetadataExchange::context_registry_);
   }
 };
 
-static Registry::RegisterFactory<MetadataExchangeFactory, NullVmPluginFactory>
+static Registry::RegisterFactory<MetadataExchangeFactory, NullPluginFactory>
     register_;
 
 }  // namespace MetadataExchange

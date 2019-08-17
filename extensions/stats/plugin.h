@@ -30,7 +30,7 @@
 
 #else  // NULL_PLUGIN
 
-#include "extensions/common/wasm/null/null.h"
+#include "extensions/common/wasm/null/null_plugin.h"
 
 namespace Envoy {
 namespace Extensions {
