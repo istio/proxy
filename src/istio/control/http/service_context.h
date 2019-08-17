@@ -17,7 +17,6 @@
 #define ISTIO_CONTROL_HTTP_SERVICE_CONTEXT_H
 
 #include "google/protobuf/stubs/status.h"
-#include "include/istio/api_spec/http_api_spec_parser.h"
 #include "include/istio/quota_config/config_parser.h"
 #include "mixer/v1/attributes.pb.h"
 #include "src/istio/control/http/client_context.h"
@@ -43,10 +42,6 @@ class ServiceContext {
   // Inject a header that contains the static forwarded attributes.
   void InjectForwardedAttributes(HeaderUpdate* header_update) const;
 
-  // Add api attributes from api_spec.
-  void AddApiAttributes(CheckData* check_data,
-                        ::istio::mixer::v1::Attributes* attributes) const;
-
   // Add quota requirements from quota configs.
   void AddQuotas(::istio::mixer::v1::Attributes* attributes,
                  std::vector<::istio::quota_config::Requirement>& quotas) const;
@@ -64,11 +59,6 @@ class ServiceContext {
 
   // The client context object.
   std::shared_ptr<ClientContext> client_context_;
-
-  // Concatenated api_spec_
-  ::istio::mixer::v1::config::client::HTTPAPISpec api_spec_;
-  // Api spec parser to generate api attributes and api_key
-  std::unique_ptr<::istio::api_spec::HttpApiSpecParser> api_spec_parser_;
 
   // The quota parsers for each quota config.
   std::vector<std::unique_ptr<::istio::quota_config::ConfigParser>>

@@ -367,51 +367,6 @@ TEST_F(RequestHandlerImplTest, TestPerRouteQuota) {
   handler->Check(&mock_data, &mock_header, nullptr, nullptr);
 }
 
-TEST_F(RequestHandlerImplTest, TestPerRouteApiSpec) {
-  ::testing::NiceMock<MockCheckData> mock_data;
-  ::testing::NiceMock<MockHeaderUpdate> mock_header;
-  EXPECT_CALL(mock_data, FindHeaderByType(_, _))
-      .WillRepeatedly(
-          Invoke([](CheckData::HeaderType type, std::string *value) -> bool {
-            if (type == CheckData::HEADER_PATH) {
-              *value = "/books/120";
-              return true;
-            }
-            if (type == CheckData::HEADER_METHOD) {
-              *value = "GET";
-              return true;
-            }
-            return false;
-          }));
-
-  // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](CheckContextSharedPtr &context,
-                          const TransportCheckFunc &transport,
-                          const CheckDoneFunc &on_done) {
-        auto map = context->attributes()->attributes();
-        EXPECT_EQ(map["global-key"].string_value(), "global-value");
-        EXPECT_EQ(map["api.name"].string_value(), "test-name");
-        EXPECT_EQ(map["api.operation"].string_value(), "test-method");
-      }));
-
-  ServiceConfig config;
-  auto api_spec = config.add_http_api_spec();
-  auto map1 = api_spec->mutable_attributes()->mutable_attributes();
-  (*map1)["api.name"].set_string_value("test-name");
-  auto pattern = api_spec->add_patterns();
-  auto map2 = pattern->mutable_attributes()->mutable_attributes();
-  (*map2)["api.operation"].set_string_value("test-method");
-  pattern->set_http_method("GET");
-  pattern->set_uri_template("/books/*");
-
-  Controller::PerRouteConfig per_route;
-  ApplyPerRouteConfig(config, &per_route);
-
-  auto handler = controller_->CreateRequestHandler(per_route);
-  handler->Check(&mock_data, &mock_header, nullptr, nullptr);
-}
-
 TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
   ::testing::NiceMock<MockCheckData> mock_data;
   ::testing::NiceMock<MockHeaderUpdate> mock_header;
@@ -426,35 +381,6 @@ TEST_F(RequestHandlerImplTest, TestHandlerCheck) {
   ApplyPerRouteConfig(config, &per_route);
 
   auto handler = controller_->CreateRequestHandler(per_route);
-  handler->Check(&mock_data, &mock_header, nullptr, nullptr);
-}
-
-TEST_F(RequestHandlerImplTest, TestDefaultApiKey) {
-  ::testing::NiceMock<MockCheckData> mock_data;
-  ::testing::NiceMock<MockHeaderUpdate> mock_header;
-  EXPECT_CALL(mock_data, FindQueryParameter(_, _))
-      .WillRepeatedly(
-          Invoke([](const std::string &name, std::string *value) -> bool {
-            if (name == "key") {
-              *value = "test-api-key";
-              return true;
-            }
-            return false;
-          }));
-
-  // Check should be called.
-  EXPECT_CALL(*mock_client_, Check(_, _, _))
-      .WillOnce(Invoke([](CheckContextSharedPtr &context,
-                          const TransportCheckFunc &transport,
-                          const CheckDoneFunc &on_done) {
-        auto map = context->attributes()->attributes();
-        EXPECT_EQ(map[utils::AttributeName::kRequestApiKey].string_value(),
-                  "test-api-key");
-      }));
-
-  // destionation.server is empty, will use default one
-  Controller::PerRouteConfig config;
-  auto handler = controller_->CreateRequestHandler(config);
   handler->Check(&mock_data, &mock_header, nullptr, nullptr);
 }
 
