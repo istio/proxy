@@ -56,8 +56,8 @@ const std::string vMTLS = "mutual_tls";
 const std::string vNone = "none";
 const std::string vDash = "-";
 
-const std::string default_field_separator = ";;";
-const std::string default_value_separator = "==";
+const std::string default_field_separator = ";.;";
+const std::string default_value_separator = "=.=";
 const std::string default_stat_prefix = "istio";
 
 using google::protobuf::util::JsonParseOptions;
