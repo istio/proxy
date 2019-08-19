@@ -117,7 +117,7 @@ google::protobuf::util::Status extractNodeMetadata(
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void populateHTTPRequestInfo(RequestInfo* request_info);
+void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info);
 
 }  // namespace Common
 }  // namespace Wasm

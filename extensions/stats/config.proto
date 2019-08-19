@@ -27,10 +27,13 @@ message PluginConfig {
   // large cache.
   int32 max_peer_cache_size = 2;
 
+  // prefix to add to stats emitted by the plugin.
+  string stat_prefix = 3;  // default: "istio_"
+
   // Stats api squashes dimensions in a single string.
   // The squashed string is parsed at prometheus scrape time to recover
   // dimensions. The following 2 fields set the field and value separators {key:
   // value} -->  key{value_separator}value{field_separator}
-  string field_separator = 3;  // default: ";;"
-  string value_separator = 4;  // default: "=="
+  string field_separator = 4;  // default: ";;"
+  string value_separator = 5;  // default: "=="
 }

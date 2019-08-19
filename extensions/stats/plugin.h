@@ -58,9 +58,13 @@ const std::string vDash = "-";
 
 const std::string default_field_separator = ";;";
 const std::string default_value_separator = "==";
+const std::string default_stat_prefix = "istio";
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
+
+#define CONFIG_DEFAULT(name) \
+  config_.name().empty() ? default_##name : config_.name()
 
 // Useful logs that print local line numbers.
 // TODO remove this when the framework support this logging.
@@ -349,6 +353,7 @@ class PluginRootContext : public RootContext {
 
   void onConfigure(std::unique_ptr<WasmData>) override;
   void report(const ::Wasm::Common::RequestInfo& request_info);
+  bool outbound() const { return outbound_; }
 
  private:
   stats::PluginConfig config_;
@@ -380,8 +385,10 @@ class PluginContext : public Context {
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   void onLog() override {
-    ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
-    rootContext()->report(request_info_);
+    auto rootCtx = rootContext();
+    ::Wasm::Common::populateHTTPRequestInfo(rootCtx->outbound(),
+                                            &request_info_);
+    rootCtx->report(request_info_);
   };
 
   // TODO remove the following 3 functions when streamInfo adds support for

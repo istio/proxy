@@ -28,7 +28,9 @@ using Envoy::Extensions::Common::Wasm::HeaderMapType;
 using Envoy::Extensions::Common::Wasm::StreamType;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestDestinationPort;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestTlsVersion;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseResponseCode;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseTlsVersion;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::
     proxy_getCurrentTimeNanoseconds;
 
@@ -58,7 +60,7 @@ google::protobuf::util::Status extractNodeMetadata(
                              json_parse_options);
 }
 
-void populateHTTPRequestInfo(RequestInfo *request_info) {
+void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info->end_timestamp = proxy_getCurrentTimeNanoseconds();
 
@@ -83,6 +85,18 @@ void populateHTTPRequestInfo(RequestInfo *request_info) {
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
   getRequestDestinationPort(&request_info->destination_port);
+
+  std::string tls_version;
+
+  if (outbound) {
+    getResponseTlsVersion(&tls_version);
+  } else {
+    getRequestTlsVersion(&tls_version);
+  }
+
+  // TODO (mjog) fix when peerCertificatePresented or equivalent is available.
+  // At present tls == mTLS
+  request_info->mTLS = !tls_version.empty();
 }
 
 }  // namespace Common

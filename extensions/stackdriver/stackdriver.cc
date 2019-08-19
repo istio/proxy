@@ -145,7 +145,10 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
-  ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
+  bool outbound =
+      getRootContext()->reporterKind() ==
+      PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND;
+  ::Wasm::Common::populateHTTPRequestInfo(outbound, &request_info_);
 
   // Fill in peer node metadata in request info.
   if (getRootContext()->reporterKind() ==

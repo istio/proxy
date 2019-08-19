@@ -87,12 +87,10 @@ static_resources:
               configuration: "test"
           - name: envoy.wasm
             config:
-              stat_prefix: "istio"
               vm_config:
                 vm: "envoy.wasm.vm.null"
                 code:
                   inline_string: "envoy.wasm.stats"
-              stat_prefix: "istio"
               configuration: |
                 { "debug": "false", max_peer_cache_size: 20, field_separator: ";;" }
           - name: envoy.router

@@ -82,35 +82,35 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   debug_ = config_.debug();
   node_info_cache_.set_max_cache_size(config_.max_peer_cache_size());
 
-  auto field_separator = default_field_separator;
-  if (!config_.field_separator().empty()) {
-    field_separator = config_.field_separator();
-  }
+  auto field_separator = CONFIG_DEFAULT(field_separator);
+  auto value_separator = CONFIG_DEFAULT(value_separator);
+  auto stat_prefix = CONFIG_DEFAULT(stat_prefix);
 
-  auto value_separator = default_value_separator;
-  if (!config_.value_separator().empty()) {
-    value_separator = config_.value_separator();
-  }
+  // prepend "_" to opt out of automatic namespacing
+  // If "_" is not prepended, envoy_ is automatically added by prometheus
+  // scraper"
+  stat_prefix = absl::StrCat("_", stat_prefix, "_");
 
   stats_ = std::vector<StatGen>{
       StatGen(
-          "requests_total", MetricType::Counter,
+          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
           field_separator, value_separator),
       StatGen(
-          "request_duration_seconds", MetricType::Histogram,
+          absl::StrCat(stat_prefix, "request_duration_seconds"),
+          MetricType::Histogram,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.end_timestamp - request_info.start_timestamp;
           },
           field_separator, value_separator),
       StatGen(
-          "request_bytes", MetricType::Histogram,
+          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.request_size;
           },
           field_separator, value_separator),
       StatGen(
-          "response_bytes", MetricType::Histogram,
+          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.response_size;
           },
