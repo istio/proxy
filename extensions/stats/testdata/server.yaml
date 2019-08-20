@@ -1,12 +1,18 @@
 node:
   id: test-server-ratings
   metadata:
-    "istio.io/metadata": {
-      namespace: default,
-      workload_name: ratings,
-      owner: /api/ns/deployment/ratings-deployment,
-      labels: { app: ratings, version: V22 },
-    }
+    EXCHANGE_KEYS: "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME"
+    NAME: ratings-v22-84975bc778-pxz2w
+    NAMESPACE: default
+    WORKLOAD_NAME: ratings
+    OWNER: /api/ns/deployment/ratings-deployment
+    LABELS: { app: ratings, version: V22 }
+    INSTANCE_IPS: "10.52.0.35,fe80::a075:11ff:fe5e:f1cd"
+    istio: sidecar
+    PLATFORM_METADATA:
+      gcp_cluster_name: /redacted/
+      gcp_project: "/redacted/"
+      gcp_cluster_location: "us-east4-b"
 stats_config:
   use_all_default_tags: false
   stats_tags:

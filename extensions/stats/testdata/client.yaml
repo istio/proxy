@@ -1,12 +1,18 @@
 node:
   id: test-client-productpage
   metadata:
-    "istio.io/metadata": {
-      namespace: default,
-      workload_name: productpage,
-      owner: /api/ns/deployment/product-deployment,
-      labels: { app: productpage, version: V11 },
-    }
+    EXCHANGE_KEYS: "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME"
+    NAME: productpage-v11-84975bc778-pxz2w
+    NAMESPACE: default
+    WORKLOAD_NAME: productpage
+    OWNER: /api/ns/deployment/product-deployment
+    LABELS: { app: productpage, version: V11 }
+    INSTANCE_IPS: "10.52.0.34,fe80::a075:11ff:fe5e:f1cd"
+    istio: sidecar
+    PLATFORM_METADATA:
+      gcp_cluster_name: /redacted/
+      gcp_project: "/redacted/"
+      gcp_cluster_location: "us-east4-b"
 stats_config:
   use_all_default_tags: true
   stats_tags:

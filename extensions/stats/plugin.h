@@ -76,6 +76,12 @@ using google::protobuf::util::Status;
 
 #define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
 
+#define LOG(lvl, ...) log ##lvl (absl::StrCat("[", __FILE__, ":", __LINE__, "]::", __FUNCTION__, "() ", __VA_ARGS__))
+
+#define LOGINFO(...) LOG(Info, __VA_ARGS__)
+
+#define LOGWARN(...) LOG(Warn, __VA_ARGS__)
+
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
   FIELD_FUNC(source_workload)                \

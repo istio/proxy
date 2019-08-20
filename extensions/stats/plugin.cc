@@ -42,24 +42,14 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
-    logWarn("Cannot parse plugin configuration JSON string " +
+    LOGWARN("Cannot parse plugin configuration JSON string " ,
             configuration->toString());
     return;
   }
 
-  google::protobuf::Value node_metadata;
-  if (getMetadataValue(MetadataType::Node, ::Wasm::Common::kIstioMetadataKey,
-                       &node_metadata) != Common::Wasm::MetadataResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ",
-                         ::Wasm::Common::kIstioMetadataKey));
-    return;
-  }
-
-  status = ::Wasm::Common::extractNodeMetadata(node_metadata.struct_value(),
-                                               &local_node_info_);
+  status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
   if (status != Status::OK) {
-    logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
-            ": " + status.ToString());
+    LOGWARN("cannot parse local node metadata ");
     return;
   }
   PluginDirection direction;
@@ -161,7 +151,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   std::string peer_id;
   if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
                              &peer_id) != Common::Wasm::MetadataResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
+    LOGWARN("cannot get metadata for: ", peer_metadata_id_key);
     return cache_[""];
   }
 
@@ -174,20 +164,20 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   if (cache_.size() > max_cache_size_) {
     auto it = cache_.begin();
     cache_.erase(cache_.begin(), std::next(it, max_cache_size_ / 4));
-    logInfo(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+    LOGINFO("cleaned cache, new cache_size:", cache_.size());
   }
 
   google::protobuf::Struct metadata;
   if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
       Common::Wasm::MetadataResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
+    LOGWARN("cannot get metadata for: ", peer_metadata_key);
     return cache_[""];
   }
 
   auto status =
       ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
   if (status != Status::OK) {
-    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
+    LOGWARN("cannot parse peer node metadata " , metadata.DebugString() , ": " ,
             status.ToString());
     return cache_[""];
   }
