@@ -19,10 +19,11 @@ RUN sudo apt-get update && \
     clang-8 clang-format-8 clang-tidy-8 lld-8 libc++-8-dev libc++abi-8-dev \
     rsync ninja-build
 
-# ~100M, depends on g++, zlib1g-dev, bash-completions
-RUN curl -Lo /tmp/bazel.deb https://github.com/bazelbuild/bazel/releases/download/0.28.0/bazel_0.28.0-linux-x86_64.deb && \
-    sudo dpkg -i /tmp/bazel.deb && rm /tmp/bazel.deb
-
+# Use Bazelisk launcher for Bazel (automatically downloads required version of Bazel).
+RUN cd /tmp && \
+    wget https://github.com/bazelbuild/bazelisk/releases/download/v1.0/bazelisk-linux-amd64 && \
+    sudo chmod +x bazelisk-linux-amd64 && \
+    sudo mv bazelisk-linux-amd64 /usr/local/bin/bazel
 
 # Instead of "apt-get -y install  golang"
 RUN cd /tmp && \
