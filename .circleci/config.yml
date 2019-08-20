@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
+      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
     environment:
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
@@ -22,10 +22,11 @@ jobs:
           key: linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+            - /home/circleci/.cache/bazelisk
 
   linux_release:
     docker:
-      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
+      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
     environment:
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
@@ -44,13 +45,14 @@ jobs:
           key: linux_release-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+            - /home/circleci/.cache/bazelisk
       - store_artifacts:
           path: /home/circleci/project/artifacts/istio-proxy.deb
           destination: /proxy/istio-proxy.deb
 
   linux_asan:
     docker:
-      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
+      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
     environment:
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
@@ -67,10 +69,11 @@ jobs:
           key: linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+            - /home/circleci/.cache/bazelisk
 
   linux_tsan:
     docker:
-      - image: istio/ci:go1.11-bazel0.28-clang8-cmake3.8.0
+      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
     environment:
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
     resource_class: xlarge
@@ -87,6 +90,7 @@ jobs:
           key: linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /home/circleci/.cache/bazel
+            - /home/circleci/.cache/bazelisk
 
   macos:
     macos:
@@ -94,16 +98,13 @@ jobs:
     environment:
       - BAZEL_STARTUP_ARGS: "--output_base /Users/distiller/.cache/bazel"
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
-      - BAZEL_VERSION: "0.28.0"
       - CC: clang
       - CXX: clang++
     steps:
       - run: sudo sntp -sS time.apple.com
-      - run: brew install cmake coreutils go libtool ninja wget
+      - run: brew tap bazelbuild/tap
+      - run: brew install bazelbuild/tap/bazelisk cmake coreutils go libtool ninja wget
       - checkout
-      - run: wget https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
-      - run: chmod +x bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
-      - run: sudo ./bazel-$BAZEL_VERSION-installer-darwin-x86_64.sh
       - restore_cache:
           keys:
             - macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
@@ -114,6 +115,7 @@ jobs:
           key: macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
           paths:
             - /Users/distiller/.cache/bazel
+            - /Users/distiller/Library/Caches/bazelisk/
 
 workflows:
   version: 2
