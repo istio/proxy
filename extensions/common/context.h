@@ -118,7 +118,7 @@ google::protobuf::util::Status extractNodeMetadata(
 
 // Read from local node metadata and populate node_info.
 google::protobuf::util::Status extractLocalNodeMetadata(
-    wasm::common::NodeInfo *node_info);
+    wasm::common::NodeInfo* node_info);
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.

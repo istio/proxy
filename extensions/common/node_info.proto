@@ -21,17 +21,17 @@ package wasm.common;
 // peer node metadata header This is used to fill metrics and log labels.
 message NodeInfo {
   // Name of the node. e.g. in k8s, name is the pod name.
-  string name = 1 [json_name="NAME"];
+  string name = 1 [json_name = "NAME"];
 
   // Namespace that the node runs in.
-  string namespace = 2 [json_name="NAMESPACE"];
+  string namespace = 2 [json_name = "NAMESPACE"];
 
   // K8s or vm workload attributes.
-  map<string, string> labels = 3 [json_name="LABELS"];
-  string owner = 4 [json_name="OWNER"];
-  string workload_name = 5 [json_name="WORKLOAD_NAME"];
+  map<string, string> labels = 3 [json_name = "LABELS"];
+  string owner = 4 [json_name = "OWNER"];
+  string workload_name = 5 [json_name = "WORKLOAD_NAME"];
 
   // Platform metadata uses prefixed keys
   // GCP uses gcp_* keys
-  map<string, string> platform_metadata = 6 [json_name="PLATFORM_METADATA"];
+  map<string, string> platform_metadata = 6 [json_name = "PLATFORM_METADATA"];
 }

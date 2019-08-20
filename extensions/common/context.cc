@@ -25,9 +25,9 @@
 #include "extensions/common/wasm/null/null_plugin.h"
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
-using Envoy::Extensions::Common::Wasm::StreamType;
-using Envoy::Extensions::Common::Wasm::MetadataType;
 using Envoy::Extensions::Common::Wasm::MetadataResult;
+using Envoy::Extensions::Common::Wasm::MetadataType;
+using Envoy::Extensions::Common::Wasm::StreamType;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getMetadataStruct;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestDestinationPort;
@@ -64,10 +64,10 @@ google::protobuf::util::Status extractNodeMetadata(
 }
 
 google::protobuf::util::Status extractLocalNodeMetadata(
-    wasm::common::NodeInfo *node_info){
+    wasm::common::NodeInfo *node_info) {
   google::protobuf::Struct node;
-  if (getMetadataStruct(MetadataType::Node, "metadata",
-                        &node) != MetadataResult::Ok){
+  if (getMetadataStruct(MetadataType::Node, "metadata", &node) !=
+      MetadataResult::Ok) {
     return google::protobuf::util::Status(
         google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
   }

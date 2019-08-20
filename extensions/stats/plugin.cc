@@ -42,7 +42,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
-    LOGWARN("Cannot parse plugin configuration JSON string " ,
+    LOGWARN("Cannot parse plugin configuration JSON string ",
             configuration->toString());
     return;
   }
@@ -177,7 +177,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   auto status =
       ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
   if (status != Status::OK) {
-    LOGWARN("cannot parse peer node metadata " , metadata.DebugString() , ": " ,
+    LOGWARN("cannot parse peer node metadata ", metadata.DebugString(), ": ",
             status.ToString());
     return cache_[""];
   }

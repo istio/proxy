@@ -56,7 +56,7 @@ MonitoredResource getMonitoredResource(
 
   // Fill in container_name of k8s_container monitored resource.
   (*monitored_resource.mutable_labels())[kContainerNameLabel] =
-        kIstioProxyContainerName;
+      kIstioProxyContainerName;
 
   return monitored_resource;
 }

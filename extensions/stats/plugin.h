@@ -76,7 +76,9 @@ using google::protobuf::util::Status;
 
 #define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
 
-#define LOG(lvl, ...) log ##lvl (absl::StrCat("[", __FILE__, ":", __LINE__, "]::", __FUNCTION__, "() ", __VA_ARGS__))
+#define LOG(lvl, ...)                                                      \
+  log##lvl(absl::StrCat("[", __FILE__, ":", __LINE__, "]::", __FUNCTION__, \
+                        "() ", __VA_ARGS__))
 
 #define LOGINFO(...) LOG(Info, __VA_ARGS__)
 
