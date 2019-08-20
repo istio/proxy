@@ -48,7 +48,7 @@ fi
 
 cd $ROOT
 
-export BAZEL_TEST_ARGS="--test_output=errors"
+export BAZEL_TEST_ARGS="--local_resources=12288,8,1 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors --config=libc++"
 
 echo 'Bazel Tests'
 make test_tsan
