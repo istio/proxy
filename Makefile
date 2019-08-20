@@ -33,7 +33,7 @@ endif
 ifeq "$(origin CXX)" "default"
 CXX := clang++
 endif
-PATH := /usr/lib/llvm-7/bin:$(PATH)
+PATH := /usr/lib/llvm-8/bin:$(PATH)
 
 # Removed 'bazel shutdown' as it could cause CircleCI to hang
 build:

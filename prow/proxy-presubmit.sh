@@ -48,7 +48,7 @@ fi
 
 cd $ROOT
 
-export BAZEL_TEST_ARGS="--test_output=errors"
+export BAZEL_TEST_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors --config=libc++"
 
 echo 'Code Check'
 make check
