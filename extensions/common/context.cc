@@ -26,7 +26,10 @@
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
 using Envoy::Extensions::Common::Wasm::StreamType;
+using Envoy::Extensions::Common::Wasm::MetadataType;
+using Envoy::Extensions::Common::Wasm::MetadataResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getMetadataStruct;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestDestinationPort;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestTlsVersion;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseResponseCode;
@@ -58,6 +61,17 @@ google::protobuf::util::Status extractNodeMetadata(
   json_parse_options.ignore_unknown_fields = true;
   return JsonStringToMessage(metadata_json_struct, node_info,
                              json_parse_options);
+}
+
+google::protobuf::util::Status extractLocalNodeMetadata(
+    wasm::common::NodeInfo *node_info){
+  google::protobuf::Struct node;
+  if (getMetadataStruct(MetadataType::Node, "metadata",
+                        &node) != MetadataResult::Ok){
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
+  }
+  return extractNodeMetadata(node, node_info);
 }
 
 void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
