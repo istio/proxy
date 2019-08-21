@@ -33,6 +33,7 @@ constexpr StringView kMetadataOwnerKey = "owner";
 constexpr StringView kMetadataWorkloadNameKey = "workload_name";
 constexpr StringView kMetadataContainersKey = "ports_to_containers";
 constexpr StringView kPlatformMetadataKey = "platform_metadata";
+constexpr StringView WholeNodeKey = ".";
 
 constexpr StringView kUpstreamMetadataIdKey =
     "envoy.wasm.metadata_exchange.upstream_id";
@@ -115,9 +116,13 @@ google::protobuf::util::Status extractNodeMetadata(
     const google::protobuf::Struct& metadata,
     wasm::common::NodeInfo* node_info);
 
+// Read from local node metadata and populate node_info.
+google::protobuf::util::Status extractLocalNodeMetadata(
+    wasm::common::NodeInfo* node_info);
+
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void populateHTTPRequestInfo(RequestInfo* request_info);
+void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info);
 
 }  // namespace Common
 }  // namespace Wasm

@@ -42,29 +42,23 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
-    logWarn("Cannot parse plugin configuration JSON string " +
+    LOGWARN("Cannot parse plugin configuration JSON string ",
             configuration->toString());
     return;
   }
 
-  google::protobuf::Value node_metadata;
-  if (getMetadataValue(MetadataType::Node, ::Wasm::Common::kIstioMetadataKey,
-                       &node_metadata) != Common::Wasm::MetadataResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ",
-                         ::Wasm::Common::kIstioMetadataKey));
-    return;
-  }
-
-  status = ::Wasm::Common::extractNodeMetadata(node_metadata.struct_value(),
-                                               &local_node_info_);
+  status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
   if (status != Status::OK) {
-    logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
-            ": " + status.ToString());
+    LOGWARN("cannot parse local node metadata ");
     return;
   }
-
-  outbound_ = stats::PluginConfig_Direction_OUTBOUND == config_.direction();
-
+  PluginDirection direction;
+  auto dirn_result = getPluginDirection(&direction);
+  if (WasmResult::Ok == dirn_result) {
+    outbound_ = PluginDirection::Outbound == direction;
+  } else {
+    logWarn(absl::StrCat("Unable to get plugin direction: ", dirn_result));
+  }
   // Local data does not change, so populate it on config load.
   istio_dimensions_.init(outbound_, local_node_info_);
 
@@ -77,6 +71,40 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
   debug_ = config_.debug();
   node_info_cache_.set_max_cache_size(config_.max_peer_cache_size());
+
+  auto field_separator = CONFIG_DEFAULT(field_separator);
+  auto value_separator = CONFIG_DEFAULT(value_separator);
+  auto stat_prefix = CONFIG_DEFAULT(stat_prefix);
+
+  // prepend "_" to opt out of automatic namespacing
+  // If "_" is not prepended, envoy_ is automatically added by prometheus
+  // scraper"
+  stat_prefix = absl::StrCat("_", stat_prefix, "_");
+
+  stats_ = std::vector<StatGen>{
+      StatGen(
+          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
+          field_separator, value_separator),
+      StatGen(
+          absl::StrCat(stat_prefix, "request_duration_seconds"),
+          MetricType::Histogram,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.end_timestamp - request_info.start_timestamp;
+          },
+          field_separator, value_separator),
+      StatGen(
+          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.request_size;
+          },
+          field_separator, value_separator),
+      StatGen(
+          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.response_size;
+          },
+          field_separator, value_separator)};
 }
 
 void PluginRootContext::report(
@@ -122,8 +150,8 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     StringView peer_metadata_id_key, StringView peer_metadata_key) {
   std::string peer_id;
   if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
-                             &peer_id) != Common::Wasm::MetadataResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
+                             &peer_id) != Common::Wasm::WasmResult::Ok) {
+    LOGWARN("cannot get metadata for: ", peer_metadata_id_key);
     return cache_[""];
   }
 
@@ -136,20 +164,20 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   if (cache_.size() > max_cache_size_) {
     auto it = cache_.begin();
     cache_.erase(cache_.begin(), std::next(it, max_cache_size_ / 4));
-    logInfo(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+    LOGINFO("cleaned cache, new cache_size:", cache_.size());
   }
 
   google::protobuf::Struct metadata;
   if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
-      Common::Wasm::MetadataResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
+      Common::Wasm::WasmResult::Ok) {
+    LOGWARN("cannot get metadata for: ", peer_metadata_key);
     return cache_[""];
   }
 
   auto status =
       ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
   if (status != Status::OK) {
-    logWarn("cannot parse peer node metadata " + metadata.DebugString() + ": " +
+    LOGWARN("cannot parse peer node metadata ", metadata.DebugString(), ": ",
             status.ToString());
     return cache_[""];
   }

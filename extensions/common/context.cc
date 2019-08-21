@@ -25,12 +25,20 @@
 #include "extensions/common/wasm/null/null_plugin.h"
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
+using Envoy::Extensions::Common::Wasm::MetadataType;
 using Envoy::Extensions::Common::Wasm::StreamType;
+using Envoy::Extensions::Common::Wasm::WasmResult;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getMetadataStruct;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestDestinationPort;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseResponseCode;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::
-    proxy_getCurrentTimeNanoseconds;
+    getRequestPeerCertificatePresented;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestTlsVersion;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::
+    getResponsePeerCertificatePresented;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseResponseCode;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseTlsVersion;
 
 #endif  // NULL_PLUGIN
 
@@ -58,9 +66,20 @@ google::protobuf::util::Status extractNodeMetadata(
                              json_parse_options);
 }
 
-void populateHTTPRequestInfo(RequestInfo *request_info) {
+google::protobuf::util::Status extractLocalNodeMetadata(
+    wasm::common::NodeInfo *node_info) {
+  google::protobuf::Struct node;
+  if (getMetadataStruct(MetadataType::Node, "metadata", &node) !=
+      WasmResult::Ok) {
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
+  }
+  return extractNodeMetadata(node, node_info);
+}
+
+void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
-  request_info->end_timestamp = proxy_getCurrentTimeNanoseconds();
+  request_info->end_timestamp = getCurrentTimeNanoseconds();
 
   // Fill in request info.
   getResponseResponseCode(&request_info->response_code);
@@ -83,6 +102,19 @@ void populateHTTPRequestInfo(RequestInfo *request_info) {
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
   getRequestDestinationPort(&request_info->destination_port);
+
+  std::string tls_version;
+  bool cert_presented;
+
+  if (outbound) {
+    getResponsePeerCertificatePresented(&cert_presented);
+    getResponseTlsVersion(&tls_version);
+  } else {
+    getRequestPeerCertificatePresented(&cert_presented);
+    getRequestTlsVersion(&tls_version);
+  }
+
+  request_info->mTLS = !tls_version.empty() && cert_presented;
 }
 
 }  // namespace Common
