@@ -69,7 +69,7 @@ void StackdriverRootContext::onConfigure(
   // metadata key.
   google::protobuf::Value node_metadata;
   if (getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey,
-                       &node_metadata) != Common::Wasm::MetadataResult::Ok) {
+                       &node_metadata) != Common::Wasm::WasmResult::Ok) {
     logWarn(absl::StrCat("cannot get metadata for: ", kIstioMetadataKey));
     return;
   }
@@ -85,10 +85,11 @@ void StackdriverRootContext::onConfigure(
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
-  auto registered = getSharedData(kStackdriverExporter);
-  if (!registered->view().empty()) {
+  WasmDataPtr registered;
+  if (WasmResult::Ok == getSharedData(kStackdriverExporter, &registered)) {
     return;
   }
+
   setSharedData(kStackdriverExporter, kExporterRegistered);
 
   opencensus::exporters::stats::StackdriverExporter::Register(
@@ -121,7 +122,7 @@ void StackdriverRootContext::record(const RequestInfo &request_info,
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
-  request_info_.start_timestamp = proxy_getCurrentTimeNanoseconds();
+  request_info_.start_timestamp = getCurrentTimeNanoseconds();
   return FilterHeadersStatus::Continue;
 }
 
@@ -145,7 +146,10 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
-  ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
+  bool outbound =
+      getRootContext()->reporterKind() ==
+      PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND;
+  ::Wasm::Common::populateHTTPRequestInfo(outbound, &request_info_);
 
   // Fill in peer node metadata in request info.
   if (getRootContext()->reporterKind() ==
@@ -153,7 +157,7 @@ void StackdriverContext::onLog() {
     google::protobuf::Struct downstream_metadata;
     if (getMetadataStruct(Common::Wasm::MetadataType::Request,
                           kDownstreamMetadataKey, &downstream_metadata) !=
-        Common::Wasm::MetadataResult::Ok) {
+        Common::Wasm::WasmResult::Ok) {
       logWarn(
           absl::StrCat("cannot get metadata for: ", kDownstreamMetadataKey));
       return;
@@ -169,8 +173,8 @@ void StackdriverContext::onLog() {
              PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
     google::protobuf::Struct upstream_metadata;
     if (getMetadataStruct(Common::Wasm::MetadataType::Request,
-                          kUpstreamMetadataKey, &upstream_metadata) !=
-        Common::Wasm::MetadataResult::Ok) {
+                          kUpstreamMetadataKey,
+                          &upstream_metadata) != Common::Wasm::WasmResult::Ok) {
       logWarn(absl::StrCat("cannot get metadata for: ", kUpstreamMetadataKey));
       return;
     }
