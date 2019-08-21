@@ -54,7 +54,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
   PluginDirection direction;
   auto dirn_result = getPluginDirection(&direction);
-  if (MetadataResult::Ok == dirn_result) {
+  if (WasmResult::Ok == dirn_result) {
     outbound_ = PluginDirection::Outbound == direction;
   } else {
     logWarn(absl::StrCat("Unable to get plugin direction: ", dirn_result));
@@ -150,7 +150,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     StringView peer_metadata_id_key, StringView peer_metadata_key) {
   std::string peer_id;
   if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
-                             &peer_id) != Common::Wasm::MetadataResult::Ok) {
+                             &peer_id) != Common::Wasm::WasmResult::Ok) {
     LOGWARN("cannot get metadata for: ", peer_metadata_id_key);
     return cache_[""];
   }
@@ -169,7 +169,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
 
   google::protobuf::Struct metadata;
   if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
-      Common::Wasm::MetadataResult::Ok) {
+      Common::Wasm::WasmResult::Ok) {
     LOGWARN("cannot get metadata for: ", peer_metadata_key);
     return cache_[""];
   }

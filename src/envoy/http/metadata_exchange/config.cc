@@ -58,7 +58,7 @@ void PluginRootContext::updateMetadataValue() {
   google::protobuf::Value keys_value;
   if (getMetadataValue(Common::Wasm::MetadataType::Node,
                        NodeMetadataExchangeKeys,
-                       &keys_value) != Common::Wasm::MetadataResult::Ok) {
+                       &keys_value) != Common::Wasm::WasmResult::Ok) {
     logWarn(
         absl::StrCat("cannot get metadata key: ", NodeMetadataExchangeKeys));
     return;
@@ -78,7 +78,7 @@ void PluginRootContext::updateMetadataValue() {
   for (auto key : keys) {
     google::protobuf::Value value;
     if (getMetadataValue(Common::Wasm::MetadataType::Node, key, &value) ==
-        Common::Wasm::MetadataResult::Ok) {
+        Common::Wasm::WasmResult::Ok) {
       (*metadata.mutable_fields())[std::string(key)] = value;
     } else {
       logWarn(absl::StrCat("cannot get metadata key: ", key));
@@ -100,7 +100,7 @@ void PluginRootContext::onConfigure(
   // before magic "." to get the whole node.
   google::protobuf::Struct node;
   if (getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey,
-                        &node) == Common::Wasm::MetadataResult::Ok) {
+                        &node) == Common::Wasm::WasmResult::Ok) {
     for (const auto& f : node.fields()) {
       if (f.first == NodeIdKey &&
           f.second.kind_case() == google::protobuf::Value::kStringValue) {

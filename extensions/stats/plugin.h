@@ -402,7 +402,7 @@ class PluginContext : public Context {
   // TODO remove the following 3 functions when streamInfo adds support for
   // response_duration, request_size and response_size.
   FilterHeadersStatus onRequestHeaders() override {
-    request_info_.start_timestamp = proxy_getCurrentTimeNanoseconds();
+    request_info_.start_timestamp = getCurrentTimeNanoseconds();
     return FilterHeadersStatus::Continue;
   };
 
