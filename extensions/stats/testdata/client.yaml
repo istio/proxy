@@ -1,60 +1,67 @@
 node:
   id: test-client-productpage
   metadata:
-    "istio.io/metadata": {
-      namespace: default,
-      workload_name: productpage,
-      owner: /api/ns/deployment/product-deployment,
-      labels: { app: productpage, version: V11 },
-    }
+    EXCHANGE_KEYS: "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME"
+    NAME: productpage-v11-84975bc778-pxz2w
+    NAMESPACE: default
+    WORKLOAD_NAME: productpage
+    OWNER: /api/ns/deployment/product-deployment
+    LABELS: { app: productpage, version: V11 }
+    INSTANCE_IPS: "10.52.0.34,fe80::a075:11ff:fe5e:f1cd"
+    istio: sidecar
+    PLATFORM_METADATA:
+      gcp_cluster_name: /redacted/
+      gcp_project: "/redacted/"
+      gcp_cluster_location: "us-east4-b"
 stats_config:
-  use_all_default_tags: false
+  use_all_default_tags: true
   stats_tags:
   - tag_name: "reporter"
-    regex: "(reporter\\.(.+?)\\.)"
+    regex: "(reporter=\\.=(.+?);\\.;)"
   - tag_name: "source_namespace"
-    regex: "(source_namespace\\.(.+?)\\.)"
+    regex: "(source_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_workload"
-    regex: "(source_workload\\.(.+?)\\.)"
+    regex: "(source_workload=\\.=(.+?);\\.;)"
   - tag_name: "source_workload_namespace"
-    regex: "(source_workload_namespace\\.(.+?)\\.)"
+    regex: "(source_workload_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_principal"
-    regex: "(source_principal\\.(.+?)\\.)"
+    regex: "(source_principal=\\.=(.+?);\\.;)"
   - tag_name: "source_app"
-    regex: "(source_app\\.(.+?)\\.)"
+    regex: "(source_app=\\.=(.+?);\\.;)"
   - tag_name: "source_version"
-    regex: "(source_version\\.(.+?)\\.)"
+    regex: "(source_version=\\.=(.+?);\\.;)"
   - tag_name: "destination_namespace"
-    regex: "(destination_namespace\\.(.+?)\\.)"
+    regex: "(destination_namespace=\\.=(.+?);\\.;)"
   - tag_name: "destination_workload"
-    regex: "(destination_workload\\.(.+?)\\.)"
+    regex: "(destination_workload=\\.=(.+?);\\.;)"
   - tag_name: "destination_workload_namespace"
-    regex: "(destination_workload_namespace\\.(.+?)\\.)"
+    regex: "(destination_workload_namespace=\\.=(.+?);\\.;)"
   - tag_name: "destination_principal"
-    regex: "(destination_principal\\.(.+?)\\.)"
+    regex: "(destination_principal=\\.=(.+?);\\.;)"
   - tag_name: "destination_app"
-    regex: "(destination_app\\.(.+?)\\.)"
+    regex: "(destination_app=\\.=(.+?);\\.;)"
   - tag_name: "destination_version"
-    regex: "(destination_version\\.(.+?)\\.)"
+    regex: "(destination_version=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_host"
-    regex: "(destination_service_host\\.(.+?)\\.)"
+    regex: "(destination_service_host=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_name"
-    regex: "(destination_service_name\\.(.+?)\\.)"
+    regex: "(destination_service_name=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_namespace"
-    regex: "(destination_service_namespace\\.(.+?)\\.)"
+    regex: "(destination_service_namespace=\\.=(.+?);\\.;)"
   - tag_name: "request_protocol"
-    regex: "(request_protocol\\.(.+?)\\.)"
+    regex: "(request_protocol=\\.=(.+?);\\.;)"
   - tag_name: "response_code"
-    regex: "(response_code\\.(.+?)\\.)|_rq(_(\\d{3}))$"
+    regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
   - tag_name: "response_flags"
-    regex: "(response_flags\\.(.+?)\\.)"
+    regex: "(response_flags=\\.=(.+?);\\.;)"
   - tag_name: "connection_security_policy"
-    regex: "(connection_security_policy\\.(.+?)\\.)"
+    regex: "(connection_security_policy=\\.=(.+?);\\.;)"
   - tag_name: "cache"
     regex: "(cache\\.(.+?)\\.)"
 static_resources:
   listeners:
   - name: client
+    traffic_direction: OUTBOUND
     address:
       socket_address:
         address: 0.0.0.0
@@ -91,7 +98,7 @@ static_resources:
                 code:
                   inline_string: "envoy.wasm.stats"
               configuration: |
-                { "direction": "OUTBOUND", "debug": "false", max_peer_cache_size: 20 }
+                { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
           - name: envoy.router
             config: {}
           access_log:

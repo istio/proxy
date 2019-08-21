@@ -37,6 +37,8 @@ using Common::Wasm::Null::Plugin::replaceRequestHeader;
 using Common::Wasm::Null::Plugin::replaceResponseHeader;
 using Common::Wasm::Null::Plugin::setMetadataStringValue;
 
+namespace {
+
 bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
                                     std::string* metadata_bytes) {
   google::protobuf::io::StringOutputStream md(metadata_bytes);
@@ -44,37 +46,61 @@ bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
 
   mcs.SetSerializationDeterministic(true);
   if (!metadata.SerializeToCodedStream(&mcs)) {
-    logWarn(
-        absl::StrCat("unable to serialize Nodemetadata key=", NodeMetadataKey));
+    logWarn("unable to serialize metadata");
     return false;
   }
   return true;
 }
 
-void PluginRootContext::onConfigure(
-    std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {
-  google::protobuf::Value metadata;
-  if (getMetadataValue(Common::Wasm::MetadataType::Node, NodeMetadataKey,
-                       &metadata) != Common::Wasm::MetadataResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ", NodeMetadataKey));
+}  // namespace
+
+void PluginRootContext::updateMetadataValue() {
+  google::protobuf::Value keys_value;
+  if (getMetadataValue(Common::Wasm::MetadataType::Node,
+                       NodeMetadataExchangeKeys,
+                       &keys_value) != Common::Wasm::WasmResult::Ok) {
+    logWarn(
+        absl::StrCat("cannot get metadata key: ", NodeMetadataExchangeKeys));
     return;
   }
 
-  if (metadata.kind_case() == google::protobuf::Value::kStructValue) {
-    std::string metadata_bytes;
-    serializeToStringDeterministic(metadata.struct_value(), &metadata_bytes);
+  if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
+    logWarn(absl::StrCat("metadata key is not a string: ",
+                         NodeMetadataExchangeKeys));
+    return;
+  }
 
-    metadata_value_ =
-        Base64::encode(metadata_bytes.data(), metadata_bytes.size());
+  google::protobuf::Struct metadata;
 
-    // magic "." to get the whole node.
-    google::protobuf::Struct node;
-    if (getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey,
-                          &node) != Common::Wasm::MetadataResult::Ok) {
-      logWarn(absl::StrCat("cannot get metadata for: ", WholeNodeKey));
-      return;
+  // select keys from the metadata using the keys
+  const std::set<absl::string_view> keys =
+      absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
+  for (auto key : keys) {
+    google::protobuf::Value value;
+    if (getMetadataValue(Common::Wasm::MetadataType::Node, key, &value) ==
+        Common::Wasm::WasmResult::Ok) {
+      (*metadata.mutable_fields())[std::string(key)] = value;
+    } else {
+      logWarn(absl::StrCat("cannot get metadata key: ", key));
     }
+  }
 
+  // store serialized form
+  std::string metadata_bytes;
+  serializeToStringDeterministic(metadata, &metadata_bytes);
+  metadata_value_ =
+      Base64::encode(metadata_bytes.data(), metadata_bytes.size());
+}
+
+void PluginRootContext::onConfigure(
+    std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {
+  updateMetadataValue();
+
+  // TODO: this is really expensive since it fetches the entire metadata from
+  // before magic "." to get the whole node.
+  google::protobuf::Struct node;
+  if (getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey,
+                        &node) == Common::Wasm::WasmResult::Ok) {
     for (const auto& f : node.fields()) {
       if (f.first == NodeIdKey &&
           f.second.kind_case() == google::protobuf::Value::kStringValue) {
@@ -82,6 +108,8 @@ void PluginRootContext::onConfigure(
         break;
       }
     }
+  } else {
+    logWarn(absl::StrCat("cannot get metadata key: ", WholeNodeKey));
   }
 
   logDebug(

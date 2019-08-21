@@ -95,7 +95,8 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
     for (int i = 0; i < static_resources.listeners_size(); ++i) {
       named_ports.push_back(static_resources.listeners(i).name());
     }
-    createGeneratedApiTestServer(bootstrap_path, named_ports);
+    createGeneratedApiTestServer(bootstrap_path, named_ports, true, false,
+                                 false);
   }
 
   // Must be called before Envoy is stopped

@@ -38,9 +38,6 @@ TEST(ContextTest, extractNodeMetadata) {
   std::string node_metadata_json = R"###(
 {
    "namespace":"test_namespace",
-   "ports_to_containers":{
-      "80":"test_container"
-   },
    "platform_metadata":{
       "gcp_project":"test_project",
       "gcp_cluster_location":"test_location",
@@ -65,8 +62,6 @@ TEST(ContextTest, extractNodeMetadata) {
   EXPECT_EQ(platform_metadata["gcp_project"], "test_project");
   EXPECT_EQ(platform_metadata["gcp_cluster_name"], "test_cluster");
   EXPECT_EQ(platform_metadata["gcp_cluster_location"], "test_location");
-  EXPECT_EQ(node_info.ports_to_containers().size(), 1);
-  EXPECT_EQ(node_info.ports_to_containers().at("80"), "test_container");
 }
 
 // Test empty node metadata.
@@ -81,7 +76,6 @@ TEST(ContextTest, extractNodeMetadataNoMetadataField) {
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
   EXPECT_EQ(node_info.platform_metadata_size(), 0);
-  EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 
 // Test missing metadata.
@@ -103,7 +97,6 @@ TEST(ContextTest, extractNodeMetadataMissingMetadata) {
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
   EXPECT_EQ(node_info.platform_metadata_size(), 0);
-  EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 
 // Test wrong type of GCP metadata.
@@ -120,7 +113,6 @@ TEST(ContextTest, extractNodeMetadataWrongGCPMetadata) {
   Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_NE(status, Status::OK);
   EXPECT_EQ(node_info.platform_metadata_size(), 0);
-  EXPECT_EQ(node_info.ports_to_containers().size(), 0);
 }
 
 // Test unknown field.
