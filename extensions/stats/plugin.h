@@ -56,13 +56,15 @@ const std::string vMTLS = "mutual_tls";
 const std::string vNone = "none";
 const std::string vDash = "-";
 
-// A "." in the values makes prometheus tag pattern fail. This replaces
-// a "." with a "/" until we support alternate tag and field separators.
-const std::vector<std::pair<const absl::string_view, std::string>>
-    HACK_VALUES_REPLACEMENTS = {{".", "~"}};
+const std::string default_field_separator = ";.;";
+const std::string default_value_separator = "=.=";
+const std::string default_stat_prefix = "istio";
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
+
+#define CONFIG_DEFAULT(name) \
+  config_.name().empty() ? default_##name : config_.name()
 
 // Useful logs that print local line numbers.
 // TODO remove this when the framework support this logging.
@@ -73,6 +75,14 @@ using google::protobuf::util::Status;
   }
 
 #define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
+
+#define LOG(lvl, ...)                                                      \
+  log##lvl(absl::StrCat("[", __FILE__, ":", __LINE__, "]::", __FUNCTION__, \
+                        "() ", __VA_ARGS__))
+
+#define LOGINFO(...) LOG(Info, __VA_ARGS__)
+
+#define LOGWARN(...) LOG(Warn, __VA_ARGS__)
 
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
@@ -100,8 +110,6 @@ struct IstioDimensions {
 #undef DEFINE_FIELD
 
   // utility fields
-  std::vector<std::string> vals;
-  bool mapped = false;
   bool outbound = false;
 
   // Ordered dimension list is used by the metrics API.
@@ -113,10 +121,9 @@ struct IstioDimensions {
 
   // values is used on the datapath, only when new dimensions are found.
   std::vector<std::string> values() {
-#define REPLACE_VALUES(name) \
-  absl::StrReplaceAll(name, HACK_VALUES_REPLACEMENTS),
-    return std::vector<std::string>{STD_ISTIO_DIMENSIONS(REPLACE_VALUES)};
-#undef REPLACE_VALUES
+#define VALUES(name) name,
+    return std::vector<std::string>{STD_ISTIO_DIMENSIONS(VALUES)};
+#undef VALUES
   }
 
   void setFieldsUnknownIfEmpty() {
@@ -315,10 +322,12 @@ class SimpleStat {
 class StatGen {
  public:
   explicit StatGen(std::string name, MetricType metric_type,
-                   ValueExtractorFn value_fn)
+                   ValueExtractorFn value_fn, std::string field_separator,
+                   std::string value_separator)
       : name_(name),
         value_fn_(value_fn),
-        metric_(metric_type, name, IstioDimensions::metricTags()){};
+        metric_(metric_type, name, IstioDimensions::metricTags(),
+                field_separator, value_separator){};
 
   StatGen() = delete;
   inline StringView name() const { return name_; };
@@ -352,6 +361,7 @@ class PluginRootContext : public RootContext {
 
   void onConfigure(std::unique_ptr<WasmData>) override;
   void report(const ::Wasm::Common::RequestInfo& request_info);
+  bool outbound() const { return outbound_; }
 
  private:
   stats::PluginConfig config_;
@@ -374,22 +384,7 @@ class PluginRootContext : public RootContext {
   absl::flat_hash_map<IstioDimensions, std::vector<SimpleStat>> metrics_;
 
   // Peer stats to be generated for a dimensioned metrics set.
-  std::vector<StatGen> stats_ = {
-      StatGen("istio_requests_total", MetricType::Counter,
-              [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; }),
-      StatGen("istio_request_duration_seconds", MetricType::Histogram,
-              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-                return request_info.end_timestamp -
-                       request_info.start_timestamp;
-              }),
-      StatGen("istio_request_bytes", MetricType::Histogram,
-              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-                return request_info.request_size;
-              }),
-      StatGen("istio_response_bytes", MetricType::Histogram,
-              [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-                return request_info.response_size;
-              })};
+  std::vector<StatGen> stats_;
 };
 
 // Per-stream context.
@@ -398,14 +393,16 @@ class PluginContext : public Context {
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   void onLog() override {
-    ::Wasm::Common::populateHTTPRequestInfo(&request_info_);
-    rootContext()->report(request_info_);
+    auto rootCtx = rootContext();
+    ::Wasm::Common::populateHTTPRequestInfo(rootCtx->outbound(),
+                                            &request_info_);
+    rootCtx->report(request_info_);
   };
 
   // TODO remove the following 3 functions when streamInfo adds support for
   // response_duration, request_size and response_size.
   FilterHeadersStatus onRequestHeaders() override {
-    request_info_.start_timestamp = proxy_getCurrentTimeNanoseconds();
+    request_info_.start_timestamp = getCurrentTimeNanoseconds();
     return FilterHeadersStatus::Continue;
   };
 

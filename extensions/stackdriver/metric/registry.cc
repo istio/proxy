@@ -54,15 +54,9 @@ MonitoredResource getMonitoredResource(
   }
 
   // Fill in container_name of k8s_container monitored resource.
-  // If no container listed in NodeInfo, fill in the default container name
-  // "istio-proxy".
-  if (local_node_info.ports_to_containers().empty()) {
-    (*monitored_resource.mutable_labels())[kContainerNameLabel] =
-        kIstioProxyContainerName;
-  } else {
-    (*monitored_resource.mutable_labels())[kContainerNameLabel] =
-        local_node_info.ports_to_containers().begin()->second;
-  }
+  (*monitored_resource.mutable_labels())[kContainerNameLabel] =
+      kIstioProxyContainerName;
+
   return monitored_resource;
 }
 
