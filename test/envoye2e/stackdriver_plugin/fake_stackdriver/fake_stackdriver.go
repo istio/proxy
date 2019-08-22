@@ -78,7 +78,7 @@ func newServer() *FakeStackdriverServer {
 	return &FakeStackdriverServer{}
 }
 
-// NewFakeStackdriver ...
+// NewFakeStackdriver creates a new fake Stackdriver server.
 func NewFakeStackdriver(port uint16) *FakeStackdriverServer {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 	grpcServer := grpc.NewServer()
