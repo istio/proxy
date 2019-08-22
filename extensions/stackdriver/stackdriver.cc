@@ -43,7 +43,6 @@ using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
 using stackdriver::config::v1alpha1::PluginConfig;
 using ::Wasm::Common::kDownstreamMetadataKey;
-using ::Wasm::Common::kIstioMetadataKey;
 using ::Wasm::Common::kUpstreamMetadataKey;
 using ::wasm::common::NodeInfo;
 using ::Wasm::Common::RequestInfo;

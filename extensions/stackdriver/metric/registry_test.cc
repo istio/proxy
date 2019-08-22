@@ -34,7 +34,6 @@ wasm::common::NodeInfo nodeInfo() {
       "test_location";
   node_info.set_namespace_("test_namespace");
   node_info.set_name("test_pod");
-  (*node_info.mutable_ports_to_containers())["111"] = "test_container";
   return node_info;
 }
 
@@ -51,7 +50,7 @@ google::api::MonitoredResource serverMonitoredResource() {
       "test_namespace";
   (*monitored_resource.mutable_labels())[Common::kPodNameLabel] = "test_pod";
   (*monitored_resource.mutable_labels())[Common::kContainerNameLabel] =
-      "test_container";
+      "istio-proxy";
   return monitored_resource;
 }
 
@@ -81,47 +80,6 @@ TEST(RegistryTest, getStackdriverOptionsProjectID) {
 TEST(RegistryTest, getStackdriverOptionsMonitoredResource) {
   auto node_info = nodeInfo();
   auto expected_server_monitored_resource = serverMonitoredResource();
-  auto expected_client_monitored_resource = clientMonitoredResource();
-
-  auto options = getStackdriverOptions(node_info);
-  EXPECT_EQ(options.project_id, "test_project");
-  EXPECT_TRUE(MessageDifferencer::Equals(
-      options.per_metric_monitored_resource.at(Common::kServerRequestCountView),
-      expected_server_monitored_resource));
-  EXPECT_TRUE(MessageDifferencer::Equals(
-      options.per_metric_monitored_resource.at(Common::kServerRequestBytesView),
-      expected_server_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kServerResponseLatenciesView),
-                                 expected_server_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kServerResponseBytesView),
-                                 expected_server_monitored_resource));
-  EXPECT_TRUE(MessageDifferencer::Equals(
-      options.per_metric_monitored_resource.at(Common::kClientRequestCountView),
-      expected_client_monitored_resource));
-  EXPECT_TRUE(MessageDifferencer::Equals(
-      options.per_metric_monitored_resource.at(Common::kClientRequestBytesView),
-      expected_client_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kClientResponseBytesView),
-                                 expected_client_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kClientRoundtripLatenciesView),
-                                 expected_client_monitored_resource));
-}
-
-TEST(RegistryTest, getStackdriverOptionsMonitoredResourceNoContainer) {
-  auto node_info = nodeInfo();
-  node_info.clear_ports_to_containers();
-  auto expected_server_monitored_resource = serverMonitoredResource();
-  (*expected_server_monitored_resource
-        .mutable_labels())[Common::kContainerNameLabel] =
-      Common::kIstioProxyContainerName;
   auto expected_client_monitored_resource = clientMonitoredResource();
 
   auto options = getStackdriverOptions(node_info);
