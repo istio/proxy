@@ -91,6 +91,7 @@ static_resources:
                   cluster: client
                   timeout: 0s
   - name: client-to-proxy
+    traffic_direction: OUTBOUND
     address:
       socket_address:
         address: 127.0.0.1
@@ -161,6 +162,7 @@ static_resources:
                 port_value: {{.Ports.ClientToAppProxyPort}}
   listeners:
   - name: proxy-to-server
+    traffic_direction: INBOUND
     address:
       socket_address:
         address: 127.0.0.1

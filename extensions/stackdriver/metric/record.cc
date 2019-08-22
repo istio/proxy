@@ -24,40 +24,13 @@ constexpr double kNanosecondsPerMillisecond = 1000000.0;
 constexpr char kMutualTLS[] = "MUTUAL_TLS";
 constexpr char kNone[] = "NONE";
 
-void record(
-    const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
-    const ::wasm::common::NodeInfo &local_node_info,
-    const ::wasm::common::NodeInfo &peer_node_info,
-    const ::Wasm::Common::RequestInfo &request_info) {
+void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
+            const ::wasm::common::NodeInfo &peer_node_info,
+            const ::Wasm::Common::RequestInfo &request_info) {
   double latency_ms =
       double(request_info.end_timestamp - request_info.start_timestamp) /
       kNanosecondsPerMillisecond;
-  if (kind == stackdriver::config::v1alpha1::PluginConfig::ReporterKind::
-                  PluginConfig_ReporterKind_INBOUND) {
-    opencensus::stats::Record(
-        {{serverRequestCountMeasure(), 1},
-         {serverRequestBytesMeasure(), request_info.request_size},
-         {serverResponseBytesMeasure(), request_info.response_size},
-         {serverResponseLatenciesMeasure(), latency_ms}},
-        {{requestOperationKey(), request_info.request_operation},
-         {requestProtocolKey(), request_info.request_protocol},
-         {serviceAuthenticationPolicyKey(),
-          request_info.mTLS ? kMutualTLS : kNone},
-         {destinationServiceNameKey(), request_info.destination_service_host},
-         {destinationServiceNamespaceKey(), local_node_info.namespace_()},
-         {destinationPortKey(), std::to_string(request_info.destination_port)},
-         {responseCodeKey(), std::to_string(request_info.response_code)},
-         {sourcePrincipalKey(), request_info.source_principal},
-         {sourceWorkloadNameKey(), peer_node_info.workload_name()},
-         {sourceWorkloadNamespaceKey(), peer_node_info.namespace_()},
-         {sourceOwnerKey(), peer_node_info.owner()},
-         {destinationPrincipalKey(), request_info.destination_principal},
-         {destinationWorkloadNameKey(), local_node_info.workload_name()},
-         {destinationWorkloadNamespaceKey(), local_node_info.namespace_()},
-         {destinationOwnerKey(), local_node_info.owner()}});
-  }
-  if (kind == stackdriver::config::v1alpha1::PluginConfig::ReporterKind::
-                  PluginConfig_ReporterKind_OUTBOUND) {
+  if (is_outbound) {
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},
          {clientRequestBytesMeasure(), request_info.request_size},
@@ -79,7 +52,30 @@ void record(
          {destinationWorkloadNameKey(), peer_node_info.workload_name()},
          {destinationWorkloadNamespaceKey(), peer_node_info.namespace_()},
          {destinationOwnerKey(), peer_node_info.owner()}});
+    return;
   }
+
+  opencensus::stats::Record(
+      {{serverRequestCountMeasure(), 1},
+       {serverRequestBytesMeasure(), request_info.request_size},
+       {serverResponseBytesMeasure(), request_info.response_size},
+       {serverResponseLatenciesMeasure(), latency_ms}},
+      {{requestOperationKey(), request_info.request_operation},
+       {requestProtocolKey(), request_info.request_protocol},
+       {serviceAuthenticationPolicyKey(),
+        request_info.mTLS ? kMutualTLS : kNone},
+       {destinationServiceNameKey(), request_info.destination_service_host},
+       {destinationServiceNamespaceKey(), local_node_info.namespace_()},
+       {destinationPortKey(), std::to_string(request_info.destination_port)},
+       {responseCodeKey(), std::to_string(request_info.response_code)},
+       {sourcePrincipalKey(), request_info.source_principal},
+       {sourceWorkloadNameKey(), peer_node_info.workload_name()},
+       {sourceWorkloadNamespaceKey(), peer_node_info.namespace_()},
+       {sourceOwnerKey(), peer_node_info.owner()},
+       {destinationPrincipalKey(), request_info.destination_principal},
+       {destinationWorkloadNameKey(), local_node_info.workload_name()},
+       {destinationWorkloadNamespaceKey(), local_node_info.namespace_()},
+       {destinationOwnerKey(), local_node_info.owner()}});
 }
 
 }  // namespace Metric

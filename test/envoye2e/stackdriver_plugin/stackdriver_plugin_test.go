@@ -42,7 +42,6 @@ const outboundStackdriverFilter = `- name: envoy.wasm
         inline_string: "envoy.wasm.null.stackdriver"
     configuration: >-
       {
-        "kind": "OUTBOUND",
         "monitoringEndpoint": "localhost:12312",
       }`
 
@@ -61,7 +60,6 @@ const inboundStackdriverFilter = `- name: envoy.wasm
         inline_string: "envoy.wasm.null.stackdriver"
     configuration: >-
       {
-        "kind": "INBOUND",
         "monitoringEndpoint": "localhost:12312",
       }`
 

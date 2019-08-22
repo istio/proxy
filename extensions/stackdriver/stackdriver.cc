@@ -68,6 +68,11 @@ void StackdriverRootContext::onConfigure(
     return;
   }
 
+  auto result = getPluginDirection(&direction_);
+  if (result != WasmResult::Ok) {
+    logWarn(absl::StrCat("Unable to get plugin direction: ", result));
+  }
+
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -84,9 +89,7 @@ void StackdriverRootContext::onConfigure(
   registerViews();
 }
 
-PluginConfig::ReporterKind StackdriverRootContext::reporterKind() {
-  return config_.kind();
-}
+PluginDirection StackdriverRootContext::direction() { return direction_; }
 
 void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
 #ifndef NULL_PLUGIN
@@ -102,8 +105,9 @@ void StackdriverRootContext::onTick() {
 
 void StackdriverRootContext::record(const RequestInfo &request_info,
                                     const NodeInfo &peer_node_info) {
-  ::Extensions::Stackdriver::Metric::record(config_.kind(), local_node_info_,
-                                            peer_node_info, request_info);
+  ::Extensions::Stackdriver::Metric::record(
+      /* is_outbound = */ direction_ == PluginDirection::Outbound,
+      local_node_info_, peer_node_info, request_info);
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
@@ -131,14 +135,11 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
-  bool outbound =
-      getRootContext()->reporterKind() ==
-      PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND;
+  bool outbound = getRootContext()->direction() == PluginDirection::Outbound;
   ::Wasm::Common::populateHTTPRequestInfo(outbound, &request_info_);
 
   // Fill in peer node metadata in request info.
-  if (getRootContext()->reporterKind() ==
-      PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
+  if (!outbound) {
     google::protobuf::Struct downstream_metadata;
     if (getMetadataStruct(Common::Wasm::MetadataType::Request,
                           kDownstreamMetadataKey, &downstream_metadata) !=
@@ -154,8 +155,7 @@ void StackdriverContext::onLog() {
       logWarn("cannot parse downstream peer node metadata " +
               downstream_metadata.DebugString() + ": " + status.ToString());
     }
-  } else if (getRootContext()->reporterKind() ==
-             PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
+  } else {
     google::protobuf::Struct upstream_metadata;
     if (getMetadataStruct(Common::Wasm::MetadataType::Request,
                           kUpstreamMetadataKey,
