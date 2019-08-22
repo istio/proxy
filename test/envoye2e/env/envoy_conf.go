@@ -25,8 +25,9 @@ import (
 const envoyClientConfTemplYAML = `
 node:
   id: test-client
-  metadata:
+  metadata: {
 {{.ClientNodeMetadata | indent 4 }}
+  }
 admin:
   access_log_path: {{.ClientAccessLogPath}}
   address:
@@ -123,8 +124,9 @@ static_resources:
 const envoyServerConfTemplYAML = `
 node: 
   id: test-server
-  metadata:
+  metadata: {
 {{.ServerNodeMetadata | indent 4 }}
+  }
 admin:
   access_log_path: {{.ServerAccessLogPath}}
   address:

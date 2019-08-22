@@ -19,32 +19,32 @@ const ServerRequestCountJSON = `{
 	"metric":{
 	   "type":"istio.io/service/server/request_count",
 	   "labels":{
-		  "destination_owner":"kubernetes://apis/v1/namespaces/server-namespace/pod/server",
+		  "destination_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
 		  "destination_port":"20020",
 		  "destination_principal":"",
 		  "destination_service_name":"localhost:20016",
-		  "destination_service_namespace":"server-namespace",
-		  "destination_workload_name":"server",
-		  "destination_workload_namespace":"server-namespace",
+		  "destination_service_namespace":"default",
+		  "destination_workload_name":"ratings-v1",
+		  "destination_workload_namespace":"default",
 		  "mesh_uid":"",
 		  "request_operation":"GET",
 		  "request_protocol":"http",
 		  "response_code":"200",
 		  "service_authentication_policy":"NONE",
-		  "source_owner":"kubernetes://apis/v1/namespaces/client-namespace/pod/client",
+		  "source_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
 		  "source_principal":"",
-		  "source_workload_name":"client",
-		  "source_workload_namespace":"client-namespace"
+		  "source_workload_name":"productpage-v1",
+		  "source_workload_namespace":"default"
 	   }
 	},
 	"resource":{
 	   "type":"k8s_container",
 	   "labels":{
 		  "cluster_name":"test-cluster",
-		  "container_name":"server-container",
-		  "location":"test-location",
-		  "namespace_name":"server-namespace",
-		  "pod_name":"server-pod",
+		  "container_name":"istio-proxy",
+		  "location":"us-east4-b",
+		  "namespace_name":"default",
+		  "pod_name":"ratings-v1-84975bc778-pxz2w",
 		  "project_id":"test-project"
 	   }
 	},
@@ -62,31 +62,31 @@ const ClientRequestCountJSON = `{
 	"metric":{
 	   "type":"istio.io/service/client/request_count",
 	   "labels":{
-		  "destination_owner":"kubernetes://apis/v1/namespaces/server-namespace/pod/server",
+		  "destination_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
 		  "destination_port":"20019",
 		  "destination_principal":"",
 		  "destination_service_name":"localhost:20016",
-		  "destination_service_namespace":"server-namespace",
-		  "destination_workload_name":"server",
-		  "destination_workload_namespace":"server-namespace",
+		  "destination_service_namespace":"default",
+		  "destination_workload_name":"ratings-v1",
+		  "destination_workload_namespace":"default",
 		  "mesh_uid":"",
 		  "request_operation":"GET",
 		  "request_protocol":"http",
 		  "response_code":"200",
 		  "service_authentication_policy":"NONE",
-		  "source_owner":"kubernetes://apis/v1/namespaces/client-namespace/pod/client",
+		  "source_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
 		  "source_principal":"",
-		  "source_workload_name":"client",
-		  "source_workload_namespace":"client-namespace"
+		  "source_workload_name":"productpage-v1",
+		  "source_workload_namespace":"default"
 	   }
 	},
 	"resource":{
 	   "type":"k8s_pod",
 	   "labels":{
 		  "cluster_name":"test-cluster",
-		  "location":"test-location",
-		  "namespace_name":"client-namespace",
-		  "pod_name":"client-pod",
+		  "location":"us-east4-b",
+		  "namespace_name":"default",
+		  "pod_name":"productpage-v1-84975bc778-pxz2w",
 		  "project_id":"test-project"
 	   }
 	},

@@ -63,22 +63,9 @@ void StackdriverRootContext::onConfigure(
     return;
   }
 
-  // Get node metadata. GetMetadataStruct always returns the whole node metadata
-  // even with a key passed in.
-  // TODO: change to GetMetadataStruct after fixing upstream API to respect node
-  // metadata key.
-  google::protobuf::Value node_metadata;
-  if (getMetadataValue(Common::Wasm::MetadataType::Node, kIstioMetadataKey,
-                       &node_metadata) != Common::Wasm::WasmResult::Ok) {
-    logWarn(absl::StrCat("cannot get metadata for: ", kIstioMetadataKey));
-    return;
-  }
-
-  status = ::Wasm::Common::extractNodeMetadata(node_metadata.struct_value(),
-                                               &local_node_info_);
+  status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
   if (status != Status::OK) {
-    logWarn("cannot parse local node metadata " + node_metadata.DebugString() +
-            ": " + status.ToString());
+    logWarn("cannot extract local node metadata: " + status.ToString());
     return;
   }
 
