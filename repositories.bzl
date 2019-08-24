@@ -103,11 +103,10 @@ cc_library(
 #
 # To update these...
 # 1) find the ISTIO_API SHA you want in git
-# 2) wget https://github.com/istio/api/archive/ISTIO_API_SHA.tar.gz
-# 3) sha256sum ISTIO_API_SHA.tar.gz
+# 2) wget https://github.com/istio/api/archive/$ISTIO_API_SHA.tar.gz && sha256sum $ISTIO_API_SHA.tar.gz
 #
-ISTIO_API = "36b42252042c0e8b229a0d66059af184c3105f9d"
-ISTIO_API_SHA256 = "20dd68b87a3189da6969504921a2c8c521d78d80232d6643471cd5e5b4fe50a5"
+ISTIO_API = "64b0d85137c15ff94d9d38f5171caf049918dbdb"
+ISTIO_API_SHA256 = "012300a54dd2b8d85264ced07ade75468192dd1b99e6b169be449c6474daea78"
 GOGOPROTO_RELEASE = "1.2.1"
 GOGOPROTO_SHA256 = "99e423905ba8921e86817607a5294ffeedb66fdd4a85efce5eb2848f715fdb3a"
 

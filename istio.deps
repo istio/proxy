@@ -1,16 +1,16 @@
 [
 	{
-		"_comment": "",
+		"_comment": "master 2019/08/23",
 		"name": "ISTIO_API",
 		"repoName": "api",
 		"file": "repositories.bzl",
-		"lastStableSHA": "36b42252042c0e8b229a0d66059af184c3105f9d"
+		"lastStableSHA": "64b0d85137c15ff94d9d38f5171caf049918dbdb"
 	},
 	{
 		"_comment": "",
 		"name": "ENVOY_SHA",
 		"repoName": "envoyproxy/envoy-wasm",
 		"file": "WORKSPACE",
-		"lastStableSHA": "915ed46b694a611f966bed501bcc177162c2df34"
+		"lastStableSHA": "057e25a86a4a30510a4c53a6d0b019493a465225"
 	}
 ]
