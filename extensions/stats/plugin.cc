@@ -151,7 +151,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   std::string peer_id;
   if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
                              &peer_id) != Common::Wasm::WasmResult::Ok) {
-    LOGWARN("cannot get metadata for: ", peer_metadata_id_key);
+    LOGDEBUG("cannot get metadata for: ", peer_metadata_id_key);
     return cache_[""];
   }
 
@@ -170,15 +170,15 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   google::protobuf::Struct metadata;
   if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
       Common::Wasm::WasmResult::Ok) {
-    LOGWARN("cannot get metadata for: ", peer_metadata_key);
+    LOGDEBUG("cannot get metadata for: ", peer_metadata_key);
     return cache_[""];
   }
 
   auto status =
       ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
   if (status != Status::OK) {
-    LOGWARN("cannot parse peer node metadata ", metadata.DebugString(), ": ",
-            status.ToString());
+    LOGDEBUG("cannot parse peer node metadata ", metadata.DebugString(), ": ",
+             status.ToString());
     return cache_[""];
   }
 

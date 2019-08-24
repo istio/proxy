@@ -80,8 +80,8 @@ using google::protobuf::util::Status;
   log##lvl(absl::StrCat("[", __FILE__, ":", __LINE__, "]::", __FUNCTION__, \
                         "() ", __VA_ARGS__))
 
+#define LOGDEBUG(...) LOG(Debug, __VA_ARGS__)
 #define LOGINFO(...) LOG(Info, __VA_ARGS__)
-
 #define LOGWARN(...) LOG(Warn, __VA_ARGS__)
 
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
