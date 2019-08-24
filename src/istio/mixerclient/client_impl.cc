@@ -39,7 +39,7 @@ MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
   timer_create_ = options.env.timer_create_func;
   check_cache_ =
       std::unique_ptr<CheckCache>(new CheckCache(options.check_options));
-  report_batch_ = std::unique_ptr<ReportBatch>(
+  report_batch_ = std::shared_ptr<ReportBatch>(
       new ReportBatch(options.report_options, options_.env.report_transport,
                       timer_create_, compressor_));
   quota_cache_ =

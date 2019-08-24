@@ -78,7 +78,8 @@ void ReportBatch::FlushWithLock() {
   // pointer so at least the memory will be freed if this lambda is deleted
   // without being called, but really this should be a unique_ptr that is
   // moved into the transport_ and then moved into the lambda if invoked.
-  transport_(request, &*response, [this, response](const Status& status) {
+  auto shared_this = shared_from_this();
+  transport_(request, &*response, [this, shared_this, response](const Status& status) {
     //
     // Classify and track transport errors
     //
