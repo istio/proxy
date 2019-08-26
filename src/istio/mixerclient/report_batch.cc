@@ -79,40 +79,43 @@ void ReportBatch::FlushWithLock() {
   // without being called, but really this should be a unique_ptr that is
   // moved into the transport_ and then moved into the lambda if invoked.
   auto shared_this = shared_from_this();
-  transport_(request, &*response, [this, shared_this, response](const Status& status) {
-    //
-    // Classify and track transport errors
-    //
+  transport_(
+      request, &*response, [this, shared_this, response](const Status& status) {
+        //
+        // Classify and track transport errors
+        //
 
-    TransportResult result = TransportStatus(status);
+        TransportResult result = TransportStatus(status);
 
-    switch (result) {
-      case TransportResult::SUCCESS:
-        ++total_remote_report_successes_;
-        break;
-      case TransportResult::RESPONSE_TIMEOUT:
-        ++total_remote_report_timeouts_;
-        break;
-      case TransportResult::SEND_ERROR:
-        ++total_remote_report_send_errors_;
-        break;
-      case TransportResult::OTHER:
-        ++total_remote_report_other_errors_;
-        break;
-    }
+        switch (result) {
+          case TransportResult::SUCCESS:
+            ++total_remote_report_successes_;
+            break;
+          case TransportResult::RESPONSE_TIMEOUT:
+            ++total_remote_report_timeouts_;
+            break;
+          case TransportResult::SEND_ERROR:
+            ++total_remote_report_send_errors_;
+            break;
+          case TransportResult::OTHER:
+            ++total_remote_report_other_errors_;
+            break;
+        }
 
-    if (!status.ok()) {
-      if (MIXER_WARN_ENABLED &&
-          0 == REPORT_FAIL_LOG_MESSAGES++ % REPORT_FAIL_LOG_MODULUS) {
-        MIXER_WARN("Mixer Report failed with: %s", status.ToString().c_str());
-      } else {
-        MIXER_DEBUG("Mixer Report failed with: %s", status.ToString().c_str());
-      }
-      if (utils::InvalidDictionaryStatus(status)) {
-        compressor_.ShrinkGlobalDictionary();
-      }
-    }
-  });
+        if (!status.ok()) {
+          if (MIXER_WARN_ENABLED &&
+              0 == REPORT_FAIL_LOG_MESSAGES++ % REPORT_FAIL_LOG_MODULUS) {
+            MIXER_WARN("Mixer Report failed with: %s",
+                       status.ToString().c_str());
+          } else {
+            MIXER_DEBUG("Mixer Report failed with: %s",
+                        status.ToString().c_str());
+          }
+          if (utils::InvalidDictionaryStatus(status)) {
+            compressor_.ShrinkGlobalDictionary();
+          }
+        }
+      });
 
   batch_compressor_->Clear();
 }
