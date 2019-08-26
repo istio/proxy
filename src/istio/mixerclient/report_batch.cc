@@ -42,7 +42,7 @@ ReportBatch::ReportBatch(const ReportOptions& options,
       total_report_calls_(0),
       total_remote_report_calls_(0) {}
 
-ReportBatch::~ReportBatch() { Flush(); }
+ReportBatch::~ReportBatch() {}
 
 void ReportBatch::Report(
     const istio::mixerclient::SharedAttributesSharedPtr& attributes) {

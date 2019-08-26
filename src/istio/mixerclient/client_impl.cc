@@ -50,7 +50,12 @@ MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
   }
 }
 
-MixerClientImpl::~MixerClientImpl() {}
+MixerClientImpl::~MixerClientImpl() {
+  if (report_batch_) {
+    report_batch_->Flush();
+    report_batch_.reset();
+  }
+}
 
 uint32_t MixerClientImpl::RetryDelay(uint32_t retry_attempt) {
   const uint32_t max_retry_ms =
