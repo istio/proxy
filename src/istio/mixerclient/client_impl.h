@@ -65,7 +65,7 @@ class MixerClientImpl : public MixerClient {
   // Cache for Check call.
   std::unique_ptr<CheckCache> check_cache_;
   // Report batch.
-  std::unique_ptr<ReportBatch> report_batch_;
+  std::shared_ptr<ReportBatch> report_batch_;
   // Cache for Quota call.
   std::unique_ptr<QuotaCache> quota_cache_;
 
