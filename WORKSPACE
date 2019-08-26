@@ -50,7 +50,7 @@ http_archive(
     url = "https://github.com/envoyproxy/envoy-wasm/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
-# TODO(silentdai) Use bazel args to select envoy between local or http
+# TODO(lambdai) Use bazel args to select envoy between local or http
 # Uncomment below and comment above http_archive to depends on local envoy.
 #local_repository(
 #     name = "envoy",
