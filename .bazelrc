@@ -83,8 +83,15 @@ build --test_env=HEAPCHECK=normal --test_env=PPROF_PATH
 # Istio specific Bazel build/test options.
 # ========================================
 
-# enable path normalization by default. See https://github.com/envoyproxy/envoy/pull/6519
+# Enable path normalization by default.
+# See: https://github.com/envoyproxy/envoy/pull/6519
 build --define path_normalization_by_default=true
+
+# Build with embedded V8-based WebAssembly runtime.
+build --define wasm=v8
+
+# Build Proxy-WASM plugins as native extensions.
+build --copt -DNULL_PLUGIN
 
 # Release builds without debug symbols.
 build:release -c opt
@@ -97,6 +104,3 @@ build:release-symbol -c opt
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
-
-# Compile all extension plugin as native
-build --copt -DNULL_PLUGIN
