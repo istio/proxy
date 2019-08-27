@@ -42,14 +42,14 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
-    LOGWARN("Cannot parse plugin configuration JSON string ",
-            configuration->toString());
+    LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
+                          configuration->toString()));
     return;
   }
 
   status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
   if (status != Status::OK) {
-    LOGWARN("cannot parse local node metadata ");
+    LOG_WARN("cannot parse local node metadata ");
     return;
   }
   PluginDirection direction;
@@ -57,7 +57,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   if (WasmResult::Ok == dirn_result) {
     outbound_ = PluginDirection::Outbound == direction;
   } else {
-    logWarn(absl::StrCat("Unable to get plugin direction: ", dirn_result));
+    LOG_WARN(absl::StrCat("Unable to get plugin direction: ", dirn_result));
   }
   // Local data does not change, so populate it on config load.
   istio_dimensions_.init(outbound_, local_node_info_);
@@ -120,8 +120,9 @@ void PluginRootContext::report(
   if (stats_it != metrics_.end()) {
     for (auto& stat : stats_it->second) {
       stat.record(request_info);
-      CTXDEBUG("metricKey cache hit ", istio_dimensions_.debug_key(),
-               ", stat=", stat.metric_id_, stats_it->first.to_string());
+      LOG_DEBUG(absl::StrCat(
+          "metricKey cache hit ", istio_dimensions_.debug_key(),
+          ", stat=", stat.metric_id_, stats_it->first.to_string()));
     }
     cache_hits_accumulator_++;
     if (cache_hits_accumulator_ == 100) {
@@ -137,8 +138,9 @@ void PluginRootContext::report(
   std::vector<SimpleStat> stats;
   for (auto& statgen : stats_) {
     auto stat = statgen.resolve(values);
-    CTXDEBUG("metricKey cache miss ", statgen.name(), " ",
-             istio_dimensions_.debug_key(), ", stat=", stat.metric_id_);
+    LOG_DEBUG(absl::StrCat("metricKey cache miss ", statgen.name(), " ",
+                           istio_dimensions_.debug_key(),
+                           ", stat=", stat.metric_id_));
     stat.record(request_info);
     stats.push_back(stat);
   }
@@ -152,7 +154,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   std::string peer_id;
   if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
                              &peer_id) != Common::Wasm::WasmResult::Ok) {
-    LOGDEBUG("cannot get metadata for: ", peer_metadata_id_key);
+    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return cache_[""];
   }
 
@@ -165,21 +167,21 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   if (cache_.size() > max_cache_size_) {
     auto it = cache_.begin();
     cache_.erase(cache_.begin(), std::next(it, max_cache_size_ / 4));
-    LOGINFO("cleaned cache, new cache_size:", cache_.size());
+    LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
 
   google::protobuf::Struct metadata;
   if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
       Common::Wasm::WasmResult::Ok) {
-    LOGDEBUG("cannot get metadata for: ", peer_metadata_key);
+    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return cache_[""];
   }
 
   auto status =
       ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
   if (status != Status::OK) {
-    LOGDEBUG("cannot parse peer node metadata ", metadata.DebugString(), ": ",
-             status.ToString());
+    LOG_DEBUG(absl::StrCat("cannot parse peer node metadata ",
+                           metadata.DebugString(), ": ", status.ToString()));
     return cache_[""];
   }
 
