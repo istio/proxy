@@ -16,6 +16,7 @@ startup --host_jvm_args=-Xmx2g
 build --workspace_status_command=tools/bazel_get_workspace_status
 build --experimental_remap_main_repo
 build --experimental_local_memory_estimate
+build --experimental_strict_action_env=true
 build --host_force_python=PY2
 build --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
 build --action_env=BAZEL_LINKOPTS=-lm:-static-libgcc
@@ -129,7 +130,7 @@ build:remote-gcc --config=remote
 build:remote-gcc --config=rbe-toolchain-gcc
 
 # Docker sandbox
-build:docker-sandbox --experimental_docker_image=gcr.io/istio-testing/prowbazel:0.5.9
+build:docker-sandbox --experimental_docker_image=gcr.io/istio-testing/prowbazel:0.5.10
 build:docker-sandbox --spawn_strategy=docker
 build:docker-sandbox --strategy=Javac=docker
 build:docker-sandbox --strategy=Closure=docker
