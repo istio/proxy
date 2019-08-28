@@ -66,24 +66,6 @@ using google::protobuf::util::Status;
 #define CONFIG_DEFAULT(name) \
   config_.name().empty() ? default_##name : config_.name()
 
-// Useful logs that print local line numbers.
-// TODO remove this when the framework support this logging.
-#define DBG(dbgsym, ...)                                                    \
-  if ((dbgsym)) {                                                           \
-    logInfo(absl::StrCat(__FILE__, ":", __LINE__, ":", __FUNCTION__, "() ", \
-                         __VA_ARGS__));                                     \
-  }
-
-#define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
-
-#define LOG(lvl, ...)                                                      \
-  log##lvl(absl::StrCat("[", __FILE__, ":", __LINE__, "]::", __FUNCTION__, \
-                        "() ", __VA_ARGS__))
-
-#define LOGDEBUG(...) LOG(Debug, __VA_ARGS__)
-#define LOGINFO(...) LOG(Info, __VA_ARGS__)
-#define LOGWARN(...) LOG(Warn, __VA_ARGS__)
-
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
   FIELD_FUNC(source_workload)                \
