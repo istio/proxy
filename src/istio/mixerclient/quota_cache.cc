@@ -169,9 +169,9 @@ void QuotaCache::CheckCache(const Attributes& request, bool check_use_cache,
            const CheckResponse::QuotaResult* result) -> bool {
       // nullptr means connection error, for quota, it is fail open for
       // connection error.
-      // TODO: determine if fail open for connection error is really
-      // appropriate.
-      return result == nullptr || result->granted_amount() > 0;
+      return result == nullptr ||
+             result->status().code() == Code::UNAVAILABLE ||
+             result->granted_amount() > 0;
     };
     return;
   }

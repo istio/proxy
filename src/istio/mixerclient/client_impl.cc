@@ -287,28 +287,7 @@ void MixerClientImpl::RemoteCheck(CheckContextSharedPtr context,
         } else if (!context->policyStatus().ok()) {
           context->setFinalStatus(context->policyStatus());
         } else {
-          // if the quota backend is unavailable and we want to fail open in
-          // network failure cases then just say OK. NOTE: this does not include
-          // INTERNAL errors as fail-open worthy. The mixer handler code for
-          // redisquota can return UNAVAILABLE, INTERNAL, or OK.
-
-          // we need to check quota statuses from the response individually, as
-          // context->quotaStatus() overrides the individual responses based on
-          // other factors. For all unavailable, the code would be 8 (resource
-          // exhausted). because we want to tease out a special case, we must
-          // look at the responses directly.
-          bool all_unavailable = context->response()->quotas().size() > 0;
-          for (auto &pair : context->response()->quotas()) {
-            auto quota = pair.second;
-            all_unavailable =
-                all_unavailable && (quota.status().code() == Code::UNAVAILABLE);
-          }
-
-          if (all_unavailable && context->networkFailOpen()) {
-            context->setFinalStatus(Status::OK);
-          } else {
-            context->setFinalStatus(context->quotaStatus());
-          }
+          context->setFinalStatus(context->quotaStatus());
         }
 
         if (on_done) {

@@ -59,15 +59,11 @@ class MixerClientImplTest : public ::testing::Test {
 
  protected:
   void CreateClient(bool check_cache, bool quota_cache) {
-    CreateClient(check_cache, quota_cache, true);
-  }
-
-  void CreateClient(bool check_cache, bool quota_cache, bool fail_open) {
     MixerClientOptions options(CheckOptions(check_cache ? 1 : 0 /*entries */),
                                ReportOptions(1, 1000),
                                QuotaOptions(quota_cache ? 1 : 0 /* entries */,
                                             600000 /* expiration_ms */));
-    options.check_options.network_fail_open = fail_open;
+    options.check_options.network_fail_open = false;
     options.env.check_transport = mock_check_transport_.GetFunc();
     client_ = CreateMixerClient(options);
   }
@@ -133,11 +129,8 @@ class MixerClientImplTest : public ::testing::Test {
   }
 
   CheckContextSharedPtr CreateContext(int quota_request) {
-    return CreateContext(quota_request, false /* fail_open */);
-  }
-
-  CheckContextSharedPtr CreateContext(int quota_request, bool fail_open) {
     uint32_t retries{0};
+    bool fail_open{false};
     istio::mixerclient::SharedAttributesSharedPtr attributes{
         new SharedAttributes()};
     istio::mixerclient::CheckContextSharedPtr context{
@@ -549,10 +542,7 @@ TEST_F(MixerClientImplTest, TestFailedCheckAndQuota) {
   EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
-TEST_F(MixerClientImplTest, TestUnavailableQuotaBackendFailClosed) {
-  CreateClient(true /* check_cache */, true /* quota_cache */,
-               false /* fail_open */);
-
+TEST_F(MixerClientImplTest, TestUnavailableQuotaBackend) {
   EXPECT_CALL(mock_check_transport_, Check(_, _, _))
       .WillOnce(Invoke([](const CheckRequest& request, CheckResponse* response,
                           DoneFunc on_done) {
@@ -566,31 +556,6 @@ TEST_F(MixerClientImplTest, TestUnavailableQuotaBackendFailClosed) {
 
   {
     CheckContextSharedPtr context = CreateContext(1);
-    Status status;
-    client_->Check(
-        context, empty_transport_,
-        [&status](const CheckResponseInfo& info) { status = info.status(); });
-    EXPECT_ERROR_CODE(Code::RESOURCE_EXHAUSTED, status);
-  }
-}
-
-TEST_F(MixerClientImplTest, TestUnavailableQuotaBackendFailOpen) {
-  CreateClient(true /* check_cache */, true /* quota_cache */,
-               true /* fail_open */);
-
-  EXPECT_CALL(mock_check_transport_, Check(_, _, _))
-      .WillOnce(Invoke([](const CheckRequest& request, CheckResponse* response,
-                          DoneFunc on_done) {
-        response->mutable_precondition()->set_valid_use_count(100);
-        CheckResponse::QuotaResult quota_result;
-        quota_result.mutable_status()->set_code(Code::UNAVAILABLE);
-        // explicitly do not set granted amounts.
-        (*response->mutable_quotas())[kRequestCount] = quota_result;
-        on_done(Status::OK);
-      }));
-
-  {
-    CheckContextSharedPtr context = CreateContext(1, true /* fail_open */);
     Status status;
     client_->Check(
         context, empty_transport_,

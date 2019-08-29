@@ -130,6 +130,27 @@ TEST_F(QuotaCacheTest, TestNotUseCache) {
   EXPECT_ERROR_CODE(Code::RESOURCE_EXHAUSTED, result.status());
 }
 
+TEST_F(QuotaCacheTest, TestUnavailable) {
+  QuotaCache::CheckResult result;
+  cache_->Check(request_, quotas_, false, &result);
+
+  CheckRequest request;
+  EXPECT_TRUE(result.BuildRequest(&request));
+  EXPECT_FALSE(result.IsCacheHit());
+
+  EXPECT_EQ(request.quotas().size(), 1);
+  EXPECT_EQ(request.quotas().begin()->first, kQuotaName);
+  EXPECT_EQ(request.quotas().begin()->second.amount(), 1);
+  EXPECT_EQ(request.quotas().begin()->second.best_effort(), false);
+
+  CheckResponse response;
+  CheckResponse::QuotaResult quota_result;
+  quota_result.mutable_status()->set_code(Code::UNAVAILABLE);
+  (*response.mutable_quotas())[kQuotaName] = quota_result;
+  result.SetResponse(Status::OK, request_, response);
+  EXPECT_ERROR_CODE(Code::OK, result.status());
+}
+
 TEST_F(QuotaCacheTest, TestUseCache) {
   QuotaCache::CheckResult result;
   cache_->Check(request_, quotas_, true, &result);
