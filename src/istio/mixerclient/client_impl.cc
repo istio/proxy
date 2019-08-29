@@ -13,9 +13,12 @@
  * limitations under the License.
  */
 #include "src/istio/mixerclient/client_impl.h"
+
 #include <google/protobuf/arena.h>
+
 #include <algorithm>
 #include <cmath>
+
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/protobuf.h"
 #include "src/istio/mixerclient/status_util.h"
