@@ -13,9 +13,12 @@
  * limitations under the License.
  */
 #include "src/istio/mixerclient/client_impl.h"
+
 #include <google/protobuf/arena.h>
+
 #include <algorithm>
 #include <cmath>
+
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/protobuf.h"
 #include "src/istio/mixerclient/status_util.h"
@@ -284,19 +287,21 @@ void MixerClientImpl::RemoteCheck(CheckContextSharedPtr context,
         } else if (!context->policyStatus().ok()) {
           context->setFinalStatus(context->policyStatus());
         } else {
-          // if the quota backend is unavailable and we want to fail open in network failure cases
-          // then just say OK.
-          // NOTE: this does not include INTERNAL errors as fail-open worthy. The
-          // mixer handler code for redisquota can return UNAVAILABLE, INTERNAL, or OK.
+          // if the quota backend is unavailable and we want to fail open in
+          // network failure cases then just say OK. NOTE: this does not include
+          // INTERNAL errors as fail-open worthy. The mixer handler code for
+          // redisquota can return UNAVAILABLE, INTERNAL, or OK.
 
-          // we need to check quota statuses from the response individually, as context->quotaStatus() overrides
-          // the individual responses based on other factors. For all unavailable, the code would be 8 (resource exhausted).
-          // because we want to tease out a special case, we must look at the responses directly.
+          // we need to check quota statuses from the response individually, as
+          // context->quotaStatus() overrides the individual responses based on
+          // other factors. For all unavailable, the code would be 8 (resource
+          // exhausted). because we want to tease out a special case, we must
+          // look at the responses directly.
           bool all_unavailable = context->response()->quotas().size() > 0;
-          for (auto & pair : context->response()->quotas())
-          {
+          for (auto &pair : context->response()->quotas()) {
             auto quota = pair.second;
-            all_unavailable = all_unavailable && (quota.status().code() == Code::UNAVAILABLE);
+            all_unavailable =
+                all_unavailable && (quota.status().code() == Code::UNAVAILABLE);
           }
 
           if (all_unavailable && context->networkFailOpen()) {

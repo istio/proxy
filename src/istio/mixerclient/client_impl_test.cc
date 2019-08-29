@@ -549,9 +549,9 @@ TEST_F(MixerClientImplTest, TestFailedCheckAndQuota) {
   EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
-
 TEST_F(MixerClientImplTest, TestUnavailableQuotaBackendFailClosed) {
-  CreateClient(true /* check_cache */, true /* quota_cache */, false /* fail_open */);
+  CreateClient(true /* check_cache */, true /* quota_cache */,
+               false /* fail_open */);
 
   EXPECT_CALL(mock_check_transport_, Check(_, _, _))
       .WillOnce(Invoke([](const CheckRequest& request, CheckResponse* response,
@@ -575,7 +575,8 @@ TEST_F(MixerClientImplTest, TestUnavailableQuotaBackendFailClosed) {
 }
 
 TEST_F(MixerClientImplTest, TestUnavailableQuotaBackendFailOpen) {
-  CreateClient(true /* check_cache */, true /* quota_cache */, true /* fail_open */);
+  CreateClient(true /* check_cache */, true /* quota_cache */,
+               true /* fail_open */);
 
   EXPECT_CALL(mock_check_transport_, Check(_, _, _))
       .WillOnce(Invoke([](const CheckRequest& request, CheckResponse* response,
