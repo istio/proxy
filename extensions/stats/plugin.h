@@ -78,7 +78,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_principal)          \
   FIELD_FUNC(destination_app)                \
   FIELD_FUNC(destination_version)            \
-  FIELD_FUNC(destination_service_host)       \
+  FIELD_FUNC(destination_service)            \
   FIELD_FUNC(destination_service_name)       \
   FIELD_FUNC(destination_service_namespace)  \
   FIELD_FUNC(request_protocol)               \
@@ -174,7 +174,7 @@ struct IstioDimensions {
   void map_request(const ::Wasm::Common::RequestInfo& request) {
     source_principal = request.source_principal;
     destination_principal = request.destination_principal;
-    destination_service_host = request.destination_service_host;
+    destination_service = request.destination_service_host;
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);
