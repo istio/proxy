@@ -11,7 +11,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
+            - linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
       # To build docker containers or run tests in a docker
       - setup_remote_docker
       - run: rm ~/.gitconfig
@@ -19,7 +19,7 @@ jobs:
       - run: make build
       - run: make test
       - save_cache:
-          key: linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
+          key: linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
           paths:
             - /home/circleci/.cache/bazel
             - /home/circleci/.cache/bazelisk
@@ -34,7 +34,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - linux_release-bazel-cache-{{ checksum "WORKSPACE" }}
+            - linux_release-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
       # To build docker containers or run tests in a docker
       - setup_remote_docker
       - run: rm ~/.gitconfig
@@ -42,7 +42,7 @@ jobs:
       - run: make artifacts ARTIFACTS_DIR="/home/circleci/project/artifacts"
       - run: make test_release
       - save_cache:
-          key: linux_release-bazel-cache-{{ checksum "WORKSPACE" }}
+          key: linux_release-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
           paths:
             - /home/circleci/.cache/bazel
             - /home/circleci/.cache/bazelisk
@@ -60,13 +60,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}
+            - linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
       # To build docker containers or run tests in a docker
       - setup_remote_docker
       - run: rm ~/.gitconfig
       - run: make test_asan
       - save_cache:
-          key: linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}
+          key: linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
           paths:
             - /home/circleci/.cache/bazel
             - /home/circleci/.cache/bazelisk
@@ -81,13 +81,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}
+            - linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
       # To build docker containers or run tests in a docker
       - setup_remote_docker
       - run: rm ~/.gitconfig
       - run: make test_tsan
       - save_cache:
-          key: linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}
+          key: linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
           paths:
             - /home/circleci/.cache/bazel
             - /home/circleci/.cache/bazelisk
@@ -107,12 +107,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
+            - macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
       - run: rm ~/.gitconfig
       - run: make build_envoy
       - run: make test
       - save_cache:
-          key: macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}
+          key: macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
           paths:
             - /Users/distiller/.cache/bazel
             - /Users/distiller/Library/Caches/bazelisk/
