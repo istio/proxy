@@ -48,22 +48,15 @@ Filter::Filter(Control& control)
 }
 
 void Filter::ReadPerRouteConfig(
-    const Router::RouteEntry* entry,
+    const PerRouteServiceConfig* route_cfg,
     ::istio::control::http::Controller::PerRouteConfig* config) {
-  if (entry == nullptr) {
+  if (!route_cfg) {
     return;
   }
-
-  // Check v2 per-route config.
-  auto route_cfg = entry->perFilterConfigTyped<PerRouteServiceConfig>("mixer");
-  if (route_cfg) {
-    if (!control_.controller()->LookupServiceConfig(route_cfg->hash)) {
-      control_.controller()->AddServiceConfig(route_cfg->hash,
-                                              route_cfg->config);
-    }
-    config->service_config_id = route_cfg->hash;
-    return;
+  if (!control_.controller()->LookupServiceConfig(route_cfg->hash)) {
+    control_.controller()->AddServiceConfig(route_cfg->hash, route_cfg->config);
   }
+  config->service_config_id = route_cfg->hash;
 }
 
 FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
@@ -73,7 +66,8 @@ FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   ::istio::control::http::Controller::PerRouteConfig config;
   auto route = decoder_callbacks_->route();
   if (route) {
-    ReadPerRouteConfig(route->routeEntry(), &config);
+    ReadPerRouteConfig(
+        route->perFilterConfigTyped<PerRouteServiceConfig>("mixer"), &config);
   }
   handler_ = control_.controller()->CreateRequestHandler(config);
 
@@ -233,7 +227,10 @@ void Filter::log(const HeaderMap* request_headers,
 
     // Here Request is rejected by other filters, Mixer filter is not called.
     ::istio::control::http::Controller::PerRouteConfig config;
-    ReadPerRouteConfig(stream_info.routeEntry(), &config);
+    auto route_entry = stream_info.routeEntry();
+    ReadPerRouteConfig(
+        route_entry->perFilterConfigTyped<PerRouteServiceConfig>("mixer"),
+        &config);
     handler_ = control_.controller()->CreateRequestHandler(config);
   }
 
