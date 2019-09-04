@@ -109,7 +109,7 @@ void StackdriverRootContext::record(const RequestInfo &request_info,
 }
 
 bool StackdriverRootContext::isOutbound() {
-  return outbound = getRootContext()->direction() == PluginDirection::Outbound;
+  return direction_ == PluginDirection::Outbound;
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
@@ -137,10 +137,26 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
-  ::Wasm::Common::populateHTTPRequestInfo(outbound, &request_info_);
+  bool isOutbound = getRootContext()->isOutbound();
+  ::Wasm::Common::populateHTTPRequestInfo(isOutbound, &request_info_);
 
   // Fill in peer node metadata in request info.
-  if (!getRootContext()->isOutbound()) {
+  if (isOutbound) {
+    google::protobuf::Struct upstream_metadata;
+    if (getMetadataStruct(Common::Wasm::MetadataType::Request,
+                          kUpstreamMetadataKey,
+                          &upstream_metadata) != Common::Wasm::WasmResult::Ok) {
+      logWarn(absl::StrCat("cannot get metadata for: ", kUpstreamMetadataKey));
+      return;
+    }
+
+    auto status = ::Wasm::Common::extractNodeMetadata(upstream_metadata,
+                                                      &peer_node_info_);
+    if (status != Status::OK) {
+      logWarn("cannot parse upstream peer node metadata " +
+              upstream_metadata.DebugString() + ": " + status.ToString());
+    }
+  } else {
     google::protobuf::Struct downstream_metadata;
     if (getMetadataStruct(Common::Wasm::MetadataType::Request,
                           kDownstreamMetadataKey, &downstream_metadata) !=
@@ -155,21 +171,6 @@ void StackdriverContext::onLog() {
     if (status != Status::OK) {
       logWarn("cannot parse downstream peer node metadata " +
               downstream_metadata.DebugString() + ": " + status.ToString());
-    }
-  } else {
-    google::protobuf::Struct upstream_metadata;
-    if (getMetadataStruct(Common::Wasm::MetadataType::Request,
-                          kUpstreamMetadataKey,
-                          &upstream_metadata) != Common::Wasm::WasmResult::Ok) {
-      logWarn(absl::StrCat("cannot get metadata for: ", kUpstreamMetadataKey));
-      return;
-    }
-
-    auto status = ::Wasm::Common::extractNodeMetadata(upstream_metadata,
-                                                      &peer_node_info_);
-    if (status != Status::OK) {
-      logWarn("cannot parse upstream peer node metadata " +
-              upstream_metadata.DebugString() + ": " + status.ToString());
     }
   }
 
