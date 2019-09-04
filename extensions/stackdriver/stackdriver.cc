@@ -89,8 +89,6 @@ void StackdriverRootContext::onConfigure(
   registerViews();
 }
 
-PluginDirection StackdriverRootContext::direction() { return direction_; }
-
 void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
 #ifndef NULL_PLUGIN
 // TODO: Start a timer to trigger exporting
@@ -108,6 +106,10 @@ void StackdriverRootContext::record(const RequestInfo &request_info,
   ::Extensions::Stackdriver::Metric::record(
       /* is_outbound = */ direction_ == PluginDirection::Outbound,
       local_node_info_, peer_node_info, request_info);
+}
+
+bool StackdriverRootContext::isOutbound() {
+  return outbound = getRootContext()->direction() == PluginDirection::Outbound;
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
@@ -135,11 +137,10 @@ StackdriverRootContext *StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
-  bool outbound = getRootContext()->direction() == PluginDirection::Outbound;
   ::Wasm::Common::populateHTTPRequestInfo(outbound, &request_info_);
 
   // Fill in peer node metadata in request info.
-  if (!outbound) {
+  if (!getRootContext()->isOutbound()) {
     google::protobuf::Struct downstream_metadata;
     if (getMetadataStruct(Common::Wasm::MetadataType::Request,
                           kDownstreamMetadataKey, &downstream_metadata) !=

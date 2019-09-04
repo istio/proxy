@@ -59,7 +59,7 @@ class StackdriverRootContext : public RootContext {
   void onTick() override;
 
   // Get direction of traffic relative to this proxy.
-  PluginDirection direction();
+  bool isOutbound();
 
   // Records telemetry based on the given request info.
   void record(const ::Wasm::Common::RequestInfo& request_info,

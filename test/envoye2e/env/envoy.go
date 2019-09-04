@@ -37,7 +37,7 @@ func (s *TestSetup) NewClientEnvoy() (*Envoy, error) {
 	if s.ClientEnvoyTemplate != "" {
 		confTmpl = s.ClientEnvoyTemplate
 	}
-	baseID := strconv.Itoa(int(s.testName) * 2)
+	baseID := strconv.Itoa(int(s.testName)*2 + 1)
 
 	return newEnvoy(s.ports.ClientAdminPort, confTmpl, baseID, s)
 }
@@ -48,7 +48,7 @@ func (s *TestSetup) NewServerEnvoy() (*Envoy, error) {
 	if s.ServerEnvoyTemplate != "" {
 		confTmpl = s.ServerEnvoyTemplate
 	}
-	baseID := strconv.Itoa(int(s.testName)*2 + 1)
+	baseID := strconv.Itoa(int(s.testName+1) * 2)
 
 	return newEnvoy(s.ports.ServerAdminPort, confTmpl, baseID, s)
 }

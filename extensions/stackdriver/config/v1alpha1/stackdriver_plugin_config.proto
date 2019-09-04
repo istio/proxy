@@ -18,17 +18,19 @@ syntax = "proto3";
 package stackdriver.config.v1alpha1;
 
 message PluginConfig {
-  // Controls whether to export access log.
+  // Optional. Controls whether to export access log.
   bool disable_access_logging = 1;
 
-  // FQDN of destination service that the request routed to.
+  // Optional. FQDN of destination service that the request routed to, e.g.
+  // productpage.default.svc.cluster.local. If not provided, request host header
+  // will be used instead
   string destination_service_name = 2;
 
-  // The endpoint that plugin targets for metric reporting. If not specified,
-  // the default Stackdriver monitoring endpoint will be used.
+  // Optional. The endpoint that plugin targets for metric reporting. If not
+  // specified, the default Stackdriver monitoring endpoint will be used.
   string monitoring_endpoint = 3;
 
-  // The endpoint that plugin targets for access log reporting. If not
+  // Optional. The endpoint that plugin targets for access log reporting. If not
   // specified, the default Stackdriver monitoring endpoint will be used.
   string logging_endpoint = 4;
 }
