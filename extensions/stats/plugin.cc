@@ -87,7 +87,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
           field_separator, value_separator),
       StatGen(
-          absl::StrCat(stat_prefix, "request_duration_seconds"),
+          absl::StrCat(stat_prefix, "request_duration_milliseconds"),
           MetricType::Histogram,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return (request_info.end_timestamp - request_info.start_timestamp) /
