@@ -77,7 +77,7 @@ class Filter : public StreamFilter,
  private:
   // Read per-route config.
   void ReadPerRouteConfig(
-      const PerRouteServiceConfig* route_cfg,
+      const PerRouteServiceConfig& route_cfg,
       ::istio::control::http::Controller::PerRouteConfig* config);
 
   // Update header maps
