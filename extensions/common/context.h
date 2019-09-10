@@ -15,7 +15,8 @@
 
 #pragma once
 
-#include "absl/container/flat_hash_set.h"
+#include <set>
+// #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "extensions/common/node_info.pb.h"
 #include "google/protobuf/struct.pb.h"
@@ -53,7 +54,7 @@ constexpr StringView kContentTypeHeaderKey = "content-type";
 const std::string kProtocolHTTP = "http";
 const std::string kProtocolGRPC = "grpc";
 
-const absl::flat_hash_set<std::string> kGrpcContentTypes{
+const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
 
 // RequestInfo represents the information collected from filter stream
