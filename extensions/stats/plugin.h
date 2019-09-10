@@ -26,7 +26,7 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
@@ -38,6 +38,12 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
+
+using MetadataType = Envoy::Extensions::Common::Wasm::MetadataType;
+using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
+using NullPluginRootRegistry =
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
@@ -406,10 +412,13 @@ class PluginContext : public Context {
   ::Wasm::Common::RequestInfo request_info_;
 };
 
+#ifdef NULL_PLUGIN
 NULL_PLUGIN_ROOT_REGISTRY;
 
-static RegisterContextFactory register_Stats(CONTEXT_FACTORY(PluginContext),
-                                             ROOT_FACTORY(PluginRootContext));
+static RegisterContextFactory register_Stats(
+    CONTEXT_FACTORY(Stats::PluginContext),
+    ROOT_FACTORY(Stats::PluginRootContext));
+#endif
 
 }  // namespace Stats
 
