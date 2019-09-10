@@ -15,5 +15,5 @@ git clone https://github.com/abseil/abseil-cpp.git
 ## Build via the Docker image.
 
 ```bash
-docker run -v $PWD:/work -w /work  wasmsdk:v1 bash /build_wasm.sh
+docker run -v $PWD:/work -w /work -v $(realpath $PWD/../../extensions):/work/extensions wasmsdk:v1 bash /build_wasm.sh
 ```
