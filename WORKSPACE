@@ -37,9 +37,9 @@ bind(
 # Determine SHA256 `wget https://github.com/istio/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # envoy commit date: 08/27/2019
 # bazel version: 0.28.1
-ENVOY_SHA = "6577606a43d799e8d60be81258efa21d78eafe96"
+ENVOY_SHA = "8647faf091fa51b86037e448d75ca6bc29a4d23f"
 
-ENVOY_SHA256 = "ea67664f17872b4eb479746ee2a6b865227019bef468d3d99c3db68fb3f55c91"
+ENVOY_SHA256 = "cd412d68e40cd920fd347e2b0976564e26b2417bd3551d84171ba06170d28df7"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
