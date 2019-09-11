@@ -228,10 +228,12 @@ void Filter::log(const HeaderMap* request_headers,
     // Here Request is rejected by other filters, Mixer filter is not called.
     ::istio::control::http::Controller::PerRouteConfig config;
     auto route_entry = stream_info.routeEntry();
-    auto route_cfg =
-        route_entry->perFilterConfigTyped<PerRouteServiceConfig>("mixer");
-    if (route_cfg) {
-      ReadPerRouteConfig(*route_cfg, &config);
+    if (route_entry) {
+      auto route_cfg =
+          route_entry->perFilterConfigTyped<PerRouteServiceConfig>("mixer");
+      if (route_cfg) {
+        ReadPerRouteConfig(*route_cfg, &config);
+      }
     }
     handler_ = control_.controller()->CreateRequestHandler(config);
   }
