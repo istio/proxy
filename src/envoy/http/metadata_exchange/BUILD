@@ -9,8 +9,9 @@ load(
 envoy_package()
 
 envoy_cc_library(
-    name = "plugin_lib",
+    name = "metadata_exchange_lib",
     srcs = [
+        "config.cc",
         "plugin.cc",
     ],
     hdrs = [
@@ -20,18 +21,6 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "@envoy//source/common/common:base64_lib",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
-    ],
-)
-
-envoy_cc_library(
-    name = "config_lib",
-    srcs = ["config.cc"],
-    repository = "@envoy",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":plugin_lib",
         "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],

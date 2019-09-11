@@ -188,11 +188,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   return cache_[peer_id];
 }
 
-}  // namespace Stats
-
 #ifdef NULL_PLUGIN
-// Registration glue
-
 NullPluginRootRegistry* context_registry_{};
 
 class StatsFactory : public NullPluginFactory {
@@ -205,7 +201,11 @@ class StatsFactory : public NullPluginFactory {
 };
 
 static Registry::RegisterFactory<StatsFactory, NullPluginFactory> register_;
+#endif
 
+}  // namespace Stats
+
+#ifdef NULL_PLUGIN
 // WASM_EPILOG
 }  // namespace Plugin
 }  // namespace Null
