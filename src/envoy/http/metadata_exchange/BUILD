@@ -16,9 +16,9 @@ envoy_cc_library(
     hdrs = [
         "plugin.h",
     ],
+    copts = ["-DNULL_PLUGIN=1"],
     repository = "@envoy",
     visibility = ["//visibility:public"],
-    copts = ["-DNULL_PLUGIN=1"],
     deps = [
         "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
