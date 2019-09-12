@@ -32,8 +32,6 @@ bind(
     actual = "//external:ssl",
 )
 
-# When updating envoy sha manually please update the sha in istio.deps file also
-#
 # Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # envoy-wasm commit date: 08/26/2019
 # bazel version: 0.28.1
