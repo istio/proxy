@@ -20,13 +20,14 @@
 #include "src/istio/mixerclient/attribute_compressor.h"
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 
 namespace istio {
 namespace mixerclient {
 
 // Report batch, this interface is thread safe.
-class ReportBatch {
+class ReportBatch : public std::enable_shared_from_this<ReportBatch> {
  public:
   ReportBatch(const ReportOptions& options, TransportReportFunc transport,
               TimerCreateFunc timer_create, AttributeCompressor& compressor);
