@@ -156,7 +156,7 @@ void StackdriverContext::onLog() {
       PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
     google::protobuf::Struct downstream_metadata;
     auto metadata_value = getSelectorExpression(
-        {"filter_state", kDownstreamMetadataKey, "struct_value"});
+        {"filter_state", kDownstreamMetadataKey});
     if (!metadata_value ||
         !downstream_metadata.ParseFromArray(metadata_value.value()->data(),
                                             metadata_value.value()->size())) {
@@ -175,7 +175,7 @@ void StackdriverContext::onLog() {
              PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
     google::protobuf::Struct upstream_metadata;
     auto metadata_value = getSelectorExpression(
-        {"filter_state", kUpstreamMetadataKey, "struct_value"});
+        {"filter_state", kUpstreamMetadataKey});
     if (!metadata_value ||
         !upstream_metadata.ParseFromArray(metadata_value.value()->data(),
                                           metadata_value.value()->size())) {

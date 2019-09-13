@@ -154,7 +154,7 @@ void PluginRootContext::report(
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     StringView peer_metadata_id_key, StringView peer_metadata_key) {
   auto peer_id_value = getSelectorExpression(
-      {"filter_state", peer_metadata_id_key, "string_value"});
+      {"filter_state", peer_metadata_id_key});
   if (!peer_id_value.has_value()) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return cache_[""];
@@ -174,7 +174,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   }
 
   auto metadata_value = getSelectorExpression(
-      {"filter_state", peer_metadata_key, "struct_value"});
+      {"filter_state", peer_metadata_key});
   if (!metadata_value.has_value()) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return cache_[""];
