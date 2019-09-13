@@ -66,24 +66,6 @@ using google::protobuf::util::Status;
 #define CONFIG_DEFAULT(name) \
   config_.name().empty() ? default_##name : config_.name()
 
-// Useful logs that print local line numbers.
-// TODO remove this when the framework support this logging.
-#define DBG(dbgsym, ...)                                                    \
-  if ((dbgsym)) {                                                           \
-    logInfo(absl::StrCat(__FILE__, ":", __LINE__, ":", __FUNCTION__, "() ", \
-                         __VA_ARGS__));                                     \
-  }
-
-#define CTXDEBUG(...) DBG(debug_, __VA_ARGS__)
-
-#define LOG(lvl, ...)                                                      \
-  log##lvl(absl::StrCat("[", __FILE__, ":", __LINE__, "]::", __FUNCTION__, \
-                        "() ", __VA_ARGS__))
-
-#define LOGINFO(...) LOG(Info, __VA_ARGS__)
-
-#define LOGWARN(...) LOG(Warn, __VA_ARGS__)
-
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
   FIELD_FUNC(source_workload)                \
@@ -96,7 +78,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_principal)          \
   FIELD_FUNC(destination_app)                \
   FIELD_FUNC(destination_version)            \
-  FIELD_FUNC(destination_service_host)       \
+  FIELD_FUNC(destination_service)            \
   FIELD_FUNC(destination_service_name)       \
   FIELD_FUNC(destination_service_namespace)  \
   FIELD_FUNC(request_protocol)               \
@@ -192,7 +174,7 @@ struct IstioDimensions {
   void map_request(const ::Wasm::Common::RequestInfo& request) {
     source_principal = request.source_principal;
     destination_principal = request.destination_principal;
-    destination_service_host = request.destination_service_host;
+    destination_service = request.destination_service_host;
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);

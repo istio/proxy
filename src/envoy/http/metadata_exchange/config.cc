@@ -59,7 +59,7 @@ void PluginRootContext::updateMetadataValue() {
   if (getMetadataValue(Common::Wasm::MetadataType::Node,
                        NodeMetadataExchangeKeys,
                        &keys_value) != Common::Wasm::WasmResult::Ok) {
-    logWarn(
+    logDebug(
         absl::StrCat("cannot get metadata key: ", NodeMetadataExchangeKeys));
     return;
   }
@@ -81,7 +81,7 @@ void PluginRootContext::updateMetadataValue() {
         Common::Wasm::WasmResult::Ok) {
       (*metadata.mutable_fields())[std::string(key)] = value;
     } else {
-      logWarn(absl::StrCat("cannot get metadata key: ", key));
+      logDebug(absl::StrCat("cannot get metadata key: ", key));
     }
   }
 
@@ -109,7 +109,7 @@ void PluginRootContext::onConfigure(
       }
     }
   } else {
-    logWarn(absl::StrCat("cannot get metadata key: ", WholeNodeKey));
+    logDebug(absl::StrCat("cannot get metadata key: ", WholeNodeKey));
   }
 
   logDebug(

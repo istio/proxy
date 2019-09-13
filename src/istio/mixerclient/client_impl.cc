@@ -13,9 +13,12 @@
  * limitations under the License.
  */
 #include "src/istio/mixerclient/client_impl.h"
+
 #include <google/protobuf/arena.h>
+
 #include <algorithm>
 #include <cmath>
+
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/protobuf.h"
 #include "src/istio/mixerclient/status_util.h"
@@ -39,7 +42,7 @@ MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
   timer_create_ = options.env.timer_create_func;
   check_cache_ =
       std::unique_ptr<CheckCache>(new CheckCache(options.check_options));
-  report_batch_ = std::unique_ptr<ReportBatch>(
+  report_batch_ = std::shared_ptr<ReportBatch>(
       new ReportBatch(options.report_options, options_.env.report_transport,
                       timer_create_, compressor_));
   quota_cache_ =
@@ -50,7 +53,12 @@ MixerClientImpl::MixerClientImpl(const MixerClientOptions &options)
   }
 }
 
-MixerClientImpl::~MixerClientImpl() {}
+MixerClientImpl::~MixerClientImpl() {
+  if (report_batch_) {
+    report_batch_->Flush();
+    report_batch_.reset();
+  }
+}
 
 uint32_t MixerClientImpl::RetryDelay(uint32_t retry_attempt) {
   const uint32_t max_retry_ms =

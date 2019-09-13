@@ -542,6 +542,28 @@ TEST_F(MixerClientImplTest, TestFailedCheckAndQuota) {
   EXPECT_EQ(stat.total_remote_call_other_errors_, 0);
 }
 
+TEST_F(MixerClientImplTest, TestUnavailableQuotaBackend) {
+  EXPECT_CALL(mock_check_transport_, Check(_, _, _))
+      .WillOnce(Invoke([](const CheckRequest& request, CheckResponse* response,
+                          DoneFunc on_done) {
+        response->mutable_precondition()->set_valid_use_count(100);
+        CheckResponse::QuotaResult quota_result;
+        quota_result.mutable_status()->set_code(Code::UNAVAILABLE);
+        // explicitly do not set granted amounts.
+        (*response->mutable_quotas())[kRequestCount] = quota_result;
+        on_done(Status::OK);
+      }));
+
+  {
+    CheckContextSharedPtr context = CreateContext(1);
+    Status status;
+    client_->Check(
+        context, empty_transport_,
+        [&status](const CheckResponseInfo& info) { status = info.status(); });
+    EXPECT_ERROR_CODE(Code::OK, status);
+  }
+}
+
 }  // namespace
 }  // namespace mixerclient
 }  // namespace istio
