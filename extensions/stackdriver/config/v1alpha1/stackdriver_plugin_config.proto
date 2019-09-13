@@ -28,9 +28,9 @@ message PluginConfig {
 
   // Optional. The endpoint that plugin targets for metric reporting. If not
   // specified, the default Stackdriver monitoring endpoint will be used.
-  string monitoring_endpoint = 3;
+  string test_monitoring_endpoint = 3;
 
   // Optional. The endpoint that plugin targets for access log reporting. If not
   // specified, the default Stackdriver monitoring endpoint will be used.
-  string logging_endpoint = 4;
+  string test_logging_endpoint = 4;
 }

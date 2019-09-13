@@ -62,13 +62,14 @@ MonitoredResource getMonitoredResource(
 
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
-    const NodeInfo &local_node_info, const std::string &monitoring_endpoint) {
+    const NodeInfo &local_node_info,
+    const std::string &test_monitoring_endpoint) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
 
-  if (!monitoring_endpoint.empty()) {
-    auto channel = grpc::CreateChannel(monitoring_endpoint,
+  if (!test_monitoring_endpoint.empty()) {
+    auto channel = grpc::CreateChannel(test_monitoring_endpoint,
                                        grpc::InsecureChannelCredentials());
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);

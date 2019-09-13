@@ -34,7 +34,7 @@ namespace Metric {
 // Returns Stackdriver exporter config option based on node metadata.
 opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
     const wasm::common::NodeInfo& local_node_info,
-    const std::string& monitoring_endpoint = "");
+    const std::string& test_monitoring_endpoint = "");
 
 // registers Opencensus views
 void registerViews();

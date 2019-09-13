@@ -83,7 +83,8 @@ void StackdriverRootContext::onConfigure(
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, config_.monitoring_endpoint()));
+      getStackdriverOptions(local_node_info_,
+                            config_.test_monitoring_endpoint()));
 
   // Register opencensus measures and views.
   registerViews();
