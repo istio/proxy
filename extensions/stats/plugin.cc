@@ -52,12 +52,14 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     LOG_WARN("cannot parse local node metadata ");
     return;
   }
-  PluginDirection direction;
-  auto dirn_result = getPluginDirection(&direction);
-  if (WasmResult::Ok == dirn_result) {
-    outbound_ = PluginDirection::Outbound == direction;
+  auto dirn_result = getSelectorExpression({"traffic_direction"});
+  if (dirn_result) {
+    envoy::api::v2::core::TrafficDirection direction =
+        static_cast<envoy::api::v2::core::TrafficDirection>(
+            *reinterpret_cast<const int64_t*>(dirn_result.value()->data()));
+    outbound_ = envoy::api::v2::core::TrafficDirection::OUTBOUND == direction;
   } else {
-    LOG_WARN(absl::StrCat("Unable to get plugin direction: ", dirn_result));
+    LOG_WARN("Unable to get plugin direction");
   }
   // Local data does not change, so populate it on config load.
   istio_dimensions_.init(outbound_, local_node_info_);
