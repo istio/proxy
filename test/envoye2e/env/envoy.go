@@ -37,7 +37,7 @@ func (s *TestSetup) NewClientEnvoy() (*Envoy, error) {
 	if s.ClientEnvoyTemplate != "" {
 		confTmpl = s.ClientEnvoyTemplate
 	}
-	baseID := strconv.Itoa(int(s.testName))
+	baseID := strconv.Itoa(int(s.testName)*2 + 1)
 
 	return newEnvoy(s.ports.ClientAdminPort, confTmpl, baseID, s)
 }
@@ -48,7 +48,7 @@ func (s *TestSetup) NewServerEnvoy() (*Envoy, error) {
 	if s.ServerEnvoyTemplate != "" {
 		confTmpl = s.ServerEnvoyTemplate
 	}
-	baseID := strconv.Itoa(int(s.testName) + 1)
+	baseID := strconv.Itoa(int(s.testName+1) * 2)
 
 	return newEnvoy(s.ports.ServerAdminPort, confTmpl, baseID, s)
 }
@@ -135,7 +135,7 @@ func newEnvoy(port uint16, confTmpl, baseID string, s *TestSetup) (*Envoy, error
 		args = append(args, s.EnvoyParams...)
 	}
 	/* #nosec */
-	envoyPath := filepath.Join(GetDefaultIstioBin(), "envoy")
+	envoyPath := filepath.Join(GetDefaultEnvoyBin(), "envoy")
 	if path, exists := os.LookupEnv("ENVOY_PATH"); exists {
 		envoyPath = path
 	}

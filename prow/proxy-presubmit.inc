@@ -27,7 +27,7 @@ set -u
 # Print commands
 set -x
 
-GOPATH=/go
+GOPATH=/home/prow/go
 ROOT=/go/src
 # Remove old bazel.rc.ci
 rm -f "${HOME}/.bazelrc"

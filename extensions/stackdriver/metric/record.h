@@ -24,11 +24,9 @@ namespace Metric {
 
 // Record metrics based on local node info and request info.
 // Reporter kind deceides the type of metrics to record.
-void record(
-    const stackdriver::config::v1alpha1::PluginConfig::ReporterKind &kind,
-    const ::wasm::common::NodeInfo &local_node_info,
-    const ::wasm::common::NodeInfo &peer_node_info,
-    const ::Wasm::Common::RequestInfo &request_info);
+void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
+            const ::wasm::common::NodeInfo &peer_node_info,
+            const ::Wasm::Common::RequestInfo &request_info);
 
 }  // namespace Metric
 }  // namespace Stackdriver

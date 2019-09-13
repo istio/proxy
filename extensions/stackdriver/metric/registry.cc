@@ -16,8 +16,7 @@
 #include "extensions/stackdriver/metric/registry.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "google/api/monitored_resource.pb.h"
-
-#include <typeinfo>
+#include "grpcpp/grpcpp.h"
 
 namespace Extensions {
 namespace Stackdriver {
@@ -62,36 +61,42 @@ MonitoredResource getMonitoredResource(
 }
 
 // Gets opencensus stackdriver exporter options.
-StackdriverOptions getStackdriverOptions(const NodeInfo &local_node_info) {
+StackdriverOptions getStackdriverOptions(
+    const NodeInfo &local_node_info,
+    const std::string &test_monitoring_endpoint) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
+
+  if (!test_monitoring_endpoint.empty()) {
+    auto channel = grpc::CreateChannel(test_monitoring_endpoint,
+                                       grpc::InsecureChannelCredentials());
+    options.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(channel);
+  }
 
   // Get server and client monitored resource.
   auto server_monitored_resource =
       getMonitoredResource(kContainerMonitoredResource, local_node_info);
   auto client_monitored_resource =
       getMonitoredResource(kPodMonitoredResource, local_node_info);
-
-  // TODO: Add per view monitored resource option and corresponding test once
-  // https://github.com/envoyproxy/envoy/pull/7622 reaches istio/proxy.
-  // options.monitored_resource[kServerRequestCountView] =
-  // server_monitored_resource;
-  // options.monitored_resource[kServerRequestBytesView] =
-  // server_monitored_resource;
-  // options.monitored_resource[kServerResponseBytesView] =
-  // server_monitored_resource;
-  // options.monitored_resource[kServerResponseLatenciesView] =
-  // server_monitored_resource;
-  // options.monitored_resource[kClientRequestCountView] =
-  // client_monitored_resource;
-  // options.monitored_resource[kClientRequestBytesView] =
-  // client_monitored_resource;
-  // options.monitored_resource[kClientResponseBytesView] =
-  // client_monitored_resource;
-  // options.monitored_resource[kClientRoundtripLatenciesView] =
-  // client_monitored_resource;
-
+  options.per_metric_monitored_resource[kServerRequestCountView] =
+      server_monitored_resource;
+  options.per_metric_monitored_resource[kServerRequestBytesView] =
+      server_monitored_resource;
+  options.per_metric_monitored_resource[kServerResponseBytesView] =
+      server_monitored_resource;
+  options.per_metric_monitored_resource[kServerResponseLatenciesView] =
+      server_monitored_resource;
+  options.per_metric_monitored_resource[kClientRequestCountView] =
+      client_monitored_resource;
+  options.per_metric_monitored_resource[kClientRequestBytesView] =
+      client_monitored_resource;
+  options.per_metric_monitored_resource[kClientResponseBytesView] =
+      client_monitored_resource;
+  options.per_metric_monitored_resource[kClientRoundtripLatenciesView] =
+      client_monitored_resource;
+  options.metric_name_prefix = kIstioMetricPrefix;
   return options;
 }
 

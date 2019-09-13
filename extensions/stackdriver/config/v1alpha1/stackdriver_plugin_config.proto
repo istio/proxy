@@ -18,19 +18,19 @@ syntax = "proto3";
 package stackdriver.config.v1alpha1;
 
 message PluginConfig {
-  // Indicates whether the module should act as inbound or outbound reporter.
-  // Difference being:
-  //   * inbound and outbound have different metric types to export.
-  //   * inbound reporter writes access logs.
-  enum ReporterKind {
-    INBOUND = 0;
-    OUTBOUND = 1;
-  }
-  ReporterKind kind = 1;
+  // Optional. Controls whether to export access log.
+  bool disable_access_logging = 1;
 
-  // Controls whether to export access log.
-  bool disable_access_logging = 2;
+  // Optional. FQDN of destination service that the request routed to, e.g.
+  // productpage.default.svc.cluster.local. If not provided, request host header
+  // will be used instead
+  string destination_service_name = 2;
 
-  // FQDN of destination service that the request routed to.
-  string destination_service_name = 3;
+  // Optional. The endpoint that plugin targets for metric reporting. If not
+  // specified, the default Stackdriver monitoring endpoint will be used.
+  string test_monitoring_endpoint = 3;
+
+  // Optional. The endpoint that plugin targets for access log reporting. If not
+  // specified, the default Stackdriver monitoring endpoint will be used.
+  string test_logging_endpoint = 4;
 }

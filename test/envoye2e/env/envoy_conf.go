@@ -17,11 +17,17 @@ package env
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
 
 const envoyClientConfTemplYAML = `
+node:
+  id: test-client
+  metadata: {
+{{.ClientNodeMetadata | indent 4 }}
+  }
 admin:
   access_log_path: {{.ClientAccessLogPath}}
   address:
@@ -85,6 +91,7 @@ static_resources:
                   cluster: client
                   timeout: 0s
   - name: client-to-proxy
+    traffic_direction: OUTBOUND
     address:
       socket_address:
         address: 127.0.0.1
@@ -116,6 +123,11 @@ static_resources:
 `
 
 const envoyServerConfTemplYAML = `
+node: 
+  id: test-server
+  metadata: {
+{{.ServerNodeMetadata | indent 4 }}
+  }
 admin:
   access_log_path: {{.ServerAccessLogPath}}
   address:
@@ -150,6 +162,7 @@ static_resources:
                 port_value: {{.Ports.ClientToAppProxyPort}}
   listeners:
   - name: proxy-to-server
+    traffic_direction: INBOUND
     address:
       socket_address:
         address: 127.0.0.1
@@ -223,6 +236,10 @@ func (s *TestSetup) CreateEnvoyConf(path, confTmpl string) error {
 	}
 	tmpl.Funcs(template.FuncMap{})
 
+	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create dir %v: %v", filepath.Dir(path), err)
+	}
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create file %v: %v", path, err)
