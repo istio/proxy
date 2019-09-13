@@ -42,7 +42,7 @@ const outboundStackdriverFilter = `- name: envoy.wasm
         inline_string: "envoy.wasm.null.stackdriver"
     configuration: >-
       {
-        "monitoringEndpoint": "localhost:12312",
+        "testMonitoringEndpoint": "localhost:12312",
       }`
 
 const inboundStackdriverFilter = `- name: envoy.wasm
@@ -60,7 +60,7 @@ const inboundStackdriverFilter = `- name: envoy.wasm
         inline_string: "envoy.wasm.null.stackdriver"
     configuration: >-
       {
-        "monitoringEndpoint": "localhost:12312",
+        "testMonitoringEndpoint": "localhost:12312",
       }`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
