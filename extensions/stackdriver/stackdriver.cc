@@ -155,9 +155,11 @@ void StackdriverContext::onLog() {
   if (getRootContext()->reporterKind() ==
       PluginConfig::ReporterKind::PluginConfig_ReporterKind_INBOUND) {
     google::protobuf::Struct downstream_metadata;
-    if (getMetadataStruct(Common::Wasm::MetadataType::Request,
-                          kDownstreamMetadataKey, &downstream_metadata) !=
-        Common::Wasm::WasmResult::Ok) {
+    auto metadata_value = getSelectorExpression(
+        {"filter_state", kDownstreamMetadataKey, "struct_value"});
+    if (!metadata_value ||
+        !downstream_metadata.ParseFromArray(metadata_value.value()->data(),
+                                            metadata_value.value()->size())) {
       logWarn(
           absl::StrCat("cannot get metadata for: ", kDownstreamMetadataKey));
       return;
@@ -172,9 +174,11 @@ void StackdriverContext::onLog() {
   } else if (getRootContext()->reporterKind() ==
              PluginConfig::ReporterKind::PluginConfig_ReporterKind_OUTBOUND) {
     google::protobuf::Struct upstream_metadata;
-    if (getMetadataStruct(Common::Wasm::MetadataType::Request,
-                          kUpstreamMetadataKey,
-                          &upstream_metadata) != Common::Wasm::WasmResult::Ok) {
+    auto metadata_value = getSelectorExpression(
+        {"filter_state", kUpstreamMetadataKey, "struct_value"});
+    if (!metadata_value ||
+        !upstream_metadata.ParseFromArray(metadata_value.value()->data(),
+                                          metadata_value.value()->size())) {
       logWarn(absl::StrCat("cannot get metadata for: ", kUpstreamMetadataKey));
       return;
     }

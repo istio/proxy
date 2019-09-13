@@ -153,13 +153,14 @@ void PluginRootContext::report(
 
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     StringView peer_metadata_id_key, StringView peer_metadata_key) {
-  std::string peer_id;
-  if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
-                             &peer_id) != Common::Wasm::WasmResult::Ok) {
+  auto peer_id_value = getSelectorExpression(
+      {"filter_state", peer_metadata_id_key, "string_value"});
+  if (!peer_id_value.has_value()) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return cache_[""];
   }
-
+  std::string peer_id(peer_id_value.value()->data(),
+                      peer_id_value.value()->size());
   auto nodeinfo_it = cache_.find(peer_id);
   if (nodeinfo_it != cache_.end()) {
     return nodeinfo_it->second;
@@ -172,10 +173,16 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
 
-  google::protobuf::Struct metadata;
-  if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
-      Common::Wasm::WasmResult::Ok) {
+  auto metadata_value = getSelectorExpression(
+      {"filter_state", peer_metadata_key, "struct_value"});
+  if (!metadata_value.has_value()) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
+    return cache_[""];
+  }
+  google::protobuf::Struct metadata;
+  if (!metadata.ParseFromArray(metadata_value.value()->data(),
+                               metadata_value.value()->size())) {
+    LOG_DEBUG(absl::StrCat("cannot parse metadata for: ", peer_metadata_key));
     return cache_[""];
   }
 

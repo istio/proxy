@@ -23,8 +23,6 @@ namespace MetadataExchange {
 
 // imports from the low-level API
 using Common::Wasm::Null::NullPluginFactory;
-using Common::Wasm::Null::Plugin::getMetadataStringValue;
-using Common::Wasm::Null::Plugin::getMetadataStruct;
 using Common::Wasm::Null::Plugin::getMetadataValue;
 using Common::Wasm::Null::Plugin::getRequestHeader;
 using Common::Wasm::Null::Plugin::getResponseHeader;
@@ -94,8 +92,7 @@ void PluginRootContext::updateMetadataValue() {
       Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
-void PluginRootContext::onConfigure(
-    std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {
+void PluginRootContext::onConfigure(std::unique_ptr<WasmData>) {
   updateMetadataValue();
 
   auto node_id = getSelectorExpression({"node", "id"});
@@ -105,8 +102,8 @@ void PluginRootContext::onConfigure(
     logDebug("cannot get node ID");
   }
 
-  logDebug(
-      absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_, " node:", node_id_));
+  logDebug(absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_,
+                        " node:", node_id_));
 }
 
 Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
