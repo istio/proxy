@@ -28,6 +28,7 @@ using Common::Wasm::Null::Plugin::getMetadataStruct;
 using Common::Wasm::Null::Plugin::getMetadataValue;
 using Common::Wasm::Null::Plugin::getRequestHeader;
 using Common::Wasm::Null::Plugin::getResponseHeader;
+using Common::Wasm::Null::Plugin::getSelectorExpression;
 using Common::Wasm::Null::Plugin::logDebug;
 using Common::Wasm::Null::Plugin::logInfo;
 using Common::Wasm::Null::Plugin::logWarn;
@@ -35,11 +36,11 @@ using Common::Wasm::Null::Plugin::removeRequestHeader;
 using Common::Wasm::Null::Plugin::removeResponseHeader;
 using Common::Wasm::Null::Plugin::replaceRequestHeader;
 using Common::Wasm::Null::Plugin::replaceResponseHeader;
-using Common::Wasm::Null::Plugin::setMetadataStringValue;
+using Common::Wasm::Null::Plugin::setFilterStateStringValue;
 
 namespace {
 
-bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
+bool serializeToStringDeterministic(const google::protobuf::Value& metadata,
                                     std::string* metadata_bytes) {
   google::protobuf::io::StringOutputStream md(metadata_bytes);
   google::protobuf::io::CodedOutputStream mcs(&md);
@@ -70,7 +71,7 @@ void PluginRootContext::updateMetadataValue() {
     return;
   }
 
-  google::protobuf::Struct metadata;
+  google::protobuf::Value metadata;
 
   // select keys from the metadata using the keys
   const std::set<absl::string_view> keys =
@@ -79,7 +80,8 @@ void PluginRootContext::updateMetadataValue() {
     google::protobuf::Value value;
     if (getMetadataValue(Common::Wasm::MetadataType::Node, key, &value) ==
         Common::Wasm::WasmResult::Ok) {
-      (*metadata.mutable_fields())[std::string(key)] = value;
+      (*metadata.mutable_struct_value()->mutable_fields())[std::string(key)] =
+          value;
     } else {
       logDebug(absl::StrCat("cannot get metadata key: ", key));
     }
@@ -96,24 +98,15 @@ void PluginRootContext::onConfigure(
     std::unique_ptr<WasmData> ABSL_ATTRIBUTE_UNUSED configuration) {
   updateMetadataValue();
 
-  // TODO: this is really expensive since it fetches the entire metadata from
-  // before magic "." to get the whole node.
-  google::protobuf::Struct node;
-  if (getMetadataStruct(Common::Wasm::MetadataType::Node, WholeNodeKey,
-                        &node) == Common::Wasm::WasmResult::Ok) {
-    for (const auto& f : node.fields()) {
-      if (f.first == NodeIdKey &&
-          f.second.kind_case() == google::protobuf::Value::kStringValue) {
-        node_id_ = f.second.string_value();
-        break;
-      }
-    }
+  auto node_id = getSelectorExpression({"node", "id"});
+  if (node_id) {
+    node_id_.assign(node_id.value()->data(), node_id.value()->size());
   } else {
-    logDebug(absl::StrCat("cannot get metadata key: ", WholeNodeKey));
+    logDebug("cannot get node ID");
   }
 
   logDebug(
-      absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_));
+      absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_, " node:", node_id_));
 }
 
 Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
@@ -124,17 +117,15 @@ Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
     removeRequestHeader(ExchangeMetadataHeader);
     auto downstream_metadata_bytes =
         Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    setMetadataStruct(Common::Wasm::MetadataType::Request,
-                      DownstreamMetadataKey, downstream_metadata_bytes);
+    setStateRaw(DownstreamMetadataKey, downstream_metadata_bytes);
   }
 
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadataStringValue(Common::Wasm::MetadataType::Request,
-                           DownstreamMetadataIdKey,
-                           downstream_metadata_id->view());
+    setFilterStateStringValue(DownstreamMetadataIdKey,
+                              downstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();
@@ -159,16 +150,15 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
         Base64::decodeWithoutPadding(upstream_metadata_value->view());
-    setMetadataStruct(Common::Wasm::MetadataType::Request, UpstreamMetadataKey,
-                      upstream_metadata_bytes);
+    setStateRaw(UpstreamMetadataKey, upstream_metadata_bytes);
   }
 
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadataStringValue(Common::Wasm::MetadataType::Request,
-                           UpstreamMetadataIdKey, upstream_metadata_id->view());
+    setFilterStateStringValue(UpstreamMetadataIdKey,
+                              upstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();

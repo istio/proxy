@@ -45,7 +45,7 @@ constexpr absl::string_view UpstreamMetadataIdKey =
     "envoy.wasm.metadata_exchange.upstream_id";
 
 using StringView = absl::string_view;
-using Common::Wasm::MetadataType;
+using Common::Wasm::WasmResult;
 using Common::Wasm::Null::NullPluginRootRegistry;
 using Common::Wasm::Null::Plugin::Context;
 using Common::Wasm::Null::Plugin::ContextFactory;
@@ -93,10 +93,9 @@ class PluginContext : public Context {
 };
 
 // TODO(mjog) move this to proxy_wasm_impl.h
-inline void setMetadataStruct(MetadataType type, StringView key,
-                              StringView value) {
-  Common::Wasm::Null::Plugin::proxy_setMetadataStruct(
-      type, key.data(), key.size(), value.data(), value.size());
+inline WasmResult setStateRaw(StringView key, StringView value) {
+  return static_cast<WasmResult>(Common::Wasm::Null::Plugin::proxy_setState(
+      key.data(), key.size(), value.data(), value.size()));
 }
 
 NULL_PLUGIN_ROOT_REGISTRY;
