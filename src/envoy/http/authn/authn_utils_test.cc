@@ -37,16 +37,17 @@ const std::string kSecIstioAuthUserinfoHeaderValue =
        "some-other-string-claims": "some-claims-kept"
      }
    )";
-const std::string kSecIstioAuthUserInfoHeaderWithNoAudValue =
+const std::string kSecIstioAuthUserInfoHeaderWithAudValueList =
     R"(
        {
          "iss": "issuer@foo.com",
          "sub": "sub@foo.com",
+         "aud": "aud1  aud2",
          "non-string-will-be-ignored": 1512754205,
          "some-other-string-claims": "some-claims-kept"
        }
      )";
-const std::string kSecIstioAuthUserInfoHeaderWithTwoAudValue =
+const std::string kSecIstioAuthUserInfoHeaderWithAudValueArray =
     R"(
        {
          "iss": "issuer@foo.com",
@@ -116,11 +117,13 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
 
-TEST(AuthnUtilsTest, ProcessJwtPayloadWithNoAudTest) {
+TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudListTest) {
   JwtPayload payload, expected_payload;
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
       user: "issuer@foo.com/sub@foo.com"
+      audiences: "aud1"
+      audiences: "aud2"
       claims: {
         fields: {
           key: "iss"
@@ -143,6 +146,19 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithNoAudTest) {
           }
         }
         fields: {
+          key: "aud"
+          value: {
+            list_value: {
+              values: {
+                string_value: "aud1"
+              }
+              values: {
+                string_value: "aud2"
+              }
+            }
+          }
+        }
+        fields: {
           key: "some-other-string-claims"
           value: {
             list_value: {
@@ -154,19 +170,19 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithNoAudTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithNoAudValue) +
+          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueList) +
           R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected. When there is no aud,  the aud is not saved in the payload
   // and claims.
   bool ret = AuthnUtils::ProcessJwtPayload(
-      kSecIstioAuthUserInfoHeaderWithNoAudValue, &payload);
+      kSecIstioAuthUserInfoHeaderWithAudValueList, &payload);
   EXPECT_TRUE(ret);
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
 
-TEST(AuthnUtilsTest, ProcessJwtPayloadWithTwoAudTest) {
+TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
   JwtPayload payload, expected_payload;
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
       R"(
@@ -219,14 +235,14 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithTwoAudTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithTwoAudValue) +
+          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueArray) +
           R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected. When the aud is a string array, the aud is not saved in the
   // claims.
   bool ret = AuthnUtils::ProcessJwtPayload(
-      kSecIstioAuthUserInfoHeaderWithTwoAudValue, &payload);
+      kSecIstioAuthUserInfoHeaderWithAudValueArray, &payload);
 
   EXPECT_TRUE(ret);
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
