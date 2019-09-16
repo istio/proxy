@@ -18,40 +18,29 @@ namespace Stackdriver {
 namespace Common {
 
 // Measure names of metrics.
-constexpr char kServerRequestCountMeasure[] =
-    "istio.io/service/server/request_count_measure";
-constexpr char kServerRequestBytesMeasure[] =
-    "istio.io/service/server/request_bytes_measure";
-constexpr char kServerResponseBytesMeasure[] =
-    "istio.io/service/server/response_bytes_measure";
+constexpr char kServerRequestCountMeasure[] = "server/request_count_measure";
+constexpr char kServerRequestBytesMeasure[] = "server/request_bytes_measure";
+constexpr char kServerResponseBytesMeasure[] = "server/response_bytes_measure";
 constexpr char kServerResponseLatenciesMeasure[] =
-    "istio.io/service/server/response_latencies_measure";
-constexpr char kClientRequestCountMeasure[] =
-    "istio.io/service/client/request_count_measure";
-constexpr char kClientRequestBytesMeasure[] =
-    "istio.io/service/client/request_bytes_measure";
-constexpr char kClientResponseBytesMeasure[] =
-    "istio.io/service/client/response_bytes_measure";
+    "server/response_latencies_measure";
+constexpr char kClientRequestCountMeasure[] = "client/request_count_measure";
+constexpr char kClientRequestBytesMeasure[] = "client/request_bytes_measure";
+constexpr char kClientResponseBytesMeasure[] = "client/response_bytes_measure";
 constexpr char kClientRoundtripLatenciesMeasure[] =
-    "istio.io/service/client/roundtrip_latencies_measure";
+    "client/roundtrip_latencies_measure";
 
 // View names of metrics.
-constexpr char kServerRequestCountView[] =
-    "istio.io/service/server/request_count";
-constexpr char kServerRequestBytesView[] =
-    "istio.io/service/server/request_bytes";
-constexpr char kServerResponseBytesView[] =
-    "istio.io/service/server/response_bytes";
-constexpr char kServerResponseLatenciesView[] =
-    "istio.io/service/server/response_latencies";
-constexpr char kClientRequestCountView[] =
-    "istio.io/service/client/request_count";
-constexpr char kClientRequestBytesView[] =
-    "istio.io/service/client/request_bytes";
-constexpr char kClientResponseBytesView[] =
-    "istio.io/service/client/response_bytes";
-constexpr char kClientRoundtripLatenciesView[] =
-    "istio.io/service/client/roundtrip_latencies";
+constexpr char kServerRequestCountView[] = "server/request_count";
+constexpr char kServerRequestBytesView[] = "server/request_bytes";
+constexpr char kServerResponseBytesView[] = "server/response_bytes";
+constexpr char kServerResponseLatenciesView[] = "server/response_latencies";
+constexpr char kClientRequestCountView[] = "client/request_count";
+constexpr char kClientRequestBytesView[] = "client/request_bytes";
+constexpr char kClientResponseBytesView[] = "client/response_bytes";
+constexpr char kClientRoundtripLatenciesView[] = "client/roundtrip_latencies";
+
+// Prefix for Istio metrics.
+constexpr char kIstioMetricPrefix[] = "istio.io/service/";
 
 // Monitored resource
 constexpr char kPodMonitoredResource[] = "k8s_pod";

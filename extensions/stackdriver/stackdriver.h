@@ -58,8 +58,8 @@ class StackdriverRootContext : public RootContext {
   void onStart(std::unique_ptr<WasmData>) override;
   void onTick() override;
 
-  // Get reporter kind of this filter from plugin config.
-  stackdriver::config::v1alpha1::PluginConfig::ReporterKind reporterKind();
+  // Get direction of traffic relative to this proxy.
+  bool isOutbound();
 
   // Records telemetry based on the given request info.
   void record(const ::Wasm::Common::RequestInfo& request_info,
@@ -71,6 +71,9 @@ class StackdriverRootContext : public RootContext {
 
   // Local node info extracted from node metadata.
   wasm::common::NodeInfo local_node_info_;
+
+  // Indicates the traffic direction relative to this proxy.
+  PluginDirection direction_ = PluginDirection::Unspecified;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

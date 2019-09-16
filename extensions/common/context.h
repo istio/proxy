@@ -26,13 +26,6 @@ namespace Common {
 using StringView = absl::string_view;
 
 // Node metadata
-constexpr StringView kIstioMetadataKey = "istio.io/metadata";
-constexpr StringView kMetadataPodNameKey = "name";
-constexpr StringView kMetadataNamespaceKey = "namespace";
-constexpr StringView kMetadataOwnerKey = "owner";
-constexpr StringView kMetadataWorkloadNameKey = "workload_name";
-constexpr StringView kMetadataContainersKey = "ports_to_containers";
-constexpr StringView kPlatformMetadataKey = "platform_metadata";
 constexpr StringView WholeNodeKey = ".";
 
 constexpr StringView kUpstreamMetadataIdKey =
