@@ -44,8 +44,8 @@ void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
   // First, try as string
   try {
     // Try as string, will throw execption if object type is not string.
-    const std::vector<std::string> keys = absl::StrSplit(obj.getString(key), ' ',
-        absl::SkipEmpty());
+    const std::vector<std::string> keys =
+        absl::StrSplit(obj.getString(key), ' ', absl::SkipEmpty());
     for (auto key : keys) {
       list->push_back(key);
     }
