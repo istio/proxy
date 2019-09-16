@@ -31,7 +31,8 @@ using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getMetadataStruct;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getSelectorExpression;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
 
 #endif  // NULL_PLUGIN
 
@@ -39,37 +40,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::getSelectorExpression;
 
 namespace Wasm {
 namespace Common {
-
-namespace {
-
-// Return int64 value or 0 if not available
-int64_t getIntValue(std::initializer_list<StringView> parts) {
-  auto buf = getSelectorExpression(parts);
-  if (!buf.has_value() || buf.value()->size() != sizeof(int64_t)) {
-    return 0;
-  }
-  return *reinterpret_cast<const int64_t *>(buf.value()->data());
-}
-
-bool getBoolValue(std::initializer_list<StringView> parts, bool *out) {
-  auto buf = getSelectorExpression(parts);
-  if (!buf.has_value() || buf.value()->size() != sizeof(bool)) {
-    return false;
-  }
-  *out = *reinterpret_cast<const bool *>(buf.value()->data());
-  return true;
-}
-
-bool getStringValue(std::initializer_list<StringView> parts, std::string *out) {
-  auto buf = getSelectorExpression(parts);
-  if (!buf.has_value()) {
-    return false;
-  }
-  out->assign(buf.value()->data(), buf.value()->size());
-  return true;
-}
-
-}  // namespace
 
 using google::protobuf::util::JsonStringToMessage;
 using google::protobuf::util::MessageToJsonString;
@@ -106,7 +76,10 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   request_info->end_timestamp = getCurrentTimeNanoseconds();
 
   // Fill in request info.
-  request_info->response_code = getIntValue({"response", "code"});
+  int64_t response_code;
+  if (getValue({"response", "code"}, &response_code)) {
+    request_info->response_code = response_code;
+  }
 
   if (kGrpcContentTypes.contains(
           getHeaderMapValue(HeaderMapType::RequestHeaders,
@@ -125,15 +98,18 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
-  request_info->destination_port = getIntValue({"destination", "port"});
+  int64_t destination_port;
+  if (getValue({"destination", "port"}, &destination_port)) {
+    request_info->destination_port = destination_port;
+  }
 
   std::string tls_version;
   if (outbound) {
     // TODO: use upstream values once they become available
-    getBoolValue({"connection", "mtls"}, &request_info->mTLS);
+    getValue({"connection", "mtls"}, &request_info->mTLS);
     getStringValue({"tls_version"}, &tls_version);
   } else {
-    getBoolValue({"connection", "mtls"}, &request_info->mTLS);
+    getValue({"connection", "mtls"}, &request_info->mTLS);
     getStringValue({"tls_version"}, &tls_version);
   }
 }
