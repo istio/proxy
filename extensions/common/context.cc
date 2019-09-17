@@ -76,7 +76,7 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   request_info->end_timestamp = getCurrentTimeNanoseconds();
 
   // Fill in request info.
-  int64_t response_code;
+  int64_t response_code = 0;
   if (getValue({"response", "code"}, &response_code)) {
     request_info->response_code = response_code;
   }
@@ -99,7 +99,7 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
 
-  int64_t destination_port;
+  int64_t destination_port = 0;
   std::string tls_version;
 
   if (outbound) {
@@ -111,7 +111,6 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
     getValue({"connection", "mtls"}, &request_info->mTLS);
     getStringValue({"connection", "tls_version"}, &tls_version);
   }
-
   request_info->destination_port = destination_port;
 }
 
