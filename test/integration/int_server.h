@@ -330,6 +330,11 @@ class Server : public Envoy::Network::FilterChainManager,
 
   virtual bool handOffRestoredDestinationConnections() const override;
 
+  virtual const Envoy::Network::ActiveUdpListenerFactory *udpListenerFactory()
+      override {
+    return nullptr;
+  }
+
   // TODO does this affect socket recv buffer size?  Only for new connections?
   virtual uint32_t perConnectionBufferLimitBytes() const override;
 

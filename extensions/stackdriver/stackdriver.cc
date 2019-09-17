@@ -68,9 +68,11 @@ void StackdriverRootContext::onConfigure(
     return;
   }
 
-  auto result = getPluginDirection(&direction_);
-  if (result != WasmResult::Ok) {
-    logWarn(absl::StrCat("Unable to get plugin direction: ", result));
+  int64_t direction;
+  if (getValue({"traffic_direction"}, &direction)) {
+    direction_ = static_cast<envoy::api::v2::core::TrafficDirection>(direction);
+  } else {
+    logWarn("Unable to get plugin direction");
   }
 
   // Register OC Stackdriver exporter and views to be exported.
@@ -104,13 +106,12 @@ void StackdriverRootContext::onTick() {
 
 void StackdriverRootContext::record(const RequestInfo &request_info,
                                     const NodeInfo &peer_node_info) {
-  ::Extensions::Stackdriver::Metric::record(
-      /* is_outbound = */ direction_ == PluginDirection::Outbound,
-      local_node_info_, peer_node_info, request_info);
+  ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
+                                            peer_node_info, request_info);
 }
 
-bool StackdriverRootContext::isOutbound() {
-  return direction_ == PluginDirection::Outbound;
+inline bool StackdriverRootContext::isOutbound() {
+  return direction_ == envoy::api::v2::core::TrafficDirection::OUTBOUND;
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
@@ -143,34 +144,44 @@ void StackdriverContext::onLog() {
 
   // Fill in peer node metadata in request info.
   if (isOutbound) {
-    google::protobuf::Struct upstream_metadata;
-    if (getMetadataStruct(Common::Wasm::MetadataType::Request,
-                          kUpstreamMetadataKey,
-                          &upstream_metadata) != Common::Wasm::WasmResult::Ok) {
-      logWarn(absl::StrCat("cannot get metadata for: ", kUpstreamMetadataKey));
+    auto metadata_value =
+        getSelectorExpression({"filter_state", kUpstreamMetadataKey});
+    if (!metadata_value) {
+      logWarn(absl::StrCat("cannot get stackdriver metadata for: ",
+                           kUpstreamMetadataKey));
       return;
     }
-
-    auto status = ::Wasm::Common::extractNodeMetadata(upstream_metadata,
-                                                      &peer_node_info_);
+    google::protobuf::Value upstream_metadata;
+    if (!upstream_metadata.ParseFromArray(metadata_value.value()->data(),
+                                          metadata_value.value()->size())) {
+      logWarn(absl::StrCat("cannot parse stackdriver metadata for: ",
+                           kUpstreamMetadataKey));
+      return;
+    }
+    auto status = ::Wasm::Common::extractNodeMetadata(
+        upstream_metadata.struct_value(), &peer_node_info_);
     if (status != Status::OK) {
       logWarn("cannot parse upstream peer node metadata " +
               upstream_metadata.DebugString() + ": " + status.ToString());
     }
   } else {
-    google::protobuf::Struct downstream_metadata;
-    auto metadata_value = getSelectorExpression(
-        {"filter_state", kDownstreamMetadataKey});
-    if (!metadata_value ||
-        !downstream_metadata.ParseFromArray(metadata_value.value()->data(),
+    auto metadata_value =
+        getSelectorExpression({"filter_state", kDownstreamMetadataKey});
+    if (!metadata_value) {
+      logWarn(absl::StrCat("cannot get stackdriver metadata for: ",
+                           kDownstreamMetadataKey));
+      return;
+    }
+    google::protobuf::Value downstream_metadata;
+    if (!downstream_metadata.ParseFromArray(metadata_value.value()->data(),
                                             metadata_value.value()->size())) {
-      logWarn(
-          absl::StrCat("cannot get metadata for: ", kDownstreamMetadataKey));
+      logWarn(absl::StrCat("cannot parse stackdriver metadata for: ",
+                           kDownstreamMetadataKey));
       return;
     }
 
-    auto status = ::Wasm::Common::extractNodeMetadata(downstream_metadata,
-                                                      &peer_node_info_);
+    auto status = ::Wasm::Common::extractNodeMetadata(
+        downstream_metadata.struct_value(), &peer_node_info_);
     if (status != Status::OK) {
       logWarn("cannot parse downstream peer node metadata " +
               downstream_metadata.DebugString() + ": " + status.ToString());

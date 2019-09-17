@@ -22,7 +22,7 @@ namespace Wasm {
 namespace MetadataExchange {
 
 // imports from the low-level API
-using Common::Wasm::Null::NullPluginFactory;
+using Common::Wasm::Null::NullVmPluginFactory;
 using Common::Wasm::Null::Plugin::getMetadataValue;
 using Common::Wasm::Null::Plugin::getRequestHeader;
 using Common::Wasm::Null::Plugin::getResponseHeader;
@@ -34,6 +34,7 @@ using Common::Wasm::Null::Plugin::removeRequestHeader;
 using Common::Wasm::Null::Plugin::removeResponseHeader;
 using Common::Wasm::Null::Plugin::replaceRequestHeader;
 using Common::Wasm::Null::Plugin::replaceResponseHeader;
+using Common::Wasm::Null::Plugin::setFilterState;
 using Common::Wasm::Null::Plugin::setFilterStateStringValue;
 
 namespace {
@@ -114,7 +115,7 @@ Http::FilterHeadersStatus PluginContext::onRequestHeaders() {
     removeRequestHeader(ExchangeMetadataHeader);
     auto downstream_metadata_bytes =
         Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    setStateRaw(DownstreamMetadataKey, downstream_metadata_bytes);
+    setFilterState(DownstreamMetadataKey, downstream_metadata_bytes);
   }
 
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
@@ -147,7 +148,7 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
         Base64::decodeWithoutPadding(upstream_metadata_value->view());
-    setStateRaw(UpstreamMetadataKey, upstream_metadata_bytes);
+    setFilterState(UpstreamMetadataKey, upstream_metadata_bytes);
   }
 
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
@@ -176,7 +177,7 @@ Http::FilterHeadersStatus PluginContext::onResponseHeaders() {
 
 Common::Wasm::Null::NullPluginRootRegistry* context_registry_{};
 
-class MetadataExchangeFactory : public Common::Wasm::Null::NullPluginFactory {
+class MetadataExchangeFactory : public Common::Wasm::Null::NullVmPluginFactory {
  public:
   const std::string name() const override {
     return "envoy.wasm.metadata_exchange";
@@ -187,7 +188,7 @@ class MetadataExchangeFactory : public Common::Wasm::Null::NullPluginFactory {
   }
 };
 
-static Registry::RegisterFactory<MetadataExchangeFactory, NullPluginFactory>
+static Registry::RegisterFactory<MetadataExchangeFactory, NullVmPluginFactory>
     register_;
 
 }  // namespace MetadataExchange

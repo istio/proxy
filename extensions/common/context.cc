@@ -31,8 +31,8 @@ using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getMetadataStruct;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 
 #endif  // NULL_PLUGIN
 
@@ -98,20 +98,21 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
+
   int64_t destination_port;
-  if (getValue({"destination", "port"}, &destination_port)) {
-    request_info->destination_port = destination_port;
+  std::string tls_version;
+
+  if (outbound) {
+    getValue({"upstream", "port"}, &destination_port);
+    getValue({"upstream", "mtls"}, &request_info->mTLS);
+    getStringValue({"upstream", "tls_version"}, &tls_version);
+  } else {
+    getValue({"destination", "port"}, &destination_port);
+    getValue({"connection", "mtls"}, &request_info->mTLS);
+    getStringValue({"connection", "tls_version"}, &tls_version);
   }
 
-  std::string tls_version;
-  if (outbound) {
-    // TODO: use upstream values once they become available
-    getValue({"connection", "mtls"}, &request_info->mTLS);
-    getStringValue({"tls_version"}, &tls_version);
-  } else {
-    getValue({"connection", "mtls"}, &request_info->mTLS);
-    getStringValue({"tls_version"}, &tls_version);
-  }
+  request_info->destination_port = destination_port;
 }
 
 }  // namespace Common

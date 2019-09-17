@@ -92,12 +92,6 @@ class PluginContext : public Context {
   inline StringView nodeId() { return rootContext()->nodeId(); }
 };
 
-// TODO(mjog) move this to proxy_wasm_impl.h
-inline WasmResult setStateRaw(StringView key, StringView value) {
-  return static_cast<WasmResult>(Common::Wasm::Null::Plugin::proxy_setState(
-      key.data(), key.size(), value.data(), value.size()));
-}
-
 NULL_PLUGIN_ROOT_REGISTRY;
 
 static RegisterContextFactory register_MetadataExchange(

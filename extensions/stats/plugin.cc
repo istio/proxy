@@ -52,11 +52,8 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     LOG_WARN("cannot parse local node metadata ");
     return;
   }
-  auto dirn_result = getSelectorExpression({"traffic_direction"});
-  if (dirn_result) {
-    envoy::api::v2::core::TrafficDirection direction =
-        static_cast<envoy::api::v2::core::TrafficDirection>(
-            *reinterpret_cast<const int64_t*>(dirn_result.value()->data()));
+  int64_t direction;
+  if (getValue({"traffic_direction"}, &direction)) {
     outbound_ = envoy::api::v2::core::TrafficDirection::OUTBOUND == direction;
   } else {
     LOG_WARN("Unable to get plugin direction");
@@ -153,8 +150,8 @@ void PluginRootContext::report(
 
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     StringView peer_metadata_id_key, StringView peer_metadata_key) {
-  auto peer_id_value = getSelectorExpression(
-      {"filter_state", peer_metadata_id_key});
+  auto peer_id_value =
+      getSelectorExpression({"filter_state", peer_metadata_id_key});
   if (!peer_id_value.has_value()) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return cache_[""];
@@ -173,8 +170,8 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
 
-  auto metadata_value = getSelectorExpression(
-      {"filter_state", peer_metadata_key});
+  auto metadata_value =
+      getSelectorExpression({"filter_state", peer_metadata_key});
   if (!metadata_value.has_value()) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return cache_[""];
@@ -201,7 +198,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
 
 NullPluginRootRegistry* context_registry_{};
 
-class StatsFactory : public NullPluginFactory {
+class StatsFactory : public NullVmPluginFactory {
  public:
   const std::string name() const override { return "envoy.wasm.stats"; }
 
@@ -210,7 +207,7 @@ class StatsFactory : public NullPluginFactory {
   }
 };
 
-static Registry::RegisterFactory<StatsFactory, NullPluginFactory> register_;
+static Registry::RegisterFactory<StatsFactory, NullVmPluginFactory> register_;
 
 }  // namespace Stats
 

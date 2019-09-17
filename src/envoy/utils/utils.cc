@@ -38,7 +38,7 @@ const std::string kMetadataDestinationUID("uid");
 bool getCertSAN(const Network::Connection* connection, bool peer,
                 std::string* principal) {
   if (connection) {
-    const Ssl::ConnectionInfo* ssl = connection->ssl();
+    const auto ssl = connection->ssl();
     if (ssl != nullptr) {
       const auto& sans =
           (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
