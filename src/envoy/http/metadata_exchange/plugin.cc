@@ -14,9 +14,9 @@
  */
 
 #ifndef NULL_PLUGIN
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include "plugin.h"
 
@@ -34,7 +34,7 @@ namespace Plugin {
 
 using namespace ::Envoy::Extensions::Common::Wasm::Null::Plugin;
 using NullPluginRootRegistry =
-  ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
 
 NULL_PLUGIN_ROOT_REGISTRY;
 
@@ -62,8 +62,7 @@ static RegisterContextFactory register_MetadataExchange(
 
 void PluginRootContext::updateMetadataValue() {
   google::protobuf::Value keys_value;
-  if (getMetadataValue(MetadataType::Node,
-                       NodeMetadataExchangeKeys,
+  if (getMetadataValue(MetadataType::Node, NodeMetadataExchangeKeys,
                        &keys_value) != WasmResult::Ok) {
     logDebug(
         absl::StrCat("cannot get metadata key: ", NodeMetadataExchangeKeys));
@@ -83,8 +82,7 @@ void PluginRootContext::updateMetadataValue() {
       absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
   for (auto key : keys) {
     google::protobuf::Value value;
-    if (getMetadataValue(MetadataType::Node, key, &value) ==
-        WasmResult::Ok) {
+    if (getMetadataValue(MetadataType::Node, key, &value) == WasmResult::Ok) {
       (*metadata.mutable_fields())[std::string(key)] = value;
     } else {
       logDebug(absl::StrCat("cannot get metadata key: ", key));
@@ -105,8 +103,8 @@ void PluginRootContext::onConfigure(
   // TODO: this is really expensive since it fetches the entire metadata from
   // before magic "." to get the whole node.
   google::protobuf::Struct node;
-  if (getMetadataStruct(MetadataType::Node, WholeNodeKey,
-                        &node) == WasmResult::Ok) {
+  if (getMetadataStruct(MetadataType::Node, WholeNodeKey, &node) ==
+      WasmResult::Ok) {
     for (const auto& f : node.fields()) {
       if (f.first == NodeIdKey &&
           f.second.kind_case() == google::protobuf::Value::kStringValue) {
@@ -130,16 +128,15 @@ FilterHeadersStatus PluginContext::onRequestHeaders() {
     removeRequestHeader(ExchangeMetadataHeader);
     auto downstream_metadata_bytes =
         Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    setMetadataStruct(MetadataType::Request,
-                      DownstreamMetadataKey, downstream_metadata_bytes);
+    setMetadataStruct(MetadataType::Request, DownstreamMetadataKey,
+                      downstream_metadata_bytes);
   }
 
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadataStringValue(MetadataType::Request,
-                           DownstreamMetadataIdKey,
+    setMetadataStringValue(MetadataType::Request, DownstreamMetadataIdKey,
                            downstream_metadata_id->view());
   }
 
@@ -173,8 +170,8 @@ FilterHeadersStatus PluginContext::onResponseHeaders() {
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setMetadataStringValue(MetadataType::Request,
-                           UpstreamMetadataIdKey, upstream_metadata_id->view());
+    setMetadataStringValue(MetadataType::Request, UpstreamMetadataIdKey,
+                           upstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();
