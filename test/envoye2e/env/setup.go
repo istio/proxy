@@ -90,6 +90,12 @@ type TestSetup struct {
 
 	// Dir is the working dir for envoy
 	Dir string
+
+	// Server side Envoy node metadata.
+	ServerNodeMetadata string
+
+	// Client side Envoy node metadata.
+	ClientNodeMetadata string
 }
 
 func NewClientServerEnvoyTestSetup(name uint16, t *testing.T) *TestSetup {
@@ -159,6 +165,16 @@ func (s *TestSetup) SetFiltersBeforeEnvoyRouterInProxyToServer(filters string) {
 // filter in ClientToApp listener.
 func (s *TestSetup) SetFiltersBeforeEnvoyRouterInClientToApp(filters string) {
 	s.FiltersBeforeEnvoyRouterInClientToApp = filters
+}
+
+// SetServerNodeMetadata sets envoy's node metadata.
+func (s *TestSetup) SetServerNodeMetadata(metadata string) {
+	s.ServerNodeMetadata = metadata
+}
+
+// SetClientNodeMetadata sets envoy's node metadata.
+func (s *TestSetup) SetClientNodeMetadata(metadata string) {
+	s.ClientNodeMetadata = metadata
 }
 
 func (s *TestSetup) SetUpClientServerEnvoy() error {

@@ -35,7 +35,7 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   gcloud auth configure-docker
 fi
 
-GOPATH=/go
+GOPATH=/home/prow/go
 ROOT=/go/src
 rm -f "${HOME}/.bazelrc"
 GIT_SHA="$(git rev-parse --verify HEAD)"

@@ -12,30 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
-
-import (
-	"fmt"
-	"go/build"
-	"log"
-	"os"
-
-	"runtime"
-)
-
-func GetDefaultIstioOut() string {
-	return fmt.Sprintf("%s/out/%s_%s", build.Default.GOPATH, runtime.GOOS, runtime.GOARCH)
-}
-
-func GetDefaultEnvoyBin() string {
-	bazelDir := os.Getenv("BAZEL_OUT")
-	if bazelDir == "" {
-		// fall back to symbolic link of bazel output
-		d, err := os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-		}
-		bazelDir = d + "/../../../bazel-bin/"
-	}
-	return bazelDir + "/src/envoy/"
-}
+// Package client contains an integration test for envoy proxy.
+package client
