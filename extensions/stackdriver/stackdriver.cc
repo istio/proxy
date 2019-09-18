@@ -142,50 +142,19 @@ void StackdriverContext::onLog() {
   bool isOutbound = getRootContext()->isOutbound();
   ::Wasm::Common::populateHTTPRequestInfo(isOutbound, &request_info_);
 
-  // Fill in peer node metadata in request info.
-  if (isOutbound) {
-    auto metadata_value =
-        getSelectorExpression({"filter_state", kUpstreamMetadataKey});
-    if (!metadata_value) {
-      logWarn(absl::StrCat("cannot get stackdriver metadata for: ",
-                           kUpstreamMetadataKey));
-      return;
-    }
-    google::protobuf::Value upstream_metadata;
-    if (!upstream_metadata.ParseFromArray(metadata_value.value()->data(),
-                                          metadata_value.value()->size())) {
-      logWarn(absl::StrCat("cannot parse stackdriver metadata for: ",
-                           kUpstreamMetadataKey));
-      return;
-    }
-    auto status = ::Wasm::Common::extractNodeMetadata(
-        upstream_metadata.struct_value(), &peer_node_info_);
-    if (status != Status::OK) {
-      logWarn("cannot parse upstream peer node metadata " +
-              upstream_metadata.DebugString() + ": " + status.ToString());
-    }
-  } else {
-    auto metadata_value =
-        getSelectorExpression({"filter_state", kDownstreamMetadataKey});
-    if (!metadata_value) {
-      logWarn(absl::StrCat("cannot get stackdriver metadata for: ",
-                           kDownstreamMetadataKey));
-      return;
-    }
-    google::protobuf::Value downstream_metadata;
-    if (!downstream_metadata.ParseFromArray(metadata_value.value()->data(),
-                                            metadata_value.value()->size())) {
-      logWarn(absl::StrCat("cannot parse stackdriver metadata for: ",
-                           kDownstreamMetadataKey));
-      return;
-    }
+  auto key = isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
 
-    auto status = ::Wasm::Common::extractNodeMetadata(
-        downstream_metadata.struct_value(), &peer_node_info_);
-    if (status != Status::OK) {
-      logWarn("cannot parse downstream peer node metadata " +
-              downstream_metadata.DebugString() + ": " + status.ToString());
-    }
+  // Fill in peer node metadata in request info.
+  google::protobuf::Value metadata;
+  if (!getStructValue({"filter_state", key}, &metadata)) {
+    logWarn(absl::StrCat("cannot get stackdriver metadata for: ", key));
+    return;
+  }
+  auto status = ::Wasm::Common::extractNodeMetadata(metadata.struct_value(),
+                                                    &peer_node_info_);
+  if (status != Status::OK) {
+    logWarn("cannot parse upstream peer node metadata " +
+            metadata.DebugString() + ": " + status.ToString());
   }
 
   // Record telemetry based on request info.
