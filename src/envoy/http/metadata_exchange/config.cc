@@ -26,7 +26,7 @@ using Common::Wasm::Null::NullVmPluginFactory;
 using Common::Wasm::Null::Plugin::getMetadataValue;
 using Common::Wasm::Null::Plugin::getRequestHeader;
 using Common::Wasm::Null::Plugin::getResponseHeader;
-using Common::Wasm::Null::Plugin::getSelectorExpression;
+using Common::Wasm::Null::Plugin::getStringValue;
 using Common::Wasm::Null::Plugin::logDebug;
 using Common::Wasm::Null::Plugin::logInfo;
 using Common::Wasm::Null::Plugin::logWarn;
@@ -96,10 +96,7 @@ void PluginRootContext::updateMetadataValue() {
 void PluginRootContext::onConfigure(std::unique_ptr<WasmData>) {
   updateMetadataValue();
 
-  auto node_id = getSelectorExpression({"node", "id"});
-  if (node_id) {
-    node_id_.assign(node_id.value()->data(), node_id.value()->size());
-  } else {
+  if (!getStringValue({"node", "id"}, &node_id_)) {
     logDebug("cannot get node ID");
   }
 
