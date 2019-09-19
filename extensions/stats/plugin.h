@@ -414,11 +414,11 @@ class PluginContext : public Context {
 
 #ifdef NULL_PLUGIN
 NULL_PLUGIN_ROOT_REGISTRY;
+#endif
 
 static RegisterContextFactory register_Stats(
     CONTEXT_FACTORY(Stats::PluginContext),
     ROOT_FACTORY(Stats::PluginRootContext));
-#endif
 
 }  // namespace Stats
 
