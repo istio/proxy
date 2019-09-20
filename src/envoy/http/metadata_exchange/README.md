@@ -9,5 +9,5 @@ Follow the instructions in the github.com/istio/envoy/api/wasm/cpp/README.md to 
 ## Build via the Docker image.
 
 ```bash
-docker run -v $PWD:/work -w /work  wasmsdk:v1 bash /build_wasm.sh
+./build_wasm.sh
 ```
