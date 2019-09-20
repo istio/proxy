@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#include "extensions/stats/plugin.h"
+#include <set>
+
 #include "absl/hash/hash_testing.h"
+#include "extensions/stats/plugin.h"
 #include "gtest/gtest.h"
 
 // WASM_PROLOG
@@ -54,9 +56,17 @@ TEST(IstioDimensions, Hash) {
                      .request_protocol = "grpc",
                      .source_app = "app_source",
                      .source_version = "v2"};
-
-  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
-      {d1, d2, d3, d4, d5, d6, d7, d8}));
+  // Must be unique except for d7 and d8.
+  std::set<size_t> hashes;
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d1));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d2));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d3));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d4));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d5));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d6));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d7));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d8));
+  EXPECT_EQ(hashes.size(), 7);
 }
 
 }  // namespace Stats

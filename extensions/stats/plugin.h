@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/hash/hash.h"
+#include <unordered_map>
+
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
@@ -237,20 +237,30 @@ struct IstioDimensions {
 
   // smart hash uses fields based on context.
   // This function is required to make IstioDimensions type hashable.
-  template <typename H>
-  friend H AbslHashValue(H h, const IstioDimensions& c) {
-    h = H::combine(std::move(h), c.request_protocol, c.response_code,
-                   c.response_flags, c.connection_security_policy, c.outbound);
-
-    if (c.outbound) {  // only care about dest properties
-      return H::combine(std::move(h), c.destination_service_namespace,
-                        c.destination_service_name, c.destination_app,
-                        c.destination_version);
-    } else {  // only care about source properties
-      return H::combine(std::move(h), c.source_workload_namespace,
-                        c.source_workload, c.source_app, c.source_version);
+  struct HashIstioDimensions {
+    size_t operator()(const IstioDimensions& c) const {
+      const size_t kMul = static_cast<size_t>(0x9ddfea08eb382d69);
+      size_t h = 0;
+      h += std::hash<std::string>()(c.request_protocol) * kMul;
+      h += std::hash<std::string>()(c.response_code) * kMul;
+      h += std::hash<std::string>()(c.response_flags) * kMul;
+      h += std::hash<std::string>()(c.connection_security_policy) * kMul;
+      h += c.outbound * kMul;
+      if (c.outbound) {  // only care about dest properties
+        h += std::hash<std::string>()(c.destination_service_namespace) * kMul;
+        h += std::hash<std::string>()(c.destination_service_name) * kMul;
+        h += std::hash<std::string>()(c.destination_app) * kMul;
+        h += std::hash<std::string>()(c.destination_version) * kMul;
+        return h;
+      } else {  // only care about source properties
+        h += std::hash<std::string>()(c.source_workload_namespace) * kMul;
+        h += std::hash<std::string>()(c.source_workload) * kMul;
+        h += std::hash<std::string>()(c.source_app) * kMul;
+        h += std::hash<std::string>()(c.source_version) * kMul;
+        return h;
+      }
     }
-  }
+  };
 
   // This function is required to make IstioDimensions type hashable.
   friend bool operator==(const IstioDimensions& lhs,
@@ -268,8 +278,8 @@ class NodeInfoCache {
  public:
   // Fetches and caches Peer information by peerId
   // TODO Remove this when it is cheap to directly get it from StreamInfo.
-  // At present this involves de-serializing to google.Protobuf.Struct and then
-  // another round trip to NodeInfo. This Should at most hold N entries.
+  // At present this involves de-serializing to google.Protobuf.Struct and
+  // then another round trip to NodeInfo. This Should at most hold N entries.
   // Node is owned by the cache. Do not store a reference.
   const wasm::common::NodeInfo& getPeerById(StringView peer_metadata_id_key,
                                             StringView peer_metadata_key);
@@ -283,7 +293,7 @@ class NodeInfoCache {
   }
 
  private:
-  absl::flat_hash_map<std::string, wasm::common::NodeInfo> cache_;
+  std::unordered_map<std::string, wasm::common::NodeInfo> cache_;
   size_t max_cache_size_ = 10;
 };
 
@@ -333,8 +343,8 @@ class StatGen {
 };
 
 // PluginRootContext is the root context for all streams processed by the
-// thread. It has the same lifetime as the worker thread and acts as target for
-// interactions that outlives individual stream, e.g. timer, async calls.
+// thread. It has the same lifetime as the worker thread and acts as target
+// for interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
@@ -369,7 +379,9 @@ class PluginRootContext : public RootContext {
 
   // Resolved metric where value can be recorded.
   // Maps resolved dimensions to a set of related metrics.
-  absl::flat_hash_map<IstioDimensions, std::vector<SimpleStat>> metrics_;
+  std::unordered_map<IstioDimensions, std::vector<SimpleStat>,
+                     IstioDimensions::HashIstioDimensions>
+      metrics_;
 
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
