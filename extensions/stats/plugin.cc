@@ -146,7 +146,8 @@ void PluginRootContext::report(
   }
 
   incrementMetric(cache_misses_, 1);
-  metrics_.try_emplace(istio_dimensions_, stats);
+  // TODO: When we have c++17, convert to try_emplace.
+  metrics_.emplace(istio_dimensions_, stats);
 }
 
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
