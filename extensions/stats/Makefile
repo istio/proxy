@@ -15,3 +15,4 @@ all: plugin.wasm
 	em++ -s WASM=1 -s BINARYEN_TRAP_MODE='clamp' -s LEGALIZE_JS_FFI=0 -s EMIT_EMSCRIPTEN_METADATA=1 --std=c++17 -O3 -g3 -I${CPP_API} -I${CPP_API}/google/protobuf -Iextensions/common -I. -I/usr/local/include -I${ABSL} -I. --js-library ${CPP_API}/proxy_wasm_intrinsics.js $*.cc ${CPP_API}/proxy_wasm_intrinsics.pb.cc ${PROTO_SRCS} ${COMMON_SRCS} ${CPP_CONTEXT_LIB} ${ABSL_CPP} ${CPP_API}/libprotobuf.bc -o $*.js
 	rm -f $*.js $*.wast
 	rm -f extensions/common/node_info.pb.* extensions/stats/config.pb.*
+	chown ${uid}.${gid} $^
