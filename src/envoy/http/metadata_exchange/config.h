@@ -26,10 +26,6 @@ constexpr absl::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
 constexpr absl::string_view ExchangeMetadataHeaderId =
     "x-envoy-peer-metadata-id";
 
-constexpr absl::string_view NodeMetadataExchangeKeys = "EXCHANGE_KEYS";
-constexpr absl::string_view NodeIdKey = "id";
-constexpr absl::string_view WholeNodeKey = ".";
-
 // DownstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
 constexpr absl::string_view DownstreamMetadataKey =
@@ -62,7 +58,7 @@ class PluginRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~PluginRootContext() = default;
 
-  void onConfigure(std::unique_ptr<WasmData>) override;
+  bool onConfigure(std::unique_ptr<WasmData>) override;
   void onStart(std::unique_ptr<WasmData>) override{};
   void onTick() override{};
 

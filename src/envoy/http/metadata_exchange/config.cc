@@ -23,10 +23,10 @@ namespace MetadataExchange {
 
 // imports from the low-level API
 using Common::Wasm::Null::NullVmPluginFactory;
-using Common::Wasm::Null::Plugin::getMetadataValue;
 using Common::Wasm::Null::Plugin::getRequestHeader;
 using Common::Wasm::Null::Plugin::getResponseHeader;
 using Common::Wasm::Null::Plugin::getStringValue;
+using Common::Wasm::Null::Plugin::getStructValue;
 using Common::Wasm::Null::Plugin::logDebug;
 using Common::Wasm::Null::Plugin::logInfo;
 using Common::Wasm::Null::Plugin::logWarn;
@@ -55,35 +55,38 @@ bool serializeToStringDeterministic(const google::protobuf::Value& metadata,
 }  // namespace
 
 void PluginRootContext::updateMetadataValue() {
-  google::protobuf::Value keys_value;
-  if (getMetadataValue(Common::Wasm::MetadataType::Node,
-                       NodeMetadataExchangeKeys,
-                       &keys_value) != Common::Wasm::WasmResult::Ok) {
-    logDebug(
-        absl::StrCat("cannot get metadata key: ", NodeMetadataExchangeKeys));
+  google::protobuf::Struct node_metadata;
+  if (!getStructValue({"node", "metadata"}, &node_metadata)) {
+    logWarn("cannot get node metadata");
     return;
   }
 
+  const auto key_it =
+      node_metadata.fields().find("EXCHANGE_KEYS");
+  if (key_it == node_metadata.fields().end()) {
+    logWarn("metadata exchange key is missing");
+    return;
+  }
+
+  const auto& keys_value = key_it->second;
   if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
-    logWarn(absl::StrCat("metadata key is not a string: ",
-                         NodeMetadataExchangeKeys));
+    logWarn("metadata exchange key is not a string");
     return;
   }
 
   google::protobuf::Value metadata;
 
   // select keys from the metadata using the keys
-  const std::set<absl::string_view> keys =
+  const std::set<std::string> keys =
       absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
   for (auto key : keys) {
-    google::protobuf::Value value;
-    if (getMetadataValue(Common::Wasm::MetadataType::Node, key, &value) ==
-        Common::Wasm::WasmResult::Ok) {
-      (*metadata.mutable_struct_value()->mutable_fields())[std::string(key)] =
-          value;
-    } else {
-      logDebug(absl::StrCat("cannot get metadata key: ", key));
+    const auto entry_it = node_metadata.fields().find(key);
+    if (entry_it == node_metadata.fields().end()) {
+      logDebug(absl::StrCat("missing metadata exchange key: ", key));
+      continue;
     }
+    (*metadata.mutable_struct_value()->mutable_fields())[key] =
+        entry_it->second;
   }
 
   // store serialized form
@@ -93,7 +96,7 @@ void PluginRootContext::updateMetadataValue() {
       Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
-void PluginRootContext::onConfigure(std::unique_ptr<WasmData>) {
+bool PluginRootContext::onConfigure(std::unique_ptr<WasmData>) {
   updateMetadataValue();
 
   if (!getStringValue({"node", "id"}, &node_id_)) {
@@ -102,6 +105,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData>) {
 
   logDebug(absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_,
                         " node:", node_id_));
+  return true;
 }
 
 Http::FilterHeadersStatus PluginContext::onRequestHeaders() {

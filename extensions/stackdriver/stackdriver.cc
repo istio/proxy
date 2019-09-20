@@ -50,7 +50,7 @@ using ::Wasm::Common::RequestInfo;
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
 
-void StackdriverRootContext::onConfigure(
+bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
   // Parse configuration JSON string.
   JsonParseOptions json_options;
@@ -59,17 +59,17 @@ void StackdriverRootContext::onConfigure(
   if (status != Status::OK) {
     logWarn("Cannot parse Stackdriver plugin configuraiton JSON string " +
             configuration->toString() + ", " + status.message().ToString());
-    return;
+    return false;
   }
 
   status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
   if (status != Status::OK) {
     logWarn("cannot extract local node metadata: " + status.ToString());
-    return;
+    return false;
   }
 
   int64_t direction;
-  if (getValue({"traffic_direction"}, &direction)) {
+  if (getValue({"listener_direction"}, &direction)) {
     direction_ = static_cast<envoy::api::v2::core::TrafficDirection>(direction);
   } else {
     logWarn("Unable to get plugin direction");
@@ -80,7 +80,7 @@ void StackdriverRootContext::onConfigure(
   // registered once.
   WasmDataPtr registered;
   if (WasmResult::Ok == getSharedData(kStackdriverExporter, &registered)) {
-    return;
+    return false;
   }
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
@@ -90,6 +90,7 @@ void StackdriverRootContext::onConfigure(
 
   // Register opencensus measures and views.
   registerViews();
+  return true;
 }
 
 void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
@@ -145,13 +146,12 @@ void StackdriverContext::onLog() {
   auto key = isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
 
   // Fill in peer node metadata in request info.
-  google::protobuf::Value metadata;
+  google::protobuf::Struct metadata;
   if (!getStructValue({"filter_state", key}, &metadata)) {
     logWarn(absl::StrCat("cannot get stackdriver metadata for: ", key));
     return;
   }
-  auto status = ::Wasm::Common::extractNodeMetadata(metadata.struct_value(),
-                                                    &peer_node_info_);
+  auto status = ::Wasm::Common::extractNodeMetadata(metadata, &peer_node_info_);
   if (status != Status::OK) {
     logWarn("cannot parse upstream peer node metadata " +
             metadata.DebugString() + ": " + status.ToString());

@@ -54,7 +54,7 @@ class StackdriverRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~StackdriverRootContext() = default;
 
-  void onConfigure(std::unique_ptr<WasmData> configuration) override;
+  bool onConfigure(std::unique_ptr<WasmData> configuration) override;
   void onStart(std::unique_ptr<WasmData>) override;
   void onTick() override;
 

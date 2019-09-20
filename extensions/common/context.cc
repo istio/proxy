@@ -30,8 +30,8 @@ using Envoy::Extensions::Common::Wasm::StreamType;
 using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getMetadataStruct;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getStructValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 
 #endif  // NULL_PLUGIN
@@ -63,8 +63,7 @@ google::protobuf::util::Status extractNodeMetadata(
 google::protobuf::util::Status extractLocalNodeMetadata(
     wasm::common::NodeInfo *node_info) {
   google::protobuf::Struct node;
-  if (getMetadataStruct(MetadataType::Node, "metadata", &node) !=
-      WasmResult::Ok) {
+  if (!getStructValue({"node", "metadata"}, &node)) {
     return google::protobuf::util::Status(
         google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
   }

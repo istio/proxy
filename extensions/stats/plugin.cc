@@ -36,7 +36,7 @@ namespace Plugin {
 
 namespace Stats {
 
-void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
+bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   // Parse configuration JSON string.
   JsonParseOptions json_options;
   Status status =
@@ -44,16 +44,16 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   if (status != Status::OK) {
     LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
                           configuration->toString()));
-    return;
+    return false;
   }
 
   status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
   if (status != Status::OK) {
     LOG_WARN("cannot parse local node metadata ");
-    return;
+    return false;
   }
   int64_t direction;
-  if (getValue({"traffic_direction"}, &direction)) {
+  if (getValue({"listener_direction"}, &direction)) {
     outbound_ = envoy::api::v2::core::TrafficDirection::OUTBOUND == direction;
   } else {
     LOG_WARN("Unable to get plugin direction");
@@ -105,6 +105,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
             return request_info.response_size;
           },
           field_separator, value_separator)};
+  return true;
 }
 
 void PluginRootContext::report(
@@ -167,14 +168,14 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
 
-  google::protobuf::Value metadata;
+  google::protobuf::Struct metadata;
   if (!getStructValue({"filter_state", peer_metadata_key}, &metadata)) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return cache_[""];
   }
 
-  auto status = ::Wasm::Common::extractNodeMetadata(metadata.struct_value(),
-                                                    &(cache_[peer_id]));
+  auto status =
+      ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
   if (status != Status::OK) {
     LOG_DEBUG(absl::StrCat("cannot parse peer node metadata ",
                            metadata.DebugString(), ": ", status.ToString()));

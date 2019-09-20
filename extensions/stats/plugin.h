@@ -341,7 +341,7 @@ class PluginRootContext : public RootContext {
 
   ~PluginRootContext() = default;
 
-  void onConfigure(std::unique_ptr<WasmData>) override;
+  bool onConfigure(std::unique_ptr<WasmData>) override;
   void report(const ::Wasm::Common::RequestInfo& request_info);
   bool outbound() const { return outbound_; }
 
