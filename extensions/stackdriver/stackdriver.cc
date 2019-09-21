@@ -80,7 +80,7 @@ bool StackdriverRootContext::onConfigure(
   // registered once.
   WasmDataPtr registered;
   if (WasmResult::Ok == getSharedData(kStackdriverExporter, &registered)) {
-    return false;
+    return true;
   }
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
