@@ -61,8 +61,7 @@ void PluginRootContext::updateMetadataValue() {
     return;
   }
 
-  const auto key_it =
-      node_metadata.fields().find("EXCHANGE_KEYS");
+  const auto key_it = node_metadata.fields().find("EXCHANGE_KEYS");
   if (key_it == node_metadata.fields().end()) {
     logWarn("metadata exchange key is missing");
     return;
