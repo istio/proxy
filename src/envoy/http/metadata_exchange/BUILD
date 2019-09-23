@@ -12,9 +12,10 @@ envoy_cc_library(
     name = "metadata_exchange_lib",
     srcs = [
         "config.cc",
+        "plugin.cc",
     ],
     hdrs = [
-        "config.h",
+        "plugin.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],

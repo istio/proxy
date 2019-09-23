@@ -17,7 +17,7 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
@@ -146,14 +146,15 @@ void PluginRootContext::report(
   }
 
   incrementMetric(cache_misses_, 1);
-  metrics_.try_emplace(istio_dimensions_, stats);
+  // TODO: When we have c++17, convert to try_emplace.
+  metrics_.emplace(istio_dimensions_, stats);
 }
 
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     StringView peer_metadata_id_key, StringView peer_metadata_key) {
   std::string peer_id;
   if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
-                             &peer_id) != Common::Wasm::WasmResult::Ok) {
+                             &peer_id) != WasmResult::Ok) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return cache_[""];
   }
@@ -172,7 +173,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
 
   google::protobuf::Struct metadata;
   if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
-      Common::Wasm::WasmResult::Ok) {
+      WasmResult::Ok) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return cache_[""];
   }
@@ -188,8 +189,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   return cache_[peer_id];
 }
 
-// Registration glue
-
+#ifdef NULL_PLUGIN
 NullPluginRootRegistry* context_registry_{};
 
 class StatsFactory : public NullPluginFactory {
@@ -202,11 +202,12 @@ class StatsFactory : public NullPluginFactory {
 };
 
 static Registry::RegisterFactory<StatsFactory, NullPluginFactory> register_;
+#endif
 
 }  // namespace Stats
 
-// WASM_EPILOG
 #ifdef NULL_PLUGIN
+// WASM_EPILOG
 }  // namespace Plugin
 }  // namespace Null
 }  // namespace Wasm
