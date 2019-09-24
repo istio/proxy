@@ -37,7 +37,6 @@ namespace Plugin {
 using namespace Envoy::Extensions::Common::Wasm::Null::Plugin;
 
 // TODO(jplevyak): move these into the base envoy repo
-using MetadataType = Envoy::Extensions::Common::Wasm::MetadataType;
 using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
 using NullPluginRootRegistry =
     ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
@@ -46,10 +45,6 @@ using NullPluginRootRegistry =
 
 constexpr StringView ExchangeMetadataHeader = "x-envoy-peer-metadata";
 constexpr StringView ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
-
-constexpr StringView NodeMetadataExchangeKeys = "EXCHANGE_KEYS";
-constexpr StringView NodeIdKey = "id";
-constexpr StringView WholeNodeKey = ".";
 
 // DownstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
@@ -103,13 +98,6 @@ class PluginContext : public Context {
   inline StringView metadataValue() { return rootContext()->metadataValue(); };
   inline StringView nodeId() { return rootContext()->nodeId(); }
 };
-
-// TODO(mjog) move this to proxy_wasm_impl.h
-inline void setMetadataStruct(MetadataType type, StringView key,
-                              StringView value) {
-  proxy_setMetadataStruct(type, key.data(), key.size(), value.data(),
-                          value.size());
-}
 
 #ifdef NULL_PLUGIN
 }  // namespace Plugin

@@ -14,7 +14,7 @@
  */
 
 #include "common/common/base64.h"
-#include "src/envoy/http/metadata_exchange/plugin.h"
+#include "extensions/metadata_exchange/plugin.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -28,7 +28,7 @@ namespace Plugin {
 // Registration glue
 
 class MetadataExchangeFactory
-    : public ::Envoy::Extensions::Common::Wasm::Null::NullPluginFactory {
+    : public ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory {
  public:
   const std::string name() const override {
     return "envoy.wasm.metadata_exchange";
@@ -43,7 +43,7 @@ class MetadataExchangeFactory
 
 static Registry::RegisterFactory<
     MetadataExchangeFactory,
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginFactory>
+    ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory>
     register_;
 
 }  // namespace MetadataExchange

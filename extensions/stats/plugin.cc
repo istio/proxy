@@ -198,7 +198,7 @@ class StatsFactory : public NullVmPluginFactory {
   }
 };
 
-static Registry::RegisterFactory<StatsFactory, NullPluginFactory> register_;
+static Registry::RegisterFactory<StatsFactory, NullVmPluginFactory> register_;
 #endif
 
 }  // namespace Stats
