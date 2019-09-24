@@ -25,9 +25,9 @@ envoy_cc_binary(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        "//extensions/metadata_exchange:metadata_exchange_lib",
         "//extensions/stackdriver:stackdriver_plugin",
         "//extensions/stats:stats_plugin",
-        "//extensions/metadata_exchange:metadata_exchange_lib",
         "//src/envoy/http/authn:filter_lib",
         "//src/envoy/http/jwt_auth:http_filter_factory",
         "//src/envoy/http/mixer:filter_lib",
