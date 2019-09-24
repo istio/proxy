@@ -18,7 +18,7 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
@@ -80,10 +80,9 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
     request_info->response_code = response_code;
   }
 
-  if (kGrpcContentTypes.contains(
-          getHeaderMapValue(HeaderMapType::RequestHeaders,
-                            kContentTypeHeaderKey)
-              ->toString())) {
+  if (kGrpcContentTypes.count(getHeaderMapValue(HeaderMapType::RequestHeaders,
+                                                kContentTypeHeaderKey)
+                                  ->toString()) != 0) {
     request_info->request_protocol = kProtocolGRPC;
   } else {
     // TODO Add http/1.1, http/1.0, http/2 in a separate attribute.

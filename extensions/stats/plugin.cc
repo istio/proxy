@@ -17,7 +17,7 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
@@ -146,7 +146,8 @@ void PluginRootContext::report(
   }
 
   incrementMetric(cache_misses_, 1);
-  metrics_.try_emplace(istio_dimensions_, stats);
+  // TODO: When we have c++17, convert to try_emplace.
+  metrics_.emplace(istio_dimensions_, stats);
 }
 
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
@@ -185,8 +186,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   return cache_[peer_id];
 }
 
-// Registration glue
-
+#ifdef NULL_PLUGIN
 NullPluginRootRegistry* context_registry_{};
 
 class StatsFactory : public NullVmPluginFactory {
@@ -198,12 +198,13 @@ class StatsFactory : public NullVmPluginFactory {
   }
 };
 
-static Registry::RegisterFactory<StatsFactory, NullVmPluginFactory> register_;
+static Registry::RegisterFactory<StatsFactory, NullPluginFactory> register_;
+#endif
 
 }  // namespace Stats
 
-// WASM_EPILOG
 #ifdef NULL_PLUGIN
+// WASM_EPILOG
 }  // namespace Plugin
 }  // namespace Null
 }  // namespace Wasm
