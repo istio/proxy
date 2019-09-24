@@ -73,8 +73,8 @@ class StackdriverRootContext : public RootContext {
   wasm::common::NodeInfo local_node_info_;
 
   // Indicates the traffic direction relative to this proxy.
-  envoy::api::v2::core::TrafficDirection direction_ =
-      envoy::api::v2::core::TrafficDirection::UNSPECIFIED;
+  ::Wasm::Common::TrafficDirection direction_{
+      ::Wasm::Common::TrafficDirection::Unspecified};
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

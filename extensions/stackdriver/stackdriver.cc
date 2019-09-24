@@ -70,7 +70,7 @@ bool StackdriverRootContext::onConfigure(
 
   int64_t direction;
   if (getValue({"listener_direction"}, &direction)) {
-    direction_ = static_cast<envoy::api::v2::core::TrafficDirection>(direction);
+    direction_ = static_cast<::Wasm::Common::TrafficDirection>(direction);
   } else {
     logWarn("Unable to get plugin direction");
   }
@@ -112,7 +112,7 @@ void StackdriverRootContext::record(const RequestInfo &request_info,
 }
 
 inline bool StackdriverRootContext::isOutbound() {
-  return direction_ == envoy::api::v2::core::TrafficDirection::OUTBOUND;
+  return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
