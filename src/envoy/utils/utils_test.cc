@@ -59,19 +59,15 @@ class UtilsTest : public testing::TestWithParam<bool> {
 
  protected:
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  NiceMock<Envoy::Ssl::MockConnectionInfo> ssl_{};
   bool peer_;
 
   void setMockSan(const std::vector<std::string>& sans) {
-    EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(&ssl_));
+    auto ssl = std::make_shared<NiceMock<Envoy::Ssl::MockConnectionInfo>>();
+    EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl));
     if (peer_) {
-      EXPECT_CALL(ssl_, uriSanPeerCertificate())
-          .Times(1)
-          .WillOnce(Return(sans));
+      ON_CALL(*ssl, uriSanPeerCertificate()).WillByDefault(Return(sans));
     } else {
-      EXPECT_CALL(ssl_, uriSanLocalCertificate())
-          .Times(1)
-          .WillOnce(Return(sans));
+      ON_CALL(*ssl, uriSanLocalCertificate()).WillByDefault(Return(sans));
     }
   }
 };

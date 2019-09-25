@@ -612,8 +612,8 @@ Server::Server(const std::string &name,
       api_(Envoy::Thread::threadFactoryForTest(), stats_, time_system_,
            Envoy::Filesystem::fileSystemForTest()),
       dispatcher_(api_.allocateDispatcher()),
-      connection_handler_(new Envoy::Server::ConnectionHandlerImpl(
-          ENVOY_LOGGER(), *dispatcher_)),
+      connection_handler_(
+          new Envoy::Server::ConnectionHandlerImpl(*dispatcher_, "test")),
       thread_(nullptr),
       listening_socket_(listening_socket),
       server_filter_chain_(transport_socket_factory),

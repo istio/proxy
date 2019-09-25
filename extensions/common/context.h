@@ -101,6 +101,13 @@ struct RequestContext {
   const Common::RequestInfo& request;
 };
 
+// TrafficDirection is a mirror of envoy xDS traffic direction.
+enum class TrafficDirection : int64_t {
+  Unspecified = 0,
+  Inbound = 1,
+  Outbound = 2,
+};
+
 // Extracts NodeInfo from proxy node metadata passed in as a protobuf struct.
 // It converts the metadata struct to a JSON struct and parse NodeInfo proto
 // from that JSON struct.

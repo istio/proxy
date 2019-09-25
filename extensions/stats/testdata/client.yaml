@@ -84,14 +84,14 @@ static_resources:
                 route: 
                   cluster: server
           http_filters:
-          - name: envoy.wasm
+          - name: envoy.filters.http.wasm
             config:
               vm_config:
                 vm: "envoy.wasm.vm.null"
                 code:
                   inline_string: "envoy.wasm.metadata_exchange"
               configuration: "test"
-          - name: envoy.wasm
+          - name: envoy.filters.http.wasm
             config:
               vm_config:
                 vm: "envoy.wasm.vm.null"

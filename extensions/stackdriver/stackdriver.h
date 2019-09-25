@@ -54,7 +54,7 @@ class StackdriverRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~StackdriverRootContext() = default;
 
-  void onConfigure(std::unique_ptr<WasmData> configuration) override;
+  bool onConfigure(std::unique_ptr<WasmData> configuration) override;
   void onStart(std::unique_ptr<WasmData>) override;
   void onTick() override;
 
@@ -73,7 +73,8 @@ class StackdriverRootContext : public RootContext {
   wasm::common::NodeInfo local_node_info_;
 
   // Indicates the traffic direction relative to this proxy.
-  PluginDirection direction_ = PluginDirection::Unspecified;
+  ::Wasm::Common::TrafficDirection direction_{
+      ::Wasm::Common::TrafficDirection::Unspecified};
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
