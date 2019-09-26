@@ -59,8 +59,7 @@ class AlpnProxyFilterTest : public testing::Test {
     config_ = std::make_shared<AlpnProxyConfig>(
         stat_prefix_, "istio2", "istio/metadata", FilterDirection::Downstream,
         scope_);
-    filter_ = std::make_unique<AlpnProxyFilter>(config_, local_info_,
-                                                validation_visitor_);
+    filter_ = std::make_unique<AlpnProxyFilter>(config_, local_info_);
     filter_->initializeReadFilterCallbacks(read_filter_callbacks_);
     filter_->initializeWriteFilterCallbacks(write_filter_callbacks_);
     metadata_node_.set_id("test");
@@ -90,7 +89,6 @@ class AlpnProxyFilterTest : public testing::Test {
   NiceMock<Network::MockWriteFilterCallbacks> write_filter_callbacks_;
   Network::MockConnection connection_;
   NiceMock<LocalInfo::MockLocalInfo> local_info_;
-  NiceMock<ProtobufMessage::MockValidationVisitor> validation_visitor_;
   NiceMock<Envoy::StreamInfo::MockStreamInfo> stream_info_;
   envoy::api::v2::core::Node metadata_node_;
 };

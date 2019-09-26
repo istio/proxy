@@ -19,7 +19,6 @@
 #include "absl/base/internal/endian.h"
 #include "absl/strings/string_view.h"
 #include "common/buffer/buffer_impl.h"
-#include "common/protobuf/message_validator_impl.h"
 #include "common/protobuf/utility.h"
 #include "envoy/network/connection.h"
 #include "envoy/stats/scope.h"
@@ -231,7 +230,6 @@ void AlpnProxyFilter::tryReadProxyData(Buffer::Instance& data) {
 
   Envoy::ProtobufWkt::Struct struct_metadata =
       Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
-  Envoy::MessageUtil::validate(struct_metadata, validation_visitor_);
   if (config_->filter_direction_ == FilterDirection::Downstream) {
     writeMetadata(UpstreamDynamicDataKey, struct_metadata);
   } else {

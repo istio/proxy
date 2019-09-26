@@ -38,8 +38,7 @@ Network::FilterFactoryCb createFilterFactoryHelper(
   return [filter_config,
           &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
-        std::make_shared<AlpnProxyFilter>(filter_config, context.localInfo(),
-                                          context.messageValidationVisitor()));
+        std::make_shared<AlpnProxyFilter>(filter_config, context.localInfo()));
   };
 }
 }  // namespace

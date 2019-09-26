@@ -17,7 +17,6 @@
 
 #include <string>
 
-#include "common/protobuf/message_validator_impl.h"
 #include "common/protobuf/protobuf.h"
 #include "envoy/local_info/local_info.h"
 #include "envoy/network/filter.h"
@@ -91,11 +90,9 @@ using AlpnProxyConfigSharedPtr = std::shared_ptr<AlpnProxyConfig>;
 class AlpnProxyFilter : public Network::Filter {
  public:
   AlpnProxyFilter(AlpnProxyConfigSharedPtr config,
-                  const LocalInfo::LocalInfo& local_info,
-                  ProtobufMessage::ValidationVisitor& validation_visitor)
+                  const LocalInfo::LocalInfo& local_info)
       : config_(config),
         local_info_(local_info),
-        validation_visitor_(validation_visitor),
         conn_state_(ConnProtocolNotRead) {}
 
   // Network::ReadFilter
@@ -144,8 +141,6 @@ class AlpnProxyFilter : public Network::Filter {
   Network::WriteFilterCallbacks* write_callbacks_{};
   // Stores the length of proxy data that contains node metadata.
   uint64_t proxy_data_length_{0};
-  // Validation Visitor instance.
-  ProtobufMessage::ValidationVisitor& validation_visitor_;
 
   // Key Identifier for dynamic metadata in upstream filter.
   const std::string UpstreamDynamicDataKey =
