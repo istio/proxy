@@ -230,8 +230,8 @@ void AlpnProxyFilter::tryReadProxyData(Buffer::Instance& data) {
   data.drain(proxy_data_length_);
 
   Envoy::ProtobufWkt::Struct struct_metadata =
-      Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(
-          proxy_data, validation_visitor_);
+      Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
+  Envoy::MessageUtil::validate(struct_metadata, validation_visitor_);
   if (config_->filter_direction_ == FilterDirection::Downstream) {
     writeMetadata(UpstreamDynamicDataKey, struct_metadata);
   } else {
