@@ -311,7 +311,7 @@ ServerConnection::ServerConnection(
       http_connection_ =
           std::make_unique<Envoy::Http::Http1::ServerConnectionImpl>(
               network_connection, *this, Envoy::Http::Http1Settings(),
-              max_request_headers_kb);
+              max_request_headers_kb, Envoy::Http::DEFAULT_MAX_HEADERS_COUNT);
       break;
     case Envoy::Http::CodecClient::Type::HTTP2: {
       Envoy::Http::Http2Settings settings;
@@ -320,7 +320,7 @@ ServerConnection::ServerConnection(
       http_connection_ =
           std::make_unique<Envoy::Http::Http2::ServerConnectionImpl>(
               network_connection, *this, scope, settings,
-              max_request_headers_kb);
+              max_request_headers_kb, Envoy::Http::DEFAULT_MAX_HEADERS_COUNT);
     } break;
     default:
       ENVOY_LOG(error,
@@ -330,7 +330,7 @@ ServerConnection::ServerConnection(
       http_connection_ =
           std::make_unique<Envoy::Http::Http1::ServerConnectionImpl>(
               network_connection, *this, Envoy::Http::Http1Settings(),
-              max_request_headers_kb);
+              max_request_headers_kb, Envoy::Http::DEFAULT_MAX_HEADERS_COUNT);
       break;
   }
 }
