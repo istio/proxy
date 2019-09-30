@@ -395,6 +395,13 @@ TEST_F(RequestHandlerImplTest, TestHandlerReport) {
   EXPECT_CALL(mock_report, GetDynamicFilterState())
       .Times(1)
       .WillOnce(ReturnRef(filter_metadata));
+  EXPECT_CALL(mock_report, IsUpstreamMutualTLS())
+      .Times(1)
+      .WillOnce(testing::Return(true));
+  const std::string empty;
+  EXPECT_CALL(mock_report, GetUpstreamFailureReason())
+      .Times(1)
+      .WillOnce(ReturnRef(empty));
 
   // Report should be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(1);
@@ -414,6 +421,8 @@ TEST_F(RequestHandlerImplTest, TestHandlerDisabledReport) {
   EXPECT_CALL(mock_report, GetResponseHeaders()).Times(0);
   EXPECT_CALL(mock_report, GetReportInfo(_)).Times(0);
   EXPECT_CALL(mock_report, GetDynamicFilterState()).Times(0);
+  EXPECT_CALL(mock_report, IsUpstreamMutualTLS()).Times(0);
+  EXPECT_CALL(mock_report, GetUpstreamFailureReason()).Times(0);
 
   // Report should NOT be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(0);
@@ -452,6 +461,8 @@ TEST_F(RequestHandlerImplTest, TestEmptyConfig) {
   EXPECT_CALL(mock_report, GetResponseHeaders()).Times(0);
   EXPECT_CALL(mock_report, GetReportInfo(_)).Times(0);
   EXPECT_CALL(mock_report, GetDynamicFilterState()).Times(0);
+  EXPECT_CALL(mock_report, IsUpstreamMutualTLS()).Times(0);
+  EXPECT_CALL(mock_report, GetUpstreamFailureReason()).Times(0);
 
   // Report should NOT be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(0);

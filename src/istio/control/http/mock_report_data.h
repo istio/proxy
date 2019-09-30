@@ -38,6 +38,8 @@ class MockReportData : public ReportData {
       GetDynamicFilterState,
       const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
           &());
+  MOCK_CONST_METHOD0(IsUpstreamMutualTLS, bool());
+  MOCK_CONST_METHOD0(GetUpstreamFailureReason, const std::string &());
 };
 
 }  // namespace http

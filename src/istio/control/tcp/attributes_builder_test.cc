@@ -178,6 +178,12 @@ attributes {
     }
   }
 }
+attributes {
+  key: "upstream.mtls"
+  value {
+    bool_value: true
+  }
+}
 )";
 
 const char kReportAttributes[] = R"(
@@ -271,6 +277,12 @@ attributes {
     }
   }
 }
+attributes {
+  key: "upstream.mtls"
+  value {
+    bool_value: true
+  }
+}
 )";
 
 const char kDeltaOneReportAttributes[] = R"(
@@ -344,6 +356,12 @@ attributes {
     }
   }
 }
+attributes {
+  key: "upstream.mtls"
+  value {
+    bool_value: true
+  }
+}
 )";
 
 const char kDeltaTwoReportAttributes[] = R"(
@@ -415,6 +433,12 @@ attributes {
         value: "a,b,c"
       }
     }
+  }
+}
+attributes {
+  key: "upstream.mtls"
+  value {
+    bool_value: true
   }
 }
 )";
@@ -526,6 +550,10 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
         info->send_bytes = 678;
         info->duration = std::chrono::nanoseconds(4);
       }));
+  EXPECT_CALL(mock_data, IsUpstreamMutualTLS()).WillRepeatedly(Return(true));
+  const std::string failure_reason;
+  EXPECT_CALL(mock_data, GetUpstreamFailureReason())
+      .WillRepeatedly(ReturnRef(failure_reason));
 
   istio::mixer::v1::Attributes attributes;
   AttributesBuilder builder(&attributes);

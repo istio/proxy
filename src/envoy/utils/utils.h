@@ -52,8 +52,11 @@ bool GetPrincipal(const Network::Connection* connection, bool peer,
 bool GetTrustDomain(const Network::Connection* connection, bool peer,
                     std::string* trust_domain);
 
-// Returns true if connection is mutual TLS enabled.
+// Returns true if downstream connection is mutual TLS enabled.
 bool IsMutualTLS(const Network::Connection* connection);
+
+// Returns true if upstream connection is mutual TLS enabled.
+bool IsUpstreamMutualTLS(const StreamInfo::StreamInfo& stream_info);
 
 // Get requested server name, SNI in case of TLS
 bool GetRequestedServerName(const Network::Connection* connection,

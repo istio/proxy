@@ -33,6 +33,8 @@ class MockReportData : public ReportData {
       const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>
           &());
   MOCK_CONST_METHOD1(GetReportInfo, void(ReportInfo *info));
+  MOCK_CONST_METHOD0(IsUpstreamMutualTLS, bool());
+  MOCK_CONST_METHOD0(GetUpstreamFailureReason, const std::string &());
 };
 
 }  // namespace tcp

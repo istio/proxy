@@ -438,6 +438,18 @@ attributes {
     }
   }
 }
+attributes {
+  key: "upstream.mtls"
+  value {
+    bool_value: false
+  }
+}
+attributes {
+  key: "upstream.failure_reason"
+  value {
+    string_value: "wrong cert"
+  }
+}
 )";
 
 constexpr char kAuthenticationResultStruct[] = R"(
@@ -809,6 +821,11 @@ TEST(AttributesBuilderTest, TestReportAttributes) {
       }));
   EXPECT_CALL(mock_data, GetDynamicFilterState())
       .WillOnce(ReturnRef(filter_metadata));
+  EXPECT_CALL(mock_data, IsUpstreamMutualTLS())
+      .WillOnce(testing::Return(false));
+  std::string failure_reason = "wrong cert";
+  EXPECT_CALL(mock_data, GetUpstreamFailureReason())
+      .WillOnce(ReturnRef(failure_reason));
 
   istio::mixer::v1::Attributes attributes;
   AttributesBuilder builder(&attributes);
@@ -889,6 +906,11 @@ TEST(AttributesBuilderTest, TestReportAttributesWithDestIP) {
       }));
   EXPECT_CALL(mock_data, GetDynamicFilterState())
       .WillOnce(ReturnRef(filter_metadata));
+  EXPECT_CALL(mock_data, IsUpstreamMutualTLS())
+      .WillOnce(testing::Return(false));
+  std::string failure_reason = "wrong cert";
+  EXPECT_CALL(mock_data, GetUpstreamFailureReason())
+      .WillOnce(ReturnRef(failure_reason));
 
   istio::mixer::v1::Attributes attributes;
   SetDestinationIp(&attributes, "1.2.3.4");

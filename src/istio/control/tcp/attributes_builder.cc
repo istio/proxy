@@ -137,6 +137,15 @@ void AttributesBuilder::ExtractReportAttributes(
 
   builder.AddTimestamp(utils::AttributeName::kContextTime,
                        std::chrono::system_clock::now());
+
+  builder.AddBool(utils::AttributeName::kUpstreamMtls,
+                  report_data->IsUpstreamMutualTLS());
+
+  const std::string &failure_reason = report_data->GetUpstreamFailureReason();
+  if (!failure_reason.empty()) {
+    builder.AddString(utils::AttributeName::kUpstreamFailureReason,
+                      failure_reason);
+  }
 }
 
 }  // namespace tcp

@@ -178,6 +178,11 @@ bool IsMutualTLS(const Network::Connection* connection) {
          connection->ssl()->peerCertificatePresented();
 }
 
+bool IsUpstreamMutualTLS(const StreamInfo::StreamInfo& stream_info) {
+  const auto ssl = stream_info.upstreamSslConnection();
+  return ssl != nullptr && ssl->peerCertificatePresented();
+}
+
 bool GetRequestedServerName(const Network::Connection* connection,
                             std::string* name) {
   if (connection && !connection->requestedServerName().empty()) {

@@ -58,6 +58,11 @@ class ReportData {
   virtual const ::google::protobuf::Map<::std::string,
                                         ::google::protobuf::Struct>
       &GetDynamicFilterState() const = 0;
+
+  // Get upstream mTLS status.
+  virtual bool IsUpstreamMutualTLS() const = 0;
+
+  virtual const std::string &GetUpstreamFailureReason() const = 0;
 };
 
 }  // namespace tcp

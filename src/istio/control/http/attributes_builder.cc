@@ -280,6 +280,14 @@ void AttributesBuilder::ExtractReportAttributes(
   }
 
   builder.FlattenMapOfStringToStruct(report_data->GetDynamicFilterState());
+
+  builder.AddBool(utils::AttributeName::kUpstreamMtls,
+                  report_data->IsUpstreamMutualTLS());
+  const std::string &failure_reason = report_data->GetUpstreamFailureReason();
+  if (!failure_reason.empty()) {
+    builder.AddString(utils::AttributeName::kUpstreamFailureReason,
+                      failure_reason);
+  }
 }
 
 }  // namespace http

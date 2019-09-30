@@ -175,6 +175,14 @@ class ReportData : public ::istio::control::http::ReportData,
       &GetDynamicFilterState() const override {
     return info_.dynamicMetadata().filter_metadata();
   }
+
+  bool IsUpstreamMutualTLS() const override {
+    return Utils::IsUpstreamMutualTLS(info_);
+  }
+
+  const std::string &GetUpstreamFailureReason() const override {
+    return info_.upstreamTransportFailureReason();
+  }
 };
 
 }  // namespace Mixer

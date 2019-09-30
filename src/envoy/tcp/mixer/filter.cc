@@ -247,6 +247,17 @@ std::string Filter::GetConnectionId() const {
   return uuid_connection_id;
 }
 
+bool Filter::IsUpstreamMutualTLS() const {
+  return Utils::IsUpstreamMutualTLS(
+      filter_callbacks_->connection().streamInfo());
+}
+
+const std::string &Filter::GetUpstreamFailureReason() const {
+  return filter_callbacks_->connection()
+      .streamInfo()
+      .upstreamTransportFailureReason();
+}
+
 void Filter::OnReportTimer() {
   handler_->Report(this, ConnectionEvent::CONTINUE);
   clearCachedFilterMetadata();

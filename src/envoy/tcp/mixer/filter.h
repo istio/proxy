@@ -65,6 +65,8 @@ class Filter : public Network::Filter,
   void GetReportInfo(
       ::istio::control::tcp::ReportData::ReportInfo *data) const override;
   std::string GetConnectionId() const override;
+  bool IsUpstreamMutualTLS() const override;
+  const std::string &GetUpstreamFailureReason() const override;
 
   void cacheFilterMetadata(
       const ::google::protobuf::Map<std::string, ::google::protobuf::Struct>

@@ -151,6 +151,13 @@ TEST_F(RequestHandlerImplTest, TestHandlerReport) {
   EXPECT_CALL(mock_data, GetDynamicFilterState())
       .Times(1)
       .WillOnce(ReturnRef(filter_metadata));
+  EXPECT_CALL(mock_data, IsUpstreamMutualTLS())
+      .Times(1)
+      .WillOnce(testing::Return(true));
+  const std::string empty;
+  EXPECT_CALL(mock_data, GetUpstreamFailureReason())
+      .Times(1)
+      .WillOnce(ReturnRef(empty));
 
   // Report should be called.
   EXPECT_CALL(*mock_client_, Report(_)).Times(1);
