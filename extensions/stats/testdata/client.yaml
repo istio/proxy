@@ -1,6 +1,7 @@
 node:
   id: test-client-productpage
   metadata:
+    ISTIO_VERSION: "1.4-dev"
     EXCHANGE_KEYS: "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME"
     NAME: productpage-v11-84975bc778-pxz2w
     NAMESPACE: default
@@ -58,6 +59,10 @@ stats_config:
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
   - tag_name: "cache"
     regex: "(cache\\.(.+?)\\.)"
+  - tag_name: "component"
+    regex: "(component\\.(.+?)\\.)"
+  - tag_name: "tag"
+    regex: "(tag\\.(.+?);\\.)"
 static_resources:
   listeners:
   - name: client
