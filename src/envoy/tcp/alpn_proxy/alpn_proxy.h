@@ -124,11 +124,11 @@ class AlpnProxyFilter : public Network::Filter {
   // form of google::protobuf::any which encapsulates google::protobuf::struct.
   void tryReadProxyData(Buffer::Instance& data);
 
-  // Helper function to write Dynamic metadata.
-  void writeMetadata(const std::string key, const ProtobufWkt::Struct& value);
+  // Helper function to set Dynamic metadata.
+  void setMetadata(const std::string key, const ProtobufWkt::Struct& value);
 
-  // Helper function to read Dynamic metadata.
-  std::unique_ptr<const google::protobuf::Struct> readMetadata(
+  // Helper function to get Dynamic metadata.
+  std::unique_ptr<const google::protobuf::Struct> getMetadata(
       const std::string& key);
 
   // Config for AlpnProxy filter.

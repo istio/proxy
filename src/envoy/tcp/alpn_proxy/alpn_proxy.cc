@@ -69,21 +69,22 @@ Network::FilterStatus AlpnProxyFilter::onData(Buffer::Instance& data, bool) {
       // No work needed if connection state is Done or Invalid.
       return Network::FilterStatus::Continue;
     case ConnProtocolNotRead: {
+      // If Alpn protocol is not the expected one, then return.
+      // Else find and write node metadata.
       if (read_callbacks_->connection().nextProtocol() != config_->protocol_) {
         conn_state_ = Invalid;
         config_->stats().alpn_protocol_not_found_.inc();
         return Network::FilterStatus::Continue;
-      } else {
-        conn_state_ = WriteMetadata;
-        config_->stats().alpn_protocol_found_.inc();
       }
+      conn_state_ = WriteMetadata;
+      config_->stats().alpn_protocol_found_.inc();
     }
     case WriteMetadata: {
       // TODO(gargnupur): Try to move this just after alpn protocol is
       // determined and first onData is called in Downstream filter.
-      if (config_->filter_direction_ == FilterDirection::Downstream) {
-        writeNodeMetadata();
-      }
+      // If downstream filter, write metadata.
+      // Otherwise, go ahead and try to read initial header and proxy data.
+      writeNodeMetadata();
     }
     case ReadingInitialHeader:
     case NeedMoreDataInitialHeader: {
@@ -136,9 +137,7 @@ Network::FilterStatus AlpnProxyFilter::onWrite(Buffer::Instance&, bool) {
     case WriteMetadata: {
       // TODO(gargnupur): Try to move this just after alpn protocol is
       // determined and first onWrite is called in Upstream filter.
-      if (config_->filter_direction_ == FilterDirection::Upstream) {
-        writeNodeMetadata();
-      }
+      writeNodeMetadata();
     }
     case ReadingInitialHeader:
     case ReadingProxyHeader:
@@ -157,7 +156,7 @@ void AlpnProxyFilter::writeNodeMetadata() {
   }
 
   std::unique_ptr<const google::protobuf::Struct> metadata =
-      readMetadata(config_->node_metadata_id_);
+      getMetadata(config_->node_metadata_id_);
   if (metadata != nullptr) {
     Envoy::ProtobufWkt::Any metadata_any_value;
     *metadata_any_value.mutable_type_url() = StructTypeUrl;
@@ -167,9 +166,9 @@ void AlpnProxyFilter::writeNodeMetadata() {
     write_callbacks_->injectWriteDataToFilterChain(*buf, false);
 
     if (config_->filter_direction_ == FilterDirection::Downstream) {
-      writeMetadata(DownstreamDynamicDataKey, *metadata);
+      setMetadata(DownstreamDynamicDataKey, *metadata);
     } else {
-      writeMetadata(UpstreamDynamicDataKey, *metadata);
+      setMetadata(UpstreamDynamicDataKey, *metadata);
     }
     config_->stats().metadata_added_.inc();
   }
@@ -231,18 +230,18 @@ void AlpnProxyFilter::tryReadProxyData(Buffer::Instance& data) {
   Envoy::ProtobufWkt::Struct struct_metadata =
       Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
   if (config_->filter_direction_ == FilterDirection::Downstream) {
-    writeMetadata(UpstreamDynamicDataKey, struct_metadata);
+    setMetadata(UpstreamDynamicDataKey, struct_metadata);
   } else {
-    writeMetadata(DownstreamDynamicDataKey, struct_metadata);
+    setMetadata(DownstreamDynamicDataKey, struct_metadata);
   }
 }
 
-void AlpnProxyFilter::writeMetadata(const std::string key,
-                                    const ProtobufWkt::Struct& value) {
+void AlpnProxyFilter::setMetadata(const std::string key,
+                                  const ProtobufWkt::Struct& value) {
   read_callbacks_->connection().streamInfo().setDynamicMetadata(key, value);
 }
 
-std::unique_ptr<const google::protobuf::Struct> AlpnProxyFilter::readMetadata(
+std::unique_ptr<const google::protobuf::Struct> AlpnProxyFilter::getMetadata(
     const std::string& key) {
   if (local_info_.node().has_metadata()) {
     auto metadata_fields = local_info_.node().metadata().fields();
