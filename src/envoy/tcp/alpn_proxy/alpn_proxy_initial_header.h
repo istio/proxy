@@ -17,18 +17,20 @@
 
 #include <cstdint>
 
+#include "envoy/common/platform.h"
+
 namespace Envoy {
 namespace Tcp {
 namespace AlpnProxy {
 
 // Used with AlpnProxyHeaderProto to be extensible.
-struct AlpnProxyInitialHeader {
+PACKED_STRUCT(struct AlpnProxyInitialHeader {
   uint32_t magic;  // Magic number in network byte order. Most significant byte
                    // is placed first.
   static const uint32_t magic_number = 0x23071961;  // decimal 587667809
   uint32_t data_size;  // Size of the data blob in network byte order. Most
                        // significant byte is placed first.
-} __attribute__((packed));
+});
 
 }  // namespace AlpnProxy
 }  // namespace Tcp
