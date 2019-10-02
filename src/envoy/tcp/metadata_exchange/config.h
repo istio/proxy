@@ -16,17 +16,17 @@
 #pragma once
 
 #include "extensions/filters/network/common/factory_base.h"
-#include "src/envoy/tcp/alpn_proxy/config/alpn_proxy.pb.h"
+#include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
 namespace Tcp {
-namespace AlpnProxy {
+namespace MetadataExchange {
 
 /**
- * Config registration for the Alpn Proxy filter. @see
+ * Config registration for the MetadataExchange filter. @see
  *  NamedNetworkFilterConfigFactory.
  */
-class AlpnProxyConfigFactory
+class MetadataExchangeConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
  public:
   Network::FilterFactoryCb createFilterFactory(
@@ -40,19 +40,19 @@ class AlpnProxyConfigFactory
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() override { return "envoy.filters.network.alpn_proxy"; }
+  std::string name() override { return "envoy.filters.network.metadata_exchange"; }
 
  private:
   Network::FilterFactoryCb createFilterFactory(
-      const envoy::tcp::alpnproxy::config::AlpnProxy& proto_config,
+      const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
       Server::Configuration::FactoryContext& context);
 };
 
 /**
- * Config registration for the Alpn Proxy Upstream filter. @see
+ * Config registration for the MetadataExchange Upstream filter. @see
  *  NamedUpstreamNetworkFilterConfigFactory.
  */
-class AlpnProxyUpstreamConfigFactory
+class MetadataExchangeUpstreamConfigFactory
     : public Server::Configuration::NamedUpstreamNetworkFilterConfigFactory {
  public:
   Network::FilterFactoryCb createFilterFactoryFromProto(
@@ -62,15 +62,15 @@ class AlpnProxyUpstreamConfigFactory
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
   std::string name() override {
-    return "envoy.filters.network.upstream.alpn_proxy";
+    return "envoy.filters.network.upstream.metadata_exchange";
   }
 
  private:
   Network::FilterFactoryCb createFilterFactory(
-      const envoy::tcp::alpnproxy::config::AlpnProxy& proto_config,
+      const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
       Server::Configuration::CommonFactoryContext& context);
 };
 
-}  // namespace AlpnProxy
+}  // namespace MetadataExchange
 }  // namespace Tcp
 }  // namespace Envoy

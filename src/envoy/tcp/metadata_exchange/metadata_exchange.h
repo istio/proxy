@@ -23,16 +23,16 @@
 #include "envoy/runtime/runtime.h"
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
-#include "src/envoy/tcp/alpn_proxy/config/alpn_proxy.pb.h"
+#include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
 namespace Tcp {
-namespace AlpnProxy {
+namespace MetadataExchange {
 
 /**
- * All AlpnProxy filter stats. @see stats_macros.h
+ * All MetadataExchange filter stats. @see stats_macros.h
  */
-#define ALL_ALPN_STATS(COUNTER)     \
+#define ALL_METADATA_EXCHANGE_STATS(COUNTER)     \
   COUNTER(alpn_protocol_not_found)  \
   COUNTER(alpn_protocol_found)      \
   COUNTER(initial_header_not_found) \
@@ -40,28 +40,28 @@ namespace AlpnProxy {
   COUNTER(metadata_added)
 
 /**
- * Struct definition for all AlpnProxy stats. @see stats_macros.h
+ * Struct definition for all MetadataExchange stats. @see stats_macros.h
  */
-struct AlpnProxyStats {
-  ALL_ALPN_STATS(GENERATE_COUNTER_STRUCT)
+struct MetadataExchangeStats {
+  ALL_METADATA_EXCHANGE_STATS(GENERATE_COUNTER_STRUCT)
 };
 
 /**
- * Direction of the flow of traffic in which this this AlpnProxy filter
+ * Direction of the flow of traffic in which this this MetadataExchange filter
  * is placed.
  */
 enum FilterDirection { Downstream, Upstream };
 
 /**
- * Configuration for the AlpnProxy filter.
+ * Configuration for the MetadataExchange filter.
  */
-class AlpnProxyConfig {
+class MetadataExchangeConfig {
  public:
-  AlpnProxyConfig(const std::string& stat_prefix, const std::string& protocol,
+  MetadataExchangeConfig(const std::string& stat_prefix, const std::string& protocol,
                   const std::string& node_metadata_id,
                   const FilterDirection filter_direction, Stats::Scope& scope);
 
-  const AlpnProxyStats& stats() { return stats_; }
+  const MetadataExchangeStats& stats() { return stats_; }
 
   // Scope for the stats.
   Stats::Scope& scope_;
@@ -73,23 +73,23 @@ class AlpnProxyConfig {
   const std::string node_metadata_id_;
   // Direction of filter.
   const FilterDirection filter_direction_;
-  // Stats for Alpn Proxy Filter.
-  AlpnProxyStats stats_;
+  // Stats for MetadataExchange Filter.
+  MetadataExchangeStats stats_;
 
  private:
-  AlpnProxyStats generateStats(const std::string& prefix, Stats::Scope& scope) {
-    return AlpnProxyStats{ALL_ALPN_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
+  MetadataExchangeStats generateStats(const std::string& prefix, Stats::Scope& scope) {
+    return MetadataExchangeStats{ALL_METADATA_EXCHANGE_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
   }
 };
 
-using AlpnProxyConfigSharedPtr = std::shared_ptr<AlpnProxyConfig>;
+using MetadataExchangeConfigSharedPtr = std::shared_ptr<MetadataExchangeConfig>;
 
 /**
- * A AlpnProxy filter instance. One per connection.
+ * A MetadataExchange filter instance. One per connection.
  */
-class AlpnProxyFilter : public Network::Filter {
+class MetadataExchangeFilter : public Network::Filter {
  public:
-  AlpnProxyFilter(AlpnProxyConfigSharedPtr config,
+  MetadataExchangeFilter(MetadataExchangeConfigSharedPtr config,
                   const LocalInfo::LocalInfo& local_info)
       : config_(config),
         local_info_(local_info),
@@ -131,8 +131,8 @@ class AlpnProxyFilter : public Network::Filter {
   std::unique_ptr<const google::protobuf::Struct> getMetadata(
       const std::string& key);
 
-  // Config for AlpnProxy filter.
-  AlpnProxyConfigSharedPtr config_;
+  // Config for MetadataExchange filter.
+  MetadataExchangeConfigSharedPtr config_;
   // LocalInfo instance.
   const LocalInfo::LocalInfo& local_info_;
   // Read callback instance.
@@ -144,10 +144,10 @@ class AlpnProxyFilter : public Network::Filter {
 
   // Key Identifier for dynamic metadata in upstream filter.
   const std::string UpstreamDynamicDataKey =
-      "filters.network.alpn_proxy.upstream";
+      "filters.network.metadata_exchange.upstream";
   // Key Identifier for dynamic metadata in downstream filter.
   const std::string DownstreamDynamicDataKey =
-      "filters.network.alpn_proxy.downstream";
+      "filters.network.metadata_exchange.downstream";
   // Type url of google::protobug::struct.
   const std::string StructTypeUrl =
       "type.googleapis.com/google.protobuf.Struct";
@@ -156,7 +156,7 @@ class AlpnProxyFilter : public Network::Filter {
   enum {
     ConnProtocolNotRead,        // Connection Protocol has not been read yet
     WriteMetadata,              // Write node metadata
-    ReadingInitialHeader,       // AlpnProxyInitialHeader is being read
+    ReadingInitialHeader,       // MetadataExchangeInitialHeader is being read
     ReadingProxyHeader,         // Proxy Header is being read
     NeedMoreDataInitialHeader,  // Need more data to be read
     NeedMoreDataProxyHeader,    // Need more data to be read
@@ -165,6 +165,6 @@ class AlpnProxyFilter : public Network::Filter {
   } conn_state_;
 };
 
-}  // namespace AlpnProxy
+}  // namespace MetadataExchange
 }  // namespace Tcp
 }  // namespace Envoy

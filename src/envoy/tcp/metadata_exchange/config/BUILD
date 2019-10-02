@@ -16,12 +16,12 @@
 #
 
 proto_library(
-    name = "alpn_proxy_proto",
-    srcs = ["alpn_proxy.proto"],
+    name = "metadata_exchange_proto",
+    srcs = ["metadata_exchange.proto"],
 )
 
 cc_proto_library(
-    name = "alpn_proxy_cc_proto",
+    name = "metadata_exchange_cc_proto",
     visibility = ["//visibility:public"],
-    deps = ["alpn_proxy_proto"],
+    deps = ["metadata_exchange_proto"],
 )

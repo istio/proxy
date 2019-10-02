@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include "src/envoy/tcp/alpn_proxy/alpn_proxy_initial_header.h"
+#include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 
 namespace Envoy {
 namespace Tcp {
-namespace AlpnProxy {
+namespace MetadataExchange {
 
-const uint32_t AlpnProxyInitialHeader::magic_number;
+const uint32_t MetadataExchangeInitialHeader::magic_number;
 
-}  // namespace AlpnProxy
+}  // namespace MetadataExchange
 }  // namespace Tcp
 }  // namespace Envoy

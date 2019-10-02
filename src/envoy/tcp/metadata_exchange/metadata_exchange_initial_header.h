@@ -21,10 +21,10 @@
 
 namespace Envoy {
 namespace Tcp {
-namespace AlpnProxy {
+namespace MetadataExchange {
 
-// Used with AlpnProxyHeaderProto to be extensible.
-PACKED_STRUCT(struct AlpnProxyInitialHeader {
+// Used with MetadataExchangeHeaderProto to be extensible.
+PACKED_STRUCT(struct MetadataExchangeInitialHeader {
   uint32_t magic;  // Magic number in network byte order. Most significant byte
                    // is placed first.
   static const uint32_t magic_number = 0x23071961;  // decimal 587667809
@@ -32,6 +32,6 @@ PACKED_STRUCT(struct AlpnProxyInitialHeader {
                        // significant byte is placed first.
 });
 
-}  // namespace AlpnProxy
+}  // namespace MetadataExchange
 }  // namespace Tcp
 }  // namespace Envoy

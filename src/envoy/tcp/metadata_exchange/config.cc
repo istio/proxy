@@ -13,95 +13,95 @@
  * limitations under the License.
  */
 
-#include "src/envoy/tcp/alpn_proxy/config.h"
+#include "src/envoy/tcp/metadata_exchange/config.h"
 #include "envoy/network/connection.h"
 #include "envoy/registry/registry.h"
-#include "src/envoy/tcp/alpn_proxy/alpn_proxy.h"
+#include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
 #include "src/envoy/utils/config.h"
 
 namespace Envoy {
 namespace Tcp {
-namespace AlpnProxy {
+namespace MetadataExchange {
 namespace {
 
-static constexpr char StatPrefix[] = "alpn_proxy.";
+static constexpr char StatPrefix[] = "metadata_exchange.";
 
 Network::FilterFactoryCb createFilterFactoryHelper(
-    const envoy::tcp::alpnproxy::config::AlpnProxy& proto_config,
+    const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
     Server::Configuration::CommonFactoryContext& context,
     FilterDirection filter_direction) {
   ASSERT(!proto_config.protocol().empty());
 
-  AlpnProxyConfigSharedPtr filter_config(std::make_shared<AlpnProxyConfig>(
+  MetadataExchangeConfigSharedPtr filter_config(std::make_shared<MetadataExchangeConfig>(
       StatPrefix, proto_config.protocol(), proto_config.node_metadata_id(),
       filter_direction, context.scope()));
   return [filter_config,
           &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
-        std::make_shared<AlpnProxyFilter>(filter_config, context.localInfo()));
+        std::make_shared<MetadataExchangeFilter>(filter_config, context.localInfo()));
   };
 }
 }  // namespace
 
-Network::FilterFactoryCb AlpnProxyConfigFactory::createFilterFactoryFromProto(
+Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& config,
     Server::Configuration::FactoryContext& context) {
   return createFilterFactory(
-      dynamic_cast<const envoy::tcp::alpnproxy::config::AlpnProxy&>(config),
+      dynamic_cast<const envoy::tcp::metadataexchange::config::MetadataExchange&>(config),
       context);
 }
 
-ProtobufTypes::MessagePtr AlpnProxyConfigFactory::createEmptyConfigProto() {
+ProtobufTypes::MessagePtr MetadataExchangeConfigFactory::createEmptyConfigProto() {
   return ProtobufTypes::MessagePtr{
-      new envoy::tcp::alpnproxy::config::AlpnProxy};
+      new envoy::tcp::metadataexchange::config::MetadataExchange};
 }
 
-Network::FilterFactoryCb AlpnProxyConfigFactory::createFilterFactory(
-    const envoy::tcp::alpnproxy::config::AlpnProxy& proto_config,
+Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactory(
+    const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
     Server::Configuration::FactoryContext& context) {
   return createFilterFactoryHelper(proto_config, context,
                                    FilterDirection::Downstream);
 }
 
 Network::FilterFactoryCb
-AlpnProxyUpstreamConfigFactory::createFilterFactoryFromProto(
+MetadataExchangeUpstreamConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& config,
     Server::Configuration::CommonFactoryContext& context) {
   return createFilterFactory(
-      dynamic_cast<const envoy::tcp::alpnproxy::config::AlpnProxy&>(config),
+      dynamic_cast<const envoy::tcp::metadataexchange::config::MetadataExchange&>(config),
       context);
 }
 
 ProtobufTypes::MessagePtr
-AlpnProxyUpstreamConfigFactory::createEmptyConfigProto() {
+MetadataExchangeUpstreamConfigFactory::createEmptyConfigProto() {
   return ProtobufTypes::MessagePtr{
-      new envoy::tcp::alpnproxy::config::AlpnProxy};
+      new envoy::tcp::metadataexchange::config::MetadataExchange};
 }
 
-Network::FilterFactoryCb AlpnProxyUpstreamConfigFactory::createFilterFactory(
-    const envoy::tcp::alpnproxy::config::AlpnProxy& proto_config,
+Network::FilterFactoryCb MetadataExchangeUpstreamConfigFactory::createFilterFactory(
+    const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
     Server::Configuration::CommonFactoryContext& context) {
   return createFilterFactoryHelper(proto_config, context,
                                    FilterDirection::Upstream);
 }
 
 /**
- * Static registration for the Alpn Proxy Downstream filter. @see
+ * Static registration for the MetadataExchange Downstream filter. @see
  * RegisterFactory.
  */
 static Registry::RegisterFactory<
-    AlpnProxyConfigFactory,
+    MetadataExchangeConfigFactory,
     Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
 
 /**
- * Static registration for the Alpn Proxy Upstream filter. @see RegisterFactory.
+ * Static registration for the MetadataExchange Upstream filter. @see RegisterFactory.
  */
 static Registry::RegisterFactory<
-    AlpnProxyUpstreamConfigFactory,
+    MetadataExchangeUpstreamConfigFactory,
     Server::Configuration::NamedUpstreamNetworkFilterConfigFactory>
     registered_upstream_;
 
-}  // namespace AlpnProxy
+}  // namespace MetadataExchange
 }  // namespace Tcp
 }  // namespace Envoy

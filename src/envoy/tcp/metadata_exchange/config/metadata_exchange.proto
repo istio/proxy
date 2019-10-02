@@ -15,16 +15,16 @@
 
 syntax = "proto3";
 
-package envoy.tcp.alpnproxy.config;
+package envoy.tcp.metadataexchange.config;
 
-option java_outer_classname = "AlpnProxyProto";
+option java_outer_classname = "MetadataExchangeProto";
 option java_multiple_files = true;
-option java_package = "io.envoyproxy.envoy.tcp.alpnproxy.config";
-option go_package = "AlpnProxy";
+option java_package = "io.envoyproxy.envoy.tcp.metadataexchange.config";
+option go_package = "MetadataExchange";
 
-// [#protodoc-title: AlpnProxy protocol match and data transfer]
-// AlpnProxy protocol match and data transfer
-message AlpnProxy {
+// [#protodoc-title: MetadataExchange protocol match and data transfer]
+// MetadataExchange protocol match and data transfer
+message MetadataExchange {
   // Protocol that Alpn should support on the server.
   // [#comment:TODO(GargNupur): Make it a list.]
   string protocol = 1;

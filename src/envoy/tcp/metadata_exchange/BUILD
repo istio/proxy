@@ -15,7 +15,7 @@
 ################################################################################
 #
 
-# Alpn Proxy filter
+# Metadata Exchange filter
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
@@ -27,18 +27,18 @@ load(
 envoy_package()
 
 envoy_cc_library(
-    name = "alpn_proxy",
+    name = "metadata_exchange",
     srcs = [
-        "alpn_proxy.cc",
-        "alpn_proxy_initial_header.cc",
+        "metadata_exchange.cc",
+        "metadata_exchange_initial_header.cc",
     ],
     hdrs = [
-        "alpn_proxy.h",
-        "alpn_proxy_initial_header.h",
+        "metadata_exchange.h",
+        "metadata_exchange_initial_header.h",
     ],
     repository = "@envoy",
     deps = [
-        "//src/envoy/tcp/alpn_proxy/config:alpn_proxy_cc_proto",
+        "//src/envoy/tcp/metadata_exchange/config:metadata_exchange_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/base:endian",
         "@com_google_absl//absl/strings",
@@ -62,8 +62,8 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        ":alpn_proxy",
-        "//src/envoy/tcp/alpn_proxy/config:alpn_proxy_cc_proto",
+        ":metadata_exchange",
+        "//src/envoy/tcp/metadata_exchange/config:metadata_exchange_cc_proto",
         "//src/envoy/utils:utils_lib",
         "@envoy//include/envoy/registry",
         "@envoy//source/extensions/filters/network/common:factory_base_lib",
@@ -71,13 +71,13 @@ envoy_cc_library(
 )
 
 envoy_cc_test(
-    name = "alpnproxy_test",
+    name = "metadataexchange_test",
     srcs = [
-        "alpn_proxy_test.cc",
+        "metadata_exchange_test.cc",
     ],
     repository = "@envoy",
     deps = [
-        ":alpn_proxy",
+        ":metadata_exchange",
         ":config_lib",
         "@envoy//source/common/protobuf",
         "@envoy//test/mocks/local_info:local_info_mocks",

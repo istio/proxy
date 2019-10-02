@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#include "src/envoy/tcp/alpn_proxy/alpn_proxy.h"
+#include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
 #include "common/buffer/buffer_impl.h"
 #include "common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
-#include "src/envoy/tcp/alpn_proxy/alpn_proxy_initial_header.h"
+#include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 #include "test/mocks/local_info/mocks.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/protobuf/mocks.h"
@@ -31,35 +31,35 @@ using testing::ReturnRef;
 
 namespace Envoy {
 namespace Tcp {
-namespace AlpnProxy {
+namespace MetadataExchange {
 namespace {
 
 MATCHER_P(MapEq, rhs, "") { return MessageDifferencer::Equals(arg, rhs); }
 
 void ConstructProxyHeaderData(::Envoy::Buffer::OwnedImpl& serialized_header,
                               Envoy::ProtobufWkt::Any& proxy_header,
-                              AlpnProxyInitialHeader* initial_header) {
+                              MetadataExchangeInitialHeader* initial_header) {
   std::string serialized_proxy_header = proxy_header.SerializeAsString();
-  memset(initial_header, 0, sizeof(AlpnProxyInitialHeader));
-  initial_header->magic = absl::ghtonl(AlpnProxyInitialHeader::magic_number);
+  memset(initial_header, 0, sizeof(MetadataExchangeInitialHeader));
+  initial_header->magic = absl::ghtonl(MetadataExchangeInitialHeader::magic_number);
   initial_header->data_size = absl::ghtonl(serialized_proxy_header.length());
   serialized_header.add(::Envoy::Buffer::OwnedImpl{
       absl::string_view(reinterpret_cast<const char*>(initial_header),
-                        sizeof(AlpnProxyInitialHeader))});
+                        sizeof(MetadataExchangeInitialHeader))});
   serialized_header.add(::Envoy::Buffer::OwnedImpl{serialized_proxy_header});
 }
 
 }  // namespace
 
-class AlpnProxyFilterTest : public testing::Test {
+class MetadataExchangeFilterTest : public testing::Test {
  public:
-  AlpnProxyFilterTest() { ENVOY_LOG_MISC(info, "test"); }
+  MetadataExchangeFilterTest() { ENVOY_LOG_MISC(info, "test"); }
 
   void initialize() {
-    config_ = std::make_shared<AlpnProxyConfig>(
+    config_ = std::make_shared<MetadataExchangeConfig>(
         stat_prefix_, "istio2", "istio/metadata", FilterDirection::Downstream,
         scope_);
-    filter_ = std::make_unique<AlpnProxyFilter>(config_, local_info_);
+    filter_ = std::make_unique<MetadataExchangeFilter>(config_, local_info_);
     filter_->initializeReadFilterCallbacks(read_filter_callbacks_);
     filter_->initializeWriteFilterCallbacks(write_filter_callbacks_);
     metadata_node_.set_id("test");
@@ -81,10 +81,10 @@ class AlpnProxyFilterTest : public testing::Test {
 
   Envoy::ProtobufWkt::Struct details_value_;
   Envoy::ProtobufWkt::Struct productpage_value_;
-  AlpnProxyConfigSharedPtr config_;
-  std::unique_ptr<AlpnProxyFilter> filter_;
+  MetadataExchangeConfigSharedPtr config_;
+  std::unique_ptr<MetadataExchangeFilter> filter_;
   Stats::IsolatedStoreImpl scope_;
-  std::string stat_prefix_{"test.alpnmetadata"};
+  std::string stat_prefix_{"test.metadataexchange"};
   NiceMock<Network::MockReadFilterCallbacks> read_filter_callbacks_;
   NiceMock<Network::MockWriteFilterCallbacks> write_filter_callbacks_;
   Network::MockConnection connection_;
@@ -93,7 +93,7 @@ class AlpnProxyFilterTest : public testing::Test {
   envoy::api::v2::core::Node metadata_node_;
 };
 
-TEST_F(AlpnProxyFilterTest, AlpnProxyFound) {
+TEST_F(MetadataExchangeFilterTest, MetadataExchangeFound) {
   initialize();
   initializeStructValues();
 
@@ -104,14 +104,14 @@ TEST_F(AlpnProxyFilterTest, AlpnProxyFound) {
   EXPECT_CALL(read_filter_callbacks_.connection_, nextProtocol())
       .WillRepeatedly(Return("istio2"));
   EXPECT_CALL(stream_info_,
-              setDynamicMetadata("filters.network.alpn_proxy.downstream",
+              setDynamicMetadata("filters.network.metadata_exchange.downstream",
                                  MapEq(details_value_)));
   EXPECT_CALL(stream_info_,
-              setDynamicMetadata("filters.network.alpn_proxy.upstream",
+              setDynamicMetadata("filters.network.metadata_exchange.upstream",
                                  MapEq(productpage_value_)));
 
   ::Envoy::Buffer::OwnedImpl data;
-  AlpnProxyInitialHeader initial_header;
+  MetadataExchangeInitialHeader initial_header;
   Envoy::ProtobufWkt::Any productpage_any_value;
   *productpage_any_value.mutable_type_url() =
       "type.googleapis.com/google.protobuf.Struct";
@@ -130,7 +130,7 @@ TEST_F(AlpnProxyFilterTest, AlpnProxyFound) {
   EXPECT_EQ(1UL, config_->stats().alpn_protocol_found_.value());
 }
 
-TEST_F(AlpnProxyFilterTest, AlpnProxyNotFound) {
+TEST_F(MetadataExchangeFilterTest, MetadataExchangeNotFound) {
   initialize();
 
   EXPECT_CALL(read_filter_callbacks_.connection_, nextProtocol())
@@ -142,6 +142,6 @@ TEST_F(AlpnProxyFilterTest, AlpnProxyNotFound) {
   EXPECT_EQ(1UL, config_->stats().alpn_protocol_not_found_.value());
 }
 
-}  // namespace AlpnProxy
+}  // namespace MetadataExchange
 }  // namespace Tcp
 }  // namespace Envoy

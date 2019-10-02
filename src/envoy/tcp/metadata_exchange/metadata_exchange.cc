@@ -22,26 +22,26 @@
 #include "common/protobuf/utility.h"
 #include "envoy/network/connection.h"
 #include "envoy/stats/scope.h"
-#include "src/envoy/tcp/alpn_proxy/alpn_proxy.h"
-#include "src/envoy/tcp/alpn_proxy/alpn_proxy_initial_header.h"
+#include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
+#include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 
 namespace Envoy {
 namespace Tcp {
-namespace AlpnProxy {
+namespace MetadataExchange {
 namespace {
 
 std::unique_ptr<::Envoy::Buffer::OwnedImpl> constructProxyHeaderData(
     const Envoy::ProtobufWkt::Any& proxy_data) {
-  AlpnProxyInitialHeader initial_header;
+  MetadataExchangeInitialHeader initial_header;
   std::string proxy_data_str = proxy_data.SerializeAsString();
   // Converting from host to network byte order so that most significant byte is
   // placed first.
-  initial_header.magic = absl::ghtonl(AlpnProxyInitialHeader::magic_number);
+  initial_header.magic = absl::ghtonl(MetadataExchangeInitialHeader::magic_number);
   initial_header.data_size = absl::ghtonl(proxy_data_str.length());
 
   ::Envoy::Buffer::OwnedImpl initial_header_buffer{
       absl::string_view(reinterpret_cast<const char*>(&initial_header),
-                        sizeof(AlpnProxyInitialHeader))};
+                        sizeof(MetadataExchangeInitialHeader))};
   auto proxy_data_buffer =
       std::make_unique<::Envoy::Buffer::OwnedImpl>(proxy_data_str);
   proxy_data_buffer->prepend(initial_header_buffer);
@@ -50,7 +50,7 @@ std::unique_ptr<::Envoy::Buffer::OwnedImpl> constructProxyHeaderData(
 
 }  // namespace
 
-AlpnProxyConfig::AlpnProxyConfig(const std::string& stat_prefix,
+MetadataExchangeConfig::MetadataExchangeConfig(const std::string& stat_prefix,
                                  const std::string& protocol,
                                  const std::string& node_metadata_id,
                                  const FilterDirection filter_direction,
@@ -62,7 +62,7 @@ AlpnProxyConfig::AlpnProxyConfig(const std::string& stat_prefix,
       filter_direction_(filter_direction),
       stats_(generateStats(stat_prefix, scope)) {}
 
-Network::FilterStatus AlpnProxyFilter::onData(Buffer::Instance& data, bool) {
+Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data, bool) {
   switch (conn_state_) {
     case Invalid:
     case Done:
@@ -114,11 +114,11 @@ Network::FilterStatus AlpnProxyFilter::onData(Buffer::Instance& data, bool) {
   return Network::FilterStatus::Continue;
 }
 
-Network::FilterStatus AlpnProxyFilter::onNewConnection() {
+Network::FilterStatus MetadataExchangeFilter::onNewConnection() {
   return Network::FilterStatus::Continue;
 }
 
-Network::FilterStatus AlpnProxyFilter::onWrite(Buffer::Instance&, bool) {
+Network::FilterStatus MetadataExchangeFilter::onWrite(Buffer::Instance&, bool) {
   switch (conn_state_) {
     case Invalid:
     case Done:
@@ -150,7 +150,7 @@ Network::FilterStatus AlpnProxyFilter::onWrite(Buffer::Instance&, bool) {
   return Network::FilterStatus::Continue;
 }
 
-void AlpnProxyFilter::writeNodeMetadata() {
+void MetadataExchangeFilter::writeNodeMetadata() {
   if (conn_state_ != WriteMetadata) {
     return;
   }
@@ -176,12 +176,12 @@ void AlpnProxyFilter::writeNodeMetadata() {
   conn_state_ = ReadingInitialHeader;
 }
 
-void AlpnProxyFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
+void MetadataExchangeFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
   if (conn_state_ != ReadingInitialHeader &&
       conn_state_ != NeedMoreDataInitialHeader) {
     return;
   }
-  const uint32_t initial_header_length = sizeof(AlpnProxyInitialHeader);
+  const uint32_t initial_header_length = sizeof(MetadataExchangeInitialHeader);
   if (data.length() < initial_header_length) {
     config_->stats().initial_header_not_found_.inc();
     // Not enough data to read. Wait for it to come.
@@ -191,11 +191,11 @@ void AlpnProxyFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
   std::string initial_header_buf = std::string(
       static_cast<const char*>(data.linearize(initial_header_length)),
       initial_header_length);
-  const AlpnProxyInitialHeader* initial_header =
-      reinterpret_cast<const AlpnProxyInitialHeader*>(
+  const MetadataExchangeInitialHeader* initial_header =
+      reinterpret_cast<const MetadataExchangeInitialHeader*>(
           initial_header_buf.c_str());
   if (absl::gntohl(initial_header->magic) !=
-      AlpnProxyInitialHeader::magic_number) {
+      MetadataExchangeInitialHeader::magic_number) {
     config_->stats().initial_header_not_found_.inc();
     conn_state_ = Invalid;
     return;
@@ -206,7 +206,7 @@ void AlpnProxyFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
   conn_state_ = ReadingProxyHeader;
 }
 
-void AlpnProxyFilter::tryReadProxyData(Buffer::Instance& data) {
+void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   if (conn_state_ != ReadingProxyHeader &&
       conn_state_ != NeedMoreDataProxyHeader) {
     return;
@@ -236,12 +236,12 @@ void AlpnProxyFilter::tryReadProxyData(Buffer::Instance& data) {
   }
 }
 
-void AlpnProxyFilter::setMetadata(const std::string key,
+void MetadataExchangeFilter::setMetadata(const std::string key,
                                   const ProtobufWkt::Struct& value) {
   read_callbacks_->connection().streamInfo().setDynamicMetadata(key, value);
 }
 
-std::unique_ptr<const google::protobuf::Struct> AlpnProxyFilter::getMetadata(
+std::unique_ptr<const google::protobuf::Struct> MetadataExchangeFilter::getMetadata(
     const std::string& key) {
   if (local_info_.node().has_metadata()) {
     auto metadata_fields = local_info_.node().metadata().fields();
@@ -254,6 +254,6 @@ std::unique_ptr<const google::protobuf::Struct> AlpnProxyFilter::getMetadata(
   return nullptr;
 }
 
-}  // namespace AlpnProxy
+}  // namespace MetadataExchange
 }  // namespace Tcp
 }  // namespace Envoy

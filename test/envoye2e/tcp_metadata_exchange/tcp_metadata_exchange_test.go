@@ -27,18 +27,18 @@ import (
 	"istio.io/proxy/test/envoye2e/env"
 )
 
-const alpnIstioConfigFilter = `
-- name: envoy.filters.network.alpn_proxy
+const metadataExchangeIstioConfigFilter = `
+- name: envoy.filters.network.metadata_exchange
   config:
     protocol: istio2
     node_metadata_id: istio.io/metadata
 `
 
-const alpnIstioUpstreamConfigFilterChain = `
+const metadataExchangeIstioUpstreamConfigFilterChain = `
 filters:
-- name: envoy.filters.network.upstream.alpn_proxy
+- name: envoy.filters.network.upstream.metadata_exchange
   typed_config: 
-    "@type": type.googleapis.com/envoy.tcp.alpnproxy.config.AlpnProxy
+    "@type": type.googleapis.com/envoy.tcp.metadataexchange.config.MetadataExchange
     protocol: istio2
     node_metadata_id: istio.io/metadata
 `
@@ -90,20 +90,20 @@ const serverNodeMetadata = `
 
 // Stats in Client Envoy proxy.
 var expectedClientStats = map[string]int{
-	"cluster.client.alpn_proxy.alpn_protocol_found":      1,
-	"cluster.client.alpn_proxy.alpn_protocol_not_found":  0,
-	"cluster.client.alpn_proxy.initial_header_not_found": 0,
-	"cluster.client.alpn_proxy.header_not_found":         0,
-	"cluster.client.alpn_proxy.metadata_added":           1,
+	"cluster.client.metadata_exchange.alpn_protocol_found":      1,
+	"cluster.client.metadata_exchange.alpn_protocol_not_found":  0,
+	"cluster.client.metadata_exchange.initial_header_not_found": 0,
+	"cluster.client.metadata_exchange.header_not_found":         0,
+	"cluster.client.metadata_exchange.metadata_added":           1,
 }
 
 // Stats in Server Envoy proxy.
 var expectedServerStats = map[string]int{
-	"alpn_proxy.alpn_protocol_found":      1,
-	"alpn_proxy.alpn_protocol_not_found":  0,
-	"alpn_proxy.initial_header_not_found": 0,
-	"alpn_proxy.header_not_found":         0,
-	"alpn_proxy.metadata_added":           1,
+	"metadata_exchange.alpn_protocol_found":      1,
+	"metadata_exchange.alpn_protocol_not_found":  0,
+	"metadata_exchange.initial_header_not_found": 0,
+	"metadata_exchange.header_not_found":         0,
+	"metadata_exchange.metadata_added":           1,
 }
 
 func TestTcpMetadataExchange(t *testing.T) {
@@ -112,8 +112,8 @@ func TestTcpMetadataExchange(t *testing.T) {
 	s.SetStartTcpBackend(true)
 	s.SetTlsContext(tlsContext)
 	s.SetClusterTlsContext(clusterTlsContext)
-	s.SetFiltersBeforeEnvoyRouterInClientToApp(alpnIstioConfigFilter)
-	s.SetUpstreamFiltersInClient(alpnIstioUpstreamConfigFilterChain)
+	s.SetFiltersBeforeEnvoyRouterInClientToApp(metadataExchangeIstioConfigFilter)
+	s.SetUpstreamFiltersInClient(metadataExchangeIstioUpstreamConfigFilterChain)
 	s.SetEnableTls(true)
 	s.SetClientNodeMetadata(clientNodeMetadata)
 	s.SetServerNodeMetadata(serverNodeMetadata)
