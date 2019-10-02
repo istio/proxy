@@ -40,11 +40,14 @@ class MetadataExchangeConfigFactory
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() override { return "envoy.filters.network.metadata_exchange"; }
+  std::string name() override {
+    return "envoy.filters.network.metadata_exchange";
+  }
 
  private:
   Network::FilterFactoryCb createFilterFactory(
-      const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
+      const envoy::tcp::metadataexchange::config::MetadataExchange&
+          proto_config,
       Server::Configuration::FactoryContext& context);
 };
 
@@ -67,7 +70,8 @@ class MetadataExchangeUpstreamConfigFactory
 
  private:
   Network::FilterFactoryCb createFilterFactory(
-      const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
+      const envoy::tcp::metadataexchange::config::MetadataExchange&
+          proto_config,
       Server::Configuration::CommonFactoryContext& context);
 };
 

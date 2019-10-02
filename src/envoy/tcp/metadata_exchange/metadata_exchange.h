@@ -32,11 +32,11 @@ namespace MetadataExchange {
 /**
  * All MetadataExchange filter stats. @see stats_macros.h
  */
-#define ALL_METADATA_EXCHANGE_STATS(COUNTER)     \
-  COUNTER(alpn_protocol_not_found)  \
-  COUNTER(alpn_protocol_found)      \
-  COUNTER(initial_header_not_found) \
-  COUNTER(header_not_found)         \
+#define ALL_METADATA_EXCHANGE_STATS(COUNTER) \
+  COUNTER(alpn_protocol_not_found)           \
+  COUNTER(alpn_protocol_found)               \
+  COUNTER(initial_header_not_found)          \
+  COUNTER(header_not_found)                  \
   COUNTER(metadata_added)
 
 /**
@@ -57,9 +57,11 @@ enum FilterDirection { Downstream, Upstream };
  */
 class MetadataExchangeConfig {
  public:
-  MetadataExchangeConfig(const std::string& stat_prefix, const std::string& protocol,
-                  const std::string& node_metadata_id,
-                  const FilterDirection filter_direction, Stats::Scope& scope);
+  MetadataExchangeConfig(const std::string& stat_prefix,
+                         const std::string& protocol,
+                         const std::string& node_metadata_id,
+                         const FilterDirection filter_direction,
+                         Stats::Scope& scope);
 
   const MetadataExchangeStats& stats() { return stats_; }
 
@@ -77,8 +79,10 @@ class MetadataExchangeConfig {
   MetadataExchangeStats stats_;
 
  private:
-  MetadataExchangeStats generateStats(const std::string& prefix, Stats::Scope& scope) {
-    return MetadataExchangeStats{ALL_METADATA_EXCHANGE_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
+  MetadataExchangeStats generateStats(const std::string& prefix,
+                                      Stats::Scope& scope) {
+    return MetadataExchangeStats{
+        ALL_METADATA_EXCHANGE_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
   }
 };
 
@@ -90,7 +94,7 @@ using MetadataExchangeConfigSharedPtr = std::shared_ptr<MetadataExchangeConfig>;
 class MetadataExchangeFilter : public Network::Filter {
  public:
   MetadataExchangeFilter(MetadataExchangeConfigSharedPtr config,
-                  const LocalInfo::LocalInfo& local_info)
+                         const LocalInfo::LocalInfo& local_info)
       : config_(config),
         local_info_(local_info),
         conn_state_(ConnProtocolNotRead) {}

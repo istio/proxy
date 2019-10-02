@@ -77,8 +77,8 @@ envoy_cc_test(
     ],
     repository = "@envoy",
     deps = [
-        ":metadata_exchange",
         ":config_lib",
+        ":metadata_exchange",
         "@envoy//source/common/protobuf",
         "@envoy//test/mocks/local_info:local_info_mocks",
         "@envoy//test/mocks/network:network_mocks",

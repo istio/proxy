@@ -41,7 +41,8 @@ void ConstructProxyHeaderData(::Envoy::Buffer::OwnedImpl& serialized_header,
                               MetadataExchangeInitialHeader* initial_header) {
   std::string serialized_proxy_header = proxy_header.SerializeAsString();
   memset(initial_header, 0, sizeof(MetadataExchangeInitialHeader));
-  initial_header->magic = absl::ghtonl(MetadataExchangeInitialHeader::magic_number);
+  initial_header->magic =
+      absl::ghtonl(MetadataExchangeInitialHeader::magic_number);
   initial_header->data_size = absl::ghtonl(serialized_proxy_header.length());
   serialized_header.add(::Envoy::Buffer::OwnedImpl{
       absl::string_view(reinterpret_cast<const char*>(initial_header),

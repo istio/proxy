@@ -36,7 +36,8 @@ std::unique_ptr<::Envoy::Buffer::OwnedImpl> constructProxyHeaderData(
   std::string proxy_data_str = proxy_data.SerializeAsString();
   // Converting from host to network byte order so that most significant byte is
   // placed first.
-  initial_header.magic = absl::ghtonl(MetadataExchangeInitialHeader::magic_number);
+  initial_header.magic =
+      absl::ghtonl(MetadataExchangeInitialHeader::magic_number);
   initial_header.data_size = absl::ghtonl(proxy_data_str.length());
 
   ::Envoy::Buffer::OwnedImpl initial_header_buffer{
@@ -50,11 +51,10 @@ std::unique_ptr<::Envoy::Buffer::OwnedImpl> constructProxyHeaderData(
 
 }  // namespace
 
-MetadataExchangeConfig::MetadataExchangeConfig(const std::string& stat_prefix,
-                                 const std::string& protocol,
-                                 const std::string& node_metadata_id,
-                                 const FilterDirection filter_direction,
-                                 Stats::Scope& scope)
+MetadataExchangeConfig::MetadataExchangeConfig(
+    const std::string& stat_prefix, const std::string& protocol,
+    const std::string& node_metadata_id, const FilterDirection filter_direction,
+    Stats::Scope& scope)
     : scope_(scope),
       stat_prefix_(stat_prefix),
       protocol_(protocol),
@@ -62,7 +62,8 @@ MetadataExchangeConfig::MetadataExchangeConfig(const std::string& stat_prefix,
       filter_direction_(filter_direction),
       stats_(generateStats(stat_prefix, scope)) {}
 
-Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data, bool) {
+Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
+                                                     bool) {
   switch (conn_state_) {
     case Invalid:
     case Done:
@@ -237,12 +238,12 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
 }
 
 void MetadataExchangeFilter::setMetadata(const std::string key,
-                                  const ProtobufWkt::Struct& value) {
+                                         const ProtobufWkt::Struct& value) {
   read_callbacks_->connection().streamInfo().setDynamicMetadata(key, value);
 }
 
-std::unique_ptr<const google::protobuf::Struct> MetadataExchangeFilter::getMetadata(
-    const std::string& key) {
+std::unique_ptr<const google::protobuf::Struct>
+MetadataExchangeFilter::getMetadata(const std::string& key) {
   if (local_info_.node().has_metadata()) {
     auto metadata_fields = local_info_.node().metadata().fields();
     auto node_metadata = metadata_fields.find(key);

@@ -32,26 +32,31 @@ Network::FilterFactoryCb createFilterFactoryHelper(
     FilterDirection filter_direction) {
   ASSERT(!proto_config.protocol().empty());
 
-  MetadataExchangeConfigSharedPtr filter_config(std::make_shared<MetadataExchangeConfig>(
-      StatPrefix, proto_config.protocol(), proto_config.node_metadata_id(),
-      filter_direction, context.scope()));
+  MetadataExchangeConfigSharedPtr filter_config(
+      std::make_shared<MetadataExchangeConfig>(
+          StatPrefix, proto_config.protocol(), proto_config.node_metadata_id(),
+          filter_direction, context.scope()));
   return [filter_config,
           &context](Network::FilterManager& filter_manager) -> void {
-    filter_manager.addFilter(
-        std::make_shared<MetadataExchangeFilter>(filter_config, context.localInfo()));
+    filter_manager.addFilter(std::make_shared<MetadataExchangeFilter>(
+        filter_config, context.localInfo()));
   };
 }
 }  // namespace
 
-Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactoryFromProto(
+Network::FilterFactoryCb
+MetadataExchangeConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& config,
     Server::Configuration::FactoryContext& context) {
   return createFilterFactory(
-      dynamic_cast<const envoy::tcp::metadataexchange::config::MetadataExchange&>(config),
+      dynamic_cast<
+          const envoy::tcp::metadataexchange::config::MetadataExchange&>(
+          config),
       context);
 }
 
-ProtobufTypes::MessagePtr MetadataExchangeConfigFactory::createEmptyConfigProto() {
+ProtobufTypes::MessagePtr
+MetadataExchangeConfigFactory::createEmptyConfigProto() {
   return ProtobufTypes::MessagePtr{
       new envoy::tcp::metadataexchange::config::MetadataExchange};
 }
@@ -68,7 +73,9 @@ MetadataExchangeUpstreamConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& config,
     Server::Configuration::CommonFactoryContext& context) {
   return createFilterFactory(
-      dynamic_cast<const envoy::tcp::metadataexchange::config::MetadataExchange&>(config),
+      dynamic_cast<
+          const envoy::tcp::metadataexchange::config::MetadataExchange&>(
+          config),
       context);
 }
 
@@ -78,7 +85,8 @@ MetadataExchangeUpstreamConfigFactory::createEmptyConfigProto() {
       new envoy::tcp::metadataexchange::config::MetadataExchange};
 }
 
-Network::FilterFactoryCb MetadataExchangeUpstreamConfigFactory::createFilterFactory(
+Network::FilterFactoryCb
+MetadataExchangeUpstreamConfigFactory::createFilterFactory(
     const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
     Server::Configuration::CommonFactoryContext& context) {
   return createFilterFactoryHelper(proto_config, context,
@@ -95,7 +103,8 @@ static Registry::RegisterFactory<
     registered_;
 
 /**
- * Static registration for the MetadataExchange Upstream filter. @see RegisterFactory.
+ * Static registration for the MetadataExchange Upstream filter. @see
+ * RegisterFactory.
  */
 static Registry::RegisterFactory<
     MetadataExchangeUpstreamConfigFactory,
