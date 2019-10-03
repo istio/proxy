@@ -58,6 +58,8 @@ message X509Payload {
   // The `trust_domains` field contains a list of trust domains. A request from
   // `serviceA` to `serviceB` is accepted at `serviceB` if `serviceA` carries a
   // valid x509 cerficicate with the trust domain from the trust_domains list.
+  // The `trust_domains` field should not be empty. It should contain at least
+  // one trust domain.
   repeated string trust_domains = 2;
 };
 
