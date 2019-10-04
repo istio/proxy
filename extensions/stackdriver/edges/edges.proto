@@ -1,0 +1,122 @@
+/* Copyright 2019 Istio Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package google.cloud.meshtelemetry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+// MeshEdgesService enables publishing information on relationships between
+// monitored resources within a mesh.
+service MeshEdgesService {
+  // ReportTrafficAssertions publishes information on the set of communications
+  // between WorkloadInstances within a service mesh.
+  rpc ReportTrafficAssertions(ReportTrafficAssertionsRequest)
+      returns (ReportTrafficAssertionsResponse) {}
+}
+
+// ReportTrafficAssertionsRequest supports sending information on observed mesh
+// traffic.
+message ReportTrafficAssertionsRequest {
+  // Full resource name for the GCP project (projects/<project number>) for the
+  // mesh in which the TrafficAssertions are being made.
+  // Example: projects/234234324
+  string parent = 1;
+
+  // Unique identifier for the mesh in which the TrafficAssertions are being
+  // made.
+  // Example:
+  // //cloudresourcemanager.googleapis.com/projects/<project>/meshes/<mesh>
+  string mesh_uid = 2;
+
+  // These represent observed traffic between two WorkloadInstances in a mesh.
+  repeated TrafficAssertion traffic_assertions = 3;
+
+  // Records the observed time of the traffic represented in this request.
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message ReportTrafficAssertionsResponse {}
+
+// A single instantiation of a workload’s binary. WorkloadInstances can expose
+// zero or more service endpoints, and can consume zero or more services.
+// A WorkloadInstance is typically a pod in a kubernetes cluster. An individual
+// virtual machine (VM) would also be represented as a WorkloadInstance.
+// See also: https://istio.io/docs/reference/glossary/#workload-instance
+message WorkloadInstance {
+  // Unique identifier for the resource.
+  // Example: kubernetes://<pod name>.<namespace>
+  string uid = 1;
+
+  // Location name for the cluster in which the resource is running.
+  // Example: us-central1
+  string location = 2;
+
+  // Name of the cluster in which the resource is running.
+  // Example: service-mesh-demo-1
+  string cluster_name = 3;
+
+  // Unique identifier for the owning resource of the monitored resource. This
+  // is typically a kubernetes deployment UID.
+  // Example: kubernetes://apis/apps/v1/namespaces/default/deployments/test
+  string owner_uid = 4;
+
+  // Name of the workload of which this resource is an instance. This is
+  // typically the short name for the owning kubernetes deployment.
+  // Example: test
+  string workload_name = 5;
+
+  // Namespace in which the monitored resource is deployed.
+  // Example: default
+  string workload_namespace = 6;
+}
+
+// Represents an observed communication between two WorkloadInstances within
+// a mesh.
+message TrafficAssertion {
+  // The WorkloadInstance that initiates the communication (sometimes referred
+  // to as a client).
+  WorkloadInstance source = 1;
+
+  // The WorkloadInstance that is the target of the communication (sometimes
+  // referred to as a server).
+  WorkloadInstance destination = 2;
+
+  // Protocol covers the set of protocols capable of being reported for
+  // mesh traffic.
+  enum Protocol {
+    // Use when protocol is unknown.
+    PROTOCOL_UNSPECIFIED = 0;
+    // HTTP communication.
+    PROTOCOL_HTTP = 1;
+    // HTTPS communication.
+    PROTOCOL_HTTPS = 2;
+    // TCP communication. A large number of protocols (mongo, etc.) are
+    // treated as TCP traffic.
+    PROTOCOL_TCP = 3;
+    // GRPC communication.
+    PROTOCOL_GRPC = 4;
+  }
+
+  // The protocol over which the communication occurred.
+  Protocol protocol = 3;
+
+  // The short name of the destination service, if known.
+  string destination_service_name = 4;
+
+  // The namespace of the destination service, if known.
+  string destination_service_namespace = 5;
+}
