@@ -17,4 +17,3 @@ pipeline:
       - sudo chown -R circleci /drone/src
       - HOME=/drone/src make test_envoy
 
-
