@@ -51,6 +51,8 @@ static_resources:
     listener_filters:
     - name: "envoy.listener.tls_inspector"
       typed_config: {}
+    - name: "envoy.listener.http_inspector"
+      typed_config: {}
     filter_chains:
     - filters:
 {{.FiltersBeforeEnvoyRouterInAppToClient | indent 6 }}
@@ -99,6 +101,11 @@ static_resources:
       socket_address:
         address: 127.0.0.1
         port_value: {{.Ports.ClientToServerProxyPort}}
+    listener_filters:
+    - name: "envoy.listener.tls_inspector"
+      typed_config: {}
+    - name: "envoy.listener.http_inspector"
+      typed_config: {}
     filter_chains:
     - filters:
 {{.FiltersBeforeEnvoyRouterInClientToApp | indent 6 }}
