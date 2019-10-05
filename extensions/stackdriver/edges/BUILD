@@ -28,7 +28,7 @@ proto_library(
     srcs = ["edges.proto"],
     deps = [
         "@com_google_protobuf//:timestamp_proto",
-    ]
+    ],
 )
 
 load(
@@ -49,9 +49,9 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":edges_cc_proto",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
         "//extensions/common:context",
-    ]
+        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+    ],
 )
 
 envoy_cc_library(
@@ -67,10 +67,10 @@ envoy_cc_library(
     deps = [
         ":edges_cc_proto",
         ":mesh_edges_service_client",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
         "//extensions/common:context",
         "//extensions/stackdriver/common:constants",
-    ]
+        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+    ],
 )
 
 envoy_cc_test(

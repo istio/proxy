@@ -24,7 +24,7 @@ cc_library(
     ],
     visibility = [
         "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/metric:__pkg__",
         "//extensions/stackdriver/edges:__pkg__",
+        "//extensions/stackdriver/metric:__pkg__",
     ],
 )
