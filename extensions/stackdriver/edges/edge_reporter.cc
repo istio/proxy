@@ -56,7 +56,7 @@ std::unique_ptr<WorkloadInstance> instanceFromMetadata(
   instance->set_owner_uid(node_info.owner());
   instance->set_workload_name(node_info.workload_name());
   instance->set_workload_namespace(node_info.namespace_());
-  return std::move(instance);
+  return instance;
 };
 
 EdgeReporter::EdgeReporter(

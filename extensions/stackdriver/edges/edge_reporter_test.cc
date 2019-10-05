@@ -131,7 +131,7 @@ std::unique_ptr<ReportTrafficAssertionsRequest> want() {
   destination->set_owner_uid("kubernetes://test_owner");
   destination->set_uid("kubernetes://test_pod.test_namespace");
 
-  return std::move(req);
+  return req;
 }
 
 }  // namespace
