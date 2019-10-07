@@ -71,6 +71,12 @@ class EdgeReporter {
   // client used to send requests to the edges service
   std::unique_ptr<MeshEdgesServiceClient> edges_client_;
 
+  // map of current peers for which edges have been created in the
+  // current_request_;
+  std::map<std::string, bool> current_peers_;
+
+  std::mutex request_mutex_;
+
   // TODO(douglas-reid): make adjustable.
   const int max_assertions_per_request_ = 1000;
 };

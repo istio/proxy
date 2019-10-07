@@ -76,7 +76,7 @@ wasm::common::NodeInfo nodeInfo() {
   return node_info;
 }
 
-wasm::common::NodeInfo peerNodeInfo() {
+wasm::common::NodeInfo peerNodeInfo(std::string name_suffix = "") {
   wasm::common::NodeInfo node_info;
   (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
       "test_project";
@@ -85,7 +85,7 @@ wasm::common::NodeInfo peerNodeInfo() {
   (*node_info.mutable_platform_metadata())[Common::kGCPClusterLocationKey] =
       "test_location";
   node_info.set_namespace_("test_peer_namespace");
-  node_info.set_name("test_peer_pod");
+  node_info.set_name("test_peer_pod" + name_suffix);
   node_info.set_workload_name("test_peer_workload");
   node_info.set_owner("kubernetes://peer_owner");
   return node_info;
@@ -161,7 +161,7 @@ TEST(EdgesTest, TestAddEdge) {
                      "ERROR: addEdge() produced unexpected result.");
 }
 
-TEST(EdgeReporterTest, TestRequestQueue) {
+TEST(EdgeReporterTest, TestRequestEdgeCache) {
   int calls = 0;
   int num_assertions = 0;
 
@@ -178,6 +178,62 @@ TEST(EdgeReporterTest, TestRequestQueue) {
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
     edges->addEdge(requestInfo(), peerNodeInfo());
+  }
+  edges->reportEdges();
+
+  // nothing has changed in the peer info, so only a single edge should be
+  // reported.
+  EXPECT_EQ(1, calls);
+  EXPECT_EQ(1, num_assertions);
+}
+
+TEST(EdgeReporterTest, TestPeriodicFlushAndCacheReset) {
+  int calls = 0;
+  int num_assertions = 0;
+
+  auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
+      [&calls, &num_assertions](
+          std::unique_ptr<ReportTrafficAssertionsRequest> request) {
+        calls++;
+        num_assertions += request->traffic_assertions_size();
+      });
+
+  auto edges =
+      std::make_unique<EdgeReporter>(nodeInfo(), std::move(test_client));
+
+  // force at least three queued reqs + current (four total)
+  for (int i = 0; i < 3500; i++) {
+    edges->addEdge(requestInfo(), peerNodeInfo());
+    // flush on 1000, 2000, 3000
+    if (i % 1000 == 0 && i > 0) {
+      edges->reportEdges();
+    }
+  }
+  edges->reportEdges();
+
+  // nothing has changed in the peer info, but reportEdges should be called four
+  // times
+  EXPECT_EQ(4, calls);
+  EXPECT_EQ(4, num_assertions);
+}
+
+TEST(EdgeReporterTest, TestCacheMisses) {
+  int calls = 0;
+  int num_assertions = 0;
+
+  auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
+      [&calls, &num_assertions](
+          std::unique_ptr<ReportTrafficAssertionsRequest> request) {
+        calls++;
+        num_assertions += request->traffic_assertions_size();
+      });
+
+  auto edges =
+      std::make_unique<EdgeReporter>(nodeInfo(), std::move(test_client));
+
+  // force at least three queued reqs + current (four total)
+  for (int i = 0; i < 3500; i++) {
+    edges->addEdge(requestInfo(), peerNodeInfo(std::to_string(i)));
   }
   edges->reportEdges();
 

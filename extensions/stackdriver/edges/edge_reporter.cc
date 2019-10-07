@@ -42,9 +42,8 @@ using google::cloud::meshtelemetry::v1alpha1::
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 using google::protobuf::util::TimeUtil;
 
-std::unique_ptr<WorkloadInstance> instanceFromMetadata(
-    const ::wasm::common::NodeInfo& node_info) {
-  auto instance = std::make_unique<WorkloadInstance>();
+void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
+                          WorkloadInstance* instance) {
   // TODO(douglas-reid): support more than just kubernetes instances
   instance->set_uid("kubernetes://" + node_info.name() + "." +
                     node_info.namespace_());
@@ -56,7 +55,7 @@ std::unique_ptr<WorkloadInstance> instanceFromMetadata(
   instance->set_owner_uid(node_info.owner());
   instance->set_workload_name(node_info.workload_name());
   instance->set_workload_namespace(node_info.namespace_());
-  return instance;
+  return;
 };
 
 EdgeReporter::EdgeReporter(
@@ -80,20 +79,34 @@ EdgeReporter::EdgeReporter(
       "//cloudresourcemanager.googleapis.com/projects/" + project_id + "/" +
       location + "/meshes/" + cluster);
 
-  node_instance_ = instanceFromMetadata(local_node_info);
+  node_instance_ = std::make_unique<WorkloadInstance>();
+  instanceFromMetadata(local_node_info, node_instance_.get());
 
   edges_client_ = std::move(edges_client);
 };
 
+std::string nodeKey(const ::wasm::common::NodeInfo& node_info) {
+  return node_info.name() + "." + node_info.namespace_();
+}
+
 // ONLY inbound
 void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
                            const ::wasm::common::NodeInfo& peer_node_info) {
+  std::string key = nodeKey(peer_node_info);
+  {
+    std::lock_guard<std::mutex> lock(request_mutex_);
+    auto peer = current_peers_.find(key);
+    if (peer != current_peers_.end()) {
+      return;
+    }
+    current_peers_.emplace(key, true);
+  }
   auto* traffic_assertions = current_request_->mutable_traffic_assertions();
   auto* edge = traffic_assertions->Add();
 
   edge->set_destination_service_name(request_info.destination_service_host);
   edge->set_destination_service_namespace(node_instance_->workload_namespace());
-  edge->mutable_source()->CopyFrom(*instanceFromMetadata(peer_node_info).get());
+  instanceFromMetadata(peer_node_info, edge->mutable_source());
   edge->mutable_destination()->CopyFrom(*node_instance_.get());
 
   auto protocol = request_info.request_protocol;
@@ -111,7 +124,7 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
       max_assertions_per_request_) {
     flush();
   }
-};
+};  // namespace Edges
 
 void EdgeReporter::reportEdges() {
   flush();
@@ -131,6 +144,8 @@ void EdgeReporter::flush() {
   next->set_parent(current_request_->parent());
   next->set_mesh_uid(current_request_->mesh_uid());
 
+  std::lock_guard<std::mutex> lock(request_mutex_);
+  current_peers_.clear();
   current_request_.swap(next);
   *next->mutable_timestamp() = TimeUtil::GetCurrentTime();
   request_queue_.emplace_back(std::move(next));
