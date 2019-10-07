@@ -27,6 +27,7 @@ namespace Stackdriver {
 namespace Edges {
 
 using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
+using ::google::protobuf::TextFormat;
 using google::protobuf::util::MessageDifferencer;
 
 namespace {
@@ -61,33 +62,81 @@ class TestMeshEdgesServiceClient : public MeshEdgesServiceClient {
   TestFn request_callback_;
 };
 
+const char kNodeInfo[] = R"(
+  name: "test_pod"
+  namespace: "test_namespace"
+  workload_name: "test_workload"
+  owner: "kubernetes://test_owner"
+  platform_metadata: {
+    key: "gcp_project"
+    value: "test_project"
+  }
+  platform_metadata: {
+    key: "gcp_cluster_name"
+    value: "test_cluster"
+  }
+  platform_metadata: {
+    key: "gcp_cluster_location"
+    value: "test_location"
+  }
+)";
+
+const char kPeerInfo[] = R"(
+  name: "test_peer_pod"
+  namespace: "test_peer_namespace"
+  workload_name: "test_peer_workload"
+  owner: "kubernetes://peer_owner"
+  platform_metadata: {
+    key: "gcp_project"
+    value: "test_project"
+  }
+  platform_metadata: {
+    key: "gcp_cluster_name"
+    value: "test_cluster"
+  }
+  platform_metadata: {
+    key: "gcp_cluster_location"
+    value: "test_location"
+  }
+)";
+
+const char kWantGrpcRequest[] = R"(
+  parent: "projects/test_project"
+  mesh_uid: "//cloudresourcemanager.googleapis.com/projects/test_project/test_location/meshes/test_cluster"
+  traffic_assertions: {
+    protocol: PROTOCOL_HTTP
+    destination_service_name: "httpbin.org"
+    destination_service_namespace: "test_namespace"
+    source: {
+      workload_namespace: "test_peer_namespace"
+      workload_name: "test_peer_workload"
+      cluster_name: "test_cluster"
+      location: "test_location"
+      owner_uid: "kubernetes://peer_owner"
+      uid: "kubernetes://test_peer_pod.test_peer_namespace"
+    }
+    destination: {
+      workload_namespace: "test_namespace"
+      workload_name: "test_workload"
+      cluster_name: "test_cluster"
+      location: "test_location"
+      owner_uid: "kubernetes://test_owner"
+      uid: "kubernetes://test_pod.test_namespace"
+    }
+  }
+)";
+
 wasm::common::NodeInfo nodeInfo() {
   wasm::common::NodeInfo node_info;
-  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
-      "test_project";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
-      "test_cluster";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterLocationKey] =
-      "test_location";
-  node_info.set_namespace_("test_namespace");
-  node_info.set_name("test_pod");
-  node_info.set_workload_name("test_workload");
-  node_info.set_owner("kubernetes://test_owner");
+  TextFormat::ParseFromString(kNodeInfo, &node_info);
   return node_info;
 }
 
 wasm::common::NodeInfo peerNodeInfo(std::string name_suffix = "") {
   wasm::common::NodeInfo node_info;
-  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
-      "test_project";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
-      "test_cluster";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterLocationKey] =
-      "test_location";
-  node_info.set_namespace_("test_peer_namespace");
-  node_info.set_name("test_peer_pod" + name_suffix);
-  node_info.set_workload_name("test_peer_workload");
-  node_info.set_owner("kubernetes://peer_owner");
+  TextFormat::ParseFromString(kPeerInfo, &node_info);
+  node_info.set_name(node_info.name() + name_suffix);
+  node_info.set_node_key(node_info.name() + "." + node_info.namespace_());
   return node_info;
 }
 
@@ -98,39 +147,9 @@ wasm::common::NodeInfo peerNodeInfo(std::string name_suffix = "") {
   return request_info;
 }
 
-std::unique_ptr<ReportTrafficAssertionsRequest> want() {
-  auto request_info = requestInfo();
-  auto peer_node_info = peerNodeInfo();
-  auto node_info = nodeInfo();
-
-  auto req = std::make_unique<ReportTrafficAssertionsRequest>();
-  req->set_parent("projects/test_project");
-  req->set_mesh_uid(
-      "//cloudresourcemanager.googleapis.com/projects/test_project/"
-      "test_location/meshes/test_cluster");
-
-  auto* ta = req->mutable_traffic_assertions()->Add();
-  ta->set_protocol(google::cloud::meshtelemetry::v1alpha1::
-                       TrafficAssertion_Protocol_PROTOCOL_HTTP);
-  ta->set_destination_service_name("httpbin.org");
-  ta->set_destination_service_namespace("test_namespace");
-
-  auto* source = ta->mutable_source();
-  source->set_workload_namespace("test_peer_namespace");
-  source->set_workload_name("test_peer_workload");
-  source->set_cluster_name("test_cluster");
-  source->set_location("test_location");
-  source->set_owner_uid("kubernetes://peer_owner");
-  source->set_uid("kubernetes://test_peer_pod.test_peer_namespace");
-
-  auto destination = ta->mutable_destination();
-  destination->set_workload_namespace("test_namespace");
-  destination->set_workload_name("test_workload");
-  destination->set_cluster_name("test_cluster");
-  destination->set_location("test_location");
-  destination->set_owner_uid("kubernetes://test_owner");
-  destination->set_uid("kubernetes://test_pod.test_namespace");
-
+ReportTrafficAssertionsRequest want() {
+  ReportTrafficAssertionsRequest req;
+  TextFormat::ParseFromString(kWantGrpcRequest, &req);
   return req;
 }
 
@@ -157,7 +176,7 @@ TEST(EdgesTest, TestAddEdge) {
   // ignore timestamps in proto comparisons.
   got->set_allocated_timestamp(nullptr);
 
-  EXPECT_PROTO_EQUAL(*want().get(), *got.get(),
+  EXPECT_PROTO_EQUAL(want(), *got.get(),
                      "ERROR: addEdge() produced unexpected result.");
 }
 

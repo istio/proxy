@@ -38,6 +38,8 @@ using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 // "edges" for a mesh. It should be used **only** to document incoming edges for
 // a proxy. This means that the proxy in which this reporter is running should
 // be the destination workload instance for all reported traffic.
+// This should only be used in a single-threaded context. No support for
+// threading is currently provided.
 class EdgeReporter {
  public:
   EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
@@ -60,7 +62,7 @@ class EdgeReporter {
   void flush();
 
   // represents the workload instance for the current proxy
-  std::unique_ptr<WorkloadInstance> node_instance_;
+  WorkloadInstance node_instance_;
 
   // the active pending request to which edges are being added
   std::unique_ptr<ReportTrafficAssertionsRequest> current_request_;
@@ -71,11 +73,8 @@ class EdgeReporter {
   // client used to send requests to the edges service
   std::unique_ptr<MeshEdgesServiceClient> edges_client_;
 
-  // map of current peers for which edges have been created in the
-  // current_request_;
-  std::map<std::string, bool> current_peers_;
-
-  std::mutex request_mutex_;
+  // current peers for which edges have been created in current_request_;
+  std::set<std::string> current_peers_;
 
   // TODO(douglas-reid): make adjustable.
   const int max_assertions_per_request_ = 1000;

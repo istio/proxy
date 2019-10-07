@@ -14,6 +14,7 @@
  */
 
 #include "extensions/common/context.h"
+
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
@@ -56,8 +57,13 @@ google::protobuf::util::Status extractNodeMetadata(
   }
   google::protobuf::util::JsonParseOptions json_parse_options;
   json_parse_options.ignore_unknown_fields = true;
-  return JsonStringToMessage(metadata_json_struct, node_info,
-                             json_parse_options);
+  status =
+      JsonStringToMessage(metadata_json_struct, node_info, json_parse_options);
+
+  // used to extract a node key at creation time.
+  absl::StrAppend(node_info->mutable_node_key(), node_info->name(), ".",
+                  node_info->namespace_());
+  return status;
 }
 
 google::protobuf::util::Status extractLocalNodeMetadata(
