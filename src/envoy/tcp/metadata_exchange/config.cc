@@ -56,9 +56,9 @@ MetadataExchangeConfigFactory::createFilterFactoryFromProto(
 }
 
 ProtobufTypes::MessagePtr
-MetadataExchangeConfigFactory::createEmptyConfigProto(){return std::make_unique<
-    envoy::tcp::metadataexchange::config::MetadataExchange>()};
-}  // namespace MetadataExchange
+MetadataExchangeConfigFactory::createEmptyConfigProto() {
+  return std::make_unique<Envoy::ProtobufWkt::Empty>();
+}
 
 Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactory(
     const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
@@ -80,8 +80,8 @@ MetadataExchangeUpstreamConfigFactory::createFilterFactoryFromProto(
 
 ProtobufTypes::MessagePtr
 MetadataExchangeUpstreamConfigFactory::createEmptyConfigProto() {
-  return ProtobufTypes::MessagePtr{
-      new envoy::tcp::metadataexchange::config::MetadataExchange};
+  return std::make_unique<Envoy::ProtobufWkt::Empty>();
+  ;
 }
 
 Network::FilterFactoryCb
@@ -110,6 +110,6 @@ static Registry::RegisterFactory<
     Server::Configuration::NamedUpstreamNetworkFilterConfigFactory>
     registered_upstream_;
 
+}  // namespace MetadataExchange
 }  // namespace Tcp
-}  // namespace Envoy
 }  // namespace Envoy
