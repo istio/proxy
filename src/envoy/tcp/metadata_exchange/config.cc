@@ -57,7 +57,8 @@ MetadataExchangeConfigFactory::createFilterFactoryFromProto(
 
 ProtobufTypes::MessagePtr
 MetadataExchangeConfigFactory::createEmptyConfigProto() {
-  return std::make_unique<Envoy::ProtobufWkt::Empty>();
+  return std::make_unique<
+      envoy::tcp::metadataexchange::config::MetadataExchange>();
 }
 
 Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactory(
@@ -80,8 +81,8 @@ MetadataExchangeUpstreamConfigFactory::createFilterFactoryFromProto(
 
 ProtobufTypes::MessagePtr
 MetadataExchangeUpstreamConfigFactory::createEmptyConfigProto() {
-  return std::make_unique<Envoy::ProtobufWkt::Empty>();
-  ;
+  return std::make_unique<
+      envoy::tcp::metadataexchange::config::MetadataExchange>();
 }
 
 Network::FilterFactoryCb

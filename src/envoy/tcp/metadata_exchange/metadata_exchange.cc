@@ -189,19 +189,15 @@ void MetadataExchangeFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
     conn_state_ = NeedMoreDataInitialHeader;
     return;
   }
-  std::string initial_header_buf = std::string(
-      static_cast<const char*>(data.linearize(initial_header_length)),
-      initial_header_length);
-  const MetadataExchangeInitialHeader* initial_header =
-      reinterpret_cast<const MetadataExchangeInitialHeader*>(
-          initial_header_buf.c_str());
-  if (absl::gntohl(initial_header->magic) !=
+  MetadataExchangeInitialHeader initial_header;
+  data.copyOut(0, initial_header_length, &initial_header);
+  if (absl::gntohl(initial_header.magic) !=
       MetadataExchangeInitialHeader::magic_number) {
     config_->stats().initial_header_not_found_.inc();
     conn_state_ = Invalid;
     return;
   }
-  proxy_data_length_ = absl::gntohl(initial_header->data_size);
+  proxy_data_length_ = absl::gntohl(initial_header.data_size);
   // Drain the initial header length bytes read.
   data.drain(initial_header_length);
   conn_state_ = ReadingProxyHeader;
