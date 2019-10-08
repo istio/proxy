@@ -70,19 +70,3 @@ envoy_cc_library(
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )
-
-envoy_cc_test(
-    name = "logger_test",
-    size = "small",
-    srcs = ["logger_test.cc"],
-    copts = [
-        # Workaround for the -DDEBUG flag added in fastbuild on macOS,
-        # which conflicts with DEBUG macro used in logging protobuf.
-        "-UDEBUG",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":logger",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
-    ],
-)
