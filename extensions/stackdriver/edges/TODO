@@ -1,5 +1,6 @@
 (P0) Figure out mesh_uid data source
 (P0) Integration test for grpc endpoint
+(P1) Destination service shortname (as opposed to host)
 (P1) Retries
 (P1) Better debugging / monitoring (exported metrics)
 (P1) WASM bits

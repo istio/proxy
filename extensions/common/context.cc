@@ -14,7 +14,6 @@
  */
 
 #include "extensions/common/context.h"
-
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG

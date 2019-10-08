@@ -85,9 +85,9 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
 };
 
 void MeshEdgesServiceClientImpl::reportTrafficAssertions(
-    std::unique_ptr<ReportTrafficAssertionsRequest> request) const {
+    const ReportTrafficAssertionsRequest& request) const {
   context_->grpcSimpleCall(
-      grpc_service_, kMeshEdgesService, kReportTrafficAssertions, *request,
+      grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
       kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
 };
 

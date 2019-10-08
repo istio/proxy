@@ -45,7 +45,7 @@ class MeshEdgesServiceClient {
 
   // reportTrafficAssertions handles invoking the `ReportTrafficAssertions` rpc.
   virtual void reportTrafficAssertions(
-      std::unique_ptr<ReportTrafficAssertionsRequest> request) const = 0;
+      const ReportTrafficAssertionsRequest& request) const = 0;
 };
 
 // MeshEdgesServiceClientImpl provides a gRPC implementation of the client
@@ -59,8 +59,8 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
   MeshEdgesServiceClientImpl(RootContext* root_context,
                              std::string edges_endpoint);
 
-  virtual void reportTrafficAssertions(
-      std::unique_ptr<ReportTrafficAssertionsRequest> request) const override;
+  void reportTrafficAssertions(
+      const ReportTrafficAssertionsRequest& request) const override;
 
  private:
   // Provides the VM context for making calls.

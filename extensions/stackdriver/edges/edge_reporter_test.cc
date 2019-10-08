@@ -20,6 +20,7 @@
 #include "extensions/stackdriver/common/constants.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "google/protobuf/util/time_util.h"
 #include "gtest/gtest.h"
 
 namespace Extensions {
@@ -29,6 +30,7 @@ namespace Edges {
 using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using ::google::protobuf::TextFormat;
 using google::protobuf::util::MessageDifferencer;
+using google::protobuf::util::TimeUtil;
 
 namespace {
 
@@ -43,19 +45,16 @@ namespace {
   }                                              \
   return
 
-std::unique_ptr<ReportTrafficAssertionsRequest> last_request_;
-
 class TestMeshEdgesServiceClient : public MeshEdgesServiceClient {
  public:
-  typedef std::function<void(std::unique_ptr<ReportTrafficAssertionsRequest>)>
-      TestFn;
+  typedef std::function<void(const ReportTrafficAssertionsRequest&)> TestFn;
 
   TestMeshEdgesServiceClient(TestFn test_func)
       : request_callback_(std::move(test_func)){};
 
-  virtual void reportTrafficAssertions(
-      std::unique_ptr<ReportTrafficAssertionsRequest> request) const override {
-    request_callback_(std::move(request));
+  void reportTrafficAssertions(
+      const ReportTrafficAssertionsRequest& request) const override {
+    request_callback_(request);
   };
 
  private:
@@ -157,16 +156,16 @@ ReportTrafficAssertionsRequest want() {
 
 TEST(EdgesTest, TestAddEdge) {
   int calls = 0;
-  std::unique_ptr<ReportTrafficAssertionsRequest> got;
+  ReportTrafficAssertionsRequest got;
 
   auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
-      [&calls, &got](std::unique_ptr<ReportTrafficAssertionsRequest> request) {
+      [&calls, &got](const ReportTrafficAssertionsRequest& request) {
         calls++;
-        got = std::move(request);
+        got = request;
       });
 
-  auto edges =
-      std::make_unique<EdgeReporter>(nodeInfo(), std::move(test_client));
+  auto edges = std::make_unique<EdgeReporter>(
+      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
   edges->addEdge(requestInfo(), peerNodeInfo());
   edges->reportEdges();
 
@@ -174,9 +173,9 @@ TEST(EdgesTest, TestAddEdge) {
   EXPECT_EQ(1, calls);
 
   // ignore timestamps in proto comparisons.
-  got->set_allocated_timestamp(nullptr);
+  got.set_allocated_timestamp(nullptr);
 
-  EXPECT_PROTO_EQUAL(want(), *got.get(),
+  EXPECT_PROTO_EQUAL(want(), got,
                      "ERROR: addEdge() produced unexpected result.");
 }
 
@@ -185,14 +184,13 @@ TEST(EdgeReporterTest, TestRequestEdgeCache) {
   int num_assertions = 0;
 
   auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
-      [&calls, &num_assertions](
-          std::unique_ptr<ReportTrafficAssertionsRequest> request) {
+      [&calls, &num_assertions](const ReportTrafficAssertionsRequest& request) {
         calls++;
-        num_assertions += request->traffic_assertions_size();
+        num_assertions += request.traffic_assertions_size();
       });
 
-  auto edges =
-      std::make_unique<EdgeReporter>(nodeInfo(), std::move(test_client));
+  auto edges = std::make_unique<EdgeReporter>(
+      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
@@ -211,14 +209,13 @@ TEST(EdgeReporterTest, TestPeriodicFlushAndCacheReset) {
   int num_assertions = 0;
 
   auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
-      [&calls, &num_assertions](
-          std::unique_ptr<ReportTrafficAssertionsRequest> request) {
+      [&calls, &num_assertions](const ReportTrafficAssertionsRequest& request) {
         calls++;
-        num_assertions += request->traffic_assertions_size();
+        num_assertions += request.traffic_assertions_size();
       });
 
-  auto edges =
-      std::make_unique<EdgeReporter>(nodeInfo(), std::move(test_client));
+  auto edges = std::make_unique<EdgeReporter>(
+      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
@@ -241,14 +238,13 @@ TEST(EdgeReporterTest, TestCacheMisses) {
   int num_assertions = 0;
 
   auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
-      [&calls, &num_assertions](
-          std::unique_ptr<ReportTrafficAssertionsRequest> request) {
+      [&calls, &num_assertions](const ReportTrafficAssertionsRequest& request) {
         calls++;
-        num_assertions += request->traffic_assertions_size();
+        num_assertions += request.traffic_assertions_size();
       });
 
-  auto edges =
-      std::make_unique<EdgeReporter>(nodeInfo(), std::move(test_client));
+  auto edges = std::make_unique<EdgeReporter>(
+      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {

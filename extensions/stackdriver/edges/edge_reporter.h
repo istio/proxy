@@ -21,6 +21,7 @@
 #include "extensions/common/context.h"
 #include "extensions/stackdriver/edges/edges.pb.h"
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
+#include "google/protobuf/util/time_util.h"
 
 namespace Extensions {
 namespace Stackdriver {
@@ -31,8 +32,16 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::Extensions::Stackdriver::
     Edges::MeshEdgesServiceClient;
 #endif
 
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
+using google::protobuf::util::TimeUtil;
+
+namespace {
+google::protobuf::Timestamp wasmTimestamp() {
+  return TimeUtil::NanosecondsToTimestamp(getCurrentTimeNanoseconds());
+}
+}  // namespace
 
 // EdgeReporter provides a mechanism for generating information on traffic
 // "edges" for a mesh. It should be used **only** to document incoming edges for
@@ -41,9 +50,12 @@ using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 // This should only be used in a single-threaded context. No support for
 // threading is currently provided.
 class EdgeReporter {
+  typedef std::function<google::protobuf::Timestamp()> TimestampFn;
+
  public:
   EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
-               std::unique_ptr<MeshEdgesServiceClient> edges_client);
+               std::unique_ptr<MeshEdgesServiceClient> edges_client,
+               TimestampFn now = wasmTimestamp);
 
   // addEdge creates a traffic assertion (aka an edge) based on the
   // the supplied request / peer info. The new edge is added to the
@@ -74,10 +86,13 @@ class EdgeReporter {
   std::unique_ptr<MeshEdgesServiceClient> edges_client_;
 
   // current peers for which edges have been created in current_request_;
-  std::set<std::string> current_peers_;
+  std::unordered_set<std::string> current_peers_;
 
   // TODO(douglas-reid): make adjustable.
   const int max_assertions_per_request_ = 1000;
+
+  // gets the current time
+  TimestampFn now_;
 };
 
 }  // namespace Edges

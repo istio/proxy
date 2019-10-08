@@ -17,7 +17,6 @@
 
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/edges/edges.pb.h"
-#include "google/protobuf/util/time_util.h"
 
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -40,7 +39,6 @@ using google::cloud::meshtelemetry::v1alpha1::
 using google::cloud::meshtelemetry::v1alpha1::
     TrafficAssertion_Protocol_PROTOCOL_TCP;
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
-using google::protobuf::util::TimeUtil;
 
 namespace {
 void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
@@ -57,11 +55,13 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
   instance->set_workload_name(node_info.workload_name());
   instance->set_workload_namespace(node_info.namespace_());
 };
+
 }  // namespace
 
-EdgeReporter::EdgeReporter(
-    const ::wasm::common::NodeInfo& local_node_info,
-    std::unique_ptr<MeshEdgesServiceClient> edges_client) {
+EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
+                           std::unique_ptr<MeshEdgesServiceClient> edges_client,
+                           TimestampFn now)
+    : now_(now) {
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
   const auto& project_id =
@@ -75,7 +75,6 @@ EdgeReporter::EdgeReporter(
       local_node_info.platform_metadata().at(Common::kGCPClusterLocationKey);
   std::string cluster =
       local_node_info.platform_metadata().at(Common::kGCPClusterNameKey);
-  std::string mesh_uid = "unknown";
   absl::StrAppend(current_request_->mutable_mesh_uid(),
                   "//cloudresourcemanager.googleapis.com/projects/", project_id,
                   "/", location, "/meshes/", cluster);
@@ -97,6 +96,8 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
   auto* traffic_assertions = current_request_->mutable_traffic_assertions();
   auto* edge = traffic_assertions->Add();
 
+  // TODO(douglas-reid): use the short name for the destination service when
+  // available Right now, this uses destination host instead.
   edge->set_destination_service_name(request_info.destination_service_host);
   edge->set_destination_service_namespace(node_instance_.workload_namespace());
   instanceFromMetadata(peer_node_info, edge->mutable_source());
@@ -122,7 +123,7 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
 void EdgeReporter::reportEdges() {
   flush();
   for (auto& req : request_queue_) {
-    edges_client_->reportTrafficAssertions(std::move(req));
+    edges_client_->reportTrafficAssertions(*req);
   }
   request_queue_.clear();
 }
@@ -139,7 +140,7 @@ void EdgeReporter::flush() {
 
   current_peers_.clear();
   current_request_.swap(next);
-  *next->mutable_timestamp() = TimeUtil::GetCurrentTime();
+  *next->mutable_timestamp() = now_();
   request_queue_.emplace_back(std::move(next));
 }
 
