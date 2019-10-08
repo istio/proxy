@@ -49,7 +49,7 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
   };
 
   failure_callback_ = [](GrpcStatus status, StringView message) {
-    // TODO: add retry.
+    // TODO(bianpengyuan): add retry.
     logWarn("Stackdriver logging api call error: " +
             std::to_string(static_cast<int>(status)) + std::string(message));
   };

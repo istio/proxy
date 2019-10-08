@@ -30,6 +30,8 @@ namespace Log {
 using google::protobuf::util::MessageDifferencer;
 using google::protobuf::util::TimeUtil;
 
+constexpr char kServerAccessLogName[] = "server-accesslog-stackdriver";
+
 namespace {
 
 class MockExporter : public Exporter {
@@ -86,7 +88,7 @@ google::logging::v2::WriteLogEntriesRequest expectedRequest(
   auto peer_node_info = peerNodeInfo();
   auto node_info = nodeInfo();
   google::logging::v2::WriteLogEntriesRequest req;
-  req.set_log_name("projects/test_project/logs/server-accesslog-stackdriver");
+  req.set_log_name(kServerAccessLogName);
   req.mutable_resource()->CopyFrom(Common::getMonitoredResource(
       Common::kContainerMonitoredResource, node_info));
   auto top_label_map = req.mutable_labels();

@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
- *constexpr int kDefaultTimeoutMillisecond = 10000;
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,16 +31,16 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::Extensions::Stackdriver::
     Log::Exporter;
 #endif
 
-// Size of an entries.write request is 5 Mb:
-// https://cloud.google.com/logging/quotas.
-constexpr int kMaxRotationBytesSize = 4000000;
-
 // Logger records access logs and exports them to Stackdriver.
 class Logger {
  public:
+  // Logger initiate a Stackdriver access logger, which batches log entries and
+  // exports to Stackdriver backend with the given exporter.
+  // log_request_size_limit is the size limit of a logging request:
+  // https://cloud.google.com/logging/quotas.
   Logger(const ::wasm::common::NodeInfo &local_node_info,
          std::unique_ptr<Exporter> exporter,
-         int log_request_size_limit = kMaxRotationBytesSize);
+         int log_request_size_limit = 4000000 /* 4 Mb */);
 
   // Add a new log entry based on the given request information and peer node
   // information.
