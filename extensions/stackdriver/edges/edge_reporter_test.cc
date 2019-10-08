@@ -131,11 +131,9 @@ wasm::common::NodeInfo nodeInfo() {
   return node_info;
 }
 
-wasm::common::NodeInfo peerNodeInfo(std::string name_suffix = "") {
+wasm::common::NodeInfo peerNodeInfo() {
   wasm::common::NodeInfo node_info;
   TextFormat::ParseFromString(kPeerInfo, &node_info);
-  node_info.set_name(node_info.name() + name_suffix);
-  node_info.set_node_key(node_info.name() + "." + node_info.namespace_());
   return node_info;
 }
 
@@ -166,7 +164,7 @@ TEST(EdgesTest, TestAddEdge) {
 
   auto edges = std::make_unique<EdgeReporter>(
       nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
-  edges->addEdge(requestInfo(), peerNodeInfo());
+  edges->addEdge(requestInfo(), "test", peerNodeInfo());
   edges->reportEdges();
 
   // must ensure that we used the client to report the edges
@@ -194,7 +192,7 @@ TEST(EdgeReporterTest, TestRequestEdgeCache) {
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
-    edges->addEdge(requestInfo(), peerNodeInfo());
+    edges->addEdge(requestInfo(), "test", peerNodeInfo());
   }
   edges->reportEdges();
 
@@ -219,7 +217,7 @@ TEST(EdgeReporterTest, TestPeriodicFlushAndCacheReset) {
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
-    edges->addEdge(requestInfo(), peerNodeInfo());
+    edges->addEdge(requestInfo(), "test", peerNodeInfo());
     // flush on 1000, 2000, 3000
     if (i % 1000 == 0 && i > 0) {
       edges->reportEdges();
@@ -248,7 +246,7 @@ TEST(EdgeReporterTest, TestCacheMisses) {
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
-    edges->addEdge(requestInfo(), peerNodeInfo(std::to_string(i)));
+    edges->addEdge(requestInfo(), std::to_string(i), peerNodeInfo());
   }
   edges->reportEdges();
 

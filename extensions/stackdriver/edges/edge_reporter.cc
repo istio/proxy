@@ -61,7 +61,7 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
 EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
                            std::unique_ptr<MeshEdgesServiceClient> edges_client,
                            TimestampFn now)
-    : now_(now) {
+    : edges_client_(std::move(edges_client)), now_(now) {
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
   const auto& project_id =
@@ -80,18 +80,19 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
                   "/", location, "/meshes/", cluster);
 
   instanceFromMetadata(local_node_info, &node_instance_);
-
-  edges_client_ = std::move(edges_client);
 };
+
+EdgeReporter::~EdgeReporter() { reportEdges(); }
 
 // ONLY inbound
 void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
+                           const std::string peer_metadata_id_key,
                            const ::wasm::common::NodeInfo& peer_node_info) {
-  auto peer = current_peers_.find(peer_node_info.node_key());
+  auto peer = current_peers_.find(peer_metadata_id_key);
   if (peer != current_peers_.end()) {
     return;
   }
-  current_peers_.emplace(peer_node_info.node_key());
+  current_peers_.emplace(peer_metadata_id_key);
 
   auto* traffic_assertions = current_request_->mutable_traffic_assertions();
   auto* edge = traffic_assertions->Add();
@@ -116,32 +117,26 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
 
   if (current_request_->traffic_assertions_size() >
       max_assertions_per_request_) {
-    flush();
+    reportEdges();
   }
 };  // namespace Edges
 
 void EdgeReporter::reportEdges() {
-  flush();
-  for (auto& req : request_queue_) {
-    edges_client_->reportTrafficAssertions(*req);
-  }
-  request_queue_.clear();
-}
-
-void EdgeReporter::flush() {
   if (current_request_->traffic_assertions_size() == 0) {
     return;
   }
 
-  std::unique_ptr<ReportTrafficAssertionsRequest> next =
+  std::unique_ptr<ReportTrafficAssertionsRequest> queued_request =
       std::make_unique<ReportTrafficAssertionsRequest>();
-  next->set_parent(current_request_->parent());
-  next->set_mesh_uid(current_request_->mesh_uid());
+  queued_request->set_parent(current_request_->parent());
+  queued_request->set_mesh_uid(current_request_->mesh_uid());
 
   current_peers_.clear();
-  current_request_.swap(next);
-  *next->mutable_timestamp() = now_();
-  request_queue_.emplace_back(std::move(next));
+  current_request_.swap(queued_request);
+
+  // set the timestamp and then send the queued request
+  *queued_request->mutable_timestamp() = now_();
+  edges_client_->reportTrafficAssertions(*queued_request);
 }
 
 }  // namespace Edges

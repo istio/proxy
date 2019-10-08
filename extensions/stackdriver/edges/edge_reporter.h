@@ -57,10 +57,13 @@ class EdgeReporter {
                std::unique_ptr<MeshEdgesServiceClient> edges_client,
                TimestampFn now = wasmTimestamp);
 
+  ~EdgeReporter();  // this will call `reportEdges`
+
   // addEdge creates a traffic assertion (aka an edge) based on the
   // the supplied request / peer info. The new edge is added to the
   // pending request that will be sent with all generated edges.
   void addEdge(const ::Wasm::Common::RequestInfo &request_info,
+               const std::string peer_metadata_id_key,
                const ::wasm::common::NodeInfo &peer_node_info);
 
   // reportEdges sends the buffered requests to the configured edges
@@ -68,31 +71,23 @@ class EdgeReporter {
   void reportEdges();
 
  private:
-  // flush pushes the current pending request (iff there have been
-  // edges added) into the request buffer, and swaps in a new request
-  // to gather additional edges.
-  void flush();
+  // client used to send requests to the edges service
+  std::unique_ptr<MeshEdgesServiceClient> edges_client_;
 
-  // represents the workload instance for the current proxy
-  WorkloadInstance node_instance_;
+  // gets the current time
+  TimestampFn now_;
 
   // the active pending request to which edges are being added
   std::unique_ptr<ReportTrafficAssertionsRequest> current_request_;
 
-  // the buffer of pending requests, awaiting transmission to the edges service
-  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>> request_queue_;
-
-  // client used to send requests to the edges service
-  std::unique_ptr<MeshEdgesServiceClient> edges_client_;
+  // represents the workload instance for the current proxy
+  WorkloadInstance node_instance_;
 
   // current peers for which edges have been created in current_request_;
   std::unordered_set<std::string> current_peers_;
 
   // TODO(douglas-reid): make adjustable.
   const int max_assertions_per_request_ = 1000;
-
-  // gets the current time
-  TimestampFn now_;
 };
 
 }  // namespace Edges

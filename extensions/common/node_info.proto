@@ -37,8 +37,4 @@ message NodeInfo {
 
   // Version identifier for the proxy.
   string istio_version = 7 [json_name = "ISTIO_VERSION"];
-
-  // Used to uniquely identify the node (in caches, etc.)
-  // This is not assigned as part of any json serialization.
-  string node_key = 9;
 }
