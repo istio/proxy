@@ -17,7 +17,7 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
@@ -36,7 +36,7 @@ namespace Plugin {
 
 namespace Stats {
 
-void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
+bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   // Parse configuration JSON string.
   JsonParseOptions json_options;
   Status status =
@@ -44,20 +44,19 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   if (status != Status::OK) {
     LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
                           configuration->toString()));
-    return;
+    return false;
   }
 
   status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
   if (status != Status::OK) {
     LOG_WARN("cannot parse local node metadata ");
-    return;
+    return false;
   }
-  PluginDirection direction;
-  auto dirn_result = getPluginDirection(&direction);
-  if (WasmResult::Ok == dirn_result) {
-    outbound_ = PluginDirection::Outbound == direction;
+  int64_t direction;
+  if (getValue({"listener_direction"}, &direction)) {
+    outbound_ = envoy::api::v2::core::TrafficDirection::OUTBOUND == direction;
   } else {
-    LOG_WARN(absl::StrCat("Unable to get plugin direction: ", dirn_result));
+    LOG_WARN("Unable to get plugin direction");
   }
   // Local data does not change, so populate it on config load.
   istio_dimensions_.init(outbound_, local_node_info_);
@@ -80,6 +79,11 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   // If "_" is not prepended, envoy_ is automatically added by prometheus
   // scraper"
   stat_prefix = absl::StrCat("_", stat_prefix, "_");
+
+  Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
+               {MetricTag{"component", MetricTag::TagType::String},
+                MetricTag{"tag", MetricTag::TagType::String}});
+  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
 
   stats_ = std::vector<StatGen>{
       StatGen(
@@ -106,6 +110,7 @@ void PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
             return request_info.response_size;
           },
           field_separator, value_separator)};
+  return true;
 }
 
 void PluginRootContext::report(
@@ -146,18 +151,17 @@ void PluginRootContext::report(
   }
 
   incrementMetric(cache_misses_, 1);
-  metrics_.try_emplace(istio_dimensions_, stats);
+  // TODO: When we have c++17, convert to try_emplace.
+  metrics_.emplace(istio_dimensions_, stats);
 }
 
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
     StringView peer_metadata_id_key, StringView peer_metadata_key) {
   std::string peer_id;
-  if (getMetadataStringValue(MetadataType::Request, peer_metadata_id_key,
-                             &peer_id) != Common::Wasm::WasmResult::Ok) {
+  if (!getStringValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return cache_[""];
   }
-
   auto nodeinfo_it = cache_.find(peer_id);
   if (nodeinfo_it != cache_.end()) {
     return nodeinfo_it->second;
@@ -171,8 +175,7 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   }
 
   google::protobuf::Struct metadata;
-  if (getMetadataStruct(MetadataType::Request, peer_metadata_key, &metadata) !=
-      Common::Wasm::WasmResult::Ok) {
+  if (!getStructValue({"filter_state", peer_metadata_key}, &metadata)) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return cache_[""];
   }
@@ -188,11 +191,10 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   return cache_[peer_id];
 }
 
-// Registration glue
-
+#ifdef NULL_PLUGIN
 NullPluginRootRegistry* context_registry_{};
 
-class StatsFactory : public NullPluginFactory {
+class StatsFactory : public NullVmPluginFactory {
  public:
   const std::string name() const override { return "envoy.wasm.stats"; }
 
@@ -201,12 +203,13 @@ class StatsFactory : public NullPluginFactory {
   }
 };
 
-static Registry::RegisterFactory<StatsFactory, NullPluginFactory> register_;
+static Registry::RegisterFactory<StatsFactory, NullVmPluginFactory> register_;
+#endif
 
 }  // namespace Stats
 
-// WASM_EPILOG
 #ifdef NULL_PLUGIN
+// WASM_EPILOG
 }  // namespace Plugin
 }  // namespace Null
 }  // namespace Wasm

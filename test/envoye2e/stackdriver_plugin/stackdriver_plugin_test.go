@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+
 	"istio.io/proxy/test/envoye2e/env"
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
@@ -27,14 +28,14 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
-const outboundStackdriverFilter = `- name: envoy.wasm
+const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
     vm_config:
       vm: "envoy.wasm.vm.null"
       code:
         inline_string: "envoy.wasm.metadata_exchange"
     configuration: "test"
-- name: envoy.wasm
+- name: envoy.filters.http.wasm
   config:
     vm_config:
       vm: "envoy.wasm.vm.null"
@@ -45,14 +46,14 @@ const outboundStackdriverFilter = `- name: envoy.wasm
         "testMonitoringEndpoint": "localhost:12312",
       }`
 
-const inboundStackdriverFilter = `- name: envoy.wasm
+const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
     vm_config:
       vm: "envoy.wasm.vm.null"
       code:
         inline_string: "envoy.wasm.metadata_exchange"
     configuration: "test"
-- name: envoy.wasm
+- name: envoy.filters.http.wasm
   config:
     vm_config:
       vm: "envoy.wasm.vm.null"
@@ -128,7 +129,7 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// TODO: remove this after https://github.com/census-instrumentation/opencensus-cpp/issues/372
 	delete(got.Metric.Labels, "opencensus_task")
 	if !proto.Equal(want, got) {
-		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v\n", got, want)
+		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
 	}
 	return nil
 }

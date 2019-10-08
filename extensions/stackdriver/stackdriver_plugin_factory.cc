@@ -32,7 +32,7 @@ constexpr char kStackdriverPluginName[] = "envoy.wasm.null.stackdriver";
  * Config registration for a Wasm filter plugin. @see
  * NamedHttpFilterConfigFactory.
  */
-class StackdriverPluginFactory : public NullPluginFactory {
+class StackdriverPluginFactory : public NullVmPluginFactory {
  public:
   StackdriverPluginFactory() {}
 
@@ -47,7 +47,7 @@ class StackdriverPluginFactory : public NullPluginFactory {
 /**
  * Static registration for the null Wasm filter. @see RegisterFactory.
  */
-static Registry::RegisterFactory<StackdriverPluginFactory, NullPluginFactory>
+static Registry::RegisterFactory<StackdriverPluginFactory, NullVmPluginFactory>
     register_;
 
 }  // namespace Plugin

@@ -18,7 +18,7 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
@@ -30,15 +30,9 @@ using Envoy::Extensions::Common::Wasm::StreamType;
 using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getMetadataStruct;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestDestinationPort;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::
-    getRequestPeerCertificatePresented;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getRequestTlsVersion;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::
-    getResponsePeerCertificatePresented;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseResponseCode;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getResponseTlsVersion;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getStructValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 
 #endif  // NULL_PLUGIN
 
@@ -69,8 +63,7 @@ google::protobuf::util::Status extractNodeMetadata(
 google::protobuf::util::Status extractLocalNodeMetadata(
     wasm::common::NodeInfo *node_info) {
   google::protobuf::Struct node;
-  if (getMetadataStruct(MetadataType::Node, "metadata", &node) !=
-      WasmResult::Ok) {
+  if (!getStructValue({"node", "metadata"}, &node)) {
     return google::protobuf::util::Status(
         google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
   }
@@ -82,12 +75,14 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   request_info->end_timestamp = getCurrentTimeNanoseconds();
 
   // Fill in request info.
-  getResponseResponseCode(&request_info->response_code);
+  int64_t response_code = 0;
+  if (getValue({"response", "code"}, &response_code)) {
+    request_info->response_code = response_code;
+  }
 
-  if (kGrpcContentTypes.contains(
-          getHeaderMapValue(HeaderMapType::RequestHeaders,
-                            kContentTypeHeaderKey)
-              ->toString())) {
+  if (kGrpcContentTypes.count(getHeaderMapValue(HeaderMapType::RequestHeaders,
+                                                kContentTypeHeaderKey)
+                                  ->toString()) != 0) {
     request_info->request_protocol = kProtocolGRPC;
   } else {
     // TODO Add http/1.1, http/1.0, http/2 in a separate attribute.
@@ -101,20 +96,20 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
-  getRequestDestinationPort(&request_info->destination_port);
 
+  int64_t destination_port = 0;
   std::string tls_version;
-  bool cert_presented;
 
   if (outbound) {
-    getResponsePeerCertificatePresented(&cert_presented);
-    getResponseTlsVersion(&tls_version);
+    getValue({"upstream", "port"}, &destination_port);
+    getValue({"upstream", "mtls"}, &request_info->mTLS);
+    getStringValue({"upstream", "tls_version"}, &tls_version);
   } else {
-    getRequestPeerCertificatePresented(&cert_presented);
-    getRequestTlsVersion(&tls_version);
+    getValue({"destination", "port"}, &destination_port);
+    getValue({"connection", "mtls"}, &request_info->mTLS);
+    getStringValue({"connection", "tls_version"}, &tls_version);
   }
-
-  request_info->mTLS = !tls_version.empty() && cert_presented;
+  request_info->destination_port = destination_port;
 }
 
 }  // namespace Common

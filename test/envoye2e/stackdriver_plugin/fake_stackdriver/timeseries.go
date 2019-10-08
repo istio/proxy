@@ -20,7 +20,7 @@ const ServerRequestCountJSON = `{
 	   "type":"istio.io/service/server/request_count",
 	   "labels":{
 		  "destination_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
-		  "destination_port":"20020",
+		  "destination_port":"20019",
 		  "destination_principal":"",
 		  "destination_service_name":"localhost:20016",
 		  "destination_service_namespace":"default",

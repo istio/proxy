@@ -27,15 +27,13 @@ import (
 
 // Stats in Client Envoy proxy.
 var expectedClientStats = map[string]int{
-	// http listener stats
-	"tcp.inbound_tcp.downstream_cx_total":  1,
-	"tcp.outbound_tcp.downstream_cx_total": 1,
+	// tcp listener stats
+	"tcp.inbound_tcp.downstream_cx_total": 1,
 }
 
 // Stats in Server Envoy proxy.
 var expectedServerStats = map[string]int{
-	// http listener stats
-	"tcp.inbound_tcp.downstream_cx_total":  1,
+	// tcp listener stats
 	"tcp.outbound_tcp.downstream_cx_total": 1,
 }
 

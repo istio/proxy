@@ -15,43 +15,50 @@
 
 #pragma once
 
+#ifndef NULL_PLUGIN
+
+#include <assert.h>
+#define ASSERT(_X) assert(_X)
+
+#include "proxy_wasm_intrinsics.h"
+
+static const std::string EMPTY_STRING;
+
+#else
+
 #include "extensions/common/wasm/null/null_plugin.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace Wasm {
 namespace MetadataExchange {
+namespace Plugin {
 
-constexpr absl::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
-constexpr absl::string_view ExchangeMetadataHeaderId =
-    "x-envoy-peer-metadata-id";
+using namespace Envoy::Extensions::Common::Wasm::Null::Plugin;
 
-constexpr absl::string_view NodeMetadataExchangeKeys = "EXCHANGE_KEYS";
-constexpr absl::string_view NodeIdKey = "id";
-constexpr absl::string_view WholeNodeKey = ".";
+// TODO(jplevyak): move these into the base envoy repo
+using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
+using NullPluginRootRegistry =
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+
+#endif
+
+constexpr StringView ExchangeMetadataHeader = "x-envoy-peer-metadata";
+constexpr StringView ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
 
 // DownstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
-constexpr absl::string_view DownstreamMetadataKey =
+constexpr StringView DownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
-constexpr absl::string_view DownstreamMetadataIdKey =
+constexpr StringView DownstreamMetadataIdKey =
     "envoy.wasm.metadata_exchange.downstream_id";
 
 // UpstreamMetadataKey is the key in the request metadata for downstream peer
 // metadata
-constexpr absl::string_view UpstreamMetadataKey =
+constexpr StringView UpstreamMetadataKey =
     "envoy.wasm.metadata_exchange.upstream";
-constexpr absl::string_view UpstreamMetadataIdKey =
+constexpr StringView UpstreamMetadataIdKey =
     "envoy.wasm.metadata_exchange.upstream_id";
-
-using StringView = absl::string_view;
-using Common::Wasm::MetadataType;
-using Common::Wasm::Null::NullPluginRootRegistry;
-using Common::Wasm::Null::Plugin::Context;
-using Common::Wasm::Null::Plugin::ContextFactory;
-using Common::Wasm::Null::Plugin::RootContext;
-using Common::Wasm::Null::Plugin::RootFactory;
-using Common::Wasm::Null::Plugin::WasmData;
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
@@ -62,7 +69,7 @@ class PluginRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~PluginRootContext() = default;
 
-  void onConfigure(std::unique_ptr<WasmData>) override;
+  bool onConfigure(std::unique_ptr<WasmData>) override;
   void onStart(std::unique_ptr<WasmData>) override{};
   void onTick() override{};
 
@@ -81,8 +88,8 @@ class PluginContext : public Context {
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   void onCreate() override{};
-  Http::FilterHeadersStatus onRequestHeaders() override;
-  Http::FilterHeadersStatus onResponseHeaders() override;
+  FilterHeadersStatus onRequestHeaders() override;
+  FilterHeadersStatus onResponseHeaders() override;
 
  private:
   inline PluginRootContext* rootContext() {
@@ -92,19 +99,10 @@ class PluginContext : public Context {
   inline StringView nodeId() { return rootContext()->nodeId(); }
 };
 
-// TODO(mjog) move this to proxy_wasm_impl.h
-inline void setMetadataStruct(MetadataType type, StringView key,
-                              StringView value) {
-  Common::Wasm::Null::Plugin::proxy_setMetadataStruct(
-      type, key.data(), key.size(), value.data(), value.size());
-}
-
-NULL_PLUGIN_ROOT_REGISTRY;
-
-static RegisterContextFactory register_MetadataExchange(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
-
+#ifdef NULL_PLUGIN
+}  // namespace Plugin
 }  // namespace MetadataExchange
 }  // namespace Wasm
 }  // namespace Extensions
 }  // namespace Envoy
+#endif
