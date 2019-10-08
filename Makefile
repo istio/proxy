@@ -37,6 +37,11 @@ BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
 BAZEL_BUILD_ARGS := -s $(BAZEL_BUILD_ARGS)
 endif
 
+BUILD_WITH_CONTAINER ?= 0
+ifeq "$(BUILD_WITH_CONTAINER)" "1"
+BAZEL_BUILD_ARGS := $(BAZEL_BUILD_ARGS) --config=docker-clang-libc++
+endif
+
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
 BAZEL_CONFIG_DEV  = --config=libc++
