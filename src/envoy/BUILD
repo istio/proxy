@@ -32,6 +32,7 @@ envoy_cc_binary(
         "//src/envoy/http/jwt_auth:http_filter_factory",
         "//src/envoy/http/mixer:filter_lib",
         "//src/envoy/tcp/forward_downstream_sni:config_lib",
+        "//src/envoy/tcp/metadata_exchange:config_lib",
         "//src/envoy/tcp/mixer:filter_lib",
         "//src/envoy/tcp/sni_verifier:config_lib",
         "//src/envoy/tcp/tcp_cluster_rewrite:config_lib",
