@@ -30,7 +30,8 @@ namespace Log {
 using google::protobuf::util::MessageDifferencer;
 using google::protobuf::util::TimeUtil;
 
-constexpr char kServerAccessLogName[] = "projects/test_project/logs/server-accesslog-stackdriver";
+constexpr char kServerAccessLogName[] =
+    "projects/test_project/logs/server-accesslog-stackdriver";
 
 namespace {
 
