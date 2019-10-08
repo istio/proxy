@@ -31,6 +31,11 @@ envoy_cc_library(
     hdrs = [
         "logger.h",
     ],
+    copts = [
+        # Workaround for the -DDEBUG flag added in fastbuild on macOS,
+        # which conflicts with DEBUG macro used in logging protobuf.
+        "-UDEBUG",
+    ],
     repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
@@ -51,6 +56,11 @@ envoy_cc_library(
     hdrs = [
         "exporter.h",
     ],
+    copts = [
+        # Workaround for the -DDEBUG flag added in fastbuild on macOS,
+        # which conflicts with DEBUG macro used in logging protobuf.
+        "-UDEBUG",
+    ],
     repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
@@ -65,6 +75,11 @@ envoy_cc_test(
     name = "logger_test",
     size = "small",
     srcs = ["logger_test.cc"],
+    copts = [
+        # Workaround for the -DDEBUG flag added in fastbuild on macOS,
+        # which conflicts with DEBUG macro used in logging protobuf.
+        "-UDEBUG",
+    ],
     repository = "@envoy",
     deps = [
         ":logger",
