@@ -68,16 +68,13 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
       local_node_info.platform_metadata().at(Common::kGCPProjectKey);
   current_request_->set_parent("projects/" + project_id);
 
-  // TODO(dougreid): figure out how to get the real mesh uid here.
-  // Using: //.../projects/<project_id>/<location>/meshes/<cluster> as a
-  // placeholder.
-  std::string location =
-      local_node_info.platform_metadata().at(Common::kGCPClusterLocationKey);
-  std::string cluster =
-      local_node_info.platform_metadata().at(Common::kGCPClusterNameKey);
+  std::string mesh_id = local_node_info.mesh_id();
+  if (mesh_id.empty()) {
+    mesh_id = "unknown";
+  }
   absl::StrAppend(current_request_->mutable_mesh_uid(),
                   "//cloudresourcemanager.googleapis.com/projects/", project_id,
-                  "/", location, "/meshes/", cluster);
+                  "/meshes/", mesh_id);
 
   instanceFromMetadata(local_node_info, &node_instance_);
 };

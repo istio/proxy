@@ -78,6 +78,7 @@ const char kNodeInfo[] = R"(
     key: "gcp_cluster_location"
     value: "test_location"
   }
+  mesh_id: "test-mesh"
 )";
 
 const char kPeerInfo[] = R"(
@@ -97,11 +98,12 @@ const char kPeerInfo[] = R"(
     key: "gcp_cluster_location"
     value: "test_location"
   }
+  mesh_id: "test-mesh"
 )";
 
 const char kWantGrpcRequest[] = R"(
   parent: "projects/test_project"
-  mesh_uid: "//cloudresourcemanager.googleapis.com/projects/test_project/test_location/meshes/test_cluster"
+  mesh_uid: "//cloudresourcemanager.googleapis.com/projects/test_project/meshes/test-mesh"
   traffic_assertions: {
     protocol: PROTOCOL_HTTP
     destination_service_name: "httpbin.org"
