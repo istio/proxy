@@ -38,7 +38,7 @@ using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 using google::protobuf::util::TimeUtil;
 
 namespace {
-google::protobuf::Timestamp wasmTimestamp() {
+static inline google::protobuf::Timestamp wasmTimestamp() {
   return TimeUtil::NanosecondsToTimestamp(getCurrentTimeNanoseconds());
 }
 }  // namespace
