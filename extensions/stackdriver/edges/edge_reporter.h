@@ -37,12 +37,6 @@ using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 using google::protobuf::util::TimeUtil;
 
-namespace {
-static inline google::protobuf::Timestamp wasmTimestamp() {
-  return TimeUtil::NanosecondsToTimestamp(getCurrentTimeNanoseconds());
-}
-}  // namespace
-
 // EdgeReporter provides a mechanism for generating information on traffic
 // "edges" for a mesh. It should be used **only** to document incoming edges for
 // a proxy. This means that the proxy in which this reporter is running should
@@ -54,8 +48,11 @@ class EdgeReporter {
 
  public:
   EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
+               std::unique_ptr<MeshEdgesServiceClient> edges_client);
+
+  EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
                std::unique_ptr<MeshEdgesServiceClient> edges_client,
-               TimestampFn now = wasmTimestamp);
+               TimestampFn now);
 
   ~EdgeReporter();  // this will call `reportEdges`
 
@@ -63,7 +60,7 @@ class EdgeReporter {
   // the supplied request / peer info. The new edge is added to the
   // pending request that will be sent with all generated edges.
   void addEdge(const ::Wasm::Common::RequestInfo &request_info,
-               const std::string peer_metadata_id_key,
+               const std::string &peer_metadata_id_key,
                const ::wasm::common::NodeInfo &peer_node_info);
 
   // reportEdges sends the buffered requests to the configured edges

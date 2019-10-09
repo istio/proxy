@@ -59,6 +59,12 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
 }  // namespace
 
 EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
+                           std::unique_ptr<MeshEdgesServiceClient> edges_client)
+    : EdgeReporter(local_node_info, std::move(edges_client), []() {
+        return TimeUtil::NanosecondsToTimestamp(getCurrentTimeNanoseconds());
+      }) {}
+
+EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
                            std::unique_ptr<MeshEdgesServiceClient> edges_client,
                            TimestampFn now)
     : edges_client_(std::move(edges_client)), now_(now) {
@@ -83,13 +89,13 @@ EdgeReporter::~EdgeReporter() { reportEdges(); }
 
 // ONLY inbound
 void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
-                           const std::string peer_metadata_id_key,
+                           const std::string& peer_metadata_id_key,
                            const ::wasm::common::NodeInfo& peer_node_info) {
-  auto peer = current_peers_.find(peer_metadata_id_key);
-  if (peer != current_peers_.end()) {
+  const auto& peer = current_peers_.emplace(peer_metadata_id_key);
+  if (!peer.second) {
+    // peer edge already exists
     return;
   }
-  current_peers_.emplace(peer_metadata_id_key);
 
   auto* traffic_assertions = current_request_->mutable_traffic_assertions();
   auto* edge = traffic_assertions->Add();
