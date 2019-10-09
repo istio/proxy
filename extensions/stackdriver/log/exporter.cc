@@ -42,7 +42,7 @@ namespace Stackdriver {
 namespace Log {
 
 ExporterImpl::ExporterImpl(RootContext* root_context,
-                           std::string logging_service_endpoint) {
+                           const std::string& logging_service_endpoint) {
   context_ = root_context;
   success_callback_ = [](google::protobuf::Empty&&) {
     logDebug("successfully sent Stackdriver logging request");
@@ -77,15 +77,10 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
 }
 
 void ExporterImpl::exportLogs(
-    const std::vector<
-        std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>>& requests)
-    const {
-  for (const auto& req : requests) {
-    context_->grpcSimpleCall(grpc_service_string_, kGoogleLoggingService,
-                             kGoogleWriteLogEntriesMethod, *req,
-                             kDefaultTimeoutMillisecond, success_callback_,
-                             failure_callback_);
-  }
+    const google::logging::v2::WriteLogEntriesRequest& req) const {
+  context_->grpcSimpleCall(
+      grpc_service_string_, kGoogleLoggingService, kGoogleWriteLogEntriesMethod,
+      req, kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
 }
 
 }  // namespace Log

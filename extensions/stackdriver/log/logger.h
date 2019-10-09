@@ -41,30 +41,22 @@ class Logger {
   Logger(const ::wasm::common::NodeInfo &local_node_info,
          std::unique_ptr<Exporter> exporter,
          int log_request_size_limit = 4000000 /* 4 Mb */);
+  ~Logger();
 
   // Add a new log entry based on the given request information and peer node
   // information.
   void addLogEntry(const ::Wasm::Common::RequestInfo &request_info,
                    const ::wasm::common::NodeInfo &peer_node_info);
 
-  // Export and clean the buffered WriteLogEntriesRequests.
-  void exportLogEntry();
-
- private:
-  // Flush rotates the current WriteLogEntriesRequest and push it into requests
-  // buffer. This will be triggered either by a timer or by request size limit.
+  // Flush rotates the current WriteLogEntriesRequest and exports it to
+  // Stackdriver backend. This will be triggered either by a timer or by request
+  // size limit.
   void flush();
 
-  // Current request that the new log entry should be written into.
+ private:
+  // Request that the new log entry should be written into.
   std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>
       log_entries_request_;
-
-  // Buffer for WriteLogEntriesRequests that are to be exported.
-  std::vector<std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>>
-      request_queue_;
-
-  // Exporter calls Stackdriver services to export access logs.
-  std::unique_ptr<Exporter> exporter_;
 
   // Estimated size of the current WriteLogEntriesRequest.
   int size_ = 0;
@@ -72,6 +64,9 @@ class Logger {
   // Size limit of a WriteLogEntriesRequest. If current WriteLogEntriesRequest
   // exceeds this size limit, flush() will be triggered.
   int log_request_size_limit_;
+
+  // Exporter calls Stackdriver services to export access logs.
+  std::unique_ptr<Exporter> exporter_;
 };
 
 }  // namespace Log

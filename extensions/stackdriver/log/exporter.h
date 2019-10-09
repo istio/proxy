@@ -43,9 +43,7 @@ class Exporter {
   virtual ~Exporter() {}
 
   virtual void exportLogs(
-      const std::vector<
-          std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>>&)
-      const = 0;
+      const google::logging::v2::WriteLogEntriesRequest&) const = 0;
 };
 
 // Exporter writes Stackdriver access log to the backend. It uses WebAssembly
@@ -55,12 +53,12 @@ class ExporterImpl : public Exporter {
   // root_context is the wasm runtime context that this instance runs with.
   // logging_service_endpoint is an optional param which should be used for test
   // only.
-  ExporterImpl(RootContext* root_context, std::string logging_service_endpoint);
+  ExporterImpl(RootContext* root_context,
+               const std::string& logging_service_endpoint);
 
-  // exportLogs exports the given log requests to Stackdriver.
-  void exportLogs(const std::vector<
-                  std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>>&
-                      requests) const override;
+  // exportLogs exports the given log request to Stackdriver.
+  void exportLogs(
+      const google::logging::v2::WriteLogEntriesRequest& req) const override;
 
  private:
   // Wasm context that outbound calls are attached to.

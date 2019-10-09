@@ -44,10 +44,12 @@ StackdriverOptions getStackdriverOptions(
   }
 
   // Get server and client monitored resource.
-  auto server_monitored_resource = Common::getMonitoredResource(
-      kContainerMonitoredResource, local_node_info);
-  auto client_monitored_resource =
-      Common::getMonitoredResource(kPodMonitoredResource, local_node_info);
+  google::api::MonitoredResource server_monitored_resource;
+  Common::getMonitoredResource(kContainerMonitoredResource, local_node_info,
+                               &server_monitored_resource);
+  google::api::MonitoredResource client_monitored_resource;
+  Common::getMonitoredResource(kPodMonitoredResource, local_node_info,
+                               &client_monitored_resource);
   options.per_metric_monitored_resource[kServerRequestCountView] =
       server_monitored_resource;
   options.per_metric_monitored_resource[kServerRequestBytesView] =

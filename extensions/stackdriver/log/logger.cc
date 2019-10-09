@@ -49,8 +49,9 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
                                      kServerAccessLogName);
 
   // Set monitored resources derived from local node info.
-  const auto& monitored_resource = Common::getMonitoredResource(
-      Common::kContainerMonitoredResource, local_node_info);
+  google::api::MonitoredResource monitored_resource;
+  Common::getMonitoredResource(Common::kContainerMonitoredResource,
+                               local_node_info, &monitored_resource);
   log_entries_request_->mutable_resource()->CopyFrom(monitored_resource);
 
   // Set common labels shared by all entries.
@@ -61,6 +62,8 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   log_request_size_limit_ = log_request_size_limit;
   exporter_ = std::move(exporter);
 }
+
+Logger::~Logger() { flush(); }
 
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                          const ::wasm::common::NodeInfo& peer_node_info) {
@@ -109,16 +112,10 @@ void Logger::flush() {
 
   // Swap the new request with the old one and push the old request into buffer.
   log_entries_request_.swap(cur);
-  request_queue_.emplace_back(std::move(cur));
+  exporter_->exportLogs(*cur);
 
   // Reset size counter.
   size_ = 0;
-}
-
-void Logger::exportLogEntry() {
-  flush();
-  exporter_->exportLogs(request_queue_);
-  request_queue_.clear();
 }
 
 }  // namespace Log
