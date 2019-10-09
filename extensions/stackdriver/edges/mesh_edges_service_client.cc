@@ -29,7 +29,7 @@ namespace Plugin {
 using envoy::api::v2::core::GrpcService;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::GrpcStatus;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::logInfo;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::logWarn;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 #endif
 

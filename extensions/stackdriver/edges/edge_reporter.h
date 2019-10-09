@@ -68,6 +68,10 @@ class EdgeReporter {
   void reportEdges();
 
  private:
+  // builds a full request out of the current traffic assertions (edges),
+  // adds that request to the queue, and resets the current request and state.
+  void flush();
+
   // client used to send requests to the edges service
   std::unique_ptr<MeshEdgesServiceClient> edges_client_;
 
@@ -82,6 +86,9 @@ class EdgeReporter {
 
   // current peers for which edges have been created in current_request_;
   std::unordered_set<std::string> current_peers_;
+
+  // requests waiting to be sent to backend
+  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>> queued_requests_;
 
   // TODO(douglas-reid): make adjustable.
   const int max_assertions_per_request_ = 1000;

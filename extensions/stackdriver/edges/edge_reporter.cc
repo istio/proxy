@@ -85,7 +85,12 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
   instanceFromMetadata(local_node_info, &node_instance_);
 };
 
-EdgeReporter::~EdgeReporter() { reportEdges(); }
+EdgeReporter::~EdgeReporter() {
+  // if (current_request_->traffic_assertions_size() == 0 ||
+  // !queued_requests_.empty()) {
+  //   logWarn("EdgeReporter had uncommitted TrafficAssertions when shutdown.");
+  // }
+}
 
 // ONLY inbound
 void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
@@ -125,6 +130,14 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
 };  // namespace Edges
 
 void EdgeReporter::reportEdges() {
+  flush();
+  for (auto& req : queued_requests_) {
+    edges_client_->reportTrafficAssertions(*req.get());
+  }
+  queued_requests_.clear();
+};
+
+void EdgeReporter::flush() {
   if (current_request_->traffic_assertions_size() == 0) {
     return;
   }
@@ -139,7 +152,7 @@ void EdgeReporter::reportEdges() {
 
   // set the timestamp and then send the queued request
   *queued_request->mutable_timestamp() = now_();
-  edges_client_->reportTrafficAssertions(*queued_request);
+  queued_requests_.emplace_back(std::move(queued_request));
 }
 
 }  // namespace Edges
