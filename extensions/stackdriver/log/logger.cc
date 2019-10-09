@@ -110,7 +110,7 @@ void Logger::flush() {
   cur->mutable_resource()->CopyFrom(log_entries_request_->resource());
   *cur->mutable_labels() = log_entries_request_->labels();
 
-  // Swap the new request with the old one and push the old request into buffer.
+  // Swap the new request with the old one and export it.
   log_entries_request_.swap(cur);
   exporter_->exportLogs(*cur);
 

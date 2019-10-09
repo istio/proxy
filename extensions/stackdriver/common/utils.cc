@@ -38,13 +38,11 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   (*monitored_resource->mutable_labels())[kPodNameLabel] =
       local_node_info.name();
 
-  if (monitored_resource_type == kPodMonitoredResource) {
-    // no need to fill in container_name for pod monitored resource.
-    return;
+  if (monitored_resource_type == kContainerMonitoredResource) {
+    // Fill in container_name of k8s_container monitored resource.
+    (*monitored_resource->mutable_labels())[kContainerNameLabel] =
+        kIstioProxyContainerName;
   }
-  // Fill in container_name of k8s_container monitored resource.
-  (*monitored_resource->mutable_labels())[kContainerNameLabel] =
-      kIstioProxyContainerName;
 }
 
 }  // namespace Common
