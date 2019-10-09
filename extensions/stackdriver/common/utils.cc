@@ -25,6 +25,9 @@ using google::api::MonitoredResource;
 void getMonitoredResource(const std::string &monitored_resource_type,
                           const ::wasm::common::NodeInfo &local_node_info,
                           MonitoredResource *monitored_resource) {
+  if (!monitored_resource) {
+      return;
+  }
   monitored_resource->set_type(monitored_resource_type);
   auto platform_metadata = local_node_info.platform_metadata();
   (*monitored_resource->mutable_labels())[kProjectIDLabel] =
