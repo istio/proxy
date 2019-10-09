@@ -63,7 +63,7 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   exporter_ = std::move(exporter);
 }
 
-Logger::~Logger() { flush(); }
+Logger::~Logger() { exportLogEntry(); }
 
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                          const ::wasm::common::NodeInfo& peer_node_info) {
@@ -97,10 +97,10 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   }
 }
 
-void Logger::flush() {
+bool Logger::flush() {
   if (size_ == 0) {
     // This flush is triggered by timer and does not have any log entries.
-    return;
+    return false;
   }
 
   // Reconstruct a new WriteLogRequest.
@@ -112,10 +112,20 @@ void Logger::flush() {
 
   // Swap the new request with the old one and export it.
   log_entries_request_.swap(cur);
-  exporter_->exportLogs(*cur);
+  request_queue_.emplace_back(std::move(cur));
 
   // Reset size counter.
   size_ = 0;
+  return true;
+}
+
+void Logger::exportLogEntry() {
+  if (!flush() && request_queue_.empty()) {
+    // No log entry needs to export.
+    return;
+  }
+  exporter_->exportLogs(request_queue_);
+  request_queue_.clear();
 }
 
 }  // namespace Log

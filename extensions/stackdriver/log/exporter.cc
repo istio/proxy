@@ -77,10 +77,15 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
 }
 
 void ExporterImpl::exportLogs(
-    const google::logging::v2::WriteLogEntriesRequest& req) const {
-  context_->grpcSimpleCall(
-      grpc_service_string_, kGoogleLoggingService, kGoogleWriteLogEntriesMethod,
-      req, kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
+    const std::vector<
+        std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
+        requests) const {
+  for (const auto& req : requests) {
+    context_->grpcSimpleCall(grpc_service_string_, kGoogleLoggingService,
+                             kGoogleWriteLogEntriesMethod, *req,
+                             kDefaultTimeoutMillisecond, success_callback_,
+                             failure_callback_);
+  }
 }
 
 }  // namespace Log

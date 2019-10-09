@@ -37,8 +37,10 @@ namespace {
 
 class MockExporter : public Exporter {
  public:
-  MOCK_CONST_METHOD1(exportLogs,
-                     void(const google::logging::v2::WriteLogEntriesRequest&));
+  MOCK_CONST_METHOD1(
+      exportLogs,
+      void(const std::vector<std::unique_ptr<
+               const google::logging::v2::WriteLogEntriesRequest>>&));
 };
 
 wasm::common::NodeInfo nodeInfo() {
@@ -126,29 +128,37 @@ TEST(LoggerTest, TestWriteLogEntry) {
   auto logger = std::make_unique<Logger>(nodeInfo(), std::move(exporter));
   logger->addLogEntry(requestInfo(), peerNodeInfo());
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_))
-      .Times(1)
-      .WillRepeatedly(::testing::Invoke(
-          [](const google::logging::v2::WriteLogEntriesRequest& request) {
+      .WillOnce(::testing::Invoke(
+          [](const std::vector<std::unique_ptr<
+                 const google::logging::v2::WriteLogEntriesRequest>>&
+                 requests) {
             auto expected_request = expectedRequest(1);
-            EXPECT_TRUE(MessageDifferencer::Equals(expected_request, request));
+            for (const auto& req : requests) {
+              EXPECT_TRUE(MessageDifferencer::Equals(expected_request, *req));
+            }
           }));
-  logger->flush();
+  logger->exportLogEntry();
 }
 
 TEST(LoggerTest, TestWriteLogEntryRotation) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
   auto logger = std::make_unique<Logger>(nodeInfo(), std::move(exporter), 900);
-  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_))
-      .Times(3)
-      .WillRepeatedly(::testing::Invoke(
-          [](const google::logging::v2::WriteLogEntriesRequest& request) {
-            auto expected_request = expectedRequest(3);
-            EXPECT_TRUE(MessageDifferencer::Equals(expected_request, request));
-          }));
   for (int i = 0; i < 9; i++) {
     logger->addLogEntry(requestInfo(), peerNodeInfo());
   }
+  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_))
+      .WillOnce(::testing::Invoke(
+          [](const std::vector<std::unique_ptr<
+                 const google::logging::v2::WriteLogEntriesRequest>>&
+                 requests) {
+            EXPECT_EQ(requests.size(), 3);
+            for (const auto& req : requests) {
+              auto expected_request = expectedRequest(3);
+              EXPECT_TRUE(MessageDifferencer::Equals(expected_request, *req));
+            }
+          }));
+  logger->exportLogEntry();
 }
 
 }  // namespace Log

@@ -43,7 +43,9 @@ class Exporter {
   virtual ~Exporter() {}
 
   virtual void exportLogs(
-      const google::logging::v2::WriteLogEntriesRequest&) const = 0;
+      const std::vector<
+          std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&)
+      const = 0;
 };
 
 // Exporter writes Stackdriver access log to the backend. It uses WebAssembly
@@ -58,7 +60,9 @@ class ExporterImpl : public Exporter {
 
   // exportLogs exports the given log request to Stackdriver.
   void exportLogs(
-      const google::logging::v2::WriteLogEntriesRequest& req) const override;
+      const std::vector<
+          std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
+          req) const override;
 
  private:
   // Wasm context that outbound calls are attached to.

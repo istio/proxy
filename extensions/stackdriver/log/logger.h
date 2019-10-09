@@ -48,12 +48,20 @@ class Logger {
   void addLogEntry(const ::Wasm::Common::RequestInfo &request_info,
                    const ::wasm::common::NodeInfo &peer_node_info);
 
-  // Flush rotates the current WriteLogEntriesRequest and exports it to
-  // Stackdriver backend. This will be triggered either by a timer or by request
-  // size limit.
-  void flush();
+  // Export and clean the buffered WriteLogEntriesRequests.
+  void exportLogEntry();
 
  private:
+  // Flush rotates the current WriteLogEntriesRequest. This will be triggered
+  // either by a timer or by request size limit. Returns false if nothing log
+  // entries to export.
+  bool flush();
+
+  // Buffer for WriteLogEntriesRequests that are to be exported.
+  std::vector<
+      std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>
+      request_queue_;
+
   // Request that the new log entry should be written into.
   std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>
       log_entries_request_;
