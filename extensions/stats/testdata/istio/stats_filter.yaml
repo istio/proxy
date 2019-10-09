@@ -24,6 +24,6 @@ spec:
                 "stat_prefix": "istio",
               }
             vm_config:
-              vm: envoy.wasm.vm.null
+              runtime: envoy.wasm.runtime.null
               code:
                 inline_string: envoy.wasm.stats

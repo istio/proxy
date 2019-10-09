@@ -92,14 +92,14 @@ static_resources:
           - name: envoy.wasm
             config:
               vm_config:
-                vm: "envoy.wasm.vm.null"
+                runtime: envoy.wasm.runtime.null
                 code:
                   inline_string: "envoy.wasm.metadata_exchange"
               configuration: "test"
           - name: envoy.wasm
             config:
               vm_config:
-                vm: "envoy.wasm.vm.null"
+                runtime: envoy.wasm.runtime.null
                 code:
                   inline_string: "envoy.wasm.stats"
               configuration: |

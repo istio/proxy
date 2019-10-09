@@ -18,6 +18,6 @@ spec:
           config:
             configuration: envoy.wasm.metadata_exchange
             vm_config:
-              vm: envoy.wasm.vm.null
+              runtime: envoy.wasm.runtime.null
               code:
                 inline_string: envoy.wasm.metadata_exchange
