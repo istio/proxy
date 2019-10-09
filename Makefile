@@ -41,8 +41,8 @@ UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
 BAZEL_CONFIG_DEV  = --config=libc++
 BAZEL_CONFIG_REL  = --config=libc++ --config=release
-BAZEL_CONFIG_ASAN = --config=clang-asan --config=libc++
-BAZEL_CONFIG_TSAN = --config=clang-tsan --config=libc++
+BAZEL_CONFIG_ASAN = --config=libc++ --config=clang-asan
+BAZEL_CONFIG_TSAN = --config=libc++ --config=clang-tsan
 endif
 ifeq ($(UNAME),Darwin)
 BAZEL_CONFIG_DEV  = # macOS always links against libc++
