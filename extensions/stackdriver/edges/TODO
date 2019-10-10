@@ -1,0 +1,7 @@
+(P0) Integration test for grpc endpoint
+(P1) Destination service shortname (as opposed to host)
+(P1) Retries
+(P1) Better debugging / monitoring (exported metrics)
+(P1) WASM bits
+(P2) Support for other platforms / error handling when not on GCP
+(P3) Refactoring / alignment with other Stackdriver extension components
