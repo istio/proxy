@@ -64,7 +64,7 @@ static_resources:
           - name: envoy.file_access_log
             config:
               path: {{.ClientAccessLogPath}}
-{{.AccesslogFormat | indent 14 }}
+              format: {{.AccesslogFormat}}
 {{.TlsContext | indent 6 }}
 `
 
@@ -117,6 +117,7 @@ static_resources:
           - name: envoy.file_access_log
             config:
               path: {{.ServerAccessLogPath}}
+              format: {{.ServerAccesslogFormat}}
 {{.TlsContext | indent 6 }}
 `
 

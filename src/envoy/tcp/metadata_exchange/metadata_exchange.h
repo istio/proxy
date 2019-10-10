@@ -23,6 +23,7 @@
 #include "envoy/runtime/runtime.h"
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
+#include "envoy/stream_info/filter_state.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
@@ -59,7 +60,6 @@ class MetadataExchangeConfig {
  public:
   MetadataExchangeConfig(const std::string& stat_prefix,
                          const std::string& protocol,
-                         const std::string& node_metadata_id,
                          const FilterDirection filter_direction,
                          Stats::Scope& scope);
 
@@ -71,8 +71,6 @@ class MetadataExchangeConfig {
   const std::string stat_prefix_;
   // Expected Alpn Protocol.
   const std::string protocol_;
-  // Node metadata id to read.
-  const std::string node_metadata_id_;
   // Direction of filter.
   const FilterDirection filter_direction_;
   // Stats for MetadataExchange Filter.
@@ -129,11 +127,20 @@ class MetadataExchangeFilter : public Network::Filter {
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to set Dynamic metadata.
-  void setMetadata(const std::string key, const ProtobufWkt::Struct& value);
+  void setMetadata(const std::string& key, ProtobufWkt::Value& value);
+
+  // Helper function to set Dynamic metadata string value.
+  void setMetadataStringValue(const std::string& key, const std::string& value);
+
+  // Helper function to set Dynamic metadata string value.
+  void setMetadataStructValue(const std::string& key,
+                              const ProtobufWkt::Value& value);
 
   // Helper function to get Dynamic metadata.
-  std::unique_ptr<const google::protobuf::Struct> getMetadata(
-      const std::string& key);
+  void getMetadata(google::protobuf::Struct* metadata);
+
+  // Helper function to get metadata id.
+  std::string getMetadataId();
 
   // Config for MetadataExchange filter.
   MetadataExchangeConfigSharedPtr config_;
@@ -147,11 +154,20 @@ class MetadataExchangeFilter : public Network::Filter {
   uint64_t proxy_data_length_{0};
 
   // Key Identifier for dynamic metadata in upstream filter.
-  const std::string UpstreamDynamicDataKey =
-      "filters.network.metadata_exchange.upstream";
+  const std::string UpstreamMetadataKey =
+      "envoy.wasm.metadata_exchange.upstream";
+  const std::string UpstreamMetadataIdKey =
+      "envoy.wasm.metadata_exchange.upstream_id";
+
   // Key Identifier for dynamic metadata in downstream filter.
-  const std::string DownstreamDynamicDataKey =
-      "filters.network.metadata_exchange.downstream";
+  const std::string DownstreamMetadataKey =
+      "envoy.wasm.metadata_exchange.downstream";
+  const std::string DownstreamMetadataIdKey =
+      "envoy.wasm.metadata_exchange.downstream_id";
+
+  const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
+  const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
+
   // Type url of google::protobug::struct.
   const std::string StructTypeUrl =
       "type.googleapis.com/google.protobuf.Struct";

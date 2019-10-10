@@ -31,7 +31,6 @@ const metadataExchangeIstioConfigFilter = `
 - name: envoy.filters.network.metadata_exchange
   config:
     protocol: istio2
-    node_metadata_id: istio.io/metadata
 `
 
 const metadataExchangeIstioUpstreamConfigFilterChain = `
@@ -40,7 +39,6 @@ filters:
   typed_config: 
     "@type": type.googleapis.com/envoy.tcp.metadataexchange.config.MetadataExchange
     protocol: istio2
-    node_metadata_id: istio.io/metadata
 `
 
 const tlsContext = `
@@ -74,19 +72,63 @@ tls_context:
         inline_string: "-----BEGIN CERTIFICATE-----\nMIIFFDCCAvygAwIBAgIUZqU0Sviq/wULK6UV7PoAZ7B+nqAwDQYJKoZIhvcNAQEL\nBQAwIjEOMAwGA1UECgwFSXN0aW8xEDAOBgNVBAMMB1Jvb3QgQ0EwHhcNMTkwNzIy\nMjEzMDA0WhcNMjkwNzE5MjEzMDA0WjAiMQ4wDAYDVQQKDAVJc3RpbzEQMA4GA1UE\nAwwHUm9vdCBDQTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBANNl5/pH\n/ktdqEsb83cqHrYJCyzbvWce6k/iud4Czu6FClFX8b+n/Rv9GrZFxJwKAFlUx3iA\nBGlSn/1XYpnhudQhgVGvyuWNO5kX4BfrAJwfWt+7Mn6NcWvunDqwqUPxI07sgCJW\nAYBAwkZH/Nhn6tj571XWNPziUtCwlPNkFMiRu/2nI/tq12IgwimFjVgiCuprNfyX\ntQz/DMVTWpCRQLK5ptlYMfk0P25UKyJdKHnr1MPQBJmPXMfSSqpGjksikV4QnYc7\nCXB3ucq7ty0IWA8QXH+86WqMTh22mosWVXHe0OGbzYtuyVnXc1G7YRv4D87G3Ves\nG4n/8e+RaDTacvwOsYEkuQGk+s8pggPkIqydGy02JNZ4cSRpXJRTzME2BgBZxT8S\nEw1Omr5+iuLNRAKEYRM/eWI7qrs5fxpD6K9JELHS41hWHGdW94PP0wKz70trx5pM\nfLpcVm7BQ5ppgf+t4vgKnrNiACQpfyZbInCBU0doaZaqVMnKH0vgyM7xrC43fsOP\ny5URy3tEH8Uk7Dbvsmj7AXR7IPKlYtgcqcJXmeWa+kLOpx3G55hgJL1ySrxXg/qz\nAobgmV0IycH2ntn5lXvjbwe0cfXAnZgGoALZjJVuEazyBmmVzjBjG2Qcq35nHfp8\nRm6WnCZIaGsZqgoDuSJD280ZLWW7R0PMcnypAgMBAAGjQjBAMB0GA1UdDgQWBBQZ\nh3/ckcK23ZYKO+JsZowd3dIobDAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQE\nAwIC5DANBgkqhkiG9w0BAQsFAAOCAgEAjh4CdrwnLsqwVxyVSgxd7TfSHtKE/J2Y\n2IZ4fJYXGkq3McPk2e9u0zjCH0buvfDwyAItLIacD+YwIP+OC2WxLe+YMZ5KkXl3\nLuhQ2TOoRlrbp5tYLQITZIIl9+vNkgnn1DkdxkLm9cDDag19LSxa9Rjrnb3wwFAT\nIzEhy+d18FpQtdMMhmonU/L8Oy5LqjT5BR3T8VrXYUsaAkcUs/yHNTFAY3iJFBWL\nZ8dFa5v0A1Ryi8quSNo7lK/hSEZvvV9k4XfFAolXSUqe8BCuXe0rbAq3Jq9HgDww\noImGM0uz4Zf89uhTk1O7UOUfQoSTmA0yZICtQkCiOC0J4AlAOTmiEXUC9gicV3R8\ndvVOqNBOcBELglZ+NIMm6FQQqPh1nZ6A3Bh+JRTPerAF12725RZZE6XMxq2MSr3G\nk5yH10QPMH7/DJRQUhRHAhbge+jk2csa7EGSxABcbsPLSV+cEzXRO4cJeItoZQLh\nsaFhIn9lGukXG6lgiperOqZl6DFVcUG6/nogK7KOTAnV9zjR/7vNwvYzPI9iOR3V\n6dbG38KnipcfL885VLJVTnfhvYHlxFklCKTEnOHnmKsM0qjQuky3DBzmDA6iqeOM\nSHRje5LKxi7mllJfu/X0MxYJWiu6i4gMCWZsC3UtAJQ09x7iwcNr/1bl9ApGszOy\nUff0OxD2hzk=\n-----END CERTIFICATE-----\n"
 `
 
-const clientNodeMetadata = `
-"istio.io/metadata": {
-      namespace: default,
-      labels: { app: productpage },
-    }
-`
+const clientNodeMetadata = `"NAMESPACE": "default",
+"INCLUDE_INBOUND_PORTS": "9080",
+"app": "productpage",
+"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
+"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
+"pod-template-hash": "84975bc778",
+"INTERCEPTION_MODE": "REDIRECT",
+"SERVICE_ACCOUNT": "bookinfo-productpage",
+"CONFIG_NAMESPACE": "default",
+"version": "v1",
+"OWNER": "kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
+"WORKLOAD_NAME": "productpage-v1",
+"ISTIO_VERSION": "1.3-dev",
+"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container productpage",
+"POD_NAME": "productpage-v1-84975bc778-pxz2w",
+"istio": "sidecar",
+"PLATFORM_METADATA": {
+ "gcp_cluster_name": "test-cluster",
+ "gcp_project": "test-project",
+ "gcp_cluster_location": "us-east4-b"
+},
+"LABELS": {
+ "app": "productpage",
+ "version": "v1",
+ "pod-template-hash": "84975bc778"
+},
+"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
+"NAME": "productpage-v1-84975bc778-pxz2w",`
 
-const serverNodeMetadata = `
-"istio.io/metadata": {
-      namespace: default,
-      labels: { app: details },
-    }
-`
+const serverNodeMetadata = `"NAMESPACE": "default",
+"INCLUDE_INBOUND_PORTS": "9080",
+"app": "ratings",
+"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
+"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
+"pod-template-hash": "84975bc778",
+"INTERCEPTION_MODE": "REDIRECT",
+"SERVICE_ACCOUNT": "bookinfo-ratings",
+"CONFIG_NAMESPACE": "default",
+"version": "v1",
+"OWNER": "kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
+"WORKLOAD_NAME": "ratings-v1",
+"ISTIO_VERSION": "1.3-dev",
+"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container ratings",
+"POD_NAME": "ratings-v1-84975bc778-pxz2w",
+"istio": "sidecar",
+"PLATFORM_METADATA": {
+ "gcp_cluster_name": "test-cluster",
+ "gcp_project": "test-project",
+ "gcp_cluster_location": "us-east4-b"
+},
+"LABELS": {
+ "app": "ratings",
+ "version": "v1",
+ "pod-template-hash": "84975bc778"
+},
+"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
+"NAME": "ratings-v1-84975bc778-pxz2w",`
 
 // Stats in Client Envoy proxy.
 var expectedClientStats = map[string]int{
@@ -140,7 +182,7 @@ func TestTcpMetadataExchange(t *testing.T) {
 	}
 	config := &tls.Config{Certificates: []tls.Certificate{certificate}, ServerName: "localhost", NextProtos: []string{"istio2"}, RootCAs: certPool}
 
-	conn, err := tls.Dial("tcp", fmt.Sprintf("localhost:%d", s.Ports().AppToClientProxyPort /*s.Ports().ProxyToServerProxyPort*/), config)
+	conn, err := tls.Dial("tcp", fmt.Sprintf("localhost:%d", s.Ports().AppToClientProxyPort), config)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,6 +15,8 @@
 
 #include "extensions/common/context.h"
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
@@ -158,6 +160,42 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
     getStringValue({"connection", "tls_version"}, &tls_version);
   }
   request_info->destination_port = destination_port;
+}
+
+google::protobuf::util::Status extractNodeMetadataValue(
+    const google::protobuf::Struct &node_metadata,
+    google::protobuf::Struct *metadata) {
+  if (metadata == nullptr) {
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::INVALID_ARGUMENT,
+        "metadata provided is null");
+  }
+  const auto key_it = node_metadata.fields().find("EXCHANGE_KEYS");
+  if (key_it == node_metadata.fields().end()) {
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::INVALID_ARGUMENT,
+        "metadata exchange key is missing");
+  }
+
+  const auto &keys_value = key_it->second;
+  if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::INVALID_ARGUMENT,
+        "metadata exchange key is not a string");
+  }
+
+  // select keys from the metadata using the keys
+  const std::set<std::string> keys =
+      absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
+  for (auto key : keys) {
+    const auto entry_it = node_metadata.fields().find(key);
+    if (entry_it == node_metadata.fields().end()) {
+      continue;
+    }
+    (*metadata->mutable_fields())[key] = entry_it->second;
+  }
+
+  return google::protobuf::util::Status(google::protobuf::util::error::OK, "");
 }
 
 }  // namespace Common
