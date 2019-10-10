@@ -30,39 +30,43 @@ import (
 
 const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.metadata_exchange"
-    configuration: "test"
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.metadata_exchange"
+      configuration: "test"
 - name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.null.stackdriver"
-    configuration: >-
-      {
-        "testMonitoringEndpoint": "localhost:12312",
-      }`
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.null.stackdriver"
+      configuration: >-
+        {
+          "testMonitoringEndpoint": "localhost:12312",
+        }`
 
 const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.metadata_exchange"
-    configuration: "test"
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.metadata_exchange"
+      configuration: "test"
 - name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.null.stackdriver"
-    configuration: >-
-      {
-        "testMonitoringEndpoint": "localhost:12312",
-      }`
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.null.stackdriver"
+      configuration: >-
+        {
+          "testMonitoringEndpoint": "localhost:12312",
+        }`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
@@ -125,9 +129,6 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
 func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
 	got.Points[0].Interval = nil
-	// remove opencensus_task label.
-	// TODO: remove this after https://github.com/census-instrumentation/opencensus-cpp/issues/372
-	delete(got.Metric.Labels, "opencensus_task")
 	if !proto.Equal(want, got) {
 		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
 	}

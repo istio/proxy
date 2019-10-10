@@ -105,8 +105,8 @@ cc_library(
 # 1) find the ISTIO_API SHA you want in git
 # 2) wget https://github.com/istio/api/archive/$ISTIO_API_SHA.tar.gz && sha256sum $ISTIO_API_SHA.tar.gz
 #
-ISTIO_API = "096de7877b32f265154689bdf6f27631406dad0e"
-ISTIO_API_SHA256 = "60f59a2a6d91d1123a7c5105c72d110314b2ec620e77636960d8b2e26d8212fe"
+ISTIO_API = "593785242b9d8afcdcec176c5f03f3637dbf1ad1"
+ISTIO_API_SHA256 = "2c0f8059464b228476bd772e7d514e373d303b821d6187e55c24956babb11bf2"
 GOGOPROTO_RELEASE = "1.2.1"
 GOGOPROTO_SHA256 = "99e423905ba8921e86817607a5294ffeedb66fdd4a85efce5eb2848f715fdb3a"
 
@@ -219,6 +219,25 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "alpn_filter_config_proto_lib",
+    srcs = glob(
+        ["envoy/config/filter/http/alpn/v2alpha1/*.proto", ],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_gogo_protobuf//:gogo_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "alpn_filter_config_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":alpn_filter_config_proto_lib",
+    ],
+)
+
+proto_library(
     name = "tcp_cluster_rewrite_config_proto_lib",
     srcs = glob(
         ["envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1/*.proto", ],
@@ -319,6 +338,10 @@ py_proto_library(
         native.bind(
             name = "jwt_auth_config_cc_proto",
             actual = "@mixerapi_git//:jwt_auth_config_cc_proto",
+        )
+        native.bind(
+            name = "alpn_filter_config_cc_proto",
+            actual = "@mixerapi_git//:alpn_filter_config_cc_proto",
         )
         native.bind(
             name = "tcp_cluster_rewrite_config_cc_proto",

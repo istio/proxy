@@ -37,4 +37,8 @@ message NodeInfo {
 
   // Version identifier for the proxy.
   string istio_version = 7 [json_name = "ISTIO_VERSION"];
+
+  // Unique identifier for the mesh. Taken from global mesh id parameter (or
+  // the configured trust domain when not specified).
+  string mesh_id = 8 [json_name = "MESH_ID"];
 }

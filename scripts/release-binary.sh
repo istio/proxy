@@ -28,6 +28,12 @@ if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]];
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
 fi
 
+if [[ "$(uname)" == "Darwin" ]]; then
+  BAZEL_CONFIG_ASAN="--config=macos-asan"
+else
+  BAZEL_CONFIG_ASAN="--config=clang-asan"
+fi
+
 # The bucket name to store proxy binaries.
 DST=""
 
@@ -115,6 +121,21 @@ fi
 BINARY_NAME="${HOME}/envoy-symbol-${SHA}.tar.gz"
 SHA256_NAME="${HOME}/envoy-symbol-${SHA}.sha256"
 bazel build ${BAZEL_BUILD_ARGS} --config=release-symbol //src/envoy:envoy_tar
+BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
+cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
+sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
+
+if [ -n "${DST}" ]; then
+  # Copy it to the bucket.
+  echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
+  gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+fi
+
+# Build the release binary with symbols and AddressSanitizer (ASan).
+# NOTE: libc++ is dynamically linked in this build.
+BINARY_NAME="${HOME}/envoy-asan-${SHA}.tar.gz"
+SHA256_NAME="${HOME}/envoy-asan-${SHA}.sha256"
+bazel build ${BAZEL_BUILD_ARGS} ${BAZEL_CONFIG_ASAN} --config=release-symbol //src/envoy:envoy_tar
 BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
