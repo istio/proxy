@@ -15,43 +15,59 @@
 ################################################################################
 #
 
-licenses(["notice"])
+licenses(["notice"])  # Apache 2
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
     "envoy_cc_test",
 )
 
-cc_library(
-    name = "metric",
+envoy_cc_library(
+    name = "logger",
     srcs = [
-        "record.cc",
-        "registry.cc",
+        "logger.cc",
     ],
     hdrs = [
-        "record.h",
-        "registry.h",
+        "logger.h",
     ],
+    repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
     ],
     deps = [
+        ":exporter",
         "//extensions/common:context",
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/common:utils",
-        "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",
-        "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
-        "@io_opencensus_cpp//opencensus/stats",
+    ],
+)
+
+envoy_cc_library(
+    name = "exporter",
+    srcs = [
+        "exporter.cc",
+    ],
+    hdrs = [
+        "exporter.h",
+    ],
+    repository = "@envoy",
+    visibility = [
+        "//extensions/stackdriver:__pkg__",
+    ],
+    deps = [
+        "@com_google_googleapis//google/logging/v2:logging_cc_proto",
+        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )
 
 envoy_cc_test(
-    name = "registry_test",
+    name = "logger_test",
     size = "small",
-    srcs = ["registry_test.cc"],
+    srcs = ["logger_test.cc"],
     repository = "@envoy",
     deps = [
-        ":metric",
+        ":logger",
         "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
