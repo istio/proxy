@@ -16,6 +16,7 @@
 #pragma once
 
 #include "extensions/common/context.h"
+#include "extensions/common/node_info_cache.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
 #include "extensions/stackdriver/metric/record.h"
 
@@ -65,12 +66,19 @@ class StackdriverRootContext : public RootContext {
   void record(const ::Wasm::Common::RequestInfo& request_info,
               const ::wasm::common::NodeInfo& peer_node_info);
 
+  // Gets peer node info. It checks the node info cache first, and then try to
+  // fetch it from host if cache miss.
+  const wasm::common::NodeInfo& getPeerNode();
+
  private:
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
 
   // Local node info extracted from node metadata.
   wasm::common::NodeInfo local_node_info_;
+
+  // Cache of peer node info.
+  ::Wasm::Common::NodeInfoCache node_info_cache_;
 
   // Indicates the traffic direction relative to this proxy.
   ::Wasm::Common::TrafficDirection direction_{
@@ -95,9 +103,6 @@ class StackdriverContext : public Context {
   // Request information collected from stream callbacks, used when record
   // metrics and access logs.
   ::Wasm::Common::RequestInfo request_info_;
-
-  // Peer node information extracted from peer node metadata header.
-  ::wasm::common::NodeInfo peer_node_info_;
 
   // Gets root Stackdriver context that this stream Stackdriver context
   // associated with.

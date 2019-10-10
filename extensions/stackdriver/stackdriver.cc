@@ -42,7 +42,9 @@ using namespace google::protobuf::util;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
 using stackdriver::config::v1alpha1::PluginConfig;
+using ::Wasm::Common::kDownstreamMetadataIdKey;
 using ::Wasm::Common::kDownstreamMetadataKey;
+using ::Wasm::Common::kUpstreamMetadataIdKey;
 using ::Wasm::Common::kUpstreamMetadataKey;
 using ::wasm::common::NodeInfo;
 using ::Wasm::Common::RequestInfo;
@@ -105,14 +107,23 @@ void StackdriverRootContext::onTick() {
 #endif
 }
 
-void StackdriverRootContext::record(const RequestInfo &request_info,
-                                    const NodeInfo &peer_node_info) {
+void StackdriverRootContext::record(const RequestInfo& request_info,
+                                    const NodeInfo& peer_node_info) {
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
 }
 
 inline bool StackdriverRootContext::isOutbound() {
   return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
+}
+
+const wasm::common::NodeInfo& StackdriverRootContext::getPeerNode() {
+  bool isOutbound = this->isOutbound();
+  const auto& id_key =
+      isOutbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey;
+  const auto& metadata_key =
+      isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
+  return node_info_cache_.getPeerById(id_key, metadata_key);
 }
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
@@ -134,31 +145,19 @@ FilterDataStatus StackdriverContext::onResponseBody(size_t body_buffer_length,
   return FilterDataStatus::Continue;
 }
 
-StackdriverRootContext *StackdriverContext::getRootContext() {
-  RootContext *root = this->root();
-  return dynamic_cast<StackdriverRootContext *>(root);
+StackdriverRootContext* StackdriverContext::getRootContext() {
+  RootContext* root = this->root();
+  return dynamic_cast<StackdriverRootContext*>(root);
 }
 
 void StackdriverContext::onLog() {
-  bool isOutbound = getRootContext()->isOutbound();
+  auto* root = getRootContext();
+  bool isOutbound = root->isOutbound();
   ::Wasm::Common::populateHTTPRequestInfo(isOutbound, &request_info_);
-
-  auto key = isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
-
-  // Fill in peer node metadata in request info.
-  google::protobuf::Struct metadata;
-  if (!getStructValue({"filter_state", key}, &metadata)) {
-    logWarn(absl::StrCat("cannot get stackdriver metadata for: ", key));
-    return;
-  }
-  auto status = ::Wasm::Common::extractNodeMetadata(metadata, &peer_node_info_);
-  if (status != Status::OK) {
-    logWarn("cannot parse upstream peer node metadata " +
-            metadata.DebugString() + ": " + status.ToString());
-  }
+  const auto& peer_node_info = root->getPeerNode();
 
   // Record telemetry based on request info.
-  getRootContext()->record(request_info_, peer_node_info_);
+  root->record(request_info_, peer_node_info);
 }
 
 }  // namespace Stackdriver

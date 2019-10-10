@@ -21,6 +21,7 @@
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
 #include "extensions/common/node_info.pb.h"
+#include "extensions/common/node_info_cache.h"
 #include "extensions/stats/config.pb.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -272,31 +273,6 @@ struct IstioDimensions {
   }
 };
 
-const size_t DEFAULT_NODECACHE_MAX_SIZE = 500;
-
-class NodeInfoCache {
- public:
-  // Fetches and caches Peer information by peerId
-  // TODO Remove this when it is cheap to directly get it from StreamInfo.
-  // At present this involves de-serializing to google.Protobuf.Struct and
-  // then another round trip to NodeInfo. This Should at most hold N entries.
-  // Node is owned by the cache. Do not store a reference.
-  const wasm::common::NodeInfo& getPeerById(StringView peer_metadata_id_key,
-                                            StringView peer_metadata_key);
-
-  inline void set_max_cache_size(size_t size) {
-    if (size == 0) {
-      max_cache_size_ = DEFAULT_NODECACHE_MAX_SIZE;
-    } else {
-      max_cache_size_ = size;
-    }
-  }
-
- private:
-  std::unordered_map<std::string, wasm::common::NodeInfo> cache_;
-  size_t max_cache_size_ = 10;
-};
-
 using ValueExtractorFn =
     uint64_t (*)(const ::Wasm::Common::RequestInfo& request_info);
 
@@ -364,7 +340,7 @@ class PluginRootContext : public RootContext {
  private:
   stats::PluginConfig config_;
   wasm::common::NodeInfo local_node_info_;
-  NodeInfoCache node_info_cache_;
+  ::Wasm::Common::NodeInfoCache node_info_cache_;
 
   IstioDimensions istio_dimensions_;
 
