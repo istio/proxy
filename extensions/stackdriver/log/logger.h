@@ -52,8 +52,8 @@ class Logger {
 
  private:
   // Flush rotates the current WriteLogEntriesRequest. This will be triggered
-  // either by a timer or by request size limit. Returns false if nothing log
-  // entries to export.
+  // either by a timer or by request size limit. Returns false if there is no
+  // log entry to be exported.
   bool flush();
 
   // Buffer for WriteLogEntriesRequests that are to be exported.
