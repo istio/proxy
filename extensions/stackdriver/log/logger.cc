@@ -63,8 +63,6 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   exporter_ = std::move(exporter);
 }
 
-Logger::~Logger() { exportLogEntry(); }
-
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                          const ::wasm::common::NodeInfo& peer_node_info) {
   // create a new log entry

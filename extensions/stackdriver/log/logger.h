@@ -41,7 +41,6 @@ class Logger {
   Logger(const ::wasm::common::NodeInfo &local_node_info,
          std::unique_ptr<Exporter> exporter,
          int log_request_size_limit = 4000000 /* 4 Mb */);
-  ~Logger();
 
   // Add a new log entry based on the given request information and peer node
   // information.
