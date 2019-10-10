@@ -30,39 +30,43 @@ import (
 
 const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.metadata_exchange"
-    configuration: "test"
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.metadata_exchange"
+      configuration: "test"
 - name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.null.stackdriver"
-    configuration: >-
-      {
-        "testMonitoringEndpoint": "localhost:12312",
-      }`
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.null.stackdriver"
+      configuration: >-
+        {
+          "testMonitoringEndpoint": "localhost:12312",
+        }`
 
 const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.metadata_exchange"
-    configuration: "test"
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.metadata_exchange"
+      configuration: "test"
 - name: envoy.filters.http.wasm
   config:
-    vm_config:
-      vm: "envoy.wasm.vm.null"
-      code:
-        inline_string: "envoy.wasm.null.stackdriver"
-    configuration: >-
-      {
-        "testMonitoringEndpoint": "localhost:12312",
-      }`
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.null.stackdriver"
+      configuration: >-
+        {
+          "testMonitoringEndpoint": "localhost:12312",
+        }`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
