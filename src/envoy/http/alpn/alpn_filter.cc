@@ -23,11 +23,9 @@ namespace Alpn {
 
 AlpnFilterConfig::AlpnFilterConfig(
     const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig
-        &proto_config) {
-  for (const auto &alpn : proto_config.alpn_override()) {
-    alpn_override_.emplace_back(alpn);
-  }
-}
+        &proto_config)
+    : alpn_override_(proto_config.alpn_override().begin(),
+                     proto_config.alpn_override().end()) {}
 
 Http::FilterHeadersStatus AlpnFilter::decodeHeaders(Http::HeaderMap &, bool) {
   const auto &alpn_override = config_->getAlpnOverride();

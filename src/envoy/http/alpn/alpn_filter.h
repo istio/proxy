@@ -29,10 +29,12 @@ class AlpnFilterConfig {
       const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig
           &proto_config);
 
-  const std::vector<std::string> &getAlpnOverride() { return alpn_override_; }
+  const std::vector<std::string> &getAlpnOverride() const {
+    return alpn_override_;
+  }
 
  private:
-  std::vector<std::string> alpn_override_;
+  const std::vector<std::string> alpn_override_;
 };
 
 using AlpnFilterConfigSharedPtr = std::shared_ptr<AlpnFilterConfig>;
