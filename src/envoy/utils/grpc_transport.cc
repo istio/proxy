@@ -52,90 +52,90 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
   options.setHashPolicy(hash_policy);
   request_ =
       async_client_->send(descriptor(), request, *this, parent_span, options);
-  {}
+}
 
-  template <class RequestType, class ResponseType>
-  void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
-      Http::HeaderMap & metadata) {
-    // We generate cluster name contains invalid characters, so override the
-    // authority header temorarily until it can be specified via CDS.
-    // See https://github.com/envoyproxy/envoy/issues/3297 for details.
-    metadata.Host()->value("mixer", 5);
+template <class RequestType, class ResponseType>
+void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
+    Http::HeaderMap &metadata) {
+  // We generate cluster name contains invalid characters, so override the
+  // authority header temorarily until it can be specified via CDS.
+  // See https://github.com/envoyproxy/envoy/issues/3297 for details.
+  metadata.Host()->value("mixer", 5);
 
-    if (!serialized_forward_attributes_.empty()) {
-      HeaderUpdate header_update_(&metadata);
-      header_update_.AddIstioAttributes(serialized_forward_attributes_);
-    }
+  if (!serialized_forward_attributes_.empty()) {
+    HeaderUpdate header_update_(&metadata);
+    header_update_.AddIstioAttributes(serialized_forward_attributes_);
   }
+}
 
-  template <class RequestType, class ResponseType>
-  void GrpcTransport<RequestType, ResponseType>::onSuccess(
-      std::unique_ptr<ResponseType> && response, Tracing::Span &) {
-    ENVOY_LOG(debug, "{} response: {}", descriptor().name(),
-              response->DebugString());
-    response->Swap(response_);
-    on_done_(Status::OK);
-    delete this;
-  }
+template <class RequestType, class ResponseType>
+void GrpcTransport<RequestType, ResponseType>::onSuccess(
+    std::unique_ptr<ResponseType> &&response, Tracing::Span &) {
+  ENVOY_LOG(debug, "{} response: {}", descriptor().name(),
+            response->DebugString());
+  response->Swap(response_);
+  on_done_(Status::OK);
+  delete this;
+}
 
-  template <class RequestType, class ResponseType>
-  void GrpcTransport<RequestType, ResponseType>::onFailure(
-      Grpc::Status::GrpcStatus status, const std::string &message,
-      Tracing::Span &) {
-    ENVOY_LOG(debug, "{} failed with code: {}, {}", descriptor().name(), status,
-              message);
-    on_done_(Status(static_cast<StatusCode>(status), message));
-    delete this;
-  }
+template <class RequestType, class ResponseType>
+void GrpcTransport<RequestType, ResponseType>::onFailure(
+    Grpc::Status::GrpcStatus status, const std::string &message,
+    Tracing::Span &) {
+  ENVOY_LOG(debug, "{} failed with code: {}, {}", descriptor().name(), status,
+            message);
+  on_done_(Status(static_cast<StatusCode>(status), message));
+  delete this;
+}
 
-  template <class RequestType, class ResponseType>
-  void GrpcTransport<RequestType, ResponseType>::Cancel() {
-    ENVOY_LOG(debug, "Cancel gRPC request {}", descriptor().name());
-    request_->cancel();
-    delete this;
-  }
+template <class RequestType, class ResponseType>
+void GrpcTransport<RequestType, ResponseType>::Cancel() {
+  ENVOY_LOG(debug, "Cancel gRPC request {}", descriptor().name());
+  request_->cancel();
+  delete this;
+}
 
-  template <class RequestType, class ResponseType>
-  typename GrpcTransport<RequestType, ResponseType>::Func
-  GrpcTransport<RequestType, ResponseType>::GetFunc(
-      Grpc::AsyncClientFactory & factory, Tracing::Span & parent_span,
-      const std::string &serialized_forward_attributes) {
-    return [&factory, &parent_span, &serialized_forward_attributes](
-               const RequestType &request, ResponseType *response,
-               istio::mixerclient::DoneFunc on_done)
-               -> istio::mixerclient::CancelFunc {
-      auto transport = new GrpcTransport<RequestType, ResponseType>(
-          factory.create(), request, response, parent_span,
-          serialized_forward_attributes, on_done);
-      return [transport]() { transport->Cancel(); };
-    };
-  }
+template <class RequestType, class ResponseType>
+typename GrpcTransport<RequestType, ResponseType>::Func
+GrpcTransport<RequestType, ResponseType>::GetFunc(
+    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
+    const std::string &serialized_forward_attributes) {
+  return [&factory, &parent_span, &serialized_forward_attributes](
+             const RequestType &request, ResponseType *response,
+             istio::mixerclient::DoneFunc on_done)
+             -> istio::mixerclient::CancelFunc {
+    auto transport = new GrpcTransport<RequestType, ResponseType>(
+        factory.create(), request, response, parent_span,
+        serialized_forward_attributes, on_done);
+    return [transport]() { transport->Cancel(); };
+  };
+}
 
-  template <>
-  const google::protobuf::MethodDescriptor &CheckTransport::descriptor() {
-    static const google::protobuf::MethodDescriptor *check_descriptor =
-        istio::mixer::v1::Mixer::descriptor()->FindMethodByName("Check");
-    ASSERT(check_descriptor);
+template <>
+const google::protobuf::MethodDescriptor &CheckTransport::descriptor() {
+  static const google::protobuf::MethodDescriptor *check_descriptor =
+      istio::mixer::v1::Mixer::descriptor()->FindMethodByName("Check");
+  ASSERT(check_descriptor);
 
-    return *check_descriptor;
-  }
+  return *check_descriptor;
+}
 
-  template <>
-  const google::protobuf::MethodDescriptor &ReportTransport::descriptor() {
-    static const google::protobuf::MethodDescriptor *report_descriptor =
-        istio::mixer::v1::Mixer::descriptor()->FindMethodByName("Report");
-    ASSERT(report_descriptor);
+template <>
+const google::protobuf::MethodDescriptor &ReportTransport::descriptor() {
+  static const google::protobuf::MethodDescriptor *report_descriptor =
+      istio::mixer::v1::Mixer::descriptor()->FindMethodByName("Report");
+  ASSERT(report_descriptor);
 
-    return *report_descriptor;
-  }
+  return *report_descriptor;
+}
 
-  // explicitly instantiate CheckTransport and ReportTransport
-  template CheckTransport::Func CheckTransport::GetFunc(
-      Grpc::AsyncClientFactory & factory, Tracing::Span & parent_span,
-      const std::string &serialized_forward_attributes);
-  template ReportTransport::Func ReportTransport::GetFunc(
-      Grpc::AsyncClientFactory & factory, Tracing::Span & parent_span,
-      const std::string &serialized_forward_attributes);
+// explicitly instantiate CheckTransport and ReportTransport
+template CheckTransport::Func CheckTransport::GetFunc(
+    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
+    const std::string &serialized_forward_attributes);
+template ReportTransport::Func ReportTransport::GetFunc(
+    Grpc::AsyncClientFactory &factory, Tracing::Span &parent_span,
+    const std::string &serialized_forward_attributes);
 
 }  // namespace Utils
-}  // namespace Utils
+}  // namespace Envoy
