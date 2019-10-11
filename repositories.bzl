@@ -351,3 +351,12 @@ py_proto_library(
 def mixerapi_dependencies():
     go_x_tools_imports_repositories()
     mixerapi_repositories()
+
+def docker_dependencies():
+    # Download the rules_docker repository at release v0.12.0
+    http_archive(
+        name = "io_bazel_rules_docker",
+        sha256 = "413bb1ec0895a8d3249a01edf24b82fd06af3c8633c9fb833a0cb1d4b234d46d",
+        strip_prefix = "rules_docker-0.12.0",
+        urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.12.0/rules_docker-v0.12.0.tar.gz"],
+    )
