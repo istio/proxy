@@ -95,9 +95,9 @@ load(
 
 container_pull(
     name = "distroless_cc",
+    digest = "sha256:86f16733f25964c40dcd34edf14339ddbb2287af2f7c9dfad88f0366723c00d7",
     registry = "gcr.io",
     repository = "distroless/cc",
-    digest = "sha256:86f16733f25964c40dcd34edf14339ddbb2287af2f7c9dfad88f0366723c00d7"
 )
 
 # End of docker dependencies
