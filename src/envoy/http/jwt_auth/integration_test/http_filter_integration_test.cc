@@ -57,7 +57,8 @@ class JwtVerificationFilterIntegrationTest
 
     // upstream envoy hardcodes workspace name, so this code is duplicated
     const std::string path = ConfigPath();
-    const std::string json_path = TestEnvironment::runfilesPath(path, "proxy");
+    const std::string json_path =
+        TestEnvironment::runfilesPath(path, "io_istio_proxy");
     std::string out_json_string =
         TestEnvironment::readFileToStringForTest(json_path);
 

@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-workspace(name = "proxy")
+workspace(name = "io_istio_proxy")
 
 # http_archive is not a native function since bazel 0.19
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -37,9 +37,9 @@ bind(
 # 2. Update .bazelrc and .bazelversion files.
 #
 # envoy-wasm commit date: 10/11/2019
-ENVOY_SHA = "c152ba0e19f6536bd604da782994536ad73a8164"
+ENVOY_SHA = "29b71643c999af4e31ba86d41740edbef71c73fe"
 
-ENVOY_SHA256 = "dde734486671d3e57984b3fec7e858d38c14ef156aa2bb2adff5041ccd8dd7b5"
+ENVOY_SHA256 = "2a29684ebc13736eb012e0aaaedc08860ddfdb07dec55f37c7e9a100a4bcd7f3"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
