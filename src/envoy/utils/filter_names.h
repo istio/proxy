@@ -26,6 +26,7 @@ namespace Utils {
 struct IstioFilterName {
   static const char kJwt[];
   static const char kAuthentication[];
+  static const char kAlpn[];
 };
 
 }  // namespace Utils
