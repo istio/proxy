@@ -53,7 +53,7 @@ pkg_tar(
 
 container_image(
     name = "istio-proxy",
-    base = "@cc_base//image",
+    base = "@distroless_cc//image",
     tags = ["manual"],
     tars = [":envoy_tar"],
 )
