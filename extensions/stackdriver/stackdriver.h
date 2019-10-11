@@ -67,6 +67,9 @@ class StackdriverRootContext : public RootContext {
               const ::wasm::common::NodeInfo& peer_node_info);
 
  private:
+  // Indicates whether to export server access log or not.
+  bool enableServerAccessLog();
+
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
 

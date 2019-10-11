@@ -42,14 +42,19 @@ namespace Stackdriver {
 namespace Log {
 
 ExporterImpl::ExporterImpl(RootContext* root_context,
-                           const std::string& logging_service_endpoint) {
+                           const std::string& logging_service_endpoint)
+    : export_call_(MetricType::Counter, "stackdriver_logging_filter",
+                   {MetricTag{"type", MetricTag::TagType::String},
+                    MetricTag{"success", MetricTag::TagType::Bool}}) {
   context_ = root_context;
-  success_callback_ = [](google::protobuf::Empty&&) {
+  success_callback_ = [this](google::protobuf::Empty&&) {
+    export_call_.increment(1, "logging", true);
     logDebug("successfully sent Stackdriver logging request");
   };
 
-  failure_callback_ = [](GrpcStatus status, StringView message) {
+  failure_callback_ = [this](GrpcStatus status, StringView message) {
     // TODO(bianpengyuan): add retry.
+    export_call_.increment(1, "logging", false);
     logWarn("Stackdriver logging api call error: " +
             std::to_string(static_cast<int>(status)) + std::string(message));
   };

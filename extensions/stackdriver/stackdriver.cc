@@ -103,13 +103,13 @@ bool StackdriverRootContext::onConfigure(
 }
 
 void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
-  if (!config_.disable_access_logging()) {
+  if (enableServerAccessLog()) {
     proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
   }
 }
 
 void StackdriverRootContext::onTick() {
-  if (!config_.disable_access_logging()) {
+  if (enableServerAccessLog()) {
     logger_->exportLogEntry();
   }
 }
@@ -118,13 +118,17 @@ void StackdriverRootContext::record(const RequestInfo &request_info,
                                     const NodeInfo &peer_node_info) {
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
-  if (!config_.disable_access_logging()) {
+  if (enableServerAccessLog()) {
     logger_->addLogEntry(request_info, peer_node_info);
   }
 }
 
 inline bool StackdriverRootContext::isOutbound() {
   return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
+}
+
+inline bool StackdriverRootContext::enableServerAccessLog() {
+  return !config_.disable_server_access_logging() && !isOutbound();
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.
