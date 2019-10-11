@@ -56,6 +56,7 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
 
   // Construct grpc_service for the Stackdriver gRPC call.
   GrpcService grpc_service;
+  grpc_service.mutable_google_grpc()->set_stat_prefix("stackdriver_logging");
   if (logging_service_endpoint.empty()) {
     grpc_service.mutable_google_grpc()->set_target_uri(
         kGoogleStackdriverLoggingAddress);
