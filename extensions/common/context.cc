@@ -117,8 +117,8 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
     request_info->request_protocol = kProtocolHTTP;
   }
 
-  // Try to get fqdn of destination service from cluster name. If not found, use host header
-  // instead.
+  // Try to get fqdn of destination service from cluster name. If not found, use
+  // host header instead.
   std::string cluster_name = "";
   getStringValue({"cluster_name"}, &cluster_name);
   extractFqdn(cluster_name, &request_info->destination_service_host);
