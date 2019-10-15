@@ -22,7 +22,7 @@ const ServerRequestCountJSON = `{
 		  "destination_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
 		  "destination_port":"20019",
 		  "destination_principal":"",
-		  "destination_service_name":"localhost:20016",
+		  "destination_service_name":"server.default.svc.cluster.local",
 		  "destination_service_namespace":"default",
 		  "destination_workload_name":"ratings-v1",
 		  "destination_workload_namespace":"default",
