@@ -80,7 +80,7 @@ struct RequestInfo {
   // Host name of destination service.
   std::string destination_service_host;
 
-  // Host name of destination service.
+  // Short name of destination service.
   std::string destination_service_name;
 
   // Operation of the request, i.e. HTTP method or gRPC API method.
