@@ -49,8 +49,9 @@ const char kRbacPermissiveEngineResultField[] = "shadow_engine_result";
 
 namespace {
 
-// Extract fqdn from Istio cluster name, e.g. inbound|9080|http|productpage.default.svc.cluster.local.
-// If cluster name does not follow Istio convention, fqdn will be left as empty string.
+// Extract fqdn from Istio cluster name, e.g.
+// inbound|9080|http|productpage.default.svc.cluster.local. If cluster name does
+// not follow Istio convention, fqdn will be left as empty string.
 void extractFqdn(const std::string& cluster_name, std::string* fqdn) {
   const std::vector<std::string>& parts = absl::StrSplit(cluster_name, '|');
   if (parts.size() == 4) {
