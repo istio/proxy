@@ -387,6 +387,18 @@ class PluginRootContext : public RootContext {
   std::vector<StatGen> stats_;
 };
 
+class PluginRootContextOutbound : public PluginRootContext {
+ public:
+  PluginRootContextOutbound(uint32_t id, StringView root_id)
+      : PluginRootContext(id, root_id){};
+};
+
+class PluginRootContextInbound : public PluginRootContext {
+ public:
+  PluginRootContextInbound(uint32_t id, StringView root_id)
+      : PluginRootContext(id, root_id){};
+};
+
 // Per-stream context.
 class PluginContext : public Context {
  public:
@@ -431,6 +443,14 @@ NULL_PLUGIN_ROOT_REGISTRY;
 static RegisterContextFactory register_Stats(
     CONTEXT_FACTORY(Stats::PluginContext),
     ROOT_FACTORY(Stats::PluginRootContext));
+
+static RegisterContextFactory register_StatsOutbound(
+    CONTEXT_FACTORY(Stats::PluginContext),
+    ROOT_FACTORY(Stats::PluginRootContextOutbound), "stats_outbound");
+
+static RegisterContextFactory register_StatsInbound(
+    CONTEXT_FACTORY(Stats::PluginContext),
+    ROOT_FACTORY(Stats::PluginRootContextInbound), "stats_inbound");
 
 }  // namespace Stats
 
