@@ -236,6 +236,6 @@ func TestStackdriverPlugin(t *testing.T) {
 		}
 	}
 	if !srvMetricRcv || !cltMetricRcv {
-		t.Errorf("Only receive metric requests from one side. client recieved: %v and server recieved %v", cltMetricRcv, srvMetricRcv)
+		t.Errorf("fail to receive metric request from both sides. client recieved: %v and server recieved: %v", cltMetricRcv, srvMetricRcv)
 	}
 }
