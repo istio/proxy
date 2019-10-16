@@ -54,7 +54,7 @@ class ServiceContext {
   }
 
   bool ignore_forwarded_attributes() const {
-    return client_context_->IgnoreForwardedAttributes();
+    return client_context_->config().ignore_forwarded_attributes();
   }
 
  private:

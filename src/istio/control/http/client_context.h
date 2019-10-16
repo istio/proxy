@@ -55,10 +55,6 @@ class ClientContext : public ClientContextBase {
   // Get the service config cache size
   int service_config_cache_size() const { return service_config_cache_size_; }
 
-  const bool IgnoreForwardedAttributes() const {
-    return config_.ignore_forwarded_attributes();
-  }
-
  private:
   // The http client config.
   const ::istio::mixer::v1::config::client::HttpClientConfig& config_;
