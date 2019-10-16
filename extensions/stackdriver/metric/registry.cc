@@ -44,8 +44,8 @@ StackdriverOptions getStackdriverOptions(
         google::monitoring::v3::MetricService::NewStub(channel);
   }
 
-  std::string server_type = kContainerMonitoredResource;
-  std::string client_type = kPodMonitoredResource;
+  auto& server_type = kContainerMonitoredResource;
+  auto& client_type = kPodMonitoredResource;
   auto iter = platform_metadata.find(kGCPClusterNameKey);
   if (platform_metadata.end() == iter) {
     // if there is no cluster name, then this is a gce_instance
