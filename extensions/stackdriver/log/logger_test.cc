@@ -49,7 +49,7 @@ wasm::common::NodeInfo nodeInfo() {
       "test_project";
   (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
       "test_cluster";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterLocationKey] =
+  (*node_info.mutable_platform_metadata())[Common::kGCPLocationKey] =
       "test_location";
   node_info.set_namespace_("test_namespace");
   node_info.set_name("test_pod");
@@ -63,7 +63,7 @@ wasm::common::NodeInfo peerNodeInfo() {
       "test_project";
   (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
       "test_cluster";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterLocationKey] =
+  (*node_info.mutable_platform_metadata())[Common::kGCPLocationKey] =
       "test_location";
   node_info.set_namespace_("test_peer_namespace");
   node_info.set_name("test_peer_pod");

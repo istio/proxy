@@ -14,6 +14,7 @@
  */
 
 #include "extensions/stackdriver/common/utils.h"
+
 #include "extensions/stackdriver/common/constants.h"
 
 namespace Extensions {
@@ -28,23 +29,37 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   if (!monitored_resource) {
     return;
   }
+
   monitored_resource->set_type(monitored_resource_type);
   auto platform_metadata = local_node_info.platform_metadata();
+
   (*monitored_resource->mutable_labels())[kProjectIDLabel] =
       platform_metadata[kGCPProjectKey];
-  (*monitored_resource->mutable_labels())[kLocationLabel] =
-      platform_metadata[kGCPClusterLocationKey];
-  (*monitored_resource->mutable_labels())[kClusterNameLabel] =
-      platform_metadata[kGCPClusterNameKey];
-  (*monitored_resource->mutable_labels())[kNamespaceNameLabel] =
-      local_node_info.namespace_();
-  (*monitored_resource->mutable_labels())[kPodNameLabel] =
-      local_node_info.name();
 
-  if (monitored_resource_type == kContainerMonitoredResource) {
-    // Fill in container_name of k8s_container monitored resource.
-    (*monitored_resource->mutable_labels())[kContainerNameLabel] =
-        kIstioProxyContainerName;
+  if (monitored_resource_type == kGCEInstanceMonitoredResource) {
+    // gce_instance
+
+    (*monitored_resource->mutable_labels())[kGCEInstanceIDLabel] =
+        platform_metadata[kGCPGCEInstanceIDKey];
+    (*monitored_resource->mutable_labels())[kZoneLabel] =
+        platform_metadata[kGCPLocationKey];
+  } else {
+    // k8s_pod or k8s_container
+
+    (*monitored_resource->mutable_labels())[kLocationLabel] =
+        platform_metadata[kGCPLocationKey];
+    (*monitored_resource->mutable_labels())[kClusterNameLabel] =
+        platform_metadata[kGCPClusterNameKey];
+    (*monitored_resource->mutable_labels())[kNamespaceNameLabel] =
+        local_node_info.namespace_();
+    (*monitored_resource->mutable_labels())[kPodNameLabel] =
+        local_node_info.name();
+
+    if (monitored_resource_type == kContainerMonitoredResource) {
+      // Fill in container_name of k8s_container monitored resource.
+      (*monitored_resource->mutable_labels())[kContainerNameLabel] =
+          kIstioProxyContainerName;
+    }
   }
 }
 
