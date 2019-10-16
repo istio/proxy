@@ -80,6 +80,9 @@ struct RequestInfo {
   // Host name of destination service.
   std::string destination_service_host;
 
+  // Short name of destination service.
+  std::string destination_service_name;
+
   // Operation of the request, i.e. HTTP method or gRPC API method.
   std::string request_operation;
 
@@ -90,6 +93,10 @@ struct RequestInfo {
   // certificate.
   std::string source_principal;
   std::string destination_principal;
+
+  // Rbac filter policy id and result.
+  std::string rbac_permissive_policy_id;
+  std::string rbac_permissive_engine_result;
 };
 
 // RequestContext contains all the information available in the request.

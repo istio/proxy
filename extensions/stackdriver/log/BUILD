@@ -15,32 +15,59 @@
 ################################################################################
 #
 
-package(default_visibility = ["//visibility:public"])
+licenses(["notice"])  # Apache 2
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
+    "envoy_cc_test",
 )
 
 envoy_cc_library(
-    name = "stackdriver_plugin",
+    name = "logger",
     srcs = [
-        "stackdriver.cc",
-        "stackdriver_plugin_factory.cc",
+        "logger.cc",
     ],
     hdrs = [
-        "stackdriver.h",
+        "logger.h",
     ],
     repository = "@envoy",
+    visibility = [
+        "//extensions/stackdriver:__pkg__",
+    ],
     deps = [
+        ":exporter",
         "//extensions/common:context",
-        "//extensions/common:node_info_cache",
         "//extensions/stackdriver/common:constants",
-        "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",
-        "//extensions/stackdriver/log:exporter",
-        "//extensions/stackdriver/log:logger",
-        "//extensions/stackdriver/metric",
+        "//extensions/stackdriver/common:utils",
+    ],
+)
+
+envoy_cc_library(
+    name = "exporter",
+    srcs = [
+        "exporter.cc",
+    ],
+    hdrs = [
+        "exporter.h",
+    ],
+    repository = "@envoy",
+    visibility = [
+        "//extensions/stackdriver:__pkg__",
+    ],
+    deps = [
+        "@com_google_googleapis//google/logging/v2:logging_cc_proto",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
-        "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
+    ],
+)
+
+envoy_cc_test(
+    name = "logger_test",
+    size = "small",
+    srcs = ["logger_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":logger",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )

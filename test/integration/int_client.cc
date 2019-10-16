@@ -254,7 +254,8 @@ class Http1ClientConnection : public ClientConnection {
                          dispatcher),
         stats_(),
         network_connection_(std::move(network_connection)),
-        http_connection_(*network_connection_, stats_, *this),
+        http_connection_(*network_connection_, stats_, *this,
+                         Envoy::Http::DEFAULT_MAX_HEADERS_COUNT),
         read_filter_{std::make_shared<HttpClientReadFilter>(client.name(), id,
                                                             http_connection_)} {
     network_connection_->addReadFilter(read_filter_);
@@ -297,7 +298,8 @@ class Http2ClientConnection : public ClientConnection {
         settings_(),
         network_connection_(std::move(network_connection)),
         http_connection_(*network_connection_, *this, stats_, settings_,
-                         max_request_headers_kb),
+                         max_request_headers_kb,
+                         Envoy::Http::DEFAULT_MAX_HEADERS_COUNT),
         read_filter_{std::make_shared<HttpClientReadFilter>(client.name(), id,
                                                             http_connection_)} {
     network_connection_->addReadFilter(read_filter_);

@@ -18,6 +18,7 @@
 #include "extensions/common/context.h"
 #include "extensions/common/node_info_cache.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
+#include "extensions/stackdriver/log/logger.h"
 #include "extensions/stackdriver/metric/record.h"
 
 // OpenCensus is full of unused parameters in metric_service.
@@ -71,6 +72,9 @@ class StackdriverRootContext : public RootContext {
   const wasm::common::NodeInfo& getPeerNode();
 
  private:
+  // Indicates whether to export server access log or not.
+  bool enableServerAccessLog();
+
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
 
@@ -83,6 +87,9 @@ class StackdriverRootContext : public RootContext {
   // Indicates the traffic direction relative to this proxy.
   ::Wasm::Common::TrafficDirection direction_{
       ::Wasm::Common::TrafficDirection::Unspecified};
+
+  // Logger records and exports log entries to Stackdriver backend.
+  std::unique_ptr<::Extensions::Stackdriver::Log::Logger> logger_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
