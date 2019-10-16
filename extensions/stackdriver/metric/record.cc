@@ -31,7 +31,6 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
       double(request_info.end_timestamp - request_info.start_timestamp) /
       Stackdriver::Common::kNanosecondsPerMillisecond;
   if (is_outbound) {
-    std::cout<<"is outbound!!!!!\n";
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},
          {clientRequestBytesMeasure(), request_info.request_size},
@@ -56,7 +55,6 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
     return;
   }
 
-  std::cout<<"is inbound!!!!!\n";
   opencensus::stats::Record(
       {{serverRequestCountMeasure(), 1},
        {serverRequestBytesMeasure(), request_info.request_size},
