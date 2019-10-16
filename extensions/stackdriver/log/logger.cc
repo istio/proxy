@@ -49,7 +49,7 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   log_entries_request_->set_log_name("projects/" + project_id + "/logs/" +
                                      kServerAccessLogName);
 
-  auto& resource_type = Common::kContainerMonitoredResource;
+  std::string resource_type = Common::kContainerMonitoredResource;
   auto iter =
       local_node_info.platform_metadata().find(Common::kGCPClusterNameKey);
   if (local_node_info.platform_metadata().end() == iter) {
