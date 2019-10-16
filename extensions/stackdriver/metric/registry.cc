@@ -14,6 +14,7 @@
  */
 
 #include "extensions/stackdriver/metric/registry.h"
+
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/utils.h"
 #include "google/api/monitored_resource.pb.h"
@@ -43,12 +44,21 @@ StackdriverOptions getStackdriverOptions(
         google::monitoring::v3::MetricService::NewStub(channel);
   }
 
+  std::string server_type = kContainerMonitoredResource;
+  std::string client_type = kPodMonitoredResource;
+  auto iter = platform_metadata.find(kGCPClusterNameKey);
+  if (platform_metadata.end() == iter) {
+    // if there is no cluster name, then this is a gce_instance
+    server_type = kGCEInstanceMonitoredResource;
+    client_type = kGCEInstanceMonitoredResource;
+  }
+
   // Get server and client monitored resource.
   google::api::MonitoredResource server_monitored_resource;
-  Common::getMonitoredResource(kContainerMonitoredResource, local_node_info,
+  Common::getMonitoredResource(server_type, local_node_info,
                                &server_monitored_resource);
   google::api::MonitoredResource client_monitored_resource;
-  Common::getMonitoredResource(kPodMonitoredResource, local_node_info,
+  Common::getMonitoredResource(client_type, local_node_info,
                                &client_monitored_resource);
   options.per_metric_monitored_resource[kServerRequestCountView] =
       server_monitored_resource;

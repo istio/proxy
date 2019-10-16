@@ -42,12 +42,12 @@ void getMonitoredResource(const std::string &monitored_resource_type,
     (*monitored_resource->mutable_labels())[kGCEInstanceIDLabel] =
         platform_metadata[kGCPGCEInstanceIDKey];
     (*monitored_resource->mutable_labels())[kZoneLabel] =
-        platform_metadata[kGCPClusterLocationKey];
+        platform_metadata[kGCPLocationKey];
   } else {
     // k8s_pod or k8s_container
 
     (*monitored_resource->mutable_labels())[kLocationLabel] =
-        platform_metadata[kGCPClusterLocationKey];
+        platform_metadata[kGCPLocationKey];
     (*monitored_resource->mutable_labels())[kClusterNameLabel] =
         platform_metadata[kGCPClusterNameKey];
     (*monitored_resource->mutable_labels())[kNamespaceNameLabel] =

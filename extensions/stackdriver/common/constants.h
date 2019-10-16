@@ -56,7 +56,7 @@ constexpr char kGCEInstanceIDLabel[] = "instance_id";
 constexpr char kZoneLabel[] = "zone";
 
 // GCP node metadata key
-constexpr char kGCPClusterLocationKey[] = "gcp_location";
+constexpr char kGCPLocationKey[] = "gcp_location";
 constexpr char kGCPClusterNameKey[] = "gcp_gke_cluster_name";
 constexpr char kGCPProjectKey[] = "gcp_project";
 constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";

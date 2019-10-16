@@ -71,11 +71,11 @@ const char kNodeInfo[] = R"(
     value: "test_project"
   }
   platform_metadata: {
-    key: "gcp_cluster_name"
+    key: "gcp_gke_cluster_name"
     value: "test_cluster"
   }
   platform_metadata: {
-    key: "gcp_cluster_location"
+    key: "gcp_location"
     value: "test_location"
   }
   mesh_id: "test-mesh"
@@ -91,11 +91,11 @@ const char kPeerInfo[] = R"(
     value: "test_project"
   }
   platform_metadata: {
-    key: "gcp_cluster_name"
+    key: "gcp_gke_cluster_name"
     value: "test_cluster"
   }
   platform_metadata: {
-    key: "gcp_cluster_location"
+    key: "gcp_location"
     value: "test_location"
   }
   mesh_id: "test-mesh"

@@ -14,6 +14,7 @@
  */
 
 #include "extensions/stackdriver/log/logger.h"
+
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/utils.h"
 #include "google/logging/v2/log_entry.pb.h"
@@ -48,10 +49,18 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   log_entries_request_->set_log_name("projects/" + project_id + "/logs/" +
                                      kServerAccessLogName);
 
+  std::string resource_type = Common::kContainerMonitoredResource;
+  auto iter =
+      local_node_info.platform_metadata().find(Common::kGCPClusterNameKey);
+  if (local_node_info.platform_metadata().end() == iter) {
+    // if there is no cluster name, then this is a gce_instance
+    resource_type = Common::kGCEInstanceMonitoredResource;
+  }
+
   // Set monitored resources derived from local node info.
   google::api::MonitoredResource monitored_resource;
-  Common::getMonitoredResource(Common::kContainerMonitoredResource,
-                               local_node_info, &monitored_resource);
+  Common::getMonitoredResource(resource_type, local_node_info,
+                               &monitored_resource);
   log_entries_request_->mutable_resource()->CopyFrom(monitored_resource);
 
   // Set common labels shared by all entries.
