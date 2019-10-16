@@ -72,6 +72,7 @@ const inboundSDFilter = `- name: envoy.filters.http.wasm
       configuration: >-
         {
           "testMonitoringEndpoint": "localhost:12312",
+          "testLoggingEndpoint": "localhost:12312",
         }`
 
 const extraInboundSDFilter = `- name: envoy.filters.http.wasm
@@ -84,10 +85,7 @@ const extraInboundSDFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
-        {
-          "testMonitoringEndpoint": "localhost:12312",
-          "testLoggingEndpoint": "localhost:12312",
-        }`
+        {}`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
