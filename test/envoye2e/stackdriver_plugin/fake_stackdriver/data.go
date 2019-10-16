@@ -123,7 +123,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -138,7 +138,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -153,7 +153,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -168,7 +168,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -183,7 +183,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -198,7 +198,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -213,7 +213,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -228,7 +228,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -243,7 +243,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
@@ -258,7 +258,7 @@ const ServerAccessLogJSON = `{
          "severity":"INFO",
          "labels":{
             "destination_principal":"",
-            "destination_service_host":"localhost:20016",
+            "destination_service_host":"server.default.svc.cluster.local",
             "protocol":"http",
             "request_operation":"GET",
             "response_flag":"",
