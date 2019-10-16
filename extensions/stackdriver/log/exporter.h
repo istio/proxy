@@ -74,6 +74,11 @@ class ExporterImpl : public Exporter {
   // Callbacks for gRPC calls.
   std::function<void(google::protobuf::Empty&&)> success_callback_;
   std::function<void(GrpcStatus, StringView)> failure_callback_;
+
+  // Counter of stackdriver export calls, with a boolean label to indicate if
+  // the call is successful or not and a string label to indicate the type of
+  // export call.
+  Metric export_call_;
 };
 
 }  // namespace Log

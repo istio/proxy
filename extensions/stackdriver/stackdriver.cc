@@ -19,6 +19,7 @@
 #include <unordered_map>
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
 #include "extensions/stackdriver/stackdriver.h"
 
@@ -41,6 +42,8 @@ using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
+using Extensions::Stackdriver::Log::ExporterImpl;
+using ::Extensions::Stackdriver::Log::Logger;
 using stackdriver::config::v1alpha1::PluginConfig;
 using ::Wasm::Common::kDownstreamMetadataKey;
 using ::Wasm::Common::kUpstreamMetadataKey;
@@ -49,6 +52,7 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
+constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
 
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
@@ -75,6 +79,11 @@ bool StackdriverRootContext::onConfigure(
     logWarn("Unable to get plugin direction");
   }
 
+  auto exporter =
+      std::make_unique<ExporterImpl>(this, config_.test_logging_endpoint());
+  // logger takes ownership of exporter.
+  logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
+
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -94,26 +103,36 @@ bool StackdriverRootContext::onConfigure(
 }
 
 void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
-#ifndef NULL_PLUGIN
-// TODO: Start a timer to trigger exporting
-#endif
+  if (enableServerAccessLog()) {
+    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
+  }
 }
 
 void StackdriverRootContext::onTick() {
-#ifndef NULL_PLUGIN
-// TODO: Add exporting logic with WASM gRPC API
-#endif
+  if (enableServerAccessLog()) {
+    logger_->exportLogEntry();
+  }
 }
 
 void StackdriverRootContext::record(const RequestInfo &request_info,
                                     const NodeInfo &peer_node_info) {
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
+  if (enableServerAccessLog()) {
+    logger_->addLogEntry(request_info, peer_node_info);
+  }
 }
 
 inline bool StackdriverRootContext::isOutbound() {
   return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
 }
+
+inline bool StackdriverRootContext::enableServerAccessLog() {
+  return !config_.disable_server_access_logging() && !isOutbound();
+}
+
+// TODO(bianpengyuan) Add final export once root context supports onDone.
+// https://github.com/envoyproxy/envoy-wasm/issues/240
 
 FilterHeadersStatus StackdriverContext::onRequestHeaders() {
   request_info_.start_timestamp = getCurrentTimeNanoseconds();
