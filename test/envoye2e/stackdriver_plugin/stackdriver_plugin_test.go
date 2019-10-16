@@ -39,7 +39,9 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
 - name: envoy.filters.http.wasm
   config:
     config:
+      root_id: "stackdriver_outbound"
       vm_config:
+        vm_id: "stackdriver_outbound"
         runtime: "envoy.wasm.runtime.null"
         code:
           inline_string: "envoy.wasm.null.stackdriver"
@@ -48,7 +50,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
           "testMonitoringEndpoint": "localhost:12312",
         }`
 
-const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
+const inboundSDFilter = `- name: envoy.filters.http.wasm
   config:
     config:
       vm_config:
@@ -59,7 +61,23 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
 - name: envoy.filters.http.wasm
   config:
     config:
+      root_id: "stackdriver_inbound"
       vm_config:
+        vm_id: "stackdriver_inbound"
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          inline_string: "envoy.wasm.null.stackdriver"
+      configuration: >-
+        {
+          "testMonitoringEndpoint": "localhost:12312",
+        }`
+
+const extraInboundSDFilter = `- name: envoy.filters.http.wasm
+  config:
+    config:
+      root_id: "stackdriver_inbound"
+      vm_config:
+        vm_id: "stackdriver_inbound"
         runtime: "envoy.wasm.runtime.null"
         code:
           inline_string: "envoy.wasm.null.stackdriver"
@@ -135,27 +153,30 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	return nil
 }
 
-func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) error {
+func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error, bool) {
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	jsonpb.UnmarshalString(fs.ServerRequestCountJSON, &srvReqCount)
 	jsonpb.UnmarshalString(fs.ClientRequestCountJSON, &cltReqCount)
+	isClient := true
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type == srvReqCount.Metric.Type {
-			return compareTimeSeries(t, &srvReqCount)
+			isClient = false
+			return compareTimeSeries(t, &srvReqCount), isClient
 		}
 		if t.Metric.Type == cltReqCount.Metric.Type {
-			return compareTimeSeries(t, &cltReqCount)
+			return compareTimeSeries(t, &cltReqCount), isClient
 		}
 	}
 	// at least one time series should match either client side request count or server side request count.
-	return fmt.Errorf("cannot find expected request count from creat time series request %v", got)
+	return fmt.Errorf("cannot find expected request count from creat time series request %v", got), isClient
 }
 
 func TestStackdriverPlugin(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
 	fsd := fs.NewFakeStackdriver(12312)
+	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundSDFilter)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
-	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
+	s.SetFiltersBeforeEnvoyRouterInAppToClient(extraInboundSDFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
 	s.SetClientNodeMetadata(outboundNodeMetadata)
 	if err := s.SetUpClientServerEnvoy(); err != nil {
@@ -172,16 +193,26 @@ func TestStackdriverPlugin(t *testing.T) {
 			t.Errorf("Failed in request %s: %v", tag, err)
 		}
 	}
-
+	srvRcv := false
+	cltRcv := false
 	for i := 0; i < 2; i++ {
 		// Two requests should be recevied: one from client and one from server.
 		select {
 		case req := <-fsd.RcvReq:
-			if err := verifyCreateTimeSeriesReq(req); err != nil {
+			err, isClient := verifyCreateTimeSeriesReq(req)
+			if err != nil {
 				t.Errorf("CreateTimeSeries verification failed: %v", err)
+			}
+			if isClient {
+				cltRcv = true
+			} else {
+				srvRcv = true
 			}
 		case <-time.After(20 * time.Second):
 			t.Error("timeout on waiting Stackdriver server to receive request")
 		}
+	}
+	if !srvRcv || !cltRcv {
+		t.Errorf("Only receive requests from one side. client recieved: %v and server recieved %v", cltRcv, srvRcv)
 	}
 }
