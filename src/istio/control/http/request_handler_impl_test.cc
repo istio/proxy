@@ -127,6 +127,50 @@ forward_attributes {
 }
 )";
 
+// The default client config with flag set to ignore
+// forwarded attributes
+const char kIgnoreForwardedAttributesClientConfig[] = R"(
+service_configs {
+  key: ":default"
+  value {
+    mixer_attributes {
+      attributes {
+        key: "route0-key"
+        value {
+          string_value: "route0-value"
+        }
+      }
+    }
+    forward_attributes {
+      attributes {
+        key: "source-key-override"
+        value {
+          string_value: "service-value"
+        }
+      }
+    }
+  }
+}
+default_destination_service: ":default"
+mixer_attributes {
+  attributes {
+    key: "global-key"
+    value {
+      string_value: "global-value"
+    }
+  }
+}
+forward_attributes {
+  attributes {
+    key: "source-key-override"
+    value {
+      string_value: "global-value"
+    }
+  }
+}
+ignore_forwarded_attributes: true
+)";
+
 class RequestHandlerImplTest : public ::testing::Test {
  public:
   RequestHandlerImplTest(bool outbound = false) : outbound_(outbound) {}
@@ -580,6 +624,32 @@ TEST_F(OutboundRequestHandlerImplTest, TestLocalAttributesOverride) {
                           const CheckDoneFunc &on_done) {
         auto map = context->attributes()->attributes();
         EXPECT_EQ(map["source.uid"].string_value(), "fwded");
+        EXPECT_NE(map["destination.uid"].string_value(), "ignored");
+      }));
+
+  ServiceConfig config;
+  Controller::PerRouteConfig per_route;
+  ApplyPerRouteConfig(config, &per_route);
+  auto handler = controller_->CreateRequestHandler(per_route);
+  handler->Check(&mock_data, &mock_header, nullptr, nullptr);
+}
+
+TEST_F(OutboundRequestHandlerImplTest, TestIgnoreForwardedAttributes) {
+  SetUpMockController(kIgnoreForwardedAttributesClientConfig);
+
+  ::testing::NiceMock<MockCheckData> mock_data;
+  ::testing::NiceMock<MockHeaderUpdate> mock_header;
+
+  EXPECT_CALL(mock_data, ExtractIstioAttributes(_)).Times(0);
+
+  // Check should be called.
+  EXPECT_CALL(*mock_client_, Check(_, _, _))
+      .WillOnce(Invoke([](CheckContextSharedPtr &context,
+                          const TransportCheckFunc &transport,
+                          const CheckDoneFunc &on_done) {
+        auto map = context->attributes()->attributes();
+        EXPECT_EQ(map["source.uid"].string_value(),
+                  "kubernetes://src-client-84469dc8d7-jbbxt.default");
         EXPECT_NE(map["destination.uid"].string_value(), "ignored");
       }));
 
