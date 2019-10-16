@@ -137,11 +137,11 @@ admin:
       port_value: {{.Ports.ServerAdminPort}}
 static_resources:
   clusters:
-  - name: backend
+  - name: inbound|9080|http|backend.default.svc.cluster.local
     connect_timeout: 5s
     type: STATIC
     load_assignment:
-      cluster_name: backend
+      cluster_name: inbound|9080|http|backend.default.svc.cluster.local
       endpoints:
       - lb_endpoints:
         - endpoint:
@@ -149,11 +149,11 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{.Ports.BackendPort}}
-  - name: server
+  - name: inbound|9080|http|server.default.svc.cluster.local
     connect_timeout: 5s
     type: STATIC
     load_assignment:
-      cluster_name: server
+      cluster_name: inbound|9080|http|server.default.svc.cluster.local
       endpoints:
       - lb_endpoints:
         - endpoint:
@@ -190,7 +190,7 @@ static_resources:
               - match:
                   prefix: /
                 route:
-                  cluster: server
+                  cluster: inbound|9080|http|server.default.svc.cluster.local
                   timeout: 0s
   - name: client-to-app
     address:
@@ -219,7 +219,7 @@ static_resources:
               - match:
                   prefix: /
                 route:
-                  cluster: backend
+                  cluster: inbound|9080|http|backend.default.svc.cluster.local
                   timeout: 0s
 `
 

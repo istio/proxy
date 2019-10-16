@@ -90,7 +90,9 @@ using google::protobuf::util::Status;
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
   FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)
+  FIELD_FUNC(connection_security_policy)     \
+  FIELD_FUNC(permissive_response_code)       \
+  FIELD_FUNC(permissive_response_policyid)
 
 struct IstioDimensions {
 #define DEFINE_FIELD(name) std::string(name);
@@ -165,7 +167,6 @@ struct IstioDimensions {
       destination_app = destination_labels["app"];
       destination_version = destination_labels["version"];
 
-      destination_service_name = node.workload_name();
       destination_service_namespace = node.namespace_();
     }
   }
@@ -181,6 +182,7 @@ struct IstioDimensions {
     source_principal = request.source_principal;
     destination_principal = request.destination_principal;
     destination_service = request.destination_service_host;
+    destination_service_name = request.destination_service_name;
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);
@@ -189,6 +191,13 @@ struct IstioDimensions {
 
     connection_security_policy =
         outbound ? unknown : (request.mTLS ? vMTLS : vNone);
+
+    permissive_response_code = request.rbac_permissive_engine_result.empty()
+                                   ? "none"
+                                   : request.rbac_permissive_engine_result;
+    permissive_response_policyid = request.rbac_permissive_policy_id.empty()
+                                       ? "none"
+                                       : request.rbac_permissive_policy_id;
 
     setFieldsUnknownIfEmpty();
   }
@@ -220,9 +229,11 @@ struct IstioDimensions {
   // debug function to specify a textual key.
   // must match HashValue
   std::string debug_key() {
-    auto key = absl::StrJoin({reporter, request_protocol, response_code,
-                              response_flags, connection_security_policy},
-                             "#");
+    auto key =
+        absl::StrJoin({reporter, request_protocol, response_code,
+                       response_flags, connection_security_policy,
+                       permissive_response_code, permissive_response_policyid},
+                      "#");
     if (outbound) {
       return absl::StrJoin(
           {key, destination_app, destination_version, destination_service_name,
@@ -245,6 +256,8 @@ struct IstioDimensions {
       h += std::hash<std::string>()(c.response_code) * kMul;
       h += std::hash<std::string>()(c.response_flags) * kMul;
       h += std::hash<std::string>()(c.connection_security_policy) * kMul;
+      h += std::hash<std::string>()(c.permissive_response_code) * kMul;
+      h += std::hash<std::string>()(c.permissive_response_policyid) * kMul;
       h += c.outbound * kMul;
       if (c.outbound) {  // only care about dest properties
         h += std::hash<std::string>()(c.destination_service_namespace) * kMul;
@@ -387,6 +400,18 @@ class PluginRootContext : public RootContext {
   std::vector<StatGen> stats_;
 };
 
+class PluginRootContextOutbound : public PluginRootContext {
+ public:
+  PluginRootContextOutbound(uint32_t id, StringView root_id)
+      : PluginRootContext(id, root_id){};
+};
+
+class PluginRootContextInbound : public PluginRootContext {
+ public:
+  PluginRootContextInbound(uint32_t id, StringView root_id)
+      : PluginRootContext(id, root_id){};
+};
+
 // Per-stream context.
 class PluginContext : public Context {
  public:
@@ -431,6 +456,14 @@ NULL_PLUGIN_ROOT_REGISTRY;
 static RegisterContextFactory register_Stats(
     CONTEXT_FACTORY(Stats::PluginContext),
     ROOT_FACTORY(Stats::PluginRootContext));
+
+static RegisterContextFactory register_StatsOutbound(
+    CONTEXT_FACTORY(Stats::PluginContext),
+    ROOT_FACTORY(Stats::PluginRootContextOutbound), "stats_outbound");
+
+static RegisterContextFactory register_StatsInbound(
+    CONTEXT_FACTORY(Stats::PluginContext),
+    ROOT_FACTORY(Stats::PluginRootContextInbound), "stats_inbound");
 
 }  // namespace Stats
 

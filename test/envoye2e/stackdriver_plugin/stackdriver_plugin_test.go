@@ -25,6 +25,7 @@ import (
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
 	"github.com/golang/protobuf/proto"
+	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
@@ -48,6 +49,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
       configuration: >-
         {
           "testMonitoringEndpoint": "localhost:12312",
+          "testLoggingEndpoint": "localhost:12312",
         }`
 
 const inboundSDFilter = `- name: envoy.filters.http.wasm
@@ -84,6 +86,7 @@ const extraInboundSDFilter = `- name: envoy.filters.http.wasm
       configuration: >-
         {
           "testMonitoringEndpoint": "localhost:12312",
+          "testLoggingEndpoint": "localhost:12312",
         }`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
@@ -153,6 +156,16 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	return nil
 }
 
+func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
+	for _, l := range got.Entries {
+		l.Timestamp = nil
+	}
+	if !proto.Equal(want, got) {
+		return fmt.Errorf("log entries are not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
+	}
+	return nil
+}
+
 func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error, bool) {
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	jsonpb.UnmarshalString(fs.ServerRequestCountJSON, &srvReqCount)
@@ -171,11 +184,17 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 	return fmt.Errorf("cannot find expected request count from creat time series request %v", got), isClient
 }
 
+func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
+	var srvLogReq logging.WriteLogEntriesRequest
+	jsonpb.UnmarshalString(fs.ServerAccessLogJSON, &srvLogReq)
+	return compareLogEntries(got, &srvLogReq)
+}
+
 func TestStackdriverPlugin(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
-	fsd := fs.NewFakeStackdriver(12312)
-	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundSDFilter)
+	fsdm, fsdl := fs.NewFakeStackdriver(12312)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
+	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundSDFilter)
 	s.SetFiltersBeforeEnvoyRouterInAppToClient(extraInboundSDFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
 	s.SetClientNodeMetadata(outboundNodeMetadata)
@@ -193,26 +212,32 @@ func TestStackdriverPlugin(t *testing.T) {
 			t.Errorf("Failed in request %s: %v", tag, err)
 		}
 	}
-	srvRcv := false
-	cltRcv := false
-	for i := 0; i < 2; i++ {
-		// Two requests should be recevied: one from client and one from server.
+	srvMetricRcv := false
+	cltMetricRcv := false
+
+	for i := 0; i < 3; i++ {
+		// Two requests should be recevied by monitoring server: one from client and one from server.
+		// One request should be received by logging server.
 		select {
-		case req := <-fsd.RcvReq:
+		case req := <-fsdm.RcvMetricReq:
 			err, isClient := verifyCreateTimeSeriesReq(req)
 			if err != nil {
 				t.Errorf("CreateTimeSeries verification failed: %v", err)
 			}
 			if isClient {
-				cltRcv = true
+				cltMetricRcv = true
 			} else {
-				srvRcv = true
+				srvMetricRcv = true
+			}
+		case req := <-fsdl.RcvLoggingReq:
+			if err := verifyWriteLogEntriesReq(req); err != nil {
+				t.Errorf("WriteLogEntries verification failed: %v", err)
 			}
 		case <-time.After(20 * time.Second):
 			t.Error("timeout on waiting Stackdriver server to receive request")
 		}
 	}
-	if !srvRcv || !cltRcv {
-		t.Errorf("Only receive requests from one side. client recieved: %v and server recieved %v", cltRcv, srvRcv)
+	if !srvMetricRcv || !cltMetricRcv {
+		t.Errorf("Only receive metric requests from one side. client recieved: %v and server recieved %v", cltMetricRcv, srvMetricRcv)
 	}
 }
