@@ -136,11 +136,9 @@ TEST(ContextTest, extractNodeMetadataValue) {
   (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("namespace,labels");
   (*node_metadata_map)["namespace"].set_string_value("default");
   (*node_metadata_map)["labels"].set_string_value("{app, details}");
-  google::protobuf::Value value;
-  const auto status = extractNodeMetadataValue(metadata_struct, &value);
+  google::protobuf::Struct value_struct;
+  const auto status = extractNodeMetadataValue(metadata_struct, &value_struct);
   EXPECT_EQ(status, Status::OK);
-  ASSERT_TRUE(value.has_struct_value());
-  google::protobuf::Struct value_struct = value.struct_value();
   auto namespace_iter = value_struct.fields().find("namespace");
   EXPECT_TRUE(namespace_iter != value_struct.fields().end());
   EXPECT_EQ(namespace_iter->second.string_value(), "default");

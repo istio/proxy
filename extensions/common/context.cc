@@ -163,8 +163,8 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
 }
 
 google::protobuf::util::Status extractNodeMetadataValue(
-    const google::protobuf::Struct &node_metadata,
-    google::protobuf::Struct *metadata) {
+    const google::protobuf::Struct& node_metadata,
+    google::protobuf::Struct* metadata) {
   if (metadata == nullptr) {
     return google::protobuf::util::Status(
         google::protobuf::util::error::INVALID_ARGUMENT,
@@ -177,7 +177,7 @@ google::protobuf::util::Status extractNodeMetadataValue(
         "metadata exchange key is missing");
   }
 
-  const auto &keys_value = key_it->second;
+  const auto& keys_value = key_it->second;
   if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
     return google::protobuf::util::Status(
         google::protobuf::util::error::INVALID_ARGUMENT,
