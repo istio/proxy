@@ -85,9 +85,9 @@ const outboundNodeMetadata = `"NAMESPACE": "default",
 "POD_NAME": "productpage-v1-84975bc778-pxz2w",
 "istio": "sidecar",
 "PLATFORM_METADATA": {
- "gcp_gke_cluster_name": "test-cluster",
+ "gcp_cluster_name": "test-cluster",
  "gcp_project": "test-project",
- "gcp_location": "us-east4-b"
+ "gcp_cluster_location": "us-east4-b"
 },
 "LABELS": {
  "app": "productpage",
@@ -114,9 +114,9 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
 "POD_NAME": "ratings-v1-84975bc778-pxz2w",
 "istio": "sidecar",
 "PLATFORM_METADATA": {
- "gcp_gke_cluster_name": "test-cluster",
+ "gcp_cluster_name": "test-cluster",
  "gcp_project": "test-project",
- "gcp_location": "us-east4-b"
+ "gcp_cluster_location": "us-east4-b"
 },
 "LABELS": {
  "app": "ratings",
