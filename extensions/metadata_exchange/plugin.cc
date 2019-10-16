@@ -24,6 +24,7 @@
 
 #else
 #include "common/common/base64.h"
+#include "extensions/common/context.h"
 #include "extensions/metadata_exchange/plugin.h"
 
 namespace Envoy {
@@ -67,31 +68,12 @@ void PluginRootContext::updateMetadataValue() {
     return;
   }
 
-  const auto key_it = node_metadata.fields().find("EXCHANGE_KEYS");
-  if (key_it == node_metadata.fields().end()) {
-    logWarn("metadata exchange key is missing");
-    return;
-  }
-
-  const auto& keys_value = key_it->second;
-  if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
-    logWarn("metadata exchange key is not a string");
-    return;
-  }
-
   google::protobuf::Value metadata;
-
-  // select keys from the metadata using the keys
-  const std::set<std::string> keys =
-      absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
-  for (auto key : keys) {
-    const auto entry_it = node_metadata.fields().find(key);
-    if (entry_it == node_metadata.fields().end()) {
-      logDebug(absl::StrCat("missing metadata exchange key: ", key));
-      continue;
-    }
-    (*metadata.mutable_struct_value()->mutable_fields())[key] =
-        entry_it->second;
+  const auto status = ::Wasm::Common::extractNodeMetadataValue(
+      node_metadata, metadata.mutable_struct_value());
+  if (!status.ok()) {
+    logWarn(status.message().ToString());
+    return;
   }
 
   // store serialized form

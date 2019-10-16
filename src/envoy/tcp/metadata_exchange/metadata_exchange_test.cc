@@ -58,12 +58,16 @@ class MetadataExchangeFilterTest : public testing::Test {
 
   void initialize() {
     config_ = std::make_shared<MetadataExchangeConfig>(
-        stat_prefix_, "istio2", "istio/metadata", FilterDirection::Downstream,
-        scope_);
+        stat_prefix_, "istio2", FilterDirection::Downstream, scope_);
     filter_ = std::make_unique<MetadataExchangeFilter>(config_, local_info_);
     filter_->initializeReadFilterCallbacks(read_filter_callbacks_);
     filter_->initializeWriteFilterCallbacks(write_filter_callbacks_);
     metadata_node_.set_id("test");
+    auto node_metadata_map =
+        metadata_node_.mutable_metadata()->mutable_fields();
+    (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("namespace, labels");
+    (*node_metadata_map)["namespace"].set_string_value("default");
+    (*node_metadata_map)["labels"].set_string_value("{app, details}");
     EXPECT_CALL(read_filter_callbacks_.connection_, streamInfo())
         .WillRepeatedly(ReturnRef(stream_info_));
     EXPECT_CALL(local_info_, node()).WillRepeatedly(ReturnRef(metadata_node_));
@@ -98,18 +102,8 @@ TEST_F(MetadataExchangeFilterTest, MetadataExchangeFound) {
   initialize();
   initializeStructValues();
 
-  auto node_metadata_map = metadata_node_.mutable_metadata()->mutable_fields();
-  google::protobuf::Value& value = (*node_metadata_map)["istio/metadata"];
-  (*value.mutable_struct_value()).CopyFrom(details_value_);
-
   EXPECT_CALL(read_filter_callbacks_.connection_, nextProtocol())
       .WillRepeatedly(Return("istio2"));
-  EXPECT_CALL(stream_info_,
-              setDynamicMetadata("filters.network.metadata_exchange.downstream",
-                                 MapEq(details_value_)));
-  EXPECT_CALL(stream_info_,
-              setDynamicMetadata("filters.network.metadata_exchange.upstream",
-                                 MapEq(productpage_value_)));
 
   ::Envoy::Buffer::OwnedImpl data;
   MetadataExchangeInitialHeader initial_header;

@@ -131,5 +131,12 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 // the request context.
 void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info);
 
+// Extracts node metadata value. It looks for values of all the keys
+// corresponding to EXCHANGE_KEYS in node_metadata and populates it in
+// google::protobuf::Value pointer that is passed in.
+google::protobuf::util::Status extractNodeMetadataValue(
+    const google::protobuf::Struct& node_metadata,
+    google::protobuf::Struct* metadata);
+
 }  // namespace Common
 }  // namespace Wasm

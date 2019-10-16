@@ -28,8 +28,4 @@ message MetadataExchange {
   // Protocol that Alpn should support on the server.
   // [#comment:TODO(GargNupur): Make it a list.]
   string protocol = 1;
-
-  // The node metadata id whose data will be written to connection data.
-  // [#comment: TODO(GargNupur): Remove this and use bootstrap node.id]
-  string node_metadata_id = 2;
 }

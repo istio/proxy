@@ -38,6 +38,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
+        "//extensions/common:context",
         "//src/envoy/tcp/metadata_exchange/config:metadata_exchange_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/base:endian",
@@ -47,10 +48,12 @@ envoy_cc_library(
         "@envoy//include/envoy/network:filter_interface",
         "@envoy//include/envoy/runtime:runtime_interface",
         "@envoy//include/envoy/stats:stats_macros",
+        "@envoy//include/envoy/stream_info:filter_state_interface",
         "@envoy//source/common/http:utility_lib",
         "@envoy//source/common/network:utility_lib",
         "@envoy//source/common/protobuf",
         "@envoy//source/common/protobuf:utility_lib",
+        "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
         "@envoy//source/extensions/filters/network:well_known_names",
     ],
 )
