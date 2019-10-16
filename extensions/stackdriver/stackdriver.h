@@ -16,6 +16,7 @@
 #pragma once
 
 #include "extensions/common/context.h"
+#include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
 #include "extensions/stackdriver/log/logger.h"
 #include "extensions/stackdriver/metric/record.h"
@@ -111,8 +112,26 @@ class StackdriverContext : public Context {
   StackdriverRootContext* getRootContext();
 };
 
-static RegisterContextFactory register_StackdriverContext(
-    CONTEXT_FACTORY(StackdriverContext), ROOT_FACTORY(StackdriverRootContext));
+class StackdriverOutboundRootContext : public StackdriverRootContext {
+ public:
+  StackdriverOutboundRootContext(uint32_t id, StringView root_id)
+      : StackdriverRootContext(id, root_id) {}
+};
+
+class StackdriverInboundRootContext : public StackdriverRootContext {
+ public:
+  StackdriverInboundRootContext(uint32_t id, StringView root_id)
+      : StackdriverRootContext(id, root_id) {}
+};
+
+static RegisterContextFactory register_OutboundStackdriverContext(
+    CONTEXT_FACTORY(StackdriverContext),
+    ROOT_FACTORY(StackdriverOutboundRootContext),
+    ::Extensions::Stackdriver::Common::kOutboundRootContextId);
+static RegisterContextFactory register_InboundStackdriverContext(
+    CONTEXT_FACTORY(StackdriverContext),
+    ROOT_FACTORY(StackdriverInboundRootContext),
+    ::Extensions::Stackdriver::Common::kInboundRootContextId);
 
 }  // namespace Stackdriver
 

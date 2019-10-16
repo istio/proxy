@@ -18,7 +18,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
 #include "extensions/stackdriver/stackdriver.h"

@@ -65,6 +65,10 @@ constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
 constexpr double kNanosecondsPerMillisecond = 1000000.0;
 
+// Stackdriver root context id.
+constexpr char kOutboundRootContextId[] = "stackdriver_outbound";
+constexpr char kInboundRootContextId[] = "stackdriver_inbound";
+
 }  // namespace Common
 }  // namespace Stackdriver
 }  // namespace Extensions
