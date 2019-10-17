@@ -18,6 +18,8 @@ syntax = "proto3";
 package stackdriver.config.v1alpha1;
 
 message PluginConfig {
+  // next id: 7
+
   // Optional. Controls whether to export server access log.
   bool disable_server_access_logging = 1;
 
@@ -31,6 +33,15 @@ message PluginConfig {
   string test_monitoring_endpoint = 3;
 
   // Optional. The endpoint that plugin targets for access log reporting. If not
-  // specified, the default Stackdriver monitoring endpoint will be used.
+  // specified, the default Stackdriver logging endpoint will be used.
   string test_logging_endpoint = 4;
+
+  // Optional. Controls whether or not to export mesh edges to a mesh edges
+  // service. This is disabled by default.
+  bool enable_mesh_edges_reporting = 5;
+
+  // Optional. The service endpoint that the plugin should use for mesh edges
+  // reporting. If not specified, the default Stackdriver endpoint will be used
+  // (when mesh edges reporting is enabled).
+  string mesh_edges_service_endpoint = 6;
 }
