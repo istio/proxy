@@ -104,18 +104,12 @@ void MixerClientImpl::Check(CheckContextSharedPtr &context,
     // immediately accept the request.
     //
     ++total_check_cache_hit_accepts_;
-    if (!context->quotaCheckRequired()) {
-      context->setFinalStatus(context->policyStatus());
-      on_done(*context);
-      return;
-    }
   } else {
     ++total_check_cache_misses_;
   }
 
   bool remote_quota_prefetch{false};
 
-  if (context->quotaCheckRequired()) {
     context->checkQuotaCache(*quota_cache_);
     ++total_quota_calls_;
 
@@ -149,7 +143,6 @@ void MixerClientImpl::Check(CheckContextSharedPtr &context,
     } else {
       ++total_quota_cache_misses_;
     }
-  }
 
   // TODO(jblatt) mjog thinks this is a big CPU hog.  Look into it.
   context->compressRequest(
