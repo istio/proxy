@@ -17,11 +17,14 @@
 #include <string>
 
 #include "absl/base/internal/endian.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "common/buffer/buffer_impl.h"
 #include "common/protobuf/utility.h"
 #include "envoy/network/connection.h"
 #include "envoy/stats/scope.h"
+#include "extensions/common/context.h"
+#include "extensions/common/wasm/wasm_state.h"
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 
@@ -49,16 +52,26 @@ std::unique_ptr<::Envoy::Buffer::OwnedImpl> constructProxyHeaderData(
   return proxy_data_buffer;
 }
 
+bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
+                                    std::string* metadata_bytes) {
+  google::protobuf::io::StringOutputStream md(metadata_bytes);
+  google::protobuf::io::CodedOutputStream mcs(&md);
+
+  mcs.SetSerializationDeterministic(true);
+  if (!metadata.SerializeToCodedStream(&mcs)) {
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 MetadataExchangeConfig::MetadataExchangeConfig(
     const std::string& stat_prefix, const std::string& protocol,
-    const std::string& node_metadata_id, const FilterDirection filter_direction,
-    Stats::Scope& scope)
+    const FilterDirection filter_direction, Stats::Scope& scope)
     : scope_(scope),
       stat_prefix_(stat_prefix),
       protocol_(protocol),
-      node_metadata_id_(node_metadata_id),
       filter_direction_(filter_direction),
       stats_(generateStats(stat_prefix, scope)) {}
 
@@ -156,21 +169,24 @@ void MetadataExchangeFilter::writeNodeMetadata() {
     return;
   }
 
-  std::unique_ptr<const google::protobuf::Struct> metadata =
-      getMetadata(config_->node_metadata_id_);
-  if (metadata != nullptr) {
+  Envoy::ProtobufWkt::Struct data;
+  Envoy::ProtobufWkt::Struct* metadata =
+      (*data.mutable_fields())[ExchangeMetadataHeader].mutable_struct_value();
+  getMetadata(metadata);
+  std::string metadata_id = getMetadataId();
+  if (!metadata_id.empty()) {
+    (*data.mutable_fields())[ExchangeMetadataHeaderId].set_string_value(
+        metadata_id);
+  }
+  if (data.fields_size() > 0) {
     Envoy::ProtobufWkt::Any metadata_any_value;
     *metadata_any_value.mutable_type_url() = StructTypeUrl;
-    *metadata_any_value.mutable_value() = metadata->SerializeAsString();
+    std::string serialized_data;
+    serializeToStringDeterministic(data, &serialized_data);
+    *metadata_any_value.mutable_value() = serialized_data;
     std::unique_ptr<::Envoy::Buffer::OwnedImpl> buf =
         constructProxyHeaderData(metadata_any_value);
     write_callbacks_->injectWriteDataToFilterChain(*buf, false);
-
-    if (config_->filter_direction_ == FilterDirection::Downstream) {
-      setMetadata(DownstreamDynamicDataKey, *metadata);
-    } else {
-      setMetadata(UpstreamDynamicDataKey, *metadata);
-    }
     config_->stats().metadata_added_.inc();
   }
 
@@ -224,31 +240,58 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   }
   data.drain(proxy_data_length_);
 
-  Envoy::ProtobufWkt::Struct struct_metadata =
+  // Set Metadata
+  Envoy::ProtobufWkt::Struct value_struct =
       Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
-  if (config_->filter_direction_ == FilterDirection::Downstream) {
-    setMetadata(UpstreamDynamicDataKey, struct_metadata);
-  } else {
-    setMetadata(DownstreamDynamicDataKey, struct_metadata);
+  auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
+  if (key_metadata_it != value_struct.fields().end()) {
+    Envoy::ProtobufWkt::Value val = key_metadata_it->second;
+    setMetadata(config_->filter_direction_ == FilterDirection::Downstream
+                    ? UpstreamMetadataKey
+                    : DownstreamMetadataKey,
+                val);
+  }
+  const auto key_metadata_id_it =
+      value_struct.fields().find(ExchangeMetadataHeaderId);
+  if (key_metadata_id_it != value_struct.fields().end()) {
+    Envoy::ProtobufWkt::Value val = key_metadata_it->second;
+    setMetadata(config_->filter_direction_ == FilterDirection::Downstream
+                    ? UpstreamMetadataIdKey
+                    : DownstreamMetadataIdKey,
+                val);
   }
 }
 
-void MetadataExchangeFilter::setMetadata(const std::string key,
-                                         const ProtobufWkt::Struct& value) {
-  read_callbacks_->connection().streamInfo().setDynamicMetadata(key, value);
+void MetadataExchangeFilter::setMetadata(const std::string& key,
+                                         Envoy::ProtobufWkt::Value& value) {
+  read_callbacks_->connection().streamInfo().filterState().setData(
+      key,
+      std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(value),
+      StreamInfo::FilterState::StateType::Mutable);
 }
 
-std::unique_ptr<const google::protobuf::Struct>
-MetadataExchangeFilter::getMetadata(const std::string& key) {
+void MetadataExchangeFilter::setMetadataStringValue(
+    const std::string& key, const std::string& str_value) {
+  Envoy::ProtobufWkt::Value value;
+  value.set_string_value(str_value);
+  setMetadata(key, value);
+}
+
+void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
   if (local_info_.node().has_metadata()) {
-    auto metadata_fields = local_info_.node().metadata().fields();
-    auto node_metadata = metadata_fields.find(key);
-    if (node_metadata != metadata_fields.end()) {
-      return std::make_unique<const google::protobuf::Struct>(
-          node_metadata->second.struct_value());
+    google::protobuf::Struct node_metadata = local_info_.node().metadata();
+    google::protobuf::Value value_struct;
+
+    const auto status =
+        Wasm::Common::extractNodeMetadataValue(node_metadata, metadata);
+    if (!status.ok()) {
+      return;
     }
   }
-  return nullptr;
+}
+
+std::string MetadataExchangeFilter::getMetadataId() {
+  return local_info_.node().id();
 }
 
 }  // namespace MetadataExchange

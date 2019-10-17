@@ -100,8 +100,11 @@ type TestSetup struct {
 	// Whether Tls is Enabled or not.
 	EnableTls bool
 
-	// Format for accesslog
+	// Format for client accesslog
 	AccesslogFormat string
+
+	// Format for server accesslog
+	ServerAccesslogFormat string
 
 	// TlsContext to be used.
 	TlsContext string
@@ -210,6 +213,11 @@ func (s *TestSetup) SetClientNodeMetadata(metadata string) {
 // SetAccessLogFormat sets the accesslogformat.
 func (s *TestSetup) SetAccessLogFormat(accesslogformat string) {
 	s.AccesslogFormat = accesslogformat
+}
+
+// SetServerAccessLogFormat sets the serverAccesslogformat.
+func (s *TestSetup) SetServerAccessLogFormat(serverAccesslogformat string) {
+	s.ServerAccesslogFormat = serverAccesslogformat
 }
 
 // SetUpstreamFiltersInClient sets upstream filters chain in client envoy..

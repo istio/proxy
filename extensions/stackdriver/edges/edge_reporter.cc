@@ -48,7 +48,7 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
                   ".", node_info.namespace_());
   // TODO(douglas-reid): support more than just GCP ?
   instance->set_location(
-      node_info.platform_metadata().at(Common::kGCPClusterLocationKey));
+      node_info.platform_metadata().at(Common::kGCPLocationKey));
   instance->set_cluster_name(
       node_info.platform_metadata().at(Common::kGCPClusterNameKey));
   instance->set_owner_uid(node_info.owner());

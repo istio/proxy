@@ -129,6 +129,24 @@ TEST(ContextTest, extractNodeMetadataUnknownField) {
   EXPECT_EQ(status, Status::OK);
 }
 
+// Test extractNodeMetadataValue.
+TEST(ContextTest, extractNodeMetadataValue) {
+  google::protobuf::Struct metadata_struct;
+  auto node_metadata_map = metadata_struct.mutable_fields();
+  (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("namespace,labels");
+  (*node_metadata_map)["namespace"].set_string_value("default");
+  (*node_metadata_map)["labels"].set_string_value("{app, details}");
+  google::protobuf::Struct value_struct;
+  const auto status = extractNodeMetadataValue(metadata_struct, &value_struct);
+  EXPECT_EQ(status, Status::OK);
+  auto namespace_iter = value_struct.fields().find("namespace");
+  EXPECT_TRUE(namespace_iter != value_struct.fields().end());
+  EXPECT_EQ(namespace_iter->second.string_value(), "default");
+  auto label_iter = value_struct.fields().find("labels");
+  EXPECT_TRUE(label_iter != value_struct.fields().end());
+  EXPECT_EQ(label_iter->second.string_value(), "{app, details}");
+}
+
 }  // namespace Common
 
 // WASM_EPILOG

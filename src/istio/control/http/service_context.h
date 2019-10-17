@@ -53,6 +53,10 @@ class ServiceContext {
     return service_config_ && !service_config_->disable_report_calls();
   }
 
+  bool ignore_forwarded_attributes() const {
+    return client_context_->config().ignore_forwarded_attributes();
+  }
+
  private:
   // Pre-process the config data to build parser objects.
   void BuildParsers();

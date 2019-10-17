@@ -20,6 +20,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        "//extensions/common:context",
         "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
