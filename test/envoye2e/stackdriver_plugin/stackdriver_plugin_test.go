@@ -75,18 +75,6 @@ const inboundSDFilter = `- name: envoy.filters.http.wasm
           "testLoggingEndpoint": "localhost:12312",
         }`
 
-const extraInboundSDFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_inbound"
-      vm_config:
-        vm_id: "stackdriver_inbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          inline_string: "envoy.wasm.null.stackdriver"
-      configuration: >-
-        {}`
-
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
 "app": "productpage",
@@ -193,7 +181,6 @@ func TestStackdriverPlugin(t *testing.T) {
 	fsdm, fsdl := fs.NewFakeStackdriver(12312)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundSDFilter)
-	s.SetFiltersBeforeEnvoyRouterInAppToClient(extraInboundSDFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
 	s.SetClientNodeMetadata(outboundNodeMetadata)
 	if err := s.SetUpClientServerEnvoy(); err != nil {

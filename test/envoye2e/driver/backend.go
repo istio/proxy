@@ -12,26 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package driver
 
 import (
-	"fmt"
-	"go/build"
-	"log"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"strings"
+	"istio.io/proxy/test/envoye2e/env"
 )
 
-func GetDefaultIstioOut() string {
-	return fmt.Sprintf("%s/out/%s_%s", build.Default.GOPATH, runtime.GOOS, runtime.GOARCH)
+type Backend struct {
+	Port uint16
+
+	server *env.HTTPServer
 }
 
-func GetDefaultEnvoyBin() string {
-	bazelDir, err := exec.Command("bazel", "info", "bazel-bin").Output()
+var _ Step = &Backend{}
+
+func (b *Backend) Run(p *Params) error {
+	var err error
+	b.server, err = env.NewHTTPServer(b.Port)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	return filepath.Join(strings.TrimSpace(string(bazelDir)), "/src/envoy/")
+
+	errCh := b.server.Start()
+	return <-errCh
+}
+
+func (b *Backend) Cleanup() {
+	if b.server != nil {
+		b.server.Stop()
+	}
 }

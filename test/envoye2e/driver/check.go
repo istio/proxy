@@ -12,26 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package driver
 
 import (
 	"fmt"
-	"go/build"
 	"log"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"strings"
+	"time"
+
+	"istio.io/proxy/test/envoye2e/env"
 )
 
-func GetDefaultIstioOut() string {
-	return fmt.Sprintf("%s/out/%s_%s", build.Default.GOPATH, runtime.GOOS, runtime.GOARCH)
+type Sleep struct {
+	time.Duration
 }
 
-func GetDefaultEnvoyBin() string {
-	bazelDir, err := exec.Command("bazel", "info", "bazel-bin").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return filepath.Join(strings.TrimSpace(string(bazelDir)), "/src/envoy/")
+var _ Step = &Sleep{}
+
+func (s *Sleep) Run(_ *Params) error {
+	log.Printf("sleeping %v\n", s.Duration)
+	time.Sleep(s.Duration)
+	return nil
 }
+func (s *Sleep) Cleanup() {}
+
+type Get struct {
+	Port uint16
+}
+
+var _ Step = &Get{}
+
+func (g *Get) Run(_ *Params) error {
+	code, _, err := env.HTTPGet(fmt.Sprintf("http://127.0.0.1:%d", g.Port))
+	if err != nil {
+		return err
+	}
+	if code != 200 {
+		return fmt.Errorf("error code for :%d: %d", g.Port, code)
+	}
+	return nil
+}
+func (g *Get) Cleanup() {}
