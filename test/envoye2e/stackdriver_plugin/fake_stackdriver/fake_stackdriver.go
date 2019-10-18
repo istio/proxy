@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	grpc "google.golang.org/grpc"
 
@@ -31,11 +32,13 @@ import (
 
 // FakeStackdriverMetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
 type FakeStackdriverMetricServer struct {
+	delay        time.Duration
 	RcvMetricReq chan *monitoringpb.CreateTimeSeriesRequest
 }
 
 // FakeStackdriverLoggingServer is a fake stackdriver server which implements all of logging v2 service method.
 type FakeStackdriverLoggingServer struct {
+	delay         time.Duration
 	RcvLoggingReq chan *logging.WriteLogEntriesRequest
 }
 
@@ -77,6 +80,7 @@ func (s *FakeStackdriverMetricServer) ListTimeSeries(context.Context, *monitorin
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *FakeStackdriverMetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
 	s.RcvMetricReq <- req
+	time.Sleep(s.delay)
 	return &empty.Empty{}, nil
 }
 
@@ -88,6 +92,7 @@ func (s *FakeStackdriverLoggingServer) DeleteLog(context.Context, *logging.Delet
 // WriteLogEntries implements WriteLogEntries method.
 func (s *FakeStackdriverLoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
 	s.RcvLoggingReq <- req
+	time.Sleep(s.delay)
 	return &logging.WriteLogEntriesResponse{}, nil
 }
 
@@ -107,13 +112,15 @@ func (s *FakeStackdriverLoggingServer) ListMonitoredResourceDescriptors(context.
 }
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
-func NewFakeStackdriver(port uint16) (*FakeStackdriverMetricServer, *FakeStackdriverLoggingServer) {
+func NewFakeStackdriver(port uint16, delay time.Duration) (*FakeStackdriverMetricServer, *FakeStackdriverLoggingServer) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 	grpcServer := grpc.NewServer()
 	fsdms := &FakeStackdriverMetricServer{
+		delay:        delay,
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
 	}
 	fsdls := &FakeStackdriverLoggingServer{
+		delay:         delay,
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)

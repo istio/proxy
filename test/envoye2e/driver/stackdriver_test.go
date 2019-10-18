@@ -267,7 +267,7 @@ func TestStackDriverReload(t *testing.T) {
 // Expects estimated 10s log dumping interval from stackdriver
 func TestStackDriverParallel(t *testing.T) {
 	ports := Counter(19030)
-	sd := &Stackdriver{Port: 19031}
+	sd := &Stackdriver{Port: 19031, Delay: 100 * time.Millisecond}
 	if err := (&Scenario{
 		[]Step{
 			&XDS{},
@@ -292,8 +292,8 @@ func TestStackDriverParallel(t *testing.T) {
 						[]Step{
 							&Update{Node: "client", Version: "{{.N}}", Listeners: []string{StackdriverClientHTTPListener}},
 							&Update{Node: "server", Version: "{{.N}}", Listeners: []string{StackdriverServerHTTPListener}},
-							// short delay so we don't eat all the CPU
-							&Sleep{100 * time.Millisecond},
+							// may need short delay so we don't eat all the CPU
+							&Sleep{10 * time.Millisecond},
 						},
 					},
 				},

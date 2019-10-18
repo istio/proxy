@@ -31,7 +31,8 @@ import (
 type Stackdriver struct {
 	sync.Mutex
 
-	Port uint16
+	Port  uint16
+	Delay time.Duration
 
 	done chan error
 	ts   map[string]struct{}
@@ -44,7 +45,7 @@ func (sd *Stackdriver) Run(p *Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
-	metrics, logging := fs.NewFakeStackdriver(sd.Port)
+	metrics, logging := fs.NewFakeStackdriver(sd.Port, sd.Delay)
 
 	go func() {
 		for {

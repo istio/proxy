@@ -187,7 +187,7 @@ func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
 
 func TestStackdriverPlugin(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
-	fsdm, fsdl := fs.NewFakeStackdriver(12312)
+	fsdm, fsdl := fs.NewFakeStackdriver(12312, 0)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
