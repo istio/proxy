@@ -42,9 +42,8 @@ type (
 		Steps []Step
 	}
 	Repeat struct {
-		N     int
-		Delay time.Duration
-		Step  Step
+		N    int
+		Step Step
 	}
 	Sleep struct {
 		time.Duration
@@ -65,7 +64,6 @@ func (r *Repeat) Run(p *Params) error {
 		if err := r.Step.Run(p); err != nil {
 			return err
 		}
-		time.Sleep(r.Delay)
 	}
 	return nil
 }
