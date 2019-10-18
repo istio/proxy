@@ -94,7 +94,7 @@ filter_chains:
   - name: envoy.http_connection_manager
     config:
       codec_type: AUTO
-      stat_prefix: client
+      stat_prefix: client{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
         config:
@@ -143,7 +143,7 @@ filter_chains:
   - name: envoy.http_connection_manager
     config:
       codec_type: AUTO
-      stat_prefix: server
+      stat_prefix: server{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
         config:
@@ -181,6 +181,7 @@ filter_chains:
 `
 
 func TestStackDriverPayload(t *testing.T) {
+	t.Parallel()
 	ports := Counter(19010)
 	params := &Params{
 		Vars: map[string]string{
@@ -217,7 +218,9 @@ func TestStackDriverPayload(t *testing.T) {
 	}
 }
 
+// Expects estimated 10s log dumping interval from stackdriver
 func TestStackDriverReload(t *testing.T) {
+	t.Parallel()
 	ports := Counter(19020)
 	sd := &Stackdriver{Port: 19021}
 	if err := (&Scenario{
@@ -263,7 +266,9 @@ func TestStackDriverReload(t *testing.T) {
 	}
 }
 
+// Expects estimated 10s log dumping interval from stackdriver
 func TestStackDriverParallel(t *testing.T) {
+	t.Parallel()
 	ports := Counter(19030)
 	sd := &Stackdriver{Port: 19031}
 	if err := (&Scenario{
@@ -277,15 +282,15 @@ func TestStackDriverParallel(t *testing.T) {
 			&Fork{
 				Fore: &Scenario{
 					[]Step{
-						&Sleep{100 * time.Millisecond},
+						&Sleep{1 * time.Second},
 						&Repeat{
-							N:    100,
-							Step: &Get{19030, "hello, world!"},
+							Duration: 19 * time.Second,
+							Step:     &Get{19030, "hello, world!"},
 						},
 					},
 				},
 				Back: &Repeat{
-					N: 1000,
+					Duration: 20 * time.Second,
 					Step: &Scenario{
 						[]Step{
 							&Update{Node: "client", Version: "{{.N}}", Listeners: []string{StackdriverClientHTTPListener}},

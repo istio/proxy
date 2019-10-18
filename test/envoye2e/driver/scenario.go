@@ -41,9 +41,11 @@ type (
 	Scenario struct {
 		Steps []Step
 	}
+	// Repeat a step either for N number or duration
 	Repeat struct {
-		N    int
-		Step Step
+		N        int
+		Duration time.Duration
+		Step     Step
 	}
 	Sleep struct {
 		time.Duration
@@ -58,11 +60,26 @@ type (
 var _ Step = &Repeat{}
 
 func (r *Repeat) Run(p *Params) error {
-	for i := 0; i < r.N; i++ {
-		log.Printf("repeat %d out of %d", i, r.N)
-		p.N = i
-		if err := r.Step.Run(p); err != nil {
-			return err
+	if r.Duration != 0 {
+		start := time.Now()
+		p.N = 0
+		for {
+			if time.Since(start) >= r.Duration {
+				break
+			}
+			log.Printf("repeat %d %v out of %v", p.N, time.Since(start), r.Duration)
+			if err := r.Step.Run(p); err != nil {
+				return err
+			}
+			p.N++
+		}
+	} else {
+		for i := 0; i < r.N; i++ {
+			log.Printf("repeat %d out of %d", i, r.N)
+			p.N = i
+			if err := r.Step.Run(p); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
