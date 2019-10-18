@@ -57,7 +57,9 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
+constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
+constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
+constexpr int kNanosPerMillis = 1000000;
 
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
@@ -94,6 +96,14 @@ bool StackdriverRootContext::onConfigure(
   edge_reporter_ =
       std::make_unique<EdgeReporter>(local_node_info_, std::move(edges_client));
 
+  if (config_.has_mesh_edges_reporting_duration()) {
+    edge_report_duration_nanos_ =
+        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+            config_.mesh_edges_reporting_duration());
+  } else {
+    edge_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
+  }
+
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -123,7 +133,11 @@ void StackdriverRootContext::onTick() {
     logger_->exportLogEntry();
   }
   if (enableEdgeReporting()) {
-    edge_reporter_->reportEdges();
+    auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
+    if ((cur - last_edge_report_call_nanos_) > edge_report_duration_nanos_) {
+      edge_reporter_->reportEdges();
+      last_edge_report_call_nanos_ = cur;
+    }
   }
 }
 

@@ -17,8 +17,10 @@ syntax = "proto3";
 
 package stackdriver.config.v1alpha1;
 
+import "google/protobuf/duration.proto";
+
 message PluginConfig {
-  // next id: 7
+  // next id: 8
 
   // Optional. Controls whether to export server access log.
   bool disable_server_access_logging = 1;
@@ -44,4 +46,9 @@ message PluginConfig {
   // reporting. If not specified, the default Stackdriver endpoint will be used
   // (when mesh edges reporting is enabled).
   string mesh_edges_service_endpoint = 6;
+
+  // Optional. Allows configuration of the time between calls out to the mesh
+  // edges service to report edges. The minimum configurable duration is `10s`.
+  // The default duration is `10m`.
+  google.protobuf.Duration mesh_edges_reporting_duration = 7;
 }

@@ -90,6 +90,10 @@ class StackdriverRootContext : public RootContext {
 
   std::unique_ptr<::Extensions::Stackdriver::Edges::EdgeReporter>
       edge_reporter_;
+
+  long int last_edge_report_call_nanos_;
+
+  long int edge_report_duration_nanos_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
