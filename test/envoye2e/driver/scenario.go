@@ -16,6 +16,7 @@ package driver
 
 import (
 	"bytes"
+	"log"
 	"strings"
 	"text/template"
 
@@ -50,6 +51,7 @@ func (p *Params) Fill(s string) (string, error) {
 }
 
 func (s *Scenario) Run(p *Params) error {
+	log.Printf("Parameters %#v\n", p)
 	passed := make([]Step, 0, len(s.Steps))
 	defer func() {
 		for i := range passed {
@@ -73,4 +75,12 @@ func ReadYAML(input string, pb proto.Message) error {
 	reader := strings.NewReader(string(js))
 	m := jsonpb.Unmarshaler{}
 	return m.Unmarshal(reader, pb)
+}
+
+func Counter(base int) func() int {
+	state := base - 1
+	return func() int {
+		state++
+		return state
+	}
 }

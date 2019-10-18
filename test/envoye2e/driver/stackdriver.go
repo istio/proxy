@@ -15,30 +15,31 @@
 package driver
 
 import (
-	"istio.io/proxy/test/envoye2e/env"
+	"strconv"
+
+	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 )
 
-type Backend struct {
-	Port uint16
-
-	server *env.HTTPServer
+type Stackdriver struct {
+	metrics *fs.FakeStackdriverMetricServer
+	logging *fs.FakeStackdriverLoggingServer
 }
 
-var _ Step = &Backend{}
+var _ Step = &Stackdriver{}
 
-func (b *Backend) Run(p *Params) error {
-	var err error
-	b.server, err = env.NewHTTPServer(b.Port)
+func (sd *Stackdriver) Run(p *Params) error {
+	port, err := strconv.Atoi(p.Vars["SDPort"])
 	if err != nil {
 		return err
 	}
-
-	errCh := b.server.Start()
-	return <-errCh
+	sd.metrics, sd.logging = fs.NewFakeStackdriver(uint16(port))
+	return nil
 }
 
-func (b *Backend) Cleanup() {
-	if b.server != nil {
-		b.server.Stop()
-	}
+func (sd *Stackdriver) Cleanup() {}
+
+type SDCheck struct {
+	sd *Stackdriver
 }
+
+var _ Step = &SDCheck{}

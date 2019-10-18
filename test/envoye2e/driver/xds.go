@@ -40,7 +40,7 @@ func (x *XDS) Run(p *Params) error {
 		return err
 	}
 
-	p.Config = cache.NewSnapshotCache(false, cache.IDHash{}, nil)
+	p.Config = cache.NewSnapshotCache(false, cache.IDHash{}, x)
 	xdsServer := server.NewServer(p.Config, nil)
 	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
 
@@ -53,6 +53,12 @@ func (x *XDS) Run(p *Params) error {
 func (x *XDS) Cleanup() {
 	log.Println("stopping XDS server")
 	x.grpc.GracefulStop()
+}
+func (x *XDS) Infof(format string, args ...interface{}) {
+	log.Printf("xds: "+format, args...)
+}
+func (x *XDS) Errorf(format string, args ...interface{}) {
+	log.Printf("xds error: "+format, args...)
 }
 
 type Update struct {
@@ -82,6 +88,7 @@ func (u *Update) Run(p *Params) error {
 		return err
 	}
 	return p.Config.SetSnapshot(u.Node, cache.Snapshot{
+		Clusters:  cache.NewResources(version, nil),
 		Listeners: cache.NewResources(version, listeners),
 	})
 }

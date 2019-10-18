@@ -65,7 +65,7 @@ func (e *Envoy) Run(p *Params) error {
 	}
 
 	debugLevel, ok := os.LookupEnv("ENVOY_DEBUG")
-	if ok {
+	if !ok {
 		debugLevel = "info"
 	}
 	args := []string{
@@ -91,7 +91,7 @@ func (e *Envoy) Run(p *Params) error {
 	}
 
 	e.cmd = cmd
-	url := fmt.Sprintf("http://localhost:%v/server_info", e.adminPort)
+	url := fmt.Sprintf("http://localhost:%v/ready", e.adminPort)
 	return env.WaitForHTTPServer(url)
 }
 

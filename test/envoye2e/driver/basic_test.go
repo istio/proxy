@@ -114,7 +114,7 @@ filter_chains:
           routes:
           - match: { prefix: / }
             route:
-              cluster: client
+              cluster: server
               timeout: 0s
 `
 
@@ -145,24 +145,16 @@ filter_chains:
               timeout: 0s
 `
 
-func counter(base int) func() int {
-	state := base - 1
-	return func() int {
-		state++
-		return state
-	}
-}
-
 func TestBasicHTTP(t *testing.T) {
-	ports := counter(19000)
+	ports := Counter(19000)
 	if err := (&Scenario{
 		[]Step{
 			&XDS{},
 			&Backend{Port: 19000},
-			&Envoy{Bootstrap: ServerBootstrap},
-			&Envoy{Bootstrap: ClientBootstrap},
 			&Update{Node: "client", Version: "0", Listeners: []string{ClientHTTPListener}},
 			&Update{Node: "server", Version: "0", Listeners: []string{ServerHTTPListener}},
+			&Envoy{Bootstrap: ServerBootstrap},
+			&Envoy{Bootstrap: ClientBootstrap},
 			&Sleep{1 * time.Second},
 			&Get{19001},
 		},
