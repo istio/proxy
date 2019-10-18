@@ -73,12 +73,8 @@ func (u *Update) Run(p *Params) error {
 	log.Printf("update config for %q with version %q", u.Node, u.Version)
 	listeners := make([]cache.Resource, 0, len(u.Listeners))
 	for _, listener := range u.Listeners {
-		filled, err := p.Fill(listener)
-		if err != nil {
-			return err
-		}
 		out := &v2.Listener{}
-		if err := ReadYAML(filled, out); err != nil {
+		if err := p.FillYAML(listener, out); err != nil {
 			return err
 		}
 		listeners = append(listeners, out)

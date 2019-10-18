@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 
+	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
@@ -154,8 +155,16 @@ func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
 
 func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error, bool) {
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
-	jsonpb.UnmarshalString(fs.ServerRequestCountJSON, &srvReqCount)
-	jsonpb.UnmarshalString(fs.ClientRequestCountJSON, &cltReqCount)
+	p := &driver.Params{
+		Vars: map[string]string{
+			"ServerPort": "20019",
+			"ClientPort": "20016",
+		},
+	}
+	client, _ := p.Fill(fs.ClientRequestCountJSON)
+	server, _ := p.Fill(fs.ServerRequestCountJSON)
+	jsonpb.UnmarshalString(server, &srvReqCount)
+	jsonpb.UnmarshalString(client, &cltReqCount)
 	isClient := true
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type == srvReqCount.Metric.Type {
@@ -188,7 +197,7 @@ func TestStackdriverPlugin(t *testing.T) {
 	}
 	defer s.TearDownClientServerEnvoy()
 
-	url := fmt.Sprintf("http://localhost:%d/echo", s.Ports().AppToClientProxyPort)
+	url := fmt.Sprintf("http://127.0.0.1:%d/echo", s.Ports().AppToClientProxyPort)
 
 	// Issues a GET echo request with 0 size body
 	tag := "OKGet"

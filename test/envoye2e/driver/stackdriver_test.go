@@ -4,9 +4,11 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 )
 
-const SDClientMetadata = `
+const ClientMetadata = `
 "NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
 "app": "productpage",
@@ -36,7 +38,7 @@ const SDClientMetadata = `
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
 "NAME": "productpage-v1-84975bc778-pxz2w"`
 
-const SDServerMetadata = `
+const ServerMetadata = `
 "NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
 "app": "ratings",
@@ -160,13 +162,27 @@ filter_chains:
           routes:
           - match: { prefix: / }
             route:
-              cluster: backend
+              cluster: inbound|9080|http|server.default.svc.cluster.local
               timeout: 0s
 `
 
-func TestStackDriver(t *testing.T) {
+func TestStackDriverPayload(t *testing.T) {
 	ports := Counter(19010)
-	sd := &Stackdriver{}
+	params := &Params{
+		Vars: map[string]string{
+			"ClientPort":     strconv.Itoa(ports()),
+			"SDPort":         strconv.Itoa(ports()),
+			"BackendPort":    strconv.Itoa(ports()),
+			"ClientAdmin":    strconv.Itoa(ports()),
+			"ServerAdmin":    strconv.Itoa(ports()),
+			"ServerPort":     strconv.Itoa(ports()),
+			"ClientMetadata": ClientMetadata,
+			"ServerMetadata": ServerMetadata,
+		},
+		XDS: ports(),
+	}
+	sd := &Stackdriver{Port: 19011}
+
 	if err := (&Scenario{
 		[]Step{
 			&XDS{},
@@ -176,18 +192,49 @@ func TestStackDriver(t *testing.T) {
 			&Envoy{Bootstrap: ServerBootstrap},
 			&Envoy{Bootstrap: ClientBootstrap},
 			&Sleep{1 * time.Second},
-			&Get{19011, "hello, world!"},
+			&Repeat{N: 10, Step: &Get{19010, "hello, world!"}},
+			sd.Check(
+				[]string{fs.ServerRequestCountJSON, fs.ClientRequestCountJSON},
+				[]string{fs.ServerAccessLogJSON},
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStackDriverReload(t *testing.T) {
+	ports := Counter(19020)
+	sd := &Stackdriver{Port: 19021}
+	if err := (&Scenario{
+		[]Step{
+			&XDS{},
+			sd,
+			&Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
+			&Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&Envoy{Bootstrap: ServerBootstrap},
+			&Envoy{Bootstrap: ClientBootstrap},
+			&Sleep{1 * time.Second},
+			&Get{19020, "hello, world!"},
+			// should drain all listeners
+			&Update{Node: "client", Version: "1"},
+			&Update{Node: "server", Version: "1"},
+			&Sleep{1 * time.Second},
+			&Update{Node: "client", Version: "2", Listeners: []string{StackdriverClientHTTPListener}},
+			&Update{Node: "server", Version: "2", Listeners: []string{StackdriverServerHTTPListener}},
+			&Sleep{1 * time.Second},
+			&Get{19020, "hello, world!"},
 		},
 	}).Run(&Params{
 		Vars: map[string]string{
-			"BackendPort":    strconv.Itoa(ports()),
 			"ClientPort":     strconv.Itoa(ports()),
 			"SDPort":         strconv.Itoa(ports()),
+			"BackendPort":    strconv.Itoa(ports()),
 			"ClientAdmin":    strconv.Itoa(ports()),
 			"ServerAdmin":    strconv.Itoa(ports()),
 			"ServerPort":     strconv.Itoa(ports()),
-			"ClientMetadata": SDClientMetadata,
-			"ServerMetadata": SDServerMetadata,
+			"ClientMetadata": ClientMetadata,
+			"ServerMetadata": ServerMetadata,
 		},
 		XDS: ports(),
 	}); err != nil {

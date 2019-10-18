@@ -16,38 +16,27 @@ package driver
 
 import (
 	"fmt"
-	"log"
-	"time"
 
 	"istio.io/proxy/test/envoye2e/env"
 )
 
-type Sleep struct {
-	time.Duration
-}
-
-var _ Step = &Sleep{}
-
-func (s *Sleep) Run(_ *Params) error {
-	log.Printf("sleeping %v\n", s.Duration)
-	time.Sleep(s.Duration)
-	return nil
-}
-func (s *Sleep) Cleanup() {}
-
 type Get struct {
 	Port uint16
+	Body string
 }
 
 var _ Step = &Get{}
 
 func (g *Get) Run(_ *Params) error {
-	code, _, err := env.HTTPGet(fmt.Sprintf("http://127.0.0.1:%d", g.Port))
+	code, body, err := env.HTTPGet(fmt.Sprintf("http://127.0.0.1:%d", g.Port))
 	if err != nil {
 		return err
 	}
 	if code != 200 {
 		return fmt.Errorf("error code for :%d: %d", g.Port, code)
+	}
+	if g.Body != "" && g.Body != body {
+		return fmt.Errorf("got body %q, want %q", body, g.Body)
 	}
 	return nil
 }

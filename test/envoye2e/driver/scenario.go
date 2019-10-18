@@ -19,6 +19,7 @@ import (
 	"log"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/ghodss/yaml"
@@ -30,7 +31,7 @@ type (
 	Params struct {
 		XDS    int
 		Config cache.SnapshotCache
-		Vars   map[string]interface{}
+		Vars   map[string]string
 	}
 	Step interface {
 		Run(*Params) error
@@ -39,10 +40,39 @@ type (
 	Scenario struct {
 		Steps []Step
 	}
+	Repeat struct {
+		N    int
+		Step Step
+	}
+	Sleep struct {
+		time.Duration
+	}
 )
 
+var _ Step = &Repeat{}
+
+func (r *Repeat) Run(p *Params) error {
+	for i := 0; i < r.N; i++ {
+		log.Printf("repeat %d out of %d", i, r.N)
+		if err := r.Step.Run(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (r *Repeat) Cleanup() {}
+
+var _ Step = &Sleep{}
+
+func (s *Sleep) Run(_ *Params) error {
+	log.Printf("sleeping %v\n", s.Duration)
+	time.Sleep(s.Duration)
+	return nil
+}
+func (s *Sleep) Cleanup() {}
+
 func (p *Params) Fill(s string) (string, error) {
-	t := template.Must(template.New("params").Parse(s))
+	t := template.Must(template.New("params").Option("missingkey=zero").Parse(s))
 	var b bytes.Buffer
 	if err := t.Execute(&b, p); err != nil {
 		return "", err
@@ -75,6 +105,14 @@ func ReadYAML(input string, pb proto.Message) error {
 	reader := strings.NewReader(string(js))
 	m := jsonpb.Unmarshaler{}
 	return m.Unmarshal(reader, pb)
+}
+
+func (p *Params) FillYAML(input string, pb proto.Message) error {
+	out, err := p.Fill(input)
+	if err != nil {
+		return err
+	}
+	return ReadYAML(out, pb)
 }
 
 func Counter(base int) func() int {
