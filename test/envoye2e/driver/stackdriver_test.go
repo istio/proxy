@@ -292,6 +292,8 @@ func TestStackDriverParallel(t *testing.T) {
 						[]Step{
 							&Update{Node: "client", Version: "{{.N}}", Listeners: []string{StackdriverClientHTTPListener}},
 							&Update{Node: "server", Version: "{{.N}}", Listeners: []string{StackdriverServerHTTPListener}},
+							// short delay so we don't eat all the CPU
+							&Sleep{100 * time.Millisecond},
 						},
 					},
 				},
