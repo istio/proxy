@@ -30,13 +30,13 @@ namespace Wasm {
 namespace Common {
 
 const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
-    StringView peer_metadata_id_key, StringView peer_metadata_key) {
-  std::string peer_id;
-  if (!getStringValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
+    StringView peer_metadata_id_key, StringView peer_metadata_key,
+    std::string* peer_id) {
+  if (!getStringValue({"filter_state", peer_metadata_id_key}, peer_id)) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return cache_[""];
   }
-  auto nodeinfo_it = cache_.find(peer_id);
+  auto nodeinfo_it = cache_.find(*peer_id);
   if (nodeinfo_it != cache_.end()) {
     return nodeinfo_it->second;
   }
@@ -55,14 +55,21 @@ const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
   }
 
   auto status =
-      ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
+      ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[*peer_id]));
   if (status != Status::OK) {
     LOG_DEBUG(absl::StrCat("cannot parse peer node metadata ",
                            metadata.DebugString(), ": ", status.ToString()));
     return cache_[""];
   }
 
-  return cache_[peer_id];
+  return cache_[*peer_id];
+}
+
+const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
+    absl::string_view peer_metadata_id_key,
+    absl::string_view peer_metadata_key) {
+  std::string peer_id;
+  return getPeerById(peer_metadata_id_key, peer_metadata_key, &peer_id);
 }
 
 }  // namespace Common

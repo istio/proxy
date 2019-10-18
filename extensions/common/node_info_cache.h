@@ -44,6 +44,11 @@ class NodeInfoCache {
       absl::string_view peer_metadata_id_key,
       absl::string_view peer_metadata_key);
 
+  // Fetches and caches peer information by peerId, also gets peer metadata id.
+  const wasm::common::NodeInfo& getPeerById(
+      absl::string_view peer_metadata_id_key,
+      absl::string_view peer_metadata_key, std::string* peer_metadata_id);
+
   inline void setMaxCacheSize(size_t size) {
     max_cache_size_ = size == 0 ? DefaultNodeCacheMaxSize : size;
   }
