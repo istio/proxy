@@ -67,7 +67,7 @@ func (r *Repeat) Run(p *Params) error {
 			if time.Since(start) >= r.Duration {
 				break
 			}
-			log.Printf("repeat %d %v out of %v", p.N, time.Since(start), r.Duration)
+			log.Printf("repeat %d elapsed %v out of %v", p.N, time.Since(start), r.Duration)
 			if err := r.Step.Run(p); err != nil {
 				return err
 			}

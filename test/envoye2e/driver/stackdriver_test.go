@@ -181,7 +181,6 @@ filter_chains:
 `
 
 func TestStackDriverPayload(t *testing.T) {
-	t.Parallel()
 	ports := Counter(19010)
 	params := &Params{
 		Vars: map[string]string{
@@ -220,7 +219,6 @@ func TestStackDriverPayload(t *testing.T) {
 
 // Expects estimated 10s log dumping interval from stackdriver
 func TestStackDriverReload(t *testing.T) {
-	t.Parallel()
 	ports := Counter(19020)
 	sd := &Stackdriver{Port: 19021}
 	if err := (&Scenario{
@@ -268,7 +266,6 @@ func TestStackDriverReload(t *testing.T) {
 
 // Expects estimated 10s log dumping interval from stackdriver
 func TestStackDriverParallel(t *testing.T) {
-	t.Parallel()
 	ports := Counter(19030)
 	sd := &Stackdriver{Port: 19031}
 	if err := (&Scenario{
