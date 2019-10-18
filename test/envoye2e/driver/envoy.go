@@ -86,11 +86,11 @@ func (e *Envoy) Run(p *Params) error {
 	}
 
 	log.Printf("envoy cmd %v", cmd.Args)
+	e.cmd = cmd
 	if err = cmd.Start(); err != nil {
 		return err
 	}
 
-	e.cmd = cmd
 	url := fmt.Sprintf("http://localhost:%v/ready", e.adminPort)
 	return env.WaitForHTTPServer(url)
 }

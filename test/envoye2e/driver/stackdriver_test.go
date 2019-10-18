@@ -69,7 +69,7 @@ const ServerMetadata = `
 "NAME": "ratings-v1-84975bc778-pxz2w"`
 
 const StackdriverClientHTTPListener = `
-name: client
+name: client{{ .N }}
 traffic_direction: OUTBOUND
 address:
   socket_address:
@@ -118,7 +118,7 @@ filter_chains:
 `
 
 const StackdriverServerHTTPListener = `
-name: server
+name: server{{ .N }}
 traffic_direction: INBOUND
 address:
   socket_address:
@@ -220,10 +220,68 @@ func TestStackDriverReload(t *testing.T) {
 			&Update{Node: "client", Version: "1"},
 			&Update{Node: "server", Version: "1"},
 			&Sleep{1 * time.Second},
-			&Update{Node: "client", Version: "2", Listeners: []string{StackdriverClientHTTPListener}},
-			&Update{Node: "server", Version: "2", Listeners: []string{StackdriverServerHTTPListener}},
-			&Sleep{1 * time.Second},
-			&Get{19020, "hello, world!"},
+			&Repeat{
+				N: 10,
+				Step: &Scenario{
+					[]Step{
+						&Update{Node: "client", Version: "i{{ .N }}", Listeners: []string{StackdriverClientHTTPListener}},
+						&Update{Node: "server", Version: "i{{ .N }}", Listeners: []string{StackdriverServerHTTPListener}},
+						&Sleep{1 * time.Second},
+						&Get{19020, "hello, world!"},
+					},
+				},
+			},
+		},
+	}).Run(&Params{
+		Vars: map[string]string{
+			"ClientPort":     strconv.Itoa(ports()),
+			"SDPort":         strconv.Itoa(ports()),
+			"BackendPort":    strconv.Itoa(ports()),
+			"ClientAdmin":    strconv.Itoa(ports()),
+			"ServerAdmin":    strconv.Itoa(ports()),
+			"ServerPort":     strconv.Itoa(ports()),
+			"ClientMetadata": ClientMetadata,
+			"ServerMetadata": ServerMetadata,
+		},
+		XDS: ports(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStackDriverParallel(t *testing.T) {
+	ports := Counter(19030)
+	sd := &Stackdriver{Port: 19031}
+	if err := (&Scenario{
+		[]Step{
+			&XDS{},
+			sd,
+			&Update{Node: "client", Version: "0"},
+			&Update{Node: "server", Version: "0"},
+			&Envoy{Bootstrap: ServerBootstrap},
+			&Envoy{Bootstrap: ClientBootstrap},
+			&Fork{
+				Fore: &Scenario{
+					[]Step{
+						&Sleep{1 * time.Second},
+						&Repeat{
+							N:     20,
+							Step:  &Get{19030, "hello, world!"},
+							Delay: 500 * time.Millisecond,
+						},
+					},
+				},
+				Back: &Repeat{
+					N: 50,
+					Step: &Scenario{
+						[]Step{
+							&Update{Node: "client", Version: "{{.N}}", Listeners: []string{StackdriverClientHTTPListener}},
+							&Update{Node: "server", Version: "{{.N}}", Listeners: []string{StackdriverServerHTTPListener}},
+						},
+					},
+					Delay: 200 * time.Millisecond,
+				},
+			},
 		},
 	}).Run(&Params{
 		Vars: map[string]string{

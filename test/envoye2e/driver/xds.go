@@ -70,7 +70,11 @@ type Update struct {
 var _ Step = &Update{}
 
 func (u *Update) Run(p *Params) error {
-	log.Printf("update config for %q with version %q", u.Node, u.Version)
+	version, err := p.Fill(u.Version)
+	if err != nil {
+		return err
+	}
+	log.Printf("update config for %q with version %q", u.Node, version)
 	listeners := make([]cache.Resource, 0, len(u.Listeners))
 	for _, listener := range u.Listeners {
 		out := &v2.Listener{}
@@ -78,10 +82,6 @@ func (u *Update) Run(p *Params) error {
 			return err
 		}
 		listeners = append(listeners, out)
-	}
-	version, err := p.Fill(u.Version)
-	if err != nil {
-		return err
 	}
 	return p.Config.SetSnapshot(u.Node, cache.Snapshot{
 		Clusters:  cache.NewResources(version, nil),

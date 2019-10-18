@@ -32,6 +32,7 @@ type (
 		XDS    int
 		Config cache.SnapshotCache
 		Vars   map[string]string
+		N      int
 	}
 	Step interface {
 		Run(*Params) error
@@ -41,11 +42,17 @@ type (
 		Steps []Step
 	}
 	Repeat struct {
-		N    int
-		Step Step
+		N     int
+		Delay time.Duration
+		Step  Step
 	}
 	Sleep struct {
 		time.Duration
+	}
+	// Fork will copy params to avoid concurrent access
+	Fork struct {
+		Fore Step
+		Back Step
 	}
 )
 
@@ -54,9 +61,11 @@ var _ Step = &Repeat{}
 func (r *Repeat) Run(p *Params) error {
 	for i := 0; i < r.N; i++ {
 		log.Printf("repeat %d out of %d", i, r.N)
+		p.N = i
 		if err := r.Step.Run(p); err != nil {
 			return err
 		}
+		time.Sleep(r.Delay)
 	}
 	return nil
 }
@@ -80,8 +89,26 @@ func (p *Params) Fill(s string) (string, error) {
 	return b.String(), nil
 }
 
+var _ Step = &Fork{}
+
+func (f *Fork) Run(p *Params) error {
+	done := make(chan error, 1)
+	go func() {
+		p2 := *p
+		done <- f.Back.Run(&p2)
+	}()
+
+	if err := f.Fore.Run(p); err != nil {
+		return err
+	}
+
+	return <-done
+}
+func (f *Fork) Cleanup() {}
+
+var _ Step = &Scenario{}
+
 func (s *Scenario) Run(p *Params) error {
-	log.Printf("Parameters %#v\n", p)
 	passed := make([]Step, 0, len(s.Steps))
 	defer func() {
 		for i := range passed {
@@ -96,6 +123,8 @@ func (s *Scenario) Run(p *Params) error {
 	}
 	return nil
 }
+
+func (s *Scenario) Cleanup() {}
 
 func ReadYAML(input string, pb proto.Message) error {
 	js, err := yaml.YAMLToJSON([]byte(input))
