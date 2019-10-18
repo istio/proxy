@@ -37,9 +37,9 @@ bind(
 # Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/COMMIT.tar.gz && sha256sum COMMIT.tar.gz`
 # envoy commit date  05/16/2019
 # bazel version: 0.25.0
-ENVOY_SHA = "3f2cfef43382bc48f814a4e6d052b8f50f7633cd"
+ENVOY_SHA = "3c2d72f48f86933a28896d729c7e7021dca1987e"
 
-ENVOY_SHA256 = "3d5e19257a1729f625f5edb2f72fa7121d2921aec212bc867a84913513c27d7e"
+ENVOY_SHA256 = "623470d30f9a7c9161b1e77003ff6390c10dc6e4ff5ed5778b963bef02ae6c1e"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
