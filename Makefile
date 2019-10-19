@@ -29,7 +29,7 @@ endif
 ifeq "$(origin CXX)" "default"
 CXX := clang++
 endif
-PATH := /usr/lib/llvm-8/bin:$(PATH)
+PATH := /usr/lib/llvm-9/bin:$(PATH)
 
 VERBOSE ?=
 ifeq "$(VERBOSE)" "1"
