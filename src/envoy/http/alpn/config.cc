@@ -27,17 +27,18 @@ namespace Alpn {
 
 Http::FilterFactoryCb AlpnConfigFactory::createFilterFactory(
     const Json::Object &config, const std::string &,
-    Server::Configuration::FactoryContext &) {
+    Server::Configuration::FactoryContext &context) {
   FilterConfig filter_config;
   MessageUtil::loadFromJson(config.asJsonString(), filter_config,
                             ProtobufMessage::getNullValidationVisitor());
-  return createFilterFactory(filter_config);
+  return createFilterFactory(filter_config, context.clusterManager());
 }
 
 Http::FilterFactoryCb AlpnConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message &config, const std::string &,
-    Server::Configuration::FactoryContext &) {
-  return createFilterFactory(dynamic_cast<const FilterConfig &>(config));
+    Server::Configuration::FactoryContext &context) {
+  return createFilterFactory(dynamic_cast<const FilterConfig &>(config),
+                             context.clusterManager());
 }
 
 ProtobufTypes::MessagePtr AlpnConfigFactory::createEmptyConfigProto() {
@@ -47,9 +48,10 @@ ProtobufTypes::MessagePtr AlpnConfigFactory::createEmptyConfigProto() {
 std::string AlpnConfigFactory::name() { return Utils::IstioFilterName::kAlpn; }
 
 Http::FilterFactoryCb AlpnConfigFactory::createFilterFactory(
-    const FilterConfig &proto_config) {
+    const FilterConfig &proto_config,
+    Upstream::ClusterManager &cluster_manager) {
   AlpnFilterConfigSharedPtr filter_config{
-      std::make_shared<AlpnFilterConfig>(proto_config)};
+      std::make_shared<AlpnFilterConfig>(proto_config, cluster_manager)};
   return [filter_config](Http::FilterChainFactoryCallbacks &callbacks) -> void {
     callbacks.addStreamDecoderFilter(
         std::make_unique<AlpnFilter>(filter_config));

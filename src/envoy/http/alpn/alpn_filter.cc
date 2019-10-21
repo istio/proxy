@@ -17,18 +17,66 @@
 
 #include "common/network/application_protocol.h"
 
+#include "envoy/upstream/cluster_manager.h"
+
 namespace Envoy {
 namespace Http {
 namespace Alpn {
 
 AlpnFilterConfig::AlpnFilterConfig(
     const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig
-        &proto_config)
-    : alpn_override_(proto_config.alpn_override().begin(),
-                     proto_config.alpn_override().end()) {}
+        &proto_config,
+    Upstream::ClusterManager &cluster_manager)
+    : cluster_manager_(cluster_manager) {
+  for (const auto &pair : proto_config.alpn_override()) {
+    std::vector<std::string> application_protocols;
+    for (const auto &protocol : pair.alpn_override()) {
+      application_protocols.push_back(protocol);
+    }
+
+    alpn_override_.insert({getHttpProtocol(pair.upstream_protocol()),
+                           std::move(application_protocols)});
+  }
+}
+
+Http::Protocol AlpnFilterConfig::getHttpProtocol(
+    const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig::
+        Protocol &protocol) {
+  switch (protocol) {
+    case istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig::
+        Protocol::FilterConfig_Protocol_HTTP10:
+      return Http::Protocol::Http10;
+    case istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig::
+        Protocol::FilterConfig_Protocol_HTTP11:
+      return Http::Protocol::Http11;
+    case istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig::
+        Protocol::FilterConfig_Protocol_HTTP2:
+      return Http::Protocol::Http2;
+    default:
+      // will not reach here.
+      NOT_IMPLEMENTED_GCOVR_EXCL_LINE;
+  }
+}
 
 Http::FilterHeadersStatus AlpnFilter::decodeHeaders(Http::HeaderMap &, bool) {
-  const auto &alpn_override = config_->getAlpnOverride();
+  Router::RouteConstSharedPtr route = decoder_callbacks_->route();
+  const Router::RouteEntry *route_entry;
+  if (!route || !(route_entry = route->routeEntry())) {
+    ENVOY_LOG(debug, "cannot find route entry");
+    return Http::FilterHeadersStatus::Continue;
+  }
+
+  Upstream::ThreadLocalCluster *cluster =
+      config_->clusterManager().get(route_entry->clusterName());
+  if (!cluster || !cluster->info()) {
+    ENVOY_LOG(debug, "cannot find cluster {}", route_entry->clusterName());
+    return Http::FilterHeadersStatus::Continue;
+  }
+
+  Http::Protocol protocol = cluster->info()->upstreamHttpProtocol(
+      decoder_callbacks_->streamInfo().protocol());
+  const auto &alpn_override = config_->alpnOverride(protocol);
+
   if (!alpn_override.empty()) {
     ENVOY_LOG(debug, "override with {} ALPNs", alpn_override.size());
     decoder_callbacks_->streamInfo().filterState().setData(
