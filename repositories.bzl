@@ -353,7 +353,6 @@ def mixerapi_dependencies():
     mixerapi_repositories()
 
 def docker_dependencies():
-    # Download the rules_docker repository at release v0.12.0
     http_archive(
         name = "io_bazel_rules_docker",
         sha256 = "413bb1ec0895a8d3249a01edf24b82fd06af3c8633c9fb833a0cb1d4b234d46d",

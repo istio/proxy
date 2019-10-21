@@ -19,7 +19,6 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_binary",
 )
-load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 
 envoy_cc_binary(
     name = "envoy",
@@ -49,11 +48,5 @@ pkg_tar(
     mode = "0755",
     package_dir = "/usr/local/bin/",
     tags = ["manual"],
-)
-
-container_image(
-    name = "istio-proxy",
-    base = "@distroless_cc//image",
-    tags = ["manual"],
-    tars = [":envoy_tar"],
+    visibility = ["//visibility:public"],
 )

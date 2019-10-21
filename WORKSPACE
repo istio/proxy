@@ -96,7 +96,8 @@ load(
 
 container_pull(
     name = "distroless_cc",
-    digest = "sha256:86f16733f25964c40dcd34edf14339ddbb2287af2f7c9dfad88f0366723c00d7",
+    # Latest as of 10/21/2019. To update, remove this line, re-build, and copy the suggested digest.
+    digest = "sha256:86f16733f25964c40dcd34edf14339ddbb2287af2f7c9dfad88f0366723c00d7"
     registry = "gcr.io",
     repository = "distroless/cc",
 )

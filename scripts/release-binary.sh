@@ -117,6 +117,9 @@ if [ -n "${DST}" ]; then
   gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 fi
 
+# Build the docker image with the release binary
+bazel run ${BAZEL_BUILD_ARGS} --config=release //tools/docker:envoy
+
 # Build the release binary with symbols.
 BINARY_NAME="${HOME}/envoy-symbol-${SHA}.tar.gz"
 SHA256_NAME="${HOME}/envoy-symbol-${SHA}.sha256"
@@ -139,6 +142,7 @@ bazel build ${BAZEL_BUILD_ARGS} ${BAZEL_CONFIG_ASAN} --config=release-symbol //s
 BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
+
 
 if [ -n "${DST}" ]; then
   # Copy it to the bucket.
