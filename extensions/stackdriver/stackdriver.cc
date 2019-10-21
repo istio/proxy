@@ -59,7 +59,6 @@ constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
 constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
 constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
-constexpr int kNanosPerMillis = 1000000;
 
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
