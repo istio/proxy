@@ -23,5 +23,5 @@ cc_library(
         "request_handler.h",
     ],
     visibility = ["//visibility:public"],
-    deps = ["//src/istio/authn:context_proto_cc"],
+    deps = ["//src/istio/authn:context_proto_cc_proto"],
 )

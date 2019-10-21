@@ -45,21 +45,29 @@ constexpr char kIstioMetricPrefix[] = "istio.io/service/";
 // Monitored resource
 constexpr char kPodMonitoredResource[] = "k8s_pod";
 constexpr char kContainerMonitoredResource[] = "k8s_container";
+constexpr char kGCEInstanceMonitoredResource[] = "gce_instance";
 constexpr char kProjectIDLabel[] = "project_id";
 constexpr char kLocationLabel[] = "location";
 constexpr char kClusterNameLabel[] = "cluster_name";
 constexpr char kNamespaceNameLabel[] = "namespace_name";
 constexpr char kPodNameLabel[] = "pod_name";
 constexpr char kContainerNameLabel[] = "container_name";
+constexpr char kGCEInstanceIDLabel[] = "instance_id";
+constexpr char kZoneLabel[] = "zone";
 
 // GCP node metadata key
-constexpr char kGCPClusterLocationKey[] = "gcp_cluster_location";
-constexpr char kGCPClusterNameKey[] = "gcp_cluster_name";
+constexpr char kGCPLocationKey[] = "gcp_location";
+constexpr char kGCPClusterNameKey[] = "gcp_gke_cluster_name";
 constexpr char kGCPProjectKey[] = "gcp_project";
+constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
 
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
 constexpr double kNanosecondsPerMillisecond = 1000000.0;
+
+// Stackdriver root context id.
+constexpr char kOutboundRootContextId[] = "stackdriver_outbound";
+constexpr char kInboundRootContextId[] = "stackdriver_inbound";
 
 }  // namespace Common
 }  // namespace Stackdriver

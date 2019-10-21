@@ -57,6 +57,10 @@ stats_config:
     regex: "(response_flags=\\.=(.+?);\\.;)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
+  - tag_name: "permissive_response_code"
+    regex: "(permissive_response_code=\\.=(.+?);\\.;)"
+  - tag_name: "permissive_response_policyid"
+    regex: "(permissive_response_policyid=\\.=(.+?);\\.;)"
   - tag_name: "cache"
     regex: "(cache\\.(.+?)\\.)"
   - tag_name: "component"
@@ -100,6 +104,7 @@ static_resources:
           - name: envoy.filters.http.wasm
             config:
               config:
+                root_id: "stats_outbound"
                 vm_config:
                   runtime: envoy.wasm.runtime.null
                   code:

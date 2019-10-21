@@ -25,6 +25,7 @@ import (
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
 	"github.com/golang/protobuf/proto"
+	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
@@ -39,13 +40,16 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
 - name: envoy.filters.http.wasm
   config:
     config:
+      root_id: "stackdriver_outbound"
       vm_config:
+        vm_id: "stackdriver_outbound"
         runtime: "envoy.wasm.runtime.null"
         code:
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
         {
           "testMonitoringEndpoint": "localhost:12312",
+          "testLoggingEndpoint": "localhost:12312",
         }`
 
 const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
@@ -59,13 +63,16 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
 - name: envoy.filters.http.wasm
   config:
     config:
+      root_id: "stackdriver_inbound"
       vm_config:
+        vm_id: "stackdriver_inbound"
         runtime: "envoy.wasm.runtime.null"
         code:
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
         {
           "testMonitoringEndpoint": "localhost:12312",
+          "testLoggingEndpoint": "localhost:12312",
         }`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
@@ -85,9 +92,9 @@ const outboundNodeMetadata = `"NAMESPACE": "default",
 "POD_NAME": "productpage-v1-84975bc778-pxz2w",
 "istio": "sidecar",
 "PLATFORM_METADATA": {
- "gcp_cluster_name": "test-cluster",
+ "gcp_gke_cluster_name": "test-cluster",
  "gcp_project": "test-project",
- "gcp_cluster_location": "us-east4-b"
+ "gcp_location": "us-east4-b"
 },
 "LABELS": {
  "app": "productpage",
@@ -114,9 +121,9 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
 "POD_NAME": "ratings-v1-84975bc778-pxz2w",
 "istio": "sidecar",
 "PLATFORM_METADATA": {
- "gcp_cluster_name": "test-cluster",
+ "gcp_gke_cluster_name": "test-cluster",
  "gcp_project": "test-project",
- "gcp_cluster_location": "us-east4-b"
+ "gcp_location": "us-east4-b"
 },
 "LABELS": {
  "app": "ratings",
@@ -135,25 +142,43 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	return nil
 }
 
-func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) error {
+func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
+	for _, l := range got.Entries {
+		l.Timestamp = nil
+	}
+	if !proto.Equal(want, got) {
+		return fmt.Errorf("log entries are not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
+	}
+	return nil
+}
+
+func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error, bool) {
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	jsonpb.UnmarshalString(fs.ServerRequestCountJSON, &srvReqCount)
 	jsonpb.UnmarshalString(fs.ClientRequestCountJSON, &cltReqCount)
+	isClient := true
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type == srvReqCount.Metric.Type {
-			return compareTimeSeries(t, &srvReqCount)
+			isClient = false
+			return compareTimeSeries(t, &srvReqCount), isClient
 		}
 		if t.Metric.Type == cltReqCount.Metric.Type {
-			return compareTimeSeries(t, &cltReqCount)
+			return compareTimeSeries(t, &cltReqCount), isClient
 		}
 	}
 	// at least one time series should match either client side request count or server side request count.
-	return fmt.Errorf("cannot find expected request count from creat time series request %v", got)
+	return fmt.Errorf("cannot find expected request count from creat time series request %v", got), isClient
+}
+
+func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
+	var srvLogReq logging.WriteLogEntriesRequest
+	jsonpb.UnmarshalString(fs.ServerAccessLogJSON, &srvLogReq)
+	return compareLogEntries(got, &srvLogReq)
 }
 
 func TestStackdriverPlugin(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
-	fsd := fs.NewFakeStackdriver(12312)
+	fsdm, fsdl := fs.NewFakeStackdriver(12312)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
@@ -172,16 +197,32 @@ func TestStackdriverPlugin(t *testing.T) {
 			t.Errorf("Failed in request %s: %v", tag, err)
 		}
 	}
+	srvMetricRcv := false
+	cltMetricRcv := false
 
-	for i := 0; i < 2; i++ {
-		// Two requests should be recevied: one from client and one from server.
+	for i := 0; i < 3; i++ {
+		// Two requests should be recevied by monitoring server: one from client and one from server.
+		// One request should be received by logging server.
 		select {
-		case req := <-fsd.RcvReq:
-			if err := verifyCreateTimeSeriesReq(req); err != nil {
+		case req := <-fsdm.RcvMetricReq:
+			err, isClient := verifyCreateTimeSeriesReq(req)
+			if err != nil {
 				t.Errorf("CreateTimeSeries verification failed: %v", err)
+			}
+			if isClient {
+				cltMetricRcv = true
+			} else {
+				srvMetricRcv = true
+			}
+		case req := <-fsdl.RcvLoggingReq:
+			if err := verifyWriteLogEntriesReq(req); err != nil {
+				t.Errorf("WriteLogEntries verification failed: %v", err)
 			}
 		case <-time.After(20 * time.Second):
 			t.Error("timeout on waiting Stackdriver server to receive request")
 		}
+	}
+	if !srvMetricRcv || !cltMetricRcv {
+		t.Errorf("fail to receive metric request from both sides. client recieved: %v and server recieved: %v", cltMetricRcv, srvMetricRcv)
 	}
 }

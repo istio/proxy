@@ -16,7 +16,9 @@
 #pragma once
 
 #include "extensions/common/context.h"
+#include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
+#include "extensions/stackdriver/log/logger.h"
 #include "extensions/stackdriver/metric/record.h"
 
 // OpenCensus is full of unused parameters in metric_service.
@@ -66,6 +68,9 @@ class StackdriverRootContext : public RootContext {
               const ::wasm::common::NodeInfo& peer_node_info);
 
  private:
+  // Indicates whether to export server access log or not.
+  bool enableServerAccessLog();
+
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
 
@@ -75,6 +80,9 @@ class StackdriverRootContext : public RootContext {
   // Indicates the traffic direction relative to this proxy.
   ::Wasm::Common::TrafficDirection direction_{
       ::Wasm::Common::TrafficDirection::Unspecified};
+
+  // Logger records and exports log entries to Stackdriver backend.
+  std::unique_ptr<::Extensions::Stackdriver::Log::Logger> logger_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
@@ -104,8 +112,26 @@ class StackdriverContext : public Context {
   StackdriverRootContext* getRootContext();
 };
 
-static RegisterContextFactory register_StackdriverContext(
-    CONTEXT_FACTORY(StackdriverContext), ROOT_FACTORY(StackdriverRootContext));
+class StackdriverOutboundRootContext : public StackdriverRootContext {
+ public:
+  StackdriverOutboundRootContext(uint32_t id, StringView root_id)
+      : StackdriverRootContext(id, root_id) {}
+};
+
+class StackdriverInboundRootContext : public StackdriverRootContext {
+ public:
+  StackdriverInboundRootContext(uint32_t id, StringView root_id)
+      : StackdriverRootContext(id, root_id) {}
+};
+
+static RegisterContextFactory register_OutboundStackdriverContext(
+    CONTEXT_FACTORY(StackdriverContext),
+    ROOT_FACTORY(StackdriverOutboundRootContext),
+    ::Extensions::Stackdriver::Common::kOutboundRootContextId);
+static RegisterContextFactory register_InboundStackdriverContext(
+    CONTEXT_FACTORY(StackdriverContext),
+    ROOT_FACTORY(StackdriverInboundRootContext),
+    ::Extensions::Stackdriver::Common::kInboundRootContextId);
 
 }  // namespace Stackdriver
 

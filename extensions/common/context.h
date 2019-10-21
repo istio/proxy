@@ -80,6 +80,9 @@ struct RequestInfo {
   // Host name of destination service.
   std::string destination_service_host;
 
+  // Short name of destination service.
+  std::string destination_service_name;
+
   // Operation of the request, i.e. HTTP method or gRPC API method.
   std::string request_operation;
 
@@ -90,6 +93,10 @@ struct RequestInfo {
   // certificate.
   std::string source_principal;
   std::string destination_principal;
+
+  // Rbac filter policy id and result.
+  std::string rbac_permissive_policy_id;
+  std::string rbac_permissive_engine_result;
 };
 
 // RequestContext contains all the information available in the request.
@@ -123,6 +130,13 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
 void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info);
+
+// Extracts node metadata value. It looks for values of all the keys
+// corresponding to EXCHANGE_KEYS in node_metadata and populates it in
+// google::protobuf::Value pointer that is passed in.
+google::protobuf::util::Status extractNodeMetadataValue(
+    const google::protobuf::Struct& node_metadata,
+    google::protobuf::Struct* metadata);
 
 }  // namespace Common
 }  // namespace Wasm

@@ -34,8 +34,8 @@ Network::FilterFactoryCb createFilterFactoryHelper(
 
   MetadataExchangeConfigSharedPtr filter_config(
       std::make_shared<MetadataExchangeConfig>(
-          StatPrefix, proto_config.protocol(), proto_config.node_metadata_id(),
-          filter_direction, context.scope()));
+          StatPrefix, proto_config.protocol(), filter_direction,
+          context.scope()));
   return [filter_config,
           &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(std::make_shared<MetadataExchangeFilter>(

@@ -1,97 +1,6 @@
 version: 2
 
 jobs:
-  build:
-    docker:
-      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
-    environment:
-      - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
-    resource_class: xlarge
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-      # To build docker containers or run tests in a docker
-      - setup_remote_docker
-      - run: rm ~/.gitconfig
-      - run: make lint
-      - run: make build
-      - run: make test
-      - save_cache:
-          key: linux_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-          paths:
-            - /home/circleci/.cache/bazel
-            - /home/circleci/.cache/bazelisk
-
-  linux_release:
-    docker:
-      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
-    environment:
-      - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
-    resource_class: xlarge
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - linux_release-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-      # To build docker containers or run tests in a docker
-      - setup_remote_docker
-      - run: rm ~/.gitconfig
-      - run: make deb
-      - run: make artifacts ARTIFACTS_DIR="/home/circleci/project/artifacts"
-      - run: make test_release
-      - save_cache:
-          key: linux_release-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-          paths:
-            - /home/circleci/.cache/bazel
-            - /home/circleci/.cache/bazelisk
-      - store_artifacts:
-          path: /home/circleci/project/artifacts/istio-proxy.deb
-          destination: /proxy/istio-proxy.deb
-
-  linux_asan:
-    docker:
-      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
-    environment:
-      - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
-    resource_class: xlarge
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-      # To build docker containers or run tests in a docker
-      - setup_remote_docker
-      - run: rm ~/.gitconfig
-      - run: make test_asan
-      - save_cache:
-          key: linux_asan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-          paths:
-            - /home/circleci/.cache/bazel
-            - /home/circleci/.cache/bazelisk
-
-  linux_tsan:
-    docker:
-      - image: istio/ci:go1.11-bazelisk-clang8-cmake3.8.0
-    environment:
-      - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all"
-    resource_class: xlarge
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-      # To build docker containers or run tests in a docker
-      - setup_remote_docker
-      - run: rm ~/.gitconfig
-      - run: make test_tsan
-      - save_cache:
-          key: linux_tsan-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
-          paths:
-            - /home/circleci/.cache/bazel
-            - /home/circleci/.cache/bazelisk
-
   macos:
     macos:
       xcode: "11.0.0"
@@ -121,8 +30,4 @@ workflows:
   version: 2
   all:
     jobs:
-      - build
-      - linux_release
-      - linux_asan
-      - linux_tsan
       - macos

@@ -15,6 +15,8 @@
 
 #include "extensions/common/context.h"
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
@@ -23,6 +25,7 @@
 
 #else  // NULL_PLUGIN
 
+#include "absl/strings/str_split.h"
 #include "extensions/common/wasm/null/null_plugin.h"
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
@@ -42,12 +45,38 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 namespace Wasm {
 namespace Common {
 
+const char kRbacFilterName[] = "envoy.filters.http.rbac";
+const char kRbacPermissivePolicyIDField[] = "shadow_effective_policy_id";
+const char kRbacPermissiveEngineResultField[] = "shadow_engine_result";
+
+namespace {
+
+// Extract fqdn from Istio cluster name, e.g.
+// inbound|9080|http|productpage.default.svc.cluster.local. If cluster name does
+// not follow Istio convention, fqdn will be left as empty string.
+void extractFqdn(const std::string& cluster_name, std::string* fqdn) {
+  const std::vector<std::string>& parts = absl::StrSplit(cluster_name, '|');
+  if (parts.size() == 4) {
+    *fqdn = parts[3];
+  }
+}
+
+// Extract service name from service fqdn.
+void extractServiceName(const std::string& fqdn, std::string* service_name) {
+  const std::vector<std::string>& parts = absl::StrSplit(fqdn, '.');
+  if (parts.size() > 0) {
+    *service_name = parts[0];
+  }
+}
+
+}  // namespace
+
 using google::protobuf::util::JsonStringToMessage;
 using google::protobuf::util::MessageToJsonString;
 
 google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct &metadata,
-    wasm::common::NodeInfo *node_info) {
+    const google::protobuf::Struct& metadata,
+    wasm::common::NodeInfo* node_info) {
   google::protobuf::util::JsonOptions json_options;
   std::string metadata_json_struct;
   auto status =
@@ -62,7 +91,7 @@ google::protobuf::util::Status extractNodeMetadata(
 }
 
 google::protobuf::util::Status extractLocalNodeMetadata(
-    wasm::common::NodeInfo *node_info) {
+    wasm::common::NodeInfo* node_info) {
   google::protobuf::Struct node;
   if (!getStructValue({"node", "metadata"}, &node)) {
     return google::protobuf::util::Status(
@@ -71,7 +100,7 @@ google::protobuf::util::Status extractLocalNodeMetadata(
   return extractNodeMetadata(node, node_info);
 }
 
-void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
+void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info->end_timestamp = getCurrentTimeNanoseconds();
 
@@ -91,9 +120,29 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
     request_info->request_protocol = kProtocolHTTP;
   }
 
-  request_info->destination_service_host =
-      getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
-          ->toString();
+  // Try to get fqdn of destination service from cluster name. If not found, use
+  // host header instead.
+  std::string cluster_name = "";
+  getStringValue({"cluster_name"}, &cluster_name);
+  extractFqdn(cluster_name, &request_info->destination_service_host);
+  if (request_info->destination_service_host.empty()) {
+    // fallback to host header.
+    request_info->destination_service_host =
+        getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
+            ->toString();
+  } else {
+    // cluster name follows Istio convention, so extract out service name.
+    extractServiceName(request_info->destination_service_host,
+                       &request_info->destination_service_name);
+  }
+
+  // Get rbac labels from dynamic metadata.
+  getStringValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
+                 &request_info->rbac_permissive_policy_id);
+  getStringValue(
+      {"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
+      &request_info->rbac_permissive_engine_result);
+
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
@@ -111,6 +160,42 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo *request_info) {
     getStringValue({"connection", "tls_version"}, &tls_version);
   }
   request_info->destination_port = destination_port;
+}
+
+google::protobuf::util::Status extractNodeMetadataValue(
+    const google::protobuf::Struct& node_metadata,
+    google::protobuf::Struct* metadata) {
+  if (metadata == nullptr) {
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::INVALID_ARGUMENT,
+        "metadata provided is null");
+  }
+  const auto key_it = node_metadata.fields().find("EXCHANGE_KEYS");
+  if (key_it == node_metadata.fields().end()) {
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::INVALID_ARGUMENT,
+        "metadata exchange key is missing");
+  }
+
+  const auto& keys_value = key_it->second;
+  if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
+    return google::protobuf::util::Status(
+        google::protobuf::util::error::INVALID_ARGUMENT,
+        "metadata exchange key is not a string");
+  }
+
+  // select keys from the metadata using the keys
+  const std::set<std::string> keys =
+      absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
+  for (auto key : keys) {
+    const auto entry_it = node_metadata.fields().find(key);
+    if (entry_it == node_metadata.fields().end()) {
+      continue;
+    }
+    (*metadata->mutable_fields())[key] = entry_it->second;
+  }
+
+  return google::protobuf::util::Status(google::protobuf::util::error::OK, "");
 }
 
 }  // namespace Common

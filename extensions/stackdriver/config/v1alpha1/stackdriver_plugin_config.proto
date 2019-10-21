@@ -18,8 +18,8 @@ syntax = "proto3";
 package stackdriver.config.v1alpha1;
 
 message PluginConfig {
-  // Optional. Controls whether to export access log.
-  bool disable_access_logging = 1;
+  // Optional. Controls whether to export server access log.
+  bool disable_server_access_logging = 1;
 
   // Optional. FQDN of destination service that the request routed to, e.g.
   // productpage.default.svc.cluster.local. If not provided, request host header
