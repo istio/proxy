@@ -118,6 +118,7 @@ if [ -n "${DST}" ]; then
 fi
 
 # Build the docker image with the release binary
+# TODO(kuat) Publish the image to a build docker registry
 bazel run ${BAZEL_BUILD_ARGS} --config=release //tools/docker:envoy
 
 # Build the release binary with symbols.
@@ -142,7 +143,6 @@ bazel build ${BAZEL_BUILD_ARGS} ${BAZEL_CONFIG_ASAN} --config=release-symbol //s
 BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
 cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
 sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
-
 
 if [ -n "${DST}" ]; then
   # Copy it to the bucket.
