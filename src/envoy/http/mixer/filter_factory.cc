@@ -60,7 +60,8 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
   Router::RouteSpecificFilterConfigConstSharedPtr
   createRouteSpecificFilterConfig(
       const Protobuf::Message& config,
-      Envoy::Server::Configuration::FactoryContext&) override {
+      Server::Configuration::ServerFactoryContext&,
+      ProtobufMessage::ValidationVisitor&) override {
     auto obj = std::make_shared<Http::Mixer::PerRouteServiceConfig>();
     // TODO: use downcastAndValidate once client_config.proto adds validate
     // rules.
