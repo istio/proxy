@@ -24,9 +24,9 @@ export CC=${CC:-clang}
 export CXX=${CXX:-clang++}
 
 # Add --config=libc++ if wasn't passed already.
-#if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
-#  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
-#fi
+if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
+fi
 
 if [[ "$(uname)" == "Darwin" ]]; then
   BAZEL_CONFIG_ASAN="--config=macos-asan"
@@ -88,8 +88,8 @@ fi
 # Symlinks don't work, use full path as a temporary workaround.
 # See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
-#for config in release release-symbol debug
-for config in release
+# k8-dbg is the output directory for -c dbg builds.
+for config in release release-symbol debug
 do
   case $config in
     "release" )
