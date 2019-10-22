@@ -45,7 +45,8 @@ do
     "release-test")
       PARAMS="--config=clang-asan --config=release-symbol";;
     "debug")
-      PARAMS="-c dbg";;
+      PARAMS="--config=debug";;
   esac
-  bazel run ${BAZEL_BUILD_ARGS} ${PARAMS} --define tag=${config}-${TAG} //tools/docker:push_envoy
+  bazel run ${BAZEL_BUILD_ARGS} ${PARAMS} //tools/docker:push_envoy
+  bazel run ${BAZEL_BUILD_ARGS} ${PARAMS} //tools/docker:push_envoy_bionic
 done

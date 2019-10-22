@@ -27,11 +27,27 @@ container_image(
     tars = ["//src/envoy:envoy_tar"],
 )
 
+container_image(
+    name = "envoy_bionic",
+    base = "@bionic//image",
+    tags = ["manual"],
+    tars = ["//src/envoy:envoy_tar"],
+)
+
 container_push(
     name = "push_envoy",
     format = "Docker",
     image = ":envoy",
     registry = "gcr.io",
     repository = "istio-testing/envoy",
-    tag = "$(tag)",
+    tag = "$(BUILD_CONFIG)-{BUILD_SCM_REVISION}",
+)
+
+container_push(
+    name = "push_envoy_bionic",
+    format = "Docker",
+    image = ":envoy_bionic",
+    registry = "gcr.io",
+    repository = "istio-testing/envoy_bionic",
+    tag = "$(BUILD_CONFIG)-{BUILD_SCM_REVISION}",
 )
