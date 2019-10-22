@@ -28,10 +28,6 @@ export PATH=/usr/lib/llvm-9/bin:$PATH
 export CC=${CC:-clang}
 export CXX=${CXX:-clang++}
 
-# Docker tag
-export GIT_SHA="$(git rev-parse --verify HEAD)"
-export TAG="${TAG:-${GIT_SHA}}"
-
 # Add --config=libc++ if wasn't passed already.
 if [[ "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
@@ -47,6 +43,6 @@ do
     "debug")
       PARAMS="--config=debug";;
   esac
-  bazel run ${BAZEL_BUILD_ARGS} ${PARAMS} //tools/docker:push_envoy
+  export BUILD_CONFIG=$config && bazel run ${BAZEL_BUILD_ARGS} ${PARAMS} //tools/docker:push_envoy
   bazel run ${BAZEL_BUILD_ARGS} ${PARAMS} //tools/docker:push_envoy_bionic
 done

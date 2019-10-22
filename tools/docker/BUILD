@@ -40,7 +40,7 @@ container_push(
     image = ":envoy",
     registry = "gcr.io",
     repository = "istio-testing/envoy",
-    tag = "$(BUILD_CONFIG)-{BUILD_SCM_REVISION}",
+    tag = "{BUILD_CONFIG}-{BUILD_SCM_REVISION}",
 )
 
 container_push(

@@ -27,3 +27,5 @@ if git diff-index --quiet HEAD; then
 else
   echo "BUILD_SCM_STATUS Modified"
 fi
+
+echo "BUILD_CONFIG ${BUILD_CONFIG:-default}"
