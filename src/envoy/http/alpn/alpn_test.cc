@@ -34,7 +34,8 @@ namespace {
 
 class AlpnFilterTest : public testing::Test {
  public:
-  std::unique_ptr<AlpnFilter> makeAlpnOverrideFilter(const AlpnOverride &alpn) {
+  std::unique_ptr<AlpnFilter> makeAlpnOverrideFilter(
+      const AlpnOverrides &alpn) {
     FilterConfig proto_config;
 
     for (const auto &p : alpn) {
@@ -79,9 +80,9 @@ class AlpnFilterTest : public testing::Test {
 TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
   NiceMock<StreamInfo::MockStreamInfo> stream_info;
   ON_CALL(callbacks_, streamInfo()).WillByDefault(ReturnRef(stream_info));
-  AlpnOverride alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
-                       {Http::Protocol::Http11, {"baz"}},
-                       {Http::Protocol::Http2, {"qux"}}};
+  const AlpnOverrides alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
+                              {Http::Protocol::Http11, {"baz"}},
+                              {Http::Protocol::Http2, {"qux"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
   ON_CALL(cluster_manager_, get(_)).WillByDefault(Return(fake_cluster_.get()));
@@ -106,16 +107,16 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
                                  Network::ApplicationProtocols::key())
                              .value();
 
-    EXPECT_EQ(alpn_override, alpn[p]);
+    EXPECT_EQ(alpn_override, alpn.at(p));
   }
 }
 
 TEST_F(AlpnFilterTest, OverrideAlpn) {
   NiceMock<StreamInfo::MockStreamInfo> stream_info;
   ON_CALL(callbacks_, streamInfo()).WillByDefault(ReturnRef(stream_info));
-  AlpnOverride alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
-                       {Http::Protocol::Http11, {"baz"}},
-                       {Http::Protocol::Http2, {"qux"}}};
+  const AlpnOverrides alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
+                              {Http::Protocol::Http11, {"baz"}},
+                              {Http::Protocol::Http2, {"qux"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
   ON_CALL(cluster_manager_, get(_)).WillByDefault(Return(fake_cluster_.get()));
@@ -139,15 +140,15 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
                                  Network::ApplicationProtocols::key())
                              .value();
 
-    EXPECT_EQ(alpn_override, alpn[Http::Protocol::Http2]);
+    EXPECT_EQ(alpn_override, alpn.at(Http::Protocol::Http2));
   }
 }
 
 TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
   NiceMock<StreamInfo::MockStreamInfo> stream_info;
   ON_CALL(callbacks_, streamInfo()).WillByDefault(ReturnRef(stream_info));
-  AlpnOverride alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
-                       {Http::Protocol::Http11, {"baz"}}};
+  const AlpnOverrides alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
+                              {Http::Protocol::Http11, {"baz"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
   ON_CALL(cluster_manager_, get(_)).WillByDefault(Return(fake_cluster_.get()));

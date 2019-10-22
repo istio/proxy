@@ -22,7 +22,7 @@ namespace Envoy {
 namespace Http {
 namespace Alpn {
 
-using AlpnOverride =
+using AlpnOverrides =
     absl::flat_hash_map<Http::Protocol, std::vector<std::string>>;
 
 class AlpnFilterConfig {
@@ -34,8 +34,12 @@ class AlpnFilterConfig {
 
   Upstream::ClusterManager &clusterManager() { return cluster_manager_; }
 
-  const std::vector<std::string> &alpnOverride(const Http::Protocol &protocol) {
-    return alpn_override_[protocol];
+  const std::vector<std::string> alpnOverrides(
+      const Http::Protocol &protocol) const {
+    if (alpn_overrides_.count(protocol)) {
+      return alpn_overrides_.at(protocol);
+    }
+    return {};
   }
 
  private:
@@ -43,7 +47,7 @@ class AlpnFilterConfig {
       const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig::
           Protocol &protocol);
 
-  AlpnOverride alpn_override_;
+  AlpnOverrides alpn_overrides_;
   Upstream::ClusterManager &cluster_manager_;
 };
 

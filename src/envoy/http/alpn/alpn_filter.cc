@@ -34,8 +34,8 @@ AlpnFilterConfig::AlpnFilterConfig(
       application_protocols.push_back(protocol);
     }
 
-    alpn_override_.insert({getHttpProtocol(pair.upstream_protocol()),
-                           std::move(application_protocols)});
+    alpn_overrides_.insert({getHttpProtocol(pair.upstream_protocol()),
+                            std::move(application_protocols)});
   }
 }
 
@@ -75,7 +75,7 @@ Http::FilterHeadersStatus AlpnFilter::decodeHeaders(Http::HeaderMap &, bool) {
 
   Http::Protocol protocol = cluster->info()->upstreamHttpProtocol(
       decoder_callbacks_->streamInfo().protocol());
-  const auto &alpn_override = config_->alpnOverride(protocol);
+  const auto &alpn_override = config_->alpnOverrides(protocol);
 
   if (!alpn_override.empty()) {
     ENVOY_LOG(debug, "override with {} ALPNs", alpn_override.size());
