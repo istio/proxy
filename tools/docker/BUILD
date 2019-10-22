@@ -15,10 +15,23 @@
 ################################################################################
 #
 load("@io_bazel_rules_docker//container:image.bzl", "container_image")
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_push",
+)
 
 container_image(
     name = "envoy",
     base = "@distroless_cc//image",
     tags = ["manual"],
     tars = ["//src/envoy:envoy_tar"],
+)
+
+container_push(
+    name = "push_envoy",
+    image = ":envoy",
+    format = "Docker",
+    registry = "gcr.io",
+    repository = "istio-testing/envoy",
+    tag = "$(tag)",
 )
