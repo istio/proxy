@@ -39,7 +39,7 @@ container_push(
     format = "Docker",
     image = ":envoy",
     registry = "gcr.io",
-    repository = "istio-testing/envoy",
+    repository = "{DOCKER_REPOSITORY}",
     tag = "{BUILD_CONFIG}-{BUILD_SCM_REVISION}",
 )
 
@@ -48,6 +48,6 @@ container_push(
     format = "Docker",
     image = ":envoy_bionic",
     registry = "gcr.io",
-    repository = "istio-testing/envoy_bionic",
+    repository = "{DOCKER_REPOSITORY}_bionic",
     tag = "{BUILD_CONFIG}-{BUILD_SCM_REVISION}",
 )

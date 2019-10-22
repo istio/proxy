@@ -29,3 +29,4 @@ else
 fi
 
 echo "BUILD_CONFIG ${BUILD_CONFIG:-default}"
+echo "DOCKER_REPOSITORY ${DOCKER_REPOSITORY:-istio-testing/envoy}"
