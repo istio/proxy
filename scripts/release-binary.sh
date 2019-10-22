@@ -19,7 +19,7 @@
 set -ex
 
 # Use clang for the release builds.
-export PATH=/usr/lib/llvm-8/bin:$PATH
+export PATH=/usr/lib/llvm-9/bin:$PATH
 export CC=${CC:-clang}
 export CXX=${CXX:-clang++}
 
@@ -116,6 +116,10 @@ if [ -n "${DST}" ]; then
   echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
   gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 fi
+
+# Build the docker image with the release binary
+# TODO(kuat) Publish the image to a build docker registry
+bazel run ${BAZEL_BUILD_ARGS} --config=release //tools/docker:envoy
 
 # Build the release binary with symbols.
 BINARY_NAME="${HOME}/envoy-symbol-${SHA}.tar.gz"

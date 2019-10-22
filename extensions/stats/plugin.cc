@@ -54,7 +54,8 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
   int64_t direction;
   if (getValue({"listener_direction"}, &direction)) {
-    outbound_ = envoy::api::v2::core::TrafficDirection::OUTBOUND == direction;
+    outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
+                static_cast<::Wasm::Common::TrafficDirection>(direction);
   } else {
     LOG_WARN("Unable to get plugin direction");
   }
@@ -79,11 +80,6 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   // If "_" is not prepended, envoy_ is automatically added by prometheus
   // scraper"
   stat_prefix = absl::StrCat("_", stat_prefix, "_");
-
-  Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
-               {MetricTag{"component", MetricTag::TagType::String},
-                MetricTag{"tag", MetricTag::TagType::String}});
-  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
 
   stats_ = std::vector<StatGen>{
       StatGen(

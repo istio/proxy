@@ -1,6 +1,4 @@
-#!/bin/bash
-#
-# Copyright 2018 Istio Authors. All Rights Reserved.
+# Copyright 2019 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,13 +13,12 @@
 # limitations under the License.
 #
 ################################################################################
+#
+load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 
-set -eu
-
-# Check whether any git repositories are defined.
-# Git repository definition contains `commit` and `remote` fields.
-if grep -nr "commit =\|remote =" --include=WORKSPACE --include=*.bzl .; then
-  echo "Using git repositories is not allowed."
-  echo "To ensure that all dependencies can be stored offline in distdir, only HTTP repositories are allowed."
-  exit 1
-fi
+container_image(
+    name = "envoy",
+    base = "@distroless_cc//image",
+    tags = ["manual"],
+    tars = ["//src/envoy:envoy_tar"],
+)
