@@ -29,8 +29,8 @@ container_image(
 
 container_push(
     name = "push_envoy",
-    image = ":envoy",
     format = "Docker",
+    image = ":envoy",
     registry = "gcr.io",
     repository = "istio-testing/envoy",
     tag = "$(tag)",
