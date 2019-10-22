@@ -164,6 +164,7 @@ proto_library(
     deps = [
         ":mixer_api_protos_lib",
         "@com_github_gogo_protobuf//:gogo_proto",
+        "@com_google_googleapis//google/api:field_behavior_proto",
         "@com_google_protobuf//:duration_proto",
     ],
 )
@@ -186,6 +187,7 @@ proto_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "@com_google_googleapis//google/api:field_behavior_proto",
         "@com_github_gogo_protobuf//:gogo_proto",
     ],
 )
