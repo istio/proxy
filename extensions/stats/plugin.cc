@@ -54,7 +54,8 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   }
   int64_t direction;
   if (getValue({"listener_direction"}, &direction)) {
-    outbound_ = envoy::api::v2::core::TrafficDirection::OUTBOUND == direction;
+    outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
+                static_cast<::Wasm::Common::TrafficDirection>(direction);
   } else {
     LOG_WARN("Unable to get plugin direction");
   }
