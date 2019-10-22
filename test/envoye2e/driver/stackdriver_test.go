@@ -272,10 +272,12 @@ func TestStackDriverParallel(t *testing.T) {
 		[]Step{
 			&XDS{},
 			sd,
-			&Update{Node: "client", Version: "0"},
-			&Update{Node: "server", Version: "0"},
+			&Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
+			&Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
 			&Envoy{Bootstrap: ServerBootstrap},
 			&Envoy{Bootstrap: ClientBootstrap},
+			&Sleep{1 * time.Second},
+			&Get{19030, "hello, world!"},
 			&Fork{
 				Fore: &Scenario{
 					[]Step{
