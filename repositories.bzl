@@ -105,8 +105,8 @@ cc_library(
 # 1) find the ISTIO_API SHA you want in git
 # 2) wget https://github.com/istio/api/archive/$ISTIO_API_SHA.tar.gz && sha256sum $ISTIO_API_SHA.tar.gz
 #
-ISTIO_API = "593785242b9d8afcdcec176c5f03f3637dbf1ad1"
-ISTIO_API_SHA256 = "2c0f8059464b228476bd772e7d514e373d303b821d6187e55c24956babb11bf2"
+ISTIO_API = "31d048906d97fb7f6b1fa8e250d3fa07456c5acc"
+ISTIO_API_SHA256 = "5bf68ef13f4b9e769b7ca0a9ce83d9da5263eed9b1223c4cbb388a6ad5520e01"
 GOGOPROTO_RELEASE = "1.2.1"
 GOGOPROTO_SHA256 = "99e423905ba8921e86817607a5294ffeedb66fdd4a85efce5eb2848f715fdb3a"
 
@@ -164,6 +164,7 @@ proto_library(
     deps = [
         ":mixer_api_protos_lib",
         "@com_github_gogo_protobuf//:gogo_proto",
+        "@com_google_googleapis//google/api:field_behavior_proto",
         "@com_google_protobuf//:duration_proto",
     ],
 )
@@ -186,6 +187,7 @@ proto_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "@com_google_googleapis//google/api:field_behavior_proto",
         "@com_github_gogo_protobuf//:gogo_proto",
     ],
 )
