@@ -37,14 +37,14 @@ if [[ "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
 fi
 
-for config in release release-test dbg
+for config in release release-test debug
 do
   case $config in
     "release" )
       PARAMS="--config=release";;
     "release-test")
       PARAMS="--config=clang-asan --config=release-symbol";;
-    "dbg")
+    "debug")
       PARAMS="-c dbg";;
   esac
   bazel run ${BAZEL_BUILD_ARGS} ${PARAMS} --define tag=${config}-${TAG} //tools/docker:push_envoy
