@@ -85,12 +85,13 @@ if [ -n "${DST}" ]; then
     || echo 'Building a new binary.'
 fi
 
-# Symlinks don't work, use full path as a temporary workaround.
+# BAZEL_OUT: Symlinks don't work, use full path as a temporary workaround.
 # See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
 # k8-dbg is the output directory for -c dbg builds.
 for config in release release-symbol debug
 do
+  PUSH_DOCKER_IMAGE="true"
   case $config in
     "release" )
       CONFIG_PARAMS="--config=release"
@@ -106,6 +107,7 @@ do
       ;;
     "asan")
       # NOTE: libc++ is dynamically linked in this build.
+      PUSH_DOCKER_IMAGE=""
       CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
       BINARY_BASE_NAME="envoy-asan"
       PACKAGE_BASE_NAME=""
@@ -135,12 +137,15 @@ do
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
   fi
 
-  echo "Building ${config} docker image"
-  bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
-    //tools/docker:push_envoy \
-    //tools/docker:push_envoy_bionic
+  if [ -n "${PUSH_DOCKER_IMAGE}"]; then
+    echo "Building and pushing ${config} docker image"
+    bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
+      //tools/docker:push_envoy_distroless \
+      //tools/docker:push_envoy_ubuntu
+  fi
 
   if [ -n "${PACKAGE_BASE_NAME}"]; then
+    echo "Building ${config} debian package"
     BINARY_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.deb"
     SHA256_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.sha256"
     bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //tools/deb:istio-proxy

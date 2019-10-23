@@ -21,32 +21,32 @@ load(
 )
 
 container_image(
-    name = "envoy",
+    name = "envoy_distroless",
     base = "@distroless_cc//image",
     tags = ["manual"],
     tars = ["//src/envoy:envoy_tar"],
 )
 
 container_image(
-    name = "envoy_bionic",
+    name = "envoy_ubuntu",
     base = "@bionic//image",
     tags = ["manual"],
     tars = ["//src/envoy:envoy_tar"],
 )
 
 container_push(
-    name = "push_envoy",
+    name = "push_envoy_distroless",
     format = "Docker",
-    image = ":envoy",
+    image = ":envoy_distroless",
     registry = "gcr.io",
     repository = "{DOCKER_REPOSITORY}",
     tag = "{BUILD_CONFIG}-{BUILD_SCM_REVISION}",
 )
 
 container_push(
-    name = "push_envoy_bionic",
+    name = "push_envoy_ubuntu",
     format = "Docker",
-    image = ":envoy_bionic",
+    image = ":envoy_ubuntu",
     registry = "gcr.io",
     repository = "{DOCKER_REPOSITORY}_bionic",
     tag = "{BUILD_CONFIG}-{BUILD_SCM_REVISION}",
