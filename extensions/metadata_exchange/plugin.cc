@@ -143,7 +143,7 @@ FilterHeadersStatus PluginContext::onResponseHeaders() {
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
-    removeRequestHeader(ExchangeMetadataHeaderId);
+    removeResponseHeader(ExchangeMetadataHeaderId);
     setFilterStateStringValue(UpstreamMetadataIdKey,
                               upstream_metadata_id->view());
   }

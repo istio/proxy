@@ -65,6 +65,7 @@ envoy_cc_test(
         "@envoy//test/mocks/local_info:local_info_mocks",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/protobuf:protobuf_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
     ],
 )
 
