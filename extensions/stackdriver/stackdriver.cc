@@ -13,14 +13,17 @@
  * limitations under the License.
  */
 
+#include "extensions/stackdriver/stackdriver.h"
+
 #include <google/protobuf/util/json_util.h>
+
 #include <random>
 #include <string>
 #include <unordered_map>
 
+#include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
-#include "extensions/stackdriver/stackdriver.h"
 
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -41,6 +44,9 @@ using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
+using ::Extensions::Stackdriver::Edges::EdgeReporter;
+using Extensions::Stackdriver::Edges::MeshEdgesServiceClientImpl;
 using Extensions::Stackdriver::Log::ExporterImpl;
 using ::Extensions::Stackdriver::Log::Logger;
 using stackdriver::config::v1alpha1::PluginConfig;
@@ -51,7 +57,8 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
+constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
+constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
 
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
@@ -83,6 +90,19 @@ bool StackdriverRootContext::onConfigure(
   // logger takes ownership of exporter.
   logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
 
+  auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
+      this, config_.mesh_edges_service_endpoint());
+  edge_reporter_ =
+      std::make_unique<EdgeReporter>(local_node_info_, std::move(edges_client));
+
+  if (config_.has_mesh_edges_reporting_duration()) {
+    edge_report_duration_nanos_ =
+        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+            config_.mesh_edges_reporting_duration());
+  } else {
+    edge_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
+  }
+
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -102,7 +122,7 @@ bool StackdriverRootContext::onConfigure(
 }
 
 void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
-  if (enableServerAccessLog()) {
+  if (enableServerAccessLog() || enableEdgeReporting()) {
     proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
   }
 }
@@ -110,6 +130,13 @@ void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {
     logger_->exportLogEntry();
+  }
+  if (enableEdgeReporting()) {
+    auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
+    if ((cur - last_edge_report_call_nanos_) > edge_report_duration_nanos_) {
+      edge_reporter_->reportEdges();
+      last_edge_report_call_nanos_ = cur;
+    }
   }
 }
 
@@ -120,6 +147,18 @@ void StackdriverRootContext::record(const RequestInfo &request_info,
   if (enableServerAccessLog()) {
     logger_->addLogEntry(request_info, peer_node_info);
   }
+  if (enableEdgeReporting()) {
+    std::string peer_id;
+    if (!getStringValue(
+            {"filter_state", ::Wasm::Common::kDownstreamMetadataIdKey},
+            &peer_id)) {
+      LOG_DEBUG(absl::StrCat(
+          "cannot get metadata for: ", ::Wasm::Common::kDownstreamMetadataIdKey,
+          "; skipping edge."));
+      return;
+    }
+    edge_reporter_->addEdge(request_info, peer_id, peer_node_info);
+  }
 }
 
 inline bool StackdriverRootContext::isOutbound() {
@@ -128,6 +167,10 @@ inline bool StackdriverRootContext::isOutbound() {
 
 inline bool StackdriverRootContext::enableServerAccessLog() {
   return !config_.disable_server_access_logging() && !isOutbound();
+}
+
+inline bool StackdriverRootContext::enableEdgeReporting() {
+  return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.
