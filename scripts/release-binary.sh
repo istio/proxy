@@ -117,10 +117,6 @@ if [ -n "${DST}" ]; then
   gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
 fi
 
-# Build the docker image with the release binary
-# TODO(kuat) Publish the image to a build docker registry
-bazel run ${BAZEL_BUILD_ARGS} --config=release //tools/docker:envoy
-
 # Build the release binary with symbols.
 BINARY_NAME="${HOME}/envoy-symbol-${SHA}.tar.gz"
 SHA256_NAME="${HOME}/envoy-symbol-${SHA}.sha256"
