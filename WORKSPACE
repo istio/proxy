@@ -38,9 +38,9 @@ bind(
 # 2. Update .bazelrc and .bazelversion files.
 #
 # envoy-wasm commit date: 10/22/2019
-ENVOY_SHA = "4e5f460901f1a3ece8b0b24ed2ece0f70ed2092e"
+ENVOY_SHA = "1da10a5fa59006be0671d7133ed6749a3ea9ac2b"
 
-ENVOY_SHA256 = "5c98510e3eaa53bda00ec5d31b195558d5971123e118205250735500619f1b63"
+ENVOY_SHA256 = "69a9feaa66761afac7485be48e9ac12fc50e5057a3994e87aacba147d2a43be8"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
