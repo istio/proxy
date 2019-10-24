@@ -19,6 +19,7 @@
 #include "extensions/common/node_info_cache.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
+#include "extensions/stackdriver/edges/edge_reporter.h"
 #include "extensions/stackdriver/log/logger.h"
 #include "extensions/stackdriver/metric/record.h"
 
@@ -75,6 +76,9 @@ class StackdriverRootContext : public RootContext {
   // fetch it from host if cache miss.
   const wasm::common::NodeInfo& getPeerNode();
 
+  // Indicates whether or not to report edges to Stackdriver.
+  bool enableEdgeReporting();
+
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
 
@@ -90,6 +94,13 @@ class StackdriverRootContext : public RootContext {
 
   // Logger records and exports log entries to Stackdriver backend.
   std::unique_ptr<::Extensions::Stackdriver::Log::Logger> logger_;
+
+  std::unique_ptr<::Extensions::Stackdriver::Edges::EdgeReporter>
+      edge_reporter_;
+
+  long int last_edge_report_call_nanos_;
+
+  long int edge_report_duration_nanos_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

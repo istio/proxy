@@ -20,15 +20,6 @@ load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_deb", "pkg_tar")
 # Current layout for binaries matches 0.1 and docker images.
 
 pkg_tar(
-    name = "envoy-bin",
-    srcs = [
-        "//src/envoy",
-    ],
-    mode = "0755",
-    package_dir = "/usr/local/bin",
-)
-
-pkg_tar(
     name = "istio-conf",
     srcs = [
         "envoy.json",
@@ -43,8 +34,8 @@ pkg_tar(
     extension = "tar.gz",
     tags = ["manual"],
     deps = [
-        ":envoy-bin",
         ":istio-conf",
+        "//src/envoy:envoy_tar",
     ],
 )
 

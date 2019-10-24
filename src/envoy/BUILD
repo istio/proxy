@@ -48,4 +48,5 @@ pkg_tar(
     mode = "0755",
     package_dir = "/usr/local/bin/",
     tags = ["manual"],
+    visibility = ["//visibility:public"],
 )

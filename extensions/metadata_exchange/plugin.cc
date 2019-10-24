@@ -13,19 +13,22 @@
  * limitations under the License.
  */
 
-#ifndef NULL_PLUGIN
+#include "extensions/metadata_exchange/plugin.h"
+
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/context.h"
+#include "extensions/common/node_info.pb.h"
+#include "google/protobuf/util/json_util.h"
 
-#include "plugin.h"
+#ifndef NULL_PLUGIN
 
 #include "base64.h"
 
 #else
+
 #include "common/common/base64.h"
-#include "extensions/common/context.h"
-#include "extensions/metadata_exchange/plugin.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -140,7 +143,7 @@ FilterHeadersStatus PluginContext::onResponseHeaders() {
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
-    removeRequestHeader(ExchangeMetadataHeaderId);
+    removeResponseHeader(ExchangeMetadataHeaderId);
     setFilterStateStringValue(UpstreamMetadataIdKey,
                               upstream_metadata_id->view());
   }

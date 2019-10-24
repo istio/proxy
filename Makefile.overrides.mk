@@ -1,6 +1,4 @@
-#!/bin/bash
-#
-# Copyright 2018 Istio Authors. All Rights Reserved.
+# Copyright 2019 Istio Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-################################################################################
 
-set -eu
-
-# Check whether any git repositories are defined.
-# Git repository definition contains `commit` and `remote` fields.
-if grep -nr "commit =\|remote =" --include=WORKSPACE --include=*.bzl .; then
-  echo "Using git repositories is not allowed."
-  echo "To ensure that all dependencies can be stored offline in distdir, only HTTP repositories are allowed."
-  exit 1
-fi
+# this repo is not on the container plan by default
+BUILD_WITH_CONTAINER ?= 0
