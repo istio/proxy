@@ -22,7 +22,7 @@ ROOT=$(dirname $WD)
 # Presubmit script triggered by Prow. #
 #######################################
 
-source "${WD}/proxy-presubmit.inc"
+source "${WD}/proxy-common.inc"
 
 echo 'Bazel Tests'
 make test_tsan

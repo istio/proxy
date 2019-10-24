@@ -18,7 +18,11 @@ WD=$(dirname $0)
 WD=$(cd $WD; pwd)
 ROOT=$(dirname $WD)
 
-source "${WD}/proxy-presubmit.inc"
+#######################################
+# Presubmit script triggered by Prow. #
+#######################################
+
+source "${WD}/proxy-common.inc"
 
 echo 'Code Check'
 make lint
