@@ -65,16 +65,15 @@ class StackdriverRootContext : public RootContext {
   bool isOutbound();
 
   // Records telemetry based on the given request info.
-  void record(const ::Wasm::Common::RequestInfo& request_info,
-              const ::wasm::common::NodeInfo& peer_node_info);
-
-  // Gets peer node info. It checks the node info cache first, and then try to
-  // fetch it from host if cache miss.
-  const wasm::common::NodeInfo& getPeerNode();
+  void record(const ::Wasm::Common::RequestInfo& request_info);
 
  private:
   // Indicates whether to export server access log or not.
   bool enableServerAccessLog();
+
+  // Gets peer node info. It checks the node info cache first, and then try to
+  // fetch it from host if cache miss.
+  const wasm::common::NodeInfo& getPeerNode();
 
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;

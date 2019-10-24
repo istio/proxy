@@ -115,8 +115,8 @@ void StackdriverRootContext::onTick() {
   }
 }
 
-void StackdriverRootContext::record(const RequestInfo& request_info,
-                                    const NodeInfo& peer_node_info) {
+void StackdriverRootContext::record(const RequestInfo& request_info) {
+  const auto& peer_node_info = getPeerNode();
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
   if (enableServerAccessLog()) {
@@ -172,10 +172,9 @@ void StackdriverContext::onLog() {
   auto* root = getRootContext();
   bool isOutbound = root->isOutbound();
   ::Wasm::Common::populateHTTPRequestInfo(isOutbound, &request_info_);
-  const auto& peer_node_info = root->getPeerNode();
 
   // Record telemetry based on request info.
-  root->record(request_info_, peer_node_info);
+  root->record(request_info_);
 }
 
 }  // namespace Stackdriver
