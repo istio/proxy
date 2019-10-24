@@ -60,6 +60,43 @@ constexpr char kExporterRegistered[] = "registered";
 constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
 constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
 
+namespace {
+
+// Gets monitoring service endpoint from node metadata. Returns empty string if
+// it is not found.
+std::string getMonitoringEndpoint() {
+  std::string monitoring_service;
+  if (!getStringValue({"node", "metadata", kMonitoringEndpointKey},
+                      &monitoring_service)) {
+    return "";
+  }
+  return monitoring_service;
+}
+
+// Gets logging service endpoint from node metadata. Returns empty string if it
+// is not found.
+std::string getLoggingEndpoint() {
+  std::string logging_service;
+  if (!getStringValue({"node", "metadata", kLoggingEndpointKey},
+                      &logging_service)) {
+    return "";
+  }
+  return logging_service;
+}
+
+// Get mesh telemetry service endpoint from node metadata. Returns empty string
+// if it is not found.
+std::string getMeshTelemetryEndpoint() {
+  std::string mesh_telemetry_service;
+  if (!getStringValue({"node", "metadata", kMeshTelemetryEndpointKey},
+                      &mesh_telemetry_service)) {
+    return "";
+  }
+  return mesh_telemetry_service;
+}
+
+}  // namespace
+
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
   // Parse configuration JSON string.
@@ -85,15 +122,22 @@ bool StackdriverRootContext::onConfigure(
     logWarn("Unable to get plugin direction");
   }
 
-  auto exporter =
-      std::make_unique<ExporterImpl>(this, config_.test_logging_endpoint());
-  // logger takes ownership of exporter.
-  logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
+  if (!logger_) {
+    // logger should only be initiated once, for now there is no reason to
+    // recreate logger because of config update.
+    auto exporter = std::make_unique<ExporterImpl>(this, getLoggingEndpoint());
+    // logger takes ownership of exporter.
+    logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
+  }
 
-  auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-      this, config_.mesh_edges_service_endpoint());
-  edge_reporter_ =
-      std::make_unique<EdgeReporter>(local_node_info_, std::move(edges_client));
+  if (!edge_reporter_) {
+    // edge reporter should only be initiated once, for now there is no reason
+    // to recreate edge reporter because of config update.
+    auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
+        this, getMeshTelemetryEndpoint());
+    edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
+                                                    std::move(edges_client));
+  }
 
   if (config_.has_mesh_edges_reporting_duration()) {
     edge_report_duration_nanos_ =
@@ -113,8 +157,7 @@ bool StackdriverRootContext::onConfigure(
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_,
-                            config_.test_monitoring_endpoint()));
+      getStackdriverOptions(local_node_info_, getMonitoringEndpoint()));
 
   // Register opencensus measures and views.
   registerViews();
