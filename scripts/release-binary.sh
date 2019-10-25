@@ -135,9 +135,16 @@ do
     # Copy it to the bucket.
     echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+  fi
 
+
+  echo "Building ${config} docker image"
+  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
+    //tools/docker:envoy_distroless \
+    //tools/docker:envoy_ubuntu
+
+  if [ -n "${DST}" ]; then
     if [ -n "${PUSH_DOCKER_IMAGE}"]; then
-      echo "Building and pushing ${config} docker image"
       bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
         //tools/docker:push_envoy_distroless \
         //tools/docker:push_envoy_ubuntu
