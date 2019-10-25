@@ -48,6 +48,6 @@ container_push(
     format = "Docker",
     image = ":envoy_ubuntu",
     registry = "gcr.io",
-    repository = "{DOCKER_REPOSITORY}_bionic",
-    tag = "{BUILD_CONFIG}-{BUILD_SCM_REVISION}",
+    repository = "{DOCKER_REPOSITORY}",
+    tag = "ubuntu-{BUILD_CONFIG}-{BUILD_SCM_REVISION}",
 )
