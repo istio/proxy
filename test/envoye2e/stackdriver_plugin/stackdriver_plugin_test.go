@@ -138,7 +138,7 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
 "NAME": "ratings-v1-84975bc778-pxz2w",
 "STACKDRIVER_MONITORING_ENDPOINT": "localhost:12312",
 "STACKDRIVER_LOGGING_ENDPOINT": "localhost:12312",
-"STACKDRIVER_MESH_TELEMETRY_ENDPOINT": "localhost:12312,`
+"STACKDRIVER_MESH_TELEMETRY_ENDPOINT": "localhost:12312",`
 
 func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
@@ -247,9 +247,6 @@ func TestStackdriverPlugin(t *testing.T) {
 	to := time.NewTimer(20 * time.Second)
 
 	for !(srvMetricRcv && cltMetricRcv && logRcv && edgeRcv) {
-		// Two requests should be recevied by monitoring server: one from client and one from server.
-		// One request should be received by logging server.
-		// One request to the edges service
 		select {
 		case req := <-fsdm.RcvMetricReq:
 			err, isClient := verifyCreateTimeSeriesReq(req)
@@ -273,10 +270,11 @@ func TestStackdriverPlugin(t *testing.T) {
 			edgeRcv = true
 		case <-to.C:
 			to.Stop()
-			t.Fatal("timeout on waiting Stackdriver server to receive required requests")
+			rcv := fmt.Sprintf(
+				"client metrics: %t, server metrics: %t, logs: %t, edges: %t",
+				cltMetricRcv, srvMetricRcv, logRcv, edgeRcv,
+			)
+			t.Fatal("timeout: Stackdriver did not receive required requests: " + rcv)
 		}
-	}
-	if !srvMetricRcv || !cltMetricRcv {
-		t.Errorf("fail to receive metric request from both sides. client recieved: %v and server recieved: %v", cltMetricRcv, srvMetricRcv)
 	}
 }
