@@ -26,11 +26,17 @@ import (
 const (
 	BasicFlowTest uint16 = iota
 
-	BasicTCPFlowTest uint16 = iota
+	BasicTCPFlowTest
 
-	StackdriverPluginTest uint16 = iota
+	StackdriverPluginTest
 
-	TcpMetadataExchangeTest uint16 = iota
+	TcpMetadataExchangeTest
+
+	// xDS driven tests
+	BasicHTTP
+	StackDriverPayload
+	StackDriverReload
+	StackDriverParallel
 
 	// The number of total tests. has to be the last one.
 	maxTestNum
@@ -39,7 +45,7 @@ const (
 const (
 	portBase uint16 = 20000
 	// Maximum number of ports used in each test.
-	portNum uint16 = 7
+	portNum uint16 = 20
 )
 
 // Ports stores all used ports
@@ -53,6 +59,8 @@ type Ports struct {
 	ClientToAppProxyPort    uint16
 	ClientTCPProxyPort      uint16
 	ServerTCPProxyPort      uint16
+	XDSPort                 uint16
+	SDPort                  uint16
 }
 
 func allocPortBase(name uint16) uint16 {
@@ -90,5 +98,7 @@ func NewPorts(name uint16) *Ports {
 		ClientToAppProxyPort:    base + 6,
 		ClientTCPProxyPort:      base + 7,
 		ServerTCPProxyPort:      base + 8,
+		XDSPort:                 base + 9,
+		SDPort:                  base + 10,
 	}
 }

@@ -15,10 +15,11 @@
 package driver
 
 import (
-	"strconv"
+	"fmt"
 	"testing"
 	"time"
 
+	"istio.io/proxy/test/envoye2e/env"
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 )
 
@@ -181,21 +182,21 @@ filter_chains:
 `
 
 func TestStackDriverPayload(t *testing.T) {
-	ports := Counter(19010)
+	ports := env.NewPorts(env.StackDriverPayload)
 	params := &Params{
 		Vars: map[string]string{
-			"ClientPort":     strconv.Itoa(ports()),
-			"SDPort":         strconv.Itoa(ports()),
-			"BackendPort":    strconv.Itoa(ports()),
-			"ClientAdmin":    strconv.Itoa(ports()),
-			"ServerAdmin":    strconv.Itoa(ports()),
-			"ServerPort":     strconv.Itoa(ports()),
+			"ClientPort":     fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"SDPort":         fmt.Sprintf("%d", ports.SDPort),
+			"BackendPort":    fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":    fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":    fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":     fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
 			"ClientMetadata": ClientMetadata,
 			"ServerMetadata": ServerMetadata,
 		},
-		XDS: ports(),
+		XDS: int(ports.XDSPort),
 	}
-	sd := &Stackdriver{Port: 19011}
+	sd := &Stackdriver{Port: ports.SDPort}
 
 	if err := (&Scenario{
 		[]Step{
@@ -206,7 +207,7 @@ func TestStackDriverPayload(t *testing.T) {
 			&Envoy{Bootstrap: ServerBootstrap},
 			&Envoy{Bootstrap: ClientBootstrap},
 			&Sleep{1 * time.Second},
-			&Repeat{N: 10, Step: &Get{19010, "hello, world!"}},
+			&Repeat{N: 10, Step: &Get{ports.ClientToServerProxyPort, "hello, world!"}},
 			sd.Check(
 				[]string{fs.ServerRequestCountJSON, fs.ClientRequestCountJSON},
 				[]string{fs.ServerAccessLogJSON},
@@ -219,8 +220,8 @@ func TestStackDriverPayload(t *testing.T) {
 
 // Expects estimated 10s log dumping interval from stackdriver
 func TestStackDriverReload(t *testing.T) {
-	ports := Counter(19020)
-	sd := &Stackdriver{Port: 19021}
+	ports := env.NewPorts(env.StackDriverReload)
+	sd := &Stackdriver{Port: ports.SDPort}
 	if err := (&Scenario{
 		[]Step{
 			&XDS{},
@@ -230,7 +231,7 @@ func TestStackDriverReload(t *testing.T) {
 			&Envoy{Bootstrap: ServerBootstrap},
 			&Envoy{Bootstrap: ClientBootstrap},
 			&Sleep{1 * time.Second},
-			&Get{19020, "hello, world!"},
+			&Get{ports.ClientToServerProxyPort, "hello, world!"},
 			// should drain all listeners
 			&Update{Node: "client", Version: "1"},
 			&Update{Node: "server", Version: "1"},
@@ -242,23 +243,23 @@ func TestStackDriverReload(t *testing.T) {
 						&Update{Node: "client", Version: "i{{ .N }}", Listeners: []string{StackdriverClientHTTPListener}},
 						&Update{Node: "server", Version: "i{{ .N }}", Listeners: []string{StackdriverServerHTTPListener}},
 						&Sleep{1 * time.Second},
-						&Get{19020, "hello, world!"},
+						&Get{ports.ClientToServerProxyPort, "hello, world!"},
 					},
 				},
 			},
 		},
 	}).Run(&Params{
 		Vars: map[string]string{
-			"ClientPort":     strconv.Itoa(ports()),
-			"SDPort":         strconv.Itoa(ports()),
-			"BackendPort":    strconv.Itoa(ports()),
-			"ClientAdmin":    strconv.Itoa(ports()),
-			"ServerAdmin":    strconv.Itoa(ports()),
-			"ServerPort":     strconv.Itoa(ports()),
+			"ClientPort":     fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"SDPort":         fmt.Sprintf("%d", ports.SDPort),
+			"BackendPort":    fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":    fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":    fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":     fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
 			"ClientMetadata": ClientMetadata,
 			"ServerMetadata": ServerMetadata,
 		},
-		XDS: ports(),
+		XDS: int(ports.XDSPort),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -266,8 +267,8 @@ func TestStackDriverReload(t *testing.T) {
 
 // Expects estimated 10s log dumping interval from stackdriver
 func TestStackDriverParallel(t *testing.T) {
-	ports := Counter(19030)
-	sd := &Stackdriver{Port: 19031, Delay: 100 * time.Millisecond}
+	ports := env.NewPorts(env.StackDriverParallel)
+	sd := &Stackdriver{Port: ports.SDPort, Delay: 100 * time.Millisecond}
 	if err := (&Scenario{
 		[]Step{
 			&XDS{},
@@ -277,14 +278,14 @@ func TestStackDriverParallel(t *testing.T) {
 			&Envoy{Bootstrap: ServerBootstrap},
 			&Envoy{Bootstrap: ClientBootstrap},
 			&Sleep{1 * time.Second},
-			&Get{19030, "hello, world!"},
+			&Get{ports.ClientToServerProxyPort, "hello, world!"},
 			&Fork{
 				Fore: &Scenario{
 					[]Step{
 						&Sleep{1 * time.Second},
 						&Repeat{
 							Duration: 19 * time.Second,
-							Step:     &Get{19030, "hello, world!"},
+							Step:     &Get{ports.ClientToServerProxyPort, "hello, world!"},
 						},
 					},
 				},
@@ -303,16 +304,16 @@ func TestStackDriverParallel(t *testing.T) {
 		},
 	}).Run(&Params{
 		Vars: map[string]string{
-			"ClientPort":     strconv.Itoa(ports()),
-			"SDPort":         strconv.Itoa(ports()),
-			"BackendPort":    strconv.Itoa(ports()),
-			"ClientAdmin":    strconv.Itoa(ports()),
-			"ServerAdmin":    strconv.Itoa(ports()),
-			"ServerPort":     strconv.Itoa(ports()),
+			"ClientPort":     fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"SDPort":         fmt.Sprintf("%d", ports.SDPort),
+			"BackendPort":    fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":    fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":    fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":     fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
 			"ClientMetadata": ClientMetadata,
 			"ServerMetadata": ServerMetadata,
 		},
-		XDS: ports(),
+		XDS: int(ports.XDSPort),
 	}); err != nil {
 		t.Fatal(err)
 	}

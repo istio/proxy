@@ -158,11 +158,3 @@ func (p *Params) FillYAML(input string, pb proto.Message) error {
 	}
 	return ReadYAML(out, pb)
 }
-
-func Counter(base int) func() int {
-	state := base - 1
-	return func() int {
-		state++
-		return state
-	}
-}

@@ -15,9 +15,11 @@
 package driver
 
 import (
-	"strconv"
+	"fmt"
 	"testing"
 	"time"
+
+	"istio.io/proxy/test/envoye2e/env"
 )
 
 const ClientBootstrap = `
@@ -190,7 +192,7 @@ filter_chains:
 `
 
 func TestBasicHTTP(t *testing.T) {
-	ports := Counter(19000)
+	ports := env.NewPorts(env.BasicHTTP)
 	if err := (&Scenario{
 		[]Step{
 			&XDS{},
@@ -199,17 +201,17 @@ func TestBasicHTTP(t *testing.T) {
 			&Envoy{Bootstrap: ServerBootstrap},
 			&Envoy{Bootstrap: ClientBootstrap},
 			&Sleep{1 * time.Second},
-			&Get{19001, "hello, world!"},
+			&Get{ports.ClientToServerProxyPort, "hello, world!"},
 		},
 	}).Run(&Params{
 		Vars: map[string]string{
-			"BackendPort": strconv.Itoa(ports()),
-			"ClientPort":  strconv.Itoa(ports()),
-			"ClientAdmin": strconv.Itoa(ports()),
-			"ServerAdmin": strconv.Itoa(ports()),
-			"ServerPort":  strconv.Itoa(ports()),
+			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
+			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
 		},
-		XDS: ports(),
+		XDS: int(ports.XDSPort),
 	}); err != nil {
 		t.Fatal(err)
 	}
