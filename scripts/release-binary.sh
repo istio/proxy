@@ -72,7 +72,6 @@ elif [ -n "${DST}" ]; then
   exit 1
 fi
 
-
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"
 
@@ -137,20 +136,17 @@ do
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
   fi
 
-
   echo "Building ${config} docker image"
   bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
     //tools/docker:envoy_distroless \
     //tools/docker:envoy_ubuntu
 
-  if [ -n "${DST}" ]; then
-    if [ -n "${PUSH_DOCKER_IMAGE}"]; then
-      bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
-        //tools/docker:push_envoy_distroless \
-        //tools/docker:push_envoy_ubuntu
-    fi
+  if [ -n "${DST}" -a -n "${PUSH_DOCKER_IMAGE}"]; then
+    echo "Pushing ${config} docker image"
+    bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
+      //tools/docker:push_envoy_distroless \
+      //tools/docker:push_envoy_ubuntu
   fi
-
 
   if [ -n "${PACKAGE_BASE_NAME}"]; then
     echo "Building ${config} debian package"
