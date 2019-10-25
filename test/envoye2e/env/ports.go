@@ -30,7 +30,7 @@ const (
 
 	StackdriverPluginTest uint16 = iota
 
-	TcpMetadataExchangeTest uint16 = iota
+	TCPMetadataExchangeTest uint16 = iota
 
 	// The number of total tests. has to be the last one.
 	maxTestNum

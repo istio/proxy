@@ -31,7 +31,7 @@ var (
 
 	requests = 0
 	data     = 0
-	lds_n    = 0
+	ldsN     = 0
 )
 
 // Test LDS update with command
@@ -102,13 +102,13 @@ const listener1 = `{
 }
 `
 
-func lds_handler(w http.ResponseWriter, r *http.Request) {
+func ldsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	// Generates a new config to cause Envoy to update the listener
-	lds_n++
-	w.Write([]byte(strings.Replace(listener1, "AAAAA", strconv.Itoa(lds_n), -1)))
+	ldsN++
+	_, _ = w.Write([]byte(strings.Replace(listener1, "AAAAA", strconv.Itoa(ldsN), -1)))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +132,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(body)
+	_, _ = w.Write(body)
 
 	requests++
 	data += len(body)
@@ -145,6 +145,6 @@ func main() {
 	fmt.Printf("Listening on port %v\n", *port)
 
 	http.HandleFunc("/", handler)
-	http.HandleFunc("/v1/listeners/cluster/node", lds_handler)
-	http.ListenAndServe(":"+strconv.Itoa(*port), nil)
+	http.HandleFunc("/v1/listeners/cluster/node", ldsHandler)
+	_ = http.ListenAndServe(":"+strconv.Itoa(*port), nil)
 }

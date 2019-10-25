@@ -28,9 +28,9 @@ import (
 
 // TCPServer stores data for a TCP server.
 type TCPServer struct {
-	port      uint16
 	lis       net.Listener
 	prefix    string
+	port      uint16
 	enableTLS bool
 }
 
@@ -97,7 +97,7 @@ func handleConnection(conn net.Conn, prefix string) {
 		// prepend prefix and send as response
 		line := fmt.Sprintf("%s %s", prefix, bytes)
 		log.Printf("response: %s", line)
-		conn.Write([]byte(line))
+		_, _ = conn.Write([]byte(line))
 	}
 }
 

@@ -137,7 +137,7 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
 	got.Points[0].Interval = nil
 	if !proto.Equal(want, got) {
-		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
+		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v", proto.MarshalTextString(got), proto.MarshalTextString(want))
 	}
 	return nil
 }
@@ -147,12 +147,12 @@ func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
 		l.Timestamp = nil
 	}
 	if !proto.Equal(want, got) {
-		return fmt.Errorf("log entries are not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
+		return fmt.Errorf("log entries are not expected, got %v \nwant %v", proto.MarshalTextString(got), proto.MarshalTextString(want))
 	}
 	return nil
 }
 
-func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error, bool) {
+func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (bool, error) {
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	jsonpb.UnmarshalString(fs.ServerRequestCountJSON, &srvReqCount)
 	jsonpb.UnmarshalString(fs.ClientRequestCountJSON, &cltReqCount)
@@ -160,14 +160,14 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type == srvReqCount.Metric.Type {
 			isClient = false
-			return compareTimeSeries(t, &srvReqCount), isClient
+			return isClient, compareTimeSeries(t, &srvReqCount)
 		}
 		if t.Metric.Type == cltReqCount.Metric.Type {
-			return compareTimeSeries(t, &cltReqCount), isClient
+			return isClient, compareTimeSeries(t, &cltReqCount)
 		}
 	}
 	// at least one time series should match either client side request count or server side request count.
-	return fmt.Errorf("cannot find expected request count from creat time series request %v", got), isClient
+	return isClient, fmt.Errorf("cannot find expected request count from creat time series request %v", got)
 }
 
 func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
@@ -205,7 +205,7 @@ func TestStackdriverPlugin(t *testing.T) {
 		// One request should be received by logging server.
 		select {
 		case req := <-fsdm.RcvMetricReq:
-			err, isClient := verifyCreateTimeSeriesReq(req)
+			isClient, err := verifyCreateTimeSeriesReq(req)
 			if err != nil {
 				t.Errorf("CreateTimeSeries verification failed: %v", err)
 			}
@@ -223,6 +223,6 @@ func TestStackdriverPlugin(t *testing.T) {
 		}
 	}
 	if !srvMetricRcv || !cltMetricRcv {
-		t.Errorf("fail to receive metric request from both sides. client recieved: %v and server recieved: %v", cltMetricRcv, srvMetricRcv)
+		t.Errorf("fail to receive metric request from both sides. client received: %v and server received: %v", cltMetricRcv, srvMetricRcv)
 	}
 }

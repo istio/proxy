@@ -29,7 +29,6 @@ type TestSetup struct {
 	epoch int
 	ports *Ports
 
-	envoy             *Envoy
 	clientEnvoy       *Envoy
 	serverEnvoy       *Envoy
 	backend           *HTTPServer
@@ -40,7 +39,7 @@ type TestSetup struct {
 	noBackend         bool
 	disableHotRestart bool
 	checkDict         bool
-	startTcpBackend   bool
+	startTCPBackend   bool
 
 	FiltersBeforeMixer string
 
@@ -98,7 +97,7 @@ type TestSetup struct {
 	ClientNodeMetadata string
 
 	// Whether Tls is Enabled or not.
-	EnableTls bool
+	EnableTLS bool
 
 	// Format for client accesslog
 	AccesslogFormat string
@@ -106,11 +105,11 @@ type TestSetup struct {
 	// Format for server accesslog
 	ServerAccesslogFormat string
 
-	// TlsContext to be used.
-	TlsContext string
+	// TLSContext to be used.
+	TLSContext string
 
-	// ClusterTlsContext to be used.
-	ClusterTlsContext string
+	// ClusterTLSContext to be used.
+	ClusterTLSContext string
 
 	// UpstreamFilters chain in client.
 	UpstreamFiltersInClient string
@@ -157,8 +156,8 @@ func (s *TestSetup) SetNoBackend(no bool) {
 }
 
 // SetNoBackend set NoBackend flag
-func (s *TestSetup) SetStartTcpBackend(yes bool) {
-	s.startTcpBackend = yes
+func (s *TestSetup) SetStartTCPBackend(yes bool) {
+	s.startTCPBackend = yes
 }
 
 // SetFiltersBeforeEnvoyRouterInAppToClient sets the configurations of the filters that come before envoy.router http
@@ -167,19 +166,19 @@ func (s *TestSetup) SetFiltersBeforeEnvoyRouterInAppToClient(filters string) {
 	s.FiltersBeforeEnvoyRouterInAppToClient = filters
 }
 
-// SetEnableTls sets EnableTls.
-func (s *TestSetup) SetEnableTls(enableTls bool) {
-	s.EnableTls = enableTls
+// SetEnableTLS sets EnableTLS.
+func (s *TestSetup) SetEnableTLS(enableTLS bool) {
+	s.EnableTLS = enableTLS
 }
 
-// SetTlsContext sets TLS COntext.
-func (s *TestSetup) SetTlsContext(tlsContext string) {
-	s.TlsContext = tlsContext
+// SetTLSContext sets TLS COntext.
+func (s *TestSetup) SetTLSContext(tlsContext string) {
+	s.TLSContext = tlsContext
 }
 
-// SetTlsContext sets TLS COntext.
-func (s *TestSetup) SetClusterTlsContext(clusterTlsContext string) {
-	s.ClusterTlsContext = clusterTlsContext
+// SetTLSContext sets TLS COntext.
+func (s *TestSetup) SetClusterTLSContext(clusterTLSContext string) {
+	s.ClusterTLSContext = clusterTLSContext
 }
 
 // SetFiltersBeforeEnvoyRouterInClientToProxy sets the configurations of the filters that come before envoy.router http
@@ -265,8 +264,8 @@ func (s *TestSetup) SetUpClientServerEnvoy() error {
 			}
 		}
 	}
-	if s.startTcpBackend {
-		s.tcpBackend, err = NewTCPServer(s.ports.BackendPort, "hello", s.EnableTls)
+	if s.startTCPBackend {
+		s.tcpBackend, err = NewTCPServer(s.ports.BackendPort, "hello", s.EnableTLS)
 		if err != nil {
 			log.Printf("unable to create TCP server %v", err)
 		} else {
