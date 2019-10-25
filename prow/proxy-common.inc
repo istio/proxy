@@ -16,10 +16,6 @@ WD=$(dirname $0)
 WD=$(cd $WD; pwd)
 ROOT=$(dirname $WD)
 
-#######################################
-# Presubmit script triggered by Prow. #
-#######################################
-
 # Exit immediately for non zero status
 set -e
 # Check unset variables
