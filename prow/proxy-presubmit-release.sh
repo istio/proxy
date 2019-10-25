@@ -14,4 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-prow/proxy-postsubmit.sh
+WD=$(dirname $0)
+WD=$(cd $WD; pwd)
+ROOT=$(dirname $WD)
+
+#######################################
+# Presubmit script triggered by Prow. #
+#######################################
+
+source "${WD}/proxy-common.inc"
+
+echo 'Test building release artifacts'
+make test_release
+make artifacts ARTIFACTS_DIR="${HOME}"
