@@ -175,6 +175,9 @@ build:release --strip=always
 # Release builds with debug symbols
 build:release-symbol -c opt
 
+# Debug builds
+build:debug -c dbg
+
 # Add compile option for all C++ files
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat

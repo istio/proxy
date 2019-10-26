@@ -102,4 +102,13 @@ container_pull(
     repository = "distroless/cc",
 )
 
+container_pull(
+    name = "bionic",
+    # Latest as of 10/21/2019. To update, remove this line, re-build, and copy the suggested digest.
+    digest = "sha256:3e83eca7870ee14a03b8026660e71ba761e6919b6982fb920d10254688a363d4",
+    registry = "index.docker.io",
+    repository = "library/ubuntu",
+    tag = "bionic",
+)
+
 # End of docker dependencies
