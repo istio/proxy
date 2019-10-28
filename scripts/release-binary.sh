@@ -141,14 +141,14 @@ do
     //tools/docker:envoy_distroless \
     //tools/docker:envoy_ubuntu
 
-  if [ -n "${DST}" -a -n "${PUSH_DOCKER_IMAGE}"]; then
+  if [ -n "${DST}" -a -n "${PUSH_DOCKER_IMAGE}" ]; then
     echo "Pushing ${config} docker image"
     bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
       //tools/docker:push_envoy_distroless \
       //tools/docker:push_envoy_ubuntu
   fi
 
-  if [ -n "${PACKAGE_BASE_NAME}"]; then
+  if [ -n "${PACKAGE_BASE_NAME}" ]; then
     echo "Building ${config} debian package"
     BINARY_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.deb"
     SHA256_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.sha256"
