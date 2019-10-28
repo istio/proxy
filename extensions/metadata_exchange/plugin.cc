@@ -104,10 +104,6 @@ FilterHeadersStatus PluginContext::onRequestHeaders() {
     removeRequestHeader(ExchangeMetadataHeader);
     auto downstream_metadata_bytes =
         Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    google::protobuf::Struct metadata;
-    metadata.ParseFromArray(downstream_metadata_bytes.data(),
-                            downstream_metadata_bytes.size());
-
     setFilterState(::Wasm::Common::kDownstreamMetadataKey,
                    downstream_metadata_bytes);
   }
