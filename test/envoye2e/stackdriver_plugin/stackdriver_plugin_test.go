@@ -185,7 +185,7 @@ func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
 
 var wantTrafficReq = &edgespb.ReportTrafficAssertionsRequest{
 	Parent:  "projects/test-project",
-	MeshUid: "//cloudresourcemanager.googleapis.com/projects/test-project/meshes/unknown",
+	MeshUid: "unknown",
 	TrafficAssertions: []*edgespb.TrafficAssertion{
 		&edgespb.TrafficAssertion{
 			Protocol:                    edgespb.TrafficAssertion_PROTOCOL_HTTP,
