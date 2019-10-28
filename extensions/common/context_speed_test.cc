@@ -51,7 +51,6 @@ constexpr absl::string_view node_metadata_json = R"###(
 )###";
 
 static void BM_GenericStructParser(benchmark::State& state) {
-  int outputBytes = 0;
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
   JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
@@ -61,18 +60,16 @@ static void BM_GenericStructParser(benchmark::State& state) {
   for (auto _ : state) {
     google::protobuf::Struct test_struct;
     test_struct.ParseFromArray(bytes.data(), bytes.size());
-    outputBytes += test_struct.SpaceUsed();
+    benchmark::DoNotOptimize(test_struct);
 
     NodeInfo node_info;
     extractNodeMetadataGeneric(test_struct, &node_info);
-    outputBytes += node_info.SpaceUsed();
+    benchmark::DoNotOptimize(node_info);
   }
-  benchmark::DoNotOptimize(outputBytes);
 }
 BENCHMARK(BM_GenericStructParser);
 
 static void BM_CustomStructParser(benchmark::State& state) {
-  int outputBytes = 0;
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
   JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
@@ -82,18 +79,16 @@ static void BM_CustomStructParser(benchmark::State& state) {
   for (auto _ : state) {
     google::protobuf::Struct test_struct;
     test_struct.ParseFromArray(bytes.data(), bytes.size());
-    outputBytes += test_struct.SpaceUsed();
+    benchmark::DoNotOptimize(test_struct);
 
     NodeInfo node_info;
     extractNodeMetadata(test_struct, &node_info);
-    outputBytes += node_info.SpaceUsed();
+    benchmark::DoNotOptimize(node_info);
   }
-  benchmark::DoNotOptimize(outputBytes);
 }
 BENCHMARK(BM_CustomStructParser);
 
 static void BM_MessageParser(benchmark::State& state) {
-  int outputBytes = 0;
   NodeInfo node_info;
   JsonParseOptions json_parse_options;
   JsonStringToMessage(std::string(node_metadata_json), &node_info,
@@ -103,9 +98,8 @@ static void BM_MessageParser(benchmark::State& state) {
   for (auto _ : state) {
     NodeInfo test_info;
     test_info.ParseFromArray(bytes.data(), bytes.size());
-    outputBytes += test_info.SpaceUsed();
+    benchmark::DoNotOptimize(test_info);
   }
-  benchmark::DoNotOptimize(outputBytes);
 }
 BENCHMARK(BM_MessageParser);
 
