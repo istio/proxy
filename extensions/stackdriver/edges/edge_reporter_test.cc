@@ -103,7 +103,7 @@ const char kPeerInfo[] = R"(
 
 const char kWantGrpcRequest[] = R"(
   parent: "projects/test_project"
-  mesh_uid: "//cloudresourcemanager.googleapis.com/projects/test_project/meshes/test-mesh"
+  mesh_uid: "test-mesh"
   traffic_assertions: {
     protocol: PROTOCOL_HTTP
     destination_service_name: "httpbin.org"

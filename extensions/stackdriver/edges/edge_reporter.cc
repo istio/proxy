@@ -78,9 +78,7 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
   if (mesh_id.empty()) {
     mesh_id = "unknown";
   }
-  absl::StrAppend(current_request_->mutable_mesh_uid(),
-                  "//cloudresourcemanager.googleapis.com/projects/", project_id,
-                  "/meshes/", mesh_id);
+  current_request_->set_mesh_uid(mesh_id);
 
   instanceFromMetadata(local_node_info, &node_instance_);
 };
