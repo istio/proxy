@@ -46,20 +46,6 @@ using NullPluginRootRegistry =
 constexpr StringView ExchangeMetadataHeader = "x-envoy-peer-metadata";
 constexpr StringView ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
 
-// DownstreamMetadataKey is the key in the request metadata for downstream peer
-// metadata
-constexpr StringView DownstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.downstream";
-constexpr StringView DownstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.downstream_id";
-
-// UpstreamMetadataKey is the key in the request metadata for downstream peer
-// metadata
-constexpr StringView UpstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.upstream";
-constexpr StringView UpstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.upstream_id";
-
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.

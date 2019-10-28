@@ -246,35 +246,28 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_it->second;
-    setMetadata(config_->filter_direction_ == FilterDirection::Downstream
-                    ? UpstreamMetadataKey
-                    : DownstreamMetadataKey,
-                val);
+    setFilterState(config_->filter_direction_ == FilterDirection::Downstream
+                       ? UpstreamMetadataKey
+                       : DownstreamMetadataKey,
+                   val.SerializeAsString());
   }
   const auto key_metadata_id_it =
       value_struct.fields().find(ExchangeMetadataHeaderId);
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_it->second;
-    setMetadata(config_->filter_direction_ == FilterDirection::Downstream
-                    ? UpstreamMetadataIdKey
-                    : DownstreamMetadataIdKey,
-                val);
+    setFilterState(config_->filter_direction_ == FilterDirection::Downstream
+                       ? UpstreamMetadataIdKey
+                       : DownstreamMetadataIdKey,
+                   val.SerializeAsString());
   }
 }
 
-void MetadataExchangeFilter::setMetadata(const std::string& key,
-                                         Envoy::ProtobufWkt::Value& value) {
+void MetadataExchangeFilter::setFilterState(const std::string& key,
+                                            absl::string_view value) {
   read_callbacks_->connection().streamInfo().filterState().setData(
       key,
       std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(value),
       StreamInfo::FilterState::StateType::Mutable);
-}
-
-void MetadataExchangeFilter::setMetadataStringValue(
-    const std::string& key, const std::string& str_value) {
-  Envoy::ProtobufWkt::Value value;
-  value.set_string_value(str_value);
-  setMetadata(key, value);
 }
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
