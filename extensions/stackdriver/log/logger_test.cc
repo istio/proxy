@@ -54,7 +54,6 @@ wasm::common::NodeInfo nodeInfo() {
   node_info.set_namespace_("test_namespace");
   node_info.set_name("test_pod");
   node_info.set_workload_name("test_workload");
-  node_info.set_mesh_id("mesh");
   return node_info;
 }
 
@@ -99,7 +98,6 @@ google::logging::v2::WriteLogEntriesRequest expectedRequest(
   (*top_label_map)["destination_name"] = node_info.name();
   (*top_label_map)["destination_workload"] = node_info.workload_name();
   (*top_label_map)["destination_namespace"] = node_info.namespace_();
-  (*top_label_map)["mesh_uid"] = node_info.mesh_id();
   for (int i = 0; i < log_entry_count; i++) {
     auto* new_entry = req.mutable_entries()->Add();
     *new_entry->mutable_timestamp() = TimeUtil::SecondsToTimestamp(0);

@@ -34,8 +34,7 @@ const ServerRequestCountJSON = `{
 		  "source_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
 		  "source_principal":"",
 		  "source_workload_name":"productpage-v1",
-		  "source_workload_namespace":"default",
-		  "mesh_uid": "mesh"
+		  "source_workload_namespace":"default"
 	   }
 	},
 	"resource":{
@@ -78,8 +77,7 @@ const ClientRequestCountJSON = `{
 		  "source_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
 		  "source_principal":"",
 		  "source_workload_name":"productpage-v1",
-		  "source_workload_namespace":"default",
-		  "mesh_uid": "mesh"
+		  "source_workload_namespace":"default"
 	   }
 	},
 	"resource":{
@@ -118,8 +116,7 @@ const ServerAccessLogJSON = `{
    "labels":{
       "destination_name":"ratings-v1-84975bc778-pxz2w",
       "destination_namespace":"default",
-      "destination_workload":"ratings-v1",
-      "mesh_uid": "mesh"
+      "destination_workload":"ratings-v1"
    },
    "entries":[
       {

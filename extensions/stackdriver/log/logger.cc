@@ -68,7 +68,6 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   (*label_map)["destination_name"] = local_node_info.name();
   (*label_map)["destination_workload"] = local_node_info.workload_name();
   (*label_map)["destination_namespace"] = local_node_info.namespace_();
-  (*label_map)["mesh_uid"] = local_node_info.mesh_id();
   log_request_size_limit_ = log_request_size_limit;
   exporter_ = std::move(exporter);
 }
