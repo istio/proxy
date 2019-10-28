@@ -34,8 +34,8 @@ const ServerRequestCountJSON = `{
 		  "source_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
 		  "source_principal":"",
 		  "source_workload_name":"productpage-v1",
-        "source_workload_namespace":"default",
-        "mesh_uid": "mesh"
+		  "source_workload_namespace":"default",
+		  "mesh_uid": "mesh"
 	   }
 	},
 	"resource":{
@@ -78,8 +78,8 @@ const ClientRequestCountJSON = `{
 		  "source_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
 		  "source_principal":"",
 		  "source_workload_name":"productpage-v1",
-        "source_workload_namespace":"default",
-        "mesh_uid": "mesh"
+		  "source_workload_namespace":"default",
+		  "mesh_uid": "mesh"
 	   }
 	},
 	"resource":{
