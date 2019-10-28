@@ -340,6 +340,10 @@ class Server : public Envoy::Network::FilterChainManager,
     return connection_balancer_;
   }
 
+  envoy::api::v2::core::TrafficDirection direction() const override {
+    return envoy::api::v2::core::TrafficDirection::UNSPECIFIED;
+  }
+
   // TODO does this affect socket recv buffer size?  Only for new connections?
   virtual uint32_t perConnectionBufferLimitBytes() const override;
 
