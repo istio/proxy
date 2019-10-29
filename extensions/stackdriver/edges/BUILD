@@ -17,6 +17,19 @@
 
 licenses(["notice"])
 
+# uncomment the following go_proto_library section to generate
+# the edges golang library when needed
+#
+# load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+#
+# go_proto_library(
+#     name = "edges_go_proto",
+#     compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+#     importpath = "cloud.google.com/go/meshtelemetry/v1alpha1",
+#     proto = "edges_proto",
+#     visibility = ["//visibility:public"],
+# )
+
 cc_proto_library(
     name = "edges_cc_proto",
     visibility = ["//visibility:public"],
