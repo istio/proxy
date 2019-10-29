@@ -46,7 +46,7 @@ NULL_PLUGIN_ROOT_REGISTRY;
 
 namespace {
 
-bool serializeToStringDeterministic(const google::protobuf::Value& metadata,
+bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
                                     std::string* metadata_bytes) {
   google::protobuf::io::StringOutputStream md(metadata_bytes);
   google::protobuf::io::CodedOutputStream mcs(&md);
@@ -71,9 +71,9 @@ void PluginRootContext::updateMetadataValue() {
     return;
   }
 
-  google::protobuf::Value metadata;
-  const auto status = ::Wasm::Common::extractNodeMetadataValue(
-      node_metadata, metadata.mutable_struct_value());
+  google::protobuf::Struct metadata;
+  const auto status =
+      ::Wasm::Common::extractNodeMetadataValue(node_metadata, &metadata);
   if (!status.ok()) {
     logWarn(status.message().ToString());
     return;
@@ -104,15 +104,16 @@ FilterHeadersStatus PluginContext::onRequestHeaders() {
     removeRequestHeader(ExchangeMetadataHeader);
     auto downstream_metadata_bytes =
         Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    setFilterState(DownstreamMetadataKey, downstream_metadata_bytes);
+    setFilterState(::Wasm::Common::kDownstreamMetadataKey,
+                   downstream_metadata_bytes);
   }
 
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setFilterStateStringValue(DownstreamMetadataIdKey,
-                              downstream_metadata_id->view());
+    setFilterState(::Wasm::Common::kDownstreamMetadataIdKey,
+                   downstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();
@@ -137,15 +138,16 @@ FilterHeadersStatus PluginContext::onResponseHeaders() {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
         Base64::decodeWithoutPadding(upstream_metadata_value->view());
-    setFilterState(UpstreamMetadataKey, upstream_metadata_bytes);
+    setFilterState(::Wasm::Common::kUpstreamMetadataKey,
+                   upstream_metadata_bytes);
   }
 
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeaderId);
-    setFilterStateStringValue(UpstreamMetadataIdKey,
-                              upstream_metadata_id->view());
+    setFilterState(::Wasm::Common::kUpstreamMetadataIdKey,
+                   upstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();
