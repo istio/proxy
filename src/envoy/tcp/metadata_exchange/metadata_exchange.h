@@ -126,15 +126,8 @@ class MetadataExchangeFilter : public Network::Filter {
   // form of google::protobuf::any which encapsulates google::protobuf::struct.
   void tryReadProxyData(Buffer::Instance& data);
 
-  // Helper function to set Dynamic metadata.
-  void setMetadata(const std::string& key, ProtobufWkt::Value& value);
-
-  // Helper function to set Dynamic metadata string value.
-  void setMetadataStringValue(const std::string& key, const std::string& value);
-
-  // Helper function to set Dynamic metadata string value.
-  void setMetadataStructValue(const std::string& key,
-                              const ProtobufWkt::Value& value);
+  // Helper function to share the metadata with other filters.
+  void setFilterState(const std::string& key, absl::string_view value);
 
   // Helper function to get Dynamic metadata.
   void getMetadata(google::protobuf::Struct* metadata);

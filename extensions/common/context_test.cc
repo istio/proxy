@@ -33,24 +33,26 @@ using namespace google::protobuf;
 using namespace google::protobuf::util;
 using namespace wasm::common;
 
-// Test all possible metadata field.
-TEST(ContextTest, extractNodeMetadata) {
-  std::string node_metadata_json = R"###(
+constexpr absl::string_view node_metadata_json = R"###(
 {
-   "namespace":"test_namespace",
-   "platform_metadata":{
+   "NAMESPACE":"test_namespace",
+   "PLATFORM_METADATA":{
       "gcp_project":"test_project",
       "gcp_cluster_location":"test_location",
       "gcp_cluster_name":"test_cluster"
    },
-   "workload_name":"test_workload",
-   "owner":"test_owner",
-   "name":"test_pod"
+   "WORKLOAD_NAME":"test_workload",
+   "OWNER":"test_owner",
+   "NAME":"test_pod"
 }
 )###";
+
+// Test all possible metadata field.
+TEST(ContextTest, extractNodeMetadata) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
+                      json_parse_options);
   NodeInfo node_info;
   Status status = extractNodeMetadata(metadata_struct, &node_info);
   EXPECT_EQ(status, Status::OK);
@@ -82,8 +84,8 @@ TEST(ContextTest, extractNodeMetadataNoMetadataField) {
 TEST(ContextTest, extractNodeMetadataMissingMetadata) {
   std::string node_metadata_json = R"###(
 {
-   "namespace":"test_namespace",
-   "name":"test_pod"
+   "NAMESPACE":"test_namespace",
+   "NAME":"test_pod"
 }
 )###";
   google::protobuf::Struct metadata_struct;
@@ -96,22 +98,6 @@ TEST(ContextTest, extractNodeMetadataMissingMetadata) {
   EXPECT_EQ(node_info.namespace_(), "test_namespace");
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
-  EXPECT_EQ(node_info.platform_metadata_size(), 0);
-}
-
-// Test wrong type of GCP metadata.
-TEST(ContextTest, extractNodeMetadataWrongGCPMetadata) {
-  std::string node_metadata_json = R"###(
-{
-   "platform_metadata":"some string",
-}
-)###";
-  google::protobuf::Struct metadata_struct;
-  JsonParseOptions json_parse_options;
-  JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
-  NodeInfo node_info;
-  Status status = extractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_NE(status, Status::OK);
   EXPECT_EQ(node_info.platform_metadata_size(), 0);
 }
 
@@ -133,16 +119,16 @@ TEST(ContextTest, extractNodeMetadataUnknownField) {
 TEST(ContextTest, extractNodeMetadataValue) {
   google::protobuf::Struct metadata_struct;
   auto node_metadata_map = metadata_struct.mutable_fields();
-  (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("namespace,labels");
-  (*node_metadata_map)["namespace"].set_string_value("default");
-  (*node_metadata_map)["labels"].set_string_value("{app, details}");
+  (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("NAMESPACE,LABELS");
+  (*node_metadata_map)["NAMESPACE"].set_string_value("default");
+  (*node_metadata_map)["LABELS"].set_string_value("{app, details}");
   google::protobuf::Struct value_struct;
   const auto status = extractNodeMetadataValue(metadata_struct, &value_struct);
   EXPECT_EQ(status, Status::OK);
-  auto namespace_iter = value_struct.fields().find("namespace");
+  auto namespace_iter = value_struct.fields().find("NAMESPACE");
   EXPECT_TRUE(namespace_iter != value_struct.fields().end());
   EXPECT_EQ(namespace_iter->second.string_value(), "default");
-  auto label_iter = value_struct.fields().find("labels");
+  auto label_iter = value_struct.fields().find("LABELS");
   EXPECT_TRUE(label_iter != value_struct.fields().end());
   EXPECT_EQ(label_iter->second.string_value(), "{app, details}");
 }

@@ -19,6 +19,7 @@ licenses(["notice"])
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_binary",
     "envoy_cc_library",
     "envoy_cc_test",
     "envoy_package",
@@ -75,6 +76,19 @@ envoy_cc_test(
     name = "context_test",
     size = "small",
     srcs = ["context_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":context",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
+)
+
+envoy_cc_binary(
+    name = "context_speed_test",
+    srcs = ["context_speed_test.cc"],
+    external_deps = [
+        "benchmark",
+    ],
     repository = "@envoy",
     deps = [
         ":context",
