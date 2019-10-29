@@ -34,7 +34,7 @@ namespace Common {
 const size_t DefaultNodeCacheMaxSize = 500;
 const wasm::common::NodeInfo EmptyNodeInfo;
 
-typedef std::shared_ptr<wasm::common::NodeInfo> NodeInfoPtr;
+typedef std::shared_ptr<const wasm::common::NodeInfo> NodeInfoPtr;
 
 class NodeInfoCache {
  public:

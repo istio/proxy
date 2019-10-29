@@ -56,7 +56,7 @@ NodeInfoPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
                                        StringView peer_metadata_key) {
   if (max_cache_size_ < 0) {
     // Cache is disabled, fetch node info from host.
-    NodeInfoPtr node_info_ptr = std::make_shared<wasm::common::NodeInfo>();
+    auto node_info_ptr = std::make_shared<wasm::common::NodeInfo>();
     if (getNodeInfo(peer_metadata_key, node_info_ptr.get())) {
       return node_info_ptr;
     }
@@ -79,13 +79,11 @@ NodeInfoPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
     cache_.erase(cache_.begin(), std::next(it, max_cache_size_ / 4));
     LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
-
-  auto emplacement =
-      cache_.emplace(peer_id, std::make_shared<wasm::common::NodeInfo>());
-  if (getNodeInfo(peer_metadata_key, emplacement.first->second.get())) {
+  auto node_info_ptr = std::make_shared<wasm::common::NodeInfo>();
+  if (getNodeInfo(peer_metadata_key, node_info_ptr.get())) {
+    auto emplacement = cache_.emplace(peer_id, std::move(node_info_ptr));
     return emplacement.first->second;
   }
-  cache_.erase(peer_id);
   return nullptr;
 }
 
