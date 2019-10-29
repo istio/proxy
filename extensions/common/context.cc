@@ -74,7 +74,40 @@ void extractServiceName(const std::string& fqdn, std::string* service_name) {
 using google::protobuf::util::JsonStringToMessage;
 using google::protobuf::util::MessageToJsonString;
 
+// Custom-written and lenient struct parser.
 google::protobuf::util::Status extractNodeMetadata(
+    const google::protobuf::Struct& metadata,
+    wasm::common::NodeInfo* node_info) {
+  for (const auto& it : metadata.fields()) {
+    if (it.first == "NAME") {
+      node_info->set_name(it.second.string_value());
+    } else if (it.first == "NAMESPACE") {
+      node_info->set_namespace_(it.second.string_value());
+    } else if (it.first == "OWNER") {
+      node_info->set_owner(it.second.string_value());
+    } else if (it.first == "WORKLOAD_NAME") {
+      node_info->set_workload_name(it.second.string_value());
+    } else if (it.first == "ISTIO_VERSION") {
+      node_info->set_istio_version(it.second.string_value());
+    } else if (it.first == "MESH_ID") {
+      node_info->set_mesh_id(it.second.string_value());
+    } else if (it.first == "LABELS") {
+      auto* labels = node_info->mutable_labels();
+      for (const auto& labels_it : it.second.struct_value().fields()) {
+        (*labels)[labels_it.first] = labels_it.second.string_value();
+      }
+    } else if (it.first == "PLATFORM_METADATA") {
+      auto* platform_metadata = node_info->mutable_platform_metadata();
+      for (const auto& platform_it : it.second.struct_value().fields()) {
+        (*platform_metadata)[platform_it.first] =
+            platform_it.second.string_value();
+      }
+    }
+  }
+  return google::protobuf::util::Status::OK;
+}
+
+google::protobuf::util::Status extractNodeMetadataGeneric(
     const google::protobuf::Struct& metadata,
     wasm::common::NodeInfo* node_info) {
   google::protobuf::util::JsonOptions json_options;

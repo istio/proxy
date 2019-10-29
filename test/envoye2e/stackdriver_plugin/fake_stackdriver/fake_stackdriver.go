@@ -23,6 +23,7 @@ import (
 
 	grpc "google.golang.org/grpc"
 
+	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
@@ -40,6 +41,11 @@ type FakeStackdriverMetricServer struct {
 type FakeStackdriverLoggingServer struct {
 	delay         time.Duration
 	RcvLoggingReq chan *logging.WriteLogEntriesRequest
+}
+
+type MeshEdgesServiceServer struct {
+	delay                   time.Duration
+	RcvTrafficAssertionsReq chan *edgespb.ReportTrafficAssertionsRequest
 }
 
 // ListMonitoredResourceDescriptors implements ListMonitoredResourceDescriptors method.
@@ -111,8 +117,15 @@ func (s *FakeStackdriverLoggingServer) ListMonitoredResourceDescriptors(context.
 	return &logging.ListMonitoredResourceDescriptorsResponse{}, nil
 }
 
+// ReportTrafficAssertions is defined by the Mesh Edges Service.
+func (e *MeshEdgesServiceServer) ReportTrafficAssertions(ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (*edgespb.ReportTrafficAssertionsResponse, error) {
+	e.RcvTrafficAssertionsReq <- req
+	time.Sleep(e.delay)
+	return &edgespb.ReportTrafficAssertionsResponse{}, nil
+}
+
 // NewFakeStackdriver creates a new fake Stackdriver server.
-func NewFakeStackdriver(port uint16, delay time.Duration) (*FakeStackdriverMetricServer, *FakeStackdriverLoggingServer) {
+func NewFakeStackdriver(port uint16, delay time.Duration) (*FakeStackdriverMetricServer, *FakeStackdriverLoggingServer, *MeshEdgesServiceServer) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 	grpcServer := grpc.NewServer()
 	fsdms := &FakeStackdriverMetricServer{
@@ -123,8 +136,13 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*FakeStackdriverMetri
 		delay:         delay,
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
+	edgesSvc := &MeshEdgesServiceServer{
+		delay:                   delay,
+		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 2),
+	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
 	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
+	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
 
 	go func() {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -136,5 +154,5 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*FakeStackdriverMetri
 			log.Fatalf("fake stackdriver server terminated abnormally: %v", err)
 		}
 	}()
-	return fsdms, fsdls
+	return fsdms, fsdls, edgesSvc
 }

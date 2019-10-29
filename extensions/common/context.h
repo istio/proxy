@@ -122,6 +122,9 @@ enum class TrafficDirection : int64_t {
 google::protobuf::util::Status extractNodeMetadata(
     const google::protobuf::Struct& metadata,
     wasm::common::NodeInfo* node_info);
+google::protobuf::util::Status extractNodeMetadataGeneric(
+    const google::protobuf::Struct& metadata,
+    wasm::common::NodeInfo* node_info);
 
 // Read from local node metadata and populate node_info.
 google::protobuf::util::Status extractLocalNodeMetadata(
