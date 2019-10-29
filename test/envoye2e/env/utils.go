@@ -17,7 +17,10 @@ package env
 import (
 	"fmt"
 	"go/build"
+	"os/exec"
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 func GetDefaultIstioOut() string {
@@ -26,5 +29,7 @@ func GetDefaultIstioOut() string {
 
 func GetDefaultEnvoyBin() string {
 	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
-	return "bazel-bin/src/envoy/"
+	// Instead we rely on symbolic link src/envoy/envoy in the workspace
+	workspace, _ := exec.Command("bazel", "info", "workspace").Output()
+	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
 }

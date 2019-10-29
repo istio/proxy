@@ -115,10 +115,7 @@ filter_chains:
               code:
                 inline_string: "envoy.wasm.null.stackdriver"
             configuration: >-
-              {
-                "testMonitoringEndpoint": "127.0.0.1:{{ .Vars.SDPort }}",
-                "testLoggingEndpoint": "127.0.0.1:{{ .Vars.SDPort }}",
-              }
+              {}
       - name: envoy.router
       route_config:
         name: client
@@ -164,10 +161,7 @@ filter_chains:
               code:
                 inline_string: "envoy.wasm.null.stackdriver"
             configuration: >-
-              {
-                "testMonitoringEndpoint": "127.0.0.1:{{ .Vars.SDPort }}",
-                "testLoggingEndpoint": "127.0.0.1:{{ .Vars.SDPort }}",
-              }
+              {}
       - name: envoy.router
       route_config:
         name: server

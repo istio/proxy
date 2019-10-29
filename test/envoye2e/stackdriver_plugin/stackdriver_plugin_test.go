@@ -229,7 +229,6 @@ func verifyTrafficAssertionsReq(got *edgespb.ReportTrafficAssertionsRequest) err
 
 func TestStackdriverPlugin(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
-	fsdm, fsdl := fs.NewFakeStackdriver(12312, 0)
 	fsdm, fsdl, edgesSvc := fs.NewFakeStackdriver(12312, 0)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
