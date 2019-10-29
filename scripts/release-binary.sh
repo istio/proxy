@@ -72,11 +72,6 @@ elif [ -n "${DST}" ]; then
   exit 1
 fi
 
-# Symlinks don't work, use full path as a temporary workaround.
-# See: https://github.com/istio/istio/issues/15714 for details.
-# k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
-BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
-
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"
 
@@ -89,93 +84,83 @@ if [ -n "${DST}" ]; then
     || echo 'Building a new binary.'
 fi
 
-# Build the release binary.
-BINARY_NAME="${HOME}/envoy-alpha-${SHA}.tar.gz"
-SHA256_NAME="${HOME}/envoy-alpha-${SHA}.sha256"
-bazel build ${BAZEL_BUILD_ARGS} --config=release //src/envoy:envoy_tar
-BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
-cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
-
-if [ -n "${DST}" ]; then
-  # Copy it to the bucket.
-  echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-  gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-fi
-
-# Build the release package.
-BINARY_NAME="${HOME}/istio-proxy-${SHA}.deb"
-SHA256_NAME="${HOME}/istio-proxy-${SHA}.sha256"
-bazel build ${BAZEL_BUILD_ARGS} --config=release //tools/deb:istio-proxy
-BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
-cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
-
-if [ -n "${DST}" ]; then
-  # Copy it to the bucket.
-  echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-  gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-fi
-
-# Build the release binary with symbols.
-BINARY_NAME="${HOME}/envoy-symbol-${SHA}.tar.gz"
-SHA256_NAME="${HOME}/envoy-symbol-${SHA}.sha256"
-bazel build ${BAZEL_BUILD_ARGS} --config=release-symbol //src/envoy:envoy_tar
-BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
-cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
-
-if [ -n "${DST}" ]; then
-  # Copy it to the bucket.
-  echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-  gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-fi
-
-# Build the release binary with symbols and AddressSanitizer (ASan).
-# NOTE: libc++ is dynamically linked in this build.
-BINARY_NAME="${HOME}/envoy-asan-${SHA}.tar.gz"
-SHA256_NAME="${HOME}/envoy-asan-${SHA}.sha256"
-bazel build ${BAZEL_BUILD_ARGS} ${BAZEL_CONFIG_ASAN} --config=release-symbol //src/envoy:envoy_tar
-BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
-cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
-
-if [ -n "${DST}" ]; then
-  # Copy it to the bucket.
-  echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-  gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-fi
-
-# Symlinks don't work, use full path as a temporary workaround.
+# BAZEL_OUT: Symlinks don't work, use full path as a temporary workaround.
 # See: https://github.com/istio/istio/issues/15714 for details.
-# k8-dbg is the output directory for x86_64 debug builds (-c dbg).
-BAZEL_OUT="$(bazel info output_path)/k8-dbg/bin"
+# k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
+# k8-dbg is the output directory for -c dbg builds.
+for config in release release-symbol debug
+do
+  PUSH_DOCKER_IMAGE="true"
+  case $config in
+    "release" )
+      CONFIG_PARAMS="--config=release"
+      BINARY_BASE_NAME="envoy-alpha"
+      PACKAGE_BASE_NAME="istio-proxy"
+      BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
+      ;;
+    "release-symbol")
+      CONFIG_PARAMS="--config=release-symbol"
+      BINARY_BASE_NAME="envoy-symbol"
+      PACKAGE_BASE_NAME=""
+      BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
+      ;;
+    "asan")
+      # NOTE: libc++ is dynamically linked in this build.
+      PUSH_DOCKER_IMAGE=""
+      CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
+      BINARY_BASE_NAME="envoy-asan"
+      PACKAGE_BASE_NAME=""
+      BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
+      ;;
+    "debug")
+      CONFIG_PARAMS="--config=debug"
+      BINARY_BASE_NAME="envoy-debug"
+      PACKAGE_BASE_NAME="istio-proxy-debug"
+      BAZEL_OUT="$(bazel info output_path)/k8-dbg/bin"
+      ;;
+  esac
 
-# Build the debug binary.
-BINARY_NAME="${HOME}/envoy-debug-${SHA}.tar.gz"
-SHA256_NAME="${HOME}/envoy-debug-${SHA}.sha256"
-bazel build ${BAZEL_BUILD_ARGS} -c dbg //src/envoy:envoy_tar
-BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
-cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
+  export BUILD_CONFIG=${config}
 
-if [ -n "${DST}" ]; then
-  # Copy it to the bucket.
-  echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-  gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-fi
+  echo "Building ${config} proxy"
+  BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.tar.gz"
+  SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.sha256"
+  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //src/envoy:envoy_tar
+  BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
+  cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
+  sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 
-# Build the debug package.
-BINARY_NAME="${HOME}/istio-proxy-debug-${SHA}.deb"
-SHA256_NAME="${HOME}/istio-proxy-debug-${SHA}.sha256"
-bazel build ${BAZEL_BUILD_ARGS} -c dbg //tools/deb:istio-proxy
-BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
-cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-exit
-sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
+  if [ -n "${DST}" ]; then
+    # Copy it to the bucket.
+    echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
+    gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+  fi
 
-if [ -n "${DST}" ]; then
-  # Copy it to the bucket.
-  echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-  gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-fi
+  echo "Building ${config} docker image"
+  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
+    //tools/docker:envoy_distroless \
+    //tools/docker:envoy_ubuntu
+
+  if [ -n "${DST}" -a -n "${PUSH_DOCKER_IMAGE}" ]; then
+    echo "Pushing ${config} docker image"
+    bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
+      //tools/docker:push_envoy_distroless \
+      //tools/docker:push_envoy_ubuntu
+  fi
+
+  if [ -n "${PACKAGE_BASE_NAME}" ]; then
+    echo "Building ${config} debian package"
+    BINARY_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.deb"
+    SHA256_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.sha256"
+    bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //tools/deb:istio-proxy
+    BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
+    cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
+    sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
+
+    if [ -n "${DST}" ]; then
+      # Copy it to the bucket.
+      echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
+      gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+    fi
+  fi
+done

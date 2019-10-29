@@ -22,12 +22,7 @@ ROOT=$(dirname $WD)
 # Postsubmit script triggered by Prow. #
 ########################################
 
-# Exit immediately for non zero status
-set -e
-# Check unset variables
-set -u
-# Print commands
-set -x
+source "${WD}/proxy-common.inc"
 
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
@@ -35,12 +30,7 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   gcloud auth configure-docker
 fi
 
-GOPATH=/home/prow/go
-ROOT=/go/src
-rm -f "${HOME}/.bazelrc"
 GIT_SHA="$(git rev-parse --verify HEAD)"
-
-export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures"
 
 GCS_BUILD_BUCKET="${GCS_BUILD_BUCKET:-istio-build}"
 GCS_ARTIFACTS_BUCKET="${GCS_ARTIFACTS_BUCKET:-istio-artifacts}"

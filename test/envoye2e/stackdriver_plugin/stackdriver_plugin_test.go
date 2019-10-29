@@ -47,10 +47,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
-        {
-          "testMonitoringEndpoint": "localhost:12312",
-          "testLoggingEndpoint": "localhost:12312",
-        }`
+        {}`
 
 const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
@@ -70,10 +67,7 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
-        {
-          "testMonitoringEndpoint": "localhost:12312",
-          "testLoggingEndpoint": "localhost:12312",
-        }`
+        {}`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
@@ -101,8 +95,11 @@ const outboundNodeMetadata = `"NAMESPACE": "default",
  "version": "v1",
  "pod-template-hash": "84975bc778"
 },
+"MESH_ID": "mesh",
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "productpage-v1-84975bc778-pxz2w",`
+"NAME": "productpage-v1-84975bc778-pxz2w",
+"STACKDRIVER_MONITORING_ENDPOINT": "localhost:12312",
+"STACKDRIVER_LOGGING_ENDPOINT": "localhost:12312",`
 
 const inboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
@@ -130,8 +127,11 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
  "version": "v1",
  "pod-template-hash": "84975bc778"
 },
+"MESH_ID": "mesh",
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "ratings-v1-84975bc778-pxz2w",`
+"NAME": "ratings-v1-84975bc778-pxz2w",
+"STACKDRIVER_MONITORING_ENDPOINT": "localhost:12312",
+"STACKDRIVER_LOGGING_ENDPOINT": "localhost:12312",`
 
 func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
