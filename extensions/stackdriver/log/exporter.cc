@@ -42,19 +42,23 @@ namespace Stackdriver {
 namespace Log {
 
 ExporterImpl::ExporterImpl(RootContext* root_context,
-                           const std::string& logging_service_endpoint)
-    : export_call_(MetricType::Counter, "stackdriver_logging_filter",
-                   {MetricTag{"type", MetricTag::TagType::String},
-                    MetricTag{"success", MetricTag::TagType::Bool}}) {
+                           const std::string& logging_service_endpoint) {
   context_ = root_context;
-  success_callback_ = [this](google::protobuf::Empty&&) {
-    export_call_.increment(1, "logging", true);
+  Metric export_call(MetricType::Counter, "stackdriver_filter",
+                     {MetricTag{"type", MetricTag::TagType::String},
+                      MetricTag{"success", MetricTag::TagType::Bool}});
+  auto success_counter = export_call.resolve("logging", true);
+  auto failure_counter = export_call.resolve("logging", false);
+  success_callback_ = [success_counter](google::protobuf::Empty&&) {
+    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
+    incrementMetric(success_counter, 1);
     logDebug("successfully sent Stackdriver logging request");
   };
 
-  failure_callback_ = [this](GrpcStatus status, StringView message) {
+  failure_callback_ = [failure_counter](GrpcStatus status, StringView message) {
     // TODO(bianpengyuan): add retry.
-    export_call_.increment(1, "logging", false);
+    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
+    incrementMetric(failure_counter, 1);
     logWarn("Stackdriver logging api call error: " +
             std::to_string(static_cast<int>(status)) + std::string(message));
   };
