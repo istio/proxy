@@ -99,7 +99,7 @@ class StackdriverRootContext : public RootContext {
   std::unique_ptr<::Extensions::Stackdriver::Edges::EdgeReporter>
       edge_reporter_;
 
-  long int last_edge_report_call_nanos_;
+  long int last_edge_report_call_nanos_ = 0;
 
   long int edge_report_duration_nanos_;
 };
