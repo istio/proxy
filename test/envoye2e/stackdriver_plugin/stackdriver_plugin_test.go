@@ -67,7 +67,9 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
-        {}`
+        {
+          "max_peer_cache_size": -1
+        }`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",

@@ -111,8 +111,10 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
 
 void PluginRootContext::report(
     const ::Wasm::Common::RequestInfo& request_info) {
-  const auto& peer_node =
+  const auto peer_node_ptr =
       node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
+  const wasm::common::NodeInfo& peer_node =
+      peer_node_ptr ? *peer_node_ptr : ::Wasm::Common::EmptyNodeInfo;
 
   // map and overwrite previous mapping.
   istio_dimensions_.map(peer_node, request_info);

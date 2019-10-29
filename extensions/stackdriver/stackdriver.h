@@ -73,8 +73,9 @@ class StackdriverRootContext : public RootContext {
   bool enableServerAccessLog();
 
   // Gets peer node info. It checks the node info cache first, and then try to
-  // fetch it from host if cache miss.
-  const wasm::common::NodeInfo& getPeerNode();
+  // fetch it from host if cache miss. If cache is disabled, it will fetch from
+  // host directly.
+  ::Wasm::Common::NodeInfoPtr getPeerNode();
 
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();

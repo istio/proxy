@@ -29,47 +29,64 @@ using google::protobuf::util::Status;
 namespace Wasm {
 namespace Common {
 
-const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
-    StringView peer_metadata_id_key, StringView peer_metadata_key,
-    std::string* peer_id) {
-  if (!getStringValue({"filter_state", peer_metadata_id_key}, peer_id)) {
-    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
-    return cache_[""];
+namespace {
+
+// getNodeInfo fetches peer node info from host filter state. It returns true if
+// no error occurs.
+bool getNodeInfo(StringView peer_metadata_key,
+                 wasm::common::NodeInfo* node_info) {
+  google::protobuf::Struct metadata;
+  if (!getStructValue({"filter_state", peer_metadata_key}, &metadata)) {
+    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
+    return false;
   }
-  auto nodeinfo_it = cache_.find(*peer_id);
+
+  auto status = ::Wasm::Common::extractNodeMetadata(metadata, node_info);
+  if (status != Status::OK) {
+    LOG_DEBUG(absl::StrCat("cannot parse peer node metadata ",
+                           metadata.DebugString(), ": ", status.ToString()));
+    return false;
+  }
+  return true;
+}
+
+}  // namespace
+
+NodeInfoPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
+                                       StringView peer_metadata_key) {
+  if (max_cache_size_ < 0) {
+    // Cache is disabled, fetch node info from host.
+    NodeInfoPtr node_info_ptr = std::make_shared<wasm::common::NodeInfo>();
+    if (getNodeInfo(peer_metadata_key, node_info_ptr.get())) {
+      return node_info_ptr;
+    }
+    return nullptr;
+  }
+
+  std::string peer_id;
+  if (!getStringValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
+    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
+    return nullptr;
+  }
+  auto nodeinfo_it = cache_.find(peer_id);
   if (nodeinfo_it != cache_.end()) {
     return nodeinfo_it->second;
   }
 
   // Do not let the cache grow beyond max_cache_size_.
-  if (cache_.size() > max_cache_size_) {
+  if (int32_t(cache_.size()) > max_cache_size_) {
     auto it = cache_.begin();
     cache_.erase(cache_.begin(), std::next(it, max_cache_size_ / 4));
     LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
 
-  google::protobuf::Struct metadata;
-  if (!getStructValue({"filter_state", peer_metadata_key}, &metadata)) {
-    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
-    return cache_[""];
+  auto emplacement =
+      cache_.emplace(peer_id, std::make_shared<wasm::common::NodeInfo>());
+  if (getNodeInfo(peer_metadata_key, emplacement.first->second.get())) {
+    return emplacement.first->second;
   }
-
-  auto status =
-      ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[*peer_id]));
-  if (status != Status::OK) {
-    LOG_DEBUG(absl::StrCat("cannot parse peer node metadata ",
-                           metadata.DebugString(), ": ", status.ToString()));
-    return cache_[""];
-  }
-
-  return cache_[*peer_id];
-}
-
-const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
-    absl::string_view peer_metadata_id_key,
-    absl::string_view peer_metadata_key) {
-  std::string peer_id;
-  return getPeerById(peer_metadata_id_key, peer_metadata_key, &peer_id);
+  cache_.erase(peer_id);
+  return nullptr;
 }
 
 }  // namespace Common

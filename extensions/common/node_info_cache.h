@@ -32,30 +32,28 @@ namespace Wasm {
 namespace Common {
 
 const size_t DefaultNodeCacheMaxSize = 500;
+const wasm::common::NodeInfo EmptyNodeInfo;
+
+typedef std::shared_ptr<wasm::common::NodeInfo> NodeInfoPtr;
 
 class NodeInfoCache {
  public:
-  // Fetches and caches Peer information by peerId
+  // Fetches and caches Peer information by peerId. An empty ptr will be
+  // returned if any error conditions.
   // TODO Remove this when it is cheap to directly get it from StreamInfo.
   // At present this involves de-serializing to google.Protobuf.Struct and
   // then another round trip to NodeInfo. This Should at most hold N entries.
   // Node is owned by the cache. Do not store a reference.
-  const wasm::common::NodeInfo& getPeerById(
-      absl::string_view peer_metadata_id_key,
-      absl::string_view peer_metadata_key);
+  NodeInfoPtr getPeerById(absl::string_view peer_metadata_id_key,
+                          absl::string_view peer_metadata_key);
 
-  // Fetches and caches peer information by peerId, also gets peer metadata id.
-  const wasm::common::NodeInfo& getPeerById(
-      absl::string_view peer_metadata_id_key,
-      absl::string_view peer_metadata_key, std::string* peer_metadata_id);
-
-  inline void setMaxCacheSize(size_t size) {
+  inline void setMaxCacheSize(int32_t size) {
     max_cache_size_ = size == 0 ? DefaultNodeCacheMaxSize : size;
   }
 
  private:
-  std::unordered_map<std::string, wasm::common::NodeInfo> cache_;
-  size_t max_cache_size_ = DefaultNodeCacheMaxSize;
+  std::unordered_map<std::string, NodeInfoPtr> cache_;
+  int32_t max_cache_size_ = DefaultNodeCacheMaxSize;
 };
 
 }  // namespace Common

@@ -149,6 +149,8 @@ bool StackdriverRootContext::onConfigure(
     edge_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
   }
 
+  node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
+
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -186,7 +188,9 @@ void StackdriverRootContext::onTick() {
 }
 
 void StackdriverRootContext::record(const RequestInfo& request_info) {
-  const auto& peer_node_info = getPeerNode();
+  const auto peer_node_info_ptr = getPeerNode();
+  const NodeInfo& peer_node_info =
+      peer_node_info_ptr ? *peer_node_info_ptr : ::Wasm::Common::EmptyNodeInfo;
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
   if (enableServerAccessLog()) {
@@ -210,7 +214,7 @@ inline bool StackdriverRootContext::isOutbound() {
   return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
 }
 
-const wasm::common::NodeInfo& StackdriverRootContext::getPeerNode() {
+::Wasm::Common::NodeInfoPtr StackdriverRootContext::getPeerNode() {
   bool isOutbound = this->isOutbound();
   const auto& id_key =
       isOutbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey;
