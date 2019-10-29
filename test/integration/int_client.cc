@@ -255,6 +255,7 @@ class Http1ClientConnection : public ClientConnection {
         stats_(),
         network_connection_(std::move(network_connection)),
         http_connection_(*network_connection_, stats_, *this,
+                         Envoy::Http::Http1Settings(),
                          Envoy::Http::DEFAULT_MAX_HEADERS_COUNT),
         read_filter_{std::make_shared<HttpClientReadFilter>(client.name(), id,
                                                             http_connection_)} {
