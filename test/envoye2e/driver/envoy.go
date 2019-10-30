@@ -91,14 +91,14 @@ func (e *Envoy) Run(p *Params) error {
 		return err
 	}
 
-	url := fmt.Sprintf("http://localhost:%v/ready", e.adminPort)
+	url := fmt.Sprintf("http://127.0.0.1:%v/ready", e.adminPort)
 	return env.WaitForHTTPServer(url)
 }
 
 func (e *Envoy) Cleanup() {
 	log.Printf("stop envoy ...\n")
 	if e.cmd != nil {
-		url := fmt.Sprintf("http://localhost:%v/quitquitquit", e.adminPort)
+		url := fmt.Sprintf("http://127.0.0.1:%v/quitquitquit", e.adminPort)
 		_, _, _ = env.HTTPPost(url, "", "")
 		done := make(chan error, 1)
 		go func() {
