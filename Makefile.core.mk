@@ -52,6 +52,7 @@ BAZEL_CONFIG_TSAN = # no working config
 endif
 
 BAZEL_OUTPUT_PATH := $(shell bazel info output_path)
+BAZEL_BUILD_TYPE ?= fastbuild
 
 build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) $(BAZEL_TARGETS)
@@ -65,17 +66,17 @@ clean:
 test:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) $(BAZEL_TARGETS)
-	env ENVOY_PATH=$(BAZEL_OUTPUT_PATH)/k8-fastbuild/bin/src/envoy/envoy GO111MODULE=on go test ./...
+	env ENVOY_PATH=$(BAZEL_OUTPUT_PATH)/k8-$(BAZEL_BUILD_TYPE)/bin/src/envoy/envoy GO111MODULE=on go test ./...
 
 test_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-	env ENVOY_PATH=$(BAZEL_OUTPUT_PATH)/k8-fastbuild/bin/src/envoy/envoy GO111MODULE=on go test ./...
+	env ENVOY_PATH=$(BAZEL_OUTPUT_PATH)/k8-$(BAZEL_BUILD_TYPE)/bin/src/envoy/envoy GO111MODULE=on go test ./...
 
 test_tsan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-	env ENVOY_PATH=$(BAZEL_OUTPUT_PATH)/k8-fastbuild/bin/src/envoy/envoy GO111MODULE=on go test ./...
+	env ENVOY_PATH=$(BAZEL_OUTPUT_PATH)/k8-$(BAZEL_BUILD_TYPE)/bin/src/envoy/envoy GO111MODULE=on go test ./...
 
 check:
 	@echo >&2 "Please use \"make lint\" instead."
