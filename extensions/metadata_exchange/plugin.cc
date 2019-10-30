@@ -13,19 +13,22 @@
  * limitations under the License.
  */
 
-#ifndef NULL_PLUGIN
+#include "extensions/metadata_exchange/plugin.h"
+
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/context.h"
+#include "extensions/common/node_info.pb.h"
+#include "google/protobuf/util/json_util.h"
 
-#include "plugin.h"
+#ifndef NULL_PLUGIN
 
 #include "base64.h"
 
 #else
+
 #include "common/common/base64.h"
-#include "extensions/common/context.h"
-#include "extensions/metadata_exchange/plugin.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -43,7 +46,7 @@ NULL_PLUGIN_ROOT_REGISTRY;
 
 namespace {
 
-bool serializeToStringDeterministic(const google::protobuf::Value& metadata,
+bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
                                     std::string* metadata_bytes) {
   google::protobuf::io::StringOutputStream md(metadata_bytes);
   google::protobuf::io::CodedOutputStream mcs(&md);
@@ -68,9 +71,9 @@ void PluginRootContext::updateMetadataValue() {
     return;
   }
 
-  google::protobuf::Value metadata;
-  const auto status = ::Wasm::Common::extractNodeMetadataValue(
-      node_metadata, metadata.mutable_struct_value());
+  google::protobuf::Struct metadata;
+  const auto status =
+      ::Wasm::Common::extractNodeMetadataValue(node_metadata, &metadata);
   if (!status.ok()) {
     logWarn(status.message().ToString());
     return;
@@ -101,15 +104,16 @@ FilterHeadersStatus PluginContext::onRequestHeaders() {
     removeRequestHeader(ExchangeMetadataHeader);
     auto downstream_metadata_bytes =
         Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    setFilterState(DownstreamMetadataKey, downstream_metadata_bytes);
+    setFilterState(::Wasm::Common::kDownstreamMetadataKey,
+                   downstream_metadata_bytes);
   }
 
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setFilterStateStringValue(DownstreamMetadataIdKey,
-                              downstream_metadata_id->view());
+    setFilterState(::Wasm::Common::kDownstreamMetadataIdKey,
+                   downstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();
@@ -134,15 +138,16 @@ FilterHeadersStatus PluginContext::onResponseHeaders() {
     removeResponseHeader(ExchangeMetadataHeader);
     auto upstream_metadata_bytes =
         Base64::decodeWithoutPadding(upstream_metadata_value->view());
-    setFilterState(UpstreamMetadataKey, upstream_metadata_bytes);
+    setFilterState(::Wasm::Common::kUpstreamMetadataKey,
+                   upstream_metadata_bytes);
   }
 
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
-    removeRequestHeader(ExchangeMetadataHeaderId);
-    setFilterStateStringValue(UpstreamMetadataIdKey,
-                              upstream_metadata_id->view());
+    removeResponseHeader(ExchangeMetadataHeaderId);
+    setFilterState(::Wasm::Common::kUpstreamMetadataIdKey,
+                   upstream_metadata_id->view());
   }
 
   auto metadata = metadataValue();

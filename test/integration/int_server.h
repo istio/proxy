@@ -18,6 +18,7 @@
 #include "common/api/api_impl.h"
 #include "common/grpc/common.h"
 #include "common/http/codec_client.h"
+#include "common/network/connection_balancer_impl.h"
 #include "common/network/listen_socket_impl.h"
 #include "common/stats/isolated_store_impl.h"
 #include "test/test_common/test_time.h"
@@ -335,6 +336,14 @@ class Server : public Envoy::Network::FilterChainManager,
     return nullptr;
   }
 
+  Envoy::Network::ConnectionBalancer &connectionBalancer() override {
+    return connection_balancer_;
+  }
+
+  envoy::api::v2::core::TrafficDirection direction() const override {
+    return envoy::api::v2::core::TrafficDirection::UNSPECIFIED;
+  }
+
   // TODO does this affect socket recv buffer size?  Only for new connections?
   virtual uint32_t perConnectionBufferLimitBytes() const override;
 
@@ -380,6 +389,7 @@ class Server : public Envoy::Network::FilterChainManager,
   Envoy::Api::Impl api_;
   Envoy::Event::DispatcherPtr dispatcher_;
   Envoy::Network::ConnectionHandlerPtr connection_handler_;
+  Envoy::Network::NopConnectionBalancerImpl connection_balancer_;
   Envoy::Thread::ThreadPtr thread_;
   std::atomic<bool> is_running{false};
 

@@ -27,4 +27,7 @@ cc_proto_library(
 proto_library(
     name = "stackdriver_plugin_config_proto",
     srcs = ["stackdriver_plugin_config.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+    ],
 )

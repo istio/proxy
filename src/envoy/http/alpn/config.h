@@ -41,7 +41,8 @@ class AlpnConfigFactory
  private:
   Http::FilterFactoryCb createFilterFactory(
       const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig
-          &config_pb);
+          &config_pb,
+      Upstream::ClusterManager &cluster_manager);
 };
 
 }  // namespace Alpn

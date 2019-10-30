@@ -22,12 +22,7 @@ ROOT=$(dirname $WD)
 # Postsubmit script triggered by Prow. #
 ########################################
 
-# Exit immediately for non zero status
-set -e
-# Check unset variables
-set -u
-# Print commands
-set -x
+source "${WD}/proxy-common.inc"
 
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
@@ -35,13 +30,11 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   gcloud auth configure-docker
 fi
 
-GOPATH=/home/prow/go
-ROOT=/go/src
-rm -f "${HOME}/.bazelrc"
 GIT_SHA="$(git rev-parse --verify HEAD)"
 
-export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures"
+GCS_BUILD_BUCKET="${GCS_BUILD_BUCKET:-istio-build}"
+GCS_ARTIFACTS_BUCKET="${GCS_ARTIFACTS_BUCKET:-istio-artifacts}"
 
 echo 'Create and push artifacts'
-make push_release RELEASE_GCS_PATH="gs://istio-build/proxy"
-make artifacts ARTIFACTS_GCS_PATH="gs://istio-artifacts/proxy/${GIT_SHA}/artifacts/debs"
+make push_release RELEASE_GCS_PATH="gs://${GCS_BUILD_BUCKET}/proxy"
+make artifacts ARTIFACTS_GCS_PATH="gs://${GCS_ARTIFACTS_BUCKET}/proxy/${GIT_SHA}/artifacts/debs"

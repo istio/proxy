@@ -18,10 +18,11 @@ WD=$(dirname $0)
 WD=$(cd $WD; pwd)
 ROOT=$(dirname $WD)
 
-# e2e tests under /test/envoye2e uses bazel artifacts.
-export BAZEL_OUT="$(bazel info output_path)/k8-fastbuild/bin"
+#######################################
+# Presubmit script triggered by Prow. #
+#######################################
 
-source "${WD}/proxy-presubmit.inc"
+source "${WD}/proxy-common.inc"
 
 echo 'Code Check'
 make lint

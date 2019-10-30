@@ -1,11 +1,13 @@
+#!/bin/bash
+
 # WARNING: DO NOT EDIT, THIS FILE IS PROBABLY A COPY
 #
 # The original version of this file is located in the https://github.com/istio/common-files repo.
 # If you're looking at this file in a different repo and want to make a change, please go to the
 # common-files repo, make the change there and check it in. Then come back to this repo and run
-# "make updatecommon".
+# "make update-common".
 
-# Copyright 2018 Istio Authors
+# Copyright Istio Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,9 +21,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-updatecommon:
-	@git clone https://github.com/istio/common-files
-	@cd common-files
-	@git rev-parse HEAD >.commonfiles.sha
-	@cp -r common-files/files/* common-files/files/.[^.]* .
-	@rm -fr common-files
+set -e
+
+ec=0
+for fn in "$@"; do
+  if ! grep -L -q -e "Apache License, Version 2" "${fn}"; then
+    echo "Missing license: ${fn}"
+    ec=1
+  fi
+
+  if ! grep -L -q -e "Copyright" "${fn}"; then
+    echo "Missing copyright: ${fn}"
+    ec=1
+  fi
+done
+
+exit $ec

@@ -65,6 +65,7 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
   };
 
   GrpcService grpc_service;
+  grpc_service.mutable_google_grpc()->set_stat_prefix("mesh_edges");
   if (edges_endpoint.empty()) {
     // use application default creds and default target
     grpc_service.mutable_google_grpc()->set_target_uri(kMeshTelemetryService);

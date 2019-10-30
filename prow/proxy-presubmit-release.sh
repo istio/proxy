@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Copyright 2017 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,16 +22,8 @@ ROOT=$(dirname $WD)
 # Presubmit script triggered by Prow. #
 #######################################
 
-# Exit immediately for non zero status
-set -e
-# Check unset variables
-set -u
-# Print commands
-set -x
+source "${WD}/proxy-common.inc"
 
-GOPATH=/home/prow/go
-ROOT=/go/src
-# Remove old bazel.rc.ci
-rm -f "${HOME}/.bazelrc"
-
-export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors"
+echo 'Test building release artifacts'
+make test_release
+make artifacts ARTIFACTS_DIR="${HOME}"

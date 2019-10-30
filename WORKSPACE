@@ -20,6 +20,7 @@ workspace(name = "io_istio_proxy")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//:repositories.bzl",
+    "docker_dependencies",
     "googletest_repositories",
     "mixerapi_dependencies",
 )
@@ -36,10 +37,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelrc and .bazelversion files.
 #
-# envoy-wasm commit date: 10/14/2019
-ENVOY_SHA = "16a5cdbf450e4d3bbeead962af5c29bc002ce8b7"
+# envoy-wasm commit date: 10/29/2019
+ENVOY_SHA = "464d2ee718ce2593fd9e402864a275a69939e5da"
 
-ENVOY_SHA256 = "a4c72fed81f4d611af45c2ced0e3067f4b41870c6e232d50cd9c0dd352959e98"
+ENVOY_SHA256 = "38472c977d6661dc3ac1e6c9814a84953221defda5e2c368812c88a6530eec25"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
@@ -72,3 +73,42 @@ envoy_dependencies()
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
 envoy_dependency_imports()
+
+# Docker dependencies
+
+docker_dependencies()
+
+load(
+    "@io_bazel_rules_docker//repositories:repositories.bzl",
+    container_repositories = "repositories",
+)
+
+container_repositories()
+
+load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+
+container_deps()
+
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_pull",
+)
+
+container_pull(
+    name = "distroless_cc",
+    # Latest as of 10/21/2019. To update, remove this line, re-build, and copy the suggested digest.
+    digest = "sha256:86f16733f25964c40dcd34edf14339ddbb2287af2f7c9dfad88f0366723c00d7",
+    registry = "gcr.io",
+    repository = "distroless/cc",
+)
+
+container_pull(
+    name = "bionic",
+    # Latest as of 10/21/2019. To update, remove this line, re-build, and copy the suggested digest.
+    digest = "sha256:3e83eca7870ee14a03b8026660e71ba761e6919b6982fb920d10254688a363d4",
+    registry = "index.docker.io",
+    repository = "library/ubuntu",
+    tag = "bionic",
+)
+
+# End of docker dependencies

@@ -15,15 +15,18 @@
 package client_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/d4l3k/messagediff"
 	"github.com/golang/protobuf/jsonpb"
 
 	"istio.io/proxy/test/envoye2e/env"
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
+	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
@@ -47,12 +50,9 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
-        {
-          "testMonitoringEndpoint": "localhost:12312",
-          "testLoggingEndpoint": "localhost:12312",
-        }`
+        {}`
 
-const inboundSDFilter = `- name: envoy.filters.http.wasm
+const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
   config:
     config:
       vm_config:
@@ -71,21 +71,9 @@ const inboundSDFilter = `- name: envoy.filters.http.wasm
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
         {
-          "testMonitoringEndpoint": "localhost:12312",
-          "testLoggingEndpoint": "localhost:12312",
+          "enableMeshEdgesReporting": "true",
+          "meshEdgesReportingDuration": "1s",
         }`
-
-const extraInboundSDFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_inbound"
-      vm_config:
-        vm_id: "stackdriver_inbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          inline_string: "envoy.wasm.null.stackdriver"
-      configuration: >-
-        {}`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
@@ -113,8 +101,11 @@ const outboundNodeMetadata = `"NAMESPACE": "default",
  "version": "v1",
  "pod-template-hash": "84975bc778"
 },
+"MESH_ID": "mesh",
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "productpage-v1-84975bc778-pxz2w",`
+"NAME": "productpage-v1-84975bc778-pxz2w",
+"STACKDRIVER_MONITORING_ENDPOINT": "localhost:12312",
+"STACKDRIVER_LOGGING_ENDPOINT": "localhost:12312",`
 
 const inboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
@@ -142,8 +133,12 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
  "version": "v1",
  "pod-template-hash": "84975bc778"
 },
+"MESH_ID": "mesh",
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "ratings-v1-84975bc778-pxz2w",`
+"NAME": "ratings-v1-84975bc778-pxz2w",
+"STACKDRIVER_MONITORING_ENDPOINT": "localhost:12312",
+"STACKDRIVER_LOGGING_ENDPOINT": "localhost:12312",
+"STACKDRIVER_MESH_TELEMETRY_ENDPOINT": "localhost:12312",`
 
 func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
@@ -188,12 +183,46 @@ func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
 	return compareLogEntries(got, &srvLogReq)
 }
 
+var wantTrafficReq = &edgespb.ReportTrafficAssertionsRequest{
+	Parent:  "projects/test-project",
+	MeshUid: "mesh",
+	TrafficAssertions: []*edgespb.TrafficAssertion{
+		&edgespb.TrafficAssertion{
+			Protocol:                    edgespb.TrafficAssertion_PROTOCOL_HTTP,
+			DestinationServiceName:      "server.default.svc.cluster.local",
+			DestinationServiceNamespace: "default",
+			Source: &edgespb.WorkloadInstance{
+				Uid:               "kubernetes://productpage-v1-84975bc778-pxz2w.default",
+				Location:          "us-east4-b",
+				ClusterName:       "test-cluster",
+				OwnerUid:          "kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
+				WorkloadName:      "productpage-v1",
+				WorkloadNamespace: "default",
+			},
+			Destination: &edgespb.WorkloadInstance{
+				Uid:               "kubernetes://ratings-v1-84975bc778-pxz2w.default",
+				Location:          "us-east4-b",
+				ClusterName:       "test-cluster",
+				OwnerUid:          "kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
+				WorkloadName:      "ratings-v1",
+				WorkloadNamespace: "default",
+			},
+		},
+	},
+}
+
+func verifyTrafficAssertionsReq(got *edgespb.ReportTrafficAssertionsRequest) error {
+	if s, same := messagediff.PrettyDiff(wantTrafficReq, got, messagediff.IgnoreStructField("Timestamp")); !same {
+		return errors.New(s)
+	}
+	return nil
+}
+
 func TestStackdriverPlugin(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
-	fsdm, fsdl := fs.NewFakeStackdriver(12312)
+	fsdm, fsdl, edgesSvc := fs.NewFakeStackdriver(12312)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
-	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundSDFilter)
-	s.SetFiltersBeforeEnvoyRouterInAppToClient(extraInboundSDFilter)
+	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
 	s.SetClientNodeMetadata(outboundNodeMetadata)
 	if err := s.SetUpClientServerEnvoy(); err != nil {
@@ -212,10 +241,12 @@ func TestStackdriverPlugin(t *testing.T) {
 	}
 	srvMetricRcv := false
 	cltMetricRcv := false
+	logRcv := false
+	edgeRcv := false
 
-	for i := 0; i < 3; i++ {
-		// Two requests should be recevied by monitoring server: one from client and one from server.
-		// One request should be received by logging server.
+	to := time.NewTimer(20 * time.Second)
+
+	for !(srvMetricRcv && cltMetricRcv && logRcv && edgeRcv) {
 		select {
 		case req := <-fsdm.RcvMetricReq:
 			err, isClient := verifyCreateTimeSeriesReq(req)
@@ -231,11 +262,19 @@ func TestStackdriverPlugin(t *testing.T) {
 			if err := verifyWriteLogEntriesReq(req); err != nil {
 				t.Errorf("WriteLogEntries verification failed: %v", err)
 			}
-		case <-time.After(20 * time.Second):
-			t.Error("timeout on waiting Stackdriver server to receive request")
+			logRcv = true
+		case req := <-edgesSvc.RcvTrafficAssertionsReq:
+			if err := verifyTrafficAssertionsReq(req); err != nil {
+				t.Errorf("ReportTrafficAssertions() verification failed: %v", err)
+			}
+			edgeRcv = true
+		case <-to.C:
+			to.Stop()
+			rcv := fmt.Sprintf(
+				"client metrics: %t, server metrics: %t, logs: %t, edges: %t",
+				cltMetricRcv, srvMetricRcv, logRcv, edgeRcv,
+			)
+			t.Fatal("timeout: Stackdriver did not receive required requests: " + rcv)
 		}
-	}
-	if !srvMetricRcv || !cltMetricRcv {
-		t.Errorf("fail to receive metric request from both sides. client recieved: %v and server recieved: %v", cltMetricRcv, srvMetricRcv)
 	}
 }
