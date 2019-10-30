@@ -70,7 +70,7 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
   debug_ = config_.debug();
-  node_info_cache_.set_max_cache_size(config_.max_peer_cache_size());
+  node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
 
   auto field_separator = CONFIG_DEFAULT(field_separator);
   auto value_separator = CONFIG_DEFAULT(value_separator);
@@ -111,8 +111,10 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
 
 void PluginRootContext::report(
     const ::Wasm::Common::RequestInfo& request_info) {
-  const auto& peer_node =
+  const auto peer_node_ptr =
       node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
+  const wasm::common::NodeInfo& peer_node =
+      peer_node_ptr ? *peer_node_ptr : ::Wasm::Common::EmptyNodeInfo;
 
   // map and overwrite previous mapping.
   istio_dimensions_.map(peer_node, request_info);
@@ -149,42 +151,6 @@ void PluginRootContext::report(
   incrementMetric(cache_misses_, 1);
   // TODO: When we have c++17, convert to try_emplace.
   metrics_.emplace(istio_dimensions_, stats);
-}
-
-const wasm::common::NodeInfo& NodeInfoCache::getPeerById(
-    StringView peer_metadata_id_key, StringView peer_metadata_key) {
-  std::string peer_id;
-  if (!getStringValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
-    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
-    return cache_[""];
-  }
-  auto nodeinfo_it = cache_.find(peer_id);
-  if (nodeinfo_it != cache_.end()) {
-    return nodeinfo_it->second;
-  }
-
-  // Do not let the cache grow beyond max_cache_size_.
-  if (cache_.size() > max_cache_size_) {
-    auto it = cache_.begin();
-    cache_.erase(cache_.begin(), std::next(it, max_cache_size_ / 4));
-    LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
-  }
-
-  google::protobuf::Struct metadata;
-  if (!getStructValue({"filter_state", peer_metadata_key}, &metadata)) {
-    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
-    return cache_[""];
-  }
-
-  auto status =
-      ::Wasm::Common::extractNodeMetadata(metadata, &(cache_[peer_id]));
-  if (status != Status::OK) {
-    LOG_DEBUG(absl::StrCat("cannot parse peer node metadata ",
-                           metadata.DebugString(), ": ", status.ToString()));
-    return cache_[""];
-  }
-
-  return cache_[peer_id];
 }
 
 #ifdef NULL_PLUGIN

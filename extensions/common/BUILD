@@ -44,6 +44,23 @@ envoy_cc_library(
     ],
 )
 
+envoy_cc_library(
+    name = "node_info_cache",
+    srcs = [
+        "node_info_cache.cc",
+    ],
+    hdrs = [
+        "node_info_cache.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":context",
+        ":node_info_cc_proto",
+        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+    ],
+)
+
 cc_proto_library(
     name = "node_info_cc_proto",
     visibility = ["//visibility:public"],

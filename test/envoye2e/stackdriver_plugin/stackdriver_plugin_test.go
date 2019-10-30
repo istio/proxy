@@ -71,8 +71,9 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
           inline_string: "envoy.wasm.null.stackdriver"
       configuration: >-
         {
+          "max_peer_cache_size": -1,
           "enableMeshEdgesReporting": "true",
-          "meshEdgesReportingDuration": "1s",
+          "meshEdgesReportingDuration": "1s"
         }`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
