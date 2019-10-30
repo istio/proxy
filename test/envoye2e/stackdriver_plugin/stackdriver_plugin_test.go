@@ -76,71 +76,6 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
           "meshEdgesReportingDuration": "1s",
         }`
 
-const outboundNodeMetadata = `"NAMESPACE": "default",
-"INCLUDE_INBOUND_PORTS": "9080",
-"app": "productpage",
-"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
-"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
-"pod-template-hash": "84975bc778",
-"INTERCEPTION_MODE": "REDIRECT",
-"SERVICE_ACCOUNT": "bookinfo-productpage",
-"CONFIG_NAMESPACE": "default",
-"version": "v1",
-"OWNER": "kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
-"WORKLOAD_NAME": "productpage-v1",
-"ISTIO_VERSION": "1.3-dev",
-"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container productpage",
-"POD_NAME": "productpage-v1-84975bc778-pxz2w",
-"istio": "sidecar",
-"PLATFORM_METADATA": {
- "gcp_gke_cluster_name": "test-cluster",
- "gcp_project": "test-project",
- "gcp_location": "us-east4-b"
-},
-"LABELS": {
- "app": "productpage",
- "version": "v1",
- "pod-template-hash": "84975bc778"
-},
-"MESH_ID": "mesh",
-"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "productpage-v1-84975bc778-pxz2w",
-"STACKDRIVER_MONITORING_ENDPOINT": "localhost:12312",
-"STACKDRIVER_LOGGING_ENDPOINT": "localhost:12312",`
-
-const inboundNodeMetadata = `"NAMESPACE": "default",
-"INCLUDE_INBOUND_PORTS": "9080",
-"app": "ratings",
-"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
-"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
-"pod-template-hash": "84975bc778",
-"INTERCEPTION_MODE": "REDIRECT",
-"SERVICE_ACCOUNT": "bookinfo-ratings",
-"CONFIG_NAMESPACE": "default",
-"version": "v1",
-"OWNER": "kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
-"WORKLOAD_NAME": "ratings-v1",
-"ISTIO_VERSION": "1.3-dev",
-"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container ratings",
-"POD_NAME": "ratings-v1-84975bc778-pxz2w",
-"istio": "sidecar",
-"PLATFORM_METADATA": {
- "gcp_gke_cluster_name": "test-cluster",
- "gcp_project": "test-project",
- "gcp_location": "us-east4-b"
-},
-"LABELS": {
- "app": "ratings",
- "version": "v1",
- "pod-template-hash": "84975bc778"
-},
-"MESH_ID": "mesh",
-"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "ratings-v1-84975bc778-pxz2w",
-"STACKDRIVER_MONITORING_ENDPOINT": "localhost:12312",
-"STACKDRIVER_LOGGING_ENDPOINT": "localhost:12312",
-"STACKDRIVER_MESH_TELEMETRY_ENDPOINT": "localhost:12312",`
-
 func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
 	got.Points[0].Interval = nil
@@ -164,8 +99,8 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	p := &driver.Params{
 		Vars: map[string]string{
-			"ServerPort": "20019",
-			"ClientPort": "20016",
+			"ServerPort": "20045",
+			"ClientPort": "20042",
 		},
 	}
 	client, _ := p.Fill(fs.ClientRequestCountJSON)
@@ -232,8 +167,9 @@ func TestStackdriverPlugin(t *testing.T) {
 	fsdm, fsdl, edgesSvc := fs.NewFakeStackdriver(12312, 0)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
-	s.SetServerNodeMetadata(inboundNodeMetadata)
-	s.SetClientNodeMetadata(outboundNodeMetadata)
+	params := driver.Params{Vars: map[string]string{"SDPort": "12312"}}
+	s.SetClientNodeMetadata(params.LoadTestData("testdata/client_node_metadata.json.tmpl"))
+	s.SetServerNodeMetadata(params.LoadTestData("testdata/server_node_metadata.json.tmpl"))
 	if err := s.SetUpClientServerEnvoy(); err != nil {
 		t.Fatalf("Failed to setup test: %v", err)
 	}

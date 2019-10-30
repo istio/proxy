@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// XDS creates an xDS server
 type XDS struct {
 	grpc *grpc.Server
 }
