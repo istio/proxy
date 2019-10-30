@@ -63,17 +63,17 @@ clean:
 test:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) $(BAZEL_TARGETS)
-	GO111MODULE=on go test ./...
+	env ENVOY_PATH="$(bazel info output_path)"/k8-fastbuild/bin/src/envoy/envoy GO111MODULE=on go test ./...
 
 test_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-	GO111MODULE=on go test ./...
+	env ENVOY_PATH="$(bazel info output_path)"/k8-opt/bin/src/envoy/envoy GO111MODULE=on go test ./...
 
 test_tsan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
-	GO111MODULE=on go test ./...
+	env ENVOY_PATH="$(bazel info output_path)"/k8-opt/bin/src/envoy/envoy GO111MODULE=on go test ./...
 
 check:
 	@echo >&2 "Please use \"make lint\" instead."
