@@ -71,6 +71,19 @@ void extractServiceName(const std::string& fqdn, std::string* service_name) {
 
 }  // namespace
 
+StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
+  switch (policy) {
+    case ServiceAuthenticationPolicy::None:
+      return kNone;
+    case ServiceAuthenticationPolicy::MutualTLS:
+      return kMutualTLS;
+    default:
+      break;
+  }
+  return {};
+  ;
+}
+
 using google::protobuf::util::JsonStringToMessage;
 using google::protobuf::util::MessageToJsonString;
 
@@ -185,11 +198,15 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
 
   if (outbound) {
     getValue({"upstream", "port"}, &destination_port);
-    getValue({"upstream", "mtls"}, &request_info->mTLS);
     getStringValue({"upstream", "tls_version"}, &tls_version);
   } else {
     getValue({"destination", "port"}, &destination_port);
-    getValue({"connection", "mtls"}, &request_info->mTLS);
+    bool mtls = false;
+    if (getValue({"connection", "mtls"}, &mtls)) {
+      request_info->service_auth_policy =
+          mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
+               : ::Wasm::Common::ServiceAuthenticationPolicy::None;
+    }
     getStringValue({"connection", "tls_version"}, &tls_version);
   }
   request_info->destination_port = destination_port;

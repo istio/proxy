@@ -95,8 +95,8 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   (*label_map)["destination_principal"] = request_info.destination_principal;
   (*label_map)["source_principal"] = request_info.source_principal;
   (*label_map)["service_authentication_policy"] =
-      request_info.mTLS ? "true" : "false";
-
+      std::string(::Wasm::Common::AuthenticationPolicyString(
+          request_info.service_auth_policy));
   // Accumulate estimated size of the request. If the current request exceeds
   // the size limit, flush the request out.
   size_ += new_entry->ByteSizeLong();

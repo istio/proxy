@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/d4l3k/messagediff"
-	"github.com/golang/protobuf/jsonpb"
 
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
@@ -100,14 +99,13 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	p := &driver.Params{
 		Vars: map[string]string{
-			"ServerPort": "20045",
-			"ClientPort": "20042",
+			"ServerPort":                  "20045",
+			"ClientPort":                  "20042",
+			"ServiceAuthenticationPolicy": "NONE",
 		},
 	}
-	client, _ := p.Fill(fs.ClientRequestCountJSON)
-	server, _ := p.Fill(fs.ServerRequestCountJSON)
-	jsonpb.UnmarshalString(server, &srvReqCount)
-	jsonpb.UnmarshalString(client, &cltReqCount)
+	p.LoadTestProto("testdata/stackdriver/client_request_count.yaml.tmpl", &cltReqCount)
+	p.LoadTestProto("testdata/stackdriver/server_request_count.yaml.tmpl", &srvReqCount)
 	isClient := true
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type == srvReqCount.Metric.Type {
@@ -124,7 +122,12 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 
 func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
 	var srvLogReq logging.WriteLogEntriesRequest
-	jsonpb.UnmarshalString(fs.ServerAccessLogJSON, &srvLogReq)
+	p := &driver.Params{
+		Vars: map[string]string{
+			"ServiceAuthenticationPolicy": "NONE",
+		},
+	}
+	p.LoadTestProto("testdata/stackdriver/server_access_log.yaml.tmpl", &srvLogReq)
 	return compareLogEntries(got, &srvLogReq)
 }
 

@@ -266,7 +266,7 @@ func (s *TestSetup) SetUpClientServerEnvoy() error {
 		}
 	}
 	if s.startTcpBackend {
-		s.tcpBackend, err = NewTCPServer(s.ports.BackendPort, "hello", s.EnableTls)
+		s.tcpBackend, err = NewTCPServer(s.ports.BackendPort, "hello", s.EnableTls, s.Dir)
 		if err != nil {
 			log.Printf("unable to create TCP server %v", err)
 		} else {

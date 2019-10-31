@@ -96,7 +96,15 @@ func (s *Sleep) Run(_ *Params) error {
 func (s *Sleep) Cleanup() {}
 
 func (p *Params) Fill(s string) (string, error) {
-	t := template.Must(template.New("params").Option("missingkey=zero").Parse(s))
+	t := template.Must(template.New("params").
+		Option("missingkey=zero").
+		Funcs(template.FuncMap{
+			"indent": func(n int, s string) string {
+				pad := strings.Repeat(" ", n)
+				return pad + strings.Replace(s, "\n", "\n"+pad, -1)
+			},
+		}).
+		Parse(s))
 	var b bytes.Buffer
 	if err := t.Execute(&b, p); err != nil {
 		return "", err
