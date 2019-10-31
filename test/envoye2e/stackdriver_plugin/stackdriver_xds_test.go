@@ -156,7 +156,7 @@ func TestStackdriverPayload(t *testing.T) {
 }
 
 func TestStackdriverPayloadWithTLS(t *testing.T) {
-	ports := env.NewPorts(env.StackDriverPayload)
+	ports := env.NewPorts(env.StackDriverPayloadWithTLS)
 	params := &driver.Params{
 		Vars: map[string]string{
 			"ClientPort":                  fmt.Sprintf("%d", ports.ClientToServerProxyPort),

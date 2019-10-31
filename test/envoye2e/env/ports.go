@@ -36,6 +36,7 @@ const (
 	BasicHTTP
 	BasicHTTPwithTLS
 	StackDriverPayload
+	StackDriverPayloadWithTLS
 	StackDriverReload
 	StackDriverParallel
 
