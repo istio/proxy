@@ -12,24 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package driver
 
 import (
 	"fmt"
-	"go/build"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"strings"
+
+	"istio.io/proxy/test/envoye2e/env"
 )
 
-func GetDefaultIstioOut() string {
-	return fmt.Sprintf("%s/out/%s_%s", build.Default.GOPATH, runtime.GOOS, runtime.GOARCH)
+type Get struct {
+	Port uint16
+	Body string
 }
 
-func GetDefaultEnvoyBin() string {
-	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
-	// Instead we rely on symbolic link src/envoy/envoy in the workspace
-	workspace, _ := exec.Command("bazel", "info", "workspace").Output()
-	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
+var _ Step = &Get{}
+
+func (g *Get) Run(_ *Params) error {
+	code, body, err := env.HTTPGet(fmt.Sprintf("http://127.0.0.1:%d", g.Port))
+	if err != nil {
+		return err
+	}
+	if code != 200 {
+		return fmt.Errorf("error code for :%d: %d", g.Port, code)
+	}
+	if g.Body != "" && g.Body != body {
+		return fmt.Errorf("got body %q, want %q", body, g.Body)
+	}
+	return nil
 }
+func (g *Get) Cleanup() {}

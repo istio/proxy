@@ -20,7 +20,7 @@ const ServerRequestCountJSON = `{
 	   "type":"istio.io/service/server/request_count",
 	   "labels":{
 		  "destination_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
-		  "destination_port":"20019",
+		  "destination_port":"{{ .Vars.ServerPort }}",
 		  "destination_principal":"",
 		  "destination_service_name":"server.default.svc.cluster.local",
 		  "destination_service_namespace":"default",
@@ -64,9 +64,9 @@ const ClientRequestCountJSON = `{
 	   "type":"istio.io/service/client/request_count",
 	   "labels":{
 		  "destination_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
-		  "destination_port":"20019",
+		  "destination_port":"{{ .Vars.ServerPort }}",
 		  "destination_principal":"",
-		  "destination_service_name":"localhost:20016",
+		  "destination_service_name":"127.0.0.1:{{ .Vars.ClientPort }}",
 		  "destination_service_namespace":"default",
 		  "destination_workload_name":"ratings-v1",
 		  "destination_workload_namespace":"default",

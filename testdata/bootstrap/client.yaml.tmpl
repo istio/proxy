@@ -1,0 +1,41 @@
+node:
+  id: client
+  cluster: test-cluster
+  metadata: { {{ .Vars.ClientMetadata }} }
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: {{ .Vars.ClientAdmin }}
+dynamic_resources:
+  ads_config:
+    api_type: GRPC
+    grpc_services:
+    - envoy_grpc:
+        cluster_name: xds_cluster
+  cds_config:
+    ads: {}
+  lds_config:
+    ads: {}
+static_resources:
+  clusters:
+  - connect_timeout: 1s
+    hosts:
+    - socket_address:
+        address: 127.0.0.1
+        port_value: {{ .XDS }}
+    http2_protocol_options: {}
+    name: xds_cluster
+  - name: server
+    connect_timeout: 1s
+    type: STATIC
+    load_assignment:
+      cluster_name: server
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{ .Vars.ServerPort }}
