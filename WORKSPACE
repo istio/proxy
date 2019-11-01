@@ -38,9 +38,9 @@ load("//:envoy_repository_rule.bzl", "envoy_repository_rule")
 # 2. Update .bazelrc and .bazelversion files.
 #
 # envoy-wasm commit date: 11/01/2019
-ENVOY_SHA = "c1957d3a78cd742eb8d2a8259d0aa8c6a792a79b"
+ENVOY_SHA = "bc93450483712189f22b2225f76039d5fe1f8ff9"
 
-ENVOY_SHA256 = "761b7fce76808ffbd06e0b875ca6a8efb980836dc53ed412131b6bfdb4439554"
+ENVOY_SHA256 = "d8b7ea5cd275f5edf61091158bff1d716c69069a3eca182c0d40f3201e5519ba"
 
 ENVOY_REPOSITORY = "https://github.com/envoyproxy/envoy-wasm"
 
