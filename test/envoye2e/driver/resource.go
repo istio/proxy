@@ -60,9 +60,10 @@ func (p *Params) LoadTestData(testFileName string) string {
 }
 
 // Loads a test file as YAML into a proto and fills in template variables
-func (p *Params) LoadTestProto(testFileName string, msg proto.Message) {
+func (p *Params) LoadTestProto(testFileName string, msg proto.Message) proto.Message {
 	data := LoadTestData(testFileName)
 	if err := p.FillYAML(data, msg); err != nil {
 		panic(err)
 	}
+	return msg
 }

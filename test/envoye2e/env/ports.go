@@ -39,6 +39,8 @@ const (
 	StackDriverPayloadWithTLS
 	StackDriverReload
 	StackDriverParallel
+	StatsPayload
+	StatsParallel
 
 	// The number of total tests. has to be the last one.
 	maxTestNum
