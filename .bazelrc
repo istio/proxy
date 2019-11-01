@@ -185,3 +185,9 @@ build:debug -c dbg
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
+
+# Envoy repo overrides from the environment.
+build --action_env=ENVOY_REPOSITORY
+build --action_env=ENVOY_SHA
+build --action_env=ENVOY_SHA256
+build --action_env=ENVOY_PREFIX
