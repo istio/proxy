@@ -176,6 +176,7 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
     request_info->destination_service_host =
         getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
             ->toString();
+    // TODO: what is the proper fallback for destination service name?
   } else {
     // cluster name follows Istio convention, so extract out service name.
     extractServiceName(request_info->destination_service_host,
