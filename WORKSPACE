@@ -16,8 +16,6 @@
 #
 workspace(name = "io_istio_proxy")
 
-# http_archive is not a native function since bazel 0.19
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//:repositories.bzl",
     "docker_dependencies",
@@ -34,6 +32,8 @@ bind(
     actual = "//external:ssl",
 )
 
+load("//:envoy_repository_rule.bzl", "envoy_repository_rule")
+
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelrc and .bazelversion files.
 #
@@ -42,13 +42,18 @@ ENVOY_SHA = "f12c992f9fb8c86e5f4f9bae4fa55ebf280acd30"
 
 ENVOY_SHA256 = "cb7915c17f5f8f093b105263b3da593c8a1359baa47faf0ba5ecaac33e84dc06"
 
+ENVOY_REPOSITORY = "https://github.com/envoyproxy/envoy-wasm"
+
+ENVOY_PREFIX = "envoy-wasm-"
+
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
-http_archive(
+envoy_repository_rule(
     name = "envoy",
+    prefix = ENVOY_PREFIX,
+    repository = ENVOY_REPOSITORY,
+    sha = ENVOY_SHA,
     sha256 = ENVOY_SHA256,
-    strip_prefix = "envoy-wasm-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy-wasm/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
 # TODO(silentdai) Use bazel args to select envoy between local or http

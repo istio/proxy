@@ -1,0 +1,11 @@
+transport_socket:
+  name: envoy.transport_sockets.tls
+  typed_config:
+    "@type": type.googleapis.com/envoy.api.v2.auth.UpstreamTlsContext
+    common_tls_context:
+      tls_certificates:
+      - certificate_chain: { filename: "testdata/certs/client.cert" }
+        private_key: { filename: "testdata/certs/client-key.cert" }
+      validation_context:
+        trusted_ca: { filename: "testdata/certs/root.cert" }
+    sni: server.com

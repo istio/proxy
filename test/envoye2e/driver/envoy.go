@@ -32,8 +32,6 @@ import (
 type Envoy struct {
 	// template for the bootstrap
 	Bootstrap string
-	// working directory (optional)
-	Dir string
 
 	tmpFile   string
 	cmd       *exec.Cmd
@@ -81,9 +79,7 @@ func (e *Envoy) Run(p *Params) error {
 	cmd := exec.Command(envoyPath, args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
-	if e.Dir != "" {
-		cmd.Dir = e.Dir
-	}
+	cmd.Dir = BazelWorkspace()
 
 	log.Printf("envoy cmd %v", cmd.Args)
 	e.cmd = cmd

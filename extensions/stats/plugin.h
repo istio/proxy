@@ -59,8 +59,6 @@ constexpr StringView Sep = "#@";
 const std::string unknown = "unknown";
 const std::string vSource = "source";
 const std::string vDest = "destination";
-const std::string vMTLS = "mutual_tls";
-const std::string vNone = "none";
 const std::string vDash = "-";
 
 const std::string default_field_separator = ";.;";
@@ -191,7 +189,8 @@ struct IstioDimensions {
         request.response_flag.empty() ? vDash : request.response_flag;
 
     connection_security_policy =
-        outbound ? unknown : (request.mTLS ? vMTLS : vNone);
+        std::string(::Wasm::Common::AuthenticationPolicyString(
+            request.service_auth_policy));
 
     permissive_response_code = request.rbac_permissive_engine_result.empty()
                                    ? "none"

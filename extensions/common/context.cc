@@ -71,6 +71,19 @@ void extractServiceName(const std::string& fqdn, std::string* service_name) {
 
 }  // namespace
 
+StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
+  switch (policy) {
+    case ServiceAuthenticationPolicy::None:
+      return kNone;
+    case ServiceAuthenticationPolicy::MutualTLS:
+      return kMutualTLS;
+    default:
+      break;
+  }
+  return {};
+  ;
+}
+
 using google::protobuf::util::JsonStringToMessage;
 using google::protobuf::util::MessageToJsonString;
 
@@ -182,16 +195,25 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
           ->toString();
 
   int64_t destination_port = 0;
-  std::string tls_version;
 
   if (outbound) {
     getValue({"upstream", "port"}, &destination_port);
-    getValue({"upstream", "mtls"}, &request_info->mTLS);
-    getStringValue({"upstream", "tls_version"}, &tls_version);
+    getStringValue({"upstream", "uri_san_peer_certificate"},
+                   &request_info->destination_principal);
+    getStringValue({"upstream", "uri_san_local_certificate"},
+                   &request_info->source_principal);
   } else {
     getValue({"destination", "port"}, &destination_port);
-    getValue({"connection", "mtls"}, &request_info->mTLS);
-    getStringValue({"connection", "tls_version"}, &tls_version);
+    bool mtls = false;
+    if (getValue({"connection", "mtls"}, &mtls)) {
+      request_info->service_auth_policy =
+          mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
+               : ::Wasm::Common::ServiceAuthenticationPolicy::None;
+    }
+    getStringValue({"connection", "uri_san_local_certificate"},
+                   &request_info->destination_principal);
+    getStringValue({"connection", "uri_san_peer_certificate"},
+                   &request_info->source_principal);
   }
   request_info->destination_port = destination_port;
 }

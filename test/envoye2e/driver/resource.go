@@ -19,6 +19,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Loads resources in the test data directory
@@ -33,14 +35,21 @@ func BazelWorkspace() string {
 	return strings.TrimSuffix(string(workspace), "\n")
 }
 
+// Normalizes test data path
+func TestPath(testFileName string) string {
+	return filepath.Join(BazelWorkspace(), testFileName)
+}
+
+// Loads a test file content
 func LoadTestData(testFileName string) string {
-	data, err := ioutil.ReadFile(filepath.Join(BazelWorkspace(), testFileName))
+	data, err := ioutil.ReadFile(TestPath(testFileName))
 	if err != nil {
 		panic(err)
 	}
 	return string(data)
 }
 
+// Loads a test file and fills in template variables
 func (p *Params) LoadTestData(testFileName string) string {
 	data := LoadTestData(testFileName)
 	out, err := p.Fill(data)
@@ -48,4 +57,12 @@ func (p *Params) LoadTestData(testFileName string) string {
 		panic(err)
 	}
 	return out
+}
+
+// Loads a test file as YAML into a proto and fills in template variables
+func (p *Params) LoadTestProto(testFileName string, msg proto.Message) {
+	data := LoadTestData(testFileName)
+	if err := p.FillYAML(data, msg); err != nil {
+		panic(err)
+	}
 }

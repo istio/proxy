@@ -34,7 +34,9 @@ const (
 
 	// xDS driven tests
 	BasicHTTP
+	BasicHTTPwithTLS
 	StackDriverPayload
+	StackDriverPayloadWithTLS
 	StackDriverReload
 	StackDriverParallel
 

@@ -80,7 +80,8 @@ wasm::common::NodeInfo peerNodeInfo() {
   request_info.request_protocol = "HTTP";
   request_info.destination_principal = "destination_principal";
   request_info.source_principal = "source_principal";
-  request_info.mTLS = true;
+  request_info.service_auth_policy =
+      ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS;
   return request_info;
 }
 
@@ -117,7 +118,8 @@ google::logging::v2::WriteLogEntriesRequest expectedRequest(
     (*label_map)["destination_principal"] = request_info.destination_principal;
     (*label_map)["source_principal"] = request_info.source_principal;
     (*label_map)["service_authentication_policy"] =
-        request_info.mTLS ? "true" : "false";
+        std::string(::Wasm::Common::AuthenticationPolicyString(
+            request_info.service_auth_policy));
   }
   return req;
 }
