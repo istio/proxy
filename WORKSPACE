@@ -46,8 +46,6 @@ ENVOY_REPOSITORY = "https://github.com/envoyproxy/envoy-wasm"
 
 ENVOY_PREFIX = "envoy-wasm-"
 
-LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
-
 envoy_repository_rule(
     name = "envoy",
     prefix = ENVOY_PREFIX,
@@ -55,13 +53,8 @@ envoy_repository_rule(
     sha = ENVOY_SHA,
     sha256 = ENVOY_SHA256,
 )
-
-# TODO(silentdai) Use bazel args to select envoy between local or http
-# Uncomment below and comment above http_archive to depends on local envoy.
-#local_repository(
-#     name = "envoy",
-#     path = LOCAL_ENVOY_PROJECT,
-#)
+# To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` or
+# persist the option in `user.bazelrc`.
 
 load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
 
