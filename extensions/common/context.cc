@@ -194,11 +194,13 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
           ->toString();
 
   int64_t destination_port = 0;
-  std::string tls_version;
 
   if (outbound) {
     getValue({"upstream", "port"}, &destination_port);
-    getStringValue({"upstream", "tls_version"}, &tls_version);
+    getStringValue({"upstream", "uri_san_peer_certificate"},
+                   &request_info->destination_principal);
+    getStringValue({"upstream", "uri_san_local_certificate"},
+                   &request_info->source_principal);
   } else {
     getValue({"destination", "port"}, &destination_port);
     bool mtls = false;
@@ -207,7 +209,10 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
           mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
                : ::Wasm::Common::ServiceAuthenticationPolicy::None;
     }
-    getStringValue({"connection", "tls_version"}, &tls_version);
+    getStringValue({"connection", "uri_san_local_certificate"},
+                   &request_info->destination_principal);
+    getStringValue({"connection", "uri_san_peer_certificate"},
+                   &request_info->source_principal);
   }
   request_info->destination_port = destination_port;
 }

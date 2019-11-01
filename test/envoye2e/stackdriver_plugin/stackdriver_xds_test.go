@@ -166,6 +166,8 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 			"ServerAdmin":                 fmt.Sprintf("%d", ports.ServerAdminPort),
 			"ServerPort":                  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
 			"ServiceAuthenticationPolicy": "MUTUAL_TLS",
+			"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
+			"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
 		},
 		XDS: int(ports.XDSPort),
 	}
