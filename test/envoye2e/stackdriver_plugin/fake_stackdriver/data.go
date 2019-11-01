@@ -66,7 +66,7 @@ const ClientRequestCountJSON = `{
 		  "destination_owner":"kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
 		  "destination_port":"{{ .Vars.ServerPort }}",
 		  "destination_principal":"",
-		  "destination_service_name":"server",
+		  "destination_service_name":"",
 		  "destination_service_namespace":"default",
 		  "destination_workload_name":"ratings-v1",
 		  "destination_workload_namespace":"default",
