@@ -8,6 +8,19 @@ import envoy.bazelrc
 # Overrides workspace_status_command
 build --workspace_status_command=tools/bazel_get_workspace_status
 
+# Additional config combination based on envoy bazelrc
+build:remote-clang-libc++ --config=remote
+build:remote-clang-libc++ --config=rbe-toolchain-clang-libc++
+
+build:remote-gcc --config=remote
+build:remote-gcc --config=rbe-toolchain-gcc
+
+build:docker-clang-libc++ --config=docker-sandbox
+build:docker-clang-libc++ --config=rbe-toolchain-clang-libc++
+
+build:docker-gcc --config=docker-sandbox
+build:docker-gcc --config=rbe-toolchain-gcc
+
 # ========================================
 # Istio specific Bazel build/test options.
 # ========================================
