@@ -21,9 +21,6 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-constexpr char kMutualTLS[] = "MUTUAL_TLS";
-constexpr char kNone[] = "NONE";
-
 void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
             const ::wasm::common::NodeInfo &peer_node_info,
             const ::Wasm::Common::RequestInfo &request_info) {
@@ -40,7 +37,8 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
          {requestOperationKey(), request_info.request_operation},
          {requestProtocolKey(), request_info.request_protocol},
          {serviceAuthenticationPolicyKey(),
-          request_info.mTLS ? kMutualTLS : kNone},
+          ::Wasm::Common::AuthenticationPolicyString(
+              request_info.service_auth_policy)},
          {destinationServiceNameKey(), request_info.destination_service_host},
          {destinationServiceNamespaceKey(), peer_node_info.namespace_()},
          {destinationPortKey(), std::to_string(request_info.destination_port)},
@@ -65,7 +63,8 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
        {requestOperationKey(), request_info.request_operation},
        {requestProtocolKey(), request_info.request_protocol},
        {serviceAuthenticationPolicyKey(),
-        request_info.mTLS ? kMutualTLS : kNone},
+        ::Wasm::Common::AuthenticationPolicyString(
+            request_info.service_auth_policy)},
        {destinationServiceNameKey(), request_info.destination_service_host},
        {destinationServiceNamespaceKey(), local_node_info.namespace_()},
        {destinationPortKey(), std::to_string(request_info.destination_port)},

@@ -21,7 +21,6 @@ import (
 
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
-	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 )
 
 const StackdriverClientHTTPListener = `
@@ -114,18 +113,20 @@ filter_chains:
             route:
               cluster: inbound|9080|http|server.default.svc.cluster.local
               timeout: 0s
+{{ .Vars.ServerTLSContext | indent 2 }}
 `
 
 func TestStackdriverPayload(t *testing.T) {
 	ports := env.NewPorts(env.StackDriverPayload)
 	params := &driver.Params{
 		Vars: map[string]string{
-			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
-			"SDPort":      fmt.Sprintf("%d", ports.SDPort),
-			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
-			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+			"ClientPort":                  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"SDPort":                      fmt.Sprintf("%d", ports.SDPort),
+			"BackendPort":                 fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":                 fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":                 fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":                  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+			"ServiceAuthenticationPolicy": "NONE",
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -144,9 +145,52 @@ func TestStackdriverPayload(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.Repeat{N: 10, Step: &driver.Get{ports.ClientToServerProxyPort, "hello, world!"}},
-			sd.Check(
-				[]string{fs.ServerRequestCountJSON, fs.ClientRequestCountJSON},
-				[]string{fs.ServerAccessLogJSON},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
+				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStackdriverPayloadWithTLS(t *testing.T) {
+	ports := env.NewPorts(env.StackDriverPayloadWithTLS)
+	params := &driver.Params{
+		Vars: map[string]string{
+			"ClientPort":                  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"SDPort":                      fmt.Sprintf("%d", ports.SDPort),
+			"BackendPort":                 fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":                 fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":                 fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":                  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+			"ServiceAuthenticationPolicy": "MUTUAL_TLS",
+			"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
+			"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
+		},
+		XDS: int(ports.XDSPort),
+	}
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ClientTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+
+	sd := &driver.Stackdriver{Port: ports.SDPort}
+
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			sd,
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 10, Step: &driver.Get{ports.ClientToServerProxyPort, "hello, world!"}},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
+				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
 		},
 	}).Run(params); err != nil {

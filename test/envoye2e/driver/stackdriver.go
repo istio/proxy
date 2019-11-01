@@ -85,67 +85,62 @@ func (sd *Stackdriver) Cleanup() {
 	close(sd.done)
 }
 
-func (sd *Stackdriver) Check(ts []string, ls []string) Step {
+func (sd *Stackdriver) Check(p *Params, tsFiles []string, lsFiles []string) Step {
+	// check as sets of strings by marshaling to proto
+	twant := make(map[string]struct{})
+	for _, t := range tsFiles {
+		pb := &monitoring.TimeSeries{}
+		p.LoadTestProto(t, pb)
+		twant[proto.MarshalTextString(pb)] = struct{}{}
+	}
+	lwant := make(map[string]struct{})
+	for _, l := range lsFiles {
+		pb := &logging.WriteLogEntriesRequest{}
+		p.LoadTestProto(l, pb)
+		lwant[proto.MarshalTextString(pb)] = struct{}{}
+	}
 	return &checkStackdriver{
-		sd: sd,
-		ts: ts,
-		ls: ls,
+		sd:    sd,
+		twant: twant,
+		lwant: lwant,
 	}
 }
 
 type checkStackdriver struct {
-	sd *Stackdriver
-	ts []string
-	ls []string
+	sd    *Stackdriver
+	twant map[string]struct{}
+	lwant map[string]struct{}
 }
 
 func (s *checkStackdriver) Run(p *Params) error {
-	// check as sets of strings by marshaling to proto
-	twant := make(map[string]struct{})
-	for _, t := range s.ts {
-		pb := &monitoring.TimeSeries{}
-		if err := p.FillYAML(t, pb); err != nil {
-			return err
-		}
-		twant[proto.MarshalTextString(pb)] = struct{}{}
-	}
-	lwant := make(map[string]struct{})
-	for _, l := range s.ls {
-		pb := &logging.WriteLogEntriesRequest{}
-		if err := p.FillYAML(l, pb); err != nil {
-			return err
-		}
-		lwant[proto.MarshalTextString(pb)] = struct{}{}
-	}
-
 	foundAllLogs := false
 	foundAllMetrics := false
 	for i := 0; i < 30; i++ {
 		s.sd.Lock()
-		foundAllLogs = reflect.DeepEqual(s.sd.ls, lwant)
+		foundAllLogs = reflect.DeepEqual(s.sd.ls, s.lwant)
 		if !foundAllLogs {
-			log.Printf("got log entries %d, want %d\n", len(s.sd.ls), len(lwant))
-			if len(s.sd.ls) >= len(lwant) {
+			log.Printf("got log entries %d, want %d\n", len(s.sd.ls), len(s.lwant))
+			if len(s.sd.ls) >= len(s.lwant) {
 				for got := range s.sd.ls {
 					log.Println(got)
 				}
 				log.Println("--- but want ---")
-				for want := range lwant {
+				for want := range s.lwant {
 					log.Println(want)
 				}
 				return fmt.Errorf("failed to receive expected logs")
 			}
 		}
 
-		foundAllMetrics = reflect.DeepEqual(s.sd.ts, twant)
+		foundAllMetrics = reflect.DeepEqual(s.sd.ts, s.twant)
 		if !foundAllMetrics {
-			log.Printf("got metrics %d, want %d\n", len(s.sd.ts), len(twant))
-			if len(s.sd.ts) >= len(twant) {
+			log.Printf("got metrics %d, want %d\n", len(s.sd.ts), len(s.twant))
+			if len(s.sd.ts) >= len(s.twant) {
 				for got := range s.sd.ts {
 					log.Println(got)
 				}
 				log.Println("--- but want ---")
-				for want := range twant {
+				for want := range s.twant {
 					log.Println(want)
 				}
 				return fmt.Errorf("failed to receive expected metrics")

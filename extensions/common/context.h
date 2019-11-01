@@ -49,6 +49,17 @@ const std::string kProtocolGRPC = "grpc";
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
 
+enum class ServiceAuthenticationPolicy : int64_t {
+  Unspecified = 0,
+  None = 1,
+  MutualTLS = 2,
+};
+
+constexpr StringView kMutualTLS = "MUTUAL_TLS";
+constexpr StringView kNone = "NONE";
+
+StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
+
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
 struct RequestInfo {
@@ -86,8 +97,8 @@ struct RequestInfo {
   // Operation of the request, i.e. HTTP method or gRPC API method.
   std::string request_operation;
 
-  // Indicates if the request uses mTLS.
-  bool mTLS = false;
+  // Service authentication policy (NONE, MUTUAL_TLS)
+  ServiceAuthenticationPolicy service_auth_policy;
 
   // Principal of source and destination workload extracted from TLS
   // certificate.

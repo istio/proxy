@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"path/filepath"
 	"time"
 )
 
@@ -32,18 +33,21 @@ type TCPServer struct {
 	lis       net.Listener
 	prefix    string
 	enableTLS bool
+	dir       string
 }
 
 // NewTCPServer creates a new TCP server.
-func NewTCPServer(port uint16, prefix string, enableTLS bool) (*TCPServer, error) {
+func NewTCPServer(port uint16, prefix string, enableTLS bool, rootDir string) (*TCPServer, error) {
 	log.Printf("Tcp server listening on port %v\n", port)
 	var lis net.Listener
 	if enableTLS {
-		certificate, err := tls.LoadX509KeyPair("cert-chain.pem", "key.pem")
+		certificate, err := tls.LoadX509KeyPair(
+			filepath.Join(rootDir, "testdata/certs/cert-chain.pem"),
+			filepath.Join(rootDir, "testdata/certs/key.pem"))
 		if err != nil {
 			return nil, err
 		}
-		caCert, err := ioutil.ReadFile("root-cert.pem")
+		caCert, err := ioutil.ReadFile(filepath.Join(rootDir, "testdata/certs/root-cert.pem"))
 		if err != nil {
 			return nil, err
 		}
@@ -76,6 +80,7 @@ func NewTCPServer(port uint16, prefix string, enableTLS bool) (*TCPServer, error
 		lis:       lis,
 		prefix:    prefix,
 		enableTLS: enableTLS,
+		dir:       rootDir,
 	}, nil
 }
 
@@ -102,12 +107,12 @@ func handleConnection(conn net.Conn, prefix string) {
 }
 
 // WaitForTCPServer waits for a TCP server
-func WaitForTCPServer(port uint16, enableTLS bool) error {
+func WaitForTCPServer(port uint16, enableTLS bool, rootDir string) error {
 	var config *tls.Config
 
 	if enableTLS {
 		certPool := x509.NewCertPool()
-		bs, err := ioutil.ReadFile("cert-chain.pem")
+		bs, err := ioutil.ReadFile(filepath.Join(rootDir, "testdata/certs/cert-chain.pem"))
 		if err != nil {
 			return fmt.Errorf("failed to read client ca cert: %s", err)
 		}
@@ -165,7 +170,7 @@ func (s *TCPServer) Start() <-chan error {
 		errCh <- Serve(s.lis, s.prefix)
 	}()
 	go func() {
-		errCh <- WaitForTCPServer(s.port, s.enableTLS)
+		errCh <- WaitForTCPServer(s.port, s.enableTLS, s.dir)
 	}()
 
 	return errCh

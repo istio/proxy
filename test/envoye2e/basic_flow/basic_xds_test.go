@@ -75,6 +75,7 @@ filter_chains:
             route:
               cluster: inbound|9080|http|server.default.svc.cluster.local
               timeout: 0s
+{{ .Vars.ServerTLSContext | indent 2 }}
 `
 
 func TestBasicHTTP(t *testing.T) {
@@ -89,6 +90,35 @@ func TestBasicHTTP(t *testing.T) {
 		},
 		XDS: int(ports.XDSPort),
 	}
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{ClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{ServerHTTPListener}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Get{ports.ClientToServerProxyPort, "hello, world!"},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBasicHTTPwithTLS(t *testing.T) {
+	ports := env.NewPorts(env.BasicHTTPwithTLS)
+	params := &driver.Params{
+		Vars: map[string]string{
+			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
+			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+		},
+		XDS: int(ports.XDSPort),
+	}
+	params.Vars["ClientTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
