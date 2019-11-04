@@ -117,12 +117,7 @@ bool StackdriverRootContext::onConfigure(
     return false;
   }
 
-  int64_t direction;
-  if (getValue({"listener_direction"}, &direction)) {
-    direction_ = static_cast<::Wasm::Common::TrafficDirection>(direction);
-  } else {
-    logWarn("Unable to get plugin direction");
-  }
+  direction_ = ::Wasm::Common::getTrafficDirection();
 
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to

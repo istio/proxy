@@ -52,13 +52,9 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
   }
-  int64_t direction;
-  if (getValue({"listener_direction"}, &direction)) {
-    outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
-                static_cast<::Wasm::Common::TrafficDirection>(direction);
-  } else {
-    LOG_WARN("Unable to get plugin direction");
-  }
+  outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
+              ::Wasm::Common::getTrafficDirection();
+
   // Local data does not change, so populate it on config load.
   istio_dimensions_.init(outbound_, local_node_info_);
 
