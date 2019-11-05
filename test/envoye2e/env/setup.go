@@ -450,13 +450,13 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uin
 	s.t.Helper()
 
 	check := func(respBody string) error {
+		var parser expfmt.TextParser
+		reader := strings.NewReader(respBody)
+		mapMetric, err := parser.TextToMetricFamilies(reader)
+		if err != nil {
+			return err
+		}
 		for eStatsName, eStatsValue := range expectedStats {
-			var parser expfmt.TextParser
-			reader := strings.NewReader(respBody)
-			mapMetric, err := parser.TextToMetricFamilies(reader)
-			if err != nil {
-				return err
-			}
 			aStats, ok := mapMetric[eStatsName]
 			if !ok {
 				return fmt.Errorf("failed to find expected stat %s", eStatsName)
@@ -468,13 +468,13 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uin
 				if len(aStats.GetMetric()) != 1 {
 					return fmt.Errorf("expected one value for counter")
 				}
-				aStatsValue = (*(aStats.GetMetric())[0]).GetCounter().GetValue()
+				aStatsValue = aStats.GetMetric()[0].GetCounter().GetValue()
 				break
 			case dto.MetricType_GAUGE:
 				if len(aStats.GetMetric()) != 1 {
 					return fmt.Errorf("expected one value for gauge")
 				}
-				aStatsValue = (*(aStats.GetMetric())[0]).GetGauge().GetValue()
+				aStatsValue = aStats.GetMetric()[0].GetGauge().GetValue()
 			default:
 				return fmt.Errorf("need to implement this type %v", aStats.GetType())
 			}
