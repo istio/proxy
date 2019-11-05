@@ -137,13 +137,13 @@ var wantTrafficReq = &edgespb.ReportTrafficAssertionsRequest{
 	TrafficAssertions: []*edgespb.TrafficAssertion{
 		&edgespb.TrafficAssertion{
 			Protocol:                    edgespb.TrafficAssertion_PROTOCOL_HTTP,
-			DestinationServiceName:      "server.default.svc.cluster.local",
+			DestinationServiceName:      "server",
 			DestinationServiceNamespace: "default",
 			Source: &edgespb.WorkloadInstance{
 				Uid:               "kubernetes://productpage-v1-84975bc778-pxz2w.default",
 				Location:          "us-east4-b",
 				ClusterName:       "test-cluster",
-				OwnerUid:          "kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
+				OwnerUid:          "kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1",
 				WorkloadName:      "productpage-v1",
 				WorkloadNamespace: "default",
 			},
@@ -151,7 +151,7 @@ var wantTrafficReq = &edgespb.ReportTrafficAssertionsRequest{
 				Uid:               "kubernetes://ratings-v1-84975bc778-pxz2w.default",
 				Location:          "us-east4-b",
 				ClusterName:       "test-cluster",
-				OwnerUid:          "kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
+				OwnerUid:          "kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1",
 				WorkloadName:      "ratings-v1",
 				WorkloadNamespace: "default",
 			},
