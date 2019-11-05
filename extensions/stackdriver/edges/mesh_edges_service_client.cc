@@ -87,6 +87,9 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
 
 void MeshEdgesServiceClientImpl::reportTrafficAssertions(
     const ReportTrafficAssertionsRequest& request) const {
+
+  logDebug("mesh edge services client: sending request '" + request.DebugString() + "'");
+
   context_->grpcSimpleCall(
       grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
       kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
