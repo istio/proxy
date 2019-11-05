@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/mixerclient/report_batch.h"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/istio/utils/attributes_builder.h"

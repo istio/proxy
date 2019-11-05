@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/mixerclient/check_cache.h"
+
 #include "include/istio/utils/protobuf.h"
 #include "src/istio/utils/logger.h"
 

@@ -15,11 +15,11 @@
 
 #include "jwt.h"
 
+#include <tuple>
+
 #include "common/common/utility.h"
 #include "common/json/json_loader.h"
 #include "test/test_common/utility.h"
-
-#include <tuple>
 
 namespace Envoy {
 namespace Http {

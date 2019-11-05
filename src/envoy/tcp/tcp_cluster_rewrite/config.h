@@ -16,7 +16,6 @@
 #pragma once
 
 #include "envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1/config.pb.h"
-
 #include "envoy/network/connection.h"
 #include "envoy/network/filter.h"
 #include "envoy/registry/registry.h"

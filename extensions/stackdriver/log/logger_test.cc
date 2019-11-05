@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
+#include "extensions/stackdriver/log/logger.h"
+
 #include <memory>
 
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/utils.h"
-#include "extensions/stackdriver/log/logger.h"
 #include "gmock/gmock.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/protobuf/util/message_differencer.h"

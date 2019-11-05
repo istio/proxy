@@ -16,14 +16,14 @@
 #ifndef ISTIO_MIXERCLIENT_CLIENT_IMPL_H
 #define ISTIO_MIXERCLIENT_CLIENT_IMPL_H
 
+#include <atomic>
+#include <random>
+
 #include "include/istio/mixerclient/client.h"
 #include "src/istio/mixerclient/attribute_compressor.h"
 #include "src/istio/mixerclient/check_cache.h"
 #include "src/istio/mixerclient/quota_cache.h"
 #include "src/istio/mixerclient/report_batch.h"
-
-#include <atomic>
-#include <random>
 
 using ::istio::mixerclient::CheckContextSharedPtr;
 using ::istio::mixerclient::SharedAttributesSharedPtr;

@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/control/tcp/controller_impl.h"
+
 #include "src/istio/control/tcp/request_handler_impl.h"
 
 using ::istio::mixer::v1::config::client::TcpClientConfig;

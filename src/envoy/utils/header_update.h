@@ -18,7 +18,6 @@
 #include "common/common/base64.h"
 #include "common/common/logger.h"
 #include "envoy/http/header_map.h"
-
 #include "include/istio/control/http/controller.h"
 
 namespace Envoy {

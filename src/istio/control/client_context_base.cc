@@ -14,6 +14,7 @@
  */
 
 #include "client_context_base.h"
+
 #include "include/istio/mixerclient/check_response.h"
 #include "include/istio/utils/attribute_names.h"
 #include "include/istio/utils/attributes_builder.h"
