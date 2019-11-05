@@ -27,7 +27,7 @@ import (
 )
 
 const StatsClientHTTPListener = `
-name: client{{ .N }}
+name: client
 traffic_direction: OUTBOUND
 address:
   socket_address:
@@ -72,7 +72,7 @@ filter_chains:
 `
 
 const StatsServerHTTPListener = `
-name: server{{ .N }}
+name: server
 traffic_direction: INBOUND
 address:
   socket_address:
@@ -215,7 +215,7 @@ func TestStatsParallel(t *testing.T) {
 							&driver.Update{Node: "client", Version: "{{.N}}", Listeners: []string{StatsClientHTTPListener}},
 							&driver.Update{Node: "server", Version: "{{.N}}", Listeners: []string{StatsServerHTTPListener}},
 							// may need short delay so we don't eat all the CPU
-							&driver.Sleep{10 * time.Millisecond},
+							&driver.Sleep{100 * time.Millisecond},
 						},
 					},
 				},
