@@ -133,3 +133,32 @@ func TestBasicHTTPwithTLS(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Tests with a single combined proxy hosting inbound/outbound listeners
+func TestBasicHTTPGateway(t *testing.T) {
+	ports := env.NewPorts(env.BasicHTTPGateway)
+	params := &driver.Params{
+		Vars: map[string]string{
+			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
+			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+		},
+		XDS: int(ports.XDSPort),
+	}
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "server", Version: "0",
+				Clusters:  []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{ClientHTTPListener, ServerHTTPListener},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Get{ports.ClientToServerProxyPort, "hello, world!"},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}

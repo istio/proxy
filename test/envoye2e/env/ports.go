@@ -36,9 +36,11 @@ const (
 	BasicHTTP
 	BasicHTTPwithTLS
 	StackDriverPayload
+	StackDriverPayloadGateway
 	StackDriverPayloadWithTLS
 	StackDriverReload
 	StackDriverParallel
+	BasicHTTPGateway
 
 	// The number of total tests. has to be the last one.
 	maxTestNum
