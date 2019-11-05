@@ -45,17 +45,17 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
 
   // Set log names.
   const auto& platform_metadata = local_node_info.platform_metadata();
-  auto iter = platform_metadata.find(Common::kGCPProjectKey);
+  const auto project_iter = platform_metadata.find(Common::kGCPProjectKey);
   std::string project_id = "";
-  if (iter != platform_metadata.end()) {
-    project_id = iter->second;
+  if (project_iter != platform_metadata.end()) {
+    project_id = project_iter->second;
   }
   log_entries_request_->set_log_name("projects/" + project_id + "/logs/" +
                                      kServerAccessLogName);
 
   std::string resource_type = Common::kContainerMonitoredResource;
-  iter = platform_metadata.find(Common::kGCPClusterNameKey);
-  if (platform_metadata.end() == iter) {
+  const auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
+  if (platform_metadata.end() == cluster_iter) {
     // if there is no cluster name, then this is a gce_instance
     resource_type = Common::kGCEInstanceMonitoredResource;
   }
