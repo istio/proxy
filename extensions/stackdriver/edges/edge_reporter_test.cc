@@ -256,6 +256,29 @@ TEST(EdgeReporterTest, TestCacheMisses) {
   EXPECT_EQ(3500, num_assertions);
 }
 
+TEST(EdgeReporterTest, TestMissingPeerMetadata) {
+  ReportTrafficAssertionsRequest got;
+
+  auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
+      [&got](const ReportTrafficAssertionsRequest& req) { got = req; });
+  auto node_info = peerNodeInfo();
+  node_info.clear_platform_metadata();
+  auto edges = std::make_unique<EdgeReporter>(
+      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+  edges->addEdge(requestInfo(), "test", node_info);
+  edges->reportEdges();
+
+  // ignore timestamps in proto comparisons.
+  got.set_allocated_timestamp(nullptr);
+  auto wantReq = want();
+  (*wantReq.mutable_traffic_assertions())[0]
+      .mutable_source()
+      ->clear_cluster_name();
+  (*wantReq.mutable_traffic_assertions())[0].mutable_source()->clear_location();
+  EXPECT_PROTO_EQUAL(wantReq, got,
+                     "ERROR: addEdge() produced unexpected result.");
+}
+
 }  // namespace Edges
 }  // namespace Stackdriver
 }  // namespace Extensions
