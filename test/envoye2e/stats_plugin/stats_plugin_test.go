@@ -193,7 +193,7 @@ func TestStatsPlugin(t *testing.T) {
 	}
 	defer s.TearDownClientServerEnvoy()
 
-	url := fmt.Sprintf("http://localhost:%d/echo", s.Ports().AppToClientProxyPort)
+	url := fmt.Sprintf("http://127.0.0.1:%d/echo", s.Ports().AppToClientProxyPort)
 
 	// Issues a GET echo request with 0 size body
 	tag := "OKGet"
