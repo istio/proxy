@@ -75,7 +75,8 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
     : edges_client_(std::move(edges_client)), now_(now) {
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
-  const auto iter = local_node_info.platform_metadata().find(Common::kGCPProjectKey);
+  const auto iter =
+      local_node_info.platform_metadata().find(Common::kGCPProjectKey);
   if (iter != local_node_info.platform_metadata().end()) {
     current_request_->set_parent("projects/" + iter->second);
   }
