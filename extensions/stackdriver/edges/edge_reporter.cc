@@ -24,6 +24,14 @@
 #include "extensions/common/wasm/null/null_plugin.h"
 #endif
 
+#define SET_IF_FOUND(src, srcKey, dest)    \
+  do {                                     \
+    const auto& it = (src).find((srcKey)); \
+    if (it != (src).end()) {               \
+      (dest)(it->second);                  \
+    }                                      \
+  } while (0)
+
 namespace Extensions {
 namespace Stackdriver {
 namespace Edges {
@@ -46,14 +54,18 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
   // TODO(douglas-reid): support more than just kubernetes instances
   absl::StrAppend(instance->mutable_uid(), "kubernetes://", node_info.name(),
                   ".", node_info.namespace_());
-  // TODO(douglas-reid): support more than just GCP ?
-  instance->set_location(
-      node_info.platform_metadata().at(Common::kGCPLocationKey));
-  instance->set_cluster_name(
-      node_info.platform_metadata().at(Common::kGCPClusterNameKey));
   instance->set_owner_uid(node_info.owner());
   instance->set_workload_name(node_info.workload_name());
   instance->set_workload_namespace(node_info.namespace_());
+  // TODO(douglas-reid): support more than just GCP ?
+  const auto& platform_metadata = node_info.platform_metadata();
+  if (platform_metadata.empty()) {
+    return;
+  }
+  SET_IF_FOUND(platform_metadata, Common::kGCPLocationKey,
+               instance->set_location);
+  SET_IF_FOUND(platform_metadata, Common::kGCPClusterNameKey,
+               instance->set_cluster_name);
 };
 
 }  // namespace

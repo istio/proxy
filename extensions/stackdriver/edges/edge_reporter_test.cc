@@ -101,6 +101,22 @@ const char kPeerInfo[] = R"(
   mesh_id: "test-mesh"
 )";
 
+const char kPeerInfoMissingLocation[] = R"(
+  name: "test_peer_pod"
+  namespace: "test_peer_namespace"
+  workload_name: "test_peer_workload"
+  owner: "kubernetes://peer_owner"
+  platform_metadata: {
+    key: "gcp_project"
+    value: "test_project"
+  }
+  platform_metadata: {
+    key: "gcp_gke_cluster_name"
+    value: "test_cluster"
+  }
+  mesh_id: "test-mesh"
+)";
+
 const char kWantGrpcRequest[] = R"(
   parent: "projects/test_project"
   mesh_uid: "test-mesh"
@@ -127,6 +143,27 @@ const char kWantGrpcRequest[] = R"(
   }
 )";
 
+const char kWantGrpcRequestSrcEmpty[] = R"(
+  parent: "projects/test_project"
+  mesh_uid: "test-mesh"
+  traffic_assertions: {
+    protocol: PROTOCOL_HTTP
+    destination_service_name: "httpbin.org"
+    destination_service_namespace: "test_namespace"
+    source: {
+      uid: "kubernetes://."
+    }
+    destination: {
+      workload_namespace: "test_namespace"
+      workload_name: "test_workload"
+      cluster_name: "test_cluster"
+      location: "test_location"
+      owner_uid: "kubernetes://test_owner"
+      uid: "kubernetes://test_pod.test_namespace"
+    }
+  }
+)";
+
 wasm::common::NodeInfo nodeInfo() {
   wasm::common::NodeInfo node_info;
   TextFormat::ParseFromString(kNodeInfo, &node_info);
@@ -136,6 +173,12 @@ wasm::common::NodeInfo nodeInfo() {
 wasm::common::NodeInfo peerNodeInfo() {
   wasm::common::NodeInfo node_info;
   TextFormat::ParseFromString(kPeerInfo, &node_info);
+  return node_info;
+}
+
+wasm::common::NodeInfo peerNodeInfoMissingLocation() {
+  wasm::common::NodeInfo node_info;
+  TextFormat::ParseFromString(kPeerInfoMissingLocation, &node_info);
   return node_info;
 }
 
@@ -152,6 +195,11 @@ ReportTrafficAssertionsRequest want() {
   return req;
 }
 
+ReportTrafficAssertionsRequest wantSrcEmpty() {
+  ReportTrafficAssertionsRequest req;
+  TextFormat::ParseFromString(kWantGrpcRequestSrcEmpty, &req);
+  return req;
+}
 }  // namespace
 
 TEST(EdgesTest, TestAddEdge) {
@@ -176,6 +224,62 @@ TEST(EdgesTest, TestAddEdge) {
   got.set_allocated_timestamp(nullptr);
 
   EXPECT_PROTO_EQUAL(want(), got,
+                     "ERROR: addEdge() produced unexpected result.");
+}
+
+TEST(EdgesTest, TestAddEdgeNoPeerLocation) {
+  int calls = 0;
+  ReportTrafficAssertionsRequest got;
+
+  auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
+      [&calls, &got](const ReportTrafficAssertionsRequest& request) {
+        calls++;
+        got = request;
+      });
+
+  auto edges = std::make_unique<EdgeReporter>(
+      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+  edges->addEdge(requestInfo(), "test", peerNodeInfoMissingLocation());
+  edges->reportEdges();
+
+  // must ensure that we used the client to report the edges
+  EXPECT_EQ(1, calls);
+
+  // ignore timestamps in proto comparisons.
+  got.set_allocated_timestamp(nullptr);
+  auto want_proto = want();
+  want_proto.mutable_traffic_assertions()
+      ->Mutable(0)
+      ->mutable_source()
+      ->set_location("");
+
+  EXPECT_PROTO_EQUAL(want_proto, got,
+                     "ERROR: addEdge() produced unexpected result.");
+}
+
+TEST(EdgesTest, TestAddEdgeNoPeerMeta) {
+  int calls = 0;
+  ReportTrafficAssertionsRequest got;
+  wasm::common::NodeInfo node_info;
+
+  auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
+      [&calls, &got](const ReportTrafficAssertionsRequest& request) {
+        calls++;
+        got = request;
+      });
+
+  auto edges = std::make_unique<EdgeReporter>(
+      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+  edges->addEdge(requestInfo(), "test", node_info);
+  edges->reportEdges();
+
+  // must ensure that we used the client to report the edges
+  EXPECT_EQ(1, calls);
+
+  // ignore timestamps in proto comparisons.
+  got.set_allocated_timestamp(nullptr);
+
+  EXPECT_PROTO_EQUAL(wantSrcEmpty(), got,
                      "ERROR: addEdge() produced unexpected result.");
 }
 
