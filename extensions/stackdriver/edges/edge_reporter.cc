@@ -110,7 +110,7 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
   auto* traffic_assertions = current_request_->mutable_traffic_assertions();
   auto* edge = traffic_assertions->Add();
 
-  edge->set_destination_service_name(request_info.destination_service_name());
+  edge->set_destination_service_name(request_info.destination_service_name);
   edge->set_destination_service_namespace(node_instance_.workload_namespace());
   instanceFromMetadata(peer_node_info, edge->mutable_source());
   edge->mutable_destination()->CopyFrom(node_instance_);

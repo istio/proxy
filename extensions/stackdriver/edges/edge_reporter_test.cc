@@ -106,7 +106,7 @@ const char kWantGrpcRequest[] = R"(
   mesh_uid: "test-mesh"
   traffic_assertions: {
     protocol: PROTOCOL_HTTP
-    destination_service_name: "httpbin.org"
+    destination_service_name: "httpbin"
     destination_service_namespace: "test_namespace"
     source: {
       workload_namespace: "test_peer_namespace"
@@ -142,6 +142,7 @@ wasm::common::NodeInfo peerNodeInfo() {
 ::Wasm::Common::RequestInfo requestInfo() {
   ::Wasm::Common::RequestInfo request_info;
   request_info.destination_service_host = "httpbin.org";
+  request_info.destination_service_name = "httpbin";
   request_info.request_protocol = "HTTP";
   return request_info;
 }
