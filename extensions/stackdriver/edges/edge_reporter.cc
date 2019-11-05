@@ -48,13 +48,13 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
                   ".", node_info.namespace_());
   // TODO(douglas-reid): support more than just GCP ?
   const auto& platform_metadata = node_info.platform_metadata();
-  auto iter = platform_metadata.find(Common::kGCPLocationKey);
-  if (iter != platform_metadata.end()) {
-    instance->set_location(iter->second);
+  const auto location_iter = platform_metadata.find(Common::kGCPLocationKey);
+  if (location_iter != platform_metadata.end()) {
+    instance->set_location(location_iter->second);
   }
-  iter = platform_metadata.find(Common::kGCPClusterNameKey);
-  if (iter != platform_metadata.end()) {
-    instance->set_cluster_name(iter->second);
+  const auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
+  if (cluster_iter != platform_metadata.end()) {
+    instance->set_cluster_name(cluster_iter->second);
   }
   instance->set_owner_uid(node_info.owner());
   instance->set_workload_name(node_info.workload_name());
@@ -75,7 +75,7 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
     : edges_client_(std::move(edges_client)), now_(now) {
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
-  auto iter = local_node_info.platform_metadata().find(Common::kGCPProjectKey);
+  const auto iter = local_node_info.platform_metadata().find(Common::kGCPProjectKey);
   if (iter != local_node_info.platform_metadata().end()) {
     current_request_->set_parent("projects/" + iter->second);
   }
