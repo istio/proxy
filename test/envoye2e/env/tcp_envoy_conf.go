@@ -45,6 +45,7 @@ static_resources:
 {{.ClusterTLSContext | indent 4 }}
   listeners:
   - name: app-to-client
+    traffic_direction: OUTBOUND
     address:
       socket_address:
         address: 127.0.0.1
@@ -99,6 +100,7 @@ static_resources:
 {{.ClusterTLSContext | indent 4 }}
   listeners:
   - name: server
+    traffic_direction: INBOUND
     address:
       socket_address:
         address: 127.0.0.1

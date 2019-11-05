@@ -347,7 +347,7 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
-  void report();
+  void report(bool is_tcp);
   bool outbound() const { return outbound_; }
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
 
@@ -393,14 +393,41 @@ class PluginRootContextInbound : public PluginRootContext {
 // Per-stream context.
 class PluginContext : public Context {
  public:
-  explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
+  explicit PluginContext(uint32_t id, RootContext* root)
+      : Context(id, root),
+        upstream_closed_(false),
+        downstream_closed_(false),
+        tcp_reported_(false) {}
 
-  void onLog() override { rootContext()->report(); };
+  void onLog() override { rootContext()->report(false); };
+
+  void onDownstreamConnectionClose(PeerType) override {
+    downstream_closed_ = true;
+    if (upstream_closed_ && !tcp_reported_) {
+      logTCP();
+    }
+  }
+  void onUpstreamConnectionClose(PeerType) override {
+    upstream_closed_ = true;
+    if (downstream_closed_ && !tcp_reported_) {
+      logTCP();
+    }
+  }
 
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
+
+  void logTCP() {
+    tcp_reported_ = true;
+    rootContext()->report(true);
+  }
+
+  bool upstream_closed_;
+  bool downstream_closed_;
+  bool tcp_reported_;
+  ::Wasm::Common::RequestInfo request_info_;
 };
 
 #ifdef NULL_PLUGIN

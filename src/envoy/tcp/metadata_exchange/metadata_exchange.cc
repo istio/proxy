@@ -262,7 +262,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   const auto key_metadata_id_it =
       value_struct.fields().find(ExchangeMetadataHeaderId);
   if (key_metadata_id_it != value_struct.fields().end()) {
-    Envoy::ProtobufWkt::Value val = key_metadata_it->second;
+    Envoy::ProtobufWkt::Value val = key_metadata_id_it->second;
     setFilterState(config_->filter_direction_ == FilterDirection::Downstream
                        ? DownstreamMetadataIdKey
                        : UpstreamMetadataIdKey,

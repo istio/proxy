@@ -106,11 +106,12 @@ bool PluginRootContext::onConfigure(size_t) {
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.response_size;
           },
-          field_separator, value_separator)};
+          field_separator, value_separator),
+  };
   return true;
 }
 
-void PluginRootContext::report() {
+void PluginRootContext::report(bool is_tcp) {
   const auto peer_node_ptr =
       node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
   const wasm::common::NodeInfo& peer_node =
@@ -119,9 +120,14 @@ void PluginRootContext::report() {
   // map and overwrite previous mapping.
   const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
   ::Wasm::Common::RequestInfo request_info;
-  ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
-                                          &request_info,
-                                          destination_node_info.namespace_());
+  if (is_tcp) {
+    ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info,
+                                           destination_node_info.namespace_());
+  } else {
+    ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
+                                            &request_info,
+                                            destination_node_info.namespace_());
+  }
   istio_dimensions_.map(peer_node, request_info);
 
   auto stats_it = metrics_.find(istio_dimensions_);
