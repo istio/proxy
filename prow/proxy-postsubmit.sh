@@ -25,8 +25,7 @@ ROOT=$(dirname $WD)
 source "${WD}/proxy-common.inc"
 
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
-  gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, configuring Docker..." >&2
   gcloud auth configure-docker
 fi
 
