@@ -10,6 +10,8 @@ require (
 	github.com/envoyproxy/go-control-plane v0.9.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.3.2
+	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect
+	golang.org/x/sys v0.0.0-20190422165155-953cdadca894 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 	google.golang.org/grpc v1.23.0
 	gopkg.in/yaml.v2 v2.2.4 // indirect
