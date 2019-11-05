@@ -126,6 +126,9 @@ enum class TrafficDirection : int64_t {
   Outbound = 2,
 };
 
+// Retrieves the traffic direction from the configuration context.
+TrafficDirection getTrafficDirection();
+
 // Extracts NodeInfo from proxy node metadata passed in as a protobuf struct.
 // It converts the metadata struct to a JSON struct and parse NodeInfo proto
 // from that JSON struct.

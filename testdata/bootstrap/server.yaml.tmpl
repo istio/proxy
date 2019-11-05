@@ -8,6 +8,7 @@ admin:
     socket_address:
       address: 127.0.0.1
       port_value: {{ .Vars.ServerAdmin }}
+{{ .Vars.StatsConfig }}
 dynamic_resources:
   ads_config:
     api_type: GRPC
@@ -21,10 +22,15 @@ dynamic_resources:
 static_resources:
   clusters:
   - connect_timeout: 1s
-    hosts:
-    - socket_address:
-        address: 127.0.0.1
-        port_value: {{ .XDS }}
+    load_assignment:
+      cluster_name: xds_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{ .XDS }}
     http2_protocol_options: {}
     name: xds_cluster
   - name: inbound|9080|http|server.default.svc.cluster.local

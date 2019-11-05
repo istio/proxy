@@ -26,6 +26,7 @@ static const std::string EMPTY_STRING;
 
 #else
 
+#include "extensions/common/context.h"
 #include "extensions/common/wasm/null/null_plugin.h"
 
 namespace Envoy {
@@ -71,7 +72,9 @@ class PluginRootContext : public RootContext {
 // Per-stream context.
 class PluginContext : public Context {
  public:
-  explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
+  explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {
+    direction_ = ::Wasm::Common::getTrafficDirection();
+  }
 
   void onCreate() override{};
   FilterHeadersStatus onRequestHeaders() override;
@@ -83,6 +86,8 @@ class PluginContext : public Context {
   };
   inline StringView metadataValue() { return rootContext()->metadataValue(); };
   inline StringView nodeId() { return rootContext()->nodeId(); }
+
+  ::Wasm::Common::TrafficDirection direction_;
 };
 
 #ifdef NULL_PLUGIN

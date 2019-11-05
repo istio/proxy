@@ -101,7 +101,8 @@ std::string getMeshTelemetryEndpoint() {
 
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
-  // Parse configuration JSON string.
+  // TODO: add config validation to reject the listener if project id is not in
+  // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
@@ -117,12 +118,7 @@ bool StackdriverRootContext::onConfigure(
     return false;
   }
 
-  int64_t direction;
-  if (getValue({"listener_direction"}, &direction)) {
-    direction_ = static_cast<::Wasm::Common::TrafficDirection>(direction);
-  } else {
-    logWarn("Unable to get plugin direction");
-  }
+  direction_ = ::Wasm::Common::getTrafficDirection();
 
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to

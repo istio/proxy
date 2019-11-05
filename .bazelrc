@@ -156,6 +156,10 @@ build:docker-clang-libc++ --config=rbe-toolchain-clang-libc++
 build:docker-gcc --config=docker-sandbox
 build:docker-gcc --config=rbe-toolchain-gcc
 
+# CI configurations
+build:remote-ci --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build:remote-ci --remote_executor=grpcs://remotebuildexecution.googleapis.com
+
 # ========================================
 # Istio specific Bazel build/test options.
 # ========================================
@@ -184,9 +188,3 @@ build:debug -c dbg
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
-
-# Envoy repo overrides from the environment.
-build --action_env=ENVOY_REPOSITORY
-build --action_env=ENVOY_SHA
-build --action_env=ENVOY_SHA256
-build --action_env=ENVOY_PREFIX
