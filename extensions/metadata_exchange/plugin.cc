@@ -18,7 +18,6 @@
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/context.h"
 #include "extensions/common/node_info.pb.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -116,15 +115,19 @@ FilterHeadersStatus PluginContext::onRequestHeaders() {
                    downstream_metadata_id->view());
   }
 
-  auto metadata = metadataValue();
-  // insert peer metadata struct for upstream
-  if (!metadata.empty()) {
-    replaceRequestHeader(ExchangeMetadataHeader, metadata);
-  }
+  // do not send request internal headers to sidecar app if it is an inbound
+  // proxy
+  if (direction_ != ::Wasm::Common::TrafficDirection::Inbound) {
+    auto metadata = metadataValue();
+    // insert peer metadata struct for upstream
+    if (!metadata.empty()) {
+      replaceRequestHeader(ExchangeMetadataHeader, metadata);
+    }
 
-  auto nodeid = nodeId();
-  if (!nodeid.empty()) {
-    replaceRequestHeader(ExchangeMetadataHeaderId, nodeid);
+    auto nodeid = nodeId();
+    if (!nodeid.empty()) {
+      replaceRequestHeader(ExchangeMetadataHeaderId, nodeid);
+    }
   }
 
   return FilterHeadersStatus::Continue;
@@ -150,15 +153,19 @@ FilterHeadersStatus PluginContext::onResponseHeaders() {
                    upstream_metadata_id->view());
   }
 
-  auto metadata = metadataValue();
-  // insert peer metadata struct for downstream
-  if (!metadata.empty()) {
-    replaceResponseHeader(ExchangeMetadataHeader, metadata);
-  }
+  // do not send response internal headers to sidecar app if it is an outbound
+  // proxy
+  if (direction_ != ::Wasm::Common::TrafficDirection::Outbound) {
+    auto metadata = metadataValue();
+    // insert peer metadata struct for downstream
+    if (!metadata.empty()) {
+      replaceResponseHeader(ExchangeMetadataHeader, metadata);
+    }
 
-  auto nodeid = nodeId();
-  if (!nodeid.empty()) {
-    replaceResponseHeader(ExchangeMetadataHeaderId, nodeid);
+    auto nodeid = nodeId();
+    if (!nodeid.empty()) {
+      replaceResponseHeader(ExchangeMetadataHeaderId, nodeid);
+    }
   }
 
   return FilterHeadersStatus::Continue;
