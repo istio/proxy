@@ -39,6 +39,8 @@ const (
 	StackDriverPayloadWithTLS
 	StackDriverReload
 	StackDriverParallel
+	StatsPayload
+	StatsParallel
 
 	StatsPluginTest uint16 = iota
 
