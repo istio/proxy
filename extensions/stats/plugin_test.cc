@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
+#include "extensions/stats/plugin.h"
+
 #include <set>
 
 #include "absl/hash/hash_testing.h"
-#include "extensions/stats/plugin.h"
 #include "gtest/gtest.h"
 
 // WASM_PROLOG

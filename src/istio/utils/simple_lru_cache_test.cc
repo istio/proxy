@@ -17,10 +17,10 @@
 // Tests of SimpleLRUCache
 
 #include "include/istio/utils/simple_lru_cache.h"
-#include "include/istio/utils/simple_lru_cache_inl.h"
 
 #include <math.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -30,6 +30,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "include/istio/utils/simple_lru_cache_inl.h"
 
 using ::testing::HasSubstr;
 using ::testing::NotNull;

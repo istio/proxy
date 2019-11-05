@@ -16,11 +16,11 @@
 #ifndef ISTIO_UTILS_PROTOBUF_H_
 #define ISTIO_UTILS_PROTOBUF_H_
 
+#include <chrono>
+
 #include "google/protobuf/duration.pb.h"
 #include "google/protobuf/stubs/status.h"
 #include "google/protobuf/timestamp.pb.h"
-
-#include <chrono>
 
 namespace istio {
 namespace utils {

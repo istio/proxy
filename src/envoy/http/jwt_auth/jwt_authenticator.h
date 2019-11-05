@@ -17,7 +17,6 @@
 
 #include "common/common/logger.h"
 #include "envoy/http/async_client.h"
-
 #include "src/envoy/http/jwt_auth/auth_store.h"
 
 namespace Envoy {

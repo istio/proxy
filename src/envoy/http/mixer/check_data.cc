@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/mixer/check_data.h"
+
 #include "absl/strings/string_view.h"
 #include "common/common/base64.h"
 #include "src/envoy/http/jwt_auth/jwt.h"

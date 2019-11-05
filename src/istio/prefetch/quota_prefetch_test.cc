@@ -14,10 +14,11 @@
  */
 
 #include "include/istio/prefetch/quota_prefetch.h"
-#include "gtest/gtest.h"
 
 #include <list>
 #include <utility>
+
+#include "gtest/gtest.h"
 
 using namespace std::chrono;
 using Tick = ::istio::prefetch::QuotaPrefetch::Tick;

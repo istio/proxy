@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "google/protobuf/arena.h"
 #include "google/protobuf/stubs/status.h"
 #include "include/istio/mixerclient/check_response.h"
@@ -29,8 +31,6 @@
 #include "src/istio/mixerclient/quota_cache.h"
 #include "src/istio/mixerclient/shared_attributes.h"
 #include "src/istio/utils/logger.h"
-
-#include <vector>
 
 namespace istio {
 namespace mixerclient {

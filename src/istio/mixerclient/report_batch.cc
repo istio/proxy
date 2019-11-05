@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/mixerclient/report_batch.h"
+
 #include "include/istio/utils/protobuf.h"
 #include "src/istio/mixerclient/status_util.h"
 #include "src/istio/utils/logger.h"

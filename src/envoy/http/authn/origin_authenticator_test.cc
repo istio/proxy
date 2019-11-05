@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/origin_authenticator.h"
+
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/protobuf/protobuf.h"
 #include "envoy/api/v2/core/base.pb.h"

@@ -15,6 +15,14 @@
 
 #include "jwt.h"
 
+#include <algorithm>
+#include <cassert>
+#include <map>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "common/common/assert.h"
 #include "common/common/base64.h"
 #include "common/common/utility.h"
@@ -24,14 +32,6 @@
 #include "openssl/evp.h"
 #include "openssl/rsa.h"
 #include "openssl/sha.h"
-
-#include <algorithm>
-#include <cassert>
-#include <map>
-#include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
 
 namespace Envoy {
 namespace Http {
