@@ -464,7 +464,6 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uin
 			var aStatsValue float64
 			switch aStats.GetType() {
 			case dto.MetricType_COUNTER:
-				log.Printf("found counter")
 				if len(aStats.GetMetric()) != 1 {
 					return fmt.Errorf("expected one value for counter")
 				}
