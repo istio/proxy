@@ -227,7 +227,7 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
   }
   request_info->destination_port = destination_port;
 
-  uint64_t response_flags;
+  uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
   request_info->response_flag = parseResponseFlag(response_flags);
 }

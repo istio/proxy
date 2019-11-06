@@ -31,6 +31,9 @@ TEST(WasmCommonUtilsTest, ParseResponseFlag) {
   // These are not real use cases, but are used to cover multiple response flags
   // case.
   { EXPECT_EQ("UT,DI,FI", parseResponseFlag(0x604)); }
+
+  // Test overflow.
+  { EXPECT_EQ("DPE,786432", parseResponseFlag(0xC0000)); }
 }
 
 }  // namespace

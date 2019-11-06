@@ -157,6 +157,12 @@ const std::string parseResponseFlag(uint64_t response_flag) {
     appendString(result, DOWNSTREAM_PROTOCOL_ERROR);
   }
 
+  if (response_flag >= (LastFlag << 1)) {
+    // Response flag integer overflows. Append the integer to avoid information
+    // loss.
+    appendString(result, std::to_string(response_flag));
+  }
+
   return result.empty() ? NONE : result;
 }
 
