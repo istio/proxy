@@ -34,21 +34,21 @@ bind(
     actual = "//external:ssl",
 )
 
-# 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
+# 1. Determine SHA256 `wget https://github.com/istio/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelrc and .bazelversion files.
 #
-# envoy-wasm commit date: 11/01/2019
-ENVOY_SHA = "bc93450483712189f22b2225f76039d5fe1f8ff9"
+# envoy commit date: 11/05/2019
+ENVOY_SHA = "fa10c36bc6d4cf9bbd1d29d5648ce9c126d39c49"
 
-ENVOY_SHA256 = "d8b7ea5cd275f5edf61091158bff1d716c69069a3eca182c0d40f3201e5519ba"
+ENVOY_SHA256 = "6f769e7f3a749097af9432c19f7e1d594d56efaa318822ac203d0fb1b6e3fcdf"
 
 LOCAL_ENVOY_PROJECT = "/PATH/TO/ENVOY"
 
 http_archive(
     name = "envoy",
     sha256 = ENVOY_SHA256,
-    strip_prefix = "envoy-wasm-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy-wasm/archive/" + ENVOY_SHA + ".tar.gz",
+    strip_prefix = "envoy-" + ENVOY_SHA,
+    url = "https://github.com/istio/envoy/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
 # TODO(silentdai) Use bazel args to select envoy between local or http
