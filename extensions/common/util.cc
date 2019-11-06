@@ -20,6 +20,10 @@ namespace Common {
 
 namespace {
 
+// This replicates the flag lists in envoyproxy/envoy, because the property
+// access API does not support returning response flags as a short string since
+// it is not owned by any object and always generated on demand:
+// https://github.com/envoyproxy/envoy/blob/v1.12.0/source/common/stream_info/utility.cc#L8
 const std::string NONE = "-";
 const std::string DOWNSTREAM_CONNECTION_TERMINATION = "DC";
 const std::string FAILED_LOCAL_HEALTH_CHECK = "LH";
@@ -40,7 +44,6 @@ const std::string RATELIMIT_SERVICE_ERROR = "RLSE";
 const std::string STREAM_IDLE_TIMEOUT = "SI";
 const std::string INVALID_ENVOY_REQUEST_HEADERS = "IH";
 const std::string DOWNSTREAM_PROTOCOL_ERROR = "DPE";
-
 
 enum ResponseFlag {
   FailedLocalHealthCheck = 0x1,
@@ -64,7 +67,6 @@ enum ResponseFlag {
   DownstreamProtocolError = 0x40000,
   LastFlag = DownstreamProtocolError
 };
-
 
 void appendString(std::string& result, const std::string& append) {
   if (result.empty()) {
