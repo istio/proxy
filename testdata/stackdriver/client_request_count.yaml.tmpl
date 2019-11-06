@@ -1,9 +1,9 @@
 metric:
   labels:
-    destination_owner: kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1
+    destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
     destination_port: '{{ .Vars.ServerPort }}'
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
-    destination_service_name: 127.0.0.1:{{ .Vars.ClientPort }}
+    destination_service_name: "" # TODO: destination name is not filled
     destination_service_namespace: default
     destination_workload_name: ratings-v1
     destination_workload_namespace: default
@@ -12,7 +12,7 @@ metric:
     request_protocol: http
     response_code: "200"
     service_authentication_policy: "" # TODO: upstream TLS indicator is not reported
-    source_owner: kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1
+    source_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
     source_principal: "{{ .Vars.SourcePrincipal }}"
     source_workload_name: productpage-v1
     source_workload_namespace: default

@@ -20,12 +20,12 @@ jobs:
             - macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
       - run: rm ~/.gitconfig
       - run: make build_envoy
-      - run: make test
       - save_cache:
           key: macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
           paths:
             - /Users/distiller/.cache/bazel
             - /Users/distiller/Library/Caches/bazelisk/
+      - run: make test
 
 workflows:
   version: 2

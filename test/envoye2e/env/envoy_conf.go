@@ -28,6 +28,7 @@ node:
   metadata: {
 {{.ClientNodeMetadata | indent 4 }}
   }
+{{.ExtraConfig }}
 admin:
   access_log_path: {{.ClientAccessLogPath}}
   address:
@@ -129,6 +130,7 @@ node:
   metadata: {
 {{.ServerNodeMetadata | indent 4 }}
   }
+{{.ExtraConfig }}
 admin:
   access_log_path: {{.ServerAccessLogPath}}
   address:

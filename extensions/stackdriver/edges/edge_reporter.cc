@@ -47,10 +47,15 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
   absl::StrAppend(instance->mutable_uid(), "kubernetes://", node_info.name(),
                   ".", node_info.namespace_());
   // TODO(douglas-reid): support more than just GCP ?
-  instance->set_location(
-      node_info.platform_metadata().at(Common::kGCPLocationKey));
-  instance->set_cluster_name(
-      node_info.platform_metadata().at(Common::kGCPClusterNameKey));
+  const auto& platform_metadata = node_info.platform_metadata();
+  const auto location_iter = platform_metadata.find(Common::kGCPLocationKey);
+  if (location_iter != platform_metadata.end()) {
+    instance->set_location(location_iter->second);
+  }
+  const auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
+  if (cluster_iter != platform_metadata.end()) {
+    instance->set_cluster_name(cluster_iter->second);
+  }
   instance->set_owner_uid(node_info.owner());
   instance->set_workload_name(node_info.workload_name());
   instance->set_workload_namespace(node_info.namespace_());
@@ -70,9 +75,11 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
     : edges_client_(std::move(edges_client)), now_(now) {
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
-  const auto& project_id =
-      local_node_info.platform_metadata().at(Common::kGCPProjectKey);
-  current_request_->set_parent("projects/" + project_id);
+  const auto iter =
+      local_node_info.platform_metadata().find(Common::kGCPProjectKey);
+  if (iter != local_node_info.platform_metadata().end()) {
+    current_request_->set_parent("projects/" + iter->second);
+  }
 
   std::string mesh_id = local_node_info.mesh_id();
   if (mesh_id.empty()) {
@@ -103,9 +110,7 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
   auto* traffic_assertions = current_request_->mutable_traffic_assertions();
   auto* edge = traffic_assertions->Add();
 
-  // TODO(douglas-reid): use the short name for the destination service when
-  // available Right now, this uses destination host instead.
-  edge->set_destination_service_name(request_info.destination_service_host);
+  edge->set_destination_service_name(request_info.destination_service_name);
   edge->set_destination_service_namespace(node_instance_.workload_namespace());
   instanceFromMetadata(peer_node_info, edge->mutable_source());
   edge->mutable_destination()->CopyFrom(node_instance_);

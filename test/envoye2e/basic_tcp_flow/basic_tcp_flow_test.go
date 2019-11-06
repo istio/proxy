@@ -57,8 +57,8 @@ func TestTcpBasicFlow(t *testing.T) {
 	if message != "hello world\n" {
 		t.Fatalf("Verification Failed. Expected: hello world. Got: %v", message)
 	}
-	s.VerifyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
-	s.VerifyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
+	s.VerifyEnvoyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
+	s.VerifyEnvoyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
 }
 
 func getParsedExpectedStats(expectedStats map[string]int, t *testing.T, s *env.TestSetup) map[string]int {

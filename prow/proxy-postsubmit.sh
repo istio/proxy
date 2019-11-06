@@ -22,11 +22,13 @@ ROOT=$(dirname $WD)
 # Postsubmit script triggered by Prow. #
 ########################################
 
+# Disable RBE until docker-credential-gcloud is fixed.
+BAZEL_BUILD_RBE_JOBS=0
+
 source "${WD}/proxy-common.inc"
 
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
-  gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, configuring Docker..." >&2
   gcloud auth configure-docker
 fi
 
