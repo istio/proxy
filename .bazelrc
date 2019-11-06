@@ -1,8 +1,9 @@
 # =====================================================================
 # Envoy specific Bazel build/test options.
+# =====================================================================
+
 # Keep envoy.bazelrc up-to-date by run:
 # curl -sSL https://raw.githubusercontent.com/envoyproxy/envoy/master/.bazelrc > envoy.bazelrc
-# =====================================================================
 import envoy.bazelrc
 
 # Overrides workspace_status_command

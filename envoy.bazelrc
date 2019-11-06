@@ -19,7 +19,10 @@ build --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
 build --action_env=BAZEL_LINKOPTS=-lm
 build --host_javabase=@bazel_tools//tools/jdk:remote_jdk11
 build --javabase=@bazel_tools//tools/jdk:remote_jdk11
-build --copt=-fPIC
+build --enable_platform_specific_config
+
+# Enable position independent code, this option is not supported on Windows and default on on macOS.
+build:linux --copt=-fPIC
 
 # We already have absl in the build, define absl=1 to tell googletest to use absl for backtrace.
 build --define absl=1
@@ -139,8 +142,15 @@ build:remote --remote_download_toplevel
 build:remote-clang --config=remote
 build:remote-clang --config=rbe-toolchain-clang
 
+build:remote-clang-libc++ --config=remote
+build:remote-clang-libc++ --config=rbe-toolchain-clang-libc++
+
+build:remote-gcc --config=remote
+build:remote-gcc --config=rbe-toolchain-gcc
+
 # Docker sandbox
-build:docker-sandbox --experimental_docker_image=envoyproxy/envoy-build@sha256:3ca8acc35fdb57ab26e1bb5f9488f37095f45acd77a12602510410dbefa00b58
+# NOTE: Update this from https://github.com/envoyproxy/envoy-build-tools/blob/master/toolchains/rbe_toolchains_config.bzl#L7
+build:docker-sandbox --experimental_docker_image=envoyproxy/envoy-build-ubuntu@sha256:3ca8acc35fdb57ab26e1bb5f9488f37095f45acd77a12602510410dbefa00b58
 build:docker-sandbox --spawn_strategy=docker
 build:docker-sandbox --strategy=Javac=docker
 build:docker-sandbox --strategy=Closure=docker
@@ -151,6 +161,12 @@ build:docker-sandbox --experimental_enable_docker_sandbox
 
 build:docker-clang --config=docker-sandbox
 build:docker-clang --config=rbe-toolchain-clang
+
+build:docker-clang-libc++ --config=docker-sandbox
+build:docker-clang-libc++ --config=rbe-toolchain-clang-libc++
+
+build:docker-gcc --config=docker-sandbox
+build:docker-gcc --config=rbe-toolchain-gcc
 
 # CI configurations
 build:remote-ci --remote_cache=grpcs://remotebuildexecution.googleapis.com
