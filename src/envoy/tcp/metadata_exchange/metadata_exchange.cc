@@ -79,6 +79,7 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
                                                      bool) {
   switch (conn_state_) {
     case Invalid:
+      FALLTHRU;
     case Done:
       // No work needed if connection state is Done or Invalid.
       return Network::FilterStatus::Continue;
@@ -92,6 +93,7 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
       }
       conn_state_ = WriteMetadata;
       config_->stats().alpn_protocol_found_.inc();
+      FALLTHRU;
     }
     case WriteMetadata: {
       // TODO(gargnupur): Try to move this just after alpn protocol is
@@ -99,6 +101,7 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
       // If downstream filter, write metadata.
       // Otherwise, go ahead and try to read initial header and proxy data.
       writeNodeMetadata();
+      FALLTHRU;
     }
     case ReadingInitialHeader:
     case NeedMoreDataInitialHeader: {
@@ -109,6 +112,7 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
       if (conn_state_ == Invalid) {
         return Network::FilterStatus::Continue;
       }
+      FALLTHRU;
     }
     case ReadingProxyHeader:
     case NeedMoreDataProxyHeader: {
@@ -119,6 +123,7 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
       if (conn_state_ == Invalid) {
         return Network::FilterStatus::Continue;
       }
+      FALLTHRU;
     }
     default:
       conn_state_ = Done;
@@ -147,11 +152,13 @@ Network::FilterStatus MetadataExchangeFilter::onWrite(Buffer::Instance&, bool) {
         conn_state_ = WriteMetadata;
         config_->stats().alpn_protocol_found_.inc();
       }
+      FALLTHRU;
     }
     case WriteMetadata: {
       // TODO(gargnupur): Try to move this just after alpn protocol is
       // determined and first onWrite is called in Upstream filter.
       writeNodeMetadata();
+      FALLTHRU;
     }
     case ReadingInitialHeader:
     case ReadingProxyHeader:
