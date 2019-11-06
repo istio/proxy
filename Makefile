@@ -82,11 +82,6 @@ RUN = $(CONTAINER_CLI) run -t -i --sig-proxy=true -u $(UID):docker --rm \
 	--mount type=volume,source=go,destination="/go" \
 	--mount type=volume,source=gocache,destination="/gocache" \
 	-w /work $(IMG)
-else
-$(info Building with your local toolchain.)
-RUN =
-GOBIN ?= $(GOPATH)/bin
-endif
 
 MAKE = $(RUN) make --no-print-directory -e -f Makefile.core.mk
 
@@ -97,3 +92,11 @@ default:
 	@$(MAKE)
 
 .PHONY: default
+
+else
+
+$(info Building with your local toolchain.)
+GOBIN ?= $(GOPATH)/bin
+include Makefile.core.mk
+
+endif
