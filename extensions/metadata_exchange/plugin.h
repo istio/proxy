@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "extensions/common/context.h"
+
 #ifndef NULL_PLUGIN
 
 #include <assert.h>
@@ -26,7 +28,6 @@ static const std::string EMPTY_STRING;
 
 #else
 
-#include "extensions/common/context.h"
 #include "extensions/common/wasm/null/null_plugin.h"
 
 namespace Envoy {
