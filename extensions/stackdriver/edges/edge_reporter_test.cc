@@ -127,6 +127,32 @@ const char kWantGrpcRequest[] = R"(
   }
 )";
 
+const char kWantUnknownGrpcRequest[] = R"(
+  parent: "projects/test_project"
+  mesh_uid: "test-mesh"
+  traffic_assertions: {
+    protocol: PROTOCOL_HTTP
+    destination_service_name: "httpbin"
+    destination_service_namespace: "test_namespace"
+    source: {
+      workload_namespace: "unknown"
+      workload_name: "unknown"
+      cluster_name: "unknown"
+      location: "unknown"
+      owner_uid: "unknown"
+      uid: "kubernetes://unknown.unknown"
+    }
+    destination: {
+      workload_namespace: "test_namespace"
+      workload_name: "test_workload"
+      cluster_name: "test_cluster"
+      location: "test_location"
+      owner_uid: "kubernetes://test_owner"
+      uid: "kubernetes://test_pod.test_namespace"
+    }
+  }
+)";
+
 wasm::common::NodeInfo nodeInfo() {
   wasm::common::NodeInfo node_info;
   TextFormat::ParseFromString(kNodeInfo, &node_info);
@@ -150,6 +176,12 @@ wasm::common::NodeInfo peerNodeInfo() {
 ReportTrafficAssertionsRequest want() {
   ReportTrafficAssertionsRequest req;
   TextFormat::ParseFromString(kWantGrpcRequest, &req);
+  return req;
+}
+
+ReportTrafficAssertionsRequest wantUnknown() {
+  ReportTrafficAssertionsRequest req;
+  TextFormat::ParseFromString(kWantUnknownGrpcRequest, &req);
   return req;
 }
 
@@ -262,21 +294,14 @@ TEST(EdgeReporterTest, TestMissingPeerMetadata) {
 
   auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
       [&got](const ReportTrafficAssertionsRequest& req) { got = req; });
-  auto node_info = peerNodeInfo();
-  node_info.clear_platform_metadata();
   auto edges = std::make_unique<EdgeReporter>(
       nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
-  edges->addEdge(requestInfo(), "test", node_info);
+  edges->addEdge(requestInfo(), "test", wasm::common::NodeInfo());
   edges->reportEdges();
 
   // ignore timestamps in proto comparisons.
   got.set_allocated_timestamp(nullptr);
-  auto wantReq = want();
-  (*wantReq.mutable_traffic_assertions())[0]
-      .mutable_source()
-      ->clear_cluster_name();
-  (*wantReq.mutable_traffic_assertions())[0].mutable_source()->clear_location();
-  EXPECT_PROTO_EQUAL(wantReq, got,
+  EXPECT_PROTO_EQUAL(wantUnknown(), got,
                      "ERROR: addEdge() produced unexpected result.");
 }
 
