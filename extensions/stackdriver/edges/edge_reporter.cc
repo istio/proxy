@@ -40,25 +40,39 @@ using google::cloud::meshtelemetry::v1alpha1::
     TrafficAssertion_Protocol_PROTOCOL_TCP;
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 
+constexpr char kUnknown[] = "unknown";
+
+std::string valueOrUnknown(std::string value) {
+  if (value.length() == 0) {
+    return kUnknown;
+  }
+  return value;
+}
+
 namespace {
 void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
                           WorkloadInstance* instance) {
   // TODO(douglas-reid): support more than just kubernetes instances
-  absl::StrAppend(instance->mutable_uid(), "kubernetes://", node_info.name(),
-                  ".", node_info.namespace_());
+  absl::StrAppend(instance->mutable_uid(), "kubernetes://",
+                  valueOrUnknown(node_info.name()), ".",
+                  valueOrUnknown(node_info.namespace_()));
   // TODO(douglas-reid): support more than just GCP ?
   const auto& platform_metadata = node_info.platform_metadata();
   const auto location_iter = platform_metadata.find(Common::kGCPLocationKey);
   if (location_iter != platform_metadata.end()) {
     instance->set_location(location_iter->second);
+  } else {
+    instance->set_location(kUnknown);
   }
   const auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
   if (cluster_iter != platform_metadata.end()) {
     instance->set_cluster_name(cluster_iter->second);
+  } else {
+    instance->set_cluster_name(kUnknown);
   }
-  instance->set_owner_uid(node_info.owner());
-  instance->set_workload_name(node_info.workload_name());
-  instance->set_workload_namespace(node_info.namespace_());
+  instance->set_owner_uid(valueOrUnknown(node_info.owner()));
+  instance->set_workload_name(valueOrUnknown(node_info.workload_name()));
+  instance->set_workload_namespace(valueOrUnknown(node_info.namespace_()));
 };
 
 }  // namespace
