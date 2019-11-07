@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
+
 #include <cstdint>
 #include <string>
 
@@ -25,7 +27,6 @@
 #include "envoy/stats/scope.h"
 #include "extensions/common/context.h"
 #include "extensions/common/wasm/wasm_state.h"
-#include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 
 namespace Envoy {

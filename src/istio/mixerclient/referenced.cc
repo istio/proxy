@@ -15,12 +15,12 @@
 
 #include "src/istio/mixerclient/referenced.h"
 
-#include "global_dictionary.h"
-
 #include <algorithm>
 #include <map>
 #include <set>
 #include <sstream>
+
+#include "global_dictionary.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_AttributeValue;

@@ -14,6 +14,7 @@
  */
 
 #include "extensions/stackdriver/metric/registry.h"
+
 #include "extensions/stackdriver/common/constants.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"

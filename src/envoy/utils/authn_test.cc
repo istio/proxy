@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/utils/authn.h"
+
 #include "common/protobuf/protobuf.h"
 #include "include/istio/utils/attribute_names.h"
 #include "src/istio/authn/context.pb.h"

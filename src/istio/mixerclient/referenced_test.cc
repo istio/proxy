@@ -15,11 +15,10 @@
 
 #include "src/istio/mixerclient/referenced.h"
 
-#include "include/istio/utils/attributes_builder.h"
-#include "include/istio/utils/concat_hash.h"
-
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
+#include "include/istio/utils/attributes_builder.h"
+#include "include/istio/utils/concat_hash.h"
 
 using ::google::protobuf::TextFormat;
 using ::istio::mixer::v1::Attributes;

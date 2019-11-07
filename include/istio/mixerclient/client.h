@@ -16,13 +16,13 @@
 #ifndef ISTIO_MIXERCLIENT_CLIENT_H
 #define ISTIO_MIXERCLIENT_CLIENT_H
 
+#include <vector>
+
 #include "environment.h"
 #include "include/istio/quota_config/requirement.h"
 #include "options.h"
 #include "src/istio/mixerclient/check_context.h"
 #include "src/istio/mixerclient/shared_attributes.h"
-
-#include <vector>
 
 namespace istio {
 namespace mixerclient {

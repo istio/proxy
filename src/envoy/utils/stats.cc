@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include <chrono>
-
 #include "src/envoy/utils/stats.h"
+
+#include <chrono>
 
 namespace Envoy {
 namespace Utils {

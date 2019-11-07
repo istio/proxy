@@ -14,6 +14,7 @@
  */
 
 #include "extensions/common/node_info_cache.h"
+
 #include "extensions/common/context.h"
 
 #ifdef NULL_PLUGIN

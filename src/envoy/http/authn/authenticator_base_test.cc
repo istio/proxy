@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/authenticator_base.h"
+
 #include "common/common/base64.h"
 #include "common/protobuf/protobuf.h"
 #include "envoy/api/v2/core/base.pb.h"
