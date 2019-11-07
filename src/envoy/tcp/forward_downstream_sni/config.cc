@@ -17,7 +17,6 @@
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
-
 #include "src/envoy/tcp/forward_downstream_sni/forward_downstream_sni.h"
 
 namespace Envoy {

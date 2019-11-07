@@ -1,4 +1,4 @@
-/* Copyright 2017 Istio Authors. All Rights Reserved.
+/* Copyright 2019 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,15 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/mixer/config.h"
+#pragma once
 
-#include "src/envoy/utils/config.h"
+#include <string>
 
-namespace Envoy {
-namespace Http {
-namespace Mixer {
+namespace Wasm {
+namespace Common {
 
-Config::Config(
-    const ::istio::mixer::v1::config::client::HttpClientConfig& config_pb)
-    : config_pb_(config_pb) {
-  Utils::SetDefaultMixerClusters(config_pb_.mutable_transport());
-}
+// Parses an integer response flag into a readable short string.
+const std::string parseResponseFlag(uint64_t response_flag);
 
-}  // namespace Mixer
-}  // namespace Http
-}  // namespace Envoy
+}  // namespace Common
+}  // namespace Wasm

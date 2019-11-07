@@ -14,6 +14,7 @@
  */
 
 #include "extensions/stackdriver/metric/record.h"
+
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/metric/registry.h"
 

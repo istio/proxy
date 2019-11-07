@@ -53,6 +53,7 @@ filter_chains:
           config:
             root_id: "stats_outbound"
             vm_config:
+              vm_id: stats_outbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
                 inline_string: "envoy.wasm.stats"
@@ -98,6 +99,7 @@ filter_chains:
           config:
             root_id: "stats_inbound"
             vm_config:
+              vm_id: stats_inbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
                 inline_string: "envoy.wasm.stats"

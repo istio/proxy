@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/jwt_auth/jwt_authenticator.h"
+
 #include "common/http/message_impl.h"
 #include "common/http/utility.h"
 

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "src/envoy/utils/grpc_transport.h"
+
 #include "absl/types/optional.h"
 #include "src/envoy/utils/header_update.h"
 

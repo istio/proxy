@@ -16,6 +16,7 @@
 #include "extensions/metadata_exchange/plugin.h"
 
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "extensions/common/node_info.pb.h"

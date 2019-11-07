@@ -14,6 +14,7 @@
  */
 
 #include "include/istio/utils/status.h"
+
 #include "google/protobuf/stubs/status.h"
 
 using StatusCode = ::google::protobuf::util::error::Code;

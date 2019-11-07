@@ -14,6 +14,7 @@
  */
 
 #include "extensions/common/context.h"
+
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/stubs/status.h"
 #include "google/protobuf/text_format.h"
