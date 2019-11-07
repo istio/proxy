@@ -31,9 +31,11 @@ envoy_cc_library(
     name = "context",
     srcs = [
         "context.cc",
+        "util.cc",
     ],
     hdrs = [
         "context.h",
+        "util.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
@@ -76,6 +78,17 @@ envoy_cc_test(
     name = "context_test",
     size = "small",
     srcs = ["context_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":context",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "util_test",
+    size = "small",
+    srcs = ["util_test.cc"],
     repository = "@envoy",
     deps = [
         ":context",
