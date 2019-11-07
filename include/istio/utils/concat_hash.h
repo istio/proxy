@@ -17,6 +17,7 @@
 #define ISTIO_UTILS_CONCAT_HASH_H_
 
 #include <string.h>
+
 #include <functional>
 #include <string>
 

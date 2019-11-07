@@ -14,9 +14,10 @@
  */
 
 #include "src/istio/utils/logger.h"
-#include "gtest/gtest.h"
 
 #include <memory>
+
+#include "gtest/gtest.h"
 
 namespace istio {
 namespace utils {

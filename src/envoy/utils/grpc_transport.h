@@ -16,13 +16,13 @@
 #pragma once
 
 #include <common/grpc/async_client_impl.h>
+
 #include <memory>
 
 #include "common/common/logger.h"
 #include "envoy/event/dispatcher.h"
 #include "envoy/grpc/async_client.h"
 #include "envoy/http/header_map.h"
-
 #include "envoy/upstream/cluster_manager.h"
 #include "include/istio/mixerclient/client.h"
 

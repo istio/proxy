@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/http_filter.h"
+
 #include "common/common/base64.h"
 #include "common/http/header_map_impl.h"
 #include "common/stream_info/stream_info_impl.h"

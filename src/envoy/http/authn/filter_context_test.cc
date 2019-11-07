@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/filter_context.h"
+
 #include "envoy/api/v2/core/base.pb.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/test_common/utility.h"

@@ -14,12 +14,13 @@
  */
 
 #include "src/istio/mixerclient/attribute_compressor.h"
-#include "include/istio/utils/attributes_builder.h"
 
 #include <time.h>
+
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
+#include "include/istio/utils/attributes_builder.h"
 
 using ::istio::mixer::v1::Attributes;
 using ::istio::mixer::v1::Attributes_AttributeValue;

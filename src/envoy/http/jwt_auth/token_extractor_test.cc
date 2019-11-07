@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/jwt_auth/token_extractor.h"
+
 #include "gtest/gtest.h"
 #include "test/test_common/utility.h"
 

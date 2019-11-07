@@ -18,9 +18,10 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_VERSION_REQUIRED="8.0.0"
-CLANG_FORMAT=$(which clang-format-${CLANG_VERSION_REQUIRED%%.*})
-if [[ ! -x "${CLANG_FORMAT}" ]]; then
+CLANG_VERSION_REQUIRED="9.0.0"
+CLANG_FORMAT=$(which clang-format)
+CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
+if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
   # Install required clang version to a folder and cache it.
   CLANG_DIRECTORY="${HOME}/clang"
   CLANG_FORMAT="${CLANG_DIRECTORY}/bin/clang-format"
@@ -33,17 +34,14 @@ if [[ ! -x "${CLANG_FORMAT}" ]]; then
     echo "Unsupported environment." ; exit 1 ;
   fi
 
-  CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
-  if [[ "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
-    echo "Downloading clang-format: https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
-    echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
+  echo "Downloading clang-format: https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
+  echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
 
-    mkdir -p ${CLANG_DIRECTORY}
-    curl --silent --show-error --retry 10 \
-      "https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
-      | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
-    || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
-  fi
+  mkdir -p ${CLANG_DIRECTORY}
+  curl --silent --show-error --retry 10 \
+    "https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
+    | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
+  || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
 fi
 
 BUILDIFIER=$(which buildifier)
@@ -59,11 +57,11 @@ if [[ ! -x "${BUILDIFIER}" ]]; then
       echo "Unsupported environment." ; exit 1 ;
     fi
 
-    echo "Downloading buildifier: https://github.com/bazelbuild/buildtools/releases/download/0.20.0/${BUILDIFIER_BIN}"
+    echo "Downloading buildifier: https://github.com/bazelbuild/buildtools/releases/download/0.29.0/${BUILDIFIER_BIN}"
 
     mkdir -p "${HOME}/bin"
     curl --silent --show-error --retry 10 --location \
-      "https://github.com/bazelbuild/buildtools/releases/download/0.20.0/${BUILDIFIER_BIN}" \
+      "https://github.com/bazelbuild/buildtools/releases/download/0.29.0/${BUILDIFIER_BIN}" \
       -o "${BUILDIFIER}" \
     || { echo "Could not install required buildifier. Skip formatting." ; exit 1 ; }
     chmod +x ${BUILDIFIER}

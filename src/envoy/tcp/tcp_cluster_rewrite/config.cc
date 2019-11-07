@@ -14,10 +14,10 @@
  */
 
 #include "src/envoy/tcp/tcp_cluster_rewrite/config.h"
-#include "src/envoy/tcp/tcp_cluster_rewrite/tcp_cluster_rewrite.h"
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
+#include "src/envoy/tcp/tcp_cluster_rewrite/tcp_cluster_rewrite.h"
 #include "src/envoy/utils/config.h"
 
 using namespace ::istio::envoy::config::filter::network::tcp_cluster_rewrite;

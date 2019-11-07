@@ -14,6 +14,7 @@
  */
 
 #include <future>
+
 #include "common/network/utility.h"
 #include "gtest/gtest.h"
 #include "int_client.h"

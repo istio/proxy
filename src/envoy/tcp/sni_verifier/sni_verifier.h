@@ -15,11 +15,9 @@
 
 #pragma once
 
+#include "common/common/logger.h"
 #include "envoy/network/filter.h"
 #include "envoy/stats/scope.h"
-
-#include "common/common/logger.h"
-
 #include "openssl/ssl.h"
 
 namespace Envoy {
