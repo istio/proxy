@@ -17,6 +17,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/util.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
@@ -225,6 +226,10 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
                    &request_info->source_principal);
   }
   request_info->destination_port = destination_port;
+
+  uint64_t response_flags = 0;
+  getValue({"response", "flags"}, &response_flags);
+  request_info->response_flag = parseResponseFlag(response_flags);
 }
 
 google::protobuf::util::Status extractNodeMetadataValue(
