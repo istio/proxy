@@ -42,7 +42,7 @@ using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 
 constexpr char kUnknown[] = "unknown";
 
-std::string valueOrUnknown(std::string value) {
+std::string valueOrUnknown(const std::string& value) {
   if (value.length() == 0) {
     return kUnknown;
   }
