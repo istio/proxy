@@ -27,7 +27,7 @@ import (
 
 const (
 	// HTTP client time out.
-	httpTimeOut = 5 * time.Second
+	httpTimeOut = 30 * time.Second
 
 	// Maximum number of ping the server to wait.
 	maxAttempts = 30

@@ -96,7 +96,7 @@ filter_chains:
           config:
             root_id: "stackdriver_inbound"
             vm_config:
-              vm_id: "stackdriver_inbound"
+              vm_id: "stackdriver_inbound{{.N}}"
               runtime: "envoy.wasm.runtime.null"
               code:
                 inline_string: "envoy.wasm.null.stackdriver"
