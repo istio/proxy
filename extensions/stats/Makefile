@@ -5,7 +5,7 @@ ABSL = /root/abseil-cpp
 ABSL_CPP = ${ABSL}/absl/strings/str_cat.cc ${ABSL}/absl/strings/str_split.cc ${ABSL}/absl/strings/numbers.cc ${ABSL}/absl/strings/ascii.cc
 
 PROTO_SRCS = extensions/common/node_info.pb.cc config.pb.cc
-COMMON_SRCS = extensions/common/context.cc
+COMMON_SRCS = extensions/common/context.cc extensions/common/node_info_cache.cc extensions/common/util.cc
 
 all: plugin.wasm
 
