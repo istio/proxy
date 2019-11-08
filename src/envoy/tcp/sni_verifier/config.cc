@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/tcp/sni_verifier/config.h"
+
 #include "envoy/registry/registry.h"
 #include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 

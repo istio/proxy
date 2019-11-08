@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/utils/mixer_control.h"
+
 #include "fmt/printf.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 #include "src/envoy/utils/utils.h"

@@ -13,17 +13,15 @@
  * limitations under the License.
  */
 
-#include "common/tcp_proxy/tcp_proxy.h"
-
-#include "src/envoy/tcp/tcp_cluster_rewrite/config.h"
 #include "src/envoy/tcp/tcp_cluster_rewrite/tcp_cluster_rewrite.h"
 
+#include "common/tcp_proxy/tcp_proxy.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/envoy/tcp/tcp_cluster_rewrite/config.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/server/mocks.h"
 #include "test/mocks/stream_info/mocks.h"
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 using namespace ::istio::envoy::config::filter::network::tcp_cluster_rewrite;
 using testing::_;

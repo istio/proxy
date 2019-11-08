@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/prefetch/time_based_counter.h"
+
 #include "gtest/gtest.h"
 
 namespace istio {

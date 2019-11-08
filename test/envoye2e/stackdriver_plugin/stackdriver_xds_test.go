@@ -24,7 +24,7 @@ import (
 )
 
 const StackdriverClientHTTPListener = `
-name: client{{ .N }}
+name: client
 traffic_direction: OUTBOUND
 address:
   socket_address:
@@ -70,7 +70,7 @@ filter_chains:
 `
 
 const StackdriverServerHTTPListener = `
-name: server{{ .N }}
+name: server
 traffic_direction: INBOUND
 address:
   socket_address:
@@ -328,7 +328,7 @@ func TestStackdriverParallel(t *testing.T) {
 							&driver.Update{Node: "client", Version: "{{.N}}", Listeners: []string{StackdriverClientHTTPListener}},
 							&driver.Update{Node: "server", Version: "{{.N}}", Listeners: []string{StackdriverServerHTTPListener}},
 							// may need short delay so we don't eat all the CPU
-							&driver.Sleep{10 * time.Millisecond},
+							&driver.Sleep{100 * time.Millisecond},
 						},
 					},
 				},

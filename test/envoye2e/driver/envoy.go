@@ -71,6 +71,7 @@ func (e *Envoy) Run(p *Params) error {
 		"-l", debugLevel,
 		"--concurrency", "1",
 		"--disable-hot-restart",
+		"--drain-time-s", "4", // this affects how long draining listenrs are kept alive
 	}
 	envoyPath := filepath.Join(env.GetDefaultEnvoyBin(), "envoy")
 	if path, exists := os.LookupEnv("ENVOY_PATH"); exists {

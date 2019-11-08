@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/utils/mixer_control.h"
+
 #include "src/envoy/utils/grpc_transport.h"
 
 using ::istio::mixerclient::Statistics;

@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/authn/origin_authenticator.h"
+
 #include "absl/strings/match.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "src/envoy/http/authn/authn_utils.h"

@@ -77,7 +77,7 @@ const clientNodeMetadata = `"NAMESPACE": "default",
 "SERVICE_ACCOUNT": "bookinfo-productpage",
 "CONFIG_NAMESPACE": "default",
 "version": "v1",
-"OWNER": "kubernetes://api/apps/v1/namespaces/default/deployment/productpage-v1",
+"OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1",
 "WORKLOAD_NAME": "productpage-v1",
 "ISTIO_VERSION": "1.3-dev",
 "kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container productpage",
@@ -106,7 +106,7 @@ const serverNodeMetadata = `"NAMESPACE": "default",
 "SERVICE_ACCOUNT": "bookinfo-ratings",
 "CONFIG_NAMESPACE": "default",
 "version": "v1",
-"OWNER": "kubernetes://api/apps/v1/namespaces/default/deployment/ratings-v1",
+"OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1",
 "WORKLOAD_NAME": "ratings-v1",
 "ISTIO_VERSION": "1.3-dev",
 "kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container ratings",
@@ -196,8 +196,8 @@ func TestTcpMetadataExchange(t *testing.T) {
 	}
 
 	_ = conn.Close()
-	s.VerifyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
-	s.VerifyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
+	s.VerifyEnvoyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
+	s.VerifyEnvoyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
 }
 
 func getParsedExpectedStats(expectedStats map[string]int, t *testing.T, s *env.TestSetup) map[string]int {

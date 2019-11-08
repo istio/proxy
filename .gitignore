@@ -4,3 +4,4 @@ docker/envoy
 *.iml
 *.test
 /artifacts
+**/plugin.wasm

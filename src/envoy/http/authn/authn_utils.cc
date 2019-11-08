@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
+#include "authn_utils.h"
+
 #include <regex>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
-#include "authn_utils.h"
 #include "common/json/json_loader.h"
 #include "google/protobuf/struct.pb.h"
 #include "src/envoy/http/jwt_auth/jwt.h"

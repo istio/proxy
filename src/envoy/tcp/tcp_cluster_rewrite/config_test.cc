@@ -15,10 +15,9 @@
 
 #include "src/envoy/tcp/tcp_cluster_rewrite/config.h"
 
-#include "test/mocks/server/mocks.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "test/mocks/server/mocks.h"
 
 using namespace ::istio::envoy::config::filter::network::tcp_cluster_rewrite;
 using testing::_;

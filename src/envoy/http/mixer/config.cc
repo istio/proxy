@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/mixer/config.h"
+
 #include "src/envoy/utils/config.h"
 
 namespace Envoy {

@@ -13,20 +13,18 @@
  * limitations under the License.
  */
 
+#include "src/envoy/tcp/sni_verifier/sni_verifier.h"
+
 #include <climits>
 #include <string>
 
-#include "src/envoy/tcp/sni_verifier/config.h"
-#include "src/envoy/tcp/sni_verifier/sni_verifier.h"
-
 #include "common/buffer/buffer_impl.h"
-
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/envoy/tcp/sni_verifier/config.h"
 #include "test/extensions/filters/listener/tls_inspector/tls_utility.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/server/mocks.h"
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 using testing::_;
 using testing::NiceMock;

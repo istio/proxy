@@ -185,8 +185,7 @@ struct IstioDimensions {
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);
-    response_flags =
-        request.response_flag.empty() ? vDash : request.response_flag;
+    response_flags = request.response_flag;
 
     connection_security_policy =
         std::string(::Wasm::Common::AuthenticationPolicyString(

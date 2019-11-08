@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/mixerclient/attribute_compressor.h"
+
 #include "google/protobuf/arena.h"
 #include "include/istio/utils/protobuf.h"
 #include "src/istio/mixerclient/global_dictionary.h"
