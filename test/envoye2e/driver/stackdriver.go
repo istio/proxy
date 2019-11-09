@@ -135,7 +135,9 @@ func (s *checkStackdriver) Run(p *Params) error {
 		foundAllMetrics = reflect.DeepEqual(s.sd.ts, s.twant)
 		if !foundAllMetrics {
 			log.Printf("got metrics %d, want %d\n", len(s.sd.ts), len(s.twant))
-			if len(s.sd.ts) >= len(s.twant) {
+			if len(s.twant) == 0 {
+				foundAllMetrics = true
+			} else if len(s.sd.ts) >= len(s.twant) {
 				for got := range s.sd.ts {
 					log.Println(got)
 				}

@@ -155,6 +155,43 @@ func TestStackdriverPayload(t *testing.T) {
 	}
 }
 
+func TestStackdriverPayloadGateway(t *testing.T) {
+	ports := env.NewPorts(env.StackDriverPayloadGateway)
+	params := &driver.Params{
+		Vars: map[string]string{
+			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"SDPort":      fmt.Sprintf("%d", ports.SDPort),
+			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+		},
+		XDS: int(ports.XDSPort),
+	}
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+
+	sd := &driver.Stackdriver{Port: ports.SDPort}
+
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			sd,
+			&driver.Update{Node: "server", Version: "0",
+				Clusters:  []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{StackdriverClientHTTPListener, StackdriverServerHTTPListener}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 1, Step: &driver.Get{ports.ClientToServerProxyPort, "hello, world!"}},
+			sd.Check(params,
+				nil,
+				[]string{"testdata/stackdriver/gateway_access_log.yaml.tmpl"},
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStackdriverPayloadWithTLS(t *testing.T) {
 	ports := env.NewPorts(env.StackDriverPayloadWithTLS)
 	params := &driver.Params{

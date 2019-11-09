@@ -66,6 +66,7 @@ type Update struct {
 	Node      string
 	Version   string
 	Listeners []string
+	Clusters  []string
 }
 
 var _ Step = &Update{}
@@ -76,6 +77,16 @@ func (u *Update) Run(p *Params) error {
 		return err
 	}
 	log.Printf("update config for %q with version %q", u.Node, version)
+
+	clusters := make([]cache.Resource, 0, len(u.Clusters))
+	for _, cluster := range u.Clusters {
+		out := &v2.Cluster{}
+		if err := p.FillYAML(cluster, out); err != nil {
+			return err
+		}
+		clusters = append(clusters, out)
+	}
+
 	listeners := make([]cache.Resource, 0, len(u.Listeners))
 	for _, listener := range u.Listeners {
 		out := &v2.Listener{}
@@ -84,8 +95,9 @@ func (u *Update) Run(p *Params) error {
 		}
 		listeners = append(listeners, out)
 	}
+
 	return p.Config.SetSnapshot(u.Node, cache.Snapshot{
-		Clusters:  cache.NewResources(version, nil),
+		Clusters:  cache.NewResources(version, clusters),
 		Listeners: cache.NewResources(version, listeners),
 	})
 }
