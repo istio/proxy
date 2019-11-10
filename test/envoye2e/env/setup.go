@@ -505,7 +505,7 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port ui
 				foundLabels++
 			}
 			if foundLabels != len(eStatsValue.Labels) {
-				return fmt.Errorf("metrics %v, %d required labels missing", (len(eStatsValue.Labels) - foundLabels), eStatsName)
+				return fmt.Errorf("metrics %v, %d required labels missing", eStatsName, (len(eStatsValue.Labels) - foundLabels))
 			}
 		}
 		return nil
