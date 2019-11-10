@@ -62,11 +62,40 @@ void extractFqdn(const std::string& cluster_name, std::string* fqdn) {
   }
 }
 
-// Extract service name from service fqdn.
-void extractServiceName(const std::string& fqdn, std::string* service_name) {
-  const std::vector<std::string>& parts = absl::StrSplit(fqdn, '.');
-  if (parts.size() > 0) {
-    *service_name = parts[0];
+// Extract service name from service host.
+void extractServiceName(const std::string& host, std::string* service_name,
+                        const std::string& destination_namespace) {
+  // TODO: right now property API only returns cluster with a upstream host, but
+  // not for passthrough or blackhole cluster. Add metrics for these two types
+  // of clusters when property api supports this. if
+  // (!cluster_name.compare(kBlackHoleClusterName) ||
+  //     !cluster_name.compare(kPassThroughClusterName)) {
+  //   *service_name = cluster_name;
+  //   return;
+  // }
+
+  auto name_pos = host.find_first_of(".:");
+  if (name_pos == std::string::npos) {
+    // host is already a short service name. return it directly.
+    *service_name = host;
+    return;
+  }
+
+  auto namespace_pos = host.find_first_of(".:", name_pos + 1);
+  std::string service_namespace = "";
+  if (namespace_pos == std::string::npos) {
+    service_namespace = host.substr(namespace_pos + 1);
+  } else {
+    int namespace_size = namespace_pos - name_pos - 1;
+    service_namespace = host.substr(name_pos + 1, namespace_size);
+  }
+  // check if namespace in host is same as destination namespace.
+  // If it is the same, return the first part of host as service name.
+  // Otherwise fallback to request host.
+  if (service_namespace == destination_namespace) {
+    *service_name = host.substr(0, name_pos);
+  } else {
+    *service_name = host;
   }
 }
 
@@ -159,10 +188,8 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 // Host header is used if use_host_header_fallback==true.
 // Normally it is ok to use host header within the mesh, but not at ingress.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
-                             RequestInfo* request_info) {
-  // TODO: switch to stream_info.requestComplete() to avoid extra compute.
-  request_info->end_timestamp = getCurrentTimeNanoseconds();
-
+                             RequestInfo* request_info,
+                             const std::string& destination_namespace) {
   // Fill in request info.
   int64_t response_code = 0;
   if (getValue({"response", "code"}, &response_code)) {
@@ -184,18 +211,16 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   std::string cluster_name = "";
   getStringValue({"cluster_name"}, &cluster_name);
   extractFqdn(cluster_name, &request_info->destination_service_host);
-  if (!request_info->destination_service_host.empty()) {
-    // cluster name follows Istio convention, so extract out service name.
-    extractServiceName(request_info->destination_service_host,
-                       &request_info->destination_service_name);
-  } else if (use_host_header_fallback) {
+  if (request_info->destination_service_host.empty() &&
+      use_host_header_fallback) {
     // fallback to host header if requested.
     request_info->destination_service_host =
         getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
             ->toString();
-    // TODO: what is the proper fallback for destination service name?
   }
-
+  extractServiceName(request_info->destination_service_host,
+                     &request_info->destination_service_name,
+                     destination_namespace);
   // Get rbac labels from dynamic metadata.
   getStringValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
                  &request_info->rbac_permissive_policy_id);
@@ -233,6 +258,11 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
   request_info->response_flag = parseResponseFlag(response_flags);
+
+  getValue({"request", "time"}, &request_info->start_time);
+  getValue({"request", "duration"}, &request_info->duration);
+  getValue({"request", "total_size"}, &request_info->request_size);
+  getValue({"response", "total_size"}, &request_info->response_size);
 }
 
 google::protobuf::util::Status extractNodeMetadataValue(

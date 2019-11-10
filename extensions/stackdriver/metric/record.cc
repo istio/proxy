@@ -17,6 +17,9 @@
 
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/metric/registry.h"
+#include "google/protobuf/util/time_util.h"
+
+using google::protobuf::util::TimeUtil;
 
 namespace Extensions {
 namespace Stackdriver {
@@ -25,9 +28,7 @@ namespace Metric {
 void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
             const ::wasm::common::NodeInfo &peer_node_info,
             const ::Wasm::Common::RequestInfo &request_info) {
-  double latency_ms =
-      double(request_info.end_timestamp - request_info.start_timestamp) /
-      Stackdriver::Common::kNanosecondsPerMillisecond;
+  double latency_ms = TimeUtil::DurationToMilliseconds(request_info.duration);
   if (is_outbound) {
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},

@@ -74,7 +74,7 @@ wasm::common::NodeInfo peerNodeInfo() {
 
 ::Wasm::Common::RequestInfo requestInfo() {
   ::Wasm::Common::RequestInfo request_info;
-  request_info.start_timestamp = 0;
+  request_info.start_time = TimeUtil::SecondsToTimestamp(0);
   request_info.request_operation = "GET";
   request_info.destination_service_host = "httpbin.org";
   request_info.response_flag = "-";

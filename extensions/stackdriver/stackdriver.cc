@@ -184,10 +184,17 @@ void StackdriverRootContext::onTick() {
   }
 }
 
-void StackdriverRootContext::record(const RequestInfo& request_info) {
+void StackdriverRootContext::record() {
   const auto peer_node_info_ptr = getPeerNode();
   const NodeInfo& peer_node_info =
       peer_node_info_ptr ? *peer_node_info_ptr : ::Wasm::Common::EmptyNodeInfo;
+  const auto& destination_node_info =
+      isOutbound() ? peer_node_info : local_node_info_;
+
+  ::Wasm::Common::RequestInfo request_info;
+  ::Wasm::Common::populateHTTPRequestInfo(isOutbound(), useHostHeaderFallback(),
+                                          &request_info,
+                                          destination_node_info.namespace_());
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
   if (enableServerAccessLog()) {
@@ -231,38 +238,14 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
 // TODO(bianpengyuan) Add final export once root context supports onDone.
 // https://github.com/envoyproxy/envoy-wasm/issues/240
 
-FilterHeadersStatus StackdriverContext::onRequestHeaders() {
-  request_info_.start_timestamp = getCurrentTimeNanoseconds();
-  return FilterHeadersStatus::Continue;
-}
-
-FilterDataStatus StackdriverContext::onRequestBody(size_t body_buffer_length,
-                                                   bool) {
-  // TODO: switch to stream_info.bytesSent/bytesReceived to avoid extra compute.
-  request_info_.request_size += body_buffer_length;
-  return FilterDataStatus::Continue;
-}
-
-FilterDataStatus StackdriverContext::onResponseBody(size_t body_buffer_length,
-                                                    bool) {
-  // TODO: switch to stream_info.bytesSent/bytesReceived to avoid extra compute.
-  request_info_.response_size += body_buffer_length;
-  return FilterDataStatus::Continue;
-}
-
 StackdriverRootContext* StackdriverContext::getRootContext() {
   RootContext* root = this->root();
   return dynamic_cast<StackdriverRootContext*>(root);
 }
 
 void StackdriverContext::onLog() {
-  auto* root = getRootContext();
-  bool isOutbound = root->isOutbound();
-  ::Wasm::Common::populateHTTPRequestInfo(
-      isOutbound, root->useHostHeaderFallback(), &request_info_);
-
   // Record telemetry based on request info.
-  root->record(request_info_);
+  getRootContext()->record();
 }
 
 }  // namespace Stackdriver

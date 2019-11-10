@@ -82,8 +82,7 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   auto* log_entries = log_entries_request_->mutable_entries();
   auto* new_entry = log_entries->Add();
 
-  *new_entry->mutable_timestamp() =
-      TimeUtil::NanosecondsToTimestamp(request_info.start_timestamp);
+  *new_entry->mutable_timestamp() = request_info.start_time;
   new_entry->set_severity(::google::logging::type::INFO);
   auto label_map = new_entry->mutable_labels();
   (*label_map)["source_name"] = peer_node_info.name();
