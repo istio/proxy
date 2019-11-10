@@ -258,7 +258,8 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
 void StackdriverContext::onLog() {
   auto* root = getRootContext();
   bool isOutbound = root->isOutbound();
-  ::Wasm::Common::populateHTTPRequestInfo(isOutbound, root->useHostHeaderFallback(), &request_info_);
+  ::Wasm::Common::populateHTTPRequestInfo(
+      isOutbound, root->useHostHeaderFallback(), &request_info_);
 
   // Record telemetry based on request info.
   root->record(request_info_);
