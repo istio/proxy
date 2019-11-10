@@ -347,6 +347,7 @@ class PluginRootContext : public RootContext {
   bool onConfigure(std::unique_ptr<WasmData>) override;
   void report(const ::Wasm::Common::RequestInfo& request_info);
   bool outbound() const { return outbound_; }
+  bool useHostHeaderFallback { return use_host_header_fallback_; }
 
  private:
   stats::PluginConfig config_;
@@ -359,6 +360,7 @@ class PluginRootContext : public RootContext {
   StringView peer_metadata_key_;
   bool outbound_;
   bool debug_;
+  bool use_host_header_fallback_;
 
   int64_t cache_hits_accumulator_ = 0;
   uint32_t cache_hits_;
@@ -393,7 +395,7 @@ class PluginContext : public Context {
 
   void onLog() override {
     auto rootCtx = rootContext();
-    ::Wasm::Common::populateHTTPRequestInfo(rootCtx->outbound(),
+    ::Wasm::Common::populateHTTPRequestInfo(rootCtx->outbound(), rootCtx->useHostHeaderFallback(),
                                             &request_info_);
     rootCtx->report(request_info_);
   };

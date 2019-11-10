@@ -119,6 +119,7 @@ bool StackdriverRootContext::onConfigure(
   }
 
   direction_ = ::Wasm::Common::getTrafficDirection();
+  use_host_header_fallback_ = !config_.disable_host_header_fallback();
 
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
@@ -257,7 +258,7 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
 void StackdriverContext::onLog() {
   auto* root = getRootContext();
   bool isOutbound = root->isOutbound();
-  ::Wasm::Common::populateHTTPRequestInfo(isOutbound, &request_info_);
+  ::Wasm::Common::populateHTTPRequestInfo(isOutbound, root->useHostHeaderFallback(), &request_info_);
 
   // Record telemetry based on request info.
   root->record(request_info_);
