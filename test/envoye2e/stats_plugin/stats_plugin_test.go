@@ -38,7 +38,7 @@ const outboundStatsFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.stats"
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }`
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", "disable_host_header_fallback": %t}`
 
 const inboundStatsFilter = `- name: envoy.filters.http.wasm
   config:
@@ -57,7 +57,7 @@ const inboundStatsFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.stats"
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }`
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;"}`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
@@ -117,16 +117,6 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
 "NAME": "ratings-v1-84975bc778-pxz2w",`
 
-// Stats in Client Envoy proxy.
-var expectedPrometheusClientStats = map[string]int{
-	"istio_requests_total": 10,
-}
-
-// Stats in Server Envoy proxy.
-var expectedPrometheusServerStats = map[string]int{
-	"istio_requests_total": 10,
-}
-
 const statsConfig = `stats_config:
   use_all_default_tags: true
   stats_tags:
@@ -181,9 +171,32 @@ const statsConfig = `stats_config:
   - tag_name: "tag"
     regex: "(tag\\.(.+?);\\.)"`
 
+// Stats in Client Envoy proxy.
+var expectedPrometheusClientStats = map[string]env.Stat{
+	"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "unknown"}},
+}
+
+// Stats in Client Envoy proxy when host header is used.
+var expectedPrometheusClientStatsHHFallback = map[string]env.Stat{
+	"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "127.0.0.1:20282"}},
+}
+
+// Stats in Server Envoy proxy.
+var expectedPrometheusServerStats = map[string]env.Stat{
+	"istio_requests_total": {Value: 10},
+}
+
 func TestStatsPlugin(t *testing.T) {
+	testStatsPlugin(t, expectedPrometheusClientStats, expectedPrometheusServerStats, true)
+}
+
+func TestStatsPluginHHFallback(t *testing.T) {
+	testStatsPlugin(t, expectedPrometheusClientStatsHHFallback, expectedPrometheusServerStats, false)
+}
+
+func testStatsPlugin(t *testing.T, clntStats, srvStats map[string]env.Stat, disable_host_header_fallback bool) {
 	s := env.NewClientServerEnvoyTestSetup(env.StatsPluginTest, t)
-	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStatsFilter)
+	s.SetFiltersBeforeEnvoyRouterInClientToProxy(fmt.Sprintf(outboundStatsFilter, disable_host_header_fallback))
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStatsFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
 	s.SetClientNodeMetadata(outboundNodeMetadata)
@@ -202,7 +215,6 @@ func TestStatsPlugin(t *testing.T) {
 			t.Errorf("Failed in request %s: %v", tag, err)
 		}
 	}
-
-	s.VerifyPrometheusStats(expectedPrometheusClientStats, s.Ports().ClientAdminPort)
-	s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
+	s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
+	s.VerifyPrometheusStats(srvStats, s.Ports().ServerAdminPort)
 }

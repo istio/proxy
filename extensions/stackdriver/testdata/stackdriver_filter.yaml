@@ -67,7 +67,7 @@ spec:
             config:
               root_id: stackdriver_outbound
               configuration: |
-                {}
+                {"disable_host_header_fallback": true}
               vm_config:
                 vm_id: stackdriver_outbound
                 runtime: envoy.wasm.runtime.null
