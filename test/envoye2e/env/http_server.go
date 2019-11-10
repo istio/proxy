@@ -147,10 +147,12 @@ func NewHTTPServer(port uint16) (*HTTPServer, error) {
 // Start starts the server
 func (s *HTTPServer) Start() <-chan error {
 	errCh := make(chan error)
+
 	go func() {
-		http.HandleFunc("/", s.handle)
-		http.HandleFunc("/pubkey", pubkeyHandler)
-		errCh <- http.Serve(s.lis, nil)
+		m := http.NewServeMux()
+		m.HandleFunc("/", s.handle)
+		m.HandleFunc("/pubkey", pubkeyHandler)
+		errCh <- http.Serve(s.lis, m)
 	}()
 	go func() {
 		url := fmt.Sprintf("http://localhost:%v/echo", s.port)
