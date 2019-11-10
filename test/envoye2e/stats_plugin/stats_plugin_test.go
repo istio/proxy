@@ -171,30 +171,36 @@ const statsConfig = `stats_config:
   - tag_name: "tag"
     regex: "(tag\\.(.+?);\\.)"`
 
-// Stats in Client Envoy proxy.
-var expectedPrometheusClientStats = map[string]env.Stat{
-	"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "unknown"}},
-}
-
-// Stats in Client Envoy proxy when host header is used.
-var expectedPrometheusClientStatsHHFallback = map[string]env.Stat{
-	"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "127.0.0.1:20282"}},
-}
-
 // Stats in Server Envoy proxy.
 var expectedPrometheusServerStats = map[string]env.Stat{
 	"istio_requests_total": {Value: 10},
 }
 
 func TestStatsPlugin(t *testing.T) {
-	testStatsPlugin(t, expectedPrometheusClientStats, expectedPrometheusServerStats, true)
+	testStatsPlugin(t, true, func(s *env.TestSetup) {
+		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
+		clntStats := map[string]env.Stat{
+			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service":
+			"unknown"}},
+		}
+		s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
+	})
 }
 
 func TestStatsPluginHHFallback(t *testing.T) {
-	testStatsPlugin(t, expectedPrometheusClientStatsHHFallback, expectedPrometheusServerStats, false)
+	testStatsPlugin(t, false, func(s *env.TestSetup) {
+		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
+		clntStats := map[string]env.Stat{
+			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service":
+			fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort)}},
+		}
+		s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
+	})
 }
 
-func testStatsPlugin(t *testing.T, clntStats, srvStats map[string]env.Stat, disable_host_header_fallback bool) {
+type verifyFn func(s *env.TestSetup)
+
+func testStatsPlugin(t *testing.T, disable_host_header_fallback bool, fn verifyFn) {
 	s := env.NewClientServerEnvoyTestSetup(env.StatsPluginTest, t)
 	s.SetFiltersBeforeEnvoyRouterInClientToProxy(fmt.Sprintf(outboundStatsFilter, disable_host_header_fallback))
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStatsFilter)
@@ -215,6 +221,5 @@ func testStatsPlugin(t *testing.T, clntStats, srvStats map[string]env.Stat, disa
 			t.Errorf("Failed in request %s: %v", tag, err)
 		}
 	}
-	s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
-	s.VerifyPrometheusStats(srvStats, s.Ports().ServerAdminPort)
+	fn(s)
 }
