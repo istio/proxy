@@ -38,7 +38,7 @@ const outboundStatsFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.stats"
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }`
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", "disable_host_header_fallback": %t}`
 
 const inboundStatsFilter = `- name: envoy.filters.http.wasm
   config:
@@ -57,7 +57,7 @@ const inboundStatsFilter = `- name: envoy.filters.http.wasm
         code:
           inline_string: "envoy.wasm.stats"
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }`
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;"}`
 
 const outboundNodeMetadata = `"NAMESPACE": "default",
 "INCLUDE_INBOUND_PORTS": "9080",
@@ -182,8 +182,16 @@ const statsConfig = `stats_config:
     regex: "(tag\\.(.+?);\\.)"`
 
 func TestStatsPlugin(t *testing.T) {
+	testStatsPlugin(t, false)
+}
+
+func TestStatsPluginHHFallback(t *testing.T) {
+	testStatsPlugin(t, true)
+}
+
+func testStatsPlugin(t *testing.T, disable_host_header_fallback bool) {
 	s := env.NewClientServerEnvoyTestSetup(env.StatsPluginTest, t)
-	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStatsFilter)
+	s.SetFiltersBeforeEnvoyRouterInClientToProxy(fmt.Sprintf(outboundStatsFilter, disable_host_header_fallback))
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStatsFilter)
 	s.SetServerNodeMetadata(inboundNodeMetadata)
 	s.SetClientNodeMetadata(outboundNodeMetadata)
@@ -202,7 +210,6 @@ func TestStatsPlugin(t *testing.T) {
 			t.Errorf("Failed in request %s: %v", tag, err)
 		}
 	}
-
-	s.VerifyPrometheusStats(expectedPrometheusClientStats, s.Ports().ClientAdminPort)
-	s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
+	s.VerifyPrometheusStats(t, expectedPrometheusClientStats, s.Ports().ClientAdminPort)
+	s.VerifyPrometheusStats(t, expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 }

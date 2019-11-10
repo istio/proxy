@@ -446,7 +446,7 @@ func (s *TestSetup) VerifyEnvoyStats(expectedStats map[string]int, port uint16) 
 }
 
 // VerifyPrometheusStats verifies prometheus stats.
-func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uint16) {
+func (s *TestSetup) VerifyPrometheusStats(t *testing.T, expectedStats map[string]int, port uint16) {
 	s.t.Helper()
 
 	check := func(respBody string) error {
@@ -467,12 +467,14 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uin
 				if len(aStats.GetMetric()) != 1 {
 					return fmt.Errorf("expected one value for counter")
 				}
+       				return fmt.Errorf("metric = %v",aStats.GetMetric())
 				aStatsValue = aStats.GetMetric()[0].GetCounter().GetValue()
 				break
 			case dto.MetricType_GAUGE:
 				if len(aStats.GetMetric()) != 1 {
 					return fmt.Errorf("expected one value for gauge")
 				}
+       				fmt.Println("metric = %v",aStats.GetMetric())
 				aStatsValue = aStats.GetMetric()[0].GetGauge().GetValue()
 			default:
 				return fmt.Errorf("need to implement this type %v", aStats.GetType())
