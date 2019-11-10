@@ -476,7 +476,6 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port ui
 				if len(aStats.GetMetric()) != 1 {
 					return fmt.Errorf("expected one value for counter")
 				}
-       			//FIXME	return fmt.Errorf("metric = %v",aStats.GetMetric())
 				aStatsValue = aStats.GetMetric()[0].GetCounter().GetValue()
 				labels = aStats.GetMetric()[0].Label
 				break
@@ -495,7 +494,7 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port ui
 					eStatsName, eStatsValue, aStatsValue)
 			}
 			foundLabels := 0
-			for _, label := range labels{
+			for _, label := range labels {
 				v, found := eStatsValue.Labels[label.GetName()]
 				if !found {
 					continue
@@ -503,10 +502,10 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port ui
 				if v != label.GetValue() {
 					return fmt.Errorf("metric %v label %v differs got:%v, want: %v", eStatsName, label.GetName(), label.GetValue(), v)
 				}
-				foundLabels ++
+				foundLabels++
 			}
 			if foundLabels != len(eStatsValue.Labels) {
-				return fmt.Errorf("metrics %v, some required labels missing")
+				return fmt.Errorf("metrics %v, %d required labels missing", (len(eStatsValue.Labels) - foundLabels), eStatsName)
 			}
 		}
 		return nil

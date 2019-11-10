@@ -117,7 +117,6 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
 "NAME": "ratings-v1-84975bc778-pxz2w",`
 
-
 const statsConfig = `stats_config:
   use_all_default_tags: true
   stats_tags:
@@ -174,12 +173,12 @@ const statsConfig = `stats_config:
 
 // Stats in Client Envoy proxy.
 var expectedPrometheusClientStats = map[string]env.Stat{
-	"istio_requests_total": {Value:10, Labels: map[string]string{"destination_service": "unknown"}},
+	"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "unknown"}},
 }
 
 // Stats in Client Envoy proxy when host header is used.
 var expectedPrometheusClientStatsHHFallback = map[string]env.Stat{
-	"istio_requests_total": {Value:10, Labels: map[string]string{"destination_service": "127.0.0.1:20282"}},
+	"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "127.0.0.1:20282"}},
 }
 
 // Stats in Server Envoy proxy.
@@ -188,11 +187,11 @@ var expectedPrometheusServerStats = map[string]env.Stat{
 }
 
 func TestStatsPlugin(t *testing.T) {
-	testStatsPlugin(t, expectedPrometheusClientStats, expectedPrometheusServerStats,false)
+	testStatsPlugin(t, expectedPrometheusClientStats, expectedPrometheusServerStats, true)
 }
 
 func TestStatsPluginHHFallback(t *testing.T) {
-	testStatsPlugin(t, expectedPrometheusClientStatsHHFallback, expectedPrometheusServerStats, true)
+	testStatsPlugin(t, expectedPrometheusClientStatsHHFallback, expectedPrometheusServerStats, false)
 }
 
 func testStatsPlugin(t *testing.T, clntStats, srvStats map[string]env.Stat, disable_host_header_fallback bool) {
