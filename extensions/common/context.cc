@@ -158,7 +158,8 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 
 // Host header is used if use_host_header_fallback==true.
 // Normally it is ok to use host header within the mesh, but not at ingress.
-void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback, RequestInfo* request_info) {
+void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
+                             RequestInfo* request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info->end_timestamp = getCurrentTimeNanoseconds();
 
@@ -187,8 +188,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback, Reque
     // cluster name follows Istio convention, so extract out service name.
     extractServiceName(request_info->destination_service_host,
                        &request_info->destination_service_name);
- } else if (use_host_header_fallback) {
-   // fallback to host header if allowed..
+  } else if (use_host_header_fallback) {
+    // fallback to host header if requested.
     request_info->destination_service_host =
         getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
             ->toString();

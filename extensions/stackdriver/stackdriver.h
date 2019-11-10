@@ -64,8 +64,8 @@ class StackdriverRootContext : public RootContext {
 
   // Get direction of traffic relative to this proxy.
   bool isOutbound();
-  
-  bool useHostHeaderFallback { return use_host_header_fallback_; }
+
+  bool useHostHeaderFallback() const { return use_host_header_fallback_; };
 
   // Records telemetry based on the given request info.
   void record(const ::Wasm::Common::RequestInfo& request_info);
