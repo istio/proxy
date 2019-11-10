@@ -64,6 +64,8 @@ class StackdriverRootContext : public RootContext {
 
   // Get direction of traffic relative to this proxy.
   bool isOutbound();
+  
+  bool useHostHeaderFallback { return use_host_header_fallback_; }
 
   // Records telemetry based on the given request info.
   void record(const ::Wasm::Common::RequestInfo& request_info);
@@ -102,6 +104,8 @@ class StackdriverRootContext : public RootContext {
   long int last_edge_report_call_nanos_ = 0;
 
   long int edge_report_duration_nanos_;
+
+  bool use_host_header_fallback_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

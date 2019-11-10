@@ -156,7 +156,9 @@ google::protobuf::util::Status extractLocalNodeMetadata(
   return extractNodeMetadata(node, node_info);
 }
 
-void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
+// Host header is used if use_host_header_fallback==true.
+// Normally it is ok to use host header within the mesh, but not at ingress.
+void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback, RequestInfo* request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
   request_info->end_timestamp = getCurrentTimeNanoseconds();
 
@@ -181,16 +183,16 @@ void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info) {
   std::string cluster_name = "";
   getStringValue({"cluster_name"}, &cluster_name);
   extractFqdn(cluster_name, &request_info->destination_service_host);
-  if (request_info->destination_service_host.empty()) {
-    // fallback to host header.
+  if (!request_info->destination_service_host.empty()) {
+    // cluster name follows Istio convention, so extract out service name.
+    extractServiceName(request_info->destination_service_host,
+                       &request_info->destination_service_name);
+ } else if (use_host_header_fallback) {
+   // fallback to host header if allowed..
     request_info->destination_service_host =
         getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
             ->toString();
     // TODO: what is the proper fallback for destination service name?
-  } else {
-    // cluster name follows Istio convention, so extract out service name.
-    extractServiceName(request_info->destination_service_host,
-                       &request_info->destination_service_name);
   }
 
   // Get rbac labels from dynamic metadata.
