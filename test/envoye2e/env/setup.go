@@ -124,6 +124,14 @@ type TestSetup struct {
 	ExtraConfig string
 }
 
+// Stat represents a prometheus stat with labels.
+type Stat struct {
+	// Value of the metric
+	Value int
+	// Labels associated with the metric if any
+	Labels map[string]string
+}
+
 func NewClientServerEnvoyTestSetup(name uint16, t *testing.T) *TestSetup {
 	return &TestSetup{
 		t:                   t,
@@ -446,7 +454,7 @@ func (s *TestSetup) VerifyEnvoyStats(expectedStats map[string]int, port uint16) 
 }
 
 // VerifyPrometheusStats verifies prometheus stats.
-func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uint16) {
+func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port uint16) {
 	s.t.Helper()
 
 	check := func(respBody string) error {
@@ -461,6 +469,7 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uin
 			if !ok {
 				return fmt.Errorf("failed to find expected stat %s", eStatsName)
 			}
+			var labels []*dto.LabelPair
 			var aStatsValue float64
 			switch aStats.GetType() {
 			case dto.MetricType_COUNTER:
@@ -468,18 +477,35 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]int, port uin
 					return fmt.Errorf("expected one value for counter")
 				}
 				aStatsValue = aStats.GetMetric()[0].GetCounter().GetValue()
+				labels = aStats.GetMetric()[0].Label
 				break
 			case dto.MetricType_GAUGE:
 				if len(aStats.GetMetric()) != 1 {
 					return fmt.Errorf("expected one value for gauge")
 				}
 				aStatsValue = aStats.GetMetric()[0].GetGauge().GetValue()
+				labels = aStats.GetMetric()[0].Label
+				break
 			default:
 				return fmt.Errorf("need to implement this type %v", aStats.GetType())
 			}
-			if aStatsValue != float64(eStatsValue) {
+			if aStatsValue != float64(eStatsValue.Value) {
 				return fmt.Errorf("stats %s does not match. expected vs actual: %v vs %v",
 					eStatsName, eStatsValue, aStatsValue)
+			}
+			foundLabels := 0
+			for _, label := range labels {
+				v, found := eStatsValue.Labels[label.GetName()]
+				if !found {
+					continue
+				}
+				if v != label.GetValue() {
+					return fmt.Errorf("metric %v label %v differs got:%v, want: %v", eStatsName, label.GetName(), label.GetValue(), v)
+				}
+				foundLabels++
+			}
+			if foundLabels != len(eStatsValue.Labels) {
+				return fmt.Errorf("metrics %v, %d required labels missing", eStatsName, (len(eStatsValue.Labels) - foundLabels))
 			}
 		}
 		return nil
