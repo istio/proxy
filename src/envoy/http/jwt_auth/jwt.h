@@ -15,13 +15,13 @@
 
 #pragma once
 
-#include "envoy/json/json_object.h"
-#include "openssl/ec.h"
-#include "openssl/evp.h"
-
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "envoy/json/json_object.h"
+#include "openssl/ec.h"
+#include "openssl/evp.h"
 
 namespace Envoy {
 namespace Http {

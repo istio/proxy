@@ -14,11 +14,12 @@
  */
 
 #include "include/istio/prefetch/quota_prefetch.h"
+
+#include <mutex>
+
 #include "src/istio/prefetch/circular_queue.h"
 #include "src/istio/prefetch/time_based_counter.h"
 #include "src/istio/utils/logger.h"
-
-#include <mutex>
 
 using namespace std::chrono;
 

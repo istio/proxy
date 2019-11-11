@@ -16,6 +16,7 @@
 #pragma once
 
 #include <string>
+
 #include "google/protobuf/struct.pb.h"
 
 namespace istio {

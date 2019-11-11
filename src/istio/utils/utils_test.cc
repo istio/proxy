@@ -14,6 +14,7 @@
  */
 
 #include "src/istio/utils/utils.h"
+
 #include "gtest/gtest.h"
 
 namespace istio {

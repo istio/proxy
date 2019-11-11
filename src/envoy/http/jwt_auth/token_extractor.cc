@@ -14,6 +14,7 @@
  */
 
 #include "src/envoy/http/jwt_auth/token_extractor.h"
+
 #include "absl/strings/match.h"
 #include "common/common/utility.h"
 #include "common/http/utility.h"

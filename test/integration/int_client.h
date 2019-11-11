@@ -16,6 +16,7 @@
 #pragma once
 
 #include <future>
+
 #include "common/api/api_impl.h"
 #include "common/common/thread.h"
 #include "common/network/raw_buffer_socket.h"

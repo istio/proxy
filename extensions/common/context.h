@@ -16,6 +16,7 @@
 #pragma once
 
 #include <set>
+
 #include "absl/strings/string_view.h"
 #include "extensions/common/node_info.pb.h"
 #include "google/protobuf/struct.pb.h"
@@ -146,7 +147,8 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void populateHTTPRequestInfo(bool outbound, RequestInfo* request_info);
+void populateHTTPRequestInfo(bool outbound, bool use_host_header,
+                             RequestInfo* request_info);
 
 // Extracts node metadata value. It looks for values of all the keys
 // corresponding to EXCHANGE_KEYS in node_metadata and populates it in

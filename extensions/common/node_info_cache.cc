@@ -14,7 +14,12 @@
  */
 
 #include "extensions/common/node_info_cache.h"
+
+#include "absl/strings/str_cat.h"
 #include "extensions/common/context.h"
+#include "google/protobuf/util/json_util.h"
+
+using google::protobuf::util::Status;
 
 #ifdef NULL_PLUGIN
 
@@ -22,7 +27,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getStructValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logInfo;
-using google::protobuf::util::Status;
 
 #endif  // NULL_PLUGIN
 

@@ -185,8 +185,7 @@ struct IstioDimensions {
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);
-    response_flags =
-        request.response_flag.empty() ? vDash : request.response_flag;
+    response_flags = request.response_flag;
 
     connection_security_policy =
         std::string(::Wasm::Common::AuthenticationPolicyString(
@@ -347,7 +346,8 @@ class PluginRootContext : public RootContext {
 
   bool onConfigure(std::unique_ptr<WasmData>) override;
   void report(const ::Wasm::Common::RequestInfo& request_info);
-  bool outbound() const { return outbound_; }
+  bool outbound() const { return outbound_; };
+  bool useHostHeaderFallback() const { return use_host_header_fallback_; };
 
  private:
   stats::PluginConfig config_;
@@ -360,6 +360,7 @@ class PluginRootContext : public RootContext {
   StringView peer_metadata_key_;
   bool outbound_;
   bool debug_;
+  bool use_host_header_fallback_;
 
   int64_t cache_hits_accumulator_ = 0;
   uint32_t cache_hits_;
@@ -394,8 +395,8 @@ class PluginContext : public Context {
 
   void onLog() override {
     auto rootCtx = rootContext();
-    ::Wasm::Common::populateHTTPRequestInfo(rootCtx->outbound(),
-                                            &request_info_);
+    ::Wasm::Common::populateHTTPRequestInfo(
+        rootCtx->outbound(), rootCtx->useHostHeaderFallback(), &request_info_);
     rootCtx->report(request_info_);
   };
 
