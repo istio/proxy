@@ -19,8 +19,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"strings"
 	"testing"
 	"time"
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 )
 
 // TestSetup store data for a test.
@@ -114,6 +119,17 @@ type TestSetup struct {
 
 	// UpstreamFilters chain in client.
 	UpstreamFiltersInClient string
+
+	// ExtraConfig that needs to be passed to envoy. Ex stats_config.
+	ExtraConfig string
+}
+
+// Stat represents a prometheus stat with labels.
+type Stat struct {
+	// Value of the metric
+	Value int
+	// Labels associated with the metric if any
+	Labels map[string]string
 }
 
 func NewClientServerEnvoyTestSetup(name uint16, t *testing.T) *TestSetup {
@@ -223,6 +239,11 @@ func (s *TestSetup) SetServerAccessLogFormat(serverAccesslogformat string) {
 // SetUpstreamFiltersInClient sets upstream filters chain in client envoy..
 func (s *TestSetup) SetUpstreamFiltersInClient(upstreamFiltersInClient string) {
 	s.UpstreamFiltersInClient = upstreamFiltersInClient
+}
+
+// SetExtraConfig sets extra config in client and server envoy.
+func (s *TestSetup) SetExtraConfig(extraConfig string) {
+	s.ExtraConfig = extraConfig
 }
 
 func (s *TestSetup) SetUpClientServerEnvoy() error {
@@ -386,8 +407,8 @@ func (s *TestSetup) unmarshalStats(statsJSON string) map[string]int {
 	return statsMap
 }
 
-// VerifyStats verifies Envoy stats.
-func (s *TestSetup) VerifyStats(expectedStats map[string]int, port uint16) {
+// VerifyEnvoyStats verifies Envoy stats.
+func (s *TestSetup) VerifyEnvoyStats(expectedStats map[string]int, port uint16) {
 	s.t.Helper()
 
 	check := func(actualStatsMap map[string]int) error {
@@ -423,6 +444,86 @@ func (s *TestSetup) VerifyStats(expectedStats map[string]int, port uint16) {
 				log.Printf("key: %v, value %v", key, value)
 			}
 			if err = check(actualStatsMap); err == nil {
+				return
+			}
+			log.Printf("failed to verify stats: %v", err)
+		}
+		time.Sleep(delay)
+	}
+	s.t.Errorf("failed to find expected stats: %v", err)
+}
+
+// VerifyPrometheusStats verifies prometheus stats.
+func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port uint16) {
+	s.t.Helper()
+
+	check := func(respBody string) error {
+		var parser expfmt.TextParser
+		reader := strings.NewReader(respBody)
+		mapMetric, err := parser.TextToMetricFamilies(reader)
+		if err != nil {
+			return err
+		}
+		for eStatsName, eStatsValue := range expectedStats {
+			aStats, ok := mapMetric[eStatsName]
+			if !ok {
+				return fmt.Errorf("failed to find expected stat %s", eStatsName)
+			}
+			var labels []*dto.LabelPair
+			var aStatsValue float64
+			switch aStats.GetType() {
+			case dto.MetricType_COUNTER:
+				if len(aStats.GetMetric()) != 1 {
+					return fmt.Errorf("expected one value for counter")
+				}
+				aStatsValue = aStats.GetMetric()[0].GetCounter().GetValue()
+				labels = aStats.GetMetric()[0].Label
+				break
+			case dto.MetricType_GAUGE:
+				if len(aStats.GetMetric()) != 1 {
+					return fmt.Errorf("expected one value for gauge")
+				}
+				aStatsValue = aStats.GetMetric()[0].GetGauge().GetValue()
+				labels = aStats.GetMetric()[0].Label
+				break
+			default:
+				return fmt.Errorf("need to implement this type %v", aStats.GetType())
+			}
+			if aStatsValue != float64(eStatsValue.Value) {
+				return fmt.Errorf("stats %s does not match. expected vs actual: %v vs %v",
+					eStatsName, eStatsValue, aStatsValue)
+			}
+			foundLabels := 0
+			for _, label := range labels {
+				v, found := eStatsValue.Labels[label.GetName()]
+				if !found {
+					continue
+				}
+				if v != label.GetValue() {
+					return fmt.Errorf("metric %v label %v differs got:%v, want: %v", eStatsName, label.GetName(), label.GetValue(), v)
+				}
+				foundLabels++
+			}
+			if foundLabels != len(eStatsValue.Labels) {
+				return fmt.Errorf("metrics %v, %d required labels missing", eStatsName, (len(eStatsValue.Labels) - foundLabels))
+			}
+		}
+		return nil
+	}
+
+	delay := 200 * time.Millisecond
+	total := 3 * time.Second
+
+	var err error
+	for attempt := 0; attempt < int(total/delay); attempt++ {
+		statsURL := fmt.Sprintf("http://localhost:%d/stats/prometheus", port)
+		code, respBody, errGet := HTTPGet(statsURL)
+		if errGet != nil {
+			log.Printf("sending stats request returns an error: %v", errGet)
+		} else if code != 200 {
+			log.Printf("sending stats request returns unexpected status code: %d", code)
+		} else {
+			if err = check(respBody); err == nil {
 				return
 			}
 			log.Printf("failed to verify stats: %v", err)

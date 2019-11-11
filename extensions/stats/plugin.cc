@@ -66,6 +66,7 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
   debug_ = config_.debug();
+  use_host_header_fallback_ = !config_.disable_host_header_fallback();
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
 
   auto field_separator = CONFIG_DEFAULT(field_separator);
