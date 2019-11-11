@@ -80,6 +80,11 @@ void extractServiceName(const std::string& host, std::string* service_name,
     *service_name = host;
     return;
   }
+  if (host[name_pos] == ':') {
+    // host is `short_service:port`, return short_service name.
+    *service_name = host.substr(0, name_pos);
+    return;
+  }
 
   auto namespace_pos = host.find_first_of(".:", name_pos + 1);
   std::string service_namespace = "";
