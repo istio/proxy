@@ -156,8 +156,10 @@ google::protobuf::util::Status extractLocalNodeMetadata(
   return extractNodeMetadata(node, node_info);
 }
 
-// Host header is used if use_host_header_fallback==true.
-// Normally it is ok to use host header within the mesh, but not at ingress.
+// use_host_header_fallback - If destination_service_host cannot be determined
+// using the cluster name, use the host header as a fallback.
+// For proxies that recieve traffic from outside clients, this should normally
+// be false. Example: ingress.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                              RequestInfo* request_info) {
   // TODO: switch to stream_info.requestComplete() to avoid extra compute.
