@@ -89,7 +89,7 @@ void extractServiceName(const std::string& host, std::string* service_name,
   auto namespace_pos = host.find_first_of(".:", name_pos + 1);
   std::string service_namespace = "";
   if (namespace_pos == std::string::npos) {
-    service_namespace = host.substr(namespace_pos + 1);
+    service_namespace = host.substr(name_pos + 1);
   } else {
     int namespace_size = namespace_pos - name_pos - 1;
     service_namespace = host.substr(name_pos + 1, namespace_size);
