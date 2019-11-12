@@ -98,6 +98,9 @@ struct RequestInfo {
   // Operation of the request, i.e. HTTP method or gRPC API method.
   std::string request_operation;
 
+  // The path portion of the URL without the query string.
+  std::string request_url_path;
+
   // Service authentication policy (NONE, MUTUAL_TLS)
   ServiceAuthenticationPolicy service_auth_policy;
 
