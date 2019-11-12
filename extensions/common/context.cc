@@ -209,6 +209,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
 
+  getStringValue({"request", "url_path"}, &request_info->request_url_path);
+
   int64_t destination_port = 0;
 
   if (outbound) {
