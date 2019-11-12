@@ -45,3 +45,11 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
     export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
   fi
 fi
+
+# Override envoy.
+if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_SHA:-}" && "${ENVOY_PREFIX:-}" ]]; then
+  TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
+  trap 'rm -rf ${TMP_DIR:?}' EXIT
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
+  curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
+fi
