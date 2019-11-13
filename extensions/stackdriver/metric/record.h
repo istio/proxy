@@ -24,7 +24,8 @@ namespace Metric {
 
 // Record metrics based on local node info and request info.
 // Reporter kind deceides the type of metrics to record.
-void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
+void record(bool is_outbound, bool use_traffic_data,
+            const ::wasm::common::NodeInfo &local_node_info,
             const ::wasm::common::NodeInfo &peer_node_info,
             const ::Wasm::Common::RequestInfo &request_info);
 

@@ -22,14 +22,16 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
+void record(bool is_outbound, bool use_traffic_data,
+            const ::wasm::common::NodeInfo &local_node_info,
             const ::wasm::common::NodeInfo &peer_node_info,
             const ::Wasm::Common::RequestInfo &request_info) {
   double latency_ms =
       double(request_info.end_timestamp - request_info.start_timestamp) /
       Stackdriver::Common::kNanosecondsPerMillisecond;
   const auto &operation =
-      request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
+      request_info.request_protocol == ::Wasm::Common::kProtocolGRPC &&
+              use_traffic_data
           ? request_info.request_url_path
           : request_info.request_operation;
   if (is_outbound) {

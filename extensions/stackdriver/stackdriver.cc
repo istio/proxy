@@ -104,6 +104,7 @@ bool StackdriverRootContext::onConfigure(
   // TODO: add config validation to reject the listener if project id is not in
   // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
+  json_options.ignore_unknown_fields = true;
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
@@ -119,7 +120,7 @@ bool StackdriverRootContext::onConfigure(
   }
 
   direction_ = ::Wasm::Common::getTrafficDirection();
-  use_host_header_fallback_ = !config_.disable_host_header_fallback();
+  use_traffic_data_label_ = !config_.disable_traffic_data_label();
 
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
@@ -188,8 +189,9 @@ void StackdriverRootContext::record(const RequestInfo& request_info) {
   const auto peer_node_info_ptr = getPeerNode();
   const NodeInfo& peer_node_info =
       peer_node_info_ptr ? *peer_node_info_ptr : ::Wasm::Common::EmptyNodeInfo;
-  ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
-                                            peer_node_info, request_info);
+  ::Extensions::Stackdriver::Metric::record(isOutbound(), useTrafficDataLabel(),
+                                            local_node_info_, peer_node_info,
+                                            request_info);
   if (enableServerAccessLog()) {
     logger_->addLogEntry(request_info, peer_node_info);
   }
@@ -259,7 +261,7 @@ void StackdriverContext::onLog() {
   auto* root = getRootContext();
   bool isOutbound = root->isOutbound();
   ::Wasm::Common::populateHTTPRequestInfo(
-      isOutbound, root->useHostHeaderFallback(), &request_info_);
+      isOutbound, root->useTrafficDataLabel(), &request_info_);
 
   // Record telemetry based on request info.
   root->record(request_info_);
