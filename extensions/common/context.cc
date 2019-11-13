@@ -30,8 +30,6 @@
 #include "extensions/common/wasm/null/null_plugin.h"
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
-using Envoy::Extensions::Common::Wasm::MetadataType;
-using Envoy::Extensions::Common::Wasm::StreamType;
 using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
