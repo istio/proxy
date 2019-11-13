@@ -255,8 +255,8 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   if (key_metadata_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_it->second;
     setFilterState(config_->filter_direction_ == FilterDirection::Downstream
-                       ? UpstreamMetadataKey
-                       : DownstreamMetadataKey,
+                       ? DownstreamMetadataKey
+                       : UpstreamMetadataKey,
                    val.SerializeAsString());
   }
   const auto key_metadata_id_it =
@@ -264,8 +264,8 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_it->second;
     setFilterState(config_->filter_direction_ == FilterDirection::Downstream
-                       ? UpstreamMetadataIdKey
-                       : DownstreamMetadataIdKey,
+                       ? DownstreamMetadataIdKey
+                       : UpstreamMetadataIdKey,
                    val.SerializeAsString());
   }
 }
