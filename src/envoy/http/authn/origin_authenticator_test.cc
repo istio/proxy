@@ -206,6 +206,10 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
     header_.removePath();
     header_.addCopy(":path", path);
   }
+
+  void addHeader(const std::string& key, const std::string& value) {
+    header_.addCopy(key, value);
+  }
 };
 
 TEST_P(OriginAuthenticatorTest, Empty) {
@@ -276,6 +280,20 @@ TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
   authenticator_->run(payload_);
   EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
                                       filter_context_.authenticationResult()));
+}
+
+TEST_P(OriginAuthenticatorTest, CORSPreflight) {
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy,
+                                                    &policy_));
+
+  createAuthenticator();
+
+  EXPECT_CALL(*authenticator_, validateJwt(_, _)).Times(0);
+
+  addHeader(":method", "OPTIONS");
+  addHeader("origin", "example.com");
+  addHeader("access-control-request-method", "GET");
+  EXPECT_TRUE(authenticator_->run(payload_));
 }
 
 TEST_P(OriginAuthenticatorTest, TriggeredWithNullPath) {
