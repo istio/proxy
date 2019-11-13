@@ -15,6 +15,7 @@
 WD=$(dirname $0)
 WD=$(cd $WD; pwd)
 ROOT=$(dirname $WD)
+WORKSPACE="${ROOT}/WORKSPACE"
 
 # Exit immediately for non zero status
 set -e
@@ -47,9 +48,10 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
 fi
 
 # Override envoy.
-if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_SHA:-}" && "${ENVOY_PREFIX:-}" ]]; then
+if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
   TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
   trap 'rm -rf ${TMP_DIR:?}' EXIT
+  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
   curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
 fi
