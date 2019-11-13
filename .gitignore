@@ -4,4 +4,6 @@ docker/envoy
 *.iml
 *.test
 /artifacts
+clang.bazelrc
+user.bazelrc
 **/plugin.wasm
