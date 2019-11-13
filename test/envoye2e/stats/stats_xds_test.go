@@ -46,7 +46,7 @@ filter_chains:
             vm_config:
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.metadata_exchange"
+                local: { inline_string: "envoy.wasm.metadata_exchange" }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -56,7 +56,7 @@ filter_chains:
               vm_id: stats_outbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
-                inline_string: "envoy.wasm.stats"
+                local: { inline_string: "envoy.wasm.stats" }
             configuration: |
               { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
       - name: envoy.router
@@ -92,7 +92,7 @@ filter_chains:
             vm_config:
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.metadata_exchange"
+                local: { inline_string: "envoy.wasm.metadata_exchange" }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -102,7 +102,7 @@ filter_chains:
               vm_id: stats_inbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
-                inline_string: "envoy.wasm.stats"
+                local: { inline_string: "envoy.wasm.stats" }
             configuration: |
               { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
       - name: envoy.router

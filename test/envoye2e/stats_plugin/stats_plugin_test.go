@@ -27,7 +27,7 @@ const outboundStatsFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.metadata_exchange"
+          local: { inline_string: "envoy.wasm.metadata_exchange" }
       configuration: "test"
 - name: envoy.filters.http.wasm
   config:
@@ -36,7 +36,7 @@ const outboundStatsFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: envoy.wasm.runtime.null
         code:
-          inline_string: "envoy.wasm.stats"
+          local: { inline_string: "envoy.wasm.stats" }
       configuration: |
         { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", "disable_host_header_fallback": %t}`
 
@@ -46,7 +46,7 @@ const inboundStatsFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.metadata_exchange"
+          local: { inline_string: "envoy.wasm.metadata_exchange" }
       configuration: "test"
 - name: envoy.filters.http.wasm
   config:
@@ -55,7 +55,7 @@ const inboundStatsFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: envoy.wasm.runtime.null
         code:
-          inline_string: "envoy.wasm.stats"
+          local: { inline_string: "envoy.wasm.stats" }
       configuration: |
         { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;"}`
 
