@@ -257,7 +257,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
     setFilterState(config_->filter_direction_ == FilterDirection::Downstream
                        ? DownstreamMetadataKey
                        : UpstreamMetadataKey,
-                   val.SerializeAsString());
+                   val.struct_value().SerializeAsString());
   }
   const auto key_metadata_id_it =
       value_struct.fields().find(ExchangeMetadataHeaderId);
@@ -266,7 +266,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
     setFilterState(config_->filter_direction_ == FilterDirection::Downstream
                        ? DownstreamMetadataIdKey
                        : UpstreamMetadataIdKey,
-                   val.SerializeAsString());
+                   val.string_value());
   }
 }
 
