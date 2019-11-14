@@ -165,5 +165,35 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
   EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
 
+TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
+  config_helper_.addFilter(kAuthnFilterWithJwt);
+  initialize();
+
+  // The AuthN filter requires JWT but should bypass CORS preflight request even
+  // it doesn't have JWT token.
+  codec_client_ =
+      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto headers = Http::TestHeaderMapImpl{
+      {":method", "OPTIONS"},
+      {":path", "/"},
+      {":scheme", "http"},
+      {":authority", "host"},
+      {"x-forwarded-for", "10.0.0.1"},
+      {"access-control-request-method", "GET"},
+      {"origin", "example.com"},
+  };
+  auto response = codec_client_->makeHeaderOnlyRequest(headers);
+
+  // Wait for request to upstream (backend)
+  waitForNextUpstreamRequest();
+  // Send backend response.
+  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
+                                   true);
+
+  response->waitForEndStream();
+  EXPECT_TRUE(response->complete());
+  EXPECT_EQ("200", response->headers().Status()->value().getStringView());
+}
+
 }  // namespace
 }  // namespace Envoy
