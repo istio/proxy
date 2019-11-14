@@ -99,7 +99,7 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (bool,
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	p := &driver.Params{
 		Vars: map[string]string{
-			"ServerPort":                  "20045",
+			"ServerPort":                  "20043",
 			"ClientPort":                  "20042",
 			"ServiceAuthenticationPolicy": "NONE",
 		},
@@ -169,7 +169,7 @@ func verifyTrafficAssertionsReq(got *edgespb.ReportTrafficAssertionsRequest) err
 func TestStackdriverPlugin(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
 	fsdm, fsdl, edgesSvc := fs.NewFakeStackdriver(12312, 0)
-	s.SetFiltersBeforeEnvoyRouterInClientToProxy(outboundStackdriverFilter)
+	s.SetFiltersBeforeEnvoyRouterInAppToClient(outboundStackdriverFilter)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
 	params := driver.Params{Vars: map[string]string{"SDPort": "12312"}}
 	s.SetClientNodeMetadata(params.LoadTestData("testdata/client_node_metadata.json.tmpl"))

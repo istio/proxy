@@ -15,11 +15,14 @@
 package env
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -69,8 +72,11 @@ const publicKey = `
 
 // HTTPServer stores data for a HTTP server.
 type HTTPServer struct {
-	port uint16
-	lis  net.Listener
+	enableTLS   bool
+	port        uint16
+	rootTestDir string
+	lis         net.Listener
+	TLSConfig   *tls.Config
 
 	reqHeaders http.Header
 	mu         sync.Mutex
@@ -131,16 +137,45 @@ func (s *HTTPServer) handle(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHTTPServer creates a new HTTP server.
-func NewHTTPServer(port uint16) (*HTTPServer, error) {
+func NewHTTPServer(port uint16, enableTLS bool, rootDir string) (*HTTPServer, error) {
 	log.Printf("Http server listening on port %v\n", port)
+	var config *tls.Config
+	if enableTLS {
+		certificate, err := tls.LoadX509KeyPair(
+			filepath.Join(rootDir, "testdata/certs/cert-chain.pem"),
+			filepath.Join(rootDir, "testdata/certs/key.pem"))
+		if err != nil {
+			return nil, err
+		}
+		caCert, err := ioutil.ReadFile(filepath.Join(rootDir, "testdata/certs/root-cert.pem"))
+		if err != nil {
+			return nil, err
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		config = &tls.Config{
+			Certificates: []tls.Certificate{certificate},
+			//NextProtos:   []string{"http/1.1","h2","istio2"},
+			ClientAuth: tls.RequestClientCert,
+			ClientCAs:  caCertPool,
+			ServerName: "localhost",
+		}
+
+	}
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
+
 	return &HTTPServer{
-		port: port,
-		lis:  lis,
+		port:        port,
+		lis:         lis,
+		enableTLS:   enableTLS,
+		rootTestDir: rootDir,
+		TLSConfig:   config,
 	}, nil
 }
 
@@ -152,13 +187,27 @@ func (s *HTTPServer) Start() <-chan error {
 		m := http.NewServeMux()
 		m.HandleFunc("/", s.handle)
 		m.HandleFunc("/pubkey", pubkeyHandler)
-		errCh <- http.Serve(s.lis, m)
+		server := http.Server{
+			Addr:      fmt.Sprintf(":%d", s.port),
+			Handler:   m,
+			TLSConfig: s.TLSConfig,
+		}
+		if s.enableTLS {
+			errCh <- server.ServeTLS(s.lis, filepath.Join(s.rootTestDir, "testdata/certs/cert-chain.pem"),
+				filepath.Join(s.rootTestDir, "testdata/certs/key.pem"))
+		} else {
+			errCh <- server.Serve(s.lis)
+		}
 	}()
 	go func() {
-		url := fmt.Sprintf("http://localhost:%v/echo", s.port)
-		errCh <- WaitForHTTPServer(url)
+		var url string
+		if s.enableTLS {
+			url = fmt.Sprintf("https://localhost:%v/echo", s.port)
+		} else {
+			url = fmt.Sprintf("http://localhost:%v/echo", s.port)
+		}
+		errCh <- WaitForHTTPServerWithTLS(url, s.rootTestDir, s.enableTLS, s.port)
 	}()
-
 	return errCh
 }
 

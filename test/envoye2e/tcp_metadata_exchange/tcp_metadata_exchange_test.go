@@ -150,7 +150,7 @@ func TestTCPMetadataExchange(t *testing.T) {
 	s.SetStartTCPBackend(true)
 	s.SetTLSContext(tlsContext)
 	s.SetClusterTLSContext(clusterTLSContext)
-	s.SetFiltersBeforeEnvoyRouterInClientToApp(metadataExchangeIstioConfigFilter)
+	s.SetFiltersBeforeEnvoyRouterInProxyToServer(metadataExchangeIstioConfigFilter)
 	s.SetUpstreamFiltersInClient(metadataExchangeIstioUpstreamConfigFilterChain)
 	s.SetEnableTLS(true)
 	s.SetClientNodeMetadata(clientNodeMetadata)

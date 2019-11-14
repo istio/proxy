@@ -83,10 +83,10 @@ func TestBasicHTTP(t *testing.T) {
 	params := &driver.Params{
 		Vars: map[string]string{
 			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientPort":  fmt.Sprintf("%d", ports.AppToClientProxyPort),
 			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
 			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -98,7 +98,7 @@ func TestBasicHTTP(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.ClientToServerProxyPort, "hello, world!"},
+			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -110,10 +110,10 @@ func TestBasicHTTPwithTLS(t *testing.T) {
 	params := &driver.Params{
 		Vars: map[string]string{
 			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientPort":  fmt.Sprintf("%d", ports.AppToClientProxyPort),
 			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
 			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -127,7 +127,7 @@ func TestBasicHTTPwithTLS(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.ClientToServerProxyPort, "hello, world!"},
+			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -140,10 +140,10 @@ func TestBasicHTTPGateway(t *testing.T) {
 	params := &driver.Params{
 		Vars: map[string]string{
 			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ClientPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientPort":  fmt.Sprintf("%d", ports.AppToClientProxyPort),
 			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
 			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ProxyToServerProxyPort),
+			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -156,7 +156,7 @@ func TestBasicHTTPGateway(t *testing.T) {
 			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.ClientToServerProxyPort, "hello, world!"},
+			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)

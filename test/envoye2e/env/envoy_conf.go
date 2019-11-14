@@ -22,8 +22,7 @@ import (
 	"text/template"
 )
 
-const envoyClientConfTemplYAML = `
-node:
+const envoyClientConfTemplYAML = `node:
   id: test-client
   metadata: {
 {{.ClientNodeMetadata | indent 4 }}
@@ -49,21 +48,11 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{.Ports.ClientToServerProxyPort}}
-  - name: server
-    connect_timeout: 5s
-    type: STATIC
-    load_assignment:
-      cluster_name: server
-      endpoints:
-      - lb_endpoints:
-        - endpoint:
-            address:
-              socket_address:
-                address: 127.0.0.1
-                port_value: {{.Ports.ProxyToServerProxyPort}}
+{{.UpstreamFiltersInClient | indent 4 }}  
+{{.ClusterTLSContext | indent 4 }}
   listeners:
   - name: app-to-client
-    traffic_direction: INBOUND
+    traffic_direction: OUTBOUND
     address:
       socket_address:
         address: 127.0.0.1
@@ -92,40 +81,9 @@ static_resources:
                 route:
                   cluster: client
                   timeout: 0s
-  - name: client-to-proxy
-    traffic_direction: OUTBOUND
-    address:
-      socket_address:
-        address: 127.0.0.1
-        port_value: {{.Ports.ClientToServerProxyPort}}
-    filter_chains:
-    - filters:
-      - name: envoy.http_connection_manager
-        config:
-          codec_type: AUTO
-          stat_prefix: outbound_http
-          access_log:
-          - name: envoy.file_access_log
-            config:
-              path: {{.ClientAccessLogPath}}
-          http_filters:
-{{.FiltersBeforeEnvoyRouterInClientToProxy | indent 10 }}
-          - name: envoy.router
-          route_config:
-            name: client-to-proxy-route
-            virtual_hosts:
-            - name: client-to-proxy-route
-              domains: ["*"]
-              routes:
-              - match:
-                  prefix: /
-                route:
-                  cluster: server
-                  timeout: 0s
-`
+{{.TLSContext | indent 6 }}`
 
-const envoyServerConfTemplYAML = `
-node: 
+const envoyServerConfTemplYAML = `node: 
   id: test-server
   metadata: {
 {{.ServerNodeMetadata | indent 4 }}
@@ -139,18 +97,6 @@ admin:
       port_value: {{.Ports.ServerAdminPort}}
 static_resources:
   clusters:
-  - name: inbound|9080|http|backend.default.svc.cluster.local
-    connect_timeout: 5s
-    type: STATIC
-    load_assignment:
-      cluster_name: inbound|9080|http|backend.default.svc.cluster.local
-      endpoints:
-      - lb_endpoints:
-        - endpoint:
-            address:
-              socket_address:
-                address: 127.0.0.1
-                port_value: {{.Ports.BackendPort}}
   - name: inbound|9080|http|server.default.svc.cluster.local
     connect_timeout: 5s
     type: STATIC
@@ -162,16 +108,18 @@ static_resources:
             address:
               socket_address:
                 address: 127.0.0.1
-                port_value: {{.Ports.ClientToAppProxyPort}}
+                port_value: {{.Ports.BackendPort}}
+{{.ClusterTLSContext | indent 4 }}
   listeners:
-  - name: proxy-to-server
+  - name: proxy-to-backend
     traffic_direction: INBOUND
     address:
       socket_address:
         address: 127.0.0.1
-        port_value: {{.Ports.ProxyToServerProxyPort}}
+        port_value: {{.Ports.ClientToServerProxyPort}}
     filter_chains:
     - filters:
+{{.FiltersBeforeHTTPConnectionManagerInProxyToServer | indent 6 }}
       - name: envoy.http_connection_manager
         config:
           codec_type: AUTO
@@ -184,9 +132,9 @@ static_resources:
 {{.FiltersBeforeEnvoyRouterInProxyToServer | indent 10 }}
           - name: envoy.router
           route_config:
-            name: proxy-to-server-route
+            name: proxy-to-backend-route
             virtual_hosts:
-            - name: proxy-to-server-route
+            - name: proxy-to-backend-route
               domains: ["*"]
               routes:
               - match:
@@ -194,36 +142,7 @@ static_resources:
                 route:
                   cluster: inbound|9080|http|server.default.svc.cluster.local
                   timeout: 0s
-  - name: client-to-app
-    address:
-      socket_address:
-        address: 127.0.0.1
-        port_value: {{.Ports.ClientToAppProxyPort}}
-    filter_chains:
-    - filters:
-      - name: envoy.http_connection_manager
-        config:
-          codec_type: AUTO
-          stat_prefix: outbound_http
-          access_log:
-          - name: envoy.file_access_log
-            config:
-              path: {{.ServerAccessLogPath}}
-          http_filters:
-{{.FiltersBeforeEnvoyRouterInClientToApp | indent 10 }}
-          - name: envoy.router
-          route_config:
-            name: client-to-app-route
-            virtual_hosts:
-            - name: client-to-app-route
-              domains: ["*"]
-              routes:
-              - match:
-                  prefix: /
-                route:
-                  cluster: inbound|9080|http|backend.default.svc.cluster.local
-                  timeout: 0s
-`
+{{.TLSContext | indent 6 }}`
 
 // CreateEnvoyConf create envoy config.
 func (s *TestSetup) CreateEnvoyConf(path, confTmpl string) error {
