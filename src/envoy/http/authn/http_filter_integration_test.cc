@@ -169,8 +169,8 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
   config_helper_.addFilter(kAuthnFilterWithJwt);
   initialize();
 
-  // The AuthN filter requires JWT but should bypass CORS preflight request even it doesn't have
-  // JWT token.
+  // The AuthN filter requires JWT but should bypass CORS preflight request even
+  // it doesn't have JWT token.
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto headers = Http::TestHeaderMapImpl{
