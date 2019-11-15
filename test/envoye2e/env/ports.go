@@ -30,7 +30,7 @@ const (
 
 	StackdriverPluginTest
 
-	TcpMetadataExchangeTest
+	TCPMetadataExchangeTest
 
 	// xDS driven tests
 	BasicHTTP

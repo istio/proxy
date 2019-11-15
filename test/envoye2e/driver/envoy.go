@@ -53,14 +53,14 @@ func (e *Envoy) Run(p *Params) error {
 	}
 	log.Printf("admin port %d", e.adminPort)
 
-	if tmp, err := ioutil.TempFile(os.TempDir(), "envoy-bootstrap-*.yaml"); err != nil {
+	tmp, err := ioutil.TempFile(os.TempDir(), "envoy-bootstrap-*.yaml")
+	if err != nil {
 		return err
-	} else {
-		if _, err := tmp.Write([]byte(bootstrap)); err != nil {
-			return err
-		}
-		e.tmpFile = tmp.Name()
 	}
+	if _, err := tmp.Write([]byte(bootstrap)); err != nil {
+		return err
+	}
+	e.tmpFile = tmp.Name()
 
 	debugLevel, ok := os.LookupEnv("ENVOY_DEBUG")
 	if !ok {
