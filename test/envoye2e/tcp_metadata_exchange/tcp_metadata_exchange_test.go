@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tcp_metadata_exchange_test
+package client_test
 
 import (
 	"bytes"
@@ -55,7 +55,7 @@ tls_context:
   require_client_certificate: true
 `
 
-const clusterTlsContext = `
+const clusterTLSContext = `
 tls_context:
   common_tls_context:
     alpn_protocols:
@@ -143,20 +143,20 @@ var expectedServerStats = map[string]int{
 	"metadata_exchange.metadata_added":           1,
 }
 
-func TestTcpMetadataExchange(t *testing.T) {
-	s := env.NewClientServerEnvoyTestSetup(env.TcpMetadataExchangeTest, t)
+func TestTCPMetadataExchange(t *testing.T) {
+	s := env.NewClientServerEnvoyTestSetup(env.TCPMetadataExchangeTest, t)
 	s.Dir = driver.BazelWorkspace()
 	s.SetNoBackend(true)
-	s.SetStartTcpBackend(true)
-	s.SetTlsContext(tlsContext)
-	s.SetClusterTlsContext(clusterTlsContext)
+	s.SetStartTCPBackend(true)
+	s.SetTLSContext(tlsContext)
+	s.SetClusterTLSContext(clusterTLSContext)
 	s.SetFiltersBeforeEnvoyRouterInClientToApp(metadataExchangeIstioConfigFilter)
 	s.SetUpstreamFiltersInClient(metadataExchangeIstioUpstreamConfigFilterChain)
-	s.SetEnableTls(true)
+	s.SetEnableTLS(true)
 	s.SetClientNodeMetadata(clientNodeMetadata)
 	s.SetServerNodeMetadata(serverNodeMetadata)
-	s.ClientEnvoyTemplate = env.GetTcpClientEnvoyConfTmp()
-	s.ServerEnvoyTemplate = env.GetTcpServerEnvoyConfTmp()
+	s.ClientEnvoyTemplate = env.GetTCPClientEnvoyConfTmp()
+	s.ServerEnvoyTemplate = env.GetTCPServerEnvoyConfTmp()
 	if err := s.SetUpClientServerEnvoy(); err != nil {
 		t.Fatalf("Failed to setup te1	st: %v", err)
 	}

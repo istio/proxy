@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tcp_metadata_exchange contains an integration test for metadata exchange in envoy proxy.
-package tcp_metadata_exchange
+// Package client contains an integration test for metadata exchange in envoy proxy.
+package client
