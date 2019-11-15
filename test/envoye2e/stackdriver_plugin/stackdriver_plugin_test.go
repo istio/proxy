@@ -38,7 +38,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.metadata_exchange"
+          local: { inline_string: "envoy.wasm.metadata_exchange" }
       configuration: "test"
 - name: envoy.filters.http.wasm
   config:
@@ -48,7 +48,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
         vm_id: "stackdriver_outbound"
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.null.stackdriver"
+          local: { inline_string: "envoy.wasm.null.stackdriver" }
       configuration: >-
         {}`
 
@@ -58,7 +58,7 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.metadata_exchange"
+          local: { inline_string: "envoy.wasm.metadata_exchange" }
       configuration: "test"
 - name: envoy.filters.http.wasm
   config:
@@ -68,7 +68,7 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
         vm_id: "stackdriver_inbound"
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.null.stackdriver"
+          local: { inline_string: "envoy.wasm.null.stackdriver" }
       configuration: >-
         {
           "max_peer_cache_size": -1,

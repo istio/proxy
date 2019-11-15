@@ -70,8 +70,8 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
   std::string grpc_service_;
 
   // callbacks for the client
-  std::function<void(google::protobuf::Empty&&)> success_callback_;
-  std::function<void(GrpcStatus, StringView)> failure_callback_;
+  std::function<void(size_t)> success_callback_;
+  std::function<void(GrpcStatus)> failure_callback_;
 };
 
 }  // namespace Edges

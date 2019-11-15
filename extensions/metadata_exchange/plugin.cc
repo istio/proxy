@@ -86,7 +86,7 @@ void PluginRootContext::updateMetadataValue() {
       Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
-bool PluginRootContext::onConfigure(std::unique_ptr<WasmData>) {
+bool PluginRootContext::onConfigure(size_t) {
   updateMetadataValue();
   if (!getStringValue({"node", "id"}, &node_id_)) {
     logDebug("cannot get node ID");
@@ -96,7 +96,7 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData>) {
   return true;
 }
 
-FilterHeadersStatus PluginContext::onRequestHeaders() {
+FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   // strip and store downstream peer metadata
   auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
   if (downstream_metadata_value != nullptr &&
@@ -134,7 +134,7 @@ FilterHeadersStatus PluginContext::onRequestHeaders() {
   return FilterHeadersStatus::Continue;
 }
 
-FilterHeadersStatus PluginContext::onResponseHeaders() {
+FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
   // strip and store upstream peer metadata
   auto upstream_metadata_value = getResponseHeader(ExchangeMetadataHeader);
   if (upstream_metadata_value != nullptr &&
