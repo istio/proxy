@@ -37,13 +37,13 @@ fi
 # The bucket name to store proxy binaries.
 DST=""
 
-# Verify that we're building binaries on Ubuntu 16.04 (Xenial).
+# Verify that we're building binaries on Ubuntu 18.04 (Bionic).
 CHECK=1
 
 function usage() {
   echo "$0
     -d  The bucket name to store proxy binary (optional).
-    -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
+    -i  Skip Ubuntu Bionic check. DO NOT USE THIS FOR RELEASED BINARIES.
         Cannot be used together with -d option."
   exit 1
 }
@@ -62,10 +62,10 @@ if [ "${DST}" == "none" ]; then
   DST=""
 fi
 
-# Make sure the release binaries are built on x86_64 Ubuntu 16.04 (Xenial)
+# Make sure the release binaries are built on x86_64 Ubuntu 18.04 (Bionic)
 if [ "${CHECK}" -eq 1 ]; then
   UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
-  [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'Must run on Ubuntu 16.04 (Xenial).'; exit 1; }
+  [[ "${UBUNTU_RELEASE}" == 'bionic' ]] || { echo 'Must run on Ubuntu 18.04 (Bionic).'; exit 1; }
   [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
 elif [ -n "${DST}" ]; then
   echo "The -i option is not allowed together with -d option."
