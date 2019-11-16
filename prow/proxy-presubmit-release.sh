@@ -24,6 +24,11 @@ ROOT=$(dirname $WD)
 
 source "${WD}/proxy-common.inc"
 
+if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, configuring Docker..." >&2
+  gcloud auth configure-docker
+fi
+
 echo 'Test building release artifacts'
 make test_release
 make artifacts ARTIFACTS_DIR="${HOME}"

@@ -24,6 +24,8 @@ ROOT=$(dirname $WD)
 
 source "${WD}/proxy-common.inc"
 
+gcloud auth configure-docker
+
 echo 'Code Check'
 make lint
 
