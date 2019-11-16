@@ -13,6 +13,9 @@ build:remote --remote_timeout=7200
 # Istio specific Bazel build/test options.
 # ========================================
 
+# Need for CI image to pickup docker-credential-gcloud, PATH is fixed in rbe-toolchain-* configs.
+build:remote-ci --action_env=PATH=/usr/local/google-cloud-sdk/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/llvm/bin
+
 # Enable path normalization by default.
 # See: https://github.com/envoyproxy/envoy/pull/6519
 build --define path_normalization_by_default=true
