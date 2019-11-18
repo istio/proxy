@@ -31,14 +31,14 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
-// FakeStackdriverMetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
-type FakeStackdriverMetricServer struct {
+// MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
+type MetricServer struct {
 	delay        time.Duration
 	RcvMetricReq chan *monitoringpb.CreateTimeSeriesRequest
 }
 
-// FakeStackdriverLoggingServer is a fake stackdriver server which implements all of logging v2 service method.
-type FakeStackdriverLoggingServer struct {
+// LoggingServer is a fake stackdriver server which implements all of logging v2 service method.
+type LoggingServer struct {
 	delay         time.Duration
 	RcvLoggingReq chan *logging.WriteLogEntriesRequest
 }
@@ -49,90 +49,102 @@ type MeshEdgesServiceServer struct {
 }
 
 // ListMonitoredResourceDescriptors implements ListMonitoredResourceDescriptors method.
-func (s *FakeStackdriverMetricServer) ListMonitoredResourceDescriptors(context.Context, *monitoringpb.ListMonitoredResourceDescriptorsRequest) (*monitoringpb.ListMonitoredResourceDescriptorsResponse, error) {
+func (s *MetricServer) ListMonitoredResourceDescriptors(
+	context.Context, *monitoringpb.ListMonitoredResourceDescriptorsRequest) (
+	*monitoringpb.ListMonitoredResourceDescriptorsResponse, error) {
 	return &monitoringpb.ListMonitoredResourceDescriptorsResponse{}, nil
 }
 
 // GetMonitoredResourceDescriptor implements GetMonitoredResourceDescriptor method.
-func (s *FakeStackdriverMetricServer) GetMonitoredResourceDescriptor(context.Context, *monitoringpb.GetMonitoredResourceDescriptorRequest) (*monitoredres.MonitoredResourceDescriptor, error) {
+func (s *MetricServer) GetMonitoredResourceDescriptor(
+	context.Context, *monitoringpb.GetMonitoredResourceDescriptorRequest) (
+	*monitoredres.MonitoredResourceDescriptor, error) {
 	return &monitoredres.MonitoredResourceDescriptor{}, nil
 }
 
 // ListMetricDescriptors implements ListMetricDescriptors method.
-func (s *FakeStackdriverMetricServer) ListMetricDescriptors(context.Context, *monitoringpb.ListMetricDescriptorsRequest) (*monitoringpb.ListMetricDescriptorsResponse, error) {
+func (s *MetricServer) ListMetricDescriptors(
+	context.Context, *monitoringpb.ListMetricDescriptorsRequest) (
+	*monitoringpb.ListMetricDescriptorsResponse, error) {
 	return &monitoringpb.ListMetricDescriptorsResponse{}, nil
 }
 
 // GetMetricDescriptor implements GetMetricDescriptor method.
-func (s *FakeStackdriverMetricServer) GetMetricDescriptor(context.Context, *monitoringpb.GetMetricDescriptorRequest) (*metric.MetricDescriptor, error) {
+func (s *MetricServer) GetMetricDescriptor(
+	context.Context, *monitoringpb.GetMetricDescriptorRequest) (
+	*metric.MetricDescriptor, error) {
 	return &metric.MetricDescriptor{}, nil
 }
 
 // CreateMetricDescriptor implements CreateMetricDescriptor method.
-func (s *FakeStackdriverMetricServer) CreateMetricDescriptor(_ context.Context, req *monitoringpb.CreateMetricDescriptorRequest) (*metric.MetricDescriptor, error) {
+func (s *MetricServer) CreateMetricDescriptor(_ context.Context, req *monitoringpb.CreateMetricDescriptorRequest) (*metric.MetricDescriptor, error) {
 	return &metric.MetricDescriptor{}, nil
 }
 
 // DeleteMetricDescriptor implements DeleteMetricDescriptor method.
-func (s *FakeStackdriverMetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.DeleteMetricDescriptorRequest) (*empty.Empty, error) {
+func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.DeleteMetricDescriptorRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
 }
 
 // ListTimeSeries implements ListTimeSeries method.
-func (s *FakeStackdriverMetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
+func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
 	return &monitoringpb.ListTimeSeriesResponse{}, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
-func (s *FakeStackdriverMetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
+func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
 	return &empty.Empty{}, nil
 }
 
 // DeleteLog implements DeleteLog method.
-func (s *FakeStackdriverLoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*empty.Empty, error) {
+func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
 }
 
 // WriteLogEntries implements WriteLogEntries method.
-func (s *FakeStackdriverLoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
+func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
 	return &logging.WriteLogEntriesResponse{}, nil
 }
 
-// ListLogEntries implementes ListLogEntries method.
-func (s *FakeStackdriverLoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+// ListLogEntries implements ListLogEntries method.
+func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 	return &logging.ListLogEntriesResponse{}, nil
 }
 
 // ListLogs implements ListLogs method.
-func (s *FakeStackdriverLoggingServer) ListLogs(context.Context, *logging.ListLogsRequest) (*logging.ListLogsResponse, error) {
+func (s *LoggingServer) ListLogs(context.Context, *logging.ListLogsRequest) (*logging.ListLogsResponse, error) {
 	return &logging.ListLogsResponse{}, nil
 }
 
 // ListMonitoredResourceDescriptors immplements ListMonitoredResourceDescriptors method.
-func (s *FakeStackdriverLoggingServer) ListMonitoredResourceDescriptors(context.Context, *logging.ListMonitoredResourceDescriptorsRequest) (*logging.ListMonitoredResourceDescriptorsResponse, error) {
+func (s *LoggingServer) ListMonitoredResourceDescriptors(
+	context.Context, *logging.ListMonitoredResourceDescriptorsRequest) (
+	*logging.ListMonitoredResourceDescriptorsResponse, error) {
 	return &logging.ListMonitoredResourceDescriptorsResponse{}, nil
 }
 
 // ReportTrafficAssertions is defined by the Mesh Edges Service.
-func (e *MeshEdgesServiceServer) ReportTrafficAssertions(ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (*edgespb.ReportTrafficAssertionsResponse, error) {
+func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
+	ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (
+	*edgespb.ReportTrafficAssertionsResponse, error) {
 	e.RcvTrafficAssertionsReq <- req
 	time.Sleep(e.delay)
 	return &edgespb.ReportTrafficAssertionsResponse{}, nil
 }
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
-func NewFakeStackdriver(port uint16, delay time.Duration) (*FakeStackdriverMetricServer, *FakeStackdriverLoggingServer, *MeshEdgesServiceServer) {
+func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 	grpcServer := grpc.NewServer()
-	fsdms := &FakeStackdriverMetricServer{
+	fsdms := &MetricServer{
 		delay:        delay,
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
 	}
-	fsdls := &FakeStackdriverLoggingServer{
+	fsdls := &LoggingServer{
 		delay:         delay,
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}

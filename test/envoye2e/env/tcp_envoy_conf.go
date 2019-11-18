@@ -42,7 +42,7 @@ static_resources:
                 address: 127.0.0.1
                 port_value: {{.Ports.ClientToServerProxyPort}}
 {{.UpstreamFiltersInClient | indent 4 }}    
-{{.ClusterTlsContext | indent 4 }}
+{{.ClusterTLSContext | indent 4 }}
   listeners:
   - name: app-to-client
     address:
@@ -66,7 +66,7 @@ static_resources:
             config:
               path: {{.ClientAccessLogPath}}
               format: {{.AccesslogFormat}}
-{{.TlsContext | indent 6 }}
+{{.TLSContext | indent 6 }}
 `
 
 const tcpEnvoyServerConfTemplYAML = `
@@ -96,7 +96,7 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{.Ports.BackendPort}}
-{{.ClusterTlsContext | indent 4 }}
+{{.ClusterTLSContext | indent 4 }}
   listeners:
   - name: server
     address:
@@ -120,13 +120,13 @@ static_resources:
             config:
               path: {{.ServerAccessLogPath}}
               format: {{.ServerAccesslogFormat}}
-{{.TlsContext | indent 6 }}
+{{.TLSContext | indent 6 }}
 `
 
-func GetTcpClientEnvoyConfTmp() string {
+func GetTCPClientEnvoyConfTmp() string {
 	return tcpEnvoyClientConfTemplYAML
 }
 
-func GetTcpServerEnvoyConfTmp() string {
+func GetTCPServerEnvoyConfTmp() string {
 	return tcpEnvoyServerConfTemplYAML
 }

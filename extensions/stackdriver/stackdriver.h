@@ -58,8 +58,8 @@ class StackdriverRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~StackdriverRootContext() = default;
 
-  bool onConfigure(std::unique_ptr<WasmData> configuration) override;
-  void onStart(std::unique_ptr<WasmData>) override;
+  bool onConfigure(size_t) override;
+  bool onStart(size_t) override;
   void onTick() override;
 
   // Get direction of traffic relative to this proxy.

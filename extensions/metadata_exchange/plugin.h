@@ -57,8 +57,8 @@ class PluginRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~PluginRootContext() = default;
 
-  bool onConfigure(std::unique_ptr<WasmData>) override;
-  void onStart(std::unique_ptr<WasmData>) override{};
+  bool onConfigure(size_t) override;
+  bool onStart(size_t) override { return true; };
   void onTick() override{};
 
   StringView metadataValue() { return metadata_value_; };
@@ -78,8 +78,8 @@ class PluginContext : public Context {
   }
 
   void onCreate() override{};
-  FilterHeadersStatus onRequestHeaders() override;
-  FilterHeadersStatus onResponseHeaders() override;
+  FilterHeadersStatus onRequestHeaders(uint32_t) override;
+  FilterHeadersStatus onResponseHeaders(uint32_t) override;
 
  private:
   inline PluginRootContext* rootContext() {

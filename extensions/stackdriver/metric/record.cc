@@ -29,6 +29,10 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
             const ::wasm::common::NodeInfo &peer_node_info,
             const ::Wasm::Common::RequestInfo &request_info) {
   double latency_ms = TimeUtil::DurationToMilliseconds(request_info.duration);
+  const auto &operation =
+      request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
+          ? request_info.request_url_path
+          : request_info.request_operation;
   if (is_outbound) {
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},
@@ -36,7 +40,7 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
          {clientResponseBytesMeasure(), request_info.response_size},
          {clientRoundtripLatenciesMeasure(), latency_ms}},
         {{meshUIDKey(), local_node_info.mesh_id()},
-         {requestOperationKey(), request_info.request_operation},
+         {requestOperationKey(), operation},
          {requestProtocolKey(), request_info.request_protocol},
          {serviceAuthenticationPolicyKey(),
           ::Wasm::Common::AuthenticationPolicyString(
@@ -62,7 +66,7 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
        {serverResponseBytesMeasure(), request_info.response_size},
        {serverResponseLatenciesMeasure(), latency_ms}},
       {{meshUIDKey(), local_node_info.mesh_id()},
-       {requestOperationKey(), request_info.request_operation},
+       {requestOperationKey(), operation},
        {requestProtocolKey(), request_info.request_protocol},
        {serviceAuthenticationPolicyKey(),
         ::Wasm::Common::AuthenticationPolicyString(

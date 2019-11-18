@@ -46,5 +46,5 @@ func main() {
 	fmt.Printf("Listening on port %v\n", *port)
 
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":"+strconv.Itoa(*port), nil)
+	_ = http.ListenAndServe(":"+strconv.Itoa(*port), nil)
 }

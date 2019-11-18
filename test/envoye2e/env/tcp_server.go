@@ -29,16 +29,16 @@ import (
 
 // TCPServer stores data for a TCP server.
 type TCPServer struct {
-	port      uint16
 	lis       net.Listener
 	prefix    string
-	enableTLS bool
 	dir       string
+	port      uint16
+	enableTLS bool
 }
 
 // NewTCPServer creates a new TCP server.
 func NewTCPServer(port uint16, prefix string, enableTLS bool, rootDir string) (*TCPServer, error) {
-	log.Printf("Tcp server listening on port %v\n", port)
+	log.Printf("TCP server listening on port %v\n", port)
 	var lis net.Listener
 	if enableTLS {
 		certificate, err := tls.LoadX509KeyPair(
@@ -102,7 +102,7 @@ func handleConnection(conn net.Conn, prefix string) {
 		// prepend prefix and send as response
 		line := fmt.Sprintf("%s %s", prefix, bytes)
 		log.Printf("response: %s", line)
-		conn.Write([]byte(line))
+		_, _ = conn.Write([]byte(line))
 	}
 }
 

@@ -17,6 +17,7 @@
 
 #include "absl/strings/match.h"
 #include "authentication/v1alpha1/policy.pb.h"
+#include "common/http/headers.h"
 #include "src/envoy/http/authn/authn_utils.h"
 
 using istio::authn::Payload;
@@ -27,6 +28,15 @@ namespace Envoy {
 namespace Http {
 namespace Istio {
 namespace AuthN {
+
+bool isCORSPreflightRequest(const Http::HeaderMap& headers) {
+  return headers.Method() &&
+         headers.Method()->value().getStringView() ==
+             Http::Headers::get().MethodValues.Options &&
+         headers.Origin() && !headers.Origin()->value().empty() &&
+         headers.AccessControlRequestMethod() &&
+         !headers.AccessControlRequestMethod()->value().empty();
+}
 
 OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context,
                                          const iaapi::Policy& policy)
@@ -44,6 +54,14 @@ bool OriginAuthenticator::run(Payload* payload) {
               "policy {}",
               policy_.DebugString());
     return false;
+  }
+
+  if (isCORSPreflightRequest(filter_context()->headerMap())) {
+    // The CORS preflight doesn't include user credentials, allow regardless of
+    // JWT policy. See
+    // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight.
+    ENVOY_LOG(debug, "CORS preflight request allowed regardless of JWT policy");
+    return true;
   }
 
   absl::string_view request_path;

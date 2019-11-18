@@ -46,7 +46,7 @@ filter_chains:
             vm_config:
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.metadata_exchange"
+                local: { inline_string: "envoy.wasm.metadata_exchange" }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -56,7 +56,7 @@ filter_chains:
               vm_id: stats_outbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
-                inline_string: "envoy.wasm.stats"
+                local: { inline_string: "envoy.wasm.stats" }
             configuration: |
               { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
       - name: envoy.router
@@ -92,7 +92,7 @@ filter_chains:
             vm_config:
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.metadata_exchange"
+                local: { inline_string: "envoy.wasm.metadata_exchange" }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -102,7 +102,7 @@ filter_chains:
               vm_id: stats_inbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
-                inline_string: "envoy.wasm.stats"
+                local: { inline_string: "envoy.wasm.stats" }
             configuration: |
               { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
       - name: envoy.router
@@ -121,7 +121,7 @@ filter_chains:
 
 type capture struct{}
 
-func (_ capture) Run(p *driver.Params) error {
+func (capture) Run(p *driver.Params) error {
 	prev, err := strconv.Atoi(p.Vars["RequestCount"])
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (_ capture) Run(p *driver.Params) error {
 	p.Vars["RequestCount"] = fmt.Sprintf("%d", p.N+prev)
 	return nil
 }
-func (_ capture) Cleanup() {}
+func (capture) Cleanup() {}
 
 func TestStatsPayload(t *testing.T) {
 	ports := env.NewPorts(env.StatsPayload)
@@ -185,10 +185,10 @@ func TestStatsParallel(t *testing.T) {
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["StatsConfig"] = params.LoadTestData("testdata/bootstrap/stats.yaml.tmpl")
-	client_request_total := &dto.MetricFamily{}
-	server_request_total := &dto.MetricFamily{}
-	params.LoadTestProto("testdata/metric/client_request_total.yaml.tmpl", client_request_total)
-	params.LoadTestProto("testdata/metric/server_request_total.yaml.tmpl", server_request_total)
+	clientRequestTotal := &dto.MetricFamily{}
+	serverRequestTotal := &dto.MetricFamily{}
+	params.LoadTestProto("testdata/metric/client_request_total.yaml.tmpl", clientRequestTotal)
+	params.LoadTestProto("testdata/metric/server_request_total.yaml.tmpl", serverRequestTotal)
 
 	if err := (&driver.Scenario{
 		[]driver.Step{

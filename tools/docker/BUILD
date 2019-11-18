@@ -23,14 +23,12 @@ load(
 container_image(
     name = "envoy_distroless",
     base = "@distroless_cc//image",
-    tags = ["manual"],
     tars = ["//src/envoy:envoy_tar"],
 )
 
 container_image(
     name = "envoy_ubuntu",
     base = "@bionic//image",
-    tags = ["manual"],
     tars = ["//src/envoy:envoy_tar"],
 )
 

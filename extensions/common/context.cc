@@ -30,8 +30,6 @@
 #include "extensions/common/wasm/null/null_plugin.h"
 
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
-using Envoy::Extensions::Common::Wasm::MetadataType;
-using Envoy::Extensions::Common::Wasm::StreamType;
 using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
@@ -236,6 +234,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
+
+  getStringValue({"request", "url_path"}, &request_info->request_url_path);
 
   int64_t destination_port = 0;
 

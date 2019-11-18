@@ -38,7 +38,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.metadata_exchange"
+          local: { inline_string: "envoy.wasm.metadata_exchange" }
       configuration: "test"
 - name: envoy.filters.http.wasm
   config:
@@ -48,7 +48,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
         vm_id: "stackdriver_outbound"
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.null.stackdriver"
+          local: { inline_string: "envoy.wasm.null.stackdriver" }
       configuration: >-
         {}`
 
@@ -58,7 +58,7 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
       vm_config:
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.metadata_exchange"
+          local: { inline_string: "envoy.wasm.metadata_exchange" }
       configuration: "test"
 - name: envoy.filters.http.wasm
   config:
@@ -68,7 +68,7 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
         vm_id: "stackdriver_inbound"
         runtime: "envoy.wasm.runtime.null"
         code:
-          inline_string: "envoy.wasm.null.stackdriver"
+          local: { inline_string: "envoy.wasm.null.stackdriver" }
       configuration: >-
         {
           "max_peer_cache_size": -1,
@@ -80,7 +80,7 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
 	got.Points[0].Interval = nil
 	if !proto.Equal(want, got) {
-		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
+		return fmt.Errorf("request count timeseries is not expected, got %v \nwant %v", proto.MarshalTextString(got), proto.MarshalTextString(want))
 	}
 	return nil
 }
@@ -90,12 +90,12 @@ func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
 		l.Timestamp = nil
 	}
 	if !proto.Equal(want, got) {
-		return fmt.Errorf("log entries are not expected, got %v \nwant %v\n", proto.MarshalTextString(got), proto.MarshalTextString(want))
+		return fmt.Errorf("log entries are not expected, got %v \nwant %v", proto.MarshalTextString(got), proto.MarshalTextString(want))
 	}
 	return nil
 }
 
-func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error, bool) {
+func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (bool, error) {
 	var srvReqCount, cltReqCount monitoringpb.TimeSeries
 	p := &driver.Params{
 		Vars: map[string]string{
@@ -110,14 +110,14 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type == srvReqCount.Metric.Type {
 			isClient = false
-			return compareTimeSeries(t, &srvReqCount), isClient
+			return isClient, compareTimeSeries(t, &srvReqCount)
 		}
 		if t.Metric.Type == cltReqCount.Metric.Type {
-			return compareTimeSeries(t, &cltReqCount), isClient
+			return isClient, compareTimeSeries(t, &cltReqCount)
 		}
 	}
 	// at least one time series should match either client side request count or server side request count.
-	return fmt.Errorf("cannot find expected request count from creat time series request %v", got), isClient
+	return isClient, fmt.Errorf("cannot find expected request count from creat time series request %v", got)
 }
 
 func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
@@ -135,7 +135,7 @@ var wantTrafficReq = &edgespb.ReportTrafficAssertionsRequest{
 	Parent:  "projects/test-project",
 	MeshUid: "mesh",
 	TrafficAssertions: []*edgespb.TrafficAssertion{
-		&edgespb.TrafficAssertion{
+		{
 			Protocol:                    edgespb.TrafficAssertion_PROTOCOL_HTTP,
 			DestinationServiceName:      "server",
 			DestinationServiceNamespace: "default",
@@ -198,7 +198,7 @@ func TestStackdriverPlugin(t *testing.T) {
 	for !(srvMetricRcv && cltMetricRcv && logRcv && edgeRcv) {
 		select {
 		case req := <-fsdm.RcvMetricReq:
-			err, isClient := verifyCreateTimeSeriesReq(req)
+			isClient, err := verifyCreateTimeSeriesReq(req)
 			if err != nil {
 				t.Errorf("CreateTimeSeries verification failed: %v", err)
 			}

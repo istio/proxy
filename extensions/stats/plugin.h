@@ -40,7 +40,6 @@ namespace Wasm {
 namespace Null {
 namespace Plugin {
 
-using MetadataType = Envoy::Extensions::Common::Wasm::MetadataType;
 using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
 using NullPluginRootRegistry =
     ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
@@ -344,7 +343,7 @@ class PluginRootContext : public RootContext {
 
   ~PluginRootContext() = default;
 
-  bool onConfigure(std::unique_ptr<WasmData>) override;
+  bool onConfigure(size_t) override;
   void report();
   bool outbound() const { return outbound_; }
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
