@@ -9,3 +9,4 @@ clang.bazelrc
 user.bazelrc
 **/plugin.wasm
 compile_commands.json
+.vscode/*
