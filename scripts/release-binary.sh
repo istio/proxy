@@ -44,14 +44,16 @@ function usage() {
   echo "$0
     -d  The bucket name to store proxy binary (optional).
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
-        Cannot be used together with -d option."
+        Cannot be used together with -d option.
+    -s  Skip pushing envoy docker image."
   exit 1
 }
 
-while getopts d:i arg ; do
+while getopts d:i:s arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
     i) CHECK=0;;
+    s) PUSH_DOCKER_IMAGE="";;
     *) usage;;
   esac
 done
@@ -90,7 +92,7 @@ fi
 # k8-dbg is the output directory for -c dbg builds.
 for config in release release-symbol debug
 do
-  PUSH_DOCKER_IMAGE="true"
+  PUSH_DOCKER_IMAGE="${PUSH_DOCKER_IMAGE:-true}"
   case $config in
     "release" )
       CONFIG_PARAMS="--config=release"
