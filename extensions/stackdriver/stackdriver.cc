@@ -99,8 +99,8 @@ std::string getMeshTelemetryEndpoint() {
 
 }  // namespace
 
-bool StackdriverRootContext::onConfigure(
-    std::unique_ptr<WasmData> configuration) {
+bool StackdriverRootContext::onConfigure(size_t) {
+  WasmDataPtr configuration = getConfiguration();
   // TODO: add config validation to reject the listener if project id is not in
   // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
@@ -165,10 +165,11 @@ bool StackdriverRootContext::onConfigure(
   return true;
 }
 
-void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
+bool StackdriverRootContext::onStart(size_t) {
   if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
+    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
   }
+  return true;
 }
 
 void StackdriverRootContext::onTick() {
@@ -231,7 +232,7 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
 // TODO(bianpengyuan) Add final export once root context supports onDone.
 // https://github.com/envoyproxy/envoy-wasm/issues/240
 
-FilterHeadersStatus StackdriverContext::onRequestHeaders() {
+FilterHeadersStatus StackdriverContext::onRequestHeaders(uint32_t) {
   request_info_.start_timestamp = getCurrentTimeNanoseconds();
   return FilterHeadersStatus::Continue;
 }

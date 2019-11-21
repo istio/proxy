@@ -36,7 +36,8 @@ namespace Plugin {
 
 namespace Stats {
 
-bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
+bool PluginRootContext::onConfigure(size_t) {
+  std::unique_ptr<WasmData> configuration = getConfiguration();
   // Parse configuration JSON string.
   JsonParseOptions json_options;
   Status status =

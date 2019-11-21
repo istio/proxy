@@ -73,7 +73,7 @@ echo "Checking file format ..."
 pushd ${ROOT} > /dev/null
 
 SOURCE_FILES=($(git ls-tree -r HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))
-"${CLANG_FORMAT}" -style=Google -i "${SOURCE_FILES[@]}" \
+"${CLANG_FORMAT}" -i "${SOURCE_FILES[@]}" \
   || { echo "Could not run clang-format." ; exit 1 ; }
 
 CHANGED_SOURCE_FILES=($(git diff HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))

@@ -51,17 +51,17 @@ using google::protobuf::util::TimeUtil;
 MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
     RootContext* root_context, std::string edges_endpoint)
     : context_(root_context) {
-  success_callback_ = [](google::protobuf::Empty&&) {
+  success_callback_ = [](size_t) {
     // TODO(douglas-reid): improve logging message.
     logDebug(
         "successfully sent MeshEdgesService ReportTrafficAssertionsRequest");
   };
 
-  failure_callback_ = [](GrpcStatus status, StringView message) {
+  failure_callback_ = [](GrpcStatus status) {
     // TODO(douglas-reid): add retry (and other) logic
     logWarn("MeshEdgesService ReportTrafficAssertionsRequest failure: " +
             std::to_string(static_cast<int>(status)) + " " +
-            std::string(message));
+            getStatus().second->toString());
   };
 
   GrpcService grpc_service;

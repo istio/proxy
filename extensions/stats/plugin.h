@@ -40,7 +40,6 @@ namespace Wasm {
 namespace Null {
 namespace Plugin {
 
-using MetadataType = Envoy::Extensions::Common::Wasm::MetadataType;
 using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
 using NullPluginRootRegistry =
     ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
@@ -344,7 +343,7 @@ class PluginRootContext : public RootContext {
 
   ~PluginRootContext() = default;
 
-  bool onConfigure(std::unique_ptr<WasmData>) override;
+  bool onConfigure(size_t) override;
   void report(const ::Wasm::Common::RequestInfo& request_info);
   bool outbound() const { return outbound_; };
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
@@ -402,7 +401,7 @@ class PluginContext : public Context {
 
   // TODO remove the following 3 functions when streamInfo adds support for
   // response_duration, request_size and response_size.
-  FilterHeadersStatus onRequestHeaders() override {
+  FilterHeadersStatus onRequestHeaders(uint32_t) override {
     request_info_.start_timestamp = getCurrentTimeNanoseconds();
     return FilterHeadersStatus::Continue;
   };

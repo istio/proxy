@@ -66,8 +66,10 @@ fi
 
 # Make sure the release binaries are built on x86_64 Ubuntu 16.04 (Xenial)
 if [ "${CHECK}" -eq 1 ]; then
-  UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
-  [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'Must run on Ubuntu 16.04 (Xenial).'; exit 1; }
+  if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
+    UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
+    [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'Must run on Ubuntu 16.04 (Xenial).'; exit 1; }
+  fi
   [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
 elif [ -n "${DST}" ]; then
   echo "The -i option is not allowed together with -d option."

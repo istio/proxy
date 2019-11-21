@@ -72,8 +72,8 @@ class ExporterImpl : public Exporter {
   std::string grpc_service_string_;
 
   // Callbacks for gRPC calls.
-  std::function<void(google::protobuf::Empty&&)> success_callback_;
-  std::function<void(GrpcStatus, StringView)> failure_callback_;
+  std::function<void(size_t)> success_callback_;
+  std::function<void(GrpcStatus)> failure_callback_;
 };
 
 }  // namespace Log

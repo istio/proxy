@@ -43,7 +43,7 @@ filter_chains:
             vm_config:
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.metadata_exchange"
+                local: { inline_string: "envoy.wasm.metadata_exchange" }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -53,7 +53,7 @@ filter_chains:
               vm_id: "stackdriver_outbound"
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.null.stackdriver"
+                local: { inline_string: "envoy.wasm.null.stackdriver" }
             configuration: >-
               {}
       - name: envoy.router
@@ -89,7 +89,7 @@ filter_chains:
             vm_config:
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.metadata_exchange"
+                local: { inline_string: "envoy.wasm.metadata_exchange" }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -99,7 +99,7 @@ filter_chains:
               vm_id: "stackdriver_inbound"
               runtime: "envoy.wasm.runtime.null"
               code:
-                inline_string: "envoy.wasm.null.stackdriver"
+                local: { inline_string: "envoy.wasm.null.stackdriver" }
             configuration: >-
               {}
       - name: envoy.router
