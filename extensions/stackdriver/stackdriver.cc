@@ -167,7 +167,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
 bool StackdriverRootContext::onStart(size_t) {
   if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
+    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
   }
   return true;
 }
