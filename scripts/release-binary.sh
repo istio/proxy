@@ -51,7 +51,7 @@ function usage() {
   exit 1
 }
 
-while getopts d:i:s arg ; do
+while getopts d:is arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
     i) CHECK=0;;
