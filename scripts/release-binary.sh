@@ -96,13 +96,13 @@ do
       CONFIG_PARAMS="--config=release"
       BINARY_BASE_NAME="envoy-alpha"
       PACKAGE_BASE_NAME="istio-proxy"
-      BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
       ;;
     "release-symbol")
       CONFIG_PARAMS="--config=release-symbol"
       BINARY_BASE_NAME="envoy-symbol"
       PACKAGE_BASE_NAME=""
-      BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
       ;;
     "asan")
       # NOTE: libc++ is dynamically linked in this build.
@@ -110,13 +110,13 @@ do
       CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
       BINARY_BASE_NAME="envoy-asan"
       PACKAGE_BASE_NAME=""
-      BAZEL_OUT="$(bazel info output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
       ;;
     "debug")
       CONFIG_PARAMS="--config=debug"
       BINARY_BASE_NAME="envoy-debug"
       PACKAGE_BASE_NAME="istio-proxy-debug"
-      BAZEL_OUT="$(bazel info output_path)/k8-dbg/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-dbg/bin"
       ;;
   esac
 
