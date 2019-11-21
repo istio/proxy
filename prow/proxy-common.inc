@@ -30,8 +30,17 @@ ROOT=/go/src
 # Configure available resources and disable IPv6 tests.
 export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors"
 
+# Override envoy.
+if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
+  TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
+  trap 'rm -rf ${TMP_DIR:?}' EXIT
+  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
+  curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
+fi
+
 # e2e tests under //test/envoye2e/... use Bazel artifacts.
-export BAZEL_OUT="$(bazel info output_path)/k8-fastbuild/bin"
+export BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-fastbuild/bin"
 
 # Use GCP service account when available.
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
@@ -45,13 +54,4 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
     echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE}"
     export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
   fi
-fi
-
-# Override envoy.
-if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
-  TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
-  trap 'rm -rf ${TMP_DIR:?}' EXIT
-  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
-  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
-  curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
 fi
