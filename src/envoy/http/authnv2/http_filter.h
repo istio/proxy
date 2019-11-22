@@ -21,6 +21,23 @@
 #include "src/envoy/http/authnv2/authenticator_base.h"
 #include "src/envoy/http/authnv2/filter_context.h"
 
+// TODO(incfly): impl notes.
+//
+// input:
+// envoy.jwt_authn {
+//     "isser.google.com": {}
+//     "isser.facebook.com": { iss:, aud: }
+// }
+// output:
+// - see attribute_names, source.principle, source.namespace
+// - all request.auth.* attributes
+//
+// can't add more attributes because of alignment...
+// - Get rid of the config proto
+//   - skip_trust_domain_verification...? get rid of it, worrying about it later.
+// - Get rid of the JWT authentication rejecting
+// - Working with multi JWT.
+
 namespace Envoy {
 namespace Http {
 namespace Istio {
