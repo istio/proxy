@@ -87,8 +87,7 @@ class MockAuthenticationFilter : public AuthenticationFilter {
  public:
   // We'll use fake authenticator for test, so policy is not really needed. Use
   // default config for simplicity.
-  MockAuthenticationFilter(const FilterConfig &filter_config)
-      : AuthenticationFilter(filter_config) {}
+  MockAuthenticationFilter(): AuthenticationFilter() {}
 
   ~MockAuthenticationFilter(){};
 
@@ -112,7 +111,7 @@ class AuthenticationFilterTest : public testing::Test {
   FilterConfig filter_config_ = FilterConfig::default_instance();
 
   Http::TestHeaderMapImpl request_headers_;
-  StrictMock<MockAuthenticationFilter> filter_{filter_config_};
+  StrictMock<MockAuthenticationFilter> filter_{};
   NiceMock<Http::MockStreamDecoderFilterCallbacks> decoder_callbacks_;
 };
 

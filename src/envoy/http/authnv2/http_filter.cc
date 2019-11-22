@@ -40,54 +40,50 @@ struct RcDetailsValues {
 };
 typedef ConstSingleton<RcDetailsValues> RcDetails;
 
-AuthenticationFilter::AuthenticationFilter(const FilterConfig& filter_config)
-    : filter_config_(filter_config) {}
-
 AuthenticationFilter::~AuthenticationFilter() {}
 
 void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
-                                                        bool) {
-  ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
-            filter_config_.DebugString());
-  state_ = State::PROCESSING;
+FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&,bool) {
+  // ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
+  //           filter_config_.DebugString());
+  // state_ = State::PROCESSING;
 
-  filter_context_.reset(new Istio::AuthN::FilterContext(
-      decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
-      decoder_callbacks_->connection(), filter_config_));
+  // filter_context_.reset(new Istio::AuthN::FilterContext(
+  //     decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
+  //     decoder_callbacks_->connection(), filter_config_));
 
-  Payload payload;
+  // Payload payload;
 
-  if (!createPeerAuthenticator(filter_context_.get())->run(&payload) &&
-      !filter_config_.policy().peer_is_optional()) {
-    rejectRequest("Peer authentication failed.");
-    return FilterHeadersStatus::StopIteration;
-  }
+  // if (!createPeerAuthenticator(filter_context_.get())->run(&payload) &&
+  //     !filter_config_.policy().peer_is_optional()) {
+  //   rejectRequest("Peer authentication failed.");
+  //   return FilterHeadersStatus::StopIteration;
+  // }
 
-  bool success =
-      createOriginAuthenticator(filter_context_.get())->run(&payload) ||
-      filter_config_.policy().origin_is_optional();
+  // bool success =
+  //     createOriginAuthenticator(filter_context_.get())->run(&payload) ||
+  //     filter_config_.policy().origin_is_optional();
 
-  if (!success) {
-    rejectRequest("Origin authentication failed.");
-    return FilterHeadersStatus::StopIteration;
-  }
+  // if (!success) {
+  //   rejectRequest("Origin authentication failed.");
+  //   return FilterHeadersStatus::StopIteration;
+  // }
 
-  // Put authentication result to headers.
-  if (filter_context_ != nullptr) {
-    // Save auth results in the metadata, could be used later by RBAC and/or
-    // mixer filter.
-    ProtobufWkt::Struct data;
-    Utils::Authentication::SaveAuthAttributesToStruct(
-        filter_context_->authenticationResult(), data);
-    decoder_callbacks_->streamInfo().setDynamicMetadata(
-        Utils::IstioFilterName::kAuthentication, data);
-    ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
-  }
-  state_ = State::COMPLETE;
+  // // Put authentication result to headers.
+  // if (filter_context_ != nullptr) {
+  //   // Save auth results in the metadata, could be used later by RBAC and/or
+  //   // mixer filter.
+  //   ProtobufWkt::Struct data;
+  //   Utils::Authentication::SaveAuthAttributesToStruct(
+  //       filter_context_->authenticationResult(), data);
+  //   decoder_callbacks_->streamInfo().setDynamicMetadata(
+  //       Utils::IstioFilterName::kAuthentication, data);
+  //   ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
+  // }
+  // state_ = State::COMPLETE;
   return FilterHeadersStatus::Continue;
 }
 
@@ -122,16 +118,18 @@ void AuthenticationFilter::rejectRequest(const std::string& message) {
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>
 AuthenticationFilter::createPeerAuthenticator(
-    Istio::AuthN::FilterContext* filter_context) {
-  return std::make_unique<Istio::AuthN::PeerAuthenticator>(
-      filter_context, filter_config_.policy());
+    Istio::AuthN::FilterContext*) {
+      return std::unique_ptr<Istio::AuthN::PeerAuthenticator>();
+  // return std::make_unique<Istio::AuthN::PeerAuthenticator>(
+  //     filter_context, filter_config_.policy());
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>
 AuthenticationFilter::createOriginAuthenticator(
-    Istio::AuthN::FilterContext* filter_context) {
-  return std::make_unique<Istio::AuthN::OriginAuthenticator>(
-      filter_context, filter_config_.policy());
+    Istio::AuthN::FilterContext*) {
+      return std::unique_ptr<Istio::AuthN::PeerAuthenticator>();
+  // return std::make_unique<Istio::AuthN::OriginAuthenticator>(
+  //     filter_context, filter_config_.policy());
 }
 
 }  // namespace AuthN

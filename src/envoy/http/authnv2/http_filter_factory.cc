@@ -32,30 +32,29 @@ namespace iaapi = istio::authentication::v1alpha1;
 class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                           public Logger::Loggable<Logger::Id::filter> {
  public:
-  Http::FilterFactoryCb createFilterFactory(const Json::Object& config,
+  Http::FilterFactoryCb createFilterFactory(const Json::Object&,
                                             const std::string&,
                                             FactoryContext&) override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
-    FilterConfig filter_config;
-    google::protobuf::util::Status status =
-        Utils::ParseJsonMessage(config.asJsonString(), &filter_config);
-    ENVOY_LOG(debug, "Called AuthnFilterConfig : Utils::ParseJsonMessage()");
-    if (!status.ok()) {
-      ENVOY_LOG(critical, "Utils::ParseJsonMessage() return value is: " +
-                              status.ToString());
-      throw EnvoyException(
-          "In createFilterFactory(), Utils::ParseJsonMessage() return value "
-          "is: " +
-          status.ToString());
-    }
-    return createFilterFactory(filter_config);
+    // FilterConfig filter_config;
+    // google::protobuf::util::Status status =
+    //     Utils::ParseJsonMessage(config.asJsonString(), &filter_config);
+    // ENVOY_LOG(debug, "Called AuthnFilterConfig : Utils::ParseJsonMessage()");
+    // if (!status.ok()) {
+    //   ENVOY_LOG(critical, "Utils::ParseJsonMessage() return value is: " +
+    //                           status.ToString());
+    //   throw EnvoyException(
+    //       "In createFilterFactory(), Utils::ParseJsonMessage() return value "
+    //       "is: " +
+    //       status.ToString());
+    // }
+    return createFilterFactory();
   }
 
   Http::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message& proto_config, const std::string&,
-      FactoryContext&) override {
-    auto filter_config = dynamic_cast<const FilterConfig&>(proto_config);
-    return createFilterFactory(filter_config);
+      const Protobuf::Message&, const std::string&, FactoryContext&) override {
+    // auto filter_config = dynamic_cast<const FilterConfig&>(proto_config);
+    return createFilterFactory();
   }
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override {
@@ -68,46 +67,45 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
   }
 
  private:
-  Http::FilterFactoryCb createFilterFactory(const FilterConfig& config_pb) {
+  Http::FilterFactoryCb createFilterFactory() {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
     // Make it shared_ptr so that the object is still reachable when callback is
     // invoked.
     // TODO(incfly): add a test to simulate different config can be handled
     // correctly similar to multiplexing on different port.
-    auto filter_config = std::make_shared<FilterConfig>(config_pb);
+    // auto filter_config = std::make_shared<FilterConfig>(config_pb);
     // Print a log to remind user to upgrade to the mTLS setting. This will only
     // be called when a new config is received by Envoy.
-    warnPermissiveMode(*filter_config);
+    // warnPermissiveMode(*filter_config);
     return
-        [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+        [](Http::FilterChainFactoryCallbacks& callbacks) -> void {
           callbacks.addStreamDecoderFilter(
-              std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(
-                  *filter_config));
+              std::make_shared<Http::Istio::AuthN::AuthenticationFilter>());
         };
   }
 
-  void warnPermissiveMode(const FilterConfig& filter_config) {
-    for (const auto& method : filter_config.policy().peers()) {
-      switch (method.params_case()) {
-        case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
-          if (method.mtls().mode() == iaapi::MutualTls_Mode_PERMISSIVE) {
-            ENVOY_LOG(
-                warn,
-                "mTLS PERMISSIVE mode is used, connection can be either "
-                "plaintext or TLS, and client cert can be omitted. "
-                "Please consider to upgrade to mTLS STRICT mode for more "
-                "secure "
-                "configuration that only allows TLS connection with client "
-                "cert. "
-                "See https://istio.io/docs/tasks/security/mtls-migration/");
-            return;
-          }
-          break;
-        default:
-          break;
-      }
-    }
-  }
+  // void warnPermissiveMode(const FilterConfig& filter_config) {
+  //   for (const auto& method : filter_config.policy().peers()) {
+  //     switch (method.params_case()) {
+  //       case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
+  //         if (method.mtls().mode() == iaapi::MutualTls_Mode_PERMISSIVE) {
+  //           ENVOY_LOG(
+  //               warn,
+  //               "mTLS PERMISSIVE mode is used, connection can be either "
+  //               "plaintext or TLS, and client cert can be omitted. "
+  //               "Please consider to upgrade to mTLS STRICT mode for more "
+  //               "secure "
+  //               "configuration that only allows TLS connection with client "
+  //               "cert. "
+  //               "See https://istio.io/docs/tasks/security/mtls-migration/");
+  //           return;
+  //         }
+  //         break;
+  //       default:
+  //         break;
+  //     }
+  //   }
+  // }
 };
 
 /**
