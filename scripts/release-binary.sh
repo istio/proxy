@@ -40,6 +40,9 @@ DST=""
 # Verify that we're building binaries on Ubuntu 16.04 (Xenial).
 CHECK=1
 
+# Push envoy docker image.
+PUSH_DOCKER_IMAGE=1
+
 function usage() {
   echo "$0
     -d  The bucket name to store proxy binary (optional).
