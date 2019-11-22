@@ -34,15 +34,21 @@
 //
 // can't add more attributes because of alignment...
 // - Get rid of the config proto
-//   - skip_trust_domain_verification...? get rid of it, worrying about it later.
+//   - skip_trust_domain_verification...? get rid of it, worrying about it
+//   later.
 // - Get rid of the JWT authentication rejecting
 // - Working with multi JWT.
 
 // QA:
-// Really the proto definition is just for composing data structure? Does not seem having the need
-// to do cross-lang data encoding as normal proto does?
+// Really the proto definition is just for composing data structure? Does not
+// seem having the need to do cross-lang data encoding as normal proto does?
 //
-// The authenticator_base.h seems very much over-object oriented. no need for class inheritance.
+// The authenticator_base.h seems very much over-object oriented. no need for
+// class inheritance.
+
+// Where are the attributes generated? Before it's BuildCheckAttributes,
+// request_handler? seems nothing to do with authn filter? where rbac filter is
+// based on?
 namespace Envoy {
 namespace Http {
 namespace Istio {
@@ -65,7 +71,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
 
-//  protected:
+  //  protected:
   // Convenient function to call decoder_callbacks_ only when stopped_ is true.
   // void continueDecoding();
 
@@ -91,7 +97,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
   // Context for authentication process. Created in decodeHeader to start
   // authentication process.
-  std::unique_ptr<Istio::AuthN::FilterContext> filter_context_;
+  // std::unique_ptr<Istio::AuthN::FilterContext> filter_context_;
 };
 
 }  // namespace AuthN

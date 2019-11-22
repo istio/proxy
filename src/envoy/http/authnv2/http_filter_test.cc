@@ -27,6 +27,8 @@
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/test_time.h"
 #include "test/test_common/utility.h"
+#include "test/mocks/network/mocks.h"
+#include "test/mocks/ssl/mocks.h"
 
 using Envoy::Http::Istio::AuthN::AuthenticatorBase;
 using Envoy::Http::Istio::AuthN::FilterContext;
@@ -37,6 +39,7 @@ using testing::_;
 using testing::AtLeast;
 using testing::Invoke;
 using testing::NiceMock;
+using testing::Return;
 using testing::ReturnRef;
 using testing::StrictMock;
 
@@ -105,20 +108,32 @@ class AuthenticationFilterTest : public testing::Test {
   Http::TestHeaderMapImpl request_headers_;
   StrictMock<MockAuthenticationFilter> filter_;
   NiceMock<Http::MockStreamDecoderFilterCallbacks> decoder_callbacks_;
+  NiceMock<Envoy::Network::MockConnection> connection_{};
 };
 
 
-TEST_F(AuthenticationFilterTest, IgnoreBothFail) {
+TEST_F(AuthenticationFilterTest, BasicPeerPrincipal) {
   StrictMock<MockAuthenticationFilter> filter;
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
+  auto ssl = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
+  ON_CALL(*ssl, peerCertificatePresented()).WillByDefault(Return(true));
+  ON_CALL(*ssl, uriSanPeerCertificate())
+      .WillByDefault(Return(std::vector<std::string>{"spiffe://cluster.local/ns/foo/sa/bar"}));
+  EXPECT_CALL(Const(connection_), ssl())
+    .WillRepeatedly(Return(ssl));
+  EXPECT_CALL(decoder_callbacks_, connection())
+    .WillRepeatedly(Return(&connection_));
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter.decodeHeaders(request_headers_, true));
   // EXPECT_CALL(filter, createPeerAuthenticator(_))
   //     .Times(1)
   //     .WillOnce(Invoke(createAlwaysFailAuthenticator));
   // EXPECT_CALL(filter, createOriginAuthenticator(_))
   //     .Times(1)
   //     .WillOnce(Invoke(createAlwaysFailAuthenticator));
-  // EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-  //           filter.decodeHeaders(request_headers_, true));
+}
+
+TEST_F(AuthenticationFilterTest, BasicJWT) {
 }
 
 // TEST_F(AuthenticationFilterTest, PeerFail) {
