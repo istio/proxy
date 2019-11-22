@@ -16,7 +16,7 @@
 #pragma once
 
 #include "authentication/v1alpha1/policy.pb.h"
-#include "src/envoy/http/authn/authenticator_base.h"
+#include "src/envoy/http/authnv2/authenticator_base.h"
 
 namespace Envoy {
 namespace Http {

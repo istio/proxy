@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "src/envoy/http/authn/authn_utils.h"
+#include "src/envoy/http/authnv2/authn_utils.h"
 
 #include "common/common/base64.h"
 #include "common/common/utility.h"
-#include "src/envoy/http/authn/test_utils.h"
+#include "src/envoy/http/authnv2/test_utils.h"
 #include "test/test_common/utility.h"
 
 using google::protobuf::util::MessageDifferencer;

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/peer_authenticator.h"
+#include "src/envoy/http/authnv2/peer_authenticator.h"
 
 #include "common/http/utility.h"
 #include "src/envoy/utils/utils.h"

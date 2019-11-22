@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/http_filter.h"
+#include "src/envoy/http/authnv2/http_filter.h"
 
 #include "common/common/base64.h"
 #include "common/http/header_map_impl.h"
@@ -21,8 +21,8 @@
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/envoy/http/authn/authenticator_base.h"
-#include "src/envoy/http/authn/test_utils.h"
+#include "src/envoy/http/authnv2/authenticator_base.h"
+#include "src/envoy/http/authnv2/test_utils.h"
 #include "src/envoy/utils/authn.h"
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/test_time.h"

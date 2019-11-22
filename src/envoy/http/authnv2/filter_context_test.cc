@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/filter_context.h"
+#include "src/envoy/http/authnv2/filter_context.h"
 
 #include "envoy/api/v2/core/base.pb.h"
-#include "src/envoy/http/authn/test_utils.h"
+#include "src/envoy/http/authnv2/test_utils.h"
 #include "test/test_common/utility.h"
 
 using istio::authn::Payload;
