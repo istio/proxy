@@ -51,7 +51,7 @@ BAZEL_CONFIG_ASAN = --config=macos-asan
 BAZEL_CONFIG_TSAN = # no working config
 endif
 
-BAZEL_OUTPUT_PATH := $(shell bazel info output_path)
+BAZEL_OUTPUT_PATH := $(shell bazel info $(BAZEL_BUILD_ARGS) output_path)
 BAZEL_ENVOY_PATH ?= $(BAZEL_OUTPUT_PATH)/k8-fastbuild/bin/src/envoy/envoy
 
 build:
