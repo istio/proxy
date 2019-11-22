@@ -34,12 +34,6 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-struct RcDetailsValues {
-  // The Istio AuthN filter rejected the request.
-  const std::string IstioAuthnAccessDenied = "istio_authn_access_denied";
-};
-typedef ConstSingleton<RcDetailsValues> RcDetails;
-
 AuthenticationFilter::~AuthenticationFilter() {}
 
 void AuthenticationFilter::onDestroy() {
@@ -47,10 +41,8 @@ void AuthenticationFilter::onDestroy() {
 }
 
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&,bool) {
-  // ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
-  //           filter_config_.DebugString());
-  // state_ = State::PROCESSING;
-
+  ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders start\n");
+  state_ = State::PROCESSING;
   // filter_context_.reset(new Istio::AuthN::FilterContext(
   //     decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
   //     decoder_callbacks_->connection(), filter_config_));
@@ -88,6 +80,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&,bool) {
 }
 
 FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
+  // TODO(incfly): what's this for? why
   if (state_ == State::PROCESSING) {
     return FilterDataStatus::StopIterationAndWatermark;
   }
@@ -104,32 +97,6 @@ FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
 void AuthenticationFilter::setDecoderFilterCallbacks(
     StreamDecoderFilterCallbacks& callbacks) {
   decoder_callbacks_ = &callbacks;
-}
-
-void AuthenticationFilter::rejectRequest(const std::string& message) {
-  if (state_ != State::PROCESSING) {
-    return;
-  }
-  state_ = State::REJECTED;
-  decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message, nullptr,
-                                     absl::nullopt,
-                                     RcDetails::get().IstioAuthnAccessDenied);
-}
-
-std::unique_ptr<Istio::AuthN::AuthenticatorBase>
-AuthenticationFilter::createPeerAuthenticator(
-    Istio::AuthN::FilterContext*) {
-      return std::unique_ptr<Istio::AuthN::PeerAuthenticator>();
-  // return std::make_unique<Istio::AuthN::PeerAuthenticator>(
-  //     filter_context, filter_config_.policy());
-}
-
-std::unique_ptr<Istio::AuthN::AuthenticatorBase>
-AuthenticationFilter::createOriginAuthenticator(
-    Istio::AuthN::FilterContext*) {
-      return std::unique_ptr<Istio::AuthN::PeerAuthenticator>();
-  // return std::make_unique<Istio::AuthN::OriginAuthenticator>(
-  //     filter_context, filter_config_.policy());
 }
 
 }  // namespace AuthN

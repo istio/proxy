@@ -48,11 +48,6 @@ namespace Istio {
 namespace AuthN {
 namespace {
 
-const char ingoreBothPolicy[] = R"(
-  peer_is_optional: true
-  origin_is_optional: true
-)";
-
 // Create a fake authenticator for test. This authenticator do nothing except
 // making the authentication fail.
 // std::unique_ptr<AuthenticatorBase> createAlwaysFailAuthenticator(

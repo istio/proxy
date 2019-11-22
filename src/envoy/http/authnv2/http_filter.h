@@ -38,6 +38,11 @@
 // - Get rid of the JWT authentication rejecting
 // - Working with multi JWT.
 
+// QA:
+// Really the proto definition is just for composing data structure? Does not seem having the need
+// to do cross-lang data encoding as normal proto does?
+//
+// The authenticator_base.h seems very much over-object oriented. no need for class inheritance.
 namespace Envoy {
 namespace Http {
 namespace Istio {
@@ -60,33 +65,28 @@ class AuthenticationFilter : public StreamDecoderFilter,
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
 
- protected:
+//  protected:
   // Convenient function to call decoder_callbacks_ only when stopped_ is true.
-  void continueDecoding();
+  // void continueDecoding();
 
   // Convenient function to reject request.
-  void rejectRequest(const std::string& message);
+  // void rejectRequest(const std::string& message);
 
   // Creates peer authenticator. This is made virtual function for
   // testing.
-  virtual std::unique_ptr<Istio::AuthN::AuthenticatorBase>
+  // virtual std::unique_ptr<Istio::AuthN::AuthenticatorBase>
 
-  createPeerAuthenticator(Istio::AuthN::FilterContext* filter_context);
+  // createPeerAuthenticator(Istio::AuthN::FilterContext* filter_context);
 
-  // Creates origin authenticator.
-  virtual std::unique_ptr<Istio::AuthN::AuthenticatorBase>
+  // // Creates origin authenticator.
+  // virtual std::unique_ptr<Istio::AuthN::AuthenticatorBase>
 
-  createOriginAuthenticator(Istio::AuthN::FilterContext* filter_context);
+  // createOriginAuthenticator(Istio::AuthN::FilterContext* filter_context);
 
  private:
-  // Store the config.
-//   const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-//       filter_config_;
-
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 
   enum State { INIT, PROCESSING, COMPLETE, REJECTED };
-  // Holds the state of the filter.
   State state_{State::INIT};
 
   // Context for authentication process. Created in decodeHeader to start
