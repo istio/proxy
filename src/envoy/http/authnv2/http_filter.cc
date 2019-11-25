@@ -75,17 +75,22 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   if (filter_it != metadata.filter_metadata().end()) {
     ENVOY_LOG(info, "No dynamic_metadata found for filter {}",
               Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+    const ::google::protobuf::Struct& jwt_payload = filter_it->second;
     // Iterate over the envoy.jwt metadata, which is indexed by the issuer.
     // For multiple JWT, we only select on of them, the first one lexically
     // sorted.
     std::string issuer_selected = "";
-    for (const auto& entry : *filter_it) {
+    for (const auto& entry : jwt_payload.fields()) {
       const std::string& issuer = entry.first;
       if (issuer_selected == "" || issuer_selected.compare(issuer)) {
         issuer_selected = issuer;
       }
     }
-    ::google::protobuf::Struct data = (*filter_it)[issuer_selected];
+    const auto& jwt_entry = jwt_payload.fields().find(issuer_selected);
+    // jwt payload data. to be converted to actual struct.
+    const auto& data = jwt_entry->second;
+    ENVOY_LOG(info, "No dynamic_metadata found for filter {}",
+              data.DebugString());
   }
 
   ENVOY_LOG(info, "Saved Dynamic Metadata:\n{}", auth_attr.DebugString());

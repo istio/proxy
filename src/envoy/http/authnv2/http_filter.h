@@ -49,6 +49,12 @@
 // Where are the attributes generated? Before it's BuildCheckAttributes,
 // request_handler? seems nothing to do with authn filter? where rbac filter is
 // based on?
+// Ans: it does. Write to authn filter entry. See the old one.
+
+// What's lifecycle of the decodeHeaders/Trailers interaction?
+// one req always `decodeHeaders` and then `decodebody`?
+// multiple req share the same filter instance? bound by stream seems like? setting state, what does
+// it mean? seems wrong by memorizing the state into filter if multi req handling?
 namespace Envoy {
 namespace Http {
 namespace Istio {
