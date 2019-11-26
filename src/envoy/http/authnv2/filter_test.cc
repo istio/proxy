@@ -104,79 +104,31 @@ class AuthenticationFilterTest : public testing::Test {
   StreamInfo::StreamInfoImpl stream_info_;
 };
 
-TEST_F(AuthenticationFilterTest, BasicAttributes) {
+TEST_F(AuthenticationFilterTest, BasicAllAttributes) {
   AuthenticationFilter filter;
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter.decodeHeaders(request_headers_, true));
-  const std::string authn_data =
-      stream_info_.dynamicMetadata()
-          .filter_metadata()
-          .at(Utils::IstioFilterName::kAuthentication)
-          .DebugString();
-  EXPECT_EQ(R"EOF(fields {
-  key: "request.auth.audiences"
-  value {
-    string_value: "example_service"
-  }
-}
-fields {
-  key: "request.auth.claims"
-  value {
-    struct_value {
-      fields {
-        key: "aud"
-        value {
-          list_value {
-            values {
-              string_value: "example_service"
-            }
-          }
-        }
-      }
-      fields {
-        key: "iss"
-        value {
-          list_value {
-            values {
-              string_value: "https://example.com"
-            }
-          }
-        }
-      }
-      fields {
-        key: "sub"
-        value {
-          list_value {
-            values {
-              string_value: "test@example.com"
-            }
-          }
-        }
-      }
-    }
-  }
-}
-fields {
-  key: "request.auth.principal"
-  value {
-    string_value: "https://example.com/test@example.com"
-  }
-}
-fields {
-  key: "request.auth.raw_claims"
-  value {
-    string_value: "{\"iss\":\"https://example.com\",\"exp\":2001001001,\"sub\":\"test@example.com\",\"aud\":\"example_service\"}"
-  }
-}
-fields {
-  key: "source.principal"
-  value {
-    string_value: "cluster.local/ns/foo/sa/bar"
-  }
-}
+  ProtobufWkt::Struct authn_data =
+      stream_info_.dynamicMetadata().filter_metadata().at(
+          Utils::IstioFilterName::kAuthentication);
+  ProtobufWkt::Struct expected_authn_data;
+  TestUtility::loadFromYaml(R"EOF(
+request.auth.raw_claims: "{\"exp\":2001001001,\"sub\":\"test@example.com\",\"aud\":\"example_service\",\"iss\":\"https://example.com\"}"
+request.auth.claims:
+  aud:
+    - example_service
+  sub:
+    - test@example.com
+  iss:
+    - https://example.com
+request.auth.principal: https://example.com/test@example.com
+source.principal: cluster.local/ns/foo/sa/bar
+request.auth.audiences: example_service
+
 )EOF",
-            authn_data);
+                            expected_authn_data);
+  EXPECT_TRUE(TestUtility::protoEqual(expected_authn_data, authn_data));
 }
 
 TEST_F(AuthenticationFilterTest, MultiJwt) {}

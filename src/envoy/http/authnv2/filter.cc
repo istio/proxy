@@ -158,11 +158,35 @@ bool ProcessMtls(const Network::Connection* connection,
     return false;
   }
   Utils::GetPrincipal(connection, true, &peer_principle);
-  // TODO: maybe add a logger.
-  // ENVOY_LOG(debug, "Extracted peer principle {}", peer_principle);
   setKeyValue(authn_data, istio::utils::AttributeName::kSourcePrincipal,
               peer_principle);
   return true;
+}
+
+std::string AuthenticationFilter::extractJwtFromMetadata(
+    const envoy::api::v2::core::Metadata& metadata, std::string* jwt_payload) {
+  std::string issuer_selected = "";
+  auto filter_it = metadata.filter_metadata().find(
+      Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+  if (filter_it == metadata.filter_metadata().end()) {
+    return "";
+  }
+  const ::google::protobuf::Struct& jwt_metadata = filter_it->second;
+  // Iterate over the envoy.jwt metadata, which is indexed by the issuer.
+  // For multiple JWT, we only select on of them, the first one lexically
+  // sorted.
+  for (const auto& entry : jwt_metadata.fields()) {
+    const std::string& issuer = entry.first;
+    if (issuer_selected == "" || issuer_selected.compare(issuer)) {
+      issuer_selected = issuer;
+    }
+  }
+  if (issuer_selected != "") {
+    const auto& jwt_entry = jwt_metadata.fields().find(issuer_selected);
+    Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
+                                        jwt_payload);
+  }
+  return issuer_selected;
 }
 
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
@@ -170,42 +194,29 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   auto& metadata = decoder_callbacks_->streamInfo().dynamicMetadata();
   auto& authn_data = (*metadata.mutable_filter_metadata())
       [Utils::IstioFilterName::kAuthentication];
-  const Network::Connection* connection = decoder_callbacks_->connection();
+
   // Always try to get principal and set to output if available.
-  ProcessMtls(connection, authn_data);
-  // Get request.authn attributes from Jwt filter metadata.
-  auto filter_it = metadata.filter_metadata().find(
-      Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
-  if (filter_it != metadata.filter_metadata().end()) {
-    ENVOY_LOG(info, "No dynamic_metadata found for filter {}",
-              Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
-  }
-  if (filter_it != metadata.filter_metadata().end()) {
-    const ::google::protobuf::Struct& jwt_metadata = filter_it->second;
-    // Iterate over the envoy.jwt metadata, which is indexed by the issuer.
-    // For multiple JWT, we only select on of them, the first one lexically
-    // sorted.
-    std::string issuer_selected = "";
-    for (const auto& entry : jwt_metadata.fields()) {
-      const std::string& issuer = entry.first;
-      if (issuer_selected == "" || issuer_selected.compare(issuer)) {
-        issuer_selected = issuer;
-      }
-    }
-    std::string jwt_payload;
-    const auto& jwt_entry = jwt_metadata.fields().find(issuer_selected);
-    Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
-                                        &jwt_payload);
+  ProcessMtls(decoder_callbacks_->connection(), authn_data);
+  std::string jwt_payload = "";
+  std::string issuer = extractJwtFromMetadata(metadata, &jwt_payload);
+  ENVOY_LOG(info,
+            "extract jwt metadata {} \njwt payload issuer {}, payload\n{}\n",
+            metadata.DebugString(), issuer, jwt_payload);
+  if (jwt_payload != "") {
     ProcessJwt(jwt_payload, authn_data);
-    ENVOY_LOG(debug, "jwt metadata {} \njwt payload selected {}, issuer {}",
-              metadata.DebugString(), jwt_payload, issuer_selected);
   }
   ENVOY_LOG(info, "Saved Dynamic Metadata:\n{}",
-            decoder_callbacks_->streamInfo()
-                .dynamicMetadata()
-                .filter_metadata()
-                .at(Utils::IstioFilterName::kAuthentication)
-                .DebugString());
+            Envoy::MessageUtil::getYamlStringFromMessage(
+                decoder_callbacks_->streamInfo()
+                    .dynamicMetadata()
+                    .filter_metadata()
+                    .at(Utils::IstioFilterName::kAuthentication),
+                true, true));
+  // decoder_callbacks_->streamInfo()
+  //     .dynamicMetadata()
+  //     .filter_metadata()
+  //     .at(Utils::IstioFilterName::kAuthentication)
+  //     .DebugString());
   return FilterHeadersStatus::Continue;
 }
 

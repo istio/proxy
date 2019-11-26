@@ -79,6 +79,10 @@ class AuthenticationFilter : public StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override;
 
  private:
+  // Determinstically select from Jwt entry from the Jwt filter metadata.
+  // Returns the corresponding issuer string, and empty if nothing is selected.
+  std::string extractJwtFromMetadata(
+      const envoy::api::v2::core::Metadata& metadata, std::string* jwt_payload);
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 };
 
