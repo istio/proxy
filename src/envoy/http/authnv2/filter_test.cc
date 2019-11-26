@@ -57,8 +57,10 @@ class AuthenticationFilterTest : public testing::Test {
  public:
   AuthenticationFilterTest()
       : request_headers_{{":method", "GET"}, {":path", "/"}},
+        ssl_(std::make_shared<NiceMock<Ssl::MockConnectionInfo>>()),
         test_time_(),
         stream_info_(Http::Protocol::Http2, test_time_.timeSystem()) {
+    // Jwt metadata filter input setup.
     const std::string jwt_name =
         Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn;
     auto& metadata = stream_info_.dynamicMetadata();
@@ -68,8 +70,17 @@ class AuthenticationFilterTest : public testing::Test {
     auto* jwt_issuers_map =
         (*metadata.mutable_filter_metadata())[jwt_name].mutable_fields();
     (*jwt_issuers_map)["https://example.com"] = value;
+
+    // Test mock setup.
     EXPECT_CALL(decoder_callbacks_, streamInfo())
         .WillRepeatedly(ReturnRef(stream_info_));
+    ON_CALL(*ssl_, peerCertificatePresented()).WillByDefault(Return(true));
+    ON_CALL(*ssl_, uriSanPeerCertificate())
+        .WillByDefault(Return(
+            std::vector<std::string>{"spiffe://cluster.local/ns/foo/sa/bar"}));
+    EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl_));
+    EXPECT_CALL(decoder_callbacks_, connection())
+        .WillRepeatedly(Return(&connection_));
   }
 
   ~AuthenticationFilterTest() {}
@@ -83,29 +94,22 @@ class AuthenticationFilterTest : public testing::Test {
   AuthenticationFilter filter_;
   NiceMock<Http::MockStreamDecoderFilterCallbacks> decoder_callbacks_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
+  std::shared_ptr<NiceMock<Ssl::MockConnectionInfo>> ssl_;
   ::Envoy::Event::SimulatedTimeSystem test_time_;
   StreamInfo::StreamInfoImpl stream_info_;
 };
 
-TEST_F(AuthenticationFilterTest, BasicPeerPrincipal) {
+TEST_F(AuthenticationFilterTest, BasicAttributes) {
   AuthenticationFilter filter;
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
-  auto ssl = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
-  ON_CALL(*ssl, peerCertificatePresented()).WillByDefault(Return(true));
-  ON_CALL(*ssl, uriSanPeerCertificate())
-      .WillByDefault(Return(
-          std::vector<std::string>{"spiffe://cluster.local/ns/foo/sa/bar"}));
-  EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl));
-  EXPECT_CALL(decoder_callbacks_, connection())
-      .WillRepeatedly(Return(&connection_));
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter.decodeHeaders(request_headers_, true));
 }
 
-TEST_F(AuthenticationFilterTest, BasicJwt) {}
-
 TEST_F(AuthenticationFilterTest, MultiJwt) {}
 
+// This test case ensures the filter does not reject the request if the
+// attributes extraction fails.
 TEST_F(AuthenticationFilterTest, AlwaysContinueState) {}
 
 }  // namespace

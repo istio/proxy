@@ -198,11 +198,15 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
                                         &jwt_payload);
     ProcessJwt(jwt_payload, authn_data);
-    ENVOY_LOG(info, "jwt metadata {} \njwt payload selected {}, issuer {}",
+    ENVOY_LOG(debug, "jwt metadata {} \njwt payload selected {}, issuer {}",
               metadata.DebugString(), jwt_payload, issuer_selected);
   }
   ENVOY_LOG(info, "Saved Dynamic Metadata:\n{}",
-            decoder_callbacks_->streamInfo().dynamicMetadata().DebugString());
+            decoder_callbacks_->streamInfo()
+                .dynamicMetadata()
+                .filter_metadata()
+                .at(Utils::IstioFilterName::kAuthentication)
+                .DebugString());
   return FilterHeadersStatus::Continue;
 }
 
