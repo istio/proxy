@@ -85,7 +85,7 @@ static void setKeyValue(::google::protobuf::Struct& data,
 }
 
 // Returns true if the attribute populated to authn filter succeeds.
-bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
+bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& authn_data) {
   Envoy::Json::ObjectSharedPtr json_obj;
   try {
     json_obj = Json::Factory::loadFromString(jwt);
@@ -115,7 +115,8 @@ bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
     // now, just use the first value.
     const auto& aud_values = (*claims)[kJwtAudienceKey].list_value().values();
     if (!aud_values.empty()) {
-      setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthAudiences,
+      setKeyValue(authn_data,
+                  istio::utils::AttributeName::kRequestAuthAudiences,
                   aud_values[0].string_value());
     }
   }
@@ -124,48 +125,55 @@ bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
   if (claims->find("iss") != claims->end() &&
       claims->find("sub") != claims->end()) {
     setKeyValue(
-        metadata, istio::utils::AttributeName::kRequestAuthPrincipal,
+        authn_data, istio::utils::AttributeName::kRequestAuthPrincipal,
         (*claims)["iss"].list_value().values().Get(0).string_value() + "/" +
             (*claims)["sub"].list_value().values().Get(0).string_value());
   }
 
   // request.auth.audiences
   if (claims->find("azp") != claims->end()) {
-    setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthPresenter,
+    setKeyValue(authn_data, istio::utils::AttributeName::kRequestAuthPresenter,
                 (*claims)["azp"].list_value().values().Get(0).string_value());
   }
 
   // request.auth.claims
-  (*(*metadata
+  (*(*authn_data
           .mutable_fields())[istio::utils::AttributeName::kRequestAuthClaims]
         .mutable_struct_value())
       .MergeFrom(claim_structs);
 
   // request.auth.raw_claims
-  setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthRawClaims,
+  setKeyValue(authn_data, istio::utils::AttributeName::kRequestAuthRawClaims,
               jwt);
 
   return true;
 }
 
+// Returns true if the peer identity can be extracted from the underying
+// certificate used for mTLS.
+bool ProcessMtls(const Network::Connection* connection,
+                 ProtobufWkt::Struct& authn_data) {
+  std::string peer_principle;
+  if (connection->ssl() == nullptr ||
+      !connection->ssl()->peerCertificatePresented()) {
+    return false;
+  }
+  Utils::GetPrincipal(connection, true, &peer_principle);
+  // TODO: maybe add a logger.
+  // ENVOY_LOG(debug, "Extracted peer principle {}", peer_principle);
+  setKeyValue(authn_data, istio::utils::AttributeName::kSourcePrincipal,
+              peer_principle);
+  return true;
+}
+
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders start\n");
-  // populate peer identity from x509 cert.
+  auto& metadata = decoder_callbacks_->streamInfo().dynamicMetadata();
+  auto& authn_data = (*metadata.mutable_filter_metadata())
+      [Utils::IstioFilterName::kAuthentication];
   const Network::Connection* connection = decoder_callbacks_->connection();
   // Always try to get principal and set to output if available.
-  std::string peer_principle;
-  if (connection->ssl() != nullptr &&
-      connection->ssl()->peerCertificatePresented()) {
-    Utils::GetPrincipal(connection, true, &peer_principle);
-  }
-  ENVOY_LOG(info, "incfly debug peer principle {}", peer_principle);
-  auto metadata = decoder_callbacks_->streamInfo().dynamicMetadata();
-  ProtobufWkt::Struct auth_attr;
-  setKeyValue(auth_attr, istio::utils::AttributeName::kSourcePrincipal,
-              peer_principle);
-  decoder_callbacks_->streamInfo().setDynamicMetadata(
-      Utils::IstioFilterName::kAuthentication, auth_attr);
-
+  ProcessMtls(connection, authn_data);
   // Get request.authn attributes from Jwt filter metadata.
   auto filter_it = metadata.filter_metadata().find(
       Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
@@ -189,14 +197,12 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     const auto& jwt_entry = jwt_metadata.fields().find(issuer_selected);
     Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
                                         &jwt_payload);
-    // TODO: set some auto reference in the beginning of the peer identity.
-    ProcessJwt(jwt_payload, (*metadata.mutable_filter_metadata())
-                                [Utils::IstioFilterName::kAuthentication]);
+    ProcessJwt(jwt_payload, authn_data);
     ENVOY_LOG(info, "jwt metadata {} \njwt payload selected {}, issuer {}",
               metadata.DebugString(), jwt_payload, issuer_selected);
   }
-
-  ENVOY_LOG(info, "Saved Dynamic Metadata:\n{}", auth_attr.DebugString());
+  ENVOY_LOG(info, "Saved Dynamic Metadata:\n{}",
+            decoder_callbacks_->streamInfo().dynamicMetadata().DebugString());
   return FilterHeadersStatus::Continue;
 }
 
