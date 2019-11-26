@@ -27,18 +27,10 @@ package(default_visibility = ["//visibility:public"])
 envoy_cc_library(
     name = "authenticator",
     srcs = [
-        "authenticator_base.cc",
         "authn_utils.cc",
-        "filter_context.cc",
-        "origin_authenticator.cc",
-        "peer_authenticator.cc",
     ],
     hdrs = [
-        "authenticator_base.h",
         "authn_utils.h",
-        "filter_context.h",
-        "origin_authenticator.h",
-        "peer_authenticator.h",
     ],
     repository = "@envoy",
     deps = [
@@ -62,13 +54,14 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":authenticator",
         "//external:authentication_policy_config_cc_proto",
         "//include/istio/utils:attribute_names_header",
+        "//src/envoy/http/jwt_auth:jwt_lib",
         "//src/envoy/utils:authn_lib",
         "//src/envoy/utils:filter_names_lib",
         "//src/envoy/utils:utils_lib",
         "//src/istio/authn:context_proto_cc_proto",
+        "@envoy//source/common/http:headers_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -79,18 +72,6 @@ envoy_cc_test_library(
     repository = "@envoy",
     deps = [
         "//src/istio/authn:context_proto_cc_proto",
-    ],
-)
-
-envoy_cc_test(
-    name = "filter_context_test",
-    srcs = ["filter_context_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":authenticator",
-        ":test_utils",
-        "@envoy//test/mocks/http:http_mocks",
-        "@envoy//test/test_common:utility_lib",
     ],
 )
 

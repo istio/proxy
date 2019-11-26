@@ -18,8 +18,6 @@
 #include "common/common/logger.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "envoy/http/filter.h"
-#include "src/envoy/http/authnv2/authenticator_base.h"
-#include "src/envoy/http/authnv2/filter_context.h"
 
 // TODO(incfly): impl notes.
 //
@@ -53,8 +51,9 @@
 
 // What's lifecycle of the decodeHeaders/Trailers interaction?
 // one req always `decodeHeaders` and then `decodebody`?
-// multiple req share the same filter instance? bound by stream seems like? setting state, what does
-// it mean? seems wrong by memorizing the state into filter if multi req handling?
+// multiple req share the same filter instance? bound by stream seems like?
+// setting state, what does it mean? seems wrong by memorizing the state into
+// filter if multi req handling?
 namespace Envoy {
 namespace Http {
 namespace Istio {

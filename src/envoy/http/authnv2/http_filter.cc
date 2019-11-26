@@ -15,12 +15,9 @@
 
 #include "src/envoy/http/authnv2/http_filter.h"
 
-#include "authentication/v1alpha1/policy.pb.h"
 #include "common/http/utility.h"
-#include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
+#include "extensions/filters/http/well_known_names.h"
 #include "include/istio/utils/attribute_names.h"
-#include "src/envoy/http/authnv2/origin_authenticator.h"
-#include "src/envoy/http/authnv2/peer_authenticator.h"
 #include "src/envoy/utils/authn.h"
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
@@ -51,8 +48,6 @@ static void setKeyValueFoo(::google::protobuf::Struct& data, std::string key,
 
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders start\n");
-  state_ = State::PROCESSING;
-
   // populate peer identity from x509 cert.
   const Network::Connection* connection = decoder_callbacks_->connection();
   // Always try to get principal and set to output if available.
@@ -88,61 +83,21 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     }
     std::string jwt_payload;
     const auto& jwt_entry = jwt_metadata.fields().find(issuer_selected);
+    // TODO: check status
     Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
                                         &jwt_payload);
     ENVOY_LOG(info, "jwt payload selected {}", jwt_payload);
   }
 
   ENVOY_LOG(info, "Saved Dynamic Metadata:\n{}", auth_attr.DebugString());
-
-  // filter_context_.reset(new Istio::AuthN::FilterContext(
-  //     decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
-  //     decoder_callbacks_->connection(), filter_config_));
-
-  // Payload payload;
-
-  // if (!createPeerAuthenticator(filter_context_.get())->run(&payload) &&
-  //     !filter_config_.policy().peer_is_optional()) {
-  //   rejectRequest("Peer authentication failed.");
-  //   return FilterHeadersStatus::StopIteration;
-  // }
-
-  // bool success =
-  //     createOriginAuthenticator(filter_context_.get())->run(&payload) ||
-  //     filter_config_.policy().origin_is_optional();
-
-  // if (!success) {
-  //   rejectRequest("Origin authentication failed.");
-  //   return FilterHeadersStatus::StopIteration;
-  // }
-
-  // // Put authentication result to headers.
-  // if (filter_context_ != nullptr) {
-  //   // Save auth results in the metadata, could be used later by RBAC and/or
-  //   // mixer filter.
-  //   ProtobufWkt::Struct data;
-  //   Utils::Authentication::SaveAuthAttributesToStruct(
-  //       filter_context_->authenticationResult(), data);
-  //   decoder_callbacks_->streamInfo().setDynamicMetadata(
-  //       Utils::IstioFilterName::kAuthentication, data);
-  //   ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
-  // }
-  // state_ = State::COMPLETE;
   return FilterHeadersStatus::Continue;
 }
 
 FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
-  // TODO(incfly): what's this for? why
-  if (state_ == State::PROCESSING) {
-    return FilterDataStatus::StopIterationAndWatermark;
-  }
   return FilterDataStatus::Continue;
 }
 
 FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
-  if (state_ == State::PROCESSING) {
-    return FilterTrailersStatus::StopIteration;
-  }
   return FilterTrailersStatus::Continue;
 }
 
