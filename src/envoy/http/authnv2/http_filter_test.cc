@@ -26,6 +26,7 @@
 #include "test/mocks/http/mocks.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
+#include "test/test_common/simulated_time_system.h"
 #include "test/test_common/test_time.h"
 #include "test/test_common/utility.h"
 
@@ -61,9 +62,13 @@ class AuthenticationFilterTest : public testing::Test {
     const std::string jwt_name =
         Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn;
     auto& metadata = stream_info_.dynamicMetadata();
-    ProtobufWkt::Struct value;
-    Protobuf::util::JsonStringToMessage(kMockJwtPayload, &value);
-    (*metadata.mutable_filter_metadata())[jwt_name].MergeFrom(value);
+    ProtobufWkt::Value value;
+    Protobuf::util::JsonStringToMessage(kMockJwtPayload, value.mutable_struct_value());
+    auto* jwt_issuers_map =
+        (*metadata.mutable_filter_metadata())[jwt_name].mutable_fields();
+    (*jwt_issuers_map)["https://example.com"] = value;
+    EXPECT_CALL(decoder_callbacks_, streamInfo())
+        .WillRepeatedly(ReturnRef(stream_info_));
   }
 
   ~AuthenticationFilterTest() {}
@@ -77,7 +82,7 @@ class AuthenticationFilterTest : public testing::Test {
   AuthenticationFilter filter_;
   NiceMock<Http::MockStreamDecoderFilterCallbacks> decoder_callbacks_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  DangerousDeprecatedTestTime test_time_;
+  ::Envoy::Event::SimulatedTimeSystem test_time_;
   StreamInfo::StreamInfoImpl stream_info_;
 };
 

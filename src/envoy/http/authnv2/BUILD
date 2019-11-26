@@ -25,25 +25,6 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 envoy_cc_library(
-    name = "authenticator",
-    srcs = [
-        "authn_utils.cc",
-    ],
-    hdrs = [
-        "authn_utils.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        "//external:authentication_policy_config_cc_proto",
-        "//src/envoy/http/jwt_auth:jwt_lib",
-        "//src/envoy/utils:filter_names_lib",
-        "//src/envoy/utils:utils_lib",
-        "//src/istio/authn:context_proto_cc_proto",
-        "@envoy//source/common/http:headers_lib",
-    ],
-)
-
-envoy_cc_library(
     name = "filter_lib",
     srcs = [
         "http_filter.cc",
@@ -76,66 +57,17 @@ envoy_cc_test_library(
 )
 
 envoy_cc_test(
-    name = "authenticator_base_test",
-    srcs = ["authenticator_base_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":authenticator",
-        ":test_utils",
-        "//src/envoy/utils:filter_names_lib",
-        "@envoy//test/mocks/network:network_mocks",
-        "@envoy//test/mocks/ssl:ssl_mocks",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "authn_utils_test",
-    srcs = ["authn_utils_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":authenticator",
-        ":test_utils",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "peer_authenticator_test",
-    srcs = ["peer_authenticator_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":authenticator",
-        ":test_utils",
-        "@envoy//test/mocks/http:http_mocks",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "origin_authenticator_test",
-    srcs = ["origin_authenticator_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":authenticator",
-        ":test_utils",
-        "@envoy//test/mocks/http:http_mocks",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-envoy_cc_test(
     name = "http_filter_test",
     srcs = ["http_filter_test.cc"],
     repository = "@envoy",
     deps = [
         ":filter_lib",
         ":test_utils",
-        "//external:authentication_policy_config_cc_proto",
         "@envoy//source/common/http:header_map_lib",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/ssl:ssl_mocks",
+        "@envoy//test/test_common:simulated_time_system_lib",
         "@envoy//test/test_common:utility_lib",
     ],
 )
