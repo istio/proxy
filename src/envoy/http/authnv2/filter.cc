@@ -42,10 +42,9 @@ void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-
 // Helper function to set a key/value pair into Struct.
-static void setKeyValue(::google::protobuf::Struct& data, std::string key,
-                        std::string value) {
+static void setKeyValue(::google::protobuf::Struct& data,
+                        const std::string& key, const std::string& value) {
   (*data.mutable_fields())[key].set_string_value(value);
 }
 
@@ -114,31 +113,36 @@ bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
     // TODO(diemtvu): this should be send as repeated field once mixer
     // support string_list (https://github.com/istio/istio/issues/2802) For
     // now, just use the first value.
-      const auto& aud_values = (*claims)[kJwtAudienceKey].list_value().values();
-      if (!aud_values.empty()) {
-        setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthAudiences, aud_values[0]);
-      }
+    const auto& aud_values = (*claims)[kJwtAudienceKey].list_value().values();
+    if (!aud_values.empty()) {
+      setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthAudiences,
+                  aud_values[0].string_value());
+    }
   }
 
-  if (claims->find("iss") != claims->end() && claims->find("sub") != claims->end()) {
-     setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthPrincipal,
+  if (claims->find("iss") != claims->end() &&
+      claims->find("sub") != claims->end()) {
+    setKeyValue(
+        metadata, istio::utils::AttributeName::kRequestAuthPrincipal,
         (*claims)["iss"].list_value().values().Get(0).string_value() + "/" +
-        (*claims)["sub"].list_value().values().Get(0).string_value());
+            (*claims)["sub"].list_value().values().Get(0).string_value());
   }
 
   // request.auth.audiences
   if (claims->find("azp") != claims->end()) {
-    // authn_fields[istio::utils::AttributeName::kRequestAuthPresenter] = 
+    // authn_fields[istio::utils::AttributeName::kRequestAuthPresenter] =
     //     (*claims)["azp"].list_value().values().Get(0).string_value());
   }
 
   // request.auth.claims
   // TODO: here
-  // *(authn_fields[istio::utils::AttributeName::kRequestAuthClaims].mutable_struct_value()) =
+  // *(authn_fields[istio::utils::AttributeName::kRequestAuthClaims].mutable_struct_value())
+  // =
   //   *claims;
 
   // request.auth.raw_claims
-  setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthRawClaims, jwt);
+  setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthRawClaims,
+              jwt);
 
   // (*metadata.mutable_filter_metadata())[Utils::IstioFilterName::kAuthentication].MergeFrom(
   //   authn_fields);
@@ -159,7 +163,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   auto metadata = decoder_callbacks_->streamInfo().dynamicMetadata();
   ProtobufWkt::Struct auth_attr;
   setKeyValue(auth_attr, istio::utils::AttributeName::kSourcePrincipal,
-                 peer_principle);
+              peer_principle);
   decoder_callbacks_->streamInfo().setDynamicMetadata(
       Utils::IstioFilterName::kAuthentication, auth_attr);
 
@@ -188,7 +192,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
                                         &jwt_payload);
     // TODO: set some auto reference in the beginning of the peer identity.
     // TODO: const reference is dropped.
-    ProcessJwt(jwt_payload, metadata.filter_metadata().at(Utils::IstioFilterName::kAuthentication));
+    ProcessJwt(jwt_payload, (*metadata.mutable_filter_metadata())
+                                [Utils::IstioFilterName::kAuthentication]);
     ENVOY_LOG(info, "jwt metadata {} \njwt payload selected {}, issuer {}",
               metadata.DebugString(), jwt_payload, issuer_selected);
   }
