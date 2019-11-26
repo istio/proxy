@@ -27,11 +27,11 @@ package(default_visibility = ["//visibility:public"])
 envoy_cc_library(
     name = "filter_lib",
     srcs = [
-        "http_filter.cc",
-        "http_filter_factory.cc",
+        "filter.cc",
+        "filter_factory.cc",
     ],
     hdrs = [
-        "http_filter.h",
+        "filter.h",
     ],
     repository = "@envoy",
     deps = [
@@ -57,8 +57,8 @@ envoy_cc_test_library(
 )
 
 envoy_cc_test(
-    name = "http_filter_test",
-    srcs = ["http_filter_test.cc"],
+    name = "filter_test",
+    srcs = ["filter_test.cc"],
     repository = "@envoy",
     deps = [
         ":filter_lib",
@@ -69,18 +69,5 @@ envoy_cc_test(
         "@envoy//test/mocks/ssl:ssl_mocks",
         "@envoy//test/test_common:simulated_time_system_lib",
         "@envoy//test/test_common:utility_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "http_filter_integration_test",
-    srcs = ["http_filter_integration_test.cc"],
-    data = glob(["testdata/*"]),
-    repository = "@envoy",
-    deps = [
-        ":filter_lib",
-        "//src/envoy/utils:filter_names_lib",
-        "@envoy//source/common/common:utility_lib",
-        "@envoy//test/integration:http_protocol_integration_lib",
     ],
 )

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authnv2/http_filter.h"
+#include "src/envoy/http/authnv2/filter.h"
 
 #include "common/common/base64.h"
 #include "common/http/header_map_impl.h"
@@ -63,7 +63,8 @@ class AuthenticationFilterTest : public testing::Test {
         Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn;
     auto& metadata = stream_info_.dynamicMetadata();
     ProtobufWkt::Value value;
-    Protobuf::util::JsonStringToMessage(kMockJwtPayload, value.mutable_struct_value());
+    Protobuf::util::JsonStringToMessage(kMockJwtPayload,
+                                        value.mutable_struct_value());
     auto* jwt_issuers_map =
         (*metadata.mutable_filter_metadata())[jwt_name].mutable_fields();
     (*jwt_issuers_map)["https://example.com"] = value;

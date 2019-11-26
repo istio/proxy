@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 
-#include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 #include "google/protobuf/util/json_util.h"
-#include "src/envoy/http/authnv2/http_filter.h"
+#include "src/envoy/http/authnv2/filter.h"
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
 
@@ -39,8 +38,9 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     return createFilterFactory();
   }
 
-  Http::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message&, const std::string&, FactoryContext&) override {
+  Http::FilterFactoryCb createFilterFactoryFromProto(const Protobuf::Message&,
+                                                     const std::string&,
+                                                     FactoryContext&) override {
     return createFilterFactory();
   }
 
@@ -56,11 +56,10 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
  private:
   Http::FilterFactoryCb createFilterFactory() {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
-    return
-        [](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-          callbacks.addStreamDecoderFilter(
-              std::make_shared<Http::Istio::AuthN::AuthenticationFilter>());
-        };
+    return [](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+      callbacks.addStreamDecoderFilter(
+          std::make_shared<Http::Istio::AuthN::AuthenticationFilter>());
+    };
   }
 };
 

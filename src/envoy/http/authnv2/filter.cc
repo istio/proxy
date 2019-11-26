@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authnv2/http_filter.h"
+#include "src/envoy/http/authnv2/filter.h"
 
 #include "common/http/utility.h"
 #include "extensions/filters/http/well_known_names.h"
@@ -87,6 +87,9 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     const auto& jwt_entry = jwt_metadata.fields().find(issuer_selected);
     Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
                                         &jwt_payload);
+    // Handling the attributes for request.auth.
+    setKeyValueFoo(auth_attr,
+                   istio::utils::AttributeName::kRequestAuthPrincipal, "foo");
     ENVOY_LOG(info, "jwt metadata {} \njwt payload selected {}, issuer {}",
               metadata.DebugString(), jwt_payload, issuer_selected);
   }
