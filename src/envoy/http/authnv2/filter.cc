@@ -42,12 +42,6 @@ void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-// Helper function to set a key/value pair into Struct.
-static void setKeyValue(::google::protobuf::Struct& data,
-                        const std::string& key, const std::string& value) {
-  (*data.mutable_fields())[key].set_string_value(value);
-}
-
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
 // The JWT issuer key name
@@ -84,9 +78,15 @@ void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
   }
 }
 
+// Helper function to set a key/value pair into Struct.
+static void setKeyValue(::google::protobuf::Struct& data,
+                        const std::string& key, const std::string& value) {
+  (*data.mutable_fields())[key].set_string_value(value);
+}
+
+// Returns true if the attribute populated to authn filter succeeds.
 bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
   Envoy::Json::ObjectSharedPtr json_obj;
-  Protobuf::Map<std::string, ProtobufWkt::Struct> authn_fields;
   try {
     json_obj = Json::Factory::loadFromString(jwt);
     // ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
@@ -120,6 +120,7 @@ bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
     }
   }
 
+  // request.auth.principal
   if (claims->find("iss") != claims->end() &&
       claims->find("sub") != claims->end()) {
     setKeyValue(
@@ -130,22 +131,20 @@ bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
 
   // request.auth.audiences
   if (claims->find("azp") != claims->end()) {
-    // authn_fields[istio::utils::AttributeName::kRequestAuthPresenter] =
-    //     (*claims)["azp"].list_value().values().Get(0).string_value());
+    setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthPresenter,
+                (*claims)["azp"].list_value().values().Get(0).string_value());
   }
 
   // request.auth.claims
-  // TODO: here
-  // *(authn_fields[istio::utils::AttributeName::kRequestAuthClaims].mutable_struct_value())
-  // =
-  //   *claims;
+  (*(*metadata
+          .mutable_fields())[istio::utils::AttributeName::kRequestAuthClaims]
+        .mutable_struct_value())
+      .MergeFrom(claim_structs);
 
   // request.auth.raw_claims
   setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthRawClaims,
               jwt);
 
-  // (*metadata.mutable_filter_metadata())[Utils::IstioFilterName::kAuthentication].MergeFrom(
-  //   authn_fields);
   return true;
 }
 
@@ -191,7 +190,6 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
                                         &jwt_payload);
     // TODO: set some auto reference in the beginning of the peer identity.
-    // TODO: const reference is dropped.
     ProcessJwt(jwt_payload, (*metadata.mutable_filter_metadata())
                                 [Utils::IstioFilterName::kAuthentication]);
     ENVOY_LOG(info, "jwt metadata {} \njwt payload selected {}, issuer {}",
