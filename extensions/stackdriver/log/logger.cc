@@ -54,10 +54,17 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
                                      kServerAccessLogName);
 
   std::string resource_type = Common::kContainerMonitoredResource;
-  const auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
-  if (platform_metadata.end() == cluster_iter) {
-    // if there is no cluster name, then this is a gce_instance
-    resource_type = Common::kGCEInstanceMonitoredResource;
+
+
+ // if aws, then continue to use container and pod resources
+  auto iter = platform_metadata.find("aws_region");
+  if (platform_metadata.end() == iter) {
+    // not aws, now check for gce (vs. generic gcp)
+    auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
+    if (platform_metadata.end() == cluster_iter) {
+      // if there is no cluster name, then this is a gce_instance
+      resource_type = Common::kGCEInstanceMonitoredResource;
+    }
   }
 
   // Set monitored resources derived from local node info.

@@ -41,4 +41,6 @@ message NodeInfo {
   // Unique identifier for the mesh. Taken from global mesh id parameter (or
   // the configured trust domain when not specified).
   string mesh_id = 8 [json_name = "MESH_ID"];
+
+  string gcp_project_id = 9;
 }

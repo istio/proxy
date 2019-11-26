@@ -46,11 +46,17 @@ StackdriverOptions getStackdriverOptions(
 
   std::string server_type = kContainerMonitoredResource;
   std::string client_type = kPodMonitoredResource;
-  auto iter = platform_metadata.find(kGCPClusterNameKey);
+
+  // if aws, then continue to use container and pod resources
+  auto iter = platform_metadata.find("aws_region");
   if (platform_metadata.end() == iter) {
-    // if there is no cluster name, then this is a gce_instance
-    server_type = kGCEInstanceMonitoredResource;
-    client_type = kGCEInstanceMonitoredResource;
+    // not aws, now check for gce (vs. generic gcp)
+    auto clusterIter = platform_metadata.find(kGCPClusterNameKey);
+    if (platform_metadata.end() == clusterIter) {
+      // if there is no cluster name, then this is a gce_instance
+      server_type = kGCEInstanceMonitoredResource;
+      client_type = kGCEInstanceMonitoredResource;
+    }
   }
 
   // Get server and client monitored resource.

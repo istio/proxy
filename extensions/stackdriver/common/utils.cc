@@ -33,8 +33,13 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   monitored_resource->set_type(monitored_resource_type);
   auto platform_metadata = local_node_info.platform_metadata();
 
-  (*monitored_resource->mutable_labels())[kProjectIDLabel] =
+  if (local_node_info.gcp_project_id() != "") {
+    (*monitored_resource->mutable_labels())[kProjectIDLabel] =
+      local_node_info.gcp_project_id();
+  } else {
+    (*monitored_resource->mutable_labels())[kProjectIDLabel] =
       platform_metadata[kGCPProjectKey];
+  }
 
   if (monitored_resource_type == kGCEInstanceMonitoredResource) {
     // gce_instance
@@ -46,10 +51,25 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   } else {
     // k8s_pod or k8s_container
 
-    (*monitored_resource->mutable_labels())[kLocationLabel] =
+
+    auto aws_zone_iter = platform_metadata.find("aws_availability_zone");
+    if (platform_metadata.end() == aws_zone_iter) {
+      (*monitored_resource->mutable_labels())[kLocationLabel] =
+        platform_metadata["aws_availability_zone"];
+    } else {
+      (*monitored_resource->mutable_labels())[kLocationLabel] =
         platform_metadata[kGCPLocationKey];
-    (*monitored_resource->mutable_labels())[kClusterNameLabel] =
+    }
+
+    auto aws_account_id_iter = platform_metadata.find("aws_account_id");
+    if (platform_metadata.end() == aws_account_id_iter) {
+      (*monitored_resource->mutable_labels())[kClusterNameLabel] =
+        platform_metadata["aws_account_id"];
+    } else {
+      (*monitored_resource->mutable_labels())[kClusterNameLabel] =
         platform_metadata[kGCPClusterNameKey];
+    }
+
     (*monitored_resource->mutable_labels())[kNamespaceNameLabel] =
         local_node_info.namespace_();
     (*monitored_resource->mutable_labels())[kPodNameLabel] =
