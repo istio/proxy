@@ -23,6 +23,7 @@
 #include "gtest/gtest.h"
 #include "src/envoy/http/authnv2/test_utils.h"
 #include "src/envoy/utils/authn.h"
+#include "src/envoy/utils/filter_names.h"
 #include "test/mocks/http/mocks.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
@@ -48,10 +49,14 @@ namespace {
 
 // Payload data to inject. Note the iss claim intentionally set different from
 // kJwtIssuer.
-static const char kMockJwtPayload[] =
-    "{\"iss\":\"https://example.com\","
-    "\"sub\":\"test@example.com\",\"exp\":2001001001,"
-    "\"aud\":\"example_service\"}";
+static const char kMockJwtPayload[] = R"EOF(
+{
+    "iss":"https://example.com",
+    "sub":"test@example.com",
+    "exp":2001001001,
+    "aud": "example_service"
+}
+)EOF";
 
 class AuthenticationFilterTest : public testing::Test {
  public:
@@ -104,6 +109,15 @@ TEST_F(AuthenticationFilterTest, BasicAttributes) {
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter.decodeHeaders(request_headers_, true));
+  const std::string authn_data =
+      stream_info_.dynamicMetadata()
+          .filter_metadata()
+          .at(Utils::IstioFilterName::kAuthentication)
+          .DebugString();
+  EXPECT_EQ(R"EOF(
+abc
+  )EOF",
+            authn_data);
 }
 
 TEST_F(AuthenticationFilterTest, MultiJwt) {}

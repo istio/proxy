@@ -35,7 +35,6 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-namespace iaapi = istio::authentication::v1alpha1;
 AuthenticationFilter::~AuthenticationFilter() {}
 
 void AuthenticationFilter::onDestroy() {
