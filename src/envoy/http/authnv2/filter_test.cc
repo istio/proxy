@@ -114,8 +114,7 @@ TEST_F(AuthenticationFilterTest, BasicAttributes) {
           .filter_metadata()
           .at(Utils::IstioFilterName::kAuthentication)
           .DebugString();
-  EXPECT_EQ(
-      R"EOF(fields {
+  EXPECT_EQ(R"EOF(fields {
   key: "request.auth.audiences"
   value {
     string_value: "example_service"
@@ -177,7 +176,7 @@ fields {
   }
 }
 )EOF",
-      authn_data);
+            authn_data);
 }
 
 TEST_F(AuthenticationFilterTest, MultiJwt) {}
