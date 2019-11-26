@@ -13,18 +13,16 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authnv2/filter.h"
+#include <string>
 
 #include "common/http/utility.h"
 #include "extensions/filters/http/well_known_names.h"
 #include "include/istio/utils/attribute_names.h"
+#include "src/envoy/http/authnv2/filter.h"
 #include "src/envoy/utils/authn.h"
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
 
-#include <string>
-
-using istio::authn::Payload;
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
 
 namespace iaapi = istio::authentication::v1alpha1;
@@ -88,6 +86,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
                                         &jwt_payload);
     // Handling the attributes for request.auth.
+    // TODO: next, copy past code from authn_utils.cc to populate the request
+    // entries.
     setKeyValueFoo(auth_attr,
                    istio::utils::AttributeName::kRequestAuthPrincipal, "foo");
     ENVOY_LOG(info, "jwt metadata {} \njwt payload selected {}, issuer {}",
