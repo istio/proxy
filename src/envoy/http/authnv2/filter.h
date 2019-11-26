@@ -54,6 +54,8 @@
 // multiple req share the same filter instance? bound by stream seems like?
 // setting state, what does it mean? seems wrong by memorizing the state into
 // filter if multi req handling?
+//
+// What's the usage of the original payload?
 namespace Envoy {
 namespace Http {
 namespace Istio {

@@ -23,25 +23,126 @@
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
 
-using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
-
-namespace iaapi = istio::authentication::v1alpha1;
+#include "absl/strings/match.h"
+#include "absl/strings/str_split.h"
+#include "common/json/json_loader.h"
+#include "google/protobuf/struct.pb.h"
+#include "include/istio/utils/attribute_names.h"
+#include "src/envoy/http/jwt_auth/jwt.h"
 
 namespace Envoy {
 namespace Http {
 namespace Istio {
 namespace AuthN {
 
+namespace iaapi = istio::authentication::v1alpha1;
 AuthenticationFilter::~AuthenticationFilter() {}
 
 void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
+
 // Helper function to set a key/value pair into Struct.
-static void setKeyValueFoo(::google::protobuf::Struct& data, std::string key,
-                           std::string value) {
+static void setKeyValue(::google::protobuf::Struct& data, std::string key,
+                        std::string value) {
   (*data.mutable_fields())[key].set_string_value(value);
+}
+
+// The JWT audience key name
+static const std::string kJwtAudienceKey = "aud";
+// The JWT issuer key name
+static const std::string kJwtIssuerKey = "iss";
+// The key name for the original claims in an exchanged token
+static const std::string kExchangedTokenOriginalPayload = "original_claims";
+
+// Extract JWT claim as a string list.
+// This function only extracts string and string list claims.
+// A string claim is extracted as a string list of 1 item.
+// A string claim with whitespace is extracted as a string list with each
+// sub-string delimited with the whitespace.
+void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
+                       std::vector<std::string>* list) {
+  // First, try as string
+  try {
+    // Try as string, will throw execption if object type is not string.
+    const std::vector<std::string> keys =
+        absl::StrSplit(obj.getString(key), ' ', absl::SkipEmpty());
+    for (auto key : keys) {
+      list->push_back(key);
+    }
+  } catch (Json::Exception& e) {
+    // Not convertable to string
+  }
+  // Next, try as string array
+  try {
+    std::vector<std::string> vector = obj.getStringArray(key);
+    for (const std::string v : vector) {
+      list->push_back(v);
+    }
+  } catch (Json::Exception& e) {
+    // Not convertable to string array
+  }
+}
+
+bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& metadata) {
+  Envoy::Json::ObjectSharedPtr json_obj;
+  Protobuf::Map<std::string, ProtobufWkt::Struct> authn_fields;
+  try {
+    json_obj = Json::Factory::loadFromString(jwt);
+    // ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
+    //           json_obj->asJsonString());
+  } catch (...) {
+    return false;
+  }
+
+  ProtobufWkt::Struct claim_structs;
+  auto claims = claim_structs.mutable_fields();
+  // Extract claims as string lists
+  json_obj->iterate([json_obj, claims](const std::string& key,
+                                       const Json::Object&) -> bool {
+    // In current implementation, only string/string list objects are extracted
+    std::vector<std::string> list;
+    ExtractStringList(key, *json_obj, &list);
+    for (auto s : list) {
+      (*claims)[key].mutable_list_value()->add_values()->set_string_value(s);
+    }
+    return true;
+  });
+
+  if (claims->find(kJwtAudienceKey) != claims->end()) {
+    // TODO(diemtvu): this should be send as repeated field once mixer
+    // support string_list (https://github.com/istio/istio/issues/2802) For
+    // now, just use the first value.
+      const auto& aud_values = (*claims)[kJwtAudienceKey].list_value().values();
+      if (!aud_values.empty()) {
+        setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthAudiences, aud_values[0]);
+      }
+  }
+
+  if (claims->find("iss") != claims->end() && claims->find("sub") != claims->end()) {
+     setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthPrincipal,
+        (*claims)["iss"].list_value().values().Get(0).string_value() + "/" +
+        (*claims)["sub"].list_value().values().Get(0).string_value());
+  }
+
+  // request.auth.audiences
+  if (claims->find("azp") != claims->end()) {
+    // authn_fields[istio::utils::AttributeName::kRequestAuthPresenter] = 
+    //     (*claims)["azp"].list_value().values().Get(0).string_value());
+  }
+
+  // request.auth.claims
+  // TODO: here
+  // *(authn_fields[istio::utils::AttributeName::kRequestAuthClaims].mutable_struct_value()) =
+  //   *claims;
+
+  // request.auth.raw_claims
+  setKeyValue(metadata, istio::utils::AttributeName::kRequestAuthRawClaims, jwt);
+
+  // (*metadata.mutable_filter_metadata())[Utils::IstioFilterName::kAuthentication].MergeFrom(
+  //   authn_fields);
+  return true;
 }
 
 FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
@@ -57,7 +158,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   ENVOY_LOG(info, "incfly debug peer principle {}", peer_principle);
   auto metadata = decoder_callbacks_->streamInfo().dynamicMetadata();
   ProtobufWkt::Struct auth_attr;
-  setKeyValueFoo(auth_attr, istio::utils::AttributeName::kSourcePrincipal,
+  setKeyValue(auth_attr, istio::utils::AttributeName::kSourcePrincipal,
                  peer_principle);
   decoder_callbacks_->streamInfo().setDynamicMetadata(
       Utils::IstioFilterName::kAuthentication, auth_attr);
@@ -85,11 +186,9 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
     const auto& jwt_entry = jwt_metadata.fields().find(issuer_selected);
     Protobuf::util::MessageToJsonString(jwt_entry->second.struct_value(),
                                         &jwt_payload);
-    // Handling the attributes for request.auth.
-    // TODO: next, copy past code from authn_utils.cc to populate the request
-    // entries.
-    setKeyValueFoo(auth_attr,
-                   istio::utils::AttributeName::kRequestAuthPrincipal, "foo");
+    // TODO: set some auto reference in the beginning of the peer identity.
+    // TODO: const reference is dropped.
+    ProcessJwt(jwt_payload, metadata.filter_metadata().at(Utils::IstioFilterName::kAuthentication));
     ENVOY_LOG(info, "jwt metadata {} \njwt payload selected {}, issuer {}",
               metadata.DebugString(), jwt_payload, issuer_selected);
   }
