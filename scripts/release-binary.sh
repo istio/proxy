@@ -49,7 +49,7 @@ function usage() {
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
         Cannot be used together with -d option.
-    -p  Pushing envoy docker image.
+    -p  Push envoy docker image.
         Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY env var.
   exit 1
 }
