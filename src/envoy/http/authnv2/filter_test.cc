@@ -49,7 +49,7 @@ namespace {
 
 // Payload data to inject. Note the iss claim intentionally set different from
 // kJwtIssuer.
-static const char kMockJwtPayload[] = R"EOF(
+static const std::string kMockJwtPayload = R"EOF(
 {
     "iss":"https://example.com",
     "sub":"test@example.com",
@@ -64,17 +64,20 @@ class AuthenticationFilterTest : public testing::Test {
       : request_headers_{{":method", "GET"}, {":path", "/"}},
         ssl_(std::make_shared<NiceMock<Ssl::MockConnectionInfo>>()),
         test_time_(),
-        stream_info_(Http::Protocol::Http2, test_time_.timeSystem()) {
+        stream_info_(Http::Protocol::Http2, test_time_.timeSystem()) {}
+
+  void initialize(const std::vector<std::string>& jwts) {
     // Jwt metadata filter input setup.
     const std::string jwt_name =
         Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn;
     auto& metadata = stream_info_.dynamicMetadata();
-    ProtobufWkt::Value value;
-    Protobuf::util::JsonStringToMessage(kMockJwtPayload,
-                                        value.mutable_struct_value());
-    auto* jwt_issuers_map =
-        (*metadata.mutable_filter_metadata())[jwt_name].mutable_fields();
-    (*jwt_issuers_map)["https://example.com"] = value;
+    for (const auto& jwt : jwts) {
+      ProtobufWkt::Value value;
+      Protobuf::util::JsonStringToMessage(jwt, value.mutable_struct_value());
+      auto* jwt_issuers_map =
+          (*metadata.mutable_filter_metadata())[jwt_name].mutable_fields();
+      (*jwt_issuers_map)["https://example.com"] = value;
+    }
 
     // Test mock setup.
     EXPECT_CALL(decoder_callbacks_, streamInfo())
@@ -86,12 +89,22 @@ class AuthenticationFilterTest : public testing::Test {
     EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl_));
     EXPECT_CALL(decoder_callbacks_, connection())
         .WillRepeatedly(Return(&connection_));
+
+    filter_.setDecoderFilterCallbacks(decoder_callbacks_);
   }
 
-  ~AuthenticationFilterTest() {}
-
-  void SetUp() override {
-    filter_.setDecoderFilterCallbacks(decoder_callbacks_);
+  // validate the authn filter metadata is as expected as input specified.
+  void validate(const std::string& expected_authn_yaml) {
+    ProtobufWkt::Struct expected_authn_data;
+    TestUtility::loadFromYaml(expected_authn_yaml, expected_authn_data);
+    ProtobufWkt::Struct authn_data =
+        stream_info_.dynamicMetadata().filter_metadata().at(
+            Utils::IstioFilterName::kAuthentication);
+    std::string authn_raw_claim =
+        (*authn_data.mutable_fields())["request.auth.raw_claims"]
+            .string_value();
+    authn_data.mutable_fields()->erase("request.auth.raw_claims");
+    EXPECT_EQ(authn_data.DebugString(), expected_authn_data.DebugString());
   }
 
  protected:
@@ -105,16 +118,10 @@ class AuthenticationFilterTest : public testing::Test {
 };
 
 TEST_F(AuthenticationFilterTest, BasicAllAttributes) {
-  AuthenticationFilter filter;
-  filter.setDecoderFilterCallbacks(decoder_callbacks_);
+  initialize({kMockJwtPayload});
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-            filter.decodeHeaders(request_headers_, true));
-  ProtobufWkt::Struct authn_data =
-      stream_info_.dynamicMetadata().filter_metadata().at(
-          Utils::IstioFilterName::kAuthentication);
-  ProtobufWkt::Struct expected_authn_data;
-  TestUtility::loadFromYaml(R"EOF(
-request.auth.raw_claims: "{\"exp\":2001001001,\"sub\":\"test@example.com\",\"aud\":\"example_service\",\"iss\":\"https://example.com\"}"
+            filter_.decodeHeaders(request_headers_, true));
+  validate(R"EOF(
 request.auth.claims:
   aud:
     - example_service
@@ -125,13 +132,24 @@ request.auth.claims:
 request.auth.principal: https://example.com/test@example.com
 source.principal: cluster.local/ns/foo/sa/bar
 request.auth.audiences: example_service
-
-)EOF",
-                            expected_authn_data);
-  EXPECT_TRUE(TestUtility::protoEqual(expected_authn_data, authn_data));
+)EOF");
 }
 
-TEST_F(AuthenticationFilterTest, MultiJwt) {}
+TEST_F(AuthenticationFilterTest, MultiJwtsSelectByIssuerLexicalOrder) {
+  initialize({
+      R"EOF({
+    "iss":"ab",
+    "sub":"test@example.com",
+    "aud": "ab-sub"
+})EOF",
+      R"EOF({
+    "iss":"aa",
+    "sub":"aa-sub",
+})EOF",
+  });
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter_.decodeHeaders(request_headers_, true));
+}
 
 // This test case ensures the filter does not reject the request if the
 // attributes extraction fails.
