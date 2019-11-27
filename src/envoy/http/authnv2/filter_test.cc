@@ -103,7 +103,7 @@ class AuthenticationFilterTest : public testing::Test {
     TestUtility::loadFromYaml(expected_authn_yaml, expected_authn_data);
     ProtobufWkt::Struct authn_data =
         stream_info_.dynamicMetadata().filter_metadata().at(
-            Utils::IstioFilterName::kAuthentication);
+            Utils::IstioFilterName::kAuthnV2);
     // raw_claims encoded raw json, serialization is undeterministic.
     // TODO: find a way to test before merge.
     std::string authn_raw_claim =

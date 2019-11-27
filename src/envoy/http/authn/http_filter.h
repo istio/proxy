@@ -76,7 +76,6 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
   // Context for authentication process. Created in decodeHeader to start
   // authentication process.
-  // TODO: Seems really not needed if all references are done in a single method, decodeHeaders?
   std::unique_ptr<Istio::AuthN::FilterContext> filter_context_;
 };
 

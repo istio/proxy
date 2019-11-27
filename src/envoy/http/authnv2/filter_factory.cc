@@ -20,13 +20,9 @@
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
 
-using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
-
 namespace Envoy {
 namespace Server {
 namespace Configuration {
-
-namespace iaapi = istio::authentication::v1alpha1;
 
 class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                           public Logger::Loggable<Logger::Id::filter> {
@@ -46,12 +42,10 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
-    return ProtobufTypes::MessagePtr{new FilterConfig};
+    return std::make_unique<Envoy::ProtobufWkt::Empty>();
   }
 
-  std::string name() override {
-    return Utils::IstioFilterName::kAuthentication;
-  }
+  std::string name() override { return Utils::IstioFilterName::kAuthnV2; }
 
  private:
   Http::FilterFactoryCb createFilterFactory() {

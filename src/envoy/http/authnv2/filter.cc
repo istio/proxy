@@ -195,7 +195,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders start\n");
   auto& metadata = decoder_callbacks_->streamInfo().dynamicMetadata();
   auto& authn_data = (*metadata.mutable_filter_metadata())
-      [Utils::IstioFilterName::kAuthentication];
+      [Utils::IstioFilterName::kAuthnV2];
 
   // Always try to get principal and set to output if available.
   ProcessMtls(decoder_callbacks_->connection(), authn_data);
@@ -212,7 +212,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
                 decoder_callbacks_->streamInfo()
                     .dynamicMetadata()
                     .filter_metadata()
-                    .at(Utils::IstioFilterName::kAuthentication),
+                    .at(Utils::IstioFilterName::kAuthnV2),
                 true, true));
   return FilterHeadersStatus::Continue;
 }
