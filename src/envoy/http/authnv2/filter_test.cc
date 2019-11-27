@@ -58,9 +58,9 @@ static const std::string kMockJwtPayload = R"EOF(
 }
 )EOF";
 
-class AuthenticationFilterTest : public testing::Test {
+class AuthnV2FilterTest : public testing::Test {
  public:
-  AuthenticationFilterTest()
+  AuthnV2FilterTest()
       : request_headers_{{":method", "GET"}, {":path", "/"}},
         ssl_(std::make_shared<NiceMock<Ssl::MockConnectionInfo>>()),
         test_time_(),
@@ -115,7 +115,7 @@ class AuthenticationFilterTest : public testing::Test {
 
  protected:
   Http::TestHeaderMapImpl request_headers_;
-  AuthenticationFilter filter_;
+  AuthnV2Filter filter_;
   NiceMock<Http::MockStreamDecoderFilterCallbacks> decoder_callbacks_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
   std::shared_ptr<NiceMock<Ssl::MockConnectionInfo>> ssl_;
@@ -124,7 +124,7 @@ class AuthenticationFilterTest : public testing::Test {
   bool enable_peer_identity_{true};
 };
 
-TEST_F(AuthenticationFilterTest, BasicAllAttributes) {
+TEST_F(AuthnV2FilterTest, BasicAllAttributes) {
   initialize({kMockJwtPayload});
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
@@ -140,7 +140,7 @@ request.auth.principal: https://example.com/test@example.com
 request.auth.audiences: example_service)EOF");
 }
 
-TEST_F(AuthenticationFilterTest, JwtsSelectedByIssuerLexicalOrder) {
+TEST_F(AuthnV2FilterTest, JwtsSelectedByIssuerLexicalOrder) {
   initialize({
       R"EOF({
     "iss":"ab.com",
@@ -162,7 +162,7 @@ source.principal: cluster.local/ns/foo/sa/bar
 request.auth.principal: aa.com/test@aa.com)EOF");
 }
 
-TEST_F(AuthenticationFilterTest, EmptySAN) {
+TEST_F(AuthnV2FilterTest, EmptySAN) {
   enable_peer_identity_ = false;
   initialize({R"EOF({
     "iss":"aa.com",
@@ -178,14 +178,14 @@ TEST_F(AuthenticationFilterTest, EmptySAN) {
 request.auth.principal: aa.com/test@aa.com)EOF");
 }
 
-TEST_F(AuthenticationFilterTest, EmptyJwt) {
+TEST_F(AuthnV2FilterTest, EmptyJwt) {
   initialize({});
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
   validate("source.principal: cluster.local/ns/foo/sa/bar");
 }
 
-TEST_F(AuthenticationFilterTest, EmptySanEmptyJwt) {
+TEST_F(AuthnV2FilterTest, EmptySanEmptyJwt) {
   enable_peer_identity_ = false;
   initialize({});
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
@@ -196,7 +196,7 @@ TEST_F(AuthenticationFilterTest, EmptySanEmptyJwt) {
 // This test case ensures the filter does not reject the request if the
 // attributes extraction fails.
 // TODO: implement this one.
-TEST_F(AuthenticationFilterTest, MalformJwtReturnContinueState) {}
+TEST_F(AuthnV2FilterTest, MalformJwtReturnContinueState) {}
 
 }  // namespace
 }  // namespace AuthN

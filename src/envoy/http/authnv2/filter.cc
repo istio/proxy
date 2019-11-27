@@ -35,10 +35,10 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-AuthenticationFilter::~AuthenticationFilter() {}
+AuthnV2Filter::~AuthnV2Filter() {}
 
-void AuthenticationFilter::onDestroy() {
-  ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
+void AuthnV2Filter::onDestroy() {
+  ENVOY_LOG(debug, "Called AuthnV2Filter : {}", __func__);
 }
 
 // The JWT audience key name
@@ -165,7 +165,7 @@ bool ProcessMtls(const Network::Connection* connection,
   return true;
 }
 
-std::string AuthenticationFilter::extractJwtFromMetadata(
+std::string AuthnV2Filter::extractJwtFromMetadata(
     const envoy::api::v2::core::Metadata& metadata, std::string* jwt_payload) {
   std::string issuer_selected = "";
   auto filter_it = metadata.filter_metadata().find(
@@ -191,11 +191,11 @@ std::string AuthenticationFilter::extractJwtFromMetadata(
   return issuer_selected;
 }
 
-FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
-  ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders start\n");
+FilterHeadersStatus AuthnV2Filter::decodeHeaders(HeaderMap&, bool) {
+  ENVOY_LOG(debug, "AuthnV2Filter::decodeHeaders start\n");
   auto& metadata = decoder_callbacks_->streamInfo().dynamicMetadata();
-  auto& authn_data = (*metadata.mutable_filter_metadata())
-      [Utils::IstioFilterName::kAuthnV2];
+  auto& authn_data =
+      (*metadata.mutable_filter_metadata())[Utils::IstioFilterName::kAuthnV2];
 
   // Always try to get principal and set to output if available.
   ProcessMtls(decoder_callbacks_->connection(), authn_data);
@@ -217,15 +217,15 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   return FilterHeadersStatus::Continue;
 }
 
-FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
+FilterDataStatus AuthnV2Filter::decodeData(Buffer::Instance&, bool) {
   return FilterDataStatus::Continue;
 }
 
-FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
+FilterTrailersStatus AuthnV2Filter::decodeTrailers(HeaderMap&) {
   return FilterTrailersStatus::Continue;
 }
 
-void AuthenticationFilter::setDecoderFilterCallbacks(
+void AuthnV2Filter::setDecoderFilterCallbacks(
     StreamDecoderFilterCallbacks& callbacks) {
   decoder_callbacks_ = &callbacks;
 }

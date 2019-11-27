@@ -61,12 +61,11 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-// The authentication filter.
-class AuthenticationFilter : public StreamDecoderFilter,
-                             public Logger::Loggable<Logger::Id::filter> {
+class AuthnV2Filter : public StreamDecoderFilter,
+                      public Logger::Loggable<Logger::Id::filter> {
  public:
-  AuthenticationFilter() {}
-  ~AuthenticationFilter();
+  AuthnV2Filter() {}
+  ~AuthnV2Filter();
 
   // Http::StreamFilterBase
   void onDestroy() override;
