@@ -76,16 +76,20 @@ class AuthenticationFilterTest : public testing::Test {
       Protobuf::util::JsonStringToMessage(jwt, value.mutable_struct_value());
       auto* jwt_issuers_map =
           (*metadata.mutable_filter_metadata())[jwt_name].mutable_fields();
-      (*jwt_issuers_map)["https://example.com"] = value;
+      const std::string& issuer =
+          value.struct_value().fields().at("iss").string_value();
+      (*jwt_issuers_map)[issuer] = value;
     }
 
     // Test mock setup.
     EXPECT_CALL(decoder_callbacks_, streamInfo())
         .WillRepeatedly(ReturnRef(stream_info_));
     ON_CALL(*ssl_, peerCertificatePresented()).WillByDefault(Return(true));
-    ON_CALL(*ssl_, uriSanPeerCertificate())
-        .WillByDefault(Return(
-            std::vector<std::string>{"spiffe://cluster.local/ns/foo/sa/bar"}));
+    if (enable_peer_identity_) {
+      ON_CALL(*ssl_, uriSanPeerCertificate())
+          .WillByDefault(Return(std::vector<std::string>{
+              "spiffe://cluster.local/ns/foo/sa/bar"}));
+    }
     EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl_));
     EXPECT_CALL(decoder_callbacks_, connection())
         .WillRepeatedly(Return(&connection_));
@@ -100,11 +104,13 @@ class AuthenticationFilterTest : public testing::Test {
     ProtobufWkt::Struct authn_data =
         stream_info_.dynamicMetadata().filter_metadata().at(
             Utils::IstioFilterName::kAuthentication);
+    // raw_claims encoded raw json, serialization is undeterministic.
+    // TODO: find a way to test before merge.
     std::string authn_raw_claim =
         (*authn_data.mutable_fields())["request.auth.raw_claims"]
             .string_value();
     authn_data.mutable_fields()->erase("request.auth.raw_claims");
-    EXPECT_EQ(authn_data.DebugString(), expected_authn_data.DebugString());
+    EXPECT_EQ(expected_authn_data.DebugString(), authn_data.DebugString());
   }
 
  protected:
@@ -115,45 +121,82 @@ class AuthenticationFilterTest : public testing::Test {
   std::shared_ptr<NiceMock<Ssl::MockConnectionInfo>> ssl_;
   ::Envoy::Event::SimulatedTimeSystem test_time_;
   StreamInfo::StreamInfoImpl stream_info_;
+  bool enable_peer_identity_{true};
 };
 
 TEST_F(AuthenticationFilterTest, BasicAllAttributes) {
   initialize({kMockJwtPayload});
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
-  validate(R"EOF(
-request.auth.claims:
+  validate(R"EOF(request.auth.claims:
   aud:
     - example_service
   sub:
     - test@example.com
   iss:
     - https://example.com
-request.auth.principal: https://example.com/test@example.com
 source.principal: cluster.local/ns/foo/sa/bar
-request.auth.audiences: example_service
-)EOF");
+request.auth.principal: https://example.com/test@example.com
+request.auth.audiences: example_service)EOF");
 }
 
-TEST_F(AuthenticationFilterTest, MultiJwtsSelectByIssuerLexicalOrder) {
+TEST_F(AuthenticationFilterTest, JwtsSelectedByIssuerLexicalOrder) {
   initialize({
       R"EOF({
-    "iss":"ab",
-    "sub":"test@example.com",
-    "aud": "ab-sub"
+    "iss":"ab.com",
+    "sub":"test@ab.com",
 })EOF",
       R"EOF({
-    "iss":"aa",
-    "sub":"aa-sub",
+    "iss":"aa.com",
+    "sub":"test@aa.com",
 })EOF",
   });
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_.decodeHeaders(request_headers_, true));
+  validate(R"EOF(request.auth.claims:
+  sub:
+    - test@aa.com
+  iss:
+    - aa.com
+source.principal: cluster.local/ns/foo/sa/bar
+request.auth.principal: aa.com/test@aa.com)EOF");
+}
+
+TEST_F(AuthenticationFilterTest, EmptySAN) {
+  enable_peer_identity_ = false;
+  initialize({R"EOF({
+    "iss":"aa.com",
+    "sub":"test@aa.com",
+})EOF"});
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter_.decodeHeaders(request_headers_, true));
+  validate(R"EOF(request.auth.claims:
+  sub:
+    - test@aa.com
+  iss:
+    - aa.com
+request.auth.principal: aa.com/test@aa.com)EOF");
+}
+
+TEST_F(AuthenticationFilterTest, EmptyJwt) {
+  initialize({});
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter_.decodeHeaders(request_headers_, true));
+  validate("source.principal: cluster.local/ns/foo/sa/bar");
+}
+
+TEST_F(AuthenticationFilterTest, EmptySanEmptyJwt) {
+  enable_peer_identity_ = false;
+  initialize({});
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter_.decodeHeaders(request_headers_, true));
+  validate("{}");
 }
 
 // This test case ensures the filter does not reject the request if the
 // attributes extraction fails.
-TEST_F(AuthenticationFilterTest, AlwaysContinueState) {}
+// TODO: implement this one.
+TEST_F(AuthenticationFilterTest, MalformJwtReturnContinueState) {}
 
 }  // namespace
 }  // namespace AuthN

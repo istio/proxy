@@ -158,8 +158,10 @@ bool ProcessMtls(const Network::Connection* connection,
     return false;
   }
   Utils::GetPrincipal(connection, true, &peer_principle);
-  setKeyValue(authn_data, istio::utils::AttributeName::kSourcePrincipal,
-              peer_principle);
+  if (peer_principle != "") {
+    setKeyValue(authn_data, istio::utils::AttributeName::kSourcePrincipal,
+                peer_principle);
+  }
   return true;
 }
 
@@ -177,7 +179,7 @@ std::string AuthenticationFilter::extractJwtFromMetadata(
   // sorted.
   for (const auto& entry : jwt_metadata.fields()) {
     const std::string& issuer = entry.first;
-    if (issuer_selected == "" || issuer_selected.compare(issuer)) {
+    if (issuer_selected == "" || issuer_selected.compare(issuer) > 0) {
       issuer_selected = issuer;
     }
   }
@@ -199,24 +201,19 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap&, bool) {
   ProcessMtls(decoder_callbacks_->connection(), authn_data);
   std::string jwt_payload = "";
   std::string issuer = extractJwtFromMetadata(metadata, &jwt_payload);
-  ENVOY_LOG(info,
+  ENVOY_LOG(debug,
             "extract jwt metadata {} \njwt payload issuer {}, payload\n{}\n",
             metadata.DebugString(), issuer, jwt_payload);
   if (jwt_payload != "") {
     ProcessJwt(jwt_payload, authn_data);
   }
-  ENVOY_LOG(info, "Saved Dynamic Metadata:\n{}",
+  ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}",
             Envoy::MessageUtil::getYamlStringFromMessage(
                 decoder_callbacks_->streamInfo()
                     .dynamicMetadata()
                     .filter_metadata()
                     .at(Utils::IstioFilterName::kAuthentication),
                 true, true));
-  // decoder_callbacks_->streamInfo()
-  //     .dynamicMetadata()
-  //     .filter_metadata()
-  //     .at(Utils::IstioFilterName::kAuthentication)
-  //     .DebugString());
   return FilterHeadersStatus::Continue;
 }
 
