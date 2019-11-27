@@ -52,19 +52,19 @@ void getMonitoredResource(const std::string &monitored_resource_type,
     // k8s_pod or k8s_container
 
 
-    auto aws_zone_iter = platform_metadata.find("aws_availability_zone");
-    if (platform_metadata.end() == aws_zone_iter) {
-      (*monitored_resource->mutable_labels())[kLocationLabel] =
-        platform_metadata["aws_availability_zone"];
+    auto aws_zone_iter = platform_metadata.find("aws_region");
+    if (platform_metadata.end() != aws_zone_iter) {
+      (*monitored_resource->mutable_labels())[kLocationLabel] = "us-west2-b";
+//        platform_metadata["aws_region"];
     } else {
       (*monitored_resource->mutable_labels())[kLocationLabel] =
         platform_metadata[kGCPLocationKey];
     }
 
     auto aws_account_id_iter = platform_metadata.find("aws_account_id");
-    if (platform_metadata.end() == aws_account_id_iter) {
+    if (platform_metadata.end() != aws_account_id_iter) {
       (*monitored_resource->mutable_labels())[kClusterNameLabel] =
-        platform_metadata["aws_account_id"];
+        "istio-"+platform_metadata["aws_account_id"];
     } else {
       (*monitored_resource->mutable_labels())[kClusterNameLabel] =
         platform_metadata[kGCPClusterNameKey];

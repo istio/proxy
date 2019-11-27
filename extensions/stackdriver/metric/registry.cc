@@ -25,6 +25,7 @@ namespace Stackdriver {
 namespace Metric {
 
 using namespace Extensions::Stackdriver::Common;
+
 using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
 using wasm::common::NodeInfo;
@@ -35,7 +36,11 @@ StackdriverOptions getStackdriverOptions(
     const std::string &test_monitoring_endpoint) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
-  options.project_id = platform_metadata[kGCPProjectKey];
+  options.project_id = local_node_info.gcp_project_id();
+  auto proj_iter = platform_metadata.find(kGCPProjectKey);
+  if (platform_metadata.end() != proj_iter) {
+    options.project_id = platform_metadata[kGCPProjectKey];
+  }
 
   if (!test_monitoring_endpoint.empty()) {
     auto channel = grpc::CreateChannel(test_monitoring_endpoint,
@@ -48,16 +53,16 @@ StackdriverOptions getStackdriverOptions(
   std::string client_type = kPodMonitoredResource;
 
   // if aws, then continue to use container and pod resources
-  auto iter = platform_metadata.find("aws_region");
-  if (platform_metadata.end() == iter) {
+ // auto iter = platform_metadata.find("aws_region");
+ // if (platform_metadata.end() == iter) {
     // not aws, now check for gce (vs. generic gcp)
-    auto clusterIter = platform_metadata.find(kGCPClusterNameKey);
-    if (platform_metadata.end() == clusterIter) {
+ //   auto clusterIter = platform_metadata.find(kGCPClusterNameKey);
+ //   if (platform_metadata.end() == clusterIter) {
       // if there is no cluster name, then this is a gce_instance
-      server_type = kGCEInstanceMonitoredResource;
-      client_type = kGCEInstanceMonitoredResource;
-    }
-  }
+ //     server_type = kGCEInstanceMonitoredResource;
+ //     client_type = kGCEInstanceMonitoredResource;
+ //   }
+ // }
 
   // Get server and client monitored resource.
   google::api::MonitoredResource server_monitored_resource;
@@ -66,6 +71,8 @@ StackdriverOptions getStackdriverOptions(
   google::api::MonitoredResource client_monitored_resource;
   Common::getMonitoredResource(client_type, local_node_info,
                                &client_monitored_resource);
+
+
   options.per_metric_monitored_resource[kServerRequestCountView] =
       server_monitored_resource;
   options.per_metric_monitored_resource[kServerRequestBytesView] =

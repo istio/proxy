@@ -46,7 +46,7 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   // Set log names.
   const auto& platform_metadata = local_node_info.platform_metadata();
   const auto project_iter = platform_metadata.find(Common::kGCPProjectKey);
-  std::string project_id = "";
+  std::string project_id = local_node_info.gcp_project_id();
   if (project_iter != platform_metadata.end()) {
     project_id = project_iter->second;
   }

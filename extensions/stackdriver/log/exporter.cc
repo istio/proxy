@@ -48,20 +48,20 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
                      {MetricTag{"type", MetricTag::TagType::String},
                       MetricTag{"success", MetricTag::TagType::Bool}});
   auto success_counter = export_call.resolve("logging", true);
-  auto failure_counter = export_call.resolve("logging", false);
+//  auto failure_counter = export_call.resolve("logging", false);
   success_callback_ = [success_counter](size_t) {
     // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
     incrementMetric(success_counter, 1);
     logDebug("successfully sent Stackdriver logging request");
   };
 
-  failure_callback_ = [failure_counter](GrpcStatus status) {
+  failure_callback_ = [](GrpcStatus) {
     // TODO(bianpengyuan): add retry.
     // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
-    incrementMetric(failure_counter, 1);
-    logWarn("Stackdriver logging api call error: " +
-            std::to_string(static_cast<int>(status)) +
-            getStatus().second->toString());
+//    incrementMetric(failure_counter, 1);
+//    logWarn("Stackdriver logging api call error: " +
+//            std::to_string(static_cast<int>(status)) +
+//            getStatus().second->toString());
   };
 
   // Construct grpc_service for the Stackdriver gRPC call.
