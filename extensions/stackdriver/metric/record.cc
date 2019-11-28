@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "absl/strings/match.h"
+
 #include "extensions/stackdriver/metric/record.h"
 
 #include "extensions/stackdriver/common/constants.h"
@@ -25,6 +27,10 @@ namespace Metric {
 void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
             const ::wasm::common::NodeInfo &peer_node_info,
             const ::Wasm::Common::RequestInfo &request_info) {
+
+  if (absl::StartsWith(request_info.user_agent, "kube-probe") || absl::StartsWith(request_info.user_agent, "Prometheus")) {
+	  return;
+  }
   double latency_ms =
       double(request_info.end_timestamp - request_info.start_timestamp) /
       Stackdriver::Common::kNanosecondsPerMillisecond;

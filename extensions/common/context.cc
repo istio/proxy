@@ -235,6 +235,10 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
   request_info->response_flag = parseResponseFlag(response_flags);
+
+  request_info->user_agent =
+        getHeaderMapValue(HeaderMapType::RequestHeaders, "User-Agent")
+            ->toString();
 }
 
 google::protobuf::util::Status extractNodeMetadataValue(

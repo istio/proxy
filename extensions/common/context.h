@@ -56,8 +56,8 @@ enum class ServiceAuthenticationPolicy : int64_t {
   MutualTLS = 2,
 };
 
-constexpr StringView kMutualTLS = "MUTUAL_TLS";
-constexpr StringView kNone = "NONE";
+constexpr StringView kMutualTLS = "mutual_tls";
+constexpr StringView kNone = "none";
 
 StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 
@@ -112,6 +112,9 @@ struct RequestInfo {
   // Rbac filter policy id and result.
   std::string rbac_permissive_policy_id;
   std::string rbac_permissive_engine_result;
+
+  // user agent
+  std::string user_agent;
 };
 
 // RequestContext contains all the information available in the request.
