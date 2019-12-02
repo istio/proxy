@@ -41,7 +41,7 @@ DST=""
 CHECK=1
 
 # Push envoy docker image.
-PUSH_DOCKER_IMAGE=1
+PUSH_DOCKER_IMAGE=0
 
 function usage() {
   echo "$0
@@ -49,16 +49,16 @@ function usage() {
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
         Cannot be used together with -d option.
-    -s  Skip pushing envoy docker image. This should only be useful if -d is provided,
-        so that only envoy binary is pushed."
+    -p  Push envoy docker image.
+        Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY env var."
   exit 1
 }
 
-while getopts d:is arg ; do
+while getopts d:ip arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
     i) CHECK=0;;
-    s) PUSH_DOCKER_IMAGE=0;;
+    p) PUSH_DOCKER_IMAGE=1;;
     *) usage;;
   esac
 done
@@ -97,7 +97,6 @@ fi
 # k8-dbg is the output directory for -c dbg builds.
 for config in release release-symbol debug
 do
-  PUSH_DOCKER_IMAGE="${PUSH_DOCKER_IMAGE:-1}"
   case $config in
     "release" )
       CONFIG_PARAMS="--config=release"
@@ -148,7 +147,7 @@ do
     //tools/docker:envoy_distroless \
     //tools/docker:envoy_ubuntu
 
-  if [ -n "${DST}" -a "${PUSH_DOCKER_IMAGE}" -eq 1 ]; then
+  if [ "${PUSH_DOCKER_IMAGE}" -eq 1 ]; then
     echo "Pushing ${config} docker image"
     bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
       //tools/docker:push_envoy_distroless \
