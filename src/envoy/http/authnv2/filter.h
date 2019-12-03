@@ -79,12 +79,13 @@ class AuthnV2Filter : public StreamDecoderFilter,
 
  private:
   // Returns true if the attribute populated to authn filter succeeds.
-  bool processJwt(const std::string& jwt, ProtobufWkt::Struct& authn_data);
+  bool processJwt(const std::string& jwt, const ProtobufWkt::Struct& jwt_struct,
+                  ProtobufWkt::Struct& authn_data);
 
   // Determinstically select from jwt entry from the Jwt filter metadata.
   // Returns the corresponding issuer string, and empty if nothing is
   // selected.
-  std::string extractJwtFromMetadata(
+  std::pair<std::string, const ProtobufWkt::Struct*> extractJwtFromMetadata(
       const envoy::api::v2::core::Metadata& metadata, std::string* jwt_payload);
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 };
