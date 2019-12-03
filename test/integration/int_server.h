@@ -234,6 +234,34 @@ class LocalListenSocket : public Envoy::Network::TcpListenSocket {
   void operator=(const LocalListenSocket &) = delete;
 };
 
+class LocalListenSocketFactory : public Envoy::Network::ListenSocketFactory {
+ public:
+  explicit LocalListenSocketFactory(
+      Envoy::Network::Address::IpVersion ip_version =
+          Envoy::Network::Address::IpVersion::v4,
+      uint16_t port = 0,
+      const Envoy::Network::Socket::OptionsSharedPtr &options = nullptr,
+      bool bind_to_port = true);
+  // Envoy::Network::ListenSocketFactory
+  Envoy::Network::SocketSharedPtr getListenSocket() override {
+    return local_listen_socket_;
+  };
+  Envoy::Network::Address::SocketType socketType() const override {
+    return Envoy::Network::Address::SocketType::Stream;
+  };
+  const Envoy::Network::Address::InstanceConstSharedPtr &localAddress()
+      const override {
+    return local_listen_socket_->localAddress();
+  };
+  absl::optional<std::reference_wrapper<Envoy::Network::Socket>> sharedSocket()
+      const override {
+    return *local_listen_socket_;
+  };
+
+ private:
+  std::shared_ptr<LocalListenSocket> local_listen_socket_;
+};
+
 /**
  * A convenience class for passing callbacks to a Server.  If no callbacks are
  * provided, default callbacks that track some simple metrics will be used.   If
@@ -292,7 +320,8 @@ class Server : public Envoy::Network::FilterChainManager,
                Envoy::Logger::Loggable<Envoy::Logger::Id::testing> {
  public:
   // TODO make use of Network::Socket::OptionsSharedPtr
-  Server(const std::string &name, Envoy::Network::Socket &listening_socket,
+  Server(const std::string &name,
+         Envoy::Network::ListenSocketFactorySharedPtr listen_socket_factory,
          Envoy::Network::TransportSocketFactory &transport_socket_factory,
          Envoy::Http::CodecClient::Type http_type);
 
@@ -323,9 +352,7 @@ class Server : public Envoy::Network::FilterChainManager,
 
   virtual Envoy::Network::FilterChainFactory &filterChainFactory() override;
 
-  virtual Envoy::Network::Socket &socket() override;
-
-  virtual const Envoy::Network::Socket &socket() const override;
+  virtual Envoy::Network::ListenSocketFactory &listenSocketFactory() override;
 
   virtual bool bindToPort() override;
 
@@ -375,7 +402,7 @@ class Server : public Envoy::Network::FilterChainManager,
   virtual bool createListenerFilterChain(
       Envoy::Network::ListenerFilterManager &) override;
 
-  virtual bool createUdpListenerFilterChain(
+  virtual void createUdpListenerFilterChain(
       Envoy::Network::UdpListenerFilterManager &,
       Envoy::Network::UdpReadFilterCallbacks &) override;
 
@@ -401,7 +428,7 @@ class Server : public Envoy::Network::FilterChainManager,
   // Envoy::Network::ListenerConfig
   //
 
-  Envoy::Network::Socket &listening_socket_;
+  Envoy::Network::ListenSocketFactorySharedPtr listen_socket_factory_;
   std::atomic<uint32_t> connection_buffer_limit_bytes_{0U};
 
   //

@@ -29,9 +29,6 @@ class AlpnConfigFactory
     : public Server::Configuration::NamedHttpFilterConfigFactory {
  public:
   // Server::Configuration::NamedHttpFilterConfigFactory
-  Http::FilterFactoryCb createFilterFactory(
-      const Json::Object &config, const std::string &stat_prefix,
-      Server::Configuration::FactoryContext &context) override;
   Http::FilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message &config, const std::string &stat_prefix,
       Server::Configuration::FactoryContext &context) override;

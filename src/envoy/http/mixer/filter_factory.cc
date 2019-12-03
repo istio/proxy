@@ -30,18 +30,6 @@ namespace Configuration {
 
 class MixerConfigFactory : public NamedHttpFilterConfigFactory {
  public:
-  Http::FilterFactoryCb createFilterFactory(const Json::Object& config_json,
-                                            const std::string& prefix,
-                                            FactoryContext& context) override {
-    HttpClientConfig config_pb;
-    if (!Utils::ReadV2Config(config_json, &config_pb) &&
-        !Utils::ReadV1Config(config_json, &config_pb)) {
-      throw EnvoyException("Failed to parse JSON config");
-    }
-
-    return createFilterFactory(config_pb, prefix, context);
-  }
-
   Http::FilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message& proto_config, const std::string& prefix,
       FactoryContext& context) override {
