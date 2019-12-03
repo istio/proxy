@@ -47,31 +47,17 @@ namespace Common {
 const char kRbacFilterName[] = "envoy.filters.http.rbac";
 const char kRbacPermissivePolicyIDField[] = "shadow_effective_policy_id";
 const char kRbacPermissiveEngineResultField[] = "shadow_engine_result";
+const char kBlackHoleCluster[] = "BlackHoleCluster";
+const char kPassThroughCluster[] = "PassthroughCluster";
+const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
+const char kInboundPassthroughClusterIpv6[] = "InboundPassthroughClusterIpv6";
 
 namespace {
 
-// Extract fqdn from Istio cluster name, e.g.
-// inbound|9080|http|productpage.default.svc.cluster.local. If cluster name does
-// not follow Istio convention, fqdn will be left as empty string.
-void extractFqdn(const std::string& cluster_name, std::string* fqdn) {
-  const std::vector<std::string>& parts = absl::StrSplit(cluster_name, '|');
-  if (parts.size() == 4) {
-    *fqdn = parts[3];
-  }
-}
-
 // Extract service name from service host.
-void extractServiceName(const std::string& host, std::string* service_name,
-                        const std::string& destination_namespace) {
-  // TODO: right now property API only returns cluster with a upstream host, but
-  // not for passthrough or blackhole cluster. Add metrics for these two types
-  // of clusters when property api supports this. if
-  // (!cluster_name.compare(kBlackHoleClusterName) ||
-  //     !cluster_name.compare(kPassThroughClusterName)) {
-  //   *service_name = cluster_name;
-  //   return;
-  // }
-
+void extractServiceName(const std::string& host,
+                        const std::string& destination_namespace,
+                        std::string* service_name) {
   auto name_pos = host.find_first_of(".:");
   if (name_pos == std::string::npos) {
     // host is already a short service name. return it directly.
@@ -100,6 +86,44 @@ void extractServiceName(const std::string& host, std::string* service_name,
   } else {
     *service_name = host;
   }
+}
+
+// Get destination service host and name based on destination cluster name and
+// host header.
+// * If cluster name is one of passthrough and blackhole clusters, use cluster
+//   name as destination service name and host header as destination host.
+// * If cluster name follows Istio convention (four parts separated by pipe),
+//   use the last part as destination host; Otherwise, use host header as
+//   destination host. To get destination service name from host: if destination
+//   host is already a short name, use that as destination service; otherwise if
+//   the second part of destination host is destination namespace, use first
+//   part as destination service name. Otherwise, fallback to use destination
+//   host for destination service name.
+void getDestinationService(const std::string& dest_namespace,
+                           bool use_host_header, std::string* dest_svc_host,
+                           std::string* dest_svc_name) {
+  std::string cluster_name = "";
+  getStringValue({"cluster_name"}, &cluster_name);
+  *dest_svc_host = use_host_header
+                       ? getHeaderMapValue(HeaderMapType::RequestHeaders,
+                                           kAuthorityHeaderKey)
+                             ->toString()
+                       : "unknown";
+
+  if (cluster_name == kBlackHoleCluster ||
+      cluster_name == kPassThroughCluster ||
+      cluster_name == kInboundPassthroughClusterIpv4 ||
+      cluster_name == kInboundPassthroughClusterIpv6) {
+    *dest_svc_name = cluster_name;
+    return;
+  }
+
+  const std::vector<std::string>& parts = absl::StrSplit(cluster_name, '|');
+  if (parts.size() == 4) {
+    *dest_svc_host = parts[3];
+  }
+
+  extractServiceName(*dest_svc_host, dest_namespace, dest_svc_name);
 }
 
 }  // namespace
@@ -209,21 +233,11 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->request_protocol = kProtocolHTTP;
   }
 
-  // Try to get fqdn of destination service from cluster name. If not found, use
-  // host header instead.
-  std::string cluster_name = "";
-  getStringValue({"cluster_name"}, &cluster_name);
-  extractFqdn(cluster_name, &request_info->destination_service_host);
-  if (request_info->destination_service_host.empty() &&
-      use_host_header_fallback) {
-    // fallback to host header if requested.
-    request_info->destination_service_host =
-        getHeaderMapValue(HeaderMapType::RequestHeaders, kAuthorityHeaderKey)
-            ->toString();
-  }
-  extractServiceName(request_info->destination_service_host,
-                     &request_info->destination_service_name,
-                     destination_namespace);
+  // Get destination service name and host based on cluster name and host header.
+  getDestinationService(destination_namespace, use_host_header_fallback,
+                        &request_info->destination_service_host,
+                        &request_info->destination_service_name);
+
   // Get rbac labels from dynamic metadata.
   getStringValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
                  &request_info->rbac_permissive_policy_id);
