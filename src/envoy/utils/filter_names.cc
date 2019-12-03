@@ -22,7 +22,7 @@ namespace Utils {
 const char IstioFilterName::kJwt[] = "jwt-auth";
 const char IstioFilterName::kAuthentication[] = "istio_authn";
 const char IstioFilterName::kAlpn[] = "istio.alpn";
-const char IstioFilterName::kAuthnV2[] = "istio.authn_v2";
+const char IstioFilterName::kAuthnV2[] = "istio.authn";
 
 }  // namespace Utils
 }  // namespace Envoy

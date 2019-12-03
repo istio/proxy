@@ -15,9 +15,10 @@
 
 #include <string>
 
+#include "common/common/logger.h"
 #include "common/http/utility.h"
 #include "extensions/filters/http/well_known_names.h"
-#include "include/istio/utils/attribute_names.h"
+
 #include "src/envoy/http/authnv2/filter.h"
 #include "src/envoy/utils/authn.h"
 #include "src/envoy/utils/filter_names.h"
@@ -25,6 +26,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
+
 #include "common/json/json_loader.h"
 #include "google/protobuf/struct.pb.h"
 #include "include/istio/utils/attribute_names.h"
@@ -35,11 +37,7 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-AuthnV2Filter::~AuthnV2Filter() {}
-
-void AuthnV2Filter::onDestroy() {
-  ENVOY_LOG(debug, "Called AuthnV2Filter : {}", __func__);
-}
+namespace {
 
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
@@ -54,15 +52,16 @@ static const std::string kExchangedTokenOriginalPayload = "original_claims";
 // A string claim with whitespace is extracted as a string list with each
 // sub-string delimited with the whitespace.
 void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
-                       std::vector<std::string>* list) {
+                       std::vector<std::string>& list) {
   // First, try as string
   try {
     // Try as string, will throw execption if object type is not string.
     const std::vector<std::string> keys =
         absl::StrSplit(obj.getString(key), ' ', absl::SkipEmpty());
-    for (auto key : keys) {
-      list->push_back(key);
+    for (const auto& key : keys) {
+      list.push_back(key);
     }
+    return;
   } catch (Json::Exception& e) {
     // Not convertable to string
   }
@@ -70,7 +69,7 @@ void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
   try {
     std::vector<std::string> vector = obj.getStringArray(key);
     for (const std::string v : vector) {
-      list->push_back(v);
+      list.push_back(v);
     }
   } catch (Json::Exception& e) {
     // Not convertable to string array
@@ -78,18 +77,37 @@ void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
 }
 
 // Helper function to set a key/value pair into Struct.
-static void setKeyValue(::google::protobuf::Struct& data,
-                        const std::string& key, const std::string& value) {
+void setKeyValue(::google::protobuf::Struct& data, const std::string& key,
+                 const std::string& value) {
   (*data.mutable_fields())[key].set_string_value(value);
 }
 
+// Returns true if the peer identity can be extracted from the underying
+// certificate used for mTLS.
+bool ProcessMtls(const Network::Connection* connection,
+                 ProtobufWkt::Struct& authn_data) {
+  std::string peer_principle;
+  if (connection->ssl() == nullptr ||
+      !connection->ssl()->peerCertificatePresented()) {
+    return false;
+  }
+  Utils::GetPrincipal(connection, true, &peer_principle);
+  if (peer_principle == "") {
+    return false;
+  }
+  setKeyValue(authn_data, istio::utils::AttributeName::kSourcePrincipal,
+              peer_principle);
+  return true;
+}
+
+}  // namespace
+
 // Returns true if the attribute populated to authn filter succeeds.
-bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& authn_data) {
+bool AuthnV2Filter::processJwt(const std::string& jwt,
+                               ProtobufWkt::Struct& authn_data) {
   Envoy::Json::ObjectSharedPtr json_obj;
   try {
     json_obj = Json::Factory::loadFromString(jwt);
-    // ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
-    //           json_obj->asJsonString());
   } catch (...) {
     return false;
   }
@@ -101,7 +119,7 @@ bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& authn_data) {
                                        const Json::Object&) -> bool {
     // In current implementation, only string/string list objects are extracted
     std::vector<std::string> list;
-    ExtractStringList(key, *json_obj, &list);
+    ExtractStringList(key, *json_obj, list);
     for (auto s : list) {
       (*claims)[key].mutable_list_value()->add_values()->set_string_value(s);
     }
@@ -148,21 +166,8 @@ bool ProcessJwt(const std::string& jwt, ProtobufWkt::Struct& authn_data) {
   return true;
 }
 
-// Returns true if the peer identity can be extracted from the underying
-// certificate used for mTLS.
-bool ProcessMtls(const Network::Connection* connection,
-                 ProtobufWkt::Struct& authn_data) {
-  std::string peer_principle;
-  if (connection->ssl() == nullptr ||
-      !connection->ssl()->peerCertificatePresented()) {
-    return false;
-  }
-  Utils::GetPrincipal(connection, true, &peer_principle);
-  if (peer_principle != "") {
-    setKeyValue(authn_data, istio::utils::AttributeName::kSourcePrincipal,
-                peer_principle);
-  }
-  return true;
+void AuthnV2Filter::onDestroy() {
+  ENVOY_LOG(debug, "Called AuthnV2Filter : {}", __func__);
 }
 
 std::string AuthnV2Filter::extractJwtFromMetadata(
@@ -198,14 +203,16 @@ FilterHeadersStatus AuthnV2Filter::decodeHeaders(HeaderMap&, bool) {
       (*metadata.mutable_filter_metadata())[Utils::IstioFilterName::kAuthnV2];
 
   // Always try to get principal and set to output if available.
-  ProcessMtls(decoder_callbacks_->connection(), authn_data);
+  if (!ProcessMtls(decoder_callbacks_->connection(), authn_data)) {
+    ENVOY_LOG(warn, "unable to extract peer identity");
+  }
   std::string jwt_payload = "";
   std::string issuer = extractJwtFromMetadata(metadata, &jwt_payload);
   ENVOY_LOG(debug,
             "extract jwt metadata {} \njwt payload issuer {}, payload\n{}\n",
             metadata.DebugString(), issuer, jwt_payload);
   if (jwt_payload != "") {
-    ProcessJwt(jwt_payload, authn_data);
+    processJwt(jwt_payload, authn_data);
   }
   ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}",
             Envoy::MessageUtil::getYamlStringFromMessage(

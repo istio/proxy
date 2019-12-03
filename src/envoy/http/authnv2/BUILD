@@ -42,6 +42,7 @@ envoy_cc_library(
         "//src/envoy/utils:filter_names_lib",
         "//src/envoy/utils:utils_lib",
         "//src/istio/authn:context_proto_cc_proto",
+        "@envoy//source/common/common:logger_lib",
         "@envoy//source/common/http:headers_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],

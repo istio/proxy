@@ -64,8 +64,8 @@ namespace AuthN {
 class AuthnV2Filter : public StreamDecoderFilter,
                       public Logger::Loggable<Logger::Id::filter> {
  public:
-  AuthnV2Filter() {}
-  ~AuthnV2Filter();
+  AuthnV2Filter() = default;
+  ~AuthnV2Filter() = default;
 
   // Http::StreamFilterBase
   void onDestroy() override;
@@ -78,8 +78,12 @@ class AuthnV2Filter : public StreamDecoderFilter,
       StreamDecoderFilterCallbacks& callbacks) override;
 
  private:
-  // Determinstically select from Jwt entry from the Jwt filter metadata.
-  // Returns the corresponding issuer string, and empty if nothing is selected.
+  // Returns true if the attribute populated to authn filter succeeds.
+  bool processJwt(const std::string& jwt, ProtobufWkt::Struct& authn_data);
+
+  // Determinstically select from jwt entry from the Jwt filter metadata.
+  // Returns the corresponding issuer string, and empty if nothing is
+  // selected.
   std::string extractJwtFromMetadata(
       const envoy::api::v2::core::Metadata& metadata, std::string* jwt_payload);
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
