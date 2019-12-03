@@ -233,7 +233,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->request_protocol = kProtocolHTTP;
   }
 
-  // Get destination service name and host based on cluster name and host header.
+  // Get destination service name and host based on cluster name and host
+  // header.
   getDestinationService(destination_namespace, use_host_header_fallback,
                         &request_info->destination_service_host,
                         &request_info->destination_service_name);
