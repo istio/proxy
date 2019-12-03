@@ -27,16 +27,6 @@ namespace Tcp {
 namespace TcpClusterRewrite {
 
 Network::FilterFactoryCb
-TcpClusterRewriteFilterConfigFactory::createFilterFactory(
-    const Json::Object& config_json, Server::Configuration::FactoryContext&) {
-  v2alpha1::TcpClusterRewrite config_pb;
-  if (!Utils::ReadV2Config(config_json, &config_pb)) {
-    throw EnvoyException("Failed to parse JSON config");
-  }
-  return createFilterFactory(config_pb);
-}
-
-Network::FilterFactoryCb
 TcpClusterRewriteFilterConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& config, Server::Configuration::FactoryContext&) {
   return createFilterFactory(

@@ -82,8 +82,8 @@ class JwtVerificationFilterIntegrationTest
       out_json_file << out_json_string;
     }
 
-    test_server_ =
-        createIntegrationTestServer(out_json_path, nullptr, timeSystem());
+    test_server_ = createIntegrationTestServer(out_json_path, nullptr, nullptr,
+                                               timeSystem());
     registerTestServerPorts({"http"});
   }
 

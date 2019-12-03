@@ -24,16 +24,6 @@ using istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig;
 namespace Envoy {
 namespace Http {
 namespace Alpn {
-
-Http::FilterFactoryCb AlpnConfigFactory::createFilterFactory(
-    const Json::Object &config, const std::string &,
-    Server::Configuration::FactoryContext &context) {
-  FilterConfig filter_config;
-  MessageUtil::loadFromJson(config.asJsonString(), filter_config,
-                            ProtobufMessage::getNullValidationVisitor());
-  return createFilterFactory(filter_config, context.clusterManager());
-}
-
 Http::FilterFactoryCb AlpnConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message &config, const std::string &,
     Server::Configuration::FactoryContext &context) {

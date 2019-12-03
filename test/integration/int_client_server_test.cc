@@ -30,19 +30,15 @@ class ClientServerTest : public testing::Test,
   ClientServerTest()
       : transport_socket_factory_(),
         ip_version_(Envoy::Network::Address::IpVersion::v4),
-        listening_socket_(
-            Envoy::Network::Utility::parseInternetAddressAndPort(fmt::format(
-                "{}:{}",
-                Envoy::Network::Test::getAnyAddressUrlString(ip_version_), 0)),
-            nullptr, true),
+        listen_socket_factory_(std::make_shared<LocalListenSocketFactory>()),
         client_("client"),
-        server_("server", listening_socket_, transport_socket_factory_,
+        server_("server", listen_socket_factory_, transport_socket_factory_,
                 Envoy::Http::CodecClient::Type::HTTP1) {}
 
  protected:
   Envoy::Network::RawBufferSocketFactory transport_socket_factory_;
   Envoy::Network::Address::IpVersion ip_version_;
-  Envoy::Network::TcpListenSocket listening_socket_;
+  Envoy::Network::ListenSocketFactorySharedPtr listen_socket_factory_;
   Client client_;
   Server server_;
 };
@@ -63,7 +59,7 @@ TEST_F(ClientServerTest, HappyPath) {
   //
 
   Envoy::Network::Address::InstanceConstSharedPtr address =
-      listening_socket_.localAddress();
+      listen_socket_factory_->localAddress();
   LoadGenerator load_generator(client_, transport_socket_factory_,
                                HttpVersion::HTTP1, address);
 
@@ -139,7 +135,7 @@ TEST_F(ClientServerTest, AcceptAndClose) {
   //
 
   Envoy::Network::Address::InstanceConstSharedPtr address =
-      listening_socket_.localAddress();
+      listen_socket_factory_->localAddress();
   LoadGenerator load_generator(client_, transport_socket_factory_,
                                HttpVersion::HTTP1, address);
 
@@ -207,7 +203,7 @@ TEST_F(ClientServerTest, SlowResponse) {
   //
 
   Envoy::Network::Address::InstanceConstSharedPtr address =
-      listening_socket_.localAddress();
+      listen_socket_factory_->localAddress();
   LoadGenerator load_generator(client_, transport_socket_factory_,
                                HttpVersion::HTTP1, address);
 
@@ -326,7 +322,7 @@ TEST_F(ClientServerTest, NoAccept) {
   //
 
   Envoy::Network::Address::InstanceConstSharedPtr address =
-      listening_socket_.localAddress();
+      listen_socket_factory_->localAddress();
   LoadGenerator load_generator(client_, transport_socket_factory_,
                                HttpVersion::HTTP1, address);
 

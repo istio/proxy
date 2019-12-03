@@ -22,11 +22,6 @@ namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
 
-Network::FilterFactoryCb SniVerifierConfigFactory::createFilterFactory(
-    const Json::Object&, Server::Configuration::FactoryContext& context) {
-  return createFilterFactoryFromContext(context);
-}
-
 Network::FilterFactoryCb SniVerifierConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message&, Server::Configuration::FactoryContext& context) {
   return createFilterFactoryFromContext(context);

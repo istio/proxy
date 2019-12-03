@@ -590,7 +590,7 @@ TEST_F(JwtTestPem, PublicKeyInvalidBase64) {
 
 TEST_F(JwtTestPem, Base64urlBadInputHeader) {
   auto invalid_header = ds.kJwtHeaderEncoded + "a";
-  auto invalid_jwt = StringUtil::join(
+  auto invalid_jwt = absl::StrJoin(
       std::vector<std::string>{invalid_header, ds.kJwtPayloadEncoded,
                                ds.kJwtSignatureEncoded},
       ".");
@@ -600,7 +600,7 @@ TEST_F(JwtTestPem, Base64urlBadInputHeader) {
 
 TEST_F(JwtTestPem, Base64urlBadInputPayload) {
   auto invalid_payload = ds.kJwtPayloadEncoded + "a";
-  auto invalid_jwt = StringUtil::join(
+  auto invalid_jwt = absl::StrJoin(
       std::vector<std::string>{ds.kJwtHeaderEncoded, invalid_payload,
                                ds.kJwtSignatureEncoded},
       ".");
@@ -610,7 +610,7 @@ TEST_F(JwtTestPem, Base64urlBadInputPayload) {
 
 TEST_F(JwtTestPem, Base64urlBadinputSignature) {
   auto invalid_signature = "a";
-  auto invalid_jwt = StringUtil::join(
+  auto invalid_jwt = absl::StrJoin(
       std::vector<std::string>{ds.kJwtHeaderEncoded, ds.kJwtPayloadEncoded,
                                invalid_signature},
       ".");
