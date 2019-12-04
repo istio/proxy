@@ -134,14 +134,7 @@ const char kWantUnknownGrpcRequest[] = R"(
     protocol: PROTOCOL_HTTP
     destination_service_name: "httpbin"
     destination_service_namespace: "test_namespace"
-    source: {
-      workload_namespace: "unknown"
-      workload_name: "unknown"
-      cluster_name: "unknown"
-      location: "unknown"
-      owner_uid: "unknown"
-      uid: "kubernetes://unknown.unknown"
-    }
+    source: {}
     destination: {
       workload_namespace: "test_namespace"
       workload_name: "test_workload"
