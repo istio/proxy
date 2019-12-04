@@ -34,9 +34,6 @@ namespace TcpClusterRewrite {
 class TcpClusterRewriteFilterConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
  public:
-  Network::FilterFactoryCb createFilterFactory(
-      const Json::Object&, Server::Configuration::FactoryContext&) override;
-
   Network::FilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message&,
       Server::Configuration::FactoryContext&) override;

@@ -32,25 +32,6 @@ namespace iaapi = istio::authentication::v1alpha1;
 class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                           public Logger::Loggable<Logger::Id::filter> {
  public:
-  Http::FilterFactoryCb createFilterFactory(const Json::Object& config,
-                                            const std::string&,
-                                            FactoryContext&) override {
-    ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
-    FilterConfig filter_config;
-    google::protobuf::util::Status status =
-        Utils::ParseJsonMessage(config.asJsonString(), &filter_config);
-    ENVOY_LOG(debug, "Called AuthnFilterConfig : Utils::ParseJsonMessage()");
-    if (!status.ok()) {
-      ENVOY_LOG(critical, "Utils::ParseJsonMessage() return value is: " +
-                              status.ToString());
-      throw EnvoyException(
-          "In createFilterFactory(), Utils::ParseJsonMessage() return value "
-          "is: " +
-          status.ToString());
-    }
-    return createFilterFactory(filter_config);
-  }
-
   Http::FilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message& proto_config, const std::string&,
       FactoryContext&) override {

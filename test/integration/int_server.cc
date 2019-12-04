@@ -491,6 +491,12 @@ LocalListenSocket::LocalListenSocket(
 
 LocalListenSocket::~LocalListenSocket() {}
 
+LocalListenSocketFactory::LocalListenSocketFactory(
+    Envoy::Network::Address::IpVersion ip_version, uint16_t port,
+    const Envoy::Network::Socket::OptionsSharedPtr &options, bool bind_to_port)
+    : local_listen_socket_(std::make_shared<LocalListenSocket>(
+          ip_version, port, options, bind_to_port)) {}
+
 ServerCallbackHelper::ServerCallbackHelper(
     ServerRequestCallback request_callback,
     ServerAcceptCallback accept_callback, ServerCloseCallback close_callback) {
@@ -604,10 +610,11 @@ void ServerCallbackHelper::wait() {
   mutex_.Await(absl::Condition(&constraints));
 }
 
-Server::Server(const std::string &name,
-               Envoy::Network::Socket &listening_socket,
-               Envoy::Network::TransportSocketFactory &transport_socket_factory,
-               Envoy::Http::CodecClient::Type http_type)
+Server::Server(
+    const std::string &name,
+    Envoy::Network::ListenSocketFactorySharedPtr listen_socket_factory,
+    Envoy::Network::TransportSocketFactory &transport_socket_factory,
+    Envoy::Http::CodecClient::Type http_type)
     : name_(name),
       stats_(),
       time_system_(),
@@ -617,7 +624,7 @@ Server::Server(const std::string &name,
       connection_handler_(
           new Envoy::Server::ConnectionHandlerImpl(*dispatcher_, "test")),
       thread_(nullptr),
-      listening_socket_(listening_socket),
+      listen_socket_factory_(std::move(listen_socket_factory)),
       server_filter_chain_(transport_socket_factory),
       http_type_(http_type) {}
 
@@ -691,10 +698,8 @@ Envoy::Network::FilterChainFactory &Server::filterChainFactory() {
   return *this;
 }
 
-Envoy::Network::Socket &Server::socket() { return listening_socket_; }
-
-const Envoy::Network::Socket &Server::socket() const {
-  return listening_socket_;
+Envoy::Network::ListenSocketFactory &Server::listenSocketFactory() {
+  return *listen_socket_factory_;
 }
 
 bool Server::bindToPort() { return true; }
@@ -749,11 +754,9 @@ bool Server::createListenerFilterChain(
   return true;
 }
 
-bool Server::createUdpListenerFilterChain(
+void Server::createUdpListenerFilterChain(
     Envoy::Network::UdpListenerFilterManager &,
-    Envoy::Network::UdpReadFilterCallbacks &) {
-  return true;
-}
+    Envoy::Network::UdpReadFilterCallbacks &) {}
 
 ClusterHelper::ClusterHelper(
     std::initializer_list<ServerCallbackHelper *> server_callbacks) {

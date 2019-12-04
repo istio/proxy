@@ -41,6 +41,7 @@ cc_test(
     name = "utils_test",
     size = "small",
     srcs = ["utils_test.cc"],
+    linkstatic = 1,
     deps = [
         ":utils_lib",
         "//external:googletest_main",
@@ -66,6 +67,7 @@ cc_test(
     name = "logger_test",
     size = "small",
     srcs = ["logger_test.cc"],
+    linkstatic = 1,
     deps = [
         ":utils_lib",
         "//external:googletest_main",

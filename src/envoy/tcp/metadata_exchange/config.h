@@ -29,11 +29,6 @@ namespace MetadataExchange {
 class MetadataExchangeConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
  public:
-  Network::FilterFactoryCb createFilterFactory(
-      const Json::Object&, Server::Configuration::FactoryContext&) override {
-    NOT_IMPLEMENTED_GCOVR_EXCL_LINE;
-  }
-
   Network::FilterFactoryCb createFilterFactoryFromProto(
       const Protobuf::Message&,
       Server::Configuration::FactoryContext&) override;

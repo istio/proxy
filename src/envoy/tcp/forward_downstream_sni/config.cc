@@ -22,14 +22,6 @@
 namespace Envoy {
 namespace Tcp {
 namespace ForwardDownstreamSni {
-
-Network::FilterFactoryCb
-ForwardDownstreamSniNetworkFilterConfigFactory::createFilterFactory(
-    const Json::Object&, Server::Configuration::FactoryContext&) {
-  // Only used in v1 filters.
-  NOT_IMPLEMENTED_GCOVR_EXCL_LINE;
-}
-
 Network::FilterFactoryCb
 ForwardDownstreamSniNetworkFilterConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message&, Server::Configuration::FactoryContext&) {

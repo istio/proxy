@@ -60,9 +60,9 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
     // Tell the base class that we will create our own upstream origin server.
     fake_upstreams_count_ = 0;
 
-    origin_listeners_.emplace_back(new LocalListenSocket());
+    origin_listeners_.emplace_back(new LocalListenSocketFactory());
     origin_servers_.emplace_back(
-        new Server(fmt::sprintf("origin-0"), *origin_listeners_.back(),
+        new Server(fmt::sprintf("origin-0"), origin_listeners_.back(),
                    transport_socket_factory_, origin_protocol));
   }
 
@@ -130,17 +130,17 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
     }
 
     for (size_t i = 0; i < policy_cluster.servers().size(); ++i) {
-      policy_listeners_.emplace_back(new LocalListenSocket());
+      policy_listeners_.emplace_back(new LocalListenSocketFactory());
       policy_servers_.emplace_back(new Server(
-          fmt::sprintf("policy-%d", i), *policy_listeners_.back(),
+          fmt::sprintf("policy-%d", i), policy_listeners_.back(),
           transport_socket_factory_, Envoy::Http::CodecClient::Type::HTTP2));
       policy_servers_.back()->start(*policy_cluster.servers()[i]);
     }
 
     for (size_t i = 0; i < telemetry_cluster.servers().size(); ++i) {
-      telemetry_listeners_.emplace_back(new LocalListenSocket());
+      telemetry_listeners_.emplace_back(new LocalListenSocketFactory());
       telemetry_servers_.emplace_back(new Server(
-          fmt::sprintf("telemetry-%d", i), *telemetry_listeners_.back(),
+          fmt::sprintf("telemetry-%d", i), telemetry_listeners_.back(),
           transport_socket_factory_, Envoy::Http::CodecClient::Type::HTTP2));
       telemetry_servers_.back()->start(*telemetry_cluster.servers()[i]);
     }
@@ -250,7 +250,8 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
 
   void addCluster(
       const std::string &name,
-      const std::vector<Envoy::Network::TcpListenSocketPtr> &listeners) {
+      const std::vector<Envoy::Network::ListenSocketFactorySharedPtr>
+          &listeners) {
     constexpr uint32_t max_uint32 =
         2147483647U;  // protobuf max, not language max
 
@@ -293,9 +294,10 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
 
   Envoy::Network::RawBufferSocketFactory transport_socket_factory_;
   Client client_;
-  std::vector<Envoy::Network::TcpListenSocketPtr> origin_listeners_;
-  std::vector<Envoy::Network::TcpListenSocketPtr> policy_listeners_;
-  std::vector<Envoy::Network::TcpListenSocketPtr> telemetry_listeners_;
+  std::vector<Envoy::Network::ListenSocketFactorySharedPtr> origin_listeners_;
+  std::vector<Envoy::Network::ListenSocketFactorySharedPtr> policy_listeners_;
+  std::vector<Envoy::Network::ListenSocketFactorySharedPtr>
+      telemetry_listeners_;
   // These three vectors could store Server directly if
   // Envoy::Stats::IsolatedStoreImpl was made movable.
   std::vector<ServerPtr> origin_servers_;
