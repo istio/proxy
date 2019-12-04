@@ -85,6 +85,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_service)            \
   FIELD_FUNC(destination_service_name)       \
   FIELD_FUNC(destination_service_namespace)  \
+  FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
   FIELD_FUNC(response_flags)                 \
@@ -135,6 +136,7 @@ struct IstioDimensions {
   // destination_version="v1",
   // destination_workload="svc01-0-8",
   // destination_workload_namespace="service-graph01",
+  // destination_port = "80",
   // permissive_response_code="none",
   // permissive_response_policyid="none",
   // reporter="source",
@@ -181,6 +183,7 @@ struct IstioDimensions {
     destination_principal = request.destination_principal;
     destination_service = request.destination_service_host;
     destination_service_name = request.destination_service_name;
+    destination_port = std::to_string(request.destination_port);
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);
