@@ -136,7 +136,7 @@ struct IstioDimensions {
   // destination_version="v1",
   // destination_workload="svc01-0-8",
   // destination_workload_namespace="service-graph01",
-  // destination_port = "80",
+  // destination_port="80",
   // permissive_response_code="none",
   // permissive_response_policyid="none",
   // reporter="source",
