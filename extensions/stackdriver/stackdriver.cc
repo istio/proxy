@@ -211,7 +211,7 @@ void StackdriverRootContext::record() {
                                           destination_node_info.namespace_());
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
-  if (enableServerAccessLog()) {
+  if (enableServerAccessLog() && shouldLogThisRequest()) {
     logger_->addLogEntry(request_info, peer_node_info);
   }
   if (enableEdgeReporting()) {
@@ -247,6 +247,16 @@ inline bool StackdriverRootContext::enableServerAccessLog() {
 
 inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
+}
+
+bool StackdriverRootContext::shouldLogThisRequest() {
+  std::string shouldLog = "";
+  if (!getStringValue({"filter_state", ::Wasm::Common::kAccessLogPolicyKey},
+                      &shouldLog)) {
+    LOG_DEBUG("cannot get envoy access log info from filter state.");
+    return true;
+  }
+  return shouldLog != "no";
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.

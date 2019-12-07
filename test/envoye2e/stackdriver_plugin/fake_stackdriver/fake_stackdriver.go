@@ -137,7 +137,7 @@ func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 }
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
-func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer) {
+func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *grpc.Server) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 	grpcServer := grpc.NewServer()
 	fsdms := &MetricServer{
@@ -166,5 +166,5 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 			log.Fatalf("fake stackdriver server terminated abnormally: %v", err)
 		}
 	}()
-	return fsdms, fsdls, edgesSvc
+	return fsdms, fsdls, edgesSvc, grpcServer
 }
