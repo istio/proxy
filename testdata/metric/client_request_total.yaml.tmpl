@@ -32,6 +32,8 @@ metric:
     value: 127.0.0.1:{{ .Vars.ClientPort }}
   - name: destination_service_namespace
     value: default
+  - name: destination_port
+    value: '{{ .Vars.ServerPort }}'
   - name: request_protocol
     value: http
   - name: response_code

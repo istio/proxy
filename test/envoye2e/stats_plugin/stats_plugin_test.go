@@ -152,6 +152,8 @@ const statsConfig = `stats_config:
     regex: "(destination_service_name=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_namespace"
     regex: "(destination_service_namespace=\\.=(.+?);\\.;)"
+  - tag_name: "destination_port"
+    regex: "(destination_port=\\.=(.+?);\\.;)"
   - tag_name: "request_protocol"
     regex: "(request_protocol=\\.=(.+?);\\.;)"
   - tag_name: "response_code"
