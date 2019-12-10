@@ -69,7 +69,7 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
   virtual ~MixerFaultTest() {}
 
   // TODO modify BaseIntegrationTest in Envoy to eliminate this copy of the
-  // createEnvoy function.
+  // createEnvoy function. test
   virtual void createEnvoy() override {
     std::vector<uint32_t> ports;
 
