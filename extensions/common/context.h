@@ -104,7 +104,7 @@ struct RequestInfo {
   std::string request_url_path;
 
   // Service authentication policy (NONE, MUTUAL_TLS)
-  ServiceAuthenticationPolicy service_auth_policy;
+  ServiceAuthenticationPolicy service_auth_policy = ServiceAuthenticationPolicy::Unspecified;
 
   // Principal of source and destination workload extracted from TLS
   // certificate.
