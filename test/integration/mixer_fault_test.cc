@@ -797,7 +797,7 @@ TEST_F(MixerFaultTest, FailOpenAndSendPolicyResponseSlowly) {
                                          {":authority", "host"}}};
 
   client->run(connections_to_initiate, requests_to_send, std::move(request),
-              std::chrono::milliseconds(10'000));
+              std::chrono::milliseconds(50'000));
 
   // shutdown envoy by destroying it
   test_server_ = nullptr;
