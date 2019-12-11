@@ -18,10 +18,9 @@
 #include <set>
 
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "extensions/common/node_info.pb.h"
-#include "google/protobuf/duration.pb.h"
 #include "google/protobuf/struct.pb.h"
-#include "google/protobuf/timestamp.pb.h"
 
 namespace Wasm {
 namespace Common {
@@ -67,10 +66,10 @@ StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 // callbacks. This is used to fill metrics and logs.
 struct RequestInfo {
   // Start timestamp in nanoseconds.
-  ::google::protobuf::Timestamp start_time;
+  absl::Time start_time;
 
   // The total duration of the request.
-  ::google::protobuf::Duration duration;
+  absl::Duration duration;
 
   // Request total size in bytes, include header, body, and trailer.
   int64_t request_size = 0;

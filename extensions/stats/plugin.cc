@@ -92,7 +92,7 @@ bool PluginRootContext::onConfigure(size_t) {
           absl::StrCat(stat_prefix, "request_duration_milliseconds"),
           MetricType::Histogram,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return TimeUtil::DurationToMilliseconds(request_info.duration);
+            return request_info.duration / absl::Milliseconds(1);
           },
           field_separator, value_separator),
       StatGen(
