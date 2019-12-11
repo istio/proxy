@@ -97,12 +97,12 @@ std::string getMeshTelemetryEndpoint() {
   return mesh_telemetry_service;
 }
 
-// Get metric export interval from node metadata. Returns 60 seconds if interval is
-// not found in metadata.
+// Get metric export interval from node metadata. Returns 60 seconds if interval
+// is not found in metadata.
 int getExportInterval() {
   std::string interval_s = "";
   if (getStringValue({"node", "metadata", kMonitoringExportIntervalKey},
-                      &interval_s)) {
+                     &interval_s)) {
     return std::stoi(interval_s);
   }
   return 60;
@@ -170,7 +170,8 @@ bool StackdriverRootContext::onConfigure(
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
       getStackdriverOptions(local_node_info_, getMonitoringEndpoint()));
-  opencensus::stats::StatsExporter::SetInterval(absl::Seconds(getExportInterval()));
+  opencensus::stats::StatsExporter::SetInterval(
+      absl::Seconds(getExportInterval()));
 
   // Register opencensus measures and views.
   registerViews();
