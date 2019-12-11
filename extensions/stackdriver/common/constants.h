@@ -75,7 +75,7 @@ constexpr char kLoggingEndpointKey[] = "STACKDRIVER_LOGGING_ENDPOINT";
 constexpr char kMeshTelemetryEndpointKey[] =
     "STACKDRIVER_MESH_TELEMETRY_ENDPOINT";
 constexpr char kMonitoringExportIntervalKey[] =
-    "STACKDRIVER_MONITORING_EXPORT_INTERVAL_S";
+    "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
 
 }  // namespace Common
 }  // namespace Stackdriver
