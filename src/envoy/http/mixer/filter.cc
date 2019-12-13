@@ -58,7 +58,7 @@ void Filter::ReadPerRouteConfig(
 
 FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
-  request_total_size_ += headers.refreshByteSize();
+  request_total_size_ += headers.byteSize();
 
   ::istio::control::http::Controller::PerRouteConfig config;
   auto route = decoder_callbacks_->route();
@@ -103,7 +103,7 @@ FilterDataStatus Filter::decodeData(Buffer::Instance& data, bool end_stream) {
 
 FilterTrailersStatus Filter::decodeTrailers(HeaderMap& trailers) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
-  request_total_size_ += trailers.refreshByteSize();
+  request_total_size_ += trailers.byteSize();
   if (state_ == Calling) {
     return FilterTrailersStatus::StopIteration;
   }

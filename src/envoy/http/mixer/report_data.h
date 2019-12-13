@@ -72,14 +72,10 @@ class ReportData : public ::istio::control::http::ReportData,
         response_total_size_(info.bytesSent()),
         request_total_size_(request_total_size) {
     if (response_headers != nullptr) {
-      response_total_size_ +=
-          (response_headers->byteSize() ? response_headers->byteSize().value()
-                                        : response_headers->byteSizeInternal());
+      response_total_size_ += response_headers->byteSize();
     }
     if (response_trailers != nullptr) {
-      response_total_size_ += (response_trailers->byteSize()
-                                   ? response_trailers->byteSize().value()
-                                   : response_trailers->byteSizeInternal());
+      response_total_size_ += response_trailers->byteSize();
     }
   }
 
