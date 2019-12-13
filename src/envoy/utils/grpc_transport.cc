@@ -61,7 +61,7 @@ void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
   // We generate cluster name contains invalid characters, so override the
   // authority header temorarily until it can be specified via CDS.
   // See https://github.com/envoyproxy/envoy/issues/3297 for details.
-  metadata.Host()->value("mixer", 5);
+  metadata.setHost(absl::string_view("mixer", 5));
 
   if (!serialized_forward_attributes_.empty()) {
     HeaderUpdate header_update_(&metadata);

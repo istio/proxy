@@ -146,10 +146,9 @@ void JwtAuthenticator::FetchPubkey(PubkeyCacheItem *issuer) {
   ExtractUriHostPath(uri_, &host, &path);
 
   MessagePtr message(new RequestMessageImpl());
-  message->headers().insertMethod().value().setReference(
-      Http::Headers::get().MethodValues.Get);
-  message->headers().insertPath().value(path);
-  message->headers().insertHost().value(host);
+  message->headers().setReferenceMethod(Http::Headers::get().MethodValues.Get);
+  message->headers().setPath(path);
+  message->headers().setHost(host);
 
   const auto &cluster = issuer->jwt_config().remote_jwks().http_uri().cluster();
   if (cm_.get(cluster) == nullptr) {
