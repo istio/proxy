@@ -102,7 +102,7 @@ void extractServiceName(const std::string& host,
 void getDestinationService(const std::string& dest_namespace,
                            bool use_host_header, std::string* dest_svc_host,
                            std::string* dest_svc_name) {
-  std::string cluster_name = "";
+  std::string cluster_name;
   getStringValue({"cluster_name"}, &cluster_name);
   *dest_svc_host = use_host_header
                        ? getHeaderMapValue(HeaderMapType::RequestHeaders,
@@ -118,9 +118,9 @@ void getDestinationService(const std::string& dest_namespace,
     return;
   }
 
-  const std::vector<std::string>& parts = absl::StrSplit(cluster_name, '|');
+  std::vector<absl::string_view> parts = absl::StrSplit(cluster_name, '|');
   if (parts.size() == 4) {
-    *dest_svc_host = parts[3];
+    *dest_svc_host = std::string(parts[3].data(), parts[3].size());
   }
 
   extractServiceName(*dest_svc_host, dest_namespace, dest_svc_name);
