@@ -103,7 +103,10 @@ int getExportInterval() {
   std::string interval_s = "";
   if (getStringValue({"node", "metadata", kMonitoringExportIntervalKey},
                      &interval_s)) {
-    return std::stoi(interval_s);
+    int sec = 0;
+    if (absl::SimpleAtoi(interval_s, &sec)) {
+      return sec;
+    }
   }
   return 60;
 }
