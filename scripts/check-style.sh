@@ -27,7 +27,7 @@ if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}
   CLANG_FORMAT="${CLANG_DIRECTORY}/bin/clang-format"
 
   if [ "$(uname)" == "Darwin" ]; then
-    CLANG_BIN="x86_64-apple-darwin.tar.xz"
+    CLANG_BIN="x86_64-darwin-apple.tar.xz"
   elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     CLANG_BIN="x86_64-linux-gnu-ubuntu-14.04.tar.xz"
   else
