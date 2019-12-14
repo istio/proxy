@@ -29,7 +29,7 @@ metric:
   - name: destination_service
     value: 127.0.0.1:{{ .Vars.ClientPort }}
   - name: destination_service_name
-    value: unknown
+    value: 127.0.0.1:{{ .Vars.ClientPort }}
   - name: destination_service_namespace
     value: default
   - name: destination_port

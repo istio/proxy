@@ -347,8 +347,8 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
-  void report(const ::Wasm::Common::RequestInfo& request_info);
-  bool outbound() const { return outbound_; };
+  void report();
+  bool outbound() const { return outbound_; }
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
 
  private:
@@ -395,36 +395,12 @@ class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
-  void onLog() override {
-    auto rootCtx = rootContext();
-    ::Wasm::Common::populateHTTPRequestInfo(
-        rootCtx->outbound(), rootCtx->useHostHeaderFallback(), &request_info_);
-    rootCtx->report(request_info_);
-  };
-
-  // TODO remove the following 3 functions when streamInfo adds support for
-  // response_duration, request_size and response_size.
-  FilterHeadersStatus onRequestHeaders(uint32_t) override {
-    request_info_.start_timestamp = getCurrentTimeNanoseconds();
-    return FilterHeadersStatus::Continue;
-  };
-
-  FilterDataStatus onRequestBody(size_t body_buffer_length, bool) override {
-    request_info_.request_size += body_buffer_length;
-    return FilterDataStatus::Continue;
-  };
-
-  FilterDataStatus onResponseBody(size_t body_buffer_length, bool) override {
-    request_info_.response_size += body_buffer_length;
-    return FilterDataStatus::Continue;
-  };
+  void onLog() override { rootContext()->report(); };
 
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
-
-  ::Wasm::Common::RequestInfo request_info_;
 };
 
 #ifdef NULL_PLUGIN

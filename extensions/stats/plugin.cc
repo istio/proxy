@@ -15,6 +15,10 @@
 
 #include "extensions/stats/plugin.h"
 
+#include "google/protobuf/util/time_util.h"
+
+using google::protobuf::util::TimeUtil;
+
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"
@@ -88,8 +92,7 @@ bool PluginRootContext::onConfigure(size_t) {
           absl::StrCat(stat_prefix, "request_duration_milliseconds"),
           MetricType::Histogram,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return (request_info.end_timestamp - request_info.start_timestamp) /
-                   1000000;
+            return request_info.duration / absl::Milliseconds(1);
           },
           field_separator, value_separator),
       StatGen(
@@ -107,14 +110,18 @@ bool PluginRootContext::onConfigure(size_t) {
   return true;
 }
 
-void PluginRootContext::report(
-    const ::Wasm::Common::RequestInfo& request_info) {
+void PluginRootContext::report() {
   const auto peer_node_ptr =
       node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
   const wasm::common::NodeInfo& peer_node =
       peer_node_ptr ? *peer_node_ptr : ::Wasm::Common::EmptyNodeInfo;
 
   // map and overwrite previous mapping.
+  const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
+  ::Wasm::Common::RequestInfo request_info;
+  ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
+                                          &request_info,
+                                          destination_node_info.namespace_());
   istio_dimensions_.map(peer_node, request_info);
 
   auto stats_it = metrics_.find(istio_dimensions_);

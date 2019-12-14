@@ -67,8 +67,8 @@ class StackdriverRootContext : public RootContext {
 
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
 
-  // Records telemetry based on the given request info.
-  void record(const ::Wasm::Common::RequestInfo& request_info);
+  // Records telemetry for the current active stream.
+  void record();
 
  private:
   // Indicates whether to export server access log or not.
@@ -115,18 +115,7 @@ class StackdriverContext : public Context {
   StackdriverContext(uint32_t id, RootContext* root) : Context(id, root) {}
   void onLog() override;
 
-  // Stream filter callbacks.
-  FilterHeadersStatus onRequestHeaders(uint32_t) override;
-  FilterDataStatus onRequestBody(size_t body_buffer_length,
-                                 bool end_of_stream) override;
-  FilterDataStatus onResponseBody(size_t body_buffer_length,
-                                  bool end_of_stream) override;
-
  private:
-  // Request information collected from stream callbacks, used when record
-  // metrics and access logs.
-  ::Wasm::Common::RequestInfo request_info_;
-
   // Gets root Stackdriver context that this stream Stackdriver context
   // associated with.
   StackdriverRootContext* getRootContext();
