@@ -34,12 +34,14 @@ import (
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
 type MetricServer struct {
 	delay        time.Duration
+	timeSeries   []*monitoringpb.TimeSeries
 	RcvMetricReq chan *monitoringpb.CreateTimeSeriesRequest
 }
 
 // LoggingServer is a fake stackdriver server which implements all of logging v2 service method.
 type LoggingServer struct {
 	delay         time.Duration
+	logEntries    []*logging.LogEntry
 	RcvLoggingReq chan *logging.WriteLogEntriesRequest
 }
 
@@ -88,11 +90,12 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 
 // ListTimeSeries implements ListTimeSeries method.
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
-	return &monitoringpb.ListTimeSeriesResponse{}, nil
+	return &monitoringpb.ListTimeSeriesResponse{TimeSeries:s.timeSeries}, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
+	s.timeSeries = append(s.timeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
 	return &empty.Empty{}, nil
@@ -105,6 +108,7 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
+	s.logEntries = append(s.logEntries, req.Entries...)
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
 	return &logging.WriteLogEntriesResponse{}, nil
@@ -112,7 +116,7 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 
 // ListLogEntries implements ListLogEntries method.
 func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-	return &logging.ListLogEntriesResponse{}, nil
+	return &logging.ListLogEntriesResponse{Entries:s.logEntries}, nil
 }
 
 // ListLogs implements ListLogs method.
@@ -142,10 +146,12 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 	grpcServer := grpc.NewServer()
 	fsdms := &MetricServer{
 		delay:        delay,
+		timeSeries:   make([]*monitoringpb.TimeSeries, 0),
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
 	}
 	fsdls := &LoggingServer{
 		delay:         delay,
+		logEntries:    make([]*logging.LogEntry, 0),
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
 	edgesSvc := &MeshEdgesServiceServer{
@@ -168,3 +174,28 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 	}()
 	return fsdms, fsdls, edgesSvc
 }
+
+func Run(port uint16) error {
+	grpcServer := grpc.NewServer()
+	fsdms := &MetricServer{
+		timeSeries:   make([]*monitoringpb.TimeSeries, 0),
+		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
+	}
+	fsdls := &LoggingServer{
+		logEntries:    make([]*logging.LogEntry, 0),
+		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
+	}
+	edgesSvc := &MeshEdgesServiceServer{
+		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 2),
+	}
+	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
+	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
+	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	return grpcServer.Serve(lis)
+}
+
