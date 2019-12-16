@@ -112,4 +112,3 @@ push_release:
 .PHONY: build clean test check artifacts
 
 include common/Makefile.common.mk
-include test/envoye2e/stackdriver_plugin/fake_stackdriver/cmd/Makefile.test_stackdriver.mk

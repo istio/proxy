@@ -13,14 +13,16 @@
 # limitations under the License.
 
   
-.PHONY: test_stackdriver.build_and_push
+.PHONY: build_and_push clean
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SD_PATH := $(dir $(MKFILE_PATH))
 
-test_stackdriver.build_and_push:
+build_and_push:
 	cd $(SD_PATH) && go build main.go
 	docker build $(SD_PATH) -t gcr.io/istio-testing/test-stackdriver:1.0
 	docker push gcr.io/istio-testing/test-stackdriver:1.0
+	
+clean:
 	rm $(SD_PATH)/main
 

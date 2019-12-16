@@ -37,4 +37,3 @@ GCS_ARTIFACTS_BUCKET="${GCS_ARTIFACTS_BUCKET:-istio-artifacts}"
 echo 'Create and push artifacts'
 make push_release RELEASE_GCS_PATH="gs://${GCS_BUILD_BUCKET}/proxy"
 make artifacts ARTIFACTS_GCS_PATH="gs://${GCS_ARTIFACTS_BUCKET}/proxy/${GIT_SHA}/artifacts/debs"
-make test_stackdriver.build_and_push
