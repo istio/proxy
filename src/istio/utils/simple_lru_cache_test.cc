@@ -568,9 +568,9 @@ TEST_F(SimpleLRUCacheTest, MultiInsertPinned) {
 void SimpleLRUCacheTest::TestExpiration(bool lru, bool release_quickly) {
   cache_.reset(new TestCache(kCacheSize));
   if (lru) {
-    cache_->SetMaxIdleSeconds(0.2);  // 200 milliseconds
+    cache_->SetMaxIdleSeconds(1);  // 1 second
   } else {
-    cache_->SetAgeBasedEviction(0.2);  // 200 milliseconds
+    cache_->SetAgeBasedEviction(1);  // 1 second
   }
   for (int i = 0; i < kCacheSize; i++) {
     TestValue* v = new TestValue(i);
@@ -579,7 +579,7 @@ void SimpleLRUCacheTest::TestExpiration(bool lru, bool release_quickly) {
   }
   for (int i = 0; i < kCacheSize; i++) ASSERT_TRUE(in_cache[i]);
 
-  usleep(110 * 1000);
+  usleep(550 * 1000);
 
   TestValue* v1 = cache_->Lookup(0);
   ASSERT_TRUE(v1 != nullptr);
@@ -591,7 +591,7 @@ void SimpleLRUCacheTest::TestExpiration(bool lru, bool release_quickly) {
 
   // Sleep more: should cause expiration of everything we
   // haven't touched, and the one we touched if age-based.
-  usleep(110 * 1000);
+  usleep(550 * 1000);
 
   // Nothing gets expired until we call one of the cache methods.
   for (int i = 0; i < kCacheSize; i++) ASSERT_TRUE(in_cache[i]);
