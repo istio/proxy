@@ -90,12 +90,12 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 
 // ListTimeSeries implements ListTimeSeries method.
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
-	return &monitoringpb.ListTimeSeriesResponse{TimeSeries:s.timeSeries}, nil
+	return &monitoringpb.ListTimeSeriesResponse{TimeSeries: s.timeSeries}, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
-    log.Printf("receive CreateTimeSeriesRequest %+v", *req)
+	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
 	s.timeSeries = append(s.timeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
@@ -109,7 +109,7 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
-    log.Printf("receive WriteLogEntriesRequest %+v", *req)
+	log.Printf("receive WriteLogEntriesRequest %+v", *req)
 	s.logEntries = append(s.logEntries, req.Entries...)
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
@@ -118,7 +118,7 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 
 // ListLogEntries implements ListLogEntries method.
 func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-	return &logging.ListLogEntriesResponse{Entries:s.logEntries}, nil
+	return &logging.ListLogEntriesResponse{Entries: s.logEntries}, nil
 }
 
 // ListLogs implements ListLogs method.
@@ -137,7 +137,7 @@ func (s *LoggingServer) ListMonitoredResourceDescriptors(
 func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 	ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (
 	*edgespb.ReportTrafficAssertionsResponse, error) {
-    log.Printf("receive ReportTrafficAssertionsRequest %+v", *req)
+	log.Printf("receive ReportTrafficAssertionsRequest %+v", *req)
 	e.RcvTrafficAssertionsReq <- req
 	time.Sleep(e.delay)
 	return &edgespb.ReportTrafficAssertionsResponse{}, nil
@@ -158,7 +158,7 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
 	edgesSvc := &MeshEdgesServiceServer{
-		delay:                   delay,
+		delay: delay,
 		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 2),
 	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
@@ -201,4 +201,3 @@ func Run(port uint16) error {
 	}
 	return grpcServer.Serve(lis)
 }
-
