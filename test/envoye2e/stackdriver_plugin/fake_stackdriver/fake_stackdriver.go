@@ -95,6 +95,7 @@ func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSer
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
+    log.Printf("receive CreateTimeSeriesRequest %+v", *req)
 	s.timeSeries = append(s.timeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
@@ -108,6 +109,7 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
+    log.Printf("receive WriteLogEntriesRequest %+v", *req)
 	s.logEntries = append(s.logEntries, req.Entries...)
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
@@ -135,6 +137,7 @@ func (s *LoggingServer) ListMonitoredResourceDescriptors(
 func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 	ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (
 	*edgespb.ReportTrafficAssertionsResponse, error) {
+    log.Printf("receive ReportTrafficAssertionsRequest %+v", *req)
 	e.RcvTrafficAssertionsReq <- req
 	time.Sleep(e.delay)
 	return &edgespb.ReportTrafficAssertionsResponse{}, nil
@@ -146,12 +149,12 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 	grpcServer := grpc.NewServer()
 	fsdms := &MetricServer{
 		delay:        delay,
-		timeSeries:   make([]*monitoringpb.TimeSeries, 0),
+		timeSeries:   []*monitoringpb.TimeSeries{},
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
 	}
 	fsdls := &LoggingServer{
 		delay:         delay,
-		logEntries:    make([]*logging.LogEntry, 0),
+		logEntries:    []*logging.LogEntry{},
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
 	edgesSvc := &MeshEdgesServiceServer{
