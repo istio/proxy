@@ -96,6 +96,7 @@ check:
 lint: lint-copyright-banner format-go lint-go tidy-go
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
+	@scripts/check-build-tools-proxy.sh
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
