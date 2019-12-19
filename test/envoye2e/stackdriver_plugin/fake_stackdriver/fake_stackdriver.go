@@ -149,12 +149,10 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 	grpcServer := grpc.NewServer()
 	fsdms := &MetricServer{
 		delay:        delay,
-		timeSeries:   []*monitoringpb.TimeSeries{},
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
 	}
 	fsdls := &LoggingServer{
 		delay:         delay,
-		logEntries:    []*logging.LogEntry{},
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
 	edgesSvc := &MeshEdgesServiceServer{
@@ -181,11 +179,9 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 func Run(port uint16) error {
 	grpcServer := grpc.NewServer()
 	fsdms := &MetricServer{
-		timeSeries:   make([]*monitoringpb.TimeSeries, 0),
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
 	}
 	fsdls := &LoggingServer{
-		logEntries:    make([]*logging.LogEntry, 0),
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
 	edgesSvc := &MeshEdgesServiceServer{
