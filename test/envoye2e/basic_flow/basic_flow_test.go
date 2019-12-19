@@ -27,19 +27,15 @@ import (
 // Stats in Client Envoy proxy.
 var expectedClientStats = map[string]int{
 	// http listener stats
-	"listener.127.0.0.1_{{.Ports.AppToClientProxyPort}}.http.inbound_http.downstream_rq_completed":     10,
-	"listener.127.0.0.1_{{.Ports.AppToClientProxyPort}}.http.inbound_http.downstream_rq_2xx":           10,
-	"listener.127.0.0.1_{{.Ports.ClientToServerProxyPort}}.http.outbound_http.downstream_rq_completed": 10,
-	"listener.127.0.0.1_{{.Ports.ClientToServerProxyPort}}.http.outbound_http.downstream_rq_2xx":       10,
+	"listener.127.0.0.1_{{.Ports.AppToClientProxyPort}}.http.inbound_http.downstream_rq_completed": 10,
+	"listener.127.0.0.1_{{.Ports.AppToClientProxyPort}}.http.inbound_http.downstream_rq_2xx":       10,
 }
 
 // Stats in Server Envoy proxy.
 var expectedServerStats = map[string]int{
 	// http listener stats
-	"listener.127.0.0.1_{{.Ports.ProxyToServerProxyPort}}.http.inbound_http.downstream_rq_completed": 10,
-	"listener.127.0.0.1_{{.Ports.ProxyToServerProxyPort}}.http.inbound_http.downstream_rq_2xx":       10,
-	"listener.127.0.0.1_{{.Ports.ClientToAppProxyPort}}.http.outbound_http.downstream_rq_completed":  10,
-	"listener.127.0.0.1_{{.Ports.ClientToAppProxyPort}}.http.outbound_http.downstream_rq_2xx":        10,
+	"listener.127.0.0.1_{{.Ports.ClientToServerProxyPort}}.http.inbound_http.downstream_rq_completed": 10,
+	"listener.127.0.0.1_{{.Ports.ClientToServerProxyPort}}.http.inbound_http.downstream_rq_2xx":       10,
 }
 
 func TestBasicFlow(t *testing.T) {
