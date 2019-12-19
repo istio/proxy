@@ -288,7 +288,7 @@ func verifyNumberOfAccessLogs(fsdl *fs.LoggingServer, t *testing.T, expectedEntr
 		select {
 		case req := <-fsdl.RcvLoggingReq:
 			if len(req.Entries) != expectedEntries {
-				t.Errorf("WriteLogEntries verification failed. Number of entries expected: %v, got: %v", 1, len(req.Entries))
+				t.Errorf("WriteLogEntries verification failed. Number of entries expected: %v, got: %v, gotEntry: %v", 1, len(req.Entries), req)
 			}
 			logRcv = true
 		case <-to.C:
