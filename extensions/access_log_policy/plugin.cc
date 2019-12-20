@@ -103,6 +103,7 @@ void PluginContext::onLog() {
   getValue({"response", "code"}, &response_code);
   // If request is a failure, log it.
   if (response_code != 200) {
+    GOOGLE_LOG(INFO)<<"Reached  here setting filterstate true, response code 200";
     setFilterStateValue(true);
     return;
   }
@@ -120,12 +121,14 @@ void PluginContext::onLog() {
   absl::Time last_log_time_nanos = lastLogTimeNanos();
   auto cur = absl::Now();
   if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
+    GOOGLE_LOG(INFO)<<"Reached  here setting filterstate true, time to log";
     if (setFilterStateValue(true)) {
       updateLastLogTimeNanos(cur);
     }
     return;
   }
 
+  GOOGLE_LOG(INFO)<<"Reached  here setting filterstate false";
   setFilterStateValue(false);
 }
 
