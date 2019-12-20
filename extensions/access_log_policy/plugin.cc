@@ -117,7 +117,8 @@ void PluginContext::onLog() {
   getStringValue({kConnection, kUriSanPeerCertificate}, &source_principal);
   istio_dimensions_.set_downstream_ip(downstream_ip);
   istio_dimensions_.set_source_principal(source_principal);
-
+  GOOGLE_LOG(INFO)<<"downstream_ip: "<<downstream_ip;
+  GOOGLE_LOG(INFO)<<"source_principal: "<<source_principal;
   absl::Time last_log_time_nanos = lastLogTimeNanos();
   auto cur = absl::Now();
   if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
