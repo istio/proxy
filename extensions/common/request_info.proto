@@ -1,0 +1,99 @@
+/* Copyright 2019 Istio Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+package wasm.common;
+
+// RequestInfo represents the information collected from filter stream
+// callbacks. This is used to fill metrics and logs.
+message RequestInfo {
+  // Time of the first request byte received.
+  google.protobuf.Timestamp request_timestamp = 1;
+
+  // Time of the first response byte received.
+  google.protobuf.Timestamp response_timestamp = 2;
+
+  // Request and response total size in bytes, include header, body, and
+  // trailer.
+  google.protobuf.Int64Value request_size = 3;
+  google.protobuf.Int64Value response_size = 4;
+
+  // Destination port that the request targets.
+  google.protobuf.Int64Value destination_port = 5;
+
+  // Downstream connection remote address.
+  google.protobuf.StringValue source_address = 6;
+
+  // Downstream connection local address.
+  google.protobuf.StringValue destination_address = 7;
+
+  // Protocol used the request (HTTP/1.1, gRPC, etc).
+  google.protobuf.StringValue request_protocol = 8;
+
+  // Response code of the request.
+  google.protobuf.Int64Value response_code = 9;
+
+  // Response flag giving additional information - NR, UAEX etc.
+  google.protobuf.StringValue response_flag = 10;
+
+  // Host name of destination service.
+  google.protobuf.StringValue destination_service_host = 11;
+
+  // Short name of destination service.
+  google.protobuf.StringValue destination_service_name = 12;
+
+  // Operation of the request, i.e. HTTP method or gRPC API method.
+  google.protobuf.StringValue request_operation = 13;
+
+  // Indicates if connection uses mutual TLS to secure.
+  google.protobuf.BoolValue mtls = 14;
+
+  // Principal of source and destination workload extracted from TLS
+  // certificate.
+  google.protobuf.StringValue source_principal = 15;
+  google.protobuf.StringValue destination_principal = 16;
+
+  // Rbac filter policy id and result.
+  google.protobuf.StringValue rbac_permissive_policy_id = 17;
+  google.protobuf.StringValue rbac_permissive_engine_result = 18;
+
+  // The total duration of the request and the response.
+  google.protobuf.Duration duration = 19;
+  google.protobuf.Duration response_duration = 20;
+
+  // Requested server name in the downstream TLS connection.
+  google.protobuf.StringValue requested_server_name = 21;
+
+  // TrafficDirection is a mirror of envoy xDS traffic direction.
+  google.protobuf.Int64Value traffic_direction = 22;
+
+  // Import HTTP headers.
+  google.protobuf.StringValue referer = 23;
+  google.protobuf.StringValue user_agent = 24;
+  google.protobuf.StringValue request_id = 25;
+  google.protobuf.StringValue b3_trace_id = 26;
+  google.protobuf.StringValue b3_span_id = 27;
+  google.protobuf.BoolValue b3_trace_sampled = 28;
+
+  // HTTP URL attributes
+  google.protobuf.StringValue url_path = 29;
+  google.protobuf.StringValue url_host = 30;
+  google.protobuf.StringValue url_scheme = 31;
+};
