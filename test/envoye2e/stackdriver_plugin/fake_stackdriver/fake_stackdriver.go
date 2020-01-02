@@ -30,8 +30,6 @@ import (
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
-
-	"github.com/gogo/protobuf/jsonpb"
 )
 
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
@@ -97,13 +95,7 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	fmt.Println("sent out")
 	resp := make([]*monitoringpb.TimeSeries, len(s.timeSeries))
-	for _, t := range s.timeSeries {
-		m := jsonpb.Marshaler{}
-		s, _ := m.MarshalToString(t)
-		fmt.Println(s)
-	}
 	copy(resp, s.timeSeries)
 	s.timeSeries = make([]*monitoringpb.TimeSeries, 0)
 	return &monitoringpb.ListTimeSeriesResponse{TimeSeries: resp}, nil
@@ -114,11 +106,6 @@ func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.C
 	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	for _, t := range req.TimeSeries {
-		m := jsonpb.Marshaler{}
-		s, _ := m.MarshalToString(t)
-		fmt.Println(s)
-	}
 	s.timeSeries = append(s.timeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
