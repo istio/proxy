@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
 	"sync"
+	"time"
 
 	grpc "google.golang.org/grpc"
 
@@ -96,7 +96,7 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 // ListTimeSeries implements ListTimeSeries method.
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
 	s.mux.Lock()
-	s.mux.Unlock()
+	defer s.mux.Unlock()
 	fmt.Println("sent out")
 	resp := make([]*monitoringpb.TimeSeries, len(s.timeSeries))
 	for _, t := range s.timeSeries {
@@ -104,17 +104,16 @@ func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSer
 		s, _ := m.MarshalToString(t)
 		fmt.Println(s)
 	}
-	copy(resp, s.timeSeries[:])
+	copy(resp, s.timeSeries)
 	s.timeSeries = make([]*monitoringpb.TimeSeries, 0)
-	return &monitoringpb.ListTimeSeriesResponse{TimeSeries:resp}, nil
+	return &monitoringpb.ListTimeSeriesResponse{TimeSeries: resp}, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
-	// log.Printf("receive CreateTimeSeriesRequest %+v", *req)
+	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
 	s.mux.Lock()
-	s.mux.Unlock()
-	fmt.Println("received")
+	defer s.mux.Unlock()
 	for _, t := range req.TimeSeries {
 		m := jsonpb.Marshaler{}
 		s, _ := m.MarshalToString(t)
@@ -133,9 +132,9 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
-	// log.Printf("receive WriteLogEntriesRequest %+v", *req)
+	log.Printf("receive WriteLogEntriesRequest %+v", *req)
 	s.mux.Lock()
-	s.mux.Unlock()
+	defer s.mux.Unlock()
 	s.logEntries = append(s.logEntries, req.Entries...)
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
@@ -145,11 +144,11 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 // ListLogEntries implements ListLogEntries method.
 func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 	s.mux.Lock()
-	s.mux.Unlock()
+	defer s.mux.Unlock()
 	resp := make([]*logging.LogEntry, len(s.logEntries))
-	copy(resp, s.logEntries[:])
+	copy(resp, s.logEntries)
 	s.logEntries = make([]*logging.LogEntry, 0)
-	return &logging.ListLogEntriesResponse{Entries:s.logEntries}, nil
+	return &logging.ListLogEntriesResponse{Entries: s.logEntries}, nil
 }
 
 // ListLogs implements ListLogs method.
@@ -187,7 +186,7 @@ func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *Loggi
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
 	edgesSvc := &MeshEdgesServiceServer{
-		delay: delay,
+		delay:                   delay,
 		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 2),
 	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)

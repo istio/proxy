@@ -14,8 +14,9 @@
 
 package main
 
-import(
+import (
 	"log"
+
 	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 )
 
