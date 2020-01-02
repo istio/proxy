@@ -61,12 +61,14 @@ class PluginRootContext : public RootContext {
   bool onConfigure(size_t) override;
 
   absl::Time lastLogTimeNanos(const IstioDimensions& key) {
+    absl::MutexLock lock(&mutex_);
     if (cache_.contains(key)) return cache_[key];
     return absl::UnixEpoch();
   }
 
   void updateLastLogTimeNanos(const IstioDimensions& key,
                               absl::Time last_log_time_nanos) {
+    absl::MutexLock lock(&mutex_);
     cache_[key] = last_log_time_nanos;
   }
 
@@ -77,6 +79,7 @@ class PluginRootContext : public RootContext {
   // Cache storing last log time by a client.
   absl::flat_hash_map<IstioDimensions, absl::Time> cache_;
   absl::Duration log_time_duration_nanos_;
+  mutable absl::Mutex mutex_;
 };
 
 // Per-stream context.
