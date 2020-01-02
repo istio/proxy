@@ -20,6 +20,7 @@ import (
 	"log"
 	"net"
 	"time"
+	"sync"
 
 	grpc "google.golang.org/grpc"
 
@@ -29,6 +30,8 @@ import (
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+
+	"github.com/gogo/protobuf/jsonpb"
 )
 
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
@@ -36,6 +39,7 @@ type MetricServer struct {
 	delay        time.Duration
 	timeSeries   []*monitoringpb.TimeSeries
 	RcvMetricReq chan *monitoringpb.CreateTimeSeriesRequest
+	mux          sync.Mutex
 }
 
 // LoggingServer is a fake stackdriver server which implements all of logging v2 service method.
@@ -43,6 +47,7 @@ type LoggingServer struct {
 	delay         time.Duration
 	logEntries    []*logging.LogEntry
 	RcvLoggingReq chan *logging.WriteLogEntriesRequest
+	mux           sync.Mutex
 }
 
 type MeshEdgesServiceServer struct {
@@ -90,12 +95,31 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 
 // ListTimeSeries implements ListTimeSeries method.
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
-	return &monitoringpb.ListTimeSeriesResponse{TimeSeries: s.timeSeries}, nil
+	s.mux.Lock()
+	s.mux.Unlock()
+	fmt.Println("sent out")
+	resp := make([]*monitoringpb.TimeSeries, len(s.timeSeries))
+	for _, t := range s.timeSeries {
+		m := jsonpb.Marshaler{}
+		s, _ := m.MarshalToString(t)
+		fmt.Println(s)
+	}
+	copy(resp, s.timeSeries[:])
+	s.timeSeries = make([]*monitoringpb.TimeSeries, 0)
+	return &monitoringpb.ListTimeSeriesResponse{TimeSeries:resp}, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
-	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
+	// log.Printf("receive CreateTimeSeriesRequest %+v", *req)
+	s.mux.Lock()
+	s.mux.Unlock()
+	fmt.Println("received")
+	for _, t := range req.TimeSeries {
+		m := jsonpb.Marshaler{}
+		s, _ := m.MarshalToString(t)
+		fmt.Println(s)
+	}
 	s.timeSeries = append(s.timeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
@@ -109,7 +133,9 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
-	log.Printf("receive WriteLogEntriesRequest %+v", *req)
+	// log.Printf("receive WriteLogEntriesRequest %+v", *req)
+	s.mux.Lock()
+	s.mux.Unlock()
 	s.logEntries = append(s.logEntries, req.Entries...)
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
@@ -118,7 +144,12 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 
 // ListLogEntries implements ListLogEntries method.
 func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-	return &logging.ListLogEntriesResponse{Entries: s.logEntries}, nil
+	s.mux.Lock()
+	s.mux.Unlock()
+	resp := make([]*logging.LogEntry, len(s.logEntries))
+	copy(resp, s.logEntries[:])
+	s.logEntries = make([]*logging.LogEntry, 0)
+	return &logging.ListLogEntriesResponse{Entries:s.logEntries}, nil
 }
 
 // ListLogs implements ListLogs method.
