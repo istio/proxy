@@ -15,12 +15,15 @@
 package env
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -38,6 +41,50 @@ func HTTPGet(url string) (code int, respBody string, err error) {
 	log.Println("HTTP GET", url)
 	client := &http.Client{Timeout: httpTimeOut}
 	resp, err := client.Get(url)
+	if err != nil {
+		log.Println(err)
+		return 0, "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err)
+		return 0, "", err
+	}
+	respBody = string(body)
+	code = resp.StatusCode
+	return code, respBody, nil
+}
+
+// HTTPGet send GET
+func HTTPTlsGet(url, rootdir string, port uint16) (code int, respBody string, err error) {
+	certPool := x509.NewCertPool()
+	bs, err := ioutil.ReadFile(filepath.Join(rootdir, "testdata/certs/cert-chain.pem"))
+	if err != nil {
+		return 0, "", fmt.Errorf("failed to read client ca cert: %s", err)
+	}
+	ok := certPool.AppendCertsFromPEM(bs)
+	if !ok {
+		return 0, "", fmt.Errorf("failed to append client certs")
+	}
+
+	certificate, err := tls.LoadX509KeyPair(filepath.Join(rootdir, "testdata/certs/cert-chain.pem"),
+		filepath.Join(rootdir, "testdata/certs/key.pem"))
+	if err != nil {
+		return 0, "", fmt.Errorf("failed to get certificate")
+	}
+	tlsConf := &tls.Config{Certificates: []tls.Certificate{certificate}, ServerName: "localhost", RootCAs: certPool}
+	tr := &http.Transport{
+		TLSClientConfig: tlsConf,
+		//DialTLS: func(network, addr string) (net.Conn, error) {
+		//	return tls.Dial("tcp", fmt.Sprintf("localhost:%d", port), tlsConf)
+		//return tls.Dial(network, addr, tlsConf)
+		//},
+	}
+	log.Println("HTTP TLS GET", url)
+	client := &http.Client{Timeout: httpTimeOut, Transport: tr}
+	resp, err := client.Get(url)
+	log.Println("resp ", resp)
 	if err != nil {
 		log.Println(err)
 		return 0, "", err
@@ -133,9 +180,20 @@ func HTTPGetWithHeaders(l string, headers map[string]string) (code int, respBody
 
 // WaitForHTTPServer waits for a HTTP server
 func WaitForHTTPServer(url string) error {
+	return WaitForHTTPServerWithTLS(url, "", false, 0)
+}
+
+// WaitForHTTPServer waits for a HTTP server
+func WaitForHTTPServerWithTLS(url, rootDir string, enableTLS bool, port uint16) error {
 	for i := 0; i < maxAttempts; i++ {
 		log.Println("Pinging URL: ", url)
-		code, _, err := HTTPGet(url)
+		var err error
+		var code int
+		if enableTLS {
+			code, _, err = HTTPTlsGet(url, rootDir, port)
+		} else {
+			code, _, err = HTTPGet(url)
+		}
 		if err == nil && code == http.StatusOK {
 			log.Println("Server is up and running...")
 			return nil

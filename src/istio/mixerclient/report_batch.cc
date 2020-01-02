@@ -72,7 +72,7 @@ void ReportBatch::FlushWithLock() {
   }
 
   ++total_remote_report_calls_;
-  auto request = batch_compressor_->Finish();
+  const auto& request = batch_compressor_->Finish();
   std::shared_ptr<ReportResponse> response{new ReportResponse()};
 
   // TODO(jblatt) I replaced a ReportResponse raw pointer with a shared

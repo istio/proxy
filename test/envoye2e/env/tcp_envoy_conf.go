@@ -110,7 +110,7 @@ static_resources:
       typed_config: {}
     filter_chains:
     - filters:
-{{.FiltersBeforeEnvoyRouterInClientToApp | indent 6 }}
+{{.FiltersBeforeEnvoyRouterInProxyToServer | indent 6 }}
       - name: envoy.tcp_proxy
         config:
           stat_prefix: outbound_tcp

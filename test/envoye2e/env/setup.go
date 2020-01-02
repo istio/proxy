@@ -30,35 +30,31 @@ import (
 
 // TestSetup store data for a test.
 type TestSetup struct {
-	t     *testing.T
-	epoch int
-	ports *Ports
-
-	clientEnvoy       *Envoy
-	serverEnvoy       *Envoy
-	backend           *HTTPServer
-	tcpBackend        *TCPServer
-	testName          uint16
 	stress            bool
 	noProxy           bool
 	noBackend         bool
 	disableHotRestart bool
 	checkDict         bool
 	startTCPBackend   bool
+	copyYamlFiles     bool
+	// Whether TLS is Enabled or not.
+	EnableTLS bool
 
-	FiltersBeforeMixer string
+	t           *testing.T
+	ports       *Ports
+	clientEnvoy *Envoy
+	serverEnvoy *Envoy
+	backend     *HTTPServer
+	tcpBackend  *TCPServer
+
+	testName uint16
+	epoch    int
 
 	// ClientEnvoyTemplate is the bootstrap config used by client envoy.
 	ClientEnvoyTemplate string
 
 	// ServerEnvoyTemplate is the bootstrap config used by client envoy.
 	ServerEnvoyTemplate string
-
-	// EnvoyParams contain extra envoy parameters to pass in the CLI (cluster, node)
-	EnvoyParams []string
-
-	// EnvoyConfigOpt allows passing additional parameters to the EnvoyTemplate
-	EnvoyConfigOpt map[string]interface{}
 
 	// IstioSrc is the base directory of istio sources. May be set for finding testdata or
 	// other files in the source tree
@@ -80,17 +76,13 @@ type TestSetup struct {
 	// listener.
 	FiltersBeforeEnvoyRouterInAppToClient string
 
-	// FiltersBeforeEnvoyRouterInClientToProxy are the filters that come before envoy.router http filter in
-	// ClientToProxy listener.
-	FiltersBeforeEnvoyRouterInClientToProxy string
+	// FiltersBeforeHTTPConnectionManagerInProxyToServer are the filters that come before http connection manager filter
+	// ProxyToServer listener.
+	FiltersBeforeHTTPConnectionManagerInProxyToServer string
 
 	// FiltersBeforeEnvoyRouterInProxyToServer are the filters that come before envoy.router http filter in
 	// ProxyToServer listener.
 	FiltersBeforeEnvoyRouterInProxyToServer string
-
-	// FiltersBeforeEnvoyRouterInClientToApp are the filters that come before envoy.router http filter in ClientToApp
-	// listener.
-	FiltersBeforeEnvoyRouterInClientToApp string
 
 	// Dir is the working dir for envoy
 	Dir string
@@ -100,9 +92,6 @@ type TestSetup struct {
 
 	// Client side Envoy node metadata.
 	ClientNodeMetadata string
-
-	// Whether TLS is Enabled or not.
-	EnableTLS bool
 
 	// Format for client accesslog
 	AccesslogFormat string
@@ -121,6 +110,12 @@ type TestSetup struct {
 
 	// ExtraConfig that needs to be passed to envoy. Ex stats_config.
 	ExtraConfig string
+
+	// EnvoyParams contain extra envoy parameters to pass in the CLI (cluster, node)
+	EnvoyParams []string
+
+	// EnvoyConfigOpt allows passing additional parameters to the EnvoyTemplate
+	EnvoyConfigOpt map[string]interface{}
 }
 
 // Stat represents a prometheus stat with labels.
@@ -176,6 +171,11 @@ func (s *TestSetup) SetStartTCPBackend(yes bool) {
 	s.startTCPBackend = yes
 }
 
+// SetCopyYamlFiles set copyYamlFiles flag
+func (s *TestSetup) SetCopyYamlFiles(yes bool) {
+	s.copyYamlFiles = yes
+}
+
 // SetFiltersBeforeEnvoyRouterInAppToClient sets the configurations of the filters that come before envoy.router http
 // filter in AppToClient listener.
 func (s *TestSetup) SetFiltersBeforeEnvoyRouterInAppToClient(filters string) {
@@ -197,22 +197,16 @@ func (s *TestSetup) SetClusterTLSContext(clusterTLSContext string) {
 	s.ClusterTLSContext = clusterTLSContext
 }
 
-// SetFiltersBeforeEnvoyRouterInClientToProxy sets the configurations of the filters that come before envoy.router http
-// filter in ClientToProxy listener.
-func (s *TestSetup) SetFiltersBeforeEnvoyRouterInClientToProxy(filters string) {
-	s.FiltersBeforeEnvoyRouterInClientToProxy = filters
-}
-
 // SetFiltersBeforeEnvoyRouterInProxyToServer sets the configurations of the filters tthat come before envoy.router http
 // filter in ProxyToServer listener.
 func (s *TestSetup) SetFiltersBeforeEnvoyRouterInProxyToServer(filters string) {
 	s.FiltersBeforeEnvoyRouterInProxyToServer = filters
 }
 
-// SetFiltersBeforeEnvoyRouterInClientToApp sets the configurations of the filters that come before envoy.router http
-// filter in ClientToApp listener.
-func (s *TestSetup) SetFiltersBeforeEnvoyRouterInClientToApp(filters string) {
-	s.FiltersBeforeEnvoyRouterInClientToApp = filters
+// SetFiltersBeforeHTTPConnectionManagerInProxyToServer sets the configurations of the filters that come before http
+// connection manager filter in ProxyToServer listener.
+func (s *TestSetup) SeFiltersBeforeHTTPConnectionManagerInProxyToServer(filters string) {
+	s.FiltersBeforeHTTPConnectionManagerInProxyToServer = filters
 }
 
 // SetServerNodeMetadata sets envoy's node metadata.
@@ -275,7 +269,7 @@ func (s *TestSetup) SetUpClientServerEnvoy() error {
 	}
 
 	if !s.noBackend {
-		s.backend, err = NewHTTPServer(s.ports.BackendPort)
+		s.backend, err = NewHTTPServer(s.ports.BackendPort, s.EnableTLS, s.Dir)
 		if err != nil {
 			log.Printf("unable to create HTTP server %v", err)
 		} else {

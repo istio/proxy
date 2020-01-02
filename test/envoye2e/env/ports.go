@@ -31,6 +31,7 @@ const (
 	StackdriverPluginTest
 
 	TCPMetadataExchangeTest
+	HTTPMetadataExchangeTest
 
 	// xDS driven tests
 	BasicHTTP
@@ -63,10 +64,6 @@ type Ports struct {
 	AppToClientProxyPort    uint16
 	ClientToServerProxyPort uint16
 	ServerAdminPort         uint16
-	ProxyToServerProxyPort  uint16
-	ClientToAppProxyPort    uint16
-	ClientTCPProxyPort      uint16
-	ServerTCPProxyPort      uint16
 	XDSPort                 uint16
 	SDPort                  uint16
 }
@@ -102,11 +99,7 @@ func NewPorts(name uint16) *Ports {
 		AppToClientProxyPort:    base + 2,
 		ClientToServerProxyPort: base + 3,
 		ServerAdminPort:         base + 4,
-		ProxyToServerProxyPort:  base + 5,
-		ClientToAppProxyPort:    base + 6,
-		ClientTCPProxyPort:      base + 7,
-		ServerTCPProxyPort:      base + 8,
-		XDSPort:                 base + 9,
-		SDPort:                  base + 10,
+		XDSPort:                 base + 5,
+		SDPort:                  base + 6,
 	}
 }
