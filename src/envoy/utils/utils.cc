@@ -36,6 +36,10 @@ const std::string kPerHostMetadataKey("istio");
 // Attribute field for per-host data override
 const std::string kMetadataDestinationUID("uid");
 
+bool hasSPIFFEPrefix(const std::string& san) {
+  return absl::StartsWith(san, kSPIFFEPrefix);
+}
+
 bool getCertSAN(const Network::Connection* connection, bool peer,
                 std::string* principal) {
   if (connection) {
@@ -47,6 +51,14 @@ bool getCertSAN(const Network::Connection* connection, bool peer,
         // empty result is not allowed.
         return false;
       }
+      // return the first san with the 'spiffe://' prefix
+      for (const auto& san : sans) {
+        if (hasSPIFFEPrefix(san)) {
+          *principal = san;
+          return true;
+        }
+      }
+      // return the first san if no sans have the spiffe:// prefix
       *principal = sans[0];
       return true;
     }
@@ -54,9 +66,6 @@ bool getCertSAN(const Network::Connection* connection, bool peer,
   return false;
 }
 
-bool hasSPIFFEPrefix(const std::string& san) {
-  return absl::StartsWith(san, kSPIFFEPrefix);
-}
 }  // namespace
 
 void ExtractHeaders(const Http::HeaderMap& header_map,
