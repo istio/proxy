@@ -256,6 +256,7 @@ bool StackdriverRootContext::shouldLogThisRequest() {
     LOG_DEBUG("cannot get envoy access log info from filter state.");
     return true;
   }
+  GOOGLE_LOG(INFO) << "Reached here shouldLog: " << shouldLog;
   return shouldLog != "no";
 }
 

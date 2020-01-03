@@ -62,13 +62,21 @@ class PluginRootContext : public RootContext {
 
   absl::Time lastLogTimeNanos(const IstioDimensions& key) {
     absl::MutexLock lock(&mutex_);
-    if (cache_.contains(key)) return cache_[key];
+    if (cache_.contains(key)) {
+      GOOGLE_LOG(INFO) << "Reached here in cache lastLogTimeNanos key: "
+                       << key.to_string();
+      return cache_[key];
+    }
+    GOOGLE_LOG(INFO) << "Reached here out of cache lastLogTimeNanos key: "
+                     << key.to_string();
     return absl::UnixEpoch();
   }
 
   void updateLastLogTimeNanos(const IstioDimensions& key,
                               absl::Time last_log_time_nanos) {
     absl::MutexLock lock(&mutex_);
+    GOOGLE_LOG(INFO) << "Reached here updates last log key: " << key.to_string()
+                     << " value: " << absl::ToUniversal(last_log_time_nanos);
     cache_[key] = last_log_time_nanos;
   }
 
