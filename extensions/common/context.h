@@ -18,6 +18,7 @@
 #include <set>
 
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "extensions/common/node_info.pb.h"
 #include "google/protobuf/struct.pb.h"
 
@@ -65,10 +66,10 @@ StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 // callbacks. This is used to fill metrics and logs.
 struct RequestInfo {
   // Start timestamp in nanoseconds.
-  int64_t start_timestamp = 0;
+  absl::Time start_time;
 
-  // End timestamp in nanoseconds.
-  int64_t end_timestamp = 0;
+  // The total duration of the request.
+  absl::Duration duration;
 
   // Request total size in bytes, include header, body, and trailer.
   int64_t request_size = 0;
@@ -102,7 +103,8 @@ struct RequestInfo {
   std::string request_url_path;
 
   // Service authentication policy (NONE, MUTUAL_TLS)
-  ServiceAuthenticationPolicy service_auth_policy;
+  ServiceAuthenticationPolicy service_auth_policy =
+      ServiceAuthenticationPolicy::Unspecified;
 
   // Principal of source and destination workload extracted from TLS
   // certificate.
@@ -151,7 +153,8 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header,
-                             RequestInfo* request_info);
+                             RequestInfo* request_info,
+                             const std::string& destination_namespace);
 
 // Extracts node metadata value. It looks for values of all the keys
 // corresponding to EXCHANGE_KEYS in node_metadata and populates it in
