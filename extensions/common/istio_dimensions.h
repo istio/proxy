@@ -59,7 +59,7 @@ struct IstioDimensions {
   STD_ISTIO_DIMENSIONS(DEFINE_FIELD)
 #undef DEFINE_FIELD
 
-  bool outbound;
+  bool outbound = false;
 
 #define SET_FIELD(name) \
   void set_##name(std::string value) { name = value; }
@@ -71,7 +71,8 @@ struct IstioDimensions {
 
   std::string to_string() const {
 #define TO_STRING(name) "\"", #name, "\":\"", name, "\" ,",
-    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING) "}");
+    return absl::StrCat(
+        "{" STD_ISTIO_DIMENSIONS(TO_STRING) "\"outbound\": ", outbound, "}");
 #undef TO_STRING
   }
 

@@ -61,22 +61,14 @@ class PluginRootContext : public RootContext {
   bool onConfigure(size_t) override;
 
   absl::Time lastLogTimeNanos(const IstioDimensions& key) {
-    absl::MutexLock lock(&mutex_);
     if (cache_.contains(key)) {
-      GOOGLE_LOG(INFO) << "Reached here in cache lastLogTimeNanos key: "
-                       << key.to_string();
       return cache_[key];
     }
-    GOOGLE_LOG(INFO) << "Reached here out of cache lastLogTimeNanos key: "
-                     << key.to_string();
     return absl::UnixEpoch();
   }
 
   void updateLastLogTimeNanos(const IstioDimensions& key,
                               absl::Time last_log_time_nanos) {
-    absl::MutexLock lock(&mutex_);
-    GOOGLE_LOG(INFO) << "Reached here updates last log key: " << key.to_string()
-                     << " value: " << absl::ToUniversal(last_log_time_nanos);
     cache_[key] = last_log_time_nanos;
   }
 
@@ -87,7 +79,6 @@ class PluginRootContext : public RootContext {
   // Cache storing last log time by a client.
   absl::flat_hash_map<IstioDimensions, absl::Time> cache_;
   absl::Duration log_time_duration_nanos_;
-  mutable absl::Mutex mutex_;
 };
 
 // Per-stream context.
