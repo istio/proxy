@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"sync"
 	"time"
 
 	grpc "google.golang.org/grpc"
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
+	jsonpb "github.com/golang/protobuf/jsonpb"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
@@ -35,19 +37,20 @@ import (
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
 type MetricServer struct {
 	delay        time.Duration
-	timeSeries   []*monitoringpb.TimeSeries
+	listTsResp   monitoringpb.ListTimeSeriesResponse
 	RcvMetricReq chan *monitoringpb.CreateTimeSeriesRequest
 	mux          sync.Mutex
 }
 
 // LoggingServer is a fake stackdriver server which implements all of logging v2 service method.
 type LoggingServer struct {
-	delay         time.Duration
-	logEntries    []*logging.LogEntry
-	RcvLoggingReq chan *logging.WriteLogEntriesRequest
-	mux           sync.Mutex
+	delay            time.Duration
+	listLogEntryResp logging.ListLogEntriesResponse
+	RcvLoggingReq    chan *logging.WriteLogEntriesRequest
+	mux              sync.Mutex
 }
 
+// MeshEdgesServiceServer is a fake stackdriver server which implements all of mesh edge service method.
 type MeshEdgesServiceServer struct {
 	delay                   time.Duration
 	RcvTrafficAssertionsReq chan *edgespb.ReportTrafficAssertionsRequest
@@ -95,10 +98,7 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	resp := make([]*monitoringpb.TimeSeries, len(s.timeSeries))
-	copy(resp, s.timeSeries)
-	s.timeSeries = make([]*monitoringpb.TimeSeries, 0)
-	return &monitoringpb.ListTimeSeriesResponse{TimeSeries: resp}, nil
+	return &s.listTsResp, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
@@ -106,7 +106,7 @@ func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.C
 	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	s.timeSeries = append(s.timeSeries, req.TimeSeries...)
+	s.listTsResp.TimeSeries = append(s.listTsResp.TimeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
 	return &empty.Empty{}, nil
@@ -122,7 +122,7 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 	log.Printf("receive WriteLogEntriesRequest %+v", *req)
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	s.logEntries = append(s.logEntries, req.Entries...)
+	s.listLogEntryResp.Entries = append(s.listLogEntryResp.Entries, req.Entries...)
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
 	return &logging.WriteLogEntriesResponse{}, nil
@@ -132,10 +132,7 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	resp := make([]*logging.LogEntry, len(s.logEntries))
-	copy(resp, s.logEntries)
-	s.logEntries = make([]*logging.LogEntry, 0)
-	return &logging.ListLogEntriesResponse{Entries: s.logEntries}, nil
+	return &s.listLogEntryResp, nil
 }
 
 // ListLogs implements ListLogs method.
@@ -158,6 +155,18 @@ func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 	e.RcvTrafficAssertionsReq <- req
 	time.Sleep(e.delay)
 	return &edgespb.ReportTrafficAssertionsResponse{}, nil
+}
+
+// GetTimeSeries returns all received time series in a ListTimeSeriesResponse as a marshaled json string
+func (s *MetricServer) GetTimeSeries(w http.ResponseWriter, req *http.Request) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	var m jsonpb.Marshaler
+	if s, err := m.MarshalToString(&s.listTsResp); err != nil {
+		fmt.Fprintln(w, "Fail to marshal received time series")
+	} else {
+		fmt.Fprintln(w, s)
+	}
 }
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
@@ -212,5 +221,10 @@ func Run(port uint16) error {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	http.HandleFunc("/timeseries", fsdms.GetTimeSeries)
+	go func() {
+		// start an http endpoint to serve time series in json text
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port+1), nil))
+	}()
 	return grpcServer.Serve(lis)
 }

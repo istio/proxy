@@ -26,6 +26,4 @@ build_and_push:
 	cd $(SD_PATH) && go build main.go
 	docker build $(SD_PATH) -t $(IMG):$(TAG)
 	docker push $(IMG):$(TAG)
-	
-clean:
 	rm $(SD_PATH)/main

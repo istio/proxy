@@ -21,8 +21,8 @@ import (
 )
 
 func main() {
-	log.Println("Run Stackdriver server, listening on port 80")
-	if err := fs.Run(80); err != nil {
+	log.Println("Run Stackdriver server, listening on port 8090")
+	if err := fs.Run(8090); err != nil {
 		log.Printf("Stackdriver server failed %v", err)
 	}
 }
