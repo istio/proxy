@@ -47,6 +47,7 @@ constexpr StringView kContentTypeHeaderKey = "content-type";
 
 const std::string kProtocolHTTP = "http";
 const std::string kProtocolGRPC = "grpc";
+const std::string kProtocolTCP = "tcp";
 
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
@@ -155,6 +156,11 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 void populateHTTPRequestInfo(bool outbound, bool use_host_header,
                              RequestInfo* request_info,
                              const std::string& destination_namespace);
+
+// populateTCPRequestInfo populates the RequestInfo struct. It needs access to
+// the request context.
+void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
+                            const std::string& destination_namespace);
 
 // Extracts node metadata value. It looks for values of all the keys
 // corresponding to EXCHANGE_KEYS in node_metadata and populates it in

@@ -126,6 +126,56 @@ void getDestinationService(const std::string& dest_namespace,
   extractServiceName(*dest_svc_host, dest_namespace, dest_svc_name);
 }
 
+void populateRequestInfo(bool outbound, bool use_host_header_fallback,
+                         RequestInfo* request_info,
+                         const std::string& destination_namespace) {
+  // Fill in request info.
+  // Get destination service name and host based on cluster name and host
+  // header.
+  getDestinationService(destination_namespace, use_host_header_fallback,
+                        &request_info->destination_service_host,
+                        &request_info->destination_service_name);
+
+  // Get rbac labels from dynamic metadata.
+  getStringValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
+                 &request_info->rbac_permissive_policy_id);
+  getStringValue(
+      {"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
+      &request_info->rbac_permissive_engine_result);
+
+  getStringValue({"request", "url_path"}, &request_info->request_url_path);
+
+  if (outbound) {
+    uint64_t destination_port = 0;
+    getValue({"upstream", "port"}, &destination_port);
+    request_info->destination_port = destination_port;
+    getStringValue({"upstream", "uri_san_peer_certificate"},
+                   &request_info->destination_principal);
+    getStringValue({"upstream", "uri_san_local_certificate"},
+                   &request_info->source_principal);
+  } else {
+    bool mtls = false;
+    if (getValue({"connection", "mtls"}, &mtls)) {
+      request_info->service_auth_policy =
+          mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
+               : ::Wasm::Common::ServiceAuthenticationPolicy::None;
+    }
+    getStringValue({"connection", "uri_san_local_certificate"},
+                   &request_info->destination_principal);
+    getStringValue({"connection", "uri_san_peer_certificate"},
+                   &request_info->source_principal);
+  }
+
+  uint64_t response_flags = 0;
+  getValue({"response", "flags"}, &response_flags);
+  request_info->response_flag = parseResponseFlag(response_flags);
+
+  getValue({"request", "time"}, &request_info->start_time);
+  getValue({"request", "duration"}, &request_info->duration);
+  getValue({"request", "total_size"}, &request_info->request_size);
+  getValue({"response", "total_size"}, &request_info->response_size);
+}
+
 }  // namespace
 
 StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
@@ -217,7 +267,9 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                              RequestInfo* request_info,
                              const std::string& destination_namespace) {
-  // Fill in request info.
+  populateRequestInfo(outbound, use_host_header_fallback, request_info,
+                      destination_namespace);
+
   int64_t response_code = 0;
   if (getValue({"response", "code"}, &response_code)) {
     request_info->response_code = response_code;
@@ -233,56 +285,24 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->request_protocol = kProtocolHTTP;
   }
 
-  // Get destination service name and host based on cluster name and host
-  // header.
-  getDestinationService(destination_namespace, use_host_header_fallback,
-                        &request_info->destination_service_host,
-                        &request_info->destination_service_name);
-
-  // Get rbac labels from dynamic metadata.
-  getStringValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
-                 &request_info->rbac_permissive_policy_id);
-  getStringValue(
-      {"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
-      &request_info->rbac_permissive_engine_result);
-
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
 
-  getStringValue({"request", "url_path"}, &request_info->request_url_path);
-
-  int64_t destination_port = 0;
-
-  if (outbound) {
-    getValue({"upstream", "port"}, &destination_port);
-    getStringValue({"upstream", "uri_san_peer_certificate"},
-                   &request_info->destination_principal);
-    getStringValue({"upstream", "uri_san_local_certificate"},
-                   &request_info->source_principal);
-  } else {
+  if (!outbound) {
+    uint64_t destination_port = 0;
     getValue({"destination", "port"}, &destination_port);
-    bool mtls = false;
-    if (getValue({"connection", "mtls"}, &mtls)) {
-      request_info->service_auth_policy =
-          mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
-               : ::Wasm::Common::ServiceAuthenticationPolicy::None;
-    }
-    getStringValue({"connection", "uri_san_local_certificate"},
-                   &request_info->destination_principal);
-    getStringValue({"connection", "uri_san_peer_certificate"},
-                   &request_info->source_principal);
+    request_info->destination_port = destination_port;
   }
-  request_info->destination_port = destination_port;
+}
 
-  uint64_t response_flags = 0;
-  getValue({"response", "flags"}, &response_flags);
-  request_info->response_flag = parseResponseFlag(response_flags);
+void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
+                            const std::string& destination_namespace) {
+  // host_header_fallback is for HTTP/gRPC only.
+  populateRequestInfo(outbound, false, request_info, destination_namespace);
 
-  getValue({"request", "time"}, &request_info->start_time);
-  getValue({"request", "duration"}, &request_info->duration);
-  getValue({"request", "total_size"}, &request_info->request_size);
-  getValue({"response", "total_size"}, &request_info->response_size);
+  request_info->response_code = 0;
+  request_info->request_protocol = kProtocolTCP;
 }
 
 google::protobuf::util::Status extractNodeMetadataValue(

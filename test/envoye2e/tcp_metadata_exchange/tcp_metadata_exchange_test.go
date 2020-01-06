@@ -32,7 +32,73 @@ const metadataExchangeIstioConfigFilter = `
 - name: envoy.filters.network.metadata_exchange
   config:
     protocol: istio2
+- name: envoy.filters.network.wasm
+  config:
+    config:
+      root_id: "stats_inbound"
+      vm_config:
+        runtime: envoy.wasm.runtime.null
+        code:
+          local: { inline_string: "envoy.wasm.stats" }
+      configuration: |
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
 `
+
+const statsConfig = `stats_config:
+  use_all_default_tags: true
+  stats_tags:
+  - tag_name: "reporter"
+    regex: "(reporter=\\.=(.+?);\\.;)"
+  - tag_name: "source_namespace"
+    regex: "(source_namespace=\\.=(.+?);\\.;)"
+  - tag_name: "source_workload"
+    regex: "(source_workload=\\.=(.+?);\\.;)"
+  - tag_name: "source_workload_namespace"
+    regex: "(source_workload_namespace=\\.=(.+?);\\.;)"
+  - tag_name: "source_principal"
+    regex: "(source_principal=\\.=(.+?);\\.;)"
+  - tag_name: "source_app"
+    regex: "(source_app=\\.=(.+?);\\.;)"
+  - tag_name: "source_version"
+    regex: "(source_version=\\.=(.+?);\\.;)"
+  - tag_name: "destination_namespace"
+    regex: "(destination_namespace=\\.=(.+?);\\.;)"
+  - tag_name: "destination_workload"
+    regex: "(destination_workload=\\.=(.+?);\\.;)"
+  - tag_name: "destination_workload_namespace"
+    regex: "(destination_workload_namespace=\\.=(.+?);\\.;)"
+  - tag_name: "destination_principal"
+    regex: "(destination_principal=\\.=(.+?);\\.;)"
+  - tag_name: "destination_app"
+    regex: "(destination_app=\\.=(.+?);\\.;)"
+  - tag_name: "destination_version"
+    regex: "(destination_version=\\.=(.+?);\\.;)"
+  - tag_name: "destination_service"
+    regex: "(destination_service=\\.=(.+?);\\.;)"
+  - tag_name: "destination_service_name"
+    regex: "(destination_service_name=\\.=(.+?);\\.;)"
+  - tag_name: "destination_service_namespace"
+    regex: "(destination_service_namespace=\\.=(.+?);\\.;)"
+  - tag_name: "destination_port"
+    regex: "(destination_port=\\.=(.+?);\\.;)"
+  - tag_name: "request_protocol"
+    regex: "(request_protocol=\\.=(.+?);\\.;)"
+  - tag_name: "response_code"
+    regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
+  - tag_name: "response_flags"
+    regex: "(response_flags=\\.=(.+?);\\.;)"
+  - tag_name: "connection_security_policy"
+    regex: "(connection_security_policy=\\.=(.+?);\\.;)"
+  - tag_name: "permissive_response_code"
+    regex: "(permissive_response_code=\\.=(.+?);\\.;)"
+  - tag_name: "permissive_response_policyid"
+    regex: "(permissive_response_policyid=\\.=(.+?);\\.;)"
+  - tag_name: "cache"
+    regex: "(cache\\.(.+?)\\.)"
+  - tag_name: "component"
+    regex: "(component\\.(.+?)\\.)"
+  - tag_name: "tag"
+    regex: "(tag\\.(.+?);\\.)"`
 
 const metadataExchangeIstioUpstreamConfigFilterChain = `
 filters:
@@ -40,6 +106,19 @@ filters:
   typed_config: 
     "@type": type.googleapis.com/envoy.tcp.metadataexchange.config.MetadataExchange
     protocol: istio2
+`
+
+const metadataExchangeIstioClientFilter = `
+- name: envoy.filters.network.wasm
+  config:
+    config:
+      root_id: "stats_outbound"
+      vm_config:
+        runtime: envoy.wasm.runtime.null
+        code:
+          local: { inline_string: "envoy.wasm.stats" }
+      configuration: |
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
 `
 
 const tlsContext = `
@@ -135,6 +214,16 @@ var expectedClientStats = map[string]int{
 }
 
 // Stats in Server Envoy proxy.
+var expectedPrometheusServerLabels = map[string]string{
+	"reporter":        "destination",
+	"source_app":      "productpage",
+	"destination_app": "ratings",
+}
+var expectedPrometheusServerStats = map[string]env.Stat{
+	"istio_requests_total": {Value: 1, Labels: expectedPrometheusServerLabels},
+}
+
+// Stats in Server Envoy proxy.
 var expectedServerStats = map[string]int{
 	"metadata_exchange.alpn_protocol_found":      1,
 	"metadata_exchange.alpn_protocol_not_found":  0,
@@ -152,9 +241,11 @@ func TestTCPMetadataExchange(t *testing.T) {
 	s.SetClusterTLSContext(clusterTLSContext)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(metadataExchangeIstioConfigFilter)
 	s.SetUpstreamFiltersInClient(metadataExchangeIstioUpstreamConfigFilterChain)
+	s.SetFiltersBeforeEnvoyRouterInAppToClient(metadataExchangeIstioClientFilter)
 	s.SetEnableTLS(true)
 	s.SetClientNodeMetadata(clientNodeMetadata)
 	s.SetServerNodeMetadata(serverNodeMetadata)
+	s.SetExtraConfig(statsConfig)
 	s.ClientEnvoyTemplate = env.GetTCPClientEnvoyConfTmp()
 	s.ServerEnvoyTemplate = env.GetTCPServerEnvoyConfTmp()
 	if err := s.SetUpClientServerEnvoy(); err != nil {
@@ -198,6 +289,9 @@ func TestTCPMetadataExchange(t *testing.T) {
 	_ = conn.Close()
 	s.VerifyEnvoyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
 	s.VerifyEnvoyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
+
+	s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
+
 }
 
 func getParsedExpectedStats(expectedStats map[string]int, t *testing.T, s *env.TestSetup) map[string]int {
