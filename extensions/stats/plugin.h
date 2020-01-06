@@ -427,7 +427,6 @@ class PluginContext : public Context {
   bool upstream_closed_;
   bool downstream_closed_;
   bool tcp_reported_;
-  ::Wasm::Common::RequestInfo request_info_;
 };
 
 #ifdef NULL_PLUGIN
