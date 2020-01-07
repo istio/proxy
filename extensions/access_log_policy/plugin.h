@@ -60,25 +60,25 @@ class PluginRootContext : public RootContext {
 
   bool onConfigure(size_t) override;
 
-  absl::Time lastLogTimeNanos(const IstioDimensions& key) {
+  long long lastLogTimeNanos(const IstioDimensions& key) {
     if (cache_.contains(key)) {
       return cache_[key];
     }
-    return absl::UnixEpoch();
+    return 0;
   }
 
   void updateLastLogTimeNanos(const IstioDimensions& key,
-                              absl::Time last_log_time_nanos) {
+                              long long last_log_time_nanos) {
     cache_[key] = last_log_time_nanos;
   }
 
-  absl::Duration logTimeDurationNanos() { return log_time_duration_nanos_; };
+  long long logTimeDurationNanos() { return log_time_duration_nanos_; };
 
  private:
   accesslogpolicy::config::v1alpha1::AccessLogPolicyConfig config_;
   // Cache storing last log time by a client.
-  absl::flat_hash_map<IstioDimensions, absl::Time> cache_;
-  absl::Duration log_time_duration_nanos_;
+  absl::flat_hash_map<IstioDimensions, long long> cache_;
+  long long log_time_duration_nanos_;
 };
 
 // Per-stream context.
@@ -92,14 +92,14 @@ class PluginContext : public Context {
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
-  inline absl::Time lastLogTimeNanos() {
+  inline long long lastLogTimeNanos() {
     return rootContext()->lastLogTimeNanos(istio_dimensions_);
   };
-  inline void updateLastLogTimeNanos(absl::Time last_log_time_nanos) {
+  inline void updateLastLogTimeNanos(long long last_log_time_nanos) {
     rootContext()->updateLastLogTimeNanos(istio_dimensions_,
                                           last_log_time_nanos);
   };
-  inline absl::Duration logTimeDurationNanos() {
+  inline long long logTimeDurationNanos() {
     return rootContext()->logTimeDurationNanos();
   };
 
