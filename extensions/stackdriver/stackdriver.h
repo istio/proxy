@@ -74,6 +74,8 @@ class StackdriverRootContext : public RootContext {
   // Indicates whether to export server access log or not.
   bool enableServerAccessLog();
 
+  bool shouldLogThisRequest();
+
   // Gets peer node info. It checks the node info cache first, and then try to
   // fetch it from host if cache miss. If cache is disabled, it will fetch from
   // host directly.

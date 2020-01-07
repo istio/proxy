@@ -40,6 +40,8 @@ constexpr StringView kDownstreamMetadataIdKey =
 constexpr StringView kDownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
 
+constexpr StringView kAccessLogPolicyKey = "envoy.wasm.access_log.log";
+
 // Header keys
 constexpr StringView kAuthorityHeaderKey = ":authority";
 constexpr StringView kMethodHeaderKey = ":method";

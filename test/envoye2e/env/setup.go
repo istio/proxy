@@ -540,3 +540,9 @@ func (s *TestSetup) VerifyStatsLT(actualStats string, expectedStat string, expec
 		log.Printf("stat %s is matched. %d < %d", expectedStat, aStatsValue, expectedStatVal)
 	}
 }
+
+func (s *TestSetup) StopHTTPBackend() {
+	if s.backend != nil {
+		s.backend.Stop()
+	}
+}
