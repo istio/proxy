@@ -44,6 +44,7 @@ const (
 	BasicHTTPGateway
 	StatsPayload
 	StatsParallel
+	StatsWasm
 
 	StatsPluginTest
 

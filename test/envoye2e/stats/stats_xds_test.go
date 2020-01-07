@@ -44,9 +44,9 @@ filter_chains:
         config:
           config:
             vm_config:
-              runtime: "envoy.wasm.runtime.null"
+              runtime: {{ .Vars.WasmRuntime }}
               code:
-                local: { inline_string: "envoy.wasm.metadata_exchange" }
+                local: { {{ .Vars.MetadataExchangeFilterCode }} }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -56,7 +56,7 @@ filter_chains:
               vm_id: stats_outbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
-                local: { inline_string: "envoy.wasm.stats" }
+                local: { {{ .Vars.StatsFilterCode }} }
             configuration: |
               { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
       - name: envoy.router
@@ -90,9 +90,9 @@ filter_chains:
         config:
           config:
             vm_config:
-              runtime: "envoy.wasm.runtime.null"
+              runtime: {{ .Vars.WasmRuntime }}
               code:
-                local: { inline_string: "envoy.wasm.metadata_exchange" }
+                local: { {{ .Vars.MetadataExchangeFilterCode }} }
             configuration: "test"
       - name: envoy.filters.http.wasm
         config:
@@ -102,7 +102,7 @@ filter_chains:
               vm_id: stats_inbound{{ .N }}
               runtime: envoy.wasm.runtime.null
               code:
-                local: { inline_string: "envoy.wasm.stats" }
+                local: { {{ .Vars.StatsFilterCode }} }
             configuration: |
               { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
       - name: envoy.router
@@ -135,12 +135,15 @@ func TestStatsPayload(t *testing.T) {
 	ports := env.NewPorts(env.StatsPayload)
 	params := &driver.Params{
 		Vars: map[string]string{
-			"ClientPort":   fmt.Sprintf("%d", ports.AppToClientProxyPort),
-			"BackendPort":  fmt.Sprintf("%d", ports.BackendPort),
-			"ClientAdmin":  fmt.Sprintf("%d", ports.ClientAdminPort),
-			"ServerAdmin":  fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":   fmt.Sprintf("%d", ports.ClientToServerProxyPort),
-			"RequestCount": "10",
+			"ClientPort":                 fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"BackendPort":                fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":                fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":                fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":                 fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"RequestCount":               "10",
+			"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
+			"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
+			"WasmRuntime":                "envoy.wasm.runtime.null",
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -173,12 +176,15 @@ func TestStatsParallel(t *testing.T) {
 	ports := env.NewPorts(env.StatsParallel)
 	params := &driver.Params{
 		Vars: map[string]string{
-			"ClientPort":   fmt.Sprintf("%d", ports.AppToClientProxyPort),
-			"BackendPort":  fmt.Sprintf("%d", ports.BackendPort),
-			"ClientAdmin":  fmt.Sprintf("%d", ports.ClientAdminPort),
-			"ServerAdmin":  fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":   fmt.Sprintf("%d", ports.ClientToServerProxyPort),
-			"RequestCount": "1",
+			"ClientPort":                 fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"BackendPort":                fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":                fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":                fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":                 fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"RequestCount":               "1",
+			"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
+			"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
+			"WasmRuntime":                "envoy.wasm.runtime.null",
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -222,6 +228,47 @@ func TestStatsParallel(t *testing.T) {
 					},
 				},
 			},
+			&driver.Stats{ports.ClientAdminPort, map[string]driver.StatMatcher{
+				"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
+			}},
+			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
+				"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
+			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStatsWasm(t *testing.T) {
+	ports := env.NewPorts(env.StatsWasm)
+	params := &driver.Params{
+		Vars: map[string]string{
+			"ClientPort":                 fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"BackendPort":                fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":                fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":                fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":                 fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"RequestCount":               "10",
+			"MetadataExchangeFilterCode": "filename: extensions/metadata_exchange/plugin.wasm",
+			"StatsFilterCode":            "inline_string: envoy.wasm.stats",
+			"WasmRuntime":                "envoy.wasm.runtime.v8",
+		},
+		XDS: int(ports.XDSPort),
+	}
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["StatsConfig"] = params.LoadTestData("testdata/bootstrap/stats.yaml.tmpl")
+
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{StatsClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{StatsServerHTTPListener}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
 			&driver.Stats{ports.ClientAdminPort, map[string]driver.StatMatcher{
 				"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
 			}},
