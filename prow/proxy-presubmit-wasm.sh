@@ -25,4 +25,4 @@ ROOT=$(dirname $WD)
 source "${WD}/proxy-common.inc"
 
 echo 'Check Wasm Plugin Files'
-${ROOT}/scripts/generate-wasm.sh -b -p -c
+${WD}/scripts/generate-wasm.sh -b -c
