@@ -96,7 +96,7 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
                     Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
-    Envoy::StreamInfo::FilterStateImpl filter_state;
+    Envoy::StreamInfo::FilterStateImpl filter_state{Envoy::StreamInfo::FilterState::FilterChain};
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
@@ -129,7 +129,7 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
                     Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
-    Envoy::StreamInfo::FilterStateImpl filter_state;
+    Envoy::StreamInfo::FilterStateImpl filter_state{Envoy::StreamInfo::FilterState::FilterChain};
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
@@ -161,7 +161,7 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
                     Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
-    Envoy::StreamInfo::FilterStateImpl filter_state;
+    Envoy::StreamInfo::FilterStateImpl filter_state{Envoy::StreamInfo::FilterState::FilterChain};
     EXPECT_CALL(stream_info, filterState()).Times(0);
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
