@@ -21,20 +21,23 @@ set -ex
 
 function usage() {
   echo "$0
-    -c build the wasm sdk image base on ENVOY SHA if it does not exist in `gcr.io/istio-testing` HUB.
+    -b build the wasm sdk image base on ENVOY SHA if it does not exist in `gcr.io/istio-testing` HUB.
        If the image already exist in the HUB, this will be noop.
        The container will be used to compile wasm files.
-    -p push the wasm sdk container built from the envoy SHA. Must use with `-c`"
+    -p push the wasm sdk container built from the envoy SHA. Must use with `-c`
+    -c controls whether to check diff of generated wasm files."
   exit 1
 }
 
 BUILD_CONTAINER=0
 PUSH_CONTAINER=0
+CHECK_DIFF=0
 
-while getopts cp arg ; do
+while getopts bpc arg ; do
   case "${arg}" in
-    c) BUILD_CONTAINER=1;;
+    b) BUILD_CONTAINER=1;;
     p) PUSH_DOCKER_IMAGE=1;;
+    c) CHECK_DIFF=1;;
     *) usage;;
   esac
 done
@@ -44,14 +47,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
 ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
 IMAGE=gcr.io/istio-testing/wasmsdk
-TAG=${ENVOY_SHA}
+TAG=bpy-${ENVOY_SHA}-test
 
 # Try pull wasm builder image.
 docker pull ${IMAGE}:${TAG} || echo "${IMAGE}:${TAG} does not exist"
 
 # If image does not exist, try build it
 if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
-  if [[ BUILD_CONTAINER == 0 ]]; then
+  if [[ ${BUILD_CONTAINER} == 0 ]]; then
     echo "no builder image to compile wasm. Add `-c` option to create the builder image"
     exit 1
   fi
@@ -67,7 +70,7 @@ if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
 
   # Rebuild and push
   cd api/wasm/cpp && docker build -t ${IMAGE}:${TAG} -f Dockerfile-sdk .
-  if [[ PUSH_DOCKER_IMAGE == 1 ]]; then
+  if [[ ${PUSH_DOCKER_IMAGE} == 1 ]]; then
     docker push ${IMAGE}:${TAG} || "fail to push to gcr.io/istio-testing hub"
   fi
 fi
@@ -78,9 +81,11 @@ cd ${ROOT}
 find . -name "*.wasm" -type f -delete
 make build_wasm
 
-if git diff-index --quiet HEAD --; then
-  echo "wasm files are up to dated"
-else
-  echo "wasm files are out of dated and need to be regenerated, run './scripts/generate-wasm.sh -c -p' to regenerate them"
-  exit 1
+if [[ ${CHECK_DIFF} == 1 ]]; then
+  if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+    echo "wasm files are out of dated and need to be regenerated, run './scripts/generate-wasm.sh -b -p' to regenerate them"
+    exit 1
+  else
+    echo "wasm files are up to dated"
+  fi
 fi
