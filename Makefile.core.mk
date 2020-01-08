@@ -72,6 +72,9 @@ build_wasm:
     # TODO(bianpengyuan): build both stats and mx filters
 	$(foreach file, $(shell find extensions/metadata_exchange -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true
 
+generate_wasm:
+	./scripts/generate-wasm.sh -b -c
+
 clean:
 	@bazel clean
 

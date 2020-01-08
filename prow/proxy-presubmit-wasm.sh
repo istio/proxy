@@ -14,15 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+WD=$(dirname $0)
+WD=$(cd $WD; pwd)
+ROOT=$(dirname $WD)
+
 #######################################
 # Presubmit script triggered by Prow. #
 #######################################
 
 source "${WD}/proxy-common.inc"
 
-WD=$(dirname $0)
-WD=$(cd $WD; pwd)
-ROOT=$(dirname $WD)
-
-echo 'Check Wasm Plugin Files'
-${ROOT}/scripts/generate-wasm.sh -b -c
+echo 'Generate and check Wasm plugin files'
+make generate_wasm
