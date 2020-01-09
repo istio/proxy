@@ -18,7 +18,6 @@
 #include <set>
 
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "extensions/common/node_info.pb.h"
 #include "google/protobuf/struct.pb.h"
 
@@ -69,10 +68,10 @@ StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 // callbacks. This is used to fill metrics and logs.
 struct RequestInfo {
   // Start timestamp in nanoseconds.
-  absl::Time start_time;
+  int64_t start_time;
 
-  // The total duration of the request.
-  absl::Duration duration;
+  // The total duration of the request in nanoseconds.
+  int64_t duration;
 
   // Request total size in bytes, include header, body, and trailer.
   int64_t request_size = 0;

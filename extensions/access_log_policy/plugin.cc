@@ -112,9 +112,9 @@ void PluginContext::onLog() {
   // not, based on last time a successful request was logged for this client ip
   // and principal combination.
   std::string downstream_ip = "";
-  getStringValue({kDestination, kAddress}, &downstream_ip);
+  getValue({kDestination, kAddress}, &downstream_ip);
   std::string source_principal = "";
-  getStringValue({kConnection, kUriSanPeerCertificate}, &source_principal);
+  getValue({kConnection, kUriSanPeerCertificate}, &source_principal);
   istio_dimensions_.set_downstream_ip(downstream_ip);
   istio_dimensions_.set_source_principal(source_principal);
   long long last_log_time_nanos = lastLogTimeNanos();
