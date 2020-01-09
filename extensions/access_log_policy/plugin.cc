@@ -59,8 +59,8 @@ bool setFilterStateValue(bool log) {
 
 }  // namespace
 
-constexpr absl::Duration kDefaultLogWindowDurationNanoseconds =
-    absl::Hours(12);  // 12h
+constexpr long long kDefaultLogWindowDurationNanoseconds =
+    43200000000000;  // 12h
 
 constexpr StringView kDestination = "destination";
 constexpr StringView kAddress = "address";
@@ -73,7 +73,8 @@ static RegisterContextFactory register_AccessLogPolicy(
 bool PluginRootContext::onConfigure(size_t) {
   if (::Wasm::Common::TrafficDirection::Inbound !=
       ::Wasm::Common::getTrafficDirection()) {
-    throw EnvoyException("ASM Acess Logging Policy is an inbound filter only.");
+    logError("ASM Acess Logging Policy is an inbound filter only.");
+    return false;
   }
   WasmDataPtr configuration = getConfiguration();
   JsonParseOptions json_options;
@@ -86,9 +87,9 @@ bool PluginRootContext::onConfigure(size_t) {
   }
 
   if (config_.has_log_window_duration()) {
-    log_time_duration_nanos_ = absl::Nanoseconds(
+    log_time_duration_nanos_ =
         ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
-            config_.log_window_duration()));
+            config_.log_window_duration());
   } else {
     log_time_duration_nanos_ = kDefaultLogWindowDurationNanoseconds;
   }
@@ -111,13 +112,13 @@ void PluginContext::onLog() {
   // not, based on last time a successful request was logged for this client ip
   // and principal combination.
   std::string downstream_ip = "";
-  getStringValue({kDestination, kAddress}, &downstream_ip);
+  getValue({kDestination, kAddress}, &downstream_ip);
   std::string source_principal = "";
-  getStringValue({kConnection, kUriSanPeerCertificate}, &source_principal);
+  getValue({kConnection, kUriSanPeerCertificate}, &source_principal);
   istio_dimensions_.set_downstream_ip(downstream_ip);
   istio_dimensions_.set_source_principal(source_principal);
-  absl::Time last_log_time_nanos = lastLogTimeNanos();
-  auto cur = absl::Now();
+  long long last_log_time_nanos = lastLogTimeNanos();
+  auto cur = static_cast<long long>(getCurrentTimeNanoseconds());
   if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
     if (setFilterStateValue(true)) {
       updateLastLogTimeNanos(cur);
