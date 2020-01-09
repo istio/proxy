@@ -76,7 +76,8 @@ if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
 fi
 
 # Regenerate all wasm plugins and compare diffs
-docker tag ${IMAGE}:${TAG} wasmsdk:v2
+# Tag image to v2, which is what used by all build wasm script.
+docker tag ${IMAGE}:${TAG} ${IMAGE}:v2
 cd ${ROOT}
 find . -name "*.wasm" -type f -delete
 make build_wasm
