@@ -47,7 +47,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
 ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
 IMAGE=gcr.io/istio-testing/wasmsdk
-TAG=bpy-${ENVOY_SHA}-test
+TAG=${ENVOY_SHA}
 
 # Try pull wasm builder image.
 docker pull ${IMAGE}:${TAG} || echo "${IMAGE}:${TAG} does not exist"
@@ -83,7 +83,7 @@ make build_wasm
 
 if [[ ${CHECK_DIFF} == 1 ]]; then
   if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
-    echo "wasm files are out of dated and need to be regenerated, run './scripts/generate-wasm.sh -b -p' to regenerate them"
+    echo "wasm files are out of dated and need to be regenerated, run './scripts/generate-wasm.sh -b' to regenerate them"
     exit 1
   else
     echo "wasm files are up to dated"
