@@ -44,7 +44,7 @@ using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 using ::Extensions::Stackdriver::Edges::EdgeReporter;
 using Extensions::Stackdriver::Edges::MeshEdgesServiceClientImpl;
 using Extensions::Stackdriver::Log::ExporterImpl;
@@ -68,8 +68,8 @@ namespace {
 // it is not found.
 std::string getMonitoringEndpoint() {
   std::string monitoring_service;
-  if (!getStringValue({"node", "metadata", kMonitoringEndpointKey},
-                      &monitoring_service)) {
+  if (!getValue({"node", "metadata", kMonitoringEndpointKey},
+                &monitoring_service)) {
     return "";
   }
   return monitoring_service;
@@ -79,8 +79,7 @@ std::string getMonitoringEndpoint() {
 // is not found.
 std::string getLoggingEndpoint() {
   std::string logging_service;
-  if (!getStringValue({"node", "metadata", kLoggingEndpointKey},
-                      &logging_service)) {
+  if (!getValue({"node", "metadata", kLoggingEndpointKey}, &logging_service)) {
     return "";
   }
   return logging_service;
@@ -90,8 +89,8 @@ std::string getLoggingEndpoint() {
 // if it is not found.
 std::string getMeshTelemetryEndpoint() {
   std::string mesh_telemetry_service;
-  if (!getStringValue({"node", "metadata", kMeshTelemetryEndpointKey},
-                      &mesh_telemetry_service)) {
+  if (!getValue({"node", "metadata", kMeshTelemetryEndpointKey},
+                &mesh_telemetry_service)) {
     return "";
   }
   return mesh_telemetry_service;
@@ -101,8 +100,8 @@ std::string getMeshTelemetryEndpoint() {
 // is not found in metadata.
 int getExportInterval() {
   std::string interval_s = "";
-  if (getStringValue({"node", "metadata", kMonitoringExportIntervalKey},
-                     &interval_s)) {
+  if (getValue({"node", "metadata", kMonitoringExportIntervalKey},
+               &interval_s)) {
     return std::stoi(interval_s);
   }
   return 60;
@@ -216,9 +215,8 @@ void StackdriverRootContext::record() {
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
-    if (!getStringValue(
-            {"filter_state", ::Wasm::Common::kDownstreamMetadataIdKey},
-            &peer_id)) {
+    if (!getValue({"filter_state", ::Wasm::Common::kDownstreamMetadataIdKey},
+                  &peer_id)) {
       LOG_DEBUG(absl::StrCat(
           "cannot get metadata for: ", ::Wasm::Common::kDownstreamMetadataIdKey,
           "; skipping edge."));
@@ -251,8 +249,8 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
 
 bool StackdriverRootContext::shouldLogThisRequest() {
   std::string shouldLog = "";
-  if (!getStringValue({"filter_state", ::Wasm::Common::kAccessLogPolicyKey},
-                      &shouldLog)) {
+  if (!getValue({"filter_state", ::Wasm::Common::kAccessLogPolicyKey},
+                &shouldLog)) {
     LOG_DEBUG("cannot get envoy access log info from filter state.");
     return true;
   }

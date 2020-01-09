@@ -33,8 +33,7 @@ using Envoy::Extensions::Common::Wasm::HeaderMapType;
 using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStructValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 
 #endif  // NULL_PLUGIN
@@ -103,7 +102,7 @@ void getDestinationService(const std::string& dest_namespace,
                            bool use_host_header, std::string* dest_svc_host,
                            std::string* dest_svc_name) {
   std::string cluster_name;
-  getStringValue({"cluster_name"}, &cluster_name);
+  getValue({"cluster_name"}, &cluster_name);
   *dest_svc_host = use_host_header
                        ? getHeaderMapValue(HeaderMapType::RequestHeaders,
                                            kAuthorityHeaderKey)
@@ -137,22 +136,21 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
                         &request_info->destination_service_name);
 
   // Get rbac labels from dynamic metadata.
-  getStringValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
-                 &request_info->rbac_permissive_policy_id);
-  getStringValue(
-      {"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
-      &request_info->rbac_permissive_engine_result);
+  getValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
+           &request_info->rbac_permissive_policy_id);
+  getValue({"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
+           &request_info->rbac_permissive_engine_result);
 
-  getStringValue({"request", "url_path"}, &request_info->request_url_path);
+  getValue({"request", "url_path"}, &request_info->request_url_path);
 
   if (outbound) {
     uint64_t destination_port = 0;
     getValue({"upstream", "port"}, &destination_port);
     request_info->destination_port = destination_port;
-    getStringValue({"upstream", "uri_san_peer_certificate"},
-                   &request_info->destination_principal);
-    getStringValue({"upstream", "uri_san_local_certificate"},
-                   &request_info->source_principal);
+    getValue({"upstream", "uri_san_peer_certificate"},
+             &request_info->destination_principal);
+    getValue({"upstream", "uri_san_local_certificate"},
+             &request_info->source_principal);
   } else {
     bool mtls = false;
     if (getValue({"connection", "mtls"}, &mtls)) {
@@ -160,10 +158,10 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
           mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
                : ::Wasm::Common::ServiceAuthenticationPolicy::None;
     }
-    getStringValue({"connection", "uri_san_local_certificate"},
-                   &request_info->destination_principal);
-    getStringValue({"connection", "uri_san_peer_certificate"},
-                   &request_info->source_principal);
+    getValue({"connection", "uri_san_local_certificate"},
+             &request_info->destination_principal);
+    getValue({"connection", "uri_san_peer_certificate"},
+             &request_info->source_principal);
   }
 
   uint64_t response_flags = 0;
@@ -255,7 +253,7 @@ google::protobuf::util::Status extractNodeMetadataGeneric(
 google::protobuf::util::Status extractLocalNodeMetadata(
     wasm::common::NodeInfo* node_info) {
   google::protobuf::Struct node;
-  if (!getStructValue({"node", "metadata"}, &node)) {
+  if (!getMessageValue({"node", "metadata"}, &node)) {
     return google::protobuf::util::Status(
         google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
   }

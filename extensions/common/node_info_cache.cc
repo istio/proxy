@@ -23,8 +23,8 @@ using google::protobuf::util::Status;
 
 #ifdef NULL_PLUGIN
 
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStructValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logInfo;
 
@@ -40,7 +40,7 @@ namespace {
 bool getNodeInfo(StringView peer_metadata_key,
                  wasm::common::NodeInfo* node_info) {
   google::protobuf::Struct metadata;
-  if (!getStructValue({"filter_state", peer_metadata_key}, &metadata)) {
+  if (!getMessageValue({"filter_state", peer_metadata_key}, &metadata)) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return false;
   }
@@ -68,7 +68,7 @@ NodeInfoPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
   }
 
   std::string peer_id;
-  if (!getStringValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
+  if (!getValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return nullptr;
   }
