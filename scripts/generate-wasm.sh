@@ -55,7 +55,7 @@ docker pull ${IMAGE}:${TAG} || echo "${IMAGE}:${TAG} does not exist"
 # If image does not exist, try build it
 if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
   if [[ ${BUILD_CONTAINER} == 0 ]]; then
-    echo "no builder image to compile wasm. Add `-c` option to create the builder image"
+    echo "no builder image to compile wasm. Add `-b` option to create the builder image"
     exit 1
   fi
   # Clone envoy-wasm repo and checkout to that SHA
