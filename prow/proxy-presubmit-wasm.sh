@@ -1,6 +1,6 @@
 #!/bin/bash
-
-# Copyright Istio Authors
+#
+# Copyright 2020 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+WD=$(dirname $0)
+WD=$(cd $WD; pwd)
+ROOT=$(dirname $WD)
 
-docker run -e uid="$(id -u)" -e gid="$(id -g)" -v $PWD:/work -w /work -v $(realpath $PWD/../../extensions):/work/extensions gcr.io/istio-testing/wasmsdk:v2 bash /build_wasm.sh
-rmdir extensions
+#######################################
+# Presubmit script triggered by Prow. #
+#######################################
+
+source "${WD}/proxy-common.inc"
+
+echo 'Generate and check Wasm plugin files'
+make generate_wasm

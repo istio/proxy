@@ -7,5 +7,4 @@ docker/envoy
 /artifacts
 clang.bazelrc
 user.bazelrc
-**/plugin.wasm
 compile_commands.json
