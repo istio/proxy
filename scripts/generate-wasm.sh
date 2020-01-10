@@ -24,7 +24,7 @@ function usage() {
     -b build the wasm sdk image base on ENVOY SHA if it does not exist in `gcr.io/istio-testing` HUB.
        If the image already exist in the HUB, this will be noop.
        The container will be used to compile wasm files.
-    -p push the wasm sdk container built from the envoy SHA. Must use with `-c`
+    -p push the wasm sdk container built from the envoy SHA. Must use with `-b`
     -c controls whether to check diff of generated wasm files."
   exit 1
 }
