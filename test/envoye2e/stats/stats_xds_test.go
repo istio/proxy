@@ -54,7 +54,7 @@ filter_chains:
             root_id: "stats_outbound"
             vm_config:
               vm_id: stats_outbound{{ .N }}
-              runtime: envoy.wasm.runtime.null
+              runtime: {{ .Vars.WasmRuntime }}
               code:
                 local: { {{ .Vars.StatsFilterCode }} }
             configuration: |
@@ -100,7 +100,7 @@ filter_chains:
             root_id: "stats_inbound"
             vm_config:
               vm_id: stats_inbound{{ .N }}
-              runtime: envoy.wasm.runtime.null
+              runtime: {{ .Vars.WasmRuntime }}
               code:
                 local: { {{ .Vars.StatsFilterCode }} }
             configuration: |
@@ -251,7 +251,7 @@ func TestStatsWasm(t *testing.T) {
 			"ServerPort":                 fmt.Sprintf("%d", ports.ClientToServerProxyPort),
 			"RequestCount":               "10",
 			"MetadataExchangeFilterCode": "filename: extensions/metadata_exchange/plugin.wasm",
-			"StatsFilterCode":            "inline_string: envoy.wasm.stats",
+			"StatsFilterCode":            "filename: extensions/stats/plugin.wasm",
 			"WasmRuntime":                "envoy.wasm.runtime.v8",
 		},
 		XDS: int(ports.XDSPort),

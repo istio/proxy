@@ -69,8 +69,7 @@ build_envoy_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 
 build_wasm:
-    # TODO(bianpengyuan): build both stats and mx filters
-	$(foreach file, $(shell find extensions/metadata_exchange -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true
+	$(foreach file, $(shell find extensions -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true
 
 generate_wasm:
 	./scripts/generate-wasm.sh -b -c
