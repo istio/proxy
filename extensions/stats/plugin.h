@@ -89,6 +89,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
   FIELD_FUNC(connection_security_policy)     \
   FIELD_FUNC(permissive_response_code)       \
@@ -143,6 +144,7 @@ struct IstioDimensions {
   // reporter="source",
   // request_protocol="http",
   // response_code="200",
+  // grpc_response_status="0",
   // response_flags="-",
   // source_app="svc01-0",
   // source_principal="unknown",
@@ -188,6 +190,7 @@ struct IstioDimensions {
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);
+    grpc_response_status = request.grpc_status;
     response_flags = request.response_flag;
 
     connection_security_policy =
@@ -232,7 +235,7 @@ struct IstioDimensions {
   // must match HashValue
   std::string debug_key() {
     auto key =
-        absl::StrJoin({reporter, request_protocol, response_code,
+        absl::StrJoin({reporter, request_protocol, response_code, grpc_response_status,
                        response_flags, connection_security_policy,
                        permissive_response_code, permissive_response_policyid},
                       "#");
@@ -256,6 +259,7 @@ struct IstioDimensions {
       size_t h = 0;
       h += std::hash<std::string>()(c.request_protocol) * kMul;
       h += std::hash<std::string>()(c.response_code) * kMul;
+      h += std::hash<std::string>()(c.grpc_response_status) * kMul;
       h += std::hash<std::string>()(c.response_flags) * kMul;
       h += std::hash<std::string>()(c.connection_security_policy) * kMul;
       h += std::hash<std::string>()(c.permissive_response_code) * kMul;

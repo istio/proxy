@@ -44,6 +44,7 @@ namespace Common {
   FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
   FIELD_FUNC(connection_security_policy)     \
   FIELD_FUNC(permissive_response_code)       \

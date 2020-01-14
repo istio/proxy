@@ -160,6 +160,8 @@ const statsConfig = `stats_config:
     regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
   - tag_name: "response_flags"
     regex: "(response_flags=\\.=(.+?);\\.;)"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
   - tag_name: "permissive_response_code"
