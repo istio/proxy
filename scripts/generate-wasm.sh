@@ -106,7 +106,7 @@ if [ -n "${DST_BUCKET}" ]; then
     PLUGIN_NAME=$(basename $(dirname ${i}))
     # Rename the plugin file and generate sha256 for it
     WASM_NAME="${TMP_WASM}/${PLUGIN_NAME}-${SHA}.wasm"
-    SHA256_NAME="${TMP_WASM}/${PLUGIN_NAME}-${SHA}.sha256"
+    SHA256_NAME="${WASM_NAME}.sha256"
     cp ${i} ${WASM_NAME}
     sha256sum "${WASM_NAME}" > "${SHA256_NAME}"
     
