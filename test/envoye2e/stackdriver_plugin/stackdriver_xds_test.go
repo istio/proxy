@@ -165,6 +165,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
 			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
 			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"RequestPath": "echo",
 		},
 		XDS: int(ports.XDSPort),
 	}

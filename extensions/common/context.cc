@@ -294,15 +294,19 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   }
 }
 
-void populateExtendedRequestInfo(RequestInfo* request_info) {
+void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
+  getValue({"source", "address"}, &request_info->source_address);
+  getValue({"destination", "address"}, &request_info->destination_address);
+
   getValue({"request", "referer"}, &request_info->referer);
   getValue({"request", "user_agent"}, &request_info->user_agent);
   getValue({"request", "id"}, &request_info->request_id);
-  getValue({"request", "headers", "x-b3-traceid"}, &request_info->b3_trace_id);
-  getValue({"request", "headers", "x-b3-traceid"}, &request_info->b3_span_id);
   std::string trace_sampled;
   getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled);
-  if (trace_sampled != "0") {
+  if (!trace_sampled.empty() && trace_sampled != "0") {
+    getValue({"request", "headers", "x-b3-traceid"},
+             &request_info->b3_trace_id);
+    getValue({"request", "headers", "x-b3-traceid"}, &request_info->b3_span_id);
     request_info->b3_trace_sampled = true;
   }
 

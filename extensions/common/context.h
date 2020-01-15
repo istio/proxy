@@ -116,9 +116,12 @@ struct RequestInfo {
   // Rbac filter policy id and result.
   std::string rbac_permissive_policy_id;
   std::string rbac_permissive_engine_result;
-  
+
   // The following fields will only be populated by calling
-  // populateExtendedRequestInfo.
+  // populateExtendedHTTPRequestInfo.
+  std::string source_address;
+  std::string destination_address;
+
   // Important Headers.
   std::string referer;
   std::string user_agent;
@@ -173,8 +176,9 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header,
                              RequestInfo* request_info,
                              const std::string& destination_namespace);
 
-// populateExtendedHTTPRequestInfo populates the extra fields in RequestInfo struct, includes trace headers, request id headers, and url. 
-void populateExtendedRequestInfo(RequestInfo* request_info);
+// populateExtendedHTTPRequestInfo populates the extra fields in RequestInfo
+// struct, includes trace headers, request id headers, and url.
+void populateExtendedHTTPRequestInfo(RequestInfo* request_info);
 
 // populateTCPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
