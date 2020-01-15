@@ -128,7 +128,7 @@ struct RequestInfo {
   std::string request_id;
   std::string b3_trace_id;
   std::string b3_span_id;
-  bool b3_trace_sampled;
+  bool b3_trace_sampled = false;
 
   // HTTP URL related attributes.
   std::string url_path;
