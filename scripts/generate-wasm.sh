@@ -82,8 +82,8 @@ fi
 # Tag image to v2, which is what used by all build wasm script.
 docker tag ${IMAGE}:${TAG} ${IMAGE}:v2
 cd ${ROOT}
-# find . -name "*.wasm" -type f -delete
-# make build_wasm
+find . -name "*.wasm" -type f -delete
+make build_wasm
 
 if [[ ${CHECK_DIFF} == 1 ]]; then
   if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
