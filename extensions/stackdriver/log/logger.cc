@@ -77,6 +77,7 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
   if (version_iter != local_labels.end()) {
     (*label_map)["destination_version"] = version_iter->second;
   }
+  // App label is used to correlate workload and its logs in UI.
   auto app_iter = local_labels.find("app");
   if (app_iter != local_labels.end()) {
     (*label_map)["destination_app"] = app_iter->second;
