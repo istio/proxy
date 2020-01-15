@@ -306,7 +306,7 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
       !trace_sampled.empty() && trace_sampled != "0") {
     getValue({"request", "headers", "x-b3-traceid"},
              &request_info->b3_trace_id);
-    getValue({"request", "headers", "x-b3-traceid"}, &request_info->b3_span_id);
+    getValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id);
     request_info->b3_trace_sampled = true;
   }
 
