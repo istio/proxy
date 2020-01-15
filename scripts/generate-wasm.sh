@@ -82,8 +82,8 @@ fi
 # Tag image to v2, which is what used by all build wasm script.
 docker tag ${IMAGE}:${TAG} ${IMAGE}:v2
 cd ${ROOT}
-find . -name "*.wasm" -type f -delete
-make build_wasm
+# find . -name "*.wasm" -type f -delete
+# make build_wasm
 
 if [[ ${CHECK_DIFF} == 1 ]]; then
   if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
@@ -105,12 +105,16 @@ if [ -n "${DST_BUCKET}" ]; then
     # Get name of the plugin
     PLUGIN_NAME=$(basename $(dirname ${i}))
     # Rename the plugin file and generate sha256 for it
-    WASM_NAME="${TMP_WASM}/${PLUGIN_NAME}-${SHA}.wasm"
-    SHA256_NAME="${WASM_NAME}.sha256"
-    cp ${i} ${WASM_NAME}
-    sha256sum "${WASM_NAME}" > "${SHA256_NAME}"
+    WASM_NAME="${PLUGIN_NAME}-${SHA}.wasm"
+    WASM_PATH="${TMP_WASM}/${WASM_NAME}"
+    SHA256_PATH="${WASM_PATH}.sha256"
+    cp ${i} ${WASM_PATH}
+    sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
     
     # push wasm files and sha to the given bucket
-    gsutil cp "${WASM_NAME}" "${SHA256_NAME}" "${DST_BUCKET}"
+    gsutil stat "${DST_BUCKET}/${WASM_NAME}" \
+      && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
+      || echo "Pushing the WASM file ${WASM_NAME}"
+    gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST_BUCKET}"
   done
 fi
