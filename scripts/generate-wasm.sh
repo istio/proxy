@@ -25,19 +25,22 @@ function usage() {
        If the image already exist in the HUB, this will be noop.
        The container will be used to compile wasm files.
     -p push the wasm sdk container built from the envoy SHA. Must use with `-b`
-    -c controls whether to check diff of generated wasm files."
+    -c controls whether to check diff of generated wasm files.
+    -d The bucket name to store the generated wasm files."
   exit 1
 }
 
 BUILD_CONTAINER=0
 PUSH_CONTAINER=0
 CHECK_DIFF=0
+DST_BUCKET=""
 
-while getopts bpc arg ; do
+while getopts bpcd: arg ; do
   case "${arg}" in
     b) BUILD_CONTAINER=1;;
     p) PUSH_DOCKER_IMAGE=1;;
     c) CHECK_DIFF=1;;
+    d) DST_BUCKET="${OPTARG}";;
     *) usage;;
   esac
 done
@@ -89,4 +92,29 @@ if [[ ${CHECK_DIFF} == 1 ]]; then
   else
     echo "wasm files are up to dated"
   fi
+fi
+
+echo "Destination bucket: ${DST_BUCKET}"
+if [ -n "${DST_BUCKET}" ]; then
+  cd ${ROOT}
+  # Get SHA of proxy repo
+  SHA="$(git rev-parse --verify HEAD)"
+  TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
+  trap "rm -rf ${TMP_WASM}" EXIT
+  for i in `find . -name "*.wasm" -type f`; do
+    # Get name of the plugin
+    PLUGIN_NAME=$(basename $(dirname ${i}))
+    # Rename the plugin file and generate sha256 for it
+    WASM_NAME="${PLUGIN_NAME}-${SHA}.wasm"
+    WASM_PATH="${TMP_WASM}/${WASM_NAME}"
+    SHA256_PATH="${WASM_PATH}.sha256"
+    cp ${i} ${WASM_PATH}
+    sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
+    
+    # push wasm files and sha to the given bucket
+    gsutil stat "${DST_BUCKET}/${WASM_NAME}" \
+      && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
+      || echo "Pushing the WASM file ${WASM_NAME}"
+    gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST_BUCKET}"
+  done
 fi
