@@ -21,6 +21,7 @@
 #include "extensions/stackdriver/common/utils.h"
 #include "gmock/gmock.h"
 #include "google/logging/v2/log_entry.pb.h"
+#include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
 
@@ -30,9 +31,6 @@ namespace Log {
 
 using google::protobuf::util::MessageDifferencer;
 using google::protobuf::util::TimeUtil;
-
-constexpr char kServerAccessLogName[] =
-    "projects/test_project/logs/server-accesslog-stackdriver";
 
 namespace {
 
@@ -68,6 +66,7 @@ wasm::common::NodeInfo peerNodeInfo() {
   (*node_info.mutable_platform_metadata())[Common::kGCPLocationKey] =
       "test_location";
   node_info.set_namespace_("test_peer_namespace");
+  node_info.set_workload_name("test_peer_workload");
   node_info.set_name("test_peer_pod");
   return node_info;
 }
@@ -83,44 +82,80 @@ wasm::common::NodeInfo peerNodeInfo() {
   request_info.source_principal = "source_principal";
   request_info.service_auth_policy =
       ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS;
+  request_info.duration = 10000000000;  // 10s in nanoseconds
+  request_info.url_scheme = "http";
+  request_info.url_host = "httpbin.org";
+  request_info.url_path = "/headers";
+  request_info.request_id = "123";
+  request_info.b3_trace_id = "123abc";
+  request_info.b3_span_id = "abc123";
+  request_info.b3_trace_sampled = true;
+  request_info.user_agent = "chrome";
+  request_info.referer = "www.google.com";
+  request_info.source_address = "1.1.1.1";
+  request_info.destination_address = "2.2.2.2";
   return request_info;
 }
 
+std::string write_log_request_json = R"({ 
+  "logName":"projects/test_project/logs/server-accesslog-stackdriver",
+  "resource":{ 
+     "type":"k8s_container",
+     "labels":{ 
+        "cluster_name":"test_cluster",
+        "pod_name":"test_pod",
+        "location":"test_location",
+        "namespace_name":"test_namespace",
+        "project_id":"test_project",
+        "container_name":"istio-proxy"
+     }
+  },
+  "labels":{ 
+     "destination_workload":"test_workload",
+     "mesh_uid":"mesh",
+     "destination_namespace":"test_namespace",
+     "destination_name":"test_pod"
+  },
+  "entries":[ 
+     {
+        "httpRequest":{ 
+           "requestMethod":"GET",
+           "requestUrl":"http://httpbin.org/headers",
+           "userAgent":"chrome",
+           "remoteIp":"1.1.1.1",
+           "referer":"www.google.com",
+           "serverIp":"2.2.2.2",
+           "latency":"10s",
+           "protocol":"HTTP"
+        },
+        "timestamp":"1970-01-01T00:00:00Z",
+        "severity":"INFO",
+        "labels":{ 
+           "source_name":"test_peer_pod",
+           "destination_principal":"destination_principal",
+           "destination_service_host":"httpbin.org",
+           "request_id":"123",
+           "source_namespace":"test_peer_namespace",
+           "source_principal":"source_principal",
+           "service_authentication_policy":"MUTUAL_TLS",
+           "source_workload":"test_peer_workload",
+           "response_flag":"-"
+        },
+        "trace":"projects/test_project/traces/123abc",
+        "spanId":"abc123",
+        "traceSampled":true
+     }
+  ]
+})";
+
 google::logging::v2::WriteLogEntriesRequest expectedRequest(
     int log_entry_count) {
-  auto request_info = requestInfo();
-  auto peer_node_info = peerNodeInfo();
-  auto node_info = nodeInfo();
   google::logging::v2::WriteLogEntriesRequest req;
-  req.set_log_name(kServerAccessLogName);
-  google::api::MonitoredResource monitored_resource;
-  Common::getMonitoredResource(Common::kContainerMonitoredResource, node_info,
-                               &monitored_resource);
-  req.mutable_resource()->CopyFrom(monitored_resource);
-  auto top_label_map = req.mutable_labels();
-  (*top_label_map)["destination_name"] = node_info.name();
-  (*top_label_map)["destination_workload"] = node_info.workload_name();
-  (*top_label_map)["destination_namespace"] = node_info.namespace_();
-  (*top_label_map)["mesh_uid"] = node_info.mesh_id();
-  for (int i = 0; i < log_entry_count; i++) {
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(write_log_request_json, &req, options);
+  for (int i = 1; i < log_entry_count; i++) {
     auto* new_entry = req.mutable_entries()->Add();
-    *new_entry->mutable_timestamp() = TimeUtil::SecondsToTimestamp(0);
-    new_entry->set_severity(::google::logging::type::INFO);
-    auto label_map = new_entry->mutable_labels();
-    (*label_map)["source_name"] = peer_node_info.name();
-    (*label_map)["source_workload"] = peer_node_info.workload_name();
-    (*label_map)["source_namespace"] = peer_node_info.namespace_();
-
-    (*label_map)["request_operation"] = request_info.request_operation;
-    (*label_map)["destination_service_host"] =
-        request_info.destination_service_host;
-    (*label_map)["response_flag"] = request_info.response_flag;
-    (*label_map)["protocol"] = request_info.request_protocol;
-    (*label_map)["destination_principal"] = request_info.destination_principal;
-    (*label_map)["source_principal"] = request_info.source_principal;
-    (*label_map)["service_authentication_policy"] =
-        std::string(::Wasm::Common::AuthenticationPolicyString(
-            request_info.service_auth_policy));
+    new_entry->CopyFrom(req.entries()[0]);
   }
   return req;
 }
@@ -137,9 +172,13 @@ TEST(LoggerTest, TestWriteLogEntry) {
           [](const std::vector<std::unique_ptr<
                  const google::logging::v2::WriteLogEntriesRequest>>&
                  requests) {
-            auto expected_request = expectedRequest(1);
             for (const auto& req : requests) {
-              EXPECT_TRUE(MessageDifferencer::Equals(expected_request, *req));
+              std::string diff;
+              MessageDifferencer differ;
+              differ.ReportDifferencesToString(&diff);
+              if (!differ.Compare(expectedRequest(1), *req)) {
+                FAIL() << "unexpected log entry " << diff << "\n";
+              }
             }
           }));
   logger->exportLogEntry();
@@ -148,7 +187,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
 TEST(LoggerTest, TestWriteLogEntryRotation) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
-  auto logger = std::make_unique<Logger>(nodeInfo(), std::move(exporter), 900);
+  auto logger = std::make_unique<Logger>(nodeInfo(), std::move(exporter), 1200);
   for (int i = 0; i < 9; i++) {
     logger->addLogEntry(requestInfo(), peerNodeInfo());
   }
@@ -159,8 +198,12 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
                  requests) {
             EXPECT_EQ(requests.size(), 3);
             for (const auto& req : requests) {
-              auto expected_request = expectedRequest(3);
-              EXPECT_TRUE(MessageDifferencer::Equals(expected_request, *req));
+              std::string diff;
+              MessageDifferencer differ;
+              differ.ReportDifferencesToString(&diff);
+              if (!differ.Compare(expectedRequest(3), *req)) {
+                FAIL() << "unexpected log entry " << diff << "\n";
+              }
             }
           }));
   logger->exportLogEntry();

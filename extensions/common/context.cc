@@ -294,6 +294,27 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   }
 }
 
+void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
+  getValue({"source", "address"}, &request_info->source_address);
+  getValue({"destination", "address"}, &request_info->destination_address);
+
+  getValue({"request", "referer"}, &request_info->referer);
+  getValue({"request", "user_agent"}, &request_info->user_agent);
+  getValue({"request", "id"}, &request_info->request_id);
+  std::string trace_sampled;
+  if (getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
+      !trace_sampled.empty() && trace_sampled != "0") {
+    getValue({"request", "headers", "x-b3-traceid"},
+             &request_info->b3_trace_id);
+    getValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id);
+    request_info->b3_trace_sampled = true;
+  }
+
+  getValue({"request", "url_path"}, &request_info->url_path);
+  getValue({"request", "host"}, &request_info->url_host);
+  getValue({"request", "scheme"}, &request_info->url_scheme);
+}
+
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
                             const std::string& destination_namespace) {
   // host_header_fallback is for HTTP/gRPC only.

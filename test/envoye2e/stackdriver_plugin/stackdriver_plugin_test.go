@@ -123,6 +123,11 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
 	for _, l := range got.Entries {
 		l.Timestamp = nil
+		delete(l.Labels, "request_id")
+		l.HttpRequest.RequestSize = 0
+		l.HttpRequest.ResponseSize = 0
+		l.HttpRequest.Latency = nil
+		l.HttpRequest.RemoteIp = ""
 	}
 	if !proto.Equal(want, got) {
 		return fmt.Errorf("log entries are not expected, got %v \nwant %v", proto.MarshalTextString(got), proto.MarshalTextString(want))
@@ -159,7 +164,10 @@ func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
 	var srvLogReq logging.WriteLogEntriesRequest
 	p := &driver.Params{
 		Vars: map[string]string{
+			"ServerPort":                  "20043",
+			"ClientPort":                  "20042",
 			"ServiceAuthenticationPolicy": "NONE",
+			"RequestPath":                 "echo",
 		},
 	}
 	p.LoadTestProto("testdata/stackdriver/server_access_log.yaml.tmpl", &srvLogReq)

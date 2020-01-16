@@ -211,6 +211,7 @@ void StackdriverRootContext::record() {
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
   if (enableServerAccessLog() && shouldLogThisRequest()) {
+    ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     logger_->addLogEntry(request_info, peer_node_info);
   }
   if (enableEdgeReporting()) {
