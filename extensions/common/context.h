@@ -114,6 +114,24 @@ struct RequestInfo {
   // Rbac filter policy id and result.
   std::string rbac_permissive_policy_id;
   std::string rbac_permissive_engine_result;
+
+  // The following fields will only be populated by calling
+  // populateExtendedHTTPRequestInfo.
+  std::string source_address;
+  std::string destination_address;
+
+  // Important Headers.
+  std::string referer;
+  std::string user_agent;
+  std::string request_id;
+  std::string b3_trace_id;
+  std::string b3_span_id;
+  bool b3_trace_sampled = false;
+
+  // HTTP URL related attributes.
+  std::string url_path;
+  std::string url_host;
+  std::string url_scheme;
 };
 
 // RequestContext contains all the information available in the request.
@@ -155,6 +173,10 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 void populateHTTPRequestInfo(bool outbound, bool use_host_header,
                              RequestInfo* request_info,
                              const std::string& destination_namespace);
+
+// populateExtendedHTTPRequestInfo populates the extra fields in RequestInfo
+// struct, includes trace headers, request id headers, and url.
+void populateExtendedHTTPRequestInfo(RequestInfo* request_info);
 
 // Extracts node metadata value. It looks for values of all the keys
 // corresponding to EXCHANGE_KEYS in node_metadata and populates it in
