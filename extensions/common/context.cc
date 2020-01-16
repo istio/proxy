@@ -298,7 +298,7 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   getStringValue({"request", "id"}, &request_info->request_id);
   std::string trace_sampled;
   if (getStringValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
-      !trace_sampled.empty() && trace_sampled != "0") {
+      trace_sampled == "1") {
     getStringValue({"request", "headers", "x-b3-traceid"},
              &request_info->b3_trace_id);
     getStringValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id);
