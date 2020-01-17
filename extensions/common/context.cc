@@ -291,7 +291,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
 
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   getStringValue({"source", "address"}, &request_info->source_address);
-  getStringValue({"destination", "address"}, &request_info->destination_address);
+  getStringValue({"destination", "address"},
+                 &request_info->destination_address);
 
   getStringValue({"request", "referer"}, &request_info->referer);
   getStringValue({"request", "user_agent"}, &request_info->user_agent);
@@ -300,8 +301,9 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   if (getStringValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
       trace_sampled == "1") {
     getStringValue({"request", "headers", "x-b3-traceid"},
-             &request_info->b3_trace_id);
-    getStringValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id);
+                   &request_info->b3_trace_id);
+    getStringValue({"request", "headers", "x-b3-spanid"},
+                   &request_info->b3_span_id);
     request_info->b3_trace_sampled = true;
   }
 

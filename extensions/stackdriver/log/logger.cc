@@ -136,8 +136,10 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   http_request->set_server_ip(request_info.destination_address);
   http_request->set_protocol(request_info.request_protocol);
   auto duration = request_info.duration;
-  http_request->mutable_latency()->set_seconds(absl::IDivDuration(duration, absl::Seconds(1), &duration));
-  http_request->mutable_latency()->set_nanos(absl::IDivDuration(duration, absl::Nanoseconds(1), &duration));
+  http_request->mutable_latency()->set_seconds(
+      absl::IDivDuration(duration, absl::Seconds(1), &duration));
+  http_request->mutable_latency()->set_nanos(
+      absl::IDivDuration(duration, absl::Nanoseconds(1), &duration));
   http_request->set_referer(request_info.referer);
 
   // Insert trace headers, if exist.
