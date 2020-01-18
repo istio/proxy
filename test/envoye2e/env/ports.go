@@ -31,6 +31,7 @@ const (
 	StackdriverPluginTest
 
 	TCPMetadataExchangeTest
+	TCPMetadataExchangeFailTest
 	HTTPMetadataExchangeTest
 
 	// xDS driven tests
