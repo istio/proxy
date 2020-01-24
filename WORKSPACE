@@ -67,6 +67,10 @@ load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
 envoy_dependency_imports()
 
+load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
+
+antlr_dependencies(471)
+
 # Docker dependencies
 
 docker_dependencies()
