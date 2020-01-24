@@ -35,7 +35,9 @@ ProtobufTypes::MessagePtr AlpnConfigFactory::createEmptyConfigProto() {
   return ProtobufTypes::MessagePtr{new FilterConfig};
 }
 
-std::string AlpnConfigFactory::name() { return Utils::IstioFilterName::kAlpn; }
+std::string AlpnConfigFactory::name() const {
+  return Utils::IstioFilterName::kAlpn;
+}
 
 Http::FilterFactoryCb AlpnConfigFactory::createFilterFactory(
     const FilterConfig &proto_config,

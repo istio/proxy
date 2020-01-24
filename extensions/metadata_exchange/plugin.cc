@@ -37,10 +37,10 @@ namespace MetadataExchange {
 namespace Plugin {
 
 using namespace ::Envoy::Extensions::Common::Wasm::Null::Plugin;
-using NullPluginRootRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+using NullPluginRegistry =
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 
-NULL_PLUGIN_ROOT_REGISTRY;
+NULL_PLUGIN_REGISTRY;
 
 #endif
 

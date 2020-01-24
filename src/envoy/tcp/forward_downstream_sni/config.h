@@ -33,7 +33,7 @@ class ForwardDownstreamSniNetworkFilterConfigFactory
       const Protobuf::Message&,
       Server::Configuration::FactoryContext&) override;
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
-  std::string name() override { return "forward_downstream_sni"; }
+  std::string name() const override { return "forward_downstream_sni"; }
 };
 
 }  // namespace ForwardDownstreamSni

@@ -40,8 +40,8 @@ using namespace Envoy::Extensions::Common::Wasm::Null::Plugin;
 
 // TODO(jplevyak): move these into the base envoy repo
 using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
-using NullPluginRootRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+using NullPluginRegistry =
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 
 #endif
 

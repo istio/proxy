@@ -15,7 +15,7 @@
 
 #include "common/common/logger.h"
 #include "common/protobuf/protobuf.h"
-#include "envoy/api/v2/core/base.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
 #include "google/protobuf/struct.pb.h"
 #include "src/istio/authn/context.pb.h"
 
@@ -33,7 +33,7 @@ class Authentication : public Logger::Loggable<Logger::Id::filter> {
   // result, if available, is stored under authentication filter metdata.
   // Returns nullptr if there is no data for that filter.
   static const ProtobufWkt::Struct* GetResultFromMetadata(
-      const envoy::api::v2::core::Metadata& metadata);
+      const envoy::config::core::v3::Metadata& metadata);
 };
 
 }  // namespace Utils

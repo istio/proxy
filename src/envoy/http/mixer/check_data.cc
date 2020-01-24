@@ -40,7 +40,7 @@ const std::set<std::string> RequestHeaderExclusives = {
 }  // namespace
 
 CheckData::CheckData(const HeaderMap& headers,
-                     const envoy::api::v2::core::Metadata& metadata,
+                     const envoy::config::core::v3::Metadata& metadata,
                      const Network::Connection* connection)
     : headers_(headers), metadata_(metadata), connection_(connection) {
   if (headers_.Path()) {

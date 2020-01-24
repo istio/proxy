@@ -96,7 +96,7 @@ class MetadataExchangeFilterTest : public testing::Test {
   Network::MockConnection connection_;
   NiceMock<LocalInfo::MockLocalInfo> local_info_;
   NiceMock<Envoy::StreamInfo::MockStreamInfo> stream_info_;
-  envoy::api::v2::core::Node metadata_node_;
+  envoy::config::core::v3::Node metadata_node_;
 };
 
 TEST_F(MetadataExchangeFilterTest, MetadataExchangeFound) {

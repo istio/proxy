@@ -23,7 +23,7 @@ namespace Wasm {
 namespace Null {
 namespace Plugin {
 
-using envoy::api::v2::core::GrpcService;
+using envoy::config::core::v3::GrpcService;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::GrpcStatus;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logInfo;

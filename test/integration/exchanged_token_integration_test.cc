@@ -222,7 +222,7 @@ class ExchangedTokenIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   ConfigHelper::ConfigModifierFunction addNodeMetadata() {
-    return [](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+    return [](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
       ::google::protobuf::Struct meta;
       MessageUtil::loadFromJson(
           fmt::sprintf(R"({
@@ -237,7 +237,7 @@ class ExchangedTokenIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   ConfigHelper::ConfigModifierFunction addCluster(const std::string& name) {
-    return [name](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+    return [name](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
       auto* cluster = bootstrap.mutable_static_resources()->add_clusters();
       cluster->MergeFrom(bootstrap.static_resources().clusters()[0]);
       cluster->mutable_http2_protocol_options();

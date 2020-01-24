@@ -367,8 +367,8 @@ class Server : public Envoy::Network::FilterChainManager,
     return connection_balancer_;
   }
 
-  envoy::api::v2::core::TrafficDirection direction() const override {
-    return envoy::api::v2::core::TrafficDirection::UNSPECIFIED;
+  envoy::config::core::v3::TrafficDirection direction() const override {
+    return envoy::config::core::v3::TrafficDirection::UNSPECIFIED;
   }
 
   // TODO does this affect socket recv buffer size?  Only for new connections?

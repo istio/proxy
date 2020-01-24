@@ -14,14 +14,14 @@
  */
 
 #include "common/common/base64.h"
-#include "extensions/metadata_exchange/plugin.h"
+#include "extensions/common/wasm/null/null_plugin.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace Wasm {
 namespace MetadataExchange {
 namespace Plugin {
-::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry*
+::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry*
     context_registry_{};
 }  // namespace Plugin
 
@@ -30,9 +30,7 @@ namespace Plugin {
 class MetadataExchangeFactory
     : public ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory {
  public:
-  const std::string name() const override {
-    return "envoy.wasm.metadata_exchange";
-  }
+  std::string name() const override { return "envoy.wasm.metadata_exchange"; }
   std::unique_ptr<::Envoy::Extensions::Common::Wasm::Null::NullVmPlugin>
   create() const override {
     return std::make_unique<

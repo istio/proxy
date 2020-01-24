@@ -21,7 +21,7 @@ namespace Extensions {
 namespace Wasm {
 namespace AccessLogPolicy {
 namespace Plugin {
-::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry*
+::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry*
     context_registry_{};
 }  // namespace Plugin
 
@@ -30,9 +30,7 @@ namespace Plugin {
 class AccessLogPolicyFactory
     : public ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory {
  public:
-  const std::string name() const override {
-    return "envoy.wasm.access_log_policy";
-  }
+  std::string name() const override { return "envoy.wasm.access_log_policy"; }
   std::unique_ptr<::Envoy::Extensions::Common::Wasm::Null::NullVmPlugin>
   create() const override {
     return std::make_unique<
