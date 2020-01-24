@@ -37,7 +37,7 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# envoy-wasm commit date: Jan 22 2020
+# envoy-wasm commit date: Jan 23 2020
 ENVOY_SHA = "59be1b34f15d23821d8ad22c75e6ad8086334398"
 
 ENVOY_SHA256 = "ec292338cc6f751b70dad5be76edc9e1b365c6c68e57c4d5aea5ed2c71c249d7"
