@@ -135,7 +135,7 @@ bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
   return false;
 }
 
-bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
+bool GetDestinationUID(const envoy::config::core::v3::Metadata& metadata,
                        std::string* uid) {
   const auto filter_it = metadata.filter_metadata().find(kPerHostMetadataKey);
   if (filter_it == metadata.filter_metadata().end()) {

@@ -261,7 +261,7 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   ConfigHelper::ConfigModifierFunction addNodeMetadata() {
-    return [](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+    return [](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
       ::google::protobuf::Struct meta;
       MessageUtil::loadFromJson(
           fmt::sprintf(R"({
@@ -276,26 +276,22 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   ConfigHelper::ConfigModifierFunction addTracer() {
-    return [](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+    return [](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
       auto* http_tracing = bootstrap.mutable_tracing()->mutable_http();
       http_tracing->set_name("envoy.zipkin");
-      auto* tracer_config_fields =
-          http_tracing->mutable_config()->mutable_fields();
-      (*tracer_config_fields)["collector_cluster"].set_string_value(
-          kZipkinBackend);
-      (*tracer_config_fields)["collector_endpoint"].set_string_value(
-          "/api/v1/spans");
+      envoy::config::trace::v3::ZipkinConfig zipkin_config;
+      zipkin_config.set_collector_cluster(kZipkinBackend);
+      zipkin_config.set_collector_endpoint("/api/v1/spans");
+      zipkin_config.set_collector_endpoint_version(
+          envoy::config::trace::v3::ZipkinConfig::HTTP_JSON);
+      http_tracing->mutable_typed_config()->PackFrom(zipkin_config);
     };
   }
 
   ConfigHelper::HttpModifierFunction addTracingRate() {
-    return [](envoy::config::filter::network::http_connection_manager::v2::
+    return [](envoy::extensions::filters::network::http_connection_manager::v3::
                   HttpConnectionManager& hcm) {
       auto* tracing = hcm.mutable_tracing();
-      tracing->set_operation_name(
-          envoy::config::filter::network::http_connection_manager::v2::
-              HttpConnectionManager_Tracing_OperationName::
-                  HttpConnectionManager_Tracing_OperationName_EGRESS);
       tracing->mutable_client_sampling()->set_value(100.0);
       tracing->mutable_random_sampling()->set_value(100.0);
       tracing->mutable_overall_sampling()->set_value(100.0);
@@ -303,7 +299,7 @@ class IstioHttpIntegrationTest : public HttpProtocolIntegrationTest {
   }
 
   ConfigHelper::ConfigModifierFunction addCluster(const std::string& name) {
-    return [name](envoy::config::bootstrap::v2::Bootstrap& bootstrap) {
+    return [name](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
       auto* cluster = bootstrap.mutable_static_resources()->add_clusters();
       cluster->MergeFrom(bootstrap.static_resources().clusters()[0]);
       cluster->mutable_http2_protocol_options();

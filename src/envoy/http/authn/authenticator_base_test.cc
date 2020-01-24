@@ -17,7 +17,7 @@
 
 #include "common/common/base64.h"
 #include "common/protobuf/protobuf.h"
-#include "envoy/api/v2/core/base.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "gmock/gmock.h"
 #include "src/envoy/http/authn/test_utils.h"
@@ -92,8 +92,8 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
   Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{
-      envoy::api::v2::core::Metadata::default_instance(), header_, &connection_,
-      filter_config_};
+      envoy::config::core::v3::Metadata::default_instance(), header_,
+      &connection_, filter_config_};
 
   MockAuthenticatorBase authenticator_{&filter_context_};
 
@@ -229,7 +229,7 @@ class ValidateJwtTest : public testing::Test,
   virtual ~ValidateJwtTest() {}
 
   // StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
-  envoy::api::v2::core::Metadata dynamic_metadata_;
+  envoy::config::core::v3::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
   Envoy::Http::HeaderMapImpl header_{};
   FilterConfig filter_config_{};

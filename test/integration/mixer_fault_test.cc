@@ -182,7 +182,7 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
 
   void addNodeMetadata() {
     config_helper_.addConfigModifier(
-        [](envoy::config::bootstrap::v2::Bootstrap &bootstrap) {
+        [](envoy::config::bootstrap::v3::Bootstrap &bootstrap) {
           ::google::protobuf::Struct meta;
 
           Envoy::MessageUtil::loadFromJson(R"({
@@ -256,7 +256,7 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
         2147483647U;  // protobuf max, not language max
 
     // See
-    // https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#cluster
+    // https://www.envoyproxy.io/docs/envoy/latest/api-v3/clusters/clusters
 
     // TODO something in the base class clobbers the connection timeout here
     std::string cluster_conf{fmt::sprintf(R"EOF(
@@ -268,7 +268,10 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
                       }
                       connect_timeout: 1s
                       max_requests_per_connection: %u
-                      hosts:
+                      load_assignment:
+                        cluster_name: backend_service
+                        endpoints:
+                        - lb_endpoints:
                   )EOF",
                                           name.c_str(), max_uint32,
                                           max_uint32)};
@@ -276,20 +279,23 @@ class MixerFaultTest : public Envoy::HttpIntegrationTest, public testing::Test {
     for (size_t i = 0; i < listeners.size(); ++i) {
       cluster_conf.append({fmt::sprintf(
           R"EOF(
-                        - socket_address:
-                            address: %s
-                            port_value: %d
+                          - endpoint:
+                              address:
+                                socket_address:
+                                  address: %s
+                                  port_value: %d
                   )EOF",
           Envoy::Network::Test::getLoopbackAddressString(version_),
           listeners[i]->localAddress()->ip()->port())});
     }
 
-    config_helper_.addConfigModifier(
-        [cluster_conf](envoy::config::bootstrap::v2::Bootstrap &bootstrap) {
-          bootstrap.mutable_static_resources()->add_clusters()->CopyFrom(
-              Envoy::TestUtility::parseYaml<envoy::api::v2::Cluster>(
-                  cluster_conf));
-        });
+    config_helper_.addConfigModifier([cluster_conf](
+                                         envoy::config::bootstrap::v3::Bootstrap
+                                             &bootstrap) {
+      bootstrap.mutable_static_resources()->add_clusters()->CopyFrom(
+          Envoy::TestUtility::parseYaml<envoy::config::cluster::v3::Cluster>(
+              cluster_conf));
+    });
   }
 
   Envoy::Network::RawBufferSocketFactory transport_socket_factory_;

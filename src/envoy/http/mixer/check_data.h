@@ -17,7 +17,7 @@
 
 #include "common/common/logger.h"
 #include "common/http/utility.h"
-#include "envoy/api/v2/core/base.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
 #include "envoy/http/header_map.h"
 #include "google/protobuf/struct.pb.h"
 #include "include/istio/control/http/controller.h"
@@ -31,7 +31,7 @@ class CheckData : public ::istio::control::http::CheckData,
                   public Logger::Loggable<Logger::Id::filter> {
  public:
   CheckData(const HeaderMap& headers,
-            const envoy::api::v2::core::Metadata& metadata,
+            const envoy::config::core::v3::Metadata& metadata,
             const Network::Connection* connection);
 
   // Find "x-istio-attributes" headers, if found base64 decode
@@ -69,7 +69,7 @@ class CheckData : public ::istio::control::http::CheckData,
 
  private:
   const HeaderMap& headers_;
-  const envoy::api::v2::core::Metadata& metadata_;
+  const envoy::config::core::v3::Metadata& metadata_;
   const Network::Connection* connection_;
   Utility::QueryParams query_params_;
 };

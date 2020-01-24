@@ -81,7 +81,7 @@ void Authentication::SaveAuthAttributesToStruct(
 }
 
 const ProtobufWkt::Struct* Authentication::GetResultFromMetadata(
-    const envoy::api::v2::core::Metadata& metadata) {
+    const envoy::config::core::v3::Metadata& metadata) {
   const auto& iter =
       metadata.filter_metadata().find(Utils::IstioFilterName::kAuthentication);
   if (iter == metadata.filter_metadata().end()) {

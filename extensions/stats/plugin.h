@@ -41,8 +41,8 @@ namespace Null {
 namespace Plugin {
 
 using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
-using NullPluginRootRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+using NullPluginRegistry =
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 
 #endif  // NULL_PLUGIN
 
@@ -430,7 +430,7 @@ class PluginContext : public Context {
 };
 
 #ifdef NULL_PLUGIN
-NULL_PLUGIN_ROOT_REGISTRY;
+NULL_PLUGIN_REGISTRY;
 #endif
 
 static RegisterContextFactory register_Stats(

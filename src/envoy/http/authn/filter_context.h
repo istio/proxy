@@ -17,7 +17,7 @@
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/logger.h"
-#include "envoy/api/v2/core/base.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "envoy/http/filter.h"
 #include "envoy/network/connection.h"
@@ -34,7 +34,7 @@ namespace AuthN {
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext(
-      const envoy::api::v2::core::Metadata& dynamic_metadata,
+      const envoy::config::core::v3::Metadata& dynamic_metadata,
       const HeaderMap& header_map, const Network::Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
@@ -87,7 +87,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
 
   // Const reference to request info dynamic metadata. This provides data that
   // output from other filters, e.g JWT.
-  const envoy::api::v2::core::Metadata& dynamic_metadata_;
+  const envoy::config::core::v3::Metadata& dynamic_metadata_;
 
   // Const reference to header map of the request. This provides request path
   // that could be used to decide if a JWT should be used for validation.

@@ -43,7 +43,7 @@ Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope, TimeSource &time_source);
 
-bool ExtractNodeInfo(const envoy::api::v2::core::Node &node,
+bool ExtractNodeInfo(const envoy::config::core::v3::Node &node,
                      ::istio::utils::LocalNode *args);
 
 }  // namespace Utils

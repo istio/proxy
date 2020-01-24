@@ -17,7 +17,7 @@
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/protobuf/protobuf.h"
-#include "envoy/api/v2/core/base.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/envoy/http/authn/test_utils.h"
@@ -69,7 +69,7 @@ class PeerAuthenticatorTest : public testing::Test {
   std::unique_ptr<StrictMock<MockPeerAuthenticator>> authenticator_;
   Envoy::Http::TestHeaderMapImpl header_;
   FilterContext filter_context_{
-      envoy::api::v2::core::Metadata::default_instance(), header_, nullptr,
+      envoy::config::core::v3::Metadata::default_instance(), header_, nullptr,
       istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
           default_instance()};
 

@@ -165,11 +165,11 @@ void PluginRootContext::report(bool is_tcp) {
 }
 
 #ifdef NULL_PLUGIN
-NullPluginRootRegistry* context_registry_{};
+NullPluginRegistry* context_registry_{};
 
 class StatsFactory : public NullVmPluginFactory {
  public:
-  const std::string name() const override { return "envoy.wasm.stats"; }
+  std::string name() const override { return "envoy.wasm.stats"; }
 
   std::unique_ptr<NullVmPlugin> create() const override {
     return std::make_unique<NullPlugin>(context_registry_);

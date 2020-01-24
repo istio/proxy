@@ -49,7 +49,7 @@ class EnvoyTimer : public ::istio::mixerclient::Timer {
 class EnvoyGrpcAsyncClientFactory : public Grpc::AsyncClientFactory {
  public:
   EnvoyGrpcAsyncClientFactory(Upstream::ClusterManager &cm,
-                              envoy::api::v2::core::GrpcService config,
+                              envoy::config::core::v3::GrpcService config,
                               TimeSource &time_source)
       : cm_(cm), config_(config), time_source_(time_source) {}
 
@@ -59,7 +59,7 @@ class EnvoyGrpcAsyncClientFactory : public Grpc::AsyncClientFactory {
 
  private:
   Upstream::ClusterManager &cm_;
-  envoy::api::v2::core::GrpcService config_;
+  envoy::config::core::v3::GrpcService config_;
   TimeSource &time_source_;
 };
 
@@ -114,7 +114,7 @@ void SerializeForwardedAttributes(
 Grpc::AsyncClientFactoryPtr GrpcClientFactoryForCluster(
     const std::string &cluster_name, Upstream::ClusterManager &cm,
     Stats::Scope &scope, TimeSource &time_source) {
-  envoy::api::v2::core::GrpcService service;
+  envoy::config::core::v3::GrpcService service;
   service.mutable_envoy_grpc()->set_cluster_name(cluster_name);
 
   // Workaround for https://github.com/envoyproxy/envoy/issues/2762
@@ -156,7 +156,7 @@ bool ExtractInfoCompat(const std::string &nodeid, LocalNode *args) {
 }
 
 // ExtractInfo depends on NODE_UID, NODE_NAMESPACE
-bool ExtractInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
+bool ExtractInfo(const envoy::config::core::v3::Node &node, LocalNode *args) {
   auto &logger = Logger::Registry::getLog(Logger::Id::config);
 
   const auto meta = node.metadata().fields();
@@ -189,7 +189,8 @@ bool ExtractInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
   return true;
 }
 
-bool ExtractNodeInfo(const envoy::api::v2::core::Node &node, LocalNode *args) {
+bool ExtractNodeInfo(const envoy::config::core::v3::Node &node,
+                     LocalNode *args) {
   if (ExtractInfo(node, args)) {
     return true;
   }

@@ -46,7 +46,7 @@ namespace Plugin {
 namespace Stackdriver {
 
 #ifdef NULL_PLUGIN
-NULL_PLUGIN_ROOT_REGISTRY;
+NULL_PLUGIN_REGISTRY;
 #endif
 
 // StackdriverRootContext is the root context for all streams processed by the

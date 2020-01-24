@@ -44,7 +44,7 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     return ProtobufTypes::MessagePtr{new FilterConfig};
   }
 
-  std::string name() override {
+  std::string name() const override {
     return Utils::IstioFilterName::kAuthentication;
   }
 
