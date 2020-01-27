@@ -40,6 +40,11 @@ TEST(WasmCommonIstioDimensionsTest, VerifyHashing) {
                       .request_protocol = "grpc",
                       .source_app = "app_source",
                       .source_version = "v2"},
+      IstioDimensions{.outbound = true,
+                      .request_protocol = "grpc",
+                      .source_app = "app_source",
+                      .source_version = "v2",
+                      .grpc_response_status = "12"},
   }));
 }
 

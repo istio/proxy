@@ -32,19 +32,21 @@ import (
 type TestSetup struct {
 	stress            bool
 	noProxy           bool
-	noBackend         bool
+	startHTTPBackend  bool
 	disableHotRestart bool
 	checkDict         bool
 	startTCPBackend   bool
 	copyYamlFiles     bool
 	// Whether TLS is Enabled or not.
-	EnableTLS bool
+	EnableTLS        bool
+	startGRPCBackend bool
 
 	t           *testing.T
 	ports       *Ports
 	clientEnvoy *Envoy
 	serverEnvoy *Envoy
-	backend     *HTTPServer
+	grpcBackend *GRPCServer
+	httpBackend *HTTPServer
 	tcpBackend  *TCPServer
 
 	testName uint16
@@ -135,6 +137,7 @@ type Stat struct {
 func NewClientServerEnvoyTestSetup(name uint16, t *testing.T) *TestSetup {
 	return &TestSetup{
 		t:                   t,
+		startHTTPBackend:    true,
 		ports:               NewPorts(name),
 		testName:            name,
 		ClientAccessLogPath: "/tmp/envoy-client-access.log",
@@ -167,12 +170,14 @@ func (s *TestSetup) SetNoProxy(no bool) {
 	s.noProxy = no
 }
 
-// SetNoBackend set NoBackend flag
-func (s *TestSetup) SetNoBackend(no bool) {
-	s.noBackend = no
+func (s *TestSetup) SetStartHTTPBackend(no bool) {
+	s.startHTTPBackend = no
 }
 
-// SetNoBackend set NoBackend flag
+func (s *TestSetup) SetStartGRPCBackend(yes bool) {
+	s.startGRPCBackend = yes
+}
+
 func (s *TestSetup) SetStartTCPBackend(yes bool) {
 	s.startTCPBackend = yes
 }
@@ -284,15 +289,21 @@ func (s *TestSetup) SetUpClientServerEnvoy() error {
 		return err
 	}
 
-	if !s.noBackend {
-		s.backend, err = NewHTTPServer(s.ports.BackendPort, s.EnableTLS, s.Dir)
+	if s.startHTTPBackend {
+		s.httpBackend, err = NewHTTPServer(s.ports.BackendPort, s.EnableTLS, s.Dir)
 		if err != nil {
 			log.Printf("unable to create HTTP server %v", err)
 		} else {
-			errCh := s.backend.Start()
+			errCh := s.httpBackend.Start()
 			if err = <-errCh; err != nil {
 				log.Fatalf("backend server start failed %v", err)
 			}
+		}
+	} else if s.startGRPCBackend {
+		s.grpcBackend = NewGRPCServer(s.Ports().BackendPort)
+		err = s.grpcBackend.Start()
+		if err != nil {
+			log.Printf("not able to start GRPC server: %v", err)
 		}
 	}
 	if s.startTCPBackend {
@@ -324,8 +335,8 @@ func (s *TestSetup) TearDownClientServerEnvoy() {
 	}
 	s.serverEnvoy.TearDown()
 
-	if s.backend != nil {
-		s.backend.Stop()
+	if s.httpBackend != nil {
+		s.httpBackend.Stop()
 	}
 	if s.tcpBackend != nil {
 		s.tcpBackend.Stop()
@@ -334,8 +345,8 @@ func (s *TestSetup) TearDownClientServerEnvoy() {
 
 // LastRequestHeaders returns last backend request headers
 func (s *TestSetup) LastRequestHeaders() http.Header {
-	if s.backend != nil {
-		return s.backend.LastRequestHeaders()
+	if s.httpBackend != nil {
+		return s.httpBackend.LastRequestHeaders()
 	}
 	return nil
 }
@@ -558,7 +569,7 @@ func (s *TestSetup) VerifyStatsLT(actualStats string, expectedStat string, expec
 }
 
 func (s *TestSetup) StopHTTPBackend() {
-	if s.backend != nil {
-		s.backend.Stop()
+	if s.httpBackend != nil {
+		s.httpBackend.Stop()
 	}
 }

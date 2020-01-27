@@ -287,7 +287,7 @@ var expectedServerStatsFailCase = map[string]int{
 func TestTCPMetadataExchange(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.TCPMetadataExchangeTest, t)
 	s.Dir = driver.BazelWorkspace()
-	s.SetNoBackend(true)
+	s.SetStartHTTPBackend(false)
 	s.SetStartTCPBackend(true)
 	s.SetTLSContext(tlsContext)
 	s.SetClusterTLSContext(clusterTLSContext)

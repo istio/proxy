@@ -269,8 +269,9 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->response_code = response_code;
   }
 
-  if (!getStringValue({"response", "grpc_status"}, &request_info->grpc_status)){
-    request_info->grpc_status = "0";
+  int64_t grpc_status_code = 0;
+  if (getValue({"response", "grpc_status"}, &grpc_status_code)){
+    request_info->grpc_status = grpc_status_code;
   };
 
   if (kGrpcContentTypes.count(getHeaderMapValue(HeaderMapType::RequestHeaders,
