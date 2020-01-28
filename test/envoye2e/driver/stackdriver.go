@@ -65,9 +65,14 @@ func (sd *Stackdriver) Run(p *Params) error {
 				sd.Unlock()
 			case req := <-logging.RcvLoggingReq:
 				log.Println("sd received log request")
-				// clear the timestamps for comparison
+				// clear the timestamps, latency request id, and req/resp size for comparison
 				for _, entry := range req.Entries {
 					entry.Timestamp = nil
+					entry.HttpRequest.RequestSize = 0
+					entry.HttpRequest.ResponseSize = 0
+					entry.HttpRequest.Latency = nil
+					entry.HttpRequest.RemoteIp = ""
+					delete(entry.Labels, "request_id")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
