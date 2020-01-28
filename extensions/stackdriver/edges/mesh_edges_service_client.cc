@@ -49,7 +49,8 @@ using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using google::protobuf::util::TimeUtil;
 
 MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
-    RootContext* root_context, std::string edges_endpoint)
+    RootContext* root_context, const std::string& edges_endpoint,
+    const std::string& sts_port)
     : context_(root_context) {
   success_callback_ = [](google::protobuf::Empty&&) {
     // TODO(douglas-reid): improve logging message.
@@ -69,9 +70,22 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
   if (edges_endpoint.empty()) {
     // use application default creds and default target
     grpc_service.mutable_google_grpc()->set_target_uri(kMeshTelemetryService);
-    grpc_service.mutable_google_grpc()
-        ->add_call_credentials()
-        ->mutable_google_compute_engine();
+    if (sts_port.empty()) {
+      // Security token exchange is not enabled. Use default GCE credential.
+      grpc_service.mutable_google_grpc()
+          ->add_call_credentials()
+          ->mutable_google_compute_engine();
+    } else {
+      auto* sts_service = grpc_service.mutable_google_grpc()
+                              ->add_call_credentials()
+                              ->mutable_sts_service();
+      sts_service->set_token_exchange_service_uri(
+          "http://127.0.0.1:" + sts_port + "/token");
+      sts_service->set_subject_token_path("/tmp/sts-envoy-token.jwt");
+      sts_service->set_subject_token_type(
+          "urn:ietf:params:oauth:token-type:jwt");
+      sts_service->set_scope("https://www.googleapis.com/auth/cloud-platform");
+    }
     grpc_service.mutable_google_grpc()
         ->mutable_channel_credentials()
         ->mutable_ssl_credentials()
