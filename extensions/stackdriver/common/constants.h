@@ -77,6 +77,9 @@ constexpr char kMeshTelemetryEndpointKey[] =
 constexpr char kMonitoringExportIntervalKey[] =
     "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
 
+// Port of security token exchange server (STS).
+constexpr char kSTSPortKey[] = "STS_PORT";
+
 }  // namespace Common
 }  // namespace Stackdriver
 }  // namespace Extensions
