@@ -48,7 +48,7 @@ StackdriverOptions getStackdriverOptions(
     ::grpc::experimental::StsCredentialsOptions sts_options;
     sts_options.token_exchange_service_uri =
         "http://127.0.0.1:" + sts_port + "/token";
-    sts_options.subject_token_path = "/tmp/sts-envoy-token.jwt";
+    sts_options.subject_token_path = "/var/run/secrets/tokens/istio-token";
     sts_options.subject_token_type = "urn:ietf:params:oauth:token-type:jwt";
     sts_options.scope = "https://www.googleapis.com/auth/cloud-platform";
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
