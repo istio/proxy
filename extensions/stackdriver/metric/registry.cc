@@ -29,10 +29,12 @@ using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
 using wasm::common::NodeInfo;
 
+constexpr char kStackdriverStatsAddress[] = "monitoring.googleapis.com";
+
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
     const NodeInfo &local_node_info,
-    const std::string &test_monitoring_endpoint) {
+    const std::string &test_monitoring_endpoint, const std::string &sts_port) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
@@ -40,6 +42,20 @@ StackdriverOptions getStackdriverOptions(
   if (!test_monitoring_endpoint.empty()) {
     auto channel = grpc::CreateChannel(test_monitoring_endpoint,
                                        grpc::InsecureChannelCredentials());
+    options.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(channel);
+  } else if (!sts_port.empty()) {
+    ::grpc::experimental::StsCredentialsOptions sts_options;
+    sts_options.token_exchange_service_uri =
+        "http://127.0.0.1:" + sts_port + "/token";
+    sts_options.subject_token_path = "/tmp/sts-envoy-token.jwt";
+    sts_options.subject_token_type = "urn:ietf:params:oauth:token-type:jwt";
+    sts_options.scope = "https://www.googleapis.com/auth/cloud-platform";
+    auto call_creds = grpc::experimental::StsCredentials(sts_options);
+    auto channel = ::grpc::CreateChannel(
+        kStackdriverStatsAddress,
+        grpc::CompositeChannelCredentials(grpc::InsecureChannelCredentials(),
+                                          call_creds));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   }
