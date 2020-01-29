@@ -17,6 +17,11 @@
 
 licenses(["notice"])
 
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
+)
+
 cc_library(
     name = "constants",
     hdrs = [
@@ -30,7 +35,7 @@ cc_library(
     ],
 )
 
-cc_library(
+envoy_cc_library(
     name = "utils",
     srcs = [
         "utils.cc",
@@ -38,8 +43,10 @@ cc_library(
     hdrs = [
         "utils.h",
     ],
+    repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
+        "//extensions/stackdriver/edges:__pkg__",
         "//extensions/stackdriver/log:__pkg__",
         "//extensions/stackdriver/metric:__pkg__",
     ],

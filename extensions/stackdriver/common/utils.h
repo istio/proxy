@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "envoy/config/core/v3/grpc_service.pb.h"
 #include "extensions/common/context.h"
 #include "google/api/monitored_resource.pb.h"
 
@@ -26,6 +27,12 @@ namespace Common {
 void getMonitoredResource(const std::string &monitored_resource_type,
                           const ::wasm::common::NodeInfo &local_node_info,
                           google::api::MonitoredResource *monitored_resource);
+
+// Set secure exchange service grpc call credentials.
+void setSTSService(
+    ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
+        *sts_service,
+    const std::string &sts_port);
 
 }  // namespace Common
 }  // namespace Stackdriver

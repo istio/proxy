@@ -56,6 +56,7 @@ envoy_cc_library(
         "//extensions/stackdriver:__pkg__",
     ],
     deps = [
+        "//extensions/stackdriver/common:utils",
         "@com_google_googleapis//google/logging/v2:logging_cc_proto",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
