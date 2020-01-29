@@ -289,6 +289,29 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"response", "total_size"}, &request_info->response_size);
 }
 
+void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
+  getStringValue({"source", "address"}, &request_info->source_address);
+  getStringValue({"destination", "address"},
+                 &request_info->destination_address);
+
+  getStringValue({"request", "referer"}, &request_info->referer);
+  getStringValue({"request", "user_agent"}, &request_info->user_agent);
+  getStringValue({"request", "id"}, &request_info->request_id);
+  std::string trace_sampled;
+  if (getStringValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
+      trace_sampled == "1") {
+    getStringValue({"request", "headers", "x-b3-traceid"},
+                   &request_info->b3_trace_id);
+    getStringValue({"request", "headers", "x-b3-spanid"},
+                   &request_info->b3_span_id);
+    request_info->b3_trace_sampled = true;
+  }
+
+  getStringValue({"request", "url_path"}, &request_info->url_path);
+  getStringValue({"request", "host"}, &request_info->url_host);
+  getStringValue({"request", "scheme"}, &request_info->url_scheme);
+}
+
 google::protobuf::util::Status extractNodeMetadataValue(
     const google::protobuf::Struct& node_metadata,
     google::protobuf::Struct* metadata) {
