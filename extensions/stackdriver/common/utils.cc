@@ -16,6 +16,7 @@
 #include "extensions/stackdriver/common/utils.h"
 
 #include "extensions/stackdriver/common/constants.h"
+#include "grpcpp/grpcpp.h"
 
 namespace Extensions {
 namespace Stackdriver {
@@ -63,7 +64,7 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   }
 }
 
-void setSTSService(
+void setSTSCallCredentialOptions(
     ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
         *sts_service,
     const std::string &sts_port) {
@@ -72,9 +73,19 @@ void setSTSService(
   }
   sts_service->set_token_exchange_service_uri("http://127.0.0.1:" + sts_port +
                                               "/token");
-  sts_service->set_subject_token_path("/var/run/secrets/tokens/istio-token");
-  sts_service->set_subject_token_type("urn:ietf:params:oauth:token-type:jwt");
-  sts_service->set_scope("https://www.googleapis.com/auth/cloud-platform");
+  sts_service->set_subject_token_path(kSTSSubjectTokenPath);
+  sts_service->set_subject_token_type(kSTSSubjectTokenType);
+  sts_service->set_scope(kSTSScope);
+}
+
+void setSTSCallCredentialOptions(
+    ::grpc::experimental::StsCredentialsOptions *sts_options,
+    const std::string &sts_port) {
+  sts_options->token_exchange_service_uri =
+      "http://127.0.0.1:" + sts_port + "/token";
+  sts_options->subject_token_path = kSTSSubjectTokenPath;
+  sts_options->subject_token_type = kSTSSubjectTokenType;
+  sts_options->scope = kSTSScope;
 }
 
 }  // namespace Common

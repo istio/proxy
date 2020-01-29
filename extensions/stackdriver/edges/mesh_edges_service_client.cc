@@ -77,7 +77,7 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
           ->add_call_credentials()
           ->mutable_google_compute_engine();
     } else {
-      ::Extensions::Stackdriver::Common::setSTSService(
+      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
           grpc_service.mutable_google_grpc()
               ->add_call_credentials()
               ->mutable_sts_service(),

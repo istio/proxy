@@ -43,6 +43,7 @@ envoy_cc_library(
     hdrs = [
         "utils.h",
     ],
+    external_deps = ["grpc"],
     repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",

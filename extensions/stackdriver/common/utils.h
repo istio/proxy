@@ -16,6 +16,7 @@
 #include "envoy/config/core/v3/grpc_service.pb.h"
 #include "extensions/common/context.h"
 #include "google/api/monitored_resource.pb.h"
+#include "grpcpp/grpcpp.h"
 
 namespace Extensions {
 namespace Stackdriver {
@@ -28,10 +29,13 @@ void getMonitoredResource(const std::string &monitored_resource_type,
                           const ::wasm::common::NodeInfo &local_node_info,
                           google::api::MonitoredResource *monitored_resource);
 
-// Set secure exchange service grpc call credentials.
-void setSTSService(
+// Set secure exchange service gRPC call credential.
+void setSTSCallCredentialOptions(
     ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
         *sts_service,
+    const std::string &sts_port);
+void setSTSCallCredentialOptions(
+    ::grpc::experimental::StsCredentialsOptions *sts_options,
     const std::string &sts_port);
 
 }  // namespace Common
