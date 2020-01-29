@@ -46,11 +46,8 @@ StackdriverOptions getStackdriverOptions(
         google::monitoring::v3::MetricService::NewStub(channel);
   } else if (!sts_port.empty()) {
     ::grpc::experimental::StsCredentialsOptions sts_options;
-    sts_options.token_exchange_service_uri =
-        "http://127.0.0.1:" + sts_port + "/token";
-    sts_options.subject_token_path = "/var/run/secrets/tokens/istio-token";
-    sts_options.subject_token_type = "urn:ietf:params:oauth:token-type:jwt";
-    sts_options.scope = "https://www.googleapis.com/auth/cloud-platform";
+    ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(&sts_options,
+                                                                   sts_port);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
     auto channel = ::grpc::CreateChannel(
         kStackdriverStatsAddress,
