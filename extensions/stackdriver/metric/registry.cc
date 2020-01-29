@@ -54,7 +54,7 @@ StackdriverOptions getStackdriverOptions(
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
     auto channel = ::grpc::CreateChannel(
         kStackdriverStatsAddress,
-        grpc::CompositeChannelCredentials(grpc::InsecureChannelCredentials(),
+        grpc::CompositeChannelCredentials(grpc::GoogleDefaultCredentials(),
                                           call_creds));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
