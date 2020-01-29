@@ -110,7 +110,7 @@ int getExportInterval() {
 // Get port of security token exchange server from node metadata, if not
 // provided, emtpy will be returned.
 std::string getSTSPort() {
-  std::string sts_port = "";
+  std::string sts_port;
   if (getValue({"node", "metadata", kSTSPortKey}, &sts_port)) {
     return sts_port;
   }
@@ -140,7 +140,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
-  auto sts_port = getSTSPort();
+  std::string sts_port = getSTSPort();
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
