@@ -63,6 +63,20 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   }
 }
 
+void setSTSService(
+    ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
+        *sts_service,
+    const std::string &sts_port) {
+  if (!sts_service) {
+    return;
+  }
+  sts_service->set_token_exchange_service_uri("http://127.0.0.1:" + sts_port +
+                                              "/token");
+  sts_service->set_subject_token_path("/var/run/secrets/tokens/istio-token");
+  sts_service->set_subject_token_type("urn:ietf:params:oauth:token-type:jwt");
+  sts_service->set_scope("https://www.googleapis.com/auth/cloud-platform");
+}
+
 }  // namespace Common
 }  // namespace Stackdriver
 }  // namespace Extensions

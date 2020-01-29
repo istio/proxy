@@ -15,6 +15,8 @@
 
 #include "extensions/stackdriver/log/exporter.h"
 
+#include "extensions/stackdriver/common/utils.h"
+
 #ifdef NULL_PLUGIN
 namespace Envoy {
 namespace Extensions {
@@ -77,16 +79,11 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
           ->add_call_credentials()
           ->mutable_google_compute_engine();
     } else {
-      auto* sts_service = grpc_service.mutable_google_grpc()
-                              ->add_call_credentials()
-                              ->mutable_sts_service();
-      sts_service->set_token_exchange_service_uri(
-          "http://127.0.0.1:" + sts_port + "/token");
-      sts_service->set_subject_token_path(
-          "/var/run/secrets/tokens/istio-token");
-      sts_service->set_subject_token_type(
-          "urn:ietf:params:oauth:token-type:jwt");
-      sts_service->set_scope("https://www.googleapis.com/auth/cloud-platform");
+      ::Extensions::Stackdriver::Common::setSTSService(
+          grpc_service.mutable_google_grpc()
+              ->add_call_credentials()
+              ->mutable_sts_service(),
+          sts_port);
     }
     grpc_service.mutable_google_grpc()
         ->mutable_channel_credentials()
