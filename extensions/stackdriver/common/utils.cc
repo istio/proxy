@@ -71,7 +71,7 @@ void setSTSCallCredentialOptions(
   if (!sts_service) {
     return;
   }
-  sts_service->set_token_exchange_service_uri("http://127.0.0.1:" + sts_port +
+  sts_service->set_token_exchange_service_uri("http://localhost:" + sts_port +
                                               "/token");
   sts_service->set_subject_token_path(kSTSSubjectTokenPath);
   sts_service->set_subject_token_type(kSTSSubjectTokenType);
@@ -82,7 +82,7 @@ void setSTSCallCredentialOptions(
     ::grpc::experimental::StsCredentialsOptions *sts_options,
     const std::string &sts_port) {
   sts_options->token_exchange_service_uri =
-      "http://127.0.0.1:" + sts_port + "/token";
+      "http://localhost:" + sts_port + "/token";
   sts_options->subject_token_path = kSTSSubjectTokenPath;
   sts_options->subject_token_type = kSTSSubjectTokenType;
   sts_options->scope = kSTSScope;
