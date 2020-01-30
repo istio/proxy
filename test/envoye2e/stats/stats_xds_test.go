@@ -58,7 +58,15 @@ filter_chains:
               code:
                 local: { {{ .Vars.StatsFilterCode }} }
             configuration: |
-              { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
+              {
+                "debug": "false",
+                max_peer_cache_size: 20,
+                field_separator: ";.;",
+                dimensions: {
+                  "configurable_metric_a": "string(2+2)",
+                  "configurable_metric_b": "request.protocol"
+                }
+              }
       - name: envoy.router
       route_config:
         name: client

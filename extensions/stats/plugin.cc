@@ -16,6 +16,7 @@
 #include "extensions/stats/plugin.h"
 
 #include "google/protobuf/util/time_util.h"
+#include "extensions/stats/proxy_expr.h"
 
 using google::protobuf::util::TimeUtil;
 
@@ -60,8 +61,24 @@ bool PluginRootContext::onConfigure(size_t) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
+  // Metric tags
+  std::vector<MetricTag> tags = IstioDimensions::defaultTags();
+  if (!config_.dimensions().empty()) {
+    tags.reserve(tags.size() + config_.dimensions().size());
+    expressions_.reserve(config_.dimensions().size());
+    for (const auto& pair : config_.dimensions()) {
+      uint32_t token = 0;
+      if (createExpression(pair.second, &token) != WasmResult::Ok) {
+        LOG_WARN(absl::StrCat("Cannot create a new tag dimension: ", pair.first));
+        continue;
+      }
+      tags.push_back({pair.first, MetricTag::TagType::String});
+      expressions_.push_back(token);
+    }
+  }
+
   // Local data does not change, so populate it on config load.
-  istio_dimensions_.init(outbound_, local_node_info_);
+  istio_dimensions_.init(outbound_, local_node_info_, expressions_.size());
 
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
@@ -85,29 +102,36 @@ bool PluginRootContext::onConfigure(size_t) {
 
   stats_ = std::vector<StatGen>{
       StatGen(
-          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
+          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter, tags,
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
           field_separator, value_separator),
       StatGen(
           absl::StrCat(stat_prefix, "request_duration_milliseconds"),
-          MetricType::Histogram,
+          MetricType::Histogram, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.duration / 1000;
           },
           field_separator, value_separator),
       StatGen(
-          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
+          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.request_size;
           },
           field_separator, value_separator),
       StatGen(
-          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
+          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.response_size;
           },
           field_separator, value_separator),
   };
+  return true;
+}
+
+bool PluginRootContext::onDone() {
+  for (uint32_t token : expressions_) {
+    exprDelete(token);
+  }
   return true;
 }
 
@@ -129,6 +153,9 @@ void PluginRootContext::report(bool is_tcp) {
                                             destination_node_info.namespace_());
   }
   istio_dimensions_.map(peer_node, request_info);
+  for (size_t i = 0; i < expressions_.size(); i++) {
+    evaluateExpression(expressions_[i], &istio_dimensions_.custom_values.at(i));
+  }
 
   auto stats_it = metrics_.find(istio_dimensions_);
   if (stats_it != metrics_.end()) {
