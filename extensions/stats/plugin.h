@@ -265,6 +265,9 @@ struct IstioDimensions {
       h += std::hash<std::string>()(c.connection_security_policy) * kMul;
       h += std::hash<std::string>()(c.permissive_response_code) * kMul;
       h += std::hash<std::string>()(c.permissive_response_policyid) * kMul;
+      for (const auto& value : c.custom_values) {
+        h += std::hash<std::string>()(value) * kMul;
+      }
       h += c.outbound * kMul;
       if (c.outbound) {  // only care about dest properties
         h += std::hash<std::string>()(c.destination_service_namespace) * kMul;
