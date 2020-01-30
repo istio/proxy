@@ -211,7 +211,8 @@ struct IstioDimensions {
   // Called during intialization.
   // initialize properties that do not vary by requests.
   // Properties are different based on inbound / outbound.
-  void init(bool out_bound, wasm::common::NodeInfo& local_node, size_t custom_count) {
+  void init(bool out_bound, wasm::common::NodeInfo& local_node,
+            size_t custom_count) {
     outbound = out_bound;
     reporter = out_bound ? vSource : vDest;
 
@@ -229,7 +230,9 @@ struct IstioDimensions {
 
   std::string to_string() const {
 #define TO_STRING(name) "\"", #name, "\":\"", name, "\" ,",
-    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING) absl::StrJoin(custom_values, ","), "}");
+    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING)
+                            absl::StrJoin(custom_values, ","),
+                        "}");
 #undef TO_STRING
   }
 
@@ -290,9 +293,9 @@ struct IstioDimensions {
                          const IstioDimensions& rhs) {
     return (lhs.outbound == rhs.outbound &&
 #define COMPARE(name) lhs.name == rhs.name&&
-        STD_ISTIO_DIMENSIONS(COMPARE)
+            STD_ISTIO_DIMENSIONS(COMPARE)
 #undef COMPARE
-        lhs.custom_values == rhs.custom_values);
+                    lhs.custom_values == rhs.custom_values);
   }
 };
 
@@ -324,8 +327,7 @@ class StatGen {
                    std::string value_separator)
       : name_(name),
         value_fn_(value_fn),
-        metric_(metric_type, name, tags,
-                field_separator, value_separator){};
+        metric_(metric_type, name, tags, field_separator, value_separator){};
 
   StatGen() = delete;
   inline StringView name() const { return name_; };

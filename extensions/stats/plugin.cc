@@ -15,8 +15,8 @@
 
 #include "extensions/stats/plugin.h"
 
-#include "google/protobuf/util/time_util.h"
 #include "extensions/stats/proxy_expr.h"
+#include "google/protobuf/util/time_util.h"
 
 using google::protobuf::util::TimeUtil;
 
@@ -69,7 +69,8 @@ bool PluginRootContext::onConfigure(size_t) {
     for (const auto& pair : config_.dimensions()) {
       uint32_t token = 0;
       if (createExpression(pair.second, &token) != WasmResult::Ok) {
-        LOG_WARN(absl::StrCat("Cannot create a new tag dimension: ", pair.first));
+        LOG_WARN(
+            absl::StrCat("Cannot create a new tag dimension: ", pair.first));
         continue;
       }
       tags.push_back({pair.first, MetricTag::TagType::String});
@@ -102,7 +103,8 @@ bool PluginRootContext::onConfigure(size_t) {
 
   stats_ = std::vector<StatGen>{
       StatGen(
-          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter, tags,
+          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
+          tags,
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
           field_separator, value_separator),
       StatGen(
@@ -113,13 +115,15 @@ bool PluginRootContext::onConfigure(size_t) {
           },
           field_separator, value_separator),
       StatGen(
-          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram, tags,
+          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
+          tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.request_size;
           },
           field_separator, value_separator),
       StatGen(
-          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram, tags,
+          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
+          tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.response_size;
           },
