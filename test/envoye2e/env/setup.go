@@ -105,6 +105,12 @@ type TestSetup struct {
 	// ClusterTLSContext to be used.
 	ClusterTLSContext string
 
+	// ServerTLSContext to be used.
+	ServerTLSContext string
+
+	// ServerClusterTLSContext to be used.
+	ServerClusterTLSContext string
+
 	// UpstreamFilters chain in client.
 	UpstreamFiltersInClient string
 
@@ -195,6 +201,16 @@ func (s *TestSetup) SetTLSContext(tlsContext string) {
 // SetTLSContext sets TLS COntext.
 func (s *TestSetup) SetClusterTLSContext(clusterTLSContext string) {
 	s.ClusterTLSContext = clusterTLSContext
+}
+
+// SetTLSContext sets TLS COntext.
+func (s *TestSetup) SetServerTLSContext(tlsContext string) {
+	s.ServerTLSContext = tlsContext
+}
+
+// SetTLSContext sets TLS COntext.
+func (s *TestSetup) SetServerClusterTLSContext(clusterTLSContext string) {
+	s.ServerClusterTLSContext = clusterTLSContext
 }
 
 // SetFiltersBeforeEnvoyRouterInProxyToServer sets the configurations of the filters tthat come before envoy.router http

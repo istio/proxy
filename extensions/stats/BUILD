@@ -53,6 +53,9 @@ cc_proto_library(
 proto_library(
     name = "config_proto",
     srcs = ["config.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+    ],
 )
 
 envoy_cc_test(
