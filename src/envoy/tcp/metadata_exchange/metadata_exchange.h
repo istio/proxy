@@ -161,7 +161,7 @@ class MetadataExchangeFilter : public Network::Filter {
   const std::string DownstreamMetadataIdKey =
       "envoy.wasm.metadata_exchange.downstream_id";
   const std::string MetadataNotFoundValue =
-      "envoy.wasm.metadata_exchange.not_found";
+      "envoy.wasm.metadata_exchange.peer_unknown";
 
   const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";

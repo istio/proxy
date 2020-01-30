@@ -304,7 +304,6 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
       config_->filter_direction_ == FilterDirection::Downstream
           ? DownstreamMetadataIdKey
           : UpstreamMetadataIdKey;
-  // Set value same as key when metadata not found.
   setFilterState(key, MetadataNotFoundValue);
 }
 

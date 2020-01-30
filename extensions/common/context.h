@@ -40,7 +40,7 @@ constexpr StringView kDownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
 
 const std::string kMetadataNotFoundValue =
-    "envoy.wasm.metadata_exchange.not_found";
+    "envoy.wasm.metadata_exchange.peer_unknown";
 
 constexpr StringView kAccessLogPolicyKey = "envoy.wasm.access_log.log";
 
@@ -144,7 +144,7 @@ struct RequestInfo {
   int64_t tcp_sent_bytes = 0;
   int64_t tcp_received_bytes = 0;
 
-  bool is_requestinfo_populated = false;
+  bool is_populated = false;
 };
 
 // RequestContext contains all the information available in the request.
