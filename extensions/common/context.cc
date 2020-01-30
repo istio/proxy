@@ -128,7 +128,7 @@ void getDestinationService(const std::string& dest_namespace,
 void populateRequestInfo(bool outbound, bool use_host_header_fallback,
                          RequestInfo* request_info,
                          const std::string& destination_namespace) {
-  request_info->is_requestinfo_populated = true;
+  request_info->is_populated = true;
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.

@@ -150,13 +150,11 @@ bool PluginRootContext::onConfigure(size_t) {
           field_separator, value_separator, /*is_tcp_metric=*/true),
   };
 
-  long long tcp_report_duration_nanos = 0;
+  long long tcp_report_duration_nanos = kDefaultTCPReportDurationNanoseconds;
   if (config_.has_tcp_reporting_duration()) {
     tcp_report_duration_nanos =
         ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
             config_.tcp_reporting_duration());
-  } else {
-    tcp_report_duration_nanos = kDefaultTCPReportDurationNanoseconds;
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_nanos);
   return true;
@@ -201,7 +199,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
         peer_id != ::Wasm::Common::kMetadataNotFoundValue && !outbound_) {
       return false;
     }
-    if (!request_info.is_requestinfo_populated) {
+    if (!request_info.is_populated) {
       ::Wasm::Common::populateTCPRequestInfo(
           outbound_, &request_info, destination_node_info.namespace_());
     }

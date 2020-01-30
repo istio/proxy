@@ -63,9 +63,8 @@ NodeInfoPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
     return nullptr;
   }
-  if (peer_id == "") {
+  if (peer_id == ::Wasm::Common::kMetadataNotFoundValue) {
     LOG_DEBUG(absl::StrCat("metadata not found for: ", peer_metadata_id_key));
-    peer_id = ::Wasm::Common::kMetadataNotFoundValue;
     return nullptr;
   }
 
