@@ -123,7 +123,10 @@ static_resources:
 
 func TestStatsPluginGRPC(t *testing.T) {
 	testStatsPluginGRPC(t, func(s *env.TestSetup) {
-		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
+		svrStats := map[string]env.Stat{
+			"istio_requests_total": {Value: 10, Labels: map[string]string{"grpc_response_status": "7"}},
+		}
+		s.VerifyPrometheusStats(svrStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
 			"istio_requests_total": {
 				Value: 10, Labels: map[string]string{

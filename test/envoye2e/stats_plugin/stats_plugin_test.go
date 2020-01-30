@@ -161,7 +161,7 @@ const statsConfig = `stats_config:
   - tag_name: "response_flags"
     regex: "(response_flags=\\.=(.+?);\\.;)"
   - tag_name: "grpc_response_status"
-    regex: "(grpc_response_status=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
   - tag_name: "permissive_response_code"
@@ -177,7 +177,7 @@ const statsConfig = `stats_config:
 
 // Stats in Server Envoy proxy.
 var expectedPrometheusServerStats = map[string]env.Stat{
-	"istio_requests_total": {Value: 10},
+	"istio_requests_total": {Value: 10, Labels: map[string]string{"grpc_response_status": ""}},
 	"istio_build":          {Value: 1},
 }
 
@@ -185,7 +185,7 @@ func TestStatsPlugin(t *testing.T) {
 	testStatsPlugin(t, true, func(s *env.TestSetup) {
 		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
-			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "unknown"}},
+			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "unknown", "grpc_response_status": ""}},
 			"istio_build":          {Value: 1},
 		}
 		s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
