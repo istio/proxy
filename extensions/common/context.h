@@ -92,7 +92,7 @@ struct RequestInfo {
   uint32_t response_code = 0;
 
   // gRPC status code for the request.
-  uint32_t grpc_status = 0;
+  uint32_t grpc_status = 2;
 
   // Response flag giving additional information - NR, UAEX etc.
   // TODO populate

@@ -55,7 +55,7 @@ type TestSetup struct {
 	// ClientEnvoyTemplate is the bootstrap config used by client envoy.
 	ClientEnvoyTemplate string
 
-	// ServerEnvoyTemplate is the bootstrap config used by client envoy.
+	// ServerEnvoyTemplate is the bootstrap config used by server envoy.
 	ServerEnvoyTemplate string
 
 	// IstioSrc is the base directory of istio sources. May be set for finding testdata or
@@ -301,9 +301,10 @@ func (s *TestSetup) SetUpClientServerEnvoy() error {
 		}
 	} else if s.startGRPCBackend {
 		s.grpcBackend = NewGRPCServer(s.Ports().BackendPort)
-		err = s.grpcBackend.Start()
-		if err != nil {
-			log.Printf("not able to start GRPC server: %v", err)
+		log.Printf("Starting GRPC echo server")
+		errCh := s.grpcBackend.Start()
+		if err := <-errCh; err != nil {
+			log.Fatalf("not able to start GRPC server: %v", err)
 		}
 	}
 	if s.startTCPBackend {
@@ -337,6 +338,9 @@ func (s *TestSetup) TearDownClientServerEnvoy() {
 
 	if s.httpBackend != nil {
 		s.httpBackend.Stop()
+	}
+	if s.grpcBackend != nil {
+		s.grpcBackend.Stop()
 	}
 	if s.tcpBackend != nil {
 		s.tcpBackend.Stop()

@@ -144,7 +144,7 @@ struct IstioDimensions {
   // reporter="source",
   // request_protocol="http",
   // response_code="200",
-  // grpc_response_status="0",
+  // grpc_response_status="2", <-- not grpc request
   // response_flags="-",
   // source_app="svc01-0",
   // source_principal="unknown",
@@ -190,7 +190,7 @@ struct IstioDimensions {
 
     request_protocol = request.request_protocol;
     response_code = std::to_string(request.response_code);
-    grpc_response_status = request.grpc_status;
+    grpc_response_status = std::to_string(request.grpc_status);
     response_flags = request.response_flag;
 
     connection_security_policy =
