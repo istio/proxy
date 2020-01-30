@@ -66,14 +66,14 @@ bool PluginRootContext::onConfigure(size_t) {
   if (!config_.dimensions().empty()) {
     tags.reserve(tags.size() + config_.dimensions().size());
     expressions_.reserve(config_.dimensions().size());
-    for (const auto& pair : config_.dimensions()) {
+    for (const auto& dim : config_.dimensions()) {
       uint32_t token = 0;
-      if (createExpression(pair.second, &token) != WasmResult::Ok) {
+      if (createExpression(dim.value(), &token) != WasmResult::Ok) {
         LOG_WARN(
-            absl::StrCat("Cannot create a new tag dimension: ", pair.first));
+            absl::StrCat("Cannot create a new tag dimension: ", dim.label()));
         continue;
       }
-      tags.push_back({pair.first, MetricTag::TagType::String});
+      tags.push_back({dim.label(), MetricTag::TagType::String});
       expressions_.push_back(token);
     }
   }
