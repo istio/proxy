@@ -49,6 +49,8 @@ using ::Wasm::Common::IstioDimensions;
 
 #endif
 
+const size_t DefaultClientCacheMaxSize = 500;
+
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
@@ -68,16 +70,14 @@ class PluginRootContext : public RootContext {
   }
 
   void updateLastLogTimeNanos(const IstioDimensions& key,
-                              long long last_log_time_nanos) {
-    cache_[key] = last_log_time_nanos;
-  }
-
+                              long long last_log_time_nanos);
   long long logTimeDurationNanos() { return log_time_duration_nanos_; };
 
  private:
   accesslogpolicy::config::v1alpha1::AccessLogPolicyConfig config_;
   // Cache storing last log time by a client.
   absl::flat_hash_map<IstioDimensions, long long> cache_;
+  int32_t max_client_cache_size_ = DefaultClientCacheMaxSize;
   long long log_time_duration_nanos_;
 };
 
