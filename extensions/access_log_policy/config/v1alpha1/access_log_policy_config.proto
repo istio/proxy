@@ -20,9 +20,13 @@ package accesslogpolicy.config.v1alpha1;
 import "google/protobuf/duration.proto";
 
 message AccessLogPolicyConfig {
-  // next id: 2
+  // next id: 3
 
   // Optional. Allows specifying logging window for successful requests.
   // The default duration is `12h`.
   google.protobuf.Duration log_window_duration = 1;
+
+  // Optional. Allows specifying max client cache size.
+  // The default is 500 entries.
+  int32 max_client_cache_size = 2;
 }
