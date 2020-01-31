@@ -136,12 +136,6 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
                         &request_info->destination_service_host,
                         &request_info->destination_service_name);
 
-  // Get rbac labels from dynamic metadata.
-  getValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
-           &request_info->rbac_permissive_policy_id);
-  getValue({"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
-           &request_info->rbac_permissive_engine_result);
-
   getValue({"request", "url_path"}, &request_info->request_url_path);
 
   if (outbound) {
