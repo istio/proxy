@@ -94,7 +94,7 @@ bool PluginRootContext::onConfigure(size_t) {
     log_time_duration_nanos_ = kDefaultLogWindowDurationNanoseconds;
   }
 
-  if (config_.max_client_cache_size() > 0 ){
+  if (config_.max_client_cache_size() > 0) {
     max_client_cache_size_ = config_.max_client_cache_size();
   }
 
@@ -102,14 +102,14 @@ bool PluginRootContext::onConfigure(size_t) {
 }
 
 void PluginRootContext::updateLastLogTimeNanos(const IstioDimensions& key,
-                              long long last_log_time_nanos) {
-      if (int32_t(cache_.size()) > max_client_cache_size_) {
-        auto it = cache_.begin();
-        cache_.erase(cache_.begin(), std::next(it, max_client_cache_size_ / 4));
-        logDebug(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
-      }
-    cache_[key] = last_log_time_nanos;
+                                               long long last_log_time_nanos) {
+  if (int32_t(cache_.size()) > max_client_cache_size_) {
+    auto it = cache_.begin();
+    cache_.erase(cache_.begin(), std::next(it, max_client_cache_size_ / 4));
+    logDebug(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
   }
+  cache_[key] = last_log_time_nanos;
+}
 
 void PluginContext::onLog() {
   // Check if request is a failure.
