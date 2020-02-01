@@ -15,6 +15,8 @@
 
 #include "extensions/stackdriver/log/exporter.h"
 
+#include "extensions/stackdriver/common/utils.h"
+
 #ifdef NULL_PLUGIN
 namespace Envoy {
 namespace Extensions {
@@ -42,7 +44,8 @@ namespace Stackdriver {
 namespace Log {
 
 ExporterImpl::ExporterImpl(RootContext* root_context,
-                           const std::string& logging_service_endpoint) {
+                           const std::string& logging_service_endpoint,
+                           const std::string& sts_port) {
   context_ = root_context;
   Metric export_call(MetricType::Counter, "stackdriver_filter",
                      {MetricTag{"type", MetricTag::TagType::String},
@@ -69,9 +72,18 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
   if (logging_service_endpoint.empty()) {
     grpc_service.mutable_google_grpc()->set_target_uri(
         kGoogleStackdriverLoggingAddress);
-    grpc_service.mutable_google_grpc()
-        ->add_call_credentials()
-        ->mutable_google_compute_engine();
+    if (sts_port.empty()) {
+      // Security token exchange is not enabled. Use default GCE credential.
+      grpc_service.mutable_google_grpc()
+          ->add_call_credentials()
+          ->mutable_google_compute_engine();
+    } else {
+      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
+          grpc_service.mutable_google_grpc()
+              ->add_call_credentials()
+              ->mutable_sts_service(),
+          sts_port);
+    }
     grpc_service.mutable_google_grpc()
         ->mutable_channel_credentials()
         ->mutable_ssl_credentials()

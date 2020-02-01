@@ -56,7 +56,8 @@ class ExporterImpl : public Exporter {
   // logging_service_endpoint is an optional param which should be used for test
   // only.
   ExporterImpl(RootContext* root_context,
-               const std::string& logging_service_endpoint);
+               const std::string& logging_service_endpoint,
+               const std::string& sts_port = "");
 
   // exportLogs exports the given log request to Stackdriver.
   void exportLogs(
