@@ -111,7 +111,8 @@ int getExportInterval() {
 // provided or "0" is provided, emtpy will be returned.
 std::string getSTSPort() {
   std::string sts_port;
-  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) && sts_port != "0") {
+  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
+      sts_port != "0") {
     return sts_port;
   }
   return "";
