@@ -29,10 +29,12 @@ using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
 using wasm::common::NodeInfo;
 
+constexpr char kStackdriverStatsAddress[] = "monitoring.googleapis.com";
+
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
     const NodeInfo &local_node_info,
-    const std::string &test_monitoring_endpoint) {
+    const std::string &test_monitoring_endpoint, const std::string &sts_port) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
@@ -40,6 +42,17 @@ StackdriverOptions getStackdriverOptions(
   if (!test_monitoring_endpoint.empty()) {
     auto channel = grpc::CreateChannel(test_monitoring_endpoint,
                                        grpc::InsecureChannelCredentials());
+    options.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(channel);
+  } else if (!sts_port.empty()) {
+    ::grpc::experimental::StsCredentialsOptions sts_options;
+    ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(&sts_options,
+                                                                   sts_port);
+    auto call_creds = grpc::experimental::StsCredentials(sts_options);
+    auto channel = ::grpc::CreateChannel(
+        kStackdriverStatsAddress,
+        grpc::CompositeChannelCredentials(grpc::GoogleDefaultCredentials(),
+                                          call_creds));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   }
