@@ -82,6 +82,11 @@ bool PluginRootContext::onConfigure(std::unique_ptr<WasmData> configuration) {
   // scraper"
   stat_prefix = absl::StrCat("_", stat_prefix, "_");
 
+  Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
+               {MetricTag{"component", MetricTag::TagType::String},
+                MetricTag{"tag", MetricTag::TagType::String}});
+  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
+
   stats_ = std::vector<StatGen>{
       StatGen(
           absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
