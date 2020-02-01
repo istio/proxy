@@ -108,10 +108,10 @@ int getExportInterval() {
 }
 
 // Get port of security token exchange server from node metadata, if not
-// provided, emtpy will be returned.
+// provided or "0" is provided, emtpy will be returned.
 std::string getSTSPort() {
   std::string sts_port;
-  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port)) {
+  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) && sts_port != "0") {
     return sts_port;
   }
   return "";
