@@ -45,7 +45,8 @@ class NodeInfoCache {
   // then another round trip to NodeInfo. This Should at most hold N entries.
   // Node is owned by the cache. Do not store a reference.
   NodeInfoPtr getPeerById(absl::string_view peer_metadata_id_key,
-                          absl::string_view peer_metadata_key);
+                          absl::string_view peer_metadata_key,
+                          std::string& peer_id);
 
   inline void setMaxCacheSize(int32_t size) {
     max_cache_size_ = size == 0 ? DefaultNodeCacheMaxSize : size;

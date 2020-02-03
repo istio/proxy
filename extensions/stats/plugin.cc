@@ -41,6 +41,17 @@ namespace Plugin {
 
 namespace Stats {
 
+constexpr long long kDefaultTCPReportDurationNanoseconds = 15000000000;  // 15s
+
+namespace {
+
+void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
+  request_info.tcp_connections_opened = 0;
+  request_info.tcp_sent_bytes = 0;
+  request_info.tcp_received_bytes = 0;
+}
+}  // namespace
+
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
   // Parse configuration JSON string.
@@ -101,34 +112,77 @@ bool PluginRootContext::onConfigure(size_t) {
   // scraper"
   stat_prefix = absl::StrCat("_", stat_prefix, "_");
 
+  Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
+               {MetricTag{"component", MetricTag::TagType::String},
+                MetricTag{"tag", MetricTag::TagType::String}});
+  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
+
   stats_ = std::vector<StatGen>{
+      // HTTP, HTTP/2, and GRPC metrics
       StatGen(
           absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
           tags,
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
-          field_separator, value_separator),
+          field_separator, value_separator, /*is_tcp_metric=*/false),
       StatGen(
           absl::StrCat(stat_prefix, "request_duration_milliseconds"),
           MetricType::Histogram, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.duration / 1000;
           },
-          field_separator, value_separator),
+          field_separator, value_separator, /*is_tcp_metric=*/false),
       StatGen(
           absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
           tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.request_size;
           },
-          field_separator, value_separator),
+          field_separator, value_separator, /*is_tcp_metric=*/false),
       StatGen(
           absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
           tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.response_size;
           },
-          field_separator, value_separator),
+          field_separator, value_separator, /*is_tcp_metric=*/false),
+      // TCP metrics.
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_sent_bytes_total"),
+          MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_sent_bytes;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_received_bytes_total"),
+          MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_received_bytes;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_connections_opened_total"),
+          MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_connections_opened;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_connections_closed_total"),
+          MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_connections_closed;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
   };
+
+  long long tcp_report_duration_nanos = kDefaultTCPReportDurationNanoseconds;
+  if (config_.has_tcp_reporting_duration()) {
+    tcp_report_duration_nanos =
+        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+            config_.tcp_reporting_duration());
+  }
+  proxy_set_tick_period_milliseconds(tcp_report_duration_nanos);
   return true;
 }
 
@@ -139,23 +193,55 @@ bool PluginRootContext::onDone() {
   return true;
 }
 
-void PluginRootContext::report(bool is_tcp) {
-  const auto peer_node_ptr =
-      node_info_cache_.getPeerById(peer_metadata_id_key_, peer_metadata_key_);
+void PluginRootContext::onTick() {
+  if (tcp_request_queue_.size() < 1) {
+    return;
+  }
+  for (auto const& item : tcp_request_queue_) {
+    // requestinfo is null, so continue.
+    if (item.second == nullptr) {
+      continue;
+    }
+    if (report(*item.second, true)) {
+      // Clear existing data in TCP metrics, so that we don't double count the
+      // metrics.
+      clearTcpMetrics(*item.second);
+    }
+  }
+}
+
+bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
+                               bool is_tcp) {
+  std::string peer_id;
+  const auto peer_node_ptr = node_info_cache_.getPeerById(
+      peer_metadata_id_key_, peer_metadata_key_, peer_id);
+
   const wasm::common::NodeInfo& peer_node =
       peer_node_ptr ? *peer_node_ptr : ::Wasm::Common::EmptyNodeInfo;
 
   // map and overwrite previous mapping.
   const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
-  ::Wasm::Common::RequestInfo request_info;
+
   if (is_tcp) {
-    ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info,
-                                           destination_node_info.namespace_());
+    // For TCP, if peer metadata is not available, peer id is set as not found.
+    // Otherwise, we wait for metadata exchange to happen before we report  any
+    // metric.
+    // TODO(gargnupur): Remove outbound_ from condition below, when
+    // https://github.com/envoyproxy/envoy-wasm/issues/291 is fixed.
+    if (peer_node_ptr == nullptr &&
+        peer_id != ::Wasm::Common::kMetadataNotFoundValue && !outbound_) {
+      return false;
+    }
+    if (!request_info.is_populated) {
+      ::Wasm::Common::populateTCPRequestInfo(
+          outbound_, &request_info, destination_node_info.namespace_());
+    }
   } else {
     ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
                                             &request_info,
                                             destination_node_info.namespace_());
   }
+
   istio_dimensions_.map(peer_node, request_info);
   for (size_t i = 0; i < expressions_.size(); i++) {
     evaluateExpression(expressions_[i], &istio_dimensions_.custom_values.at(i));
@@ -174,7 +260,7 @@ void PluginRootContext::report(bool is_tcp) {
       incrementMetric(cache_hits_, cache_hits_accumulator_);
       cache_hits_accumulator_ = 0;
     }
-    return;
+    return true;
   }
 
   // fetch dimensions in the required form for resolve.
@@ -182,6 +268,9 @@ void PluginRootContext::report(bool is_tcp) {
 
   std::vector<SimpleStat> stats;
   for (auto& statgen : stats_) {
+    if (statgen.is_tcp_metric() != is_tcp) {
+      continue;
+    }
     auto stat = statgen.resolve(values);
     LOG_DEBUG(absl::StrCat("metricKey cache miss ", statgen.name(), " ",
                            istio_dimensions_.debug_key(),
@@ -193,6 +282,16 @@ void PluginRootContext::report(bool is_tcp) {
   incrementMetric(cache_misses_, 1);
   // TODO: When we have c++17, convert to try_emplace.
   metrics_.emplace(istio_dimensions_, stats);
+  return true;
+}
+
+void PluginRootContext::addToTCPRequestQueue(
+    uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info) {
+  tcp_request_queue_[id] = request_info;
+}
+
+void PluginRootContext::deleteFromTCPRequestQueue(uint32_t id) {
+  tcp_request_queue_.erase(id);
 }
 
 #ifdef NULL_PLUGIN

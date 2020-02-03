@@ -62,7 +62,7 @@ bool setFilterStateValue(bool log) {
 constexpr long long kDefaultLogWindowDurationNanoseconds =
     43200000000000;  // 12h
 
-constexpr StringView kDestination = "destination";
+constexpr StringView kSource = "source";
 constexpr StringView kAddress = "address";
 constexpr StringView kConnection = "connection";
 constexpr StringView kUriSanPeerCertificate = "uri_san_peer_certificate";
@@ -94,7 +94,21 @@ bool PluginRootContext::onConfigure(size_t) {
     log_time_duration_nanos_ = kDefaultLogWindowDurationNanoseconds;
   }
 
+  if (config_.max_client_cache_size() > 0) {
+    max_client_cache_size_ = config_.max_client_cache_size();
+  }
+
   return true;
+}
+
+void PluginRootContext::updateLastLogTimeNanos(const IstioDimensions& key,
+                                               long long last_log_time_nanos) {
+  if (int32_t(cache_.size()) > max_client_cache_size_) {
+    auto it = cache_.begin();
+    cache_.erase(cache_.begin(), std::next(it, max_client_cache_size_ / 4));
+    logDebug(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+  }
+  cache_[key] = last_log_time_nanos;
 }
 
 void PluginContext::onLog() {
@@ -111,11 +125,11 @@ void PluginContext::onLog() {
   // If request is not a failure, check cache to see if it should be logged or
   // not, based on last time a successful request was logged for this client ip
   // and principal combination.
-  std::string downstream_ip = "";
-  getValue({kDestination, kAddress}, &downstream_ip);
+  std::string source_ip = "";
+  getValue({kSource, kAddress}, &source_ip);
   std::string source_principal = "";
   getValue({kConnection, kUriSanPeerCertificate}, &source_principal);
-  istio_dimensions_.set_downstream_ip(downstream_ip);
+  istio_dimensions_.set_downstream_ip(source_ip);
   istio_dimensions_.set_source_principal(source_principal);
   long long last_log_time_nanos = lastLogTimeNanos();
   auto cur = static_cast<long long>(getCurrentTimeNanoseconds());

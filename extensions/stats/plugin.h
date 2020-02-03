@@ -43,6 +43,7 @@ namespace Plugin {
 using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
 using NullPluginRegistry =
     ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::FilterStatus;
 
 #endif  // NULL_PLUGIN
 
@@ -324,13 +325,15 @@ class StatGen {
   explicit StatGen(std::string name, MetricType metric_type,
                    const std::vector<MetricTag>& tags,
                    ValueExtractorFn value_fn, std::string field_separator,
-                   std::string value_separator)
+                   std::string value_separator, bool is_tcp_metric)
       : name_(name),
         value_fn_(value_fn),
-        metric_(metric_type, name, tags, field_separator, value_separator){};
+        metric_(metric_type, name, tags, field_separator, value_separator),
+        is_tcp_metric_(is_tcp_metric){};
 
   StatGen() = delete;
   inline StringView name() const { return name_; };
+  inline bool is_tcp_metric() const { return is_tcp_metric_; }
 
   // Resolve metric based on provided dimension values.
   SimpleStat resolve(std::vector<std::string>& vals) {
@@ -342,6 +345,7 @@ class StatGen {
   std::string name_;
   ValueExtractorFn value_fn_;
   Metric metric_;
+  bool is_tcp_metric_;
 };
 
 // PluginRootContext is the root context for all streams processed by the
@@ -361,9 +365,16 @@ class PluginRootContext : public RootContext {
 
   bool onConfigure(size_t) override;
   bool onDone() override;
-  void report(bool is_tcp);
+  void onTick() override;
+  // Report will return false when peer metadata exchange is not found for TCP,
+  // so that we wait to report metrics till we find peer metadata or get
+  // information that it's not available.
+  bool report(::Wasm::Common::RequestInfo& request_info, bool is_tcp);
   bool outbound() const { return outbound_; }
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
+  void addToTCPRequestQueue(
+      uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
+  void deleteFromTCPRequestQueue(uint32_t id);
 
  private:
   stats::PluginConfig config_;
@@ -388,7 +399,8 @@ class PluginRootContext : public RootContext {
   std::unordered_map<IstioDimensions, std::vector<SimpleStat>,
                      IstioDimensions::HashIstioDimensions>
       metrics_;
-
+  std::unordered_map<uint32_t, std::shared_ptr<::Wasm::Common::RequestInfo>>
+      tcp_request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
 };
@@ -412,20 +424,40 @@ class PluginContext : public Context {
       : Context(id, root),
         upstream_closed_(false),
         downstream_closed_(false),
-        tcp_reported_(false) {}
+        tcp_connection_closed_(false),
+        context_id_(id) {
+    request_info_ = std::make_shared<::Wasm::Common::RequestInfo>();
+  }
 
-  void onLog() override { rootContext()->report(false); };
+  void onLog() override { rootContext()->report(*request_info_, false); };
+
+  FilterStatus onNewConnection() override {
+    request_info_->tcp_connections_opened++;
+    rootContext()->addToTCPRequestQueue(context_id_, request_info_);
+    return FilterStatus::Continue;
+  }
+
+  // Called on onData call, so counting the data that is received.
+  FilterStatus onDownstreamData(size_t size, bool) override {
+    request_info_->tcp_received_bytes += size;
+    return FilterStatus::Continue;
+  }
+  // Called on onWrite call, so counting the data that is sent.
+  FilterStatus onUpstreamData(size_t size, bool) override {
+    request_info_->tcp_sent_bytes += size;
+    return FilterStatus::Continue;
+  }
 
   void onDownstreamConnectionClose(PeerType) override {
     downstream_closed_ = true;
-    if (upstream_closed_ && !tcp_reported_) {
-      logTCP();
+    if (upstream_closed_ && !tcp_connection_closed_) {
+      logTCPOnClose();
     }
   }
   void onUpstreamConnectionClose(PeerType) override {
     upstream_closed_ = true;
-    if (downstream_closed_ && !tcp_reported_) {
-      logTCP();
+    if (downstream_closed_ && !tcp_connection_closed_) {
+      logTCPOnClose();
     }
   }
 
@@ -434,14 +466,18 @@ class PluginContext : public Context {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
 
-  void logTCP() {
-    tcp_reported_ = true;
-    rootContext()->report(true);
+  void logTCPOnClose() {
+    tcp_connection_closed_ = true;
+    rootContext()->deleteFromTCPRequestQueue(context_id_);
+    request_info_->tcp_connections_closed++;
+    rootContext()->report(*request_info_, true);
   }
 
   bool upstream_closed_;
   bool downstream_closed_;
-  bool tcp_reported_;
+  bool tcp_connection_closed_;
+  uint32_t context_id_;
+  std::shared_ptr<::Wasm::Common::RequestInfo> request_info_;
 };
 
 #ifdef NULL_PLUGIN

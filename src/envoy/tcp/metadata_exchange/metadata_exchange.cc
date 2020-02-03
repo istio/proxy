@@ -88,6 +88,7 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
       // If Alpn protocol is not the expected one, then return.
       // Else find and write node metadata.
       if (read_callbacks_->connection().nextProtocol() != config_->protocol_) {
+        setMetadataNotFoundFilterState();
         conn_state_ = Invalid;
         config_->stats().alpn_protocol_not_found_.inc();
         return Network::FilterStatus::Continue;
@@ -146,6 +147,7 @@ Network::FilterStatus MetadataExchangeFilter::onWrite(Buffer::Instance&, bool) {
       return Network::FilterStatus::Continue;
     case ConnProtocolNotRead: {
       if (read_callbacks_->connection().nextProtocol() != config_->protocol_) {
+        setMetadataNotFoundFilterState();
         conn_state_ = Invalid;
         config_->stats().alpn_protocol_not_found_.inc();
         return Network::FilterStatus::Continue;
@@ -218,6 +220,7 @@ void MetadataExchangeFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
   if (absl::gntohl(initial_header.magic) !=
       MetadataExchangeInitialHeader::magic_number) {
     config_->stats().initial_header_not_found_.inc();
+    setMetadataNotFoundFilterState();
     conn_state_ = Invalid;
     return;
   }
@@ -243,6 +246,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   Envoy::ProtobufWkt::Any proxy_data;
   if (!proxy_data.ParseFromString(proxy_data_buf)) {
     config_->stats().header_not_found_.inc();
+    setMetadataNotFoundFilterState();
     conn_state_ = Invalid;
     return;
   }
@@ -293,6 +297,14 @@ void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
 
 std::string MetadataExchangeFilter::getMetadataId() {
   return local_info_.node().id();
+}
+
+void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
+  const std::string key =
+      config_->filter_direction_ == FilterDirection::Downstream
+          ? DownstreamMetadataIdKey
+          : UpstreamMetadataIdKey;
+  setFilterState(key, MetadataNotFoundValue);
 }
 
 }  // namespace MetadataExchange

@@ -107,6 +107,17 @@ int getExportInterval() {
   return 60;
 }
 
+// Get port of security token exchange server from node metadata, if not
+// provided or "0" is provided, emtpy will be returned.
+std::string getSTSPort() {
+  std::string sts_port;
+  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
+      sts_port != "0") {
+    return sts_port;
+  }
+  return "";
+}
+
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(size_t) {
@@ -130,11 +141,12 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
-
+  std::string sts_port = getSTSPort();
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter = std::make_unique<ExporterImpl>(this, getLoggingEndpoint());
+    auto exporter =
+        std::make_unique<ExporterImpl>(this, getLoggingEndpoint(), sts_port);
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -143,7 +155,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-        this, getMeshTelemetryEndpoint());
+        this, getMeshTelemetryEndpoint(), sts_port);
     edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
                                                     std::move(edges_client));
   }
@@ -168,7 +180,8 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, getMonitoringEndpoint()));
+      getStackdriverOptions(local_node_info_, getMonitoringEndpoint(),
+                            sts_port));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 
@@ -237,7 +250,8 @@ inline bool StackdriverRootContext::isOutbound() {
       isOutbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey;
   const auto& metadata_key =
       isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
-  return node_info_cache_.getPeerById(id_key, metadata_key);
+  std::string peer_id;
+  return node_info_cache_.getPeerById(id_key, metadata_key, peer_id);
 }
 
 inline bool StackdriverRootContext::enableServerAccessLog() {
