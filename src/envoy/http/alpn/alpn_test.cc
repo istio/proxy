@@ -101,10 +101,10 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
-    EXPECT_TRUE(filter_state.hasData<Network::ApplicationProtocols>(
+    EXPECT_TRUE(filter_state->hasData<Network::ApplicationProtocols>(
         Network::ApplicationProtocols::key()));
     auto alpn_override = filter_state
-                             .getDataReadOnly<Network::ApplicationProtocols>(
+                             ->getDataReadOnly<Network::ApplicationProtocols>(
                                  Network::ApplicationProtocols::key())
                              .value();
 
@@ -135,10 +135,10 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
-    EXPECT_TRUE(filter_state.hasData<Network::ApplicationProtocols>(
+    EXPECT_TRUE(filter_state->hasData<Network::ApplicationProtocols>(
         Network::ApplicationProtocols::key()));
     auto alpn_override = filter_state
-                             .getDataReadOnly<Network::ApplicationProtocols>(
+                             ->getDataReadOnly<Network::ApplicationProtocols>(
                                  Network::ApplicationProtocols::key())
                              .value();
 
@@ -168,7 +168,7 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
     EXPECT_CALL(stream_info, filterState()).Times(0);
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
-    EXPECT_FALSE(filter_state.hasData<Network::ApplicationProtocols>(
+    EXPECT_FALSE(filter_state->hasData<Network::ApplicationProtocols>(
         Network::ApplicationProtocols::key()));
   }
 }
