@@ -50,7 +50,30 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_sent_bytes = 0;
   request_info.tcp_received_bytes = 0;
 }
+
 }  // namespace
+
+void PluginRootContext::initializeDimensions() {
+  // Metric tags
+  std::vector<MetricTag> tags = IstioDimensions::defaultTags();
+  if (!config_.metrics(0).dimensions().empty()) {
+    tags.reserve(tags.size() + config_.metrics(0).dimensions().size());
+    expressions_.reserve(config_.metrics(0).dimensions().size());
+    for (const auto& dim : config_.metrics(0).dimensions()) {
+      uint32_t token = 0;
+      if (createExpression(dim.second, &token) != WasmResult::Ok) {
+        LOG_WARN(
+            absl::StrCat("Cannot create a new tag dimension: ", dim.first));
+        continue;
+      }
+      tags.push_back({dim.first, MetricTag::TagType::String});
+      expressions_.push_back(token);
+    }
+  }
+
+  // Local data does not change, so populate it on config load.
+  istio_dimensions_.init(outbound_, local_node_info_, expressions_.size());
+}
 
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
@@ -72,25 +95,6 @@ bool PluginRootContext::onConfigure(size_t) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
-  // Metric tags
-  std::vector<MetricTag> tags = IstioDimensions::defaultTags();
-  if (!config_.dimensions().empty()) {
-    tags.reserve(tags.size() + config_.dimensions().size());
-    expressions_.reserve(config_.dimensions().size());
-    for (const auto& dim : config_.dimensions()) {
-      uint32_t token = 0;
-      if (createExpression(dim.value(), &token) != WasmResult::Ok) {
-        LOG_WARN(
-            absl::StrCat("Cannot create a new tag dimension: ", dim.label()));
-        continue;
-      }
-      tags.push_back({dim.label(), MetricTag::TagType::String});
-      expressions_.push_back(token);
-    }
-  }
-
-  // Local data does not change, so populate it on config load.
-  istio_dimensions_.init(outbound_, local_node_info_, expressions_.size());
 
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
@@ -99,6 +103,7 @@ bool PluginRootContext::onConfigure(size_t) {
     peer_metadata_id_key_ = ::Wasm::Common::kDownstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
+
   debug_ = config_.debug();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
@@ -116,6 +121,8 @@ bool PluginRootContext::onConfigure(size_t) {
                {MetricTag{"component", MetricTag::TagType::String},
                 MetricTag{"tag", MetricTag::TagType::String}});
   build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
+
+  initializeDimensions();
 
   stats_ = std::vector<StatGen>{
       // HTTP, HTTP/2, and GRPC metrics

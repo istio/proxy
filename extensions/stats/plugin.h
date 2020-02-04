@@ -94,11 +94,13 @@ using google::protobuf::util::Status;
   FIELD_FUNC(permissive_response_code)       \
   FIELD_FUNC(permissive_response_policyid)
 
+// Aggregate metric values in a shared and reusable bag.
 struct IstioDimensions {
 #define DEFINE_FIELD(name) std::string(name);
   STD_ISTIO_DIMENSIONS(DEFINE_FIELD)
 #undef DEFINE_FIELD
 
+  // Custom values corresponding to the expressions.
   std::vector<std::string> custom_values;
 
   // utility fields
@@ -375,6 +377,10 @@ class PluginRootContext : public RootContext {
   void addToTCPRequestQueue(
       uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
   void deleteFromTCPRequestQueue(uint32_t id);
+
+ protected:
+  // Update the dimensions and the expressions data structures with the new configuration.
+  void initializeDimensions();
 
  private:
   stats::PluginConfig config_;

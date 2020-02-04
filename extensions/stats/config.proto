@@ -25,15 +25,23 @@ import "google/protobuf/duration.proto";
 // The standard metrics are optimized and reported through a "fast-path".
 // The customizations allow full configurability, at the cost of a "slower"
 // path.
-message Metric {
-  // (Optional) Conditional enabling the override.
-  string match = 1;
+message MetricConfig {
+  // (Optional) Collection of tag names and tag expressions to include in the
+  // metric. Conflicts are resolved by the tag name by overriding previously
+  // supplied values.
+  map<string, string> dimensions = 1;
 
-  // Metric name.
+  // NOT IMPLEMENTED. (Optional) Metric name.
   string name = 2;
 
-  // (Optional) Metric value expression.
-  string value = 3;
+  // NOT IMPLEMENTED. (Optional) A list of tags to remove.
+  repeated string tags_to_remove = 3;
+
+  // NOT IMPLEMENTED. (Optional) Conditional enabling the override.
+  string match = 4;
+
+  // NOT IMPLEMENTED. (Optional) Metric value expression.
+  string value = 5;
 
   enum MetricType {
     Counter = 0;
@@ -41,16 +49,8 @@ message Metric {
     Histogram = 2;
   }
 
-  // (Optional) Metric type.
-  MetricType type = 4;
-
-  // (Optional) Collection of tag names and tag expressions to include in the
-  // metric. Conflicts are resolved by the tag name by overriding previously
-  // supplied values.
-  map<string, string> dimensions = 5;
-
-  // (Optional) A list of tags to remove.
-  repeated string tags_to_remove = 6;
+  // NOT IMPLEMENTED (Optional) Metric type.
+  MetricType type = 6;
 }
 
 message PluginConfig {
@@ -83,14 +83,6 @@ message PluginConfig {
   // metrics reporting. The default duration is `15s`.
   google.protobuf.Duration tcp_reporting_duration = 7;
 
-  message Dimension {
-    string label = 1;
-    string value = 2;
-  }
-
-  // Optional: Custom metric dimensions
-  repeated Dimension dimensions = 8;
-
   // Metric overrides.
-  repeated Metric metrics = 9;
+  repeated MetricConfig metrics = 8;
 }
