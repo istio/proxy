@@ -379,8 +379,11 @@ class PluginRootContext : public RootContext {
   void deleteFromTCPRequestQueue(uint32_t id);
 
  protected:
-  // Update the dimensions and the expressions data structures with the new configuration.
+  // Update the dimensions and the expressions data structures with the new
+  // configuration.
   void initializeDimensions();
+  // Destroy host resources for the allocated expressions.
+  void cleanupExpressions();
 
  private:
   stats::PluginConfig config_;
@@ -389,6 +392,7 @@ class PluginRootContext : public RootContext {
 
   IstioDimensions istio_dimensions_;
   std::vector<uint32_t> expressions_;
+  std::vector<MetricTag> tags_;
 
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;

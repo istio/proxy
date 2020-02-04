@@ -62,9 +62,9 @@ filter_chains:
                 "debug": "false",
                 max_peer_cache_size: 20,
                 field_separator: ";.;",
-                dimensions: [
-                  {label: "configurable_metric_a", value: "string(2+2)"},
-                  {label: "configurable_metric_b", value: "request.protocol"}
+                metrics: [
+                  {dimensions: {"configurable_metric_a": "string(2+2)"}},
+                  {dimensions: {"configurable_metric_b": "request.protocol"}}
                 ]
               }
       - name: envoy.router
