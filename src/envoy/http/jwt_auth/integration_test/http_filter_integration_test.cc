@@ -76,7 +76,7 @@ class JwtVerificationFilterIntegrationTest
         absl::EndsWith(path, ".yaml") ? ".yaml" : ".json";
     const std::string out_json_path =
         TestEnvironment::temporaryPath(path + ".with.ports" + extension);
-    TestEnvironment::createParentPath(out_json_path);
+    TestEnvironment::createPath(out_json_path);
     {
       std::ofstream out_json_file(out_json_path);
       out_json_file << out_json_string;

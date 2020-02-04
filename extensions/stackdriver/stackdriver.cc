@@ -197,9 +197,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
   return true;
 }
 
-bool StackdriverRootContext::onStart(size_t) {
-  return true;
-}
+bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {
