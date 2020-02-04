@@ -174,14 +174,15 @@ const statsConfig = `stats_config:
 // Stats in Server Envoy proxy.
 var expectedPrometheusServerStats = map[string]env.Stat{
 	"istio_requests_total": {Value: 10},
+	"istio_build":          {Value: 1},
 }
 
 func TestStatsPlugin(t *testing.T) {
 	testStatsPlugin(t, true, func(s *env.TestSetup) {
 		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
-			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service":
-			"unknown"}},
+			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "unknown"}},
+			"istio_build":          {Value: 1},
 		}
 		s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
 	})
@@ -191,8 +192,8 @@ func TestStatsPluginHHFallback(t *testing.T) {
 	testStatsPlugin(t, false, func(s *env.TestSetup) {
 		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
-			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service":
-			fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort)}},
+			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort)}},
+			"istio_build":          {Value: 1},
 		}
 		s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
 	})
