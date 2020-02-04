@@ -39,8 +39,11 @@ bind(
 #
 # envoy-wasm commit date: Jan 23 2020
 ENVOY_PROJECT = "istio"
+
 ENVOY_REPO = "envoy"
+
 ENVOY_SHA = "277a86a6aaf2f4a22f9060969fb0cca4ab8d7a79"
+
 ENVOY_SHA256 = "7ee31e7a5bb2316ff2c0f9d5448b9ba22789201ebfd9a20ae3e9062c125c2ec0"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
