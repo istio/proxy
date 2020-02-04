@@ -128,6 +128,7 @@ void getDestinationService(const std::string& dest_namespace,
 void populateRequestInfo(bool outbound, bool use_host_header_fallback,
                          RequestInfo* request_info,
                          const std::string& destination_namespace) {
+  request_info->is_populated = true;
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.
@@ -167,11 +168,6 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
   uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
   request_info->response_flag = parseResponseFlag(response_flags);
-
-  getValue({"request", "time"}, &request_info->start_time);
-  getValue({"request", "duration"}, &request_info->duration);
-  getValue({"request", "total_size"}, &request_info->request_size);
-  getValue({"response", "total_size"}, &request_info->response_size);
 }
 
 }  // namespace
@@ -292,6 +288,11 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     getValue({"destination", "port"}, &destination_port);
     request_info->destination_port = destination_port;
   }
+
+  getValue({"request", "time"}, &request_info->start_time);
+  getValue({"request", "duration"}, &request_info->duration);
+  getValue({"request", "total_size"}, &request_info->request_size);
+  getValue({"response", "total_size"}, &request_info->response_size);
 }
 
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {

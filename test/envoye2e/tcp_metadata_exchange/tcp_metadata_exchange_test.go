@@ -20,6 +20,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
+	"sync"
+	"time"
 
 	"testing"
 	"text/template"
@@ -41,7 +44,7 @@ const metadataExchangeIstioConfigFilter = `
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "0.00000001s" }
 `
 
 const statsConfig = `stats_config:
@@ -118,7 +121,7 @@ const metadataExchangeIstioClientFilter = `
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "0.00000001s" }
 `
 
 const tlsContext = `
@@ -139,6 +142,31 @@ tls_context:
   common_tls_context:
     alpn_protocols:
     - istio2
+    tls_certificates:
+    - certificate_chain: { filename: "testdata/certs/cert-chain.pem" }
+      private_key: { filename: "testdata/certs/key.pem" }
+    validation_context:
+      trusted_ca: { filename: "testdata/certs/root-cert.pem" }
+`
+
+const serverTLSContext = `
+tls_context:
+  common_tls_context:
+    alpn_protocols:
+    - istio3
+    tls_certificates:
+    - certificate_chain: { filename: "testdata/certs/cert-chain.pem" }
+      private_key: { filename: "testdata/certs/key.pem" }
+    validation_context:
+      trusted_ca: { filename: "testdata/certs/root-cert.pem" }
+  require_client_certificate: true
+`
+
+const serverClusterTLSContext = `
+tls_context:
+  common_tls_context:
+    alpn_protocols:
+    - istio3
     tls_certificates:
     - certificate_chain: { filename: "testdata/certs/cert-chain.pem" }
       private_key: { filename: "testdata/certs/key.pem" }
@@ -206,11 +234,11 @@ const serverNodeMetadata = `"NAMESPACE": "default",
 
 // Stats in Client Envoy proxy.
 var expectedClientStats = map[string]int{
-	"cluster.client.metadata_exchange.alpn_protocol_found":      1,
+	"cluster.client.metadata_exchange.alpn_protocol_found":      5,
 	"cluster.client.metadata_exchange.alpn_protocol_not_found":  0,
 	"cluster.client.metadata_exchange.initial_header_not_found": 0,
 	"cluster.client.metadata_exchange.header_not_found":         0,
-	"cluster.client.metadata_exchange.metadata_added":           1,
+	"cluster.client.metadata_exchange.metadata_added":           5,
 }
 
 // Stats in Server Envoy proxy.
@@ -220,16 +248,40 @@ var expectedPrometheusServerLabels = map[string]string{
 	"destination_app": "ratings",
 }
 var expectedPrometheusServerStats = map[string]env.Stat{
-	"istio_requests_total": {Value: 1, Labels: expectedPrometheusServerLabels},
+	"istio_tcp_connections_opened_total": {Value: 5, Labels: expectedPrometheusServerLabels},
+	"istio_tcp_connections_closed_total": {Value: 5, Labels: expectedPrometheusServerLabels},
+	"istio_tcp_received_bytes_total":     {Value: 35, Labels: expectedPrometheusServerLabels},
+	"istio_tcp_sent_bytes_total":         {Value: 65, Labels: expectedPrometheusServerLabels},
+}
+
+// Stats in Server Envoy proxy Fail Case.
+var expectedPrometheusServerLabelsFailCase = map[string]string{
+	"reporter":        "destination",
+	"source_app":      "unknown",
+	"destination_app": "ratings",
+}
+var expectedPrometheusServerStatsFailCase = map[string]env.Stat{
+	"istio_tcp_connections_opened_total": {Value: 5, Labels: expectedPrometheusServerLabelsFailCase},
+	"istio_tcp_connections_closed_total": {Value: 5, Labels: expectedPrometheusServerLabelsFailCase},
+	"istio_tcp_received_bytes_total":     {Value: 35, Labels: expectedPrometheusServerLabelsFailCase},
+	"istio_tcp_sent_bytes_total":         {Value: 65, Labels: expectedPrometheusServerLabelsFailCase},
 }
 
 // Stats in Server Envoy proxy.
 var expectedServerStats = map[string]int{
-	"metadata_exchange.alpn_protocol_found":      1,
+	"metadata_exchange.alpn_protocol_found":      5,
 	"metadata_exchange.alpn_protocol_not_found":  0,
 	"metadata_exchange.initial_header_not_found": 0,
 	"metadata_exchange.header_not_found":         0,
-	"metadata_exchange.metadata_added":           1,
+	"metadata_exchange.metadata_added":           5,
+}
+
+var expectedServerStatsFailCase = map[string]int{
+	"metadata_exchange.alpn_protocol_found":      0,
+	"metadata_exchange.alpn_protocol_not_found":  5,
+	"metadata_exchange.initial_header_not_found": 0,
+	"metadata_exchange.header_not_found":         0,
+	"metadata_exchange.metadata_added":           0,
 }
 
 func TestTCPMetadataExchange(t *testing.T) {
@@ -239,8 +291,47 @@ func TestTCPMetadataExchange(t *testing.T) {
 	s.SetStartTCPBackend(true)
 	s.SetTLSContext(tlsContext)
 	s.SetClusterTLSContext(clusterTLSContext)
+	s.SetServerTLSContext(tlsContext)
+	s.SetServerClusterTLSContext(clusterTLSContext)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(metadataExchangeIstioConfigFilter)
 	s.SetUpstreamFiltersInClient(metadataExchangeIstioUpstreamConfigFilterChain)
+	s.SetFiltersBeforeEnvoyRouterInAppToClient(metadataExchangeIstioClientFilter)
+	s.SetEnableTLS(true)
+	s.SetClientNodeMetadata(clientNodeMetadata)
+	s.SetServerNodeMetadata(serverNodeMetadata)
+	s.SetExtraConfig(statsConfig)
+	s.ClientEnvoyTemplate = env.GetTCPClientEnvoyConfTmp()
+	s.ServerEnvoyTemplate = env.GetTCPServerEnvoyConfTmp()
+	s.SetCopyYamlFiles(true)
+	if err := s.SetUpClientServerEnvoy(); err != nil {
+		t.Fatalf("Failed to setup te1	st: %v", err)
+	}
+	defer s.TearDownClientServerEnvoy()
+
+	SendRequests(t, s)
+
+	s.VerifyEnvoyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
+	s.VerifyEnvoyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
+
+	time.Sleep(time.Second * 5)
+	s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
+
+}
+
+func TestTCPMetadataExchangeNoClientFilter(t *testing.T) {
+	s := env.NewClientServerEnvoyTestSetup(env.TCPMetadataExchangeFailTest, t)
+	s.Dir = driver.BazelWorkspace()
+	s.SetNoBackend(true)
+	s.SetStartTCPBackend(true)
+	// Client send istio2  alpn in tls context.
+	s.SetTLSContext(tlsContext)
+	s.SetClusterTLSContext(clusterTLSContext)
+	// Server accepts istio3 alpn in tls context.
+	s.SetServerTLSContext(serverTLSContext)
+	s.SetServerClusterTLSContext(serverClusterTLSContext)
+	// Only setting mxc filter in server and stats filter in client and filter.
+	// Mxc  upstream filter in  server is not set.
+	s.SetFiltersBeforeEnvoyRouterInProxyToServer(metadataExchangeIstioConfigFilter)
 	s.SetFiltersBeforeEnvoyRouterInAppToClient(metadataExchangeIstioClientFilter)
 	s.SetEnableTLS(true)
 	s.SetClientNodeMetadata(clientNodeMetadata)
@@ -253,6 +344,14 @@ func TestTCPMetadataExchange(t *testing.T) {
 	}
 	defer s.TearDownClientServerEnvoy()
 
+	SendRequests(t, s)
+	s.VerifyEnvoyStats(getParsedExpectedStats(expectedServerStatsFailCase, t, s), s.Ports().ServerAdminPort)
+
+	time.Sleep(time.Second * 5)
+	s.VerifyPrometheusStats(expectedPrometheusServerStatsFailCase, s.Ports().ServerAdminPort)
+}
+
+func SendRequests(t *testing.T, s *env.TestSetup) {
 	certPool := x509.NewCertPool()
 	bs, err := ioutil.ReadFile(driver.TestPath("testdata/certs/cert-chain.pem"))
 	if err != nil {
@@ -268,30 +367,48 @@ func TestTCPMetadataExchange(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to get certificate")
 	}
-	config := &tls.Config{Certificates: []tls.Certificate{certificate}, ServerName: "localhost", NextProtos: []string{"istio2"}, RootCAs: certPool}
+	config := &tls.Config{Certificates: []tls.Certificate{certificate}, ServerName: "localhost", NextProtos: []string{"istio3"}, RootCAs: certPool}
+	rand.Seed(time.Now().UTC().UnixNano())
 
-	conn, err := tls.Dial("tcp", fmt.Sprintf("localhost:%d", s.Ports().AppToClientProxyPort), config)
+	var wg sync.WaitGroup
+
+	response := make(chan error, 5)
+	wg.Add(5)
+	go sendRequest(response, config, s.Ports().AppToClientProxyPort, &wg)
+	go sendRequest(response, config, s.Ports().AppToClientProxyPort, &wg)
+	go sendRequest(response, config, s.Ports().AppToClientProxyPort, &wg)
+	go sendRequest(response, config, s.Ports().AppToClientProxyPort, &wg)
+	go sendRequest(response, config, s.Ports().AppToClientProxyPort, &wg)
+	wg.Wait()
+	close(response)
+
+	for err := range response {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func sendRequest(response chan<- error, config *tls.Config, port uint16, wg *sync.WaitGroup) {
+	defer wg.Done()
+	conn, err := tls.Dial("tcp", fmt.Sprintf("localhost:%d", port), config)
 	if err != nil {
-		t.Fatal(err)
+		response <- err
 	}
 
 	conn.Write([]byte("world \n"))
 	reply := make([]byte, 256)
 	n, err := conn.Read(reply)
 	if err != nil {
-		t.Fatal(err)
+		response <- err
 	}
 
 	if fmt.Sprintf("%s", reply[:n]) != "hello world \n" {
-		t.Fatalf("Verification Failed. Expected: hello world. Got: %v", fmt.Sprintf("%s", reply[:n]))
+		response <- fmt.Errorf("verification Failed. Expected: hello world. Got: %v", fmt.Sprintf("%s", reply[:n]))
 	}
 
 	_ = conn.Close()
-	s.VerifyEnvoyStats(getParsedExpectedStats(expectedClientStats, t, s), s.Ports().ClientAdminPort)
-	s.VerifyEnvoyStats(getParsedExpectedStats(expectedServerStats, t, s), s.Ports().ServerAdminPort)
-
-	s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
-
+	response <- nil
 }
 
 func getParsedExpectedStats(expectedStats map[string]int, t *testing.T, s *env.TestSetup) map[string]int {

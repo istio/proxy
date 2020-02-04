@@ -135,6 +135,9 @@ class MetadataExchangeFilter : public Network::Filter {
   // Helper function to get metadata id.
   std::string getMetadataId();
 
+  // Helper function to set filterstate when no client mxc found.
+  void setMetadataNotFoundFilterState();
+
   // Config for MetadataExchange filter.
   MetadataExchangeConfigSharedPtr config_;
   // LocalInfo instance.
@@ -157,6 +160,8 @@ class MetadataExchangeFilter : public Network::Filter {
       "envoy.wasm.metadata_exchange.downstream";
   const std::string DownstreamMetadataIdKey =
       "envoy.wasm.metadata_exchange.downstream_id";
+  const std::string MetadataNotFoundValue =
+      "envoy.wasm.metadata_exchange.peer_unknown";
 
   const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
