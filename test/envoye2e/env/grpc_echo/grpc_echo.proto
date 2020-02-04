@@ -21,9 +21,9 @@ import "google/protobuf/empty.proto";
 import "google/rpc/status.proto";
 
 message EchoRequest {
-    google.rpc.Status return_status = 1;
+  google.rpc.Status return_status = 1;
 }
 
 service Echo {
-    rpc Echo(EchoRequest) returns (google.protobuf.Empty) {}
+  rpc Echo(EchoRequest) returns (google.protobuf.Empty) {}
 }

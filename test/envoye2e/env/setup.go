@@ -30,6 +30,67 @@ import (
 
 // TestSetup store data for a test.
 type TestSetup struct {
+	// EnvoyParams contain extra envoy parameters to pass in the CLI (cluster, node)
+	EnvoyParams []string
+	// ClientEnvoyTemplate is the bootstrap config used by client envoy.
+	ClientEnvoyTemplate string
+	// ServerEnvoyTemplate is the bootstrap config used by server envoy.
+	ServerEnvoyTemplate string
+	// IstioSrc is the base directory of istio sources. May be set for finding testdata or
+	// other files in the source tree
+	IstioSrc string
+	// IstioOut is the base output directory.
+	IstioOut string
+	// AccessLogPath is the access log path for Envoy
+	AccessLogPath string
+	// AccessLogPath is the access log path for the client Envoy
+	ClientAccessLogPath string
+	// AccessLogPath is the access log path for the server Envoy
+	ServerAccessLogPath string
+	// FiltersBeforeEnvoyRouterInAppToClient are the filters that come before envoy.router http filter in AppToClient
+	// listener.
+	FiltersBeforeEnvoyRouterInAppToClient string
+	// FiltersBeforeHTTPConnectionManagerInProxyToServer are the filters that come before http connection manager filter
+	// ProxyToServer listener.
+	FiltersBeforeHTTPConnectionManagerInProxyToServer string
+	// FiltersBeforeEnvoyRouterInProxyToServer are the filters that come before envoy.router http filter in
+	// ProxyToServer listener.
+	FiltersBeforeEnvoyRouterInProxyToServer string
+	// Dir is the working dir for envoy
+	Dir string
+	// Server side Envoy node metadata.
+	ServerNodeMetadata string
+	// Client side Envoy node metadata.
+	ClientNodeMetadata string
+	// Format for client accesslog
+	AccesslogFormat string
+	// Format for server accesslog
+	ServerAccesslogFormat string
+	// TLSContext to be used.
+	TLSContext string
+	// ClusterTLSContext to be used.
+	ClusterTLSContext string
+	// ServerTLSContext to be used.
+	ServerTLSContext string
+	// ServerClusterTLSContext to be used.
+	ServerClusterTLSContext string
+	// UpstreamFilters chain in client.
+	UpstreamFiltersInClient string
+	// ExtraConfig that needs to be passed to envoy. Ex stats_config.
+	ExtraConfig string
+
+	t           *testing.T
+	ports       *Ports
+	clientEnvoy *Envoy
+	serverEnvoy *Envoy
+	httpBackend *HTTPServer
+	tcpBackend  *TCPServer
+	epoch       int
+	// EnvoyConfigOpt allows passing additional parameters to the EnvoyTemplate
+	EnvoyConfigOpt map[string]interface{}
+	grpcBackend    *GRPCServer
+
+	testName          uint16
 	stress            bool
 	noProxy           bool
 	startHTTPBackend  bool
@@ -37,93 +98,8 @@ type TestSetup struct {
 	checkDict         bool
 	startTCPBackend   bool
 	copyYamlFiles     bool
-	// Whether TLS is Enabled or not.
-	EnableTLS        bool
-	startGRPCBackend bool
-
-	t           *testing.T
-	ports       *Ports
-	clientEnvoy *Envoy
-	serverEnvoy *Envoy
-	grpcBackend *GRPCServer
-	httpBackend *HTTPServer
-	tcpBackend  *TCPServer
-
-	testName uint16
-	epoch    int
-
-	// ClientEnvoyTemplate is the bootstrap config used by client envoy.
-	ClientEnvoyTemplate string
-
-	// ServerEnvoyTemplate is the bootstrap config used by server envoy.
-	ServerEnvoyTemplate string
-
-	// IstioSrc is the base directory of istio sources. May be set for finding testdata or
-	// other files in the source tree
-	IstioSrc string
-
-	// IstioOut is the base output directory.
-	IstioOut string
-
-	// AccessLogPath is the access log path for Envoy
-	AccessLogPath string
-
-	// AccessLogPath is the access log path for Envoy
-	ClientAccessLogPath string
-
-	// AccessLogPath is the access log path for Envoy
-	ServerAccessLogPath string
-
-	// FiltersBeforeEnvoyRouterInAppToClient are the filters that come before envoy.router http filter in AppToClient
-	// listener.
-	FiltersBeforeEnvoyRouterInAppToClient string
-
-	// FiltersBeforeHTTPConnectionManagerInProxyToServer are the filters that come before http connection manager filter
-	// ProxyToServer listener.
-	FiltersBeforeHTTPConnectionManagerInProxyToServer string
-
-	// FiltersBeforeEnvoyRouterInProxyToServer are the filters that come before envoy.router http filter in
-	// ProxyToServer listener.
-	FiltersBeforeEnvoyRouterInProxyToServer string
-
-	// Dir is the working dir for envoy
-	Dir string
-
-	// Server side Envoy node metadata.
-	ServerNodeMetadata string
-
-	// Client side Envoy node metadata.
-	ClientNodeMetadata string
-
-	// Format for client accesslog
-	AccesslogFormat string
-
-	// Format for server accesslog
-	ServerAccesslogFormat string
-
-	// TLSContext to be used.
-	TLSContext string
-
-	// ClusterTLSContext to be used.
-	ClusterTLSContext string
-
-	// ServerTLSContext to be used.
-	ServerTLSContext string
-
-	// ServerClusterTLSContext to be used.
-	ServerClusterTLSContext string
-
-	// UpstreamFilters chain in client.
-	UpstreamFiltersInClient string
-
-	// ExtraConfig that needs to be passed to envoy. Ex stats_config.
-	ExtraConfig string
-
-	// EnvoyParams contain extra envoy parameters to pass in the CLI (cluster, node)
-	EnvoyParams []string
-
-	// EnvoyConfigOpt allows passing additional parameters to the EnvoyTemplate
-	EnvoyConfigOpt map[string]interface{}
+	EnableTLS         bool
+	startGRPCBackend  bool
 }
 
 // Stat represents a prometheus stat with labels.

@@ -323,7 +323,7 @@ func TestTCPMetadataExchange(t *testing.T) {
 func TestTCPMetadataExchangeNoClientFilter(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.TCPMetadataExchangeFailTest, t)
 	s.Dir = driver.BazelWorkspace()
-	s.SetNoBackend(true)
+	s.SetStartHTTPBackend(false)
 	s.SetStartTCPBackend(true)
 	// Client send istio2  alpn in tls context.
 	s.SetTLSContext(tlsContext)

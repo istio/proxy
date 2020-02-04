@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
 	"istio.io/proxy/test/envoye2e/env"
 	"istio.io/proxy/test/envoye2e/env/grpc_echo"
 )

@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+
 	"istio.io/proxy/test/envoye2e/env/grpc_echo"
 )
 

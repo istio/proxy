@@ -239,11 +239,11 @@ struct IstioDimensions {
   // debug function to specify a textual key.
   // must match HashValue
   std::string debug_key() {
-    auto key =
-        absl::StrJoin({reporter, request_protocol, response_code, grpc_response_status,
-                       response_flags, connection_security_policy,
-                       permissive_response_code, permissive_response_policyid},
-                      "#");
+    auto key = absl::StrJoin(
+        {reporter, request_protocol, response_code, grpc_response_status,
+         response_flags, connection_security_policy, permissive_response_code,
+         permissive_response_policyid},
+        "#");
     if (outbound) {
       return absl::StrJoin(
           {key, destination_app, destination_version, destination_service_name,
