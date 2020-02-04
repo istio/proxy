@@ -16,6 +16,7 @@
 
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 
+#include "extensions/stackdriver/common/utils.h"
 #include "google/protobuf/util/time_util.h"
 
 #ifdef NULL_PLUGIN
@@ -49,7 +50,8 @@ using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using google::protobuf::util::TimeUtil;
 
 MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
-    RootContext* root_context, std::string edges_endpoint)
+    RootContext* root_context, const std::string& edges_endpoint,
+    const std::string& sts_port)
     : context_(root_context) {
   success_callback_ = [](size_t) {
     // TODO(douglas-reid): improve logging message.
@@ -69,9 +71,18 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
   if (edges_endpoint.empty()) {
     // use application default creds and default target
     grpc_service.mutable_google_grpc()->set_target_uri(kMeshTelemetryService);
-    grpc_service.mutable_google_grpc()
-        ->add_call_credentials()
-        ->mutable_google_compute_engine();
+    if (sts_port.empty()) {
+      // Security token exchange is not enabled. Use default GCE credential.
+      grpc_service.mutable_google_grpc()
+          ->add_call_credentials()
+          ->mutable_google_compute_engine();
+    } else {
+      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
+          grpc_service.mutable_google_grpc()
+              ->add_call_credentials()
+              ->mutable_sts_service(),
+          sts_port);
+    }
     grpc_service.mutable_google_grpc()
         ->mutable_channel_credentials()
         ->mutable_ssl_credentials()

@@ -57,7 +57,8 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
   // edges_endpoint is an optional param used to specify alternative service
   // address.
   MeshEdgesServiceClientImpl(RootContext* root_context,
-                             std::string edges_endpoint);
+                             const std::string& edges_endpoint,
+                             const std::string& sts_port = "");
 
   void reportTrafficAssertions(
       const ReportTrafficAssertionsRequest& request) const override;

@@ -77,6 +77,14 @@ constexpr char kMeshTelemetryEndpointKey[] =
 constexpr char kMonitoringExportIntervalKey[] =
     "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
 
+// Port of security token exchange server (STS).
+constexpr char kSTSPortKey[] = "STS_PORT";
+
+// STS credentials
+constexpr char kSTSSubjectTokenPath[] = "/var/run/secrets/tokens/istio-token";
+constexpr char kSTSSubjectTokenType[] = "urn:ietf:params:oauth:token-type:jwt";
+constexpr char kSTSScope[] = "https://www.googleapis.com/auth/cloud-platform";
+
 }  // namespace Common
 }  // namespace Stackdriver
 }  // namespace Extensions
