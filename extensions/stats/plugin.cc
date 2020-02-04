@@ -148,28 +148,28 @@ bool PluginRootContext::onConfigure(size_t) {
       // TCP metrics.
       StatGen(
           absl::StrCat(stat_prefix, "tcp_sent_bytes_total"),
-          MetricType::Counter,
+          MetricType::Counter, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_sent_bytes;
           },
           field_separator, value_separator, /*is_tcp_metric=*/true),
       StatGen(
           absl::StrCat(stat_prefix, "tcp_received_bytes_total"),
-          MetricType::Counter,
+          MetricType::Counter, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_received_bytes;
           },
           field_separator, value_separator, /*is_tcp_metric=*/true),
       StatGen(
           absl::StrCat(stat_prefix, "tcp_connections_opened_total"),
-          MetricType::Counter,
+          MetricType::Counter, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_connections_opened;
           },
           field_separator, value_separator, /*is_tcp_metric=*/true),
       StatGen(
           absl::StrCat(stat_prefix, "tcp_connections_closed_total"),
-          MetricType::Counter,
+          MetricType::Counter, tags,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_connections_closed;
           },
