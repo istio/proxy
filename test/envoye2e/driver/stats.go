@@ -66,7 +66,7 @@ func (s *Stats) Run(p *Params) error {
 		if count == len(s.Matchers) {
 			return nil
 		}
-		log.Printf("failed to match all metrics: %#v", s.Matchers)
+		log.Printf("failed to match all metrics: want %#v, got %#v", s.Matchers, string(body))
 		time.Sleep(1 * time.Second)
 	}
 	return errors.New("failed to match all stats")
