@@ -187,15 +187,17 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   // Register opencensus measures and views.
   registerViews();
-  return true;
-}
 
-bool StackdriverRootContext::onStart(size_t) {
+  // onStart is called prior to onConfigure
   if (enableServerAccessLog() || enableEdgeReporting()) {
     proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
+  } else {
+    proxy_set_tick_period_milliseconds(0);
   }
   return true;
 }
+
+bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {

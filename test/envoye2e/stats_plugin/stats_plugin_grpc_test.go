@@ -131,7 +131,7 @@ func TestStatsPluginGRPC(t *testing.T) {
 		clntStats := map[string]env.Stat{
 			"istio_requests_total": {
 				Value: 10, Labels: map[string]string{
-					"destination_service":  "127.0.0.1:20322",
+					"destination_service":  fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort),
 					"grpc_response_status": "7",
 				}},
 		}
