@@ -25,7 +25,6 @@ using istio::envoy::config::filter::http::alpn::v2alpha1::
     FilterConfig_AlpnOverride;
 using testing::NiceMock;
 using testing::Return;
-using testing::ReturnPointee;
 using testing::ReturnRef;
 
 namespace Envoy {
