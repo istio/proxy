@@ -121,7 +121,6 @@ std::string getSTSPort() {
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(size_t) {
-
   // onStart is called prior to onConfigure
   if (enableServerAccessLog() || enableEdgeReporting()) {
     proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
