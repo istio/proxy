@@ -25,8 +25,8 @@ using istio::envoy::config::filter::http::alpn::v2alpha1::
     FilterConfig_AlpnOverride;
 using testing::NiceMock;
 using testing::Return;
-using testing::ReturnRef;
 using testing::ReturnPointee;
+using testing::ReturnRef;
 
 namespace Envoy {
 namespace Http {
@@ -98,10 +98,9 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
     Envoy::StreamInfo::FilterStateSharedPtr filter_state(
-      std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
-          Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
+        std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
+            Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
-    // ON_CALL(Const(stream_info), filterState()).WillByDefault(ReturnRef(*filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
     EXPECT_TRUE(filter_state->hasData<Network::ApplicationProtocols>(
@@ -134,8 +133,8 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
     Envoy::StreamInfo::FilterStateSharedPtr filter_state(
-      std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
-          Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
+        std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
+            Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
