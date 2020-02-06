@@ -95,16 +95,20 @@ using google::protobuf::util::Status;
   FIELD_FUNC(response_flags)                 \
   FIELD_FUNC(connection_security_policy)
 
+// Aggregate metric values in a shared and reusable bag.
 struct IstioDimensions {
 #define DEFINE_FIELD(name) std::string(name);
   STD_ISTIO_DIMENSIONS(DEFINE_FIELD)
 #undef DEFINE_FIELD
 
+  // Custom values corresponding to the expressions.
+  std::vector<std::string> custom_values;
+
   // utility fields
   bool outbound = false;
 
   // Ordered dimension list is used by the metrics API.
-  static std::vector<MetricTag> metricTags() {
+  static std::vector<MetricTag> defaultTags() {
 #define DEFINE_METRIC(name) {#name, MetricTag::TagType::String},
     return std::vector<MetricTag>{STD_ISTIO_DIMENSIONS(DEFINE_METRIC)};
 #undef DEFINE_METRIC
@@ -113,8 +117,10 @@ struct IstioDimensions {
   // values is used on the datapath, only when new dimensions are found.
   std::vector<std::string> values() {
 #define VALUES(name) name,
-    return std::vector<std::string>{STD_ISTIO_DIMENSIONS(VALUES)};
+    auto result = std::vector<std::string>{STD_ISTIO_DIMENSIONS(VALUES)};
 #undef VALUES
+    result.insert(result.end(), custom_values.begin(), custom_values.end());
+    return result;
   }
 
   void setFieldsUnknownIfEmpty() {
@@ -213,11 +219,14 @@ struct IstioDimensions {
   // Called during intialization.
   // initialize properties that do not vary by requests.
   // Properties are different based on inbound / outbound.
-  void init(bool out_bound, wasm::common::NodeInfo& local_node) {
+  void init(bool out_bound, wasm::common::NodeInfo& local_node,
+            size_t custom_count) {
     outbound = out_bound;
     reporter = out_bound ? vSource : vDest;
 
     map_node(out_bound, local_node);
+
+    custom_values.resize(custom_count);
   }
 
   // maps peer_node and request to dimensions.
@@ -229,7 +238,9 @@ struct IstioDimensions {
 
   std::string to_string() const {
 #define TO_STRING(name) "\"", #name, "\":\"", name, "\" ,",
-    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING) "}");
+    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING)
+                            absl::StrJoin(custom_values, ","),
+                        "}");
 #undef TO_STRING
   }
 
@@ -265,6 +276,11 @@ struct IstioDimensions {
       h += std::hash<std::string>()(c.connection_security_policy) * kMul;
       h += std::hash<std::string>()(c.source_canonical_service) * kMul;
       h += std::hash<std::string>()(c.destination_canonical_service) * kMul;
+      h += std::hash<std::string>()(c.permissive_response_code) * kMul;
+      h += std::hash<std::string>()(c.permissive_response_policyid) * kMul;
+      for (const auto& value : c.custom_values) {
+        h += std::hash<std::string>()(value) * kMul;
+      }
       h += c.outbound * kMul;
       if (c.outbound) {  // only care about dest properties
         h += std::hash<std::string>()(c.destination_service_namespace) * kMul;
@@ -285,10 +301,11 @@ struct IstioDimensions {
   // This function is required to make IstioDimensions type hashable.
   friend bool operator==(const IstioDimensions& lhs,
                          const IstioDimensions& rhs) {
-    return (
+    return (lhs.outbound == rhs.outbound &&
 #define COMPARE(name) lhs.name == rhs.name&&
-        STD_ISTIO_DIMENSIONS(COMPARE) lhs.outbound == rhs.outbound);
+            STD_ISTIO_DIMENSIONS(COMPARE)
 #undef COMPARE
+                    lhs.custom_values == rhs.custom_values);
   }
 };
 
@@ -315,12 +332,12 @@ class SimpleStat {
 class StatGen {
  public:
   explicit StatGen(std::string name, MetricType metric_type,
+                   const std::vector<MetricTag>& tags,
                    ValueExtractorFn value_fn, std::string field_separator,
                    std::string value_separator, bool is_tcp_metric)
       : name_(name),
         value_fn_(value_fn),
-        metric_(metric_type, name, IstioDimensions::metricTags(),
-                field_separator, value_separator),
+        metric_(metric_type, name, tags, field_separator, value_separator),
         is_tcp_metric_(is_tcp_metric){};
 
   StatGen() = delete;
@@ -356,6 +373,7 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
+  bool onDone() override;
   void onTick() override;
   // Report will return false when peer metadata exchange is not found for TCP,
   // so that we wait to report metrics till we find peer metadata or get
@@ -367,12 +385,21 @@ class PluginRootContext : public RootContext {
       uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
   void deleteFromTCPRequestQueue(uint32_t id);
 
+ protected:
+  // Update the dimensions and the expressions data structures with the new
+  // configuration.
+  void initializeDimensions();
+  // Destroy host resources for the allocated expressions.
+  void cleanupExpressions();
+
  private:
   stats::PluginConfig config_;
   wasm::common::NodeInfo local_node_info_;
   ::Wasm::Common::NodeInfoCache node_info_cache_;
 
   IstioDimensions istio_dimensions_;
+  std::vector<uint32_t> expressions_;
+  std::vector<MetricTag> tags_;
 
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;
