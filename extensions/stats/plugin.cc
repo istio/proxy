@@ -94,6 +94,11 @@ bool PluginRootContext::onConfigure(size_t) {
   // scraper"
   stat_prefix = absl::StrCat("_", stat_prefix, "_");
 
+  Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
+               {MetricTag{"component", MetricTag::TagType::String},
+                MetricTag{"tag", MetricTag::TagType::String}});
+  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
+
   stats_ = std::vector<StatGen>{
       // HTTP, HTTP/2, and GRPC metrics
       StatGen(
