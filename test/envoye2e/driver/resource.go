@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -47,6 +48,16 @@ func LoadTestData(testFileName string) string {
 		panic(err)
 	}
 	return string(data)
+}
+
+// Load a YAML and converts to JSON
+func LoadTestJSON(testFileName string) string {
+	data := LoadTestData(testFileName)
+	js, err := yaml.YAMLToJSON([]byte(data))
+	if err != nil {
+		panic(err)
+	}
+	return string(js)
 }
 
 // Loads a test file and fills in template variables

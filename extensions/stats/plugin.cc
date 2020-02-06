@@ -161,13 +161,17 @@ void PluginRootContext::initializeDimensions() {
       // Process tag overrides.
       for (const auto& tag : tags) {
         auto expr_index = addExpression(metric.dimensions().at(tag));
+        Optional<size_t> value = {};
+        if (expr_index.has_value()) {
+          value = count_standard_labels + expr_index.value();
+        }
         auto it = indexes.find(tag);
         if (it != indexes.end()) {
-          it->second = expr_index;
+          it->second = value;
         } else {
           metric_tags[factory.name].push_back(
               {tag, MetricTag::TagType::String});
-          indexes[tag] = count_standard_labels + expr_index.value();
+          indexes[tag] = value;
         }
       }
     }
