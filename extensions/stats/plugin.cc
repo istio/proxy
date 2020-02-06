@@ -15,6 +15,7 @@
 
 #include "extensions/stats/plugin.h"
 
+#include "extensions/stats/proxy_expr.h"
 #include "google/protobuf/util/time_util.h"
 
 using google::protobuf::util::TimeUtil;
@@ -49,7 +50,125 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_sent_bytes = 0;
   request_info.tcp_received_bytes = 0;
 }
+
 }  // namespace
+
+void PluginRootContext::initializeDimensions() {
+  // Clean-up existing expressions.
+  // Potential perf optimization: re-use the existing expressions.
+  cleanupExpressions();
+
+  // Seed the common metric tags with the default set.
+  tags_ = IstioDimensions::defaultTags();
+
+  // Process the dimension overrides
+  for (const auto& metric : config_.metrics()) {
+    if (metric.dimensions().empty()) {
+      continue;
+    }
+
+    // sort map keys
+    std::vector<std::string> keys;
+    auto size = metric.dimensions().size();
+    keys.reserve(size);
+    for (const auto& dim : metric.dimensions()) {
+      keys.push_back(dim.first);
+    }
+    std::sort(keys.begin(), keys.end());
+
+    // create expressions
+    tags_.reserve(tags_.size() + size);
+    expressions_.reserve(expressions_.size() + size);
+    for (const auto& key : keys) {
+      uint32_t token = 0;
+      if (createExpression(metric.dimensions().at(key), &token) !=
+          WasmResult::Ok) {
+        LOG_WARN(absl::StrCat("Cannot create a new tag dimension '", key,
+                              "': " + metric.dimensions().at(key)));
+        continue;
+      }
+      tags_.push_back({key, MetricTag::TagType::String});
+      expressions_.push_back(token);
+    }
+  }
+
+  // Local data does not change, so populate it on config load.
+  istio_dimensions_.init(outbound_, local_node_info_, expressions_.size());
+
+  // Instantiate stat factories using the new dimensions
+  auto field_separator = CONFIG_DEFAULT(field_separator);
+  auto value_separator = CONFIG_DEFAULT(value_separator);
+  auto stat_prefix = CONFIG_DEFAULT(stat_prefix);
+
+  // prepend "_" to opt out of automatic namespacing
+  // If "_" is not prepended, envoy_ is automatically added by prometheus
+  // scraper"
+  stat_prefix = absl::StrCat("_", stat_prefix, "_");
+
+  stats_ = std::vector<StatGen>{
+      // HTTP, HTTP/2, and GRPC metrics
+      StatGen(
+          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
+          tags_,
+          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
+          field_separator, value_separator, /*is_tcp_metric=*/false),
+      StatGen(
+          absl::StrCat(stat_prefix, "request_duration_milliseconds"),
+          MetricType::Histogram, tags_,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.duration / 1000;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/false),
+      StatGen(
+          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
+          tags_,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.request_size;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/false),
+      StatGen(
+          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
+          tags_,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.response_size;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/false),
+      // TCP metrics.
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_sent_bytes_total"),
+          MetricType::Counter, tags_,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_sent_bytes;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_received_bytes_total"),
+          MetricType::Counter, tags_,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_received_bytes;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_connections_opened_total"),
+          MetricType::Counter, tags_,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_connections_opened;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
+      StatGen(
+          absl::StrCat(stat_prefix, "tcp_connections_closed_total"),
+          MetricType::Counter, tags_,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_connections_closed;
+          },
+          field_separator, value_separator, /*is_tcp_metric=*/true),
+  };
+
+  Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
+               {MetricTag{"component", MetricTag::TagType::String},
+                MetricTag{"tag", MetricTag::TagType::String}});
+  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
+}
 
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
@@ -71,9 +190,6 @@ bool PluginRootContext::onConfigure(size_t) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
-  // Local data does not change, so populate it on config load.
-  istio_dimensions_.init(outbound_, local_node_info_);
-
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
@@ -81,79 +197,12 @@ bool PluginRootContext::onConfigure(size_t) {
     peer_metadata_id_key_ = ::Wasm::Common::kDownstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
+
   debug_ = config_.debug();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
 
-  auto field_separator = CONFIG_DEFAULT(field_separator);
-  auto value_separator = CONFIG_DEFAULT(value_separator);
-  auto stat_prefix = CONFIG_DEFAULT(stat_prefix);
-
-  // prepend "_" to opt out of automatic namespacing
-  // If "_" is not prepended, envoy_ is automatically added by prometheus
-  // scraper"
-  stat_prefix = absl::StrCat("_", stat_prefix, "_");
-
-  Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
-               {MetricTag{"component", MetricTag::TagType::String},
-                MetricTag{"tag", MetricTag::TagType::String}});
-  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
-
-  stats_ = std::vector<StatGen>{
-      // HTTP, HTTP/2, and GRPC metrics
-      StatGen(
-          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      StatGen(
-          absl::StrCat(stat_prefix, "request_duration_milliseconds"),
-          MetricType::Histogram,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.duration / 1000;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      StatGen(
-          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.request_size;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      StatGen(
-          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.response_size;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      // TCP metrics.
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_sent_bytes_total"),
-          MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_sent_bytes;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_received_bytes_total"),
-          MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_received_bytes;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_connections_opened_total"),
-          MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_opened;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_connections_closed_total"),
-          MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_closed;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-  };
+  initializeDimensions();
 
   long long tcp_report_duration_nanos = kDefaultTCPReportDurationNanoseconds;
   if (config_.has_tcp_reporting_duration()) {
@@ -162,6 +211,19 @@ bool PluginRootContext::onConfigure(size_t) {
             config_.tcp_reporting_duration());
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_nanos);
+
+  return true;
+}
+
+void PluginRootContext::cleanupExpressions() {
+  for (uint32_t token : expressions_) {
+    exprDelete(token);
+  }
+  expressions_.clear();
+}
+
+bool PluginRootContext::onDone() {
+  cleanupExpressions();
   return true;
 }
 
@@ -215,6 +277,9 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   }
 
   istio_dimensions_.map(peer_node, request_info);
+  for (size_t i = 0; i < expressions_.size(); i++) {
+    evaluateExpression(expressions_[i], &istio_dimensions_.custom_values.at(i));
+  }
 
   auto stats_it = metrics_.find(istio_dimensions_);
   if (stats_it != metrics_.end()) {

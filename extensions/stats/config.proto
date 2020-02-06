@@ -19,6 +19,40 @@ package stats;
 
 import "google/protobuf/duration.proto";
 
+// Metric instance configuration overrides.
+// The metric value and the metric type are optional and permit changing the
+// reported value for an existing metric.
+// The standard metrics are optimized and reported through a "fast-path".
+// The customizations allow full configurability, at the cost of a "slower"
+// path.
+message MetricConfig {
+  // (Optional) Collection of tag names and tag expressions to include in the
+  // metric. Conflicts are resolved by the tag name by overriding previously
+  // supplied values.
+  map<string, string> dimensions = 1;
+
+  // NOT IMPLEMENTED. (Optional) Metric name.
+  string name = 2;
+
+  // NOT IMPLEMENTED. (Optional) A list of tags to remove.
+  repeated string tags_to_remove = 3;
+
+  // NOT IMPLEMENTED. (Optional) Conditional enabling the override.
+  string match = 4;
+
+  // NOT IMPLEMENTED. (Optional) Metric value expression.
+  string value = 5;
+
+  enum MetricType {
+    Counter = 0;
+    Gauge = 1;
+    Histogram = 2;
+  }
+
+  // NOT IMPLEMENTED (Optional) Metric type.
+  MetricType type = 6;
+}
+
 message PluginConfig {
   // next id: 7
   // The following settings should be rarely used.
@@ -48,4 +82,7 @@ message PluginConfig {
   // Optional. Allows configuration of the time between calls out to for TCP
   // metrics reporting. The default duration is `15s`.
   google.protobuf.Duration tcp_reporting_duration = 7;
+
+  // Metric overrides.
+  repeated MetricConfig metrics = 8;
 }

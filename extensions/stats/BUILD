@@ -33,6 +33,7 @@ envoy_cc_library(
     ],
     hdrs = [
         "plugin.h",
+        "proxy_expr.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
