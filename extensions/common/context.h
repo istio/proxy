@@ -119,10 +119,6 @@ struct RequestInfo {
   std::string source_principal;
   std::string destination_principal;
 
-  // Rbac filter policy id and result.
-  std::string rbac_permissive_policy_id;
-  std::string rbac_permissive_engine_result;
-
   // The following fields will only be populated by calling
   // populateExtendedHTTPRequestInfo.
   std::string source_address;

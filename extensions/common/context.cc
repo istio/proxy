@@ -43,9 +43,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 namespace Wasm {
 namespace Common {
 
-const char kRbacFilterName[] = "envoy.filters.http.rbac";
-const char kRbacPermissivePolicyIDField[] = "shadow_effective_policy_id";
-const char kRbacPermissiveEngineResultField[] = "shadow_engine_result";
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";
 const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
@@ -135,12 +132,6 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
   getDestinationService(destination_namespace, use_host_header_fallback,
                         &request_info->destination_service_host,
                         &request_info->destination_service_name);
-
-  // Get rbac labels from dynamic metadata.
-  getValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
-           &request_info->rbac_permissive_policy_id);
-  getValue({"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
-           &request_info->rbac_permissive_engine_result);
 
   getValue({"request", "url_path"}, &request_info->request_url_path);
 
