@@ -53,10 +53,17 @@ TEST(IstioDimensions, Hash) {
                      .request_protocol = "grpc",
                      .source_app = "app_source",
                      .source_version = "v2"};
-  IstioDimensions d8{.outbound = true,
-                     .request_protocol = "grpc",
-                     .source_app = "app_source",
-                     .source_version = "v2"};
+  IstioDimensions d7_duplicate{.outbound = true,
+                               .request_protocol = "grpc",
+                               .source_app = "app_source",
+                               .source_version = "v2"};
+  IstioDimensions d8{
+      .outbound = true,
+      .request_protocol = "grpc",
+      .source_app = "app_source",
+      .source_version = "v2",
+      .grpc_response_status = "12",
+  };
   // Must be unique except for d7 and d8.
   std::set<size_t> hashes;
   hashes.insert(IstioDimensions::HashIstioDimensions()(d1));
@@ -66,8 +73,9 @@ TEST(IstioDimensions, Hash) {
   hashes.insert(IstioDimensions::HashIstioDimensions()(d5));
   hashes.insert(IstioDimensions::HashIstioDimensions()(d6));
   hashes.insert(IstioDimensions::HashIstioDimensions()(d7));
+  hashes.insert(IstioDimensions::HashIstioDimensions()(d7_duplicate));
   hashes.insert(IstioDimensions::HashIstioDimensions()(d8));
-  EXPECT_EQ(hashes.size(), 7);
+  EXPECT_EQ(hashes.size(), 8);
 }
 
 }  // namespace Stats

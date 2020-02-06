@@ -90,6 +90,8 @@ const statsConfig = `stats_config:
     regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
   - tag_name: "response_flags"
     regex: "(response_flags=\\.=(.+?);\\.;)"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
   - tag_name: "permissive_response_code"
@@ -287,7 +289,7 @@ var expectedServerStatsFailCase = map[string]int{
 func TestTCPMetadataExchange(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.TCPMetadataExchangeTest, t)
 	s.Dir = driver.BazelWorkspace()
-	s.SetNoBackend(true)
+	s.SetStartHTTPBackend(false)
 	s.SetStartTCPBackend(true)
 	s.SetTLSContext(tlsContext)
 	s.SetClusterTLSContext(clusterTLSContext)
@@ -321,7 +323,7 @@ func TestTCPMetadataExchange(t *testing.T) {
 func TestTCPMetadataExchangeNoClientFilter(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.TCPMetadataExchangeFailTest, t)
 	s.Dir = driver.BazelWorkspace()
-	s.SetNoBackend(true)
+	s.SetStartHTTPBackend(false)
 	s.SetStartTCPBackend(true)
 	// Client send istio2  alpn in tls context.
 	s.SetTLSContext(tlsContext)
