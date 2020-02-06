@@ -52,6 +52,9 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::FilterStatus;
 namespace Stats {
 
 using StringView = absl::string_view;
+template <typename K, typename V>
+using Map = std::unordered_map<K, V>;
+template <typename T>
 
 constexpr StringView Sep = "#@";
 
@@ -110,11 +113,11 @@ enum class StandardLabels : int32_t {
 STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
 #undef DECLARE_CONSTANT
 
-const int32_t count_standard_labels =
-    static_cast<int32_t>(StandardLabels::xxx_last_metric);
+const size_t count_standard_labels =
+    static_cast<size_t>(StandardLabels::xxx_last_metric);
 
 // Ordered dimension list is used by the metrics API.
-static std::vector<MetricTag> StandardLabels() {
+static std::vector<MetricTag> DefaultLabels() {
 #define DEFINE_METRIC_TAG(name) {#name, MetricTag::TagType::String},
   return std::vector<MetricTag>{STD_ISTIO_DIMENSIONS(DEFINE_METRIC_TAG)};
 #undef DEFINE_METRIC_TAG
@@ -150,52 +153,52 @@ class SimpleStat {
   ValueExtractorFn value_fn_;
 };
 
-// StatFactory creates a stat generator given tags.
-struct StatFactory {
+// MetricFactory creates a stat generator given tags.
+struct MetricFactory {
   std::string name;
   MetricType type;
   ValueExtractorFn extractor;
   bool is_tcp;
 };
 
-static std::vector<StatFactory> StandardStats() {
+static std::vector<MetricFactory> DefaultMetrics() {
   return {
       // HTTP, HTTP/2, and GRPC metrics
-      StatFactory{
+      MetricFactory{
           "requests_total", MetricType::Counter,
 
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
           false},
-      StatFactory{"request_duration_milliseconds", MetricType::Histogram,
-                  [](const ::Wasm::Common::RequestInfo& request_info)
-                      -> uint64_t { return request_info.duration / 1000; },
-                  false},
-      StatFactory{"request_bytes", MetricType::Histogram,
+      MetricFactory{"request_duration_milliseconds", MetricType::Histogram,
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.duration / 1000; },
+                    false},
+      MetricFactory{"request_bytes", MetricType::Histogram,
 
-                  [](const ::Wasm::Common::RequestInfo& request_info)
-                      -> uint64_t { return request_info.request_size; },
-                  false},
-      StatFactory{"response_bytes", MetricType::Histogram,
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.request_size; },
+                    false},
+      MetricFactory{"response_bytes", MetricType::Histogram,
 
-                  [](const ::Wasm::Common::RequestInfo& request_info)
-                      -> uint64_t { return request_info.response_size; },
-                  false},
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.response_size; },
+                    false},
       // TCP metrics.
-      StatFactory{"tcp_sent_bytes_total", MetricType::Counter,
-                  [](const ::Wasm::Common::RequestInfo& request_info)
-                      -> uint64_t { return request_info.tcp_sent_bytes; },
-                  true},
-      StatFactory{"tcp_received_bytes_total", MetricType::Counter,
-                  [](const ::Wasm::Common::RequestInfo& request_info)
-                      -> uint64_t { return request_info.tcp_received_bytes; },
-                  true},
-      StatFactory{
+      MetricFactory{"tcp_sent_bytes_total", MetricType::Counter,
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.tcp_sent_bytes; },
+                    true},
+      MetricFactory{"tcp_received_bytes_total", MetricType::Counter,
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.tcp_received_bytes; },
+                    true},
+      MetricFactory{
           "tcp_connections_opened_total", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_connections_opened;
           },
           true},
-      StatFactory{
+      MetricFactory{
           "tcp_connections_closed_total", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_connections_closed;
@@ -208,27 +211,56 @@ static std::vector<StatFactory> StandardStats() {
 class StatGen {
  public:
   explicit StatGen(const std::string& stat_prefix,
-                   const StatFactory& metric_factory,
+                   const MetricFactory& metric_factory,
                    const std::vector<MetricTag>& tags,
+                   const std::vector<size_t>& indexes,
                    const std::string& field_separator,
                    const std::string& value_separator)
-      : metric_factory_(metric_factory),
-        metric_(metric_factory_.type,
-                absl::StrCat(stat_prefix, metric_factory_.name), tags,
-                field_separator, value_separator){};
+      : is_tcp_(metric_factory.is_tcp),
+        indexes_(indexes),
+        extractor_(metric_factory.extractor),
+        metric_(metric_factory.type,
+                absl::StrCat(stat_prefix, metric_factory.name), tags,
+                field_separator, value_separator) {
+    if (tags.size() != indexes.size()) {
+      logAbort("metric tags.size() != indexes.size()");
+    }
+  };
 
   StatGen() = delete;
-  inline StringView name() const { return metric_factory_.name; };
-  inline bool is_tcp_metric() const { return metric_factory_.is_tcp; }
+  inline StringView name() const { return metric_.name; };
+  inline bool is_tcp_metric() const { return is_tcp_; }
 
   // Resolve metric based on provided dimension values.
-  SimpleStat resolve(std::vector<std::string>& vals) {
-    auto metric_id = metric_.resolveWithFields(vals);
-    return SimpleStat(metric_id, metric_factory_.extractor);
+  SimpleStat resolve(const IstioDimensions& instance) {
+    // Using a lower level API to avoid creating an intermediary vector
+    size_t s = metric_.prefix.size();
+    for (const auto& tag : metric_.tags) {
+      s += tag.name.size() + metric_.value_separator.size();
+    }
+    for (size_t i : indexes_) {
+      s += instance[i].size() + metric_.field_separator.size();
+    }
+    s += metric_.name.size();
+
+    std::string n;
+    n.reserve(s);
+    n.append(metric_.prefix);
+    for (size_t i = 0; i < metric_.tags.size(); i++) {
+      n.append(metric_.tags[i].name);
+      n.append(metric_.value_separator);
+      n.append(instance[indexes_[i]]);
+      n.append(metric_.field_separator);
+    }
+    n.append(metric_.name);
+    auto metric_id = metric_.resolveFullName(n);
+    return SimpleStat(metric_id, extractor_);
   };
 
  private:
-  StatFactory metric_factory_;
+  bool is_tcp_;
+  std::vector<size_t> indexes_;
+  ValueExtractorFn extractor_;
   Metric metric_;
 };
 
@@ -266,6 +298,8 @@ class PluginRootContext : public RootContext {
   void initializeDimensions();
   // Destroy host resources for the allocated expressions.
   void cleanupExpressions();
+  // Allocate an expression if necessary and return its token.
+  Optional<size_t> addExpression(const std::string& input);
 
  private:
   stats::PluginConfig config_;
@@ -274,7 +308,7 @@ class PluginRootContext : public RootContext {
 
   IstioDimensions istio_dimensions_;
   std::vector<uint32_t> expressions_;
-  std::vector<MetricTag> tags_;
+  Map<std::string, size_t> input_expressions_;
 
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;
@@ -291,7 +325,7 @@ class PluginRootContext : public RootContext {
   std::unordered_map<IstioDimensions, std::vector<SimpleStat>,
                      HashIstioDimensions>
       metrics_;
-  std::unordered_map<uint32_t, std::shared_ptr<::Wasm::Common::RequestInfo>>
+  Map<uint32_t, std::shared_ptr<::Wasm::Common::RequestInfo>>
       tcp_request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;

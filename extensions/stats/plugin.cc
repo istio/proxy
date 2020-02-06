@@ -129,40 +129,55 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
 
 void PluginRootContext::initializeDimensions() {
   // Clean-up existing expressions.
-  // Potential perf optimization: re-use the existing expressions.
   cleanupExpressions();
 
   // Seed the common metric tags with the default set.
-  tags_ = StandardLabels();
+  std::vector<MetricFactory> factories = DefaultMetrics();
+  Map<std::string, std::vector<MetricTag>> metric_tags;
+  Map<std::string, Map<std::string, Optional<size_t>>> metric_indexes;
+  std::vector<MetricTag> default_tags = DefaultLabels();
+  for (const auto& factory : factories) {
+    metric_tags[factory.name] = default_tags;
+    for (size_t i = 0; i < count_standard_labels; i++) {
+      metric_indexes[factory.name][default_tags[i].name] = i;
+    }
+  }
 
-  // Process the dimension overrides
+  // Process the dimension overrides.
   for (const auto& metric : config_.metrics()) {
-    if (metric.dimensions().empty()) {
-      continue;
-    }
-
-    // sort map keys
-    std::vector<std::string> keys;
-    auto size = metric.dimensions().size();
-    keys.reserve(size);
+    // sort tag override tags
+    std::vector<std::string> tags;
+    const auto size = metric.dimensions().size();
+    tags.reserve(size);
     for (const auto& dim : metric.dimensions()) {
-      keys.push_back(dim.first);
+      tags.push_back(dim.first);
     }
-    std::sort(keys.begin(), keys.end());
+    std::sort(tags.begin(), tags.end());
 
-    // create expressions
-    tags_.reserve(tags_.size() + size);
-    expressions_.reserve(expressions_.size() + size);
-    for (const auto& key : keys) {
-      uint32_t token = 0;
-      if (createExpression(metric.dimensions().at(key), &token) !=
-          WasmResult::Ok) {
-        LOG_WARN(absl::StrCat("Cannot create a new tag dimension '", key,
-                              "': " + metric.dimensions().at(key)));
+    for (const auto& factory : factories) {
+      if (!metric.name().empty() && metric.name() != factory.name) {
         continue;
       }
-      tags_.push_back({key, MetricTag::TagType::String});
-      expressions_.push_back(token);
+      auto& indexes = metric_indexes[factory.name];
+      // Process tag deletions.
+      for (const auto& tag : metric.tags_to_remove()) {
+        auto it = indexes.find(tag);
+        if (it != indexes.end()) {
+          it->second = {};
+        }
+      }
+      // Process tag overrides.
+      for (const auto& tag : tags) {
+        auto expr_index = addExpression(metric.dimensions().at(tag));
+        auto it = indexes.find(tag);
+        if (it != indexes.end()) {
+          it->second = expr_index;
+        } else {
+          metric_tags[factory.name].push_back(
+              {tag, MetricTag::TagType::String});
+          indexes[tag] = count_standard_labels + expr_index.value();
+        }
+      }
     }
   }
 
@@ -182,8 +197,22 @@ void PluginRootContext::initializeDimensions() {
   stat_prefix = absl::StrCat("_", stat_prefix, "_");
 
   stats_ = std::vector<StatGen>();
-  for (const auto& factory : StandardStats()) {
-    stats_.emplace_back(stat_prefix, factory, tags_, field_separator,
+  std::vector<MetricTag> tags;
+  std::vector<size_t> indexes;
+  for (const auto& factory : factories) {
+    tags.clear();
+    indexes.clear();
+    size_t size = metric_tags[factory.name].size();
+    tags.reserve(size);
+    indexes.reserve(size);
+    for (const auto& tag : metric_tags[factory.name]) {
+      auto index = metric_indexes[factory.name][tag.name];
+      if (index.has_value()) {
+        tags.push_back(tag);
+        indexes.push_back(index.value());
+      }
+    }
+    stats_.emplace_back(stat_prefix, factory, tags, indexes, field_separator,
                         value_separator);
   }
 
@@ -243,6 +272,23 @@ void PluginRootContext::cleanupExpressions() {
     exprDelete(token);
   }
   expressions_.clear();
+  input_expressions_.clear();
+}
+
+Optional<size_t> PluginRootContext::addExpression(const std::string& input) {
+  auto it = input_expressions_.find(input);
+  if (it == input_expressions_.end()) {
+    uint32_t token = 0;
+    if (createExpression(input, &token) != WasmResult::Ok) {
+      LOG_WARN(absl::StrCat("Cannot create an expression: " + input));
+      return {};
+    }
+    size_t result = expressions_.size();
+    input_expressions_[input] = result;
+    expressions_.push_back(token);
+    return result;
+  }
+  return it->second;
 }
 
 bool PluginRootContext::onDone() {

@@ -41,41 +41,56 @@ namespace Plugin {
 namespace Stats {
 
 TEST(IstioDimensions, Hash) {
-  IstioDimensions d1;
-  IstioDimensions d2{.request_protocol = "grpc"};
-  IstioDimensions d3{.request_protocol = "grpc", .response_code = "200"};
-  IstioDimensions d4{.request_protocol = "grpc", .response_code = "400"};
-  IstioDimensions d5{.request_protocol = "grpc", .source_app = "app_source"};
-  IstioDimensions d6{.request_protocol = "grpc",
-                     .source_app = "app_source",
-                     .source_version = "v2"};
-  IstioDimensions d7{.outbound = true,
-                     .request_protocol = "grpc",
-                     .source_app = "app_source",
-                     .source_version = "v2"};
-  IstioDimensions d7_duplicate{.outbound = true,
-                               .request_protocol = "grpc",
-                               .source_app = "app_source",
-                               .source_version = "v2"};
-  IstioDimensions d8{
-      .outbound = true,
-      .request_protocol = "grpc",
-      .source_app = "app_source",
-      .source_version = "v2",
-      .grpc_response_status = "12",
-  };
+  IstioDimensions d1(count_standard_labels);
+  IstioDimensions d2(count_standard_labels);
+  d2[request_protocol] = "grpc";
+  IstioDimensions d3(count_standard_labels);
+  d3[request_protocol] = "grpc";
+  d3[response_code] = "200";
+  IstioDimensions d4(count_standard_labels);
+  d4[request_protocol] = "grpc";
+  d4[response_code] = "400";
+  IstioDimensions d5(count_standard_labels);
+  d5[request_protocol] = "grpc";
+  d5[source_app] = "app_source";
+  IstioDimensions d6(count_standard_labels);
+  d6[reporter] = source;
+  d6[request_protocol] = "grpc";
+  d6[source_app] = "app_source";
+  d6[source_version] = "v2";
+  IstioDimensions d7(count_standard_labels);
+  d7[request_protocol] = "grpc", d7[source_app] = "app_source",
+  d7[source_version] = "v2";
+  IstioDimensions d7_duplicate(count_standard_labels);
+  d7_duplicate[request_protocol] = "grpc";
+  d7_duplicate[source_app] = "app_source";
+  d7_duplicate[source_version] = "v2";
+  IstioDimensions d8(count_standard_labels);
+  d8[request_protocol] = "grpc";
+  d8[source_app] = "app_source";
+  d8[source_version] = "v2";
+  d8[grpc_response_status] = "12";
+
   // Must be unique except for d7 and d8.
   std::set<size_t> hashes;
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d1));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d2));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d3));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d4));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d5));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d6));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d7));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d7_duplicate));
-  hashes.insert(IstioDimensions::HashIstioDimensions()(d8));
+  hashes.insert(HashIstioDimensions()(d1));
+  hashes.insert(HashIstioDimensions()(d2));
+  hashes.insert(HashIstioDimensions()(d3));
+  hashes.insert(HashIstioDimensions()(d4));
+  hashes.insert(HashIstioDimensions()(d5));
+  hashes.insert(HashIstioDimensions()(d6));
+  hashes.insert(HashIstioDimensions()(d7));
+  hashes.insert(HashIstioDimensions()(d7_duplicate));
+  hashes.insert(HashIstioDimensions()(d8));
   EXPECT_EQ(hashes.size(), 8);
+}
+
+TEST(IstioDimensions, DefaultLabelsSize) {
+  EXPECT_EQ(DefaultLabels().size(), count_standard_labels);
+}
+
+TEST(IstioDimensions, DefaultMetricsSize) {
+  EXPECT_EQ(DefaultMetrics().size(), 8);
 }
 
 }  // namespace Stats

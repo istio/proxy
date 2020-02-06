@@ -31,10 +31,11 @@ message MetricConfig {
   // supplied values.
   map<string, string> dimensions = 1;
 
-  // NOT IMPLEMENTED. (Optional) Metric name.
+  // (Optional) Metric name to restrict the override to a metric. If not
+  // specified, applies to all.
   string name = 2;
 
-  // NOT IMPLEMENTED. (Optional) A list of tags to remove.
+  // (Optional) A list of tags to remove.
   repeated string tags_to_remove = 3;
 
   // NOT IMPLEMENTED. (Optional) Conditional enabling the override.
