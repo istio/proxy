@@ -45,6 +45,80 @@ constexpr long long kDefaultTCPReportDurationNanoseconds = 15000000000;  // 15s
 
 namespace {
 
+void map_node(IstioDimensions& instance, bool is_source,
+              const wasm::common::NodeInfo& node) {
+  if (is_source) {
+    instance[source_workload] = node.workload_name();
+    instance[source_workload_namespace] = node.namespace_();
+
+    auto source_labels = node.labels();
+    instance[source_app] = source_labels["app"];
+    instance[source_version] = source_labels["version"];
+  } else {
+    instance[destination_workload] = node.workload_name();
+    instance[destination_workload_namespace] = node.namespace_();
+
+    auto destination_labels = node.labels();
+    instance[destination_app] = destination_labels["app"];
+    instance[destination_version] = destination_labels["version"];
+
+    instance[destination_service_namespace] = node.namespace_();
+  }
+}
+
+// Called during request processing.
+void map_peer(IstioDimensions& instance, bool outbound,
+              const wasm::common::NodeInfo& peer_node) {
+  map_node(instance, !outbound, peer_node);
+}
+
+void map_unknown_if_empty(IstioDimensions& instance) {
+#define SET_IF_EMPTY(name)      \
+  if (instance[name].empty()) { \
+    instance[name] = unknown;   \
+  }
+  STD_ISTIO_DIMENSIONS(SET_IF_EMPTY)
+#undef SET_IF_EMPTY
+}
+
+// maps from request context to dimensions.
+// local node derived dimensions are already filled in.
+void map_request(IstioDimensions& instance,
+                 const ::Wasm::Common::RequestInfo& request) {
+  instance[source_principal] = request.source_principal;
+  instance[destination_principal] = request.destination_principal;
+  instance[destination_service] = request.destination_service_host;
+  instance[destination_service_name] = request.destination_service_name;
+  instance[destination_port] = std::to_string(request.destination_port);
+  instance[request_protocol] = request.request_protocol;
+  instance[response_code] = std::to_string(request.response_code);
+  instance[response_flags] = request.response_flag;
+  instance[connection_security_policy] = std::string(
+      ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy));
+  instance[permissive_response_code] =
+      request.rbac_permissive_engine_result.empty()
+          ? "none"
+          : request.rbac_permissive_engine_result;
+  instance[permissive_response_policyid] =
+      request.rbac_permissive_policy_id.empty()
+          ? "none"
+          : request.rbac_permissive_policy_id;
+}
+
+// maps peer_node and request to dimensions.
+void map(IstioDimensions& instance, bool outbound,
+         const wasm::common::NodeInfo& peer_node,
+         const ::Wasm::Common::RequestInfo& request) {
+  map_peer(instance, outbound, peer_node);
+  map_request(instance, request);
+  map_unknown_if_empty(instance);
+  if (request.request_protocol == "grpc") {
+    instance[grpc_response_status] = std::to_string(request.grpc_status);
+  } else {
+    instance[grpc_response_status] = "";
+  }
+}
+
 void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_connections_opened = 0;
   request_info.tcp_sent_bytes = 0;
@@ -59,7 +133,7 @@ void PluginRootContext::initializeDimensions() {
   cleanupExpressions();
 
   // Seed the common metric tags with the default set.
-  tags_ = IstioDimensions::defaultTags();
+  tags_ = StandardLabels();
 
   // Process the dimension overrides
   for (const auto& metric : config_.metrics()) {
@@ -93,7 +167,9 @@ void PluginRootContext::initializeDimensions() {
   }
 
   // Local data does not change, so populate it on config load.
-  istio_dimensions_.init(outbound_, local_node_info_, expressions_.size());
+  istio_dimensions_.resize(count_standard_labels + expressions_.size());
+  istio_dimensions_[reporter] = outbound_ ? source : destination;
+  map_node(istio_dimensions_, outbound_, local_node_info_);
 
   // Instantiate stat factories using the new dimensions
   auto field_separator = CONFIG_DEFAULT(field_separator);
@@ -105,64 +181,11 @@ void PluginRootContext::initializeDimensions() {
   // scraper"
   stat_prefix = absl::StrCat("_", stat_prefix, "_");
 
-  stats_ = std::vector<StatGen>{
-      // HTTP, HTTP/2, and GRPC metrics
-      StatGen(
-          absl::StrCat(stat_prefix, "requests_total"), MetricType::Counter,
-          tags_,
-          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      StatGen(
-          absl::StrCat(stat_prefix, "request_duration_milliseconds"),
-          MetricType::Histogram, tags_,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.duration / 1000;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      StatGen(
-          absl::StrCat(stat_prefix, "request_bytes"), MetricType::Histogram,
-          tags_,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.request_size;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      StatGen(
-          absl::StrCat(stat_prefix, "response_bytes"), MetricType::Histogram,
-          tags_,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.response_size;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/false),
-      // TCP metrics.
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_sent_bytes_total"),
-          MetricType::Counter, tags_,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_sent_bytes;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_received_bytes_total"),
-          MetricType::Counter, tags_,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_received_bytes;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_connections_opened_total"),
-          MetricType::Counter, tags_,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_opened;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-      StatGen(
-          absl::StrCat(stat_prefix, "tcp_connections_closed_total"),
-          MetricType::Counter, tags_,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_closed;
-          },
-          field_separator, value_separator, /*is_tcp_metric=*/true),
-  };
+  stats_ = std::vector<StatGen>();
+  for (const auto& factory : StandardStats()) {
+    stats_.emplace_back(stat_prefix, factory, tags_, field_separator,
+                        value_separator);
+  }
 
   Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
                {MetricTag{"component", MetricTag::TagType::String},
@@ -276,18 +299,18 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                             destination_node_info.namespace_());
   }
 
-  istio_dimensions_.map(peer_node, request_info);
+  map(istio_dimensions_, outbound_, peer_node, request_info);
   for (size_t i = 0; i < expressions_.size(); i++) {
-    evaluateExpression(expressions_[i], &istio_dimensions_.custom_values.at(i));
+    evaluateExpression(expressions_[i],
+                       &istio_dimensions_.at(count_standard_labels + i));
   }
 
   auto stats_it = metrics_.find(istio_dimensions_);
   if (stats_it != metrics_.end()) {
     for (auto& stat : stats_it->second) {
       stat.record(request_info);
-      LOG_DEBUG(absl::StrCat(
-          "metricKey cache hit ", istio_dimensions_.debug_key(),
-          ", stat=", stat.metric_id_, stats_it->first.to_string()));
+      LOG_DEBUG(
+          absl::StrCat("metricKey cache hit ", ", stat=", stat.metric_id_));
     }
     cache_hits_accumulator_++;
     if (cache_hits_accumulator_ == 100) {
@@ -297,17 +320,13 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     return true;
   }
 
-  // fetch dimensions in the required form for resolve.
-  auto values = istio_dimensions_.values();
-
   std::vector<SimpleStat> stats;
   for (auto& statgen : stats_) {
     if (statgen.is_tcp_metric() != is_tcp) {
       continue;
     }
-    auto stat = statgen.resolve(values);
+    auto stat = statgen.resolve(istio_dimensions_);
     LOG_DEBUG(absl::StrCat("metricKey cache miss ", statgen.name(), " ",
-                           istio_dimensions_.debug_key(),
                            ", stat=", stat.metric_id_));
     stat.record(request_info);
     stats.push_back(stat);
