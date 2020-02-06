@@ -91,9 +91,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(response_code)                  \
   FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)     \
-  FIELD_FUNC(permissive_response_code)       \
-  FIELD_FUNC(permissive_response_policyid)
+  FIELD_FUNC(connection_security_policy)
 
 struct IstioDimensions {
 #define DEFINE_FIELD(name) std::string(name);
@@ -139,8 +137,6 @@ struct IstioDimensions {
   // destination_workload="svc01-0-8",
   // destination_workload_namespace="service-graph01",
   // destination_port="80",
-  // permissive_response_code="none",
-  // permissive_response_policyid="none",
   // reporter="source",
   // request_protocol="http",
   // response_code="200",
@@ -196,13 +192,6 @@ struct IstioDimensions {
         std::string(::Wasm::Common::AuthenticationPolicyString(
             request.service_auth_policy));
 
-    permissive_response_code = request.rbac_permissive_engine_result.empty()
-                                   ? "none"
-                                   : request.rbac_permissive_engine_result;
-    permissive_response_policyid = request.rbac_permissive_policy_id.empty()
-                                       ? "none"
-                                       : request.rbac_permissive_policy_id;
-
     setFieldsUnknownIfEmpty();
 
     if (request.request_protocol == "grpc") {
@@ -241,8 +230,7 @@ struct IstioDimensions {
   std::string debug_key() {
     auto key = absl::StrJoin(
         {reporter, request_protocol, response_code, grpc_response_status,
-         response_flags, connection_security_policy, permissive_response_code,
-         permissive_response_policyid},
+         response_flags, connection_security_policy},
         "#");
     if (outbound) {
       return absl::StrJoin(
@@ -267,8 +255,6 @@ struct IstioDimensions {
       h += std::hash<std::string>()(c.grpc_response_status) * kMul;
       h += std::hash<std::string>()(c.response_flags) * kMul;
       h += std::hash<std::string>()(c.connection_security_policy) * kMul;
-      h += std::hash<std::string>()(c.permissive_response_code) * kMul;
-      h += std::hash<std::string>()(c.permissive_response_policyid) * kMul;
       h += c.outbound * kMul;
       if (c.outbound) {  // only care about dest properties
         h += std::hash<std::string>()(c.destination_service_namespace) * kMul;
