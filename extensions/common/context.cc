@@ -43,9 +43,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 namespace Wasm {
 namespace Common {
 
-const char kRbacFilterName[] = "envoy.filters.http.rbac";
-const char kRbacPermissivePolicyIDField[] = "shadow_effective_policy_id";
-const char kRbacPermissiveEngineResultField[] = "shadow_engine_result";
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";
 const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
