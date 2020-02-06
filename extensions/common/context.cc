@@ -269,6 +269,10 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->response_code = response_code;
   }
 
+  int64_t grpc_status_code = 2;
+  getValue({"response", "grpc_status"}, &grpc_status_code);
+  request_info->grpc_status = grpc_status_code;
+
   if (kGrpcContentTypes.count(getHeaderMapValue(HeaderMapType::RequestHeaders,
                                                 kContentTypeHeaderKey)
                                   ->toString()) != 0) {

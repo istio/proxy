@@ -276,7 +276,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
 
 void MetadataExchangeFilter::setFilterState(const std::string& key,
                                             absl::string_view value) {
-  read_callbacks_->connection().streamInfo().filterState().setData(
+  read_callbacks_->connection().streamInfo().filterState()->setData(
       key,
       std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(value),
       StreamInfo::FilterState::StateType::Mutable);

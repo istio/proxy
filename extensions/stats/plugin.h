@@ -89,6 +89,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
   FIELD_FUNC(connection_security_policy)     \
   FIELD_FUNC(permissive_response_code)       \
@@ -143,6 +144,7 @@ struct IstioDimensions {
   // reporter="source",
   // request_protocol="http",
   // response_code="200",
+  // grpc_response_status="", <-- not grpc request
   // response_flags="-",
   // source_app="svc01-0",
   // source_principal="unknown",
@@ -202,6 +204,12 @@ struct IstioDimensions {
                                        : request.rbac_permissive_policy_id;
 
     setFieldsUnknownIfEmpty();
+
+    if (request.request_protocol == "grpc") {
+      grpc_response_status = std::to_string(request.grpc_status);
+    } else {
+      grpc_response_status = "";
+    }
   }
 
  public:
@@ -231,11 +239,11 @@ struct IstioDimensions {
   // debug function to specify a textual key.
   // must match HashValue
   std::string debug_key() {
-    auto key =
-        absl::StrJoin({reporter, request_protocol, response_code,
-                       response_flags, connection_security_policy,
-                       permissive_response_code, permissive_response_policyid},
-                      "#");
+    auto key = absl::StrJoin(
+        {reporter, request_protocol, response_code, grpc_response_status,
+         response_flags, connection_security_policy, permissive_response_code,
+         permissive_response_policyid},
+        "#");
     if (outbound) {
       return absl::StrJoin(
           {key, destination_app, destination_version, destination_service_name,
@@ -256,6 +264,7 @@ struct IstioDimensions {
       size_t h = 0;
       h += std::hash<std::string>()(c.request_protocol) * kMul;
       h += std::hash<std::string>()(c.response_code) * kMul;
+      h += std::hash<std::string>()(c.grpc_response_status) * kMul;
       h += std::hash<std::string>()(c.response_flags) * kMul;
       h += std::hash<std::string>()(c.connection_security_policy) * kMul;
       h += std::hash<std::string>()(c.permissive_response_code) * kMul;
