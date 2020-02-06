@@ -168,7 +168,8 @@ struct IstioDimensions {
       auto source_labels = node.labels();
       source_app = source_labels["app"];
       source_version = source_labels["version"];
-      source_canonical_service = source_labels["service.istio.io/canonical-name"];
+      source_canonical_service =
+          source_labels["service.istio.io/canonical-name"];
     } else {
       destination_workload = node.workload_name();
       destination_workload_namespace = node.namespace_();
@@ -176,7 +177,8 @@ struct IstioDimensions {
       auto destination_labels = node.labels();
       destination_app = destination_labels["app"];
       destination_version = destination_labels["version"];
-      destination_canonical_service = destination_labels["service.istio.io/canonical-name"];
+      destination_canonical_service =
+          destination_labels["service.istio.io/canonical-name"];
 
       destination_service_namespace = node.namespace_();
     }
