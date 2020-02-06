@@ -95,14 +95,6 @@ void map_request(IstioDimensions& instance,
   instance[response_flags] = request.response_flag;
   instance[connection_security_policy] = std::string(
       ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy));
-  instance[permissive_response_code] =
-      request.rbac_permissive_engine_result.empty()
-          ? "none"
-          : request.rbac_permissive_engine_result;
-  instance[permissive_response_policyid] =
-      request.rbac_permissive_policy_id.empty()
-          ? "none"
-          : request.rbac_permissive_policy_id;
 }
 
 // maps peer_node and request to dimensions.
