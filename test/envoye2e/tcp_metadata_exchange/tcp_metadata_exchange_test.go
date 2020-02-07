@@ -56,6 +56,8 @@ const statsConfig = `stats_config:
     regex: "(source_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_workload"
     regex: "(source_workload=\\.=(.+?);\\.;)"
+  - tag_name: "source_canonical_service"
+    regex: "(source_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "source_workload_namespace"
     regex: "(source_workload_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_principal"
@@ -78,6 +80,8 @@ const statsConfig = `stats_config:
     regex: "(destination_version=\\.=(.+?);\\.;)"
   - tag_name: "destination_service"
     regex: "(destination_service=\\.=(.+?);\\.;)"
+  - tag_name: "destination_canonical_service"
+    regex: "(destination_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_name"
     regex: "(destination_service_name=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_namespace"
@@ -196,7 +200,8 @@ const clientNodeMetadata = `"NAMESPACE": "default",
 "LABELS": {
  "app": "productpage",
  "version": "v1",
- "pod-template-hash": "84975bc778"
+ "pod-template-hash": "84975bc778",
+ "service.istio.io/canonical-name": "productpage-v1",
 },
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
 "NAME": "productpage-v1-84975bc778-pxz2w",`
@@ -225,7 +230,8 @@ const serverNodeMetadata = `"NAMESPACE": "default",
 "LABELS": {
  "app": "ratings",
  "version": "v1",
- "pod-template-hash": "84975bc778"
+ "pod-template-hash": "84975bc778",
+ "service.istio.io/canonical-name": "ratings",
 },
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
 "NAME": "ratings-v1-84975bc778-pxz2w",`
