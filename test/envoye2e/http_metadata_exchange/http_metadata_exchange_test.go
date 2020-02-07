@@ -210,6 +210,7 @@ var expectedServerStats = map[string]int{
 }
 
 func TestHttpMetadataExchange(t *testing.T) {
+	t.Skip("Enable after https://github.com/envoyproxy/envoy-wasm/issues/402  is fixed")
 	testPlugins(t, func(s *env.TestSetup) {
 		serverStats := map[string]env.Stat{
 			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "server.default.svc.cluster.local",
