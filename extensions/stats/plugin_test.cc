@@ -85,14 +85,6 @@ TEST(IstioDimensions, Hash) {
   EXPECT_EQ(hashes.size(), 8);
 }
 
-TEST(IstioDimensions, DefaultLabelsSize) {
-  EXPECT_EQ(DefaultLabels().size(), count_standard_labels);
-}
-
-TEST(IstioDimensions, DefaultMetricsSize) {
-  EXPECT_EQ(DefaultMetrics().size(), 8);
-}
-
 }  // namespace Stats
 
 // WASM_EPILOG
