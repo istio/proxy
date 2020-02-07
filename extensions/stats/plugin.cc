@@ -55,7 +55,7 @@ void map_node(IstioDimensions& instance, bool is_source,
     instance[source_app] = source_labels["app"];
     instance[source_version] = source_labels["version"];
     instance[source_canonical_service] =
-          source_labels["service.istio.io/canonical-name"];
+        source_labels["service.istio.io/canonical-name"];
   } else {
     instance[destination_workload] = node.workload_name();
     instance[destination_workload_namespace] = node.namespace_();
@@ -64,7 +64,7 @@ void map_node(IstioDimensions& instance, bool is_source,
     instance[destination_app] = destination_labels["app"];
     instance[destination_version] = destination_labels["version"];
     instance[destination_canonical_service] =
-          destination_labels["service.istio.io/canonical-name"];
+        destination_labels["service.istio.io/canonical-name"];
 
     instance[destination_service_namespace] = node.namespace_();
   }
@@ -222,8 +222,10 @@ void PluginRootContext::initializeDimensions() {
         break;
       case stats::MetricType::GAUGE:
         factory.type = MetricType::Gauge;
+        break;
       case stats::MetricType::HISTOGRAM:
         factory.type = MetricType::Histogram;
+        break;
       default:
         break;
     }
