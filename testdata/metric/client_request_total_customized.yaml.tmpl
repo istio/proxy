@@ -8,6 +8,8 @@ metric:
     value: source
   - name: source_workload
     value: _productpage-v1
+  - name: source_canonical_service
+    value: productpage-v1
   - name: source_workload_namespace
     value: _default
   - name: source_principal
@@ -26,6 +28,8 @@ metric:
     value: _v1
   - name: destination_service
     value: 127.0.0.1:{{ .Vars.ClientPort }}
+  - name: destination_canonical_service
+    value: ratings
   - name: destination_service_name
     value: 127.0.0.1:{{ .Vars.ClientPort }}
   - name: destination_service_namespace

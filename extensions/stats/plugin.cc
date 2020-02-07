@@ -54,6 +54,8 @@ void map_node(IstioDimensions& instance, bool is_source,
     auto source_labels = node.labels();
     instance[source_app] = source_labels["app"];
     instance[source_version] = source_labels["version"];
+    instance[source_canonical_service] =
+          source_labels["service.istio.io/canonical-name"];
   } else {
     instance[destination_workload] = node.workload_name();
     instance[destination_workload_namespace] = node.namespace_();
@@ -61,6 +63,8 @@ void map_node(IstioDimensions& instance, bool is_source,
     auto destination_labels = node.labels();
     instance[destination_app] = destination_labels["app"];
     instance[destination_version] = destination_labels["version"];
+    instance[destination_canonical_service] =
+          destination_labels["service.istio.io/canonical-name"];
 
     instance[destination_service_namespace] = node.namespace_();
   }
@@ -123,12 +127,11 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
 const std::vector<MetricTag>& PluginRootContext::defaultTags() {
   static const std::vector<MetricTag> default_tags = {
 #define DEFINE_METRIC_TAG(name) {#name, MetricTag::TagType::String},
-    STD_ISTIO_DIMENSIONS(DEFINE_METRIC_TAG)
+      STD_ISTIO_DIMENSIONS(DEFINE_METRIC_TAG)
 #undef DEFINE_METRIC_TAG
   };
   return default_tags;
 }
-
 
 const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
   static const std::vector<MetricFactory> default_metrics = {
@@ -177,7 +180,6 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
   return default_metrics;
 }
 
-
 void PluginRootContext::initializeDimensions() {
   // Clean-up existing expressions.
   cleanupExpressions();
@@ -205,11 +207,11 @@ void PluginRootContext::initializeDimensions() {
     if (definition.name().empty() || definition.value().empty()) {
       continue;
     }
-    auto token = addIntExpression(definition.value()); 
+    auto token = addIntExpression(definition.value());
     auto& factory = factories[definition.name()];
     factory.name = definition.name();
-    factory.extractor = [token](const ::Wasm::Common::RequestInfo&)
-                        -> uint64_t {
+    factory.extractor =
+        [token](const ::Wasm::Common::RequestInfo&) -> uint64_t {
       int64_t result = 0;
       evaluateExpression(token.value(), &result);
       return result;
@@ -300,8 +302,8 @@ void PluginRootContext::initializeDimensions() {
         indexes.push_back(index.value());
       }
     }
-    stats_.emplace_back(stat_prefix, factory_it.second, tags, indexes, field_separator,
-                        value_separator);
+    stats_.emplace_back(stat_prefix, factory_it.second, tags, indexes,
+                        field_separator, value_separator);
   }
 
   Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
@@ -367,7 +369,8 @@ void PluginRootContext::cleanupExpressions() {
   int_expressions_.clear();
 }
 
-Optional<size_t> PluginRootContext::addStringExpression(const std::string& input) {
+Optional<size_t> PluginRootContext::addStringExpression(
+    const std::string& input) {
   auto it = input_expressions_.find(input);
   if (it == input_expressions_.end()) {
     uint32_t token = 0;
@@ -383,7 +386,8 @@ Optional<size_t> PluginRootContext::addStringExpression(const std::string& input
   return it->second;
 }
 
-Optional<uint32_t> PluginRootContext::addIntExpression(const std::string& input) {
+Optional<uint32_t> PluginRootContext::addIntExpression(
+    const std::string& input) {
   uint32_t token = 0;
   if (createExpression(input, &token) != WasmResult::Ok) {
     LOG_WARN(absl::StrCat("Cannot create a value expression: " + input));
