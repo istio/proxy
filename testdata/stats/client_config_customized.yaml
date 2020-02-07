@@ -1,7 +1,17 @@
 debug: "false"
 max_peer_cache_size: 20
 field_separator: ";.;"
+definitions:
+- name: requests_total
+  value: "10"
+  type: COUNTER
+- name: custom
+  value: "1"
+  type: COUNTER
 metrics:
+  - name: custom
+    dimensions:
+      reporter: "'proxy'"
   - tags_to_remove:
     - response_flags
     - source_principal

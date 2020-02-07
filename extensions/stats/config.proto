@@ -40,18 +40,23 @@ message MetricConfig {
 
   // NOT IMPLEMENTED. (Optional) Conditional enabling the override.
   string match = 4;
+}
 
-  // NOT IMPLEMENTED. (Optional) Metric value expression.
-  string value = 5;
+enum MetricType {
+  COUNTER = 0;
+  GAUGE = 1;
+  HISTOGRAM = 2;
+}
 
-  enum MetricType {
-    Counter = 0;
-    Gauge = 1;
-    Histogram = 2;
-  }
+message MetricDefinition {
+  // Metric name.
+  string name = 1;
+
+  // Metric value expression.
+  string value = 2;
 
   // NOT IMPLEMENTED (Optional) Metric type.
-  MetricType type = 6;
+  MetricType type = 3;
 }
 
 message PluginConfig {
@@ -86,4 +91,7 @@ message PluginConfig {
 
   // Metric overrides.
   repeated MetricConfig metrics = 8;
+
+  // Metric definitions.
+  repeated MetricDefinition definitions = 9;
 }

@@ -119,25 +119,117 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
 
 }  // namespace
 
+// Ordered dimension list is used by the metrics API.
+const std::vector<MetricTag>& PluginRootContext::defaultTags() {
+  static const std::vector<MetricTag> default_tags = {
+#define DEFINE_METRIC_TAG(name) {#name, MetricTag::TagType::String},
+    STD_ISTIO_DIMENSIONS(DEFINE_METRIC_TAG)
+#undef DEFINE_METRIC_TAG
+  };
+  return default_tags;
+}
+
+
+const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
+  static const std::vector<MetricFactory> default_metrics = {
+      // HTTP, HTTP/2, and GRPC metrics
+      MetricFactory{
+          "requests_total", MetricType::Counter,
+
+          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
+          false},
+      MetricFactory{"request_duration_milliseconds", MetricType::Histogram,
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.duration / 1000; },
+                    false},
+      MetricFactory{"request_bytes", MetricType::Histogram,
+
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.request_size; },
+                    false},
+      MetricFactory{"response_bytes", MetricType::Histogram,
+
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.response_size; },
+                    false},
+      // TCP metrics.
+      MetricFactory{"tcp_sent_bytes_total", MetricType::Counter,
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.tcp_sent_bytes; },
+                    true},
+      MetricFactory{"tcp_received_bytes_total", MetricType::Counter,
+                    [](const ::Wasm::Common::RequestInfo& request_info)
+                        -> uint64_t { return request_info.tcp_received_bytes; },
+                    true},
+      MetricFactory{
+          "tcp_connections_opened_total", MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_connections_opened;
+          },
+          true},
+      MetricFactory{
+          "tcp_connections_closed_total", MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.tcp_connections_closed;
+          },
+          true},
+  };
+  return default_metrics;
+}
+
+
 void PluginRootContext::initializeDimensions() {
   // Clean-up existing expressions.
   cleanupExpressions();
 
-  // Seed the common metric tags with the default set.
-  std::vector<MetricFactory> factories = DefaultMetrics();
+  // Maps factory name to a factory instance
+  Map<std::string, MetricFactory> factories;
+  // Maps factory name to a list of tags.
   Map<std::string, std::vector<MetricTag>> metric_tags;
+  // Maps factory name to a map from a tag name to an optional index.
+  // Empty index means the tag needs to be removed.
   Map<std::string, Map<std::string, Optional<size_t>>> metric_indexes;
-  std::vector<MetricTag> default_tags = DefaultLabels();
-  for (const auto& factory : factories) {
+
+  // Seed the common metric tags with the default set.
+  const std::vector<MetricTag>& default_tags = defaultTags();
+  for (const auto& factory : defaultMetrics()) {
+    factories[factory.name] = factory;
     metric_tags[factory.name] = default_tags;
     for (size_t i = 0; i < count_standard_labels; i++) {
       metric_indexes[factory.name][default_tags[i].name] = i;
     }
   }
 
+  // Process the metric definitions (overriding existing).
+  for (const auto& definition : config_.definitions()) {
+    if (definition.name().empty() || definition.value().empty()) {
+      continue;
+    }
+    auto token = addIntExpression(definition.value()); 
+    auto& factory = factories[definition.name()];
+    factory.name = definition.name();
+    factory.extractor = [token](const ::Wasm::Common::RequestInfo&)
+                        -> uint64_t {
+      int64_t result = 0;
+      evaluateExpression(token.value(), &result);
+      return result;
+    };
+    switch (definition.type()) {
+      case stats::MetricType::COUNTER:
+        factory.type = MetricType::Counter;
+        break;
+      case stats::MetricType::GAUGE:
+        factory.type = MetricType::Gauge;
+      case stats::MetricType::HISTOGRAM:
+        factory.type = MetricType::Histogram;
+      default:
+        break;
+    }
+  }
+
   // Process the dimension overrides.
   for (const auto& metric : config_.metrics()) {
-    // sort tag override tags
+    // Sort tag override tags to keep the order of tags deterministic.
     std::vector<std::string> tags;
     const auto size = metric.dimensions().size();
     tags.reserve(size);
@@ -146,11 +238,11 @@ void PluginRootContext::initializeDimensions() {
     }
     std::sort(tags.begin(), tags.end());
 
-    for (const auto& factory : factories) {
-      if (!metric.name().empty() && metric.name() != factory.name) {
+    for (const auto& factory_it : factories) {
+      if (!metric.name().empty() && metric.name() != factory_it.first) {
         continue;
       }
-      auto& indexes = metric_indexes[factory.name];
+      auto& indexes = metric_indexes[factory_it.first];
       // Process tag deletions.
       for (const auto& tag : metric.tags_to_remove()) {
         auto it = indexes.find(tag);
@@ -160,7 +252,7 @@ void PluginRootContext::initializeDimensions() {
       }
       // Process tag overrides.
       for (const auto& tag : tags) {
-        auto expr_index = addExpression(metric.dimensions().at(tag));
+        auto expr_index = addStringExpression(metric.dimensions().at(tag));
         Optional<size_t> value = {};
         if (expr_index.has_value()) {
           value = count_standard_labels + expr_index.value();
@@ -169,7 +261,7 @@ void PluginRootContext::initializeDimensions() {
         if (it != indexes.end()) {
           it->second = value;
         } else {
-          metric_tags[factory.name].push_back(
+          metric_tags[factory_it.first].push_back(
               {tag, MetricTag::TagType::String});
           indexes[tag] = value;
         }
@@ -195,20 +287,20 @@ void PluginRootContext::initializeDimensions() {
   stats_ = std::vector<StatGen>();
   std::vector<MetricTag> tags;
   std::vector<size_t> indexes;
-  for (const auto& factory : factories) {
+  for (const auto& factory_it : factories) {
     tags.clear();
     indexes.clear();
-    size_t size = metric_tags[factory.name].size();
+    size_t size = metric_tags[factory_it.first].size();
     tags.reserve(size);
     indexes.reserve(size);
-    for (const auto& tag : metric_tags[factory.name]) {
-      auto index = metric_indexes[factory.name][tag.name];
+    for (const auto& tag : metric_tags[factory_it.first]) {
+      auto index = metric_indexes[factory_it.first][tag.name];
       if (index.has_value()) {
         tags.push_back(tag);
         indexes.push_back(index.value());
       }
     }
-    stats_.emplace_back(stat_prefix, factory, tags, indexes, field_separator,
+    stats_.emplace_back(stat_prefix, factory_it.second, tags, indexes, field_separator,
                         value_separator);
   }
 
@@ -269,9 +361,13 @@ void PluginRootContext::cleanupExpressions() {
   }
   expressions_.clear();
   input_expressions_.clear();
+  for (uint32_t token : int_expressions_) {
+    exprDelete(token);
+  }
+  int_expressions_.clear();
 }
 
-Optional<size_t> PluginRootContext::addExpression(const std::string& input) {
+Optional<size_t> PluginRootContext::addStringExpression(const std::string& input) {
   auto it = input_expressions_.find(input);
   if (it == input_expressions_.end()) {
     uint32_t token = 0;
@@ -285,6 +381,16 @@ Optional<size_t> PluginRootContext::addExpression(const std::string& input) {
     return result;
   }
   return it->second;
+}
+
+Optional<uint32_t> PluginRootContext::addIntExpression(const std::string& input) {
+  uint32_t token = 0;
+  if (createExpression(input, &token) != WasmResult::Ok) {
+    LOG_WARN(absl::StrCat("Cannot create a value expression: " + input));
+    return {};
+  }
+  int_expressions_.push_back(token);
+  return token;
 }
 
 bool PluginRootContext::onDone() {

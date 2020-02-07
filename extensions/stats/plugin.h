@@ -114,13 +114,6 @@ STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
 const size_t count_standard_labels =
     static_cast<size_t>(StandardLabels::xxx_last_metric);
 
-// Ordered dimension list is used by the metrics API.
-static std::vector<MetricTag> DefaultLabels() {
-#define DEFINE_METRIC_TAG(name) {#name, MetricTag::TagType::String},
-  return std::vector<MetricTag>{STD_ISTIO_DIMENSIONS(DEFINE_METRIC_TAG)};
-#undef DEFINE_METRIC_TAG
-}
-
 struct HashIstioDimensions {
   size_t operator()(const IstioDimensions& c) const {
     const size_t kMul = static_cast<size_t>(0x9ddfea08eb382d69);
@@ -132,8 +125,7 @@ struct HashIstioDimensions {
   }
 };
 
-using ValueExtractorFn =
-    uint64_t (*)(const ::Wasm::Common::RequestInfo& request_info);
+using ValueExtractorFn = std::function<uint64_t(const ::Wasm::Common::RequestInfo& request_info)>;
 
 // SimpleStat record a pre-resolved metric based on the values function.
 class SimpleStat {
@@ -158,52 +150,6 @@ struct MetricFactory {
   ValueExtractorFn extractor;
   bool is_tcp;
 };
-
-static std::vector<MetricFactory> DefaultMetrics() {
-  return {
-      // HTTP, HTTP/2, and GRPC metrics
-      MetricFactory{
-          "requests_total", MetricType::Counter,
-
-          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
-          false},
-      MetricFactory{"request_duration_milliseconds", MetricType::Histogram,
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.duration / 1000; },
-                    false},
-      MetricFactory{"request_bytes", MetricType::Histogram,
-
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.request_size; },
-                    false},
-      MetricFactory{"response_bytes", MetricType::Histogram,
-
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.response_size; },
-                    false},
-      // TCP metrics.
-      MetricFactory{"tcp_sent_bytes_total", MetricType::Counter,
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.tcp_sent_bytes; },
-                    true},
-      MetricFactory{"tcp_received_bytes_total", MetricType::Counter,
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.tcp_received_bytes; },
-                    true},
-      MetricFactory{
-          "tcp_connections_opened_total", MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_opened;
-          },
-          true},
-      MetricFactory{
-          "tcp_connections_closed_total", MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_closed;
-          },
-          true},
-  };
-}
 
 // StatGen creates a SimpleStat based on resolved metric_id.
 class StatGen {
@@ -293,13 +239,17 @@ class PluginRootContext : public RootContext {
   void deleteFromTCPRequestQueue(uint32_t id);
 
  protected:
+  const std::vector<MetricTag>& defaultTags();
+  const std::vector<MetricFactory>& defaultMetrics();
   // Update the dimensions and the expressions data structures with the new
   // configuration.
   void initializeDimensions();
   // Destroy host resources for the allocated expressions.
   void cleanupExpressions();
-  // Allocate an expression if necessary and return its token.
-  Optional<size_t> addExpression(const std::string& input);
+  // Allocate an expression if necessary and return its token position.
+  Optional<size_t> addStringExpression(const std::string& input);
+  // Allocate an int expression and return its token if successful.
+  Optional<uint32_t> addIntExpression(const std::string& input);
 
  private:
   stats::PluginConfig config_;
@@ -307,8 +257,13 @@ class PluginRootContext : public RootContext {
   ::Wasm::Common::NodeInfoCache node_info_cache_;
 
   IstioDimensions istio_dimensions_;
+
+  // String expressions evaluated into dimensions
   std::vector<uint32_t> expressions_;
   Map<std::string, size_t> input_expressions_;
+
+  // Int expressions evaluated to metric values
+  std::vector<uint32_t> int_expressions_;
 
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;

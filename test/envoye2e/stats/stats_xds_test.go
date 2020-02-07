@@ -167,6 +167,7 @@ var ClientConfigs = []struct {
 		Name:         "Customized",
 		ClientConfig: "testdata/stats/client_config_customized.yaml",
 		ClientStats: map[string]driver.StatMatcher{
+			"istio_custom":         &driver.ExactStat{"testdata/metric/client_custom_metric.yaml.tmpl"},
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total_customized.yaml.tmpl"},
 		},
 	},
