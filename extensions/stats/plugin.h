@@ -229,7 +229,9 @@ class StatGen {
   inline StringView name() const { return metric_.name; };
   inline bool is_tcp_metric() const { return is_tcp_; }
 
-  // Resolve metric based on provided dimension values.
+  // Resolve metric based on provided dimension values by
+  // combining the tags with the indexed dimensions and resolving
+  // to a metric ID.
   SimpleStat resolve(const IstioDimensions& instance) {
     // Using a lower level API to avoid creating an intermediary vector
     size_t s = metric_.prefix.size();

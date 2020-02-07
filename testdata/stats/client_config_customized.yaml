@@ -14,7 +14,8 @@ metrics:
       source_version: "'_' + node.metadata['LABELS']['app']" # same as above expression
       request_protocol: request.protocol
       destination_version: "'_' + (has(node.metadata.LABELS.version) ? node.metadata.LABELS.version : 'unknown')"
-      # TODO: need a bad expression
+      destination_app: "cannot _ parse"
+      destination_workload: "cannot_evaluate"
     tags_to_remove:
     - grpc_response_status
   - name: request_bytes

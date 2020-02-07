@@ -343,8 +343,12 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
 
   map(istio_dimensions_, outbound_, peer_node, request_info);
   for (size_t i = 0; i < expressions_.size(); i++) {
-    evaluateExpression(expressions_[i],
-                       &istio_dimensions_.at(count_standard_labels + i));
+    if (!evaluateExpression(expressions_[i],
+                            &istio_dimensions_.at(count_standard_labels + i))) {
+      LOG_TRACE(absl::StrCat("Failed to evaluate expression at slot: " +
+                             std::to_string(i)));
+      istio_dimensions_[count_standard_labels + i] = "";
+    }
   }
 
   auto stats_it = metrics_.find(istio_dimensions_);
