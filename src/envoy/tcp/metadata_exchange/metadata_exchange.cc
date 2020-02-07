@@ -279,7 +279,8 @@ void MetadataExchangeFilter::setFilterState(const std::string& key,
   read_callbacks_->connection().streamInfo().filterState()->setData(
       key,
       std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(value),
-      StreamInfo::FilterState::StateType::Mutable);
+      StreamInfo::FilterState::StateType::Mutable,
+      StreamInfo::FilterState::LifeSpan::DownstreamConnection);
 }
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
