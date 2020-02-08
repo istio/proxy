@@ -64,6 +64,7 @@ constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
 constexpr double kNanosecondsPerMillisecond = 1000000.0;
+constexpr char kDefaultRootCertFile[] = "/etc/ssl/certs/ca-certificates.crt";
 
 // Stackdriver root context id.
 constexpr char kOutboundRootContextId[] = "stackdriver_outbound";

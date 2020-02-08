@@ -16,6 +16,7 @@
 #include "extensions/stackdriver/log/exporter.h"
 
 #include "extensions/stackdriver/common/utils.h"
+#include "extensions/stackdriver/common/constants.h"
 
 #ifdef NULL_PLUGIN
 namespace Envoy {
@@ -36,7 +37,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 constexpr char kGoogleStackdriverLoggingAddress[] = "logging.googleapis.com";
 constexpr char kGoogleLoggingService[] = "google.logging.v2.LoggingServiceV2";
 constexpr char kGoogleWriteLogEntriesMethod[] = "WriteLogEntries";
-constexpr char kDefaultRootCertFile[] = "/etc/ssl/certs/ca-certificates.crt";
 constexpr int kDefaultTimeoutMillisecond = 10000;
 
 namespace Extensions {
@@ -89,7 +89,7 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
         ->mutable_channel_credentials()
         ->mutable_ssl_credentials()
         ->mutable_root_certs()
-        ->set_filename(kDefaultRootCertFile);
+        ->set_filename(::Extensions::Stackdriver::Common::kDefaultRootCertFile);
   } else {
     // Do not set credential if target uri is provided. This should happen in
     // test.
