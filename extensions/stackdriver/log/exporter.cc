@@ -15,8 +15,8 @@
 
 #include "extensions/stackdriver/log/exporter.h"
 
-#include "extensions/stackdriver/common/utils.h"
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/utils.h"
 
 #ifdef NULL_PLUGIN
 namespace Envoy {
