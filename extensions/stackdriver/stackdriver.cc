@@ -59,8 +59,8 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
-constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
+constexpr int kDefaultLogExportMilliseconds = 10000;                         // 10s
+constexpr long int kDefaultEdgeReportDurationNanoseconds = 60000000000;      // 1m
 
 namespace {
 
@@ -168,11 +168,11 @@ bool StackdriverRootContext::onConfigure(size_t) {
   }
 
   if (config_.has_mesh_edges_reporting_duration()) {
-    edge_report_duration_nanos_ =
+    edge_new_report_duration_nanos_ =
         ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
             config_.mesh_edges_reporting_duration());
   } else {
-    edge_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
+    edge_new_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
   }
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
@@ -206,8 +206,11 @@ void StackdriverRootContext::onTick() {
   }
   if (enableEdgeReporting()) {
     auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
-    if ((cur - last_edge_report_call_nanos_) > edge_report_duration_nanos_) {
-      edge_reporter_->reportEdges();
+    if ((cur - last_edge_report_call_nanos_) > edge_epoch_report_duration_nanos_) {
+      edge_reporter_->reportEdges(true /* report ALL edges from epoch*/);
+      last_edge_report_call_nanos_ = cur;
+    } else if ((cur - last_edge_report_call_nanos_) > edge_new_report_duration_nanos_) {
+      edge_reporter_->reportEdges(false /* only report new edges*/);
       last_edge_report_call_nanos_ = cur;
     }
   }

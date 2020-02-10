@@ -65,12 +65,15 @@ class EdgeReporter {
 
   // reportEdges sends the buffered requests to the configured edges
   // service via the supplied client.
-  void reportEdges();
+  void reportEdges(bool report_all=false);
 
  private:
   // builds a full request out of the current traffic assertions (edges),
   // adds that request to the queue, and resets the current request and state.
-  void flush();
+  void flush(bool flush_all=false);
+
+  void rotateCurrentRequest();
+  void rotateEpochRequest();
 
   // client used to send requests to the edges service
   std::unique_ptr<MeshEdgesServiceClient> edges_client_;
@@ -81,14 +84,20 @@ class EdgeReporter {
   // the active pending request to which edges are being added
   std::unique_ptr<ReportTrafficAssertionsRequest> current_request_;
 
+  // the active pending request to which edges are being added
+  std::unique_ptr<ReportTrafficAssertionsRequest> epoch_current_request_;
+
   // represents the workload instance for the current proxy
   WorkloadInstance node_instance_;
 
   // current peers for which edges have been created in current_request_;
-  std::unordered_set<std::string> current_peers_;
+  std::unordered_set<std::string> known_peers_;
 
-  // requests waiting to be sent to backend
-  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>> queued_requests_;
+  // requests waiting to be sent to backend per intermediate flush
+  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>> current_queued_requests_;
+
+  // requests waiting to be sent to backend per full flush
+  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>> epoch_queued_requests_;
 
   // TODO(douglas-reid): make adjustable.
   const int max_assertions_per_request_ = 1000;
