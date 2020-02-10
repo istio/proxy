@@ -23,6 +23,7 @@ load(
     "docker_dependencies",
     "googletest_repositories",
     "mixerapi_dependencies",
+    "cel_dependencies",
 )
 
 googletest_repositories()
@@ -70,6 +71,10 @@ envoy_dependencies()
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
 envoy_dependency_imports()
+
+load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
+
+antlr_dependencies(471)
 
 # Docker dependencies
 
