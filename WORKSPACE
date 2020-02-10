@@ -23,7 +23,6 @@ load(
     "docker_dependencies",
     "googletest_repositories",
     "mixerapi_dependencies",
-    "cel_dependencies",
 )
 
 googletest_repositories()
