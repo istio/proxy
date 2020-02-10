@@ -45,6 +45,8 @@ namespace Plugin {
 
 namespace Stackdriver {
 
+constexpr long int kDefaultEdgeFullReportDurationNanoseconds = 600000000000; // 10m
+
 #ifdef NULL_PLUGIN
 NULL_PLUGIN_REGISTRY;
 #endif
@@ -105,7 +107,9 @@ class StackdriverRootContext : public RootContext {
 
   long int last_edge_report_call_nanos_ = 0;
 
-  long int edge_report_duration_nanos_;
+  long int edge_new_report_duration_nanos_;
+
+  long int edge_epoch_report_duration_nanos_ = kDefaultEdgeFullReportDurationNanoseconds;
 
   bool use_host_header_fallback_;
 };

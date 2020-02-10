@@ -78,6 +78,7 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
                            TimestampFn now)
     : edges_client_(std::move(edges_client)), now_(now) {
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
+  epoch_current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
   const auto iter =
       local_node_info.platform_metadata().find(Common::kGCPProjectKey);
@@ -90,6 +91,7 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
     mesh_id = "unknown";
   }
   current_request_->set_mesh_uid(mesh_id);
+  epoch_current_request_->set_mesh_uid(mesh_id);
 
   instanceFromMetadata(local_node_info, &node_instance_);
 };
@@ -105,7 +107,7 @@ EdgeReporter::~EdgeReporter() {
 void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
                            const std::string& peer_metadata_id_key,
                            const ::wasm::common::NodeInfo& peer_node_info) {
-  const auto& peer = current_peers_.emplace(peer_metadata_id_key);
+  const auto& peer = known_peers_.emplace(peer_metadata_id_key);
   if (!peer.second) {
     // peer edge already exists
     return;
@@ -130,36 +132,70 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
     edge->set_protocol(TrafficAssertion_Protocol_PROTOCOL_TCP);
   }
 
+  auto* epoch_assertion = epoch_current_request_->mutable_traffic_assertions()->Add();
+  epoch_assertion->MergeFrom(*edge);
+
   if (current_request_->traffic_assertions_size() >
       max_assertions_per_request_) {
-    reportEdges();
+    rotateCurrentRequest();
   }
+
+  if (epoch_current_request_->traffic_assertions_size() > max_assertions_per_request_) {
+    rotateEpochRequest();
+  }
+
 };  // namespace Edges
 
-void EdgeReporter::reportEdges() {
-  flush();
-  for (auto& req : queued_requests_) {
-    edges_client_->reportTrafficAssertions(*req.get());
+void EdgeReporter::reportEdges(bool report_all) {
+  flush(report_all);
+  if (report_all) {
+    auto timestamp = now_();
+    for (auto& req : epoch_queued_requests_) {
+      // update all assertions
+      auto assertion = req.get();
+      *assertion->mutable_timestamp() = timestamp;
+      edges_client_->reportTrafficAssertions(*assertion);
+    }
+    epoch_queued_requests_.clear();
+    current_queued_requests_.clear();
+  } else {
+    for (auto& req : current_queued_requests_) {
+      edges_client_->reportTrafficAssertions(*req.get());
+    }
+    current_queued_requests_.clear();
   }
-  queued_requests_.clear();
 };
 
-void EdgeReporter::flush() {
+void EdgeReporter::flush(bool flush_all) {
+  rotateCurrentRequest();
+  if (flush_all) {
+    rotateEpochRequest();
+    known_peers_.clear();
+  }
+}
+
+void EdgeReporter::rotateCurrentRequest() {
   if (current_request_->traffic_assertions_size() == 0) {
     return;
   }
-
   std::unique_ptr<ReportTrafficAssertionsRequest> queued_request =
       std::make_unique<ReportTrafficAssertionsRequest>();
   queued_request->set_parent(current_request_->parent());
   queued_request->set_mesh_uid(current_request_->mesh_uid());
-
-  current_peers_.clear();
   current_request_.swap(queued_request);
+  current_queued_requests_.emplace_back(std::move(queued_request));
+}
 
-  // set the timestamp and then send the queued request
-  *queued_request->mutable_timestamp() = now_();
-  queued_requests_.emplace_back(std::move(queued_request));
+void EdgeReporter::rotateEpochRequest() {
+  if (epoch_current_request_->traffic_assertions_size() == 0) {
+    return;
+  }
+  std::unique_ptr<ReportTrafficAssertionsRequest> queued_request =
+      std::make_unique<ReportTrafficAssertionsRequest>();
+  queued_request->set_parent(epoch_current_request_->parent());
+  queued_request->set_mesh_uid(epoch_current_request_->mesh_uid());
+  epoch_current_request_.swap(queued_request);
+  epoch_queued_requests_.emplace_back(std::move(queued_request));
 }
 
 }  // namespace Edges
