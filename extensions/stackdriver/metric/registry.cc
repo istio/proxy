@@ -49,10 +49,12 @@ StackdriverOptions getStackdriverOptions(
     ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(&sts_options,
                                                                    sts_port);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
+    auto ssl_creds_options = grpc::SslCredentialsOptions();
+    ssl_creds_options.pem_root_certs = kDefaultRootCertFile;
+    auto channel_creds = grpc::SslCredentials(ssl_creds_options);
     auto channel = ::grpc::CreateChannel(
         kStackdriverStatsAddress,
-        grpc::CompositeChannelCredentials(grpc::GoogleDefaultCredentials(),
-                                          call_creds));
+        grpc::CompositeChannelCredentials(channel_creds, call_creds));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   }
