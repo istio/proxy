@@ -33,6 +33,7 @@ namespace Common {
   FIELD_FUNC(source_principal)               \
   FIELD_FUNC(source_app)                     \
   FIELD_FUNC(source_version)                 \
+  FIELD_FUNC(source_canonical_service)       \
   FIELD_FUNC(destination_workload)           \
   FIELD_FUNC(destination_workload_namespace) \
   FIELD_FUNC(destination_principal)          \
@@ -41,13 +42,13 @@ namespace Common {
   FIELD_FUNC(destination_service)            \
   FIELD_FUNC(destination_service_name)       \
   FIELD_FUNC(destination_service_namespace)  \
+  FIELD_FUNC(destination_canonical_service)  \
   FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)     \
-  FIELD_FUNC(permissive_response_code)       \
-  FIELD_FUNC(permissive_response_policyid)
+  FIELD_FUNC(connection_security_policy)
 
 // A structure that can hold multiple Istio dimensions(metadata variables).
 // This could be use to key caches based on Istio dimensions for various

@@ -39,6 +39,8 @@ stats_config:
     regex: "(source_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_workload"
     regex: "(source_workload=\\.=(.+?);\\.;)"
+  - tag_name: "source_canonical_service"
+    regex: "(source_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "source_workload_namespace"
     regex: "(source_workload_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_principal"
@@ -61,6 +63,8 @@ stats_config:
     regex: "(destination_version=\\.=(.+?);\\.;)"
   - tag_name: "destination_service"
     regex: "(destination_service=\\.=(.+?);\\.;)"
+  - tag_name: "destination_canonical_service"
+    regex: "(destination_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_name"
     regex: "(destination_service_name=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_namespace"
@@ -73,12 +77,10 @@ stats_config:
     regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
   - tag_name: "response_flags"
     regex: "(response_flags=\\.=(.+?);\\.;)"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_code"
-    regex: "(permissive_response_code=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_policyid"
-    regex: "(permissive_response_policyid=\\.=(.+?);\\.;)"
   - tag_name: "cache"
     regex: "(cache\\.(.+?)\\.)"
   - tag_name: "component"
@@ -90,7 +92,7 @@ admin:
   address:
     socket_address:
       address: 127.0.0.1
-      port_value: 20081
+      port_value: 20101
 static_resources:
   clusters:
   - name: client
@@ -104,7 +106,7 @@ static_resources:
             address:
               socket_address:
                 address: 127.0.0.1
-                port_value: 20083
+                port_value: 20103
     filters:
     - name: envoy.filters.network.upstream.metadata_exchange
       typed_config: 
@@ -125,7 +127,7 @@ static_resources:
     address:
       socket_address:
         address: 127.0.0.1
-        port_value: 20082
+        port_value: 20102
     filter_chains:
     - filters:
       - name: envoy.http_connection_manager

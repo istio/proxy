@@ -34,7 +34,7 @@ bind(
     actual = "//external:ssl",
 )
 
-# 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
+# 1. Determine SHA256 `wget https://github.com/istio/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # envoy-wasm commit date: Jan 23 2020
@@ -42,9 +42,9 @@ ENVOY_PROJECT = "istio"
 
 ENVOY_REPO = "envoy"
 
-ENVOY_SHA = "277a86a6aaf2f4a22f9060969fb0cca4ab8d7a79"
+ENVOY_SHA = "5c68a90aaebd0a2249361c0e05e17b531b1f6e22"
 
-ENVOY_SHA256 = "7ee31e7a5bb2316ff2c0f9d5448b9ba22789201ebfd9a20ae3e9062c125c2ec0"
+ENVOY_SHA256 = "91c844c37c9b7609dd023c0dfa9e6e11c5f83546929d55761135387192ad89d2"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
@@ -70,6 +70,10 @@ envoy_dependencies()
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
 envoy_dependency_imports()
+
+load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
+
+antlr_dependencies(471)
 
 # Docker dependencies
 

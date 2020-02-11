@@ -39,7 +39,7 @@ var expectedServerStats = map[string]int{
 
 func TestTCPBasicFlow(t *testing.T) {
 	s := env.NewClientServerEnvoyTestSetup(env.BasicTCPFlowTest, t)
-	s.SetNoBackend(true)
+	s.SetStartHTTPBackend(false)
 	s.SetStartTCPBackend(true)
 	s.ClientEnvoyTemplate = env.GetTCPClientEnvoyConfTmp()
 	s.ServerEnvoyTemplate = env.GetTCPServerEnvoyConfTmp()

@@ -71,7 +71,6 @@ class JwtVerificationFilterIntegrationTest
 
     // Substitute paths and other common things.
     out_json_string = TestEnvironment::substitute(out_json_string, version_);
-
     const std::string extension =
         absl::EndsWith(path, ".yaml") ? ".yaml" : ".json";
     const std::string out_json_path =

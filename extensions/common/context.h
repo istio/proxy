@@ -91,6 +91,9 @@ struct RequestInfo {
   // Response code of the request.
   uint32_t response_code = 0;
 
+  // gRPC status code for the request.
+  uint32_t grpc_status = 2;
+
   // Response flag giving additional information - NR, UAEX etc.
   // TODO populate
   std::string response_flag;
@@ -115,10 +118,6 @@ struct RequestInfo {
   // certificate.
   std::string source_principal;
   std::string destination_principal;
-
-  // Rbac filter policy id and result.
-  std::string rbac_permissive_policy_id;
-  std::string rbac_permissive_engine_result;
 
   // The following fields will only be populated by calling
   // populateExtendedHTTPRequestInfo.

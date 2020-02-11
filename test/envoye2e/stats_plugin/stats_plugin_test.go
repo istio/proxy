@@ -83,7 +83,8 @@ const outboundNodeMetadata = `"NAMESPACE": "default",
 "LABELS": {
  "app": "productpage",
  "version": "v1",
- "pod-template-hash": "84975bc778"
+ "pod-template-hash": "84975bc778",
+ "service.istio.io/canonical-name": "productpage",
 },
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
 "NAME": "productpage-v1-84975bc778-pxz2w",`
@@ -112,7 +113,8 @@ const inboundNodeMetadata = `"NAMESPACE": "default",
 "LABELS": {
  "app": "ratings",
  "version": "v1",
- "pod-template-hash": "84975bc778"
+ "pod-template-hash": "84975bc778",
+ "service.istio.io/canonical-name": "ratings",
 },
 "ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
 "NAME": "ratings-v1-84975bc778-pxz2w",`
@@ -134,6 +136,8 @@ const statsConfig = `stats_config:
     regex: "(source_app=\\.=(.+?);\\.;)"
   - tag_name: "source_version"
     regex: "(source_version=\\.=(.+?);\\.;)"
+  - tag_name: "source_canonical_service"
+    regex: "(source_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "destination_namespace"
     regex: "(destination_namespace=\\.=(.+?);\\.;)"
   - tag_name: "destination_workload"
@@ -152,6 +156,8 @@ const statsConfig = `stats_config:
     regex: "(destination_service_name=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_namespace"
     regex: "(destination_service_namespace=\\.=(.+?);\\.;)"
+  - tag_name: "destination_canonical_service"
+    regex: "(destination_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "destination_port"
     regex: "(destination_port=\\.=(.+?);\\.;)"
   - tag_name: "request_protocol"
@@ -160,12 +166,10 @@ const statsConfig = `stats_config:
     regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
   - tag_name: "response_flags"
     regex: "(response_flags=\\.=(.+?);\\.;)"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_code"
-    regex: "(permissive_response_code=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_policyid"
-    regex: "(permissive_response_policyid=\\.=(.+?);\\.;)"
   - tag_name: "cache"
     regex: "(cache\\.(.+?)\\.)"
   - tag_name: "component"
@@ -175,16 +179,26 @@ const statsConfig = `stats_config:
 
 // Stats in Server Envoy proxy.
 var expectedPrometheusServerStats = map[string]env.Stat{
-	"istio_requests_total": {Value: 10},
-	"istio_build":          {Value: 1},
+	"istio_requests_total": {Value: 10,
+		Labels: map[string]string{
+			"grpc_response_status":          "",
+			"destination_canonical_service": "ratings",
+			"source_canonical_service":      "productpage",
+		}},
+	"istio_build": {Value: 1},
 }
 
 func TestStatsPlugin(t *testing.T) {
 	testStatsPlugin(t, true, func(s *env.TestSetup) {
 		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
-			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "unknown"}},
-			"istio_build":          {Value: 1},
+			"istio_requests_total": {Value: 10, Labels: map[string]string{
+				"destination_service":           "unknown",
+				"grpc_response_status":          "",
+				"destination_canonical_service": "ratings",
+				"source_canonical_service":      "productpage",
+			}},
+			"istio_build": {Value: 1},
 		}
 		s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
 	})
@@ -194,8 +208,12 @@ func TestStatsPluginHHFallback(t *testing.T) {
 	testStatsPlugin(t, false, func(s *env.TestSetup) {
 		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
-			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort)}},
-			"istio_build":          {Value: 1},
+			"istio_requests_total": {Value: 10, Labels: map[string]string{
+				"destination_service":           fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort),
+				"destination_canonical_service": "ratings",
+				"source_canonical_service":      "productpage",
+			}},
+			"istio_build": {Value: 1},
 		}
 		s.VerifyPrometheusStats(clntStats, s.Ports().ClientAdminPort)
 	})

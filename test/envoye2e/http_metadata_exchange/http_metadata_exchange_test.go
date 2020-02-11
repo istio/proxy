@@ -144,6 +144,8 @@ const statsConfig = `stats_config:
     regex: "(source_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_workload"
     regex: "(source_workload=\\.=(.+?);\\.;)"
+  - tag_name: "source_canonical_service"
+    regex: "(source_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "source_workload_namespace"
     regex: "(source_workload_namespace=\\.=(.+?);\\.;)"
   - tag_name: "source_principal"
@@ -166,6 +168,8 @@ const statsConfig = `stats_config:
     regex: "(destination_version=\\.=(.+?);\\.;)"
   - tag_name: "destination_service"
     regex: "(destination_service=\\.=(.+?);\\.;)"
+  - tag_name: "destination_canonical_service"
+    regex: "(destination_canonical_service=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_name"
     regex: "(destination_service_name=\\.=(.+?);\\.;)"
   - tag_name: "destination_service_namespace"
@@ -178,12 +182,10 @@ const statsConfig = `stats_config:
     regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
   - tag_name: "response_flags"
     regex: "(response_flags=\\.=(.+?);\\.;)"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_code"
-    regex: "(permissive_response_code=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_policyid"
-    regex: "(permissive_response_policyid=\\.=(.+?);\\.;)"
   - tag_name: "cache"
     regex: "(cache\\.(.+?)\\.)"
   - tag_name: "component"
@@ -210,6 +212,7 @@ var expectedServerStats = map[string]int{
 }
 
 func TestHttpMetadataExchange(t *testing.T) {
+	t.Skip("Enable after https://github.com/envoyproxy/envoy-wasm/issues/402  is fixed")
 	testPlugins(t, func(s *env.TestSetup) {
 		serverStats := map[string]env.Stat{
 			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "server.default.svc.cluster.local",

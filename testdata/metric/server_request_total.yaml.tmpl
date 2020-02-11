@@ -8,6 +8,8 @@ metric:
     value: destination
   - name: source_workload
     value: productpage-v1
+  - name: source_canonical_service
+    value: productpage-v1
   - name: source_workload_namespace
     value: default
   - name: source_principal
@@ -28,6 +30,8 @@ metric:
     value: v1
   - name: destination_service
     value: server.default.svc.cluster.local
+  - name: destination_canonical_service
+    value: ratings
   - name: destination_service_name
     value: server
   - name: destination_service_namespace
@@ -38,11 +42,9 @@ metric:
     value: http
   - name: response_code
     value: "200"
+  - name: grpc_response_status
+    value: ""
   - name: response_flags
     value: "-"
   - name: connection_security_policy
     value: NONE
-  - name: permissive_response_code
-    value: none
-  - name: permissive_response_policyid
-    value: none

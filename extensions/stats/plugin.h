@@ -78,6 +78,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(source_principal)               \
   FIELD_FUNC(source_app)                     \
   FIELD_FUNC(source_version)                 \
+  FIELD_FUNC(source_canonical_service)       \
   FIELD_FUNC(destination_workload)           \
   FIELD_FUNC(destination_workload_namespace) \
   FIELD_FUNC(destination_principal)          \
@@ -86,13 +87,13 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_service)            \
   FIELD_FUNC(destination_service_name)       \
   FIELD_FUNC(destination_service_namespace)  \
+  FIELD_FUNC(destination_canonical_service)  \
   FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)     \
-  FIELD_FUNC(permissive_response_code)       \
-  FIELD_FUNC(permissive_response_policyid)
+  FIELD_FUNC(connection_security_policy)
 
 struct IstioDimensions {
 #define DEFINE_FIELD(name) std::string(name);
@@ -134,21 +135,22 @@ struct IstioDimensions {
   // destination_service="svc01-0-8.service-graph01.svc.cluster.local",
   // destination_service_name="svc01-0-8",
   // destination_service_namespace="service-graph01",
+  // destination_canonical_service="svc01-0-8",
   // destination_version="v1",
   // destination_workload="svc01-0-8",
   // destination_workload_namespace="service-graph01",
   // destination_port="80",
-  // permissive_response_code="none",
-  // permissive_response_policyid="none",
   // reporter="source",
   // request_protocol="http",
   // response_code="200",
+  // grpc_response_status="", <-- not grpc request
   // response_flags="-",
   // source_app="svc01-0",
   // source_principal="unknown",
   // source_version="v2",
   // source_workload="svc01-0v2",
-  // source_workload_namespace="service-graph01"
+  // source_workload_namespace="service-graph01",
+  // source_canonical_service="svc01-0v2",
   // }
 
  private:
@@ -160,6 +162,8 @@ struct IstioDimensions {
       auto source_labels = node.labels();
       source_app = source_labels["app"];
       source_version = source_labels["version"];
+      source_canonical_service =
+          source_labels["service.istio.io/canonical-name"];
     } else {
       destination_workload = node.workload_name();
       destination_workload_namespace = node.namespace_();
@@ -167,6 +171,8 @@ struct IstioDimensions {
       auto destination_labels = node.labels();
       destination_app = destination_labels["app"];
       destination_version = destination_labels["version"];
+      destination_canonical_service =
+          destination_labels["service.istio.io/canonical-name"];
 
       destination_service_namespace = node.namespace_();
     }
@@ -194,14 +200,13 @@ struct IstioDimensions {
         std::string(::Wasm::Common::AuthenticationPolicyString(
             request.service_auth_policy));
 
-    permissive_response_code = request.rbac_permissive_engine_result.empty()
-                                   ? "none"
-                                   : request.rbac_permissive_engine_result;
-    permissive_response_policyid = request.rbac_permissive_policy_id.empty()
-                                       ? "none"
-                                       : request.rbac_permissive_policy_id;
-
     setFieldsUnknownIfEmpty();
+
+    if (request.request_protocol == "grpc") {
+      grpc_response_status = std::to_string(request.grpc_status);
+    } else {
+      grpc_response_status = "";
+    }
   }
 
  public:
@@ -231,11 +236,10 @@ struct IstioDimensions {
   // debug function to specify a textual key.
   // must match HashValue
   std::string debug_key() {
-    auto key =
-        absl::StrJoin({reporter, request_protocol, response_code,
-                       response_flags, connection_security_policy,
-                       permissive_response_code, permissive_response_policyid},
-                      "#");
+    auto key = absl::StrJoin(
+        {reporter, request_protocol, response_code, grpc_response_status,
+         response_flags, connection_security_policy},
+        "#");
     if (outbound) {
       return absl::StrJoin(
           {key, destination_app, destination_version, destination_service_name,
@@ -256,10 +260,11 @@ struct IstioDimensions {
       size_t h = 0;
       h += std::hash<std::string>()(c.request_protocol) * kMul;
       h += std::hash<std::string>()(c.response_code) * kMul;
+      h += std::hash<std::string>()(c.grpc_response_status) * kMul;
       h += std::hash<std::string>()(c.response_flags) * kMul;
       h += std::hash<std::string>()(c.connection_security_policy) * kMul;
-      h += std::hash<std::string>()(c.permissive_response_code) * kMul;
-      h += std::hash<std::string>()(c.permissive_response_policyid) * kMul;
+      h += std::hash<std::string>()(c.source_canonical_service) * kMul;
+      h += std::hash<std::string>()(c.destination_canonical_service) * kMul;
       h += c.outbound * kMul;
       if (c.outbound) {  // only care about dest properties
         h += std::hash<std::string>()(c.destination_service_namespace) * kMul;
