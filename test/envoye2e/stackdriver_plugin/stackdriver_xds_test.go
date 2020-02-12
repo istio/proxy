@@ -33,29 +33,36 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: client{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            vm_config:
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.metadata_exchange" }
-            configuration: "test"
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.metadata_exchange" }
+              configuration: "test"
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            root_id: "stackdriver_outbound"
-            vm_config:
-              vm_id: "stackdriver_outbound"
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.null.stackdriver" }
-            configuration: >-
-              {}
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stackdriver_outbound"
+              vm_config:
+                vm_id: "stackdriver_outbound"
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.null.stackdriver" }
+              configuration: >-
+                {}
       - name: envoy.router
       route_config:
         name: client
@@ -79,29 +86,36 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: server{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            vm_config:
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.metadata_exchange" }
-            configuration: "test"
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.metadata_exchange" }
+              configuration: "test"
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            root_id: "stackdriver_inbound"
-            vm_config:
-              vm_id: "stackdriver_inbound"
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.null.stackdriver" }
-            configuration: >-
-              {}
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stackdriver_inbound"
+              vm_config:
+                vm_id: "stackdriver_inbound"
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.null.stackdriver" }
+              configuration: >-
+                {}
       - name: envoy.router
       route_config:
         name: server

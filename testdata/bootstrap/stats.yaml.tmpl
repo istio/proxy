@@ -1,4 +1,5 @@
 stats_config:
+  use_all_default_tags: true
   stats_tags:
   - tag_name: "reporter"
     regex: "(reporter=\\.=(.*?);\\.;)"
@@ -48,13 +49,15 @@ stats_config:
     regex: "(response_flags=\\.=(.*?);\\.;)"
   - tag_name: "connection_security_policy"
     regex: "(connection_security_policy=\\.=(.*?);\\.;)"
+# Extra regexes used for configurable metrics
   - tag_name: "configurable_metric_a"
     regex: "(configurable_metric_a=\\.=(.*?);\\.;)"
   - tag_name: "configurable_metric_b"
     regex: "(configurable_metric_b=\\.=(.*?);\\.;)"
-#  - tag_name: "cache"
-#    regex: "(cache\\.(.*?)\\.)"
-#  - tag_name: "component"
-#    regex: "(component\\.(.*?)\\.)"
-#  - tag_name: "tag"
-#    regex: "(tag\\.(.*?);\\.)"
+# Internal monitoring
+  - tag_name: "cache"
+    regex: "(cache\\.(.*?)\\.)"
+  - tag_name: "component"
+    regex: "(component\\.(.*?)\\.)"
+  - tag_name: "tag"
+    regex: "(tag\\.(.*?);\\.)"

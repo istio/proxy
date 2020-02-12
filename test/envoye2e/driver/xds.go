@@ -15,6 +15,7 @@
 package driver
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -42,7 +43,7 @@ func (x *XDS) Run(p *Params) error {
 	}
 
 	p.Config = cache.NewSnapshotCache(false, cache.IDHash{}, x)
-	xdsServer := server.NewServer(p.Config, nil)
+	xdsServer := server.NewServer(context.Background(), p.Config, nil)
 	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
 
 	go func() {
@@ -55,11 +56,17 @@ func (x *XDS) Cleanup() {
 	log.Println("stopping XDS server")
 	x.grpc.GracefulStop()
 }
+func (x *XDS) Debugf(format string, args ...interface{}) {
+	log.Printf("xds debug: "+format, args...)
+}
 func (x *XDS) Infof(format string, args ...interface{}) {
 	log.Printf("xds: "+format, args...)
 }
 func (x *XDS) Errorf(format string, args ...interface{}) {
 	log.Printf("xds error: "+format, args...)
+}
+func (x *XDS) Warnf(format string, args ...interface{}) {
+	log.Printf("xds warn: "+format, args...)
 }
 
 type Update struct {
@@ -96,10 +103,10 @@ func (u *Update) Run(p *Params) error {
 		listeners = append(listeners, out)
 	}
 
-	return p.Config.SetSnapshot(u.Node, cache.Snapshot{
-		Clusters:  cache.NewResources(version, clusters),
-		Listeners: cache.NewResources(version, listeners),
-	})
+	snap := cache.Snapshot{}
+	snap.Resources[cache.Cluster] = cache.NewResources(version, clusters)
+	snap.Resources[cache.Listener] = cache.NewResources(version, listeners)
+	return p.Config.SetSnapshot(u.Node, snap)
 }
 
 func (u *Update) Cleanup() {}
