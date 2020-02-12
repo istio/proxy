@@ -36,29 +36,36 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: client{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            vm_config:
-              runtime: {{ .Vars.WasmRuntime }}
-              code:
-                local: { {{ .Vars.MetadataExchangeFilterCode }} }
-            configuration: "test"
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: {{ .Vars.WasmRuntime }}
+                code:
+                  local: { {{ .Vars.MetadataExchangeFilterCode }} }
+              configuration: "test"
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            root_id: "stats_outbound"
-            vm_config:
-              vm_id: stats_outbound{{ .N }}
-              runtime: {{ .Vars.WasmRuntime }}
-              code:
-                local: { {{ .Vars.StatsFilterCode }} }
-            configuration: |
-              {{ .Vars.StatsFilterClientConfig }}
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stats_outbound"
+              vm_config:
+                vm_id: stats_outbound{{ .N }}
+                runtime: {{ .Vars.WasmRuntime }}
+                code:
+                  local: { {{ .Vars.StatsFilterCode }} }
+              configuration: |
+                {{ .Vars.StatsFilterClientConfig }}
       - name: envoy.router
       route_config:
         name: client
@@ -82,29 +89,36 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: server{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            vm_config:
-              runtime: {{ .Vars.WasmRuntime }}
-              code:
-                local: { {{ .Vars.MetadataExchangeFilterCode }} }
-            configuration: "test"
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: {{ .Vars.WasmRuntime }}
+                code:
+                  local: { {{ .Vars.MetadataExchangeFilterCode }} }
+              configuration: "test"
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            root_id: "stats_inbound"
-            vm_config:
-              vm_id: stats_inbound{{ .N }}
-              runtime: {{ .Vars.WasmRuntime }}
-              code:
-                local: { {{ .Vars.StatsFilterCode }} }
-            configuration: |
-              {{ .Vars.StatsFilterServerConfig }}
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stats_inbound"
+              vm_config:
+                vm_id: stats_inbound{{ .N }}
+                runtime: {{ .Vars.WasmRuntime }}
+                code:
+                  local: { {{ .Vars.StatsFilterCode }} }
+              configuration: |
+                {{ .Vars.StatsFilterServerConfig }}
       - name: envoy.router
       route_config:
         name: server
