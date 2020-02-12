@@ -45,11 +45,16 @@ bool OriginAuthenticator::run(Payload* payload) {
     return false;
   }
 
-  absl::string_view request_path;
+  absl::string_view path;
   if (filter_context()->headerMap().Path() != nullptr) {
-    request_path =
-        filter_context()->headerMap().Path()->value().getStringView();
-    ENVOY_LOG(debug, "Got request path {}", request_path);
+    path = filter_context()->headerMap().Path()->value().getStringView();
+
+    // Trim query parameters and/or fragment if present
+    size_t offset = path.find_first_of("?#");
+    if (offset != absl::string_view::npos) {
+      path.remove_suffix(path.length() - offset);
+    }
+    ENVOY_LOG(trace, "Got request path {}", path);
   } else {
     ENVOY_LOG(error,
               "Failed to get request path, JWT will always be used for "
@@ -61,8 +66,8 @@ bool OriginAuthenticator::run(Payload* payload) {
   for (const auto& method : policy_.origins()) {
     const auto& jwt = method.jwt();
 
-    if (AuthnUtils::ShouldValidateJwtPerPath(request_path, jwt)) {
-      ENVOY_LOG(debug, "Validating request path {} for jwt {}", request_path,
+    if (AuthnUtils::ShouldValidateJwtPerPath(path, jwt)) {
+      ENVOY_LOG(debug, "Validating request path {} for jwt {}", path,
                 jwt.DebugString());
       // set triggered to true if any of the jwt trigger rule matched.
       triggered = true;
