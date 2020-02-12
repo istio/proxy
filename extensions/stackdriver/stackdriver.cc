@@ -59,8 +59,8 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;                         // 10s
-constexpr long int kDefaultEdgeReportDurationNanoseconds = 60000000000;      // 1m
+constexpr int kDefaultLogExportMilliseconds = 10000;                     // 10s
+constexpr long int kDefaultEdgeReportDurationNanoseconds = 60000000000;  // 1m
 
 namespace {
 
@@ -206,10 +206,14 @@ void StackdriverRootContext::onTick() {
   }
   if (enableEdgeReporting()) {
     auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
-    if ((cur - last_edge_report_call_nanos_) > edge_epoch_report_duration_nanos_) {
+    if ((cur - last_edge_report_call_nanos_) >
+        edge_epoch_report_duration_nanos_) {
+      // end of epoch
       edge_reporter_->reportEdges(true /* report ALL edges from epoch*/);
       last_edge_report_call_nanos_ = cur;
-    } else if ((cur - last_edge_report_call_nanos_) > edge_new_report_duration_nanos_) {
+    } else if ((cur - last_edge_report_call_nanos_) >
+               edge_new_report_duration_nanos_) {
+      // end of intra-epoch interval
       edge_reporter_->reportEdges(false /* only report new edges*/);
       last_edge_report_call_nanos_ = cur;
     }
