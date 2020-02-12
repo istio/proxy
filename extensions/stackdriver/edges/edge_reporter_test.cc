@@ -287,7 +287,7 @@ TEST(EdgeReporterTest, TestCacheMisses) {
       edges->reportEdges(false /* only send current */);
     }
   }
-  edges->reportEdges(true /* only send current */);
+  edges->reportEdges(true /* send full epoch */);
 
   EXPECT_EQ(7, calls);
   // the last 500 new are not sent as part of the current
