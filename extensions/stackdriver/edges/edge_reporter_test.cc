@@ -247,7 +247,8 @@ TEST(EdgeReporterTest, TestPeriodicFlushAndCacheReset) {
   auto edges = std::make_unique<EdgeReporter>(
       nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
 
-  // this should work as follows: 1 assertion in 1 request, the rest dropped (due to cache)
+  // this should work as follows: 1 assertion in 1 request, the rest dropped
+  // (due to cache)
   for (int i = 0; i < 3500; i++) {
     edges->addEdge(requestInfo(), "test", peerNodeInfo());
     // flush on 1000, 2000, 3000
@@ -293,7 +294,7 @@ TEST(EdgeReporterTest, TestCacheMisses) {
   // only as part of the epoch. and since we don't flush i == 0,
   // the initial batch is 1001.
   // so, 3001 + 3500 = 6500.
-  EXPECT_EQ(6501, num_assertions); 
+  EXPECT_EQ(6501, num_assertions);
 }
 
 TEST(EdgeReporterTest, TestMissingPeerMetadata) {

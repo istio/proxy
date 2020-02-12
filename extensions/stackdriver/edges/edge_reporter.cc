@@ -84,6 +84,7 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
       local_node_info.platform_metadata().find(Common::kGCPProjectKey);
   if (iter != local_node_info.platform_metadata().end()) {
     current_request_->set_parent("projects/" + iter->second);
+    epoch_current_request_->set_parent("projects/" + iter->second);
   }
 
   std::string mesh_id = local_node_info.mesh_id();
@@ -96,12 +97,7 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
   instanceFromMetadata(local_node_info, &node_instance_);
 };
 
-EdgeReporter::~EdgeReporter() {
-  // if (current_request_->traffic_assertions_size() == 0 ||
-  // !queued_requests_.empty()) {
-  //   logWarn("EdgeReporter had uncommitted TrafficAssertions when shutdown.");
-  // }
-}
+EdgeReporter::~EdgeReporter() {}
 
 // ONLY inbound
 void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
@@ -132,7 +128,8 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
     edge->set_protocol(TrafficAssertion_Protocol_PROTOCOL_TCP);
   }
 
-  auto* epoch_assertion = epoch_current_request_->mutable_traffic_assertions()->Add();
+  auto* epoch_assertion =
+      epoch_current_request_->mutable_traffic_assertions()->Add();
   epoch_assertion->MergeFrom(*edge);
 
   if (current_request_->traffic_assertions_size() >
@@ -140,16 +137,17 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
     rotateCurrentRequest();
   }
 
-  if (epoch_current_request_->traffic_assertions_size() > max_assertions_per_request_) {
+  if (epoch_current_request_->traffic_assertions_size() >
+      max_assertions_per_request_) {
     rotateEpochRequest();
   }
 
 };  // namespace Edges
 
-void EdgeReporter::reportEdges(bool report_all) {
-  flush(report_all);
-  if (report_all) {
-    auto timestamp = now_();
+void EdgeReporter::reportEdges(bool full_epoch) {
+  flush(full_epoch);
+  auto timestamp = now_();
+  if (full_epoch) {
     for (auto& req : epoch_queued_requests_) {
       // update all assertions
       auto assertion = req.get();
@@ -160,15 +158,17 @@ void EdgeReporter::reportEdges(bool report_all) {
     current_queued_requests_.clear();
   } else {
     for (auto& req : current_queued_requests_) {
-      edges_client_->reportTrafficAssertions(*req.get());
+      auto assertion = req.get();
+      *assertion->mutable_timestamp() = timestamp;
+      edges_client_->reportTrafficAssertions(*assertion);
     }
     current_queued_requests_.clear();
   }
 };
 
-void EdgeReporter::flush(bool flush_all) {
+void EdgeReporter::flush(bool flush_epoch) {
   rotateCurrentRequest();
-  if (flush_all) {
+  if (flush_epoch) {
     rotateEpochRequest();
     known_peers_.clear();
   }
