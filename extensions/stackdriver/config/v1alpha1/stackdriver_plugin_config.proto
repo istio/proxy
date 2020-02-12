@@ -38,7 +38,9 @@ message PluginConfig {
   // edges service to report *NEW* edges. The minimum configurable duration is
   // `10s`. NOTE: This option ONLY configures the intermediate reporting of
   // novel edges. Once every `10m`, all edges observed in that 10m window are
-  // reported and the local cache is cleared. The default duration is `1m`.
+  // reported and the local cache is cleared.
+  // The default duration is `1m`. Any value greater than `10m` will result in
+  // reporting every `10m`.
   google.protobuf.Duration mesh_edges_reporting_duration = 4;
 
   // maximum size of the peer metadata cache.
