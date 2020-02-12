@@ -33,7 +33,8 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: client
       http_filters:
@@ -60,7 +61,8 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: server
       http_filters:

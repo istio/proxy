@@ -26,6 +26,10 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	v2 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 
+	// Preload proto definitions
+	_ "github.com/cncf/udpa/go/udpa/type/v1"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+
 	"istio.io/proxy/test/envoye2e/env"
 )
 
