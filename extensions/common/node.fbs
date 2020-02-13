@@ -1,0 +1,22 @@
+namespace wasm.common;
+
+table KeyVal {
+  key:string;
+  value:string;
+}
+
+// FlatNode represents the information extracted from proxy node metadata, or
+// peer node metadata header This is used to fill metrics and log labels.
+table FlatNode {
+  name:string;
+  namespace:string;
+  labels:[KeyVal];
+  app:string;
+  version:string;
+  platform_metadata:[KeyVal];
+  owner:string;
+  workload_name:string;
+  istio_version:string;
+  mesh_id:string;
+
+}

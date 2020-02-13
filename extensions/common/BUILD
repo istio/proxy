@@ -57,6 +57,18 @@ envoy_cc_library(
 )
 
 envoy_cc_library(
+    name = "node_generated",
+    hdrs = [
+        "node_generated.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@flatbuffers",
+    ],
+)
+
+envoy_cc_library(
     name = "node_info_cache",
     srcs = [
         "node_info_cache.cc",
@@ -119,6 +131,7 @@ envoy_cc_test(
 
 envoy_cc_binary(
     name = "context_speed_test",
+    testonly = True,
     srcs = ["context_speed_test.cc"],
     external_deps = [
         "benchmark",
@@ -126,6 +139,9 @@ envoy_cc_binary(
     repository = "@envoy",
     deps = [
         ":context",
+        ":node_generated",
+        "@envoy//source/common/stream_info:filter_state_lib",
+        "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
         "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )

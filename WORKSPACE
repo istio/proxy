@@ -109,3 +109,12 @@ container_pull(
 )
 
 # End of docker dependencies
+
+FLAT_BUFFERS_SHA = "9e7e8cbe9f675123dd41b7c62868acad39188cae"
+
+http_archive(
+    name = "flatbuffers",
+    sha256 = "4e506107bf2a3b2ad73fa12133e93ce07f8704233f7f2fb24ce179d77082bab3",
+    strip_prefix = "flatbuffers-" + FLAT_BUFFERS_SHA,
+    url = "https://github.com/google/flatbuffers/archive/" + FLAT_BUFFERS_SHA + ".tar.gz",
+)
