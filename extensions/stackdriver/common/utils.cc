@@ -65,7 +65,7 @@ void getMonitoredResource(const std::string &monitored_resource_type,
 }
 
 void setSTSCallCredentialOptions(
-    ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
+    ::envoy::api::v2::core::GrpcService_GoogleGrpc_CallCredentials_StsService
         *sts_service,
     const std::string &sts_port) {
   if (!sts_service) {

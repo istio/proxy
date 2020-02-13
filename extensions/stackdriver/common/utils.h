@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "envoy/config/core/v3/grpc_service.pb.h"
+#include "envoy/api/v2/core/grpc_service.pb.h"
 #include "extensions/common/context.h"
 #include "google/api/monitored_resource.pb.h"
 #include "grpcpp/grpcpp.h"
@@ -31,7 +31,7 @@ void getMonitoredResource(const std::string &monitored_resource_type,
 
 // Set secure exchange service gRPC call credential.
 void setSTSCallCredentialOptions(
-    ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
+    ::envoy::api::v2::core::GrpcService_GoogleGrpc_CallCredentials_StsService
         *sts_service,
     const std::string &sts_port);
 void setSTSCallCredentialOptions(
