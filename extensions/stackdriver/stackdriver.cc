@@ -59,8 +59,7 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
-constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
+constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
 
 namespace {
 
@@ -168,11 +167,16 @@ bool StackdriverRootContext::onConfigure(size_t) {
   }
 
   if (config_.has_mesh_edges_reporting_duration()) {
-    edge_report_duration_nanos_ =
-        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
-            config_.mesh_edges_reporting_duration());
+    auto duration = ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+        config_.mesh_edges_reporting_duration());
+    // if the interval duration is longer than the epoch duration, use the
+    // epoch duration.
+    if (duration >= kDefaultEdgeEpochReportDurationNanoseconds) {
+      duration = kDefaultEdgeEpochReportDurationNanoseconds;
+    }
+    edge_new_report_duration_nanos_ = duration;
   } else {
-    edge_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
+    edge_new_report_duration_nanos_ = kDefaultEdgeNewReportDurationNanoseconds;
   }
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
@@ -206,9 +210,17 @@ void StackdriverRootContext::onTick() {
   }
   if (enableEdgeReporting()) {
     auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
-    if ((cur - last_edge_report_call_nanos_) > edge_report_duration_nanos_) {
-      edge_reporter_->reportEdges();
-      last_edge_report_call_nanos_ = cur;
+    if ((cur - last_edge_epoch_report_call_nanos_) >
+        edge_epoch_report_duration_nanos_) {
+      // end of epoch
+      edge_reporter_->reportEdges(true /* report ALL edges from epoch*/);
+      last_edge_epoch_report_call_nanos_ = cur;
+      last_edge_new_report_call_nanos_ = cur;
+    } else if ((cur - last_edge_new_report_call_nanos_) >
+               edge_new_report_duration_nanos_) {
+      // end of intra-epoch interval
+      edge_reporter_->reportEdges(false /* only report new edges*/);
+      last_edge_new_report_call_nanos_ = cur;
     }
   }
 }
