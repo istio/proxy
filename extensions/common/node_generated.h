@@ -12,7 +12,14 @@ struct KeyVal;
 
 struct FlatNode;
 
+inline const flatbuffers::TypeTable *KeyValTypeTable();
+
+inline const flatbuffers::TypeTable *FlatNodeTypeTable();
+
 struct KeyVal FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  static const flatbuffers::TypeTable *MiniReflectTypeTable() {
+    return KeyValTypeTable();
+  }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_KEY = 4,
     VT_VALUE = 6
@@ -20,11 +27,16 @@ struct KeyVal FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *key() const {
     return GetPointer<const flatbuffers::String *>(VT_KEY);
   }
+  bool KeyCompareLessThan(const KeyVal *o) const { return *key() < *o->key(); }
+  int KeyCompareWithValue(const char *val) const {
+    return strcmp(key()->c_str(), val);
+  }
   const flatbuffers::String *value() const {
     return GetPointer<const flatbuffers::String *>(VT_VALUE);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) && VerifyOffset(verifier, VT_KEY) &&
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_KEY) &&
            verifier.VerifyString(key()) && VerifyOffset(verifier, VT_VALUE) &&
            verifier.VerifyString(value()) && verifier.EndTable();
   }
@@ -46,6 +58,7 @@ struct KeyValBuilder {
   flatbuffers::Offset<KeyVal> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<KeyVal>(end);
+    fbb_.Required(o, KeyVal::VT_KEY);
     return o;
   }
 };
@@ -69,17 +82,18 @@ inline flatbuffers::Offset<KeyVal> CreateKeyValDirect(
 }
 
 struct FlatNode FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  static const flatbuffers::TypeTable *MiniReflectTypeTable() {
+    return FlatNodeTypeTable();
+  }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
     VT_NAMESPACE_ = 6,
     VT_LABELS = 8,
-    VT_APP = 10,
-    VT_VERSION = 12,
-    VT_PLATFORM_METADATA = 14,
-    VT_OWNER = 16,
-    VT_WORKLOAD_NAME = 18,
-    VT_ISTIO_VERSION = 20,
-    VT_MESH_ID = 22
+    VT_PLATFORM_METADATA = 10,
+    VT_OWNER = 12,
+    VT_WORKLOAD_NAME = 14,
+    VT_ISTIO_VERSION = 16,
+    VT_MESH_ID = 18
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -90,12 +104,6 @@ struct FlatNode FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<KeyVal>> *labels() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<KeyVal>> *>(
         VT_LABELS);
-  }
-  const flatbuffers::String *app() const {
-    return GetPointer<const flatbuffers::String *>(VT_APP);
-  }
-  const flatbuffers::String *version() const {
-    return GetPointer<const flatbuffers::String *>(VT_VERSION);
   }
   const flatbuffers::Vector<flatbuffers::Offset<KeyVal>> *platform_metadata()
       const {
@@ -122,9 +130,6 @@ struct FlatNode FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_LABELS) &&
            verifier.VerifyVector(labels()) &&
            verifier.VerifyVectorOfTables(labels()) &&
-           VerifyOffset(verifier, VT_APP) && verifier.VerifyString(app()) &&
-           VerifyOffset(verifier, VT_VERSION) &&
-           verifier.VerifyString(version()) &&
            VerifyOffset(verifier, VT_PLATFORM_METADATA) &&
            verifier.VerifyVector(platform_metadata()) &&
            verifier.VerifyVectorOfTables(platform_metadata()) &&
@@ -151,12 +156,6 @@ struct FlatNodeBuilder {
       flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>>
           labels) {
     fbb_.AddOffset(FlatNode::VT_LABELS, labels);
-  }
-  void add_app(flatbuffers::Offset<flatbuffers::String> app) {
-    fbb_.AddOffset(FlatNode::VT_APP, app);
-  }
-  void add_version(flatbuffers::Offset<flatbuffers::String> version) {
-    fbb_.AddOffset(FlatNode::VT_VERSION, version);
   }
   void add_platform_metadata(
       flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>>
@@ -194,8 +193,6 @@ inline flatbuffers::Offset<FlatNode> CreateFlatNode(
     flatbuffers::Offset<flatbuffers::String> namespace_ = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>>
         labels = 0,
-    flatbuffers::Offset<flatbuffers::String> app = 0,
-    flatbuffers::Offset<flatbuffers::String> version = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>>
         platform_metadata = 0,
     flatbuffers::Offset<flatbuffers::String> owner = 0,
@@ -208,8 +205,6 @@ inline flatbuffers::Offset<FlatNode> CreateFlatNode(
   builder_.add_workload_name(workload_name);
   builder_.add_owner(owner);
   builder_.add_platform_metadata(platform_metadata);
-  builder_.add_version(version);
-  builder_.add_app(app);
   builder_.add_labels(labels);
   builder_.add_namespace_(namespace_);
   builder_.add_name(name);
@@ -220,7 +215,6 @@ inline flatbuffers::Offset<FlatNode> CreateFlatNodeDirect(
     flatbuffers::FlatBufferBuilder &_fbb, const char *name = nullptr,
     const char *namespace_ = nullptr,
     const std::vector<flatbuffers::Offset<KeyVal>> *labels = nullptr,
-    const char *app = nullptr, const char *version = nullptr,
     const std::vector<flatbuffers::Offset<KeyVal>> *platform_metadata = nullptr,
     const char *owner = nullptr, const char *workload_name = nullptr,
     const char *istio_version = nullptr, const char *mesh_id = nullptr) {
@@ -228,8 +222,6 @@ inline flatbuffers::Offset<FlatNode> CreateFlatNodeDirect(
   auto namespace___ = namespace_ ? _fbb.CreateString(namespace_) : 0;
   auto labels__ =
       labels ? _fbb.CreateVector<flatbuffers::Offset<KeyVal>>(*labels) : 0;
-  auto app__ = app ? _fbb.CreateString(app) : 0;
-  auto version__ = version ? _fbb.CreateString(version) : 0;
   auto platform_metadata__ =
       platform_metadata
           ? _fbb.CreateVector<flatbuffers::Offset<KeyVal>>(*platform_metadata)
@@ -238,10 +230,33 @@ inline flatbuffers::Offset<FlatNode> CreateFlatNodeDirect(
   auto workload_name__ = workload_name ? _fbb.CreateString(workload_name) : 0;
   auto istio_version__ = istio_version ? _fbb.CreateString(istio_version) : 0;
   auto mesh_id__ = mesh_id ? _fbb.CreateString(mesh_id) : 0;
-  return wasm::common::CreateFlatNode(_fbb, name__, namespace___, labels__,
-                                      app__, version__, platform_metadata__,
-                                      owner__, workload_name__, istio_version__,
-                                      mesh_id__);
+  return wasm::common::CreateFlatNode(
+      _fbb, name__, namespace___, labels__, platform_metadata__, owner__,
+      workload_name__, istio_version__, mesh_id__);
+}
+
+inline const flatbuffers::TypeTable *KeyValTypeTable() {
+  static const flatbuffers::TypeCode type_codes[] = {
+      {flatbuffers::ET_STRING, 0, -1}, {flatbuffers::ET_STRING, 0, -1}};
+  static const char *const names[] = {"key", "value"};
+  static const flatbuffers::TypeTable tt = {
+      flatbuffers::ST_TABLE, 2, type_codes, nullptr, nullptr, names};
+  return &tt;
+}
+
+inline const flatbuffers::TypeTable *FlatNodeTypeTable() {
+  static const flatbuffers::TypeCode type_codes[] = {
+      {flatbuffers::ET_STRING, 0, -1},  {flatbuffers::ET_STRING, 0, -1},
+      {flatbuffers::ET_SEQUENCE, 1, 0}, {flatbuffers::ET_SEQUENCE, 1, 0},
+      {flatbuffers::ET_STRING, 0, -1},  {flatbuffers::ET_STRING, 0, -1},
+      {flatbuffers::ET_STRING, 0, -1},  {flatbuffers::ET_STRING, 0, -1}};
+  static const flatbuffers::TypeFunction type_refs[] = {KeyValTypeTable};
+  static const char *const names[] = {
+      "name",  "namespace_",    "labels",        "platform_metadata",
+      "owner", "workload_name", "istio_version", "mesh_id"};
+  static const flatbuffers::TypeTable tt = {
+      flatbuffers::ST_TABLE, 8, type_codes, type_refs, nullptr, names};
+  return &tt;
 }
 
 }  // namespace common

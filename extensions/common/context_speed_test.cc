@@ -13,12 +13,14 @@
  * limitations under the License.
  */
 #include <cassert>
+#include <iostream>
 
 #include "benchmark/benchmark.h"
 #include "common/stream_info/filter_state_impl.h"
 #include "extensions/common/context.h"
 #include "extensions/common/node_generated.h"
 #include "extensions/common/wasm/wasm_state.h"
+#include "flatbuffers/minireflect.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
@@ -183,6 +185,7 @@ static void BM_ReadRawBytesWithCache(benchmark::State& state) {
     benchmark::DoNotOptimize(size);
   }
 
+  std::cout << size << std::endl;
   assert(size == 40);
 }
 BENCHMARK(BM_ReadRawBytesWithCache);
@@ -248,36 +251,44 @@ static void BM_ReadStrings(benchmark::State& state) {
     benchmark::DoNotOptimize(size);
   }
 
+  std::cout << size << std::endl;
   assert(size == 40);
 }
 BENCHMARK(BM_ReadStrings);
 
 void extractFlatNodeMetadata(const google::protobuf::Struct& metadata,
-                             flatbuffers::FlatBufferBuilder& fbb,
-                             FlatNodeBuilder& node) {
-  for (const auto& it : metadata.fields()) {
-    if (it.first == "NAME") {
-      node.add_name(fbb.CreateString(it.second.string_value()));
-    } else if (it.first == "NAMESPACE") {
-      node.add_namespace_(fbb.CreateString(it.second.string_value()));
-    } else if (it.first == "OWNER") {
-      node.add_owner(fbb.CreateString(it.second.string_value()));
-    } else if (it.first == "WORKLOAD_NAME") {
-      node.add_workload_name(fbb.CreateString(it.second.string_value()));
-    } else if (it.first == "ISTIO_VERSION") {
-      node.add_istio_version(fbb.CreateString(it.second.string_value()));
-    } else if (it.first == "MESH_ID") {
-      node.add_mesh_id(fbb.CreateString(it.second.string_value()));
-    } else if (it.first == "LABELS") {
-      for (const auto& labels_it : it.second.struct_value().fields()) {
-        if (labels_it.first == "app") {
-          node.add_app(fbb.CreateString(labels_it.second.string_value()));
-        } else if (labels_it.first == "version") {
-          node.add_version(fbb.CreateString(labels_it.second.string_value()));
-        }
-      }
-    }
+                             flatbuffers::FlatBufferBuilder& fbb) {
+  auto name = fbb.CreateString(metadata.fields().at("NAME").string_value());
+  auto namespace_ =
+      fbb.CreateString(metadata.fields().at("NAMESPACE").string_value());
+  auto owner = fbb.CreateString(metadata.fields().at("OWNER").string_value());
+  auto workload_name =
+      fbb.CreateString(metadata.fields().at("WORKLOAD_NAME").string_value());
+  auto istio_version =
+      fbb.CreateString(metadata.fields().at("ISTIO_VERSION").string_value());
+  auto mesh_id =
+      fbb.CreateString(metadata.fields().at("MESH_ID").string_value());
+
+  std::vector<flatbuffers::Offset<KeyVal>> keyvals;
+  for (const auto& labels_it :
+       metadata.fields().at("LABELS").struct_value().fields()) {
+    keyvals.push_back(
+        CreateKeyVal(fbb, fbb.CreateString(labels_it.first),
+                     fbb.CreateString(labels_it.second.string_value())));
   }
+  auto labels = fbb.CreateVectorOfSortedTables(&keyvals);
+
+  FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_namespace_(namespace_);
+  node.add_owner(owner);
+  node.add_workload_name(workload_name);
+  node.add_istio_version(istio_version);
+  node.add_mesh_id(mesh_id);
+  node.add_labels(labels);
+  auto data = node.Finish();
+
+  fbb.Finish(data);
 }
 
 static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
@@ -301,10 +312,7 @@ static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
       benchmark::DoNotOptimize(test_struct);
 
       flatbuffers::FlatBufferBuilder fbb;
-      FlatNodeBuilder node(fbb);
-      extractFlatNodeMetadata(test_struct, fbb, node);
-      auto data = node.Finish();
-      fbb.Finish(data);
+      extractFlatNodeMetadata(test_struct, fbb);
 
       node_info =
           cache
@@ -323,14 +331,12 @@ static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
 BENCHMARK(BM_WriteFlatBufferWithCache);
 
 static void BM_ReadFlatBuffer(benchmark::State& state) {
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
+                      json_parse_options);
   flatbuffers::FlatBufferBuilder fbb;
-  FlatNodeBuilder node(fbb);
-  node.add_name(fbb.CreateString("test_pod"));
-  node.add_namespace_(fbb.CreateString("test_namespace"));
-  node.add_app(fbb.CreateString("productpage"));
-  node.add_version(fbb.CreateString("v1"));
-  auto data = node.Finish();
-  fbb.Finish(data);
+  extractFlatNodeMetadata(metadata_struct, fbb);
 
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
@@ -343,8 +349,10 @@ static void BM_ReadFlatBuffer(benchmark::State& state) {
   for (auto _ : state) {
     auto buf = getData(filter_state, metadata_key);
     auto peer = flatbuffers::GetRoot<FlatNode>(buf.data());
-    size = peer->name()->size() + peer->namespace_()->size() +
-           peer->app()->size() + peer->version()->size();
+    size = peer->workload_name()->size() + peer->namespace_()->size() +
+           peer->labels()->LookupByKey("app")->value()->size() +
+           peer->labels()->LookupByKey("version")->value()->size();
+    benchmark::DoNotOptimize(size);
   }
   assert(size == 40);
 }

@@ -1,7 +1,7 @@
 namespace wasm.common;
 
 table KeyVal {
-  key:string;
+  key:string (key);
   value:string;
 }
 
@@ -11,12 +11,9 @@ table FlatNode {
   name:string;
   namespace:string;
   labels:[KeyVal];
-  app:string;
-  version:string;
   platform_metadata:[KeyVal];
   owner:string;
   workload_name:string;
   istio_version:string;
   mesh_id:string;
-
 }
