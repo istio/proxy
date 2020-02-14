@@ -115,7 +115,7 @@ int getExportInterval() {
 // provided or "0" is provided, emtpy will be returned.
 std::string getSTSPort() {
   std::string sts_port;
-  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
+  if (getStringValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
       sts_port != "0") {
     return sts_port;
   }
@@ -146,6 +146,7 @@ bool StackdriverRootContext::onConfigure(
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
   std::string sts_port = getSTSPort();
+  std::cout<<"to get sts port here "<<sts_port<<"\n";
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
