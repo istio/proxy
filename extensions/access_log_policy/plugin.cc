@@ -62,11 +62,14 @@ bool setFilterStateValue(bool log) {
 constexpr long long kDefaultLogWindowDurationNanoseconds =
     43200000000000;  // 12h
 
+constexpr StringView kRootContextId = "accesslog_inbound";
 constexpr StringView kSource = "source";
 constexpr StringView kAddress = "address";
 constexpr StringView kConnection = "connection";
 constexpr StringView kUriSanPeerCertificate = "uri_san_peer_certificate";
-constexpr StringView kRootContextId = "accesslog_inbound";
+constexpr StringView kResponse = "response";
+constexpr StringView kCode = "code";
+constexpr StringView kGrpcStatus = "grpc_status";
 
 static RegisterContextFactory register_AccessLogPolicy(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext),
@@ -115,11 +118,7 @@ void PluginRootContext::updateLastLogTimeNanos(const IstioDimensions& key,
 
 void PluginContext::onLog() {
   // Check if request is a failure.
-  int64_t response_code = 0;
-  // TODO(gargnupur): Add check for gRPC status too.
-  getValue({"response", "code"}, &response_code);
-  // If request is a failure, log it.
-  if (response_code != 200) {
+  if (isRequestFailed()) {
     LOG_TRACE("Setting logging to true as we got error log");
     setFilterStateValue(true);
     return;
@@ -148,6 +147,26 @@ void PluginContext::onLog() {
   }
 
   setFilterStateValue(false);
+}
+
+bool PluginContext::isRequestFailed() {
+  // Check if HTTP request is a failure.
+  int64_t http_response_code = 0;
+  getValue({kResponse, kCode}, &http_response_code);
+  // If request is a failure, log it.
+  if (http_response_code != 200) {
+    return false;
+  }
+
+  // Check if gRPC request is a failure.
+  int64_t grpc_response_code = 0;
+  getValue({kResponse, kGrpcStatus}, &grpc_response_code);
+  // If request is a failure, log it.
+  if (grpc_response_code != 0) {
+    return false;
+  }
+
+  return true;
 }
 
 #ifdef NULL_PLUGIN
