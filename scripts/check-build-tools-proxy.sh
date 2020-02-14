@@ -21,7 +21,7 @@ set -eu
 # Check whether the proxy build-tools image tag in Makefile.overrides is the same as
 # build-tools image tag in Makefile.
 proxy_build_tools_tag=$(grep -oP 'gcr.io/istio-testing/build-tools-proxy:\K([-0-9a-zA-Z]+)' Makefile.overrides.mk)
-build_tools_tag=$(grep -oP 'gcr.io/istio-testing/build-tools:\K([-0-9a-zA-Z]+)' Makefile)
+build_tools_tag=$(grep -oP 'IMAGE_VERSION\s*(\?|:)?=\s*\K([-0-9a-zA-Z]+)' Makefile)
 
 if [[ $proxy_build_tools_tag != $build_tools_tag ]]; then
     echo "proxy build-tools tag $proxy_build_tools_tag is different from build-tools tag $build_tools_tag"
