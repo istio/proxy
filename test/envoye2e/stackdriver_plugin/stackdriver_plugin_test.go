@@ -87,7 +87,9 @@ const inboundStackdriverAndAccessLogFilter = `- name: envoy.filters.http.wasm
 - name: envoy.filters.http.wasm
   config:
     config:
+      root_id: "accesslog_inbound"
       vm_config:
+        vm_id: "accesslog_inbound"
         runtime: "envoy.wasm.runtime.null"
         code:
           local: { inline_string: "envoy.wasm.access_log_policy" }
@@ -124,6 +126,7 @@ func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
 	for _, l := range got.Entries {
 		l.Timestamp = nil
 		delete(l.Labels, "request_id")
+		delete(l.Labels, "source_ip")
 		l.HttpRequest.RequestSize = 0
 		l.HttpRequest.ResponseSize = 0
 		l.HttpRequest.Latency = nil

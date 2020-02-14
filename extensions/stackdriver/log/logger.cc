@@ -120,6 +120,7 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   (*label_map)["service_authentication_policy"] =
       std::string(::Wasm::Common::AuthenticationPolicyString(
           request_info.service_auth_policy));
+  (*label_map)["source_ip"] = request_info.source_address;
 
   // Insert HTTPRequest
   auto http_request = new_entry->mutable_http_request();

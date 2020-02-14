@@ -66,9 +66,11 @@ constexpr StringView kSource = "source";
 constexpr StringView kAddress = "address";
 constexpr StringView kConnection = "connection";
 constexpr StringView kUriSanPeerCertificate = "uri_san_peer_certificate";
+constexpr StringView kRootContextId = "accesslog_inbound";
 
 static RegisterContextFactory register_AccessLogPolicy(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
+    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext),
+    kRootContextId);
 
 bool PluginRootContext::onConfigure(size_t) {
   if (::Wasm::Common::TrafficDirection::Inbound !=
@@ -118,6 +120,7 @@ void PluginContext::onLog() {
   getValue({"response", "code"}, &response_code);
   // If request is a failure, log it.
   if (response_code != 200) {
+    LOG_TRACE("Setting logging to true as we got error log");
     setFilterStateValue(true);
     return;
   }
@@ -134,6 +137,10 @@ void PluginContext::onLog() {
   long long last_log_time_nanos = lastLogTimeNanos();
   auto cur = static_cast<long long>(getCurrentTimeNanoseconds());
   if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
+    LOG_TRACE(absl::StrCat(
+        "Setting logging to true as its outside of log windown. SourceIp: ",
+        source_ip, " SourcePrincipal: ", source_principal,
+        " Window: ", logTimeDurationNanos()));
     if (setFilterStateValue(true)) {
       updateLastLogTimeNanos(cur);
     }
