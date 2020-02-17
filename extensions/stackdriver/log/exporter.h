@@ -57,7 +57,7 @@ class ExporterImpl : public Exporter {
   // only.
   ExporterImpl(RootContext* root_context,
                const std::string& logging_service_endpoint,
-               const std::string& sts_port = "");
+               const std::string& project_id, const std::string& sts_port = "");
 
   // exportLogs exports the given log request to Stackdriver.
   void exportLogs(
@@ -75,6 +75,12 @@ class ExporterImpl : public Exporter {
   // Callbacks for gRPC calls.
   std::function<void(google::protobuf::Empty&&)> success_callback_;
   std::function<void(GrpcStatus, StringView)> failure_callback_;
+
+  // Stats to count successful and failed logging gRPC call.
+  uint32_t success_counter_;
+  uint32_t failure_counter_;
+
+  std::string project_id_;
 };
 
 }  // namespace Log

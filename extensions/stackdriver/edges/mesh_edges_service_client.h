@@ -58,6 +58,7 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
   // address.
   MeshEdgesServiceClientImpl(RootContext* root_context,
                              const std::string& edges_endpoint,
+                             const std::string& project_id,
                              const std::string& sts_port = "");
 
   void reportTrafficAssertions(
@@ -70,9 +71,7 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
   // edges service endpoint.
   std::string grpc_service_;
 
-  // callbacks for the client
-  std::function<void(google::protobuf::Empty&&)> success_callback_;
-  std::function<void(GrpcStatus, StringView)> failure_callback_;
+  std::string project_id_;
 };
 
 }  // namespace Edges
