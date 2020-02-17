@@ -103,6 +103,8 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
     return FilterHeadersStatus::Continue;
   }
 
+  bool modified_headers = false;
+
   for (const auto& mapping: rootContext()->config().header_map()){
     const auto claim_it = jwtStruct.fields().find(mapping.second);
     if (jwtStruct.fields().end() == claim_it) {
@@ -111,9 +113,14 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
     }
     if (WasmResult::Ok != addRequestHeader(mapping.first, claim_it->second.string_value())) {
       LOG_WARN(absl::StrCat("Unable to set header ", mapping.first, " to ", claim_it->second.string_value()));
+    } else {
+      modified_headers = true;
     }
   }
 
+  if (modified_headers) {
+    clearRouteCache();
+  }
 
   return FilterHeadersStatus::Continue;
 }
