@@ -19,12 +19,12 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/node_info.pb.h"
 #include "google/protobuf/util/json_util.h"
 
 #ifndef NULL_PLUGIN
 
 #include "base64.h"
+
 
 #else
 
@@ -43,6 +43,9 @@ using NullPluginRegistry =
 NULL_PLUGIN_REGISTRY;
 
 #endif
+
+using google::protobuf::util::JsonParseOptions;
+using google::protobuf::util::Status;
 
 static RegisterContextFactory register_JwtHeader(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));

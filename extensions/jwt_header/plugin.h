@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include "extensions/common/context.h"
 #include "extensions/jwt_header/config.pb.h"
 
 #ifndef NULL_PLUGIN
@@ -44,9 +43,6 @@ using NullPluginRegistry =
     ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 
 #endif
-
-using google::protobuf::util::JsonParseOptions;
-using google::protobuf::util::Status;
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
