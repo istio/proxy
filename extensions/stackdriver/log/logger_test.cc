@@ -138,9 +138,9 @@ std::string write_log_request_json = R"({
            "source_namespace":"test_peer_namespace",
            "source_principal":"source_principal",
            "service_authentication_policy":"MUTUAL_TLS",
+           "source_ip":"1.1.1.1",
            "source_workload":"test_peer_workload",
            "response_flag":"-"
-           "source_ip":"1.1.1.1"
         },
         "trace":"projects/test_project/traces/123abc",
         "spanId":"abc123",
