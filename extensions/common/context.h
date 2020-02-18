@@ -65,6 +65,8 @@ enum class ServiceAuthenticationPolicy : int64_t {
 constexpr StringView kMutualTLS = "MUTUAL_TLS";
 constexpr StringView kNone = "NONE";
 
+const uint32_t kDefaultGrpcStatusCode = 2;
+
 StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 
 // RequestInfo represents the information collected from filter stream
@@ -92,7 +94,7 @@ struct RequestInfo {
   uint32_t response_code = 0;
 
   // gRPC status code for the request.
-  uint32_t grpc_status = 2;
+  uint32_t grpc_status = kDefaultGrpcStatusCode;
 
   // Response flag giving additional information - NR, UAEX etc.
   // TODO populate
