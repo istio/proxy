@@ -16,6 +16,7 @@ package stats
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 	"time"
