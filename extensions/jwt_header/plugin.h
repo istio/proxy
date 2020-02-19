@@ -26,7 +26,7 @@
 
 static const std::string EMPTY_STRING;
 
-#else
+#else  // NULL_PLUGIN
 
 #include "extensions/common/wasm/null/null_plugin.h"
 
@@ -42,7 +42,7 @@ using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
 using NullPluginRegistry =
     ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 
-#endif
+#endif  // NULL_PLUGIN
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
@@ -57,14 +57,9 @@ class PluginRootContext : public RootContext {
   bool onStart(size_t) override { return true; };
   void onTick() override{};
 
-  std::initializer_list<StringView> jwt_path() { return jwt_path_; };
-
   const jwt_header::PluginConfig& config() { return config_; };
 
  private:
-  // streamInfo().setDynamicMetadata("jwt", MessageUtil::keyValueStruct(issuer,
-  // payload)) getProperty({"metadata", "jwt", issuer}, &value)
-  std::initializer_list<StringView> jwt_path_;
   jwt_header::PluginConfig config_;
 };
 

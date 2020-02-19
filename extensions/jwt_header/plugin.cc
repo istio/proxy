@@ -15,17 +15,16 @@
 
 #include "extensions/jwt_header/plugin.h"
 
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+//#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "google/protobuf/util/json_util.h"
 
 #ifndef NULL_PLUGIN
 
 #include "base64.h"
 
-#else
+#else  // NULL_PLUGIN
 
 #include "common/common/base64.h"
 
@@ -41,7 +40,7 @@ using NullPluginRegistry =
 
 NULL_PLUGIN_REGISTRY;
 
-#endif
+#endif  // NULL_PLUGIN
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
@@ -51,21 +50,15 @@ static RegisterContextFactory register_JwtHeader(
 
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
-  // Parse configuration JSON string.
+
   JsonParseOptions json_options;
-  Status status =
+  auto status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
     LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
                           configuration->toString()));
     return false;
   }
-
-  if (config_.jwt_path().empty()) {
-    jwt_path_ = {"metadata", "jwt-auth"};
-  }  // else {
-     // jwt_path_ = std::initializer_list<StringView>(config_.jwt_path());
-  //}
 
   return true;
 }
@@ -74,29 +67,24 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   google::protobuf::Struct jwtPayloadStruct;
   JsonParseOptions json_options;
 
+  // jwt validation filter uses the jwt-auth dynamic metadata
+  // with issuer as the key in struct.
   if (!getMessageValue({"metadata", "filter_metadata", "jwt-auth"},
                        &jwtPayloadStruct)) {
-    LOG_INFO("no jwt-auth metadata present");
+    LOG_DEBUG("No jwt-auth metadata present");
     return FilterHeadersStatus::Continue;
   }
 
   // Istio jwt filter adds exactly one entry to the map
-  // key: issuer which is not relevant here.
+  // The 'issuer' is not relevant.
   auto it = jwtPayloadStruct.fields().begin();
 
   if (jwtPayloadStruct.fields().end() == it) {
-    LOG_INFO("empty jwt metadata");
+    LOG_DEBUG("Empty jwt metadata");
     return FilterHeadersStatus::Continue;
   }
 
-  // auto jsonJwt = Base64::decodeWithoutPadding(it->second.string_value());
   auto jsonJwt = it->second.string_value();
-
-  if (jsonJwt.empty()) {
-    LOG_WARN(absl::StrCat("Invalid base64 in jwt metadata:", it->first, "-->",
-                          it->second.string_value()));
-    return FilterHeadersStatus::Continue;
-  }
 
   google::protobuf::Struct jwtStruct;
   auto status = JsonStringToMessage(jsonJwt, &jwtStruct, json_options);
@@ -107,22 +95,31 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   }
 
   bool modified_headers = false;
+  const auto end_it = jwtStruct.fields().end();
 
   for (const auto& mapping : rootContext()->config().header_map()) {
     const auto claim_it = jwtStruct.fields().find(mapping.second);
-    if (jwtStruct.fields().end() == claim_it) {
-      LOG_WARN(
+    if (claim_it == end_it) {
+      LOG_DEBUG(
           absl::StrCat("Claim ", mapping.second, " missing from ", jsonJwt));
-      removeRequestHeader(mapping.first);
+
+      // Remove mapping request header if present so that it is not used to
+      // decide routes.
+      auto found = getRequestHeader(mapping.first);
+      if (found) {
+        removeRequestHeader(mapping.first);
+        modified_headers = true;
+      }
       continue;
     }
+
     if (WasmResult::Ok !=
         replaceRequestHeader(mapping.first, claim_it->second.string_value())) {
       LOG_WARN(absl::StrCat("Unable to set header ", mapping.first, " to ",
                             claim_it->second.string_value()));
     } else {
-      LOG_WARN(absl::StrCat("SetHeader ", mapping.second, " = ",
-                            claim_it->second.string_value()));
+      LOG_DEBUG(absl::StrCat("SetHeader ", mapping.first, " = ",
+                             claim_it->second.string_value()));
       modified_headers = true;
     }
   }
