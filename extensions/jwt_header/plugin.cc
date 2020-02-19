@@ -25,7 +25,6 @@
 
 #include "base64.h"
 
-
 #else
 
 #include "common/common/base64.h"
@@ -63,9 +62,9 @@ bool PluginRootContext::onConfigure(size_t) {
   }
 
   if (config_.jwt_path().empty()) {
-    jwt_path_ = {"metadata", "jwt"};
-  } //else {
-    //jwt_path_ = std::initializer_list<StringView>(config_.jwt_path());
+    jwt_path_ = {"metadata", "jwt-auth"};
+  }  // else {
+     // jwt_path_ = std::initializer_list<StringView>(config_.jwt_path());
   //}
 
   return true;
@@ -73,50 +72,57 @@ bool PluginRootContext::onConfigure(size_t) {
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   google::protobuf::Struct jwtPayloadStruct;
+  JsonParseOptions json_options;
 
-  if (!getValue(rootContext()->jwt_path(), &jwtPayloadStruct)) {
-    LOG_INFO("no jwt metadata present");
+  if (!getMessageValue({"metadata", "filter_metadata", "jwt-auth"},
+                       &jwtPayloadStruct)) {
+    LOG_INFO("no jwt-auth metadata present");
     return FilterHeadersStatus::Continue;
   }
 
   // Istio jwt filter adds exactly one entry to the map
   // key: issuer which is not relevant here.
   auto it = jwtPayloadStruct.fields().begin();
-  
+
   if (jwtPayloadStruct.fields().end() == it) {
     LOG_INFO("empty jwt metadata");
     return FilterHeadersStatus::Continue;
   }
 
-  auto jsonJwt = Base64::decodeWithoutPadding(it->second.string_value());
-  
+  // auto jsonJwt = Base64::decodeWithoutPadding(it->second.string_value());
+  auto jsonJwt = it->second.string_value();
+
   if (jsonJwt.empty()) {
-    LOG_WARN("Invalid base64 in jwt metadata");
+    LOG_WARN(absl::StrCat("Invalid base64 in jwt metadata:", it->first, "-->",
+                          it->second.string_value()));
     return FilterHeadersStatus::Continue;
   }
-  
+
   google::protobuf::Struct jwtStruct;
-  JsonParseOptions json_options;
-  auto status =
-      JsonStringToMessage(jsonJwt, &jwtStruct, json_options);
+  auto status = JsonStringToMessage(jsonJwt, &jwtStruct, json_options);
 
   if (status != Status::OK) {
-    LOG_WARN(absl::StrCat("Cannot parse JSON string ",
-                          jsonJwt));
+    LOG_WARN(absl::StrCat("Cannot parse JSON string ", jsonJwt));
     return FilterHeadersStatus::Continue;
   }
 
   bool modified_headers = false;
 
-  for (const auto& mapping: rootContext()->config().header_map()){
+  for (const auto& mapping : rootContext()->config().header_map()) {
     const auto claim_it = jwtStruct.fields().find(mapping.second);
     if (jwtStruct.fields().end() == claim_it) {
-      LOG_WARN(absl::StrCat("Claim ", mapping.second, " missing from ", jsonJwt));
+      LOG_WARN(
+          absl::StrCat("Claim ", mapping.second, " missing from ", jsonJwt));
+      removeRequestHeader(mapping.first);
       continue;
     }
-    if (WasmResult::Ok != addRequestHeader(mapping.first, claim_it->second.string_value())) {
-      LOG_WARN(absl::StrCat("Unable to set header ", mapping.first, " to ", claim_it->second.string_value()));
+    if (WasmResult::Ok !=
+        replaceRequestHeader(mapping.first, claim_it->second.string_value())) {
+      LOG_WARN(absl::StrCat("Unable to set header ", mapping.first, " to ",
+                            claim_it->second.string_value()));
     } else {
+      LOG_WARN(absl::StrCat("SetHeader ", mapping.second, " = ",
+                            claim_it->second.string_value()));
       modified_headers = true;
     }
   }

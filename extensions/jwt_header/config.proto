@@ -27,6 +27,5 @@ message PluginConfig {
   // The path in the context where jwt token is found.
   // This filter must be deployed *after* the jwt filter.
   // The default is ["metadata", "jwt"]
-  repeated string jwt_path = 2; 
-
+  repeated string jwt_path = 2;
 }

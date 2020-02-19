@@ -57,16 +57,15 @@ class PluginRootContext : public RootContext {
   bool onStart(size_t) override { return true; };
   void onTick() override{};
 
-  
-  std::initializer_list<StringView> jwt_path(){ return jwt_path_; };
+  std::initializer_list<StringView> jwt_path() { return jwt_path_; };
 
-  const jwt_header::PluginConfig& config() {return config_; };
+  const jwt_header::PluginConfig& config() { return config_; };
+
  private:
-  // streamInfo().setDynamicMetadata("jwt", MessageUtil::keyValueStruct(issuer, payload))
-  // getProperty({"metadata", "jwt", issuer}, &value)
+  // streamInfo().setDynamicMetadata("jwt", MessageUtil::keyValueStruct(issuer,
+  // payload)) getProperty({"metadata", "jwt", issuer}, &value)
   std::initializer_list<StringView> jwt_path_;
   jwt_header::PluginConfig config_;
-  
 };
 
 // Per-stream context.
