@@ -148,7 +148,7 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
   EXPECT_CALL(filter_, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
-  DangerousDeprecatedTestTime test_time;
+  Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
                                          test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, streamInfo())
@@ -172,7 +172,7 @@ TEST_F(AuthenticationFilterTest, AllPass) {
   EXPECT_CALL(filter_, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
-  DangerousDeprecatedTestTime test_time;
+  Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
                                          test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, streamInfo())
@@ -243,7 +243,7 @@ TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
   EXPECT_CALL(filter, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
-  DangerousDeprecatedTestTime test_time;
+  Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
                                          test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, streamInfo())
