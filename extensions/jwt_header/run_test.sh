@@ -1,4 +1,4 @@
-# Copyright Istio Authors
+# Copyright 2020 Istio Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,4 +20,4 @@ BAZEL_BIN="${WD}/../../bazel-bin"
 set -ex
 pwd
 
-${BAZEL_BIN}/src/envoy/envoy -c ${WD}/testdata/server.yaml --concurrency 2 --allow-unknown-fields -l trace
+${BAZEL_BIN}/src/envoy/envoy -c ${WD}/testdata/server.yaml --concurrency 2 --allow-unknown-fields -l info
