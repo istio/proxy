@@ -133,6 +133,13 @@ filter_chains:
 {{ .Vars.ServerTLSContext | indent 2 }}
 `
 
+func skipTSAN(t *testing.T) {
+	// TODO()
+	if os.Getenv("TSAN") != "" {
+	  t.Skip("https://github.com/istio/istio/issues/21273")
+	}
+}
+
 type capture struct{}
 
 func (capture) Run(p *driver.Params) error {
@@ -188,6 +195,7 @@ var ClientConfigs = []struct {
 }
 
 func TestStatsPayload(t *testing.T) {
+	skipTSAN()
 	for _, config := range ClientConfigs {
 		for _, testCase := range TestCases {
 			t.Run(config.Name+"/"+testCase.WasmRuntime, func(t *testing.T) {
@@ -235,6 +243,7 @@ func TestStatsPayload(t *testing.T) {
 }
 
 func TestStatsParallel(t *testing.T) {
+	skipTSAN()
 	ports := env.NewPorts(env.StatsParallel)
 	params := &driver.Params{
 		Vars: map[string]string{
