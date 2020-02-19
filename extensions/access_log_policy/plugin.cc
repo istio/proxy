@@ -62,7 +62,6 @@ bool setFilterStateValue(bool log) {
 constexpr long long kDefaultLogWindowDurationNanoseconds =
     43200000000000;  // 12h
 
-constexpr StringView kRootContextId = "accesslog_inbound";
 constexpr StringView kSource = "source";
 constexpr StringView kAddress = "address";
 constexpr StringView kConnection = "connection";
@@ -72,8 +71,7 @@ constexpr StringView kCode = "code";
 constexpr StringView kGrpcStatus = "grpc_status";
 
 static RegisterContextFactory register_AccessLogPolicy(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext),
-    kRootContextId);
+    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
 bool PluginRootContext::onConfigure(size_t) {
   if (::Wasm::Common::TrafficDirection::Inbound !=

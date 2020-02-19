@@ -74,7 +74,6 @@ func (sd *Stackdriver) Run(p *Params) error {
 					entry.HttpRequest.Latency = nil
 					entry.HttpRequest.RemoteIp = ""
 					delete(entry.Labels, "request_id")
-					delete(entry.Labels, "source_ip")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
