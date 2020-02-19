@@ -134,7 +134,6 @@ filter_chains:
 `
 
 func skipTSAN(t *testing.T) {
-	// TODO()
 	if os.Getenv("TSAN") != "" {
 	  t.Skip("https://github.com/istio/istio/issues/21273")
 	}
