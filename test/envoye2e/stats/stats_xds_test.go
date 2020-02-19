@@ -194,7 +194,7 @@ var ClientConfigs = []struct {
 }
 
 func TestStatsPayload(t *testing.T) {
-	skipTSAN()
+	skipTSAN(t)
 	for _, config := range ClientConfigs {
 		for _, testCase := range TestCases {
 			t.Run(config.Name+"/"+testCase.WasmRuntime, func(t *testing.T) {
@@ -242,7 +242,7 @@ func TestStatsPayload(t *testing.T) {
 }
 
 func TestStatsParallel(t *testing.T) {
-	skipTSAN()
+	skipTSAN(t)
 	ports := env.NewPorts(env.StatsParallel)
 	params := &driver.Params{
 		Vars: map[string]string{
