@@ -15,6 +15,9 @@
 
 #include "extensions/stackdriver/metric/registry.h"
 
+#include <fstream>
+#include <sstream>
+
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/utils.h"
 #include "google/api/monitored_resource.pb.h"
@@ -50,7 +53,12 @@ StackdriverOptions getStackdriverOptions(
                                                                    sts_port);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
     auto ssl_creds_options = grpc::SslCredentialsOptions();
-    ssl_creds_options.pem_root_certs = kDefaultRootCertFile;
+    std::ifstream file(kDefaultRootCertFile);
+    if (!file.fail()) {
+      std::stringstream file_string;
+      file_string << file.rdbuf();
+      ssl_creds_options.pem_root_certs = file_string.str();
+    }
     auto channel_creds = grpc::SslCredentials(ssl_creds_options);
     auto channel = ::grpc::CreateChannel(
         kStackdriverStatsAddress,
