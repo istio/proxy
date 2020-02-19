@@ -25,6 +25,11 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
+constexpr char kCanonicalNameLabel[] = "service.istio.io/canonical-name";
+constexpr char kCanonicalRevisionLabel[] =
+    "service.istio.io/canonical-revision";
+constexpr char kLatest[] = "latest";
+
 void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
             const ::wasm::common::NodeInfo &peer_node_info,
             const ::Wasm::Common::RequestInfo &request_info) {
@@ -33,6 +38,34 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
       request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
           ? request_info.request_url_path
           : request_info.request_operation;
+
+  const auto &local_labels = local_node_info.labels();
+  const auto &peer_labels = peer_node_info.labels();
+
+  std::string local_canonical_name = local_node_info.workload_name();
+  const auto local_name = local_labels.find(kCanonicalNameLabel);
+  if (local_labels.end() != local_name) {
+    local_canonical_name = local_name->second;
+  }
+
+  std::string peer_canonical_name = peer_node_info.workload_name();
+  const auto peer_name = peer_labels.find(kCanonicalNameLabel);
+  if (peer_labels.end() != peer_name) {
+    peer_canonical_name = peer_name->second;
+  }
+
+  std::string local_canonical_rev = kLatest;
+  const auto local_rev = local_labels.find(kCanonicalRevisionLabel);
+  if (local_labels.end() != local_rev) {
+    local_canonical_rev = local_rev->second;
+  }
+
+  std::string peer_canonical_rev = kLatest;
+  const auto peer_rev = peer_labels.find(kCanonicalRevisionLabel);
+  if (peer_labels.end() != peer_rev) {
+    peer_canonical_rev = peer_rev->second;
+  }
+
   if (is_outbound) {
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},
@@ -56,7 +89,14 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
          {destinationPrincipalKey(), request_info.destination_principal},
          {destinationWorkloadNameKey(), peer_node_info.workload_name()},
          {destinationWorkloadNamespaceKey(), peer_node_info.namespace_()},
-         {destinationOwnerKey(), peer_node_info.owner()}});
+         {destinationOwnerKey(), peer_node_info.owner()},
+         {destinationCanonicalServiceNameKey(), peer_canonical_name},
+         {destinationCanonicalServiceNamespaceKey(),
+          peer_node_info.namespace_()},
+         {destinationCanonicalRevisionKey(), peer_canonical_rev},
+         {sourceCanonicalServiceNameKey(), local_canonical_name},
+         {sourceCanonicalServiceNamespaceKey(), local_node_info.namespace_()},
+         {sourceCanonicalRevisionKey(), local_canonical_rev}});
     return;
   }
 
@@ -82,7 +122,14 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
        {destinationPrincipalKey(), request_info.destination_principal},
        {destinationWorkloadNameKey(), local_node_info.workload_name()},
        {destinationWorkloadNamespaceKey(), local_node_info.namespace_()},
-       {destinationOwnerKey(), local_node_info.owner()}});
+       {destinationOwnerKey(), local_node_info.owner()},
+       {destinationCanonicalServiceNameKey(), local_canonical_name},
+       {destinationCanonicalServiceNamespaceKey(),
+        local_node_info.namespace_()},
+       {destinationCanonicalRevisionKey(), local_canonical_rev},
+       {sourceCanonicalServiceNameKey(), peer_canonical_name},
+       {sourceCanonicalServiceNamespaceKey(), peer_node_info.namespace_()},
+       {sourceCanonicalRevisionKey(), peer_canonical_rev}});
 }
 
 }  // namespace Metric
