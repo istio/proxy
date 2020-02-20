@@ -53,9 +53,10 @@ TEST(SniVerifierTest, MaxClientHelloSize) {
       "max_client_hello_size of 65537 is greater than maximum of 65536.");
 }
 
-class SniVerifierFilterTest : public testing::Test {
+class SniVerifierFilterTest
+    : public testing::TestWithParam<std::tuple<uint16_t, uint16_t>> {
  protected:
-  static constexpr size_t TLS_MAX_CLIENT_HELLO = 200;
+  static constexpr size_t TLS_MAX_CLIENT_HELLO = 250;
 
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
@@ -69,10 +70,12 @@ class SniVerifierFilterTest : public testing::Test {
     store_ = nullptr;
   }
 
-  void runTestForClientHello(std::string outer_sni, std::string inner_sni,
+  void runTestForClientHello(uint16_t tls_min_version, uint16_t tls_max_version,
+                             std::string outer_sni, std::string inner_sni,
                              Network::FilterStatus expected_status,
                              size_t data_installment_size = UINT_MAX) {
-    auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
+    auto client_hello = Tls::Test::generateClientHello(
+        tls_min_version, tls_max_version, inner_sni, "");
     runTestForData(outer_sni, client_hello, expected_status,
                    data_installment_size);
   }
@@ -120,8 +123,18 @@ class SniVerifierFilterTest : public testing::Test {
 
 constexpr size_t SniVerifierFilterTest::TLS_MAX_CLIENT_HELLO;  // definition
 
-TEST_F(SniVerifierFilterTest, SnisMatch) {
-  runTestForClientHello("example.com", "example.com",
+INSTANTIATE_TEST_SUITE_P(
+    TlsProtocolVersions, SniVerifierFilterTest,
+    testing::Values(std::make_tuple(Config::TLS_MIN_SUPPORTED_VERSION,
+                                    Config::TLS_MAX_SUPPORTED_VERSION),
+                    std::make_tuple(TLS1_VERSION, TLS1_VERSION),
+                    std::make_tuple(TLS1_1_VERSION, TLS1_1_VERSION),
+                    std::make_tuple(TLS1_2_VERSION, TLS1_2_VERSION),
+                    std::make_tuple(TLS1_3_VERSION, TLS1_3_VERSION)));
+
+TEST_P(SniVerifierFilterTest, SnisMatch) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                        "example.com", "example.com",
                         Network::FilterStatus::Continue);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
@@ -131,8 +144,9 @@ TEST_F(SniVerifierFilterTest, SnisMatch) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, SnisDoNotMatch) {
-  runTestForClientHello("example.com", "istio.io",
+TEST_P(SniVerifierFilterTest, SnisDoNotMatch) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                        "example.com", "istio.io",
                         Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
@@ -142,8 +156,9 @@ TEST_F(SniVerifierFilterTest, SnisDoNotMatch) {
   EXPECT_EQ(1, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, EmptyOuterSni) {
-  runTestForClientHello("", "istio.io", Network::FilterStatus::StopIteration);
+TEST_P(SniVerifierFilterTest, EmptyOuterSni) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()), "",
+                        "istio.io", Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -152,8 +167,9 @@ TEST_F(SniVerifierFilterTest, EmptyOuterSni) {
   EXPECT_EQ(1, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, EmptyInnerSni) {
-  runTestForClientHello("example.com", "",
+TEST_P(SniVerifierFilterTest, EmptyInnerSni) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                        "example.com", "",
                         Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
@@ -163,8 +179,9 @@ TEST_F(SniVerifierFilterTest, EmptyInnerSni) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, BothSnisEmpty) {
-  runTestForClientHello("", "", Network::FilterStatus::StopIteration);
+TEST_P(SniVerifierFilterTest, BothSnisEmpty) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()), "",
+                        "", Network::FilterStatus::StopIteration);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
   EXPECT_EQ(0, cfg_->stats().tls_not_found_.value());
@@ -173,8 +190,9 @@ TEST_F(SniVerifierFilterTest, BothSnisEmpty) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, SniTooLarge) {
-  runTestForClientHello("example.com", std::string(TLS_MAX_CLIENT_HELLO, 'a'),
+TEST_P(SniVerifierFilterTest, SniTooLarge) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                        "example.com", std::string(TLS_MAX_CLIENT_HELLO, 'a'),
                         Network::FilterStatus::StopIteration);
   EXPECT_EQ(1, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(0, cfg_->stats().tls_found_.value());
@@ -184,8 +202,9 @@ TEST_F(SniVerifierFilterTest, SniTooLarge) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfTen) {
-  runTestForClientHello("example.com", "example.com",
+TEST_P(SniVerifierFilterTest, SnisMatchSendDataInChunksOfTen) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                        "example.com", "example.com",
                         Network::FilterStatus::Continue, 10);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
@@ -195,8 +214,9 @@ TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfTen) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfFifty) {
-  runTestForClientHello("example.com", "example.com",
+TEST_P(SniVerifierFilterTest, SnisMatchSendDataInChunksOfFifty) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                        "example.com", "example.com",
                         Network::FilterStatus::Continue, 50);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
@@ -206,8 +226,9 @@ TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfFifty) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfHundred) {
-  runTestForClientHello("example.com", "example.com",
+TEST_P(SniVerifierFilterTest, SnisMatchSendDataInChunksOfHundred) {
+  runTestForClientHello(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                        "example.com", "example.com",
                         Network::FilterStatus::Continue, 100);
   EXPECT_EQ(0, cfg_->stats().client_hello_too_large_.value());
   EXPECT_EQ(1, cfg_->stats().tls_found_.value());
@@ -217,7 +238,7 @@ TEST_F(SniVerifierFilterTest, SnisMatchSendDataInChunksOfHundred) {
   EXPECT_EQ(0, cfg_->stats().snis_do_not_match_.value());
 }
 
-TEST_F(SniVerifierFilterTest, NonTLS) {
+TEST_P(SniVerifierFilterTest, NonTLS) {
   std::vector<uint8_t> nonTLSData(TLS_MAX_CLIENT_HELLO, 7);
   runTestForData("example.com", nonTLSData,
                  Network::FilterStatus::StopIteration);
