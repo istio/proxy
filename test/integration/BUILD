@@ -22,23 +22,6 @@ load(
     "envoy_cc_test_library",
 )
 
-envoy_cc_test_library(
-    name = "int_client_server",
-    srcs = [
-        "int_client.cc",
-        "int_server.cc",
-    ],
-    hdrs = [
-        "int_client.h",
-        "int_server.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        "@envoy//source/server:server_lib",
-        "@envoy//test/integration:http_protocol_integration_lib",
-    ],
-)
-
 envoy_cc_test(
     name = "istio_http_integration_test",
     srcs = [
@@ -72,31 +55,6 @@ envoy_cc_test(
         "//src/envoy/utils:filter_names_lib",
         "@envoy//source/common/common:utility_lib",
         "@envoy//test/integration:http_protocol_integration_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "mixer_fault_test",
-    srcs = [
-        "mixer_fault_test.cc",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":int_client_server",
-        "//include/istio/utils:attribute_names_header",
-        "//src/envoy/http/mixer:filter_lib",
-        "//src/envoy/utils:filter_names_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "int_client_server_test",
-    srcs = [
-        "int_client_server_test.cc",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":int_client_server",
     ],
 )
 
