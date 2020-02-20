@@ -150,17 +150,19 @@ void PluginContext::onLog() {
 bool PluginContext::isRequestFailed() {
   // Check if HTTP request is a failure.
   int64_t http_response_code = 0;
-  getValue({kResponse, kCode}, &http_response_code);
-  // If request is a failure, log it.
-  if (http_response_code != 200) {
+  if (getValue({kResponse, kCode}, &http_response_code) &&
+      http_response_code != 200) {
     return true;
   }
 
   // Check if gRPC request is a failure.
-  int64_t grpc_response_code = ::Wasm::Common::kDefaultGrpcStatusCode;
-  getValue({kResponse, kGrpcStatus}, &grpc_response_code);
-  // If request is a failure, log it.
-  if (grpc_response_code != ::Wasm::Common::kDefaultGrpcStatusCode) {
+  int64_t grpc_response_code = 0;
+  if (::Wasm::Common::kGrpcContentTypes.count(
+          getHeaderMapValue(Common::Wasm::HeaderMapType::RequestHeaders,
+                            ::Wasm::Common::kContentTypeHeaderKey)
+              ->toString()) != 0 &&
+      getValue({kResponse, kGrpcStatus}, &grpc_response_code) &&
+      grpc_response_code != 0) {
     return true;
   }
 
