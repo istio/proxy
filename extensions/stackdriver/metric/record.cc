@@ -42,29 +42,23 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
   const auto &local_labels = local_node_info.labels();
   const auto &peer_labels = peer_node_info.labels();
 
-  std::string local_canonical_name = local_node_info.workload_name();
-  const auto local_name = local_labels.find(kCanonicalNameLabel);
-  if (local_labels.end() != local_name) {
-    local_canonical_name = local_name->second;
-  }
+  const auto local_name_iter = local_labels.find(kCanonicalNameLabel);
+  const string &local_canonical_name = local_name_iter == local_labels.end()
+                                           ? local_node_info.workload_name()
+                                           : local_name->second;
 
-  std::string peer_canonical_name = peer_node_info.workload_name();
-  const auto peer_name = peer_labels.find(kCanonicalNameLabel);
-  if (peer_labels.end() != peer_name) {
-    peer_canonical_name = peer_name->second;
-  }
+  const auto peer_name_iter = peer_labels.find(kCanonicalNameLabel);
+  const string &peer_canonical_name = peer_name_iter == peer_labels.end()
+                                          ? peer_node_info.workload_name()
+                                          : peer_name->second;
 
-  std::string local_canonical_rev = kLatest;
-  const auto local_rev = local_labels.find(kCanonicalRevisionLabel);
-  if (local_labels.end() != local_rev) {
-    local_canonical_rev = local_rev->second;
-  }
+  const auto local_rev_iter = local_labels.find(kCanonicalRevisionLabel);
+  const string &local_canonical_rev =
+      local_rev_iter == local_labels.end() ? kLatest : local_rev->second;
 
-  std::string peer_canonical_rev = kLatest;
-  const auto peer_rev = peer_labels.find(kCanonicalRevisionLabel);
-  if (peer_labels.end() != peer_rev) {
-    peer_canonical_rev = peer_rev->second;
-  }
+  const auto peer_rev_iter = peer_labels.find(kCanonicalRevisionLabel);
+  const string &peer_canonical_rev =
+      peer_rev_iter == peer_labels.end() ? kLatest : peer_rev->second;
 
   if (is_outbound) {
     opencensus::stats::Record(
