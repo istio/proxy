@@ -15,6 +15,7 @@
 
 #include "extensions/stats/plugin.h"
 
+#include "absl/strings/ascii.h"
 #include "extensions/stats/proxy_expr.h"
 #include "google/protobuf/util/time_util.h"
 
@@ -97,8 +98,8 @@ void map_request(IstioDimensions& instance,
   instance[request_protocol] = request.request_protocol;
   instance[response_code] = std::to_string(request.response_code);
   instance[response_flags] = request.response_flag;
-  instance[connection_security_policy] = std::string(
-      ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy));
+  instance[connection_security_policy] = absl::AsciiStrToLower(std::string(
+      ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy)));
 }
 
 // maps peer_node and request to dimensions.
