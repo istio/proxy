@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fakestackdriver
+package driver
 
 import (
 	"context"
@@ -21,7 +21,9 @@ import (
 	"net"
 	"time"
 
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	empty "github.com/golang/protobuf/ptypes/empty"
@@ -137,9 +139,33 @@ func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 }
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
-func NewFakeStackdriver(port uint16, delay time.Duration) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *grpc.Server) {
+func NewFakeStackdriver(port uint16, delay time.Duration, enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *grpc.Server) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
-	grpcServer := grpc.NewServer()
+
+	var options []grpc.ServerOption
+	if enableTLS {
+		creds, err := credentials.NewServerTLSFromFile(
+			TestPath("testdata/certs/stackdriver.pem"),
+			TestPath("testdata/certs/stackdriver.key"))
+		if err != nil {
+			log.Fatalf("failed to read certificate: %v", err)
+		}
+		options = append(options, grpc.Creds(creds))
+	}
+	if bearer != "" {
+		options = append(options, grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			md, ok := metadata.FromIncomingContext(ctx)
+			if !ok {
+				return nil, fmt.Errorf("missing metadata, want %q", bearer)
+			}
+			if got := md["authorization"]; len(got) != 1 || got[0] != fmt.Sprintf("Bearer %s", bearer) {
+				return nil, fmt.Errorf("authorization failure: got %q, want %q", got, bearer)
+			}
+			return handler(ctx, req)
+		}))
+	}
+	grpcServer := grpc.NewServer(options...)
+
 	fsdms := &MetricServer{
 		delay:        delay,
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 2),
