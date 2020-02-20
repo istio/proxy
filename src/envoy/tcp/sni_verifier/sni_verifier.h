@@ -55,6 +55,8 @@ class Config {
   size_t maxClientHelloSize() const { return max_client_hello_size_; }
 
   static constexpr size_t TLS_MAX_CLIENT_HELLO = 64 * 1024;
+  static const unsigned TLS_MIN_SUPPORTED_VERSION;
+  static const unsigned TLS_MAX_SUPPORTED_VERSION;
 
  private:
   SniVerifierStats stats_;
