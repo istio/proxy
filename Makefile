@@ -21,8 +21,6 @@ BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?= --config=libc++
 BAZEL_TEST_ARGS ?= --config=libc++
 BAZEL_TARGETS ?= //...
-# Some tests run so slowly under the santizers that they always timeout.
-SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
 GCS_BUCKET ?= gs://istio-build/proxy
@@ -50,10 +48,10 @@ test:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) $(BAZEL_TARGETS)
 
 test_asan:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-asan -- $(BAZEL_TARGETS)
 
 test_tsan:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_TEST_ARGS) --config=clang-tsan --test_env=TSAN_OPTIONS=suppressions=$(TOP)/tsan.suppressions -- $(BAZEL_TARGETS)
 
 check:
 	@script/check-license-headers
