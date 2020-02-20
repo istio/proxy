@@ -31,8 +31,11 @@ type SecureTokenService struct {
 }
 
 const (
-	ExpectedTokenRequest = "grant_type=urn:ietf:params:oauth:grant-type:token-exchange&subject_token=kombucha&subject_token_type=urn:ietf:params:oauth:token-type:jwt&scope=https://www.googleapis.com/auth/cloud-platform"
 	ExpectedBearer       = "kvass"
+	ExpectedTokenRequest = "grant_type=urn:ietf:params:oauth:grant-type:token-exchange&" +
+		"subject_token=kombucha&" +
+		"subject_token_type=urn:ietf:params:oauth:token-type:jwt&" +
+		"scope=https://www.googleapis.com/auth/cloud-platform"
 )
 
 var (
@@ -54,7 +57,7 @@ func (sts *SecureTokenService) Run(_ *Params) error {
 		WriteTimeout: 10 * time.Second,
 	}
 	go func() {
-		sts.server.ListenAndServe()
+		_ = sts.server.ListenAndServe()
 	}()
 	return env.WaitForHTTPServer(fmt.Sprintf("http://localhost:%d/health", sts.Port))
 }
@@ -67,7 +70,7 @@ func (sts *SecureTokenService) ServeHTTP(resp http.ResponseWriter, req *http.Req
 		resp.WriteHeader(http.StatusOK)
 		body, _ := ioutil.ReadAll(req.Body)
 		if string(body) == ExpectedTokenRequest {
-			resp.Write([]byte(ExpectedTokenResponse))
+			_, _ = resp.Write([]byte(ExpectedTokenResponse))
 		} else {
 			log.Printf("STS: unexpected request body %q\n", string(body))
 		}
@@ -77,5 +80,5 @@ func (sts *SecureTokenService) ServeHTTP(resp http.ResponseWriter, req *http.Req
 }
 
 func (sts *SecureTokenService) Cleanup() {
-	sts.server.Shutdown(context.Background())
+	_ = sts.server.Shutdown(context.Background())
 }

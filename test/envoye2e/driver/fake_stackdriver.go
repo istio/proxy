@@ -139,7 +139,8 @@ func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 }
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
-func NewFakeStackdriver(port uint16, delay time.Duration, enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *grpc.Server) {
+func NewFakeStackdriver(port uint16, delay time.Duration,
+	enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *grpc.Server) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 
 	var options []grpc.ServerOption
@@ -153,16 +154,18 @@ func NewFakeStackdriver(port uint16, delay time.Duration, enableTLS bool, bearer
 		options = append(options, grpc.Creds(creds))
 	}
 	if bearer != "" {
-		options = append(options, grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-			md, ok := metadata.FromIncomingContext(ctx)
-			if !ok {
-				return nil, fmt.Errorf("missing metadata, want %q", bearer)
-			}
-			if got := md["authorization"]; len(got) != 1 || got[0] != fmt.Sprintf("Bearer %s", bearer) {
-				return nil, fmt.Errorf("authorization failure: got %q, want %q", got, bearer)
-			}
-			return handler(ctx, req)
-		}))
+		options = append(options, grpc.UnaryInterceptor(
+			func(ctx context.Context, req interface{},
+				_ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+				md, ok := metadata.FromIncomingContext(ctx)
+				if !ok {
+					return nil, fmt.Errorf("missing metadata, want %q", bearer)
+				}
+				if got := md["authorization"]; len(got) != 1 || got[0] != fmt.Sprintf("Bearer %s", bearer) {
+					return nil, fmt.Errorf("authorization failure: got %q, want %q", got, bearer)
+				}
+				return handler(ctx, req)
+			}))
 	}
 	grpcServer := grpc.NewServer(options...)
 
