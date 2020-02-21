@@ -76,6 +76,8 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
           "meshEdgesReportingDuration": "1s"
         }`
 
+const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
+
 func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
 	got.Points[0].Interval = nil
@@ -123,6 +125,37 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 	}
 	// at least one time series should match either client side request count or server side request count.
 	return fmt.Errorf("cannot find expected request count from creat time series request %v", got), isClient
+}
+
+// Check that response latency is within a reasonable range (less than 10 milliseconds).
+func verifyResponseLatency(got *monitoringpb.CreateTimeSeriesRequest) (bool, error) {
+	for _, t := range got.TimeSeries {
+		if t.Metric.Type != ResponseLatencyMetricName {
+			continue
+		}
+		p := t.Points[0]
+		d := p.Value.GetDistributionValue()
+		bo := d.GetBucketOptions()
+		if bo == nil {
+			return true, fmt.Errorf("expect response latency metrics bucket option not to be empty: %v", got)
+		}
+		eb := bo.GetExplicitBuckets()
+		if eb == nil {
+			return true, fmt.Errorf("explicit response latency metrics buckets should not be empty: %v", got)
+		}
+		bounds := eb.GetBounds()
+		maxLatencyInMilli := 0.0
+		for i, b := range d.GetBucketCounts() {
+			if b != 0 {
+				maxLatencyInMilli = bounds[i]
+			}
+		}
+		if maxLatencyInMilli > 100 {
+			return true, fmt.Errorf("latency metric is too large (>100ms) %v", maxLatencyInMilli)
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
 func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
@@ -198,12 +231,13 @@ func TestStackdriverPlugin(t *testing.T) {
 	}
 	srvMetricRcv := false
 	cltMetricRcv := false
+	latencyMetricRcv := false
 	logRcv := false
 	edgeRcv := false
 
 	to := time.NewTimer(20 * time.Second)
 
-	for !(srvMetricRcv && cltMetricRcv && logRcv && edgeRcv) {
+	for !(srvMetricRcv && cltMetricRcv && latencyMetricRcv && logRcv && edgeRcv) {
 		select {
 		case req := <-fsdm.RcvMetricReq:
 			err, isClient := verifyCreateTimeSeriesReq(req)
@@ -214,6 +248,13 @@ func TestStackdriverPlugin(t *testing.T) {
 				cltMetricRcv = true
 			} else {
 				srvMetricRcv = true
+			}
+			if hasResponseLatency, err := verifyResponseLatency(req); hasResponseLatency {
+				if err != nil {
+					t.Errorf("Latency metric is not expected: %v", err)
+				} else {
+					latencyMetricRcv = true
+				}
 			}
 		case req := <-fsdl.RcvLoggingReq:
 			if err := verifyWriteLogEntriesReq(req); err != nil {

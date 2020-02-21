@@ -85,7 +85,7 @@ class StackdriverLoggingHandler
  private:
   uint32_t success_counter_;
   uint32_t failure_counter_;
-  std::string project_id_;
+  const std::string& project_id_;
 };
 
 }  // namespace
@@ -139,11 +139,11 @@ void ExporterImpl::exportLogs(
         std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
         requests) const {
   for (const auto& req : requests) {
+    auto handler = std::make_unique<StackdriverLoggingHandler>(success_counter_, failure_counter_, project_id_);
     context_->grpcCallHandler(
         grpc_service_string_, kGoogleLoggingService,
         kGoogleWriteLogEntriesMethod, *req, kDefaultTimeoutMillisecond,
-        std::unique_ptr<GrpcCallHandlerBase>(new StackdriverLoggingHandler(
-            success_counter_, failure_counter_, project_id_)));
+        std::move(handler));
   }
 }
 

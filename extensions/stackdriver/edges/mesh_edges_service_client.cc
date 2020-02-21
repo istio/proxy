@@ -63,7 +63,7 @@ class StackdriverContextGraphHandler
   }
 
  private:
-  std::string project_id_;
+  const std::string& project_id_;
 };
 
 }  // namespace
@@ -126,11 +126,10 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
 
 void MeshEdgesServiceClientImpl::reportTrafficAssertions(
     const ReportTrafficAssertionsRequest& request) const {
+  auto handler = std::make_unique<StackdriverContextGraphHandler>(project_id_);
   context_->grpcCallHandler(
       grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
-      kDefaultTimeoutMillisecond,
-      std::unique_ptr<GrpcCallHandlerBase>(
-          new StackdriverContextGraphHandler(project_id_)));
+      kDefaultTimeoutMillisecond, std::move(handler));
 };
 
 }  // namespace Edges
