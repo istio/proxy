@@ -67,26 +67,26 @@ void getMonitoredResource(const std::string &monitored_resource_type,
 void setSTSCallCredentialOptions(
     ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
         *sts_service,
-    const std::string &sts_port) {
+    const std::string &sts_port, const std::string &token_path) {
   if (!sts_service) {
     return;
   }
   sts_service->set_token_exchange_service_uri("http://localhost:" + sts_port +
                                               "/token");
-  sts_service->set_subject_token_path(kSTSSubjectTokenPath);
+  sts_service->set_subject_token_path(token_path);
   sts_service->set_subject_token_type(kSTSSubjectTokenType);
   sts_service->set_scope(kSTSScope);
 }
 
 void setSTSCallCredentialOptions(
     ::grpc::experimental::StsCredentialsOptions *sts_options,
-    const std::string &sts_port) {
+    const std::string &sts_port, const std::string &token_path) {
   if (!sts_options) {
     return;
   }
   sts_options->token_exchange_service_uri =
       "http://localhost:" + sts_port + "/token";
-  sts_options->subject_token_path = kSTSSubjectTokenPath;
+  sts_options->subject_token_path = token_path;
   sts_options->subject_token_type = kSTSSubjectTokenType;
   sts_options->scope = kSTSScope;
 }

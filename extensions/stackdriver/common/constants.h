@@ -77,6 +77,8 @@ constexpr char kMeshTelemetryEndpointKey[] =
     "STACKDRIVER_MESH_TELEMETRY_ENDPOINT";
 constexpr char kMonitoringExportIntervalKey[] =
     "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
+constexpr char kTokenFile[] = "STACKDRIVER_TOKEN_FILE";
+constexpr char kCACertFile[] = "STACKDRIVER_ROOT_CA_FILE";
 
 // Port of security token exchange server (STS).
 constexpr char kSTSPortKey[] = "STS_PORT";

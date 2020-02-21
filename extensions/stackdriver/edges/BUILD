@@ -63,6 +63,7 @@ envoy_cc_library(
     deps = [
         ":edges_cc_proto",
         "//extensions/common:context",
+        "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/common:utils",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
