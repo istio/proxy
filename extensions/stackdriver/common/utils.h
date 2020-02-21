@@ -33,10 +33,10 @@ void getMonitoredResource(const std::string &monitored_resource_type,
 void setSTSCallCredentialOptions(
     ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
         *sts_service,
-    const std::string &sts_port);
+    const std::string &sts_port, const std::string &token_path);
 void setSTSCallCredentialOptions(
     ::grpc::experimental::StsCredentialsOptions *sts_options,
-    const std::string &sts_port);
+    const std::string &sts_port, const std::string &token_path);
 
 }  // namespace Common
 }  // namespace Stackdriver

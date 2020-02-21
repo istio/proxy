@@ -15,6 +15,9 @@
 
 #include "extensions/stackdriver/metric/registry.h"
 
+#include <fstream>
+#include <sstream>
+
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/utils.h"
 #include "google/api/monitored_resource.pb.h"
@@ -34,27 +37,37 @@ constexpr char kStackdriverStatsAddress[] = "monitoring.googleapis.com";
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
     const NodeInfo &local_node_info,
-    const std::string &test_monitoring_endpoint, const std::string &sts_port) {
+    const std::string &test_monitoring_endpoint, const std::string &sts_port,
+    const std::string &test_token_path, const std::string &test_root_pem_file) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
 
-  if (!test_monitoring_endpoint.empty()) {
-    auto channel = grpc::CreateChannel(test_monitoring_endpoint,
-                                       grpc::InsecureChannelCredentials());
+  auto ssl_creds_options = grpc::SslCredentialsOptions();
+  std::ifstream file(test_root_pem_file.empty() ? kDefaultRootCertFile
+                                                : test_root_pem_file);
+  if (!file.fail()) {
+    std::stringstream file_string;
+    file_string << file.rdbuf();
+    ssl_creds_options.pem_root_certs = file_string.str();
+  }
+  auto channel_creds = grpc::SslCredentials(ssl_creds_options);
+
+  if (!sts_port.empty()) {
+    ::grpc::experimental::StsCredentialsOptions sts_options;
+    std::string token_path =
+        test_token_path.empty() ? kSTSSubjectTokenPath : test_token_path;
+    ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
+        &sts_options, sts_port, token_path);
+    auto call_creds = grpc::experimental::StsCredentials(sts_options);
+    auto channel = ::grpc::CreateChannel(
+        test_monitoring_endpoint.empty() ? kStackdriverStatsAddress
+                                         : test_monitoring_endpoint,
+        grpc::CompositeChannelCredentials(channel_creds, call_creds));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
-  } else if (!sts_port.empty()) {
-    ::grpc::experimental::StsCredentialsOptions sts_options;
-    ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(&sts_options,
-                                                                   sts_port);
-    auto call_creds = grpc::experimental::StsCredentials(sts_options);
-    auto ssl_creds_options = grpc::SslCredentialsOptions();
-    ssl_creds_options.pem_root_certs = kDefaultRootCertFile;
-    auto channel_creds = grpc::SslCredentials(ssl_creds_options);
-    auto channel = ::grpc::CreateChannel(
-        kStackdriverStatsAddress,
-        grpc::CompositeChannelCredentials(channel_creds, call_creds));
+  } else if (!test_monitoring_endpoint.empty()) {
+    auto channel = grpc::CreateChannel(test_monitoring_endpoint, channel_creds);
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   }
