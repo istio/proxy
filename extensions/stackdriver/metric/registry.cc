@@ -129,23 +129,29 @@ StackdriverOptions getStackdriverOptions(
     view_descriptor.RegisterForExport();                            \
   }
 
-#define ADD_TAGS                                     \
-  .add_column(requestOperationKey())                 \
-      .add_column(requestProtocolKey())              \
-      .add_column(serviceAuthenticationPolicyKey())  \
-      .add_column(meshUIDKey())                      \
-      .add_column(destinationServiceNameKey())       \
-      .add_column(destinationServiceNamespaceKey())  \
-      .add_column(destinationPortKey())              \
-      .add_column(responseCodeKey())                 \
-      .add_column(sourcePrincipalKey())              \
-      .add_column(sourceWorkloadNameKey())           \
-      .add_column(sourceWorkloadNamespaceKey())      \
-      .add_column(sourceOwnerKey())                  \
-      .add_column(destinationPrincipalKey())         \
-      .add_column(destinationWorkloadNameKey())      \
-      .add_column(destinationWorkloadNamespaceKey()) \
-      .add_column(destinationOwnerKey())
+#define ADD_TAGS                                             \
+  .add_column(requestOperationKey())                         \
+      .add_column(requestProtocolKey())                      \
+      .add_column(serviceAuthenticationPolicyKey())          \
+      .add_column(meshUIDKey())                              \
+      .add_column(destinationServiceNameKey())               \
+      .add_column(destinationServiceNamespaceKey())          \
+      .add_column(destinationPortKey())                      \
+      .add_column(responseCodeKey())                         \
+      .add_column(sourcePrincipalKey())                      \
+      .add_column(sourceWorkloadNameKey())                   \
+      .add_column(sourceWorkloadNamespaceKey())              \
+      .add_column(sourceOwnerKey())                          \
+      .add_column(destinationPrincipalKey())                 \
+      .add_column(destinationWorkloadNameKey())              \
+      .add_column(destinationWorkloadNamespaceKey())         \
+      .add_column(destinationOwnerKey())                     \
+      .add_column(destinationCanonicalServiceNameKey())      \
+      .add_column(destinationCanonicalServiceNamespaceKey()) \
+      .add_column(sourceCanonicalServiceNameKey())           \
+      .add_column(sourceCanonicalServiceNamespaceKey())      \
+      .add_column(destinationCanonicalRevisionKey())         \
+      .add_column(sourceCanonicalRevisionKey())
 
 // Functions to register opencensus views to export.
 REGISTER_COUNT_VIEW(ServerRequestCount)
@@ -226,6 +232,15 @@ TAG_KEY_FUNC(destination_principal, destinationPrincipal)
 TAG_KEY_FUNC(destination_workload_name, destinationWorkloadName)
 TAG_KEY_FUNC(destination_workload_namespace, destinationWorkloadNamespace)
 TAG_KEY_FUNC(destination_owner, destinationOwner)
+TAG_KEY_FUNC(source_canonical_service_name, sourceCanonicalServiceName)
+TAG_KEY_FUNC(source_canonical_service_namespace,
+             sourceCanonicalServiceNamespace)
+TAG_KEY_FUNC(destination_canonical_service_name,
+             destinationCanonicalServiceName)
+TAG_KEY_FUNC(destination_canonical_service_namespace,
+             destinationCanonicalServiceNamespace)
+TAG_KEY_FUNC(source_canonical_revision, sourceCanonicalRevision)
+TAG_KEY_FUNC(destination_canonical_revision, destinationCanonicalRevision)
 
 }  // namespace Metric
 }  // namespace Stackdriver
