@@ -16,5 +16,5 @@
 
 set -e
 
-docker run -e uid="$(id -u)" -e gid="$(id -g)" -v $PWD:/work -w /work -v $(realpath $PWD/../../extensions):/work/extensions gcr.io/istio-testing/wasmsdk:v2 bash /build_wasm.sh
+docker run -e uid="$(id -u)" -e gid="$(id -g)" -v $PWD:/work -w /work -v $(realpath $PWD/../../extensions):/work/extensions gcr.io/istio-testing/wasmsdk:v3 bash /build_wasm.sh
 rmdir extensions

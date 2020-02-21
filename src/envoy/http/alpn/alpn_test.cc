@@ -96,14 +96,16 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
                     Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
-    Envoy::StreamInfo::FilterStateImpl filter_state;
+    Envoy::StreamInfo::FilterStateSharedPtr filter_state(
+        std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
+            Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
-    EXPECT_TRUE(filter_state.hasData<Network::ApplicationProtocols>(
+    EXPECT_TRUE(filter_state->hasData<Network::ApplicationProtocols>(
         Network::ApplicationProtocols::key()));
     auto alpn_override = filter_state
-                             .getDataReadOnly<Network::ApplicationProtocols>(
+                             ->getDataReadOnly<Network::ApplicationProtocols>(
                                  Network::ApplicationProtocols::key())
                              .value();
 
@@ -129,14 +131,16 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
                     Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
-    Envoy::StreamInfo::FilterStateImpl filter_state;
+    Envoy::StreamInfo::FilterStateSharedPtr filter_state(
+        std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
+            Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);
-    EXPECT_TRUE(filter_state.hasData<Network::ApplicationProtocols>(
+    EXPECT_TRUE(filter_state->hasData<Network::ApplicationProtocols>(
         Network::ApplicationProtocols::key()));
     auto alpn_override = filter_state
-                             .getDataReadOnly<Network::ApplicationProtocols>(
+                             ->getDataReadOnly<Network::ApplicationProtocols>(
                                  Network::ApplicationProtocols::key())
                              .value();
 
@@ -161,7 +165,8 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
                     Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
-    Envoy::StreamInfo::FilterStateImpl filter_state;
+    Envoy::StreamInfo::FilterStateImpl filter_state{
+        Envoy::StreamInfo::FilterState::FilterChain};
     EXPECT_CALL(stream_info, filterState()).Times(0);
     EXPECT_EQ(filter->decodeHeaders(headers_, false),
               Http::FilterHeadersStatus::Continue);

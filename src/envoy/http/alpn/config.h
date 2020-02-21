@@ -33,7 +33,7 @@ class AlpnConfigFactory
       const Protobuf::Message &config, const std::string &stat_prefix,
       Server::Configuration::FactoryContext &context) override;
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
-  std::string name() override;
+  std::string name() const override;
 
  private:
   Http::FilterFactoryCb createFilterFactory(

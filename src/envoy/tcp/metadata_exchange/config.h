@@ -35,7 +35,7 @@ class MetadataExchangeConfigFactory
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() override {
+  std::string name() const override {
     return "envoy.filters.network.metadata_exchange";
   }
 
@@ -59,7 +59,7 @@ class MetadataExchangeUpstreamConfigFactory
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() override {
+  std::string name() const override {
     return "envoy.filters.network.upstream.metadata_exchange";
   }
 

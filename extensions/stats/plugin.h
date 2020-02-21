@@ -41,8 +41,9 @@ namespace Null {
 namespace Plugin {
 
 using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
-using NullPluginRootRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+using NullPluginRegistry =
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::FilterStatus;
 
 #endif  // NULL_PLUGIN
 
@@ -51,13 +52,16 @@ using NullPluginRootRegistry =
 namespace Stats {
 
 using StringView = absl::string_view;
+template <typename K, typename V>
+using Map = std::unordered_map<K, V>;
+template <typename T>
 
 constexpr StringView Sep = "#@";
 
 // The following need to be std::strings because the receiver expects a string.
 const std::string unknown = "unknown";
-const std::string vSource = "source";
-const std::string vDest = "destination";
+const std::string source = "source";
+const std::string destination = "destination";
 const std::string vDash = "-";
 
 const std::string default_field_separator = ";.;";
@@ -77,6 +81,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(source_principal)               \
   FIELD_FUNC(source_app)                     \
   FIELD_FUNC(source_version)                 \
+  FIELD_FUNC(source_canonical_service)       \
   FIELD_FUNC(destination_workload)           \
   FIELD_FUNC(destination_workload_namespace) \
   FIELD_FUNC(destination_principal)          \
@@ -85,209 +90,45 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_service)            \
   FIELD_FUNC(destination_service_name)       \
   FIELD_FUNC(destination_service_namespace)  \
+  FIELD_FUNC(destination_canonical_service)  \
   FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)     \
-  FIELD_FUNC(permissive_response_code)       \
-  FIELD_FUNC(permissive_response_policyid)
+  FIELD_FUNC(connection_security_policy)
 
-struct IstioDimensions {
-#define DEFINE_FIELD(name) std::string(name);
-  STD_ISTIO_DIMENSIONS(DEFINE_FIELD)
-#undef DEFINE_FIELD
+// Aggregate metric values in a shared and reusable bag.
+using IstioDimensions = std::vector<std::string>;
 
-  // utility fields
-  bool outbound = false;
+enum class StandardLabels : int32_t {
+#define DECLARE_LABEL(name) name,
+  STD_ISTIO_DIMENSIONS(DECLARE_LABEL)
+#undef DECLARE_LABEL
+      xxx_last_metric
+};
 
-  // Ordered dimension list is used by the metrics API.
-  static std::vector<MetricTag> metricTags() {
-#define DEFINE_METRIC(name) {#name, MetricTag::TagType::String},
-    return std::vector<MetricTag>{STD_ISTIO_DIMENSIONS(DEFINE_METRIC)};
-#undef DEFINE_METRIC
-  }
+#define DECLARE_CONSTANT(name) \
+  const int32_t name = static_cast<int32_t>(StandardLabels::name);
+STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
+#undef DECLARE_CONSTANT
 
-  // values is used on the datapath, only when new dimensions are found.
-  std::vector<std::string> values() {
-#define VALUES(name) name,
-    return std::vector<std::string>{STD_ISTIO_DIMENSIONS(VALUES)};
-#undef VALUES
-  }
+const size_t count_standard_labels =
+    static_cast<size_t>(StandardLabels::xxx_last_metric);
 
-  void setFieldsUnknownIfEmpty() {
-#define SET_IF_EMPTY(name) \
-  if ((name).empty()) {    \
-    (name) = unknown;      \
-  }
-    STD_ISTIO_DIMENSIONS(SET_IF_EMPTY)
-#undef SET_IF_EMPTY
-  }
-
-  // Example Prometheus output
-  //
-  // istio_requests_total{
-  // connection_security_policy="unknown",
-  // destination_app="svc01-0-8",
-  // destination_principal="unknown",
-  // destination_service="svc01-0-8.service-graph01.svc.cluster.local",
-  // destination_service_name="svc01-0-8",
-  // destination_service_namespace="service-graph01",
-  // destination_version="v1",
-  // destination_workload="svc01-0-8",
-  // destination_workload_namespace="service-graph01",
-  // destination_port="80",
-  // permissive_response_code="none",
-  // permissive_response_policyid="none",
-  // reporter="source",
-  // request_protocol="http",
-  // response_code="200",
-  // response_flags="-",
-  // source_app="svc01-0",
-  // source_principal="unknown",
-  // source_version="v2",
-  // source_workload="svc01-0v2",
-  // source_workload_namespace="service-graph01"
-  // }
-
- private:
-  void map_node(bool is_source, const wasm::common::NodeInfo& node) {
-    if (is_source) {
-      source_workload = node.workload_name();
-      source_workload_namespace = node.namespace_();
-
-      auto source_labels = node.labels();
-      source_app = source_labels["app"];
-      source_version = source_labels["version"];
-    } else {
-      destination_workload = node.workload_name();
-      destination_workload_namespace = node.namespace_();
-
-      auto destination_labels = node.labels();
-      destination_app = destination_labels["app"];
-      destination_version = destination_labels["version"];
-
-      destination_service_namespace = node.namespace_();
+struct HashIstioDimensions {
+  size_t operator()(const IstioDimensions& c) const {
+    const size_t kMul = static_cast<size_t>(0x9ddfea08eb382d69);
+    size_t h = 0;
+    for (const auto& value : c) {
+      h += std::hash<std::string>()(value) * kMul;
     }
-  }
-
-  // Called during request processing.
-  void map_peer(const wasm::common::NodeInfo& peer_node) {
-    map_node(!outbound, peer_node);
-  }
-
-  // maps from request context to dimensions.
-  // local node derived dimensions are already filled in.
-  void map_request(const ::Wasm::Common::RequestInfo& request) {
-    source_principal = request.source_principal;
-    destination_principal = request.destination_principal;
-    destination_service = request.destination_service_host;
-    destination_service_name = request.destination_service_name;
-    destination_port = std::to_string(request.destination_port);
-
-    request_protocol = request.request_protocol;
-    response_code = std::to_string(request.response_code);
-    response_flags = request.response_flag;
-
-    connection_security_policy =
-        std::string(::Wasm::Common::AuthenticationPolicyString(
-            request.service_auth_policy));
-
-    permissive_response_code = request.rbac_permissive_engine_result.empty()
-                                   ? "none"
-                                   : request.rbac_permissive_engine_result;
-    permissive_response_policyid = request.rbac_permissive_policy_id.empty()
-                                       ? "none"
-                                       : request.rbac_permissive_policy_id;
-
-    setFieldsUnknownIfEmpty();
-  }
-
- public:
-  // Called during intialization.
-  // initialize properties that do not vary by requests.
-  // Properties are different based on inbound / outbound.
-  void init(bool out_bound, wasm::common::NodeInfo& local_node) {
-    outbound = out_bound;
-    reporter = out_bound ? vSource : vDest;
-
-    map_node(out_bound, local_node);
-  }
-
-  // maps peer_node and request to dimensions.
-  void map(const wasm::common::NodeInfo& peer_node,
-           const ::Wasm::Common::RequestInfo& request) {
-    map_peer(peer_node);
-    map_request(request);
-  }
-
-  std::string to_string() const {
-#define TO_STRING(name) "\"", #name, "\":\"", name, "\" ,",
-    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING) "}");
-#undef TO_STRING
-  }
-
-  // debug function to specify a textual key.
-  // must match HashValue
-  std::string debug_key() {
-    auto key =
-        absl::StrJoin({reporter, request_protocol, response_code,
-                       response_flags, connection_security_policy,
-                       permissive_response_code, permissive_response_policyid},
-                      "#");
-    if (outbound) {
-      return absl::StrJoin(
-          {key, destination_app, destination_version, destination_service_name,
-           destination_service_namespace},
-          "#");
-    } else {
-      return absl::StrJoin({key, source_app, source_version, source_workload,
-                            source_workload_namespace},
-                           "#");
-    }
-  }
-
-  // smart hash uses fields based on context.
-  // This function is required to make IstioDimensions type hashable.
-  struct HashIstioDimensions {
-    size_t operator()(const IstioDimensions& c) const {
-      const size_t kMul = static_cast<size_t>(0x9ddfea08eb382d69);
-      size_t h = 0;
-      h += std::hash<std::string>()(c.request_protocol) * kMul;
-      h += std::hash<std::string>()(c.response_code) * kMul;
-      h += std::hash<std::string>()(c.response_flags) * kMul;
-      h += std::hash<std::string>()(c.connection_security_policy) * kMul;
-      h += std::hash<std::string>()(c.permissive_response_code) * kMul;
-      h += std::hash<std::string>()(c.permissive_response_policyid) * kMul;
-      h += c.outbound * kMul;
-      if (c.outbound) {  // only care about dest properties
-        h += std::hash<std::string>()(c.destination_service_namespace) * kMul;
-        h += std::hash<std::string>()(c.destination_service_name) * kMul;
-        h += std::hash<std::string>()(c.destination_app) * kMul;
-        h += std::hash<std::string>()(c.destination_version) * kMul;
-        return h;
-      } else {  // only care about source properties
-        h += std::hash<std::string>()(c.source_workload_namespace) * kMul;
-        h += std::hash<std::string>()(c.source_workload) * kMul;
-        h += std::hash<std::string>()(c.source_app) * kMul;
-        h += std::hash<std::string>()(c.source_version) * kMul;
-        return h;
-      }
-    }
-  };
-
-  // This function is required to make IstioDimensions type hashable.
-  friend bool operator==(const IstioDimensions& lhs,
-                         const IstioDimensions& rhs) {
-    return (
-#define COMPARE(name) lhs.name == rhs.name&&
-        STD_ISTIO_DIMENSIONS(COMPARE) lhs.outbound == rhs.outbound);
-#undef COMPARE
+    return h;
   }
 };
 
 using ValueExtractorFn =
-    uint64_t (*)(const ::Wasm::Common::RequestInfo& request_info);
+    std::function<uint64_t(const ::Wasm::Common::RequestInfo& request_info)>;
 
 // SimpleStat record a pre-resolved metric based on the values function.
 class SimpleStat {
@@ -305,29 +146,70 @@ class SimpleStat {
   ValueExtractorFn value_fn_;
 };
 
+// MetricFactory creates a stat generator given tags.
+struct MetricFactory {
+  std::string name;
+  MetricType type;
+  ValueExtractorFn extractor;
+  bool is_tcp;
+};
+
 // StatGen creates a SimpleStat based on resolved metric_id.
 class StatGen {
  public:
-  explicit StatGen(std::string name, MetricType metric_type,
-                   ValueExtractorFn value_fn, std::string field_separator,
-                   std::string value_separator)
-      : name_(name),
-        value_fn_(value_fn),
-        metric_(metric_type, name, IstioDimensions::metricTags(),
-                field_separator, value_separator){};
+  explicit StatGen(const std::string& stat_prefix,
+                   const MetricFactory& metric_factory,
+                   const std::vector<MetricTag>& tags,
+                   const std::vector<size_t>& indexes,
+                   const std::string& field_separator,
+                   const std::string& value_separator)
+      : is_tcp_(metric_factory.is_tcp),
+        indexes_(indexes),
+        extractor_(metric_factory.extractor),
+        metric_(metric_factory.type,
+                absl::StrCat(stat_prefix, metric_factory.name), tags,
+                field_separator, value_separator) {
+    if (tags.size() != indexes.size()) {
+      logAbort("metric tags.size() != indexes.size()");
+    }
+  };
 
   StatGen() = delete;
-  inline StringView name() const { return name_; };
+  inline StringView name() const { return metric_.name; };
+  inline bool is_tcp_metric() const { return is_tcp_; }
 
-  // Resolve metric based on provided dimension values.
-  SimpleStat resolve(std::vector<std::string>& vals) {
-    auto metric_id = metric_.resolveWithFields(vals);
-    return SimpleStat(metric_id, value_fn_);
+  // Resolve metric based on provided dimension values by
+  // combining the tags with the indexed dimensions and resolving
+  // to a metric ID.
+  SimpleStat resolve(const IstioDimensions& instance) {
+    // Using a lower level API to avoid creating an intermediary vector
+    size_t s = metric_.prefix.size();
+    for (const auto& tag : metric_.tags) {
+      s += tag.name.size() + metric_.value_separator.size();
+    }
+    for (size_t i : indexes_) {
+      s += instance[i].size() + metric_.field_separator.size();
+    }
+    s += metric_.name.size();
+
+    std::string n;
+    n.reserve(s);
+    n.append(metric_.prefix);
+    for (size_t i = 0; i < metric_.tags.size(); i++) {
+      n.append(metric_.tags[i].name);
+      n.append(metric_.value_separator);
+      n.append(instance[indexes_[i]]);
+      n.append(metric_.field_separator);
+    }
+    n.append(metric_.name);
+    auto metric_id = metric_.resolveFullName(n);
+    return SimpleStat(metric_id, extractor_);
   };
 
  private:
-  std::string name_;
-  ValueExtractorFn value_fn_;
+  bool is_tcp_;
+  std::vector<size_t> indexes_;
+  ValueExtractorFn extractor_;
   Metric metric_;
 };
 
@@ -347,9 +229,30 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
-  void report();
+  bool onDone() override;
+  void onTick() override;
+  // Report will return false when peer metadata exchange is not found for TCP,
+  // so that we wait to report metrics till we find peer metadata or get
+  // information that it's not available.
+  bool report(::Wasm::Common::RequestInfo& request_info, bool is_tcp);
   bool outbound() const { return outbound_; }
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
+  void addToTCPRequestQueue(
+      uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
+  void deleteFromTCPRequestQueue(uint32_t id);
+
+ protected:
+  const std::vector<MetricTag>& defaultTags();
+  const std::vector<MetricFactory>& defaultMetrics();
+  // Update the dimensions and the expressions data structures with the new
+  // configuration.
+  void initializeDimensions();
+  // Destroy host resources for the allocated expressions.
+  void cleanupExpressions();
+  // Allocate an expression if necessary and return its token position.
+  Optional<size_t> addStringExpression(const std::string& input);
+  // Allocate an int expression and return its token if successful.
+  Optional<uint32_t> addIntExpression(const std::string& input);
 
  private:
   stats::PluginConfig config_;
@@ -357,6 +260,13 @@ class PluginRootContext : public RootContext {
   ::Wasm::Common::NodeInfoCache node_info_cache_;
 
   IstioDimensions istio_dimensions_;
+
+  // String expressions evaluated into dimensions
+  std::vector<uint32_t> expressions_;
+  Map<std::string, size_t> input_expressions_;
+
+  // Int expressions evaluated to metric values
+  std::vector<uint32_t> int_expressions_;
 
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;
@@ -371,9 +281,10 @@ class PluginRootContext : public RootContext {
   // Resolved metric where value can be recorded.
   // Maps resolved dimensions to a set of related metrics.
   std::unordered_map<IstioDimensions, std::vector<SimpleStat>,
-                     IstioDimensions::HashIstioDimensions>
+                     HashIstioDimensions>
       metrics_;
-
+  Map<uint32_t, std::shared_ptr<::Wasm::Common::RequestInfo>>
+      tcp_request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
 };
@@ -393,18 +304,68 @@ class PluginRootContextInbound : public PluginRootContext {
 // Per-stream context.
 class PluginContext : public Context {
  public:
-  explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
+  explicit PluginContext(uint32_t id, RootContext* root)
+      : Context(id, root),
+        upstream_closed_(false),
+        downstream_closed_(false),
+        tcp_connection_closed_(false),
+        context_id_(id) {
+    request_info_ = std::make_shared<::Wasm::Common::RequestInfo>();
+  }
 
-  void onLog() override { rootContext()->report(); };
+  void onLog() override { rootContext()->report(*request_info_, false); };
+
+  FilterStatus onNewConnection() override {
+    request_info_->tcp_connections_opened++;
+    rootContext()->addToTCPRequestQueue(context_id_, request_info_);
+    return FilterStatus::Continue;
+  }
+
+  // Called on onData call, so counting the data that is received.
+  FilterStatus onDownstreamData(size_t size, bool) override {
+    request_info_->tcp_received_bytes += size;
+    return FilterStatus::Continue;
+  }
+  // Called on onWrite call, so counting the data that is sent.
+  FilterStatus onUpstreamData(size_t size, bool) override {
+    request_info_->tcp_sent_bytes += size;
+    return FilterStatus::Continue;
+  }
+
+  void onDownstreamConnectionClose(PeerType) override {
+    downstream_closed_ = true;
+    if (upstream_closed_ && !tcp_connection_closed_) {
+      logTCPOnClose();
+    }
+  }
+  void onUpstreamConnectionClose(PeerType) override {
+    upstream_closed_ = true;
+    if (downstream_closed_ && !tcp_connection_closed_) {
+      logTCPOnClose();
+    }
+  }
 
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
+
+  void logTCPOnClose() {
+    tcp_connection_closed_ = true;
+    rootContext()->deleteFromTCPRequestQueue(context_id_);
+    request_info_->tcp_connections_closed++;
+    rootContext()->report(*request_info_, true);
+  }
+
+  bool upstream_closed_;
+  bool downstream_closed_;
+  bool tcp_connection_closed_;
+  uint32_t context_id_;
+  std::shared_ptr<::Wasm::Common::RequestInfo> request_info_;
 };
 
 #ifdef NULL_PLUGIN
-NULL_PLUGIN_ROOT_REGISTRY;
+NULL_PLUGIN_REGISTRY;
 #endif
 
 static RegisterContextFactory register_Stats(

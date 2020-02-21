@@ -66,7 +66,7 @@ TEST(ForwardDownstreamSni, SetUpstreamServerNameOnlyIfSniIsPresent) {
         .WillByDefault(Return(EMPTY_STRING));
     filter.onNewConnection();
 
-    EXPECT_FALSE(stream_info.filterState().hasData<UpstreamServerName>(
+    EXPECT_FALSE(stream_info.filterState()->hasData<UpstreamServerName>(
         UpstreamServerName::key()));
   }
 
@@ -76,11 +76,11 @@ TEST(ForwardDownstreamSni, SetUpstreamServerNameOnlyIfSniIsPresent) {
         .WillByDefault(Return("www.example.com"));
     filter.onNewConnection();
 
-    EXPECT_TRUE(stream_info.filterState().hasData<UpstreamServerName>(
+    EXPECT_TRUE(stream_info.filterState()->hasData<UpstreamServerName>(
         UpstreamServerName::key()));
 
     auto forward_requested_server_name =
-        stream_info.filterState().getDataReadOnly<UpstreamServerName>(
+        stream_info.filterState()->getDataReadOnly<UpstreamServerName>(
             UpstreamServerName::key());
     EXPECT_EQ(forward_requested_server_name.value(), "www.example.com");
   }

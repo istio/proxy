@@ -40,7 +40,7 @@ class JwtVerificationFilterConfig : public NamedHttpFilterConfigFactory {
     return ProtobufTypes::MessagePtr{new JwtAuthentication};
   }
 
-  std::string name() override { return Utils::IstioFilterName::kJwt; }
+  std::string name() const override { return Utils::IstioFilterName::kJwt; }
 
  private:
   Http::FilterFactoryCb createFilter(const JwtAuthentication& proto_config,

@@ -41,7 +41,7 @@ void FindHeaders(const Http::HeaderMap& header_map,
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port);
 
 // Get destination.uid attribute value from metadata.
-bool GetDestinationUID(const envoy::api::v2::core::Metadata& metadata,
+bool GetDestinationUID(const envoy::config::core::v3::Metadata& metadata,
                        std::string* uid);
 
 // Get peer or local principal URI.

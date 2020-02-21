@@ -18,7 +18,6 @@
 #include <set>
 
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "extensions/common/node_info.pb.h"
 #include "google/protobuf/struct.pb.h"
 
@@ -40,6 +39,11 @@ constexpr StringView kDownstreamMetadataIdKey =
 constexpr StringView kDownstreamMetadataKey =
     "envoy.wasm.metadata_exchange.downstream";
 
+const std::string kMetadataNotFoundValue =
+    "envoy.wasm.metadata_exchange.peer_unknown";
+
+constexpr StringView kAccessLogPolicyKey = "envoy.wasm.access_log.log";
+
 // Header keys
 constexpr StringView kAuthorityHeaderKey = ":authority";
 constexpr StringView kMethodHeaderKey = ":method";
@@ -47,6 +51,7 @@ constexpr StringView kContentTypeHeaderKey = "content-type";
 
 const std::string kProtocolHTTP = "http";
 const std::string kProtocolGRPC = "grpc";
+const std::string kProtocolTCP = "tcp";
 
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
@@ -66,10 +71,10 @@ StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 // callbacks. This is used to fill metrics and logs.
 struct RequestInfo {
   // Start timestamp in nanoseconds.
-  absl::Time start_time;
+  int64_t start_time;
 
-  // The total duration of the request.
-  absl::Duration duration;
+  // The total duration of the request in nanoseconds.
+  int64_t duration;
 
   // Request total size in bytes, include header, body, and trailer.
   int64_t request_size = 0;
@@ -85,6 +90,9 @@ struct RequestInfo {
 
   // Response code of the request.
   uint32_t response_code = 0;
+
+  // gRPC status code for the request.
+  uint32_t grpc_status = 2;
 
   // Response flag giving additional information - NR, UAEX etc.
   // TODO populate
@@ -111,9 +119,31 @@ struct RequestInfo {
   std::string source_principal;
   std::string destination_principal;
 
-  // Rbac filter policy id and result.
-  std::string rbac_permissive_policy_id;
-  std::string rbac_permissive_engine_result;
+  // The following fields will only be populated by calling
+  // populateExtendedHTTPRequestInfo.
+  std::string source_address;
+  std::string destination_address;
+
+  // Important Headers.
+  std::string referer;
+  std::string user_agent;
+  std::string request_id;
+  std::string b3_trace_id;
+  std::string b3_span_id;
+  bool b3_trace_sampled = false;
+
+  // HTTP URL related attributes.
+  std::string url_path;
+  std::string url_host;
+  std::string url_scheme;
+
+  // TCP variables.
+  int64_t tcp_connections_opened = 0;
+  int64_t tcp_connections_closed = 0;
+  int64_t tcp_sent_bytes = 0;
+  int64_t tcp_received_bytes = 0;
+
+  bool is_populated = false;
 };
 
 // RequestContext contains all the information available in the request.
@@ -155,6 +185,15 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 void populateHTTPRequestInfo(bool outbound, bool use_host_header,
                              RequestInfo* request_info,
                              const std::string& destination_namespace);
+
+// populateExtendedHTTPRequestInfo populates the extra fields in RequestInfo
+// struct, includes trace headers, request id headers, and url.
+void populateExtendedHTTPRequestInfo(RequestInfo* request_info);
+
+// populateTCPRequestInfo populates the RequestInfo struct. It needs access to
+// the request context.
+void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
+                            const std::string& destination_namespace);
 
 // Extracts node metadata value. It looks for values of all the keys
 // corresponding to EXCHANGE_KEYS in node_metadata and populates it in

@@ -23,8 +23,8 @@ using google::protobuf::util::Status;
 
 #ifdef NULL_PLUGIN
 
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStructValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::logInfo;
 
@@ -40,7 +40,7 @@ namespace {
 bool getNodeInfo(StringView peer_metadata_key,
                  wasm::common::NodeInfo* node_info) {
   google::protobuf::Struct metadata;
-  if (!getStructValue({"filter_state", peer_metadata_key}, &metadata)) {
+  if (!getMessageValue({"filter_state", peer_metadata_key}, &metadata)) {
     LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_key));
     return false;
   }
@@ -57,7 +57,17 @@ bool getNodeInfo(StringView peer_metadata_key,
 }  // namespace
 
 NodeInfoPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
-                                       StringView peer_metadata_key) {
+                                       StringView peer_metadata_key,
+                                       std::string& peer_id) {
+  if (!getValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
+    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
+    return nullptr;
+  }
+  if (peer_id == ::Wasm::Common::kMetadataNotFoundValue) {
+    LOG_DEBUG(absl::StrCat("metadata not found for: ", peer_metadata_id_key));
+    return nullptr;
+  }
+
   if (max_cache_size_ < 0) {
     // Cache is disabled, fetch node info from host.
     auto node_info_ptr = std::make_shared<wasm::common::NodeInfo>();
@@ -67,11 +77,6 @@ NodeInfoPtr NodeInfoCache::getPeerById(StringView peer_metadata_id_key,
     return nullptr;
   }
 
-  std::string peer_id;
-  if (!getStringValue({"filter_state", peer_metadata_id_key}, &peer_id)) {
-    LOG_DEBUG(absl::StrCat("cannot get metadata for: ", peer_metadata_id_key));
-    return nullptr;
-  }
   auto nodeinfo_it = cache_.find(peer_id);
   if (nodeinfo_it != cache_.end()) {
     return nodeinfo_it->second;

@@ -25,8 +25,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
-
-	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 )
 
 type Stackdriver struct {
@@ -46,7 +44,7 @@ func (sd *Stackdriver) Run(p *Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
-	metrics, logging, _ := fs.NewFakeStackdriver(sd.Port, sd.Delay)
+	metrics, logging, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
 		for {
@@ -66,9 +64,14 @@ func (sd *Stackdriver) Run(p *Params) error {
 				sd.Unlock()
 			case req := <-logging.RcvLoggingReq:
 				log.Println("sd received log request")
-				// clear the timestamps for comparison
+				// clear the timestamps, latency request id, and req/resp size for comparison
 				for _, entry := range req.Entries {
 					entry.Timestamp = nil
+					entry.HttpRequest.RequestSize = 0
+					entry.HttpRequest.ResponseSize = 0
+					entry.HttpRequest.Latency = nil
+					entry.HttpRequest.RemoteIp = ""
+					delete(entry.Labels, "request_id")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}

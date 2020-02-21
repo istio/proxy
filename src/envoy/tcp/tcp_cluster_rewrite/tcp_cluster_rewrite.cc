@@ -41,13 +41,13 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
       read_callbacks_->connection()
           .streamInfo()
           .filterState()
-          .hasData<TcpProxy::PerConnectionCluster>(
+          ->hasData<TcpProxy::PerConnectionCluster>(
               TcpProxy::PerConnectionCluster::key())) {
     absl::string_view cluster_name =
         read_callbacks_->connection()
             .streamInfo()
             .filterState()
-            .getDataReadOnly<TcpProxy::PerConnectionCluster>(
+            ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
                 TcpProxy::PerConnectionCluster::key())
             .value();
     ENVOY_CONN_LOG(trace,
@@ -64,7 +64,7 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
                    read_callbacks_->connection(), final_cluster_name);
 
     // The data is mutable to allow other filters to change it.
-    read_callbacks_->connection().streamInfo().filterState().setData(
+    read_callbacks_->connection().streamInfo().filterState()->setData(
         TcpProxy::PerConnectionCluster::key(),
         std::make_unique<TcpProxy::PerConnectionCluster>(final_cluster_name),
         StreamInfo::FilterState::StateType::Mutable);

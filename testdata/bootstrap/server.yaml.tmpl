@@ -54,9 +54,10 @@ static_resources:
     filter_chains:
     - filters:
       - name: envoy.http_connection_manager
-        config:
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           stat_prefix: staticreply
-          codec_type: auto
+          codec_type: AUTO
           route_config:
             name: staticreply
             virtual_hosts:
@@ -71,4 +72,3 @@ static_resources:
                     inline_string: "hello, world!"
           http_filters:
           - name: envoy.router
-            config: {}

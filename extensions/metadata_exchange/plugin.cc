@@ -37,10 +37,10 @@ namespace MetadataExchange {
 namespace Plugin {
 
 using namespace ::Envoy::Extensions::Common::Wasm::Null::Plugin;
-using NullPluginRootRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRootRegistry;
+using NullPluginRegistry =
+    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 
-NULL_PLUGIN_ROOT_REGISTRY;
+NULL_PLUGIN_REGISTRY;
 
 #endif
 
@@ -66,7 +66,7 @@ static RegisterContextFactory register_MetadataExchange(
 
 void PluginRootContext::updateMetadataValue() {
   google::protobuf::Struct node_metadata;
-  if (!getStructValue({"node", "metadata"}, &node_metadata)) {
+  if (!getMessageValue({"node", "metadata"}, &node_metadata)) {
     logWarn("cannot get node metadata");
     return;
   }
@@ -88,7 +88,7 @@ void PluginRootContext::updateMetadataValue() {
 
 bool PluginRootContext::onConfigure(size_t) {
   updateMetadataValue();
-  if (!getStringValue({"node", "id"}, &node_id_)) {
+  if (!getValue({"node", "id"}, &node_id_)) {
     logDebug("cannot get node ID");
   }
   logDebug(absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_,

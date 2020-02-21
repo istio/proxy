@@ -37,10 +37,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# envoy-wasm commit date: 12/12/2019
-ENVOY_SHA = "097b7f2e4cc1fb490cc1943d0d633655ac3c522f"
+# envoy-wasm commit date: Feb 19 2020
+ENVOY_SHA = "59063ae91c27d15989f2710e239b3776cb5c0835"
 
-ENVOY_SHA256 = "eecb4ca7536524e6dea3e214d693f179ca4c079f83c0d99f10091cd796b26f3e"
+ENVOY_SHA256 = "48e991ac22b6bd9a2dada98aea07affb36e6907de9efbf25d3b0ee542393631e"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
@@ -66,6 +66,10 @@ envoy_dependencies()
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
 envoy_dependency_imports()
+
+load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
+
+antlr_dependencies(471)
 
 # Docker dependencies
 

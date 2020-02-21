@@ -20,8 +20,6 @@ BAZEL_BUILD_ARGS ?=
 BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/...
-# Some tests run so slowly under the santizers that they always timeout.
-SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
 
@@ -71,6 +69,9 @@ build_envoy_asan:
 build_wasm:
 	$(foreach file, $(shell find extensions -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true
 
+generate_wasm:
+	./scripts/generate-wasm.sh -b -c
+
 clean:
 	@bazel clean
 
@@ -81,13 +82,13 @@ test:
 
 test_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TEST_TARGETS) $(SANITIZER_EXCLUSIONS)
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test ./...
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TEST_TARGETS)
+	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) ASAN=true GO111MODULE=on go test ./...
 
 test_tsan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) -- $(BAZEL_TEST_TARGETS) $(SANITIZER_EXCLUSIONS)
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test ./...
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) -- $(BAZEL_TEST_TARGETS)
+	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) TSAN=true GO111MODULE=on go test ./...
 
 check:
 	@echo >&2 "Please use \"make lint\" instead."
@@ -105,10 +106,10 @@ artifacts:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/push-debian.sh -p "$(ARTIFACTS_GCS_PATH)" -o "$(ARTIFACTS_DIR)"
 
 test_release:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 
 push_release:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p && ./scripts/generate-wasm.sh -b -p -d "$(RELEASE_GCS_PATH)"
 
 .PHONY: build clean test check artifacts
 

@@ -77,119 +77,11 @@ const clusterTLSContext = `tls_context:
     validation_context:
       trusted_ca: { filename: "testdata/certs/root-cert.pem" }`
 
-const outboundNodeMetadata = `"NAMESPACE": "default",
-"INCLUDE_INBOUND_PORTS": "9080",
-"app": "productpage",
-"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
-"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
-"pod-template-hash": "84975bc778",
-"INTERCEPTION_MODE": "REDIRECT",
-"SERVICE_ACCOUNT": "bookinfo-productpage",
-"CONFIG_NAMESPACE": "default",
-"version": "v1",
-"OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1",
-"WORKLOAD_NAME": "productpage-v1",
-"ISTIO_VERSION": "1.3-dev",
-"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container productpage",
-"POD_NAME": "productpage-v1-84975bc778-pxz2w",
-"istio": "sidecar",
-"PLATFORM_METADATA": {
- "gcp_cluster_name": "test-cluster",
- "gcp_project": "test-project",
- "gcp_cluster_location": "us-east4-b"
-},
-"LABELS": {
- "app": "productpage",
- "version": "v1",
- "pod-template-hash": "84975bc778"
-},
-"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "productpage-v1-84975bc778-pxz2w",`
-
-const inboundNodeMetadata = `"NAMESPACE": "default",
-"INCLUDE_INBOUND_PORTS": "9080",
-"app": "ratings",
-"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
-"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
-"pod-template-hash": "84975bc778",
-"INTERCEPTION_MODE": "REDIRECT",
-"SERVICE_ACCOUNT": "bookinfo-ratings",
-"CONFIG_NAMESPACE": "default",
-"version": "v1",
-"OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1",
-"WORKLOAD_NAME": "ratings-v1",
-"ISTIO_VERSION": "1.3-dev",
-"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container ratings",
-"POD_NAME": "ratings-v1-84975bc778-pxz2w",
-"istio": "sidecar",
-"PLATFORM_METADATA": {
- "gcp_cluster_name": "test-cluster",
- "gcp_project": "test-project",
- "gcp_cluster_location": "us-east4-b"
-},
-"LABELS": {
- "app": "ratings",
- "version": "v1",
- "pod-template-hash": "84975bc778"
-},
-"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
-"NAME": "ratings-v1-84975bc778-pxz2w",`
-
-const statsConfig = `stats_config:
-  use_all_default_tags: true
-  stats_tags:
-  - tag_name: "reporter"
-    regex: "(reporter=\\.=(.+?);\\.;)"
-  - tag_name: "source_namespace"
-    regex: "(source_namespace=\\.=(.+?);\\.;)"
-  - tag_name: "source_workload"
-    regex: "(source_workload=\\.=(.+?);\\.;)"
-  - tag_name: "source_workload_namespace"
-    regex: "(source_workload_namespace=\\.=(.+?);\\.;)"
-  - tag_name: "source_principal"
-    regex: "(source_principal=\\.=(.+?);\\.;)"
-  - tag_name: "source_app"
-    regex: "(source_app=\\.=(.+?);\\.;)"
-  - tag_name: "source_version"
-    regex: "(source_version=\\.=(.+?);\\.;)"
-  - tag_name: "destination_namespace"
-    regex: "(destination_namespace=\\.=(.+?);\\.;)"
-  - tag_name: "destination_workload"
-    regex: "(destination_workload=\\.=(.+?);\\.;)"
-  - tag_name: "destination_workload_namespace"
-    regex: "(destination_workload_namespace=\\.=(.+?);\\.;)"
-  - tag_name: "destination_principal"
-    regex: "(destination_principal=\\.=(.+?);\\.;)"
-  - tag_name: "destination_app"
-    regex: "(destination_app=\\.=(.+?);\\.;)"
-  - tag_name: "destination_version"
-    regex: "(destination_version=\\.=(.+?);\\.;)"
-  - tag_name: "destination_service"
-    regex: "(destination_service=\\.=(.+?);\\.;)"
-  - tag_name: "destination_service_name"
-    regex: "(destination_service_name=\\.=(.+?);\\.;)"
-  - tag_name: "destination_service_namespace"
-    regex: "(destination_service_namespace=\\.=(.+?);\\.;)"
-  - tag_name: "destination_port"
-    regex: "(destination_port=\\.=(.+?);\\.;)"
-  - tag_name: "request_protocol"
-    regex: "(request_protocol=\\.=(.+?);\\.;)"
-  - tag_name: "response_code"
-    regex: "(response_code=\\.=(.+?);\\.;)|_rq(_(\\.d{3}))$"
-  - tag_name: "response_flags"
-    regex: "(response_flags=\\.=(.+?);\\.;)"
-  - tag_name: "connection_security_policy"
-    regex: "(connection_security_policy=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_code"
-    regex: "(permissive_response_code=\\.=(.+?);\\.;)"
-  - tag_name: "permissive_response_policyid"
-    regex: "(permissive_response_policyid=\\.=(.+?);\\.;)"
-  - tag_name: "cache"
-    regex: "(cache\\.(.+?)\\.)"
-  - tag_name: "component"
-    regex: "(component\\.(.+?)\\.)"
-  - tag_name: "tag"
-    regex: "(tag\\.(.+?);\\.)"`
+var (
+	statsConfig          = driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl")
+	outboundNodeMetadata = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	inboundNodeMetadata  = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
+)
 
 // Stats in Client Envoy proxy.
 var expectedClientStats = map[string]int{
@@ -210,6 +102,7 @@ var expectedServerStats = map[string]int{
 }
 
 func TestHttpMetadataExchange(t *testing.T) {
+	t.Skip("Enable after https://github.com/envoyproxy/envoy-wasm/issues/402  is fixed")
 	testPlugins(t, func(s *env.TestSetup) {
 		serverStats := map[string]env.Stat{
 			"istio_requests_total": {Value: 10, Labels: map[string]string{"destination_service": "server.default.svc.cluster.local",

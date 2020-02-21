@@ -31,6 +31,7 @@ const (
 	StackdriverPluginTest
 
 	TCPMetadataExchangeTest
+	TCPMetadataExchangeFailTest
 	HTTPMetadataExchangeTest
 
 	// xDS driven tests
@@ -44,6 +45,7 @@ const (
 	BasicHTTPGateway
 	StatsPayload
 	StatsParallel
+	StatsWasm
 
 	StatsPluginTest
 
@@ -64,8 +66,12 @@ type Ports struct {
 	AppToClientProxyPort    uint16
 	ClientToServerProxyPort uint16
 	ServerAdminPort         uint16
-	XDSPort                 uint16
-	SDPort                  uint16
+	// Port used for xDS server
+	XDSPort uint16
+	// Port used for StackDriver
+	SDPort uint16
+	// Port used for Secure Token Service
+	STSPort uint16
 }
 
 func allocPortBase(name uint16) uint16 {
@@ -101,5 +107,6 @@ func NewPorts(name uint16) *Ports {
 		ServerAdminPort:         base + 4,
 		XDSPort:                 base + 5,
 		SDPort:                  base + 6,
+		STSPort:                 base + 7,
 	}
 }

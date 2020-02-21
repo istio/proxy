@@ -36,7 +36,7 @@ class FilterFactory : public NamedNetworkFilterConfigFactory {
     return ProtobufTypes::MessagePtr{new TcpClientConfig};
   }
 
-  std::string name() override { return "mixer"; }
+  std::string name() const override { return "mixer"; }
 
  private:
   Network::FilterFactoryCb createFilterFactory(const TcpClientConfig& config_pb,

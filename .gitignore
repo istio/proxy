@@ -7,5 +7,6 @@ docker/envoy
 /artifacts
 clang.bazelrc
 user.bazelrc
-**/plugin.wasm
 compile_commands.json
+test/envoye2e/tcp_metadata_exchange/testoutput
+test/envoye2e/http_metadata_exchange/testoutput

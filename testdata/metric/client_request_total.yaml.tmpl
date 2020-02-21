@@ -8,6 +8,8 @@ metric:
     value: source
   - name: source_workload
     value: productpage-v1
+  - name: source_canonical_service
+    value: productpage-v1
   - name: source_workload_namespace
     value: default
   - name: source_principal
@@ -28,6 +30,8 @@ metric:
     value: v1
   - name: destination_service
     value: 127.0.0.1:{{ .Vars.ClientPort }}
+  - name: destination_canonical_service
+    value: ratings
   - name: destination_service_name
     value: 127.0.0.1:{{ .Vars.ClientPort }}
   - name: destination_service_namespace
@@ -38,11 +42,13 @@ metric:
     value: http
   - name: response_code
     value: "200"
+  - name: grpc_response_status
+    value: ""
   - name: response_flags
     value: "-"
   - name: connection_security_policy
     value: unknown
-  - name: permissive_response_code
-    value: none
-  - name: permissive_response_policyid
-    value: none
+  - name: configurable_metric_a
+    value: localhost:server
+  - name: configurable_metric_b
+    value: HTTP/1.1

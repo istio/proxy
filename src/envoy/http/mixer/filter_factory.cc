@@ -58,7 +58,7 @@ class MixerConfigFactory : public NamedHttpFilterConfigFactory {
     return obj;
   }
 
-  std::string name() override { return "mixer"; }
+  std::string name() const override { return "mixer"; }
 
  private:
   Http::FilterFactoryCb createFilterFactory(const HttpClientConfig& config_pb,

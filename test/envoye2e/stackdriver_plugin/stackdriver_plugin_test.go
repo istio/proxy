@@ -24,7 +24,6 @@ import (
 
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
-	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	"github.com/golang/protobuf/proto"
@@ -76,6 +75,41 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
           "meshEdgesReportingDuration": "1s"
         }`
 
+const inboundStackdriverAndAccessLogFilter = `- name: envoy.filters.http.wasm
+  config:
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          local: { inline_string: "envoy.wasm.metadata_exchange" }
+      configuration: "test"
+- name: envoy.filters.http.wasm
+  config:
+    config:
+      vm_config:
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          local: { inline_string: "envoy.wasm.access_log_policy" }
+      configuration: >-
+        {
+          "log_window_duration": %s,
+        }
+- name: envoy.filters.http.wasm
+  config:
+    config:
+      root_id: "stackdriver_inbound"
+      vm_config:
+        vm_id: "stackdriver_inbound"
+        runtime: "envoy.wasm.runtime.null"
+        code:
+          local: { inline_string: "envoy.wasm.null.stackdriver" }
+      configuration: >-
+        {
+          "max_peer_cache_size": -1,
+          "enableMeshEdgesReporting": "true",
+          "meshEdgesReportingDuration": "1s"
+        }`
+
 func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 	// ignore time difference
 	got.Points[0].Interval = nil
@@ -88,6 +122,11 @@ func compareTimeSeries(got, want *monitoringpb.TimeSeries) error {
 func compareLogEntries(got, want *logging.WriteLogEntriesRequest) error {
 	for _, l := range got.Entries {
 		l.Timestamp = nil
+		delete(l.Labels, "request_id")
+		l.HttpRequest.RequestSize = 0
+		l.HttpRequest.ResponseSize = 0
+		l.HttpRequest.Latency = nil
+		l.HttpRequest.RemoteIp = ""
 	}
 	if !proto.Equal(want, got) {
 		return fmt.Errorf("log entries are not expected, got %v \nwant %v", proto.MarshalTextString(got), proto.MarshalTextString(want))
@@ -124,7 +163,10 @@ func verifyWriteLogEntriesReq(got *logging.WriteLogEntriesRequest) error {
 	var srvLogReq logging.WriteLogEntriesRequest
 	p := &driver.Params{
 		Vars: map[string]string{
+			"ServerPort":                  "20043",
+			"ClientPort":                  "20042",
 			"ServiceAuthenticationPolicy": "NONE",
+			"RequestPath":                 "echo",
 		},
 	}
 	p.LoadTestProto("testdata/stackdriver/server_access_log.yaml.tmpl", &srvLogReq)
@@ -166,20 +208,31 @@ func verifyTrafficAssertionsReq(got *edgespb.ReportTrafficAssertionsRequest) err
 	return nil
 }
 
-func TestStackdriverPlugin(t *testing.T) {
+func setup(t *testing.T, inbound string) *env.TestSetup {
 	s := env.NewClientServerEnvoyTestSetup(env.StackdriverPluginTest, t)
-	fsdm, fsdl, edgesSvc := fs.NewFakeStackdriver(12312, 0)
+
+	if inbound == "" {
+		inbound = inboundStackdriverFilter
+	}
 	s.SetFiltersBeforeEnvoyRouterInAppToClient(outboundStackdriverFilter)
-	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inboundStackdriverFilter)
-	params := driver.Params{Vars: map[string]string{"SDPort": "12312"}}
+	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inbound)
+	params := driver.Params{Vars: map[string]string{
+		"SDPort":                "12312",
+		"STSPort":               "12313",
+		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+	}}
 	s.SetClientNodeMetadata(params.LoadTestData("testdata/client_node_metadata.json.tmpl"))
 	s.SetServerNodeMetadata(params.LoadTestData("testdata/server_node_metadata.json.tmpl"))
 	if err := s.SetUpClientServerEnvoy(); err != nil {
 		t.Fatalf("Failed to setup test: %v", err)
 	}
-	defer s.TearDownClientServerEnvoy()
 
-	url := fmt.Sprintf("http://127.0.0.1:%d/echo", s.Ports().AppToClientProxyPort)
+	return s
+}
+
+func issueGetRequests(port uint16, t *testing.T) {
+	url := fmt.Sprintf("http://127.0.0.1:%d/echo", port)
 
 	// Issues a GET echo request with 0 size body
 	tag := "OKGet"
@@ -188,6 +241,19 @@ func TestStackdriverPlugin(t *testing.T) {
 			t.Errorf("Failed in request %s: %v", tag, err)
 		}
 	}
+}
+
+func TestStackdriverPlugin(t *testing.T) {
+	s := setup(t, "")
+	defer s.TearDownClientServerEnvoy()
+	fsdm, fsdl, edgesSvc, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
+
+	issueGetRequests(s.Ports().AppToClientProxyPort, t)
+
 	srvMetricRcv := false
 	cltMetricRcv := false
 	logRcv := false
@@ -226,4 +292,73 @@ func TestStackdriverPlugin(t *testing.T) {
 			t.Fatal("timeout: Stackdriver did not receive required requests: " + rcv)
 		}
 	}
+}
+
+func verifyNumberOfAccessLogs(fsdl *driver.LoggingServer, t *testing.T, expectedEntries int) {
+	logRcv := false
+
+	to := time.NewTimer(20 * time.Second)
+
+	for !(logRcv) {
+		select {
+		case req := <-fsdl.RcvLoggingReq:
+			if len(req.Entries) != expectedEntries {
+				t.Errorf("WriteLogEntries verification failed. Number of entries expected: %v, got: %v, gotEntry: %v", 1, len(req.Entries), req)
+			}
+			logRcv = true
+		case <-to.C:
+			to.Stop()
+			rcv := fmt.Sprintf(
+				"client logs: %t",
+				logRcv,
+			)
+			t.Fatal("timeout: Stackdriver did not receive required requests: " + rcv)
+		}
+	}
+}
+
+func TestStackdriverAndAccessLogPlugin(t *testing.T) {
+	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"15s\""))
+	defer s.TearDownClientServerEnvoy()
+	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
+
+	issueGetRequests(s.Ports().AppToClientProxyPort, t)
+	verifyNumberOfAccessLogs(fsdl, t, 1)
+}
+
+func TestStackdriverAndAccessLogPluginLogRequestGetsLoggedAgain(t *testing.T) {
+	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
+	defer s.TearDownClientServerEnvoy()
+	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
+
+	issueGetRequests(s.Ports().AppToClientProxyPort, t)
+	// Sleep for one second
+	time.Sleep(1 * time.Second)
+	issueGetRequests(s.Ports().AppToClientProxyPort, t)
+
+	verifyNumberOfAccessLogs(fsdl, t, 2)
+}
+
+func TestStackdriverAndAccessLogPluginAllErrorRequestsGetsLogged(t *testing.T) {
+	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
+	defer s.TearDownClientServerEnvoy()
+	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
+
+	// Shuts down backend, so all 10 requests fail.
+	s.StopHTTPBackend()
+	issueGetRequests(s.Ports().AppToClientProxyPort, t)
+
+	verifyNumberOfAccessLogs(fsdl, t, 10)
 }

@@ -74,6 +74,9 @@ class Logger {
 
   // Exporter calls Stackdriver services to export access logs.
   std::unique_ptr<Exporter> exporter_;
+
+  // GCP project that this proxy runs with.
+  std::string project_id_;
 };
 
 }  // namespace Log

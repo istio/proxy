@@ -45,6 +45,7 @@ static_resources:
 {{.ClusterTLSContext | indent 4 }}
   listeners:
   - name: app-to-client
+    traffic_direction: OUTBOUND
     address:
       socket_address:
         address: 127.0.0.1
@@ -96,9 +97,10 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{.Ports.BackendPort}}
-{{.ClusterTLSContext | indent 4 }}
+{{.ServerClusterTLSContext | indent 4 }}
   listeners:
   - name: server
+    traffic_direction: INBOUND
     address:
       socket_address:
         address: 127.0.0.1
@@ -120,7 +122,7 @@ static_resources:
             config:
               path: {{.ServerAccessLogPath}}
               format: {{.ServerAccesslogFormat}}
-{{.TLSContext | indent 6 }}
+{{.ServerTLSContext | indent 6 }}
 `
 
 func GetTCPClientEnvoyConfTmp() string {

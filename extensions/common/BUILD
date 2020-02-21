@@ -35,6 +35,7 @@ envoy_cc_library(
     ],
     hdrs = [
         "context.h",
+        "istio_dimensions.h",
         "util.h",
     ],
     repository = "@envoy",
@@ -44,6 +45,15 @@ envoy_cc_library(
         "@com_google_protobuf//:protobuf",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
+)
+
+envoy_cc_library(
+    name = "istio_dimensions",
+    hdrs = [
+        "istio_dimensions.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
 )
 
 envoy_cc_library(
@@ -93,6 +103,17 @@ envoy_cc_test(
     deps = [
         ":context",
         "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "istio_dimensions_test",
+    size = "small",
+    srcs = ["istio_dimensions_test.cc"],
+    external_deps = ["abseil_hash_testing"],
+    repository = "@envoy",
+    deps = [
+        ":istio_dimensions",
     ],
 )
 

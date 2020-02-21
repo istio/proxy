@@ -33,29 +33,36 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: client{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            vm_config:
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.metadata_exchange" }
-            configuration: "test"
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.metadata_exchange" }
+              configuration: "test"
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            root_id: "stackdriver_outbound"
-            vm_config:
-              vm_id: "stackdriver_outbound"
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.null.stackdriver" }
-            configuration: >-
-              {}
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stackdriver_outbound"
+              vm_config:
+                vm_id: "stackdriver_outbound"
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.null.stackdriver" }
+              configuration: >-
+                {}
       - name: envoy.router
       route_config:
         name: client
@@ -79,29 +86,36 @@ address:
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
-    config:
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: server{{ .N }}
       http_filters:
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            vm_config:
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.metadata_exchange" }
-            configuration: "test"
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.metadata_exchange" }
+              configuration: "test"
       - name: envoy.filters.http.wasm
-        config:
-          config:
-            root_id: "stackdriver_inbound"
-            vm_config:
-              vm_id: "stackdriver_inbound"
-              runtime: "envoy.wasm.runtime.null"
-              code:
-                local: { inline_string: "envoy.wasm.null.stackdriver" }
-            configuration: >-
-              {}
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stackdriver_inbound"
+              vm_config:
+                vm_id: "stackdriver_inbound"
+                runtime: "envoy.wasm.runtime.null"
+                code:
+                  local: { inline_string: "envoy.wasm.null.stackdriver" }
+              configuration: >-
+                {}
       - name: envoy.router
       route_config:
         name: server
@@ -122,11 +136,14 @@ func TestStackdriverPayload(t *testing.T) {
 		Vars: map[string]string{
 			"ClientPort":                  fmt.Sprintf("%d", ports.AppToClientProxyPort),
 			"SDPort":                      fmt.Sprintf("%d", ports.SDPort),
+			"STSPort":                     fmt.Sprintf("%d", ports.STSPort),
 			"BackendPort":                 fmt.Sprintf("%d", ports.BackendPort),
 			"ClientAdmin":                 fmt.Sprintf("%d", ports.ClientAdminPort),
 			"ServerAdmin":                 fmt.Sprintf("%d", ports.ServerAdminPort),
 			"ServerPort":                  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
 			"ServiceAuthenticationPolicy": "NONE",
+			"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+			"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -139,6 +156,7 @@ func TestStackdriverPayload(t *testing.T) {
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
+			&driver.SecureTokenService{Port: ports.STSPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
@@ -159,12 +177,16 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 	ports := env.NewPorts(env.StackDriverPayloadGateway)
 	params := &driver.Params{
 		Vars: map[string]string{
-			"ClientPort":  fmt.Sprintf("%d", ports.AppToClientProxyPort),
-			"SDPort":      fmt.Sprintf("%d", ports.SDPort),
-			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
-			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientPort":            fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"SDPort":                fmt.Sprintf("%d", ports.SDPort),
+			"STSPort":               fmt.Sprintf("%d", ports.STSPort),
+			"BackendPort":           fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":           fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":           fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":            fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"RequestPath":           "echo",
+			"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+			"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -176,6 +198,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
+			&driver.SecureTokenService{Port: ports.STSPort},
 			&driver.Update{Node: "server", Version: "0",
 				Clusters:  []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
 				Listeners: []string{StackdriverClientHTTPListener, StackdriverServerHTTPListener}},
@@ -198,6 +221,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 		Vars: map[string]string{
 			"ClientPort":                  fmt.Sprintf("%d", ports.AppToClientProxyPort),
 			"SDPort":                      fmt.Sprintf("%d", ports.SDPort),
+			"STSPort":                     fmt.Sprintf("%d", ports.STSPort),
 			"BackendPort":                 fmt.Sprintf("%d", ports.BackendPort),
 			"ClientAdmin":                 fmt.Sprintf("%d", ports.ClientAdminPort),
 			"ServerAdmin":                 fmt.Sprintf("%d", ports.ServerAdminPort),
@@ -205,6 +229,8 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 			"ServiceAuthenticationPolicy": "MUTUAL_TLS",
 			"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
 			"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
+			"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+			"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -219,6 +245,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
+			&driver.SecureTokenService{Port: ports.STSPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
@@ -240,12 +267,15 @@ func TestStackdriverReload(t *testing.T) {
 	ports := env.NewPorts(env.StackDriverReload)
 	params := &driver.Params{
 		Vars: map[string]string{
-			"ClientPort":  fmt.Sprintf("%d", ports.AppToClientProxyPort),
-			"SDPort":      fmt.Sprintf("%d", ports.SDPort),
-			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
-			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientPort":            fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"SDPort":                fmt.Sprintf("%d", ports.SDPort),
+			"STSPort":               fmt.Sprintf("%d", ports.STSPort),
+			"BackendPort":           fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":           fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":           fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":            fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+			"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -257,6 +287,7 @@ func TestStackdriverReload(t *testing.T) {
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
+			&driver.SecureTokenService{Port: ports.STSPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
@@ -289,12 +320,15 @@ func TestStackdriverParallel(t *testing.T) {
 	ports := env.NewPorts(env.StackDriverParallel)
 	params := &driver.Params{
 		Vars: map[string]string{
-			"ClientPort":  fmt.Sprintf("%d", ports.AppToClientProxyPort),
-			"SDPort":      fmt.Sprintf("%d", ports.SDPort),
-			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ClientAdmin": fmt.Sprintf("%d", ports.ClientAdminPort),
-			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ClientPort":            fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"SDPort":                fmt.Sprintf("%d", ports.SDPort),
+			"STSPort":               fmt.Sprintf("%d", ports.STSPort),
+			"BackendPort":           fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":           fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":           fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":            fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+			"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -305,6 +339,7 @@ func TestStackdriverParallel(t *testing.T) {
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
+			&driver.SecureTokenService{Port: ports.STSPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},

@@ -33,7 +33,7 @@ class SniVerifierConfigFactory
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() override { return "sni_verifier"; }
+  std::string name() const override { return "sni_verifier"; }
 
  private:
   Network::FilterFactoryCb createFilterFactoryFromContext(

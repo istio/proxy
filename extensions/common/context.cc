@@ -33,8 +33,7 @@ using Envoy::Extensions::Common::Wasm::HeaderMapType;
 using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStructValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 
 #endif  // NULL_PLUGIN
@@ -44,9 +43,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 namespace Wasm {
 namespace Common {
 
-const char kRbacFilterName[] = "envoy.filters.http.rbac";
-const char kRbacPermissivePolicyIDField[] = "shadow_effective_policy_id";
-const char kRbacPermissiveEngineResultField[] = "shadow_engine_result";
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";
 const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
@@ -103,7 +99,7 @@ void getDestinationService(const std::string& dest_namespace,
                            bool use_host_header, std::string* dest_svc_host,
                            std::string* dest_svc_name) {
   std::string cluster_name;
-  getStringValue({"cluster_name"}, &cluster_name);
+  getValue({"cluster_name"}, &cluster_name);
   *dest_svc_host = use_host_header
                        ? getHeaderMapValue(HeaderMapType::RequestHeaders,
                                            kAuthorityHeaderKey)
@@ -124,6 +120,45 @@ void getDestinationService(const std::string& dest_namespace,
   }
 
   extractServiceName(*dest_svc_host, dest_namespace, dest_svc_name);
+}
+
+void populateRequestInfo(bool outbound, bool use_host_header_fallback,
+                         RequestInfo* request_info,
+                         const std::string& destination_namespace) {
+  request_info->is_populated = true;
+  // Fill in request info.
+  // Get destination service name and host based on cluster name and host
+  // header.
+  getDestinationService(destination_namespace, use_host_header_fallback,
+                        &request_info->destination_service_host,
+                        &request_info->destination_service_name);
+
+  getValue({"request", "url_path"}, &request_info->request_url_path);
+
+  if (outbound) {
+    uint64_t destination_port = 0;
+    getValue({"upstream", "port"}, &destination_port);
+    request_info->destination_port = destination_port;
+    getValue({"upstream", "uri_san_peer_certificate"},
+             &request_info->destination_principal);
+    getValue({"upstream", "uri_san_local_certificate"},
+             &request_info->source_principal);
+  } else {
+    bool mtls = false;
+    if (getValue({"connection", "mtls"}, &mtls)) {
+      request_info->service_auth_policy =
+          mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
+               : ::Wasm::Common::ServiceAuthenticationPolicy::None;
+    }
+    getValue({"connection", "uri_san_local_certificate"},
+             &request_info->destination_principal);
+    getValue({"connection", "uri_san_peer_certificate"},
+             &request_info->source_principal);
+  }
+
+  uint64_t response_flags = 0;
+  getValue({"response", "flags"}, &response_flags);
+  request_info->response_flag = parseResponseFlag(response_flags);
 }
 
 }  // namespace
@@ -205,7 +240,7 @@ google::protobuf::util::Status extractNodeMetadataGeneric(
 google::protobuf::util::Status extractLocalNodeMetadata(
     wasm::common::NodeInfo* node_info) {
   google::protobuf::Struct node;
-  if (!getStructValue({"node", "metadata"}, &node)) {
+  if (!getMessageValue({"node", "metadata"}, &node)) {
     return google::protobuf::util::Status(
         google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
   }
@@ -217,11 +252,17 @@ google::protobuf::util::Status extractLocalNodeMetadata(
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                              RequestInfo* request_info,
                              const std::string& destination_namespace) {
-  // Fill in request info.
+  populateRequestInfo(outbound, use_host_header_fallback, request_info,
+                      destination_namespace);
+
   int64_t response_code = 0;
   if (getValue({"response", "code"}, &response_code)) {
     request_info->response_code = response_code;
   }
+
+  int64_t grpc_status_code = 2;
+  getValue({"response", "grpc_status"}, &grpc_status_code);
+  request_info->grpc_status = grpc_status_code;
 
   if (kGrpcContentTypes.count(getHeaderMapValue(HeaderMapType::RequestHeaders,
                                                 kContentTypeHeaderKey)
@@ -233,56 +274,50 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->request_protocol = kProtocolHTTP;
   }
 
-  // Get destination service name and host based on cluster name and host
-  // header.
-  getDestinationService(destination_namespace, use_host_header_fallback,
-                        &request_info->destination_service_host,
-                        &request_info->destination_service_name);
-
-  // Get rbac labels from dynamic metadata.
-  getStringValue({"metadata", kRbacFilterName, kRbacPermissivePolicyIDField},
-                 &request_info->rbac_permissive_policy_id);
-  getStringValue(
-      {"metadata", kRbacFilterName, kRbacPermissiveEngineResultField},
-      &request_info->rbac_permissive_engine_result);
-
   request_info->request_operation =
       getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
 
-  getStringValue({"request", "url_path"}, &request_info->request_url_path);
-
-  int64_t destination_port = 0;
-
-  if (outbound) {
-    getValue({"upstream", "port"}, &destination_port);
-    getStringValue({"upstream", "uri_san_peer_certificate"},
-                   &request_info->destination_principal);
-    getStringValue({"upstream", "uri_san_local_certificate"},
-                   &request_info->source_principal);
-  } else {
+  if (!outbound) {
+    uint64_t destination_port = 0;
     getValue({"destination", "port"}, &destination_port);
-    bool mtls = false;
-    if (getValue({"connection", "mtls"}, &mtls)) {
-      request_info->service_auth_policy =
-          mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
-               : ::Wasm::Common::ServiceAuthenticationPolicy::None;
-    }
-    getStringValue({"connection", "uri_san_local_certificate"},
-                   &request_info->destination_principal);
-    getStringValue({"connection", "uri_san_peer_certificate"},
-                   &request_info->source_principal);
+    request_info->destination_port = destination_port;
   }
-  request_info->destination_port = destination_port;
-
-  uint64_t response_flags = 0;
-  getValue({"response", "flags"}, &response_flags);
-  request_info->response_flag = parseResponseFlag(response_flags);
 
   getValue({"request", "time"}, &request_info->start_time);
   getValue({"request", "duration"}, &request_info->duration);
   getValue({"request", "total_size"}, &request_info->request_size);
   getValue({"response", "total_size"}, &request_info->response_size);
+}
+
+void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
+  getValue({"source", "address"}, &request_info->source_address);
+  getValue({"destination", "address"}, &request_info->destination_address);
+
+  getValue({"request", "referer"}, &request_info->referer);
+  getValue({"request", "user_agent"}, &request_info->user_agent);
+  getValue({"request", "id"}, &request_info->request_id);
+  std::string trace_sampled;
+  if (getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
+      trace_sampled == "1") {
+    getValue({"request", "headers", "x-b3-traceid"},
+             &request_info->b3_trace_id);
+    getValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id);
+    request_info->b3_trace_sampled = true;
+  }
+
+  getValue({"request", "url_path"}, &request_info->url_path);
+  getValue({"request", "host"}, &request_info->url_host);
+  getValue({"request", "scheme"}, &request_info->url_scheme);
+}
+
+void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
+                            const std::string& destination_namespace) {
+  // host_header_fallback is for HTTP/gRPC only.
+  populateRequestInfo(outbound, false, request_info, destination_namespace);
+
+  request_info->response_code = 0;
+  request_info->request_protocol = kProtocolTCP;
 }
 
 google::protobuf::util::Status extractNodeMetadataValue(

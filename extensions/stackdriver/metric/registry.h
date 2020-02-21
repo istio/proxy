@@ -34,7 +34,9 @@ namespace Metric {
 // Returns Stackdriver exporter config option based on node metadata.
 opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
     const wasm::common::NodeInfo& local_node_info,
-    const std::string& test_monitoring_endpoint = "");
+    const std::string& test_monitoring_endpoint = "",
+    const std::string& sts_port = "", const std::string& test_token_path = "",
+    const std::string& test_root_pem_file = "");
 
 // registers Opencensus views
 void registerViews();
@@ -56,6 +58,12 @@ opencensus::tags::TagKey destinationPrincipalKey();
 opencensus::tags::TagKey destinationWorkloadNameKey();
 opencensus::tags::TagKey destinationWorkloadNamespaceKey();
 opencensus::tags::TagKey destinationOwnerKey();
+opencensus::tags::TagKey destinationCanonicalServiceNameKey();
+opencensus::tags::TagKey destinationCanonicalServiceNamespaceKey();
+opencensus::tags::TagKey sourceCanonicalServiceNameKey();
+opencensus::tags::TagKey sourceCanonicalServiceNamespaceKey();
+opencensus::tags::TagKey destinationCanonicalRevisionKey();
+opencensus::tags::TagKey sourceCanonicalRevisionKey();
 
 // Opencensus measure functions.
 opencensus::stats::MeasureInt64 serverRequestCountMeasure();

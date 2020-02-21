@@ -130,7 +130,7 @@ func newEnvoy(port uint16, confTmpl, baseID, yamlName string, s *TestSetup) (*En
 
 	args := []string{"-c", confPath,
 		"--drain-time-s", "1",
-		"--allow-unknown-fields"}
+	}
 	if s.stress {
 		args = append(args, "--concurrency", "10")
 	} else {

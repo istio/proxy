@@ -128,6 +128,16 @@ TEST_P(UtilsTest, GetPrincipalNoSpiffePrefix) {
   testGetPrincipal(sans, "spiffe:foo/bar", true);
 }
 
+TEST_P(UtilsTest, GetPrincipalFromSpiffePrefixSAN) {
+  std::vector<std::string> sans{"bad", "spiffe://foo/bar"};
+  testGetPrincipal(sans, "foo/bar", true);
+}
+
+TEST_P(UtilsTest, GetPrincipalFromNonSpiffePrefixSAN) {
+  std::vector<std::string> sans{"foobar", "xyz"};
+  testGetPrincipal(sans, "foobar", true);
+}
+
 TEST_P(UtilsTest, GetPrincipalEmpty) {
   std::vector<std::string> sans;
   testGetPrincipal(sans, "", false);
@@ -145,6 +155,16 @@ TEST_P(UtilsTest, GetTrustDomainEmpty) {
 
 TEST_P(UtilsTest, GetTrustDomainNoSpiffePrefix) {
   std::vector<std::string> sans{"spiffe:td/bar", "bad"};
+  testGetTrustDomain(sans, "", false);
+}
+
+TEST_P(UtilsTest, GetTrustDomainFromSpiffePrefixSAN) {
+  std::vector<std::string> sans{"bad", "spiffe://td/bar", "xyz"};
+  testGetTrustDomain(sans, "td", true);
+}
+
+TEST_P(UtilsTest, GetTrustDomainFromNonSpiffePrefixSAN) {
+  std::vector<std::string> sans{"tdbar", "xyz"};
   testGetTrustDomain(sans, "", false);
 }
 

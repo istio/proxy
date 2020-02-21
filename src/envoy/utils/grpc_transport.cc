@@ -44,7 +44,7 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
             request.DebugString());
   Envoy::Http::AsyncClient::RequestOptions options;
   options.setTimeout(kGrpcRequestTimeoutMs);
-  Protobuf::RepeatedPtrField<envoy::api::v2::route::RouteAction::HashPolicy>
+  Protobuf::RepeatedPtrField<envoy::config::route::v3::RouteAction::HashPolicy>
       hash_policy;
   hash_policy.Add()->mutable_header()->set_header_name(
       kIstioAttributeHeader.get());

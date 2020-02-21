@@ -44,7 +44,7 @@ using namespace opencensus::exporters::stats;
 using namespace google::protobuf::util;
 using namespace ::Extensions::Stackdriver::Common;
 using namespace ::Extensions::Stackdriver::Metric;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getStringValue;
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
 using ::Extensions::Stackdriver::Edges::EdgeReporter;
 using Extensions::Stackdriver::Edges::MeshEdgesServiceClientImpl;
 using Extensions::Stackdriver::Log::ExporterImpl;
@@ -59,8 +59,7 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
-constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
+constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
 
 namespace {
 
@@ -68,8 +67,8 @@ namespace {
 // it is not found.
 std::string getMonitoringEndpoint() {
   std::string monitoring_service;
-  if (!getStringValue({"node", "metadata", kMonitoringEndpointKey},
-                      &monitoring_service)) {
+  if (!getValue({"node", "metadata", kMonitoringEndpointKey},
+                &monitoring_service)) {
     return "";
   }
   return monitoring_service;
@@ -79,8 +78,7 @@ std::string getMonitoringEndpoint() {
 // is not found.
 std::string getLoggingEndpoint() {
   std::string logging_service;
-  if (!getStringValue({"node", "metadata", kLoggingEndpointKey},
-                      &logging_service)) {
+  if (!getValue({"node", "metadata", kLoggingEndpointKey}, &logging_service)) {
     return "";
   }
   return logging_service;
@@ -90,8 +88,8 @@ std::string getLoggingEndpoint() {
 // if it is not found.
 std::string getMeshTelemetryEndpoint() {
   std::string mesh_telemetry_service;
-  if (!getStringValue({"node", "metadata", kMeshTelemetryEndpointKey},
-                      &mesh_telemetry_service)) {
+  if (!getValue({"node", "metadata", kMeshTelemetryEndpointKey},
+                &mesh_telemetry_service)) {
     return "";
   }
   return mesh_telemetry_service;
@@ -101,16 +99,52 @@ std::string getMeshTelemetryEndpoint() {
 // is not found in metadata.
 int getExportInterval() {
   std::string interval_s = "";
-  if (getStringValue({"node", "metadata", kMonitoringExportIntervalKey},
-                     &interval_s)) {
+  if (getValue({"node", "metadata", kMonitoringExportIntervalKey},
+               &interval_s)) {
     return std::stoi(interval_s);
   }
   return 60;
 }
 
+// Get port of security token exchange server from node metadata, if not
+// provided or "0" is provided, emtpy will be returned.
+std::string getSTSPort() {
+  std::string sts_port;
+  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
+      sts_port != "0") {
+    return sts_port;
+  }
+  return "";
+}
+
+// Get file name for the token test override.
+std::string getTokenFile() {
+  std::string token_file;
+  if (!getValue({"node", "metadata", kTokenFile}, &token_file)) {
+    return "";
+  }
+  return token_file;
+}
+
+// Get file name for the root CA PEM file test override.
+std::string getCACertFile() {
+  std::string ca_cert_file;
+  if (!getValue({"node", "metadata", kCACertFile}, &ca_cert_file)) {
+    return "";
+  }
+  return ca_cert_file;
+}
+
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(size_t) {
+  // onStart is called prior to onConfigure
+  if (enableServerAccessLog() || enableEdgeReporting()) {
+    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
+  } else {
+    proxy_set_tick_period_milliseconds(0);
+  }
+
   WasmDataPtr configuration = getConfiguration();
   // TODO: add config validation to reject the listener if project id is not in
   // metadata. Parse configuration JSON string.
@@ -131,11 +165,12 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
-
+  std::string sts_port = getSTSPort();
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter = std::make_unique<ExporterImpl>(this, getLoggingEndpoint());
+    auto exporter = std::make_unique<ExporterImpl>(
+        this, getLoggingEndpoint(), sts_port, getTokenFile(), getCACertFile());
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -144,17 +179,23 @@ bool StackdriverRootContext::onConfigure(size_t) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-        this, getMeshTelemetryEndpoint());
+        this, getMeshTelemetryEndpoint(), sts_port, getTokenFile(),
+        getCACertFile());
     edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
                                                     std::move(edges_client));
   }
 
   if (config_.has_mesh_edges_reporting_duration()) {
-    edge_report_duration_nanos_ =
-        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
-            config_.mesh_edges_reporting_duration());
+    auto duration = ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+        config_.mesh_edges_reporting_duration());
+    // if the interval duration is longer than the epoch duration, use the
+    // epoch duration.
+    if (duration >= kDefaultEdgeEpochReportDurationNanoseconds) {
+      duration = kDefaultEdgeEpochReportDurationNanoseconds;
+    }
+    edge_new_report_duration_nanos_ = duration;
   } else {
-    edge_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
+    edge_new_report_duration_nanos_ = kDefaultEdgeNewReportDurationNanoseconds;
   }
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
@@ -169,21 +210,18 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, getMonitoringEndpoint()));
+      getStackdriverOptions(local_node_info_, getMonitoringEndpoint(), sts_port,
+                            getTokenFile(), getCACertFile()));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 
   // Register opencensus measures and views.
   registerViews();
+
   return true;
 }
 
-bool StackdriverRootContext::onStart(size_t) {
-  if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
-  }
-  return true;
-}
+bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {
@@ -191,9 +229,17 @@ void StackdriverRootContext::onTick() {
   }
   if (enableEdgeReporting()) {
     auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
-    if ((cur - last_edge_report_call_nanos_) > edge_report_duration_nanos_) {
-      edge_reporter_->reportEdges();
-      last_edge_report_call_nanos_ = cur;
+    if ((cur - last_edge_epoch_report_call_nanos_) >
+        edge_epoch_report_duration_nanos_) {
+      // end of epoch
+      edge_reporter_->reportEdges(true /* report ALL edges from epoch*/);
+      last_edge_epoch_report_call_nanos_ = cur;
+      last_edge_new_report_call_nanos_ = cur;
+    } else if ((cur - last_edge_new_report_call_nanos_) >
+               edge_new_report_duration_nanos_) {
+      // end of intra-epoch interval
+      edge_reporter_->reportEdges(false /* only report new edges*/);
+      last_edge_new_report_call_nanos_ = cur;
     }
   }
 }
@@ -211,14 +257,14 @@ void StackdriverRootContext::record() {
                                           destination_node_info.namespace_());
   ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
                                             peer_node_info, request_info);
-  if (enableServerAccessLog()) {
+  if (enableServerAccessLog() && shouldLogThisRequest()) {
+    ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     logger_->addLogEntry(request_info, peer_node_info);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
-    if (!getStringValue(
-            {"filter_state", ::Wasm::Common::kDownstreamMetadataIdKey},
-            &peer_id)) {
+    if (!getValue({"filter_state", ::Wasm::Common::kDownstreamMetadataIdKey},
+                  &peer_id)) {
       LOG_DEBUG(absl::StrCat(
           "cannot get metadata for: ", ::Wasm::Common::kDownstreamMetadataIdKey,
           "; skipping edge."));
@@ -238,7 +284,8 @@ inline bool StackdriverRootContext::isOutbound() {
       isOutbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey;
   const auto& metadata_key =
       isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
-  return node_info_cache_.getPeerById(id_key, metadata_key);
+  std::string peer_id;
+  return node_info_cache_.getPeerById(id_key, metadata_key, peer_id);
 }
 
 inline bool StackdriverRootContext::enableServerAccessLog() {
@@ -247,6 +294,16 @@ inline bool StackdriverRootContext::enableServerAccessLog() {
 
 inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
+}
+
+bool StackdriverRootContext::shouldLogThisRequest() {
+  std::string shouldLog = "";
+  if (!getValue({"filter_state", ::Wasm::Common::kAccessLogPolicyKey},
+                &shouldLog)) {
+    LOG_DEBUG("cannot get envoy access log info from filter state.");
+    return true;
+  }
+  return shouldLog != "no";
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.
