@@ -37,6 +37,8 @@ using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 using google::protobuf::util::TimeUtil;
 
+constexpr int kDefaultAssertionBatchSize = 100;
+
 // EdgeReporter provides a mechanism for generating information on traffic
 // "edges" for a mesh. It should be used **only** to document incoming edges for
 // a proxy. This means that the proxy in which this reporter is running should
@@ -55,11 +57,12 @@ class EdgeReporter {
 
  public:
   EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
-               std::unique_ptr<MeshEdgesServiceClient> edges_client);
+               std::unique_ptr<MeshEdgesServiceClient> edges_client,
+               const int batch_size = kDefaultAssertionBatchSize);
 
   EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
                std::unique_ptr<MeshEdgesServiceClient> edges_client,
-               TimestampFn now);
+               const int batch_size, TimestampFn now);
 
   ~EdgeReporter();  // this will call `reportEdges`
 
@@ -117,8 +120,7 @@ class EdgeReporter {
   std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>>
       epoch_queued_requests_;
 
-  // TODO(douglas-reid): make adjustable.
-  const int max_assertions_per_request_ = 1000;
+  const int max_assertions_per_request_;
 };
 
 }  // namespace Edges

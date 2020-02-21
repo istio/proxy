@@ -188,8 +188,15 @@ bool StackdriverRootContext::onConfigure(size_t) {
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
         this, getMeshTelemetryEndpoint(), project_id, sts_port, getTokenFile(),
         getCACertFile());
-    edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
-                                                    std::move(edges_client));
+
+    if (config_.has_max_edges_batch_size()) {
+      edge_reporter_ = std::make_unique<EdgeReporter>(
+          local_node_info_, std::move(edges_client),
+          config_.max_edges_batch_size());
+    } else {
+      edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
+                                                      std::move(edges_client));
+    }
   }
 
   if (config_.has_mesh_edges_reporting_duration()) {
