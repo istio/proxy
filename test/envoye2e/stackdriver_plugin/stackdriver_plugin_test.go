@@ -127,7 +127,7 @@ func verifyCreateTimeSeriesReq(got *monitoringpb.CreateTimeSeriesRequest) (error
 	return fmt.Errorf("cannot find expected request count from creat time series request %v", got), isClient
 }
 
-// Check that response latency is within a reasonable range (less than 100 milliseconds).
+// Check that response latency is within a reasonable range (less than 256 milliseconds).
 func verifyResponseLatency(got *monitoringpb.CreateTimeSeriesRequest) (bool, error) {
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type != ResponseLatencyMetricName {
@@ -150,8 +150,8 @@ func verifyResponseLatency(got *monitoringpb.CreateTimeSeriesRequest) (bool, err
 				maxLatencyInMilli = bounds[i]
 			}
 		}
-		if maxLatencyInMilli > 100 {
-			return true, fmt.Errorf("latency metric is too large (>100ms) %v", maxLatencyInMilli)
+		if maxLatencyInMilli > 256 {
+			return true, fmt.Errorf("latency metric is too large (>256ms) %v", maxLatencyInMilli)
 		}
 		return true, nil
 	}
