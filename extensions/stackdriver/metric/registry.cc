@@ -105,7 +105,9 @@ StackdriverOptions getStackdriverOptions(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         creators;
-    auto header_factory = std::make_unique<GoogleUserProjHeaderInterceptorFactory>(options.project_id);
+    auto header_factory =
+        std::make_unique<GoogleUserProjHeaderInterceptorFactory>(
+            options.project_id);
     creators.push_back(std::move(header_factory));
     auto channel = ::grpc::experimental::CreateCustomChannelWithInterceptors(
         kStackdriverStatsAddress,

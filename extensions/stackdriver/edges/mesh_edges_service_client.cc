@@ -127,9 +127,9 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
 void MeshEdgesServiceClientImpl::reportTrafficAssertions(
     const ReportTrafficAssertionsRequest& request) const {
   auto handler = std::make_unique<StackdriverContextGraphHandler>(project_id_);
-  context_->grpcCallHandler(
-      grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
-      kDefaultTimeoutMillisecond, std::move(handler));
+  context_->grpcCallHandler(grpc_service_, kMeshEdgesService,
+                            kReportTrafficAssertions, request,
+                            kDefaultTimeoutMillisecond, std::move(handler));
 };
 
 }  // namespace Edges
