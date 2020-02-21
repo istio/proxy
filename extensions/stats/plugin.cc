@@ -143,7 +143,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
           false},
       MetricFactory{"request_duration_milliseconds", MetricType::Histogram,
                     [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.duration / 1000; },
+                        -> uint64_t { return request_info.duration /* in nanoseconds */ / 1000; },
                     false},
       MetricFactory{"request_bytes", MetricType::Histogram,
 
