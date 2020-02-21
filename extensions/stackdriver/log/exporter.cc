@@ -78,7 +78,8 @@ class StackdriverLoggingHandler
     // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
     incrementMetric(failure_counter_, 1);
     logWarn("Stackdriver logging api call error: " +
-            std::to_string(static_cast<int>(status)) + getStatus().second->toString());
+            std::to_string(static_cast<int>(status)) +
+            getStatus().second->toString());
   }
 
  private:
@@ -139,7 +140,7 @@ void ExporterImpl::exportLogs(
         requests) const {
   for (const auto& req : requests) {
     auto handler = std::make_unique<StackdriverLoggingHandler>(
-      success_counter_, failure_counter_, project_id_);
+        success_counter_, failure_counter_, project_id_);
     context_->grpcCallHandler(grpc_service_string_, kGoogleLoggingService,
                               kGoogleWriteLogEntriesMethod, *req,
                               kDefaultTimeoutMillisecond, std::move(handler));

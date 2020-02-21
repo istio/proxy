@@ -77,8 +77,8 @@ constexpr char kStackdriverStatsAddress[] = "monitoring.googleapis.com";
 
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
-    const NodeInfo &local_node_info,
-    const std::string &test_monitoring_endpoint, const std::string &sts_port) {
+    const NodeInfo& local_node_info,
+    const std::string& test_monitoring_endpoint, const std::string& sts_port) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
