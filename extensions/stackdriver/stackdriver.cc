@@ -117,6 +117,24 @@ std::string getSTSPort() {
   return "";
 }
 
+// Get file name for the token test override.
+std::string getTokenFile() {
+  std::string token_file;
+  if (!getValue({"node", "metadata", kTokenFile}, &token_file)) {
+    return "";
+  }
+  return token_file;
+}
+
+// Get file name for the root CA PEM file test override.
+std::string getCACertFile() {
+  std::string ca_cert_file;
+  if (!getValue({"node", "metadata", kCACertFile}, &ca_cert_file)) {
+    return "";
+  }
+  return ca_cert_file;
+}
+
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(size_t) {
@@ -151,8 +169,8 @@ bool StackdriverRootContext::onConfigure(size_t) {
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter =
-        std::make_unique<ExporterImpl>(this, getLoggingEndpoint(), sts_port);
+    auto exporter = std::make_unique<ExporterImpl>(
+        this, getLoggingEndpoint(), sts_port, getTokenFile(), getCACertFile());
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -161,7 +179,8 @@ bool StackdriverRootContext::onConfigure(size_t) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-        this, getMeshTelemetryEndpoint(), sts_port);
+        this, getMeshTelemetryEndpoint(), sts_port, getTokenFile(),
+        getCACertFile());
     edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
                                                     std::move(edges_client));
   }
@@ -191,8 +210,8 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, getMonitoringEndpoint(),
-                            sts_port));
+      getStackdriverOptions(local_node_info_, getMonitoringEndpoint(), sts_port,
+                            getTokenFile(), getCACertFile()));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 

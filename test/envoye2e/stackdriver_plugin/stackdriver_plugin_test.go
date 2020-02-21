@@ -24,7 +24,6 @@ import (
 
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
-	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	"github.com/golang/protobuf/proto"
@@ -217,7 +216,12 @@ func setup(t *testing.T, inbound string) *env.TestSetup {
 	}
 	s.SetFiltersBeforeEnvoyRouterInAppToClient(outboundStackdriverFilter)
 	s.SetFiltersBeforeEnvoyRouterInProxyToServer(inbound)
-	params := driver.Params{Vars: map[string]string{"SDPort": "12312"}}
+	params := driver.Params{Vars: map[string]string{
+		"SDPort":                "12312",
+		"STSPort":               "12313",
+		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+	}}
 	s.SetClientNodeMetadata(params.LoadTestData("testdata/client_node_metadata.json.tmpl"))
 	s.SetServerNodeMetadata(params.LoadTestData("testdata/server_node_metadata.json.tmpl"))
 	if err := s.SetUpClientServerEnvoy(); err != nil {
@@ -242,8 +246,11 @@ func issueGetRequests(port uint16, t *testing.T) {
 func TestStackdriverPlugin(t *testing.T) {
 	s := setup(t, "")
 	defer s.TearDownClientServerEnvoy()
-	fsdm, fsdl, edgesSvc, grpcServer := fs.NewFakeStackdriver(12312, 0)
+	fsdm, fsdl, edgesSvc, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
 
 	issueGetRequests(s.Ports().AppToClientProxyPort, t)
 
@@ -287,7 +294,7 @@ func TestStackdriverPlugin(t *testing.T) {
 	}
 }
 
-func verifyNumberOfAccessLogs(fsdl *fs.LoggingServer, t *testing.T, expectedEntries int) {
+func verifyNumberOfAccessLogs(fsdl *driver.LoggingServer, t *testing.T, expectedEntries int) {
 	logRcv := false
 
 	to := time.NewTimer(20 * time.Second)
@@ -313,8 +320,11 @@ func verifyNumberOfAccessLogs(fsdl *fs.LoggingServer, t *testing.T, expectedEntr
 func TestStackdriverAndAccessLogPlugin(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"15s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := fs.NewFakeStackdriver(12312, 0)
+	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
 
 	issueGetRequests(s.Ports().AppToClientProxyPort, t)
 	verifyNumberOfAccessLogs(fsdl, t, 1)
@@ -323,8 +333,11 @@ func TestStackdriverAndAccessLogPlugin(t *testing.T) {
 func TestStackdriverAndAccessLogPluginLogRequestGetsLoggedAgain(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := fs.NewFakeStackdriver(12312, 0)
+	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
 
 	issueGetRequests(s.Ports().AppToClientProxyPort, t)
 	// Sleep for one second
@@ -337,8 +350,11 @@ func TestStackdriverAndAccessLogPluginLogRequestGetsLoggedAgain(t *testing.T) {
 func TestStackdriverAndAccessLogPluginAllErrorRequestsGetsLogged(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := fs.NewFakeStackdriver(12312, 0)
+	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
+	sts := driver.SecureTokenService{Port: 12313}
+	sts.Run(nil)
+	defer sts.Cleanup()
 
 	// Shuts down backend, so all 10 requests fail.
 	s.StopHTTPBackend()

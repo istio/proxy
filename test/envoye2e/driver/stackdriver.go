@@ -25,8 +25,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
-
-	fs "istio.io/proxy/test/envoye2e/stackdriver_plugin/fake_stackdriver"
 )
 
 type Stackdriver struct {
@@ -46,7 +44,7 @@ func (sd *Stackdriver) Run(p *Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
-	metrics, logging, _, _ := fs.NewFakeStackdriver(sd.Port, sd.Delay)
+	metrics, logging, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
 		for {

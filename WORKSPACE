@@ -37,10 +37,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# envoy-wasm commit date: Feb 11 2020
-ENVOY_SHA = "d6ebd6366d55bb6125cda311d6a719e124d9239a"
+# envoy-wasm commit date: Feb 19 2020
+ENVOY_SHA = "59063ae91c27d15989f2710e239b3776cb5c0835"
 
-ENVOY_SHA256 = "3b4ec15a84d02cd57359144b014dd212249209b17aa2c28cb987da8cba2d4615"
+ENVOY_SHA256 = "48e991ac22b6bd9a2dada98aea07affb36e6907de9efbf25d3b0ee542393631e"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
