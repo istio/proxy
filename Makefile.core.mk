@@ -18,8 +18,6 @@ SHELL := /bin/bash
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
 BAZEL_TARGETS ?= //...
-# Some tests run so slowly under the santizers that they always timeout.
-SANITIZER_EXCLUSIONS ?= -test/integration:mixer_fault_test
 HUB ?=
 TAG ?=
 
@@ -73,12 +71,12 @@ test:
 
 test_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TARGETS)
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test ./...
 
 test_tsan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) -- $(BAZEL_TARGETS) $(SANITIZER_EXCLUSIONS)
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) -- $(BAZEL_TARGETS)
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test ./...
 
 check:
