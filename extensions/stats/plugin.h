@@ -196,6 +196,11 @@ class StatGen {
     n.reserve(s);
     n.append(metric_.prefix);
     for (size_t i = 0; i < metric_.tags.size(); i++) {
+      // Don't add response_code and grpc_response_status labels for TCP.
+      if ((metric_.tags[i].name == "response_code" ||
+           metric_.tags[i].name == "grpc_response_status") &&
+          is_tcp_)
+        continue;
       n.append(metric_.tags[i].name);
       n.append(metric_.value_separator);
       n.append(instance[indexes_[i]]);
