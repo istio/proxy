@@ -74,13 +74,13 @@ void map_node(IstioDimensions& instance, bool is_source,
     auto destination_labels = node.labels();
     instance[destination_app] = destination_labels["app"];
     instance[destination_version] = destination_labels["version"];
-    
+
     auto name = destination_labels["service.istio.io/canonical-name"];
     if (name.empty()) {
       name = node.workload_name();
     }
     instance[destination_canonical_service] = name;
-    
+
     auto rev = destination_labels["service.istio.io/canonical-revision"];
     if (rev.empty()) {
       rev = "latest";
