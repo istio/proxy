@@ -68,9 +68,17 @@ static_resources:
                   vm_config:
                     runtime: envoy.wasm.runtime.v8
                     code:
-                      local:
+                      local1:
                         #inline_string: "envoy.wasm.jwt_header"
-                        filename: /Volumes/work/go/src/istio.io/proxy15/extensions/jwt_header/plugin.wasm
+                        #filename: /Volumes/work/go/src/istio.io/proxy15/extensions/jwt_header/plugin.wasm
+                        filename: /Volumes/work/go/src/istio.io/proxy15/extensions/jwt_header/jwt_header_plugin_15.wasm
+                      remote:
+                        sha256: 497302bb0de35537b066118bd9bfcd893fe46f04b32005a114ea0d2fc3683fab 
+                        http_uri:
+                          uri: http://storage.googleapis.com/artifacts.mixologist-142215.appspot.com/extensions/jwt_header_plugin_15.wasm
+                          cluster: googleapis_storage
+                          timeout:
+                            seconds: 5
                   configuration: |
                     { "header_map": {"jwt-group": "group"} }
           - name: envoy.router
@@ -130,6 +138,15 @@ static_resources:
           - name: envoy.router
             config: {}
   clusters:
+  - name: googleapis_storage
+    dns_lookup_family: V4_ONLY
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    lb_policy: round_robin
+    hosts:
+    - socket_address:
+        address: storage.googleapis.com
+        port_value: 80
   - name: service_PROD
     connect_timeout: 0.25s
     type: static
