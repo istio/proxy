@@ -316,7 +316,6 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
   // host_header_fallback is for HTTP/gRPC only.
   populateRequestInfo(outbound, false, request_info, destination_namespace);
 
-  request_info->response_code = 0;
   request_info->request_protocol = kProtocolTCP;
 }
 

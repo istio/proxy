@@ -440,10 +440,8 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report  any
     // metric.
-    // TODO(gargnupur): Remove outbound_ from condition below, when
-    // https://github.com/envoyproxy/envoy-wasm/issues/291 is fixed.
     if (peer_node_ptr == nullptr &&
-        peer_id != ::Wasm::Common::kMetadataNotFoundValue && !outbound_) {
+        peer_id != ::Wasm::Common::kMetadataNotFoundValue) {
       return false;
     }
     if (!request_info.is_populated) {

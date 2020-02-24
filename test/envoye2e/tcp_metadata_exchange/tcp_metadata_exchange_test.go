@@ -159,6 +159,19 @@ var expectedPrometheusServerStatsFailCase = map[string]env.Stat{
 	"istio_tcp_sent_bytes_total":         {Value: 65, Labels: expectedPrometheusServerLabelsFailCase},
 }
 
+// Stats in Client Envoy proxy.
+var expectedPrometheusClientLabels = map[string]string{
+	"reporter":        "source",
+	"source_app":      "productpage",
+	"destination_app": "ratings",
+}
+var expectedPrometheusClientStats = map[string]env.Stat{
+	"istio_tcp_connections_opened_total": {Value: 5, Labels: expectedPrometheusClientLabels},
+	"istio_tcp_connections_closed_total": {Value: 5, Labels: expectedPrometheusClientLabels},
+	"istio_tcp_received_bytes_total":     {Value: 35, Labels: expectedPrometheusClientLabels},
+	"istio_tcp_sent_bytes_total":         {Value: 65, Labels: expectedPrometheusClientLabels},
+}
+
 // Stats in Server Envoy proxy.
 var expectedServerStats = map[string]int{
 	"metadata_exchange.alpn_protocol_found":      5,
@@ -207,7 +220,7 @@ func TestTCPMetadataExchange(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 	s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
-
+	s.VerifyPrometheusStats(expectedPrometheusClientStats, s.Ports().ClientAdminPort)
 }
 
 func TestTCPMetadataExchangeNoClientFilter(t *testing.T) {
@@ -300,6 +313,7 @@ func sendRequest(response chan<- error, config *tls.Config, port uint16, wg *syn
 	}
 
 	_ = conn.Close()
+
 	response <- nil
 }
 
