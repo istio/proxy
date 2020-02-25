@@ -69,14 +69,14 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
 
 EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
                            std::unique_ptr<MeshEdgesServiceClient> edges_client,
-                           const int batch_size)
+                           int batch_size)
     : EdgeReporter(local_node_info, std::move(edges_client), batch_size, []() {
         return TimeUtil::NanosecondsToTimestamp(getCurrentTimeNanoseconds());
       }) {}
 
 EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
                            std::unique_ptr<MeshEdgesServiceClient> edges_client,
-                           const int batch_size, TimestampFn now)
+                           int batch_size, TimestampFn now)
     : edges_client_(std::move(edges_client)),
       now_(now),
       max_assertions_per_request_(batch_size) {

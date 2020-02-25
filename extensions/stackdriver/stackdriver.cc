@@ -182,7 +182,8 @@ bool StackdriverRootContext::onConfigure(size_t) {
         this, getMeshTelemetryEndpoint(), sts_port, getTokenFile(),
         getCACertFile());
 
-    if (config_.has_max_edges_batch_size()) {
+    if (config_.max_edges_batch_size() > 0 &&
+        config_.max_edges_batch_size() <= 1000) {
       edge_reporter_ = std::make_unique<EdgeReporter>(
           local_node_info_, std::move(edges_client),
           config_.max_edges_batch_size());
