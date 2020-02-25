@@ -58,7 +58,7 @@ class EdgeReporter {
  public:
   EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
                std::unique_ptr<MeshEdgesServiceClient> edges_client,
-               int batch_size = kDefaultAssertionBatchSize);
+               int batch_size);
 
   EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
                std::unique_ptr<MeshEdgesServiceClient> edges_client,
