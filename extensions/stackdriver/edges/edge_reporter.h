@@ -41,6 +41,13 @@ using google::protobuf::util::TimeUtil;
 // "edges" for a mesh. It should be used **only** to document incoming edges for
 // a proxy. This means that the proxy in which this reporter is running should
 // be the destination workload instance for all reported traffic.
+//
+// EdgeReporter tracks edges in two distinct batches. A full batch of edges for
+// an entire epoch of reporting is maintained, as is a batch of new edges
+// observed during intervals within that epoch. This allows continual
+// incremental updating of the edges in the system with a periodic full sync of
+// observed edges.
+//
 // This should only be used in a single-threaded context. No support for
 // threading is currently provided.
 class EdgeReporter {
@@ -64,13 +71,24 @@ class EdgeReporter {
                const ::wasm::common::NodeInfo &peer_node_info);
 
   // reportEdges sends the buffered requests to the configured edges
-  // service via the supplied client.
-  void reportEdges();
+  // service via the supplied client. When full_epoch is false, only
+  // the most recent *new* edges are reported. When full_epoch is true,
+  // all edges observed for the entire current epoch are reported.
+  void reportEdges(bool full_epoch = false);
 
  private:
   // builds a full request out of the current traffic assertions (edges),
-  // adds that request to the queue, and resets the current request and state.
-  void flush();
+  // and adds that request to a queue. when flush_epoch is true, this operation
+  // is performed on the epoch-maintained assertions and the cache is cleared.
+  void flush(bool flush_epoch = false);
+
+  // moves the current request to the queue and creates a new current request
+  // for new edges to be added into.
+  void rotateCurrentRequest();
+
+  // moves the current epoch request to the queue and creates a new epoch
+  // request for new edges to be added into.
+  void rotateEpochRequest();
 
   // client used to send requests to the edges service
   std::unique_ptr<MeshEdgesServiceClient> edges_client_;
@@ -78,17 +96,26 @@ class EdgeReporter {
   // gets the current time
   TimestampFn now_;
 
-  // the active pending request to which edges are being added
+  // the active pending new edges request to which edges are being added
   std::unique_ptr<ReportTrafficAssertionsRequest> current_request_;
+
+  // the active pending epoch request to which edges are being added
+  std::unique_ptr<ReportTrafficAssertionsRequest> epoch_current_request_;
 
   // represents the workload instance for the current proxy
   WorkloadInstance node_instance_;
 
-  // current peers for which edges have been created in current_request_;
-  std::unordered_set<std::string> current_peers_;
+  // current peers for which edges have been observed in the current epoch;
+  std::unordered_set<std::string> known_peers_;
 
-  // requests waiting to be sent to backend
-  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>> queued_requests_;
+  // requests waiting to be sent to backend for the intra-epoch reporting
+  // interval
+  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>>
+      current_queued_requests_;
+
+  // requests waiting to be sent to backend for the entire epoch
+  std::vector<std::unique_ptr<ReportTrafficAssertionsRequest>>
+      epoch_queued_requests_;
 
   // TODO(douglas-reid): make adjustable.
   const int max_assertions_per_request_ = 1000;
