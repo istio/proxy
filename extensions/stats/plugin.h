@@ -93,7 +93,6 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_service_namespace)  \
   FIELD_FUNC(destination_canonical_service)  \
   FIELD_FUNC(destination_canonical_revision) \
-  FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
   FIELD_FUNC(grpc_response_status)           \

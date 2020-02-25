@@ -16,7 +16,6 @@ require (
 	github.com/prometheus/common v0.7.0
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 	google.golang.org/grpc v1.25.1
-	gopkg.in/yaml.v2 v2.2.4 // indirect
 	istio.io/api v0.0.0-20200222035036-b245c555a47b // indirect
 	istio.io/gogo-genproto v0.0.0-20200222040034-75d4aa95f22c // indirect
 )
