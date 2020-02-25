@@ -82,6 +82,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(source_app)                     \
   FIELD_FUNC(source_version)                 \
   FIELD_FUNC(source_canonical_service)       \
+  FIELD_FUNC(source_canonical_revision)      \
   FIELD_FUNC(destination_workload)           \
   FIELD_FUNC(destination_workload_namespace) \
   FIELD_FUNC(destination_principal)          \
@@ -91,6 +92,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_service_name)       \
   FIELD_FUNC(destination_service_namespace)  \
   FIELD_FUNC(destination_canonical_service)  \
+  FIELD_FUNC(destination_canonical_revision) \
   FIELD_FUNC(destination_port)               \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_code)                  \
