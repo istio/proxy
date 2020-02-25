@@ -70,9 +70,11 @@ var (
 var expectedPrometheusServerStats = map[string]env.Stat{
 	"istio_requests_total": {Value: 10,
 		Labels: map[string]string{
-			"grpc_response_status":          "",
-			"destination_canonical_service": "ratings",
-			"source_canonical_service":      "productpage-v1",
+			"grpc_response_status":           "",
+			"destination_canonical_service":  "ratings",
+			"destination_canonical_revision": "version-1",
+			"source_canonical_service":       "productpage-v1",
+			"source_canonical_revision":      "version-1",
 		}},
 	"istio_build": {Value: 1},
 }
@@ -82,10 +84,12 @@ func TestStatsPlugin(t *testing.T) {
 		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
 			"istio_requests_total": {Value: 10, Labels: map[string]string{
-				"destination_service":           "unknown",
-				"grpc_response_status":          "",
-				"destination_canonical_service": "ratings",
-				"source_canonical_service":      "productpage-v1",
+				"destination_service":            "unknown",
+				"grpc_response_status":           "",
+				"destination_canonical_service":  "ratings",
+				"destination_canonical_revision": "version-1",
+				"source_canonical_service":       "productpage-v1",
+				"source_canonical_revision":      "version-1",
 			}},
 			"istio_build": {Value: 1},
 		}
@@ -98,9 +102,11 @@ func TestStatsPluginHHFallback(t *testing.T) {
 		s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 		clntStats := map[string]env.Stat{
 			"istio_requests_total": {Value: 10, Labels: map[string]string{
-				"destination_service":           fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort),
-				"destination_canonical_service": "ratings",
-				"source_canonical_service":      "productpage-v1",
+				"destination_service":            fmt.Sprintf("127.0.0.1:%d", s.Ports().AppToClientProxyPort),
+				"destination_canonical_service":  "ratings",
+				"destination_canonical_revision": "version-1",
+				"source_canonical_service":       "productpage-v1",
+				"source_canonical_revision":      "version-1",
 			}},
 			"istio_build": {Value: 1},
 		}
