@@ -58,6 +58,12 @@ opencensus::tags::TagKey destinationPrincipalKey();
 opencensus::tags::TagKey destinationWorkloadNameKey();
 opencensus::tags::TagKey destinationWorkloadNamespaceKey();
 opencensus::tags::TagKey destinationOwnerKey();
+opencensus::tags::TagKey destinationCanonicalServiceNameKey();
+opencensus::tags::TagKey destinationCanonicalServiceNamespaceKey();
+opencensus::tags::TagKey sourceCanonicalServiceNameKey();
+opencensus::tags::TagKey sourceCanonicalServiceNamespaceKey();
+opencensus::tags::TagKey destinationCanonicalRevisionKey();
+opencensus::tags::TagKey sourceCanonicalRevisionKey();
 
 // Opencensus measure functions.
 opencensus::stats::MeasureInt64 serverRequestCountMeasure();

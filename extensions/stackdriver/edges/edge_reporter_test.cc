@@ -193,7 +193,7 @@ TEST(EdgesTest, TestAddEdge) {
   auto edges = std::make_unique<EdgeReporter>(
       nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
   edges->addEdge(requestInfo(), "test", peerNodeInfo());
-  edges->reportEdges();
+  edges->reportEdges(false /* only report new edges */);
 
   // must ensure that we used the client to report the edges
   EXPECT_EQ(1, calls);
@@ -203,6 +203,10 @@ TEST(EdgesTest, TestAddEdge) {
 
   EXPECT_PROTO_EQUAL(want(), got,
                      "ERROR: addEdge() produced unexpected result.");
+
+  edges->reportEdges(true /* report all edges */);
+  // must ensure that we used the client to report the edges
+  EXPECT_EQ(2, calls);
 }
 
 TEST(EdgeReporterTest, TestRequestEdgeCache) {
@@ -222,7 +226,7 @@ TEST(EdgeReporterTest, TestRequestEdgeCache) {
   for (int i = 0; i < 3500; i++) {
     edges->addEdge(requestInfo(), "test", peerNodeInfo());
   }
-  edges->reportEdges();
+  edges->reportEdges(false /* only send current request */);
 
   // nothing has changed in the peer info, so only a single edge should be
   // reported.
@@ -243,20 +247,23 @@ TEST(EdgeReporterTest, TestPeriodicFlushAndCacheReset) {
   auto edges = std::make_unique<EdgeReporter>(
       nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
 
-  // force at least three queued reqs + current (four total)
+  // this should work as follows: 1 assertion in 1 request, the rest dropped
+  // (due to cache)
   for (int i = 0; i < 3500; i++) {
     edges->addEdge(requestInfo(), "test", peerNodeInfo());
     // flush on 1000, 2000, 3000
     if (i % 1000 == 0 && i > 0) {
-      edges->reportEdges();
+      edges->reportEdges(false /* only send current */);
     }
   }
-  edges->reportEdges();
+  // then a final assertion and additional request for a full flush.
+  edges->reportEdges(true /* send full epoch-observed results */);
 
   // nothing has changed in the peer info, but reportEdges should be called four
-  // times
-  EXPECT_EQ(4, calls);
-  EXPECT_EQ(4, num_assertions);
+  // times. two of the calls will result in no new edges or assertions. the last
+  // call will have the full set.
+  EXPECT_EQ(2, calls);
+  EXPECT_EQ(2, num_assertions);
 }
 
 TEST(EdgeReporterTest, TestCacheMisses) {
@@ -275,11 +282,19 @@ TEST(EdgeReporterTest, TestCacheMisses) {
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
     edges->addEdge(requestInfo(), std::to_string(i), peerNodeInfo());
+    // flush on 1000, 2000, 3000
+    if (i % 1000 == 0 && i > 0) {
+      edges->reportEdges(false /* only send current */);
+    }
   }
-  edges->reportEdges();
+  edges->reportEdges(true /* send full epoch */);
 
-  EXPECT_EQ(4, calls);
-  EXPECT_EQ(3500, num_assertions);
+  EXPECT_EQ(7, calls);
+  // the last 500 new are not sent as part of the current
+  // only as part of the epoch. and since we don't flush i == 0,
+  // the initial batch is 1001.
+  // so, 3001 + 3500 = 6500.
+  EXPECT_EQ(6501, num_assertions);
 }
 
 TEST(EdgeReporterTest, TestMissingPeerMetadata) {
@@ -290,7 +305,7 @@ TEST(EdgeReporterTest, TestMissingPeerMetadata) {
   auto edges = std::make_unique<EdgeReporter>(
       nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
   edges->addEdge(requestInfo(), "test", wasm::common::NodeInfo());
-  edges->reportEdges();
+  edges->reportEdges(false /* only send current */);
 
   // ignore timestamps in proto comparisons.
   got.set_allocated_timestamp(nullptr);

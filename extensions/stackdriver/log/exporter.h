@@ -57,7 +57,7 @@ class ExporterImpl : public Exporter {
   // only.
   ExporterImpl(RootContext* root_context,
                const std::string& logging_service_endpoint,
-               const std::string& sts_port = "",
+               const std::string& project_id, const std::string& sts_port = "",
                const std::string& test_token_file = "",
                const std::string& test_root_pem_file = "");
 
@@ -74,9 +74,11 @@ class ExporterImpl : public Exporter {
   // Serialized string of Stackdriver logging service
   std::string grpc_service_string_;
 
-  // Callbacks for gRPC calls.
-  std::function<void(size_t)> success_callback_;
-  std::function<void(GrpcStatus)> failure_callback_;
+  // Stats to count successful and failed logging gRPC call.
+  uint32_t success_counter_;
+  uint32_t failure_counter_;
+
+  std::string project_id_;
 };
 
 }  // namespace Log

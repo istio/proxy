@@ -59,8 +59,7 @@ using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;                      // 10s
-constexpr long int kDefaultEdgeReportDurationNanoseconds = 600000000000;  // 10m
+constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
 
 namespace {
 
@@ -167,11 +166,18 @@ bool StackdriverRootContext::onConfigure(size_t) {
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
   std::string sts_port = getSTSPort();
+  std::string project_id;
+  const auto& platform_metadata = local_node_info_.platform_metadata();
+  const auto project_iter = platform_metadata.find(kGCPProjectKey);
+  if (project_iter != platform_metadata.end()) {
+    project_id = project_iter->second;
+  }
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
     auto exporter = std::make_unique<ExporterImpl>(
-        this, getLoggingEndpoint(), sts_port, getTokenFile(), getCACertFile());
+        this, getLoggingEndpoint(), project_id, sts_port, getTokenFile(),
+        getCACertFile());
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -180,18 +186,23 @@ bool StackdriverRootContext::onConfigure(size_t) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-        this, getMeshTelemetryEndpoint(), sts_port, getTokenFile(),
+        this, getMeshTelemetryEndpoint(), project_id, sts_port, getTokenFile(),
         getCACertFile());
     edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
                                                     std::move(edges_client));
   }
 
   if (config_.has_mesh_edges_reporting_duration()) {
-    edge_report_duration_nanos_ =
-        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
-            config_.mesh_edges_reporting_duration());
+    auto duration = ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+        config_.mesh_edges_reporting_duration());
+    // if the interval duration is longer than the epoch duration, use the
+    // epoch duration.
+    if (duration >= kDefaultEdgeEpochReportDurationNanoseconds) {
+      duration = kDefaultEdgeEpochReportDurationNanoseconds;
+    }
+    edge_new_report_duration_nanos_ = duration;
   } else {
-    edge_report_duration_nanos_ = kDefaultEdgeReportDurationNanoseconds;
+    edge_new_report_duration_nanos_ = kDefaultEdgeNewReportDurationNanoseconds;
   }
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
@@ -225,9 +236,17 @@ void StackdriverRootContext::onTick() {
   }
   if (enableEdgeReporting()) {
     auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
-    if ((cur - last_edge_report_call_nanos_) > edge_report_duration_nanos_) {
-      edge_reporter_->reportEdges();
-      last_edge_report_call_nanos_ = cur;
+    if ((cur - last_edge_epoch_report_call_nanos_) >
+        edge_epoch_report_duration_nanos_) {
+      // end of epoch
+      edge_reporter_->reportEdges(true /* report ALL edges from epoch*/);
+      last_edge_epoch_report_call_nanos_ = cur;
+      last_edge_new_report_call_nanos_ = cur;
+    } else if ((cur - last_edge_new_report_call_nanos_) >
+               edge_new_report_duration_nanos_) {
+      // end of intra-epoch interval
+      edge_reporter_->reportEdges(false /* only report new edges*/);
+      last_edge_new_report_call_nanos_ = cur;
     }
   }
 }

@@ -45,6 +45,11 @@ namespace Plugin {
 
 namespace Stackdriver {
 
+constexpr long int kDefaultEdgeNewReportDurationNanoseconds =
+    60000000000;  // 1m
+constexpr long int kDefaultEdgeEpochReportDurationNanoseconds =
+    600000000000;  // 10m
+
 #ifdef NULL_PLUGIN
 NULL_PLUGIN_REGISTRY;
 #endif
@@ -103,9 +108,15 @@ class StackdriverRootContext : public RootContext {
   std::unique_ptr<::Extensions::Stackdriver::Edges::EdgeReporter>
       edge_reporter_;
 
-  long int last_edge_report_call_nanos_ = 0;
+  long int last_edge_epoch_report_call_nanos_ = 0;
 
-  long int edge_report_duration_nanos_;
+  long int last_edge_new_report_call_nanos_ = 0;
+
+  long int edge_new_report_duration_nanos_ =
+      kDefaultEdgeNewReportDurationNanoseconds;
+
+  long int edge_epoch_report_duration_nanos_ =
+      kDefaultEdgeEpochReportDurationNanoseconds;
 
   bool use_host_header_fallback_;
 };

@@ -15,6 +15,7 @@
 
 #include "extensions/stats/plugin.h"
 
+#include "absl/strings/ascii.h"
 #include "extensions/stats/proxy_expr.h"
 #include "google/protobuf/util/time_util.h"
 
@@ -97,8 +98,8 @@ void map_request(IstioDimensions& instance,
   instance[request_protocol] = request.request_protocol;
   instance[response_code] = std::to_string(request.response_code);
   instance[response_flags] = request.response_flag;
-  instance[connection_security_policy] = std::string(
-      ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy));
+  instance[connection_security_policy] = absl::AsciiStrToLower(std::string(
+      ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy)));
 }
 
 // maps peer_node and request to dimensions.
@@ -439,10 +440,8 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report  any
     // metric.
-    // TODO(gargnupur): Remove outbound_ from condition below, when
-    // https://github.com/envoyproxy/envoy-wasm/issues/291 is fixed.
     if (peer_node_ptr == nullptr &&
-        peer_id != ::Wasm::Common::kMetadataNotFoundValue && !outbound_) {
+        peer_id != ::Wasm::Common::kMetadataNotFoundValue) {
       return false;
     }
     if (!request_info.is_populated) {

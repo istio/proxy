@@ -27,6 +27,47 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
+namespace {
+
+class GoogleUserProjHeaderInterceptor : public grpc::experimental::Interceptor {
+ public:
+  GoogleUserProjHeaderInterceptor(const std::string& project_id)
+      : project_id_(project_id) {}
+
+  virtual void Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
+    if (methods->QueryInterceptionHookPoint(
+            grpc::experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
+      auto* metadata_map = methods->GetSendInitialMetadata();
+      if (metadata_map != nullptr) {
+        metadata_map->insert(
+            std::make_pair("x-goog-user-project", project_id_));
+      }
+    }
+    methods->Proceed();
+  }
+
+ private:
+  const std::string& project_id_;
+};
+
+class GoogleUserProjHeaderInterceptorFactory
+    : public grpc::experimental::ClientInterceptorFactoryInterface {
+ public:
+  GoogleUserProjHeaderInterceptorFactory(const std::string& project_id)
+      : project_id_(project_id) {}
+
+  virtual grpc::experimental::Interceptor* CreateClientInterceptor(
+      grpc::experimental::ClientRpcInfo*) override {
+    return new GoogleUserProjHeaderInterceptor(project_id_);
+  }
+
+ private:
+  std::string project_id_;
+};
+
+}  // namespace
+
 using namespace Extensions::Stackdriver::Common;
 using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
@@ -36,9 +77,9 @@ constexpr char kStackdriverStatsAddress[] = "monitoring.googleapis.com";
 
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
-    const NodeInfo &local_node_info,
-    const std::string &test_monitoring_endpoint, const std::string &sts_port,
-    const std::string &test_token_path, const std::string &test_root_pem_file) {
+    const NodeInfo& local_node_info,
+    const std::string& test_monitoring_endpoint, const std::string& sts_port,
+    const std::string& test_token_path, const std::string& test_root_pem_file) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
@@ -60,10 +101,19 @@ StackdriverOptions getStackdriverOptions(
     ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
         &sts_options, sts_port, token_path);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
-    auto channel = ::grpc::CreateChannel(
+    grpc::ChannelArguments args;
+    std::vector<
+        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+        creators;
+    auto header_factory =
+        absl::make_unique<GoogleUserProjHeaderInterceptorFactory>(
+            options.project_id);
+    creators.push_back(std::move(header_factory));
+    auto channel = ::grpc::experimental::CreateCustomChannelWithInterceptors(
         test_monitoring_endpoint.empty() ? kStackdriverStatsAddress
                                          : test_monitoring_endpoint,
-        grpc::CompositeChannelCredentials(channel_creds, call_creds));
+        grpc::CompositeChannelCredentials(channel_creds, call_creds), args,
+        std::move(creators));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   } else if (!test_monitoring_endpoint.empty()) {
@@ -134,23 +184,29 @@ StackdriverOptions getStackdriverOptions(
     view_descriptor.RegisterForExport();                            \
   }
 
-#define ADD_TAGS                                     \
-  .add_column(requestOperationKey())                 \
-      .add_column(requestProtocolKey())              \
-      .add_column(serviceAuthenticationPolicyKey())  \
-      .add_column(meshUIDKey())                      \
-      .add_column(destinationServiceNameKey())       \
-      .add_column(destinationServiceNamespaceKey())  \
-      .add_column(destinationPortKey())              \
-      .add_column(responseCodeKey())                 \
-      .add_column(sourcePrincipalKey())              \
-      .add_column(sourceWorkloadNameKey())           \
-      .add_column(sourceWorkloadNamespaceKey())      \
-      .add_column(sourceOwnerKey())                  \
-      .add_column(destinationPrincipalKey())         \
-      .add_column(destinationWorkloadNameKey())      \
-      .add_column(destinationWorkloadNamespaceKey()) \
-      .add_column(destinationOwnerKey())
+#define ADD_TAGS                                             \
+  .add_column(requestOperationKey())                         \
+      .add_column(requestProtocolKey())                      \
+      .add_column(serviceAuthenticationPolicyKey())          \
+      .add_column(meshUIDKey())                              \
+      .add_column(destinationServiceNameKey())               \
+      .add_column(destinationServiceNamespaceKey())          \
+      .add_column(destinationPortKey())                      \
+      .add_column(responseCodeKey())                         \
+      .add_column(sourcePrincipalKey())                      \
+      .add_column(sourceWorkloadNameKey())                   \
+      .add_column(sourceWorkloadNamespaceKey())              \
+      .add_column(sourceOwnerKey())                          \
+      .add_column(destinationPrincipalKey())                 \
+      .add_column(destinationWorkloadNameKey())              \
+      .add_column(destinationWorkloadNamespaceKey())         \
+      .add_column(destinationOwnerKey())                     \
+      .add_column(destinationCanonicalServiceNameKey())      \
+      .add_column(destinationCanonicalServiceNamespaceKey()) \
+      .add_column(sourceCanonicalServiceNameKey())           \
+      .add_column(sourceCanonicalServiceNamespaceKey())      \
+      .add_column(destinationCanonicalRevisionKey())         \
+      .add_column(sourceCanonicalRevisionKey())
 
 // Functions to register opencensus views to export.
 REGISTER_COUNT_VIEW(ServerRequestCount)
@@ -231,6 +287,15 @@ TAG_KEY_FUNC(destination_principal, destinationPrincipal)
 TAG_KEY_FUNC(destination_workload_name, destinationWorkloadName)
 TAG_KEY_FUNC(destination_workload_namespace, destinationWorkloadNamespace)
 TAG_KEY_FUNC(destination_owner, destinationOwner)
+TAG_KEY_FUNC(source_canonical_service_name, sourceCanonicalServiceName)
+TAG_KEY_FUNC(source_canonical_service_namespace,
+             sourceCanonicalServiceNamespace)
+TAG_KEY_FUNC(destination_canonical_service_name,
+             destinationCanonicalServiceName)
+TAG_KEY_FUNC(destination_canonical_service_namespace,
+             destinationCanonicalServiceNamespace)
+TAG_KEY_FUNC(source_canonical_revision, sourceCanonicalRevision)
+TAG_KEY_FUNC(destination_canonical_revision, destinationCanonicalRevision)
 
 }  // namespace Metric
 }  // namespace Stackdriver
