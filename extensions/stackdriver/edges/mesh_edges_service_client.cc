@@ -79,7 +79,6 @@ constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
 constexpr char kMeshEdgesService[] =
     "google.cloud.meshtelemetry.v1alpha1.MeshEdgesService";
 constexpr char kReportTrafficAssertions[] = "ReportTrafficAssertions";
-constexpr char kDefaultRootCertFile[] = "/etc/ssl/certs/ca-certificates.crt";
 constexpr int kDefaultTimeoutMillisecond = 10000;  // 10 seconds
 
 namespace Extensions {
@@ -91,34 +90,38 @@ using google::protobuf::util::TimeUtil;
 
 MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
     RootContext* root_context, const std::string& edges_endpoint,
-    const std::string& project_id, const std::string& sts_port)
+    const std::string& project_id, const std::string& sts_port,
+    const std::string& test_token_file, const std::string& test_root_pem_file)
     : context_(root_context), project_id_(project_id) {
   GrpcService grpc_service;
   grpc_service.mutable_google_grpc()->set_stat_prefix("mesh_edges");
-  if (edges_endpoint.empty()) {
-    // use application default creds and default target
-    grpc_service.mutable_google_grpc()->set_target_uri(kMeshTelemetryService);
-    if (sts_port.empty()) {
-      // Security token exchange is not enabled. Use default GCE credential.
-      grpc_service.mutable_google_grpc()
-          ->add_call_credentials()
-          ->mutable_google_compute_engine();
-    } else {
-      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
-          grpc_service.mutable_google_grpc()
-              ->add_call_credentials()
-              ->mutable_sts_service(),
-          sts_port);
-    }
+
+  // use application default creds and default target
+  grpc_service.mutable_google_grpc()->set_target_uri(
+      edges_endpoint.empty() ? kMeshTelemetryService : edges_endpoint);
+  if (sts_port.empty()) {
+    // Security token exchange is not enabled. Use default GCE credential.
     grpc_service.mutable_google_grpc()
-        ->mutable_channel_credentials()
-        ->mutable_ssl_credentials()
-        ->mutable_root_certs()
-        ->set_filename(kDefaultRootCertFile);
+        ->add_call_credentials()
+        ->mutable_google_compute_engine();
   } else {
-    // no creds attached
-    grpc_service.mutable_google_grpc()->set_target_uri(edges_endpoint);
+    ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
+        grpc_service.mutable_google_grpc()
+            ->add_call_credentials()
+            ->mutable_sts_service(),
+        sts_port,
+        test_token_file.empty()
+            ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
+            : test_token_file);
   }
+  grpc_service.mutable_google_grpc()
+      ->mutable_channel_credentials()
+      ->mutable_ssl_credentials()
+      ->mutable_root_certs()
+      ->set_filename(
+          test_root_pem_file.empty()
+              ? ::Extensions::Stackdriver::Common::kDefaultRootCertFile
+              : test_root_pem_file);
 
   grpc_service.SerializeToString(&grpc_service_);
 };

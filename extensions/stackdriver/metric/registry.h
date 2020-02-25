@@ -35,7 +35,8 @@ namespace Metric {
 opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
     const wasm::common::NodeInfo& local_node_info,
     const std::string& test_monitoring_endpoint = "",
-    const std::string& sts_port = "");
+    const std::string& sts_port = "", const std::string& test_token_path = "",
+    const std::string& test_root_pem_file = "");
 
 // registers Opencensus views
 void registerViews();

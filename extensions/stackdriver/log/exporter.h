@@ -57,7 +57,9 @@ class ExporterImpl : public Exporter {
   // only.
   ExporterImpl(RootContext* root_context,
                const std::string& logging_service_endpoint,
-               const std::string& project_id, const std::string& sts_port = "");
+               const std::string& project_id, const std::string& sts_port = "",
+               const std::string& test_token_file = "",
+               const std::string& test_root_pem_file = "");
 
   // exportLogs exports the given log request to Stackdriver.
   void exportLogs(

@@ -59,7 +59,9 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
   MeshEdgesServiceClientImpl(RootContext* root_context,
                              const std::string& edges_endpoint,
                              const std::string& project_id,
-                             const std::string& sts_port = "");
+                             const std::string& sts_port = "",
+                             const std::string& test_token_path = "",
+                             const std::string& test_root_pem_file = "");
 
   void reportTrafficAssertions(
       const ReportTrafficAssertionsRequest& request) const override;
