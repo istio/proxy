@@ -85,6 +85,7 @@ constexpr char kSTSPortKey[] = "STS_PORT";
 constexpr char kSTSSubjectTokenPath[] = "/var/run/secrets/tokens/istio-token";
 constexpr char kSTSSubjectTokenType[] = "urn:ietf:params:oauth:token-type:jwt";
 constexpr char kSTSScope[] = "https://www.googleapis.com/auth/cloud-platform";
+constexpr char kGoogleUserProjectHeaderKey[] = "x-goog-user-project";
 
 }  // namespace Common
 }  // namespace Stackdriver

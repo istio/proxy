@@ -16,6 +16,7 @@
 
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 
+#include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/utils.h"
 #include "google/protobuf/util/time_util.h"
 
@@ -34,6 +35,45 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::logWarn;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 #endif
 
+namespace {
+
+// StackdriverContextGraphHandler is used to inject x-goog-user-project header
+// into gRPC initial metadata. This is a work around since gRPC library is not
+// yet able to add that header automatically based on quota project from STS
+// token. This should not be needed after
+// https://github.com/grpc/grpc/issues/21225 is ready.
+class StackdriverContextGraphHandler
+    : public GrpcCallHandler<google::protobuf::Empty> {
+ public:
+  StackdriverContextGraphHandler(const std::string& project_id)
+      : GrpcCallHandler(), project_id_(project_id) {}
+
+  void onCreateInitialMetadata(uint32_t /* headers */) override {
+    addHeaderMapValue(
+        HeaderMapType::GrpcCreateInitialMetadata,
+        ::Extensions::Stackdriver::Common::kGoogleUserProjectHeaderKey,
+        project_id_);
+  }
+
+  void onSuccess(size_t /*body_size*/) override {
+    // TODO(douglas-reid): improve logging message.
+    logDebug(
+        "successfully sent MeshEdgesService ReportTrafficAssertionsRequest");
+  }
+
+  void onFailure(GrpcStatus status) override {
+    // TODO(douglas-reid): add retry (and other) logic
+    logWarn("MeshEdgesService ReportTrafficAssertionsRequest failure: " +
+            std::to_string(static_cast<int>(status)) + " " +
+            getStatus().second->toString());
+  }
+
+ private:
+  const std::string& project_id_;
+};
+
+}  // namespace
+
 // TODO(douglas-reid): confirm values here
 constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
 constexpr char kMeshEdgesService[] =
@@ -51,21 +91,8 @@ using google::protobuf::util::TimeUtil;
 
 MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
     RootContext* root_context, const std::string& edges_endpoint,
-    const std::string& sts_port)
-    : context_(root_context) {
-  success_callback_ = [](size_t) {
-    // TODO(douglas-reid): improve logging message.
-    logDebug(
-        "successfully sent MeshEdgesService ReportTrafficAssertionsRequest");
-  };
-
-  failure_callback_ = [](GrpcStatus status) {
-    // TODO(douglas-reid): add retry (and other) logic
-    logWarn("MeshEdgesService ReportTrafficAssertionsRequest failure: " +
-            std::to_string(static_cast<int>(status)) + " " +
-            getStatus().second->toString());
-  };
-
+    const std::string& project_id, const std::string& sts_port)
+    : context_(root_context), project_id_(project_id) {
   GrpcService grpc_service;
   grpc_service.mutable_google_grpc()->set_stat_prefix("mesh_edges");
   if (edges_endpoint.empty()) {
@@ -100,10 +127,10 @@ void MeshEdgesServiceClientImpl::reportTrafficAssertions(
     const ReportTrafficAssertionsRequest& request) const {
   LOG_TRACE("mesh edge services client: sending request '" +
             request.DebugString() + "'");
-
-  context_->grpcSimpleCall(
-      grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
-      kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
+  auto handler = std::make_unique<StackdriverContextGraphHandler>(project_id_);
+  context_->grpcCallHandler(grpc_service_, kMeshEdgesService,
+                            kReportTrafficAssertions, request,
+                            kDefaultTimeoutMillisecond, std::move(handler));
 };
 
 }  // namespace Edges
