@@ -195,8 +195,9 @@ bool StackdriverRootContext::onConfigure(size_t) {
           local_node_info_, std::move(edges_client),
           config_.max_edges_batch_size());
     } else {
-      edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
-                                                      std::move(edges_client));
+      edge_reporter_ = std::make_unique<EdgeReporter>(
+          local_node_info_, std::move(edges_client),
+          ::Extensions::Stackdriver::Edges::kDefaultAssertionBatchSize);
     }
   }
 
