@@ -54,6 +54,6 @@ message PluginConfig {
   bool disable_host_header_fallback = 6;
 
   // Optional. Allows configuration of the number of traffic assertions to batch
-  // into a single request. Default is 250.
+  // into a single request. Default is 100. Max is 1000.
   int32 max_edges_batch_size = 7;
 }
