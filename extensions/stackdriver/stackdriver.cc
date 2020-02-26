@@ -126,10 +126,6 @@ std::string getSTSPort() {
 
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
-  // onStart is called prior to onConfigure
-  if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
-  }
   // TODO: add config validation to reject the listener if project id is not in
   // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
@@ -192,6 +188,12 @@ bool StackdriverRootContext::onConfigure(
   }
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
+
+  // All the necessary reporting objects should be initialized.
+  // Start ticker for reporting.
+  if (enableServerAccessLog() || enableEdgeReporting()) {
+    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
+  }
 
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
