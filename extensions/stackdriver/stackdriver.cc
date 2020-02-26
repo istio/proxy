@@ -189,6 +189,12 @@ bool StackdriverRootContext::onConfigure(
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
 
+  // All the necessary reporting objects should be initialized.
+  // Start ticker for reporting.
+  if (enableServerAccessLog() || enableEdgeReporting()) {
+    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
+  }
+
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -209,11 +215,7 @@ bool StackdriverRootContext::onConfigure(
   return true;
 }
 
-void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
-  if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
-  }
-}
+void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {}
 
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {
