@@ -126,6 +126,10 @@ std::string getSTSPort() {
 
 bool StackdriverRootContext::onConfigure(
     std::unique_ptr<WasmData> configuration) {
+  // onStart is called prior to onConfigure
+  if (enableServerAccessLog() || enableEdgeReporting()) {
+    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
+  }
   // TODO: add config validation to reject the listener if project id is not in
   // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
@@ -209,11 +213,7 @@ bool StackdriverRootContext::onConfigure(
   return true;
 }
 
-void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
-  if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
-  }
-}
+void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {}
 
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {
