@@ -101,6 +101,20 @@ const char kSingleOriginMethodWithTriggerRulePolicy[] = R"(
   }
 )";
 
+const char kSingleOriginMethodWithExcludeTriggerRulePolicy[] = R"(
+  principal_binding: USE_ORIGIN
+  origins {
+    jwt {
+      issuer: "abc.xyz"
+      trigger_rules: {
+        excluded_paths: {
+          exact: "/login"
+        }
+      }
+    }
+  }
+)";
+
 const char kMultipleOriginMethodWithTriggerRulePolicy[] = R"(
   principal_binding: USE_ORIGIN
   origins {
@@ -327,15 +341,60 @@ TEST_P(OriginAuthenticatorTest, SingleRuleTriggered) {
                                       filter_context_.authenticationResult()));
 }
 
+TEST_P(OriginAuthenticatorTest, SingleRuleTriggeredWithComponents) {
+  const std::vector<std::string> input_paths{"/allow?",
+                                             "/allow?a=b&c=d",
+                                             "/allow??",
+                                             "/allow??",
+                                             "/allow?#",
+                                             "/allow#?",
+                                             "/allow#a",
+                                             "/allow#$"
+                                             "/allow?a=b#c",
+                                             "/allow#a?b=c"};
+  for (const auto& path : input_paths) {
+    ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+        kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+
+    createAuthenticator();
+
+    EXPECT_CALL(*authenticator_, validateJwt(_, _))
+        .Times(1)
+        .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
+
+    setPath(path);
+    EXPECT_TRUE(authenticator_->run(payload_));
+    EXPECT_TRUE(TestUtility::protoEqual(
+        expected_result_when_pass_, filter_context_.authenticationResult()));
+  }
+}
+
 TEST_P(OriginAuthenticatorTest, SingleRuleNotTriggered) {
+  const std::vector<std::string> input_paths{"/bad", "/allow$?", "/allow$#"};
+  for (const auto& path : input_paths) {
+    ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+        kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+
+    createAuthenticator();
+
+    EXPECT_CALL(*authenticator_, validateJwt(_, _)).Times(0);
+
+    setPath(path);
+    EXPECT_TRUE(authenticator_->run(payload_));
+    EXPECT_TRUE(TestUtility::protoEqual(
+        initial_result_, filter_context_.authenticationResult()));
+  }
+}
+
+TEST_P(OriginAuthenticatorTest, SingleExcludeRuleTriggeredWithQueryParam) {
   ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+      kSingleOriginMethodWithExcludeTriggerRulePolicy, &policy_));
 
   createAuthenticator();
 
   EXPECT_CALL(*authenticator_, validateJwt(_, _)).Times(0);
 
-  setPath("/bad");
+  setPath("/login?a=b&c=d");
   EXPECT_TRUE(authenticator_->run(payload_));
   EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
                                       filter_context_.authenticationResult()));
