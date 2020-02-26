@@ -166,8 +166,17 @@ bool StackdriverRootContext::onConfigure(
     // to recreate edge reporter because of config update.
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
         this, getMeshTelemetryEndpoint(), project_id, sts_port);
-    edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
-                                                    std::move(edges_client));
+
+    if (config_.max_edges_batch_size() > 0 &&
+        config_.max_edges_batch_size() <= 1000) {
+      edge_reporter_ = std::make_unique<EdgeReporter>(
+          local_node_info_, std::move(edges_client),
+          config_.max_edges_batch_size());
+    } else {
+      edge_reporter_ = std::make_unique<EdgeReporter>(
+          local_node_info_, std::move(edges_client),
+          ::Extensions::Stackdriver::Edges::kDefaultAssertionBatchSize);
+    }
   }
 
   if (config_.has_mesh_edges_reporting_duration()) {

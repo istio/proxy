@@ -69,15 +69,18 @@ void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
 }  // namespace
 
 EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
-                           std::unique_ptr<MeshEdgesServiceClient> edges_client)
-    : EdgeReporter(local_node_info, std::move(edges_client), []() {
+                           std::unique_ptr<MeshEdgesServiceClient> edges_client,
+                           int batch_size)
+    : EdgeReporter(local_node_info, std::move(edges_client), batch_size, []() {
         return TimeUtil::NanosecondsToTimestamp(getCurrentTimeNanoseconds());
       }) {}
 
 EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
                            std::unique_ptr<MeshEdgesServiceClient> edges_client,
-                           TimestampFn now)
-    : edges_client_(std::move(edges_client)), now_(now) {
+                           int batch_size, TimestampFn now)
+    : edges_client_(std::move(edges_client)),
+      now_(now),
+      max_assertions_per_request_(batch_size) {
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
   const auto iter =
