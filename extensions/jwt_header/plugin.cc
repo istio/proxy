@@ -69,7 +69,8 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
 
   // jwt validation filter uses the jwt-auth dynamic metadata
   // with issuer as the key in struct.
-  if (!getMessageValue({"metadata", "filter_metadata", "jwt-auth"},
+  //if (!getMessageValue({"metadata", "filter_metadata", "jwt-auth"},
+  if (!getMessageValue({"metadata", "filter_metadata", "envoy.filters.http.jwt_authn"},
                        &jwtPayloadStruct)) {
     LOG_DEBUG("No jwt-auth metadata present");
     return FilterHeadersStatus::Continue;
@@ -84,15 +85,24 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
     return FilterHeadersStatus::Continue;
   }
 
-  auto jsonJwt = it->second.string_value();
 
   google::protobuf::Struct jwtStruct;
+  std::string jsonJwt;
+
+  google::protobuf::util::MessageToJsonString(it->second.struct_value(), &jsonJwt);
+
+  //auto jwtStruct = it->second.struct_value();
+
+  
+  //auto jsonJwt = it->second.string_value();
+
   auto status = JsonStringToMessage(jsonJwt, &jwtStruct, json_options);
 
   if (status != Status::OK) {
     LOG_WARN(absl::StrCat("Cannot parse JSON string ", jsonJwt));
     return FilterHeadersStatus::Continue;
   }
+   
 
   bool modified_headers = false;
   const auto end_it = jwtStruct.fields().end();

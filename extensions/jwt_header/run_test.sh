@@ -19,5 +19,5 @@ BAZEL_BIN="${WD}/../../bazel-bin"
 
 set -ex
 pwd
-
-${BAZEL_BIN}/src/envoy/envoy -c ${WD}/testdata/server.yaml --concurrency 2 --allow-unknown-fields -l info
+# --allow-unknown-fields
+${BAZEL_BIN}/src/envoy/envoy -c ${WD}/testdata/server.yaml --concurrency 2 -l debug
