@@ -110,16 +110,16 @@ constexpr char kPolicyBackend[] = "policy-backend";
 constexpr char kZipkinBackend[] = "zipkin-backend";
 
 // Generates basic test request header.
-Http::TestHeaderMapImpl BaseRequestHeaders() {
-  return Http::TestHeaderMapImpl{{":method", "GET"},
-                                 {":path", "/"},
-                                 {":scheme", "http"},
-                                 {":authority", "host"},
-                                 {"x-forwarded-for", "10.0.0.1"}};
+Http::TestRequestHeaderMapImpl BaseRequestHeaders() {
+  return Http::TestRequestHeaderMapImpl{{":method", "GET"},
+                                        {":path", "/"},
+                                        {":scheme", "http"},
+                                        {":authority", "host"},
+                                        {"x-forwarded-for", "10.0.0.1"}};
 }
 
 // Generates test request header with given token.
-Http::TestHeaderMapImpl HeadersWithToken(const std::string& token) {
+Http::TestRequestHeaderMapImpl HeadersWithToken(const std::string& token) {
   auto headers = BaseRequestHeaders();
   headers.addCopy("Authorization", "Bearer " + token);
   return headers;
@@ -498,8 +498,8 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, GoodJwt) {
 
   waitForNextUpstreamRequest(0);
   // Send backend response.
-  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
-                                   true);
+  upstream_request_->encodeHeaders(
+      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
   response->waitForEndStream();
 
   // Report (log) is sent after backen response.
@@ -541,7 +541,8 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, TracingHeader) {
   response->waitForEndStream();
 
   EXPECT_TRUE(response->complete());
-  Http::TestHeaderMapImpl upstream_headers(upstream_request_->headers());
+  Http::TestResponseHeaderMapImpl upstream_headers(
+      upstream_request_->headers());
   // Trace headers should be added into upstream request
   EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kTraceID));
   EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kSpanID));

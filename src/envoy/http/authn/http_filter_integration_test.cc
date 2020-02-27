@@ -32,12 +32,12 @@ static const Envoy::Http::LowerCaseString kSecIstioAuthnPayloadHeaderKey(
     "sec-istio-authn-payload");
 
 // Default request for testing.
-Http::TestHeaderMapImpl SimpleRequestHeaders() {
-  return Http::TestHeaderMapImpl{{":method", "GET"},
-                                 {":path", "/"},
-                                 {":scheme", "http"},
-                                 {":authority", "host"},
-                                 {"x-forwarded-for", "10.0.0.1"}};
+Http::TestRequestHeaderMapImpl SimpleRequestHeaders() {
+  return Http::TestRequestHeaderMapImpl{{":method", "GET"},
+                                        {":path", "/"},
+                                        {":scheme", "http"},
+                                        {":authority", "host"},
+                                        {"x-forwarded-for", "10.0.0.1"}};
 }
 
 // Keep the same as issuer in the policy below.
@@ -94,8 +94,8 @@ TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
   waitForNextUpstreamRequest();
 
   // Send backend response.
-  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
-                                   true);
+  upstream_request_->encodeHeaders(
+      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
@@ -157,8 +157,8 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
   // Wait for request to upstream (backend)
   waitForNextUpstreamRequest();
   // Send backend response.
-  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
-                                   true);
+  upstream_request_->encodeHeaders(
+      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());
@@ -173,7 +173,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
   // it doesn't have JWT token.
   codec_client_ =
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto headers = Http::TestHeaderMapImpl{
+  auto headers = Http::TestRequestHeaderMapImpl{
       {":method", "OPTIONS"},
       {":path", "/"},
       {":scheme", "http"},
@@ -187,8 +187,8 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
   // Wait for request to upstream (backend)
   waitForNextUpstreamRequest();
   // Send backend response.
-  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
-                                   true);
+  upstream_request_->encodeHeaders(
+      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
   response->waitForEndStream();
   EXPECT_TRUE(response->complete());

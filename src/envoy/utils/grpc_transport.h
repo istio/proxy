@@ -48,7 +48,7 @@ class GrpcTransport : public Grpc::AsyncRequestCallbacks<ResponseType>,
                 const std::string& serialized_forward_attributes,
                 istio::mixerclient::DoneFunc on_done);
 
-  void onCreateInitialMetadata(Http::HeaderMap& metadata) override;
+  void onCreateInitialMetadata(Http::RequestHeaderMap& metadata) override;
 
   void onSuccess(std::unique_ptr<ResponseType>&& response,
                  Tracing::Span& span) override;

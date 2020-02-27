@@ -60,7 +60,7 @@ class AlpnFilter : public Http::PassThroughDecoderFilter,
       : config_(config) {}
 
   // Http::PassThroughDecoderFilter
-  Http::FilterHeadersStatus decodeHeaders(Http::HeaderMap &headers,
+  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap &headers,
                                           bool end_stream) override;
 
  private:

@@ -40,9 +40,9 @@ class Filter : public StreamFilter,
   Filter(Control& control);
 
   // Http::StreamDecoderFilter
-  FilterHeadersStatus decodeHeaders(HeaderMap& headers, bool) override;
+  FilterHeadersStatus decodeHeaders(RequestHeaderMap& headers, bool) override;
   FilterDataStatus decodeData(Buffer::Instance& data, bool end_stream) override;
-  FilterTrailersStatus decodeTrailers(HeaderMap& trailers) override;
+  FilterTrailersStatus decodeTrailers(RequestTrailerMap& trailers) override;
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
 
@@ -50,14 +50,14 @@ class Filter : public StreamFilter,
   void onDestroy() override;
 
   // Http::StreamEncoderFilter
-  FilterHeadersStatus encode100ContinueHeaders(HeaderMap&) override {
+  FilterHeadersStatus encode100ContinueHeaders(ResponseHeaderMap&) override {
     return FilterHeadersStatus::Continue;
   }
-  FilterHeadersStatus encodeHeaders(HeaderMap& headers, bool) override;
+  FilterHeadersStatus encodeHeaders(ResponseHeaderMap& headers, bool) override;
   FilterDataStatus encodeData(Buffer::Instance&, bool) override {
     return FilterDataStatus::Continue;
   }
-  FilterTrailersStatus encodeTrailers(HeaderMap&) override {
+  FilterTrailersStatus encodeTrailers(ResponseTrailerMap&) override {
     return FilterTrailersStatus::Continue;
   }
   Http::FilterMetadataStatus encodeMetadata(MetadataMap&) override {
@@ -96,7 +96,7 @@ class Filter : public StreamFilter,
   bool initiating_call_;
 
   // Point to the request HTTP headers
-  HeaderMap* headers_;
+  RequestHeaderMap* headers_;
 
   // Total number of bytes received, including request headers, body, and
   // trailers.

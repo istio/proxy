@@ -49,8 +49,8 @@ void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-FilterHeadersStatus AuthenticationFilter::decodeHeaders(HeaderMap& headers,
-                                                        bool) {
+FilterHeadersStatus AuthenticationFilter::decodeHeaders(
+    RequestHeaderMap& headers, bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
             filter_config_.DebugString());
   state_ = State::PROCESSING;
@@ -98,7 +98,7 @@ FilterDataStatus AuthenticationFilter::decodeData(Buffer::Instance&, bool) {
   return FilterDataStatus::Continue;
 }
 
-FilterTrailersStatus AuthenticationFilter::decodeTrailers(HeaderMap&) {
+FilterTrailersStatus AuthenticationFilter::decodeTrailers(RequestTrailerMap&) {
   if (state_ == State::PROCESSING) {
     return FilterTrailersStatus::StopIteration;
   }

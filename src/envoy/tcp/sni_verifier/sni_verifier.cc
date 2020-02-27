@@ -40,6 +40,8 @@ Config::Config(Stats::Scope& scope, size_t max_client_hello_size)
         max_client_hello_size_, size_t(TLS_MAX_CLIENT_HELLO)));
   }
 
+  SSL_CTX_set_min_proto_version(ssl_ctx_.get(), TLS1_VERSION);
+  SSL_CTX_set_max_proto_version(ssl_ctx_.get(), TLS1_3_VERSION);
   SSL_CTX_set_options(ssl_ctx_.get(), SSL_OP_NO_TICKET);
   SSL_CTX_set_session_cache_mode(ssl_ctx_.get(), SSL_SESS_CACHE_OFF);
   SSL_CTX_set_tlsext_servername_callback(
@@ -77,6 +79,8 @@ Network::FilterStatus Filter::onData(Buffer::Instance& data, bool) {
                      : Network::FilterStatus::StopIteration;
   }
 
+  ENVOY_CONN_LOG(trace, "Reached here {}", read_callbacks_->connection(),
+                 config_->maxClientHelloSize());
   size_t left_space_in_buf = config_->maxClientHelloSize() - read_;
   size_t data_to_read =
       (data.length() < left_space_in_buf) ? data.length() : left_space_in_buf;
@@ -123,6 +127,7 @@ void Filter::done(bool success) {
 }
 
 void Filter::parseClientHello(const void* data, size_t len) {
+  ENVOY_CONN_LOG(trace, "Reached here {}", read_callbacks_->connection(), len);
   // Ownership is passed to ssl_ in SSL_set_bio()
   bssl::UniquePtr<BIO> bio(BIO_new_mem_buf(data, len));
 
@@ -148,6 +153,8 @@ void Filter::parseClientHello(const void* data, size_t len) {
       if (read_ == config_->maxClientHelloSize()) {
         // We've hit the specified size limit. This is an unreasonably large
         // ClientHello; indicate failure.
+        ENVOY_CONN_LOG(trace, "Reached here {}", read_callbacks_->connection(),
+                       read_);
         config_->stats().client_hello_too_large_.inc();
         done(false);
       }

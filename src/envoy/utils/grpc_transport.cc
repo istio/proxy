@@ -57,7 +57,7 @@ GrpcTransport<RequestType, ResponseType>::GrpcTransport(
 
 template <class RequestType, class ResponseType>
 void GrpcTransport<RequestType, ResponseType>::onCreateInitialMetadata(
-    Http::HeaderMap &metadata) {
+    Http::RequestHeaderMap &metadata) {
   // We generate cluster name contains invalid characters, so override the
   // authority header temorarily until it can be specified via CDS.
   // See https://github.com/envoyproxy/envoy/issues/3297 for details.

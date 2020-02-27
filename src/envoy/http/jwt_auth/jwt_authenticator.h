@@ -50,7 +50,7 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
   // Fetch a remote public key.
   void FetchPubkey(PubkeyCacheItem* issuer);
   // Following two functions are for AyncClient::Callbacks
-  void onSuccess(MessagePtr&& response);
+  void onSuccess(ResponseMessagePtr&& response);
   void onFailure(AsyncClient::FailureReason);
 
   // Verify with a specific public key.

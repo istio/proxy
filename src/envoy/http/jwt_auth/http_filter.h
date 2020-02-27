@@ -35,9 +35,9 @@ class JwtVerificationFilter : public StreamDecoderFilter,
   void onDestroy() override;
 
   // Http::StreamDecoderFilter
-  FilterHeadersStatus decodeHeaders(HeaderMap& headers, bool) override;
+  FilterHeadersStatus decodeHeaders(RequestHeaderMap& headers, bool) override;
   FilterDataStatus decodeData(Buffer::Instance&, bool) override;
-  FilterTrailersStatus decodeTrailers(HeaderMap&) override;
+  FilterTrailersStatus decodeTrailers(RequestTrailerMap&) override;
   void setDecoderFilterCallbacks(
       StreamDecoderFilterCallbacks& callbacks) override;
 
