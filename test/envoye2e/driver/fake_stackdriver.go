@@ -159,10 +159,13 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 				_ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 				md, ok := metadata.FromIncomingContext(ctx)
 				if !ok {
-					return nil, fmt.Errorf("missing metadata, want %q", bearer)
+					return nil, fmt.Errorf("missing metadata, want %q and x-goog-user-project", bearer)
 				}
 				if got := md["authorization"]; len(got) != 1 || got[0] != fmt.Sprintf("Bearer %s", bearer) {
 					return nil, fmt.Errorf("authorization failure: got %q, want %q", got, bearer)
+				}
+				if got := md["x-goog-user-project"]; len(got) != 1 || got[0] != "test-project" {
+					return nil, fmt.Errorf("x-goog-user-project failure: got %q, want test-project", got)
 				}
 				return handler(ctx, req)
 			}))
