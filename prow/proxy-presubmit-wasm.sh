@@ -24,5 +24,5 @@ ROOT=$(dirname $WD)
 
 source "${WD}/proxy-common.inc"
 
-echo 'Generate and check Wasm plugin files'
+echo 'Generate Wasm plugin files and run Wasm related test'
 make generate_wasm
