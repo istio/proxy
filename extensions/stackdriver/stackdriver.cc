@@ -138,13 +138,6 @@ std::string getCACertFile() {
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(size_t) {
-  // onStart is called prior to onConfigure
-  if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
-  } else {
-    proxy_set_tick_period_milliseconds(0);
-  }
-
   WasmDataPtr configuration = getConfiguration();
   // TODO: add config validation to reject the listener if project id is not in
   // metadata. Parse configuration JSON string.
@@ -209,9 +202,16 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
 
-  // Register OC Stackdriver exporter and views to be exported.
-  // Note exporter and views are global singleton so they should only be
-  // registered once.
+  // All dependencies should be ready now. Start ticker for reporting.
+  if (enableServerAccessLog() || enableEdgeReporting()) {
+    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
+  }
+
+  // **NOTE** be very careful when you add code from this point to the end of
+  // function. This block is guarded by a global variable to make sure
+  // Opencensus exporter and views is only registered once. Register OC
+  // Stackdriver exporter and views to be exported. Note exporter and views are
+  // global singleton so they should only be registered once.
   WasmDataPtr registered;
   if (WasmResult::Ok == getSharedData(kStackdriverExporter, &registered)) {
     return true;
