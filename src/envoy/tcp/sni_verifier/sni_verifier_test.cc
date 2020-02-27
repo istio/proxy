@@ -53,8 +53,7 @@ TEST(SniVerifierTest, MaxClientHelloSize) {
       "max_client_hello_size of 65537 is greater than maximum of 65536.");
 }
 
-class SniVerifierFilterTest : public testing::Test,
-                              Logger::Loggable<Logger::Id::filter> {
+class SniVerifierFilterTest : public testing::Test {
  protected:
   static constexpr size_t TLS_MAX_CLIENT_HELLO = 250;
 
@@ -74,7 +73,6 @@ class SniVerifierFilterTest : public testing::Test,
                              Network::FilterStatus expected_status,
                              size_t data_installment_size = UINT_MAX) {
     auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
-    ENVOY_LOG(trace, "Reached  here  {}", client_hello.size());
     runTestForData(outer_sni, client_hello, expected_status,
                    data_installment_size);
   }
