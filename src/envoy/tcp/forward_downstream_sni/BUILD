@@ -28,6 +28,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        ":config_cc_proto",
         ":forward_downstream_sni_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
@@ -54,4 +55,14 @@ envoy_cc_test(
         "@envoy//test/mocks/server:server_mocks",
         "@envoy//test/mocks/stream_info:stream_info_mocks",
     ],
+)
+
+cc_proto_library(
+    name = "config_cc_proto",
+    deps = ["config_proto"],
+)
+
+proto_library(
+    name = "config_proto",
+    srcs = ["config.proto"],
 )
