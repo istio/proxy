@@ -25,7 +25,7 @@
 #include "src/envoy/http/authn/test_utils.h"
 #include "src/envoy/utils/authn.h"
 #include "test/mocks/http/mocks.h"
-#include "test/test_common/test_time.h"
+#include "test/test_common/simulated_time_system.h"
 #include "test/test_common/utility.h"
 
 using Envoy::Http::Istio::AuthN::AuthenticatorBase;
@@ -111,7 +111,7 @@ class AuthenticationFilterTest : public testing::Test {
  protected:
   FilterConfig filter_config_ = FilterConfig::default_instance();
 
-  Http::TestHeaderMapImpl request_headers_;
+  Http::TestRequestHeaderMapImpl request_headers_;
   StrictMock<MockAuthenticationFilter> filter_{filter_config_};
   NiceMock<Http::MockStreamDecoderFilterCallbacks> decoder_callbacks_;
 };
@@ -122,7 +122,7 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
   EXPECT_CALL(filter_, createPeerAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
-  DangerousDeprecatedTestTime test_time;
+  Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
                                          test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, streamInfo())
@@ -130,7 +130,7 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
       .WillRepeatedly(ReturnRef(stream_info));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
-      .WillOnce(testing::Invoke([](Http::HeaderMap &headers, bool) {
+      .WillOnce(testing::Invoke([](Http::ResponseHeaderMap &headers, bool) {
         EXPECT_EQ("401", headers.Status()->value().getStringView());
       }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
@@ -148,7 +148,7 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
   EXPECT_CALL(filter_, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
-  DangerousDeprecatedTestTime test_time;
+  Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
                                          test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, streamInfo())
@@ -156,7 +156,7 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
       .WillRepeatedly(ReturnRef(stream_info));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
-      .WillOnce(testing::Invoke([](Http::HeaderMap &headers, bool) {
+      .WillOnce(testing::Invoke([](Http::ResponseHeaderMap &headers, bool) {
         EXPECT_EQ("401", headers.Status()->value().getStringView());
       }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
@@ -172,7 +172,7 @@ TEST_F(AuthenticationFilterTest, AllPass) {
   EXPECT_CALL(filter_, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
-  DangerousDeprecatedTestTime test_time;
+  Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
                                          test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, streamInfo())
@@ -243,7 +243,7 @@ TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
   EXPECT_CALL(filter, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
-  DangerousDeprecatedTestTime test_time;
+  Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
                                          test_time.timeSystem());
   EXPECT_CALL(decoder_callbacks_, streamInfo())

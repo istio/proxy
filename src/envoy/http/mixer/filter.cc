@@ -56,7 +56,7 @@ void Filter::ReadPerRouteConfig(
   config->service_config_id = route_cfg.hash;
 }
 
-FilterHeadersStatus Filter::decodeHeaders(HeaderMap& headers, bool) {
+FilterHeadersStatus Filter::decodeHeaders(RequestHeaderMap& headers, bool) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
   request_total_size_ += headers.byteSize();
 
@@ -101,7 +101,7 @@ FilterDataStatus Filter::decodeData(Buffer::Instance& data, bool end_stream) {
   return FilterDataStatus::Continue;
 }
 
-FilterTrailersStatus Filter::decodeTrailers(HeaderMap& trailers) {
+FilterTrailersStatus Filter::decodeTrailers(RequestTrailerMap& trailers) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
   request_total_size_ += trailers.byteSize();
   if (state_ == Calling) {
@@ -131,7 +131,7 @@ void Filter::UpdateHeaders(
   }
 }
 
-FilterHeadersStatus Filter::encodeHeaders(HeaderMap& headers, bool) {
+FilterHeadersStatus Filter::encodeHeaders(ResponseHeaderMap& headers, bool) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {} {}", __func__, state_);
   // Init state is possible if a filter prior to mixerfilter interrupts the
   // filter chain
@@ -170,7 +170,7 @@ void Filter::completeCheck(const CheckResponseInfo& info) {
     state_ = Responded;
     decoder_callbacks_->sendLocalReply(
         Code(status_code), route_directive_.direct_response_body(),
-        [this](HeaderMap& headers) {
+        [this](ResponseHeaderMap& headers) {
           UpdateHeaders(headers, route_directive_.response_header_operations());
         },
         absl::nullopt, RcDetails::get().MixerDirectResponse);

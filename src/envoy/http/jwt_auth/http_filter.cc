@@ -40,8 +40,8 @@ JwtVerificationFilter::~JwtVerificationFilter() {}
 
 void JwtVerificationFilter::onDestroy() { jwt_auth_.onDestroy(); }
 
-FilterHeadersStatus JwtVerificationFilter::decodeHeaders(HeaderMap& headers,
-                                                         bool) {
+FilterHeadersStatus JwtVerificationFilter::decodeHeaders(
+    RequestHeaderMap& headers, bool) {
   state_ = Calling;
   stopped_ = false;
 
@@ -93,7 +93,7 @@ FilterDataStatus JwtVerificationFilter::decodeData(Buffer::Instance&, bool) {
   return FilterDataStatus::Continue;
 }
 
-FilterTrailersStatus JwtVerificationFilter::decodeTrailers(HeaderMap&) {
+FilterTrailersStatus JwtVerificationFilter::decodeTrailers(RequestTrailerMap&) {
   if (state_ == Calling) {
     return FilterTrailersStatus::StopIteration;
   }

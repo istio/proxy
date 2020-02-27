@@ -96,19 +96,19 @@ class JwtVerificationFilterIntegrationTest
   }
 
  protected:
-  Http::TestHeaderMapImpl BaseRequestHeaders() {
-    return Http::TestHeaderMapImpl{
+  Http::TestRequestHeaderMapImpl BaseRequestHeaders() {
+    return Http::TestRequestHeaderMapImpl{
         {":method", "GET"}, {":path", "/"}, {":authority", "host"}};
   }
 
-  Http::TestHeaderMapImpl createHeaders(const std::string& token) {
+  Http::TestRequestHeaderMapImpl createHeaders(const std::string& token) {
     auto headers = BaseRequestHeaders();
     headers.addCopy("Authorization", "Bearer " + token);
     return headers;
   }
 
-  Http::TestHeaderMapImpl createIssuerHeaders() {
-    return Http::TestHeaderMapImpl{{":status", "200"}};
+  Http::TestResponseHeaderMapImpl createIssuerHeaders() {
+    return Http::TestResponseHeaderMapImpl{{":status", "200"}};
   }
 
   std::string InstanceToString(Buffer::Instance& instance) {
@@ -142,7 +142,7 @@ class JwtVerificationFilterIntegrationTest
     }
   }
 
-  void TestVerification(const Http::HeaderMap& request_headers,
+  void TestVerification(const Http::RequestHeaderMap& request_headers,
                         const std::string& request_body,
                         const Http::HeaderMap& issuer_response_headers,
                         const std::string& issuer_response_body,
@@ -178,7 +178,7 @@ class JwtVerificationFilterIntegrationTest
       ASSERT_TRUE(request_stream_issuer->waitForEndStream(*dispatcher_));
 
       request_stream_issuer->encodeHeaders(
-          Http::HeaderMapImpl(issuer_response_headers), false);
+          Http::TestHeaderMapImpl(issuer_response_headers), false);
       Buffer::OwnedImpl body(issuer_response_body);
       request_stream_issuer->encodeData(body, true);
     }
@@ -347,7 +347,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, JwtExpired) {
   // Issuer is not called by passing empty pubkey.
   std::string pubkey = "";
   TestVerification(createHeaders(kJwtNoKid), "", createIssuerHeaders(), pubkey,
-                   false, Http::TestHeaderMapImpl{{":status", "401"}},
+                   false, Http::TestResponseHeaderMapImpl{{":status", "401"}},
                    "JWT is expired");
 }
 
@@ -368,7 +368,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, AudInvalid) {
   // Issuer is not called by passing empty pubkey.
   std::string pubkey = "";
   TestVerification(createHeaders(jwt), "", createIssuerHeaders(), pubkey, false,
-                   Http::TestHeaderMapImpl{{":status", "401"}},
+                   Http::TestResponseHeaderMapImpl{{":status", "401"}},
                    "Audience doesn't match");
 }
 
@@ -377,7 +377,7 @@ TEST_P(JwtVerificationFilterIntegrationTestWithJwks, Fail1) {
   // Issuer is not called by passing empty pubkey.
   std::string pubkey = "";
   TestVerification(createHeaders(token), "", createIssuerHeaders(), pubkey,
-                   false, Http::TestHeaderMapImpl{{":status", "401"}},
+                   false, Http::TestResponseHeaderMapImpl{{":status", "401"}},
                    "JWT_BAD_FORMAT");
 }
 

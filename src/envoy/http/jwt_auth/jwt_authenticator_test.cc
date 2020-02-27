@@ -363,11 +363,13 @@ class MockUpstream {
                const std::string &response_body)
       : request_(&mock_cm.async_client_), response_body_(response_body) {
     ON_CALL(mock_cm.async_client_, send_(_, _, _))
-        .WillByDefault(Invoke([this](MessagePtr &, AsyncClient::Callbacks &cb,
+        .WillByDefault(Invoke([this](Http::RequestMessagePtr &,
+                                     AsyncClient::Callbacks &cb,
                                      const Http::AsyncClient::RequestOptions &)
                                   -> AsyncClient::Request * {
-          Http::MessagePtr response_message(new ResponseMessageImpl(
-              HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
+          Http::ResponseMessagePtr response_message(
+              new ResponseMessageImpl(ResponseHeaderMapPtr{
+                  new TestResponseHeaderMapImpl{{":status", "200"}}}));
           response_message->body().reset(new Buffer::OwnedImpl(response_body_));
           cb.onSuccess(std::move(response_message));
           called_count_++;
@@ -750,10 +752,11 @@ TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
   MockAsyncClientRequest request(&async_client);
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
-      .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
+      .WillOnce(Invoke([&](Http::RequestMessagePtr &message,
+                           AsyncClient::Callbacks &cb,
                            const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
-        EXPECT_EQ((TestHeaderMapImpl{
+        EXPECT_EQ((TestRequestHeaderMapImpl{
                       {":method", "GET"},
                       {":path", "/pubkey_path"},
                       {":authority", "pubkey_server"},
@@ -770,8 +773,8 @@ TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
   auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   auth_->Verify(headers, &mock_cb_);
 
-  Http::MessagePtr response_message(new ResponseMessageImpl(
-      HeaderMapPtr{new TestHeaderMapImpl{{":status", "401"}}}));
+  Http::ResponseMessagePtr response_message(new ResponseMessageImpl(
+      ResponseHeaderMapPtr{new TestResponseHeaderMapImpl{{":status", "401"}}}));
   callbacks->onSuccess(std::move(response_message));
 }
 
@@ -786,10 +789,11 @@ TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
   MockAsyncClientRequest request(&async_client);
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
-      .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
+      .WillOnce(Invoke([&](Http::RequestMessagePtr &message,
+                           AsyncClient::Callbacks &cb,
                            const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
-        EXPECT_EQ((TestHeaderMapImpl{
+        EXPECT_EQ((TestRequestHeaderMapImpl{
                       {":method", "GET"},
                       {":path", "/pubkey_path"},
                       {":authority", "pubkey_server"},
@@ -806,8 +810,8 @@ TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
   auto headers = TestHeaderMapImpl{{"Authorization", "Bearer " + kGoodToken}};
   auth_->Verify(headers, &mock_cb_);
 
-  Http::MessagePtr response_message(new ResponseMessageImpl(
-      HeaderMapPtr{new TestHeaderMapImpl{{":status", "200"}}}));
+  Http::ResponseMessagePtr response_message(new ResponseMessageImpl(
+      ResponseHeaderMapPtr{new TestResponseHeaderMapImpl{{":status", "200"}}}));
   response_message->body().reset(new Buffer::OwnedImpl("invalid publik key"));
   callbacks->onSuccess(std::move(response_message));
 }
@@ -823,10 +827,11 @@ TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
   MockAsyncClientRequest request(&async_client);
   AsyncClient::Callbacks *callbacks;
   EXPECT_CALL(async_client, send_(_, _, _))
-      .WillOnce(Invoke([&](MessagePtr &message, AsyncClient::Callbacks &cb,
+      .WillOnce(Invoke([&](Http::RequestMessagePtr &message,
+                           AsyncClient::Callbacks &cb,
                            const Http::AsyncClient::RequestOptions &)
                            -> AsyncClient::Request * {
-        EXPECT_EQ((TestHeaderMapImpl{
+        EXPECT_EQ((TestRequestHeaderMapImpl{
                       {":method", "GET"},
                       {":path", "/pubkey_path"},
                       {":authority", "pubkey_server"},

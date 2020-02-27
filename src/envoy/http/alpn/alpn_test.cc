@@ -74,7 +74,7 @@ class AlpnFilterTest : public testing::Test {
       std::make_shared<NiceMock<Upstream::MockThreadLocalCluster>>()};
   std::shared_ptr<Upstream::MockClusterInfo> cluster_info_{
       std::make_shared<NiceMock<Upstream::MockClusterInfo>>()};
-  Http::TestHeaderMapImpl headers_;
+  Http::TestRequestHeaderMapImpl headers_;
 };
 
 TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
