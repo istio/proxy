@@ -140,6 +140,12 @@ func skipTSanASan(t *testing.T) {
 	}
 }
 
+func skipWasm(t *testing.T, runtime string) {
+	if os.Getenv("WASM") == "" || runtime != "envoy.wasm.runtime.v8" {
+		t.Skip("Skip test since either WASM module is not generated or runtime is not v8")
+	}
+}
+
 type capture struct{}
 
 func (capture) Run(p *driver.Params) error {
@@ -198,6 +204,7 @@ func TestStatsPayload(t *testing.T) {
 	skipTSanASan(t)
 	for _, config := range ClientConfigs {
 		for _, testCase := range TestCases {
+			skipWasm(t, testCase.WasmRuntime)
 			t.Run(config.Name+"/"+testCase.WasmRuntime, func(t *testing.T) {
 				ports := env.NewPorts(testCase.Ports)
 				params := &driver.Params{

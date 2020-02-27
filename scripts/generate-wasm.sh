@@ -25,21 +25,18 @@ function usage() {
        If the image already exist in the HUB, this will be noop.
        The container will be used to compile wasm files.
     -p push the wasm sdk container built from the envoy SHA. Must use with `-b`
-    -c controls whether to check diff of generated wasm files.
     -d The bucket name to store the generated wasm files."
   exit 1
 }
 
 BUILD_CONTAINER=0
 PUSH_CONTAINER=0
-CHECK_DIFF=0
 DST_BUCKET=""
 
 while getopts bpcd: arg ; do
   case "${arg}" in
     b) BUILD_CONTAINER=1;;
     p) PUSH_DOCKER_IMAGE=1;;
-    c) CHECK_DIFF=1;;
     d) DST_BUCKET="${OPTARG}";;
     *) usage;;
   esac
@@ -86,15 +83,6 @@ docker tag ${IMAGE}:${TAG} ${IMAGE}:v3
 cd ${ROOT}
 find . -name "*.wasm" -type f -delete
 make build_wasm
-
-if [[ ${CHECK_DIFF} == 1 ]]; then
-  if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
-    echo "wasm files are out of dated and need to be regenerated, run './scripts/generate-wasm.sh -b' to regenerate them"
-    exit 1
-  else
-    echo "wasm files are up to dated"
-  fi
-fi
 
 echo "Destination bucket: ${DST_BUCKET}"
 if [ -n "${DST_BUCKET}" ]; then
