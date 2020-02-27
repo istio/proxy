@@ -209,9 +209,9 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   // **NOTE** be very careful when you add code from this point to the end of
   // function. This block is guarded by a global variable to make sure
-  // Opencensus exporter and views is only registered once. Register OC
-  // Stackdriver exporter and views to be exported. Note exporter and views are
-  // global singleton so they should only be registered once.
+  // Opencensus exporter and views are only registered once.
+  // Register OC Stackdriver exporter and views to be exported. Note exporter
+  // and views are global singleton so they should only be registered once.
   WasmDataPtr registered;
   if (WasmResult::Ok == getSharedData(kStackdriverExporter, &registered)) {
     return true;
