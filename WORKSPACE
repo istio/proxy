@@ -37,14 +37,14 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/istio/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# envoy-wasm commit date: Feb 24 2020
+# envoy-wasm commit date: Feb 26 2020
 ENVOY_PROJECT = "istio"
 
 ENVOY_REPO = "envoy"
 
-ENVOY_SHA = "baf361b08e1a48e4f34b234ab586646704089ade"
+ENVOY_SHA = "5114da080fc6046850f46c5bebfbe4229deba52f"
 
-ENVOY_SHA256 = "824e4501134fe35b9ebef5cd0a95c6a0d1eeb311159efda48fcd4bce3fcde61c"
+ENVOY_SHA256 = "5e247a9707aa7f1c1588badb8522db4ee4150f97300cb43972f1ef4a7f8a33de"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
