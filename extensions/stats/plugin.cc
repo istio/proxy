@@ -114,7 +114,6 @@ void map_request(IstioDimensions& instance,
   instance[destination_principal] = request.destination_principal;
   instance[destination_service] = request.destination_service_host;
   instance[destination_service_name] = request.destination_service_name;
-  instance[destination_port] = std::to_string(request.destination_port);
   instance[request_protocol] = request.request_protocol;
   instance[response_code] = std::to_string(request.response_code);
   instance[response_flags] = request.response_flag;
