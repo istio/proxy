@@ -22,7 +22,7 @@ load(
     "envoy_cc_library",
 )
 
-stackdriver_cc_library(
+envoy_cc_library(
     name = "constants",
     hdrs = [
         "constants.h",
