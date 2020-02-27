@@ -22,7 +22,7 @@ load(
     "envoy_cc_test",
 )
 
-cc_library(
+envoy_cc_library(
     name = "metric",
     srcs = [
         "record.cc",
@@ -32,6 +32,7 @@ cc_library(
         "record.h",
         "registry.h",
     ],
+    repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
     ],

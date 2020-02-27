@@ -22,11 +22,12 @@ load(
     "envoy_cc_library",
 )
 
-cc_library(
+stackdriver_cc_library(
     name = "constants",
     hdrs = [
         "constants.h",
     ],
+    repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
         "//extensions/stackdriver/edges:__pkg__",
