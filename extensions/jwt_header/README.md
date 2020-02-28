@@ -55,10 +55,15 @@ The following is an example testing session.
 $ export GW_IP=35.184.6.129
 $ cd extensions/jwt_header/testdata (jwt_header_sample)
 $ curl http://${GW_IP}/reviews/0  -H "Host: reviews.local" -H "Authorization: Bearer $(cat canary_token.txt)"
-{"id": "0","reviews": [{  "reviewer": "Reviewer1",  "text": "An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!", "rating": {"stars": 5, "color": "black"}},{  "reviewer": "Reviewer2",  "text": "Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.", "rating": {"stars": 4, "color": "black"}}]}
+{"id": "0","reviews": [{  "reviewer": "Reviewer1",  "text": "An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!", 
+"rating": {"stars": 5, "color": "black"}},
+{  "reviewer": "Reviewer2",  "text": "Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.", 
+"rating": {"stars": 4, "color": "black"}}]}
 
 $ curl http://${GW_IP}/reviews/0  -H "Host: reviews.local" -H "Authorization: Bearer $(cat dev_token.txt)"
-{"id": "0","reviews": [{  "reviewer": "Reviewer1",  "text": "An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!", "rating": {"stars": 5, "color": "red"}},{  "reviewer": "Reviewer2",  "text": "Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.", "rating": {"stars": 4, "color": "red"}}]}
+{"id": "0","reviews": [{  "reviewer": "Reviewer1",  "text": "An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!",
+"rating": {"stars": 5, "color": "red"}},{  "reviewer": "Reviewer2",  "text": "Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.",
+"rating": {"stars": 4, "color": "red"}}]}
 
 $ curl http://${GW_IP}/reviews/0  -H "Host: reviews.local" -H "Authorization: Bearer $(cat prod_token.txt)"
 {"id": "0","reviews": [{  "reviewer": "Reviewer1",  "text": "An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{  "reviewer": "Reviewer2",  "text": "Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}]}
