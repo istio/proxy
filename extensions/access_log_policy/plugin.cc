@@ -78,6 +78,7 @@ bool PluginRootContext::onConfigure(size_t) {
   }
   WasmDataPtr configuration = getConfiguration();
   JsonParseOptions json_options;
+  json_options.ignore_unknown_fields = true;
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {

@@ -340,6 +340,7 @@ bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
   // Parse configuration JSON string.
   JsonParseOptions json_options;
+  json_options.ignore_unknown_fields = true;
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
