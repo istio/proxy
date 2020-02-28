@@ -42,7 +42,7 @@ namespace Plugin {
 
 namespace Stats {
 
-constexpr long long kDefaultTCPReportDurationNanoseconds = 15000000000;  // 15s
+constexpr long long kDefaultTCPReportDurationMilliseconds= 15000;  // 15s
 
 namespace {
 
@@ -370,13 +370,13 @@ bool PluginRootContext::onConfigure(size_t) {
 
   initializeDimensions();
 
-  long long tcp_report_duration_nanos = kDefaultTCPReportDurationNanoseconds;
+  long long tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
   if (config_.has_tcp_reporting_duration()) {
-    tcp_report_duration_nanos =
-        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+    tcp_report_duration_milis =
+        ::google::protobuf::util::TimeUtil::DurationToMilliseconds(
             config_.tcp_reporting_duration());
   }
-  proxy_set_tick_period_milliseconds(tcp_report_duration_nanos);
+  proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
 
   return true;
 }
