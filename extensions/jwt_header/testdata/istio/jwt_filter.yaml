@@ -1,0 +1,83 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: jwt-filter
+spec:
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.http_connection_manager"
+              subFilter:
+                name: "envoy.cors"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+            name: envoy.filters.http.jwt_authn
+            typed_config:
+              '@type': type.googleapis.com/envoy.config.filter.http.jwt_authn.v2alpha.JwtAuthentication
+              providers:
+                origins-0:
+                  forward: true
+                  issuer: testing@secure.istio.io
+                  local_jwks:
+                    inline_string: '{ "keys":[ {"e":"AQAB","kid":"DHFbpoIUqrY8t2zpA2qXfCmr5VO5ZEr4RzHU_-envvQ","kty":"RSA","n":"xAE7eB6qugXyCAG3yhh7pkDkT65pHymX-P7KfIupjf59vsdo91bSP9C8H07pSAGQO1MV_xFj9VswgsCg4R6otmg5PV2He95lZdHtOcU5DXIg_pbhLdKXbi66GlVeK6ABZOUW3WYtnNHD-91gVuoeJT_DwtGGcp4ignkgXfkiEm4sw-4sfb4qdt5oLbyVpmW6x9cfa7vs2WTfURiCrBoUqgBo_-4WTiULmmHSGZHOjzwa8WtrtOQGsAFjIbno85jp6MnGGGZPYZbDAa_b3y5u-YpW7ypZrvD8BgtKVjgtQgZhLAGezMt0ua3DRrWnKqTZ0BJ_EyxOGuHJrLsn00fnMQ"}]}'
+                  payload_in_metadata: testing@secure.istio.io
+              rules:
+              - match:
+                  prefix: /
+                requires:
+                  requiresAny:
+                    requirements:
+                     - providerName: origins-0
+                     - allow_missing: {}
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.http_connection_manager"
+              subFilter:
+                name: "envoy.cors"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+            name: envoy.filters.http.wasm
+            typed_config:
+              "@type": "type.googleapis.com/udpa.type.v1.TypedStruct"
+              type_url: type.googleapis.com/envoy.config.filter.http.wasm.v2.Wasm
+              value:
+                config:
+                  vm_config:
+                    runtime: envoy.wasm.runtime.v8
+                    code:
+                      local:
+                        filename: /etc/istio/extensions/jwt_header.wasm
+                  configuration: |
+                    { "header_map": {"jwt-group": "group"} }
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.http_connection_manager"
+              subFilter:
+                name: "envoy.cors"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+            name: istio_authn
+            typed_config:
+              '@type': type.googleapis.com/istio.envoy.config.filter.http.authn.v2alpha1.FilterConfig
+              policy:
+                origins:
+                - jwt:
+                    issuer: testing@secure.istio.io
+                originIsOptional: false
+                principal_binding: USE_ORIGIN
+
