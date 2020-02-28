@@ -42,7 +42,7 @@ namespace Plugin {
 
 namespace Stats {
 
-constexpr long long kDefaultTCPReportDurationMilliseconds= 15000;  // 15s
+constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
 
 namespace {
 
