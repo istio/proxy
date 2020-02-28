@@ -149,6 +149,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
   // TODO: add config validation to reject the listener if project id is not in
   // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
+  json_options.ignore_unknown_fields = true;
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
