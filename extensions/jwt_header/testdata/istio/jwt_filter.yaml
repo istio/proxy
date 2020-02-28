@@ -80,4 +80,3 @@ spec:
                     issuer: testing@secure.istio.io
                 originIsOptional: false
                 principal_binding: USE_ORIGIN
-
