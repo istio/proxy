@@ -16,6 +16,7 @@
 #pragma once
 
 #include "extensions/common/context.h"
+#include "extensions/stackdriver/common/utils.h"
 
 // OpenCensus is full of unused parameters in metric_service.
 #pragma GCC diagnostic push
@@ -34,9 +35,8 @@ namespace Metric {
 // Returns Stackdriver exporter config option based on node metadata.
 opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
     const wasm::common::NodeInfo& local_node_info,
-    const std::string& test_monitoring_endpoint = "",
-    const std::string& sts_port = "", const std::string& test_token_path = "",
-    const std::string& test_root_pem_file = "");
+    const ::Extensions::Stackdriver::Common::StackdriverStubOption&
+        stub_option);
 
 // registers Opencensus views
 void registerViews();

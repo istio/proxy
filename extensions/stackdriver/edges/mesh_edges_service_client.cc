@@ -17,7 +17,6 @@
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 
 #include "extensions/stackdriver/common/constants.h"
-#include "extensions/stackdriver/common/utils.h"
 #include "google/protobuf/util/time_util.h"
 
 #ifdef NULL_PLUGIN
@@ -50,9 +49,8 @@ using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using google::protobuf::util::TimeUtil;
 
 MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
-    RootContext* root_context, const std::string& edges_endpoint,
-    const std::string& sts_port, const std::string& test_token_file,
-    const std::string& test_root_pem_file)
+    RootContext* root_context,
+    const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option)
     : context_(root_context) {
   success_callback_ = [](size_t) {
     // TODO(douglas-reid): improve logging message.
@@ -69,36 +67,43 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
 
   GrpcService grpc_service;
   grpc_service.mutable_google_grpc()->set_stat_prefix("mesh_edges");
-
-  // use application default creds and default target
-  grpc_service.mutable_google_grpc()->set_target_uri(
-      edges_endpoint.empty() ? kMeshTelemetryService : edges_endpoint);
-  if (sts_port.empty()) {
-    // Security token exchange is not enabled. Use default GCE credential.
-    grpc_service.mutable_google_grpc()
-        ->add_call_credentials()
-        ->mutable_google_compute_engine();
+  if (!stub_option.insecure_endpoint.empty()) {
+    // Do not set up credential if insecure endpoint is provided. This is only
+    // for testing.
+    grpc_service.mutable_google_grpc()->set_target_uri(
+        stub_option.insecure_endpoint);
   } else {
-    ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
-        grpc_service.mutable_google_grpc()
-            ->add_call_credentials()
-            ->mutable_sts_service(),
-        sts_port,
-        test_token_file.empty()
-            ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
-            : test_token_file);
+    // use application default creds and default target
+    grpc_service.mutable_google_grpc()->set_target_uri(
+        stub_option.secure_endpoint.empty() ? kMeshTelemetryService
+                                            : stub_option.secure_endpoint);
+    if (stub_option.sts_port.empty()) {
+      // Security token exchange is not enabled. Use default GCE credential.
+      grpc_service.mutable_google_grpc()
+          ->add_call_credentials()
+          ->mutable_google_compute_engine();
+    } else {
+      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
+          grpc_service.mutable_google_grpc()
+              ->add_call_credentials()
+              ->mutable_sts_service(),
+          stub_option.sts_port,
+          stub_option.test_token_path.empty()
+              ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
+              : stub_option.test_token_path);
+    }
+    grpc_service.mutable_google_grpc()
+        ->mutable_channel_credentials()
+        ->mutable_ssl_credentials()
+        ->mutable_root_certs()
+        ->set_filename(
+            stub_option.test_root_pem_path.empty()
+                ? ::Extensions::Stackdriver::Common::kDefaultRootCertFile
+                : stub_option.test_root_pem_path);
   }
-  grpc_service.mutable_google_grpc()
-      ->mutable_channel_credentials()
-      ->mutable_ssl_credentials()
-      ->mutable_root_certs()
-      ->set_filename(
-          test_root_pem_file.empty()
-              ? ::Extensions::Stackdriver::Common::kDefaultRootCertFile
-              : test_root_pem_file);
 
   grpc_service.SerializeToString(&grpc_service_);
-};
+}
 
 void MeshEdgesServiceClientImpl::reportTrafficAssertions(
     const ReportTrafficAssertionsRequest& request) const {
@@ -108,7 +113,7 @@ void MeshEdgesServiceClientImpl::reportTrafficAssertions(
   context_->grpcSimpleCall(
       grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
       kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
-};
+}
 
 }  // namespace Edges
 }  // namespace Stackdriver
