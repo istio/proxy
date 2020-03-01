@@ -34,8 +34,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::logWarn;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 #endif
 
-// TODO(douglas-reid): confirm values here
-constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
 constexpr char kMeshEdgesService[] =
     "google.cloud.meshtelemetry.v1alpha1.MeshEdgesService";
 constexpr char kReportTrafficAssertions[] = "ReportTrafficAssertions";
@@ -67,41 +65,7 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
 
   GrpcService grpc_service;
   grpc_service.mutable_google_grpc()->set_stat_prefix("mesh_edges");
-  if (!stub_option.insecure_endpoint.empty()) {
-    // Do not set up credential if insecure endpoint is provided. This is only
-    // for testing.
-    grpc_service.mutable_google_grpc()->set_target_uri(
-        stub_option.insecure_endpoint);
-  } else {
-    // use application default creds and default target
-    grpc_service.mutable_google_grpc()->set_target_uri(
-        stub_option.secure_endpoint.empty() ? kMeshTelemetryService
-                                            : stub_option.secure_endpoint);
-    if (stub_option.sts_port.empty()) {
-      // Security token exchange is not enabled. Use default GCE credential.
-      grpc_service.mutable_google_grpc()
-          ->add_call_credentials()
-          ->mutable_google_compute_engine();
-    } else {
-      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
-          grpc_service.mutable_google_grpc()
-              ->add_call_credentials()
-              ->mutable_sts_service(),
-          stub_option.sts_port,
-          stub_option.test_token_path.empty()
-              ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
-              : stub_option.test_token_path);
-    }
-    grpc_service.mutable_google_grpc()
-        ->mutable_channel_credentials()
-        ->mutable_ssl_credentials()
-        ->mutable_root_certs()
-        ->set_filename(
-            stub_option.test_root_pem_path.empty()
-                ? ::Extensions::Stackdriver::Common::kDefaultRootCertFile
-                : stub_option.test_root_pem_path);
-  }
-
+  buildEnvoyGrpcService(stub_option, &grpc_service);
   grpc_service.SerializeToString(&grpc_service_);
 }
 

@@ -24,6 +24,45 @@ namespace Common {
 
 using google::api::MonitoredResource;
 
+void buildEnvoyGrpcService(
+    const StackdriverStubOption &stub_option,
+    ::envoy::config::core::v3::GrpcService *grpc_service) {
+  if (!stub_option.insecure_endpoint.empty()) {
+    // Do not set up credential if insecure endpoint is provided. This is only
+    // for testing.
+    grpc_service->mutable_google_grpc()->set_target_uri(
+        stub_option.insecure_endpoint);
+  } else {
+    grpc_service->mutable_google_grpc()->set_target_uri(
+        stub_option.secure_endpoint.empty() ? stub_option.default_endpoint
+                                            : stub_option.secure_endpoint);
+    if (stub_option.sts_port.empty()) {
+      // Security token exchange is not enabled. Use default GCE credential.
+      grpc_service->mutable_google_grpc()
+          ->add_call_credentials()
+          ->mutable_google_compute_engine();
+    } else {
+      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
+          grpc_service->mutable_google_grpc()
+              ->add_call_credentials()
+              ->mutable_sts_service(),
+          stub_option.sts_port,
+          stub_option.test_token_path.empty()
+              ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
+              : stub_option.test_token_path);
+    }
+
+    grpc_service->mutable_google_grpc()
+        ->mutable_channel_credentials()
+        ->mutable_ssl_credentials()
+        ->mutable_root_certs()
+        ->set_filename(
+            stub_option.test_root_pem_path.empty()
+                ? ::Extensions::Stackdriver::Common::kDefaultRootCertFile
+                : stub_option.test_root_pem_path);
+  }
+}
+
 void getMonitoredResource(const std::string &monitored_resource_type,
                           const ::wasm::common::NodeInfo &local_node_info,
                           MonitoredResource *monitored_resource) {

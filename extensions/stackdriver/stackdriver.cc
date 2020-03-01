@@ -165,7 +165,9 @@ bool StackdriverRootContext::onConfigure(size_t) {
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter = std::make_unique<ExporterImpl>(this, stub_option);
+    auto logging_stub_option = stub_option;
+    logging_stub_option.default_endpoint = kLoggingService;
+    auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -173,8 +175,10 @@ bool StackdriverRootContext::onConfigure(size_t) {
   if (!edge_reporter_) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
+    auto edge_stub_option = stub_option;
+    edge_stub_option.default_endpoint = kMeshTelemetryService;
     auto edges_client =
-        std::make_unique<MeshEdgesServiceClientImpl>(this, stub_option);
+        std::make_unique<MeshEdgesServiceClientImpl>(this, edge_stub_option);
 
     if (config_.max_edges_batch_size() > 0 &&
         config_.max_edges_batch_size() <= 1000) {

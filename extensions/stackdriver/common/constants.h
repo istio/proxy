@@ -87,6 +87,10 @@ constexpr char kSTSSubjectTokenPath[] = "/var/run/secrets/tokens/istio-token";
 constexpr char kSTSSubjectTokenType[] = "urn:ietf:params:oauth:token-type:jwt";
 constexpr char kSTSScope[] = "https://www.googleapis.com/auth/cloud-platform";
 
+// Stackdriver services
+constexpr char kLoggingService[] = "logging.googleapis.com";
+constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
+
 }  // namespace Common
 }  // namespace Stackdriver
 }  // namespace Extensions
