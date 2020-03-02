@@ -17,6 +17,7 @@
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
+#include "src/envoy/tcp/forward_downstream_sni/config.pb.h"
 #include "src/envoy/tcp/forward_downstream_sni/forward_downstream_sni.h"
 
 namespace Envoy {
@@ -33,7 +34,7 @@ ForwardDownstreamSniNetworkFilterConfigFactory::createFilterFactoryFromProto(
 
 ProtobufTypes::MessagePtr
 ForwardDownstreamSniNetworkFilterConfigFactory::createEmptyConfigProto() {
-  return std::make_unique<ProtobufWkt::Empty>();
+  return std::make_unique<io::istio::tcp::forward_downstream_sni::v1::Config>();
 }
 
 /**

@@ -16,6 +16,7 @@
 #include "src/envoy/tcp/sni_verifier/config.h"
 
 #include "envoy/registry/registry.h"
+#include "src/envoy/tcp/sni_verifier/config.pb.h"
 #include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 
 namespace Envoy {
@@ -28,7 +29,7 @@ Network::FilterFactoryCb SniVerifierConfigFactory::createFilterFactoryFromProto(
 }
 
 ProtobufTypes::MessagePtr SniVerifierConfigFactory::createEmptyConfigProto() {
-  return ProtobufTypes::MessagePtr{new Envoy::ProtobufWkt::Empty()};
+  return std::make_unique<io::istio::tcp::sni_verifier::v1::Config>();
 }
 
 Network::FilterFactoryCb
