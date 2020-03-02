@@ -27,12 +27,13 @@ The Jwt header filter is desiged to specifically work with the jwt_authn filter.
 populates dynamic metadata. Jwt header filter reads the validated token from this place.
 
 ## How to deploy
-* Update ingress-gateway deployment image with a build of proxy 1.5 that bundles in the wasm module.
-  `gcr.io/mixologist-142215/proxyv2:1.5-jwtHeader`
+* Update ingress-gateway deployment image with a build of proxy 1.5 that bundles in the jwt-header wasm module.
+ 
+  `kubectl -n istio-system set image deployment/istio-ingressgateway istio-proxy=gcr.io/mixologist-142215/proxyv2:1.5-jwtHeader`
 
 * Deploy the filter at ingress using canned configuration.
 
-`kubectl apply -f testdata/istio/jwt_filter.yaml`
+  `kubectl apply -f testdata/istio/jwt_filter.yaml -n istio-system`
 
 The above configuration will deploy jwt validation filter using unsafe keys from testing@secure.istio.io issuer.
 The configuration specifies that a header named `jwt-group` should be populated from the `group` claim in the validated jwt token.
