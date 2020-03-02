@@ -457,13 +457,6 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
 
   if (is_tcp) {
-    // For TCP, if peer metadata is not available, peer id is set as not found.
-    // Otherwise, we wait for metadata exchange to happen before we report  any
-    // metric.
-    if (peer_node_ptr == nullptr &&
-        peer_id != ::Wasm::Common::kMetadataNotFoundValue) {
-      return false;
-    }
     if (!request_info.is_populated) {
       ::Wasm::Common::populateTCPRequestInfo(
           outbound_, &request_info, destination_node_info.namespace_());
