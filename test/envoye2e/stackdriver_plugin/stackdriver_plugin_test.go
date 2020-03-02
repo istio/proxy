@@ -300,7 +300,7 @@ func TestStackdriverPlugin(t *testing.T) {
 		case req := <-fsdm.RcvMetricReq:
 			isClient, err := verifyCreateTimeSeriesReq(req)
 			if err != nil {
-				t.Errorf("CreateTimeSeries verification failed: %v", err)
+				t.Errorf("CreateTimeSeries verification failed (client=%t): %v", isClient, err)
 			}
 			if isClient {
 				cltMetricRcv = true

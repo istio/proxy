@@ -8,6 +8,7 @@ metric:
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
     destination_service_name: "127.0.0.1:{{ .Vars.ClientPort }}"
     destination_service_namespace: default
+    destination_subset_name: "server"
     destination_workload_name: ratings-v1
     destination_workload_namespace: default
     mesh_uid: mesh

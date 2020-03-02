@@ -36,11 +36,15 @@ admin:
       port_value: {{.Ports.ClientAdminPort}}
 static_resources:
   clusters:
-  - name: client
+  - name: server
+    metadata:
+      filter_metadata:
+        istio:
+          subset: server
     connect_timeout: 5s
     type: STATIC
     load_assignment:
-      cluster_name: client
+      cluster_name: server
       endpoints:
       - lb_endpoints:
         - endpoint:
@@ -79,7 +83,7 @@ static_resources:
               - match:
                   prefix: /
                 route:
-                  cluster: client
+                  cluster: server
                   timeout: 0s
 {{.TLSContext | indent 6 }}`
 

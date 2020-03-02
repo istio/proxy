@@ -21,6 +21,21 @@
 
 using google::protobuf::util::TimeUtil;
 
+// WASM_PROLOG
+#ifndef NULL_PLUGIN
+#include "proxy_wasm_intrinsics.h"
+
+#else  // NULL_PLUGIN
+
+#include "absl/strings/str_split.h"
+#include "extensions/common/wasm/null/null_plugin.h"
+
+using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
+
+#endif  // NULL_PLUGIN
+
+// END WASM_PROLOG
+
 namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
@@ -61,6 +76,17 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
       peer_rev_iter == peer_labels.end() ? kLatest : peer_rev_iter->second;
 
   if (is_outbound) {
+    std::string subset;
+    google::protobuf::Struct istio;
+    getMessageValue({"cluster_metadata", "filter_metadata", "istio"}, &istio);
+    const auto key_it = istio.fields().find("subset");
+    if (key_it != istio.fields().end()) {
+      const auto &keys_value = key_it->second;
+      if (keys_value.kind_case() == google::protobuf::Value::kStringValue) {
+        subset = keys_value.string_value();
+      }
+    }
+
     opencensus::stats::Record(
         {{clientRequestCountMeasure(), 1},
          {clientRequestBytesMeasure(), request_info.request_size},
@@ -88,6 +114,7 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
          {destinationCanonicalServiceNamespaceKey(),
           peer_node_info.namespace_()},
          {destinationCanonicalRevisionKey(), peer_canonical_rev},
+         {destinationSubsetNameKey(), subset},
          {sourceCanonicalServiceNameKey(), local_canonical_name},
          {sourceCanonicalServiceNamespaceKey(), local_node_info.namespace_()},
          {sourceCanonicalRevisionKey(), local_canonical_rev}});

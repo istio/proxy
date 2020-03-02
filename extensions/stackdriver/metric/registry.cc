@@ -122,6 +122,17 @@ StackdriverOptions getStackdriverOptions(
     view_descriptor.RegisterForExport();                     \
   }
 
+#define REGISTER_CLIENT_COUNT_VIEW(_v)                              \
+  void register##_v##View() {                                       \
+    const ViewDescriptor view_descriptor =                          \
+        ViewDescriptor()                                            \
+            .set_name(k##_v##View)                                  \
+            .set_measure(k##_v##Measure)                            \
+            .set_aggregation(Aggregation::Count()) ADD_CLIENT_TAGS; \
+    View view(view_descriptor);                                     \
+    view_descriptor.RegisterForExport();                            \
+  }
+
 #define REGISTER_DISTRIBUTION_VIEW(_v)                              \
   void register##_v##View() {                                       \
     const ViewDescriptor view_descriptor =                          \
@@ -132,6 +143,18 @@ StackdriverOptions getStackdriverOptions(
                 BucketBoundaries::Exponential(20, 1, 2))) ADD_TAGS; \
     View view(view_descriptor);                                     \
     view_descriptor.RegisterForExport();                            \
+  }
+
+#define REGISTER_CLIENT_DISTRIBUTION_VIEW(_v)                              \
+  void register##_v##View() {                                              \
+    const ViewDescriptor view_descriptor =                                 \
+        ViewDescriptor()                                                   \
+            .set_name(k##_v##View)                                         \
+            .set_measure(k##_v##Measure)                                   \
+            .set_aggregation(Aggregation::Distribution(                    \
+                BucketBoundaries::Exponential(20, 1, 2))) ADD_CLIENT_TAGS; \
+    View view(view_descriptor);                                            \
+    view_descriptor.RegisterForExport();                                   \
   }
 
 #define ADD_TAGS                                             \
@@ -158,15 +181,40 @@ StackdriverOptions getStackdriverOptions(
       .add_column(destinationCanonicalRevisionKey())         \
       .add_column(sourceCanonicalRevisionKey())
 
+#define ADD_CLIENT_TAGS                                      \
+  .add_column(requestOperationKey())                         \
+      .add_column(requestProtocolKey())                      \
+      .add_column(serviceAuthenticationPolicyKey())          \
+      .add_column(meshUIDKey())                              \
+      .add_column(destinationServiceNameKey())               \
+      .add_column(destinationServiceNamespaceKey())          \
+      .add_column(destinationPortKey())                      \
+      .add_column(responseCodeKey())                         \
+      .add_column(sourcePrincipalKey())                      \
+      .add_column(sourceWorkloadNameKey())                   \
+      .add_column(sourceWorkloadNamespaceKey())              \
+      .add_column(sourceOwnerKey())                          \
+      .add_column(destinationPrincipalKey())                 \
+      .add_column(destinationWorkloadNameKey())              \
+      .add_column(destinationWorkloadNamespaceKey())         \
+      .add_column(destinationOwnerKey())                     \
+      .add_column(destinationCanonicalServiceNameKey())      \
+      .add_column(destinationCanonicalServiceNamespaceKey()) \
+      .add_column(sourceCanonicalServiceNameKey())           \
+      .add_column(sourceCanonicalServiceNamespaceKey())      \
+      .add_column(destinationCanonicalRevisionKey())         \
+      .add_column(sourceCanonicalRevisionKey())              \
+      .add_column(destinationSubsetNameKey())
+
 // Functions to register opencensus views to export.
 REGISTER_COUNT_VIEW(ServerRequestCount)
 REGISTER_DISTRIBUTION_VIEW(ServerRequestBytes)
 REGISTER_DISTRIBUTION_VIEW(ServerResponseBytes)
 REGISTER_DISTRIBUTION_VIEW(ServerResponseLatencies)
-REGISTER_COUNT_VIEW(ClientRequestCount)
-REGISTER_DISTRIBUTION_VIEW(ClientRequestBytes)
-REGISTER_DISTRIBUTION_VIEW(ClientResponseBytes)
-REGISTER_DISTRIBUTION_VIEW(ClientRoundtripLatencies)
+REGISTER_CLIENT_COUNT_VIEW(ClientRequestCount)
+REGISTER_CLIENT_DISTRIBUTION_VIEW(ClientRequestBytes)
+REGISTER_CLIENT_DISTRIBUTION_VIEW(ClientResponseBytes)
+REGISTER_CLIENT_DISTRIBUTION_VIEW(ClientRoundtripLatencies)
 
 /*
  * measure function macros
@@ -246,6 +294,7 @@ TAG_KEY_FUNC(destination_canonical_service_namespace,
              destinationCanonicalServiceNamespace)
 TAG_KEY_FUNC(source_canonical_revision, sourceCanonicalRevision)
 TAG_KEY_FUNC(destination_canonical_revision, destinationCanonicalRevision)
+TAG_KEY_FUNC(destination_subset_name, destinationSubsetName)
 
 }  // namespace Metric
 }  // namespace Stackdriver

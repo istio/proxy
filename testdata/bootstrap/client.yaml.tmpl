@@ -34,6 +34,10 @@ static_resources:
     http2_protocol_options: {}
     name: xds_cluster
   - name: server
+    metadata:
+      filter_metadata:
+        istio:
+          subset: server
     connect_timeout: 1s
     type: STATIC
     http2_protocol_options: {}

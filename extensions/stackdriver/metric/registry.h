@@ -64,6 +64,7 @@ opencensus::tags::TagKey sourceCanonicalServiceNameKey();
 opencensus::tags::TagKey sourceCanonicalServiceNamespaceKey();
 opencensus::tags::TagKey destinationCanonicalRevisionKey();
 opencensus::tags::TagKey sourceCanonicalRevisionKey();
+opencensus::tags::TagKey destinationSubsetNameKey();
 
 // Opencensus measure functions.
 opencensus::stats::MeasureInt64 serverRequestCountMeasure();
