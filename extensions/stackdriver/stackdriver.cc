@@ -105,12 +105,12 @@ std::string getCACertFile() {
 
 // Get secure stackdriver endpoint for e2e testing.
 std::string getSecureEndpoint() {
-  std::string monitoring_service;
+  std::string secure_endpoint;
   if (!getValue({"node", "metadata", kSecureStackdriverEndpointKey},
-                &monitoring_service)) {
+                &secure_endpoint)) {
     return "";
   }
-  return monitoring_service;
+  return secure_endpoint;
 }
 
 // Get insecure stackdriver endpoint for e2e testing.
@@ -155,6 +155,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
 
+  // Common stackdriver stub option for logging, edge and monitoring.
   ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
   stub_option.sts_port = getSTSPort();
   stub_option.test_token_path = getTokenFile();
@@ -216,8 +217,10 @@ bool StackdriverRootContext::onConfigure(size_t) {
   }
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
+  auto monitoring_stub_option = stub_option;
+  monitoring_stub_option.default_endpoint = kMonitoringService;
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, stub_option));
+      getStackdriverOptions(local_node_info_, monitoring_stub_option));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 

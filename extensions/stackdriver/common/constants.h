@@ -88,6 +88,7 @@ constexpr char kSTSSubjectTokenType[] = "urn:ietf:params:oauth:token-type:jwt";
 constexpr char kSTSScope[] = "https://www.googleapis.com/auth/cloud-platform";
 
 // Stackdriver services
+constexpr char kMonitoringService[] = "monitoring.googleapis.com";
 constexpr char kLoggingService[] = "logging.googleapis.com";
 constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
 

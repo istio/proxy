@@ -31,8 +31,6 @@ using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
 using wasm::common::NodeInfo;
 
-constexpr char kStackdriverStatsAddress[] = "monitoring.googleapis.com";
-
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
     const wasm::common::NodeInfo& local_node_info,
@@ -62,7 +60,7 @@ StackdriverOptions getStackdriverOptions(
         &sts_options, stub_option.sts_port, token_path);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
     auto channel = ::grpc::CreateChannel(
-        stub_option.secure_endpoint.empty() ? kStackdriverStatsAddress
+        stub_option.secure_endpoint.empty() ? stub_option.default_endpoint
                                             : stub_option.secure_endpoint,
         grpc::CompositeChannelCredentials(channel_creds, call_creds));
     options.metric_service_stub =
