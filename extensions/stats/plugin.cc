@@ -16,6 +16,7 @@
 #include "extensions/stats/plugin.h"
 
 #include "absl/strings/ascii.h"
+#include "extensions/common/util.h"
 #include "extensions/stats/proxy_expr.h"
 #include "google/protobuf/util/time_util.h"
 
@@ -43,6 +44,7 @@ namespace Plugin {
 namespace Stats {
 
 constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
+const std::string NO_HEALTHY_UPSTREAM = "UH";
 
 namespace {
 
@@ -457,6 +459,19 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
 
   if (is_tcp) {
+    // For TCP, if peer metadata is not available, peer id is set as not found.
+    // Otherwise, we wait for metadata exchange to happen before we report  any
+    // metric.
+    // We skip this wait  if upstream is unhealthy as we won't get peer metadata
+    // in that case.
+    uint64_t response_flags = 0;
+    getValue({"response", "flags"}, &response_flags);
+    if (peer_node_ptr == nullptr &&
+        peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
+        !(::Wasm::Common::parseResponseFlag(response_flags)
+              .find(NO_HEALTHY_UPSTREAM) != std::string::npos)) {
+      return false;
+    }
     if (!request_info.is_populated) {
       ::Wasm::Common::populateTCPRequestInfo(
           outbound_, &request_info, destination_node_info.namespace_());
