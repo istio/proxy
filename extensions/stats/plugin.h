@@ -323,28 +323,37 @@ class PluginContext : public Context {
 
   FilterStatus onNewConnection() override {
     request_info_->tcp_connections_opened++;
+    LOG_INFO(absl::StrCat("Reached here ",context_id_));
     rootContext()->addToTCPRequestQueue(context_id_, request_info_);
     return FilterStatus::Continue;
   }
 
   // Called on onData call, so counting the data that is received.
   FilterStatus onDownstreamData(size_t size, bool) override {
+    LOG_INFO(absl::StrCat("Reached here ",context_id_));
+    
     request_info_->tcp_received_bytes += size;
     return FilterStatus::Continue;
   }
   // Called on onWrite call, so counting the data that is sent.
   FilterStatus onUpstreamData(size_t size, bool) override {
+    LOG_INFO(absl::StrCat("Reached here ",context_id_));
+    
     request_info_->tcp_sent_bytes += size;
     return FilterStatus::Continue;
   }
 
   void onDownstreamConnectionClose(PeerType) override {
+    LOG_INFO(absl::StrCat("Reached here ",context_id_));
+    
     downstream_closed_ = true;
     if (upstream_closed_ && !tcp_connection_closed_) {
       logTCPOnClose();
     }
   }
   void onUpstreamConnectionClose(PeerType) override {
+    LOG_INFO(absl::StrCat("Reached here ",context_id_));
+    
     upstream_closed_ = true;
     if (downstream_closed_ && !tcp_connection_closed_) {
       logTCPOnClose();

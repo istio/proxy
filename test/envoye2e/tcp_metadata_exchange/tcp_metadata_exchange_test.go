@@ -71,7 +71,7 @@ const metadataExchangeIstioClientFilter = `
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "0.00000001s" }
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "0.1s" }
 `
 
 const tlsContext = `
@@ -301,15 +301,20 @@ func sendRequest(response chan<- error, config *tls.Config, port uint16, wg *syn
 		response <- err
 	}
 
-	conn.Write([]byte("world \n"))
-	reply := make([]byte, 256)
-	n, err := conn.Read(reply)
-	if err != nil {
-		response <- err
-	}
+	for i := 1; i <= 30; i++ {
+		conn.Write([]byte("world \n"))
+		reply := make([]byte, 256)
+		n, err := conn.Read(reply)
+		if err != nil {
+			response <- err
+			break
+		}
 
-	if fmt.Sprintf("%s", reply[:n]) != "hello world \n" {
-		response <- fmt.Errorf("verification Failed. Expected: hello world. Got: %v", fmt.Sprintf("%s", reply[:n]))
+		if fmt.Sprintf("%s", reply[:n]) != "hello world \n" {
+			response <- fmt.Errorf("verification Failed. Expected: hello world. Got: %v", fmt.Sprintf("%s", reply[:n]))
+			break
+		}
+		time.Sleep(time.Second * 1)
 	}
 
 	_ = conn.Close()

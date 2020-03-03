@@ -89,7 +89,7 @@ using MetadataExchangeConfigSharedPtr = std::shared_ptr<MetadataExchangeConfig>;
 /**
  * A MetadataExchange filter instance. One per connection.
  */
-class MetadataExchangeFilter : public Network::Filter {
+class MetadataExchangeFilter : public Network::Filter, public Logger::Loggable<Logger::Id::filter> {
  public:
   MetadataExchangeFilter(MetadataExchangeConfigSharedPtr config,
                          const LocalInfo::LocalInfo& local_info)

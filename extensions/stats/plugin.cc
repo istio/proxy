@@ -377,6 +377,10 @@ bool PluginRootContext::onConfigure(size_t) {
         ::google::protobuf::util::TimeUtil::DurationToMilliseconds(
             config_.tcp_reporting_duration());
   }
+  if(tcp_report_duration_milis == 0){
+    tcp_report_duration_milis  = kDefaultTCPReportDurationMilliseconds;
+  }
+  LOG_INFO(absl::StrCat("Reached here ",tcp_report_duration_milis));
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
 
   return true;
@@ -428,15 +432,18 @@ bool PluginRootContext::onDone() {
 }
 
 void PluginRootContext::onTick() {
+  LOG_INFO("Reached here");
   if (tcp_request_queue_.size() < 1) {
     return;
   }
   for (auto const& item : tcp_request_queue_) {
     // requestinfo is null, so continue.
     if (item.second == nullptr) {
+      LOG_INFO("Reached here");
       continue;
     }
     if (report(*item.second, true)) {
+      LOG_INFO("Reached here");
       // Clear existing data in TCP metrics, so that we don't double count the
       // metrics.
       clearTcpMetrics(*item.second);
@@ -457,6 +464,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
 
   if (is_tcp) {
+    LOG_INFO("Reached here");
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report  any
     // metric.
@@ -488,6 +496,8 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   if (stats_it != metrics_.end()) {
     for (auto& stat : stats_it->second) {
       stat.record(request_info);
+      LOG_INFO(absl::StrCat("Reached here "));
+    
       LOG_DEBUG(
           absl::StrCat("metricKey cache hit ", ", stat=", stat.metric_id_));
     }
@@ -507,6 +517,8 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     auto stat = statgen.resolve(istio_dimensions_);
     LOG_DEBUG(absl::StrCat("metricKey cache miss ", statgen.name(), " ",
                            ", stat=", stat.metric_id_));
+                           LOG_INFO(absl::StrCat("Reached here "));
+    
     stat.record(request_info);
     stats.push_back(stat);
   }

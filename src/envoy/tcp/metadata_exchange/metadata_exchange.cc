@@ -258,6 +258,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_it->second;
+    ENVOY_LOG(info,"Reached  here set filter state");
     setFilterState(config_->filter_direction_ == FilterDirection::Downstream
                        ? DownstreamMetadataKey
                        : UpstreamMetadataKey,
@@ -267,6 +268,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
       value_struct.fields().find(ExchangeMetadataHeaderId);
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_id_it->second;
+    ENVOY_LOG(info,"Reached  here set filter state");
     setFilterState(config_->filter_direction_ == FilterDirection::Downstream
                        ? DownstreamMetadataIdKey
                        : UpstreamMetadataIdKey,
