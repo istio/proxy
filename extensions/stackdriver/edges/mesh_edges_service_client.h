@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "extensions/stackdriver/common/utils.h"
 #include "extensions/stackdriver/edges/edges.pb.h"
 
 #ifndef NULL_PLUGIN
@@ -56,11 +57,10 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
   // root_context is the wasm runtime context
   // edges_endpoint is an optional param used to specify alternative service
   // address.
-  MeshEdgesServiceClientImpl(RootContext* root_context,
-                             const std::string& edges_endpoint,
-                             const std::string& sts_port = "",
-                             const std::string& test_token_path = "",
-                             const std::string& test_root_pem_file = "");
+  MeshEdgesServiceClientImpl(
+      RootContext* root_context,
+      const ::Extensions::Stackdriver::Common::StackdriverStubOption&
+          stub_option);
 
   void reportTrafficAssertions(
       const ReportTrafficAssertionsRequest& request) const override;

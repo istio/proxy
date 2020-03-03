@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#pragma once
+
 #include "envoy/config/core/v3/grpc_service.pb.h"
 #include "extensions/common/context.h"
 #include "google/api/monitored_resource.pb.h"
@@ -21,6 +23,22 @@
 namespace Extensions {
 namespace Stackdriver {
 namespace Common {
+
+// StackdriverStubOption includes all the configuration to construct stackdriver
+// gRPC stubs.
+struct StackdriverStubOption {
+  std::string sts_port;
+  std::string default_endpoint;
+  std::string test_token_path;
+  std::string test_root_pem_path;
+  std::string secure_endpoint;
+  std::string insecure_endpoint;
+};
+
+// Build Envoy GrpcService proto based on the given stub option.
+void buildEnvoyGrpcService(
+    const StackdriverStubOption &option,
+    ::envoy::config::core::v3::GrpcService *grpc_service);
 
 // Gets monitored resource proto based on the type and node metadata info.
 // Only two types of monitored resource could be returned: k8s_container or

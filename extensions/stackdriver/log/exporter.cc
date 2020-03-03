@@ -16,7 +16,6 @@
 #include "extensions/stackdriver/log/exporter.h"
 
 #include "extensions/stackdriver/common/constants.h"
-#include "extensions/stackdriver/common/utils.h"
 
 #ifdef NULL_PLUGIN
 namespace Envoy {
@@ -34,7 +33,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 
 #endif
 
-constexpr char kGoogleStackdriverLoggingAddress[] = "logging.googleapis.com";
 constexpr char kGoogleLoggingService[] = "google.logging.v2.LoggingServiceV2";
 constexpr char kGoogleWriteLogEntriesMethod[] = "WriteLogEntries";
 constexpr int kDefaultTimeoutMillisecond = 10000;
@@ -43,11 +41,10 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Log {
 
-ExporterImpl::ExporterImpl(RootContext* root_context,
-                           const std::string& logging_service_endpoint,
-                           const std::string& sts_port,
-                           const std::string& test_token_file,
-                           const std::string& test_root_pem_file) {
+ExporterImpl::ExporterImpl(
+    RootContext* root_context,
+    const ::Extensions::Stackdriver::Common::StackdriverStubOption&
+        stub_option) {
   context_ = root_context;
   Metric export_call(MetricType::Counter, "stackdriver_filter",
                      {MetricTag{"type", MetricTag::TagType::String},
@@ -72,35 +69,7 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
   // Construct grpc_service for the Stackdriver gRPC call.
   GrpcService grpc_service;
   grpc_service.mutable_google_grpc()->set_stat_prefix("stackdriver_logging");
-
-  grpc_service.mutable_google_grpc()->set_target_uri(
-      logging_service_endpoint.empty() ? kGoogleStackdriverLoggingAddress
-                                       : logging_service_endpoint);
-  if (sts_port.empty()) {
-    // Security token exchange is not enabled. Use default GCE credential.
-    grpc_service.mutable_google_grpc()
-        ->add_call_credentials()
-        ->mutable_google_compute_engine();
-  } else {
-    ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
-        grpc_service.mutable_google_grpc()
-            ->add_call_credentials()
-            ->mutable_sts_service(),
-        sts_port,
-        test_token_file.empty()
-            ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
-            : test_token_file);
-  }
-
-  grpc_service.mutable_google_grpc()
-      ->mutable_channel_credentials()
-      ->mutable_ssl_credentials()
-      ->mutable_root_certs()
-      ->set_filename(
-          test_root_pem_file.empty()
-              ? ::Extensions::Stackdriver::Common::kDefaultRootCertFile
-              : test_root_pem_file);
-
+  buildEnvoyGrpcService(stub_option, &grpc_service);
   grpc_service.SerializeToString(&grpc_service_string_);
 }
 

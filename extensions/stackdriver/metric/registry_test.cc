@@ -74,7 +74,8 @@ TEST(RegistryTest, getStackdriverOptionsProjectID) {
   wasm::common::NodeInfo node_info;
   (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
       "test_project";
-  auto options = getStackdriverOptions(node_info);
+  ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
+  auto options = getStackdriverOptions(node_info, stub_option);
   EXPECT_EQ(options.project_id, "test_project");
 }
 
@@ -83,7 +84,8 @@ TEST(RegistryTest, getStackdriverOptionsMonitoredResource) {
   auto expected_server_monitored_resource = serverMonitoredResource();
   auto expected_client_monitored_resource = clientMonitoredResource();
 
-  auto options = getStackdriverOptions(node_info);
+  ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
+  auto options = getStackdriverOptions(node_info, stub_option);
   EXPECT_EQ(options.project_id, "test_project");
   EXPECT_TRUE(MessageDifferencer::Equals(
       options.per_metric_monitored_resource.at(Common::kServerRequestCountView),

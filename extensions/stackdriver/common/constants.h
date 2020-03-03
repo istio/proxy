@@ -71,10 +71,9 @@ constexpr char kOutboundRootContextId[] = "stackdriver_outbound";
 constexpr char kInboundRootContextId[] = "stackdriver_inbound";
 
 // Stackdriver service endpoint node metadata key.
-constexpr char kMonitoringEndpointKey[] = "STACKDRIVER_MONITORING_ENDPOINT";
-constexpr char kLoggingEndpointKey[] = "STACKDRIVER_LOGGING_ENDPOINT";
-constexpr char kMeshTelemetryEndpointKey[] =
-    "STACKDRIVER_MESH_TELEMETRY_ENDPOINT";
+constexpr char kSecureStackdriverEndpointKey[] = "SECURE_STACKDRIVER_ENDPOINT";
+constexpr char kInsecureStackdriverEndpointKey[] =
+    "INSECURE_STACKDRIVER_ENDPOINT";
 constexpr char kMonitoringExportIntervalKey[] =
     "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
 constexpr char kTokenFile[] = "STACKDRIVER_TOKEN_FILE";
@@ -87,6 +86,11 @@ constexpr char kSTSPortKey[] = "STS_PORT";
 constexpr char kSTSSubjectTokenPath[] = "/var/run/secrets/tokens/istio-token";
 constexpr char kSTSSubjectTokenType[] = "urn:ietf:params:oauth:token-type:jwt";
 constexpr char kSTSScope[] = "https://www.googleapis.com/auth/cloud-platform";
+
+// Stackdriver services
+constexpr char kMonitoringService[] = "monitoring.googleapis.com";
+constexpr char kLoggingService[] = "logging.googleapis.com";
+constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
 
 }  // namespace Common
 }  // namespace Stackdriver

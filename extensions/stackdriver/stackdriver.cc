@@ -63,38 +63,6 @@ constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
 
 namespace {
 
-// Gets monitoring service endpoint from node metadata. Returns empty string if
-// it is not found.
-std::string getMonitoringEndpoint() {
-  std::string monitoring_service;
-  if (!getValue({"node", "metadata", kMonitoringEndpointKey},
-                &monitoring_service)) {
-    return "";
-  }
-  return monitoring_service;
-}
-
-// Gets logging service endpoint from node metadata. Returns empty string if it
-// is not found.
-std::string getLoggingEndpoint() {
-  std::string logging_service;
-  if (!getValue({"node", "metadata", kLoggingEndpointKey}, &logging_service)) {
-    return "";
-  }
-  return logging_service;
-}
-
-// Get mesh telemetry service endpoint from node metadata. Returns empty string
-// if it is not found.
-std::string getMeshTelemetryEndpoint() {
-  std::string mesh_telemetry_service;
-  if (!getValue({"node", "metadata", kMeshTelemetryEndpointKey},
-                &mesh_telemetry_service)) {
-    return "";
-  }
-  return mesh_telemetry_service;
-}
-
 // Get metric export interval from node metadata. Returns 60 seconds if interval
 // is not found in metadata.
 int getExportInterval() {
@@ -135,6 +103,26 @@ std::string getCACertFile() {
   return ca_cert_file;
 }
 
+// Get secure stackdriver endpoint for e2e testing.
+std::string getSecureEndpoint() {
+  std::string secure_endpoint;
+  if (!getValue({"node", "metadata", kSecureStackdriverEndpointKey},
+                &secure_endpoint)) {
+    return "";
+  }
+  return secure_endpoint;
+}
+
+// Get insecure stackdriver endpoint for e2e testing.
+std::string getInsecureEndpoint() {
+  std::string insecure_endpoint;
+  if (!getValue({"node", "metadata", kInsecureStackdriverEndpointKey},
+                &insecure_endpoint)) {
+    return "";
+  }
+  return insecure_endpoint;
+}
+
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(size_t) {
@@ -166,12 +154,21 @@ bool StackdriverRootContext::onConfigure(size_t) {
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
-  std::string sts_port = getSTSPort();
+
+  // Common stackdriver stub option for logging, edge and monitoring.
+  ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
+  stub_option.sts_port = getSTSPort();
+  stub_option.test_token_path = getTokenFile();
+  stub_option.test_root_pem_path = getCACertFile();
+  stub_option.secure_endpoint = getSecureEndpoint();
+  stub_option.insecure_endpoint = getInsecureEndpoint();
+
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter = std::make_unique<ExporterImpl>(
-        this, getLoggingEndpoint(), sts_port, getTokenFile(), getCACertFile());
+    auto logging_stub_option = stub_option;
+    logging_stub_option.default_endpoint = kLoggingService;
+    auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -179,9 +176,10 @@ bool StackdriverRootContext::onConfigure(size_t) {
   if (!edge_reporter_) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
-    auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-        this, getMeshTelemetryEndpoint(), sts_port, getTokenFile(),
-        getCACertFile());
+    auto edge_stub_option = stub_option;
+    edge_stub_option.default_endpoint = kMeshTelemetryService;
+    auto edges_client =
+        std::make_unique<MeshEdgesServiceClientImpl>(this, edge_stub_option);
 
     if (config_.max_edges_batch_size() > 0 &&
         config_.max_edges_batch_size() <= 1000) {
@@ -219,9 +217,10 @@ bool StackdriverRootContext::onConfigure(size_t) {
   }
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
+  auto monitoring_stub_option = stub_option;
+  monitoring_stub_option.default_endpoint = kMonitoringService;
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, getMonitoringEndpoint(), sts_port,
-                            getTokenFile(), getCACertFile()));
+      getStackdriverOptions(local_node_info_, monitoring_stub_option));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 
