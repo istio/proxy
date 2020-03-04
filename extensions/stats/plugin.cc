@@ -16,6 +16,7 @@
 #include "extensions/stats/plugin.h"
 
 #include "absl/strings/ascii.h"
+#include "extensions/common/util.h"
 #include "extensions/stats/proxy_expr.h"
 #include "google/protobuf/util/time_util.h"
 
@@ -43,6 +44,8 @@ namespace Plugin {
 namespace Stats {
 
 constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
+// No healthy upstream.
+constexpr uint64_t kNoHealthyUpstream = 0x2;
 
 namespace {
 
@@ -436,6 +439,11 @@ void PluginRootContext::onTick() {
     if (item.second == nullptr) {
       continue;
     }
+    Context* context = getContext(item.first);
+    if (context == nullptr) {
+      continue;
+    }
+    context->setEffectiveContext();
     if (report(*item.second, true)) {
       // Clear existing data in TCP metrics, so that we don't double count the
       // metrics.
@@ -460,8 +468,13 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report  any
     // metric.
+    // We skip this wait  if upstream is unhealthy as we won't get peer metadata
+    // in that case.
+    uint64_t response_flags = 0;
+    getValue({"response", "flags"}, &response_flags);
     if (peer_node_ptr == nullptr &&
-        peer_id != ::Wasm::Common::kMetadataNotFoundValue) {
+        peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
+        !(response_flags & kNoHealthyUpstream)) {
       return false;
     }
     if (!request_info.is_populated) {
