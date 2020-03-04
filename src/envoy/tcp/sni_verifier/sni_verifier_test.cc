@@ -72,7 +72,8 @@ class SniVerifierFilterTest : public testing::Test {
   void runTestForClientHello(std::string outer_sni, std::string inner_sni,
                              Network::FilterStatus expected_status,
                              size_t data_installment_size = UINT_MAX) {
-    auto client_hello = Tls::Test::generateClientHello(inner_sni, "");
+    auto client_hello = Tls::Test::generateClientHello(
+        TLS1_VERSION, TLS1_3_VERSION, inner_sni, "");
     runTestForData(outer_sni, client_hello, expected_status,
                    data_installment_size);
   }
