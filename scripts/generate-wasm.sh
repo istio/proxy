@@ -30,7 +30,7 @@ function usage() {
 }
 
 BUILD_CONTAINER=0
-PUSH_CONTAINER=0
+PUSH_DOCKER_IMAGE=0
 DST_BUCKET=""
 
 while getopts bpcd: arg ; do
