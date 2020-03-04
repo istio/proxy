@@ -46,7 +46,6 @@ namespace Stats {
 constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
 // No healthy upstream.
 constexpr uint64_t kNoHealthyUpstream = 0x2;
-using ::Envoy::Extensions::Common::Wasm::Null::Plugin::getContext;
 
 namespace {
 
