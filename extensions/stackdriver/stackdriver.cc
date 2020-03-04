@@ -115,7 +115,7 @@ int getExportInterval() {
 // provided or "0" is provided, emtpy will be returned.
 std::string getSTSPort() {
   std::string sts_port;
-  if (getStringValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
+  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
       sts_port != "0") {
     return sts_port;
   }
@@ -146,17 +146,11 @@ bool StackdriverRootContext::onConfigure(
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
   std::string sts_port = getSTSPort();
-  std::string project_id;
-  const auto& platform_metadata = local_node_info_.platform_metadata();
-  const auto project_iter = platform_metadata.find(kGCPProjectKey);
-  if (project_iter != platform_metadata.end()) {
-    project_id = project_iter->second;
-  }
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter = std::make_unique<ExporterImpl>(this, getLoggingEndpoint(),
-                                                   project_id, sts_port);
+    auto exporter =
+        std::make_unique<ExporterImpl>(this, getLoggingEndpoint(), sts_port);
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -165,7 +159,7 @@ bool StackdriverRootContext::onConfigure(
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-        this, getMeshTelemetryEndpoint(), project_id, sts_port);
+        this, getMeshTelemetryEndpoint(), sts_port);
     edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
                                                     std::move(edges_client));
   }
