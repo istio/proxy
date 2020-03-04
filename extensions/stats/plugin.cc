@@ -44,7 +44,9 @@ namespace Plugin {
 namespace Stats {
 
 constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
-const std::string NO_HEALTHY_UPSTREAM = "UH";
+// No healthy upstream.
+constexpr uint64_t kNoHealthyUpstream = 0x2;
+using ::Envoy::Extensions::Common::Wasm::Null::Plugin::getContext;
 
 namespace {
 
@@ -438,6 +440,11 @@ void PluginRootContext::onTick() {
     if (item.second == nullptr) {
       continue;
     }
+    Context* context = getContext(item.first);
+    if (context == nullptr) {
+      continue;
+    }
+    context->setEffectiveContext();
     if (report(*item.second, true)) {
       // Clear existing data in TCP metrics, so that we don't double count the
       // metrics.
@@ -468,8 +475,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     getValue({"response", "flags"}, &response_flags);
     if (peer_node_ptr == nullptr &&
         peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
-        !(::Wasm::Common::parseResponseFlag(response_flags)
-              .find(NO_HEALTHY_UPSTREAM) != std::string::npos)) {
+        !(response_flags & kNoHealthyUpstream)) {
       return false;
     }
     if (!request_info.is_populated) {
