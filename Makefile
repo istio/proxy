@@ -19,6 +19,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SHELL := /bin/bash
+
 # allow optional per-repo overrides
 -include Makefile.overrides.mk
 
@@ -29,7 +31,7 @@
 export BUILD_WITH_CONTAINER ?= 0
 
 # Version of image used within build container
-IMAGE_VERSION ?= master-2020-02-14T13-09-14
+IMAGE_VERSION ?= master-2020-03-04T04-41-33
 
 LOCAL_ARCH := $(shell uname -m)
 ifeq ($(LOCAL_ARCH),x86_64)
@@ -68,6 +70,7 @@ UID = $(shell id -u)
 GID = `grep '^docker:' /etc/group | cut -f3 -d:`
 PWD = $(shell pwd)
 
+$(info If you suffer an unexpected failure, please reference: https://github.com/istio/istio/wiki/Troubleshooting-Development-Environment)
 $(info Building with the build container: $(IMG).)
 
 # Determine the timezone across various platforms to pass into the
