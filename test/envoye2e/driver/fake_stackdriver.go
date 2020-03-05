@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -26,6 +28,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
+	jsonpb "github.com/golang/protobuf/jsonpb"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
@@ -36,15 +39,20 @@ import (
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
 type MetricServer struct {
 	delay        time.Duration
+	listTsResp   monitoringpb.ListTimeSeriesResponse
 	RcvMetricReq chan *monitoringpb.CreateTimeSeriesRequest
+	mux          sync.Mutex
 }
 
 // LoggingServer is a fake stackdriver server which implements all of logging v2 service method.
 type LoggingServer struct {
-	delay         time.Duration
-	RcvLoggingReq chan *logging.WriteLogEntriesRequest
+	delay            time.Duration
+	listLogEntryResp logging.ListLogEntriesResponse
+	RcvLoggingReq    chan *logging.WriteLogEntriesRequest
+	mux              sync.Mutex
 }
 
+// MeshEdgesServiceServer is a fake stackdriver server which implements all of mesh edge service method.
 type MeshEdgesServiceServer struct {
 	delay                   time.Duration
 	RcvTrafficAssertionsReq chan *edgespb.ReportTrafficAssertionsRequest
@@ -90,11 +98,17 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 
 // ListTimeSeries implements ListTimeSeries method.
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
-	return &monitoringpb.ListTimeSeriesResponse{}, nil
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	return &s.listTsResp, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
+	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.listTsResp.TimeSeries = append(s.listTsResp.TimeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
 	return &empty.Empty{}, nil
@@ -107,6 +121,10 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
+	log.Printf("receive WriteLogEntriesRequest %+v", *req)
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.listLogEntryResp.Entries = append(s.listLogEntryResp.Entries, req.Entries...)
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
 	return &logging.WriteLogEntriesResponse{}, nil
@@ -114,7 +132,9 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 
 // ListLogEntries implements ListLogEntries method.
 func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-	return &logging.ListLogEntriesResponse{}, nil
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	return &s.listLogEntryResp, nil
 }
 
 // ListLogs implements ListLogs method.
@@ -133,9 +153,22 @@ func (s *LoggingServer) ListMonitoredResourceDescriptors(
 func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 	ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (
 	*edgespb.ReportTrafficAssertionsResponse, error) {
+	log.Printf("receive ReportTrafficAssertionsRequest %+v", *req)
 	e.RcvTrafficAssertionsReq <- req
 	time.Sleep(e.delay)
 	return &edgespb.ReportTrafficAssertionsResponse{}, nil
+}
+
+// GetTimeSeries returns all received time series in a ListTimeSeriesResponse as a marshaled json string
+func (s *MetricServer) GetTimeSeries(w http.ResponseWriter, req *http.Request) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	var m jsonpb.Marshaler
+	if s, err := m.MarshalToString(&s.listTsResp); err != nil {
+		fmt.Fprintln(w, "Fail to marshal received time series")
+	} else {
+		fmt.Fprintln(w, s)
+	}
 }
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
@@ -196,4 +229,31 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 		}
 	}()
 	return fsdms, fsdls, edgesSvc, grpcServer
+}
+
+func RunFakeStackdriver(port uint16) error {
+	grpcServer := grpc.NewServer()
+	fsdms := &MetricServer{
+		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 100),
+	}
+	fsdls := &LoggingServer{
+		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 100),
+	}
+	edgesSvc := &MeshEdgesServiceServer{
+		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 100),
+	}
+	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
+	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
+	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	http.HandleFunc("/timeseries", fsdms.GetTimeSeries)
+	go func() {
+		// start an http endpoint to serve time series in json text
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port+1), nil))
+	}()
+	return grpcServer.Serve(lis)
 }
