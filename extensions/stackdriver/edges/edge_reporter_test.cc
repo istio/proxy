@@ -191,7 +191,7 @@ TEST(EdgesTest, TestAddEdge) {
       });
 
   auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+      nodeInfo(), std::move(test_client), 10, TimeUtil::GetCurrentTime);
   edges->addEdge(requestInfo(), "test", peerNodeInfo());
   edges->reportEdges();
 
@@ -216,7 +216,7 @@ TEST(EdgeReporterTest, TestRequestEdgeCache) {
       });
 
   auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+      nodeInfo(), std::move(test_client), 1000, TimeUtil::GetCurrentTime);
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
@@ -241,13 +241,14 @@ TEST(EdgeReporterTest, TestPeriodicFlushAndCacheReset) {
       });
 
   auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+      nodeInfo(), std::move(test_client), 100, TimeUtil::GetCurrentTime);
 
-  // force at least three queued reqs + current (four total)
-  for (int i = 0; i < 3500; i++) {
+  // this should work as follows: 1 assertion in 1 request, the rest dropped
+  // (due to cache)
+  for (int i = 0; i < 350; i++) {
     edges->addEdge(requestInfo(), "test", peerNodeInfo());
-    // flush on 1000, 2000, 3000
-    if (i % 1000 == 0 && i > 0) {
+    // flush on 100, 200, 300
+    if (i % 100 == 0 && i > 0) {
       edges->reportEdges();
     }
   }
@@ -270,7 +271,7 @@ TEST(EdgeReporterTest, TestCacheMisses) {
       });
 
   auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+      nodeInfo(), std::move(test_client), 1000, TimeUtil::GetCurrentTime);
 
   // force at least three queued reqs + current (four total)
   for (int i = 0; i < 3500; i++) {
@@ -288,7 +289,7 @@ TEST(EdgeReporterTest, TestMissingPeerMetadata) {
   auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
       [&got](const ReportTrafficAssertionsRequest& req) { got = req; });
   auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), TimeUtil::GetCurrentTime);
+      nodeInfo(), std::move(test_client), 100, TimeUtil::GetCurrentTime);
   edges->addEdge(requestInfo(), "test", wasm::common::NodeInfo());
   edges->reportEdges();
 
