@@ -111,6 +111,17 @@ int getExportInterval() {
   return 60;
 }
 
+// Get port of security token exchange server from node metadata, if not
+// provided or "0" is provided, emtpy will be returned.
+std::string getSTSPort() {
+  std::string sts_port;
+  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
+      sts_port != "0") {
+    return sts_port;
+  }
+  return "";
+}
+
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(
@@ -134,11 +145,12 @@ bool StackdriverRootContext::onConfigure(
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
-
+  std::string sts_port = getSTSPort();
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter = std::make_unique<ExporterImpl>(this, getLoggingEndpoint());
+    auto exporter =
+        std::make_unique<ExporterImpl>(this, getLoggingEndpoint(), sts_port);
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -187,7 +199,8 @@ bool StackdriverRootContext::onConfigure(
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, getMonitoringEndpoint()));
+      getStackdriverOptions(local_node_info_, getMonitoringEndpoint(),
+                            sts_port));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 
