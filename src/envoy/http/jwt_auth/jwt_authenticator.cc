@@ -55,7 +55,7 @@ JwtAuthenticator::JwtAuthenticator(Upstream::ClusterManager &cm,
     : cm_(cm), store_(store) {}
 
 // Verify a JWT token.
-void JwtAuthenticator::Verify(HeaderMap &headers,
+void JwtAuthenticator::Verify(RequestHeaderMap &headers,
                               JwtAuthenticator::Callbacks *callback) {
   headers_ = &headers;
   callback_ = callback;

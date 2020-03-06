@@ -38,7 +38,7 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
     virtual void savePayload(const std::string& key,
                              const std::string& payload) PURE;
   };
-  void Verify(HeaderMap& headers, Callbacks* callback);
+  void Verify(RequestHeaderMap& headers, Callbacks* callback);
 
   // Called when the object is about to be destroyed.
   void onDestroy();
@@ -75,7 +75,7 @@ class JwtAuthenticator : public Logger::Loggable<Logger::Id::filter>,
   std::unique_ptr<JwtTokenExtractor::Token> token_;
 
   // The HTTP request headers
-  HeaderMap* headers_{};
+  RequestHeaderMap* headers_{};
   // The on_done function.
   Callbacks* callback_{};
 

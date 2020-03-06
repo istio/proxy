@@ -69,9 +69,9 @@ class Filter : public StreamFilter,
   void completeCheck(const ::istio::mixerclient::CheckResponseInfo& info);
 
   // Called when the request is completed.
-  virtual void log(const HeaderMap* request_headers,
-                   const HeaderMap* response_headers,
-                   const HeaderMap* response_trailers,
+  virtual void log(const RequestHeaderMap* request_headers,
+                   const ResponseHeaderMap* response_headers,
+                   const ResponseTrailerMap* response_trailers,
                    const StreamInfo::StreamInfo& stream_info) override;
 
  private:

@@ -35,7 +35,7 @@ const std::string kRbacPermissiveEngineResultField = "shadow_engine_result";
 // Set of headers excluded from response.headers attribute.
 const std::set<std::string> ResponseHeaderExclusives = {};
 
-bool ExtractGrpcStatus(const HeaderMap *headers,
+bool ExtractGrpcStatus(const ResponseHeaderOrTrailerMap *headers,
                        ::istio::control::http::ReportData::GrpcStatus *status) {
   if (headers != nullptr && headers->GrpcStatus()) {
     status->status =
@@ -53,17 +53,17 @@ bool ExtractGrpcStatus(const HeaderMap *headers,
 
 class ReportData : public ::istio::control::http::ReportData,
                    public Logger::Loggable<Logger::Id::filter> {
-  const HeaderMap *request_headers_;
-  const HeaderMap *response_headers_;
-  const HeaderMap *trailers_;
+  const RequestHeaderMap *request_headers_;
+  const ResponseHeaderMap *response_headers_;
+  const ResponseTrailerMap *trailers_;
   const StreamInfo::StreamInfo &info_;
   uint64_t response_total_size_;
   uint64_t request_total_size_;
 
  public:
-  ReportData(const HeaderMap *request_headers,
-             const HeaderMap *response_headers,
-             const HeaderMap *response_trailers,
+  ReportData(const RequestHeaderMap *request_headers,
+             const ResponseHeaderMap *response_headers,
+             const ResponseTrailerMap *response_trailers,
              const StreamInfo::StreamInfo &info, uint64_t request_total_size)
       : request_headers_(request_headers),
         response_headers_(response_headers),

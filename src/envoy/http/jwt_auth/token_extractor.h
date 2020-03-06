@@ -58,7 +58,7 @@ class JwtTokenExtractor : public Logger::Loggable<Logger::Id::filter> {
     }
 
     // TODO: to remove token from query parameter.
-    void Remove(HeaderMap* headers) {
+    void Remove(RequestHeaderMap* headers) {
       if (from_authorization_) {
         headers->removeAuthorization();
       } else if (header_name_ != nullptr) {
@@ -79,7 +79,7 @@ class JwtTokenExtractor : public Logger::Loggable<Logger::Id::filter> {
 
   // Return the extracted JWT tokens.
   // Only extract one token for now.
-  void Extract(const HeaderMap& headers,
+  void Extract(const RequestHeaderMap& headers,
                std::vector<std::unique_ptr<Token>>* tokens) const;
 
  private:

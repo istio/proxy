@@ -35,7 +35,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
  public:
   FilterContext(
       const envoy::config::core::v3::Metadata& dynamic_metadata,
-      const HeaderMap& header_map, const Network::Connection* connection,
+      const RequestHeaderMap& header_map, const Network::Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
       : dynamic_metadata_(dynamic_metadata),
@@ -73,7 +73,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // returns false.
   bool getJwtPayload(const std::string& issuer, std::string* payload) const;
 
-  const HeaderMap& headerMap() const { return header_map_; }
+  const RequestHeaderMap& headerMap() const { return header_map_; }
 
  private:
   // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
@@ -91,7 +91,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
 
   // Const reference to header map of the request. This provides request path
   // that could be used to decide if a JWT should be used for validation.
-  const HeaderMap& header_map_;
+  const RequestHeaderMap& header_map_;
 
   // Pointer to network connection of the request.
   const Network::Connection* connection_;
