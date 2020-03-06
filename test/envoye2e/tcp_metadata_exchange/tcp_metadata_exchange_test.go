@@ -283,8 +283,8 @@ func TestTCPMetadataExchangeOnTicker(t *testing.T) {
 			stats := map[string]env.Stat{
 				"istio_tcp_connections_opened_total": {Value: 1, Labels: labels},
 			}
-			s.VerifyPrometheusStatsWithComparator(stats, s.Ports().ServerAdminPort, true)
-			s.VerifyPrometheusStatsWithComparator(stats, s.Ports().ClientAdminPort, true)
+			s.VerifyPrometheusStats(stats, s.Ports().ServerAdminPort)
+			s.VerifyPrometheusStats(stats, s.Ports().ClientAdminPort)
 		}
 
 		time.Sleep(time.Second * 1)

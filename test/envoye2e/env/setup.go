@@ -454,7 +454,7 @@ func (s *TestSetup) VerifyEnvoyStats(expectedStats map[string]int, port uint16) 
 }
 
 // VerifyPrometheusStats verifies prometheus stats.
-func (s *TestSetup) VerifyPrometheusStatsWithComparator(expectedStats map[string]Stat, port uint16, useGreterComparator bool) {
+func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port uint16) {
 	s.t.Helper()
 
 	check := func(respBody string) error {
@@ -487,18 +487,12 @@ func (s *TestSetup) VerifyPrometheusStatsWithComparator(expectedStats map[string
 			default:
 				return fmt.Errorf("need to implement this type %v", aStats.GetType())
 			}
-			if useGreterComparator {
-				if aStatsValue < float64(eStatsValue.Value) {
-					return fmt.Errorf("stats %s does not match. expected vs actual: %v vs %v",
-						eStatsName, eStatsValue, aStatsValue)
-				}
 
-			} else {
-				if aStatsValue != float64(eStatsValue.Value) {
-					return fmt.Errorf("stats %s does not match. expected vs actual: %v vs %v",
-						eStatsName, eStatsValue, aStatsValue)
-				}
+			if aStatsValue != float64(eStatsValue.Value) {
+				return fmt.Errorf("stats %s does not match. expected vs actual: %v vs %v",
+					eStatsName, eStatsValue, aStatsValue)
 			}
+
 			foundLabels := 0
 			for _, label := range labels {
 				v, found := eStatsValue.Labels[label.GetName()]
@@ -537,11 +531,6 @@ func (s *TestSetup) VerifyPrometheusStatsWithComparator(expectedStats map[string
 		time.Sleep(delay)
 	}
 	s.t.Errorf("failed to find expected stats: %v", err)
-}
-
-// VerifyPrometheusStats verifies prometheus stats.
-func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port uint16) {
-	s.VerifyPrometheusStatsWithComparator(expectedStats, port, false)
 }
 
 // VerifyStatsLT verifies that Envoy stats contains stat expectedStat, whose value is less than
