@@ -487,12 +487,10 @@ func (s *TestSetup) VerifyPrometheusStats(expectedStats map[string]Stat, port ui
 			default:
 				return fmt.Errorf("need to implement this type %v", aStats.GetType())
 			}
-
 			if aStatsValue != float64(eStatsValue.Value) {
 				return fmt.Errorf("stats %s does not match. expected vs actual: %v vs %v",
 					eStatsName, eStatsValue, aStatsValue)
 			}
-
 			foundLabels := 0
 			for _, label := range labels {
 				v, found := eStatsValue.Labels[label.GetName()]
