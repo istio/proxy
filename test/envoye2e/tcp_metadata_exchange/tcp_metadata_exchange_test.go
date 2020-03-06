@@ -44,7 +44,7 @@ const metadataExchangeIstioConfigFilter = `
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "0.00000001s" }
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "1s" }
 `
 
 var (
@@ -71,7 +71,7 @@ const metadataExchangeIstioClientFilter = `
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "0.00000001s" }
+        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "1s" }
 `
 
 const tlsContext = `
@@ -189,7 +189,7 @@ var expectedServerStatsFailCase = map[string]int{
 	"metadata_exchange.metadata_added":           0,
 }
 
-func TestTCPMetadataExchange(t *testing.T) {
+func setupMXC(t *testing.T) *env.TestSetup {
 	s := env.NewClientServerEnvoyTestSetup(env.TCPMetadataExchangeTest, t)
 	s.Dir = driver.BazelWorkspace()
 	s.SetStartHTTPBackend(false)
@@ -211,6 +211,34 @@ func TestTCPMetadataExchange(t *testing.T) {
 	if err := s.SetUpClientServerEnvoy(); err != nil {
 		t.Fatalf("Failed to setup te1	st: %v", err)
 	}
+	return s
+}
+
+func setupCerts(t *testing.T) *tls.Config {
+	certPool := x509.NewCertPool()
+	bs, err := ioutil.ReadFile(driver.TestPath("testdata/certs/cert-chain.pem"))
+	if err != nil {
+		t.Fatalf("failed to read client ca cert: %s", err)
+	}
+	ok := certPool.AppendCertsFromPEM(bs)
+	if !ok {
+		t.Fatal("failed to append client certs")
+		return nil
+	}
+
+	certificate, err := tls.LoadX509KeyPair(driver.TestPath("testdata/certs/cert-chain.pem"),
+		driver.TestPath("testdata/certs/key.pem"))
+	if err != nil {
+		t.Fatal("failed to get certificate")
+		return nil
+	}
+	config := &tls.Config{Certificates: []tls.Certificate{certificate}, ServerName: "localhost", NextProtos: []string{"istio3"}, RootCAs: certPool}
+	rand.Seed(time.Now().UTC().UnixNano())
+	return config
+}
+
+func TestTCPMetadataExchange(t *testing.T) {
+	s := setupMXC(t)
 	defer s.TearDownClientServerEnvoy()
 
 	SendRequests(t, s)
@@ -221,6 +249,57 @@ func TestTCPMetadataExchange(t *testing.T) {
 	time.Sleep(time.Second * 5)
 	s.VerifyPrometheusStats(expectedPrometheusServerStats, s.Ports().ServerAdminPort)
 	s.VerifyPrometheusStats(expectedPrometheusClientStats, s.Ports().ClientAdminPort)
+}
+
+func TestTCPMetadataExchangeOnTicker(t *testing.T) {
+	s := setupMXC(t)
+	defer s.TearDownClientServerEnvoy()
+
+	config := setupCerts(t)
+
+	conn, err := tls.Dial("tcp", fmt.Sprintf("localhost:%d", s.Ports().AppToClientProxyPort), config)
+	if err != nil {
+		t.Fatalf("Failed err: %v", err)
+	}
+
+	labels := map[string]string{
+		"source_app":      "productpage",
+		"destination_app": "ratings",
+	}
+
+	for i := 0; i < 10; i++ {
+		conn.Write([]byte("world \n"))
+		reply := make([]byte, 256)
+		n, err := conn.Read(reply)
+		if err != nil {
+			t.Fatalf("Failed err: %v", err)
+		}
+
+		if fmt.Sprintf("%s", reply[:n]) != "hello world \n" {
+			t.Fatalf("verification Failed. Expected: hello world. Got: %v", fmt.Sprintf("%s", reply[:n]))
+		}
+
+		if i == 8 {
+			stats := map[string]env.Stat{
+				"istio_tcp_connections_opened_total": {Value: 1, Labels: labels},
+			}
+			s.VerifyPrometheusStats(stats, s.Ports().ServerAdminPort)
+			s.VerifyPrometheusStats(stats, s.Ports().ClientAdminPort)
+		}
+
+		time.Sleep(time.Second * 1)
+	}
+
+	_ = conn.Close()
+
+	time.Sleep(time.Second * 2)
+
+	stats := map[string]env.Stat{
+		"istio_tcp_connections_opened_total": {Value: 1, Labels: labels},
+		"istio_tcp_connections_closed_total": {Value: 1, Labels: labels},
+	}
+	s.VerifyPrometheusStats(stats, s.Ports().ServerAdminPort)
+	s.VerifyPrometheusStats(stats, s.Ports().ClientAdminPort)
 }
 
 func TestTCPMetadataExchangeNoClientFilter(t *testing.T) {
@@ -257,23 +336,7 @@ func TestTCPMetadataExchangeNoClientFilter(t *testing.T) {
 }
 
 func SendRequests(t *testing.T, s *env.TestSetup) {
-	certPool := x509.NewCertPool()
-	bs, err := ioutil.ReadFile(driver.TestPath("testdata/certs/cert-chain.pem"))
-	if err != nil {
-		t.Fatalf("failed to read client ca cert: %s", err)
-	}
-	ok := certPool.AppendCertsFromPEM(bs)
-	if !ok {
-		t.Fatal("failed to append client certs")
-	}
-
-	certificate, err := tls.LoadX509KeyPair(driver.TestPath("testdata/certs/cert-chain.pem"),
-		driver.TestPath("testdata/certs/key.pem"))
-	if err != nil {
-		t.Fatal("failed to get certificate")
-	}
-	config := &tls.Config{Certificates: []tls.Certificate{certificate}, ServerName: "localhost", NextProtos: []string{"istio3"}, RootCAs: certPool}
-	rand.Seed(time.Now().UTC().UnixNano())
+	config := setupCerts(t)
 
 	var wg sync.WaitGroup
 
