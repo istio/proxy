@@ -29,6 +29,7 @@ import (
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	jsonpb "github.com/golang/protobuf/jsonpb"
+	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
@@ -124,7 +125,14 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 	log.Printf("receive WriteLogEntriesRequest %+v", *req)
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	s.listLogEntryResp.Entries = append(s.listLogEntryResp.Entries, req.Entries...)
+	for _, entry := range req.Entries {
+		// Add the general labels to every log entry in list logentries response.
+		tmpEntry := proto.Clone(entry).(*logging.LogEntry)
+		for k, v := range req.Labels {
+			tmpEntry.Labels[k] = v
+		}
+		s.listLogEntryResp.Entries = append(s.listLogEntryResp.Entries, tmpEntry)
+	}
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
 	return &logging.WriteLogEntriesResponse{}, nil
@@ -166,6 +174,18 @@ func (s *MetricServer) GetTimeSeries(w http.ResponseWriter, req *http.Request) {
 	var m jsonpb.Marshaler
 	if s, err := m.MarshalToString(&s.listTsResp); err != nil {
 		fmt.Fprintln(w, "Fail to marshal received time series")
+	} else {
+		fmt.Fprintln(w, s)
+	}
+}
+
+// GetLogEntries returns all received log entries in a ReportTrafficAssertionsRequest as a marshaled json string.
+func (s *LoggingServer) GetLogEntries(w http.ResponseWriter, req *http.Request) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	var m jsonpb.Marshaler
+	if s, err := m.MarshalToString(&s.listLogEntryResp); err != nil {
+		fmt.Fprintln(w, "Fail to marshal received log entries")
 	} else {
 		fmt.Fprintln(w, s)
 	}
@@ -251,6 +271,7 @@ func RunFakeStackdriver(port uint16) error {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	http.HandleFunc("/timeseries", fsdms.GetTimeSeries)
+	http.HandleFunc("/logentries", fsdls.GetLogEntries)
 	go func() {
 		// start an http endpoint to serve time series in json text
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port+1), nil))
