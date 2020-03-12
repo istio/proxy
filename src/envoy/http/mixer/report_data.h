@@ -121,7 +121,7 @@ class ReportData : public ::istio::control::http::ReportData,
   }
 
   bool GetDestinationUID(std::string *uid) const override {
-    if (info_.upstreamHost()) {
+    if (info_.upstreamHost() && info_.upstreamHost()->metadata()) {
       return Utils::GetDestinationUID(*info_.upstreamHost()->metadata(), uid);
     }
     return false;

@@ -192,7 +192,7 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
  protected:
   std::unique_ptr<StrictMock<MockOriginAuthenticator>> authenticator_;
   // envoy::config::core::v3::Metadata metadata_;
-  Envoy::Http::TestHeaderMapImpl header_{};
+  Envoy::Http::TestRequestHeaderMapImpl header_{};
   FilterContext filter_context_{
       envoy::config::core::v3::Metadata::default_instance(), header_, nullptr,
       istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::

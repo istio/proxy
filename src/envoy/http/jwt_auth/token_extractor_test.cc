@@ -82,28 +82,30 @@ class JwtTokenExtractorTest : public ::testing::Test {
 };
 
 TEST_F(JwtTokenExtractorTest, TestNoToken) {
-  auto headers = TestHeaderMapImpl{};
+  auto headers = TestRequestHeaderMapImpl{};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   extractor_->Extract(headers, &tokens);
   EXPECT_EQ(tokens.size(), 0);
 }
 
 TEST_F(JwtTokenExtractorTest, TestWrongHeaderToken) {
-  auto headers = TestHeaderMapImpl{{"wrong-token-header", "jwt_token"}};
+  auto headers = TestRequestHeaderMapImpl{{"wrong-token-header", "jwt_token"}};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   extractor_->Extract(headers, &tokens);
   EXPECT_EQ(tokens.size(), 0);
 }
 
 TEST_F(JwtTokenExtractorTest, TestWrongParamToken) {
-  auto headers = TestHeaderMapImpl{{":path", "/path?wrong_token=jwt_token"}};
+  auto headers =
+      TestRequestHeaderMapImpl{{":path", "/path?wrong_token=jwt_token"}};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   extractor_->Extract(headers, &tokens);
   EXPECT_EQ(tokens.size(), 0);
 }
 
 TEST_F(JwtTokenExtractorTest, TestDefaultHeaderLocation) {
-  auto headers = TestHeaderMapImpl{{"Authorization", "Bearer jwt_token"}};
+  auto headers =
+      TestRequestHeaderMapImpl{{"Authorization", "Bearer jwt_token"}};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   extractor_->Extract(headers, &tokens);
   EXPECT_EQ(tokens.size(), 1);
@@ -122,7 +124,8 @@ TEST_F(JwtTokenExtractorTest, TestDefaultHeaderLocation) {
 }
 
 TEST_F(JwtTokenExtractorTest, TestDefaultParamLocation) {
-  auto headers = TestHeaderMapImpl{{":path", "/path?access_token=jwt_token"}};
+  auto headers =
+      TestRequestHeaderMapImpl{{":path", "/path?access_token=jwt_token"}};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   extractor_->Extract(headers, &tokens);
   EXPECT_EQ(tokens.size(), 1);
@@ -140,7 +143,7 @@ TEST_F(JwtTokenExtractorTest, TestCustomHeaderToken) {
   std::vector<std::string> headerVals = {"jwt_token", "istio jwt_token"};
 
   for (const auto& v : headerVals) {
-    auto headers = TestHeaderMapImpl{{"token-header", v}};
+    auto headers = TestRequestHeaderMapImpl{{"token-header", v}};
     std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
     extractor_->Extract(headers, &tokens);
     EXPECT_EQ(tokens.size(), 1);
@@ -160,7 +163,8 @@ TEST_F(JwtTokenExtractorTest, TestCustomHeaderToken) {
 }
 
 TEST_F(JwtTokenExtractorTest, TestCustomParamToken) {
-  auto headers = TestHeaderMapImpl{{":path", "/path?token_param=jwt_token"}};
+  auto headers =
+      TestRequestHeaderMapImpl{{":path", "/path?token_param=jwt_token"}};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   extractor_->Extract(headers, &tokens);
   EXPECT_EQ(tokens.size(), 1);
@@ -175,8 +179,9 @@ TEST_F(JwtTokenExtractorTest, TestCustomParamToken) {
 }
 
 TEST_F(JwtTokenExtractorTest, TestMultipleTokens) {
-  auto headers = TestHeaderMapImpl{{":path", "/path?token_param=param_token"},
-                                   {"token-header", "header_token"}};
+  auto headers =
+      TestRequestHeaderMapImpl{{":path", "/path?token_param=param_token"},
+                               {"token-header", "header_token"}};
   std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
   extractor_->Extract(headers, &tokens);
   EXPECT_EQ(tokens.size(), 1);
