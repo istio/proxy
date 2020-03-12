@@ -311,17 +311,19 @@ class PluginRootContextInbound : public PluginRootContext {
 class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root)
-      : Context(id, root),
-        upstream_closed_(false),
-        downstream_closed_(false),
-        tcp_connection_closed_(false),
-        context_id_(id) {
+      : Context(id, root), is_tcp_(false), context_id_(id) {
     request_info_ = std::make_shared<::Wasm::Common::RequestInfo>();
   }
 
-  void onLog() override { rootContext()->report(*request_info_, false); };
+  void onLog() override {
+    if (is_tcp_) {
+      cleanupTCPOnClose();
+    }
+    rootContext()->report(*request_info_, is_tcp_);
+  };
 
   FilterStatus onNewConnection() override {
+    is_tcp_ = true;
     request_info_->tcp_connections_opened++;
     rootContext()->addToTCPRequestQueue(context_id_, request_info_);
     return FilterStatus::Continue;
@@ -338,34 +340,17 @@ class PluginContext : public Context {
     return FilterStatus::Continue;
   }
 
-  void onDownstreamConnectionClose(PeerType) override {
-    downstream_closed_ = true;
-    if (upstream_closed_ && !tcp_connection_closed_) {
-      logTCPOnClose();
-    }
-  }
-  void onUpstreamConnectionClose(PeerType) override {
-    upstream_closed_ = true;
-    if (downstream_closed_ && !tcp_connection_closed_) {
-      logTCPOnClose();
-    }
-  }
-
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
 
-  void logTCPOnClose() {
-    tcp_connection_closed_ = true;
+  void cleanupTCPOnClose() {
     rootContext()->deleteFromTCPRequestQueue(context_id_);
     request_info_->tcp_connections_closed++;
-    rootContext()->report(*request_info_, true);
   }
 
-  bool upstream_closed_;
-  bool downstream_closed_;
-  bool tcp_connection_closed_;
+  bool is_tcp_;
   uint32_t context_id_;
   std::shared_ptr<::Wasm::Common::RequestInfo> request_info_;
 };
