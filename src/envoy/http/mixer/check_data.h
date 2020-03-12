@@ -30,7 +30,7 @@ namespace Mixer {
 class CheckData : public ::istio::control::http::CheckData,
                   public Logger::Loggable<Logger::Id::filter> {
  public:
-  CheckData(const HeaderMap& headers,
+  CheckData(const RequestHeaderMap& headers,
             const envoy::config::core::v3::Metadata& metadata,
             const Network::Connection* connection);
 
@@ -68,7 +68,7 @@ class CheckData : public ::istio::control::http::CheckData,
       std::map<std::string, std::string>* query_params) const override;
 
  private:
-  const HeaderMap& headers_;
+  const RequestHeaderMap& headers_;
   const envoy::config::core::v3::Metadata& metadata_;
   const Network::Connection* connection_;
   Utility::QueryParams query_params_;

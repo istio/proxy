@@ -215,9 +215,9 @@ void Filter::onDestroy() {
   }
 }
 
-void Filter::log(const HeaderMap* request_headers,
-                 const HeaderMap* response_headers,
-                 const HeaderMap* response_trailers,
+void Filter::log(const RequestHeaderMap* request_headers,
+                 const ResponseHeaderMap* response_headers,
+                 const ResponseTrailerMap* response_trailers,
                  const StreamInfo::StreamInfo& stream_info) {
   ENVOY_LOG(debug, "Called Mixer::Filter : {}", __func__);
   if (!handler_) {

@@ -30,7 +30,7 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-bool isCORSPreflightRequest(const Http::HeaderMap& headers) {
+bool isCORSPreflightRequest(const Http::RequestHeaderMap& headers) {
   return headers.Method() &&
          headers.Method()->value().getStringView() ==
              Http::Headers::get().MethodValues.Options &&
