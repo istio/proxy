@@ -344,7 +344,7 @@ func verifyNumberOfAccessLogs(fsdl *driver.LoggingServer, t *testing.T, expected
 		select {
 		case req := <-fsdl.RcvLoggingReq:
 			if len(req.Entries) != expectedEntries {
-				t.Errorf("WriteLogEntries verification failed. Number of entries expected: %v, got: %v, gotEntry: %v", 1, len(req.Entries), req)
+				t.Errorf("WriteLogEntries verification failed. Number of entries expected: %v, got: %v, gotEntry: %v", expectedEntries, len(req.Entries), req)
 			}
 			logRcv = true
 		case <-to.C:

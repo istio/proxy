@@ -102,6 +102,7 @@ class PluginContext : public Context {
   inline long long logTimeDurationNanos() {
     return rootContext()->logTimeDurationNanos();
   };
+  bool isRequestFailed();
 
   IstioDimensions istio_dimensions_;
 };

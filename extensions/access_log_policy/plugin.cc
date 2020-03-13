@@ -66,6 +66,9 @@ constexpr StringView kSource = "source";
 constexpr StringView kAddress = "address";
 constexpr StringView kConnection = "connection";
 constexpr StringView kUriSanPeerCertificate = "uri_san_peer_certificate";
+constexpr StringView kResponse = "response";
+constexpr StringView kCode = "code";
+constexpr StringView kGrpcStatus = "grpc_status";
 
 static RegisterContextFactory register_AccessLogPolicy(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
@@ -114,11 +117,8 @@ void PluginRootContext::updateLastLogTimeNanos(const IstioDimensions& key,
 
 void PluginContext::onLog() {
   // Check if request is a failure.
-  int64_t response_code = 0;
-  // TODO(gargnupur): Add check for gRPC status too.
-  getValue({"response", "code"}, &response_code);
-  // If request is a failure, log it.
-  if (response_code != 200) {
+  if (isRequestFailed()) {
+    LOG_TRACE("Setting logging to true as we got error log");
     setFilterStateValue(true);
     return;
   }
@@ -135,6 +135,10 @@ void PluginContext::onLog() {
   long long last_log_time_nanos = lastLogTimeNanos();
   auto cur = static_cast<long long>(getCurrentTimeNanoseconds());
   if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
+    LOG_TRACE(absl::StrCat(
+        "Setting logging to true as its outside of log windown. SourceIp: ",
+        source_ip, " SourcePrincipal: ", source_principal,
+        " Window: ", logTimeDurationNanos()));
     if (setFilterStateValue(true)) {
       updateLastLogTimeNanos(cur);
     }
@@ -142,6 +146,28 @@ void PluginContext::onLog() {
   }
 
   setFilterStateValue(false);
+}
+
+bool PluginContext::isRequestFailed() {
+  // Check if HTTP request is a failure.
+  int64_t http_response_code = 0;
+  if (getValue({kResponse, kCode}, &http_response_code) &&
+      http_response_code != 200) {
+    return true;
+  }
+
+  // Check if gRPC request is a failure.
+  int64_t grpc_response_code = 0;
+  if (::Wasm::Common::kGrpcContentTypes.count(
+          getHeaderMapValue(Common::Wasm::HeaderMapType::RequestHeaders,
+                            ::Wasm::Common::kContentTypeHeaderKey)
+              ->toString()) != 0 &&
+      getValue({kResponse, kGrpcStatus}, &grpc_response_code) &&
+      grpc_response_code != 0) {
+    return true;
+  }
+
+  return false;
 }
 
 #ifdef NULL_PLUGIN
