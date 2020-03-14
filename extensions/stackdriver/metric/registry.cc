@@ -134,6 +134,18 @@ StackdriverOptions getStackdriverOptions(
     view_descriptor.RegisterForExport();                            \
   }
 
+#define REGISTER_BYTES_DISTRIBUTION_VIEW(_v)                        \
+  void register##_v##View() {                                       \
+    const ViewDescriptor view_descriptor =                          \
+        ViewDescriptor()                                            \
+            .set_name(k##_v##View)                                  \
+            .set_measure(k##_v##Measure)                            \
+            .set_aggregation(Aggregation::Distribution(             \
+                BucketBoundaries::Exponential(8, 1, 10))) ADD_TAGS; \
+    View view(view_descriptor);                                     \
+    view_descriptor.RegisterForExport();                            \
+  }
+
 #define ADD_TAGS                                             \
   .add_column(requestOperationKey())                         \
       .add_column(requestProtocolKey())                      \
@@ -160,12 +172,12 @@ StackdriverOptions getStackdriverOptions(
 
 // Functions to register opencensus views to export.
 REGISTER_COUNT_VIEW(ServerRequestCount)
-REGISTER_DISTRIBUTION_VIEW(ServerRequestBytes)
-REGISTER_DISTRIBUTION_VIEW(ServerResponseBytes)
+REGISTER_BYTES_DISTRIBUTION_VIEW(ServerRequestBytes)
+REGISTER_BYTES_DISTRIBUTION_VIEW(ServerResponseBytes)
 REGISTER_DISTRIBUTION_VIEW(ServerResponseLatencies)
 REGISTER_COUNT_VIEW(ClientRequestCount)
-REGISTER_DISTRIBUTION_VIEW(ClientRequestBytes)
-REGISTER_DISTRIBUTION_VIEW(ClientResponseBytes)
+REGISTER_BYTES_DISTRIBUTION_VIEW(ClientRequestBytes)
+REGISTER_BYTES_DISTRIBUTION_VIEW(ClientResponseBytes)
 REGISTER_DISTRIBUTION_VIEW(ClientRoundtripLatencies)
 
 /*
