@@ -219,7 +219,8 @@ bool Filter::GetDestinationIpPort(std::string *str_ip, int *port) const {
 }
 
 bool Filter::GetDestinationUID(std::string *uid) const {
-  if (filter_callbacks_->upstreamHost()) {
+  if (filter_callbacks_->upstreamHost() &&
+      filter_callbacks_->upstreamHost()->metadata()) {
     return Utils::GetDestinationUID(
         *filter_callbacks_->upstreamHost()->metadata(), uid);
   }
