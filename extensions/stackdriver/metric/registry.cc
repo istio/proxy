@@ -141,7 +141,7 @@ StackdriverOptions getStackdriverOptions(
             .set_name(k##_v##View)                                  \
             .set_measure(k##_v##Measure)                            \
             .set_aggregation(Aggregation::Distribution(             \
-                BucketBoundaries::Exponential(8, 1, 10))) ADD_TAGS; \
+                BucketBoundaries::Exponential(7, 1, 10))) ADD_TAGS; \
     View view(view_descriptor);                                     \
     view_descriptor.RegisterForExport();                            \
   }
