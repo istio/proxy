@@ -16,7 +16,6 @@
 #include "extensions/stackdriver/common/utils.h"
 
 #include "extensions/stackdriver/common/constants.h"
-#include "grpcpp/grpcpp.h"
 
 namespace Extensions {
 namespace Stackdriver {
@@ -62,33 +61,6 @@ void getMonitoredResource(const std::string &monitored_resource_type,
           kIstioProxyContainerName;
     }
   }
-}
-
-void setSTSCallCredentialOptions(
-    ::envoy::api::v2::core::GrpcService_GoogleGrpc_CallCredentials_StsService
-        *sts_service,
-    const std::string &sts_port) {
-  if (!sts_service) {
-    return;
-  }
-  sts_service->set_token_exchange_service_uri("http://localhost:" + sts_port +
-                                              "/token");
-  sts_service->set_subject_token_path(kSTSSubjectTokenPath);
-  sts_service->set_subject_token_type(kSTSSubjectTokenType);
-  sts_service->set_scope(kSTSScope);
-}
-
-void setSTSCallCredentialOptions(
-    ::grpc::experimental::StsCredentialsOptions *sts_options,
-    const std::string &sts_port) {
-  if (!sts_options) {
-    return;
-  }
-  sts_options->token_exchange_service_uri =
-      "http://localhost:" + sts_port + "/token";
-  sts_options->subject_token_path = kSTSSubjectTokenPath;
-  sts_options->subject_token_type = kSTSSubjectTokenType;
-  sts_options->scope = kSTSScope;
 }
 
 }  // namespace Common
