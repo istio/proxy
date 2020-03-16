@@ -15,9 +15,6 @@
 
 #include "extensions/stackdriver/metric/registry.h"
 
-#include <fstream>
-#include <sstream>
-
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/common/utils.h"
 #include "google/api/monitored_resource.pb.h"
@@ -26,47 +23,6 @@
 namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
-
-namespace {
-
-class GoogleUserProjHeaderInterceptor : public grpc::experimental::Interceptor {
- public:
-  GoogleUserProjHeaderInterceptor(const std::string& project_id)
-      : project_id_(project_id) {}
-
-  virtual void Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
-    if (methods->QueryInterceptionHookPoint(
-            grpc::experimental::InterceptionHookPoints::
-                PRE_SEND_INITIAL_METADATA)) {
-      auto* metadata_map = methods->GetSendInitialMetadata();
-      if (metadata_map != nullptr) {
-        metadata_map->insert(
-            std::make_pair("x-goog-user-project", project_id_));
-      }
-    }
-    methods->Proceed();
-  }
-
- private:
-  const std::string& project_id_;
-};
-
-class GoogleUserProjHeaderInterceptorFactory
-    : public grpc::experimental::ClientInterceptorFactoryInterface {
- public:
-  GoogleUserProjHeaderInterceptorFactory(const std::string& project_id)
-      : project_id_(project_id) {}
-
-  virtual grpc::experimental::Interceptor* CreateClientInterceptor(
-      grpc::experimental::ClientRpcInfo*) override {
-    return new GoogleUserProjHeaderInterceptor(project_id_);
-  }
-
- private:
-  std::string project_id_;
-};
-
-}  // namespace
 
 using namespace Extensions::Stackdriver::Common;
 using namespace opencensus::exporters::stats;
@@ -77,8 +33,8 @@ constexpr char kStackdriverStatsAddress[] = "monitoring.googleapis.com";
 
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
-    const NodeInfo& local_node_info,
-    const std::string& test_monitoring_endpoint, const std::string& sts_port) {
+    const NodeInfo &local_node_info,
+    const std::string &test_monitoring_endpoint, const std::string &sts_port) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   options.project_id = platform_metadata[kGCPProjectKey];
@@ -94,25 +50,11 @@ StackdriverOptions getStackdriverOptions(
                                                                    sts_port);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
     auto ssl_creds_options = grpc::SslCredentialsOptions();
-    std::ifstream file(kDefaultRootCertFile);
-    if (!file.fail()) {
-      std::stringstream file_string;
-      file_string << file.rdbuf();
-      ssl_creds_options.pem_root_certs = file_string.str();
-    }
+    ssl_creds_options.pem_root_certs = kDefaultRootCertFile;
     auto channel_creds = grpc::SslCredentials(ssl_creds_options);
-    grpc::ChannelArguments args;
-    std::vector<
-        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
-        creators;
-    auto header_factory =
-        std::make_unique<GoogleUserProjHeaderInterceptorFactory>(
-            options.project_id);
-    creators.push_back(std::move(header_factory));
-    auto channel = ::grpc::experimental::CreateCustomChannelWithInterceptors(
+    auto channel = ::grpc::CreateChannel(
         kStackdriverStatsAddress,
-        grpc::CompositeChannelCredentials(channel_creds, call_creds), args,
-        std::move(creators));
+        grpc::CompositeChannelCredentials(channel_creds, call_creds));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   }
