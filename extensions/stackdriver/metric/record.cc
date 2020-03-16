@@ -32,7 +32,8 @@ constexpr char kLatest[] = "latest";
 
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
-            const ::Wasm::Common::RequestInfo& request_info) {
+            const ::Wasm::Common::RequestInfo &request_info,
+            bool record_http_size_metrics) {
   double latency_ms = request_info.duration /* in nanoseconds */ / 1000000.0;
   const auto& operation =
       request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
@@ -65,11 +66,20 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
       peer_rev_iter ? peer_rev_iter->value() : nullptr;
 
   if (is_outbound) {
+    std::initializer_list<opencensus::stats::Measurement> measurements = {
+        {clientRequestCountMeasure(), 1},
+        {clientRoundtripLatenciesMeasure(), latency_ms}};
+
+    if (record_http_size_metrics) {
+      measurements = {
+          {clientRequestCountMeasure(), 1},
+          {clientRoundtripLatenciesMeasure(), latency_ms},
+          {clientRequestBytesMeasure(), request_info.request_size},
+          {clientResponseBytesMeasure(), request_info.response_size}};
+    }
+
     opencensus::stats::Record(
-        {{clientRequestCountMeasure(), 1},
-         {clientRequestBytesMeasure(), request_info.request_size},
-         {clientResponseBytesMeasure(), request_info.response_size},
-         {clientRoundtripLatenciesMeasure(), latency_ms}},
+        measurements,
         {{meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
          {requestOperationKey(), operation},
          {requestProtocolKey(), request_info.request_protocol},
@@ -109,11 +119,19 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
     return;
   }
 
+  std::initializer_list<opencensus::stats::Measurement> measurements = {
+      {serverRequestCountMeasure(), 1},
+      {serverResponseLatenciesMeasure(), latency_ms}};
+
+  if (record_http_size_metrics) {
+    measurements = {{serverRequestCountMeasure(), 1},
+                    {serverResponseLatenciesMeasure(), latency_ms},
+                    {serverRequestBytesMeasure(), request_info.request_size},
+                    {serverResponseBytesMeasure(), request_info.response_size}};
+  }
+
   opencensus::stats::Record(
-      {{serverRequestCountMeasure(), 1},
-       {serverRequestBytesMeasure(), request_info.request_size},
-       {serverResponseBytesMeasure(), request_info.response_size},
-       {serverResponseLatenciesMeasure(), latency_ms}},
+      measurements,
       {{meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
        {requestOperationKey(), operation},
        {requestProtocolKey(), request_info.request_protocol},
