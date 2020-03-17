@@ -64,7 +64,6 @@ constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
 constexpr double kNanosecondsPerMillisecond = 1000000.0;
-constexpr char kDefaultRootCertFile[] = "/etc/ssl/certs/ca-certificates.crt";
 
 // Stackdriver root context id.
 constexpr char kOutboundRootContextId[] = "stackdriver_outbound";
@@ -77,14 +76,6 @@ constexpr char kMeshTelemetryEndpointKey[] =
     "STACKDRIVER_MESH_TELEMETRY_ENDPOINT";
 constexpr char kMonitoringExportIntervalKey[] =
     "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
-
-// Port of security token exchange server (STS).
-constexpr char kSTSPortKey[] = "STS_PORT";
-
-// STS credentials
-constexpr char kSTSSubjectTokenPath[] = "/var/run/secrets/tokens/istio-token";
-constexpr char kSTSSubjectTokenType[] = "urn:ietf:params:oauth:token-type:jwt";
-constexpr char kSTSScope[] = "https://www.googleapis.com/auth/cloud-platform";
 
 }  // namespace Common
 }  // namespace Stackdriver
