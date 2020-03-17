@@ -11,3 +11,4 @@ compile_commands.json
 test/envoye2e/tcp_metadata_exchange/testoutput
 test/envoye2e/http_metadata_exchange/testoutput
 *.wasm
+.vscode
