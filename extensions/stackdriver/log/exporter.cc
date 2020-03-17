@@ -15,9 +15,6 @@
 
 #include "extensions/stackdriver/log/exporter.h"
 
-#include "extensions/stackdriver/common/constants.h"
-#include "extensions/stackdriver/common/utils.h"
-
 #ifdef NULL_PLUGIN
 namespace Envoy {
 namespace Extensions {
@@ -37,70 +34,34 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 constexpr char kGoogleStackdriverLoggingAddress[] = "logging.googleapis.com";
 constexpr char kGoogleLoggingService[] = "google.logging.v2.LoggingServiceV2";
 constexpr char kGoogleWriteLogEntriesMethod[] = "WriteLogEntries";
+constexpr char kDefaultRootCertFile[] = "/etc/ssl/certs/ca-certificates.crt";
 constexpr int kDefaultTimeoutMillisecond = 10000;
 
 namespace Extensions {
 namespace Stackdriver {
 namespace Log {
 
-namespace {
-
-// StackdriverLoggingHandler is used to inject x-goog-user-project header into
-// gRPC initial metadata. This is a work around since gRPC library is not yet
-// able to add that header automatically based on quota project from STS token.
-// This should not be needed after https://github.com/grpc/grpc/issues/21225 is
-// ready.
-class StackdriverLoggingHandler
-    : public GrpcCallHandler<google::logging::v2::WriteLogEntriesResponse> {
- public:
-  StackdriverLoggingHandler(uint32_t success_counter, uint32_t failure_counter,
-                            const std::string& project_id)
-      : GrpcCallHandler(),
-        success_counter_(success_counter),
-        failure_counter_(failure_counter),
-        project_id_(project_id) {}
-
-  void onCreateInitialMetadata() override {
-    addHeaderMapValue(
-        HeaderMapType::GrpcCreateInitialMetadata,
-        ::Extensions::Stackdriver::Common::kGoogleUserProjectHeaderKey,
-        project_id_);
-  }
-
-  void onSuccess(google::logging::v2::WriteLogEntriesResponse&&) override {
-    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
-    incrementMetric(success_counter_, 1);
-    logDebug("successfully sent Stackdriver logging request");
-  }
-
-  void onFailure(GrpcStatus status,
-                 std::unique_ptr<WasmData> message) override {
-    // TODO(bianpengyuan): add retry.
-    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
-    incrementMetric(failure_counter_, 1);
-    logWarn("Stackdriver logging api call error: " +
-            std::to_string(static_cast<int>(status)) + message->toString());
-  }
-
- private:
-  uint32_t success_counter_;
-  uint32_t failure_counter_;
-  const std::string& project_id_;
-};
-
-}  // namespace
-
 ExporterImpl::ExporterImpl(RootContext* root_context,
-                           const std::string& logging_service_endpoint,
-                           const std::string& project_id,
-                           const std::string& sts_port) {
+                           const std::string& logging_service_endpoint) {
   context_ = root_context;
   Metric export_call(MetricType::Counter, "stackdriver_filter",
                      {MetricTag{"type", MetricTag::TagType::String},
                       MetricTag{"success", MetricTag::TagType::Bool}});
-  success_counter_ = export_call.resolve("logging", true);
-  failure_counter_ = export_call.resolve("logging", false);
-  project_id_ = project_id;
+  auto success_counter = export_call.resolve("logging", true);
+  auto failure_counter = export_call.resolve("logging", false);
+  success_callback_ = [success_counter](google::protobuf::Empty&&) {
+    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
+    incrementMetric(success_counter, 1);
+    logDebug("successfully sent Stackdriver logging request");
+  };
+
+  failure_callback_ = [failure_counter](GrpcStatus status, StringView message) {
+    // TODO(bianpengyuan): add retry.
+    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
+    incrementMetric(failure_counter, 1);
+    logWarn("Stackdriver logging api call error: " +
+            std::to_string(static_cast<int>(status)) + std::string(message));
+  };
 
   // Construct grpc_service for the Stackdriver gRPC call.
   GrpcService grpc_service;
@@ -108,23 +69,14 @@ ExporterImpl::ExporterImpl(RootContext* root_context,
   if (logging_service_endpoint.empty()) {
     grpc_service.mutable_google_grpc()->set_target_uri(
         kGoogleStackdriverLoggingAddress);
-    if (sts_port.empty()) {
-      // Security token exchange is not enabled. Use default GCE credential.
-      grpc_service.mutable_google_grpc()
-          ->add_call_credentials()
-          ->mutable_google_compute_engine();
-    } else {
-      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
-          grpc_service.mutable_google_grpc()
-              ->add_call_credentials()
-              ->mutable_sts_service(),
-          sts_port);
-    }
+    grpc_service.mutable_google_grpc()
+        ->add_call_credentials()
+        ->mutable_google_compute_engine();
     grpc_service.mutable_google_grpc()
         ->mutable_channel_credentials()
         ->mutable_ssl_credentials()
         ->mutable_root_certs()
-        ->set_filename(::Extensions::Stackdriver::Common::kDefaultRootCertFile);
+        ->set_filename(kDefaultRootCertFile);
   } else {
     // Do not set credential if target uri is provided. This should happen in
     // test.
@@ -139,11 +91,10 @@ void ExporterImpl::exportLogs(
         std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
         requests) const {
   for (const auto& req : requests) {
-    auto handler = std::make_unique<StackdriverLoggingHandler>(
-        success_counter_, failure_counter_, project_id_);
-    context_->grpcCallHandler(grpc_service_string_, kGoogleLoggingService,
-                              kGoogleWriteLogEntriesMethod, *req,
-                              kDefaultTimeoutMillisecond, std::move(handler));
+    context_->grpcSimpleCall(grpc_service_string_, kGoogleLoggingService,
+                             kGoogleWriteLogEntriesMethod, *req,
+                             kDefaultTimeoutMillisecond, success_callback_,
+                             failure_callback_);
   }
 }
 

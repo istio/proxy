@@ -111,17 +111,6 @@ int getExportInterval() {
   return 60;
 }
 
-// Get port of security token exchange server from node metadata, if not
-// provided or "0" is provided, emtpy will be returned.
-std::string getSTSPort() {
-  std::string sts_port;
-  if (getStringValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
-      sts_port != "0") {
-    return sts_port;
-  }
-  return "";
-}
-
 }  // namespace
 
 bool StackdriverRootContext::onConfigure(
@@ -145,18 +134,11 @@ bool StackdriverRootContext::onConfigure(
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
-  std::string sts_port = getSTSPort();
-  std::string project_id;
-  const auto& platform_metadata = local_node_info_.platform_metadata();
-  const auto project_iter = platform_metadata.find(kGCPProjectKey);
-  if (project_iter != platform_metadata.end()) {
-    project_id = project_iter->second;
-  }
+
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto exporter = std::make_unique<ExporterImpl>(this, getLoggingEndpoint(),
-                                                   project_id, sts_port);
+    auto exporter = std::make_unique<ExporterImpl>(this, getLoggingEndpoint());
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
@@ -165,17 +147,9 @@ bool StackdriverRootContext::onConfigure(
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edges_client = std::make_unique<MeshEdgesServiceClientImpl>(
-        this, getMeshTelemetryEndpoint(), project_id, sts_port);
-    if (config_.max_edges_batch_size() > 0 &&
-        config_.max_edges_batch_size() <= 1000) {
-      edge_reporter_ = std::make_unique<EdgeReporter>(
-          local_node_info_, std::move(edges_client),
-          config_.max_edges_batch_size());
-    } else {
-      edge_reporter_ = std::make_unique<EdgeReporter>(
-          local_node_info_, std::move(edges_client),
-          ::Extensions::Stackdriver::Edges::kDefaultAssertionBatchSize);
-    }
+        this, getMeshTelemetryEndpoint());
+    edge_reporter_ = std::make_unique<EdgeReporter>(local_node_info_,
+                                                    std::move(edges_client));
   }
 
   if (config_.has_mesh_edges_reporting_duration()) {
@@ -188,12 +162,6 @@ bool StackdriverRootContext::onConfigure(
 
   node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
 
-  // All the necessary reporting objects should be initialized.
-  // Start ticker for reporting.
-  if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
-  }
-
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -204,8 +172,7 @@ bool StackdriverRootContext::onConfigure(
 
   setSharedData(kStackdriverExporter, kExporterRegistered);
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, getMonitoringEndpoint(),
-                            sts_port));
+      getStackdriverOptions(local_node_info_, getMonitoringEndpoint()));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 
@@ -214,7 +181,11 @@ bool StackdriverRootContext::onConfigure(
   return true;
 }
 
-void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {}
+void StackdriverRootContext::onStart(std::unique_ptr<WasmData>) {
+  if (enableServerAccessLog() || enableEdgeReporting()) {
+    proxy_setTickPeriodMilliseconds(kDefaultLogExportMilliseconds);
+  }
+}
 
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {

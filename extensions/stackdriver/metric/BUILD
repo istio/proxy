@@ -19,11 +19,10 @@ licenses(["notice"])
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_library",
     "envoy_cc_test",
 )
 
-envoy_cc_library(
+cc_library(
     name = "metric",
     srcs = [
         "record.cc",
@@ -33,7 +32,6 @@ envoy_cc_library(
         "record.h",
         "registry.h",
     ],
-    repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
     ],
