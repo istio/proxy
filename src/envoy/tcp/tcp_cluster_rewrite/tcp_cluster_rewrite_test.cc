@@ -56,30 +56,6 @@ class TcpClusterRewriteFilterTest : public testing::Test {
   std::unique_ptr<TcpClusterRewriteFilter> filter_;
 };
 
-TEST_F(TcpClusterRewriteFilterTest, LifespanConflict) {
-    v2alpha1::TcpClusterRewrite proto_config;
-    proto_config.set_cluster_pattern("\\.global$");
-    proto_config.set_cluster_replacement(".svc.cluster.local");
-    configure(proto_config);
-
-    stream_info_.filterState()->setData(
-        TcpProxy::PerConnectionCluster::key(),
-        std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.global"),
-        StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
-    filter_->onNewConnection();
-
-    EXPECT_TRUE(
-        stream_info_.filterState()->hasData<TcpProxy::PerConnectionCluster>(
-            TcpProxy::PerConnectionCluster::key()));
-
-    auto per_connection_cluster =
-        stream_info_.filterState()
-            ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
-                TcpProxy::PerConnectionCluster::key());
-    EXPECT_EQ(per_connection_cluster.value(), "hello.ns1.svc.cluster.local");
-}
-
 TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
   // no rewrite
   {
