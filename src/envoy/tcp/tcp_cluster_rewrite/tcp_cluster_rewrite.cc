@@ -77,7 +77,7 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
     } catch (...) {
       ENVOY_LOG(
           critical,
-          "tcp_cluster_rewrit: error setting data due to unknown exception");
+          "tcp_cluster_rewrite: error setting data due to unknown exception");
       throw;
     }
   }
