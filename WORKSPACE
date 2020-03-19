@@ -40,7 +40,7 @@ bind(
 # envoy-wasm commit time: Wed Mar 18 20:46:00 2020 -0700
 ENVOY_SHA = "b7a1308968cc26312424cab901dba65cd3607107"
 
-ENVOY_SHA256 = "b9aff07386e7fb804a88482dd2e5a7671385a75ddb00ea37e43af72547e67550"
+ENVOY_SHA256 = "da20b87734beb93e2b9d1428f44dbbe0c225cc22dab6459f3d09e6da8c5b4313"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
