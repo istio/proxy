@@ -26,6 +26,47 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
+namespace {
+
+class GoogleUserProjHeaderInterceptor : public grpc::experimental::Interceptor {
+ public:
+  GoogleUserProjHeaderInterceptor(const std::string& project_id)
+      : project_id_(project_id) {}
+
+  virtual void Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
+    if (methods->QueryInterceptionHookPoint(
+            grpc::experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
+      auto* metadata_map = methods->GetSendInitialMetadata();
+      if (metadata_map != nullptr) {
+        metadata_map->insert(
+            std::make_pair("x-goog-user-project", project_id_));
+      }
+    }
+    methods->Proceed();
+  }
+
+ private:
+  const std::string& project_id_;
+};
+
+class GoogleUserProjHeaderInterceptorFactory
+    : public grpc::experimental::ClientInterceptorFactoryInterface {
+ public:
+  GoogleUserProjHeaderInterceptorFactory(const std::string& project_id)
+      : project_id_(project_id) {}
+
+  virtual grpc::experimental::Interceptor* CreateClientInterceptor(
+      grpc::experimental::ClientRpcInfo*) override {
+    return new GoogleUserProjHeaderInterceptor(project_id_);
+  }
+
+ private:
+  std::string project_id_;
+};
+
+}  // namespace
+
 using namespace Extensions::Stackdriver::Common;
 using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
@@ -59,10 +100,19 @@ StackdriverOptions getStackdriverOptions(
     ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
         &sts_options, stub_option.sts_port, token_path);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
-    auto channel = ::grpc::CreateChannel(
+    grpc::ChannelArguments args;
+    std::vector<
+        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+        creators;
+    auto header_factory =
+        std::make_unique<GoogleUserProjHeaderInterceptorFactory>(
+            options.project_id);
+    creators.push_back(std::move(header_factory));
+    auto channel = ::grpc::experimental::CreateCustomChannelWithInterceptors(
         stub_option.secure_endpoint.empty() ? stub_option.default_endpoint
                                             : stub_option.secure_endpoint,
-        grpc::CompositeChannelCredentials(channel_creds, call_creds));
+        grpc::CompositeChannelCredentials(channel_creds, call_creds), args,
+        std::move(creators));
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   } else if (!stub_option.secure_endpoint.empty()) {
