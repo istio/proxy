@@ -162,6 +162,11 @@ bool StackdriverRootContext::onConfigure(size_t) {
   stub_option.test_root_pem_path = getCACertFile();
   stub_option.secure_endpoint = getSecureEndpoint();
   stub_option.insecure_endpoint = getInsecureEndpoint();
+  const auto& platform_metadata = local_node_info_.platform_metadata();
+  const auto project_iter = platform_metadata.find(kGCPProjectKey);
+  if (project_iter != platform_metadata.end()) {
+    stub_option.project_id = project_iter->second;
+  }
 
   if (!logger_) {
     // logger should only be initiated once, for now there is no reason to

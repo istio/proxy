@@ -50,6 +50,9 @@ void buildEnvoyGrpcService(
           stub_option.test_token_path.empty()
               ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
               : stub_option.test_token_path);
+      auto initial_metadata = grpc_service->add_initial_metadata();
+      initial_metadata->set_key("x-goog-user-project");
+      initial_metadata->set_value(stub_option.project_id);
     }
 
     grpc_service->mutable_google_grpc()
