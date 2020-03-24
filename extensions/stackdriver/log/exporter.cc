@@ -46,9 +46,6 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  Metric export_call(MetricType::Counter, "stackdriver_filter",
-                     {MetricTag{"type", MetricTag::TagType::String},
-                      MetricTag{"success", MetricTag::TagType::Bool}});
   success_callback_ = [this](size_t) {
     logDebug("successfully sent Stackdriver logging request");
     if (is_on_done_) {
