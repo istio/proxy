@@ -58,7 +58,7 @@ filter_chains:
               root_id: "stackdriver_outbound"
               vm_config:
                 {{- if .Vars.ReloadVM }}
-                vm_id: "stackdriver_outbound_{{ .N }}"
+                vm_id: "stackdriver_outbound_{{ .Vars.Version }}"
                 {{- else }}
                 vm_id: "stackdriver_outbound"
                 {{- end }}
@@ -115,7 +115,7 @@ filter_chains:
               root_id: "stackdriver_inbound"
               vm_config:
                 {{- if .Vars.ReloadVM }}
-                vm_id: "stackdriver_inbound_{{ .N }}"
+                vm_id: "stackdriver_inbound_{{ .Vars.Version }}"
                 {{- else }}
                 vm_id: "stackdriver_inbound"
                 {{- end }}
