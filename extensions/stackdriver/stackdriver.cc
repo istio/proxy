@@ -239,7 +239,7 @@ bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
   if (enableServerAccessLog()) {
-    logger_->exportLogEntry();
+    logger_->exportLogEntry(/* is_on_done= */ false);
   }
   if (enableEdgeReporting()) {
     auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
@@ -256,6 +256,20 @@ void StackdriverRootContext::onTick() {
       last_edge_new_report_call_nanos_ = cur;
     }
   }
+}
+
+bool StackdriverRootContext::onDone() {
+  bool done = true;
+  // Check if logger is empty. In base Wasm VM, only onStart and onDone are
+  // called, but onConfigure is not triggered. onConfigure is only triggered in
+  // thread local VM, which makes it possible that logger_ is empty ptr even
+  // when logging is enabled.
+  if (logger_ && enableServerAccessLog() &&
+      logger_->exportLogEntry(/* is_on_done= */ true)) {
+    done = false;
+  }
+  // TODO: add on done for edge.
+  return done;
 }
 
 void StackdriverRootContext::record() {

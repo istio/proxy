@@ -57,7 +57,11 @@ filter_chains:
             config:
               root_id: "stackdriver_outbound"
               vm_config:
+                {{- if .Vars.ReloadVM }}
+                vm_id: "stackdriver_outbound_{{ .N }}"
+                {{- else }}
                 vm_id: "stackdriver_outbound"
+                {{- end }}
                 runtime: "envoy.wasm.runtime.null"
                 code:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
@@ -110,7 +114,11 @@ filter_chains:
             config:
               root_id: "stackdriver_inbound"
               vm_config:
+                {{- if .Vars.ReloadVM }}
+                vm_id: "stackdriver_inbound_{{ .N }}"
+                {{- else }}
                 vm_id: "stackdriver_inbound"
+                {{- end }}
                 runtime: "envoy.wasm.runtime.null"
                 code:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
@@ -267,15 +275,16 @@ func TestStackdriverReload(t *testing.T) {
 	ports := env.NewPorts(env.StackDriverReload)
 	params := &driver.Params{
 		Vars: map[string]string{
-			"ClientPort":            fmt.Sprintf("%d", ports.AppToClientProxyPort),
-			"SDPort":                fmt.Sprintf("%d", ports.SDPort),
-			"STSPort":               fmt.Sprintf("%d", ports.STSPort),
-			"BackendPort":           fmt.Sprintf("%d", ports.BackendPort),
-			"ClientAdmin":           fmt.Sprintf("%d", ports.ClientAdminPort),
-			"ServerAdmin":           fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":            fmt.Sprintf("%d", ports.ClientToServerProxyPort),
-			"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
-			"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+			"ClientPort":                  fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"SDPort":                      fmt.Sprintf("%d", ports.SDPort),
+			"STSPort":                     fmt.Sprintf("%d", ports.STSPort),
+			"BackendPort":                 fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":                 fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":                 fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":                  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ServiceAuthenticationPolicy": "NONE",
+			"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+			"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -293,22 +302,67 @@ func TestStackdriverReload(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
-			// should drain all listeners
-			&driver.Update{Node: "client", Version: "1"},
-			&driver.Update{Node: "server", Version: "1"},
-			&driver.Sleep{1 * time.Second},
 			&driver.Repeat{
-				N: 10,
+				N: 2,
 				Step: &driver.Scenario{
 					[]driver.Step{
 						&driver.Update{Node: "client", Version: "i{{ .N }}", Listeners: []string{StackdriverClientHTTPListener}},
 						&driver.Update{Node: "server", Version: "i{{ .N }}", Listeners: []string{StackdriverServerHTTPListener}},
-						&driver.Sleep{1 * time.Second},
-						&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+						&driver.Sleep{5 * time.Second},
+						&driver.Repeat{N: 5, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
 					},
 				},
 			},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
+				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStackdriverVMReload(t *testing.T) {
+	ports := env.NewPorts(env.StackDriverReload)
+	params := &driver.Params{
+		Vars: map[string]string{
+			"ClientPort":                  fmt.Sprintf("%d", ports.AppToClientProxyPort),
+			"SDPort":                      fmt.Sprintf("%d", ports.SDPort),
+			"STSPort":                     fmt.Sprintf("%d", ports.STSPort),
+			"BackendPort":                 fmt.Sprintf("%d", ports.BackendPort),
+			"ClientAdmin":                 fmt.Sprintf("%d", ports.ClientAdminPort),
+			"ServerAdmin":                 fmt.Sprintf("%d", ports.ServerAdminPort),
+			"ServerPort":                  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
+			"ServiceAuthenticationPolicy": "NONE",
+			"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+			"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+			"ReloadVM":                    "true",
+		},
+		XDS: int(ports.XDSPort),
+	}
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+
+	sd := &driver.Stackdriver{Port: ports.SDPort}
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			sd,
+			&driver.SecureTokenService{Port: ports.STSPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Sleep{1 * time.Second},
+			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
+				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
+			),
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)

@@ -36,10 +36,10 @@ namespace {
 
 class MockExporter : public Exporter {
  public:
-  MOCK_CONST_METHOD1(
-      exportLogs,
-      void(const std::vector<std::unique_ptr<
-               const google::logging::v2::WriteLogEntriesRequest>>&));
+  MOCK_METHOD2(exportLogs,
+               void(const std::vector<std::unique_ptr<
+                        const google::logging::v2::WriteLogEntriesRequest>>&,
+                    bool));
 };
 
 wasm::common::NodeInfo nodeInfo() {
@@ -167,11 +167,11 @@ TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter_ptr = exporter.get();
   auto logger = std::make_unique<Logger>(nodeInfo(), std::move(exporter));
   logger->addLogEntry(requestInfo(), peerNodeInfo());
-  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_))
+  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>&
-                 requests) {
+                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+             bool) {
             for (const auto& req : requests) {
               std::string diff;
               MessageDifferencer differ;
@@ -181,7 +181,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
               }
             }
           }));
-  logger->exportLogEntry();
+  logger->exportLogEntry(/* is_on_done = */ false);
 }
 
 TEST(LoggerTest, TestWriteLogEntryRotation) {
@@ -191,11 +191,11 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   for (int i = 0; i < 9; i++) {
     logger->addLogEntry(requestInfo(), peerNodeInfo());
   }
-  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_))
+  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>&
-                 requests) {
+                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+             bool) {
             EXPECT_EQ(requests.size(), 3);
             for (const auto& req : requests) {
               std::string diff;
@@ -206,7 +206,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
               }
             }
           }));
-  logger->exportLogEntry();
+  logger->exportLogEntry(/* is_on_done = */ false);
 }
 
 }  // namespace Log

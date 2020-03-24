@@ -45,8 +45,8 @@ class Exporter {
 
   virtual void exportLogs(
       const std::vector<
-          std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&)
-      const = 0;
+          std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&,
+      bool is_on_done) = 0;
 };
 
 // Exporter writes Stackdriver access log to the backend. It uses WebAssembly
@@ -61,10 +61,9 @@ class ExporterImpl : public Exporter {
                    stub_option);
 
   // exportLogs exports the given log request to Stackdriver.
-  void exportLogs(
-      const std::vector<
-          std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
-          req) const override;
+  void exportLogs(const std::vector<std::unique_ptr<
+                      const google::logging::v2::WriteLogEntriesRequest>>& req,
+                  bool is_on_done) override;
 
  private:
   // Wasm context that outbound calls are attached to.
@@ -72,6 +71,11 @@ class ExporterImpl : public Exporter {
 
   // Serialized string of Stackdriver logging service
   std::string grpc_service_string_;
+
+  // Indicates if the current exporting is triggered by root context onDone. If
+  // this is true, gRPC callback needs to call proxy_done to indicate that async
+  // call finishes.
+  bool is_on_done_;
 
   // Callbacks for gRPC calls.
   std::function<void(size_t)> success_callback_;

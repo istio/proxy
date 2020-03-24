@@ -47,8 +47,10 @@ class Logger {
   void addLogEntry(const ::Wasm::Common::RequestInfo &request_info,
                    const ::wasm::common::NodeInfo &peer_node_info);
 
-  // Export and clean the buffered WriteLogEntriesRequests.
-  void exportLogEntry();
+  // Export and clean the buffered WriteLogEntriesRequests. Returns true if
+  // async call is made to export log entry, otherwise returns false if nothing
+  // exported.
+  bool exportLogEntry(bool is_on_done);
 
  private:
   // Flush rotates the current WriteLogEntriesRequest. This will be triggered

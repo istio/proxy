@@ -46,24 +46,21 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  Metric export_call(MetricType::Counter, "stackdriver_filter",
-                     {MetricTag{"type", MetricTag::TagType::String},
-                      MetricTag{"success", MetricTag::TagType::Bool}});
-  auto success_counter = export_call.resolve("logging", true);
-  auto failure_counter = export_call.resolve("logging", false);
-  success_callback_ = [success_counter](size_t) {
-    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
-    incrementMetric(success_counter, 1);
+  success_callback_ = [this](size_t) {
     logDebug("successfully sent Stackdriver logging request");
+    if (is_on_done_) {
+      proxy_done();
+    }
   };
 
-  failure_callback_ = [failure_counter](GrpcStatus status) {
+  failure_callback_ = [this](GrpcStatus status) {
     // TODO(bianpengyuan): add retry.
-    // TODO(bianpengyuan): replace this with envoy's generic gRPC counter.
-    incrementMetric(failure_counter, 1);
     logWarn("Stackdriver logging api call error: " +
             std::to_string(static_cast<int>(status)) +
             getStatus().second->toString());
+    if (is_on_done_) {
+      proxy_done();
+    }
   };
 
   // Construct grpc_service for the Stackdriver gRPC call.
@@ -74,9 +71,10 @@ ExporterImpl::ExporterImpl(
 }
 
 void ExporterImpl::exportLogs(
-    const std::vector<
-        std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
-        requests) const {
+    const std::vector<std::unique_ptr<
+        const google::logging::v2::WriteLogEntriesRequest>>& requests,
+    bool is_on_done) {
+  is_on_done_ = is_on_done;
   for (const auto& req : requests) {
     context_->grpcSimpleCall(grpc_service_string_, kGoogleLoggingService,
                              kGoogleWriteLogEntriesMethod, *req,

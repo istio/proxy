@@ -66,6 +66,7 @@ class StackdriverRootContext : public RootContext {
   bool onConfigure(size_t) override;
   bool onStart(size_t) override;
   void onTick() override;
+  bool onDone() override;
 
   // Get direction of traffic relative to this proxy.
   bool isOutbound();

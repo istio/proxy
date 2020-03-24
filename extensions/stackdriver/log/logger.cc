@@ -175,13 +175,14 @@ bool Logger::flush() {
   return true;
 }
 
-void Logger::exportLogEntry() {
+bool Logger::exportLogEntry(bool is_on_done) {
   if (!flush() && request_queue_.empty()) {
     // No log entry needs to export.
-    return;
+    return false;
   }
-  exporter_->exportLogs(request_queue_);
+  exporter_->exportLogs(request_queue_, is_on_done);
   request_queue_.clear();
+  return true;
 }
 
 }  // namespace Log
