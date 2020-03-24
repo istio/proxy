@@ -355,20 +355,13 @@ func TestStackdriverVMReload(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{
-				N: 2,
-				Step: &driver.Scenario{
-					[]driver.Step{
-						&driver.Update{Node: "client", Version: "i{{ .N }}", Listeners: []string{StackdriverClientHTTPListener}},
-						&driver.Update{Node: "server", Version: "i{{ .N }}", Listeners: []string{StackdriverServerHTTPListener}},
-						&driver.Sleep{5 * time.Second},
-						&driver.Repeat{N: 5, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
-					},
-				},
-			},
+			&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Sleep{1 * time.Second},
+			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
-				[]string{"testdata/stackdriver/server_access_log_vm_reload.yaml.tmpl", "testdata/stackdriver/server_access_log_vm_reload.yaml.tmpl"},
+				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
 		},
 	}).Run(params); err != nil {
