@@ -255,6 +255,10 @@ void StackdriverRootContext::onTick() {
 
 bool StackdriverRootContext::onDone() {
   bool done = true;
+  // Check if logger is empty. In base Wasm VM, only onStart and onDone are
+  // called, but onConfigure is not triggered. onConfigure is only triggered in
+  // thread local VM, which makes it possible that logger_ is empty ptr even
+  // when logging is enabled.
   if (logger_ && enableServerAccessLog() &&
       logger_->exportLogEntry(/* is_on_done= */ true)) {
     done = false;
