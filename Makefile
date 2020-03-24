@@ -19,8 +19,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SHELL := /bin/bash
-
 # allow optional per-repo overrides
 -include Makefile.overrides.mk
 
@@ -29,12 +27,6 @@ SHELL := /bin/bash
 # docker. If you'd rather build with a local tool chain instead, you'll need to
 # figure out all the tools you need in your environment to make that work.
 export BUILD_WITH_CONTAINER ?= 0
-
-# Name of build container image
-IMAGE_NAME ?= build-tools
-
-# Version of image used within build container
-IMAGE_VERSION ?= master-2020-03-05T18-27-04
 
 LOCAL_ARCH := $(shell uname -m)
 ifeq ($(LOCAL_ARCH),x86_64)
@@ -68,12 +60,11 @@ export TARGET_OUT = /work/out/$(TARGET_OS)_$(TARGET_ARCH)
 export TARGET_OUT_LINUX = /work/out/linux_amd64
 CONTAINER_CLI ?= docker
 DOCKER_SOCKET_MOUNT ?= -v /var/run/docker.sock:/var/run/docker.sock
-IMG ?= gcr.io/istio-testing/$(IMAGE_NAME):$(IMAGE_VERSION)
+IMG ?= gcr.io/istio-testing/build-tools:release-1.5-2020-03-24T16-54-03
 UID = $(shell id -u)
 GID = `grep docker /etc/group | cut -f3 -d:`
 PWD = $(shell pwd)
 
-$(info If you suffer an unexpected failure, please reference: https://github.com/istio/istio/wiki/Troubleshooting-Development-Environment)
 $(info Building with the build container: $(IMG).)
 
 # Determine the timezone across various platforms to pass into the
