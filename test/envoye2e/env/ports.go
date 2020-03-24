@@ -41,6 +41,7 @@ const (
 	StackDriverPayloadGateway
 	StackDriverPayloadWithTLS
 	StackDriverReload
+	StackDriverVMReload
 	StackDriverParallel
 	BasicHTTPGateway
 	StatsPayload
