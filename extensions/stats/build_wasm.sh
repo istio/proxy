@@ -16,11 +16,4 @@
 
 set -e
 
-# Get SHA of envoy-wasm repo and use that as wasm sdk image tag.
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-WORKSPACE=${ROOT}/WORKSPACE
-WASM_SDK_TAG="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
-WASM_SDK_IMAGE=${WASM_SDK_IMAGE:=gcr.io/istio-testing/wasmsdk}
-
-docker run -e uid="$(id -u)" -e gid="$(id -g)" -v $PWD:/work -w /work -v $(realpath $PWD/../../extensions):/work/extensions ${WASM_SDK_IMAGE}:${WASM_SDK_TAG} bash /build_wasm.sh
-rmdir extensions
+source ../../scripts/build_wasm.inc
