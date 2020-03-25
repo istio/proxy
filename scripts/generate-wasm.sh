@@ -50,7 +50,7 @@ WASM_SDK_IMAGE=${WASM_SDK_IMAGE:=gcr.io/istio-testing/wasmsdk}
 TAG=${ENVOY_SHA}
 
 # Try pull wasm builder image.
-docker pull ${WASM_IMAGE}:${TAG} || echo "${WASM_SDK_IMAGE}:${TAG} does not exist"
+docker pull ${WASM_SDK_IMAGE}:${TAG} || echo "${WASM_SDK_IMAGE}:${TAG} does not exist"
 
 # If image does not exist, try build it
 if [[ "$(docker images -q ${WASM_SDK_IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
@@ -71,7 +71,7 @@ if [[ "$(docker images -q ${WASM_SDK_IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
   # Rebuild and push
   cd api/wasm/cpp && docker build -t ${WASM_SDK_IMAGE}:${TAG} -f Dockerfile-sdk .
   if [[ ${PUSH_DOCKER_IMAGE} == 1 ]]; then
-    docker push ${WASM_SDK_IMAGE}:${TAG} || "fail to push to gcr.io/istio-testing hub"
+    docker push ${WASM_SDK_IMAGE}:${TAG} || "fail to push to ${WASM_SDK_IMAGE} hub"
   fi
 fi
 
