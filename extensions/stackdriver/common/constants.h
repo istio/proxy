@@ -74,6 +74,7 @@ constexpr char kInboundRootContextId[] = "stackdriver_inbound";
 constexpr char kSecureStackdriverEndpointKey[] = "SECURE_STACKDRIVER_ENDPOINT";
 constexpr char kInsecureStackdriverEndpointKey[] =
     "INSECURE_STACKDRIVER_ENDPOINT";
+constexpr char kMonitoringEndpointKey[] = "STACKDRIVER_MONITORING_ENDPOINT";
 constexpr char kMonitoringExportIntervalKey[] =
     "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
 constexpr char kTokenFile[] = "STACKDRIVER_TOKEN_FILE";

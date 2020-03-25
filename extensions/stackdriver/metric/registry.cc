@@ -125,6 +125,11 @@ StackdriverOptions getStackdriverOptions(
                                        grpc::InsecureChannelCredentials());
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
+  } else if (!stub_option.monitoring_endpoint.empty()) {
+    auto channel = ::grpc::CreateChannel(stub_option.monitoring_endpoint,
+                                         ::grpc::GoogleDefaultCredentials());
+    options.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(channel);
   }
 
   std::string server_type = kContainerMonitoredResource;
