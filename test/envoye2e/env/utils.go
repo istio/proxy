@@ -17,10 +17,12 @@ package env
 import (
 	"fmt"
 	"go/build"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"testing"
 )
 
 func GetDefaultIstioOut() string {
@@ -32,4 +34,10 @@ func GetDefaultEnvoyBin() string {
 	// Instead we rely on symbolic link src/envoy/envoy in the workspace
 	workspace, _ := exec.Command("bazel", "info", "workspace").Output()
 	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
+}
+
+func SkipTSanASan(t *testing.T) {
+	if os.Getenv("TSAN") != "" || os.Getenv("ASAN") != "" {
+		t.Skip("https://github.com/istio/istio/issues/21273")
+	}
 }

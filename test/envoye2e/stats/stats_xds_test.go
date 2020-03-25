@@ -134,12 +134,6 @@ filter_chains:
 {{ .Vars.ServerTLSContext | indent 2 }}
 `
 
-func skipTSanASan(t *testing.T) {
-	if os.Getenv("TSAN") != "" || os.Getenv("ASAN") != "" {
-		t.Skip("https://github.com/istio/istio/issues/21273")
-	}
-}
-
 func skipWasm(t *testing.T, runtime string) {
 	if os.Getenv("WASM") == "" || runtime != "envoy.wasm.runtime.v8" {
 		t.Skip("Skip test since either WASM module is not generated or runtime is not v8")
@@ -201,7 +195,7 @@ var ClientConfigs = []struct {
 }
 
 func TestStatsPayload(t *testing.T) {
-	skipTSanASan(t)
+	env.SkipTSanASan(t)
 	for _, config := range ClientConfigs {
 		for _, testCase := range TestCases {
 			skipWasm(t, testCase.WasmRuntime)

@@ -272,6 +272,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 
 // Expects estimated 10s log dumping interval from stackdriver
 func TestStackdriverReload(t *testing.T) {
+	env.SkipTSanASan(t)
 	ports := env.NewPorts(env.StackDriverReload)
 	params := &driver.Params{
 		Vars: map[string]string{
@@ -318,6 +319,7 @@ func TestStackdriverReload(t *testing.T) {
 }
 
 func TestStackdriverVMReload(t *testing.T) {
+	env.SkipTSanASan(t)
 	ports := env.NewPorts(env.StackDriverReload)
 	params := &driver.Params{
 		Vars: map[string]string{
