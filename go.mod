@@ -21,4 +21,7 @@ require (
 	google.golang.org/grpc v1.25.1
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.4 // indirect
+	google.golang.org/api v0.20.0
+	istio.io/api v0.0.0-20200222035036-b245c555a47b // indirect
+	istio.io/gogo-genproto v0.0.0-20200222040034-75d4aa95f22c // indirect
 )
