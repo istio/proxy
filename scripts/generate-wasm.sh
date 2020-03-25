@@ -46,14 +46,14 @@ done
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
 ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
-IMAGE=gcr.io/istio-testing/wasmsdk
+WASM_SDK_IMAGE=${WASM_SDK_IMAGE:=gcr.io/istio-testing/wasmsdk}
 TAG=${ENVOY_SHA}
 
 # Try pull wasm builder image.
-docker pull ${IMAGE}:${TAG} || echo "${IMAGE}:${TAG} does not exist"
+docker pull ${WASM_IMAGE}:${TAG} || echo "${WASM_SDK_IMAGE}:${TAG} does not exist"
 
 # If image does not exist, try build it
-if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
+if [[ "$(docker images -q ${WASM_SDK_IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
   if [[ ${BUILD_CONTAINER} == 0 ]]; then
     echo "no builder image to compile wasm. Add `-b` option to create the builder image"
     exit 1
@@ -69,15 +69,15 @@ if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
   git checkout ${ENVOY_SHA}
 
   # Rebuild and push
-  cd api/wasm/cpp && docker build -t ${IMAGE}:${TAG} -f Dockerfile-sdk .
+  cd api/wasm/cpp && docker build -t ${WASM_SDK_IMAGE}:${TAG} -f Dockerfile-sdk .
   if [[ ${PUSH_DOCKER_IMAGE} == 1 ]]; then
-    docker push ${IMAGE}:${TAG} || "fail to push to gcr.io/istio-testing hub"
+    docker push ${WASM_SDK_IMAGE}:${TAG} || "fail to push to gcr.io/istio-testing hub"
   fi
 fi
 
 # Regenerate all wasm plugins and compare diffs
 # Tag image to v3, which is what used by all build wasm script.
-docker tag ${IMAGE}:${TAG} ${IMAGE}:v3
+docker tag ${WASM_SDK_IMAGE}:${TAG} ${WASM_SDK_IMAGE}:v3
 cd ${ROOT}
 find . -name "*.wasm" -type f -delete
 make build_wasm
