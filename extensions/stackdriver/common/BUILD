@@ -58,3 +58,15 @@ envoy_cc_library(
         "@com_google_googleapis//google/monitoring/v3:monitoring_cc_proto",
     ],
 )
+
+envoy_cc_library(
+    name = "metrics",
+    hdrs = [
+        "metrics.h",
+    ],
+    repository = "@envoy",
+    visibility = [
+        "//extensions/stackdriver/edges:__pkg__",
+        "//extensions/stackdriver/log:__pkg__",
+    ],
+)

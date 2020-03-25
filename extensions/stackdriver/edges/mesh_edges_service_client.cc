@@ -17,6 +17,7 @@
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/metrics.h"
 #include "google/protobuf/util/time_util.h"
 
 #ifdef NULL_PLUGIN
@@ -50,14 +51,8 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
     RootContext* root_context,
     const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option)
     : context_(root_context) {
-  Metric export_call(MetricType::Counter, "export_call",
-                     {MetricTag{"wasm_filter", MetricTag::TagType::String},
-                      MetricTag{"type", MetricTag::TagType::String},
-                      MetricTag{"success", MetricTag::TagType::Bool}});
-  auto success_counter =
-      export_call.resolve("stackdriver_filter", "edge", true);
-  auto failure_counter =
-      export_call.resolve("stackdriver_filter", "edge", false);
+  auto success_counter = Common::stackdriver_export_call.resolve("edge", true);
+  auto failure_counter = Common::stackdriver_export_call.resolve("edge", false);
   success_callback_ = [success_counter](size_t) {
     incrementMetric(success_counter, 1);
     // TODO(douglas-reid): improve logging message.

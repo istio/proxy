@@ -16,6 +16,7 @@
 #include "extensions/stackdriver/log/exporter.h"
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/metrics.h"
 
 #ifdef NULL_PLUGIN
 namespace Envoy {
@@ -46,14 +47,10 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  Metric export_call(MetricType::Counter, "export_call",
-                     {MetricTag{"wasm_filter", MetricTag::TagType::String},
-                      MetricTag{"type", MetricTag::TagType::String},
-                      MetricTag{"success", MetricTag::TagType::Bool}});
   auto success_counter =
-      export_call.resolve("stackdriver_filter", "logging", true);
+      Common::stackdriver_export_call.resolve("logging", true);
   auto failure_counter =
-      export_call.resolve("stackdriver_filter", "logging", false);
+      Common::stackdriver_export_call.resolve("logging", false);
   success_callback_ = [this, success_counter](size_t) {
     incrementMetric(success_counter, 1);
     logDebug("successfully sent Stackdriver logging request");

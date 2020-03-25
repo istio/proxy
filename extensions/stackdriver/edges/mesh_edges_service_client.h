@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "extensions/stackdriver/common/metrics.h"
 #include "extensions/stackdriver/common/utils.h"
 #include "extensions/stackdriver/edges/edges.pb.h"
 
