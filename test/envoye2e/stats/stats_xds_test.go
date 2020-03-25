@@ -244,7 +244,7 @@ func TestStatsPayload(t *testing.T) {
 }
 
 func TestStatsParallel(t *testing.T) {
-	skipTSanASan(t)
+	env.SkipTSanASan(t)
 	ports := env.NewPorts(env.StatsParallel)
 	params := &driver.Params{
 		Vars: map[string]string{
