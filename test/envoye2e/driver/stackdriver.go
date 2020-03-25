@@ -117,8 +117,8 @@ type checkStackdriver struct {
 }
 
 func (s *checkStackdriver) Run(p *Params) error {
-	foundAllLogs := true
-	foundAllMetrics := true
+	foundAllLogs := false
+	foundAllMetrics := false
 	for i := 0; i < 30; i++ {
 		s.sd.Lock()
 		foundAllLogs = reflect.DeepEqual(s.sd.ls, s.lwant)
