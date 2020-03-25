@@ -226,10 +226,11 @@ class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
       : RootContext(id, root_id) {
-    Metric cache_count(MetricType::Counter, "statsfilter",
-                       {MetricTag{"cache", MetricTag::TagType::String}});
-    cache_hits_ = cache_count.resolve("hit");
-    cache_misses_ = cache_count.resolve("miss");
+    Metric cache_count(MetricType::Counter, "node_info_cache_count",
+                      {MetricTag{"wasm_filter", MetricTag::TagType::String},
+                       MetricTag{"cache", MetricTag::TagType::Bool}});
+    cache_hits_ = cache_count.resolve("stats_filter", "hit");
+    cache_misses_ = cache_count.resolve("stats_filter", "miss");
   }
 
   ~PluginRootContext() = default;

@@ -46,15 +46,23 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  success_callback_ = [this](size_t) {
+  Metric export_call(MetricType::Counter, "export_call",
+                     {MetricTag{"wasm_filter", MetricTag::TagType::String},
+                      MetricTag{"type", MetricTag::TagType::String},
+                      MetricTag{"success", MetricTag::TagType::Bool}});
+  auto success_counter = export_call.resolve("stackdriver_filter", "logging", true);
+  auto failure_counter = export_call.resolve("stackdriver_filter", "logging", false);
+  success_callback_ = [this, success_counter](size_t) {
+    incrementMetric(success_counter, 1);
     logDebug("successfully sent Stackdriver logging request");
     if (is_on_done_) {
       proxy_done();
     }
   };
 
-  failure_callback_ = [this](GrpcStatus status) {
+  failure_callback_ = [this, failure_counter](GrpcStatus status) {
     // TODO(bianpengyuan): add retry.
+    incrementMetric(failure_counter, 1);
     logWarn("Stackdriver logging api call error: " +
             std::to_string(static_cast<int>(status)) +
             getStatus().second->toString());
