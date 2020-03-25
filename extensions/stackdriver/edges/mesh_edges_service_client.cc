@@ -54,8 +54,10 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
                      {MetricTag{"wasm_filter", MetricTag::TagType::String},
                       MetricTag{"type", MetricTag::TagType::String},
                       MetricTag{"success", MetricTag::TagType::Bool}});
-  auto success_counter = export_call.resolve("stackdriver_filter", "edge", true);
-  auto failure_counter = export_call.resolve("stackdriver_filter", "edge", false);
+  auto success_counter =
+      export_call.resolve("stackdriver_filter", "edge", true);
+  auto failure_counter =
+      export_call.resolve("stackdriver_filter", "edge", false);
   success_callback_ = [success_counter](size_t) {
     incrementMetric(success_counter, 1);
     // TODO(douglas-reid): improve logging message.
