@@ -37,12 +37,21 @@ BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
 BAZEL_BUILD_ARGS := -s --sandbox_debug --verbose_failures $(BAZEL_BUILD_ARGS)
 endif
 
+ifeq "$(origin WITH_LIBCXX)" "undefined"
+WITH_LIBCXX := $(shell ($(CXX) --version | grep ^g++ >/dev/null && echo 0) || echo 1)
+endif
+ifeq "$(WITH_LIBCXX)" "1"
+BAZEL_CONFIG = --config=libc++
+else
+BAZEL_CONFIG =
+endif
+
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
-BAZEL_CONFIG_DEV  = --config=libc++
-BAZEL_CONFIG_REL  = --config=libc++ --config=release
-BAZEL_CONFIG_ASAN = --config=libc++ --config=clang-asan
-BAZEL_CONFIG_TSAN = --config=libc++ --config=clang-tsan
+BAZEL_CONFIG_DEV  = $(BAZEL_CONFIG)
+BAZEL_CONFIG_REL  = $(BAZEL_CONFIG) --config=release
+BAZEL_CONFIG_ASAN = $(BAZEL_CONFIG) --config=clang-asan
+BAZEL_CONFIG_TSAN = $(BAZEL_CONFIG) --config=clang-tsan
 endif
 ifeq ($(UNAME),Darwin)
 BAZEL_CONFIG_DEV  = # macOS always links against libc++

@@ -79,6 +79,7 @@ type Update struct {
 var _ Step = &Update{}
 
 func (u *Update) Run(p *Params) error {
+	p.Vars["Version"] = u.Version
 	version, err := p.Fill(u.Version)
 	if err != nil {
 		return err
