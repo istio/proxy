@@ -32,83 +32,104 @@ import (
 )
 
 const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.metadata_exchange" }
-      configuration: "test"
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.metadata_exchange" }
+        configuration: "test"
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_outbound"
-      vm_config:
-        vm_id: "stackdriver_outbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.null.stackdriver" }
-      configuration: >-
-        {}`
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        root_id: "stackdriver_outbound"
+        vm_config:
+          vm_id: "stackdriver_outbound"
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.null.stackdriver" }
+        configuration: >-
+          {}`
 
 const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.metadata_exchange" }
-      configuration: "test"
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.metadata_exchange" }
+        configuration: "test"
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_inbound"
-      vm_config:
-        vm_id: "stackdriver_inbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.null.stackdriver" }
-      configuration: >-
-        {
-          "max_peer_cache_size": -1,
-          "enableMeshEdgesReporting": "true",
-          "meshEdgesReportingDuration": "1s"
-        }`
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        root_id: "stackdriver_inbound"
+        vm_config:
+          vm_id: "stackdriver_inbound"
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.null.stackdriver" }
+        configuration: >-
+          {
+            "max_peer_cache_size": -1,
+            "enableMeshEdgesReporting": "true",
+            "meshEdgesReportingDuration": "1s"
+          }`
 
 const inboundStackdriverAndAccessLogFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.metadata_exchange" }
-      configuration: "test"
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.metadata_exchange" }
+        configuration: "test"
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.access_log_policy" }
-      configuration: >-
-        {
-          "log_window_duration": %s,
-        }
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.access_log_policy" }
+        configuration: >-
+          {
+            "log_window_duration": %s,
+          }
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_inbound"
-      vm_config:
-        vm_id: "stackdriver_inbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.null.stackdriver" }
-      configuration: >-
-        {
-          "max_peer_cache_size": -1,
-          "enableMeshEdgesReporting": "true",
-          "meshEdgesReportingDuration": "1s"
-        }`
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        root_id: "stackdriver_inbound"
+        vm_config:
+          vm_id: "stackdriver_inbound"
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.null.stackdriver" }
+        configuration: >-
+          {
+            "max_peer_cache_size": -1,
+            "enableMeshEdgesReporting": "true",
+            "meshEdgesReportingDuration": "1s"
+          }`
 
 const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
 
