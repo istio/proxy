@@ -38,7 +38,7 @@ filter_chains:
       codec_type: AUTO
       stat_prefix: client
       http_filters:
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -66,7 +66,7 @@ filter_chains:
       codec_type: AUTO
       stat_prefix: server
       http_filters:
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:

@@ -6,9 +6,9 @@ replace cloud.google.com/go/meshtelemetry/v1alpha1 v0.0.0 => ./test/envoye2e/sta
 
 require (
 	cloud.google.com/go/meshtelemetry/v1alpha1 v0.0.0
-	github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f
+	github.com/cncf/udpa/go v0.0.0-20200313221541-5f7e5dd04533
 	github.com/d4l3k/messagediff v1.2.2-0.20180726183240-b9e99b2f9263
-	github.com/envoyproxy/go-control-plane v0.9.3
+	github.com/envoyproxy/go-control-plane v0.9.5-0.20200326174812-e8bd2869ff56
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/protobuf v1.3.2

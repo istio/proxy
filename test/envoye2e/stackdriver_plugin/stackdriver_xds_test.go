@@ -67,7 +67,7 @@ filter_chains:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
               configuration: >-
                 {}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -124,7 +124,7 @@ filter_chains:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
               configuration: >-
                 {}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:

@@ -1,7 +1,7 @@
 transport_socket:
-  name: envoy.transport_sockets.tls
+  name: tls
   typed_config:
-    "@type": type.googleapis.com/envoy.api.v2.auth.DownstreamTlsContext
+    "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
     common_tls_context:
       tls_certificates:
       - certificate_chain: { filename: "testdata/certs/server.cert" }

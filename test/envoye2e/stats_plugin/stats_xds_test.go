@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stats
+package client
 
 import (
 	"fmt"
@@ -67,7 +67,7 @@ filter_chains:
                   local: { {{ .Vars.StatsFilterCode }} }
               configuration: |
                 {{ .Vars.StatsFilterClientConfig }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -120,7 +120,7 @@ filter_chains:
                   local: { {{ .Vars.StatsFilterCode }} }
               configuration: |
                 {{ .Vars.StatsFilterServerConfig }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:

@@ -20,10 +20,12 @@ import (
 	"log"
 	"net"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/envoyproxy/go-control-plane/pkg/server"
+	cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
 )
 
@@ -86,18 +88,18 @@ func (u *Update) Run(p *Params) error {
 	}
 	log.Printf("update config for %q with version %q", u.Node, version)
 
-	clusters := make([]cache.Resource, 0, len(u.Clusters))
+	clusters := make([]types.Resource, 0, len(u.Clusters))
 	for _, cluster := range u.Clusters {
-		out := &v2.Cluster{}
+		out := &cluster_v3.Cluster{}
 		if err := p.FillYAML(cluster, out); err != nil {
 			return err
 		}
 		clusters = append(clusters, out)
 	}
 
-	listeners := make([]cache.Resource, 0, len(u.Listeners))
+	listeners := make([]types.Resource, 0, len(u.Listeners))
 	for _, listener := range u.Listeners {
-		out := &v2.Listener{}
+		out := &listener_v3.Listener{}
 		if err := p.FillYAML(listener, out); err != nil {
 			return err
 		}
@@ -105,8 +107,8 @@ func (u *Update) Run(p *Params) error {
 	}
 
 	snap := cache.Snapshot{}
-	snap.Resources[cache.Cluster] = cache.NewResources(version, clusters)
-	snap.Resources[cache.Listener] = cache.NewResources(version, listeners)
+	snap.Resources[types.Cluster] = cache.NewResources(version, clusters)
+	snap.Resources[types.Listener] = cache.NewResources(version, listeners)
 	return p.Config.SetSnapshot(u.Node, snap)
 }
 

@@ -74,7 +74,7 @@ static_resources:
               path: {{.ServerAccessLogPath}}
           http_filters:
 {{.FiltersBeforeEnvoyRouterInProxyToServer | indent 10 }}
-          - name: envoy.router
+          - name: envoy.filters.http.router
           route_config:
             name: proxy-to-backend-route
             virtual_hosts:
@@ -107,7 +107,7 @@ static_resources:
           http2_protocol_options: {}
           http_filters:
 {{.FiltersBeforeEnvoyRouterInProxyToServer | indent 10 }}
-          - name: envoy.router
+          - name: envoy.filters.http.router
           route_config:
             name: proxy-to-backend-route
             virtual_hosts:
