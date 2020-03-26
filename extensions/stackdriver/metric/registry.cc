@@ -108,9 +108,18 @@ StackdriverOptions getStackdriverOptions(
         std::make_unique<GoogleUserProjHeaderInterceptorFactory>(
             options.project_id);
     creators.push_back(std::move(header_factory));
+    // When STS is turned on, first check if secure_endpoint is set or not,
+    // which indicates whether this is for testing senario. If not set, check
+    // for monitoring_endpoint override, which indicates a different SD backend
+    // endpoint, such as staging.
+    std::string monitoring_endpoint = stub_option.default_endpoint;
+    if (!stub_option.secure_endpoint.empty()) {
+      monitoring_endpoint = stub_option.secure_endpoint;
+    } else if (!stub_option.monitoring_endpoint.empty()) {
+      monitoring_endpoint = stub_option.monitoring_endpoint;
+    }
     auto channel = ::grpc::experimental::CreateCustomChannelWithInterceptors(
-        stub_option.secure_endpoint.empty() ? stub_option.default_endpoint
-                                            : stub_option.secure_endpoint,
+        monitoring_endpoint,
         grpc::CompositeChannelCredentials(channel_creds, call_creds), args,
         std::move(creators));
     options.metric_service_stub =
@@ -123,6 +132,11 @@ StackdriverOptions getStackdriverOptions(
   } else if (!stub_option.insecure_endpoint.empty()) {
     auto channel = grpc::CreateChannel(stub_option.insecure_endpoint,
                                        grpc::InsecureChannelCredentials());
+    options.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(channel);
+  } else if (!stub_option.monitoring_endpoint.empty()) {
+    auto channel = ::grpc::CreateChannel(stub_option.monitoring_endpoint,
+                                         ::grpc::GoogleDefaultCredentials());
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   }
