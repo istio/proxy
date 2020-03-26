@@ -65,12 +65,14 @@ static_resources:
     filter_chains:
     - filters:
 {{.FiltersBeforeHTTPConnectionManagerInProxyToServer | indent 6 }}
-      - name: envoy.http_connection_manager
-        config:
+      - name: http
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           stat_prefix: inbound_http
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: log
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: {{.ServerAccessLogPath}}
           http_filters:
 {{.FiltersBeforeEnvoyRouterInProxyToServer | indent 10 }}
@@ -97,12 +99,14 @@ static_resources:
     filter_chains:
     - filters:
 {{.FiltersBeforeHTTPConnectionManagerInProxyToServer | indent 6 }}
-      - name: envoy.http_connection_manager
-        config:
+      - name: http
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           stat_prefix: inbound_grpc
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: log
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: {{.ServerAccessLogPath}}
           http2_protocol_options: {}
           http_filters:

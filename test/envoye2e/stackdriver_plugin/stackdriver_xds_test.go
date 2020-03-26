@@ -32,7 +32,7 @@ address:
     port_value: {{ .Vars.ClientPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -89,7 +89,7 @@ address:
     port_value: {{ .Vars.ServerPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
