@@ -17,3 +17,5 @@
 set -e
 
 source ../../scripts/build_wasm.inc
+
+build_wasm
