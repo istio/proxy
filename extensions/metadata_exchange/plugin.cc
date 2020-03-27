@@ -106,6 +106,8 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
         Base64::decodeWithoutPadding(downstream_metadata_value->view());
     setFilterState(::Wasm::Common::kDownstreamMetadataKey,
                    downstream_metadata_bytes);
+  } else {
+    metadata_received_ = false;
   }
 
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
@@ -114,6 +116,8 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
     removeRequestHeader(ExchangeMetadataHeaderId);
     setFilterState(::Wasm::Common::kDownstreamMetadataIdKey,
                    downstream_metadata_id->view());
+  } else {
+    metadata_id_received_ = false;
   }
 
   // do not send request internal headers to sidecar app if it is an inbound
@@ -159,12 +163,12 @@ FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
   if (direction_ != ::Wasm::Common::TrafficDirection::Outbound) {
     auto metadata = metadataValue();
     // insert peer metadata struct for downstream
-    if (!metadata.empty()) {
+    if (!metadata.empty() && metadata_received_) {
       replaceResponseHeader(ExchangeMetadataHeader, metadata);
     }
 
     auto nodeid = nodeId();
-    if (!nodeid.empty()) {
+    if (!nodeid.empty() && metadata_id_received_) {
       replaceResponseHeader(ExchangeMetadataHeaderId, nodeid);
     }
   }

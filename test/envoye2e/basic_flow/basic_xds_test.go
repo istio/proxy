@@ -100,7 +100,7 @@ func TestBasicHTTP(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+			driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -129,7 +129,7 @@ func TestBasicHTTPwithTLS(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+			driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -158,7 +158,7 @@ func TestBasicHTTPGateway(t *testing.T) {
 			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+			driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)

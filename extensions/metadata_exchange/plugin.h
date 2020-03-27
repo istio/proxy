@@ -89,6 +89,8 @@ class PluginContext : public Context {
   inline StringView nodeId() { return rootContext()->nodeId(); }
 
   ::Wasm::Common::TrafficDirection direction_;
+  bool metadata_received_{true};
+  bool metadata_id_received_{true};
 };
 
 #ifdef NULL_PLUGIN

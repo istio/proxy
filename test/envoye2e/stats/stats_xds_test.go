@@ -229,7 +229,7 @@ func TestStatsPayload(t *testing.T) {
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 						&driver.Sleep{1 * time.Second},
-						&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+						&driver.Repeat{N: 10, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 						&driver.Stats{ports.ClientAdminPort, config.ClientStats},
 						&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
 							"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
@@ -278,14 +278,14 @@ func TestStatsParallel(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+			driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 			&driver.Fork{
 				Fore: &driver.Scenario{
 					[]driver.Step{
 						&driver.Sleep{1 * time.Second},
 						&driver.Repeat{
 							Duration: 9 * time.Second,
-							Step:     &driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+							Step:     driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 						},
 						capture{},
 					},

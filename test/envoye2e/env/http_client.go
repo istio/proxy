@@ -51,6 +51,7 @@ func HTTPGet(url string) (code int, respBody string, err error) {
 		log.Println(err)
 		return 0, "", err
 	}
+	log.Println(resp.Header)
 	respBody = string(body)
 	code = resp.StatusCode
 	return code, respBody, nil
