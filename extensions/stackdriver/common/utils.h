@@ -33,6 +33,7 @@ struct StackdriverStubOption {
   std::string test_root_pem_path;
   std::string secure_endpoint;
   std::string insecure_endpoint;
+  std::string monitoring_endpoint;
   std::string project_id;
 };
 
