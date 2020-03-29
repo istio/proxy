@@ -80,6 +80,10 @@ class ExporterImpl : public Exporter {
   // Callbacks for gRPC calls.
   std::function<void(size_t)> success_callback_;
   std::function<void(GrpcStatus)> failure_callback_;
+
+  // Record in flight export calls. When ondone is triggered, export call needs
+  // to be zero before calling proxy_done.
+  int in_flight_export_call_ = 0;
 };
 
 }  // namespace Log
