@@ -49,7 +49,7 @@ ExporterImpl::ExporterImpl(
   success_callback_ = [this](size_t) {
     logDebug("successfully sent Stackdriver logging request");
     in_flight_export_call_ -= 1;
-    if (in_flight_export_call_ == 0 && is_on_done_) {
+    if (in_flight_export_call_ <= 0 && is_on_done_) {
       proxy_done();
     }
   };
@@ -60,7 +60,7 @@ ExporterImpl::ExporterImpl(
             std::to_string(static_cast<int>(status)) +
             getStatus().second->toString());
     in_flight_export_call_ -= 1;
-    if (in_flight_export_call_ == 0 && is_on_done_) {
+    if (in_flight_export_call_ <= 0 && is_on_done_) {
       proxy_done();
     }
   };
