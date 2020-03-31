@@ -228,7 +228,7 @@ class PluginRootContext : public RootContext {
       : RootContext(id, root_id) {
     Metric cache_count(MetricType::Counter, "node_info_cache_count",
                        {MetricTag{"wasm_filter", MetricTag::TagType::String},
-                        MetricTag{"cache", MetricTag::TagType::Bool}});
+                        MetricTag{"cache", MetricTag::TagType::String}});
     cache_hits_ = cache_count.resolve("stats_filter", "hit");
     cache_misses_ = cache_count.resolve("stats_filter", "miss");
   }
