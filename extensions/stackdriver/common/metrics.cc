@@ -29,17 +29,16 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Common {
 
-// NOTE: every call to this function will alloc a new metric object. Though this
-// object is the same in all calls, it cannot be extracted out to a global
-// variable. The metric object caches all fully resolved metrics and won't make
-// define metrics abi call when the same resolved metrics are defined. In Null
-// VM case, since global objects are shared between root contexts in base VM and
-// in thread local VM, and the same metrics definition code path will excercised
-// in both VMs (we don't really have a way to distinguish base VM and thread
-// local VM), the cache will make thread local root context miss metric
-// definition at host side. In real Wasm VM, this can be extracted to a global
-// var.
 uint32_t newExportCallMetric(const std::string& type, bool success) {
+  // NOTE: export_call cannot be a static global object, because in Nullvm,
+  // global metric is shared by base VM and thread local VM, but at host side,
+  // metrics are attached to a specific VM/root context. Since (1) metric object
+  // keeps an internal map which records all fully resolved metrics and avoid
+  // define metric ABI call when the same metric are seen (2) base VM always
+  // initiliazing before thread local VM, sharing a global metric object between
+  // base VM and thread local VM would cause host side thread local VM root
+  // context missing metric definition. This is not going to be a problem with
+  // real Wasm VM due to memory isolation.
   Metric export_call(MetricType::Counter, "export_call",
                      {MetricTag{"wasm_filter", MetricTag::TagType::String},
                       MetricTag{"type", MetricTag::TagType::String},
