@@ -51,8 +51,8 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
     RootContext* root_context,
     const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option)
     : context_(root_context) {
-  auto success_counter = Common::stackdriver_export_call.resolve("edge", true);
-  auto failure_counter = Common::stackdriver_export_call.resolve("edge", false);
+  auto success_counter = Common::newExportCallMetric("edge", true);
+  auto failure_counter = Common::newExportCallMetric("edge", false);
   success_callback_ = [success_counter](size_t) {
     incrementMetric(success_counter, 1);
     // TODO(douglas-reid): improve logging message.

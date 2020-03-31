@@ -33,16 +33,10 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Common {
 
-// Tracks gRPC export call made by the plugin.
-static Metric export_call(MetricType::Counter, "export_call",
-                          {MetricTag{"wasm_filter", MetricTag::TagType::String},
-                           MetricTag{"type", MetricTag::TagType::String},
-                           MetricTag{"success", MetricTag::TagType::Bool}});
-
-// Partially resolve the export call metrics by setting wasm_filter tag as
-// stackdriver_filter.
-static Metric stackdriver_export_call =
-    export_call.partiallyResolve("stackdriver_filter");
+// newExportCallMetric create a fully resolved metric based on the given type
+// and a boolean which indicates whether the call succeeds or not. Current type
+// could only be logging or edge.
+uint32_t newExportCallMetric(const std::string& type, bool success);
 
 }  // namespace Common
 }  // namespace Stackdriver

@@ -47,10 +47,8 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  auto success_counter =
-      Common::stackdriver_export_call.resolve("logging", true);
-  auto failure_counter =
-      Common::stackdriver_export_call.resolve("logging", false);
+  auto success_counter = Common::newExportCallMetric("logging", true);
+  auto failure_counter = Common::newExportCallMetric("logging", false);
   success_callback_ = [this, success_counter](size_t) {
     incrementMetric(success_counter, 1);
     logDebug("successfully sent Stackdriver logging request");

@@ -195,6 +195,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 			"RequestPath":           "echo",
 			"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
 			"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+			"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -217,6 +218,9 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 				nil,
 				[]string{"testdata/stackdriver/gateway_access_log.yaml.tmpl"},
 			),
+			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_stackdriver_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -264,6 +268,9 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
 				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
+			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_stackdriver_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -312,6 +319,9 @@ func TestStackdriverReload(t *testing.T) {
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
 				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
+			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_stackdriver_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
