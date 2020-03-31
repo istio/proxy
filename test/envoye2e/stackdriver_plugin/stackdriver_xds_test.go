@@ -177,7 +177,7 @@ func TestStackdriverPayload(t *testing.T) {
 				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
 			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
-				"envoy_type_logging_success_true_stackdriver_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -223,7 +223,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 				[]string{"testdata/stackdriver/gateway_access_log.yaml.tmpl"},
 			),
 			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
-				"envoy_type_logging_success_true_stackdriver_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -274,7 +274,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
 			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
-				"envoy_type_logging_success_true_stackdriver_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {

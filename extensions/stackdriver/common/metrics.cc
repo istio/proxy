@@ -40,7 +40,7 @@ namespace Common {
 // definition at host side. In real Wasm VM, this can be extracted to a global
 // var.
 uint32_t newExportCallMetric(const std::string& type, bool success) {
-  Metric export_call(MetricType::Counter, "stackdriver_export_call",
+  Metric export_call(MetricType::Counter, "export_call",
                      {MetricTag{"wasm_filter", MetricTag::TagType::String},
                       MetricTag{"type", MetricTag::TagType::String},
                       MetricTag{"success", MetricTag::TagType::Bool}});
