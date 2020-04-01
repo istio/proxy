@@ -16,6 +16,7 @@
 #include "extensions/stackdriver/log/exporter.h"
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/metrics.h"
 
 #ifdef NULL_PLUGIN
 namespace Envoy {
@@ -46,15 +47,19 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  success_callback_ = [this](size_t) {
+  auto success_counter = Common::newExportCallMetric("logging", true);
+  auto failure_counter = Common::newExportCallMetric("logging", false);
+  success_callback_ = [this, success_counter](size_t) {
+    incrementMetric(success_counter, 1);
     logDebug("successfully sent Stackdriver logging request");
     if (is_on_done_) {
       proxy_done();
     }
   };
 
-  failure_callback_ = [this](GrpcStatus status) {
+  failure_callback_ = [this, failure_counter](GrpcStatus status) {
     // TODO(bianpengyuan): add retry.
+    incrementMetric(failure_counter, 1);
     logWarn("Stackdriver logging api call error: " +
             std::to_string(static_cast<int>(status)) +
             getStatus().second->toString());
