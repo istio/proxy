@@ -51,20 +51,20 @@ static_resources:
         address: 127.0.0.1
         port_value: {{.Ports.AppToClientProxyPort}}
     listener_filters:
-    - name: "envoy.listener.tls_inspector"
-      typed_config: {}
-    - name: "envoy.listener.http_inspector"
-      typed_config: {}
+    - name: "envoy.filters.listener.tls_inspector"
+    - name: "envoy.filters.listener.http_inspector"
     filter_chains:
     - filters:
 {{.FiltersBeforeEnvoyRouterInAppToClient | indent 6 }}
-      - name: envoy.tcp_proxy
-        config:
+      - name: tcp_proxy
+        typed_config:
+          "@type": type.googleapis.com/envoy.config.filter.network.tcp_proxy.v2.TcpProxy
           stat_prefix: inbound_tcp
           cluster: client
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: log
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: {{.ClientAccessLogPath}}
               format: {{.AccesslogFormat}}
 {{.TLSContext | indent 6 }}
@@ -106,20 +106,20 @@ static_resources:
         address: 127.0.0.1
         port_value: {{.Ports.ClientToServerProxyPort}}
     listener_filters:
-    - name: "envoy.listener.tls_inspector"
-      typed_config: {}
-    - name: "envoy.listener.http_inspector"
-      typed_config: {}
+    - name: "envoy.filters.listener.tls_inspector"
+    - name: "envoy.filters.listener.http_inspector"
     filter_chains:
     - filters:
 {{.FiltersBeforeEnvoyRouterInProxyToServer | indent 6 }}
-      - name: envoy.tcp_proxy
-        config:
+      - name: tcp_proxy
+        typed_config:
+          "@type": type.googleapis.com/envoy.config.filter.network.tcp_proxy.v2.TcpProxy
           stat_prefix: outbound_tcp
           cluster: backend
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: log
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: {{.ServerAccessLogPath}}
               format: {{.ServerAccesslogFormat}}
 {{.ServerTLSContext | indent 6 }}

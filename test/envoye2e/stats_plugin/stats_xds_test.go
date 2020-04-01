@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stats
+package client
 
 import (
 	"fmt"
@@ -36,7 +36,7 @@ address:
     port_value: {{ .Vars.ClientPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -67,7 +67,7 @@ filter_chains:
                   local: { {{ .Vars.StatsFilterCode }} }
               configuration: |
                 {{ .Vars.StatsFilterClientConfig }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -89,7 +89,7 @@ address:
     port_value: {{ .Vars.ServerPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -120,7 +120,7 @@ filter_chains:
                   local: { {{ .Vars.StatsFilterCode }} }
               configuration: |
                 {{ .Vars.StatsFilterServerConfig }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:
@@ -135,7 +135,7 @@ filter_chains:
 `
 
 func skipWasm(t *testing.T, runtime string) {
-	if os.Getenv("WASM") == "" || runtime != "envoy.wasm.runtime.v8" {
+	if os.Getenv("WASM") == "" && runtime == "envoy.wasm.runtime.v8" {
 		t.Skip("Skip test since either WASM module is not generated or runtime is not v8")
 	}
 }

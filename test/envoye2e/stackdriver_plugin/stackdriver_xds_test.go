@@ -32,7 +32,7 @@ address:
     port_value: {{ .Vars.ClientPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -67,7 +67,7 @@ filter_chains:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
               configuration: >-
                 {}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -89,7 +89,7 @@ address:
     port_value: {{ .Vars.ServerPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -124,7 +124,7 @@ filter_chains:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
               configuration: >-
                 {}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:

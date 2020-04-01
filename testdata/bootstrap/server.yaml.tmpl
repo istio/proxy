@@ -12,13 +12,16 @@ admin:
 dynamic_resources:
   ads_config:
     api_type: GRPC
+    transport_api_version: V3
     grpc_services:
     - envoy_grpc:
         cluster_name: xds_cluster
   cds_config:
     ads: {}
+    resource_api_version: V3
   lds_config:
     ads: {}
+    resource_api_version: V3
 static_resources:
   clusters:
   - connect_timeout: 1s
@@ -53,7 +56,7 @@ static_resources:
         port_value: {{ .Vars.BackendPort }}
     filter_chains:
     - filters:
-      - name: envoy.http_connection_manager
+      - name: http
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           stat_prefix: staticreply
@@ -71,4 +74,4 @@ static_resources:
                   body:
                     inline_string: "hello, world!"
           http_filters:
-          - name: envoy.router
+          - name: envoy.filters.http.router
