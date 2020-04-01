@@ -135,7 +135,7 @@ filter_chains:
 `
 
 func skipWasm(t *testing.T, runtime string) {
-	if os.Getenv("WASM") == "" || runtime != "envoy.wasm.runtime.v8" {
+	if os.Getenv("WASM") == "" && runtime == "envoy.wasm.runtime.v8" {
 		t.Skip("Skip test since either WASM module is not generated or runtime is not v8")
 	}
 }
