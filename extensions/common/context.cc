@@ -113,9 +113,9 @@ void getDestinationService(const std::string& dest_namespace,
   std::string route_name;
   getValue({"route_name"}, &route_name);
   if (route_name == kBlackHoleRouteName) {
-      cluster_name = kBlackHoleCluster;
+    cluster_name = kBlackHoleCluster;
   } else if (route_name == kPassThroughRouteName) {
-      cluster_name = kPassThroughCluster;
+    cluster_name = kPassThroughCluster;
   }
 
   if (cluster_name == kBlackHoleCluster ||
