@@ -24,4 +24,3 @@ message PluginConfig {
   // large cache. To turn off the cache, set this field to zero.
   uint32 max_peer_cache_size = 1;
 }
-

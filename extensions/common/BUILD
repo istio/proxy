@@ -49,6 +49,7 @@ envoy_cc_library(
         ":node_info_cc_proto",
         ":node_info_fb_cc",
         "@com_google_protobuf//:protobuf",
+        "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )

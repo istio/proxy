@@ -25,7 +25,6 @@
 #include "common/protobuf/utility.h"
 #include "envoy/network/connection.h"
 #include "envoy/stats/scope.h"
-#include "extensions/common/context.h"
 #include "extensions/common/wasm/wasm_state.h"
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 
@@ -69,12 +68,14 @@ bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
 
 MetadataExchangeConfig::MetadataExchangeConfig(
     const std::string& stat_prefix, const std::string& protocol,
-    const FilterDirection filter_direction, Stats::Scope& scope)
+    const FilterDirection filter_direction, Stats::Scope& scope,
+    uint32_t max_peer_cache_size)
     : scope_(scope),
       stat_prefix_(stat_prefix),
       protocol_(protocol),
       filter_direction_(filter_direction),
-      stats_(generateStats(stat_prefix, scope)) {}
+      stats_(generateStats(stat_prefix, scope)),
+      max_peer_cache_size_(max_peer_cache_size) {}
 
 Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data,
                                                      bool) {
@@ -267,27 +268,30 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   // Set Metadata
   Envoy::ProtobufWkt::Struct value_struct =
       Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
-  auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
-  if (key_metadata_it != value_struct.fields().end()) {
-    Envoy::ProtobufWkt::Value val = key_metadata_it->second;
-    setFilterState(config_->filter_direction_ == FilterDirection::Downstream
-                       ? DownstreamMetadataKey
-                       : UpstreamMetadataKey,
-                   val.struct_value().SerializeAsString());
-  }
+  std::string peer_id;
   const auto key_metadata_id_it =
       value_struct.fields().find(ExchangeMetadataHeaderId);
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_id_it->second;
-    setFilterState(config_->filter_direction_ == FilterDirection::Downstream
-                       ? DownstreamMetadataIdKey
-                       : UpstreamMetadataIdKey,
-                   val.string_value());
+    peer_id = val.string_value();
+    updateState(config_->filter_direction_ == FilterDirection::Downstream
+                    ? DownstreamMetadataIdKey
+                    : UpstreamMetadataIdKey,
+                peer_id);
+  }
+
+  auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
+  if (key_metadata_it != value_struct.fields().end()) {
+    Envoy::ProtobufWkt::Value val = key_metadata_it->second;
+    updatePeer(config_->filter_direction_ == FilterDirection::Downstream
+                   ? DownstreamMetadataKey
+                   : UpstreamMetadataKey,
+               peer_id, val.struct_value().SerializeAsString());
   }
 }
 
-void MetadataExchangeFilter::setFilterState(const std::string& key,
-                                            absl::string_view value) {
+void MetadataExchangeFilter::updateState(absl::string_view key,
+                                         absl::string_view value) {
   read_callbacks_->connection().streamInfo().filterState()->setData(
       key,
       std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(value),
@@ -317,7 +321,7 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
       config_->filter_direction_ == FilterDirection::Downstream
           ? DownstreamMetadataIdKey
           : UpstreamMetadataIdKey;
-  setFilterState(key, MetadataNotFoundValue);
+  updateState(key, MetadataNotFoundValue);
 }
 
 }  // namespace MetadataExchange

@@ -51,7 +51,8 @@ constexpr StringView ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
-class PluginRootContext : public RootContext {
+class PluginRootContext : public RootContext,
+                          public ::Wasm::Common::FlatNodeCache {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
       : RootContext(id, root_id) {}
@@ -63,17 +64,12 @@ class PluginRootContext : public RootContext {
 
   StringView metadataValue() { return metadata_value_; };
   StringView nodeId() { return node_id_; };
-  bool updatePeer(absl::string_view key, absl::string_view peer_id,
-                  absl::string_view peer_content);
+  void updateState(StringView key, StringView value) override;
 
  private:
   void updateMetadataValue();
   std::string metadata_value_;
   std::string node_id_;
-
-  // maps peer ID to flat buffer peer info
-  std::unordered_map<std::string, std::string> cache_;
-  uint32_t max_peer_cache_size_;
 };
 
 // Per-stream context.

@@ -28,4 +28,9 @@ message MetadataExchange {
   // Protocol that Alpn should support on the server.
   // [#comment:TODO(GargNupur): Make it a list.]
   string protocol = 1;
+
+  // maximum size of the peer metadata cache.
+  // A long lived proxy that connects with many transient peers can build up a
+  // large cache. To turn off the cache, set this field to zero.
+  uint32 max_peer_cache_size = 2;
 }

@@ -24,6 +24,7 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
 #include "envoy/stream_info/filter_state.h"
+#include "extensions/common/context.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
@@ -61,7 +62,7 @@ class MetadataExchangeConfig {
   MetadataExchangeConfig(const std::string& stat_prefix,
                          const std::string& protocol,
                          const FilterDirection filter_direction,
-                         Stats::Scope& scope);
+                         Stats::Scope& scope, uint32_t max_peer_cache_size);
 
   const MetadataExchangeStats& stats() { return stats_; }
 
@@ -75,6 +76,8 @@ class MetadataExchangeConfig {
   const FilterDirection filter_direction_;
   // Stats for MetadataExchange Filter.
   MetadataExchangeStats stats_;
+  // Maximum peer cache size or 0 to disable
+  uint32_t max_peer_cache_size_;
 
  private:
   MetadataExchangeStats generateStats(const std::string& prefix,
@@ -90,13 +93,16 @@ using MetadataExchangeConfigSharedPtr = std::shared_ptr<MetadataExchangeConfig>;
  * A MetadataExchange filter instance. One per connection.
  */
 class MetadataExchangeFilter : public Network::Filter,
-                               protected Logger::Loggable<Logger::Id::filter> {
+                               protected Logger::Loggable<Logger::Id::filter>,
+                               public ::Wasm::Common::FlatNodeCache {
  public:
   MetadataExchangeFilter(MetadataExchangeConfigSharedPtr config,
                          const LocalInfo::LocalInfo& local_info)
       : config_(config),
         local_info_(local_info),
-        conn_state_(ConnProtocolNotRead) {}
+        conn_state_(ConnProtocolNotRead) {
+    updateSize(config->max_peer_cache_size_);
+  }
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance& data,
@@ -113,6 +119,7 @@ class MetadataExchangeFilter : public Network::Filter,
       Network::WriteFilterCallbacks& callbacks) override {
     write_callbacks_ = &callbacks;
   }
+  void updateState(absl::string_view key, absl::string_view value) override;
 
  private:
   // Writes node metadata in write pipeline of the filter chain.
@@ -126,9 +133,6 @@ class MetadataExchangeFilter : public Network::Filter,
   // Tries to read data after initial proxy header. This is currently in the
   // form of google::protobuf::any which encapsulates google::protobuf::struct.
   void tryReadProxyData(Buffer::Instance& data);
-
-  // Helper function to share the metadata with other filters.
-  void setFilterState(const std::string& key, absl::string_view value);
 
   // Helper function to get Dynamic metadata.
   void getMetadata(google::protobuf::Struct* metadata);

@@ -24,7 +24,7 @@
 
 #ifndef NULL_PLUGIN
 
-#include "base64.h"
+#include "extensions/common/base64.h"
 
 #else
 
@@ -106,47 +106,12 @@ bool PluginRootContext::onConfigure(size_t) {
                          configuration->toString()));
     return false;
   }
-  max_peer_cache_size_ = config.max_peer_cache_size();
+  updateSize(config.max_peer_cache_size());
   return true;
 }
 
-bool PluginRootContext::updatePeer(absl::string_view key,
-                                   absl::string_view peer_id,
-                                   absl::string_view peer_content) {
-  std::string id = std::string(peer_id);
-  if (max_peer_cache_size_ > 0) {
-    auto it = cache_.find(id);
-    if (it != cache_.end()) {
-      setFilterState(key, it->second);
-      return true;
-    }
-  }
-
-  auto bytes = Base64::decodeWithoutPadding(peer_content);
-  google::protobuf::Struct metadata;
-  if (!metadata.ParseFromString(bytes)) {
-    return false;
-  }
-
-  flatbuffers::FlatBufferBuilder fbb;
-  if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
-    return false;
-  }
-  std::string out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                  fbb.GetSize());
-  setFilterState(key, out);
-
-  if (max_peer_cache_size_ > 0) {
-    // do not let the cache grow beyond max cache size.
-    if (static_cast<uint32_t>(cache_.size()) > max_peer_cache_size_) {
-      auto it = cache_.begin();
-      cache_.erase(cache_.begin(), std::next(it, max_peer_cache_size_ / 4));
-      LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
-    }
-    cache_.emplace(std::move(id), std::move(out));
-  }
-
-  return true;
+void PluginRootContext::updateState(StringView key, StringView value) {
+  setFilterState(key, value);
 }
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
