@@ -63,13 +63,17 @@ class PluginRootContext : public RootContext {
 
   StringView metadataValue() { return metadata_value_; };
   StringView nodeId() { return node_id_; };
+  bool updatePeer(absl::string_view key, absl::string_view peer_id,
+                  absl::string_view peer_content);
 
  private:
   void updateMetadataValue();
   std::string metadata_value_;
   std::string node_id_;
 
+  // maps peer ID to flat buffer peer info
   std::unordered_map<std::string, std::string> cache_;
+  uint32_t max_peer_cache_size_;
 };
 
 // Per-stream context.

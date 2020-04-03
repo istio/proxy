@@ -41,7 +41,7 @@ const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.metadata_exchange" }
-        configuration: "test"
+        configuration: "{ max_peer_cache_size: 20 }"
 - name: envoy.filters.http.wasm
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -67,7 +67,7 @@ const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.metadata_exchange" }
-        configuration: "test"
+        configuration: "{ max_peer_cache_size: 20 }"
 - name: envoy.filters.http.wasm
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -97,7 +97,7 @@ const inboundStackdriverAndAccessLogFilter = `- name: envoy.filters.http.wasm
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.metadata_exchange" }
-        configuration: "test"
+        configuration: "{ max_peer_cache_size: 20 }"
 - name: envoy.filters.http.wasm
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct

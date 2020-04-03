@@ -19,7 +19,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/node_info.pb.h"
+#include "extensions/metadata_exchange/config.pb.h"
 #include "google/protobuf/util/json_util.h"
 
 #ifndef NULL_PLUGIN
@@ -59,26 +59,6 @@ bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
   return true;
 }
 
-bool updatePeer(absl::string_view key, absl::string_view,
-                absl::string_view peer_content) {
-  auto bytes = Base64::decodeWithoutPadding(peer_content);
-
-  google::protobuf::Struct metadata;
-  if (!metadata.ParseFromString(bytes)) {
-    return false;
-  }
-
-  flatbuffers::FlatBufferBuilder fbb;
-  if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
-    return false;
-  }
-
-  setFilterState(key, absl::string_view(
-                          reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                          fbb.GetSize()));
-  return true;
-}
-
 }  // namespace
 
 static RegisterContextFactory register_MetadataExchange(
@@ -113,6 +93,59 @@ bool PluginRootContext::onConfigure(size_t) {
   }
   logDebug(absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_,
                         " node:", node_id_));
+
+  // Parse configuration JSON string.
+  std::unique_ptr<WasmData> configuration = getConfiguration();
+  google::protobuf::util::JsonParseOptions json_options;
+  json_options.ignore_unknown_fields = true;
+  metadata_exchange::PluginConfig config;
+  const auto status = google::protobuf::util::JsonStringToMessage(
+      configuration->toString(), &config, json_options);
+  if (!status.ok()) {
+    logWarn(absl::StrCat("cannot parse plugin configuration JSON string ",
+                         configuration->toString()));
+    return false;
+  }
+  max_peer_cache_size_ = config.max_peer_cache_size();
+  return true;
+}
+
+bool PluginRootContext::updatePeer(absl::string_view key,
+                                   absl::string_view peer_id,
+                                   absl::string_view peer_content) {
+  std::string id = std::string(peer_id);
+  if (max_peer_cache_size_ > 0) {
+    auto it = cache_.find(id);
+    if (it != cache_.end()) {
+      setFilterState(key, it->second);
+      return true;
+    }
+  }
+
+  auto bytes = Base64::decodeWithoutPadding(peer_content);
+  google::protobuf::Struct metadata;
+  if (!metadata.ParseFromString(bytes)) {
+    return false;
+  }
+
+  flatbuffers::FlatBufferBuilder fbb;
+  if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
+    return false;
+  }
+  std::string out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                  fbb.GetSize());
+  setFilterState(key, out);
+
+  if (max_peer_cache_size_ > 0) {
+    // do not let the cache grow beyond max cache size.
+    if (static_cast<uint32_t>(cache_.size()) > max_peer_cache_size_) {
+      auto it = cache_.begin();
+      cache_.erase(cache_.begin(), std::next(it, max_peer_cache_size_ / 4));
+      LOG_INFO(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+    }
+    cache_.emplace(std::move(id), std::move(out));
+  }
+
   return true;
 }
 
@@ -132,9 +165,9 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   if (downstream_metadata_value != nullptr &&
       !downstream_metadata_value->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeader);
-    if (!updatePeer(::Wasm::Common::kDownstreamMetadataKey,
-                    downstream_metadata_id->view(),
-                    downstream_metadata_value->view())) {
+    if (!rootContext()->updatePeer(::Wasm::Common::kDownstreamMetadataKey,
+                                   downstream_metadata_id->view(),
+                                   downstream_metadata_value->view())) {
       logDebug("cannot set downstream peer node");
     }
   } else {
@@ -173,9 +206,9 @@ FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
   if (upstream_metadata_value != nullptr &&
       !upstream_metadata_value->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeader);
-    if (!updatePeer(::Wasm::Common::kUpstreamMetadataKey,
-                    upstream_metadata_id->view(),
-                    upstream_metadata_value->view())) {
+    if (!rootContext()->updatePeer(::Wasm::Common::kUpstreamMetadataKey,
+                                   upstream_metadata_id->view(),
+                                   upstream_metadata_value->view())) {
       logDebug("cannot set upstream peer node");
     }
   }

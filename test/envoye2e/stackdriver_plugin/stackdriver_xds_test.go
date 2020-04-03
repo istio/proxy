@@ -48,7 +48,7 @@ filter_chains:
                 runtime: "envoy.wasm.runtime.null"
                 code:
                   local: { inline_string: "envoy.wasm.metadata_exchange" }
-              configuration: "test"
+              configuration: "{ max_peer_cache_size: 20 }"
       - name: envoy.filters.http.wasm
         typed_config:
           "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -105,7 +105,7 @@ filter_chains:
                 runtime: "envoy.wasm.runtime.null"
                 code:
                   local: { inline_string: "envoy.wasm.metadata_exchange" }
-              configuration: "test"
+              configuration: "{ max_peer_cache_size: 20 }"
       - name: envoy.filters.http.wasm
         typed_config:
           "@type": type.googleapis.com/udpa.type.v1.TypedStruct
