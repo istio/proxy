@@ -32,7 +32,7 @@ address:
     port_value: {{ .Vars.ClientPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -67,7 +67,7 @@ filter_chains:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
               configuration: >-
                 {}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -89,7 +89,7 @@ address:
     port_value: {{ .Vars.ServerPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -124,7 +124,7 @@ filter_chains:
                   local: { inline_string: "envoy.wasm.null.stackdriver" }
               configuration: >-
                 {}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:
@@ -152,6 +152,7 @@ func TestStackdriverPayload(t *testing.T) {
 			"ServiceAuthenticationPolicy": "NONE",
 			"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 			"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+			"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -170,11 +171,14 @@ func TestStackdriverPayload(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Repeat{N: 10, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
 				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
+			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -195,6 +199,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 			"RequestPath":           "echo",
 			"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
 			"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+			"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -212,11 +217,14 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 				Listeners: []string{StackdriverClientHTTPListener, StackdriverServerHTTPListener}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{N: 1, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Repeat{N: 1, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 			sd.Check(params,
 				nil,
 				[]string{"testdata/stackdriver/gateway_access_log.yaml.tmpl"},
 			),
+			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -239,6 +247,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 			"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
 			"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 			"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+			"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		},
 		XDS: int(ports.XDSPort),
 	}
@@ -259,11 +268,14 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Repeat{N: 10, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
 				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
 			),
+			&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -303,11 +315,11 @@ func TestStackdriverReload(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{2 * time.Second},
-			&driver.Repeat{N: 5, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Repeat{N: 5, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
 			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
 			&driver.Sleep{2 * time.Second},
-			&driver.Repeat{N: 5, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Repeat{N: 5, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
 				[]string{"testdata/stackdriver/server_access_log.yaml.tmpl"},
@@ -351,7 +363,7 @@ func TestStackdriverVMReload(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+			&driver.Repeat{N: 10, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 			&driver.Sleep{1 * time.Second},
 			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
 			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
@@ -395,14 +407,14 @@ func TestStackdriverParallel(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+			driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 			&driver.Fork{
 				Fore: &driver.Scenario{
 					[]driver.Step{
 						&driver.Sleep{1 * time.Second},
 						&driver.Repeat{
 							Duration: 19 * time.Second,
-							Step:     &driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+							Step:     driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 						},
 					},
 				},

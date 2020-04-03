@@ -16,6 +16,7 @@
 #include "extensions/stackdriver/log/exporter.h"
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/metrics.h"
 
 #ifdef NULL_PLUGIN
 namespace Envoy {
@@ -46,7 +47,10 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  success_callback_ = [this](size_t) {
+  auto success_counter = Common::newExportCallMetric("logging", true);
+  auto failure_counter = Common::newExportCallMetric("logging", false);
+  success_callback_ = [this, success_counter](size_t) {
+    incrementMetric(success_counter, 1);
     LOG_DEBUG("successfully sent Stackdriver logging request");
     in_flight_export_call_ -= 1;
     if (in_flight_export_call_ < 0) {
@@ -57,11 +61,12 @@ ExporterImpl::ExporterImpl(
     }
   };
 
-  failure_callback_ = [this](GrpcStatus status) {
+  failure_callback_ = [this, failure_counter](GrpcStatus status) {
     // TODO(bianpengyuan): add retry.
-    LOG_WARN("Stackdriver logging api call error: " +
-             std::to_string(static_cast<int>(status)) +
-             getStatus().second->toString());
+    incrementMetric(failure_counter, 1);
+    logWarn("Stackdriver logging api call error: " +
+            std::to_string(static_cast<int>(status)) +
+            getStatus().second->toString());
     in_flight_export_call_ -= 1;
     if (in_flight_export_call_ < 0) {
       LOG_WARN("in flight report call should not be negative");

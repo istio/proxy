@@ -59,17 +59,19 @@ static_resources:
         port_value: {{.Ports.AppToClientProxyPort}}
     filter_chains:
     - filters:
-      - name: envoy.http_connection_manager
-        config:
+      - name: http
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           codec_type: AUTO
           stat_prefix: inbound_http
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: log
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: {{.ClientAccessLogPath}}
           http_filters:
 {{.FiltersBeforeEnvoyRouterInAppToClient | indent 10 }}
-          - name: envoy.router
+          - name: envoy.filters.http.router
           route_config:
             name: app-to-client-route
             virtual_hosts:
@@ -120,17 +122,19 @@ static_resources:
     filter_chains:
     - filters:
 {{.FiltersBeforeHTTPConnectionManagerInProxyToServer | indent 6 }}
-      - name: envoy.http_connection_manager
-        config:
+      - name: http
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           codec_type: AUTO
           stat_prefix: inbound_http
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: log
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: {{.ServerAccessLogPath}}
           http_filters:
 {{.FiltersBeforeEnvoyRouterInProxyToServer | indent 10 }}
-          - name: envoy.router
+          - name: envoy.filters.http.router
           route_config:
             name: proxy-to-backend-route
             virtual_hosts:

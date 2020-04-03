@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stats
+package client
 
 import (
 	"fmt"
@@ -36,7 +36,7 @@ address:
     port_value: {{ .Vars.ClientPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -67,7 +67,7 @@ filter_chains:
                   local: { {{ .Vars.StatsFilterCode }} }
               configuration: |
                 {{ .Vars.StatsFilterClientConfig }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -89,7 +89,7 @@ address:
     port_value: {{ .Vars.ServerPort }}
 filter_chains:
 - filters:
-  - name: envoy.http_connection_manager
+  - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
@@ -120,7 +120,7 @@ filter_chains:
                   local: { {{ .Vars.StatsFilterCode }} }
               configuration: |
                 {{ .Vars.StatsFilterServerConfig }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:
@@ -135,7 +135,7 @@ filter_chains:
 `
 
 func skipWasm(t *testing.T, runtime string) {
-	if os.Getenv("WASM") == "" || runtime != "envoy.wasm.runtime.v8" {
+	if os.Getenv("WASM") == "" && runtime == "envoy.wasm.runtime.v8" {
 		t.Skip("Skip test since either WASM module is not generated or runtime is not v8")
 	}
 }
@@ -229,7 +229,7 @@ func TestStatsPayload(t *testing.T) {
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 						&driver.Sleep{1 * time.Second},
-						&driver.Repeat{N: 10, Step: &driver.Get{ports.AppToClientProxyPort, "hello, world!"}},
+						&driver.Repeat{N: 10, Step: driver.Get(ports.AppToClientProxyPort, "hello, world!")},
 						&driver.Stats{ports.ClientAdminPort, config.ClientStats},
 						&driver.Stats{ports.ServerAdminPort, map[string]driver.StatMatcher{
 							"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
@@ -278,14 +278,14 @@ func TestStatsParallel(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+			driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 			&driver.Fork{
 				Fore: &driver.Scenario{
 					[]driver.Step{
 						&driver.Sleep{1 * time.Second},
 						&driver.Repeat{
 							Duration: 9 * time.Second,
-							Step:     &driver.Get{ports.AppToClientProxyPort, "hello, world!"},
+							Step:     driver.Get(ports.AppToClientProxyPort, "hello, world!"),
 						},
 						capture{},
 					},

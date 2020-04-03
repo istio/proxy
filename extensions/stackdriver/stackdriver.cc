@@ -181,7 +181,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
     stub_option.project_id = project_iter->second;
   }
 
-  if (!logger_) {
+  if (!logger_ && enableServerAccessLog()) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
     auto logging_stub_option = stub_option;
@@ -191,7 +191,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
     logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
   }
 
-  if (!edge_reporter_) {
+  if (!edge_reporter_ && enableEdgeReporting()) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edge_stub_option = stub_option;

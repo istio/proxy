@@ -32,83 +32,104 @@ import (
 )
 
 const outboundStackdriverFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.metadata_exchange" }
-      configuration: "test"
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.metadata_exchange" }
+        configuration: "test"
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_outbound"
-      vm_config:
-        vm_id: "stackdriver_outbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.null.stackdriver" }
-      configuration: >-
-        {}`
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        root_id: "stackdriver_outbound"
+        vm_config:
+          vm_id: "stackdriver_outbound"
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.null.stackdriver" }
+        configuration: >-
+          {}`
 
 const inboundStackdriverFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.metadata_exchange" }
-      configuration: "test"
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.metadata_exchange" }
+        configuration: "test"
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_inbound"
-      vm_config:
-        vm_id: "stackdriver_inbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.null.stackdriver" }
-      configuration: >-
-        {
-          "max_peer_cache_size": -1,
-          "enableMeshEdgesReporting": "true",
-          "meshEdgesReportingDuration": "1s"
-        }`
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        root_id: "stackdriver_inbound"
+        vm_config:
+          vm_id: "stackdriver_inbound"
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.null.stackdriver" }
+        configuration: >-
+          {
+            "max_peer_cache_size": -1,
+            "enableMeshEdgesReporting": "true",
+            "meshEdgesReportingDuration": "1s"
+          }`
 
 const inboundStackdriverAndAccessLogFilter = `- name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.metadata_exchange" }
-      configuration: "test"
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.metadata_exchange" }
+        configuration: "test"
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      vm_config:
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.access_log_policy" }
-      configuration: >-
-        {
-          "log_window_duration": %s,
-        }
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.access_log_policy" }
+        configuration: >-
+          {
+            "log_window_duration": %s,
+          }
 - name: envoy.filters.http.wasm
-  config:
-    config:
-      root_id: "stackdriver_inbound"
-      vm_config:
-        vm_id: "stackdriver_inbound"
-        runtime: "envoy.wasm.runtime.null"
-        code:
-          local: { inline_string: "envoy.wasm.null.stackdriver" }
-      configuration: >-
-        {
-          "max_peer_cache_size": -1,
-          "enableMeshEdgesReporting": "true",
-          "meshEdgesReportingDuration": "1s"
-        }`
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        root_id: "stackdriver_inbound"
+        vm_config:
+          vm_id: "stackdriver_inbound"
+          runtime: "envoy.wasm.runtime.null"
+          code:
+            local: { inline_string: "envoy.wasm.null.stackdriver" }
+        configuration: >-
+          {
+            "max_peer_cache_size": -1,
+            "enableMeshEdgesReporting": "true",
+            "meshEdgesReportingDuration": "1s"
+          }`
 
 const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
 
@@ -279,7 +300,7 @@ func issueGetRequests(port uint16, t *testing.T) {
 func TestStackdriverPlugin(t *testing.T) {
 	s := setup(t, "")
 	defer s.TearDownClientServerEnvoy()
-	fsdm, fsdl, edgesSvc, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	fsdm, fsdl, edgesSvc, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)
@@ -361,7 +382,7 @@ func verifyNumberOfAccessLogs(fsdl *driver.LoggingServer, t *testing.T, expected
 func TestStackdriverAndAccessLogPlugin(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"15s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	_, fsdl, _, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)
@@ -374,7 +395,7 @@ func TestStackdriverAndAccessLogPlugin(t *testing.T) {
 func TestStackdriverAndAccessLogPluginLogRequestGetsLoggedAgain(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	_, fsdl, _, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)
@@ -391,7 +412,7 @@ func TestStackdriverAndAccessLogPluginLogRequestGetsLoggedAgain(t *testing.T) {
 func TestStackdriverAndAccessLogPluginAllErrorRequestsGetsLogged(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	_, fsdl, _, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)

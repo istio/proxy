@@ -81,7 +81,7 @@ build_wasm:
 check_wasm:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	./scripts/generate-wasm.sh -b
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on WASM=true go test ./test/envoye2e/stats/...
+	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
 
 clean:
 	@bazel clean

@@ -20,6 +20,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -33,6 +36,8 @@ import (
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
+	cloudtracev1 "google.golang.org/genproto/googleapis/devtools/cloudtrace/v1"
+	cloudtracev2 "google.golang.org/genproto/googleapis/devtools/cloudtrace/v2"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
@@ -57,6 +62,15 @@ type LoggingServer struct {
 type MeshEdgesServiceServer struct {
 	delay                   time.Duration
 	RcvTrafficAssertionsReq chan *edgespb.ReportTrafficAssertionsRequest
+}
+
+// TracesServer is a fake stackdriver server which implements all of cloudtrace v1 service method.
+type TracesServer struct {
+	delay          time.Duration
+	listTracesResp cloudtracev1.ListTracesResponse
+	RcvTracesReq   chan *cloudtracev2.BatchWriteSpansRequest
+	mux            sync.Mutex
+	traceMap       map[string]*cloudtracev1.Trace
 }
 
 // ListMonitoredResourceDescriptors implements ListMonitoredResourceDescriptors method.
@@ -191,9 +205,136 @@ func (s *LoggingServer) GetLogEntries(w http.ResponseWriter, req *http.Request) 
 	}
 }
 
+// ListTraces implements ListTraces method.
+func (s *TracesServer) ListTraces(ctx context.Context, req *cloudtracev1.ListTracesRequest) (*cloudtracev1.ListTracesResponse, error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	numTracesAdded := 0
+	for _, trace := range s.traceMap {
+		if req.ProjectId != trace.ProjectId {
+			continue
+		}
+		foundSpan := false
+		for _, span := range trace.Spans {
+			// If any span started before request start time or ended after request start time, we skip adding this trace.
+			if req.StartTime.Seconds > span.StartTime.Seconds || req.EndTime.Seconds < span.EndTime.Seconds {
+				foundSpan = false
+				break
+			}
+			// This does label matching to find any span that match the filter.
+			if req.Filter != "" {
+				keyValue := strings.Split(req.Filter, ":")
+				key := keyValue[0]
+				exactMatch := false
+				if strings.HasPrefix(key, "+") {
+					key = strings.TrimPrefix(key, "+")
+					exactMatch = true
+				}
+				for k, v := range span.Labels {
+					if k == key && ((exactMatch && v == keyValue[1]) || (!exactMatch && strings.HasPrefix(v, keyValue[1]))) {
+						foundSpan = true
+						continue
+					}
+				}
+			} else {
+				foundSpan = true
+			}
+		}
+		if foundSpan {
+			if (req.PageSize > 0 && int32(numTracesAdded) < req.PageSize) || req.PageSize <= 0 {
+				s.listTracesResp.Traces = append(s.listTracesResp.Traces, trace)
+				numTracesAdded++
+			}
+		}
+	}
+	return &s.listTracesResp, nil
+}
+
+// GetTrace implements GetTrace method.
+func (s *TracesServer) GetTrace(context.Context, *cloudtracev1.GetTraceRequest) (*cloudtracev1.Trace, error) {
+	log.Fatal("Unimplemented Method")
+	return &cloudtracev1.Trace{}, nil
+}
+
+// GetTrace implements GetTrace method.
+func (s *TracesServer) PatchTraces(context.Context, *cloudtracev1.PatchTracesRequest) (*empty.Empty, error) {
+	log.Fatal("Unimplemented Method")
+	return &empty.Empty{}, nil
+}
+
+func getID(id string) (uint64, error) {
+	// Convert hexadecimal string to int64
+	dec, err := strconv.ParseUint(id, 16, 64)
+	if err != nil {
+		return 0, err
+	}
+	return dec, nil
+}
+
+// BatchWriteSpans implements BatchWriteSpans method.
+func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.BatchWriteSpansRequest) (*empty.Empty, error) {
+	log.Printf("receive BatchWriteSpansRequest %+v", *req)
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	for _, span := range req.Spans {
+		re := regexp.MustCompile(`projects\/(\w+)\/traces\/(\w+)\/spans\/(\w+)`)
+		match := re.FindStringSubmatch(span.Name)
+		if len(match) < 4 {
+			log.Printf("span name not in correct format: %v", span.Name)
+			continue
+		}
+		traceID := match[2]
+		spanID, err := getID(match[3])
+		if err != nil {
+			log.Printf("Could not convert span id to int: %v", err)
+			continue
+		}
+		parentSpanID, err := getID(span.ParentSpanId)
+		if err != nil {
+			log.Printf("Could not convert parent span id to int: %v", err)
+			continue
+		}
+
+		newTraceSpan := &cloudtracev1.TraceSpan{
+			SpanId:       spanID,
+			Name:         span.Name,
+			ParentSpanId: parentSpanID,
+			StartTime:    span.StartTime,
+			EndTime:      span.EndTime,
+		}
+		// Add Labels, so that test can query it using filters.
+		newTraceSpan.Labels["span"] = span.DisplayName.GetValue()
+		if span.ParentSpanId == "" {
+			newTraceSpan.Labels["root"] = span.DisplayName.GetValue()
+		}
+
+		if existingTrace, ok := s.traceMap[traceID]; ok {
+			existingTrace.Spans = append(existingTrace.Spans, newTraceSpan)
+		} else {
+			s.traceMap[traceID] = &cloudtracev1.Trace{
+				ProjectId: req.Name,
+				TraceId:   traceID,
+				Spans: []*cloudtracev1.TraceSpan{
+					newTraceSpan,
+				},
+			}
+		}
+	}
+
+	s.RcvTracesReq <- req
+	time.Sleep(s.delay)
+	return &empty.Empty{}, nil
+}
+
+// CreateSpan implements CreateSpan method.
+func (s *TracesServer) CreateSpan(ctx context.Context, req *cloudtracev2.Span) (*cloudtracev2.Span, error) {
+	log.Fatal("Unimplemented Method")
+	return &cloudtracev2.Span{}, nil
+}
+
 // NewFakeStackdriver creates a new fake Stackdriver server.
 func NewFakeStackdriver(port uint16, delay time.Duration,
-	enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *grpc.Server) {
+	enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *TracesServer, *grpc.Server) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 
 	var options []grpc.ServerOption
@@ -237,9 +378,16 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 		delay:                   delay,
 		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 2),
 	}
+	traceSvc := &TracesServer{
+		delay:        delay,
+		RcvTracesReq: make(chan *cloudtracev2.BatchWriteSpansRequest, 2),
+		traceMap:     make(map[string]*cloudtracev1.Trace),
+	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
 	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
 	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
+	cloudtracev1.RegisterTraceServiceServer(grpcServer, traceSvc)
+	cloudtracev2.RegisterTraceServiceServer(grpcServer, traceSvc)
 
 	go func() {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -251,7 +399,7 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 			log.Fatalf("fake stackdriver server terminated abnormally: %v", err)
 		}
 	}()
-	return fsdms, fsdls, edgesSvc, grpcServer
+	return fsdms, fsdls, edgesSvc, traceSvc, grpcServer
 }
 
 func RunFakeStackdriver(port uint16) error {
@@ -265,9 +413,15 @@ func RunFakeStackdriver(port uint16) error {
 	edgesSvc := &MeshEdgesServiceServer{
 		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 100),
 	}
+	traceSvc := &TracesServer{
+		RcvTracesReq: make(chan *cloudtracev2.BatchWriteSpansRequest, 100),
+		traceMap:     make(map[string]*cloudtracev1.Trace),
+	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
 	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
 	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
+	cloudtracev1.RegisterTraceServiceServer(grpcServer, traceSvc)
+	cloudtracev2.RegisterTraceServiceServer(grpcServer, traceSvc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
