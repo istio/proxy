@@ -45,6 +45,8 @@ namespace Common {
 
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";
+const char kBlackHoleRouteName[] = "block_all";
+const char kPassThroughRouteName[] = "allow_any";
 const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
 const char kInboundPassthroughClusterIpv6[] = "InboundPassthroughClusterIpv6";
 
@@ -105,6 +107,16 @@ void getDestinationService(const std::string& dest_namespace,
                                            kAuthorityHeaderKey)
                              ->toString()
                        : "unknown";
+
+  // override the cluster name if this is being sent to the
+  // blackhole or passthrough cluster
+  std::string route_name;
+  getValue({"route_name"}, &route_name);
+  if (route_name == kBlackHoleRouteName) {
+    cluster_name = kBlackHoleCluster;
+  } else if (route_name == kPassThroughRouteName) {
+    cluster_name = kPassThroughCluster;
+  }
 
   if (cluster_name == kBlackHoleCluster ||
       cluster_name == kPassThroughCluster ||
