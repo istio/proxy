@@ -44,7 +44,7 @@ func (sd *Stackdriver) Run(p *Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
-	metrics, logging, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
+	metrics, logging, _, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
 		for {
