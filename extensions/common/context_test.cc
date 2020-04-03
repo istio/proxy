@@ -65,6 +65,18 @@ TEST(ContextTest, extractNodeMetadata) {
   EXPECT_EQ(platform_metadata["gcp_project"], "test_project");
   EXPECT_EQ(platform_metadata["gcp_cluster_name"], "test_cluster");
   EXPECT_EQ(platform_metadata["gcp_cluster_location"], "test_location");
+
+  flatbuffers::FlatBufferBuilder fbb(1024);
+  EXPECT_TRUE(extractNodeFlatBuffer(metadata_struct, fbb));
+  auto peer = flatbuffers::GetRoot<FlatNode>(fbb.GetBufferPointer());
+  EXPECT_EQ(peer->name()->string_view(), "test_pod");
+  EXPECT_EQ(peer->namespace_()->string_view(), "test_namespace");
+  EXPECT_EQ(peer->owner()->string_view(), "test_owner");
+  EXPECT_EQ(peer->workload_name()->string_view(), "test_workload");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->key()->string_view(),
+            "gcp_project");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(),
+            "test_project");
 }
 
 // Test empty node metadata.

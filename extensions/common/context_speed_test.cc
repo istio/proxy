@@ -14,7 +14,9 @@
  */
 
 #include "benchmark/benchmark.h"
+#include "common/stream_info/filter_state_impl.h"
 #include "extensions/common/context.h"
+#include "extensions/common/wasm/wasm_state.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
@@ -102,6 +104,96 @@ static void BM_MessageParser(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_MessageParser);
+
+constexpr absl::string_view metadata_id_key =
+    "envoy.wasm.metadata_exchange.downstream_id";
+constexpr absl::string_view metadata_key =
+    "envoy.wasm.metadata_exchange.downstream";
+constexpr absl::string_view node_id = "test_pod.test_namespace";
+
+static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
+                    absl::string_view key, absl::string_view value) {
+  filter_state.setData(
+      key, std::make_unique<Envoy::Extensions::Common::Wasm::WasmState>(value),
+      Envoy::StreamInfo::FilterState::StateType::Mutable);
+}
+
+static const std::string& getData(
+    Envoy::StreamInfo::FilterStateImpl& filter_state, absl::string_view key) {
+  return filter_state
+      .getDataReadOnly<Envoy::Extensions::Common::Wasm::WasmState>(key)
+      .value();
+}
+
+typedef std::shared_ptr<const wasm::common::NodeInfo> NodeInfoPtr;
+
+static void BM_ReadRawBytesWithCache(benchmark::State& state) {
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
+                      json_parse_options);
+  auto bytes = metadata_struct.SerializeAsString();
+  Envoy::StreamInfo::FilterStateImpl filter_state{
+      Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
+  setData(filter_state, metadata_id_key, node_id);
+  setData(filter_state, metadata_key, bytes);
+
+  std::unordered_map<std::string, NodeInfoPtr> cache;
+
+  size_t size = 0;
+  for (auto _ : state) {
+    // lookup cache by key
+    const std::string& peer_id = getData(filter_state, metadata_id_key);
+    auto nodeinfo_it = cache.find(peer_id);
+    const NodeInfo* node_info = nullptr;
+    if (nodeinfo_it == cache.end()) {
+      const std::string& bytes = getData(filter_state, metadata_key);
+      google::protobuf::Struct test_struct;
+      test_struct.ParseFromArray(bytes.data(), bytes.size());
+      benchmark::DoNotOptimize(test_struct);
+
+      auto node_info_ptr = std::make_shared<wasm::common::NodeInfo>();
+      auto status = extractNodeMetadata(test_struct, node_info_ptr.get());
+      node_info = node_info_ptr.get();
+      cache.emplace(peer_id, std::move(node_info_ptr));
+    } else {
+      node_info = nodeinfo_it->second.get();
+    }
+
+    size += node_info->namespace_().size() + node_info->workload_name().size() +
+            node_info->labels().at("app").size() +
+            node_info->labels().at("version").size();
+    benchmark::DoNotOptimize(size);
+  }
+}
+BENCHMARK(BM_ReadRawBytesWithCache);
+
+static void BM_ReadFlatBuffer(benchmark::State& state) {
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
+                      json_parse_options);
+  flatbuffers::FlatBufferBuilder fbb(1024);
+  extractNodeFlatBuffer(metadata_struct, fbb);
+
+  Envoy::StreamInfo::FilterStateImpl filter_state{
+      Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
+  setData(
+      filter_state, metadata_key,
+      absl::string_view(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                        fbb.GetSize()));
+
+  size_t size = 0;
+  for (auto _ : state) {
+    auto buf = getData(filter_state, metadata_key);
+    auto peer = flatbuffers::GetRoot<FlatNode>(buf.data());
+    size += peer->workload_name()->size() + peer->namespace_()->size() +
+            peer->labels()->LookupByKey("app")->value()->size() +
+            peer->labels()->LookupByKey("version")->value()->size();
+    benchmark::DoNotOptimize(size);
+  }
+}
+BENCHMARK(BM_ReadFlatBuffer);
 
 }  // namespace Common
 

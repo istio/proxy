@@ -19,6 +19,8 @@
 
 #include "absl/strings/string_view.h"
 #include "extensions/common/node_info.pb.h"
+#include "extensions/common/node_info_generated.h"
+#include "flatbuffers/flatbuffers.h"
 #include "google/protobuf/struct.pb.h"
 
 namespace Wasm {
@@ -175,6 +177,10 @@ google::protobuf::util::Status extractNodeMetadata(
 google::protobuf::util::Status extractNodeMetadataGeneric(
     const google::protobuf::Struct& metadata,
     wasm::common::NodeInfo* node_info);
+
+// Extract node info into a flatbuffer from a struct.
+bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
+                           flatbuffers::FlatBufferBuilder& fbb);
 
 // Read from local node metadata and populate node_info.
 google::protobuf::util::Status extractLocalNodeMetadata(

@@ -1,0 +1,20 @@
+namespace Wasm.Common;
+
+table KeyVal {
+  key:string (key);
+  value:string;
+}
+
+// NodeInfo represents the information extracted from proxy node metadata.
+table FlatNode {
+  name:string;
+  namespace:string;
+  labels:[KeyVal];
+  platform_metadata:[KeyVal];
+  owner:string;
+  workload_name:string;
+  istio_version:string;
+  mesh_id:string;
+}
+
+root_type FlatNode;
