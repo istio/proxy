@@ -45,8 +45,8 @@ namespace Common {
 
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";
-const char kBlackHoleRouteName[] = "black_hole_route";
-const char kPassThroughRouteName[] = "pass_through_route";
+const char kBlackHoleRouteName[] = "block_all";
+const char kPassThroughRouteName[] = "allow_any";
 const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
 const char kInboundPassthroughClusterIpv6[] = "InboundPassthroughClusterIpv6";
 
