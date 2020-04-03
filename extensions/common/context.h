@@ -181,6 +181,10 @@ google::protobuf::util::Status extractNodeMetadataGeneric(
 // Extract node info into a flatbuffer from a struct.
 bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
                            flatbuffers::FlatBufferBuilder& fbb);
+// Extra local node metadata into a flatbuffer.
+bool extractLocalNodeFlatBuffer(std::string* out);
+// Convenience routine to create an empty node flatbuffer.
+void extractEmptyNodeFlatBuffer(std::string* out);
 
 // Read from local node metadata and populate node_info.
 google::protobuf::util::Status extractLocalNodeMetadata(

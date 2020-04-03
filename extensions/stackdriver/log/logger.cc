@@ -36,24 +36,29 @@ using google::protobuf::util::TimeUtil;
 // Name of the HTTP server access log.
 constexpr char kServerAccessLogName[] = "server-accesslog-stackdriver";
 
-Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
+Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
                std::unique_ptr<Exporter> exporter, int log_request_size_limit) {
   // Initalize the current WriteLogEntriesRequest.
   log_entries_request_ =
       std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
 
   // Set log names.
-  const auto& platform_metadata = local_node_info.platform_metadata();
-  const auto project_iter = platform_metadata.find(Common::kGCPProjectKey);
-  if (project_iter != platform_metadata.end()) {
-    project_id_ = project_iter->second;
+  const auto platform_metadata = local_node_info.platform_metadata();
+  const auto project_iter =
+      platform_metadata ? platform_metadata->LookupByKey(Common::kGCPProjectKey)
+                        : nullptr;
+  if (project_iter) {
+    project_id_ = flatbuffers::GetString(project_iter->value());
   }
   log_entries_request_->set_log_name("projects/" + project_id_ + "/logs/" +
                                      kServerAccessLogName);
 
   std::string resource_type = Common::kContainerMonitoredResource;
-  const auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
-  if (platform_metadata.end() == cluster_iter) {
+  const auto cluster_iter =
+      platform_metadata
+          ? platform_metadata->LookupByKey(Common::kGCPClusterNameKey)
+          : nullptr;
+  if (!cluster_iter) {
     // if there is no cluster name, then this is a gce_instance
     resource_type = Common::kGCEInstanceMonitoredResource;
   }
@@ -66,27 +71,34 @@ Logger::Logger(const ::wasm::common::NodeInfo& local_node_info,
 
   // Set common labels shared by all entries.
   auto label_map = log_entries_request_->mutable_labels();
-  (*label_map)["destination_name"] = local_node_info.name();
-  (*label_map)["destination_workload"] = local_node_info.workload_name();
-  (*label_map)["destination_namespace"] = local_node_info.namespace_();
-  (*label_map)["mesh_uid"] = local_node_info.mesh_id();
+  (*label_map)["destination_name"] =
+      flatbuffers::GetString(local_node_info.name());
+  (*label_map)["destination_workload"] =
+      flatbuffers::GetString(local_node_info.workload_name());
+  (*label_map)["destination_namespace"] =
+      flatbuffers::GetString(local_node_info.namespace_());
+  (*label_map)["mesh_uid"] = flatbuffers::GetString(local_node_info.mesh_id());
   // Add destination app and version label if exist.
-  const auto& local_labels = local_node_info.labels();
-  auto version_iter = local_labels.find("version");
-  if (version_iter != local_labels.end()) {
-    (*label_map)["destination_version"] = version_iter->second;
-  }
-  // App label is used to correlate workload and its logs in UI.
-  auto app_iter = local_labels.find("app");
-  if (app_iter != local_labels.end()) {
-    (*label_map)["destination_app"] = app_iter->second;
+  const auto local_labels = local_node_info.labels();
+  if (local_labels) {
+    auto version_iter = local_labels->LookupByKey("version");
+    if (version_iter) {
+      (*label_map)["destination_version"] =
+          flatbuffers::GetString(version_iter->value());
+    }
+    // App label is used to correlate workload and its logs in UI.
+    auto app_iter = local_labels->LookupByKey("app");
+    if (app_iter) {
+      (*label_map)["destination_app"] =
+          flatbuffers::GetString(app_iter->value());
+    }
   }
   log_request_size_limit_ = log_request_size_limit;
   exporter_ = std::move(exporter);
 }
 
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                         const ::wasm::common::NodeInfo& peer_node_info) {
+                         const ::Wasm::Common::FlatNode& peer_node_info) {
   // create a new log entry
   auto* log_entries = log_entries_request_->mutable_entries();
   auto* new_entry = log_entries->Add();
@@ -97,18 +109,23 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   new_entry->set_severity(::google::logging::type::INFO);
   auto label_map = new_entry->mutable_labels();
   (*label_map)["request_id"] = request_info.request_id;
-  (*label_map)["source_name"] = peer_node_info.name();
-  (*label_map)["source_workload"] = peer_node_info.workload_name();
-  (*label_map)["source_namespace"] = peer_node_info.namespace_();
+  (*label_map)["source_name"] = flatbuffers::GetString(peer_node_info.name());
+  (*label_map)["source_workload"] =
+      flatbuffers::GetString(peer_node_info.workload_name());
+  (*label_map)["source_namespace"] =
+      flatbuffers::GetString(peer_node_info.namespace_());
   // Add source app and version label if exist.
-  const auto& peer_labels = peer_node_info.labels();
-  auto version_iter = peer_labels.find("version");
-  if (version_iter != peer_labels.end()) {
-    (*label_map)["source_version"] = version_iter->second;
-  }
-  auto app_iter = peer_labels.find("app");
-  if (app_iter != peer_labels.end()) {
-    (*label_map)["source_app"] = app_iter->second;
+  const auto peer_labels = peer_node_info.labels();
+  if (peer_labels) {
+    auto version_iter = peer_labels->LookupByKey("version");
+    if (version_iter) {
+      (*label_map)["source_version"] =
+          flatbuffers::GetString(version_iter->value());
+    }
+    auto app_iter = peer_labels->LookupByKey("app");
+    if (app_iter) {
+      (*label_map)["source_app"] = flatbuffers::GetString(app_iter->value());
+    }
   }
 
   (*label_map)["destination_service_host"] =

@@ -56,11 +56,11 @@ class EdgeReporter {
   typedef std::function<google::protobuf::Timestamp()> TimestampFn;
 
  public:
-  EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
+  EdgeReporter(const ::Wasm::Common::FlatNode& local_node_info,
                std::unique_ptr<MeshEdgesServiceClient> edges_client,
                int batch_size);
 
-  EdgeReporter(const ::wasm::common::NodeInfo &local_node_info,
+  EdgeReporter(const ::Wasm::Common::FlatNode& local_node_info,
                std::unique_ptr<MeshEdgesServiceClient> edges_client,
                int batch_size, TimestampFn now);
 
@@ -69,9 +69,9 @@ class EdgeReporter {
   // addEdge creates a traffic assertion (aka an edge) based on the
   // the supplied request / peer info. The new edge is added to the
   // pending request that will be sent with all generated edges.
-  void addEdge(const ::Wasm::Common::RequestInfo &request_info,
-               const std::string &peer_metadata_id_key,
-               const ::wasm::common::NodeInfo &peer_node_info);
+  void addEdge(const ::Wasm::Common::RequestInfo& request_info,
+               const std::string& peer_metadata_id_key,
+               const ::Wasm::Common::FlatNode& peer_node_info);
 
   // reportEdges sends the buffered requests to the configured edges
   // service via the supplied client. When full_epoch is false, only

@@ -40,7 +40,6 @@ envoy_cc_library(
     deps = [
         ":config_cc_proto",
         "//extensions/common:context",
-        "//extensions/common:node_info_cache",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )

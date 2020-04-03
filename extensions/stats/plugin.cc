@@ -49,54 +49,63 @@ constexpr uint64_t kNoHealthyUpstream = 0x2;
 
 namespace {
 
+// Efficient way to assign flatbuffer to a vector of strings
+#define FB_ASSIGN(name, v) \
+  instance[name].assign((v) ? (v)->c_str() : nullptr, (v) ? (v)->size() : 0);
 void map_node(IstioDimensions& instance, bool is_source,
-              const wasm::common::NodeInfo& node) {
+              const ::Wasm::Common::FlatNode& node) {
   if (is_source) {
-    instance[source_workload] = node.workload_name();
-    instance[source_workload_namespace] = node.namespace_();
+    FB_ASSIGN(source_workload, node.workload_name());
+    FB_ASSIGN(source_workload_namespace, node.namespace_());
 
     auto source_labels = node.labels();
-    instance[source_app] = source_labels["app"];
-    instance[source_version] = source_labels["version"];
+    auto app = source_labels->LookupByKey("app");
+    FB_ASSIGN(source_app, app ? app->value() : nullptr);
+    auto version = source_labels->LookupByKey("version");
+    FB_ASSIGN(source_version, version ? version->value() : nullptr);
 
-    auto name = source_labels["service.istio.io/canonical-name"];
-    if (name.empty()) {
-      name = node.workload_name();
-    }
-    instance[source_canonical_service] = name;
+    auto name = source_labels->LookupByKey("service.istio.io/canonical-name");
+    FB_ASSIGN(source_canonical_service,
+              name ? name->value() : node.workload_name());
 
-    auto rev = source_labels["service.istio.io/canonical-revision"];
-    if (rev.empty()) {
-      rev = "latest";
+    auto rev =
+        source_labels->LookupByKey("service.istio.io/canonical-revision");
+    if (rev) {
+      FB_ASSIGN(source_canonical_revision, rev->value());
+    } else {
+      instance[source_canonical_revision] = "latest";
     }
-    instance[source_canonical_revision] = rev;
   } else {
-    instance[destination_workload] = node.workload_name();
-    instance[destination_workload_namespace] = node.namespace_();
+    FB_ASSIGN(destination_workload, node.workload_name());
+    FB_ASSIGN(destination_workload_namespace, node.namespace_());
 
     auto destination_labels = node.labels();
-    instance[destination_app] = destination_labels["app"];
-    instance[destination_version] = destination_labels["version"];
+    auto app = destination_labels->LookupByKey("app");
+    FB_ASSIGN(destination_app, app ? app->value() : nullptr);
+    auto version = destination_labels->LookupByKey("version");
+    FB_ASSIGN(destination_version, version ? version->value() : nullptr);
 
-    auto name = destination_labels["service.istio.io/canonical-name"];
-    if (name.empty()) {
-      name = node.workload_name();
+    auto name =
+        destination_labels->LookupByKey("service.istio.io/canonical-name");
+    FB_ASSIGN(destination_canonical_service,
+              name ? name->value() : node.workload_name());
+
+    auto rev =
+        destination_labels->LookupByKey("service.istio.io/canonical-revision");
+    if (rev) {
+      FB_ASSIGN(destination_canonical_revision, rev->value());
+    } else {
+      instance[destination_canonical_revision] = "latest";
     }
-    instance[destination_canonical_service] = name;
 
-    auto rev = destination_labels["service.istio.io/canonical-revision"];
-    if (rev.empty()) {
-      rev = "latest";
-    }
-    instance[destination_canonical_revision] = rev;
-
-    instance[destination_service_namespace] = node.namespace_();
+    FB_ASSIGN(destination_service_namespace, node.namespace_());
   }
 }
+#undef FB_ASSIGN
 
 // Called during request processing.
 void map_peer(IstioDimensions& instance, bool outbound,
-              const wasm::common::NodeInfo& peer_node) {
+              const ::Wasm::Common::FlatNode& peer_node) {
   map_node(instance, !outbound, peer_node);
 }
 
@@ -126,9 +135,11 @@ void map_request(IstioDimensions& instance,
 
 // maps peer_node and request to dimensions.
 void map(IstioDimensions& instance, bool outbound,
-         const wasm::common::NodeInfo& peer_node,
+         const ::Wasm::Common::FlatNode* peer_node,
          const ::Wasm::Common::RequestInfo& request) {
-  map_peer(instance, outbound, peer_node);
+  if (peer_node) {
+    map_peer(instance, outbound, *peer_node);
+  }
   map_request(instance, request);
   map_unknown_if_empty(instance);
   if (request.request_protocol == "grpc") {
@@ -301,7 +312,10 @@ void PluginRootContext::initializeDimensions() {
   // Local data does not change, so populate it on config load.
   istio_dimensions_.resize(count_standard_labels + expressions_.size());
   istio_dimensions_[reporter] = outbound_ ? source : destination;
-  map_node(istio_dimensions_, outbound_, local_node_info_);
+
+  const auto& local_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+  map_node(istio_dimensions_, outbound_, local_node);
 
   // Instantiate stat factories using the new dimensions
   auto field_separator = CONFIG_DEFAULT(field_separator);
@@ -336,7 +350,11 @@ void PluginRootContext::initializeDimensions() {
   Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
                {MetricTag{"component", MetricTag::TagType::String},
                 MetricTag{"tag", MetricTag::TagType::String}});
-  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
+  build.record(1, "proxy",
+               absl::StrCat(local_node.istio_version()
+                                ? local_node.istio_version()->str()
+                                : "unknown",
+                            ";"));
 }
 
 bool PluginRootContext::onConfigure(size_t) {
@@ -352,8 +370,7 @@ bool PluginRootContext::onConfigure(size_t) {
     return false;
   }
 
-  status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
-  if (status != Status::OK) {
+  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
   }
@@ -370,7 +387,6 @@ bool PluginRootContext::onConfigure(size_t) {
 
   debug_ = config_.debug();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
-  node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
 
   initializeDimensions();
 
@@ -455,14 +471,23 @@ void PluginRootContext::onTick() {
 bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                bool is_tcp) {
   std::string peer_id;
-  const auto peer_node_ptr = node_info_cache_.getPeerById(
-      peer_metadata_id_key_, peer_metadata_key_, peer_id);
+  getValue({"filter_state", peer_metadata_id_key_}, &peer_id);
 
-  const wasm::common::NodeInfo& peer_node =
-      peer_node_ptr ? *peer_node_ptr : ::Wasm::Common::EmptyNodeInfo;
+  std::string peer;
+  const ::Wasm::Common::FlatNode* peer_node =
+      getValue({"filter_state", peer_metadata_key_}, &peer)
+          ? flatbuffers::GetRoot<::Wasm::Common::FlatNode>(peer.data())
+          : nullptr;
 
   // map and overwrite previous mapping.
-  const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
+  const ::Wasm::Common::FlatNode* destination_node_info =
+      outbound_ ? peer_node
+                : flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+                      local_node_info_.data());
+  std::string destination_namespace =
+      destination_node_info && destination_node_info->namespace_()
+          ? destination_node_info->namespace_()->str()
+          : "";
 
   if (is_tcp) {
     // For TCP, if peer metadata is not available, peer id is set as not found.
@@ -472,19 +497,19 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     // in that case.
     uint64_t response_flags = 0;
     getValue({"response", "flags"}, &response_flags);
-    if (peer_node_ptr == nullptr &&
+    if (peer_node == nullptr &&
         peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
         !(response_flags & kNoHealthyUpstream)) {
       return false;
     }
     if (!request_info.is_populated) {
-      ::Wasm::Common::populateTCPRequestInfo(
-          outbound_, &request_info, destination_node_info.namespace_());
+      ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info,
+                                             destination_namespace);
     }
   } else {
     ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
                                             &request_info,
-                                            destination_node_info.namespace_());
+                                            destination_namespace);
   }
 
   map(istio_dimensions_, outbound_, peer_node, request_info);

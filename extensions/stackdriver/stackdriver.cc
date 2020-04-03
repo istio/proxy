@@ -158,14 +158,15 @@ bool StackdriverRootContext::onConfigure(size_t) {
     return false;
   }
 
-  status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
-  if (status != Status::OK) {
-    logWarn("cannot extract local node metadata: " + status.ToString());
+  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
+    logWarn("cannot extract local node metadata");
     return false;
   }
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
+  const ::Wasm::Common::FlatNode& local_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
 
   // Common stackdriver stub option for logging, edge and monitoring.
   ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
@@ -175,10 +176,12 @@ bool StackdriverRootContext::onConfigure(size_t) {
   stub_option.secure_endpoint = getSecureEndpoint();
   stub_option.insecure_endpoint = getInsecureEndpoint();
   stub_option.monitoring_endpoint = getMonitoringEndpoint();
-  const auto& platform_metadata = local_node_info_.platform_metadata();
-  const auto project_iter = platform_metadata.find(kGCPProjectKey);
-  if (project_iter != platform_metadata.end()) {
-    stub_option.project_id = project_iter->second;
+  const auto platform_metadata = local_node.platform_metadata();
+  if (platform_metadata) {
+    const auto project_iter = platform_metadata->LookupByKey(kGCPProjectKey);
+    if (project_iter) {
+      stub_option.project_id = flatbuffers::GetString(project_iter->value());
+    }
   }
 
   if (!logger_ && enableServerAccessLog()) {
@@ -188,7 +191,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
     logging_stub_option.default_endpoint = kLoggingService;
     auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
     // logger takes ownership of exporter.
-    logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
+    logger_ = std::make_unique<Logger>(local_node, std::move(exporter));
   }
 
   if (!edge_reporter_ && enableEdgeReporting()) {
@@ -202,11 +205,10 @@ bool StackdriverRootContext::onConfigure(size_t) {
     if (config_.max_edges_batch_size() > 0 &&
         config_.max_edges_batch_size() <= 1000) {
       edge_reporter_ = std::make_unique<EdgeReporter>(
-          local_node_info_, std::move(edges_client),
-          config_.max_edges_batch_size());
+          local_node, std::move(edges_client), config_.max_edges_batch_size());
     } else {
       edge_reporter_ = std::make_unique<EdgeReporter>(
-          local_node_info_, std::move(edges_client),
+          local_node, std::move(edges_client),
           ::Extensions::Stackdriver::Edges::kDefaultAssertionBatchSize);
     }
   }
@@ -224,8 +226,6 @@ bool StackdriverRootContext::onConfigure(size_t) {
     edge_new_report_duration_nanos_ = kDefaultEdgeNewReportDurationNanoseconds;
   }
 
-  node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
-
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -238,7 +238,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
   auto monitoring_stub_option = stub_option;
   monitoring_stub_option.default_endpoint = kMonitoringService;
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, monitoring_stub_option));
+      getStackdriverOptions(local_node, monitoring_stub_option));
   opencensus::stats::StatsExporter::SetInterval(
       absl::Seconds(getExportInterval()));
 
@@ -286,21 +286,29 @@ bool StackdriverRootContext::onDone() {
 }
 
 void StackdriverRootContext::record() {
-  const auto peer_node_info_ptr = getPeerNode();
-  const NodeInfo& peer_node_info =
-      peer_node_info_ptr ? *peer_node_info_ptr : ::Wasm::Common::EmptyNodeInfo;
-  const auto& destination_node_info =
-      isOutbound() ? peer_node_info : local_node_info_;
+  const bool outbound = isOutbound();
+  const auto& metadata_key =
+      outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
+  std::string peer;
+  const ::Wasm::Common::FlatNode& peer_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+          getValue({"filter_state", metadata_key}, &peer)
+              ? peer.data()
+              : empty_node_info_.data());
+  const ::Wasm::Common::FlatNode& local_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+  const ::Wasm::Common::FlatNode& destination_node_info =
+      outbound ? peer_node : local_node;
 
   ::Wasm::Common::RequestInfo request_info;
-  ::Wasm::Common::populateHTTPRequestInfo(isOutbound(), useHostHeaderFallback(),
-                                          &request_info,
-                                          destination_node_info.namespace_());
-  ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
-                                            peer_node_info, request_info);
+  ::Wasm::Common::populateHTTPRequestInfo(
+      isOutbound(), useHostHeaderFallback(), &request_info,
+      flatbuffers::GetString(destination_node_info.namespace_()));
+  ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node, peer_node,
+                                            request_info);
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node_info);
+    logger_->addLogEntry(request_info, peer_node);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
@@ -311,22 +319,12 @@ void StackdriverRootContext::record() {
           "; skipping edge."));
       return;
     }
-    edge_reporter_->addEdge(request_info, peer_id, peer_node_info);
+    edge_reporter_->addEdge(request_info, peer_id, peer_node);
   }
 }
 
 inline bool StackdriverRootContext::isOutbound() {
   return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
-}
-
-::Wasm::Common::NodeInfoPtr StackdriverRootContext::getPeerNode() {
-  bool isOutbound = this->isOutbound();
-  const auto& id_key =
-      isOutbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey;
-  const auto& metadata_key =
-      isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
-  std::string peer_id;
-  return node_info_cache_.getPeerById(id_key, metadata_key, peer_id);
 }
 
 inline bool StackdriverRootContext::enableServerAccessLog() {

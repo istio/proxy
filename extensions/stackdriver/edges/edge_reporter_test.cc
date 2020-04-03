@@ -146,16 +146,21 @@ const char kWantUnknownGrpcRequest[] = R"(
   }
 )";
 
-wasm::common::NodeInfo nodeInfo() {
-  wasm::common::NodeInfo node_info;
-  TextFormat::ParseFromString(kNodeInfo, &node_info);
-  return node_info;
-}
-
-wasm::common::NodeInfo peerNodeInfo() {
-  wasm::common::NodeInfo node_info;
-  TextFormat::ParseFromString(kPeerInfo, &node_info);
-  return node_info;
+const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb,
+                                         const std::string& data) {
+  ::wasm::common::NodeInfo node_info;
+  TextFormat::ParseFromString(data, &node_info);
+  google::protobuf::util::JsonOptions json_options;
+  std::string metadata_json_struct;
+  google::protobuf::util::MessageToJsonString(node_info, &metadata_json_struct,
+                                              json_options);
+  google::protobuf::util::JsonParseOptions json_parse_options;
+  google::protobuf::Struct struct_info;
+  google::protobuf::util::JsonStringToMessage(metadata_json_struct,
+                                              &struct_info, json_parse_options);
+  ::Wasm::Common::extractNodeFlatBuffer(struct_info, fbb);
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      fbb.GetBufferPointer());
 }
 
 ::Wasm::Common::RequestInfo requestInfo() {
@@ -190,9 +195,11 @@ TEST(EdgesTest, TestAddEdge) {
         got = request;
       });
 
-  auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), 10, TimeUtil::GetCurrentTime);
-  edges->addEdge(requestInfo(), "test", peerNodeInfo());
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto edges = std::make_unique<EdgeReporter>(nodeInfo(local, kNodeInfo),
+                                              std::move(test_client), 10,
+                                              TimeUtil::GetCurrentTime);
+  edges->addEdge(requestInfo(), "test", nodeInfo(peer, kPeerInfo));
   edges->reportEdges(false /* only report new edges */);
 
   // must ensure that we used the client to report the edges
@@ -219,12 +226,15 @@ TEST(EdgeReporterTest, TestRequestEdgeCache) {
         num_assertions += request.traffic_assertions_size();
       });
 
-  auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), 1000, TimeUtil::GetCurrentTime);
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto edges = std::make_unique<EdgeReporter>(nodeInfo(local, kNodeInfo),
+                                              std::move(test_client), 1000,
+                                              TimeUtil::GetCurrentTime);
 
   // force at least three queued reqs + current (four total)
+  const auto& peer_info = nodeInfo(peer, kPeerInfo);
   for (int i = 0; i < 3500; i++) {
-    edges->addEdge(requestInfo(), "test", peerNodeInfo());
+    edges->addEdge(requestInfo(), "test", peer_info);
   }
   edges->reportEdges(false /* only send current request */);
 
@@ -244,13 +254,16 @@ TEST(EdgeReporterTest, TestPeriodicFlushAndCacheReset) {
         num_assertions += request.traffic_assertions_size();
       });
 
-  auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), 100, TimeUtil::GetCurrentTime);
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto edges = std::make_unique<EdgeReporter>(nodeInfo(local, kNodeInfo),
+                                              std::move(test_client), 100,
+                                              TimeUtil::GetCurrentTime);
 
   // this should work as follows: 1 assertion in 1 request, the rest dropped
   // (due to cache)
+  const auto& peer_info = nodeInfo(peer, kPeerInfo);
   for (int i = 0; i < 350; i++) {
-    edges->addEdge(requestInfo(), "test", peerNodeInfo());
+    edges->addEdge(requestInfo(), "test", peer_info);
     // flush on 100, 200, 300
     if (i % 100 == 0 && i > 0) {
       edges->reportEdges(false /* only send current */);
@@ -276,12 +289,15 @@ TEST(EdgeReporterTest, TestCacheMisses) {
         num_assertions += request.traffic_assertions_size();
       });
 
-  auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), 1000, TimeUtil::GetCurrentTime);
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto edges = std::make_unique<EdgeReporter>(nodeInfo(local, kNodeInfo),
+                                              std::move(test_client), 1000,
+                                              TimeUtil::GetCurrentTime);
 
   // force at least three queued reqs + current (four total)
+  const auto& peer_info = nodeInfo(peer, kPeerInfo);
   for (int i = 0; i < 3500; i++) {
-    edges->addEdge(requestInfo(), std::to_string(i), peerNodeInfo());
+    edges->addEdge(requestInfo(), std::to_string(i), peer_info);
     // flush on 1000, 2000, 3000
     if (i % 1000 == 0 && i > 0) {
       edges->reportEdges(false /* only send current */);
@@ -302,9 +318,11 @@ TEST(EdgeReporterTest, TestMissingPeerMetadata) {
 
   auto test_client = std::make_unique<TestMeshEdgesServiceClient>(
       [&got](const ReportTrafficAssertionsRequest& req) { got = req; });
-  auto edges = std::make_unique<EdgeReporter>(
-      nodeInfo(), std::move(test_client), 100, TimeUtil::GetCurrentTime);
-  edges->addEdge(requestInfo(), "test", wasm::common::NodeInfo());
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto edges = std::make_unique<EdgeReporter>(nodeInfo(local, kNodeInfo),
+                                              std::move(test_client), 100,
+                                              TimeUtil::GetCurrentTime);
+  edges->addEdge(requestInfo(), "test", nodeInfo(peer, ""));
   edges->reportEdges(false /* only send current */);
 
   // ignore timestamps in proto comparisons.

@@ -195,6 +195,61 @@ static void BM_ReadFlatBuffer(benchmark::State& state) {
 }
 BENCHMARK(BM_ReadFlatBuffer);
 
+static void BM_WriteRawBytes(benchmark::State& state) {
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
+                      json_parse_options);
+  auto bytes = metadata_struct.SerializeAsString();
+  Envoy::StreamInfo::FilterStateImpl filter_state{
+      Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
+
+  for (auto _ : state) {
+    setData(filter_state, metadata_id_key, node_id);
+    setData(filter_state, metadata_key, bytes);
+  }
+}
+BENCHMARK(BM_WriteRawBytes);
+
+static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
+                      json_parse_options);
+  auto bytes = metadata_struct.SerializeAsString();
+  Envoy::StreamInfo::FilterStateImpl filter_state{
+      Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
+
+  std::unordered_map<std::string, std::string> cache;
+
+  for (auto _ : state) {
+    // lookup cache by key
+    auto nodeinfo_it = cache.find(std::string(node_id));
+    std::string node_info;
+    if (nodeinfo_it == cache.end()) {
+      google::protobuf::Struct test_struct;
+      test_struct.ParseFromArray(bytes.data(), bytes.size());
+      benchmark::DoNotOptimize(test_struct);
+
+      flatbuffers::FlatBufferBuilder fbb;
+      extractNodeFlatBuffer(test_struct, fbb);
+
+      node_info =
+          cache
+              .emplace(node_id, std::string(reinterpret_cast<const char*>(
+                                                fbb.GetBufferPointer()),
+                                            fbb.GetSize()))
+              .first->second;
+    } else {
+      node_info = nodeinfo_it->second;
+    }
+
+    setData(filter_state, metadata_id_key, node_id);
+    setData(filter_state, metadata_key, node_info);
+  }
+}
+BENCHMARK(BM_WriteFlatBufferWithCache);
+
 }  // namespace Common
 
 // WASM_EPILOG

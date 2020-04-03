@@ -59,6 +59,26 @@ bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
   return true;
 }
 
+bool updatePeer(absl::string_view key, absl::string_view,
+                absl::string_view peer_content) {
+  auto bytes = Base64::decodeWithoutPadding(peer_content);
+
+  google::protobuf::Struct metadata;
+  if (!metadata.ParseFromString(bytes)) {
+    return false;
+  }
+
+  flatbuffers::FlatBufferBuilder fbb;
+  if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
+    return false;
+  }
+
+  setFilterState(key, absl::string_view(
+                          reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                          fbb.GetSize()));
+  return true;
+}
+
 }  // namespace
 
 static RegisterContextFactory register_MetadataExchange(
@@ -98,18 +118,6 @@ bool PluginRootContext::onConfigure(size_t) {
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   // strip and store downstream peer metadata
-  auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
-  if (downstream_metadata_value != nullptr &&
-      !downstream_metadata_value->view().empty()) {
-    removeRequestHeader(ExchangeMetadataHeader);
-    auto downstream_metadata_bytes =
-        Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    setFilterState(::Wasm::Common::kDownstreamMetadataKey,
-                   downstream_metadata_bytes);
-  } else {
-    metadata_received_ = false;
-  }
-
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
@@ -118,6 +126,19 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
                    downstream_metadata_id->view());
   } else {
     metadata_id_received_ = false;
+  }
+
+  auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
+  if (downstream_metadata_value != nullptr &&
+      !downstream_metadata_value->view().empty()) {
+    removeRequestHeader(ExchangeMetadataHeader);
+    if (!updatePeer(::Wasm::Common::kDownstreamMetadataKey,
+                    downstream_metadata_id->view(),
+                    downstream_metadata_value->view())) {
+      logDebug("cannot set downstream peer node");
+    }
+  } else {
+    metadata_received_ = false;
   }
 
   // do not send request internal headers to sidecar app if it is an inbound
@@ -140,22 +161,23 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
 
 FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
   // strip and store upstream peer metadata
-  auto upstream_metadata_value = getResponseHeader(ExchangeMetadataHeader);
-  if (upstream_metadata_value != nullptr &&
-      !upstream_metadata_value->view().empty()) {
-    removeResponseHeader(ExchangeMetadataHeader);
-    auto upstream_metadata_bytes =
-        Base64::decodeWithoutPadding(upstream_metadata_value->view());
-    setFilterState(::Wasm::Common::kUpstreamMetadataKey,
-                   upstream_metadata_bytes);
-  }
-
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeaderId);
     setFilterState(::Wasm::Common::kUpstreamMetadataIdKey,
                    upstream_metadata_id->view());
+  }
+
+  auto upstream_metadata_value = getResponseHeader(ExchangeMetadataHeader);
+  if (upstream_metadata_value != nullptr &&
+      !upstream_metadata_value->view().empty()) {
+    removeResponseHeader(ExchangeMetadataHeader);
+    if (!updatePeer(::Wasm::Common::kUpstreamMetadataKey,
+                    upstream_metadata_id->view(),
+                    upstream_metadata_value->view())) {
+      logDebug("cannot set upstream peer node");
+    }
   }
 
   // do not send response internal headers to sidecar app if it is an outbound

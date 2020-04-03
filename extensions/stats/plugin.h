@@ -20,8 +20,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
-#include "extensions/common/node_info.pb.h"
-#include "extensions/common/node_info_cache.h"
 #include "extensions/stats/config.pb.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -263,8 +261,7 @@ class PluginRootContext : public RootContext {
 
  private:
   stats::PluginConfig config_;
-  wasm::common::NodeInfo local_node_info_;
-  ::Wasm::Common::NodeInfoCache node_info_cache_;
+  std::string local_node_info_;
 
   IstioDimensions istio_dimensions_;
 

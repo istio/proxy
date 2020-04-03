@@ -16,7 +16,6 @@
 #pragma once
 
 #include "extensions/common/context.h"
-#include "extensions/common/node_info_cache.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
 #include "extensions/stackdriver/edges/edge_reporter.h"
@@ -60,7 +59,9 @@ NULL_PLUGIN_REGISTRY;
 class StackdriverRootContext : public RootContext {
  public:
   StackdriverRootContext(uint32_t id, StringView root_id)
-      : RootContext(id, root_id) {}
+      : RootContext(id, root_id) {
+    ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
+  }
   ~StackdriverRootContext() = default;
 
   bool onConfigure(size_t) override;
@@ -82,11 +83,6 @@ class StackdriverRootContext : public RootContext {
 
   bool shouldLogThisRequest();
 
-  // Gets peer node info. It checks the node info cache first, and then try to
-  // fetch it from host if cache miss. If cache is disabled, it will fetch from
-  // host directly.
-  ::Wasm::Common::NodeInfoPtr getPeerNode();
-
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();
 
@@ -94,10 +90,8 @@ class StackdriverRootContext : public RootContext {
   stackdriver::config::v1alpha1::PluginConfig config_;
 
   // Local node info extracted from node metadata.
-  wasm::common::NodeInfo local_node_info_;
-
-  // Cache of peer node info.
-  ::Wasm::Common::NodeInfoCache node_info_cache_;
+  std::string local_node_info_;
+  std::string empty_node_info_;
 
   // Indicates the traffic direction relative to this proxy.
   ::Wasm::Common::TrafficDirection direction_{

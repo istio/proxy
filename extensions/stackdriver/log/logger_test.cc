@@ -42,33 +42,61 @@ class MockExporter : public Exporter {
                     bool));
 };
 
-wasm::common::NodeInfo nodeInfo() {
-  wasm::common::NodeInfo node_info;
-  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
-      "test_project";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
-      "test_cluster";
-  (*node_info.mutable_platform_metadata())[Common::kGCPLocationKey] =
-      "test_location";
-  node_info.set_namespace_("test_namespace");
-  node_info.set_name("test_pod");
-  node_info.set_workload_name("test_workload");
-  node_info.set_mesh_id("mesh");
-  return node_info;
+const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
+  auto name = fbb.CreateString("test_pod");
+  auto namespace_ = fbb.CreateString("test_namespace");
+  auto workload_name = fbb.CreateString("test_workload");
+  auto mesh_id = fbb.CreateString("mesh");
+  std::vector<flatbuffers::Offset<::Wasm::Common::KeyVal>> platform_metadata = {
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPProjectKey),
+                                   fbb.CreateString("test_project")),
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPClusterNameKey),
+                                   fbb.CreateString("test_cluster")),
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPLocationKey),
+                                   fbb.CreateString("test_location"))};
+  auto platform_metadata_offset =
+      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  ::Wasm::Common::FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_namespace_(namespace_);
+  node.add_workload_name(workload_name);
+  node.add_mesh_id(mesh_id);
+  node.add_platform_metadata(platform_metadata_offset);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      fbb.GetBufferPointer());
 }
 
-wasm::common::NodeInfo peerNodeInfo() {
-  wasm::common::NodeInfo node_info;
-  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
-      "test_project";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
-      "test_cluster";
-  (*node_info.mutable_platform_metadata())[Common::kGCPLocationKey] =
-      "test_location";
-  node_info.set_namespace_("test_peer_namespace");
-  node_info.set_workload_name("test_peer_workload");
-  node_info.set_name("test_peer_pod");
-  return node_info;
+const ::Wasm::Common::FlatNode& peerNodeInfo(
+    flatbuffers::FlatBufferBuilder& fbb) {
+  auto name = fbb.CreateString("test_peer_pod");
+  auto namespace_ = fbb.CreateString("test_peer_namespace");
+  auto workload_name = fbb.CreateString("test_peer_workload");
+  std::vector<flatbuffers::Offset<::Wasm::Common::KeyVal>> platform_metadata = {
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPProjectKey),
+                                   fbb.CreateString("test_project")),
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPClusterNameKey),
+                                   fbb.CreateString("test_cluster")),
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPLocationKey),
+                                   fbb.CreateString("test_location"))};
+  auto platform_metadata_offset =
+      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  ::Wasm::Common::FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_namespace_(namespace_);
+  node.add_workload_name(workload_name);
+  node.add_platform_metadata(platform_metadata_offset);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      fbb.GetBufferPointer());
 }
 
 ::Wasm::Common::RequestInfo requestInfo() {
@@ -165,8 +193,9 @@ google::logging::v2::WriteLogEntriesRequest expectedRequest(
 TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
-  auto logger = std::make_unique<Logger>(nodeInfo(), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo());
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -187,9 +216,11 @@ TEST(LoggerTest, TestWriteLogEntry) {
 TEST(LoggerTest, TestWriteLogEntryRotation) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
-  auto logger = std::make_unique<Logger>(nodeInfo(), std::move(exporter), 1200);
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto logger =
+      std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
   for (int i = 0; i < 9; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo());
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(

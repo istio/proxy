@@ -68,6 +68,8 @@ class PluginRootContext : public RootContext {
   void updateMetadataValue();
   std::string metadata_value_;
   std::string node_id_;
+
+  std::unordered_map<std::string, std::string> cache_;
 };
 
 // Per-stream context.

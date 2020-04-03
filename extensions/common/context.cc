@@ -271,6 +271,29 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
   return true;
 }
 
+bool extractLocalNodeFlatBuffer(std::string* out) {
+  google::protobuf::Struct node;
+  if (!getMessageValue({"node", "metadata"}, &node)) {
+    return false;
+  }
+  flatbuffers::FlatBufferBuilder fbb;
+  if (!extractNodeFlatBuffer(node, fbb)) {
+    return false;
+  }
+  out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+              fbb.GetSize());
+  return true;
+}
+
+void extractEmptyNodeFlatBuffer(std::string* out) {
+  flatbuffers::FlatBufferBuilder fbb;
+  FlatNodeBuilder node(fbb);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+              fbb.GetSize());
+}
+
 google::protobuf::util::Status extractNodeMetadataGeneric(
     const google::protobuf::Struct& metadata,
     wasm::common::NodeInfo* node_info) {
