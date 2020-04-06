@@ -300,7 +300,7 @@ func issueGetRequests(port uint16, t *testing.T) {
 func TestStackdriverPlugin(t *testing.T) {
 	s := setup(t, "")
 	defer s.TearDownClientServerEnvoy()
-	fsdm, fsdl, edgesSvc, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	fsdm, fsdl, edgesSvc, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)
@@ -382,7 +382,7 @@ func verifyNumberOfAccessLogs(fsdl *driver.LoggingServer, t *testing.T, expected
 func TestStackdriverAndAccessLogPlugin(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"15s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	_, fsdl, _, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)
@@ -395,7 +395,7 @@ func TestStackdriverAndAccessLogPlugin(t *testing.T) {
 func TestStackdriverAndAccessLogPluginLogRequestGetsLoggedAgain(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	_, fsdl, _, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)
@@ -412,7 +412,7 @@ func TestStackdriverAndAccessLogPluginLogRequestGetsLoggedAgain(t *testing.T) {
 func TestStackdriverAndAccessLogPluginAllErrorRequestsGetsLogged(t *testing.T) {
 	s := setup(t, fmt.Sprintf(inboundStackdriverAndAccessLogFilter, "\"1s\""))
 	defer s.TearDownClientServerEnvoy()
-	_, fsdl, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
+	_, fsdl, _, _, grpcServer := driver.NewFakeStackdriver(12312, 0, true, driver.ExpectedBearer)
 	defer grpcServer.Stop()
 	sts := driver.SecureTokenService{Port: 12313}
 	sts.Run(nil)
