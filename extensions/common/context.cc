@@ -22,24 +22,19 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "base64.h"
 #include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
 #include "absl/strings/str_split.h"
-#include "common/common/base64.h"
 #include "extensions/common/wasm/null/null_plugin.h"
 
-using Envoy::Base64;
 using Envoy::Extensions::Common::Wasm::HeaderMapType;
 using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::setFilterState;
 
 #endif  // NULL_PLUGIN
 
@@ -443,44 +438,6 @@ google::protobuf::util::Status extractNodeMetadataValue(
   }
 
   return google::protobuf::util::Status(google::protobuf::util::error::OK, "");
-}
-
-bool FlatNodeCache::updatePeer(absl::string_view key, absl::string_view peer_id,
-                               absl::string_view peer_content) {
-  std::string id = std::string(peer_id);
-  if (max_size_ > 0) {
-    auto it = cache_.find(id);
-    if (it != cache_.end()) {
-      updateState(key, it->second);
-      return true;
-    }
-  }
-
-  auto bytes = Base64::decodeWithoutPadding(peer_content);
-  google::protobuf::Struct metadata;
-  if (!metadata.ParseFromString(bytes)) {
-    return false;
-  }
-
-  flatbuffers::FlatBufferBuilder fbb;
-  if (!extractNodeFlatBuffer(metadata, fbb)) {
-    return false;
-  }
-  std::string out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                  fbb.GetSize());
-  updateState(key, out);
-
-  if (max_size_ > 0) {
-    // do not let the cache grow beyond max cache size.
-    if (static_cast<uint32_t>(cache_.size()) > max_size_) {
-      auto it = cache_.begin();
-      cache_.erase(cache_.begin(), std::next(it, max_size_ / 4));
-      logDebug(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
-    }
-    cache_.emplace(std::move(id), std::move(out));
-  }
-
-  return true;
 }
 
 }  // namespace Common

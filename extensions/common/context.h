@@ -212,22 +212,5 @@ google::protobuf::util::Status extractNodeMetadataValue(
     const google::protobuf::Struct& node_metadata,
     google::protobuf::Struct* metadata);
 
-class FlatNodeCache {
- public:
-  FlatNodeCache() {}
-  virtual ~FlatNodeCache() {}
-  void updateSize(uint32_t max_size) { max_size_ = max_size; }
-  // Updates the filter state for "key" using this cache or the provided peer id
-  // and content.
-  bool updatePeer(absl::string_view key, absl::string_view peer_id,
-                  absl::string_view peer_content);
-  // Override for custom behavior
-  virtual void updateState(absl::string_view key, absl::string_view value) = 0;
-
- protected:
-  std::unordered_map<std::string, std::string> cache_;
-  uint32_t max_size_;
-};
-
 }  // namespace Common
 }  // namespace Wasm

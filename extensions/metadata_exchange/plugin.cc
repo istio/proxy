@@ -106,12 +106,46 @@ bool PluginRootContext::onConfigure(size_t) {
                          configuration->toString()));
     return false;
   }
-  updateSize(config.max_peer_cache_size());
+  max_peer_cache_size_ = config.max_peer_cache_size();
   return true;
 }
 
-void PluginRootContext::updateState(StringView key, StringView value) {
-  setFilterState(key, value);
+bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
+                                   StringView peer_header) {
+  std::string id = std::string(peer_id);
+  if (max_peer_cache_size_ > 0) {
+    auto it = cache_.find(id);
+    if (it != cache_.end()) {
+      setFilterState(key, it->second);
+      return true;
+    }
+  }
+
+  auto bytes = Base64::decodeWithoutPadding(peer_header);
+  google::protobuf::Struct metadata;
+  if (!metadata.ParseFromString(bytes)) {
+    return false;
+  }
+
+  flatbuffers::FlatBufferBuilder fbb;
+  if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
+    return false;
+  }
+  StringView out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                 fbb.GetSize());
+  setFilterState(key, out);
+
+  if (max_peer_cache_size_ > 0) {
+    // do not let the cache grow beyond max cache size.
+    if (static_cast<uint32_t>(cache_.size()) > max_peer_cache_size_) {
+      auto it = cache_.begin();
+      cache_.erase(cache_.begin(), std::next(it, max_peer_cache_size_ / 4));
+      logDebug(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+    }
+    cache_.emplace(std::move(id), out);
+  }
+
+  return true;
 }
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
