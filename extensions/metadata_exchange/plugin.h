@@ -47,6 +47,7 @@ using NullPluginRegistry =
 
 constexpr StringView ExchangeMetadataHeader = "x-envoy-peer-metadata";
 constexpr StringView ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
+const size_t DefaultNodeCacheMaxSize = 500;
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
@@ -72,7 +73,7 @@ class PluginRootContext : public RootContext {
 
   // maps peer ID to the decoded peer flat buffer
   std::unordered_map<std::string, std::string> cache_;
-  uint32_t max_peer_cache_size_{0};
+  uint32_t max_peer_cache_size_{DefaultNodeCacheMaxSize};
 };
 
 // Per-stream context.

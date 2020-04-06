@@ -106,7 +106,9 @@ bool PluginRootContext::onConfigure(size_t) {
                          configuration->toString()));
     return false;
   }
-  max_peer_cache_size_ = config.max_peer_cache_size();
+  if (config.has_max_peer_cache_size()) {
+    max_peer_cache_size_ = config.max_peer_cache_size().value();
+  }
   return true;
 }
 

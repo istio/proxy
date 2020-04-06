@@ -17,10 +17,12 @@ syntax = "proto3";
 
 package metadata_exchange;
 
+import "google/protobuf/wrappers.proto";
+
 message PluginConfig {
   // next id: 2
   // maximum size of the peer metadata cache.
   // A long lived proxy that connects with many transient peers can build up a
   // large cache. To turn off the cache, set this field to zero.
-  uint32 max_peer_cache_size = 1;
+  google.protobuf.UInt32Value max_peer_cache_size = 1;
 }
