@@ -48,6 +48,7 @@ filter_chains:
           type_url: envoy.extensions.filters.http.wasm.v3.Wasm
           value:
             config:
+              root_id: "mx_outbound"
               vm_config:
                 runtime: {{ .Vars.WasmRuntime }}
                 code:
@@ -101,6 +102,7 @@ filter_chains:
           type_url: envoy.extensions.filters.http.wasm.v3.Wasm
           value:
             config:
+              root_id: "mx_inbound"
               vm_config:
                 runtime: {{ .Vars.WasmRuntime }}
                 code:

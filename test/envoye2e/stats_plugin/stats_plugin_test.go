@@ -28,6 +28,7 @@ const outboundStatsFilter = `- name: envoy.filters.http.wasm
     type_url: envoy.extensions.filters.http.wasm.v3.Wasm
     value:
       config:
+        root_id: "mx_outbound"
         vm_config:
           runtime: "envoy.wasm.runtime.null"
           code:
@@ -53,6 +54,7 @@ const inboundStatsFilter = `- name: envoy.filters.http.wasm
     type_url: envoy.extensions.filters.http.wasm.v3.Wasm
     value:
       config:
+        root_id: "mx_inbound"
         vm_config:
           runtime: "envoy.wasm.runtime.null"
           code:
