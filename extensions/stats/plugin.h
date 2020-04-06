@@ -229,6 +229,7 @@ class PluginRootContext : public RootContext {
                         MetricTag{"cache", MetricTag::TagType::String}});
     cache_hits_ = cache_count.resolve("stats_filter", "hit");
     cache_misses_ = cache_count.resolve("stats_filter", "miss");
+    ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
   }
 
   ~PluginRootContext() = default;
@@ -262,6 +263,7 @@ class PluginRootContext : public RootContext {
  private:
   stats::PluginConfig config_;
   std::string local_node_info_;
+  std::string empty_node_info_;
 
   IstioDimensions istio_dimensions_;
 
