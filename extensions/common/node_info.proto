@@ -41,4 +41,8 @@ message NodeInfo {
   // Unique identifier for the mesh. Taken from global mesh id parameter (or
   // the configured trust domain when not specified).
   string mesh_id = 8 [json_name = "MESH_ID"];
+
+  // List of short names for application containers that are using this proxy.
+  // This is only used for kubernetes, and is populated by the sidecar injector.
+  repeated string app_containers = 9 [json_name = "APP_CONTAINERS"];
 }
