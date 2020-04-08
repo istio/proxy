@@ -24,7 +24,7 @@ namespace Common {
 
 namespace {
 
-const std::string& getContainerName(
+const std::string getContainerName(
     const ::google::protobuf::RepeatedPtrField<std::string> &containers) {
   if (containers.size() == 1) {
     return containers.Get(0);
@@ -71,7 +71,7 @@ void getMonitoredResource(const std::string &monitored_resource_type,
 
     if (monitored_resource_type == kContainerMonitoredResource) {
       // Fill in container_name of k8s_container monitored resource.
-      auto& container = getContainerName(local_node_info.app_containers());
+      auto container = getContainerName(local_node_info.app_containers());
       (*monitored_resource->mutable_labels())[kContainerNameLabel] = container;
     }
   }
