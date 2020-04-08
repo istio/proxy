@@ -25,9 +25,10 @@ namespace Common {
 namespace {
 
 const std::string getContainerName(
-    const ::google::protobuf::RepeatedPtrField<std::string> &containers) {
-  if (containers.size() == 1) {
-    return containers.Get(0);
+    const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>
+        *containers) {
+  if (containers && containers->size() == 1) {
+    return flatbuffers::GetString(containers->Get(0));
   }
 
   return kIstioProxyContainerName;
@@ -80,7 +81,7 @@ void buildEnvoyGrpcService(
 }
 
 void getMonitoredResource(const std::string &monitored_resource_type,
-                          const ::wasm::common::NodeInfo &local_node_info,
+                          const ::Wasm::Common::FlatNode &local_node_info,
                           MonitoredResource *monitored_resource) {
   if (!monitored_resource) {
     return;
@@ -89,27 +90,48 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   monitored_resource->set_type(monitored_resource_type);
   auto platform_metadata = local_node_info.platform_metadata();
 
-  (*monitored_resource->mutable_labels())[kProjectIDLabel] =
-      platform_metadata[kGCPProjectKey];
+  if (platform_metadata) {
+    auto project_key = platform_metadata->LookupByKey(kGCPProjectKey);
+    if (project_key) {
+      (*monitored_resource->mutable_labels())[kProjectIDLabel] =
+          flatbuffers::GetString(project_key->value());
+    }
+  }
 
   if (monitored_resource_type == kGCEInstanceMonitoredResource) {
     // gce_instance
-
-    (*monitored_resource->mutable_labels())[kGCEInstanceIDLabel] =
-        platform_metadata[kGCPGCEInstanceIDKey];
-    (*monitored_resource->mutable_labels())[kZoneLabel] =
-        platform_metadata[kGCPLocationKey];
+    if (platform_metadata) {
+      auto instance_id_label =
+          platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
+      if (instance_id_label) {
+        (*monitored_resource->mutable_labels())[kGCEInstanceIDLabel] =
+            flatbuffers::GetString(instance_id_label->value());
+      }
+      auto zone_label = platform_metadata->LookupByKey(kGCPLocationKey);
+      if (zone_label) {
+        (*monitored_resource->mutable_labels())[kZoneLabel] =
+            flatbuffers::GetString(zone_label->value());
+      }
+    }
   } else {
     // k8s_pod or k8s_container
+    if (platform_metadata) {
+      auto location_label = platform_metadata->LookupByKey(kGCPLocationKey);
+      if (location_label) {
+        (*monitored_resource->mutable_labels())[kLocationLabel] =
+            flatbuffers::GetString(location_label->value());
+      }
+      auto cluster_name = platform_metadata->LookupByKey(kGCPClusterNameKey);
+      if (cluster_name) {
+        (*monitored_resource->mutable_labels())[kClusterNameLabel] =
+            flatbuffers::GetString(cluster_name->value());
+      }
+    }
 
-    (*monitored_resource->mutable_labels())[kLocationLabel] =
-        platform_metadata[kGCPLocationKey];
-    (*monitored_resource->mutable_labels())[kClusterNameLabel] =
-        platform_metadata[kGCPClusterNameKey];
     (*monitored_resource->mutable_labels())[kNamespaceNameLabel] =
-        local_node_info.namespace_();
+        flatbuffers::GetString(local_node_info.namespace_());
     (*monitored_resource->mutable_labels())[kPodNameLabel] =
-        local_node_info.name();
+        flatbuffers::GetString(local_node_info.name());
 
     if (monitored_resource_type == kContainerMonitoredResource) {
       // Fill in container_name of k8s_container monitored resource.

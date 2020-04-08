@@ -13,21 +13,16 @@
  * limitations under the License.
  */
 
-#pragma once
+syntax = "proto3";
 
-#include "extensions/common/context.h"
-#include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
+package metadata_exchange;
 
-namespace Extensions {
-namespace Stackdriver {
-namespace Metric {
+import "google/protobuf/wrappers.proto";
 
-// Record metrics based on local node info and request info.
-// Reporter kind deceides the type of metrics to record.
-void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
-            const ::Wasm::Common::FlatNode& peer_node_info,
-            const ::Wasm::Common::RequestInfo& request_info);
-
-}  // namespace Metric
-}  // namespace Stackdriver
-}  // namespace Extensions
+message PluginConfig {
+  // next id: 2
+  // maximum size of the peer metadata cache.
+  // A long lived proxy that connects with many transient peers can build up a
+  // large cache. To turn off the cache, set this field to zero.
+  google.protobuf.UInt32Value max_peer_cache_size = 1;
+}

@@ -30,35 +30,39 @@ constexpr char kCanonicalRevisionLabel[] =
     "service.istio.io/canonical-revision";
 constexpr char kLatest[] = "latest";
 
-void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
-            const ::wasm::common::NodeInfo &peer_node_info,
-            const ::Wasm::Common::RequestInfo &request_info) {
+void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
+            const ::Wasm::Common::FlatNode& peer_node_info,
+            const ::Wasm::Common::RequestInfo& request_info) {
   double latency_ms = request_info.duration /* in nanoseconds */ / 1000000.0;
-  const auto &operation =
+  const auto& operation =
       request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
           ? request_info.request_url_path
           : request_info.request_operation;
 
-  const auto &local_labels = local_node_info.labels();
-  const auto &peer_labels = peer_node_info.labels();
+  const auto local_labels = local_node_info.labels();
+  const auto peer_labels = peer_node_info.labels();
 
-  const auto local_name_iter = local_labels.find(kCanonicalNameLabel);
-  const std::string &local_canonical_name =
-      local_name_iter == local_labels.end() ? local_node_info.workload_name()
-                                            : local_name_iter->second;
+  const auto local_name_iter =
+      local_labels ? local_labels->LookupByKey(kCanonicalNameLabel) : nullptr;
+  const auto local_canonical_name = local_name_iter
+                                        ? local_name_iter->value()
+                                        : local_node_info.workload_name();
 
-  const auto peer_name_iter = peer_labels.find(kCanonicalNameLabel);
-  const std::string &peer_canonical_name = peer_name_iter == peer_labels.end()
-                                               ? peer_node_info.workload_name()
-                                               : peer_name_iter->second;
+  const auto peer_name_iter =
+      peer_labels ? peer_labels->LookupByKey(kCanonicalNameLabel) : nullptr;
+  const auto peer_canonical_name =
+      peer_name_iter ? peer_name_iter->value() : peer_node_info.workload_name();
 
-  const auto local_rev_iter = local_labels.find(kCanonicalRevisionLabel);
-  const std::string &local_canonical_rev =
-      local_rev_iter == local_labels.end() ? kLatest : local_rev_iter->second;
+  const auto local_rev_iter =
+      local_labels ? local_labels->LookupByKey(kCanonicalRevisionLabel)
+                   : nullptr;
+  const auto local_canonical_rev =
+      local_rev_iter ? local_rev_iter->value() : nullptr;
 
-  const auto peer_rev_iter = peer_labels.find(kCanonicalRevisionLabel);
-  const std::string &peer_canonical_rev =
-      peer_rev_iter == peer_labels.end() ? kLatest : peer_rev_iter->second;
+  const auto peer_rev_iter =
+      peer_labels ? peer_labels->LookupByKey(kCanonicalRevisionLabel) : nullptr;
+  const auto peer_canonical_rev =
+      peer_rev_iter ? peer_rev_iter->value() : nullptr;
 
   if (is_outbound) {
     opencensus::stats::Record(
@@ -66,31 +70,42 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
          {clientRequestBytesMeasure(), request_info.request_size},
          {clientResponseBytesMeasure(), request_info.response_size},
          {clientRoundtripLatenciesMeasure(), latency_ms}},
-        {{meshUIDKey(), local_node_info.mesh_id()},
+        {{meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
          {requestOperationKey(), operation},
          {requestProtocolKey(), request_info.request_protocol},
          {serviceAuthenticationPolicyKey(),
           ::Wasm::Common::AuthenticationPolicyString(
               request_info.service_auth_policy)},
          {destinationServiceNameKey(), request_info.destination_service_name},
-         {destinationServiceNamespaceKey(), peer_node_info.namespace_()},
+         {destinationServiceNamespaceKey(),
+          flatbuffers::GetString(peer_node_info.namespace_())},
          {destinationPortKey(), std::to_string(request_info.destination_port)},
          {responseCodeKey(), std::to_string(request_info.response_code)},
          {sourcePrincipalKey(), request_info.source_principal},
-         {sourceWorkloadNameKey(), local_node_info.workload_name()},
-         {sourceWorkloadNamespaceKey(), local_node_info.namespace_()},
-         {sourceOwnerKey(), local_node_info.owner()},
+         {sourceWorkloadNameKey(),
+          flatbuffers::GetString(local_node_info.workload_name())},
+         {sourceWorkloadNamespaceKey(),
+          flatbuffers::GetString(local_node_info.namespace_())},
+         {sourceOwnerKey(), flatbuffers::GetString(local_node_info.owner())},
          {destinationPrincipalKey(), request_info.destination_principal},
-         {destinationWorkloadNameKey(), peer_node_info.workload_name()},
-         {destinationWorkloadNamespaceKey(), peer_node_info.namespace_()},
-         {destinationOwnerKey(), peer_node_info.owner()},
-         {destinationCanonicalServiceNameKey(), peer_canonical_name},
+         {destinationWorkloadNameKey(),
+          flatbuffers::GetString(peer_node_info.workload_name())},
+         {destinationWorkloadNamespaceKey(),
+          flatbuffers::GetString(peer_node_info.namespace_())},
+         {destinationOwnerKey(),
+          flatbuffers::GetString(peer_node_info.owner())},
+         {destinationCanonicalServiceNameKey(),
+          flatbuffers::GetString(peer_canonical_name)},
          {destinationCanonicalServiceNamespaceKey(),
-          peer_node_info.namespace_()},
-         {destinationCanonicalRevisionKey(), peer_canonical_rev},
-         {sourceCanonicalServiceNameKey(), local_canonical_name},
-         {sourceCanonicalServiceNamespaceKey(), local_node_info.namespace_()},
-         {sourceCanonicalRevisionKey(), local_canonical_rev}});
+          flatbuffers::GetString(peer_node_info.namespace_())},
+         {destinationCanonicalRevisionKey(),
+          peer_canonical_rev ? peer_canonical_rev->str() : kLatest},
+         {sourceCanonicalServiceNameKey(),
+          flatbuffers::GetString(local_canonical_name)},
+         {sourceCanonicalServiceNamespaceKey(),
+          flatbuffers::GetString(local_node_info.namespace_())},
+         {sourceCanonicalRevisionKey(),
+          local_canonical_rev ? local_canonical_rev->str() : kLatest}});
     return;
   }
 
@@ -99,31 +114,41 @@ void record(bool is_outbound, const ::wasm::common::NodeInfo &local_node_info,
        {serverRequestBytesMeasure(), request_info.request_size},
        {serverResponseBytesMeasure(), request_info.response_size},
        {serverResponseLatenciesMeasure(), latency_ms}},
-      {{meshUIDKey(), local_node_info.mesh_id()},
+      {{meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
        {requestOperationKey(), operation},
        {requestProtocolKey(), request_info.request_protocol},
        {serviceAuthenticationPolicyKey(),
         ::Wasm::Common::AuthenticationPolicyString(
             request_info.service_auth_policy)},
        {destinationServiceNameKey(), request_info.destination_service_name},
-       {destinationServiceNamespaceKey(), local_node_info.namespace_()},
+       {destinationServiceNamespaceKey(),
+        flatbuffers::GetString(local_node_info.namespace_())},
        {destinationPortKey(), std::to_string(request_info.destination_port)},
        {responseCodeKey(), std::to_string(request_info.response_code)},
        {sourcePrincipalKey(), request_info.source_principal},
-       {sourceWorkloadNameKey(), peer_node_info.workload_name()},
-       {sourceWorkloadNamespaceKey(), peer_node_info.namespace_()},
-       {sourceOwnerKey(), peer_node_info.owner()},
+       {sourceWorkloadNameKey(),
+        flatbuffers::GetString(peer_node_info.workload_name())},
+       {sourceWorkloadNamespaceKey(),
+        flatbuffers::GetString(peer_node_info.namespace_())},
+       {sourceOwnerKey(), flatbuffers::GetString(peer_node_info.owner())},
        {destinationPrincipalKey(), request_info.destination_principal},
-       {destinationWorkloadNameKey(), local_node_info.workload_name()},
-       {destinationWorkloadNamespaceKey(), local_node_info.namespace_()},
-       {destinationOwnerKey(), local_node_info.owner()},
-       {destinationCanonicalServiceNameKey(), local_canonical_name},
+       {destinationWorkloadNameKey(),
+        flatbuffers::GetString(local_node_info.workload_name())},
+       {destinationWorkloadNamespaceKey(),
+        flatbuffers::GetString(local_node_info.namespace_())},
+       {destinationOwnerKey(), flatbuffers::GetString(local_node_info.owner())},
+       {destinationCanonicalServiceNameKey(),
+        flatbuffers::GetString(local_canonical_name)},
        {destinationCanonicalServiceNamespaceKey(),
-        local_node_info.namespace_()},
-       {destinationCanonicalRevisionKey(), local_canonical_rev},
-       {sourceCanonicalServiceNameKey(), peer_canonical_name},
-       {sourceCanonicalServiceNamespaceKey(), peer_node_info.namespace_()},
-       {sourceCanonicalRevisionKey(), peer_canonical_rev}});
+        flatbuffers::GetString(local_node_info.namespace_())},
+       {destinationCanonicalRevisionKey(),
+        local_canonical_rev ? local_canonical_rev->str() : kLatest},
+       {sourceCanonicalServiceNameKey(),
+        flatbuffers::GetString(peer_canonical_name)},
+       {sourceCanonicalServiceNamespaceKey(),
+        flatbuffers::GetString(peer_node_info.namespace_())},
+       {sourceCanonicalRevisionKey(),
+        peer_canonical_rev ? peer_canonical_rev->str() : kLatest}});
 }
 
 }  // namespace Metric

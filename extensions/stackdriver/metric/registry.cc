@@ -70,16 +70,20 @@ class GoogleUserProjHeaderInterceptorFactory
 using namespace Extensions::Stackdriver::Common;
 using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
-using wasm::common::NodeInfo;
 
 // Gets opencensus stackdriver exporter options.
 StackdriverOptions getStackdriverOptions(
-    const wasm::common::NodeInfo& local_node_info,
+    const Wasm::Common::FlatNode& local_node_info,
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
-  options.project_id = platform_metadata[kGCPProjectKey];
+  if (platform_metadata) {
+    auto project = platform_metadata->LookupByKey(kGCPProjectKey);
+    if (project) {
+      options.project_id = flatbuffers::GetString(project->value());
+    }
+  }
 
   auto ssl_creds_options = grpc::SslCredentialsOptions();
   std::ifstream file(stub_option.test_root_pem_path.empty()
@@ -143,8 +147,8 @@ StackdriverOptions getStackdriverOptions(
 
   std::string server_type = kContainerMonitoredResource;
   std::string client_type = kPodMonitoredResource;
-  auto iter = platform_metadata.find(kGCPClusterNameKey);
-  if (platform_metadata.end() == iter) {
+  if (!platform_metadata ||
+      !platform_metadata->LookupByKey(kGCPClusterNameKey)) {
     // if there is no cluster name, then this is a gce_instance
     server_type = kGCEInstanceMonitoredResource;
     client_type = kGCEInstanceMonitoredResource;

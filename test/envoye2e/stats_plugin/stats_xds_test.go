@@ -48,11 +48,12 @@ filter_chains:
           type_url: envoy.extensions.filters.http.wasm.v3.Wasm
           value:
             config:
+              root_id: "mx_outbound"
               vm_config:
                 runtime: {{ .Vars.WasmRuntime }}
                 code:
                   local: { {{ .Vars.MetadataExchangeFilterCode }} }
-              configuration: "test"
+              configuration: "{ max_peer_cache_size: 20 }"
       - name: envoy.filters.http.wasm
         typed_config:
           "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -101,11 +102,12 @@ filter_chains:
           type_url: envoy.extensions.filters.http.wasm.v3.Wasm
           value:
             config:
+              root_id: "mx_inbound"
               vm_config:
                 runtime: {{ .Vars.WasmRuntime }}
                 code:
                   local: { {{ .Vars.MetadataExchangeFilterCode }} }
-              configuration: "test"
+              configuration: "{ max_peer_cache_size: 20 }"
       - name: envoy.filters.http.wasm
         typed_config:
           "@type": type.googleapis.com/udpa.type.v1.TypedStruct

@@ -47,6 +47,7 @@ using NullPluginRegistry =
 
 constexpr StringView ExchangeMetadataHeader = "x-envoy-peer-metadata";
 constexpr StringView ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
+const size_t DefaultNodeCacheMaxSize = 500;
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
@@ -63,11 +64,28 @@ class PluginRootContext : public RootContext {
 
   StringView metadataValue() { return metadata_value_; };
   StringView nodeId() { return node_id_; };
+  bool updatePeer(StringView key, StringView peer_id, StringView peer_header);
 
  private:
   void updateMetadataValue();
   std::string metadata_value_;
   std::string node_id_;
+
+  // maps peer ID to the decoded peer flat buffer
+  std::unordered_map<std::string, std::string> cache_;
+  uint32_t max_peer_cache_size_{DefaultNodeCacheMaxSize};
+};
+
+class PluginRootContextOutbound : public PluginRootContext {
+ public:
+  PluginRootContextOutbound(uint32_t id, StringView root_id)
+      : PluginRootContext(id, root_id){};
+};
+
+class PluginRootContextInbound : public PluginRootContext {
+ public:
+  PluginRootContextInbound(uint32_t id, StringView root_id)
+      : PluginRootContext(id, root_id){};
 };
 
 // Per-stream context.

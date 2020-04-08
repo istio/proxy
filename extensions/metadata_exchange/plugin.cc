@@ -19,7 +19,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/node_info.pb.h"
+#include "extensions/metadata_exchange/config.pb.h"
 #include "google/protobuf/util/json_util.h"
 
 #ifndef NULL_PLUGIN
@@ -64,6 +64,14 @@ bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
 static RegisterContextFactory register_MetadataExchange(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
+static RegisterContextFactory register_StatsOutbound(
+    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContextOutbound),
+    "mx_outbound");
+
+static RegisterContextFactory register_StatsInbound(
+    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContextInbound),
+    "mx_inbound");
+
 void PluginRootContext::updateMetadataValue() {
   google::protobuf::Struct node_metadata;
   if (!getMessageValue({"node", "metadata"}, &node_metadata)) {
@@ -93,23 +101,65 @@ bool PluginRootContext::onConfigure(size_t) {
   }
   logDebug(absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_,
                         " node:", node_id_));
+
+  // Parse configuration JSON string.
+  std::unique_ptr<WasmData> configuration = getConfiguration();
+  google::protobuf::util::JsonParseOptions json_options;
+  json_options.ignore_unknown_fields = true;
+  metadata_exchange::PluginConfig config;
+  const auto status = google::protobuf::util::JsonStringToMessage(
+      configuration->toString(), &config, json_options);
+  if (!status.ok()) {
+    logWarn(absl::StrCat("cannot parse plugin configuration JSON string ",
+                         configuration->toString()));
+    return false;
+  }
+  if (config.has_max_peer_cache_size()) {
+    max_peer_cache_size_ = config.max_peer_cache_size().value();
+  }
+  return true;
+}
+
+bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
+                                   StringView peer_header) {
+  std::string id = std::string(peer_id);
+  if (max_peer_cache_size_ > 0) {
+    auto it = cache_.find(id);
+    if (it != cache_.end()) {
+      setFilterState(key, it->second);
+      return true;
+    }
+  }
+
+  auto bytes = Base64::decodeWithoutPadding(peer_header);
+  google::protobuf::Struct metadata;
+  if (!metadata.ParseFromString(bytes)) {
+    return false;
+  }
+
+  flatbuffers::FlatBufferBuilder fbb;
+  if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
+    return false;
+  }
+  StringView out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                 fbb.GetSize());
+  setFilterState(key, out);
+
+  if (max_peer_cache_size_ > 0) {
+    // do not let the cache grow beyond max cache size.
+    if (static_cast<uint32_t>(cache_.size()) > max_peer_cache_size_) {
+      auto it = cache_.begin();
+      cache_.erase(cache_.begin(), std::next(it, max_peer_cache_size_ / 4));
+      logDebug(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+    }
+    cache_.emplace(std::move(id), out);
+  }
+
   return true;
 }
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   // strip and store downstream peer metadata
-  auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
-  if (downstream_metadata_value != nullptr &&
-      !downstream_metadata_value->view().empty()) {
-    removeRequestHeader(ExchangeMetadataHeader);
-    auto downstream_metadata_bytes =
-        Base64::decodeWithoutPadding(downstream_metadata_value->view());
-    setFilterState(::Wasm::Common::kDownstreamMetadataKey,
-                   downstream_metadata_bytes);
-  } else {
-    metadata_received_ = false;
-  }
-
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
       !downstream_metadata_id->view().empty()) {
@@ -118,6 +168,19 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
                    downstream_metadata_id->view());
   } else {
     metadata_id_received_ = false;
+  }
+
+  auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
+  if (downstream_metadata_value != nullptr &&
+      !downstream_metadata_value->view().empty()) {
+    removeRequestHeader(ExchangeMetadataHeader);
+    if (!rootContext()->updatePeer(::Wasm::Common::kDownstreamMetadataKey,
+                                   downstream_metadata_id->view(),
+                                   downstream_metadata_value->view())) {
+      logDebug("cannot set downstream peer node");
+    }
+  } else {
+    metadata_received_ = false;
   }
 
   // do not send request internal headers to sidecar app if it is an inbound
@@ -140,22 +203,23 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
 
 FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
   // strip and store upstream peer metadata
-  auto upstream_metadata_value = getResponseHeader(ExchangeMetadataHeader);
-  if (upstream_metadata_value != nullptr &&
-      !upstream_metadata_value->view().empty()) {
-    removeResponseHeader(ExchangeMetadataHeader);
-    auto upstream_metadata_bytes =
-        Base64::decodeWithoutPadding(upstream_metadata_value->view());
-    setFilterState(::Wasm::Common::kUpstreamMetadataKey,
-                   upstream_metadata_bytes);
-  }
-
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
       !upstream_metadata_id->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeaderId);
     setFilterState(::Wasm::Common::kUpstreamMetadataIdKey,
                    upstream_metadata_id->view());
+  }
+
+  auto upstream_metadata_value = getResponseHeader(ExchangeMetadataHeader);
+  if (upstream_metadata_value != nullptr &&
+      !upstream_metadata_value->view().empty()) {
+    removeResponseHeader(ExchangeMetadataHeader);
+    if (!rootContext()->updatePeer(::Wasm::Common::kUpstreamMetadataKey,
+                                   upstream_metadata_id->view(),
+                                   upstream_metadata_value->view())) {
+      logDebug("cannot set upstream peer node");
+    }
   }
 
   // do not send response internal headers to sidecar app if it is an outbound

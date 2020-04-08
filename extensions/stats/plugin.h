@@ -20,8 +20,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
-#include "extensions/common/node_info.pb.h"
-#include "extensions/common/node_info_cache.h"
 #include "extensions/stats/config.pb.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -231,6 +229,7 @@ class PluginRootContext : public RootContext {
                         MetricTag{"cache", MetricTag::TagType::String}});
     cache_hits_ = cache_count.resolve("stats_filter", "hit");
     cache_misses_ = cache_count.resolve("stats_filter", "miss");
+    ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
   }
 
   ~PluginRootContext() = default;
@@ -263,8 +262,8 @@ class PluginRootContext : public RootContext {
 
  private:
   stats::PluginConfig config_;
-  wasm::common::NodeInfo local_node_info_;
-  ::Wasm::Common::NodeInfoCache node_info_cache_;
+  std::string local_node_info_;
+  std::string empty_node_info_;
 
   IstioDimensions istio_dimensions_;
 

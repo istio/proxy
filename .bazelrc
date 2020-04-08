@@ -40,3 +40,6 @@ build:debug -c dbg
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
+
+# Link pthread for flatbuffers
+build --host_linkopt=-pthread

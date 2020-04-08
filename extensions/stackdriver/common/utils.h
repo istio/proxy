@@ -46,7 +46,7 @@ void buildEnvoyGrpcService(
 // Only two types of monitored resource could be returned: k8s_container or
 // k8s_pod.
 void getMonitoredResource(const std::string &monitored_resource_type,
-                          const ::wasm::common::NodeInfo &local_node_info,
+                          const ::Wasm::Common::FlatNode &local_node_info,
                           google::api::MonitoredResource *monitored_resource);
 
 // Set secure exchange service gRPC call credential.

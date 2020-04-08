@@ -270,10 +270,15 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_it->second;
-    setFilterState(config_->filter_direction_ == FilterDirection::Downstream
-                       ? DownstreamMetadataKey
-                       : UpstreamMetadataKey,
-                   val.struct_value().SerializeAsString());
+    flatbuffers::FlatBufferBuilder fbb;
+    if (::Wasm::Common::extractNodeFlatBuffer(val.struct_value(), fbb)) {
+      setFilterState(config_->filter_direction_ == FilterDirection::Downstream
+                         ? DownstreamMetadataKey
+                         : UpstreamMetadataKey,
+                     absl::string_view(
+                         reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                         fbb.GetSize()));
+    }
   }
   const auto key_metadata_id_it =
       value_struct.fields().find(ExchangeMetadataHeaderId);

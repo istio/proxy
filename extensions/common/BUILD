@@ -24,6 +24,11 @@ load(
     "envoy_cc_test",
     "envoy_package",
 )
+load(
+    "@com_github_google_flatbuffers//:build_defs.bzl",
+    "DEFAULT_FLATC_ARGS",
+    "flatbuffer_library_public",
+)
 
 envoy_package()
 
@@ -42,7 +47,9 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":node_info_cc_proto",
+        ":node_info_fb_cc",
         "@com_google_protobuf//:protobuf",
+        "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )
@@ -119,6 +126,7 @@ envoy_cc_test(
 
 envoy_cc_binary(
     name = "context_speed_test",
+    testonly = True,
     srcs = ["context_speed_test.cc"],
     external_deps = [
         "benchmark",
@@ -126,6 +134,28 @@ envoy_cc_binary(
     repository = "@envoy",
     deps = [
         ":context",
+        "@envoy//source/common/stream_info:filter_state_lib",
+        "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
         "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
+)
+
+flatbuffer_library_public(
+    name = "node_info_fbs",
+    srcs = ["node_info.fbs"],
+    outs = [
+        "node_info_bfbs_generated.h",
+        "node_info_generated.h",
+    ],
+    flatc_args = DEFAULT_FLATC_ARGS + ["--bfbs-gen-embed"],
+    language_flag = "-c",
+)
+
+cc_library(
+    name = "node_info_fb_cc",
+    srcs = [":node_info_fbs"],
+    hdrs = [":node_info_fbs"],
+    features = ["-parse_headers"],
+    linkstatic = True,
+    deps = ["@com_github_google_flatbuffers//:runtime_cc"],
 )

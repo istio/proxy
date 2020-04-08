@@ -53,6 +53,7 @@ filter_chains:
                 code:
                   local:
                     inline_string: envoy.wasm.metadata_exchange
+              configuration: "{ max_peer_cache_size: 20 }"
       - name: envoy.router
       route_config:
         name: server

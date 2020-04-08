@@ -38,14 +38,14 @@ class Logger {
   // exports to Stackdriver backend with the given exporter.
   // log_request_size_limit is the size limit of a logging request:
   // https://cloud.google.com/logging/quotas.
-  Logger(const ::wasm::common::NodeInfo &local_node_info,
+  Logger(const ::Wasm::Common::FlatNode &local_node_info,
          std::unique_ptr<Exporter> exporter,
          int log_request_size_limit = 4000000 /* 4 Mb */);
 
   // Add a new log entry based on the given request information and peer node
   // information.
   void addLogEntry(const ::Wasm::Common::RequestInfo &request_info,
-                   const ::wasm::common::NodeInfo &peer_node_info);
+                   const ::Wasm::Common::FlatNode &peer_node_info);
 
   // Export and clean the buffered WriteLogEntriesRequests. Returns true if
   // async call is made to export log entry, otherwise returns false if nothing
