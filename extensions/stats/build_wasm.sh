@@ -16,6 +16,7 @@
 
 set -e
 
-source ../../scripts/build_wasm.inc
+WS=$(bazel info workspace)
+source ${WS}/scripts/build_wasm.inc
 
 build_wasm
