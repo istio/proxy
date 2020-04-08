@@ -242,6 +242,7 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
       workload_name, istio_version, mesh_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
+  std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   for (const auto& it : metadata.fields()) {
     if (it.first == "NAME") {
       name = fbb.CreateString(it.second.string_value());
@@ -267,12 +268,18 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
             CreateKeyVal(fbb, fbb.CreateString(platform_it.first),
                          fbb.CreateString(platform_it.second.string_value())));
       }
+    } else if (it.first == "APP_CONTAINERS") {
+      for (const auto& containers_it : it.second.list_value().values()) {
+        app_containers.push_back(
+            fbb.CreateString(containers_it.string_value()));
+      }
     }
   }
   // finish pre-order construction
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
   auto platform_metadata_offset =
       fbb.CreateVectorOfSortedTables(&platform_metadata);
+  auto app_containers_offset = fbb.CreateVector(app_containers);
   FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
@@ -282,6 +289,7 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
   node.add_mesh_id(mesh_id);
   node.add_labels(labels_offset);
   node.add_platform_metadata(platform_metadata_offset);
+  node.add_app_containers(app_containers_offset);
   auto data = node.Finish();
   fbb.Finish(data);
   return true;

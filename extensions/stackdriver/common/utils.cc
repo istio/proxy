@@ -25,9 +25,10 @@ namespace Common {
 namespace {
 
 const std::string getContainerName(
-    const ::google::protobuf::RepeatedPtrField<std::string> &containers) {
-  if (containers.size() == 1) {
-    return containers.Get(0);
+    const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>
+        *containers) {
+  if (containers && containers->size() == 1) {
+    return flatbuffers::GetString(containers->Get(0));
   }
 
   return kIstioProxyContainerName;
