@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
-set -x
+# Build Wasm modules 
+build_wasm() {
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+    workspace=${root}/WORKSPACE
+    wasm_sdk_tag="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${workspace}")"
+    wasm_sdk_image=${WASM_SDK_IMAGE:=gcr.io/istio-testing/wasmsdk}
 
-WS=$(bazel info workspace)
-source ${WS}/scripts/build_wasm.inc
-
-build_wasm
+    docker run -e uid="$(id -u)" -e gid="$(id -g)" -v $PWD:/work -w /work -v $(realpath $PWD/../../extensions):/work/extensions ${wasm_sdk_image}:${wasm_sdk_tag} bash /build_wasm.sh
+    rmdir extensions
+}
