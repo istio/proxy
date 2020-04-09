@@ -45,7 +45,7 @@ export BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-fastbuild/bin
 # Disable RBE execution due to failures like https://prow.istio.io/view/gcs/istio-prow/pr-logs/pull/istio_proxy/2633/release-test_proxy/211
 export BAZEL_BUILD_RBE_JOBS=0
 
-Use GCP service account when available.
+# Use GCP service account when available.
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
   gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
