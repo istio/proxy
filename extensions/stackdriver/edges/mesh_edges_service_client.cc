@@ -38,7 +38,7 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 constexpr char kMeshEdgesService[] =
     "google.cloud.meshtelemetry.v1alpha1.MeshEdgesService";
 constexpr char kReportTrafficAssertions[] = "ReportTrafficAssertions";
-constexpr int kDefaultTimeoutMillisecond = 10000;  // 10 seconds
+constexpr int kDefaultTimeoutMillisecond = 60000;  // 60 seconds
 
 namespace Extensions {
 namespace Stackdriver {
