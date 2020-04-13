@@ -1,0 +1,158 @@
+/* Copyright 2020 Istio Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package classify;
+
+
+// Configuration to classify http traffic.
+// Traffic classification can be done on mutiple dimensions using request and
+// response headers and other measurements. 
+// The plugin must be configured as request, response or log based on
+// which other plugins need to consume the classfication results.
+// For exmaple: If Stats plugin uses `operation` dimension produced by the classification
+// plugin, then it must be executed in LOG phase *before* the Stats plugin.
+message PluginConfig {
+  // next id: 3
+  // Plugin phase when classification is done.
+  PluginPhase phase = 1;
+
+  // Request classification along multiple dimensions.
+  repeated Dimension dimensions = 2;
+}
+
+// Dimension configuration produces the named dimension with a value based
+// on the match clause in the value. 
+// The value matches are processed sequentially and the first value to match is assigned.
+message Dimension {
+  // For example `operation` is a dimension.
+  string name = 1;
+
+  // At most one of the following values is assigned to the dimension. 
+  repeated Value values = 2;
+}
+
+// Value assigned to the dimension if the request matches.
+message Value {
+  // Assign `value` to the enclosing dimension if match is true.
+  string value = 1;
+
+  // Match specification.
+  // Empty match always matches, which can be used to specify a default value when placed
+  // at the end of the list.
+  Match match = 2;
+}
+
+// Match condition based on request and response information.
+// Every match condition must match for the result to be true.
+message Match {
+  // invert the match condition.
+  bool invert = 1;
+
+  // Match uri.
+  StringMatch uri = 2;
+
+  // Match scheme: http or https.
+  string scheme = 3;
+
+  // Match method: GET, POST, HEAD, PUT, DELETE, ...
+  string method = 4;
+
+  // Match request headers.
+  // Not implemented.
+  // $hide_from_docs
+  map<string, StringMatch> request_headers = 5;
+  
+  // Match response headers.
+  // Not implemented.
+  // $hide_from_docs
+  map<string, StringMatch> response_headers = 6;
+
+  // Match query parameters.
+  // Not implemented.
+  // $hide_from_docs
+  map<string, StringMatch> query_params = 7;
+
+  // Match response code.
+  IntMatch response_code = 8;
+
+  // Match request size.
+  // Not implemented.
+  // $hide_from_docs
+  IntMatch request_size = 9;
+
+  // Match response size.
+  // Not implemented.
+  // $hide_from_docs
+  IntMatch response_size = 10;
+}
+
+// Describes how to match a given string.
+message StringMatch {
+  // default is case sensitive.
+  bool case_insensitive = 1;
+
+  oneof match_type {
+
+    // exact string match
+    string exact = 2;
+
+    // prefix-based match
+    string prefix = 3;
+
+    // RE2 style regex-based match (https://github.com/google/re2/wiki/Syntax).
+    string regex = 4;
+  }
+}
+
+// Describes how to match a given Integer.
+message IntMatch {
+  oneof match_type {
+
+    // exact Int match
+    int64 exact = 1;
+
+    // Range match
+    IntRange range = 2;
+  }
+}
+
+// IntRange matches a range of integers.
+message IntRange {
+  // Greater than or equal to this number.
+  int64 ge = 1;
+
+  // Less than or equal to this number.
+  int64 le = 2;
+}
+
+// PluginPhase determines when the classification is performed.
+enum PluginPhase {
+  // Classification is performed after the response is sent back to the client.
+  // All information about the request is available in this phase,
+  // and classification does not add to the latency observed by the client.
+  LOG = 0;
+  // Classification is performed during request processing, and adds to
+  // the request latency as observed by the client.
+  // Only request related information can be used in this phase.
+  // For example: you may not use response headers here.
+  // Attemping to use response headers in request phase will never result in a match.
+  // Not Implemented
+  // $hide_from_docs
+  REQUEST = 1;
+
+  // ADD RESPONSE=2 if there is a need.
+}
