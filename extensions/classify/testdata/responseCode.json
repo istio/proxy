@@ -1,0 +1,74 @@
+{
+  "phase": "LOG",
+  "dimensions": [
+    {
+      "name": "responseCode",
+      "values": [
+        {
+          "value": "2xx",
+          "match": {
+            "response_code": {
+              "range": {"ge": 200, "le": 299 }
+            }
+          }
+        },
+        {
+          "value": "3xx",
+          "match": {
+            "response_code": {
+              "range": {"ge": 300, "le": 399 }
+            }
+          }
+        },
+        {
+          "value": "404",
+          "match": {
+            "response_code": {
+              "exact": 404
+            }
+          }
+        },
+        {
+          "value": "401",
+          "match": {
+            "response_code": {
+              "exact": 401
+            }
+          }
+        },
+        {
+          "value": "403",
+          "match": {
+            "response_code": {
+              "exact": 403
+            }
+          }
+        },
+        {
+          "value": "4xx",
+          "match": {
+            "response_code": {
+              "range": {"ge": 400, "le": 499 }
+            }
+          }
+        },
+        {
+          "value": "503",
+          "match": {
+            "response_code": {
+              "exact": 503
+            }
+          }
+        },
+        {
+          "value": "5xx",
+          "match": {
+            "response_code": {
+              "range": {"ge": 500, "le": 599 }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

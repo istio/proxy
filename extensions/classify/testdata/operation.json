@@ -1,0 +1,37 @@
+{
+  "phase": "LOG",
+  "dimensions": [
+    {
+      "name": "operation",
+      "values": [
+        {
+          "value": "GetReview",
+          "match": {
+            "uri": {
+              "regex": "^/reviews/\d*"
+            },
+            "method": "GET"
+          }
+        },
+        {
+          "value": "ListReviews",
+          "match": {
+            "uri": {
+              "exact": "/reviews/"
+            },
+            "method": "GET"
+          }
+        },
+        {
+          "value": "CreateReview",
+          "match": {
+            "uri": {
+              "exact": "/reviews/"
+            },
+            "method": "POST"
+          }
+        }
+      ]
+    }
+  ]
+}
