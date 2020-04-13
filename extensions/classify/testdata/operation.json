@@ -8,7 +8,7 @@
           "value": "GetReview",
           "match": {
             "uri": {
-              "regex": "^/reviews/\d*"
+              "regex": "^/reviews/\d*/lines/\d*"
             },
             "method": "GET"
           }

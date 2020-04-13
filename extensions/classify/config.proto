@@ -17,18 +17,19 @@ syntax = "proto3";
 
 package classify;
 
+import "google/protobuf/duration.proto";
 
 // Configuration to classify http traffic.
 // Traffic classification can be done on mutiple dimensions using request and
 // response headers and other measurements. 
 // The plugin must be configured as request, response or log based on
 // which other plugins need to consume the classfication results.
-// For exmaple: If Stats plugin uses `operation` dimension produced by the classification
+// For example: If Stats plugin uses `operation` dimension produced by the classification
 // plugin, then it must be executed in LOG phase *before* the Stats plugin.
 message PluginConfig {
   // next id: 3
   // Plugin phase when classification is done.
-  PluginPhase phase = 1;
+  Phase phase = 1;
 
   // Request classification along multiple dimensions.
   repeated Dimension dimensions = 2;
@@ -62,14 +63,14 @@ message Match {
   // invert the match condition.
   bool invert = 1;
 
-  // Match uri.
-  StringMatch uri = 2;
+  // Match path.
+  repeated StringMatch path = 2;
 
-  // Match scheme: http or https.
-  string scheme = 3;
+  // Match scheme: http, https or unset.
+  Scheme scheme = 3;
 
   // Match method: GET, POST, HEAD, PUT, DELETE, ...
-  string method = 4;
+  repeated string method = 4;
 
   // Match request headers.
   // Not implemented.
@@ -87,17 +88,22 @@ message Match {
   map<string, StringMatch> query_params = 7;
 
   // Match response code.
-  IntMatch response_code = 8;
+  repeated IntMatch response_code = 8;
 
   // Match request size.
   // Not implemented.
   // $hide_from_docs
-  IntMatch request_size = 9;
+  repeated IntMatch request_size = 9;
 
   // Match response size.
   // Not implemented.
   // $hide_from_docs
-  IntMatch response_size = 10;
+  repeated IntMatch response_size = 10;
+
+  // Match response duration.
+  // Not implemented.
+  // $hide_from_docs
+  repeated DurationMatch response_duration = 11;
 }
 
 // Describes how to match a given string.
@@ -130,21 +136,55 @@ message IntMatch {
   }
 }
 
+// Describes how to match a Duration.
+message DurationMatch {
+  oneof match_type {
+
+    // exact duration match.
+    google.protobuf.Duration exact = 1;
+
+    // Range match for duration.
+    DurationRange range = 2;
+  }
+}
+
 // IntRange matches a range of integers.
 message IntRange {
   // Greater than or equal to this number.
-  int64 ge = 1;
+  // Default is 0.
+  int64 min = 1;
 
   // Less than or equal to this number.
-  int64 le = 2;
+  // Default is INT_MAX.
+  int64 max = 2;
 }
 
-// PluginPhase determines when the classification is performed.
-enum PluginPhase {
+// DurationRange matches a range of integers.
+message DurationRange {
+  // Greater than or equal to this duration.
+  // Default is 0.
+  google.protobuf.Duration min = 1;
+
+  // Less than or equal to this duration.
+  // Default is INT_MAX.
+  google.protobuf.Duration max = 2;
+}
+
+enum Scheme {
+  // Matches any
+  UNSPECIFIED = 0;
+  HTTP = 1;
+  HTTPS = 2;
+}
+
+// Phase determines when the classification is performed.
+enum Phase {
+  option allow_alias = true;
   // Classification is performed after the response is sent back to the client.
   // All information about the request is available in this phase,
   // and classification does not add to the latency observed by the client.
-  LOG = 0;
+  PHASE_UNSPECIFIED = 0;
+  AFTER_RESPONSE = 0;
   // Classification is performed during request processing, and adds to
   // the request latency as observed by the client.
   // Only request related information can be used in this phase.
@@ -152,7 +192,7 @@ enum PluginPhase {
   // Attemping to use response headers in request phase will never result in a match.
   // Not Implemented
   // $hide_from_docs
-  REQUEST = 1;
+  ON_REQUEST = 1;
 
-  // ADD RESPONSE=2 if there is a need.
+  // ADD ON_RESPONSE=2 if there is a need.
 }
