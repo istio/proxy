@@ -1,22 +1,3 @@
-entries:
-- http_request:
-    request_method: "GET"
-    request_url: "http://127.0.0.1:{{ .Vars.ClientPort }}/"
-    server_ip: "127.0.0.1:{{ .Vars.ServerPort }}"
-    protocol: "http"
-    status: 200
-  labels:
-    destination_principal: ""
-    destination_service_host: server.default.svc.cluster.local
-    response_flag: "-"
-    service_authentication_policy: NONE
-    source_name: ratings-v1-84975bc778-pxz2w
-    source_namespace: default
-    source_principal: ""
-    source_workload: ratings-v1
-    source_app: ratings
-    source_version: v1
-  severity: INFO
 labels:
   destination_name: ratings-v1-84975bc778-pxz2w
   destination_namespace: default

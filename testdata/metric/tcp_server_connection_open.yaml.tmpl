@@ -1,11 +1,11 @@
-name: istio_requests_total
+name: istio_tcp_connections_opened_total
 type: COUNTER
 metric:
 - counter:
-    value: {{ .Vars.RequestCount }}
+    value: 10
   label:
   - name: reporter
-    value: source
+    value: destination
   - name: source_workload
     value: productpage-v1
   - name: source_canonical_service
@@ -15,7 +15,7 @@ metric:
   - name: source_workload_namespace
     value: default
   - name: source_principal
-    value: unknown
+    value: spiffe://cluster.local/ns/default/sa/client
   - name: source_app
     value: productpage
   - name: source_version
@@ -25,7 +25,7 @@ metric:
   - name: destination_workload_namespace
     value: default
   - name: destination_principal
-    value: unknown
+    value: spiffe://cluster.local/ns/default/sa/server
   - name: destination_app
     value: ratings
   - name: destination_version
@@ -41,16 +41,8 @@ metric:
   - name: destination_service_namespace
     value: default
   - name: request_protocol
-    value: http
-  - name: response_code
-    value: "200"
-  - name: grpc_response_status
-    value: "{{ .Vars.GrpcResponseStatus }}"
+    value: tcp
   - name: response_flags
     value: "-"
   - name: connection_security_policy
-    value: unknown
-  - name: configurable_metric_a
-    value: localhost:server
-  - name: configurable_metric_b
-    value: HTTP/1.1
+    value: mutual_tls

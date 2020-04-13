@@ -4,9 +4,9 @@ metric:
     destination_canonical_service_name: ratings
     destination_canonical_service_namespace: default
     destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
-    destination_port: '{{ .Vars.ServerPort }}'
+    destination_port: '{{ .Ports.ServerPort }}'
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
-    destination_service_name: "127.0.0.1:{{ .Vars.ClientPort }}"
+    destination_service_name: server
     destination_service_namespace: default
     destination_workload_name: ratings-v1
     destination_workload_namespace: default

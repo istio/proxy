@@ -29,13 +29,13 @@ metric:
   - name: destination_version
     value: _v1
   - name: destination_service
-    value: 127.0.0.1:{{ .Vars.ClientPort }}
+    value: server.default.svc.cluster.local
   - name: destination_canonical_service
     value: ratings
   - name: destination_canonical_revision
     value: version-1
   - name: destination_service_name
-    value: 127.0.0.1:{{ .Vars.ClientPort }}
+    value: server
   - name: destination_service_namespace
     value: default
   - name: request_protocol
