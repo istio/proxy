@@ -1,0 +1,11 @@
+- output_attribute: istio.operationId 
+  phase: LOG
+  ignore_errors: true
+  match:
+  - value: ListBooks
+    condition: request.url_path == "/books" && request.method == "GET"
+  - value: GetBook
+    condition: request.url_path.matches("^/shelves/\d*/books/\d*$") && request.method == "GET"
+  - value: CreateBook
+    condition: request.url_path == "/books/" && request.method == "POST"
+
