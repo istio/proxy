@@ -1,5 +1,5 @@
 - output_attribute: istio.operationId 
-  phase: LOG
+  phase: AFTER_RESPONSE
   ignore_errors: true
   match:
   - value: ListBooks
