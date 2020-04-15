@@ -23,8 +23,8 @@ using google::protobuf::util::TimeUtil;
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "proxy_wasm_intrinsics.h"
 #include "extensions/common/proxy_expr.h"
+#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
