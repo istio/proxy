@@ -17,7 +17,8 @@ syntax = "proto3";
 
 package istio.attributegen;
 
-// Configuration to generate attributes based on existing attributes.
+// Configuration to generate new attributes based on attributes of the proxied
+// traffic.
 message PluginConfig {
   // next id: 2
   // Multiple independent attribute generation configurations.
