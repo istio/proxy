@@ -15,8 +15,6 @@
 
 #include "extensions/attributegen/plugin.h"
 
-#include "absl/strings/ascii.h"
-
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
 

@@ -15,10 +15,7 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
 #include "extensions/attributegen/config.pb.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -52,8 +49,6 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::FilterStatus;
 namespace AttributeGen {
 
 using StringView = absl::string_view;
-template <typename K, typename V>
-using Map = std::unordered_map<K, V>;
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
