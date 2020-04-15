@@ -18,6 +18,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "extensions/common/util.h"
+#include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
