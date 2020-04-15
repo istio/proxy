@@ -15,46 +15,54 @@
 
 syntax = "proto3";
 
-package istioclassify;
+package istio.attributegen;
 
-// Configuration to classify traffic.
+// Configuration to generate attributes based on existing attributes.
 message PluginConfig {
   // next id: 2
-  // Multiple independent classification configurations.
-  repeated Classification classifications = 1;
+  // Multiple independent attribute generation configurations.
+  repeated AttributeGeneration attributes = 1;
 }
 
-// Classification uses [well known attributes](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition) as inputs and produces
-// a new attribute that denotes a specific classification.
+// AttributeGeneration uses [well known attributes]
+// (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
+// as inputs and produces a new attribute.
 // The new attribute can be used by a downstream plugin.
 //
-// Example: A classifier may produce an attribute called `istio.operationId` which is analogous to the `operationId` in the OpenAPI Spec.
-// The Stats plugin will run after the classifier and use `istio.operationId` to populate a dimension. 
-message Classification {
-  // Phase denotes plugin lifecycle phase when the classification is evaluated. 
+// Example: AttributeGen may produce an attribute called `istio.operationId` which is analogous to
+// the `operationId` in the OpenAPI Spec.
+// The Stats plugin will run after this plugin and use `istio.operationId` to populate a dimension. 
+message AttributeGeneration {
+  // Phase denotes plugin lifecycle phase when the new attribute is generated.
+  // Default: After the response is sent back to the client.
   Phase phase = 1;
 
-  // The following attribute is populated on successfully running the classification.
+  // The following attribute is populated on a successful match.
   // Example: `istio.operationId`
-  string output_attribute = 2;
-
-  // A Classification may fail to evaluate when an attribute is not available.
+  // `istio.` attribute namespace is reserved by Istio.
+  //
+  // AttributeGeneration may fail to evaluate when an attribute is not available.
   // Example: `response.code` may not be available when a request ends abruptly.
-  // When evalution failes, the plugin will return an error to the client.
-  // This is the correct behaviour if the result of the classification is used by an authz plugin.
-  // If the result of the classifier is used by stats, you may just want to log an error but not
-  // fail the request. If `ignore_errors=true` then the classifier plugin will not fail the request.
-  bool ignore_errors = 3;
+  // When evaluation fails the plugin will set an error_attribute to the error string.
+  // error_attribute = ${output_attribute}_error
+  //
+  // If the generated attribute is used by an authz plugin, it should fail the request if
+  // the `error_attribute` is set.
+  // If the generated attribute is used by Stats, it may log the error but not
+  // fail the request.
+  string output_attribute = 2;
  
   // Matches are evaluated in order until the first successful match.
-  // The value specified by the successful match is assgined to the output_attribute. 
-  repeated Match match = 4;
+  // The value specified by the successful match is assgined to the output_attribute.
+  repeated Match match = 3;
 }
 
 // If the condition evaluates to true then the Match returns the specified value. 
 message Match {
   // Condition is a [CEL expressions](https://github.com/google/cel-spec/blob/master/doc/langdef.md)
-  // You may use [well known attributes](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition) in the CEL expression.
+  // You may use [well known attributes]
+  // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
+  // in the CEL expression.
   //
   // Examples:
   //
@@ -65,12 +73,15 @@ message Match {
   // a GET on /shelves/{id1}/books/{id2}
   // { value: GetBook,
   //   condition: request.url_path.matches("^/shelves/\d*/books/\d*$") && request.method == "GET" }
-  // Note: Use anchors {^, $} to ensure that the regex evaluates efficiently.
+  // Note: CEL uses [re2](https://github.com/google/re2/wiki/Syntax) regex library.
+  //       Use anchors {^, $} to ensure that the regex evaluates efficiently.
   // Note: request.url_path is normalized and stripped of query params.
   //
   // a Read only operation on books
   // { value: ReadOnlyBooks, 
   //   condition: request.url_path.startsWith("/books/") && in(request.method, ["GET", "HEAD"])}
+  //
+  // An empty condition evaluates to `true` and should be used to provide a default value.
   string condition = 1;
 
   // If condition evaluates to true, return the `value`.
@@ -80,12 +91,13 @@ message Match {
 // Phase determines when the classification is performed.
 enum Phase {
   option allow_alias = true;
-  // Classification is performed after the response is sent back to the client.
+  // AttributeGeneration is performed after the response is sent back to the client.
   // All information about the request is available in this phase,
   // and classification does not add to the latency observed by the client.
   PHASE_UNSPECIFIED = 0;
   AFTER_RESPONSE = 0;
-  // Classification is performed during request processing, and adds to
+
+  // AttributeGeneration is performed during request processing, and adds to
   // the request latency as observed by the client.
   // Only request related information can be used in this phase.
   // For example: you may not use response headers here.
