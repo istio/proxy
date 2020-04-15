@@ -1,4 +1,4 @@
-/* Copyright 2019 Istio Authors. All Rights Reserved.
+/* Copyright 2020 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,9 @@
 #include "extensions/attributegen/plugin.h"
 
 #include "absl/strings/ascii.h"
-#include "extensions/common/util.h"
-#include "extensions/attributegen/proxy_expr.h"
-#include "google/protobuf/util/time_util.h"
-
-using google::protobuf::util::TimeUtil;
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
@@ -48,83 +42,76 @@ bool PluginRootContext::onConfigure(size_t) {
   // Parse configuration JSON string.
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
+  istio::attributegen::PluginConfig config;
   Status status =
-      JsonStringToMessage(configuration->toString(), &config_, json_options);
+      JsonStringToMessage(configuration->toString(), &config, json_options);
   if (status != Status::OK) {
     LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
                           configuration->toString()));
     return false;
   }
 
-  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
-    LOG_WARN("cannot parse local node metadata ");
-    return false;
+  return initAttributeGen(config);
+}
+
+bool PluginRootContext::initAttributeGen(
+    const istio::attributegen::PluginConfig& config) {
+  // Clear prior host resources.
+  // TODO(mjog) see if this still needed since onDone is always called.
+  cleanupAttributeGen();
+
+  for (auto agconfig : config.attributes()) {
+    EvalPhase phase = on_log;
+    if (agconfig.phase() == istio::attributegen::ON_REQUEST) {
+      phase = on_request;
+    }
+    auto ag = AttributeGenerator(phase, agconfig.output_attribute());
+    gen_.push_back(ag);
+    for (auto matchconfig : agconfig.match()) {
+      uint32_t token = 0;
+      if (createExpression(matchconfig.condition(), &token) != WasmResult::Ok) {
+        LOG_WARN(
+            absl::StrCat("Cannot create expression: ", matchconfig.condition(),
+                         " for ", agconfig.output_attribute()));
+        return false;
+      }
+      LOG_DEBUG(absl::StrCat("Added ", agconfig.output_attribute(), " if (",
+                             matchconfig.condition(), ") -> ",
+                             matchconfig.value()));
+      ag.add_match(Match(matchconfig.condition(), token, matchconfig.value()));
+    }
   }
-  outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
-              ::Wasm::Common::getTrafficDirection();
-
-  if (outbound_) {
-    peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
-    peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
-  } else {
-    peer_metadata_id_key_ = ::Wasm::Common::kDownstreamMetadataIdKey;
-    peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
-  }
-
-  debug_ = config_.debug();
-  use_host_header_fallback_ = !config_.disable_host_header_fallback();
-
-  cleanupExpressions();
-
-  long long tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
-  if (config_.has_tcp_reporting_duration()) {
-    tcp_report_duration_milis =
-        ::google::protobuf::util::TimeUtil::DurationToMilliseconds(
-            config_.tcp_reporting_duration());
-  }
-  proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
-
   return true;
 }
 
-void PluginRootContext::cleanupExpressions() {
-  for (uint32_t token : expressions_) {
-    exprDelete(token);
+void PluginRootContext::cleanupAttributeGen() {
+  for (auto ag : gen_) {
+    ag.cleanup();
   }
-  expressions_.clear();
-  input_expressions_.clear();
-  for (uint32_t token : int_expressions_) {
-    exprDelete(token);
-  }
-  int_expressions_.clear();
+  gen_.clear();
 }
 
-Optional<size_t> PluginRootContext::addStringExpression(
-    const std::string& input) {
-  auto it = input_expressions_.find(input);
-  if (it == input_expressions_.end()) {
-    uint32_t token = 0;
-    if (createExpression(input, &token) != WasmResult::Ok) {
-      LOG_WARN(absl::StrCat("Cannot create an expression: " + input));
-      return {};
+// attributeGen is called on the data path.
+void PluginRootContext::attributeGen(EvalPhase phase) {
+  for (const auto& ag : gen_) {
+    if (phase != ag.phase()) {
+      continue;
     }
-    size_t result = expressions_.size();
-    input_expressions_[input] = result;
-    expressions_.push_back(token);
-    return result;
-  }
-  return it->second;
-}
 
-Optional<uint32_t> PluginRootContext::addIntExpression(
-    const std::string& input) {
-  uint32_t token = 0;
-  if (createExpression(input, &token) != WasmResult::Ok) {
-    LOG_WARN(absl::StrCat("Cannot create a value expression: " + input));
-    return {};
+    std::string val;
+    auto eval_status = ag.evaluate(&val);
+    if (!eval_status) {
+      // eval failed set error attribute
+      setFilterState(ag.error_attribute(), "1");
+      continue;
+    }
+
+    if (!eval_status.value()) {
+      continue;
+    }
+
+    setFilterState(ag.output_attribute(), val);
   }
-  int_expressions_.push_back(token);
-  return token;
 }
 
 #ifdef NULL_PLUGIN
@@ -139,7 +126,8 @@ class AttributeGenFactory : public NullVmPluginFactory {
   }
 };
 
-static Registry::RegisterFactory<AttributeGenFactory, NullVmPluginFactory> register_;
+static Registry::RegisterFactory<AttributeGenFactory, NullVmPluginFactory>
+    register_;
 #endif
 
 }  // namespace AttributeGen

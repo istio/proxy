@@ -27,35 +27,18 @@ load(
 envoy_package()
 
 envoy_cc_library(
-    name = "match_lib",
-    srcs = [
-        "match.cc",
-    ],
-    hdrs = [
-        "match.h",
-    ],
-    repository = "@envoy",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":config_cc_proto",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
-    ],
-)
-
-envoy_cc_library(
-    name = "classify_plugin",
+    name = "attributegen_plugin",
     srcs = [
         "plugin.cc",
     ],
     hdrs = [
         "plugin.h",
-        "proxy_expr.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         ":config_cc_proto",
-        ":match_lib",
+	      "@envoy//api/wasm/cpp/contrib:contrib_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )
@@ -69,14 +52,4 @@ cc_proto_library(
 proto_library(
     name = "config_proto",
     srcs = ["config.proto"],
-)
-
-envoy_cc_test(
-    name = "match_lib_test",
-    size = "small",
-    srcs = ["match_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":match_lib",
-    ],
 )

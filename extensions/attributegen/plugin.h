@@ -1,4 +1,4 @@
-/* Copyright 2019 Istio Authors. All Rights Reserved.
+/* Copyright 2020 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@
 
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
-#include "extensions/common/context.h"
 #include "extensions/attributegen/config.pb.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
+#include "extensions/common/proxy_expr.h"
 #include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
@@ -43,6 +43,8 @@ using NullPluginRegistry =
     ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 using Envoy::Extensions::Common::Wasm::Null::Plugin::FilterStatus;
 
+#include "api/wasm/cpp/contrib/proxy_expr.h"
+
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
@@ -52,169 +54,83 @@ namespace AttributeGen {
 using StringView = absl::string_view;
 template <typename K, typename V>
 using Map = std::unordered_map<K, V>;
-template <typename T>
-
-constexpr StringView Sep = "#@";
-
-// The following need to be std::strings because the receiver expects a string.
-const std::string unknown = "unknown";
-const std::string source = "source";
-const std::string destination = "destination";
-const std::string vDash = "-";
-
-const std::string default_field_separator = ";.;";
-const std::string default_value_separator = "=.=";
-const std::string default_stat_prefix = "istio";
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
-#define CONFIG_DEFAULT(name) \
-  config_.name().empty() ? default_##name : config_.name()
+class Match {
+ public:
+  explicit Match(std::string condition, uint32_t condition_token,
+                 std::string value)
+      : condition_(condition),
+        condition_token_(condition_token),
+        value_(value){};
 
-#define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
-  FIELD_FUNC(reporter)                       \
-  FIELD_FUNC(source_workload)                \
-  FIELD_FUNC(source_workload_namespace)      \
-  FIELD_FUNC(source_principal)               \
-  FIELD_FUNC(source_app)                     \
-  FIELD_FUNC(source_version)                 \
-  FIELD_FUNC(source_canonical_service)       \
-  FIELD_FUNC(source_canonical_revision)      \
-  FIELD_FUNC(destination_workload)           \
-  FIELD_FUNC(destination_workload_namespace) \
-  FIELD_FUNC(destination_principal)          \
-  FIELD_FUNC(destination_app)                \
-  FIELD_FUNC(destination_version)            \
-  FIELD_FUNC(destination_service)            \
-  FIELD_FUNC(destination_service_name)       \
-  FIELD_FUNC(destination_service_namespace)  \
-  FIELD_FUNC(destination_canonical_service)  \
-  FIELD_FUNC(destination_canonical_revision) \
-  FIELD_FUNC(request_protocol)               \
-  FIELD_FUNC(response_code)                  \
-  FIELD_FUNC(grpc_response_status)           \
-  FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)
+  // Returns the result of evaluation or nothing in case of an error.
+  Optional<bool> evaluate() const {
+    bool matched;
+    if (!evaluateExpression(condition_token_, &matched)) {
+      LOG_WARN(absl::StrCat("Failed to evaluate expression: ", condition_));
+      return {};
+    }
+    if (matched) {
+      LOG_DEBUG(absl::StrCat("Matched: ", condition_));
+    }
+    return matched;
+  };
 
-// Aggregate metric values in a shared and reusable bag.
-using IstioDimensions = std::vector<std::string>;
+  std::string value() const { return value_; };
 
-enum class StandardLabels : int32_t {
-#define DECLARE_LABEL(name) name,
-  STD_ISTIO_DIMENSIONS(DECLARE_LABEL)
-#undef DECLARE_LABEL
-      xxx_last_metric
+  void cleanup() { exprDelete(condition_token_); }
+
+ protected:
+  // Only used for debug messages after construction.
+  std::string condition_;
+  // Expression token associated with the condition.
+  uint32_t condition_token_;
+  std::string value_;
 };
 
-#define DECLARE_CONSTANT(name) \
-  const int32_t name = static_cast<int32_t>(StandardLabels::name);
-STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
-#undef DECLARE_CONSTANT
+enum EvalPhase { on_log, on_request };
 
-const size_t count_standard_labels =
-    static_cast<size_t>(StandardLabels::xxx_last_metric);
+class AttributeGenerator {
+ public:
+  explicit AttributeGenerator(EvalPhase phase, std::string output_attribute)
+      : phase_(phase),
+        output_attribute_(output_attribute),
+        error_attribute_(absl::StrCat(output_attribute, "_error")) {}
 
-struct HashIstioDimensions {
-  size_t operator()(const IstioDimensions& c) const {
-    const size_t kMul = static_cast<size_t>(0x9ddfea08eb382d69);
-    size_t h = 0;
-    for (const auto& value : c) {
-      h += std::hash<std::string>()(value) * kMul;
+  // If evaluation is successful returns true and sets result.
+  Optional<bool> evaluate(std::string* val) const {
+    for (const auto& match : matches_) {
+      auto eval_status = match.evaluate();
+      if (!eval_status) {
+        return {};
+      }
+      if (eval_status.value()) {
+        *val = match.value();
+        return true;
+      }
     }
-    return h;
+    return false;
   }
-};
 
-using ValueExtractorFn =
-    std::function<uint64_t(const ::Wasm::Common::RequestInfo& request_info)>;
-
-// SimpleStat record a pre-resolved metric based on the values function.
-class SimpleStat {
- public:
-  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn)
-      : metric_id_(metric_id), value_fn_(value_fn){};
-
-  inline void record(const ::Wasm::Common::RequestInfo& request_info) {
-    recordMetric(metric_id_, value_fn_(request_info));
-  };
-
-  uint32_t metric_id_;
-
- private:
-  ValueExtractorFn value_fn_;
-};
-
-// MetricFactory creates a stat generator given tags.
-struct MetricFactory {
-  std::string name;
-  MetricType type;
-  ValueExtractorFn extractor;
-  bool is_tcp;
-};
-
-// StatGen creates a SimpleStat based on resolved metric_id.
-class StatGen {
- public:
-  explicit StatGen(const std::string& stat_prefix,
-                   const MetricFactory& metric_factory,
-                   const std::vector<MetricTag>& tags,
-                   const std::vector<size_t>& indexes,
-                   const std::string& field_separator,
-                   const std::string& value_separator)
-      : is_tcp_(metric_factory.is_tcp),
-        indexes_(indexes),
-        extractor_(metric_factory.extractor),
-        metric_(metric_factory.type,
-                absl::StrCat(stat_prefix, metric_factory.name), tags,
-                field_separator, value_separator) {
-    if (tags.size() != indexes.size()) {
-      logAbort("metric tags.size() != indexes.size()");
+  EvalPhase phase() const { return phase_; }
+  std::string output_attribute() const { return output_attribute_; }
+  std::string error_attribute() const { return error_attribute_; }
+  void add_match(Match match) { matches_.push_back(match); }
+  void cleanup() {
+    for (auto match : matches_) {
+      match.cleanup();
     }
-  };
+    matches_.clear();
+  }
 
-  StatGen() = delete;
-  inline StringView name() const { return metric_.name; };
-  inline bool is_tcp_metric() const { return is_tcp_; }
-
-  // Resolve metric based on provided dimension values by
-  // combining the tags with the indexed dimensions and resolving
-  // to a metric ID.
-  SimpleStat resolve(const IstioDimensions& instance) {
-    // Using a lower level API to avoid creating an intermediary vector
-    size_t s = metric_.prefix.size();
-    for (const auto& tag : metric_.tags) {
-      s += tag.name.size() + metric_.value_separator.size();
-    }
-    for (size_t i : indexes_) {
-      s += instance[i].size() + metric_.field_separator.size();
-    }
-    s += metric_.name.size();
-
-    std::string n;
-    n.reserve(s);
-    n.append(metric_.prefix);
-    for (size_t i = 0; i < metric_.tags.size(); i++) {
-      // Don't add response_code and grpc_response_status labels for TCP.
-      if ((metric_.tags[i].name == "response_code" ||
-           metric_.tags[i].name == "grpc_response_status") &&
-          is_tcp_)
-        continue;
-      n.append(metric_.tags[i].name);
-      n.append(metric_.value_separator);
-      n.append(instance[indexes_[i]]);
-      n.append(metric_.field_separator);
-    }
-    n.append(metric_.name);
-    auto metric_id = metric_.resolveFullName(n);
-    return SimpleStat(metric_id, extractor_);
-  };
-
- private:
-  bool is_tcp_;
-  std::vector<size_t> indexes_;
-  ValueExtractorFn extractor_;
-  Metric metric_;
+ protected:
+  EvalPhase phase_;
+  std::string output_attribute_;
+  std::string error_attribute_;
+  std::vector<Match> matches_;
 };
 
 // PluginRootContext is the root context for all streams processed by the
@@ -224,44 +140,37 @@ class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
       : RootContext(id, root_id) {}
-  }
-
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
+  // is called even if
   bool onDone() override {
-    cleanupExpressions();
+    cleanupAttributeGen();
     return true;
   };
+  void attributeGen(EvalPhase);
 
  protected:
-  void cleanupExpressions();
-  // Allocate an expression if necessary and return its token position.
-  Optional<size_t> addStringExpression(const std::string& input);
-  // Allocate an int expression and return its token if successful.
-  Optional<uint32_t> addIntExpression(const std::string& input);
+  // Destroy host resources for the allocated expressions.
+  void cleanupAttributeGen();
+
+  bool initAttributeGen(const istio::attributegen::PluginConfig& config);
 
  private:
-  istio::attributegen::PluginConfig config_;
-
-  // Bool expressions evaluated by matches.
-  std::vector<uint32_t> expressions_;
-  Map<std::string, size_t> input_expressions_;
+  std::vector<AttributeGenerator> gen_;
 };
-
 
 // Per-stream context.
 class PluginContext : public Context {
  public:
-  explicit PluginContext(uint32_t id, RootContext* root)
-      : Context(id, root){}
+  explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
-  void onLog() override {
-    if (is_tcp_) {
-      cleanupTCPOnClose();
-    }
-    rootContext()->report(*request_info_, is_tcp_);
-  };
+  void onLog() override { rootContext()->attributeGen(on_log); };
+
+  FilterHeadersStatus onRequestHeaders(uint32_t) override {
+    rootContext()->attributeGen(on_request);
+    return FilterHeadersStatus::Continue;
+  }
 
  private:
   inline PluginRootContext* rootContext() {
