@@ -37,7 +37,7 @@ namespace Wasm {
 namespace Null {
 namespace Plugin {
 
-#include "external/envoy/api/wasm/cpp/contrib/proxy_expr.h"
+#include "api/wasm/cpp/contrib/proxy_expr.h"
 
 #endif  // NULL_PLUGIN
 
