@@ -80,6 +80,7 @@ build_envoy_asan:
 wasm_include:
 	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_generated.h $(TOP)/extensions/common/
 	cp -fLR $$(bazel info bazel-bin)/external/com_github_google_flatbuffers/_virtual_includes/runtime_cc/flatbuffers $(TOP)/extensions/common/
+	cp -f $$(bazel info output_base)/external/envoy/api/wasm/cpp/contrib/proxy_expr.h $(TOP)/extensions/common/
 
 build_wasm: wasm_include
 	$(foreach file, $(shell find extensions -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true

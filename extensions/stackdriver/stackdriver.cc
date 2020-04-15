@@ -54,7 +54,6 @@ using ::Wasm::Common::kDownstreamMetadataIdKey;
 using ::Wasm::Common::kDownstreamMetadataKey;
 using ::Wasm::Common::kUpstreamMetadataIdKey;
 using ::Wasm::Common::kUpstreamMetadataKey;
-using ::wasm::common::NodeInfo;
 using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";

@@ -20,7 +20,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "extensions/common/istio_dimensions.h"
-#include "extensions/common/node_info.pb.h"
 #include "google/protobuf/util/json_util.h"
 
 #ifndef NULL_PLUGIN

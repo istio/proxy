@@ -29,7 +29,6 @@ namespace Wasm {
 namespace Common {
 
 using namespace google::protobuf::util;
-using namespace wasm::common;
 
 constexpr absl::string_view node_metadata_json = R"###(
 {
@@ -52,59 +51,6 @@ constexpr absl::string_view node_metadata_json = R"###(
 }
 )###";
 
-static void BM_GenericStructParser(benchmark::State& state) {
-  google::protobuf::Struct metadata_struct;
-  JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
-                      json_parse_options);
-  auto bytes = metadata_struct.SerializeAsString();
-
-  for (auto _ : state) {
-    google::protobuf::Struct test_struct;
-    test_struct.ParseFromArray(bytes.data(), bytes.size());
-    benchmark::DoNotOptimize(test_struct);
-
-    NodeInfo node_info;
-    extractNodeMetadataGeneric(test_struct, &node_info);
-    benchmark::DoNotOptimize(node_info);
-  }
-}
-BENCHMARK(BM_GenericStructParser);
-
-static void BM_CustomStructParser(benchmark::State& state) {
-  google::protobuf::Struct metadata_struct;
-  JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
-                      json_parse_options);
-  auto bytes = metadata_struct.SerializeAsString();
-
-  for (auto _ : state) {
-    google::protobuf::Struct test_struct;
-    test_struct.ParseFromArray(bytes.data(), bytes.size());
-    benchmark::DoNotOptimize(test_struct);
-
-    NodeInfo node_info;
-    extractNodeMetadata(test_struct, &node_info);
-    benchmark::DoNotOptimize(node_info);
-  }
-}
-BENCHMARK(BM_CustomStructParser);
-
-static void BM_MessageParser(benchmark::State& state) {
-  NodeInfo node_info;
-  JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &node_info,
-                      json_parse_options);
-  auto bytes = node_info.SerializeAsString();
-
-  for (auto _ : state) {
-    NodeInfo test_info;
-    test_info.ParseFromArray(bytes.data(), bytes.size());
-    benchmark::DoNotOptimize(test_info);
-  }
-}
-BENCHMARK(BM_MessageParser);
-
 constexpr absl::string_view metadata_id_key =
     "envoy.wasm.metadata_exchange.downstream_id";
 constexpr absl::string_view metadata_key =
@@ -124,49 +70,6 @@ static const std::string& getData(
       .getDataReadOnly<Envoy::Extensions::Common::Wasm::WasmState>(key)
       .value();
 }
-
-typedef std::shared_ptr<const wasm::common::NodeInfo> NodeInfoPtr;
-
-static void BM_ReadRawBytesWithCache(benchmark::State& state) {
-  google::protobuf::Struct metadata_struct;
-  JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
-                      json_parse_options);
-  auto bytes = metadata_struct.SerializeAsString();
-  Envoy::StreamInfo::FilterStateImpl filter_state{
-      Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
-  setData(filter_state, metadata_id_key, node_id);
-  setData(filter_state, metadata_key, bytes);
-
-  std::unordered_map<std::string, NodeInfoPtr> cache;
-
-  size_t size = 0;
-  for (auto _ : state) {
-    // lookup cache by key
-    const std::string& peer_id = getData(filter_state, metadata_id_key);
-    auto nodeinfo_it = cache.find(peer_id);
-    const NodeInfo* node_info = nullptr;
-    if (nodeinfo_it == cache.end()) {
-      const std::string& bytes = getData(filter_state, metadata_key);
-      google::protobuf::Struct test_struct;
-      test_struct.ParseFromArray(bytes.data(), bytes.size());
-      benchmark::DoNotOptimize(test_struct);
-
-      auto node_info_ptr = std::make_shared<wasm::common::NodeInfo>();
-      auto status = extractNodeMetadata(test_struct, node_info_ptr.get());
-      node_info = node_info_ptr.get();
-      cache.emplace(peer_id, std::move(node_info_ptr));
-    } else {
-      node_info = nodeinfo_it->second.get();
-    }
-
-    size += node_info->namespace_().size() + node_info->workload_name().size() +
-            node_info->labels().at("app").size() +
-            node_info->labels().at("version").size();
-    benchmark::DoNotOptimize(size);
-  }
-}
-BENCHMARK(BM_ReadRawBytesWithCache);
 
 static void BM_ReadFlatBuffer(benchmark::State& state) {
   google::protobuf::Struct metadata_struct;

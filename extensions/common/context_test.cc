@@ -32,7 +32,6 @@ namespace Common {
 
 using namespace google::protobuf;
 using namespace google::protobuf::util;
-using namespace wasm::common;
 
 constexpr absl::string_view node_metadata_json = R"###(
 {
@@ -55,19 +54,6 @@ TEST(ContextTest, extractNodeMetadata) {
   JsonParseOptions json_parse_options;
   JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
                       json_parse_options);
-  NodeInfo node_info;
-  Status status = extractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_EQ(status, Status::OK);
-  EXPECT_EQ(node_info.name(), "test_pod");
-  EXPECT_EQ(node_info.namespace_(), "test_namespace");
-  EXPECT_EQ(node_info.owner(), "test_owner");
-  EXPECT_EQ(node_info.workload_name(), "test_workload");
-  auto platform_metadata = node_info.platform_metadata();
-  EXPECT_EQ(platform_metadata["gcp_project"], "test_project");
-  EXPECT_EQ(platform_metadata["gcp_cluster_name"], "test_cluster");
-  EXPECT_EQ(platform_metadata["gcp_cluster_location"], "test_location");
-  EXPECT_EQ(node_info.app_containers_size(), 2);
-
   flatbuffers::FlatBufferBuilder fbb(1024);
   EXPECT_TRUE(extractNodeFlatBuffer(metadata_struct, fbb));
   auto peer = flatbuffers::GetRoot<FlatNode>(fbb.GetBufferPointer());
@@ -80,57 +66,6 @@ TEST(ContextTest, extractNodeMetadata) {
   EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(),
             "test_project");
   EXPECT_EQ(peer->app_containers()->size(), 2);
-}
-
-// Test empty node metadata.
-TEST(ContextTest, extractNodeMetadataNoMetadataField) {
-  google::protobuf::Struct metadata_struct;
-  NodeInfo node_info;
-
-  Status status = extractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_EQ(status, Status::OK);
-  EXPECT_EQ(node_info.name(), "");
-  EXPECT_EQ(node_info.namespace_(), "");
-  EXPECT_EQ(node_info.owner(), "");
-  EXPECT_EQ(node_info.workload_name(), "");
-  EXPECT_EQ(node_info.platform_metadata_size(), 0);
-  EXPECT_EQ(node_info.app_containers_size(), 0);
-}
-
-// Test missing metadata.
-TEST(ContextTest, extractNodeMetadataMissingMetadata) {
-  std::string node_metadata_json = R"###(
-{
-   "NAMESPACE":"test_namespace",
-   "NAME":"test_pod"
-}
-)###";
-  google::protobuf::Struct metadata_struct;
-  JsonParseOptions json_parse_options;
-  JsonStringToMessage(node_metadata_json, &metadata_struct, json_parse_options);
-  NodeInfo node_info;
-  Status status = extractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_EQ(status, Status::OK);
-  EXPECT_EQ(node_info.name(), "test_pod");
-  EXPECT_EQ(node_info.namespace_(), "test_namespace");
-  EXPECT_EQ(node_info.owner(), "");
-  EXPECT_EQ(node_info.workload_name(), "");
-  EXPECT_EQ(node_info.platform_metadata_size(), 0);
-  EXPECT_EQ(node_info.app_containers_size(), 0);
-}
-
-// Test unknown field.
-TEST(ContextTest, extractNodeMetadataUnknownField) {
-  std::string node_metadata_json = R"###(
-{
-   "some_key":"some string",
-}
-)###";
-  google::protobuf::Struct metadata_struct;
-  TextFormat::ParseFromString(node_metadata_json, &metadata_struct);
-  NodeInfo node_info;
-  Status status = extractNodeMetadata(metadata_struct, &node_info);
-  EXPECT_EQ(status, Status::OK);
 }
 
 // Test extractNodeMetadataValue.

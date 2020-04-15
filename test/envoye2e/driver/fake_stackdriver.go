@@ -45,7 +45,7 @@ import (
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
 type MetricServer struct {
 	delay        time.Duration
-	listTsResp   monitoringpb.ListTimeSeriesResponse
+	listTSResp   monitoringpb.ListTimeSeriesResponse
 	RcvMetricReq chan *monitoringpb.CreateTimeSeriesRequest
 	mux          sync.Mutex
 }
@@ -115,7 +115,7 @@ func (s *MetricServer) DeleteMetricDescriptor(context.Context, *monitoringpb.Del
 func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSeriesRequest) (*monitoringpb.ListTimeSeriesResponse, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return &s.listTsResp, nil
+	return &s.listTSResp, nil
 }
 
 // CreateTimeSeries implements CreateTimeSeries method.
@@ -123,7 +123,7 @@ func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.C
 	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	s.listTsResp.TimeSeries = append(s.listTsResp.TimeSeries, req.TimeSeries...)
+	s.listTSResp.TimeSeries = append(s.listTSResp.TimeSeries, req.TimeSeries...)
 	s.RcvMetricReq <- req
 	time.Sleep(s.delay)
 	return &empty.Empty{}, nil
@@ -186,7 +186,7 @@ func (s *MetricServer) GetTimeSeries(w http.ResponseWriter, req *http.Request) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	var m jsonpb.Marshaler
-	if s, err := m.MarshalToString(&s.listTsResp); err != nil {
+	if s, err := m.MarshalToString(&s.listTSResp); err != nil {
 		fmt.Fprintln(w, "Fail to marshal received time series")
 	} else {
 		fmt.Fprintln(w, s)
