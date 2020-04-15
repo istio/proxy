@@ -59,6 +59,7 @@ void map_node(IstioDimensions& instance, bool is_source,
   if (is_source) {
     FB_ASSIGN(source_workload, node.workload_name());
     FB_ASSIGN(source_workload_namespace, node.namespace_());
+    FB_ASSIGN(source_cluster_id, node.cluster_id());
 
     auto source_labels = node.labels();
     if (source_labels) {
@@ -92,6 +93,7 @@ void map_node(IstioDimensions& instance, bool is_source,
   } else {
     FB_ASSIGN(destination_workload, node.workload_name());
     FB_ASSIGN(destination_workload_namespace, node.namespace_());
+    FB_ASSIGN(destination_cluster_id, node.cluster_id());
 
     auto destination_labels = node.labels();
     if (destination_labels) {
