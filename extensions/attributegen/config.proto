@@ -31,7 +31,10 @@ message PluginConfig {
 //
 // Example: AttributeGen may produce an attribute called `istio.operationId` which is analogous to
 // the `operationId` in the OpenAPI Spec.
-// The Stats plugin will run after this plugin and use `istio.operationId` to populate a dimension. 
+// The Stats plugin will run after this plugin and use `istio.operationId` to populate a dimension.
+//
+// If multiple AttributeGenerations produce the same attribute, the result of the last generation
+// will be visible to downstream filters.
 message AttributeGeneration {
   // Phase denotes plugin lifecycle phase when the new attribute is generated.
   // Default: After the response is sent back to the client.
