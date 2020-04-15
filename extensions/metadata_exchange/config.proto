@@ -15,6 +15,12 @@
 
 syntax = "proto3";
 
+// $schema: metadata_exchange
+// $title: Metadata Exchange Config
+// $description: Configuration for Metadata Exchange Filter.
+// $location: https://istio.io/docs/reference/config/metadata_exchange.html
+// $weight: 20
+
 package metadata_exchange;
 
 import "google/protobuf/wrappers.proto";
