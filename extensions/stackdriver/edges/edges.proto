@@ -82,6 +82,14 @@ message WorkloadInstance {
   // Namespace in which the monitored resource is deployed.
   // Example: default
   string workload_namespace = 6;
+
+  // Name of the Istio Canonical Service for the workload instance.
+  // Example: foo-canonical
+  string canonical_service = 7;
+
+  // Revision of the Istio Canonical Service for the workload instance.
+  // Example: latest
+  string canonical_revision = 8;
 }
 
 // Represents an observed communication between two WorkloadInstances within

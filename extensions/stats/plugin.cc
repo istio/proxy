@@ -71,23 +71,23 @@ void map_node(IstioDimensions& instance, bool is_source,
       FB_ASSIGN(source_version, version);
 
       auto canonical_name =
-          source_labels->LookupByKey("service.istio.io/canonical-name");
+          source_labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName);
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
       FB_ASSIGN(source_canonical_service, name);
 
       auto rev =
-          source_labels->LookupByKey("service.istio.io/canonical-revision");
+          source_labels->LookupByKey(::Wasm::Common::kCanonicalServiceRevisionLabelName);
       if (rev) {
         FB_ASSIGN(source_canonical_revision, rev->value());
       } else {
-        instance[source_canonical_revision] = "latest";
+        instance[source_canonical_revision] = ::Wasm::Common::kLatest;
       }
     } else {
       instance[source_app] = "";
       instance[source_version] = "";
       instance[source_canonical_service] = "";
-      instance[source_canonical_revision] = "latest";
+      instance[source_canonical_revision] = ::Wasm::Common::kLatest;
     }
   } else {
     FB_ASSIGN(destination_workload, node.workload_name());
@@ -104,23 +104,23 @@ void map_node(IstioDimensions& instance, bool is_source,
       FB_ASSIGN(destination_version, version);
 
       auto canonical_name =
-          destination_labels->LookupByKey("service.istio.io/canonical-name");
+          destination_labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName);
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
       FB_ASSIGN(destination_canonical_service, name);
 
       auto rev = destination_labels->LookupByKey(
-          "service.istio.io/canonical-revision");
+          ::Wasm::Common::kCanonicalServiceRevisionLabelName);
       if (rev) {
         FB_ASSIGN(destination_canonical_revision, rev->value());
       } else {
-        instance[destination_canonical_revision] = "latest";
+        instance[destination_canonical_revision] = ::Wasm::Common::kLatest;
       }
     } else {
       instance[destination_app] = "";
       instance[destination_version] = "";
       instance[destination_canonical_service] = "";
-      instance[destination_canonical_revision] = "latest";
+      instance[destination_canonical_revision] = ::Wasm::Common::kLatest;
     }
 
     FB_ASSIGN(destination_service_namespace, node.namespace_());
