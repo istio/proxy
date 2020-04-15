@@ -70,14 +70,14 @@ void map_node(IstioDimensions& instance, bool is_source,
       auto version = version_iter ? version_iter->value() : nullptr;
       FB_ASSIGN(source_version, version);
 
-      auto canonical_name =
-          source_labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName);
+      auto canonical_name = source_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceLabelName);
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
       FB_ASSIGN(source_canonical_service, name);
 
-      auto rev =
-          source_labels->LookupByKey(::Wasm::Common::kCanonicalServiceRevisionLabelName);
+      auto rev = source_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceRevisionLabelName);
       if (rev) {
         FB_ASSIGN(source_canonical_revision, rev->value());
       } else {
@@ -103,8 +103,8 @@ void map_node(IstioDimensions& instance, bool is_source,
       auto version = version_iter ? version_iter->value() : nullptr;
       FB_ASSIGN(destination_version, version);
 
-      auto canonical_name =
-          destination_labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName);
+      auto canonical_name = destination_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceLabelName);
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
       FB_ASSIGN(destination_canonical_service, name);

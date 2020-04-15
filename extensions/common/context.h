@@ -55,7 +55,8 @@ const std::string kProtocolGRPC = "grpc";
 const std::string kProtocolTCP = "tcp";
 
 const char kCanonicalServiceLabelName[] = "service.istio.io/canonical-name";
-const char kCanonicalServiceRevisionLabelName[] = "service.istio.io/canonical-revision";
+const char kCanonicalServiceRevisionLabelName[] =
+    "service.istio.io/canonical-revision";
 const std::string kLatest = "latest";
 
 const std::set<std::string> kGrpcContentTypes{

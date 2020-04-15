@@ -76,13 +76,17 @@ void instanceFromMetadata(const ::Wasm::Common::FlatNode& node_info,
 
   const auto labels = node_info.labels();
   if (labels) {
-    const auto svc_iter = labels->LookupByKey(Wasm::Common::kCanonicalServiceLabelName);
+    const auto svc_iter =
+        labels->LookupByKey(Wasm::Common::kCanonicalServiceLabelName);
     if (svc_iter) {
-      instance->set_canonical_service(flatbuffers::GetString(svc_iter->value()));
+      instance->set_canonical_service(
+          flatbuffers::GetString(svc_iter->value()));
     }
-    const auto rev_iter = labels->LookupByKey(Wasm::Common::kCanonicalServiceRevisionLabelName);
+    const auto rev_iter =
+        labels->LookupByKey(Wasm::Common::kCanonicalServiceRevisionLabelName);
     if (rev_iter) {
-      instance->set_canonical_revision(flatbuffers::GetString(rev_iter->value()));
+      instance->set_canonical_revision(
+          flatbuffers::GetString(rev_iter->value()));
     }
   }
 };
