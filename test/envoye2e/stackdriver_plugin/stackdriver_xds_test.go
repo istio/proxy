@@ -342,7 +342,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 	}
 }
 
-// Expects estimated 10s log dumping interval from stackdriver
+// Expects estimated 20s log dumping interval from stackdriver
 func TestStackdriverReload(t *testing.T) {
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
@@ -431,7 +431,7 @@ func TestStackdriverVMReload(t *testing.T) {
 	}
 }
 
-// Expects estimated 10s log dumping interval from stackdriver
+// Expects estimated 20s log dumping interval from stackdriver
 func TestStackdriverParallel(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"SDLogStatusCode":       "200",
