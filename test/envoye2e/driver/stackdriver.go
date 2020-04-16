@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
+	"istio.io/proxy/test/envoye2e/env"
 )
 
 const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
@@ -207,7 +208,7 @@ func (s *checkStackdriver) Run(p *Params) error {
 		// Sanity check response latency
 		for _, r := range s.sd.tsReq {
 			if verfied, err := verifyResponseLatency(r); err != nil {
-				return fmt.Errorf("failed to verify latency metric: %v", r)
+				return fmt.Errorf("failed to verify latency metric: %v", err)
 			} else if verfied {
 				verfiedLatency = true
 				break
@@ -250,8 +251,12 @@ func verifyResponseLatency(got *monitoring.CreateTimeSeriesRequest) (bool, error
 				maxLatencyInMilli = bounds[i]
 			}
 		}
-		if maxLatencyInMilli > 256 {
-			return true, fmt.Errorf("latency metric is too large (>256ms) %v", maxLatencyInMilli)
+		wantMaxLatencyInMilli := 256.0
+		if env.IsTSanASan() {
+			wantMaxLatencyInMilli = 1024.0
+		}
+		if maxLatencyInMilli > wantMaxLatencyInMilli {
+			return true, fmt.Errorf("latency metric is too large, got %vms, but want < %vms", maxLatencyInMilli, wantMaxLatencyInMilli)
 		}
 		return true, nil
 	}
