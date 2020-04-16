@@ -17,13 +17,13 @@
 
 #include "absl/strings/ascii.h"
 #include "extensions/common/util.h"
-#include "extensions/stats/proxy_expr.h"
 #include "google/protobuf/util/time_util.h"
 
 using google::protobuf::util::TimeUtil;
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
+#include "extensions/common/proxy_expr.h"
 #include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
@@ -36,6 +36,8 @@ namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
+
+#include "api/wasm/cpp/contrib/proxy_expr.h"
 
 #endif  // NULL_PLUGIN
 

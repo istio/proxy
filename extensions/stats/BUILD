@@ -33,13 +33,13 @@ envoy_cc_library(
     ],
     hdrs = [
         "plugin.h",
-        "proxy_expr.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         ":config_cc_proto",
         "//extensions/common:context",
+        "@envoy//api/wasm/cpp/contrib:contrib_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )

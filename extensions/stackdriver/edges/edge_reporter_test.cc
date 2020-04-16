@@ -61,45 +61,31 @@ class TestMeshEdgesServiceClient : public MeshEdgesServiceClient {
   TestFn request_callback_;
 };
 
-const char kNodeInfo[] = R"(
-  name: "test_pod"
-  namespace: "test_namespace"
-  workload_name: "test_workload"
-  owner: "kubernetes://test_owner"
-  platform_metadata: {
-    key: "gcp_project"
-    value: "test_project"
-  }
-  platform_metadata: {
-    key: "gcp_gke_cluster_name"
-    value: "test_cluster"
-  }
-  platform_metadata: {
-    key: "gcp_location"
-    value: "test_location"
-  }
-  mesh_id: "test-mesh"
-)";
+const char kNodeInfo[] = R"({
+  "NAME": "test_pod",
+  "NAMESPACE": "test_namespace",
+  "WORKLOAD_NAME": "test_workload",
+  "OWNER": "kubernetes://test_owner",
+  "PLATFORM_METADATA": {
+    "gcp_project": "test_project",
+    "gcp_gke_cluster_name": "test_cluster",
+    "gcp_location": "test_location"
+  },
+  "MESH_ID": "test-mesh"
+})";
 
-const char kPeerInfo[] = R"(
-  name: "test_peer_pod"
-  namespace: "test_peer_namespace"
-  workload_name: "test_peer_workload"
-  owner: "kubernetes://peer_owner"
-  platform_metadata: {
-    key: "gcp_project"
-    value: "test_project"
-  }
-  platform_metadata: {
-    key: "gcp_gke_cluster_name"
-    value: "test_cluster"
-  }
-  platform_metadata: {
-    key: "gcp_location"
-    value: "test_location"
-  }
-  mesh_id: "test-mesh"
-)";
+const char kPeerInfo[] = R"({
+  "NAME": "test_peer_pod",
+  "NAMESPACE": "test_peer_namespace",
+  "WORKLOAD_NAME": "test_peer_workload",
+  "OWNER": "kubernetes://peer_owner",
+  "PLATFORM_METADATA": {
+    "gcp_project": "test_project",
+    "gcp_gke_cluster_name": "test_cluster",
+    "gcp_location": "test_location"
+  },
+  "MESH_ID": "test-mesh"
+})";
 
 const char kWantGrpcRequest[] = R"(
   parent: "projects/test_project"
@@ -148,16 +134,10 @@ const char kWantUnknownGrpcRequest[] = R"(
 
 const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb,
                                          const std::string& data) {
-  ::wasm::common::NodeInfo node_info;
-  TextFormat::ParseFromString(data, &node_info);
-  google::protobuf::util::JsonOptions json_options;
-  std::string metadata_json_struct;
-  google::protobuf::util::MessageToJsonString(node_info, &metadata_json_struct,
-                                              json_options);
   google::protobuf::util::JsonParseOptions json_parse_options;
   google::protobuf::Struct struct_info;
-  google::protobuf::util::JsonStringToMessage(metadata_json_struct,
-                                              &struct_info, json_parse_options);
+  google::protobuf::util::JsonStringToMessage(data, &struct_info,
+                                              json_parse_options);
   ::Wasm::Common::extractNodeFlatBuffer(struct_info, fbb);
   return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
       fbb.GetBufferPointer());

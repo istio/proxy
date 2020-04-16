@@ -18,7 +18,6 @@
 #include <set>
 
 #include "absl/strings/string_view.h"
-#include "extensions/common/node_info.pb.h"
 #include "extensions/common/node_info_generated.h"
 #include "flatbuffers/flatbuffers.h"
 #include "google/protobuf/struct.pb.h"
@@ -152,8 +151,6 @@ struct RequestInfo {
 // Some or all part may be populated depending on need.
 struct RequestContext {
   const bool outbound;
-  const wasm::common::NodeInfo& source;
-  const wasm::common::NodeInfo& destination;
   const Common::RequestInfo& request;
 };
 
@@ -167,17 +164,6 @@ enum class TrafficDirection : int64_t {
 // Retrieves the traffic direction from the configuration context.
 TrafficDirection getTrafficDirection();
 
-// Extracts NodeInfo from proxy node metadata passed in as a protobuf struct.
-// It converts the metadata struct to a JSON struct and parse NodeInfo proto
-// from that JSON struct.
-// Returns status of protocol/JSON operations.
-google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct& metadata,
-    wasm::common::NodeInfo* node_info);
-google::protobuf::util::Status extractNodeMetadataGeneric(
-    const google::protobuf::Struct& metadata,
-    wasm::common::NodeInfo* node_info);
-
 // Extract node info into a flatbuffer from a struct.
 bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
                            flatbuffers::FlatBufferBuilder& fbb);
@@ -185,10 +171,6 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
 bool extractLocalNodeFlatBuffer(std::string* out);
 // Convenience routine to create an empty node flatbuffer.
 void extractEmptyNodeFlatBuffer(std::string* out);
-
-// Read from local node metadata and populate node_info.
-google::protobuf::util::Status extractLocalNodeMetadata(
-    wasm::common::NodeInfo* node_info);
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.

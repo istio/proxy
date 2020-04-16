@@ -46,7 +46,6 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        ":node_info_cc_proto",
         ":node_info_fb_cc",
         "@com_google_protobuf//:protobuf",
         "@envoy//source/common/common:base64_lib",
@@ -61,34 +60,6 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
-)
-
-envoy_cc_library(
-    name = "node_info_cache",
-    srcs = [
-        "node_info_cache.cc",
-    ],
-    hdrs = [
-        "node_info_cache.h",
-    ],
-    repository = "@envoy",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":context",
-        ":node_info_cc_proto",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
-    ],
-)
-
-cc_proto_library(
-    name = "node_info_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = ["node_info_proto"],
-)
-
-proto_library(
-    name = "node_info_proto",
-    srcs = ["node_info.proto"],
 )
 
 envoy_cc_test(
