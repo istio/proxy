@@ -519,6 +519,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 					&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverAndAccessLogFilter}},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
 					&driver.Repeat{
 						N: 5,
 						Step: &driver.HTTPCall{
