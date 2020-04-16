@@ -448,13 +448,15 @@ bool PluginRootContext::onConfigure(size_t) {
   }
 
   uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
-  auto tcp_reporting_duration = JsonGetField<std::string>(j, "tcp_reporting_duration");
+  auto tcp_reporting_duration =
+      JsonGetField<std::string>(j, "tcp_reporting_duration");
   absl::Duration duration;
   if (tcp_reporting_duration.has_value()) {
     if (absl::ParseDuration(tcp_reporting_duration.value(), &duration)) {
       tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
     } else {
-      LOG_WARN(absl::StrCat("failed to parse 'tcp_reporting_duration': ", tcp_reporting_duration.value()));
+      LOG_WARN(absl::StrCat("failed to parse 'tcp_reporting_duration': ",
+                            tcp_reporting_duration.value()));
     }
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
