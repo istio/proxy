@@ -210,6 +210,7 @@ bool extractPartialLocalNodeFlatBuffer(std::string* out) {
   flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
       workload_name, istio_version, mesh_id;
+  std::vector<flatbuffers::Offset<KeyVal>> labels;
   std::string value;
   if (getValue({"node", "metadata", "NAME"}, &value)) {
     name = fbb.CreateString(value);
@@ -229,7 +230,14 @@ bool extractPartialLocalNodeFlatBuffer(std::string* out) {
   if (getValue({"node", "metadata", "MESH_ID"}, &value)) {
     mesh_id = fbb.CreateString(value);
   }
+  for (const auto& label : kDefaultLabels) {
+    if (getValue({"node", "metadata", "LABELS", label}, &value)) {
+      labels.push_back(
+          CreateKeyVal(fbb, fbb.CreateString(label), fbb.CreateString(value)));
+    }
+  }
 
+  auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
   FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
@@ -237,6 +245,7 @@ bool extractPartialLocalNodeFlatBuffer(std::string* out) {
   node.add_workload_name(workload_name);
   node.add_istio_version(istio_version);
   node.add_mesh_id(mesh_id);
+  node.add_labels(labels_offset);
   auto data = node.Finish();
   fbb.Finish(data);
   out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),

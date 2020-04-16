@@ -33,7 +33,7 @@ const outboundStatsFilter = `- name: envoy.filters.http.wasm
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.metadata_exchange" }
-        configuration: "{ max_peer_cache_size: 20 }"
+        configuration: "{ \"max_peer_cache_size\": 20 }"
 - name: envoy.filters.http.wasm
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -46,7 +46,7 @@ const outboundStatsFilter = `- name: envoy.filters.http.wasm
           code:
             local: { inline_string: "envoy.wasm.stats" }
         configuration: |
-          { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", "disable_host_header_fallback": %t}`
+          { "debug": false, "field_separator": ";.;", "disable_host_header_fallback": %t}`
 
 const inboundStatsFilter = `- name: envoy.filters.http.wasm
   typed_config:
@@ -59,7 +59,7 @@ const inboundStatsFilter = `- name: envoy.filters.http.wasm
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.metadata_exchange" }
-        configuration: "{ max_peer_cache_size: 20 }"
+        configuration: "{ \"max_peer_cache_size\": 20 }"
 - name: envoy.filters.http.wasm
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -72,7 +72,7 @@ const inboundStatsFilter = `- name: envoy.filters.http.wasm
           code:
             local: { inline_string: "envoy.wasm.stats" }
         configuration: |
-          { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;"}`
+          { "debug": false, "field_separator": ";.;"}`
 
 var (
 	statsConfig          = driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl")

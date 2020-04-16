@@ -245,7 +245,7 @@ class PluginRootContext : public RootContext {
   const std::vector<MetricFactory>& defaultMetrics();
   // Update the dimensions and the expressions data structures with the new
   // configuration.
-  void initializeDimensions(const nlohmann::json& j);
+  bool initializeDimensions(const ::nlohmann::json& j);
   // Destroy host resources for the allocated expressions.
   void cleanupExpressions();
   // Allocate an expression if necessary and return its token position.

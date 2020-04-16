@@ -47,11 +47,59 @@ absl::optional<absl::string_view> JsonValueAs<absl::string_view>(
 }
 
 template <>
+absl::optional<std::string> JsonValueAs<std::string>(
+    const ::nlohmann::json& j) {
+  if (j.is_string()) {
+    return j.get<std::string>();
+  }
+  return absl::nullopt;
+}
+
+template <>
 absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j) {
   if (j.is_boolean()) {
     return j.get<bool>();
   }
   return absl::nullopt;
+}
+
+bool JsonArrayIterate(
+    const ::nlohmann::json& j, absl::string_view field,
+    const std::function<bool(const ::nlohmann::json& elt)>& visitor) {
+  auto it = j.find(field);
+  if (it == j.end()) {
+    return true;
+  }
+  if (!it.value().is_array()) {
+    return false;
+  }
+  for (const auto& elt : it.value().items()) {
+    if (!visitor(elt.value())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool JsonObjectIterate(const ::nlohmann::json& j, absl::string_view field,
+                       const std::function<bool(std::string key)>& visitor) {
+  auto it = j.find(field);
+  if (it == j.end()) {
+    return true;
+  }
+  if (!it.value().is_object()) {
+    return false;
+  }
+  for (const auto& elt : it.value().items()) {
+    auto key = JsonValueAs<std::string>(elt.key());
+    if (!key.has_value()) {
+      return false;
+    }
+    if (!visitor(key.value())) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace Common

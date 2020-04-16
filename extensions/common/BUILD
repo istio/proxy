@@ -148,13 +148,15 @@ cc_library(
     deps = ["@com_github_google_flatbuffers//:runtime_cc"],
 )
 
-cc_library(
+envoy_cc_library(
     name = "json_lib",
     srcs = ["json.cc"],
     hdrs = [
         "json.h",
         "nlohmann_json.hpp",
     ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
     deps = [
         "@envoy//source/extensions/common/wasm:wasm_lib",
     ],

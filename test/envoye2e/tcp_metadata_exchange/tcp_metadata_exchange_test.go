@@ -44,7 +44,7 @@ const metadataExchangeIstioConfigFilter = `
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "1s" }
+        { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }
 `
 
 var (
@@ -71,7 +71,7 @@ const metadataExchangeIstioClientFilter = `
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "1s" }
+        { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }
 `
 
 const tlsContext = `

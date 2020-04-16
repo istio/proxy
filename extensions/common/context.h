@@ -56,6 +56,13 @@ const std::string kProtocolTCP = "tcp";
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
 
+const std::set<std::string> kDefaultLabels{
+    "app",
+    "version",
+    "service.istio.io/canonical-name",
+    "service.istio.io/canonical-revision",
+};
+
 enum class ServiceAuthenticationPolicy : int64_t {
   Unspecified = 0,
   None = 1,
