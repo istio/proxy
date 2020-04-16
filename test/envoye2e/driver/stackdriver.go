@@ -26,7 +26,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
 const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
@@ -38,7 +37,7 @@ type Stackdriver struct {
 	Delay time.Duration
 
 	done  chan error
-	tsReq []*monitoringpb.CreateTimeSeriesRequest
+	tsReq []*monitoring.CreateTimeSeriesRequest
 	ts    map[string]struct{}
 	ls    map[string]struct{}
 	es    map[string]struct{}
@@ -57,7 +56,7 @@ func (sd *Stackdriver) Run(p *Params) error {
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
 	sd.es = make(map[string]struct{})
-	sd.tsReq = make([]*monitoringpb.CreateTimeSeriesRequest, 0, 20)
+	sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
 	metrics, logging, edge, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
@@ -229,7 +228,7 @@ func (s *checkStackdriver) Run(p *Params) error {
 func (s *checkStackdriver) Cleanup() {}
 
 // Check that response latency is within a reasonable range (less than 256 milliseconds).
-func verifyResponseLatency(got *monitoringpb.CreateTimeSeriesRequest) (bool, error) {
+func verifyResponseLatency(got *monitoring.CreateTimeSeriesRequest) (bool, error) {
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type != ResponseLatencyMetricName {
 			continue
