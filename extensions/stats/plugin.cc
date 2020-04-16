@@ -17,9 +17,6 @@
 
 #include "absl/strings/ascii.h"
 #include "extensions/common/util.h"
-#include "google/protobuf/util/time_util.h"
-
-using google::protobuf::util::TimeUtil;
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -46,6 +43,8 @@ namespace Plugin {
 namespace Stats {
 
 constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
+
+using ::Wasm::Common::JsonGetField;
 
 namespace {
 
@@ -239,7 +238,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
   return default_metrics;
 }
 
-void PluginRootContext::initializeDimensions() {
+void PluginRootContext::initializeDimensions(const nlohmann::json& j) {
   // Clean-up existing expressions.
   cleanupExpressions();
 
@@ -262,19 +261,22 @@ void PluginRootContext::initializeDimensions() {
   }
 
   // Process the metric definitions (overriding existing).
-  for (const auto& definition : config_.definitions()) {
-    if (definition.name().empty() || definition.value().empty()) {
+  for (const auto& definition : j["definitions"]) {
+    auto name = definition.value("name", "");
+    auto value = definition.value("value", "");
+    if (name.empty() || value.empty()) {
       continue;
     }
-    auto token = addIntExpression(definition.value());
-    auto& factory = factories[definition.name()];
-    factory.name = definition.name();
+    auto token = addIntExpression(value);
+    auto& factory = factories[name];
+    factory.name = name;
     factory.extractor =
         [token](const ::Wasm::Common::RequestInfo&) -> uint64_t {
       int64_t result = 0;
       evaluateExpression(token.value(), &result);
       return result;
     };
+    /*
     switch (definition.type()) {
       case stats::MetricType::COUNTER:
         factory.type = MetricType::Counter;
@@ -288,26 +290,30 @@ void PluginRootContext::initializeDimensions() {
       default:
         break;
     }
+    */
   }
 
   // Process the dimension overrides.
-  for (const auto& metric : config_.metrics()) {
+  for (const auto& metric : j["metrics"]) {
     // Sort tag override tags to keep the order of tags deterministic.
     std::vector<std::string> tags;
+    /*
     const auto size = metric.dimensions().size();
     tags.reserve(size);
     for (const auto& dim : metric.dimensions()) {
       tags.push_back(dim.first);
     }
     std::sort(tags.begin(), tags.end());
+    */
 
     for (const auto& factory_it : factories) {
-      if (!metric.name().empty() && metric.name() != factory_it.first) {
+      auto name = metric.value("name", "");
+      if (!name.empty() && name != factory_it.first) {
         continue;
       }
       auto& indexes = metric_indexes[factory_it.first];
       // Process tag deletions.
-      for (const auto& tag : metric.tags_to_remove()) {
+      for (const auto& tag : metric["tags_to_remove"]) {
         auto it = indexes.find(tag);
         if (it != indexes.end()) {
           it->second = {};
@@ -315,7 +321,8 @@ void PluginRootContext::initializeDimensions() {
       }
       // Process tag overrides.
       for (const auto& tag : tags) {
-        auto expr_index = addStringExpression(metric.dimensions().at(tag));
+        auto expr_index =
+            addStringExpression(metric["dimensions"].value(tag, ""));
         Optional<size_t> value = {};
         if (expr_index.has_value()) {
           value = count_standard_labels + expr_index.value();
@@ -341,9 +348,15 @@ void PluginRootContext::initializeDimensions() {
   map_node(istio_dimensions_, outbound_, local_node);
 
   // Instantiate stat factories using the new dimensions
-  auto field_separator = CONFIG_DEFAULT(field_separator);
-  auto value_separator = CONFIG_DEFAULT(value_separator);
-  auto stat_prefix = CONFIG_DEFAULT(stat_prefix);
+  auto field_separator =
+      std::string(JsonGetField<absl::string_view>(j, "field_separator")
+                      .value_or(default_field_separator));
+  auto value_separator =
+      std::string(JsonGetField<absl::string_view>(j, "value_separator")
+                      .value_or(default_value_separator));
+  auto stat_prefix =
+      std::string(JsonGetField<absl::string_view>(j, "stat_prefix")
+                      .value_or(default_stat_prefix));
 
   // prepend "_" to opt out of automatic namespacing
   // If "_" is not prepended, envoy_ is automatically added by prometheus
@@ -380,23 +393,14 @@ void PluginRootContext::initializeDimensions() {
 
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
-  // Parse configuration JSON string.
-  JsonParseOptions json_options;
-  json_options.ignore_unknown_fields = true;
-  Status status =
-      JsonStringToMessage(configuration->toString(), &config_, json_options);
-  if (status != Status::OK) {
-    LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
-                          configuration->toString()));
-    return false;
-  }
-
-  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
+  if (!::Wasm::Common::extractPartialLocalNodeFlatBuffer(&local_node_info_)) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
   }
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
+
+  auto j = ::Wasm::Common::JsonParse(configuration->view());
 
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
@@ -406,17 +410,20 @@ bool PluginRootContext::onConfigure(size_t) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
 
-  debug_ = config_.debug();
-  use_host_header_fallback_ = !config_.disable_host_header_fallback();
+  debug_ = JsonGetField<bool>(j, "debug").value_or(false);
+  use_host_header_fallback_ =
+      !JsonGetField<bool>(j, "disable_host_header_fallback").value_or(false);
 
-  initializeDimensions();
+  initializeDimensions(j);
 
   long long tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
+  /*
   if (config_.has_tcp_reporting_duration()) {
     tcp_report_duration_milis =
         ::google::protobuf::util::TimeUtil::DurationToMilliseconds(
             config_.tcp_reporting_duration());
   }
+  */
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
 
   return true;

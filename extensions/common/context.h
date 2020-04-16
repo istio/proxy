@@ -20,7 +20,6 @@
 #include "absl/strings/string_view.h"
 #include "extensions/common/node_info_generated.h"
 #include "flatbuffers/flatbuffers.h"
-#include "google/protobuf/struct.pb.h"
 
 namespace Wasm {
 namespace Common {
@@ -164,13 +163,13 @@ enum class TrafficDirection : int64_t {
 // Retrieves the traffic direction from the configuration context.
 TrafficDirection getTrafficDirection();
 
-// Extract node info into a flatbuffer from a struct.
-bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
-                           flatbuffers::FlatBufferBuilder& fbb);
-// Extra local node metadata into a flatbuffer.
-bool extractLocalNodeFlatBuffer(std::string* out);
 // Convenience routine to create an empty node flatbuffer.
 void extractEmptyNodeFlatBuffer(std::string* out);
+
+// Extra partial local node metadata into a flatbuffer.
+// This populates a subset of nested labels and platform metadata to avoid
+// parsing a protobuf from the host.
+bool extractPartialLocalNodeFlatBuffer(std::string* out);
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
@@ -186,13 +185,6 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info);
 // the request context.
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
                             const std::string& destination_namespace);
-
-// Extracts node metadata value. It looks for values of all the keys
-// corresponding to EXCHANGE_KEYS in node_metadata and populates it in
-// google::protobuf::Value pointer that is passed in.
-google::protobuf::util::Status extractNodeMetadataValue(
-    const google::protobuf::Struct& node_metadata,
-    google::protobuf::Struct* metadata);
 
 }  // namespace Common
 }  // namespace Wasm

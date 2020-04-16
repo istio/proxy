@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#include "extensions/common/context.h"
+#include "extensions/common/proto_util.h"
 
+#include "extensions/common/node_info_generated.h"
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/stubs/status.h"
 #include "google/protobuf/text_format.h"
