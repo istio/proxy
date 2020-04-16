@@ -386,6 +386,11 @@ func TestStatsGrpc(t *testing.T) {
 				Matchers: map[string]driver.StatMatcher{
 					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
 				}},
+			&driver.Stats{
+				AdminPort: params.Ports.ClientAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total.yaml.tmpl"},
+				}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)

@@ -21,6 +21,7 @@ import (
 var ProxyE2ETests *env.TestInventory
 
 func init() {
+	// TODO(bianpengyuan): automatically generate this.
 	ProxyE2ETests = &env.TestInventory{
 		Tests: []string{
 			"TestBasicFlow",

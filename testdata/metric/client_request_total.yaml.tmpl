@@ -41,7 +41,11 @@ metric:
   - name: destination_service_namespace
     value: default
   - name: request_protocol
+    {{- if .Vars.GrpcResponseStatus }}
+    value: grpc
+    {{- else }}
     value: http
+    {{- end }}
   - name: response_code
     value: "200"
   - name: grpc_response_status
@@ -53,4 +57,8 @@ metric:
   - name: configurable_metric_a
     value: localhost:server
   - name: configurable_metric_b
+    {{- if .Vars.GrpcResponseStatus }}
+    value: HTTP/2
+    {{- else }}
     value: HTTP/1.1
+    {{- end }}
