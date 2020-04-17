@@ -16,6 +16,7 @@ package client_test
 
 import (
 	"testing"
+	"time"
 
 	"istio.io/proxy/test/envoye2e"
 	"istio.io/proxy/test/envoye2e/driver"
@@ -129,6 +130,7 @@ func TestTCPMetadataExchange(t *testing.T) {
 			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.TCPServer{Prefix: "hello"},
 			&driver.Repeat{
 				N:    10,
@@ -183,6 +185,7 @@ func TestTCPMetadataExchangeNoAlpn(t *testing.T) {
 			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.TCPServer{Prefix: "hello"},
 			&driver.Repeat{
 				N:    10,
