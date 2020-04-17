@@ -60,6 +60,14 @@ absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j) {
   if (j.is_boolean()) {
     return j.get<bool>();
   }
+  if (j.is_string()) {
+    const std::string& v = j.get_ref<std::string const&>();
+    if (v == "true") {
+      return true;
+    } else if (v == "false") {
+      return false;
+    }
+  }
   return absl::nullopt;
 }
 

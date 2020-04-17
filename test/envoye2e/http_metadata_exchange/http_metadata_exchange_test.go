@@ -38,7 +38,7 @@ const metadataExchangeIstioStatsServerFilter = `- name: envoy.filters.http.wasm
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }`
+        { "debug": false, "field_separator": ";.;" }`
 const metadataExchangeIstioUpstreamConfigFilterChain = `filters:
 - name: envoy.filters.network.upstream.metadata_exchange
   typed_config: 
@@ -54,7 +54,7 @@ const metadataExchangeIstioStatsClientFilter = `- name: envoy.filters.http.wasm
         code:
           local: { inline_string: "envoy.wasm.stats" }
       configuration: |
-        { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }`
+        { "debug": false, "field_separator": ";.;" }`
 
 const tlsContext = `tls_context:
   common_tls_context:
