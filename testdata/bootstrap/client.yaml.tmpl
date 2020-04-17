@@ -7,7 +7,7 @@ admin:
   address:
     socket_address:
       address: 127.0.0.1
-      port_value: {{ .Vars.ClientAdmin }}
+      port_value: {{ .Ports.ClientAdmin }}
 {{ .Vars.StatsConfig }}
 dynamic_resources:
   ads_config:
@@ -33,20 +33,21 @@ static_resources:
             address:
               socket_address:
                 address: 127.0.0.1
-                port_value: {{ .XDS }}
+                port_value: {{ .Ports.XDSPort }}
     http2_protocol_options: {}
     name: xds_cluster
-  - name: server
+  - name: outbound|9080|http|server.default.svc.cluster.local
     connect_timeout: 1s
     type: STATIC
     http2_protocol_options: {}
     load_assignment:
-      cluster_name: server
+      cluster_name: outbound|9080|http|server.default.svc.cluster.local
       endpoints:
       - lb_endpoints:
         - endpoint:
             address:
               socket_address:
                 address: 127.0.0.1
-                port_value: {{ .Vars.ServerPort }}
+                port_value: {{ .Ports.ServerPort }}
 {{ .Vars.ClientTLSContext | indent 4 }}
+{{ .Vars.ClientStaticCluster | indent 2 }}

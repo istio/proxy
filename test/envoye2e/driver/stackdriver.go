@@ -22,10 +22,14 @@ import (
 	"sync"
 	"time"
 
+	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
+	"istio.io/proxy/test/envoye2e/env"
 )
+
+const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
 
 type Stackdriver struct {
 	sync.Mutex
@@ -33,9 +37,17 @@ type Stackdriver struct {
 	Port  uint16
 	Delay time.Duration
 
-	done chan error
-	ts   map[string]struct{}
-	ls   map[string]struct{}
+	done  chan error
+	tsReq []*monitoring.CreateTimeSeriesRequest
+	ts    map[string]struct{}
+	ls    map[string]struct{}
+	es    map[string]struct{}
+}
+
+type SDLogEntry struct {
+	LogBaseFile   string
+	LogEntryFile  string
+	LogEntryCount int
 }
 
 var _ Step = &Stackdriver{}
@@ -44,7 +56,9 @@ func (sd *Stackdriver) Run(p *Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
-	metrics, logging, _, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
+	sd.es = make(map[string]struct{})
+	sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
+	metrics, logging, edge, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
 		for {
@@ -52,6 +66,7 @@ func (sd *Stackdriver) Run(p *Params) error {
 			case req := <-metrics.RcvMetricReq:
 				log.Printf("sd received metric request: %d\n", len(req.TimeSeries))
 				sd.Lock()
+				sd.tsReq = append(sd.tsReq, req)
 				for _, ts := range req.TimeSeries {
 					if strings.HasSuffix(ts.Metric.Type, "request_count") {
 						// clear the timestamps for comparison
@@ -76,6 +91,11 @@ func (sd *Stackdriver) Run(p *Params) error {
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
 				sd.Unlock()
+			case req := <-edge.RcvTrafficAssertionsReq:
+				req.Timestamp = nil
+				sd.Lock()
+				sd.es[proto.MarshalTextString(req)] = struct{}{}
+				sd.Unlock()
 			case <-sd.done:
 				return
 			}
@@ -89,7 +109,7 @@ func (sd *Stackdriver) Cleanup() {
 	close(sd.done)
 }
 
-func (sd *Stackdriver) Check(p *Params, tsFiles []string, lsFiles []string) Step {
+func (sd *Stackdriver) Check(p *Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string) Step {
 	// check as sets of strings by marshaling to proto
 	twant := make(map[string]struct{})
 	for _, t := range tsFiles {
@@ -100,13 +120,25 @@ func (sd *Stackdriver) Check(p *Params, tsFiles []string, lsFiles []string) Step
 	lwant := make(map[string]struct{})
 	for _, l := range lsFiles {
 		pb := &logging.WriteLogEntriesRequest{}
-		p.LoadTestProto(l, pb)
+		e := &logging.LogEntry{}
+		p.LoadTestProto(l.LogBaseFile, pb)
+		p.LoadTestProto(l.LogEntryFile, e)
+		for i := 0; i < l.LogEntryCount; i++ {
+			pb.Entries = append(pb.Entries, e)
+		}
 		lwant[proto.MarshalTextString(pb)] = struct{}{}
+	}
+	ewant := make(map[string]struct{})
+	for _, e := range edgeFiles {
+		pb := &edgespb.ReportTrafficAssertionsRequest{}
+		p.LoadTestProto(e, pb)
+		ewant[proto.MarshalTextString(pb)] = struct{}{}
 	}
 	return &checkStackdriver{
 		sd:    sd,
 		twant: twant,
 		lwant: lwant,
+		ewant: ewant,
 	}
 }
 
@@ -114,11 +146,14 @@ type checkStackdriver struct {
 	sd    *Stackdriver
 	twant map[string]struct{}
 	lwant map[string]struct{}
+	ewant map[string]struct{}
 }
 
 func (s *checkStackdriver) Run(p *Params) error {
 	foundAllLogs := false
 	foundAllMetrics := false
+	foundAllEdge := false
+	verfiedLatency := false
 	for i := 0; i < 30; i++ {
 		s.sd.Lock()
 		foundAllLogs = reflect.DeepEqual(s.sd.ls, s.lwant)
@@ -152,16 +187,78 @@ func (s *checkStackdriver) Run(p *Params) error {
 				return fmt.Errorf("failed to receive expected metrics")
 			}
 		}
+
+		foundAllEdge = reflect.DeepEqual(s.sd.es, s.ewant)
+		if !foundAllEdge {
+			log.Printf("got edges %d, want %d\n", len(s.sd.es), len(s.ewant))
+			if len(s.ewant) == 0 {
+				foundAllEdge = true
+			} else if len(s.sd.es) >= len(s.ewant) {
+				for got := range s.sd.es {
+					log.Println(got)
+				}
+				log.Println("--- but want ---")
+				for want := range s.ewant {
+					log.Println(want)
+				}
+				return fmt.Errorf("failed to receive expected edges")
+			}
+		}
+
+		// Sanity check response latency
+		for _, r := range s.sd.tsReq {
+			if verfied, err := verifyResponseLatency(r); err != nil {
+				return fmt.Errorf("failed to verify latency metric: %v", err)
+			} else if verfied {
+				verfiedLatency = true
+				break
+			}
+		}
 		s.sd.Unlock()
 
-		if foundAllLogs && foundAllMetrics {
+		if foundAllLogs && foundAllMetrics && foundAllEdge && verfiedLatency {
 			return nil
 		}
 
 		log.Println("sleeping till next check")
 		time.Sleep(1 * time.Second)
 	}
-	return fmt.Errorf("found all metrics %v, all logs %v", foundAllMetrics, foundAllLogs)
+	return fmt.Errorf("found all metrics %v, all logs %v, all edge %v, verified latency %v", foundAllMetrics, foundAllLogs, foundAllEdge, verfiedLatency)
 }
 
 func (s *checkStackdriver) Cleanup() {}
+
+// Check that response latency is within a reasonable range (less than 256 milliseconds).
+func verifyResponseLatency(got *monitoring.CreateTimeSeriesRequest) (bool, error) {
+	for _, t := range got.TimeSeries {
+		if t.Metric.Type != ResponseLatencyMetricName {
+			continue
+		}
+		p := t.Points[0]
+		d := p.Value.GetDistributionValue()
+		bo := d.GetBucketOptions()
+		if bo == nil {
+			return true, fmt.Errorf("expect response latency metrics bucket option not to be empty: %v", got)
+		}
+		eb := bo.GetExplicitBuckets()
+		if eb == nil {
+			return true, fmt.Errorf("explicit response latency metrics buckets should not be empty: %v", got)
+		}
+		bounds := eb.GetBounds()
+		maxLatencyInMilli := 0.0
+		for i, b := range d.GetBucketCounts() {
+			if b != 0 {
+				maxLatencyInMilli = bounds[i]
+			}
+		}
+		wantMaxLatencyInMilli := 256.0
+		if env.IsTSanASan() {
+			wantMaxLatencyInMilli = 1024.0
+		}
+		if maxLatencyInMilli > wantMaxLatencyInMilli {
+			return true, fmt.Errorf("latency metric is too large, got %vms, but want < %vms", maxLatencyInMilli, wantMaxLatencyInMilli)
+		}
+		return true, nil
+	}
+	return false, nil
+}

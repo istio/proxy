@@ -1,0 +1,20 @@
+parent: projects/test-project
+mesh_uid: mesh
+traffic_assertions:
+- protocol: PROTOCOL_HTTP
+  destination_service_name: server
+  destination_service_namespace: default
+  source:
+    uid: kubernetes://productpage-v1-84975bc778-pxz2w.default
+    location: us-east4-b
+    cluster_name: test-cluster
+    owner_uid: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
+    workload_name: productpage-v1
+    workload_namespace: default
+  destination:
+    uid: kubernetes://ratings-v1-84975bc778-pxz2w.default
+    location: us-east4-b
+    cluster_name: test-cluster
+    owner_uid: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
+    workload_name: ratings-v1
+    workload_namespace: default  

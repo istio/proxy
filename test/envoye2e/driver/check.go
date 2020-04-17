@@ -32,12 +32,16 @@ const (
 type HTTPCall struct {
 	// Method
 	Method string
+	// URL path
+	Path string
 	// Port specifies the port in 127.0.0.1:PORT
 	Port uint16
 	// Body is the expected body
 	Body string
 	// RequestHeaders to send with the request
 	RequestHeaders map[string]string
+	// ResponseCode to expect
+	ResponseCode int
 	// ResponseHeaders to expect
 	ResponseHeaders map[string]string
 	// Timeout (must be set to avoid the default)
@@ -53,7 +57,7 @@ func Get(port uint16, body string) Step {
 }
 
 func (g *HTTPCall) Run(_ *Params) error {
-	url := fmt.Sprintf("http://127.0.0.1:%d", g.Port)
+	url := fmt.Sprintf("http://127.0.0.1:%d%v", g.Port, g.Path)
 	if g.Timeout == 0 {
 		g.Timeout = DefaultTimeout
 	}
@@ -73,7 +77,11 @@ func (g *HTTPCall) Run(_ *Params) error {
 		return err
 	}
 	code := resp.StatusCode
-	if code != 200 {
+	wantCode := 200
+	if g.ResponseCode != 0 {
+		wantCode = g.ResponseCode
+	}
+	if code != wantCode {
 		return fmt.Errorf("error code for :%d: %d", g.Port, code)
 	}
 

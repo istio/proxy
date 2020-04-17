@@ -31,21 +31,25 @@ metric:
   - name: destination_version
     value: v1
   - name: destination_service
-    value: 127.0.0.1:{{ .Vars.ClientPort }}
+    value: server.default.svc.cluster.local
   - name: destination_canonical_service
     value: ratings
   - name: destination_canonical_revision
     value: version-1
   - name: destination_service_name
-    value: 127.0.0.1:{{ .Vars.ClientPort }}
+    value: server
   - name: destination_service_namespace
     value: default
   - name: request_protocol
+    {{- if .Vars.GrpcResponseStatus }}
+    value: grpc
+    {{- else }}
     value: http
+    {{- end }}
   - name: response_code
     value: "200"
   - name: grpc_response_status
-    value: ""
+    value: "{{ .Vars.GrpcResponseStatus }}"
   - name: response_flags
     value: "-"
   - name: connection_security_policy
@@ -53,4 +57,8 @@ metric:
   - name: configurable_metric_a
     value: localhost:server
   - name: configurable_metric_b
+    {{- if .Vars.GrpcResponseStatus }}
+    value: HTTP/2
+    {{- else }}
     value: HTTP/1.1
+    {{- end }}

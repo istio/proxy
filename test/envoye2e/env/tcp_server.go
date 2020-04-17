@@ -90,7 +90,7 @@ func handleConnection(conn net.Conn, prefix string) {
 	reader := bufio.NewReader(conn)
 	for {
 		// read client request data
-		bytes, err := reader.ReadBytes(byte('\n'))
+		bytes, err := reader.ReadString('\n')
 		if err != nil {
 			if err != io.EOF {
 				log.Println("failed to read data, err:", err)
@@ -136,7 +136,7 @@ func WaitForTCPServer(port uint16, enableTLS bool, rootDir string) error {
 			continue
 		}
 		// send to socket
-		fmt.Fprintf(conn, "ping"+"\n")
+		fmt.Fprintf(conn, "ping\n")
 		// listen for reply
 		message, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
