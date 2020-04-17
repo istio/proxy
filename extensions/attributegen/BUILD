@@ -23,6 +23,10 @@ load(
     "envoy_cc_test",
     "envoy_package",
 )
+load(
+    "@envoy//test/extensions:extensions_build_system.bzl",
+    "envoy_extension_cc_test",
+)
 
 envoy_package()
 
@@ -52,4 +56,30 @@ cc_proto_library(
 proto_library(
     name = "config_proto",
     srcs = ["config.proto"],
+)
+
+envoy_extension_cc_test(
+    name = "plugin_test",
+    size = "small",
+    srcs = ["plugin_test.cc"],
+    extension_name = "envoy.filters.http.wasm",
+    repository = "@envoy",
+    deps = [
+        ":attributegen_plugin",
+        "//external:abseil_hash_testing",
+        "@envoy//source/common/stream_info:stream_info_lib",
+        "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+        "@envoy//source/extensions/filters/http/wasm:wasm_filter_lib",
+        "@envoy//test/mocks/grpc:grpc_mocks",
+        "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/server:server_mocks",
+        "@envoy//test/mocks/ssl:ssl_mocks",
+        "@envoy//test/mocks/stream_info:stream_info_mocks",
+        "@envoy//test/mocks/thread_local:thread_local_mocks",
+        "@envoy//test/mocks/upstream:upstream_mocks",
+        "@envoy//test/test_common:environment_lib",
+        "@envoy//test/test_common:utility_lib",
+    ],
 )

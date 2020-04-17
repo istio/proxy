@@ -64,13 +64,16 @@ bool PluginRootContext::initAttributeGen(
       phase = on_request;
     }
     auto ag = AttributeGenerator(phase, agconfig.output_attribute());
-    gen_.push_back(ag);
     for (auto matchconfig : agconfig.match()) {
       uint32_t token = 0;
+      if (matchconfig.condition().empty()) {
+        ag.add_match(Match("", 0, matchconfig.value()));
+        continue;
+      }
       if (createExpression(matchconfig.condition(), &token) != WasmResult::Ok) {
-        LOG_WARN(
-            absl::StrCat("Cannot create expression: ", matchconfig.condition(),
-                         " for ", agconfig.output_attribute()));
+        LOG_WARN(absl::StrCat("Cannot create expression: <",
+                              matchconfig.condition(), "> for ",
+                              agconfig.output_attribute()));
         return false;
       }
       LOG_DEBUG(absl::StrCat("Added ", agconfig.output_attribute(), " if (",
@@ -78,6 +81,7 @@ bool PluginRootContext::initAttributeGen(
                              matchconfig.value()));
       ag.add_match(Match(matchconfig.condition(), token, matchconfig.value()));
     }
+    gen_.push_back(ag);
   }
   return true;
 }
@@ -99,6 +103,7 @@ void PluginRootContext::attributeGen(EvalPhase phase) {
     std::string val;
     auto eval_status = ag.evaluate(&val);
     if (!eval_status) {
+      LOG_DEBUG(absl::StrCat("Failed eval. setting ", ag.error_attribute()));
       // eval failed set error attribute
       setFilterState(ag.error_attribute(), "1");
       continue;
@@ -107,7 +112,7 @@ void PluginRootContext::attributeGen(EvalPhase phase) {
     if (!eval_status.value()) {
       continue;
     }
-
+    LOG_DEBUG(absl::StrCat("Setting ", ag.output_attribute(), " --> ", val));
     setFilterState(ag.output_attribute(), val);
   }
 }

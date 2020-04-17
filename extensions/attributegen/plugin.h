@@ -63,6 +63,11 @@ class Match {
 
   // Returns the result of evaluation or nothing in case of an error.
   Optional<bool> evaluate() const {
+    if (condition_.empty()) {
+      LOG_DEBUG(absl::StrCat("Matched empty condition: value=", value_));
+      return true;
+    }
+
     bool matched;
     if (!evaluateExpression(condition_token_, &matched)) {
       LOG_WARN(absl::StrCat("Failed to evaluate expression: ", condition_));
@@ -76,7 +81,11 @@ class Match {
 
   std::string value() const { return value_; };
 
-  void cleanup() { exprDelete(condition_token_); }
+  void cleanup() {
+    if (!condition_.empty()) {
+      exprDelete(condition_token_);
+    }
+  }
 
  protected:
   // Only used for debug messages after construction.
