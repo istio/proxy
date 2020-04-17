@@ -70,7 +70,8 @@ constexpr StringView kCode = "code";
 constexpr StringView kGrpcStatus = "grpc_status";
 
 static RegisterContextFactory register_AccessLogPolicy(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
+    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext),
+    "access_log_inbound");
 
 bool PluginRootContext::onConfigure(size_t) {
   if (::Wasm::Common::TrafficDirection::Inbound !=
