@@ -1,8 +1,8 @@
-name: outbound|9080|http|server.default.svc.cluster.local
+name: outbound|9080|tcp|server.default.svc.cluster.local
 connect_timeout: 1s
 type: STATIC
 load_assignment:
-  cluster_name: outbound|9080|http|server.default.svc.cluster.local
+  cluster_name: outbound|9080|tcp|server.default.svc.cluster.local
   endpoints:
   - lb_endpoints:
     - endpoint:
@@ -10,3 +10,6 @@ load_assignment:
           socket_address:
             address: 127.0.0.1
             port_value: {{ .Ports.ServerPort }}
+{{ .Vars.ClientClusterTLSContext }}
+filters:
+{{ .Vars.ClientUpstreamFilters }}

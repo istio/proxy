@@ -64,13 +64,23 @@ namespace {
 
 // Get metric export interval from node metadata. Returns 60 seconds if interval
 // is not found in metadata.
-int getExportInterval() {
+int getMonitoringExportInterval() {
   std::string interval_s = "";
   if (getValue({"node", "metadata", kMonitoringExportIntervalKey},
                &interval_s)) {
     return std::stoi(interval_s);
   }
   return 60;
+}
+
+// Get logging export interval from node metadata in milliseconds. Returns 60
+// seconds if interval is not found in metadata.
+int getLoggingExportIntervalMilliseconds() {
+  std::string interval_s = "";
+  if (getValue({"node", "metadata", kLoggingExportIntervalKey}, &interval_s)) {
+    return std::stoi(interval_s) * 1000;
+  }
+  return kDefaultLogExportMilliseconds;
 }
 
 // Get port of security token exchange server from node metadata, if not
@@ -139,7 +149,7 @@ std::string getMonitoringEndpoint() {
 bool StackdriverRootContext::onConfigure(size_t) {
   // onStart is called prior to onConfigure
   if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
+    proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
   } else {
     proxy_set_tick_period_milliseconds(0);
   }
@@ -239,7 +249,7 @@ bool StackdriverRootContext::onConfigure(size_t) {
   opencensus::exporters::stats::StackdriverExporter::Register(
       getStackdriverOptions(local_node, monitoring_stub_option));
   opencensus::stats::StatsExporter::SetInterval(
-      absl::Seconds(getExportInterval()));
+      absl::Seconds(getMonitoringExportInterval()));
 
   // Register opencensus measures and views.
   registerViews();

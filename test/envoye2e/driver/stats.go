@@ -89,3 +89,28 @@ func (me *ExactStat) Matches(params *Params, that *dto.MetricFamily) error {
 }
 
 var _ StatMatcher = &ExactStat{}
+
+type PartialStat struct {
+	Metric string
+}
+
+func (me *PartialStat) Matches(params *Params, that *dto.MetricFamily) error {
+	metric := &dto.MetricFamily{}
+	params.LoadTestProto(me.Metric, metric)
+	for _, wm := range metric.Metric {
+		found := false
+		for _, gm := range that.Metric {
+			if _, same := messagediff.PrettyDiff(wm, gm); !same {
+				continue
+			}
+			found = true
+			break
+		}
+		if !found {
+			return fmt.Errorf("cannot find metric, got: %v, want: %v", that.Metric, wm)
+		}
+	}
+	return nil
+}
+
+var _ StatMatcher = &PartialStat{}

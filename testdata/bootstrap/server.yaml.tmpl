@@ -7,7 +7,7 @@ admin:
   address:
     socket_address:
       address: 127.0.0.1
-      port_value: {{ .Vars.ServerAdmin }}
+      port_value: {{ .Ports.ServerAdmin }}
 {{ .Vars.StatsConfig }}
 dynamic_resources:
   ads_config:
@@ -33,12 +33,15 @@ static_resources:
             address:
               socket_address:
                 address: 127.0.0.1
-                port_value: {{ .XDS }}
+                port_value: {{ .Ports.XDSPort }}
     http2_protocol_options: {}
     name: xds_cluster
   - name: inbound|9080|http|server.default.svc.cluster.local
     connect_timeout: 1s
     type: STATIC
+    {{- if eq .Vars.UsingGrpcBackend "true" }}
+    http2_protocol_options: {}
+    {{- end }}
     load_assignment:
       cluster_name: inbound|9080|http|server.default.svc.cluster.local
       endpoints:
@@ -47,13 +50,15 @@ static_resources:
             address:
               socket_address:
                 address: 127.0.0.1
-                port_value: {{ .Vars.BackendPort }}
+                port_value: {{ .Ports.BackendPort }}
+{{ .Vars.ServerStaticCluster | indent 2 }}
+{{- if ne .Vars.DisableDirectResponse "true" }}
   listeners:
   - name: staticreply
     address:
       socket_address:
         address: 127.0.0.1
-        port_value: {{ .Vars.BackendPort }}
+        port_value: {{ .Ports.BackendPort }}
     filter_chains:
     - filters:
       - name: http
@@ -70,8 +75,13 @@ static_resources:
               - match:
                   prefix: "/"
                 direct_response:
+                  {{- if .Vars.DirectResponseCode }}
+                  status: {{ .Vars.DirectResponseCode }}
+                  {{- else }}
                   status: 200
+                  {{- end }}
                   body:
                     inline_string: "hello, world!"
           http_filters:
           - name: envoy.filters.http.router
+{{- end }}

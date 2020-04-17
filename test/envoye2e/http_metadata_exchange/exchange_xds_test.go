@@ -16,15 +16,14 @@ package client_test
 
 import (
 	"encoding/base64"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	pstruct "github.com/golang/protobuf/ptypes/struct"
 
+	"istio.io/proxy/test/envoye2e"
 	"istio.io/proxy/test/envoye2e/driver"
-	"istio.io/proxy/test/envoye2e/env"
 )
 
 const ServerHTTPListener = `
@@ -33,7 +32,7 @@ traffic_direction: INBOUND
 address:
   socket_address:
     address: 127.0.0.1
-    port_value: {{ .Vars.ServerPort }}
+    port_value: {{ .Ports.ServerPort }}
 filter_chains:
 - filters:
   - name: envoy.http_connection_manager
@@ -81,15 +80,7 @@ func EncodeMetadata(t *testing.T, p *driver.Params) string {
 }
 
 func TestHTTPExchange(t *testing.T) {
-	ports := env.NewPorts(env.HTTPExchange)
-	params := &driver.Params{
-		Vars: map[string]string{
-			"BackendPort": fmt.Sprintf("%d", ports.BackendPort),
-			"ServerAdmin": fmt.Sprintf("%d", ports.ServerAdminPort),
-			"ServerPort":  fmt.Sprintf("%d", ports.ClientToServerProxyPort),
-		},
-		XDS: int(ports.XDSPort),
-	}
+	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	if err := (&driver.Scenario{
@@ -99,7 +90,7 @@ func TestHTTPExchange(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.HTTPCall{
-				Port: ports.ClientToServerProxyPort,
+				Port: params.Ports.ServerPort,
 				Body: "hello, world!",
 				ResponseHeaders: map[string]string{
 					"x-envoy-peer-metadata-id": driver.None,
@@ -107,7 +98,7 @@ func TestHTTPExchange(t *testing.T) {
 				},
 			},
 			&driver.HTTPCall{
-				Port: ports.ClientToServerProxyPort,
+				Port: params.Ports.ServerPort,
 				Body: "hello, world!",
 				RequestHeaders: map[string]string{
 					"x-envoy-peer-metadata-id": "client",
@@ -118,7 +109,7 @@ func TestHTTPExchange(t *testing.T) {
 				},
 			},
 			&driver.HTTPCall{
-				Port: ports.ClientToServerProxyPort,
+				Port: params.Ports.ServerPort,
 				Body: "hello, world!",
 				RequestHeaders: map[string]string{
 					"x-envoy-peer-metadata-id": "client",

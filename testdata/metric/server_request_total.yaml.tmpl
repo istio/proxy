@@ -41,11 +41,15 @@ metric:
   - name: destination_service_namespace
     value: default
   - name: request_protocol
+    {{- if .Vars.GrpcResponseStatus }}
+    value: grpc
+    {{- else }}
     value: http
+    {{- end }}
   - name: response_code
     value: "200"
   - name: grpc_response_status
-    value: ""
+    value: "{{ .Vars.GrpcResponseStatus }}"
   - name: response_flags
     value: "-"
   - name: connection_security_policy

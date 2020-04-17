@@ -63,7 +63,6 @@ const (
 
 // Ports stores all used ports
 type Ports struct {
-	BackendPort             uint16
 	ClientAdminPort         uint16
 	AppToClientProxyPort    uint16
 	ClientToServerProxyPort uint16
@@ -74,6 +73,12 @@ type Ports struct {
 	SDPort uint16
 	// Port used for Secure Token Service
 	STSPort uint16
+
+	BackendPort uint16
+	ClientAdmin uint16
+	ClientPort  uint16
+	ServerPort  uint16
+	ServerAdmin uint16
 }
 
 func allocPortBase(name uint16) uint16 {
@@ -104,9 +109,13 @@ func NewPorts(name uint16) *Ports {
 	return &Ports{
 		BackendPort:             base,
 		ClientAdminPort:         base + 1,
+		ClientAdmin:             base + 1,
 		AppToClientProxyPort:    base + 2,
+		ClientPort:              base + 2,
 		ClientToServerProxyPort: base + 3,
+		ServerPort:              base + 3,
 		ServerAdminPort:         base + 4,
+		ServerAdmin:             base + 4,
 		XDSPort:                 base + 5,
 		SDPort:                  base + 6,
 		STSPort:                 base + 7,

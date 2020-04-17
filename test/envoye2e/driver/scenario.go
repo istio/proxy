@@ -16,8 +16,10 @@ package driver
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"strings"
+	"testing"
 	"text/template"
 	"time"
 
@@ -25,12 +27,15 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+
+	"istio.io/proxy/test/envoye2e/env"
 )
 
 type (
 	Params struct {
 		XDS    int
 		Config cache.SnapshotCache
+		Ports  *env.Ports
 		Vars   map[string]string
 		N      int
 	}
@@ -56,6 +61,16 @@ type (
 		Back Step
 	}
 )
+
+func NewTestParams(t *testing.T, vars map[string]string, inv *env.TestInventory) *Params {
+	ind := inv.GetTestIndex(t)
+	ports := env.NewPorts(ind)
+	return &Params{
+		Vars:  vars,
+		Ports: ports,
+		XDS:   int(ports.XDSPort),
+	}
+}
 
 var _ Step = &Repeat{}
 
@@ -164,5 +179,6 @@ func (p *Params) FillYAML(input string, pb proto.Message) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(out)
 	return ReadYAML(out, pb)
 }

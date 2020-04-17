@@ -1,0 +1,18 @@
+http_request:
+  request_method: "GET"
+  request_url: "http://127.0.0.1:{{ .Ports.ClientPort }}/{{ .Vars.RequestPath }}"
+  server_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
+  protocol: "http"
+  status: {{ .Vars.SDLogStatusCode }}
+labels:
+  destination_principal: "{{ .Vars.DestinationPrincipal }}"
+  destination_service_host: server.default.svc.cluster.local
+  response_flag: "-"
+  service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
+  source_name: productpage-v1-84975bc778-pxz2w
+  source_namespace: default
+  source_principal: "{{ .Vars.SourcePrincipal }}"
+  source_workload: productpage-v1
+  source_app: productpage
+  source_version: v1
+severity: INFO
