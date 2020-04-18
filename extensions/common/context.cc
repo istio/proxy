@@ -228,6 +228,10 @@ google::protobuf::util::Status extractNodeMetadata(
         (*platform_metadata)[platform_it.first] =
             platform_it.second.string_value();
       }
+    } else if (it.first == "APP_CONTAINERS") {
+      for (const auto& containers_it : it.second.list_value().values()) {
+        node_info->add_app_containers(containers_it.string_value());
+      }
     }
   }
   return google::protobuf::util::Status::OK;

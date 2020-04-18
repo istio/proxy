@@ -44,7 +44,8 @@ constexpr absl::string_view node_metadata_json = R"###(
    },
    "WORKLOAD_NAME":"test_workload",
    "OWNER":"test_owner",
-   "NAME":"test_pod"
+   "NAME":"test_pod",
+   "APP_CONTAINERS": [ "test", "hello" ]
 }
 )###";
 
@@ -65,6 +66,7 @@ TEST(ContextTest, extractNodeMetadata) {
   EXPECT_EQ(platform_metadata["gcp_project"], "test_project");
   EXPECT_EQ(platform_metadata["gcp_cluster_name"], "test_cluster");
   EXPECT_EQ(platform_metadata["gcp_cluster_location"], "test_location");
+  EXPECT_EQ(node_info.app_containers_size(), 2);
 }
 
 // Test empty node metadata.
@@ -79,6 +81,7 @@ TEST(ContextTest, extractNodeMetadataNoMetadataField) {
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
   EXPECT_EQ(node_info.platform_metadata_size(), 0);
+  EXPECT_EQ(node_info.app_containers_size(), 0);
 }
 
 // Test missing metadata.
@@ -100,6 +103,7 @@ TEST(ContextTest, extractNodeMetadataMissingMetadata) {
   EXPECT_EQ(node_info.owner(), "");
   EXPECT_EQ(node_info.workload_name(), "");
   EXPECT_EQ(node_info.platform_metadata_size(), 0);
+  EXPECT_EQ(node_info.app_containers_size(), 0);
 }
 
 // Test unknown field.
