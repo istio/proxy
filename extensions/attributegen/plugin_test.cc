@@ -26,18 +26,17 @@
 
 #else  // NULL_PLUGIN
 
-#include "extensions/common/wasm/null/null.h"
-#include "envoy/server/lifecycle_notifier.h"
-
 #include "common/buffer/buffer_impl.h"
 #include "common/http/message_impl.h"
 #include "common/stats/isolated_store_impl.h"
 #include "common/stream_info/stream_info_impl.h"
-
+#include "envoy/server/lifecycle_notifier.h"
+#include "extensions/common/wasm/null/null.h"
 #include "extensions/common/wasm/wasm.h"
 #include "extensions/common/wasm/wasm_state.h"
 #include "extensions/filters/http/wasm/wasm_filter.h"
-
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "test/mocks/grpc/mocks.h"
 #include "test/mocks/http/mocks.h"
 #include "test/mocks/network/mocks.h"
@@ -49,9 +48,6 @@
 #include "test/test_common/environment.h"
 #include "test/test_common/printers.h"
 #include "test/test_common/utility.h"
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 using testing::_;
 using testing::AtLeast;
@@ -70,63 +66,75 @@ namespace Wasm {
 using envoy::config::core::v3::TrafficDirection;
 using Envoy::Extensions::Common::Wasm::PluginSharedPtr;
 using Envoy::Extensions::Common::Wasm::Wasm;
-using Envoy::Extensions::Common::Wasm::WasmState;
 using Envoy::Extensions::Common::Wasm::WasmHandleSharedPtr;
+using Envoy::Extensions::Common::Wasm::WasmState;
 using GrpcService = envoy::config::core::v3::GrpcService;
 using WasmFilterConfig = envoy::extensions::filters::http::wasm::v3::Wasm;
 
-
 class TestFilter : public Envoy::Extensions::Common::Wasm::Context {
-public:
+ public:
   TestFilter(Wasm* wasm, uint32_t root_context_id,
-             Envoy::Extensions::Common::Wasm::PluginSharedPtr plugin, bool mock_logger=false)
-      : Envoy::Extensions::Common::Wasm::Context(wasm, root_context_id, plugin), mock_logger_(mock_logger){}
+             Envoy::Extensions::Common::Wasm::PluginSharedPtr plugin,
+             bool mock_logger = false)
+      : Envoy::Extensions::Common::Wasm::Context(wasm, root_context_id, plugin),
+        mock_logger_(mock_logger) {}
 
-  void scriptLog(spdlog::level::level_enum level, absl::string_view message) override {
+  void scriptLog(spdlog::level::level_enum level,
+                 absl::string_view message) override {
     if (mock_logger_) {
       scriptLog_(level, message);
     }
   }
-  MOCK_METHOD2(scriptLog_, void(spdlog::level::level_enum level, absl::string_view message));
-private:
+  MOCK_METHOD2(scriptLog_, void(spdlog::level::level_enum level,
+                                absl::string_view message));
+
+ private:
   bool mock_logger_;
 };
 
 class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
-public:
-  TestRoot(bool mock_logger=false): mock_logger_(mock_logger) {}
+ public:
+  TestRoot(bool mock_logger = false) : mock_logger_(mock_logger) {}
 
-  void scriptLog(spdlog::level::level_enum level, absl::string_view message) override {
+  void scriptLog(spdlog::level::level_enum level,
+                 absl::string_view message) override {
     if (mock_logger_) {
       scriptLog_(level, message);
     }
   }
-  MOCK_METHOD2(scriptLog_, void(spdlog::level::level_enum level, absl::string_view message));
-private:
+  MOCK_METHOD2(scriptLog_, void(spdlog::level::level_enum level,
+                                absl::string_view message));
+
+ private:
   bool mock_logger_;
 };
 
 struct TestParams {
-  std::string runtime; // null, v8, wavm
-  // In order to load wasm files we need to specify base path relative to WORKSPACE.
-  std::string testdata_dir;
+  std::string runtime;  // null, v8, wavm
+  // In order to load wasm files we need to specify base path relative to
+  // WORKSPACE.
+  std::string wasmfiles_dir;
 };
 
-std::ostream& operator << (std::ostream &os, const TestParams &s) {
-    return (os << "{runtime: '" << s.runtime << "', testdata_dir: '" << s.testdata_dir << "' }");
+std::ostream& operator<<(std::ostream& os, const TestParams& s) {
+  return (os << "{runtime: '" << s.runtime << "', wasmfiles_dir: '"
+             << s.wasmfiles_dir << "' }");
 }
 
-
 class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
-public:
+ public:
   WasmHttpFilterTest() {}
   ~WasmHttpFilterTest() {}
 
-  void setupConfig(const std::string& name, std::string plugin_config, std::string root_id = "", bool mock_logger = false) {
+  void setupConfig(const std::string& name, std::string plugin_config,
+                   std::string root_id = "", bool mock_logger = false) {
     auto params = GetParam();
-    auto code = (params.runtime == "null") ? name:
-      TestEnvironment::readFileToStringForTest(TestEnvironment::substitute(
-      "{{ test_rundir }}"+ params.testdata_dir + "/" + name));
+    auto code =
+        (params.runtime == "null")
+            ? name
+            : TestEnvironment::readFileToStringForTest(
+                  TestEnvironment::substitute(
+                      "{{ test_rundir }}" + params.wasmfiles_dir + "/" + name));
 
     root_context_ = new TestRoot(mock_logger);
     WasmFilterConfig proto_config;
@@ -143,27 +151,37 @@ public:
     scope_ = Stats::ScopeSharedPtr(stats_store_.createScope("wasm."));
     auto vm_id = "";
     plugin_ = std::make_shared<Extensions::Common::Wasm::Plugin>(
-        name, root_id, vm_id, TrafficDirection::INBOUND, local_info_, &listener_metadata_);
+        name, root_id, vm_id, TrafficDirection::INBOUND, local_info_,
+        &listener_metadata_);
     // creates a base VM
-    // This is synchronous, even though it happens thru a callback due to null vm.
+    // This is synchronous, even though it happens thru a callback due to null
+    // vm.
     Extensions::Common::Wasm::createWasmForTesting(
-        proto_config.config().vm_config(), plugin_, scope_, cluster_manager_, init_manager_,
-        dispatcher_, random_, *api,
-        std::unique_ptr<Envoy::Extensions::Common::Wasm::Context>(root_context_),
-        remote_data_provider_, [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; });
+        proto_config.config().vm_config(), plugin_, scope_, cluster_manager_,
+        init_manager_, dispatcher_, random_, *api,
+        std::unique_ptr<Envoy::Extensions::Common::Wasm::Context>(
+            root_context_),
+        remote_data_provider_,
+        [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; });
     // wasm_ is set correctly
     // This will only call onStart.
     wasm_->wasm()->configure(root_context_, plugin_, plugin_config);
   }
 
-
-  void setupFilter(const std::string root_id = "", bool mock_logger=false) {
-    filter_ = std::make_unique<TestFilter>(wasm_->wasm().get(),
-                                           wasm_->wasm()->getRootContext(root_id)->id(), plugin_, mock_logger);
+  void setupFilter(const std::string root_id = "", bool mock_logger = false) {
+    filter_ = std::make_unique<TestFilter>(
+        wasm_->wasm().get(), wasm_->wasm()->getRootContext(root_id)->id(),
+        plugin_, mock_logger);
     filter_->setDecoderFilterCallbacks(decoder_callbacks_);
     filter_->setEncoderFilterCallbacks(encoder_callbacks_);
+
+    ON_CALL(decoder_callbacks_.stream_info_, filterState())
+        .WillByDefault(ReturnRef(request_stream_info_.filterState()));
+    ON_CALL(encoder_callbacks_.stream_info_, filterState())
+        .WillByDefault(ReturnRef(request_stream_info_.filterState()));
   }
 
+  // Many of the following are not used yet, but are useful
   Stats::IsolatedStoreImpl stats_store_;
   Stats::ScopeSharedPtr scope_;
   NiceMock<ThreadLocal::MockInstance> tls_;
@@ -185,14 +203,12 @@ public:
   Config::DataSource::RemoteAsyncDataProviderPtr remote_data_provider_;
 };
 
-} // Wasm
-} // HttpFilters
+}  // namespace Wasm
+}  // namespace HttpFilters
 namespace Common {
 namespace Wasm {
 namespace Null {
 namespace Plugin {
-
- 
 
 #endif  // NULL_PLUGIN
 
@@ -200,25 +216,27 @@ namespace Plugin {
 
 namespace AttributeGen {
 
-using HttpFilters::Wasm::WasmHttpFilterTest;
 using HttpFilters::Wasm::TestParams;
+using HttpFilters::Wasm::WasmHttpFilterTest;
 
 std::vector<TestParams> generateTestParams() {
-  return std::vector<TestParams> {
-    {.runtime = "null"},
-  }; 
+  return std::vector<TestParams>{
+      {.runtime = "null"},
+      // {.runtime = "v8", .wasmfiles_dir =
+      // "/extensions/attributegen/testdata"},
+  };
 }
 
 INSTANTIATE_TEST_SUITE_P(Runtimes, WasmHttpFilterTest,
-                         testing::ValuesIn(generateTestParams()));  
-
+                         testing::ValuesIn(generateTestParams()));
 
 // Bad code in initial config.
 TEST_P(WasmHttpFilterTest, BadCode) {
   if (GetParam().runtime == "null") {
     return;
   }
-  EXPECT_THROW_WITH_MESSAGE(setupConfig("bad code", "badonfig"), Common::Wasm::WasmException,
+  EXPECT_THROW_WITH_MESSAGE(setupConfig("bad code", "badonfig"),
+                            Common::Wasm::WasmException,
                             "Failed to initialize WASM code from <inline>");
 }
 
@@ -229,22 +247,25 @@ TEST_P(WasmHttpFilterTest, AccessLog) {
                             "GetStatus", "condition": "request.url_path.startsWith('/status')"}]}]}
   )EOF";
   setupConfig("envoy.wasm.attributegen", plugin_config);
-  setupFilter("", true);
+  setupFilter();
+
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
-  EXPECT_EQ(Http::FilterHeadersStatus::Continue, filter_->decodeHeaders(request_headers, true));
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter_->decodeHeaders(request_headers, true));
   Buffer::OwnedImpl data("hello");
   EXPECT_EQ(Http::FilterDataStatus::Continue, filter_->decodeData(data, true));
-  //StreamInfo::MockStreamInfo log_stream_info;
-  //auto si = decoder_callbacks_->streamInfo();
-  filter_->log(&request_headers, nullptr, nullptr, request_stream_info_);
-  auto fs = request_stream_info_.filterState();
-  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), true);
-  const auto& operationId =  fs->getDataReadOnly<WasmState>("istio.operationId");
-  //auto operationId =  fs->getDataReadOnly<WasmState>("istio.operationId");
-  ASSERT_EQ(operationId.value(), "GetStatus");
-  //ASSERT(operationId != nullptr);
-}
 
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
+            filter_->encodeHeaders(response_headers, true));
+
+  auto fs = request_stream_info_.filterState();
+  filter_->log(&request_headers, nullptr, nullptr, request_stream_info_);
+  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), true);
+  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId_error"), false);
+  const auto& operationId = fs->getDataReadOnly<WasmState>("istio.operationId");
+  ASSERT_EQ(operationId.value(), "GetStatus");
+}
 
 }  // namespace AttributeGen
 
