@@ -1,3 +1,4 @@
+attributes:
 - output_attribute: istio.responseClass
   phase: AFTER_RESPONSE
   match:
@@ -19,4 +20,3 @@
     condition: response.code >= 500 && response.code <= 599
   - value: 4xx
     condition: response.code >= 400 && response.code <= 499
-
