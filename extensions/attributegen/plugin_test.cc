@@ -112,12 +112,34 @@ struct TestParams {
   std::string runtime;  // null, v8, wavm
   // In order to load wasm files we need to specify base path relative to
   // WORKSPACE.
-  std::string wasmfiles_dir;
+  std::string testdata_dir;
+};
+
+// Config params
+// All default values are zero values
+// So name flags accordingly.
+struct ConfigParams {
+  std::string name;
+  std::string plugin_config;
+  // relative from testdata_dir
+  std::string plugin_config_file;
+  bool do_not_add_filter;
+  std::string root_id;
+  bool mock_logger;
 };
 
 std::ostream& operator<<(std::ostream& os, const TestParams& s) {
-  return (os << "{runtime: '" << s.runtime << "', wasmfiles_dir: '"
-             << s.wasmfiles_dir << "' }");
+  return (os << "{runtime: '" << s.runtime << "', testdata_dir: '"
+             << s.testdata_dir << "' }");
+}
+
+std::string readfile(std::string relative_path) {
+  auto rundir = TestEnvironment::substitute("{{ test_rundir }}");
+  // TODO figure out why the above has `envoy` at the end instead of
+  // io_istio_proxy
+  auto pos = rundir.find("envoy");
+  auto rundir_proxy = rundir.substr(0, pos) + "io_istio_proxy";
+  return TestEnvironment::readFileToStringForTest(rundir_proxy + relative_path);
 }
 
 class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
@@ -125,33 +147,35 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   WasmHttpFilterTest() {}
   ~WasmHttpFilterTest() {}
 
-  void setupConfig(const std::string& name, std::string plugin_config,
-                   bool add_filter = true, std::string root_id = "",
-                   bool mock_logger = false) {
+  virtual void setupConfig(ConfigParams c) {
     auto params = GetParam();
-    auto code =
-        (params.runtime == "null")
-            ? name
-            : TestEnvironment::readFileToStringForTest(
-                  TestEnvironment::substitute(
-                      "{{ test_rundir }}" + params.wasmfiles_dir + "/" + name));
 
-    root_context_ = new TestRoot(mock_logger);
+    if (!c.plugin_config_file.empty()) {
+      c.plugin_config =
+          readfile(params.testdata_dir + "/" + c.plugin_config_file);
+    }
+
+    auto code = (params.runtime == "null")
+                    ? c.name
+                    : readfile(params.testdata_dir + "/" + c.name);
+
+    root_context_ = new TestRoot(c.mock_logger);
     WasmFilterConfig proto_config;
     proto_config.mutable_config()->mutable_vm_config()->set_vm_id("vm_id");
     proto_config.mutable_config()->mutable_vm_config()->set_runtime(
-        "envoy.wasm.runtime.null");
+        absl::StrCat("envoy.wasm.runtime.", params.runtime));
     proto_config.mutable_config()
         ->mutable_vm_config()
         ->mutable_code()
         ->mutable_local()
         ->set_inline_bytes(code);
-    proto_config.mutable_config()->set_configuration(plugin_config);
+    proto_config.mutable_config()->set_configuration(c.plugin_config);
     Api::ApiPtr api = Api::createApiForTest(stats_store_);
     scope_ = Stats::ScopeSharedPtr(stats_store_.createScope("wasm."));
+
     auto vm_id = "";
     plugin_ = std::make_shared<Extensions::Common::Wasm::Plugin>(
-        name, root_id, vm_id, TrafficDirection::INBOUND, local_info_,
+        c.name, c.root_id, vm_id, TrafficDirection::INBOUND, local_info_,
         &listener_metadata_);
     // creates a base VM
     // This is synchronous, even though it happens thru a callback due to null
@@ -166,12 +190,12 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
     // wasm_ is set correctly
     // This will only call onStart.
     auto config_status =
-        wasm_->wasm()->configure(root_context_, plugin_, plugin_config);
+        wasm_->wasm()->configure(root_context_, plugin_, c.plugin_config);
     if (!config_status) {
       throw EnvoyException("Configuration failed");
     }
-    if (add_filter) {
-      setupFilter(root_id, mock_logger);
+    if (!c.do_not_add_filter) {
+      setupFilter(c.root_id, c.mock_logger);
     }
   }
 
@@ -188,9 +212,10 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
         .WillByDefault(ReturnRef(request_stream_info_.filterState()));
   }
 
-  void makeTestRequest(Http::TestRequestHeaderMapImpl& request_headers,
-                       Http::TestResponseHeaderMapImpl& response_headers,
-                       std::string bdata = "data") {
+  std::shared_ptr<Envoy::StreamInfo::FilterState> makeTestRequest(
+      Http::TestRequestHeaderMapImpl& request_headers,
+      Http::TestResponseHeaderMapImpl& response_headers,
+      std::string bdata = "data") {
     auto fs = request_stream_info_.filterState();
 
     EXPECT_EQ(Http::FilterHeadersStatus::Continue,
@@ -204,6 +229,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
               filter_->encodeHeaders(response_headers, true));
 
     filter_->log(&request_headers, nullptr, nullptr, request_stream_info_);
+    return fs;
   }
 
   // Many of the following are not used yet, but are useful
@@ -240,43 +266,57 @@ namespace Plugin {
 // END WASM_PROLOG
 
 namespace AttributeGen {
-
+using HttpFilters::Wasm::ConfigParams;
 using HttpFilters::Wasm::TestParams;
 using HttpFilters::Wasm::WasmHttpFilterTest;
 
 std::vector<TestParams> generateTestParams() {
   return std::vector<TestParams>{
-      {.runtime = "null"},
-      // {.runtime = "v8", .wasmfiles_dir =
+      {.runtime = "null", .testdata_dir = "/extensions/attributegen/testdata"},
+      // {.runtime = "v8", .testdata_dir =
       // "/extensions/attributegen/testdata"},
   };
 }
 
-INSTANTIATE_TEST_SUITE_P(Runtimes, WasmHttpFilterTest,
+class AttributeGenFilterTest : public WasmHttpFilterTest {
+ public:
+  void verify_request(Http::TestRequestHeaderMapImpl& request_headers,
+                      Http::TestResponseHeaderMapImpl& response_headers,
+                      const std::string& attribute, bool found, bool error,
+                      const std::string& value) {
+    auto fs = makeTestRequest(request_headers, response_headers);
+
+    ASSERT_EQ(fs->hasData<WasmState>(attribute), found);
+    ASSERT_EQ(fs->hasData<WasmState>(attribute + "_error"), error);
+    if (found) {
+      ASSERT_EQ(fs->getDataReadOnly<WasmState>(attribute).value(), value);
+    }
+  }
+
+  void setupConfig(ConfigParams c) override {
+    if (c.name.empty()) {
+      c.name = "envoy.wasm.attributegen";
+    }
+
+    WasmHttpFilterTest::setupConfig(c);
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(Runtimes, AttributeGenFilterTest,
                          testing::ValuesIn(generateTestParams()));
 
-// Bad code in initial config.
-TEST_P(WasmHttpFilterTest, BadCode) {
-  if (GetParam().runtime == "null") {
-    return;
-  }
-  EXPECT_THROW_WITH_MESSAGE(setupConfig("bad code", "badonfig"),
-                            Common::Wasm::WasmException,
-                            "Failed to initialize WASM code from <inline>");
-}
-
-TEST_P(WasmHttpFilterTest, OneMatch) {
+TEST_P(AttributeGenFilterTest, OneMatch) {
   const char* plugin_config = R"EOF(
                     {"attributes": [{"output_attribute": "istio.operationId",
                     "match": [{"value":
                             "GetStatus", "condition": "request.url_path.startsWith('/status')"}]}]}
   )EOF";
-  setupConfig("envoy.wasm.attributegen", plugin_config);
+  setupConfig({.plugin_config = plugin_config});
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  WasmHttpFilterTest::makeTestRequest(request_headers, response_headers);
+  makeTestRequest(request_headers, response_headers);
 
   auto fs = request_stream_info_.filterState();
   ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), true);
@@ -285,62 +325,75 @@ TEST_P(WasmHttpFilterTest, OneMatch) {
   ASSERT_EQ(operationId.value(), "GetStatus");
 }
 
-TEST_P(WasmHttpFilterTest, ExprEvalError) {
+TEST_P(AttributeGenFilterTest, ExprEvalError) {
   const char* plugin_config = R"EOF(
                     {"attributes": [{"output_attribute": "istio.operationId",
                     "match": [{"value":
                             "GetStatus", "condition": "request.url_path"}]}]}
   )EOF";
-  setupConfig("envoy.wasm.attributegen", plugin_config);
+  setupConfig({.plugin_config = plugin_config});
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  WasmHttpFilterTest::makeTestRequest(request_headers, response_headers);
+  makeTestRequest(request_headers, response_headers);
 
   auto fs = request_stream_info_.filterState();
   ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), false);
   ASSERT_EQ(fs->hasData<WasmState>("istio.operationId_error"), true);
 }
 
-TEST_P(WasmHttpFilterTest, UnparseableConfig) {
+TEST_P(AttributeGenFilterTest, UnparseableConfig) {
   const char* plugin_config = R"EOF(
                     attributes = [ output_attribute ]; 
   )EOF";
-  EXPECT_THROW_WITH_MESSAGE(
-      setupConfig("envoy.wasm.attributegen", plugin_config), EnvoyException,
-      "Configuration failed");
+  EXPECT_THROW_WITH_MESSAGE(setupConfig({.plugin_config = plugin_config}),
+                            EnvoyException, "Configuration failed");
 }
 
-TEST_P(WasmHttpFilterTest, BadExpr) {
+TEST_P(AttributeGenFilterTest, BadExpr) {
   const char* plugin_config = R"EOF(
                     {"attributes": [{"output_attribute": "istio.operationId",
                     "match": [{"value":
                             "GetStatus", "condition": "if a = b then return 5"}]}]}
   )EOF";
-  EXPECT_THROW_WITH_MESSAGE(
-      setupConfig("envoy.wasm.attributegen", plugin_config), EnvoyException,
-      "Configuration failed");
+  EXPECT_THROW_WITH_MESSAGE(setupConfig({.plugin_config = plugin_config}),
+                            EnvoyException, "Configuration failed");
 }
 
-TEST_P(WasmHttpFilterTest, NoMatch) {
+TEST_P(AttributeGenFilterTest, NoMatch) {
   const char* plugin_config = R"EOF(
                     {"attributes": [{"output_attribute": "istio.operationId",
                     "match": [{"value":
                             "GetStatus", "condition": "request.url_path.startsWith('/status') && request.method == 'POST'"}]}]}
   )EOF";
-  setupConfig("envoy.wasm.attributegen", plugin_config);
+  setupConfig({.plugin_config = plugin_config});
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"},
                                                  {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  WasmHttpFilterTest::makeTestRequest(request_headers, response_headers);
+  makeTestRequest(request_headers, response_headers);
 
   auto fs = request_stream_info_.filterState();
   ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), false);
   ASSERT_EQ(fs->hasData<WasmState>("istio.operationId_error"), false);
 }
+
+TEST_P(AttributeGenFilterTest, OperationFile) {
+  const std::string attribute = "istio.operationId";
+
+  setupConfig(
+      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
+                                                 {":method", "GET"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
+
+  verify_request(request_headers, response_headers, attribute, true, false,
+                 "ListBooks");
+}
+
 }  // namespace AttributeGen
 
 // WASM_EPILOG

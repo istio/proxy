@@ -1,0 +1,22 @@
+{
+  "attributes": [
+    {
+      "phase": "AFTER_RESPONSE", 
+      "output_attribute": "istio.operationId", 
+      "match": [
+        {
+          "value": "ListBooks", 
+          "condition": "request.url_path == '/books' && request.method == 'GET'"
+        }, 
+        {
+          "value": "GetBook", 
+          "condition": "request.url_path.matches('^/shelves/[[:alpha:]]*/books/[[:alpha:]]d*$') && request.method == 'GET'"
+        }, 
+        {
+          "value": "CreateBook1", 
+          "condition": "request.url_path == '/books/' && request.method == 'POST'"
+        }
+      ]
+    }
+  ]
+}

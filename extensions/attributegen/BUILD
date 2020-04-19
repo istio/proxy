@@ -62,6 +62,9 @@ envoy_extension_cc_test(
     name = "plugin_test",
     size = "small",
     srcs = ["plugin_test.cc"],
+    data = [
+        "//extensions/attributegen/testdata",
+    ],
     extension_name = "envoy.filters.http.wasm",
     repository = "@envoy",
     deps = [
