@@ -128,7 +128,8 @@ class MetadataExchangeFilter : public Network::Filter,
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to share the metadata with other filters.
-  void setFilterState(const std::string& key, absl::string_view value);
+  void updatePeer(const Envoy::ProtobufWkt::Struct& struct_value);
+  void updatePeerId(absl::string_view key, absl::string_view value);
 
   // Helper function to get Dynamic metadata.
   void getMetadata(google::protobuf::Struct* metadata);
@@ -149,20 +150,6 @@ class MetadataExchangeFilter : public Network::Filter,
   Network::WriteFilterCallbacks* write_callbacks_{};
   // Stores the length of proxy data that contains node metadata.
   uint64_t proxy_data_length_{0};
-
-  // Key Identifier for dynamic metadata in upstream filter.
-  const std::string UpstreamMetadataKey =
-      "envoy.wasm.metadata_exchange.upstream";
-  const std::string UpstreamMetadataIdKey =
-      "envoy.wasm.metadata_exchange.upstream_id";
-
-  // Key Identifier for dynamic metadata in downstream filter.
-  const std::string DownstreamMetadataKey =
-      "envoy.wasm.metadata_exchange.downstream";
-  const std::string DownstreamMetadataIdKey =
-      "envoy.wasm.metadata_exchange.downstream_id";
-  const std::string MetadataNotFoundValue =
-      "envoy.wasm.metadata_exchange.peer_unknown";
 
   const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
