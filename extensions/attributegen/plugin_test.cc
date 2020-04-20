@@ -134,12 +134,8 @@ std::ostream& operator<<(std::ostream& os, const TestParams& s) {
 }
 
 std::string readfile(std::string relative_path) {
-  auto rundir = TestEnvironment::substitute("{{ test_rundir }}");
-  // TODO figure out why the above has `envoy` at the end instead of
-  // io_istio_proxy
-  auto pos = rundir.find("envoy");
-  auto rundir_proxy = rundir.substr(0, pos) + "io_istio_proxy";
-  return TestEnvironment::readFileToStringForTest(rundir_proxy + relative_path);
+  std::string run_dir = TestEnvironment::runfilesDirectory("io_istio_proxy");
+  return TestEnvironment::readFileToStringForTest(run_dir + relative_path);
 }
 
 class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
@@ -217,6 +213,15 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
       Http::TestResponseHeaderMapImpl& response_headers,
       std::string bdata = "data") {
     auto fs = request_stream_info_.filterState();
+
+    uint32_t response_code = 200;
+    auto resp_code = response_headers.get_(":status");
+    if (!resp_code.empty()) {
+      EXPECT_EQ(absl::SimpleAtoi(resp_code, &response_code), true);
+    }
+
+    ON_CALL(encoder_callbacks_.stream_info_, responseCode())
+        .WillByDefault(Invoke([response_code]() { return response_code; }));
 
     EXPECT_EQ(Http::FilterHeadersStatus::Continue,
               filter_->decodeHeaders(request_headers, true));
@@ -439,20 +444,48 @@ TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
                  "GetBook");
 }
 
-// CEL is unable to get access to response status code.
-TEST_P(AttributeGenFilterTest, DISABLED_ResponseCodeFile) {
+TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
   const std::string attribute = "istio.responseClass";
 
-  setupConfig({.mock_logger = true,
+  setupConfig({.mock_logger = false,
                .plugin_config_file =
                    "responseCode.json"});  // testdata/responseCode.json
 
-  Http::TestRequestHeaderMapImpl request_headers{
-      {":path", "/books"}, {":method", "GET"}, {":status", "207"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
+                                                 {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "207"}};
 
   verify_request(request_headers, response_headers, attribute, true, false,
                  "2xx");
+}
+
+TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch2) {
+  const std::string attribute = "istio.responseClass";
+
+  setupConfig({.mock_logger = false,
+               .plugin_config_file =
+                   "responseCode.json"});  // testdata/responseCode.json
+
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
+                                                 {":method", "GET"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
+  // 404 is not classified.
+  verify_request(request_headers, response_headers, attribute, true, false,
+                 "404");
+}
+
+TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch3) {
+  const std::string attribute = "istio.responseClass";
+
+  setupConfig({.mock_logger = false,
+               .plugin_config_file =
+                   "responseCode.json"});  // testdata/responseCode.json
+
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
+                                                 {":method", "GET"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "504"}};
+  verify_request(request_headers, response_headers, attribute, true, false,
+                 "5xx");
 }
 
 }  // namespace AttributeGen

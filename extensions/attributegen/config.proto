@@ -77,12 +77,13 @@ message Match {
   //
   // a GET on /books
   // { value: ListBooks,
-  //   condition: request.url_path == "/books" && request.method == "GET" }
+  //   condition: request.url_path == '/books' && request.method == 'GET' }
   //
   // a GET on /shelves/{id1}/books/{id2}
   // { value: GetBook,
-  //   condition: request.url_path.matches("^/shelves/\d*/books/\d*$") &&
-  //   request.method == "GET" }
+  //   condition:
+  //   request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$') &&
+  //   request.method == 'GET' }
   // Note: CEL uses [re2](https://github.com/google/re2/wiki/Syntax) regex
   // library.
   //       Use anchors {^, $} to ensure that the regex evaluates efficiently.
@@ -90,8 +91,8 @@ message Match {
   //
   // a Read only operation on books
   // { value: ReadOnlyBooks,
-  //   condition: request.url_path.startsWith("/books/") && in(request.method,
-  //   ["GET", "HEAD"])}
+  //   condition: request.url_path.startsWith('/books/') && in(request.method,
+  //   ['GET', 'HEAD'])}
   //
   // An empty condition evaluates to `true` and should be used to provide a
   // default value.
