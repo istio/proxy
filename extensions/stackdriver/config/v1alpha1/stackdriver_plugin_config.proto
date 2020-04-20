@@ -20,7 +20,7 @@ package stackdriver.config.v1alpha1;
 import "google/protobuf/duration.proto";
 
 message PluginConfig {
-  // next id: 8
+  // next id: 9
 
   // Optional. Controls whether to export server access log.
   bool disable_server_access_logging = 1;
@@ -56,4 +56,9 @@ message PluginConfig {
   // Optional. Allows configuration of the number of traffic assertions to batch
   // into a single request. Default is 100. Max is 1000.
   int32 max_edges_batch_size = 7;
+
+  // Optional. Allows disabling of reporting of the request and response size
+  // metrics for HTTP traffic. Defaults to false (request and response size
+  // metrics are enabled).
+  bool disable_http_size_metrics = 8;
 }

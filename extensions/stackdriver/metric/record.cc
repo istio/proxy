@@ -32,7 +32,8 @@ constexpr char kLatest[] = "latest";
 
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
-            const ::Wasm::Common::RequestInfo& request_info) {
+            const ::Wasm::Common::RequestInfo& request_info,
+            bool record_http_size_metrics) {
   double latency_ms = request_info.duration /* in nanoseconds */ / 1000000.0;
   const auto& operation =
       request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
@@ -65,90 +66,108 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
       peer_rev_iter ? peer_rev_iter->value() : nullptr;
 
   if (is_outbound) {
-    opencensus::stats::Record(
-        {{clientRequestCountMeasure(), 1},
-         {clientRequestBytesMeasure(), request_info.request_size},
-         {clientResponseBytesMeasure(), request_info.response_size},
-         {clientRoundtripLatenciesMeasure(), latency_ms}},
-        {{meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
-         {requestOperationKey(), operation},
-         {requestProtocolKey(), request_info.request_protocol},
-         {serviceAuthenticationPolicyKey(),
-          ::Wasm::Common::AuthenticationPolicyString(
-              request_info.service_auth_policy)},
-         {destinationServiceNameKey(), request_info.destination_service_name},
-         {destinationServiceNamespaceKey(),
-          flatbuffers::GetString(peer_node_info.namespace_())},
-         {destinationPortKey(), std::to_string(request_info.destination_port)},
-         {responseCodeKey(), std::to_string(request_info.response_code)},
-         {sourcePrincipalKey(), request_info.source_principal},
-         {sourceWorkloadNameKey(),
-          flatbuffers::GetString(local_node_info.workload_name())},
-         {sourceWorkloadNamespaceKey(),
-          flatbuffers::GetString(local_node_info.namespace_())},
-         {sourceOwnerKey(), flatbuffers::GetString(local_node_info.owner())},
-         {destinationPrincipalKey(), request_info.destination_principal},
-         {destinationWorkloadNameKey(),
-          flatbuffers::GetString(peer_node_info.workload_name())},
-         {destinationWorkloadNamespaceKey(),
-          flatbuffers::GetString(peer_node_info.namespace_())},
-         {destinationOwnerKey(),
-          flatbuffers::GetString(peer_node_info.owner())},
-         {destinationCanonicalServiceNameKey(),
-          flatbuffers::GetString(peer_canonical_name)},
-         {destinationCanonicalServiceNamespaceKey(),
-          flatbuffers::GetString(peer_node_info.namespace_())},
-         {destinationCanonicalRevisionKey(),
-          peer_canonical_rev ? peer_canonical_rev->str() : kLatest},
-         {sourceCanonicalServiceNameKey(),
-          flatbuffers::GetString(local_canonical_name)},
-         {sourceCanonicalServiceNamespaceKey(),
-          flatbuffers::GetString(local_node_info.namespace_())},
-         {sourceCanonicalRevisionKey(),
-          local_canonical_rev ? local_canonical_rev->str() : kLatest}});
+    opencensus::tags::TagMap tagMap = {
+        {meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
+        {requestOperationKey(), operation},
+        {requestProtocolKey(), request_info.request_protocol},
+        {serviceAuthenticationPolicyKey(),
+         ::Wasm::Common::AuthenticationPolicyString(
+             request_info.service_auth_policy)},
+        {destinationServiceNameKey(), request_info.destination_service_name},
+        {destinationServiceNamespaceKey(),
+         flatbuffers::GetString(peer_node_info.namespace_())},
+        {destinationPortKey(), std::to_string(request_info.destination_port)},
+        {responseCodeKey(), std::to_string(request_info.response_code)},
+        {sourcePrincipalKey(), request_info.source_principal},
+        {sourceWorkloadNameKey(),
+         flatbuffers::GetString(local_node_info.workload_name())},
+        {sourceWorkloadNamespaceKey(),
+         flatbuffers::GetString(local_node_info.namespace_())},
+        {sourceOwnerKey(), flatbuffers::GetString(local_node_info.owner())},
+        {destinationPrincipalKey(), request_info.destination_principal},
+        {destinationWorkloadNameKey(),
+         flatbuffers::GetString(peer_node_info.workload_name())},
+        {destinationWorkloadNamespaceKey(),
+         flatbuffers::GetString(peer_node_info.namespace_())},
+        {destinationOwnerKey(), flatbuffers::GetString(peer_node_info.owner())},
+        {destinationCanonicalServiceNameKey(),
+         flatbuffers::GetString(peer_canonical_name)},
+        {destinationCanonicalServiceNamespaceKey(),
+         flatbuffers::GetString(peer_node_info.namespace_())},
+        {destinationCanonicalRevisionKey(),
+         peer_canonical_rev ? peer_canonical_rev->str() : kLatest},
+        {sourceCanonicalServiceNameKey(),
+         flatbuffers::GetString(local_canonical_name)},
+        {sourceCanonicalServiceNamespaceKey(),
+         flatbuffers::GetString(local_node_info.namespace_())},
+        {sourceCanonicalRevisionKey(),
+         local_canonical_rev ? local_canonical_rev->str() : kLatest}};
+
+    if (record_http_size_metrics) {
+      opencensus::stats::Record(
+          {{clientRequestCountMeasure(), 1},
+           {clientRoundtripLatenciesMeasure(), latency_ms},
+           {clientRequestBytesMeasure(), request_info.request_size},
+           {clientResponseBytesMeasure(), request_info.response_size}},
+          tagMap);
+    } else {
+      opencensus::stats::Record(
+          {{clientRequestCountMeasure(), 1},
+           {clientRoundtripLatenciesMeasure(), latency_ms}},
+          tagMap);
+    }
     return;
   }
 
-  opencensus::stats::Record(
-      {{serverRequestCountMeasure(), 1},
-       {serverRequestBytesMeasure(), request_info.request_size},
-       {serverResponseBytesMeasure(), request_info.response_size},
-       {serverResponseLatenciesMeasure(), latency_ms}},
-      {{meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
-       {requestOperationKey(), operation},
-       {requestProtocolKey(), request_info.request_protocol},
-       {serviceAuthenticationPolicyKey(),
-        ::Wasm::Common::AuthenticationPolicyString(
-            request_info.service_auth_policy)},
-       {destinationServiceNameKey(), request_info.destination_service_name},
-       {destinationServiceNamespaceKey(),
-        flatbuffers::GetString(local_node_info.namespace_())},
-       {destinationPortKey(), std::to_string(request_info.destination_port)},
-       {responseCodeKey(), std::to_string(request_info.response_code)},
-       {sourcePrincipalKey(), request_info.source_principal},
-       {sourceWorkloadNameKey(),
-        flatbuffers::GetString(peer_node_info.workload_name())},
-       {sourceWorkloadNamespaceKey(),
-        flatbuffers::GetString(peer_node_info.namespace_())},
-       {sourceOwnerKey(), flatbuffers::GetString(peer_node_info.owner())},
-       {destinationPrincipalKey(), request_info.destination_principal},
-       {destinationWorkloadNameKey(),
-        flatbuffers::GetString(local_node_info.workload_name())},
-       {destinationWorkloadNamespaceKey(),
-        flatbuffers::GetString(local_node_info.namespace_())},
-       {destinationOwnerKey(), flatbuffers::GetString(local_node_info.owner())},
-       {destinationCanonicalServiceNameKey(),
-        flatbuffers::GetString(local_canonical_name)},
-       {destinationCanonicalServiceNamespaceKey(),
-        flatbuffers::GetString(local_node_info.namespace_())},
-       {destinationCanonicalRevisionKey(),
-        local_canonical_rev ? local_canonical_rev->str() : kLatest},
-       {sourceCanonicalServiceNameKey(),
-        flatbuffers::GetString(peer_canonical_name)},
-       {sourceCanonicalServiceNamespaceKey(),
-        flatbuffers::GetString(peer_node_info.namespace_())},
-       {sourceCanonicalRevisionKey(),
-        peer_canonical_rev ? peer_canonical_rev->str() : kLatest}});
+  opencensus::tags::TagMap tagMap = {
+      {meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
+      {requestOperationKey(), operation},
+      {requestProtocolKey(), request_info.request_protocol},
+      {serviceAuthenticationPolicyKey(),
+       ::Wasm::Common::AuthenticationPolicyString(
+           request_info.service_auth_policy)},
+      {destinationServiceNameKey(), request_info.destination_service_name},
+      {destinationServiceNamespaceKey(),
+       flatbuffers::GetString(local_node_info.namespace_())},
+      {destinationPortKey(), std::to_string(request_info.destination_port)},
+      {responseCodeKey(), std::to_string(request_info.response_code)},
+      {sourcePrincipalKey(), request_info.source_principal},
+      {sourceWorkloadNameKey(),
+       flatbuffers::GetString(peer_node_info.workload_name())},
+      {sourceWorkloadNamespaceKey(),
+       flatbuffers::GetString(peer_node_info.namespace_())},
+      {sourceOwnerKey(), flatbuffers::GetString(peer_node_info.owner())},
+      {destinationPrincipalKey(), request_info.destination_principal},
+      {destinationWorkloadNameKey(),
+       flatbuffers::GetString(local_node_info.workload_name())},
+      {destinationWorkloadNamespaceKey(),
+       flatbuffers::GetString(local_node_info.namespace_())},
+      {destinationOwnerKey(), flatbuffers::GetString(local_node_info.owner())},
+      {destinationCanonicalServiceNameKey(),
+       flatbuffers::GetString(local_canonical_name)},
+      {destinationCanonicalServiceNamespaceKey(),
+       flatbuffers::GetString(local_node_info.namespace_())},
+      {destinationCanonicalRevisionKey(),
+       local_canonical_rev ? local_canonical_rev->str() : kLatest},
+      {sourceCanonicalServiceNameKey(),
+       flatbuffers::GetString(peer_canonical_name)},
+      {sourceCanonicalServiceNamespaceKey(),
+       flatbuffers::GetString(peer_node_info.namespace_())},
+      {sourceCanonicalRevisionKey(),
+       peer_canonical_rev ? peer_canonical_rev->str() : kLatest}};
+
+  if (record_http_size_metrics) {
+    opencensus::stats::Record(
+        {{serverRequestCountMeasure(), 1},
+         {serverResponseLatenciesMeasure(), latency_ms},
+         {serverRequestBytesMeasure(), request_info.request_size},
+         {serverResponseBytesMeasure(), request_info.response_size}},
+        tagMap);
+  } else {
+    opencensus::stats::Record({{serverRequestCountMeasure(), 1},
+                               {serverResponseLatenciesMeasure(), latency_ms}},
+                              tagMap);
+  }
 }
 
 }  // namespace Metric
