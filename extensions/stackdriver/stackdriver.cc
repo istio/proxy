@@ -314,7 +314,7 @@ void StackdriverRootContext::record() {
       isOutbound(), useHostHeaderFallback(), &request_info,
       flatbuffers::GetString(destination_node_info.namespace_()));
   ::Extensions::Stackdriver::Metric::record(
-      isOutbound(), local_node_info_, peer_node_info, request_info,
+      isOutbound(), local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
