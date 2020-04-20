@@ -44,8 +44,9 @@ bool PluginRootContext::onConfigure(size_t) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config, json_options);
   if (status != Status::OK) {
-    LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
-                          configuration->toString()));
+    LOG_WARN(absl::StrCat(
+        "Cannot parse plugin configuration JSON string [YAML not supported]: ",
+        configuration->toString()));
     return false;
   }
 
