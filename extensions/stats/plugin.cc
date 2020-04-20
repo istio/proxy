@@ -153,12 +153,7 @@ void map_request(IstioDimensions& instance,
   instance[destination_service] = request.destination_service_host;
   instance[destination_service_name] = request.destination_service_name;
   instance[request_protocol] = request.request_protocol;
-  std::string rclass;
-  if (getValue({"filter_state", "istio.responseClass"}, &rclass)) {
-    instance[response_code] = rclass;
-  } else {
-    instance[response_code] = std::to_string(request.response_code);
-  }
+  instance[response_code] = std::to_string(request.response_code);
   instance[response_flags] = request.response_flag;
   instance[connection_security_policy] = absl::AsciiStrToLower(std::string(
       ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy)));
@@ -175,11 +170,6 @@ void map(IstioDimensions& instance, bool outbound,
     instance[grpc_response_status] = std::to_string(request.grpc_status);
   } else {
     instance[grpc_response_status] = "";
-  }
-  std::string operation;
-  // istio.operationId can be populated by any plugin
-  if (getValue({"filter_state", "istio.operationId"}, &operation)) {
-    instance[request_operation] = operation;
   }
 }
 
