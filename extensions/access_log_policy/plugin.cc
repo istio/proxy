@@ -70,8 +70,7 @@ constexpr StringView kCode = "code";
 constexpr StringView kGrpcStatus = "grpc_status";
 
 static RegisterContextFactory register_AccessLogPolicy(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext),
-    "access_log_inbound");
+    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
 bool PluginRootContext::onConfigure(size_t) {
   if (::Wasm::Common::TrafficDirection::Inbound !=
@@ -85,7 +84,7 @@ bool PluginRootContext::onConfigure(size_t) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
-    logWarn("Cannot parse Stackdriver plugin configuration JSON string " +
+    logWarn("Cannot parse AccessLog plugin configuration JSON string " +
             configuration->toString() + ", " + status.message().ToString());
     return false;
   }
