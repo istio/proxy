@@ -10,7 +10,7 @@
         }, 
         {
           "value": "GetBook", 
-          "condition": "request.url_path.matches('^/shelves/[[:alpha:]]*/books/[[:alpha:]]d*$') && request.method == 'GET'"
+          "condition": "request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$') && request.method == 'GET'"
         }, 
         {
           "value": "CreateBook1", 

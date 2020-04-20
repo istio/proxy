@@ -286,10 +286,12 @@ class AttributeGenFilterTest : public WasmHttpFilterTest {
                       const std::string& value) {
     auto fs = makeTestRequest(request_headers, response_headers);
 
-    ASSERT_EQ(fs->hasData<WasmState>(attribute), found);
+    ASSERT_EQ(fs->hasData<WasmState>(attribute), found)
+        << absl::StrCat(attribute, "=?", value);
     ASSERT_EQ(fs->hasData<WasmState>(attribute + "_error"), error);
     if (found) {
-      ASSERT_EQ(fs->getDataReadOnly<WasmState>(attribute).value(), value);
+      ASSERT_EQ(fs->getDataReadOnly<WasmState>(attribute).value(), value)
+          << absl::StrCat(attribute, "=?", value);
     }
   }
 
@@ -380,7 +382,7 @@ TEST_P(AttributeGenFilterTest, NoMatch) {
   ASSERT_EQ(fs->hasData<WasmState>("istio.operationId_error"), false);
 }
 
-TEST_P(AttributeGenFilterTest, OperationFile) {
+TEST_P(AttributeGenFilterTest, OperationFileList) {
   const std::string attribute = "istio.operationId";
 
   setupConfig(
@@ -388,10 +390,53 @@ TEST_P(AttributeGenFilterTest, OperationFile) {
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
                                                  {":method", "GET"}};
-  Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
   verify_request(request_headers, response_headers, attribute, true, false,
                  "ListBooks");
+}
+
+TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
+  const std::string attribute = "istio.operationId";
+
+  setupConfig(
+      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+
+  // needs GET to match
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
+                                                 {":method", "POST"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
+
+  verify_request(request_headers, response_headers, attribute, false, false,
+                 "");
+}
+
+TEST_P(AttributeGenFilterTest, OperationFileGet) {
+  const std::string attribute = "istio.operationId";
+
+  setupConfig(
+      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+
+  Http::TestRequestHeaderMapImpl request_headers{
+      {":path", "/shelves/a101/books/b1122"}, {":method", "GET"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
+
+  verify_request(request_headers, response_headers, attribute, true, false,
+                 "GetBook");
+}
+
+TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
+  const std::string attribute = "istio.operationId";
+
+  setupConfig(
+      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+  // match requires alphanumeric ids.
+  Http::TestRequestHeaderMapImpl request_headers{
+      {":path", "/shelves/-----/books/b1122"}, {":method", "GET"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
+
+  verify_request(request_headers, response_headers, attribute, false, false,
+                 "GetBook");
 }
 
 // CEL is unable to get access to response status code.
