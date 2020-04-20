@@ -92,6 +92,7 @@ using google::protobuf::util::Status;
   FIELD_FUNC(destination_canonical_service)  \
   FIELD_FUNC(destination_canonical_revision) \
   FIELD_FUNC(request_protocol)               \
+  FIELD_FUNC(request_operation)              \
   FIELD_FUNC(response_code)                  \
   FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \

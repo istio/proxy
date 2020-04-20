@@ -394,6 +394,22 @@ TEST_P(AttributeGenFilterTest, OperationFile) {
                  "ListBooks");
 }
 
+// CEL is unable to get access to response status code.
+TEST_P(AttributeGenFilterTest, DISABLED_ResponseCodeFile) {
+  const std::string attribute = "istio.responseClass";
+
+  setupConfig({.mock_logger = true,
+               .plugin_config_file =
+                   "responseCode.json"});  // testdata/responseCode.json
+
+  Http::TestRequestHeaderMapImpl request_headers{
+      {":path", "/books"}, {":method", "GET"}, {":status", "207"}};
+  Http::TestResponseHeaderMapImpl response_headers{{":status", "207"}};
+
+  verify_request(request_headers, response_headers, attribute, true, false,
+                 "2xx");
+}
+
 }  // namespace AttributeGen
 
 // WASM_EPILOG

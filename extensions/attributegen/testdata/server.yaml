@@ -108,14 +108,28 @@ static_resources:
               value:
                 config:
                   configuration: |
-                    {"attributes": [{"output_attribute": "istio.operationId",
-                    "match": [{"value":
-                            "GetStatus", "condition": "request.url_path.startsWith('/status')"}]}]}
-                  configuration1: |
-                    attributes:
-                    - output_attribute: istio.operationId
-                      match:
-                      - value: GetStatus  
+                    {
+                      "attributes": [
+                        {
+                          "output_attribute": "istio.operationId",
+                          "match": [
+                            {
+                              "value": "GetStatus",
+                              "condition": "request.url_path.startsWith('/status')"
+                            }
+                          ]
+                        },
+                        {
+                          "output_attribute": "istio.responseClass",
+                          "match": [
+                            {
+                              "value": "2xx",
+                              "condition": "response.code >= 200 && response.code <= 299"
+                            }
+                          ]
+                        }
+                      ]
+                    }                          
                   vm_config:
                     code:
                       local:
