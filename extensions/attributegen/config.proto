@@ -40,6 +40,8 @@ message PluginConfig {
 message AttributeGeneration {
   // Phase denotes plugin lifecycle phase when the new attribute is generated.
   // Default: After the response is sent back to the client.
+  //
+  // $hide_from_docs
   Phase phase = 1;
 
   // The following attribute is populated on a successful match.
@@ -113,7 +115,9 @@ enum Phase {
   // Only request related information can be used in this phase.
   // For example: you may not use response headers here.
   // Attemping to use response headers in request phase will never result in a
-  // match. Not Implemented $hide_from_docs
+  // match.
+  //
+  // $hide_from_docs
   ON_REQUEST = 1;
 
   // ADD ON_RESPONSE=2 if there is a need.
