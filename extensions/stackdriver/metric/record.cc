@@ -32,7 +32,7 @@ constexpr char kLatest[] = "latest";
 
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
-            const ::Wasm::Common::RequestInfo &request_info,
+            const ::Wasm::Common::RequestInfo& request_info,
             bool record_http_size_metrics) {
   double latency_ms = request_info.duration /* in nanoseconds */ / 1000000.0;
   const auto& operation =
