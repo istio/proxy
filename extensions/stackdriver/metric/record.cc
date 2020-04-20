@@ -96,14 +96,16 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
          flatbuffers::GetString(peer_canonical_name)},
         {destinationCanonicalServiceNamespaceKey(),
          flatbuffers::GetString(peer_node_info.namespace_())},
-        {destinationCanonicalRevisionKey(),
-         peer_canonical_rev ? peer_canonical_rev->str() : ::Wasm::Common::kLatest},
+        {destinationCanonicalRevisionKey(), peer_canonical_rev
+                                                ? peer_canonical_rev->str()
+                                                : ::Wasm::Common::kLatest},
         {sourceCanonicalServiceNameKey(),
          flatbuffers::GetString(local_canonical_name)},
         {sourceCanonicalServiceNamespaceKey(),
          flatbuffers::GetString(local_node_info.namespace_())},
-        {sourceCanonicalRevisionKey(),
-         local_canonical_rev ? local_canonical_rev->str() : ::Wasm::Common::kLatest}};
+        {sourceCanonicalRevisionKey(), local_canonical_rev
+                                           ? local_canonical_rev->str()
+                                           : ::Wasm::Common::kLatest}};
 
     if (record_http_size_metrics) {
       opencensus::stats::Record(
@@ -149,14 +151,16 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
        flatbuffers::GetString(local_canonical_name)},
       {destinationCanonicalServiceNamespaceKey(),
        flatbuffers::GetString(local_node_info.namespace_())},
-      {destinationCanonicalRevisionKey(),
-       local_canonical_rev ? local_canonical_rev->str() : ::Wasm::Common::kLatest},
+      {destinationCanonicalRevisionKey(), local_canonical_rev
+                                              ? local_canonical_rev->str()
+                                              : ::Wasm::Common::kLatest},
       {sourceCanonicalServiceNameKey(),
        flatbuffers::GetString(peer_canonical_name)},
       {sourceCanonicalServiceNamespaceKey(),
        flatbuffers::GetString(peer_node_info.namespace_())},
-      {sourceCanonicalRevisionKey(),
-       peer_canonical_rev ? peer_canonical_rev->str() : ::Wasm::Common::kLatest}};
+      {sourceCanonicalRevisionKey(), peer_canonical_rev
+                                         ? peer_canonical_rev->str()
+                                         : ::Wasm::Common::kLatest}};
 
   if (record_http_size_metrics) {
     opencensus::stats::Record(
