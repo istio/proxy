@@ -123,10 +123,11 @@ func newEnvoy(port uint16, confTmpl, baseID, yamlName string, s *TestSetup) (*En
 		}
 	}
 
-	debugLevel, ok := os.LookupEnv("ENVOY_DEBUG")
+	/*debugLevel, ok := os.LookupEnv("ENVOY_DEBUG")
 	if !ok {
 		debugLevel = "info"
-	}
+	}*/
+	debugLevel := "debug"
 
 	args := []string{"-c", confPath,
 		"--drain-time-s", "1",
