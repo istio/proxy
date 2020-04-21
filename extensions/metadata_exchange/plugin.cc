@@ -21,15 +21,16 @@
 #include "absl/strings/str_split.h"
 #include "extensions/metadata_exchange/config.pb.h"
 #include "google/protobuf/util/json_util.h"
-#include "source/extensions/common/wasm/declare_property.pb.h"
 
 #ifndef NULL_PLUGIN
 
 #include "base64.h"
+#include "declare_property.pb.h"
 
 #else
 
 #include "common/common/base64.h"
+#include "source/extensions/common/wasm/declare_property.pb.h"
 
 namespace Envoy {
 namespace Extensions {
