@@ -92,14 +92,14 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
       (*label_map)["destination_app"] =
           flatbuffers::GetString(app_iter->value());
     }
-    auto ics_iter =
-        local_labels->LookupByKey("service.istio.io/canonical-name");
+    auto ics_iter = local_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceLabelName.data());
     if (ics_iter) {
       (*label_map)["destination_canonical_service"] =
           flatbuffers::GetString(ics_iter->value());
     }
-    auto rev_iter =
-        local_labels->LookupByKey("service.istio.io/canonical-revision");
+    auto rev_iter = local_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceRevisionLabelName.data());
     if (rev_iter) {
       (*label_map)["destination_canonical_revision"] =
           flatbuffers::GetString(rev_iter->value());
@@ -138,13 +138,14 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
     if (app_iter) {
       (*label_map)["source_app"] = flatbuffers::GetString(app_iter->value());
     }
-    auto ics_iter = peer_labels->LookupByKey("service.istio.io/canonical-name");
+    auto ics_iter = peer_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceLabelName.data());
     if (ics_iter) {
       (*label_map)["source_canonical_service"] =
           flatbuffers::GetString(ics_iter->value());
     }
-    auto rev_iter =
-        peer_labels->LookupByKey("service.istio.io/canonical-revision");
+    auto rev_iter = peer_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceRevisionLabelName.data());
     if (rev_iter) {
       (*label_map)["source_canonical_revision"] =
           flatbuffers::GetString(rev_iter->value());
