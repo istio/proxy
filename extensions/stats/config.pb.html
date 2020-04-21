@@ -1,6 +1,6 @@
 ---
 title: Stats Config
-description: Configuration for Stats Filter
+description: Configuration for Stats Filter.
 location: https://istio.io/docs/reference/config/proxy_extensions/stats.html
 layout: protoc-gen-docs
 generator: protoc-gen-docs
@@ -22,7 +22,6 @@ path.</p>
 <th>Field</th>
 <th>Type</th>
 <th>Description</th>
-<th>Required</th>
 </tr>
 </thead>
 <tbody>
@@ -35,9 +34,6 @@ metric. Conflicts are resolved by the tag name by overriding previously
 supplied values.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricConfig-name">
 <td><code>name</code></td>
@@ -47,9 +43,6 @@ No
 specified, applies to all.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricConfig-tags_to_remove">
 <td><code>tagsToRemove</code></td>
@@ -58,9 +51,6 @@ No
 <p>(Optional) A list of tags to remove.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricConfig-match">
 <td><code>match</code></td>
@@ -68,9 +58,6 @@ No
 <td>
 <p>NOT IMPLEMENTED. (Optional) Conditional enabling the override.</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 </tbody>
@@ -84,7 +71,6 @@ No
 <th>Field</th>
 <th>Type</th>
 <th>Description</th>
-<th>Required</th>
 </tr>
 </thead>
 <tbody>
@@ -95,9 +81,6 @@ No
 <p>Metric name.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricDefinition-value">
 <td><code>value</code></td>
@@ -106,9 +89,6 @@ No
 <p>Metric value expression.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricDefinition-type">
 <td><code>type</code></td>
@@ -116,9 +96,6 @@ No
 <td>
 <p>NOT IMPLEMENTED (Optional) Metric type.</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 </tbody>
@@ -160,7 +137,6 @@ No
 <th>Field</th>
 <th>Type</th>
 <th>Description</th>
-<th>Required</th>
 </tr>
 </thead>
 <tbody>
@@ -173,9 +149,6 @@ The following settings should be rarely used.
 Enable debug for this filter.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-max_peer_cache_size">
 <td><code>maxPeerCacheSize</code></td>
@@ -186,9 +159,6 @@ A long lived proxy that connects with many transient peers can build up a
 large cache. To turn off the cache, set this field to a negative value.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-stat_prefix">
 <td><code>statPrefix</code></td>
@@ -197,9 +167,6 @@ No
 <p>prefix to add to stats emitted by the plugin.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-field_separator">
 <td><code>fieldSeparator</code></td>
@@ -207,12 +174,9 @@ No
 <td>
 <p>Stats api squashes dimensions in a single string.
 The squashed string is parsed at prometheus scrape time to recover
-dimensions. The following 2 fields set the field and value separators {key:
-value} &ndash;&gt;  key{value<em>separator}value{field</em>separator}</p>
+dimensions. The following 2 fields set the field and value separators &lbrace;key:
+value} &ndash;&gt;  key&lbrace;value<em>separator}value&lbrace;field</em>separator}</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 <tr id="PluginConfig-value_separator">
@@ -221,9 +185,6 @@ No
 <td>
 <p>default: &ldquo;==&rdquo;</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 <tr id="PluginConfig-disable_host_header_fallback">
@@ -235,20 +196,14 @@ not available from the controlplane. Disable the fallback if the host
 header originates outsides the mesh, like at ingress.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-tcp_reporting_duration">
 <td><code>tcpReportingDuration</code></td>
-<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">google.protobuf.Duration</a></code></td>
 <td>
 <p>Optional. Allows configuration of the time between calls out to for TCP
 metrics reporting. The default duration is <code>15s</code>.</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 <tr id="PluginConfig-metrics">
@@ -258,9 +213,6 @@ No
 <p>Metric overrides.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-definitions">
 <td><code>definitions</code></td>
@@ -268,9 +220,6 @@ No
 <td>
 <p>Metric definitions.</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 </tbody>
