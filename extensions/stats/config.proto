@@ -15,6 +15,11 @@
 
 syntax = "proto3";
 
+// $title: Stats Config
+// $description: Configuration for Stats Filter
+// $location: https://istio.io/docs/reference/config/proxy_extensions/stats.html
+// $weight: 20
+
 package stats;
 
 import "google/protobuf/duration.proto";
