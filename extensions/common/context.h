@@ -54,6 +54,12 @@ const std::string kProtocolHTTP = "http";
 const std::string kProtocolGRPC = "grpc";
 const std::string kProtocolTCP = "tcp";
 
+constexpr absl::string_view kCanonicalServiceLabelName =
+    "service.istio.io/canonical-name";
+constexpr absl::string_view kCanonicalServiceRevisionLabelName =
+    "service.istio.io/canonical-revision";
+constexpr absl::string_view kLatest = "latest";
+
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
 

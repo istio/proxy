@@ -73,6 +73,22 @@ void instanceFromMetadata(const ::Wasm::Common::FlatNode& node_info,
       flatbuffers::GetString(node_info.workload_name()));
   instance->set_workload_namespace(
       flatbuffers::GetString(node_info.namespace_()));
+
+  const auto labels = node_info.labels();
+  if (labels) {
+    const auto svc_iter =
+        labels->LookupByKey(Wasm::Common::kCanonicalServiceLabelName.data());
+    if (svc_iter) {
+      instance->set_canonical_service(
+          flatbuffers::GetString(svc_iter->value()));
+    }
+    const auto rev_iter = labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceRevisionLabelName.data());
+    if (rev_iter) {
+      instance->set_canonical_revision(
+          flatbuffers::GetString(rev_iter->value()));
+    }
+  }
 };
 
 }  // namespace

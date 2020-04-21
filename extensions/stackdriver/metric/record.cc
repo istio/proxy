@@ -25,11 +25,6 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-constexpr char kCanonicalNameLabel[] = "service.istio.io/canonical-name";
-constexpr char kCanonicalRevisionLabel[] =
-    "service.istio.io/canonical-revision";
-constexpr char kLatest[] = "latest";
-
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
             const ::Wasm::Common::RequestInfo& request_info,
@@ -44,24 +39,32 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
   const auto peer_labels = peer_node_info.labels();
 
   const auto local_name_iter =
-      local_labels ? local_labels->LookupByKey(kCanonicalNameLabel) : nullptr;
+      local_labels ? local_labels->LookupByKey(
+                         Wasm::Common::kCanonicalServiceLabelName.data())
+                   : nullptr;
   const auto local_canonical_name = local_name_iter
                                         ? local_name_iter->value()
                                         : local_node_info.workload_name();
 
   const auto peer_name_iter =
-      peer_labels ? peer_labels->LookupByKey(kCanonicalNameLabel) : nullptr;
+      peer_labels ? peer_labels->LookupByKey(
+                        Wasm::Common::kCanonicalServiceLabelName.data())
+                  : nullptr;
   const auto peer_canonical_name =
       peer_name_iter ? peer_name_iter->value() : peer_node_info.workload_name();
 
   const auto local_rev_iter =
-      local_labels ? local_labels->LookupByKey(kCanonicalRevisionLabel)
-                   : nullptr;
+      local_labels
+          ? local_labels->LookupByKey(
+                Wasm::Common::kCanonicalServiceRevisionLabelName.data())
+          : nullptr;
   const auto local_canonical_rev =
       local_rev_iter ? local_rev_iter->value() : nullptr;
 
   const auto peer_rev_iter =
-      peer_labels ? peer_labels->LookupByKey(kCanonicalRevisionLabel) : nullptr;
+      peer_labels ? peer_labels->LookupByKey(
+                        Wasm::Common::kCanonicalServiceRevisionLabelName.data())
+                  : nullptr;
   const auto peer_canonical_rev =
       peer_rev_iter ? peer_rev_iter->value() : nullptr;
 
@@ -95,13 +98,15 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
         {destinationCanonicalServiceNamespaceKey(),
          flatbuffers::GetString(peer_node_info.namespace_())},
         {destinationCanonicalRevisionKey(),
-         peer_canonical_rev ? peer_canonical_rev->str() : kLatest},
+         peer_canonical_rev ? peer_canonical_rev->str()
+                            : ::Wasm::Common::kLatest.data()},
         {sourceCanonicalServiceNameKey(),
          flatbuffers::GetString(local_canonical_name)},
         {sourceCanonicalServiceNamespaceKey(),
          flatbuffers::GetString(local_node_info.namespace_())},
-        {sourceCanonicalRevisionKey(),
-         local_canonical_rev ? local_canonical_rev->str() : kLatest}};
+        {sourceCanonicalRevisionKey(), local_canonical_rev
+                                           ? local_canonical_rev->str()
+                                           : ::Wasm::Common::kLatest.data()}};
 
     if (record_http_size_metrics) {
       opencensus::stats::Record(
@@ -147,14 +152,16 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
        flatbuffers::GetString(local_canonical_name)},
       {destinationCanonicalServiceNamespaceKey(),
        flatbuffers::GetString(local_node_info.namespace_())},
-      {destinationCanonicalRevisionKey(),
-       local_canonical_rev ? local_canonical_rev->str() : kLatest},
+      {destinationCanonicalRevisionKey(), local_canonical_rev
+                                              ? local_canonical_rev->str()
+                                              : ::Wasm::Common::kLatest.data()},
       {sourceCanonicalServiceNameKey(),
        flatbuffers::GetString(peer_canonical_name)},
       {sourceCanonicalServiceNamespaceKey(),
        flatbuffers::GetString(peer_node_info.namespace_())},
-      {sourceCanonicalRevisionKey(),
-       peer_canonical_rev ? peer_canonical_rev->str() : kLatest}};
+      {sourceCanonicalRevisionKey(), peer_canonical_rev
+                                         ? peer_canonical_rev->str()
+                                         : ::Wasm::Common::kLatest.data()}};
 
   if (record_http_size_metrics) {
     opencensus::stats::Record(
