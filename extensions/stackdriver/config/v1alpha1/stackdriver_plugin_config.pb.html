@@ -1,14 +1,15 @@
 ---
-title: stackdriver.config.v1alpha1
+title: Stackdriver Config
+description: Configuration for Stackdriver filter.
+location: https://istio.io/docs/reference/config/proxy_extensions/stackdriver.html
 layout: protoc-gen-docs
 generator: protoc-gen-docs
-schema: stackdriver
 weight: 20
 number_of_entries: 1
 ---
 <h2 id="PluginConfig">PluginConfig</h2>
 <section>
-<p>next id: 8</p>
+<p>next id: 9</p>
 
 <table class="message-fields">
 <thead>
@@ -105,6 +106,19 @@ No
 <td>
 <p>Optional. Allows configuration of the number of traffic assertions to batch
 into a single request. Default is 100. Max is 1000.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-disable_http_size_metrics">
+<td><code>disableHttpSizeMetrics</code></td>
+<td><code>bool</code></td>
+<td>
+<p>Optional. Allows disabling of reporting of the request and response size
+metrics for HTTP traffic. Defaults to false (request and response size
+metrics are enabled).</p>
 
 </td>
 <td>

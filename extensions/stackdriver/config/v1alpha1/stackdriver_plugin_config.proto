@@ -15,10 +15,9 @@
 
 syntax = "proto3";
 
-// $schema: stackdriver
 // $title: Stackdriver Config
 // $description: Configuration for Stackdriver filter.
-// $location: https://istio.io/docs/reference/config/stackdriver.html
+// $location: https://istio.io/docs/reference/config/proxy_extensions/stackdriver.html
 // $weight: 20
 
 package stackdriver.config.v1alpha1;

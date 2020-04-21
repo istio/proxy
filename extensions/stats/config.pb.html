@@ -1,8 +1,9 @@
 ---
-title: stats
+title: Stats Config
+description: Configuration for Stats Filter
+location: https://istio.io/docs/reference/config/proxy_extensions/stats.html
 layout: protoc-gen-docs
 generator: protoc-gen-docs
-schema: stats
 weight: 20
 number_of_entries: 4
 ---
@@ -111,7 +112,7 @@ No
 </tr>
 <tr id="MetricDefinition-type">
 <td><code>type</code></td>
-<td><code><a href="https://istio.io/docs/reference/config/stats.html#MetricType">MetricType</a></code></td>
+<td><code><a href="#MetricType">MetricType</a></code></td>
 <td>
 <p>NOT IMPLEMENTED (Optional) Metric type.</p>
 
@@ -252,7 +253,7 @@ No
 </tr>
 <tr id="PluginConfig-metrics">
 <td><code>metrics</code></td>
-<td><code><a href="https://istio.io/docs/reference/config/stats.html#MetricConfig">MetricConfig[]</a></code></td>
+<td><code><a href="#MetricConfig">MetricConfig[]</a></code></td>
 <td>
 <p>Metric overrides.</p>
 
@@ -263,7 +264,7 @@ No
 </tr>
 <tr id="PluginConfig-definitions">
 <td><code>definitions</code></td>
-<td><code><a href="https://istio.io/docs/reference/config/stats.html#MetricDefinition">MetricDefinition[]</a></code></td>
+<td><code><a href="#MetricDefinition">MetricDefinition[]</a></code></td>
 <td>
 <p>Metric definitions.</p>
 

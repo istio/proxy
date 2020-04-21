@@ -120,7 +120,7 @@ lint: lint-copyright-banner format-go lint-go tidy-go
 	@scripts/check-style.sh
 
 protoc = protoc -I common-protos -I extensions
-protoc_gen_docs_plugin := --docs_out=warnings=true,mode=html_fragment_with_front_matter:$(repo_dir)/
+protoc_gen_docs_plugin := --docs_out=warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
 
 metadata_exchange_path := extensions/metadata_exchange
 metadata_exchange_protos := $(wildcard $(metadata_exchange_path)/*.proto)
