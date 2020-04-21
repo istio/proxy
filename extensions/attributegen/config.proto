@@ -15,28 +15,113 @@
 
 syntax = "proto3";
 
+// $schema: istio.attributegen
+// $title: AttributeGen Config
+// $description: Configuration for Attribute Generation plugin.
+// $location: https://istio.io/docs/reference/config/attributegen.html
+// $weight: 20
+
+// AttributeGen plugin uses [builtin attributes]
+// (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
+// as inputs and produces new attributes that can be used by downstream plugins.
+//
+// The following is an example of a configuration that produces one attribute named
+// `istio.operationId` using `request.url_path` and `request.method`.
+//
+// {{<tabset category-name="example">}}
+// {{<tab name="v1alpha3" category-value="v1alpha3">}}
+// ```yaml
+// {
+//   "attributes": [
+//     {
+//       "output_attribute": "istio.operationId", 
+//       "match": [
+//         {
+//           "value": "ListBooks", 
+//           "condition": "request.url_path == '/books' && request.method == 'GET'"
+//         }, 
+//         {
+//           "value": "GetBook", 
+//           "condition": "request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$') && request.method == 'GET'"
+//         }, 
+//         {
+//           "value": "CreateBook", 
+//           "condition": "request.url_path == '/books/' && request.method == 'POST'"
+//         }
+//       ]
+//     }
+//   ]
+// }
+//
+// ```
+// {{</tab>}}
+// {{</tabset>}}
+// If the Stats plugin runs after AttributeGen, it can use `istio.operationId` to populate a
+// dimension on a metric.
+//
+// The following is an example of response codes being mapped into a smaller number of response classes as the `istio.responseClass` attribute.
+// For example, all response codes in 200s are mapped to `2xx`.
+//
+// {{<tabset category-name="example">}}
+// {{<tab name="v1alpha3" category-value="v1alpha3">}}
+// ```yaml
+// {
+//   "attributes": [
+//     {
+//       "output_attribute": "istio.responseClass", 
+//       "match": [
+//         {
+//           "value": "2xx", 
+//           "condition": "response.code >= 200 && response.code <= 299"
+//         }, 
+//         {
+//           "value": "3xx", 
+//           "condition": "response.code >= 300 && response.code <= 399"
+//         }, 
+//         {
+//           "value": "404", 
+//           "condition": "response.code == 404"
+//         }, 
+//         {
+//           "value": "429", 
+//           "condition": "response.code == 429"
+//         }, 
+//         {
+//           "value": "503", 
+//           "condition": "response.code == 503"
+//         }, 
+//         {
+//           "value": "5xx", 
+//           "condition": "response.code >= 500 && response.code <= 599"
+//         }, 
+//         {
+//           "value": "4xx", 
+//           "condition": "response.code >= 400 && response.code <= 499"
+//         }
+//       ]
+//     }
+//   ]
+// }
+//
+// ```
+// {{</tab>}}
+// {{</tabset>}}
+//
+// If multiple AttributeGene configurations produce the same attribute, the result of
+// the last configuration will be visible to downstream filters.
 package istio.attributegen;
 
-// Configuration to generate new attributes based on attributes of the proxied
+// Top level configuration to generate new attributes based on attributes of the proxied
 // traffic.
 message PluginConfig {
-  // next id: 2
+  // The following settings should be rarely used.
+  // Enable debug for this filter.
+  bool debug = 1;
   // Multiple independent attribute generation configurations.
-  repeated AttributeGeneration attributes = 1;
+  repeated AttributeGeneration attributes = 2;
 }
 
-// AttributeGeneration uses [well known attributes]
-// (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
-// as inputs and produces a new attribute.
-// The new attribute can be used by a downstream plugin.
-//
-// Example: AttributeGen may produce an attribute called `istio.operationId`
-// which is analogous to the `operationId` in the OpenAPI Spec. The Stats plugin
-// will run after this plugin and use `istio.operationId` to populate a
-// dimension.
-//
-// If multiple AttributeGenerations produce the same attribute, the result of
-// the last generation will be visible to downstream filters.
+// AttributeGeneration define generation of one attribute.
 message AttributeGeneration {
   // Phase denotes plugin lifecycle phase when the new attribute is generated.
   // Default: After the response is sent back to the client.
@@ -44,14 +129,19 @@ message AttributeGeneration {
   // $hide_from_docs
   Phase phase = 1;
 
-  // The following attribute is populated on a successful match.
+  // The name of the attribute that is populated on a successful match.
+  //
   // Example: `istio.operationId`
+  //
   // `istio.` attribute namespace is reserved by Istio.
   //
   // AttributeGeneration may fail to evaluate when an attribute is not
-  // available. Example: `response.code` may not be available when a request
+  // available. For example, `response.code` may not be available when a request
   // ends abruptly. When evaluation fails the plugin will set an error_attribute
-  // to the error string. error_attribute = ${output_attribute}_error
+  // to `"1"`, where `error_attribute = ${output_attribute}_error`.
+  //
+  // Use `has(attribute_name)` function to check for presence of an attribute if you
+  // expect a source attribute to be missing from time to time.
   //
   // If the generated attribute is used by an authz plugin, it should fail the
   // request if the `error_attribute` is set. If the generated attribute is used
@@ -67,32 +157,30 @@ message AttributeGeneration {
 // If the condition evaluates to true then the Match returns the specified
 // value.
 message Match {
-  // Condition is a [CEL
-  // expressions](https://github.com/google/cel-spec/blob/master/doc/langdef.md)
-  // You may use [well known attributes]
-  // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
-  // in the CEL expression.
+  // The condition is a [CEL
+  // expression](https://github.com/google/cel-spec/blob/master/doc/langdef.md)
+  // that may use [builtin attributes]
+  // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition).
   //
-  // Examples:
-  //
-  // a GET on /books
-  // { value: ListBooks,
-  //   condition: request.url_path == '/books' && request.method == 'GET' }
-  //
-  // a GET on /shelves/{id1}/books/{id2}
-  // { value: GetBook,
-  //   condition:
-  //   request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$') &&
-  //   request.method == 'GET' }
+  // Example:
+  // {{<tab name="attribute-match" >}}
+  // ```yaml
+  //    {
+  //      "value": "GetBook", 
+  //      "condition": "request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$') && request.method == 'GET'"
+  //    }, 
+  // ```
   // Note: CEL uses [re2](https://github.com/google/re2/wiki/Syntax) regex
-  // library.
-  //       Use anchors {^, $} to ensure that the regex evaluates efficiently.
-  // Note: request.url_path is normalized and stripped of query params.
+  // library. Use anchors `{^, $}` to ensure that the regex evaluates efficiently.
+  //
+  // Note: `request.url_path` is normalized and stripped of query params.
   //
   // a Read only operation on books
-  // { value: ReadOnlyBooks,
-  //   condition: request.url_path.startsWith('/books/') && in(request.method,
-  //   ['GET', 'HEAD'])}
+  // ```yaml
+  // { "value": "ReadOnlyBooks",
+  //   "condition": "request.url_path.startsWith('/books/') && in(request.method, ['GET', 'HEAD'])"}
+  // ```
+  // {{</tab>}}
   //
   // An empty condition evaluates to `true` and should be used to provide a
   // default value.
@@ -103,12 +191,15 @@ message Match {
 }
 
 // Phase determines when the classification is performed.
+// $hide_from_docs
 enum Phase {
   option allow_alias = true;
   // AttributeGeneration is performed after the response is sent back to the
   // client. All information about the request is available in this phase, and
   // classification does not add to the latency observed by the client.
+  // $hide_from_docs
   PHASE_UNSPECIFIED = 0;
+  // $hide_from_docs
   AFTER_RESPONSE = 0;
 
   // AttributeGeneration is performed during request processing, and adds to
