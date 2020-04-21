@@ -1,0 +1,34 @@
+metric:
+  labels:
+    destination_canonical_revision: version-1
+    destination_canonical_service_name: ratings
+    destination_canonical_service_namespace: default
+    destination_owner: //compute.googleapis.com/projects/23412341234/instanceGroupManagers/324234
+    destination_port: '{{ .Ports.ServerPort }}'
+    destination_principal: "{{ .Vars.DestinationPrincipal }}"
+    destination_service_name: server
+    destination_service_namespace: default
+    destination_workload_name: ratings-v1
+    destination_workload_namespace: default
+    mesh_uid: mesh
+    request_operation: GET
+    request_protocol: http
+    response_code: "200"
+    service_authentication_policy: "" # TODO: upstream TLS indicator is not reported
+    source_canonical_revision: version-1
+    source_canonical_service_name: productpage-v1
+    source_canonical_service_namespace: default
+    source_owner: //compute.googleapis.com/projects/23412341234/zones/us-east4-b/instances/234215124341324123
+    source_principal: "{{ .Vars.SourcePrincipal }}"
+    source_workload_name: productpage-v1
+    source_workload_namespace: default
+  type: istio.io/service/client/request_count
+points:
+- value:
+    int64Value: "10"
+resource:
+  labels:
+    zone: us-east4-b
+    project_id: test-project
+    instance_id: "234215124341324123"
+  type: gce_instance

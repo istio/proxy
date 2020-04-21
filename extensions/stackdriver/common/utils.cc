@@ -99,7 +99,7 @@ std::string getOwner(const ::Wasm::Common::FlatNode &node) {
   }
 
   // then handle unmanaged GCE Instance case
-  auto instance_id = platform_metadata->LookupByKey(kGCEInstanceIDLabel);
+  auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
   auto project = platform_metadata->LookupByKey(kGCPProjectNumberKey.data());
   auto location = platform_metadata->LookupByKey(kGCPLocationKey);
   if (instance_id && project && location) {
