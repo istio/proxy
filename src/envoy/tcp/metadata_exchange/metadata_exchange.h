@@ -24,11 +24,16 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
 #include "envoy/stream_info/filter_state.h"
+#include "extensions/common/context.h"
+#include "extensions/common/node_info_bfbs_generated.h"
+#include "extensions/common/wasm/wasm_state.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
 namespace Tcp {
 namespace MetadataExchange {
+
+using ::Envoy::Extensions::Common::Wasm::WasmStatePrototype;
 
 /**
  * All MetadataExchange filter stats. @see stats_macros.h
@@ -75,6 +80,14 @@ class MetadataExchangeConfig {
   const FilterDirection filter_direction_;
   // Stats for MetadataExchange Filter.
   MetadataExchangeStats stats_;
+
+  static const WasmStatePrototype& nodeInfoPrototype() {
+    static const WasmStatePrototype* const prototype = new WasmStatePrototype(
+        true, ::Envoy::Extensions::Common::Wasm::WasmType::FlatBuffers,
+        ::Wasm::Common::nodeInfoSchema(),
+        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+    return *prototype;
+  }
 
  private:
   MetadataExchangeStats generateStats(const std::string& prefix,
