@@ -25,6 +25,7 @@ import (
 )
 
 func TestStackdriverPayload(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
@@ -72,6 +73,7 @@ func TestStackdriverPayload(t *testing.T) {
 }
 
 func TestStackdriverPayloadGateway(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestPath":            "echo",
 		"SDLogStatusCode":        "200",
@@ -121,6 +123,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 }
 
 func TestStackdriverPayloadWithTLS(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "MUTUAL_TLS",
 		"SDLogStatusCode":             "200",
@@ -173,6 +176,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 
 // Expects estimated 20s log dumping interval from stackdriver
 func TestStackdriverReload(t *testing.T) {
+	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
@@ -220,6 +224,7 @@ func TestStackdriverReload(t *testing.T) {
 }
 
 func TestStackdriverVMReload(t *testing.T) {
+	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
@@ -276,6 +281,7 @@ func TestStackdriverVMReload(t *testing.T) {
 
 // Expects estimated 20s log dumping interval from stackdriver
 func TestStackdriverParallel(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"SDLogStatusCode":        "200",
 		"EnableMetadataExchange": "true",
@@ -334,6 +340,7 @@ func TestStackdriverParallel(t *testing.T) {
 }
 
 func TestStackdriverAccessLog(t *testing.T) {
+	t.Parallel()
 	var TestCases = []struct {
 		name              string
 		logWindowDuration string
