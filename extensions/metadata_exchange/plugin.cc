@@ -64,14 +64,6 @@ bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
 static RegisterContextFactory register_MetadataExchange(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
-static RegisterContextFactory register_StatsOutbound(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContextOutbound),
-    "mx_outbound");
-
-static RegisterContextFactory register_StatsInbound(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContextInbound),
-    "mx_inbound");
-
 void PluginRootContext::updateMetadataValue() {
   google::protobuf::Struct node_metadata;
   if (!getMessageValue({"node", "metadata"}, &node_metadata)) {
