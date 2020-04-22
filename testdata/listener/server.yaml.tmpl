@@ -33,7 +33,7 @@ filter_chains:
                   {{- if .Vars.MetadataExchangeFilterCode }}
                   local: { {{ .Vars.MetadataExchangeFilterCode }} }
                   {{- else }}
-                  local: { inline_string: \"envoy.wasm.metadata_exchange\" }
+                  local: { inline_string: "envoy.wasm.metadata_exchange" }
                   {{- end }}
               configuration: "{ max_peer_cache_size: 20 }"
 {{- end }}
