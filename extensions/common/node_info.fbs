@@ -41,6 +41,8 @@ table FlatNode {
   // List of short names for application containers that are using this proxy.
   // This is only used for kubernetes, and is populated by the sidecar injector.
   app_containers:[string];
+  // Identifier for the cluster to which this workload belongs (for k8s workloads).
+  cluster_id:string;
 }
 
 root_type FlatNode;
