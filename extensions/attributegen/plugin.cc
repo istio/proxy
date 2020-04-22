@@ -57,10 +57,14 @@ Optional<bool> Match::evaluate() const {
   if (out_size != sizeof(bool)) {
     LOG_TRACE(absl::StrCat("Expression:[", condition_token_, "] ", condition_,
                            " did not return a bool, size:", out_size));
+    free(out);
     return {};
   }
 
-  return (*reinterpret_cast<bool*>(out));
+  bool matched = *reinterpret_cast<bool*>(out);
+
+  free(out);
+  return matched;
 }
 
 // end class Match
