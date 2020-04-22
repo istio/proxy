@@ -200,7 +200,7 @@ TrafficDirection getTrafficDirection() {
 bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
                            flatbuffers::FlatBufferBuilder& fbb) {
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
-      workload_name, istio_version, mesh_id;
+      workload_name, istio_version, mesh_id, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   for (const auto& it : metadata.fields()) {
@@ -216,6 +216,8 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
       istio_version = fbb.CreateString(it.second.string_value());
     } else if (it.first == "MESH_ID") {
       mesh_id = fbb.CreateString(it.second.string_value());
+    } else if (it.first == "CLUSTER_ID") {
+      cluster_id = fbb.CreateString(it.second.string_value());
     } else if (it.first == "LABELS") {
       for (const auto& labels_it : it.second.struct_value().fields()) {
         labels.push_back(
@@ -247,6 +249,7 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
   node.add_workload_name(workload_name);
   node.add_istio_version(istio_version);
   node.add_mesh_id(mesh_id);
+  node.add_cluster_id(cluster_id);
   node.add_labels(labels_offset);
   node.add_platform_metadata(platform_metadata_offset);
   node.add_app_containers(app_containers_offset);
