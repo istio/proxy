@@ -1,4 +1,4 @@
-/* Copyright 2019 Istio Authors. All Rights Reserved.
+/* Copyright 2020 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -284,10 +284,10 @@ std::vector<TestParams> generateTestParams() {
 
 class AttributeGenFilterTest : public WasmHttpFilterTest {
  public:
-  void verify_request(Http::TestRequestHeaderMapImpl& request_headers,
-                      Http::TestResponseHeaderMapImpl& response_headers,
-                      const std::string& attribute, bool found, bool error,
-                      const std::string& value = "") {
+  void verifyRequest(Http::TestRequestHeaderMapImpl& request_headers,
+                     Http::TestResponseHeaderMapImpl& response_headers,
+                     const std::string& attribute, bool found, bool error,
+                     const std::string& value = "") {
     auto fs = makeTestRequest(request_headers, response_headers);
 
     ASSERT_EQ(fs->hasData<WasmState>(attribute + "__error"), error);
@@ -323,8 +323,8 @@ TEST_P(AttributeGenFilterTest, OneMatch) {
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  verify_request(request_headers, response_headers, attribute, true, false,
-                 "GetStatus");
+  verifyRequest(request_headers, response_headers, attribute, true, false,
+                "GetStatus");
 }
 
 TEST_P(AttributeGenFilterTest, ExprEvalError) {
@@ -339,7 +339,7 @@ TEST_P(AttributeGenFilterTest, ExprEvalError) {
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  verify_request(request_headers, response_headers, attribute, false, true);
+  verifyRequest(request_headers, response_headers, attribute, false, true);
 }
 
 TEST_P(AttributeGenFilterTest, UnparseableConfig) {
@@ -373,7 +373,7 @@ TEST_P(AttributeGenFilterTest, NoMatch) {
                                                  {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  verify_request(request_headers, response_headers, attribute, false, false);
+  verifyRequest(request_headers, response_headers, attribute, false, false);
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileList) {
@@ -386,8 +386,8 @@ TEST_P(AttributeGenFilterTest, OperationFileList) {
                                                  {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verify_request(request_headers, response_headers, attribute, true, false,
-                 "ListBooks");
+  verifyRequest(request_headers, response_headers, attribute, true, false,
+                "ListBooks");
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
@@ -401,7 +401,7 @@ TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
                                                  {":method", "POST"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verify_request(request_headers, response_headers, attribute, false, false);
+  verifyRequest(request_headers, response_headers, attribute, false, false);
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileGet) {
@@ -414,8 +414,8 @@ TEST_P(AttributeGenFilterTest, OperationFileGet) {
       {":path", "/shelves/a101/books/b1122"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verify_request(request_headers, response_headers, attribute, true, false,
-                 "GetBook");
+  verifyRequest(request_headers, response_headers, attribute, true, false,
+                "GetBook");
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
@@ -428,8 +428,8 @@ TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
       {":path", "/shelves/-----/books/b1122"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verify_request(request_headers, response_headers, attribute, false, false,
-                 "GetBook");
+  verifyRequest(request_headers, response_headers, attribute, false, false,
+                "GetBook");
 }
 
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
@@ -443,8 +443,8 @@ TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
                                                  {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "207"}};
 
-  verify_request(request_headers, response_headers, attribute, true, false,
-                 "2xx");
+  verifyRequest(request_headers, response_headers, attribute, true, false,
+                "2xx");
 }
 
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch2) {
@@ -458,8 +458,8 @@ TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch2) {
                                                  {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
   // 404 is not classified.
-  verify_request(request_headers, response_headers, attribute, true, false,
-                 "404");
+  verifyRequest(request_headers, response_headers, attribute, true, false,
+                "404");
 }
 
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch3) {
@@ -472,8 +472,8 @@ TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch3) {
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
                                                  {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "504"}};
-  verify_request(request_headers, response_headers, attribute, true, false,
-                 "5xx");
+  verifyRequest(request_headers, response_headers, attribute, true, false,
+                "5xx");
 }
 
 }  // namespace AttributeGen
