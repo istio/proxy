@@ -43,7 +43,7 @@ void buildEnvoyGrpcService(
     const StackdriverStubOption &option,
     ::envoy::config::core::v3::GrpcService *grpc_service);
 
-// Return Owner information when that information. If that information
+// Returns "owner" information for a node. If that information
 // has been directly set, that value is returned. If not, and the owner
 // can be entirely derived from platform metadata, this will derive the
 // owner. Currently, this is only supported for GCE Instances. For

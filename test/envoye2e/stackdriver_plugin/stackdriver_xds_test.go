@@ -432,7 +432,6 @@ func TestStackdriverVMReload(t *testing.T) {
 }
 
 func TestStackdriverGCEInstances(t *testing.T) {
-	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
