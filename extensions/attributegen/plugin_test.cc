@@ -16,6 +16,7 @@
 #include "extensions/attributegen/plugin.h"
 
 #include <set>
+#include <unordered_map>
 
 #include "gtest/gtest.h"
 
@@ -66,6 +67,7 @@ using envoy::config::core::v3::TrafficDirection;
 using Envoy::Extensions::Common::Wasm::PluginSharedPtr;
 using Envoy::Extensions::Common::Wasm::Wasm;
 using Envoy::Extensions::Common::Wasm::WasmHandleSharedPtr;
+using Envoy::Extensions::Common::Wasm::WasmResult;
 using Envoy::Extensions::Common::Wasm::WasmState;
 using GrpcService = envoy::config::core::v3::GrpcService;
 using WasmFilterConfig = envoy::extensions::filters::http::wasm::v3::Wasm;
@@ -103,9 +105,28 @@ class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
   }
   MOCK_METHOD2(scriptLog_, void(spdlog::level::level_enum level,
                                 absl::string_view message));
+  WasmResult defineMetric(MetricType type, absl::string_view name,
+                          uint32_t* metric_id_ptr) override {
+    auto rs = Envoy::Extensions::Common::Wasm::Context::defineMetric(
+        type, name, metric_id_ptr);
+    metrics_[std::string(name)] = *metric_id_ptr;
+    scriptLog(spdlog::level::err, absl::StrCat(name, " = ", *metric_id_ptr));
+    return rs;
+  }
+
+  uint64_t readMetric(absl::string_view name) {
+    auto mid = metrics_.find(std::string(name));
+    if (mid == metrics_.end()) {
+      return 0;
+    }
+    uint64_t cnt = 0;
+    Envoy::Extensions::Common::Wasm::Context::getMetric(mid->second, &cnt);
+    return cnt;
+  }
 
  private:
   bool mock_logger_;
+  std::map<std::string, uint32_t> metrics_;
 };
 
 struct TestParams {
@@ -286,9 +307,10 @@ class AttributeGenFilterTest : public WasmHttpFilterTest {
  public:
   void verifyRequest(Http::TestRequestHeaderMapImpl& request_headers,
                      Http::TestResponseHeaderMapImpl& response_headers,
-                     const std::string& attribute, bool found, bool error,
+                     const std::string& base_attribute, bool found, bool error,
                      const std::string& value = "") {
     auto fs = makeTestRequest(request_headers, response_headers);
+    auto attribute = "wasm." + base_attribute;
 
     ASSERT_EQ(fs->hasData<WasmState>(attribute + "__error"), error);
     ASSERT_EQ(fs->hasData<WasmState>(attribute), found)
@@ -346,8 +368,10 @@ TEST_P(AttributeGenFilterTest, UnparseableConfig) {
   const char* plugin_config = R"EOF(
                     attributes = [ output_attribute ]; 
   )EOF";
-  EXPECT_THROW_WITH_MESSAGE(setupConfig({.plugin_config = plugin_config}),
-                            EnvoyException, "Configuration failed");
+  setupConfig({.plugin_config = plugin_config});
+  EXPECT_EQ(root_context_->readMetric(
+                "wasm_filter.attributegen.type.config.error_count"),
+            1);
 }
 
 TEST_P(AttributeGenFilterTest, BadExpr) {
@@ -356,8 +380,10 @@ TEST_P(AttributeGenFilterTest, BadExpr) {
                     "match": [{"value":
                             "GetStatus", "condition": "if a = b then return 5"}]}]}
   )EOF";
-  EXPECT_THROW_WITH_MESSAGE(setupConfig({.plugin_config = plugin_config}),
-                            EnvoyException, "Configuration failed");
+  setupConfig({.plugin_config = plugin_config});
+  EXPECT_EQ(root_context_->readMetric(
+                "wasm_filter.attributegen.type.config.error_count"),
+            1);
 }
 
 TEST_P(AttributeGenFilterTest, NoMatch) {

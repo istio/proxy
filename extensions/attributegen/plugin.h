@@ -79,7 +79,7 @@ class AttributeGenerator {
  public:
   explicit AttributeGenerator(EvalPhase phase,
                               const std::string& output_attribute,
-                              const std::vector<Match> matches)
+                              const std::vector<Match>& matches)
       : phase_(phase),
         output_attribute_(output_attribute),
         error_attribute_(absl::StrCat(output_attribute, "__error")),
@@ -107,7 +107,7 @@ class PluginRootContext : public RootContext {
       : RootContext(id, root_id) {
     Metric error_count(MetricType::Counter, "error_count",
                        {MetricTag{"wasm_filter", MetricTag::TagType::String},
-                        MetricTag{"cache", MetricTag::TagType::String}});
+                        MetricTag{"type", MetricTag::TagType::String}});
     config_errors_ = error_count.resolve("attributegen", "config");
     runtime_errors_ = error_count.resolve("attributegen", "runtime");
   }

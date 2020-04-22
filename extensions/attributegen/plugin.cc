@@ -42,6 +42,8 @@ Optional<bool> Match::evaluate() const {
     return true;
   }
 
+  Optional<bool> ret = {};
+
   const std::string function = "expr_evaluate";
   char* out = nullptr;
   size_t out_size = 0;
@@ -49,22 +51,24 @@ Optional<bool> Match::evaluate() const {
       function.data(), function.size(),
       reinterpret_cast<const char*>(&condition_token_), sizeof(uint32_t), &out,
       &out_size);
+
   if (result != WasmResult::Ok) {
     LOG_TRACE(absl::StrCat("Failed to evaluate expression:[", condition_token_,
                            "] ", condition_, " result: ", toString(result)));
-    return {};
-  }
-  if (out_size != sizeof(bool)) {
+  } else if (out_size != sizeof(bool)) {
     LOG_TRACE(absl::StrCat("Expression:[", condition_token_, "] ", condition_,
                            " did not return a bool, size:", out_size));
-    free(out);
-    return {};
+  } else {
+    // we have a bool.
+    bool matched = *reinterpret_cast<bool*>(out);
+    ret = Optional<bool>{matched};
   }
 
-  bool matched = *reinterpret_cast<bool*>(out);
+  if (out != nullptr) {
+    free(out);
+  }
 
-  free(out);
-  return matched;
+  return ret;
 }
 
 // end class Match
@@ -88,6 +92,10 @@ Optional<bool> AttributeGenerator::evaluate(std::string* val) const {
 
 // end class AttributeGenerator
 
+// onConfigure validates configuration.
+// If it returns `false` the Proxy will crash.
+// It is the responsibility of the control plane to send valid configuration.
+// AttributeGen plugin will not return `false`.
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
   // Parse configuration JSON string.
@@ -97,12 +105,13 @@ bool PluginRootContext::onConfigure(size_t) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config, json_options);
   if (status != Status::OK) {
-    LOG_WARN(absl::StrCat(
-        "Cannot parse 'attributegen' plugin configuration JSON string [YAML is "
-        "not supported]: ",
-        configuration->toString()));
+    LOG_WARN(
+        absl::StrCat("Config Error: cannot parse 'attributegen' plugin "
+                     "configuration JSON string [YAML is "
+                     "not supported]: ",
+                     configuration->toString()));
     incrementMetric(config_errors_, 1);
-    return false;
+    return true;
   }
 
   debug_ = config.debug();
@@ -112,9 +121,11 @@ bool PluginRootContext::onConfigure(size_t) {
   if (!init_status) {
     incrementMetric(config_errors_, 1);
     cleanupAttributeGen();
+    LOG_WARN(
+        "Config Error: attributegen plugin rejected invalid configuration");
   }
 
-  return init_status;
+  return true;
 }
 
 bool PluginRootContext::initAttributeGen(
