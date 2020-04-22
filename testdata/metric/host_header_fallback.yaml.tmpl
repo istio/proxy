@@ -12,8 +12,6 @@ metric:
     value: productpage-v1
   - name: source_canonical_revision
     value: version-1
-  - name: source_cluster_id
-    value: client-cluster
   - name: source_workload_namespace
     value: default
   - name: source_principal
@@ -40,8 +38,6 @@ metric:
     value: version-1
   - name: destination_service_name
     value: 127.0.0.1:{{ .Ports.ClientPort }}
-  - name: destination_cluster_id
-    value: server-cluster
   - name: destination_service_namespace
     value: default
   - name: request_protocol
