@@ -17,6 +17,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -322,6 +323,12 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"request", "duration"}, &request_info->duration);
   getValue({"request", "total_size"}, &request_info->request_size);
   getValue({"response", "total_size"}, &request_info->response_size);
+}
+
+absl::string_view nodeInfoSchema() {
+  return absl::string_view(
+      reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
+      FlatNodeBinarySchema::size());
 }
 
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {

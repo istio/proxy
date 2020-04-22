@@ -30,20 +30,16 @@ using StringView = absl::string_view;
 // Node metadata
 constexpr StringView WholeNodeKey = ".";
 
-constexpr StringView kUpstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.upstream_id";
-constexpr StringView kUpstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.upstream";
+constexpr StringView kUpstreamMetadataIdKey = "upstream_peer_id";
+constexpr StringView kUpstreamMetadataKey = "upstream_peer";
 
-constexpr StringView kDownstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.downstream_id";
-constexpr StringView kDownstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.downstream";
+constexpr StringView kDownstreamMetadataIdKey = "downstream_peer_id";
+constexpr StringView kDownstreamMetadataKey = "downstream_peer";
 
 const std::string kMetadataNotFoundValue =
     "envoy.wasm.metadata_exchange.peer_unknown";
 
-constexpr StringView kAccessLogPolicyKey = "envoy.wasm.access_log.log";
+constexpr StringView kAccessLogPolicyKey = "access_log_policy";
 
 // Header keys
 constexpr StringView kAuthorityHeaderKey = ":authority";
@@ -177,6 +173,9 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
 bool extractLocalNodeFlatBuffer(std::string* out);
 // Convenience routine to create an empty node flatbuffer.
 void extractEmptyNodeFlatBuffer(std::string* out);
+
+// Returns flatbuffer schema for node info.
+absl::string_view nodeInfoSchema();
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.

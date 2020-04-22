@@ -59,9 +59,12 @@ constexpr absl::string_view node_id = "test_pod.test_namespace";
 
 static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
                     absl::string_view key, absl::string_view value) {
-  filter_state.setData(
-      key, std::make_unique<Envoy::Extensions::Common::Wasm::WasmState>(value),
-      Envoy::StreamInfo::FilterState::StateType::Mutable);
+  Envoy::Extensions::Common::Wasm::WasmStatePrototype prototype;
+  auto state_ptr =
+      std::make_unique<Envoy::Extensions::Common::Wasm::WasmState>(prototype);
+  state_ptr->setValue(value);
+  filter_state.setData(key, std::move(state_ptr),
+                       Envoy::StreamInfo::FilterState::StateType::Mutable);
 }
 
 static const std::string& getData(

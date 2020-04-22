@@ -24,11 +24,16 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
 #include "envoy/stream_info/filter_state.h"
+#include "extensions/common/context.h"
+#include "extensions/common/node_info_bfbs_generated.h"
+#include "extensions/common/wasm/wasm_state.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
 namespace Tcp {
 namespace MetadataExchange {
+
+using ::Envoy::Extensions::Common::Wasm::WasmStatePrototype;
 
 /**
  * All MetadataExchange filter stats. @see stats_macros.h
@@ -75,6 +80,14 @@ class MetadataExchangeConfig {
   const FilterDirection filter_direction_;
   // Stats for MetadataExchange Filter.
   MetadataExchangeStats stats_;
+
+  static const WasmStatePrototype& nodeInfoPrototype() {
+    static const WasmStatePrototype* const prototype = new WasmStatePrototype(
+        true, ::Envoy::Extensions::Common::Wasm::WasmType::FlatBuffers,
+        ::Wasm::Common::nodeInfoSchema(),
+        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+    return *prototype;
+  }
 
  private:
   MetadataExchangeStats generateStats(const std::string& prefix,
@@ -128,7 +141,8 @@ class MetadataExchangeFilter : public Network::Filter,
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to share the metadata with other filters.
-  void setFilterState(const std::string& key, absl::string_view value);
+  void updatePeer(const Envoy::ProtobufWkt::Struct& struct_value);
+  void updatePeerId(absl::string_view key, absl::string_view value);
 
   // Helper function to get Dynamic metadata.
   void getMetadata(google::protobuf::Struct* metadata);
@@ -149,20 +163,6 @@ class MetadataExchangeFilter : public Network::Filter,
   Network::WriteFilterCallbacks* write_callbacks_{};
   // Stores the length of proxy data that contains node metadata.
   uint64_t proxy_data_length_{0};
-
-  // Key Identifier for dynamic metadata in upstream filter.
-  const std::string UpstreamMetadataKey =
-      "envoy.wasm.metadata_exchange.upstream";
-  const std::string UpstreamMetadataIdKey =
-      "envoy.wasm.metadata_exchange.upstream_id";
-
-  // Key Identifier for dynamic metadata in downstream filter.
-  const std::string DownstreamMetadataKey =
-      "envoy.wasm.metadata_exchange.downstream";
-  const std::string DownstreamMetadataIdKey =
-      "envoy.wasm.metadata_exchange.downstream_id";
-  const std::string MetadataNotFoundValue =
-      "envoy.wasm.metadata_exchange.peer_unknown";
 
   const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";

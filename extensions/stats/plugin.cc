@@ -493,11 +493,11 @@ void PluginRootContext::onTick() {
 bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                bool is_tcp) {
   std::string peer_id;
-  getValue({"filter_state", peer_metadata_id_key_}, &peer_id);
+  getValue({peer_metadata_id_key_}, &peer_id);
 
   std::string peer;
   const ::Wasm::Common::FlatNode* peer_node =
-      getValue({"filter_state", peer_metadata_key_}, &peer)
+      getValue({peer_metadata_key_}, &peer)
           ? flatbuffers::GetRoot<::Wasm::Common::FlatNode>(peer.data())
           : nullptr;
 

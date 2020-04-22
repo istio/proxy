@@ -371,7 +371,7 @@ class MockUpstream {
               new ResponseMessageImpl(ResponseHeaderMapPtr{
                   new TestResponseHeaderMapImpl{{":status", "200"}}}));
           response_message->body().reset(new Buffer::OwnedImpl(response_body_));
-          cb.onSuccess(std::move(response_message));
+          cb.onSuccess(request_, std::move(response_message));
           called_count_++;
           return &request_;
         }));
@@ -782,7 +782,7 @@ TEST_F(JwtAuthenticatorTest, TestPubkeyFetchFail) {
 
   Http::ResponseMessagePtr response_message(new ResponseMessageImpl(
       ResponseHeaderMapPtr{new TestResponseHeaderMapImpl{{":status", "401"}}}));
-  callbacks->onSuccess(std::move(response_message));
+  callbacks->onSuccess(request, std::move(response_message));
 }
 
 TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
@@ -821,7 +821,7 @@ TEST_F(JwtAuthenticatorTest, TestInvalidPubkey) {
   Http::ResponseMessagePtr response_message(new ResponseMessageImpl(
       ResponseHeaderMapPtr{new TestResponseHeaderMapImpl{{":status", "200"}}}));
   response_message->body().reset(new Buffer::OwnedImpl("invalid publik key"));
-  callbacks->onSuccess(std::move(response_message));
+  callbacks->onSuccess(request, std::move(response_message));
 }
 
 TEST_F(JwtAuthenticatorTest, TestOnDestroy) {
