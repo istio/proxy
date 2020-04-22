@@ -22,63 +22,6 @@ import (
 	"istio.io/proxy/test/envoye2e/driver"
 )
 
-const ClientHTTPListener = `
-name: client
-traffic_direction: OUTBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ClientPort }}
-filter_chains:
-- filters:
-  - name: http
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: client
-      http_filters:
-      - name: envoy.filters.http.router
-      route_config:
-        name: client
-        virtual_hosts:
-        - name: client
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              cluster: outbound|9080|http|server.default.svc.cluster.local
-              timeout: 0s
-`
-
-const ServerHTTPListener = `
-name: server
-traffic_direction: INBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ServerPort }}
-filter_chains:
-- filters:
-  - name: http
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: server
-      http_filters:
-      - name: envoy.filters.http.router
-      route_config:
-        name: server
-        virtual_hosts:
-        - name: server
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              cluster: inbound|9080|http|server.default.svc.cluster.local
-              timeout: 0s
-{{ .Vars.ServerTLSContext | indent 2 }}
-`
-
 func TestBasicTCPFlow(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"ConnectionCount":       "10",
@@ -128,8 +71,8 @@ func TestBasicHTTP(t *testing.T) {
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{ClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{ServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
@@ -147,8 +90,8 @@ func TestBasicHTTPwithTLS(t *testing.T) {
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{ClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{ServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
@@ -166,8 +109,11 @@ func TestBasicHTTPGateway(t *testing.T) {
 		[]driver.Step{
 			&driver.XDS{},
 			&driver.Update{Node: "server", Version: "0",
-				Clusters:  []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
-				Listeners: []string{ClientHTTPListener, ServerHTTPListener},
+				Clusters: []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+				},
 			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
