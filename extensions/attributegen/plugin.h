@@ -57,86 +57,45 @@ using google::protobuf::util::Status;
 
 class Match {
  public:
-  explicit Match(std::string condition, uint32_t condition_token,
-                 std::string value)
+  explicit Match(const std::string& condition, uint32_t condition_token,
+                 const std::string& value)
       : condition_(condition),
         condition_token_(condition_token),
         value_(value){};
 
-  // Returns the result of evaluation or nothing in case of an error.
-  Optional<bool> evaluate() const {
-    if (condition_.empty()) {
-      LOG_DEBUG(absl::StrCat("Matched empty condition: value=", value_));
-      return true;
-    }
+  Optional<bool> evaluate() const;
+  const std::string& value() const { return value_; };
 
-    bool matched;
-    if (!evaluateExpression(condition_token_, &matched)) {
-      LOG_WARN(absl::StrCat("Failed to evaluate expression: ", condition_));
-      return {};
-    }
-    if (matched) {
-      LOG_DEBUG(absl::StrCat("Matched: ", condition_));
-    }
-    return matched;
-  };
-
-  std::string value() const { return value_; };
-
-  void cleanup() {
-    if (!condition_.empty()) {
-      exprDelete(condition_token_);
-    }
-  }
-
- protected:
-  // Only used for debug messages after construction.
-  std::string condition_;
+ private:
+  const std::string condition_;
   // Expression token associated with the condition.
-  uint32_t condition_token_;
-  std::string value_;
+  const uint32_t condition_token_;
+  const std::string value_;
 };
 
-enum EvalPhase { on_log, on_request };
+enum EvalPhase { OnLog, OnRequest };
 
 class AttributeGenerator {
  public:
-  explicit AttributeGenerator(EvalPhase phase, std::string output_attribute)
+  explicit AttributeGenerator(EvalPhase phase,
+                              const std::string& output_attribute,
+                              const std::vector<Match> matches)
       : phase_(phase),
         output_attribute_(output_attribute),
-        error_attribute_(absl::StrCat(output_attribute, "_error")) {}
+        error_attribute_(absl::StrCat(output_attribute, "__error")),
+        matches_(std::move(matches)) {}
 
   // If evaluation is successful returns true and sets result.
-  Optional<bool> evaluate(std::string* val) const {
-    for (const auto& match : matches_) {
-      auto eval_status = match.evaluate();
-      if (!eval_status) {
-        return {};
-      }
-      if (eval_status.value()) {
-        *val = match.value();
-        return true;
-      }
-    }
-    return false;
-  }
-
+  Optional<bool> evaluate(std::string* val) const;
   EvalPhase phase() const { return phase_; }
-  std::string output_attribute() const { return output_attribute_; }
-  std::string error_attribute() const { return error_attribute_; }
-  void add_match(Match match) { matches_.push_back(match); }
-  void cleanup() {
-    for (auto match : matches_) {
-      match.cleanup();
-    }
-    matches_.clear();
-  }
+  const std::string& outputAttribute() const { return output_attribute_; }
+  const std::string& errorAttribute() const { return error_attribute_; }
 
- protected:
+ private:
   EvalPhase phase_;
-  std::string output_attribute_;
-  std::string error_attribute_;
-  std::vector<Match> matches_;
+  const std::string output_attribute_;
+  const std::string error_attribute_;
+  const std::vector<Match> matches_;
 };
 
 // PluginRootContext is the root context for all streams processed by the
@@ -145,25 +104,33 @@ class AttributeGenerator {
 class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
-      : RootContext(id, root_id) {}
-  ~PluginRootContext() = default;
+      : RootContext(id, root_id) {
+    Metric error_count(MetricType::Counter, "error_count",
+                       {MetricTag{"wasm_filter", MetricTag::TagType::String},
+                        MetricTag{"cache", MetricTag::TagType::String}});
+    config_errors_ = error_count.resolve("attributegen", "config");
+    runtime_errors_ = error_count.resolve("attributegen", "runtime");
+  }
 
   bool onConfigure(size_t) override;
-  // is called even if
-  bool onDone() override {
-    cleanupAttributeGen();
-    return true;
-  };
+  bool onDone() override;
   void attributeGen(EvalPhase);
 
- protected:
+ private:
   // Destroy host resources for the allocated expressions.
   void cleanupAttributeGen();
-
   bool initAttributeGen(const istio::attributegen::PluginConfig& config);
 
- private:
+  // list of generators.
   std::vector<AttributeGenerator> gen_;
+  // Token are created and destroyed by PluginContext.
+  std::vector<uint32_t> tokens_;
+
+  bool debug_;
+
+  // error counter metrics.
+  uint32_t config_errors_;
+  uint32_t runtime_errors_;
 };
 
 // Per-stream context.
@@ -171,10 +138,10 @@ class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
-  void onLog() override { rootContext()->attributeGen(on_log); };
+  void onLog() override { rootContext()->attributeGen(OnLog); };
 
   FilterHeadersStatus onRequestHeaders(uint32_t) override {
-    rootContext()->attributeGen(on_request);
+    rootContext()->attributeGen(OnRequest);
     return FilterHeadersStatus::Continue;
   }
 

@@ -35,6 +35,55 @@ namespace Plugin {
 
 namespace AttributeGen {
 
+// class Match
+// Returns the result of evaluation or nothing in case of an error.
+Optional<bool> Match::evaluate() const {
+  if (condition_.empty()) {
+    return true;
+  }
+
+  const std::string function = "expr_evaluate";
+  char* out = nullptr;
+  size_t out_size = 0;
+  auto result = proxy_call_foreign_function(
+      function.data(), function.size(),
+      reinterpret_cast<const char*>(&condition_token_), sizeof(uint32_t), &out,
+      &out_size);
+  if (result != WasmResult::Ok) {
+    LOG_TRACE(absl::StrCat("Failed to evaluate expression:[", condition_token_,
+                           "] ", condition_, " result: ", toString(result)));
+    return {};
+  }
+  if (out_size != sizeof(bool)) {
+    LOG_TRACE(absl::StrCat("Expression:[", condition_token_, "] ", condition_,
+                           " did not return a bool, size:", out_size));
+    return {};
+  }
+
+  return (*reinterpret_cast<bool*>(out));
+}
+
+// end class Match
+
+// class AttributeGenerator
+
+// If evaluation is successful returns true and sets result.
+Optional<bool> AttributeGenerator::evaluate(std::string* val) const {
+  for (const auto& match : matches_) {
+    auto eval_status = match.evaluate();
+    if (!eval_status) {
+      return {};
+    }
+    if (eval_status.value()) {
+      *val = match.value();
+      return true;
+    }
+  }
+  return false;
+}
+
+// end class AttributeGenerator
+
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
   // Parse configuration JSON string.
@@ -45,76 +94,109 @@ bool PluginRootContext::onConfigure(size_t) {
       JsonStringToMessage(configuration->toString(), &config, json_options);
   if (status != Status::OK) {
     LOG_WARN(absl::StrCat(
-        "Cannot parse plugin configuration JSON string [YAML not supported]: ",
+        "Cannot parse 'attributegen' plugin configuration JSON string [YAML is "
+        "not supported]: ",
         configuration->toString()));
+    incrementMetric(config_errors_, 1);
     return false;
   }
 
-  return initAttributeGen(config);
+  debug_ = config.debug();
+
+  cleanupAttributeGen();
+  auto init_status = initAttributeGen(config);
+  if (!init_status) {
+    incrementMetric(config_errors_, 1);
+    cleanupAttributeGen();
+  }
+
+  return init_status;
 }
 
 bool PluginRootContext::initAttributeGen(
     const istio::attributegen::PluginConfig& config) {
-  // Clear prior host resources.
-  // TODO(mjog) see if this still needed since onDone is always called.
-  cleanupAttributeGen();
-
-  for (auto agconfig : config.attributes()) {
-    EvalPhase phase = on_log;
-    if (agconfig.phase() == istio::attributegen::ON_REQUEST) {
-      phase = on_request;
+  for (const auto& attribute_gen_config : config.attributes()) {
+    EvalPhase phase = OnLog;
+    if (attribute_gen_config.phase() == istio::attributegen::ON_REQUEST) {
+      phase = OnRequest;
     }
-    auto ag = AttributeGenerator(phase, agconfig.output_attribute());
-    for (auto matchconfig : agconfig.match()) {
+    std::vector<Match> matches;
+
+    for (const auto& matchconfig : attribute_gen_config.match()) {
       uint32_t token = 0;
       if (matchconfig.condition().empty()) {
-        ag.add_match(Match("", 0, matchconfig.value()));
+        matches.push_back(Match("", 0, matchconfig.value()));
         continue;
       }
-      if (createExpression(matchconfig.condition(), &token) != WasmResult::Ok) {
+      auto create_status = createExpression(matchconfig.condition(), &token);
+
+      if (create_status != WasmResult::Ok) {
         LOG_WARN(absl::StrCat("Cannot create expression: <",
                               matchconfig.condition(), "> for ",
-                              agconfig.output_attribute()));
+                              attribute_gen_config.output_attribute(),
+                              " result:", toString(create_status)));
         return false;
       }
-      LOG_DEBUG(absl::StrCat("Added ", agconfig.output_attribute(), " if (",
-                             matchconfig.condition(), ") -> ",
-                             matchconfig.value()));
-      ag.add_match(Match(matchconfig.condition(), token, matchconfig.value()));
+      if (debug_) {
+        LOG_DEBUG(absl::StrCat(
+            "Added [", token, "] ", attribute_gen_config.output_attribute(),
+            " if (", matchconfig.condition(), ") -> ", matchconfig.value()));
+      }
+
+      tokens_.push_back(token);
+      matches.push_back(
+          Match(matchconfig.condition(), token, matchconfig.value()));
     }
-    gen_.push_back(ag);
+    gen_.push_back(AttributeGenerator(
+        phase, attribute_gen_config.output_attribute(), std::move(matches)));
+    matches.clear();
   }
   return true;
 }
 
 void PluginRootContext::cleanupAttributeGen() {
-  for (auto ag : gen_) {
-    ag.cleanup();
-  }
   gen_.clear();
+  for (const auto& token : tokens_) {
+    exprDelete(token);
+  }
+  tokens_.clear();
+}
+
+bool PluginRootContext::onDone() {
+  cleanupAttributeGen();
+  return true;
 }
 
 // attributeGen is called on the data path.
 void PluginRootContext::attributeGen(EvalPhase phase) {
-  for (const auto& ag : gen_) {
-    if (phase != ag.phase()) {
+  for (const auto& attribute_generator : gen_) {
+    if (phase != attribute_generator.phase()) {
       continue;
     }
 
     std::string val;
-    auto eval_status = ag.evaluate(&val);
+    auto eval_status = attribute_generator.evaluate(&val);
     if (!eval_status) {
-      LOG_DEBUG(absl::StrCat("Failed eval. setting ", ag.error_attribute()));
+      incrementMetric(runtime_errors_, 1);
+
       // eval failed set error attribute
-      setFilterState(ag.error_attribute(), "1");
+      // __error attribute should be used by downstream plugins to distinguish
+      // between
+      // 1. No conditions matched.
+      // 2. Error evaluating a condition.
+      setFilterState(attribute_generator.errorAttribute(), "1");
       continue;
     }
 
     if (!eval_status.value()) {
       continue;
     }
-    LOG_DEBUG(absl::StrCat("Setting ", ag.output_attribute(), " --> ", val));
-    setFilterState(ag.output_attribute(), val);
+
+    if (debug_) {
+      LOG_DEBUG(absl::StrCat("Setting ", attribute_generator.outputAttribute(),
+                             " --> ", val));
+    }
+    setFilterState(attribute_generator.outputAttribute(), val);
   }
 }
 

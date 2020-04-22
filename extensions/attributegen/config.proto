@@ -25,8 +25,8 @@ syntax = "proto3";
 // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
 // as inputs and produces new attributes that can be used by downstream plugins.
 //
-// The following is an example of a configuration that produces one attribute named
-// `istio.operationId` using `request.url_path` and `request.method`.
+// The following is an example of a configuration that produces one attribute
+// named `istio.operationId` using `request.url_path` and `request.method`.
 //
 // {{<tabset category-name="example">}}
 // {{<tab name="v1alpha3" category-value="v1alpha3">}}
@@ -34,19 +34,23 @@ syntax = "proto3";
 // {
 //   "attributes": [
 //     {
-//       "output_attribute": "istio.operationId", 
+//       "output_attribute": "istio.operationId",
 //       "match": [
 //         {
-//           "value": "ListBooks", 
-//           "condition": "request.url_path == '/books' && request.method == 'GET'"
-//         }, 
+//           "value": "ListBooks",
+//           "condition": "request.url_path == '/books' && request.method ==
+//           'GET'"
+//         },
 //         {
-//           "value": "GetBook", 
-//           "condition": "request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$') && request.method == 'GET'"
-//         }, 
+//           "value": "GetBook",
+//           "condition":
+//           "request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$')
+//           && request.method == 'GET'"
+//         },
 //         {
-//           "value": "CreateBook", 
-//           "condition": "request.url_path == '/books/' && request.method == 'POST'"
+//           "value": "CreateBook",
+//           "condition": "request.url_path == '/books/' && request.method ==
+//           'POST'"
 //         }
 //       ]
 //     }
@@ -56,11 +60,12 @@ syntax = "proto3";
 // ```
 // {{</tab>}}
 // {{</tabset>}}
-// If the Stats plugin runs after AttributeGen, it can use `istio.operationId` to populate a
-// dimension on a metric.
+// If the Stats plugin runs after AttributeGen, it can use `istio.operationId`
+// to populate a dimension on a metric.
 //
-// The following is an example of response codes being mapped into a smaller number of response classes as the `istio.responseClass` attribute.
-// For example, all response codes in 200s are mapped to `2xx`.
+// The following is an example of response codes being mapped into a smaller
+// number of response classes as the `istio.responseClass` attribute. For
+// example, all response codes in 200s are mapped to `2xx`.
 //
 // {{<tabset category-name="example">}}
 // {{<tab name="v1alpha3" category-value="v1alpha3">}}
@@ -68,34 +73,34 @@ syntax = "proto3";
 // {
 //   "attributes": [
 //     {
-//       "output_attribute": "istio.responseClass", 
+//       "output_attribute": "istio.responseClass",
 //       "match": [
 //         {
-//           "value": "2xx", 
+//           "value": "2xx",
 //           "condition": "response.code >= 200 && response.code <= 299"
-//         }, 
+//         },
 //         {
-//           "value": "3xx", 
+//           "value": "3xx",
 //           "condition": "response.code >= 300 && response.code <= 399"
-//         }, 
+//         },
 //         {
-//           "value": "404", 
+//           "value": "404",
 //           "condition": "response.code == 404"
-//         }, 
+//         },
 //         {
-//           "value": "429", 
+//           "value": "429",
 //           "condition": "response.code == 429"
-//         }, 
+//         },
 //         {
-//           "value": "503", 
+//           "value": "503",
 //           "condition": "response.code == 503"
-//         }, 
+//         },
 //         {
-//           "value": "5xx", 
+//           "value": "5xx",
 //           "condition": "response.code >= 500 && response.code <= 599"
-//         }, 
+//         },
 //         {
-//           "value": "4xx", 
+//           "value": "4xx",
 //           "condition": "response.code >= 400 && response.code <= 499"
 //         }
 //       ]
@@ -107,12 +112,12 @@ syntax = "proto3";
 // {{</tab>}}
 // {{</tabset>}}
 //
-// If multiple AttributeGene configurations produce the same attribute, the result of
-// the last configuration will be visible to downstream filters.
+// If multiple AttributeGene configurations produce the same attribute, the
+// result of the last configuration will be visible to downstream filters.
 package istio.attributegen;
 
-// Top level configuration to generate new attributes based on attributes of the proxied
-// traffic.
+// Top level configuration to generate new attributes based on attributes of the
+// proxied traffic.
 message PluginConfig {
   // The following settings should be rarely used.
   // Enable debug for this filter.
@@ -138,10 +143,10 @@ message AttributeGeneration {
   // AttributeGeneration may fail to evaluate when an attribute is not
   // available. For example, `response.code` may not be available when a request
   // ends abruptly. When evaluation fails the plugin will set an error_attribute
-  // to `"1"`, where `error_attribute = ${output_attribute}_error`.
+  // to `"1"`, where `error_attribute = ${output_attribute}__error`.
   //
-  // Use `has(attribute_name)` function to check for presence of an attribute if you
-  // expect a source attribute to be missing from time to time.
+  // Use `has(attribute_name)` function to check for presence of an attribute if
+  // you expect a source attribute to be missing from time to time.
   //
   // If the generated attribute is used by an authz plugin, it should fail the
   // request if the `error_attribute` is set. If the generated attribute is used
@@ -166,19 +171,23 @@ message Match {
   // {{<tab name="attribute-match" >}}
   // ```yaml
   //    {
-  //      "value": "GetBook", 
-  //      "condition": "request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$') && request.method == 'GET'"
-  //    }, 
+  //      "value": "GetBook",
+  //      "condition":
+  //      "request.url_path.matches('^/shelves/[[:alnum:]]*/books/[[:alnum:]]*$')
+  //      && request.method == 'GET'"
+  //    },
   // ```
   // Note: CEL uses [re2](https://github.com/google/re2/wiki/Syntax) regex
-  // library. Use anchors `{^, $}` to ensure that the regex evaluates efficiently.
+  // library. Use anchors `{^, $}` to ensure that the regex evaluates
+  // efficiently.
   //
   // Note: `request.url_path` is normalized and stripped of query params.
   //
   // a Read only operation on books
   // ```yaml
   // { "value": "ReadOnlyBooks",
-  //   "condition": "request.url_path.startsWith('/books/') && in(request.method, ['GET', 'HEAD'])"}
+  //   "condition": "request.url_path.startsWith('/books/') &&
+  //   in(request.method, ['GET', 'HEAD'])"}
   // ```
   // {{</tab>}}
   //

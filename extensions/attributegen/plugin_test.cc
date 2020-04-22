@@ -145,7 +145,6 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
 
   virtual void setupConfig(ConfigParams c) {
     auto params = GetParam();
-
     if (!c.plugin_config_file.empty()) {
       c.plugin_config =
           readfile(params.testdata_dir + "/" + c.plugin_config_file);
@@ -288,12 +287,12 @@ class AttributeGenFilterTest : public WasmHttpFilterTest {
   void verify_request(Http::TestRequestHeaderMapImpl& request_headers,
                       Http::TestResponseHeaderMapImpl& response_headers,
                       const std::string& attribute, bool found, bool error,
-                      const std::string& value) {
+                      const std::string& value = "") {
     auto fs = makeTestRequest(request_headers, response_headers);
 
+    ASSERT_EQ(fs->hasData<WasmState>(attribute + "__error"), error);
     ASSERT_EQ(fs->hasData<WasmState>(attribute), found)
         << absl::StrCat(attribute, "=?", value);
-    ASSERT_EQ(fs->hasData<WasmState>(attribute + "_error"), error);
     if (found) {
       ASSERT_EQ(fs->getDataReadOnly<WasmState>(attribute).value(), value)
           << absl::StrCat(attribute, "=?", value);
@@ -313,6 +312,7 @@ INSTANTIATE_TEST_SUITE_P(Runtimes, AttributeGenFilterTest,
                          testing::ValuesIn(generateTestParams()));
 
 TEST_P(AttributeGenFilterTest, OneMatch) {
+  const std::string attribute = "istio.operationId";
   const char* plugin_config = R"EOF(
                     {"attributes": [{"output_attribute": "istio.operationId",
                     "match": [{"value":
@@ -323,16 +323,12 @@ TEST_P(AttributeGenFilterTest, OneMatch) {
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  makeTestRequest(request_headers, response_headers);
-
-  auto fs = request_stream_info_.filterState();
-  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), true);
-  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId_error"), false);
-  const auto& operationId = fs->getDataReadOnly<WasmState>("istio.operationId");
-  ASSERT_EQ(operationId.value(), "GetStatus");
+  verify_request(request_headers, response_headers, attribute, true, false,
+                 "GetStatus");
 }
 
 TEST_P(AttributeGenFilterTest, ExprEvalError) {
+  const std::string attribute = "istio.operationId";
   const char* plugin_config = R"EOF(
                     {"attributes": [{"output_attribute": "istio.operationId",
                     "match": [{"value":
@@ -343,11 +339,7 @@ TEST_P(AttributeGenFilterTest, ExprEvalError) {
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  makeTestRequest(request_headers, response_headers);
-
-  auto fs = request_stream_info_.filterState();
-  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), false);
-  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId_error"), true);
+  verify_request(request_headers, response_headers, attribute, false, true);
 }
 
 TEST_P(AttributeGenFilterTest, UnparseableConfig) {
@@ -369,22 +361,19 @@ TEST_P(AttributeGenFilterTest, BadExpr) {
 }
 
 TEST_P(AttributeGenFilterTest, NoMatch) {
+  const std::string attribute = "istio.operationId";
   const char* plugin_config = R"EOF(
                     {"attributes": [{"output_attribute": "istio.operationId",
                     "match": [{"value":
                             "GetStatus", "condition": "request.url_path.startsWith('/status') && request.method == 'POST'"}]}]}
   )EOF";
-  setupConfig({.plugin_config = plugin_config});
+  setupConfig({.plugin_config = plugin_config, .mock_logger = false});
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"},
                                                  {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  makeTestRequest(request_headers, response_headers);
-
-  auto fs = request_stream_info_.filterState();
-  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId"), false);
-  ASSERT_EQ(fs->hasData<WasmState>("istio.operationId_error"), false);
+  verify_request(request_headers, response_headers, attribute, false, false);
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileList) {
@@ -412,8 +401,7 @@ TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
                                                  {":method", "POST"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verify_request(request_headers, response_headers, attribute, false, false,
-                 "");
+  verify_request(request_headers, response_headers, attribute, false, false);
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileGet) {
