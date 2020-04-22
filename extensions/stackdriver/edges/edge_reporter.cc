@@ -68,7 +68,7 @@ void instanceFromMetadata(const ::Wasm::Common::FlatNode& node_info,
     }
   }
 
-  instance->set_owner_uid(flatbuffers::GetString(node_info.owner()));
+  instance->set_owner_uid(Common::getOwner(node_info));
   instance->set_workload_name(
       flatbuffers::GetString(node_info.workload_name()));
   instance->set_workload_namespace(

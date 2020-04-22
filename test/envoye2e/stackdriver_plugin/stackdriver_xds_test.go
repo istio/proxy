@@ -431,6 +431,42 @@ func TestStackdriverVMReload(t *testing.T) {
 	}
 }
 
+func TestStackdriverGCEInstances(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/gce_client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/gce_server_node_metadata.json.tmpl")
+
+	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			sd,
+			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
+			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/gce_client_request_count.yaml.tmpl", "testdata/stackdriver/gce_server_request_count.yaml.tmpl"},
+				nil,
+				nil,
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // Expects estimated 20s log dumping interval from stackdriver
 func TestStackdriverParallel(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
