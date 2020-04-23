@@ -11,10 +11,15 @@ traffic_assertions:
     owner_uid: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
     workload_name: productpage-v1
     workload_namespace: default
+    canonical_service: productpage-v1
+    canonical_revision: version-1
   destination:
     uid: kubernetes://ratings-v1-84975bc778-pxz2w.default
     location: us-east4-b
     cluster_name: test-cluster
     owner_uid: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
     workload_name: ratings-v1
-    workload_namespace: default  
+    workload_namespace: default
+    canonical_service: ratings
+    canonical_revision: version-1
+

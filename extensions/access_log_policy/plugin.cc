@@ -84,7 +84,7 @@ bool PluginRootContext::onConfigure(size_t) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
-    logWarn("Cannot parse Stackdriver plugin configuration JSON string " +
+    logWarn("Cannot parse AccessLog plugin configuration JSON string " +
             configuration->toString() + ", " + status.message().ToString());
     return false;
   }

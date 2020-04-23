@@ -46,6 +46,8 @@ done
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
 ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
+ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 WASM_SDK_IMAGE=${WASM_SDK_IMAGE:=gcr.io/istio-testing/wasmsdk}
 export WASM_SDK_TAG=${ENVOY_SHA}
 
@@ -59,13 +61,13 @@ if [[ "$(docker images -q ${WASM_SDK_IMAGE}:${WASM_SDK_TAG} 2> /dev/null)" == ""
     exit 1
   fi
   # Clone envoy-wasm repo and checkout to that SHA
-  TMP_DIR=$(mktemp -d -t envoy-wasm-XXXXXXXXXX)
+  TMP_DIR=$(mktemp -d -t ${ENVOY_REPO}-XXXXXXXXXX)
   trap "rm -rf ${TMP_DIR}" EXIT
 
   # Check out to envoy SHA
   cd ${TMP_DIR}
-  git clone https://github.com/envoyproxy/envoy-wasm
-  cd envoy-wasm
+  git clone https://github.com/${ENVOY_ORG}/${ENVOY_REPO}
+  cd ${ENVOY_REPO}
   git checkout ${ENVOY_SHA}
 
   # Rebuild and push

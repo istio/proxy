@@ -80,6 +80,41 @@ void buildEnvoyGrpcService(
   }
 }
 
+std::string getOwner(const ::Wasm::Common::FlatNode &node) {
+  // do not override supplied owner
+  if (node.owner()) {
+    return flatbuffers::GetString(node.owner());
+  }
+
+  auto platform_metadata = node.platform_metadata();
+  if (!platform_metadata) {
+    return "";
+  }
+
+  // only attempt for GCE Instances at this point, first check for MIG.
+  auto created_by = platform_metadata->LookupByKey(kGCECreatedByKey.data());
+  if (created_by) {
+    return absl::StrCat("//compute.googleapis.com/",
+                        flatbuffers::GetString(created_by->value()));
+  }
+
+  // then handle unmanaged GCE Instance case
+  auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
+  auto project = platform_metadata->LookupByKey(kGCPProjectNumberKey.data());
+  auto location = platform_metadata->LookupByKey(kGCPLocationKey);
+  if (instance_id && project && location) {
+    // Should be of the form:
+    // //compute.googleapis.com/projects/%s/zones/%s/instances/%s
+    return absl::StrCat("//compute.googleapis.com/projects/",
+                        flatbuffers::GetString(project->value()), "/zones/",
+                        flatbuffers::GetString(location->value()),
+                        "/instances/",
+                        flatbuffers::GetString(instance_id->value()));
+  }
+
+  return "";
+}
+
 void getMonitoredResource(const std::string &monitored_resource_type,
                           const ::Wasm::Common::FlatNode &local_node_info,
                           MonitoredResource *monitored_resource) {

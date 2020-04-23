@@ -37,6 +37,7 @@ using namespace google::protobuf::util;
 constexpr absl::string_view node_metadata_json = R"###(
 {
    "NAMESPACE":"test_namespace",
+   "CLUSTER_ID": "test-cluster",
    "PLATFORM_METADATA":{
       "gcp_project":"test_project",
       "gcp_cluster_location":"test_location",
@@ -67,6 +68,7 @@ TEST(ContextTest, extractNodeMetadata) {
   EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(),
             "test_project");
   EXPECT_EQ(peer->app_containers()->size(), 2);
+  EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
 }
 
 // Test extractNodeMetadataValue.

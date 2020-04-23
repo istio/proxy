@@ -17,6 +17,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -245,6 +246,7 @@ bool extractPartialLocalNodeFlatBuffer(std::string* out) {
   node.add_workload_name(workload_name);
   node.add_istio_version(istio_version);
   node.add_mesh_id(mesh_id);
+  node.add_cluster_id(cluster_id);
   node.add_labels(labels_offset);
   auto data = node.Finish();
   fbb.Finish(data);
@@ -294,6 +296,12 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"request", "duration"}, &request_info->duration);
   getValue({"request", "total_size"}, &request_info->request_size);
   getValue({"response", "total_size"}, &request_info->response_size);
+}
+
+absl::string_view nodeInfoSchema() {
+  return absl::string_view(
+      reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
+      FlatNodeBinarySchema::size());
 }
 
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {

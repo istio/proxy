@@ -24,6 +24,7 @@ envoy_cc_library(
         "//extensions/common:json_lib",
         "//extensions/common:proto_util",
         "@envoy//source/common/common:base64_lib",
+        "@envoy//source/extensions/common/wasm:declare_property_cc_proto",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )

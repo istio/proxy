@@ -74,24 +74,24 @@ void map_node(IstioDimensions& instance, bool is_source,
       auto version = version_iter ? version_iter->value() : nullptr;
       FB_ASSIGN(source_version, version);
 
-      auto canonical_name =
-          source_labels->LookupByKey("service.istio.io/canonical-name");
+      auto canonical_name = source_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceLabelName.data());
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
       FB_ASSIGN(source_canonical_service, name);
 
-      auto rev =
-          source_labels->LookupByKey("service.istio.io/canonical-revision");
+      auto rev = source_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
         FB_ASSIGN(source_canonical_revision, rev->value());
       } else {
-        instance[source_canonical_revision] = "latest";
+        instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
       }
     } else {
       instance[source_app] = "";
       instance[source_version] = "";
       instance[source_canonical_service] = "";
-      instance[source_canonical_revision] = "latest";
+      instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
   } else {
     FB_ASSIGN(destination_workload, node.workload_name());
@@ -107,24 +107,25 @@ void map_node(IstioDimensions& instance, bool is_source,
       auto version = version_iter ? version_iter->value() : nullptr;
       FB_ASSIGN(destination_version, version);
 
-      auto canonical_name =
-          destination_labels->LookupByKey("service.istio.io/canonical-name");
+      auto canonical_name = destination_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceLabelName.data());
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
       FB_ASSIGN(destination_canonical_service, name);
 
       auto rev = destination_labels->LookupByKey(
-          "service.istio.io/canonical-revision");
+          ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
         FB_ASSIGN(destination_canonical_revision, rev->value());
       } else {
-        instance[destination_canonical_revision] = "latest";
+        instance[destination_canonical_revision] =
+            ::Wasm::Common::kLatest.data();
       }
     } else {
       instance[destination_app] = "";
       instance[destination_version] = "";
       instance[destination_canonical_service] = "";
-      instance[destination_canonical_revision] = "latest";
+      instance[destination_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
 
     FB_ASSIGN(destination_service_namespace, node.namespace_());
@@ -534,11 +535,11 @@ void PluginRootContext::onTick() {
 bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                bool is_tcp) {
   std::string peer_id;
-  getValue({"filter_state", peer_metadata_id_key_}, &peer_id);
+  getValue({peer_metadata_id_key_}, &peer_id);
 
   std::string peer;
   const ::Wasm::Common::FlatNode* peer_node =
-      getValue({"filter_state", peer_metadata_key_}, &peer)
+      getValue({peer_metadata_key_}, &peer)
           ? flatbuffers::GetRoot<::Wasm::Common::FlatNode>(peer.data())
           : nullptr;
 
