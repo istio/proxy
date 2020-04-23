@@ -156,10 +156,10 @@ genrule(
 )
 
 envoy_cc_library(
-    name = "json_lib",
-    srcs = ["json.cc"],
+    name = "json_util",
+    srcs = ["json_util.cc"],
     hdrs = [
-        "json.h",
+        "json_util.h",
         ":nlohmann_json_hpp",
     ],
     repository = "@envoy",

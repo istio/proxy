@@ -38,7 +38,7 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//extensions/common:context",
-        "//extensions/common:json_lib",
+        "//extensions/common:json_util",
         "@envoy//api/wasm/cpp/contrib:contrib_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
