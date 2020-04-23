@@ -19,7 +19,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/json.h"
+#include "extensions/common/json_util.h"
 #include "extensions/common/proto_util.h"
 
 #ifndef NULL_PLUGIN

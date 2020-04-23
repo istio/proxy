@@ -14,7 +14,7 @@
  */
 
 #include "absl/strings/numbers.h"
-#include "extensions/common/json.h"
+#include "extensions/common/json_util.h"
 
 namespace Wasm {
 namespace Common {
