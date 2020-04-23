@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#include "absl/strings/numbers.h"
 #include "extensions/common/json_util.h"
+
+#include "absl/strings/numbers.h"
 
 namespace Wasm {
 namespace Common {
