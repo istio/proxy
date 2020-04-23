@@ -280,6 +280,7 @@ func TestStackdriverVMReload(t *testing.T) {
 }
 
 func TestStackdriverGCEInstances(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
