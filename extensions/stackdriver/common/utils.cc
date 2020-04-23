@@ -107,8 +107,7 @@ std::string getOwner(const ::Wasm::Common::FlatNode &node) {
     // //compute.googleapis.com/projects/%s/zones/%s/instances/%s
     return absl::StrCat("//compute.googleapis.com/projects/",
                         project->value()->string_view(), "/zones/",
-                        location->value()->string_view(),
-                        "/instances/",
+                        location->value()->string_view(), "/instances/",
                         instance_id->value()->string_view());
   }
 
