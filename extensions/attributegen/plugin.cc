@@ -193,13 +193,6 @@ void PluginRootContext::attributeGen(EvalPhase phase) {
     auto eval_status = attribute_generator.evaluate(&val);
     if (!eval_status) {
       incrementMetric(runtime_errors_, 1);
-
-      // eval failed set error attribute
-      // __error attribute should be used by downstream plugins to distinguish
-      // between
-      // 1. No conditions matched.
-      // 2. Error evaluating a condition.
-      setFilterState(attribute_generator.errorAttribute(), "1");
       continue;
     }
 

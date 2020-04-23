@@ -142,15 +142,16 @@ message AttributeGeneration {
   //
   // AttributeGeneration may fail to evaluate when an attribute is not
   // available. For example, `response.code` may not be available when a request
-  // ends abruptly. When evaluation fails the plugin will set an error_attribute
-  // to `"1"`, where `error_attribute = ${output_attribute}__error`.
+  // ends abruptly. When attribute generation fails, it will not populate the
+  // attribute.
   //
-  // Use `has(attribute_name)` function to check for presence of an attribute if
-  // you expect a source attribute to be missing from time to time.
+  // If the generated attribute is used by an authz plugin, it should account
+  // for the possibility that the attribute may be missing. Use
+  // `has(attribute_name)` function to check for presence of an attribute before
+  // using its value, and provide appropriate defaults. For example the
+  // following is a safe use of `response.code`
   //
-  // If the generated attribute is used by an authz plugin, it should fail the
-  // request if the `error_attribute` is set. If the generated attribute is used
-  // by Stats, it may log the error but not fail the request.
+  // `has(response.code)?response.code:200`
   string output_attribute = 2;
 
   // Matches are evaluated in order until the first successful match.

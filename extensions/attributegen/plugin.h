@@ -82,19 +82,16 @@ class AttributeGenerator {
                               const std::vector<Match>& matches)
       : phase_(phase),
         output_attribute_(output_attribute),
-        error_attribute_(absl::StrCat(output_attribute, "__error")),
         matches_(std::move(matches)) {}
 
   // If evaluation is successful returns true and sets result.
   Optional<bool> evaluate(std::string* val) const;
   EvalPhase phase() const { return phase_; }
   const std::string& outputAttribute() const { return output_attribute_; }
-  const std::string& errorAttribute() const { return error_attribute_; }
 
  private:
   EvalPhase phase_;
   const std::string output_attribute_;
-  const std::string error_attribute_;
   const std::vector<Match> matches_;
 };
 
