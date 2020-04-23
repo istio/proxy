@@ -148,12 +148,19 @@ cc_library(
     deps = ["@com_github_google_flatbuffers//:runtime_cc"],
 )
 
+genrule(
+    name = "nlohmann_json_hpp",
+    srcs = ["@com_github_nlohmann_json_single_header//file"],
+    outs = ["nlohmann_json.hpp"],
+    cmd = "cp $< $@",
+    )
+
 envoy_cc_library(
     name = "json_lib",
     srcs = ["json.cc"],
     hdrs = [
         "json.h",
-        "nlohmann_json.hpp",
+        ":nlohmann_json_hpp",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
