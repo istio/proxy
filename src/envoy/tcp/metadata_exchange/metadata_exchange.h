@@ -24,6 +24,7 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
 #include "envoy/stream_info/filter_state.h"
+#include "extensions/common/proto_util.h"
 #include "extensions/common/context.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/wasm/wasm_state.h"
