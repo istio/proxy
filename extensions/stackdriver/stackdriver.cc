@@ -301,9 +301,8 @@ void StackdriverRootContext::record() {
   std::string peer;
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          getValue({"filter_state", metadata_key}, &peer)
-              ? peer.data()
-              : empty_node_info_.data());
+          getValue({metadata_key}, &peer) ? peer.data()
+                                          : empty_node_info_.data());
   const ::Wasm::Common::FlatNode& local_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
   const ::Wasm::Common::FlatNode& destination_node_info =
@@ -322,8 +321,7 @@ void StackdriverRootContext::record() {
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
-    if (!getValue({"filter_state", ::Wasm::Common::kDownstreamMetadataIdKey},
-                  &peer_id)) {
+    if (!getValue({::Wasm::Common::kDownstreamMetadataIdKey}, &peer_id)) {
       LOG_DEBUG(absl::StrCat(
           "cannot get metadata for: ", ::Wasm::Common::kDownstreamMetadataIdKey,
           "; skipping edge."));
@@ -347,8 +345,7 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
 
 bool StackdriverRootContext::shouldLogThisRequest() {
   std::string shouldLog = "";
-  if (!getValue({"filter_state", ::Wasm::Common::kAccessLogPolicyKey},
-                &shouldLog)) {
+  if (!getValue({::Wasm::Common::kAccessLogPolicyKey}, &shouldLog)) {
     LOG_DEBUG("cannot get envoy access log info from filter state.");
     return true;
   }

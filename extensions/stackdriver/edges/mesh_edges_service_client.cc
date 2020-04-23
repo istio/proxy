@@ -79,9 +79,11 @@ void MeshEdgesServiceClientImpl::reportTrafficAssertions(
   LOG_TRACE("mesh edge services client: sending request '" +
             request.DebugString() + "'");
 
-  context_->grpcSimpleCall(
-      grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
-      kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
+  HeaderStringPairs initial_metadata;
+  context_->grpcSimpleCall(grpc_service_, kMeshEdgesService,
+                           kReportTrafficAssertions, initial_metadata, request,
+                           kDefaultTimeoutMillisecond, success_callback_,
+                           failure_callback_);
 }
 
 }  // namespace Edges

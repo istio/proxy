@@ -15,6 +15,13 @@
 
 syntax = "proto3";
 
+// clang-format off
+// $title: Stackdriver Config
+// $description: Configuration for Stackdriver filter.
+// $location: https://istio.io/docs/reference/config/proxy_extensions/stackdriver.html
+// $weight: 20
+// clang-format on
+
 package stackdriver.config.v1alpha1;
 
 import "google/protobuf/duration.proto";

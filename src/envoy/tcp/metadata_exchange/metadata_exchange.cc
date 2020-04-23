@@ -25,8 +25,6 @@
 #include "common/protobuf/utility.h"
 #include "envoy/network/connection.h"
 #include "envoy/stats/scope.h"
-#include "extensions/common/context.h"
-#include "extensions/common/wasm/wasm_state.h"
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 
 namespace Envoy {
@@ -269,35 +267,54 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
       Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
-    Envoy::ProtobufWkt::Value val = key_metadata_it->second;
-    flatbuffers::FlatBufferBuilder fbb;
-    if (::Wasm::Common::extractNodeFlatBuffer(val.struct_value(), fbb)) {
-      setFilterState(config_->filter_direction_ == FilterDirection::Downstream
-                         ? DownstreamMetadataKey
-                         : UpstreamMetadataKey,
-                     absl::string_view(
-                         reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                         fbb.GetSize()));
-    }
+    updatePeer(key_metadata_it->second.struct_value());
   }
   const auto key_metadata_id_it =
       value_struct.fields().find(ExchangeMetadataHeaderId);
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_id_it->second;
-    setFilterState(config_->filter_direction_ == FilterDirection::Downstream
-                       ? DownstreamMetadataIdKey
-                       : UpstreamMetadataIdKey,
-                   val.string_value());
+    updatePeerId(config_->filter_direction_ == FilterDirection::Downstream
+                     ? ::Wasm::Common::kDownstreamMetadataIdKey
+                     : ::Wasm::Common::kUpstreamMetadataIdKey,
+                 val.string_value());
   }
 }
 
-void MetadataExchangeFilter::setFilterState(const std::string& key,
-                                            absl::string_view value) {
+void MetadataExchangeFilter::updatePeer(
+    const Envoy::ProtobufWkt::Struct& struct_value) {
+  flatbuffers::FlatBufferBuilder fbb;
+  if (!::Wasm::Common::extractNodeFlatBuffer(struct_value, fbb)) {
+    return;
+  }
+
+  // Filter object captures schema by view, hence the global singleton for the
+  // prototype.
+  auto state = std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(
+      MetadataExchangeConfig::nodeInfoPrototype());
+  state->setValue(absl::string_view(
+      reinterpret_cast<const char*>(fbb.GetBufferPointer()), fbb.GetSize()));
+
+  auto key = config_->filter_direction_ == FilterDirection::Downstream
+                 ? ::Wasm::Common::kDownstreamMetadataKey
+                 : ::Wasm::Common::kUpstreamMetadataKey;
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      key,
-      std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(value),
+      absl::StrCat("wasm.", key), std::move(state),
       StreamInfo::FilterState::StateType::Mutable,
       StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+}
+
+void MetadataExchangeFilter::updatePeerId(absl::string_view key,
+                                          absl::string_view value) {
+  WasmStatePrototype prototype(
+      true, ::Envoy::Extensions::Common::Wasm::WasmType::String,
+      absl::string_view(),
+      StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+  auto state =
+      std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(prototype);
+  state->setValue(value);
+  read_callbacks_->connection().streamInfo().filterState()->setData(
+      absl::StrCat("wasm.", key), std::move(state),
+      StreamInfo::FilterState::StateType::Mutable, prototype.life_span_);
 }
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
@@ -318,11 +335,10 @@ std::string MetadataExchangeFilter::getMetadataId() {
 }
 
 void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
-  const std::string key =
-      config_->filter_direction_ == FilterDirection::Downstream
-          ? DownstreamMetadataIdKey
-          : UpstreamMetadataIdKey;
-  setFilterState(key, MetadataNotFoundValue);
+  auto key = config_->filter_direction_ == FilterDirection::Downstream
+                 ? ::Wasm::Common::kDownstreamMetadataIdKey
+                 : ::Wasm::Common::kUpstreamMetadataIdKey;
+  updatePeerId(key, ::Wasm::Common::kMetadataNotFoundValue);
 }
 
 }  // namespace MetadataExchange

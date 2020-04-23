@@ -59,7 +59,9 @@ constexpr char kZoneLabel[] = "zone";
 constexpr char kGCPLocationKey[] = "gcp_location";
 constexpr char kGCPClusterNameKey[] = "gcp_gke_cluster_name";
 constexpr char kGCPProjectKey[] = "gcp_project";
+constexpr absl::string_view kGCPProjectNumberKey = "gcp_project_number";
 constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
+constexpr absl::string_view kGCECreatedByKey = "gcp_gce_instance_created_by";
 
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";

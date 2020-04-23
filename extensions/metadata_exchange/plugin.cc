@@ -25,10 +25,12 @@
 #ifndef NULL_PLUGIN
 
 #include "base64.h"
+#include "declare_property.pb.h"
 
 #else
 
 #include "common/common/base64.h"
+#include "source/extensions/common/wasm/declare_property.pb.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -63,14 +65,6 @@ bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
 
 static RegisterContextFactory register_MetadataExchange(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
-
-static RegisterContextFactory register_StatsOutbound(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContextOutbound),
-    "mx_outbound");
-
-static RegisterContextFactory register_StatsInbound(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContextInbound),
-    "mx_inbound");
 
 void PluginRootContext::updateMetadataValue() {
   google::protobuf::Struct node_metadata;
@@ -117,6 +111,25 @@ bool PluginRootContext::onConfigure(size_t) {
   if (config.has_max_peer_cache_size()) {
     max_peer_cache_size_ = config.max_peer_cache_size().value();
   }
+
+  // Declare filter state property type.
+  const std::string function = "declare_property";
+  envoy::source::extensions::common::wasm::DeclarePropertyArguments args;
+  args.set_type(envoy::source::extensions::common::wasm::WasmType::FlatBuffers);
+  args.set_span(
+      envoy::source::extensions::common::wasm::LifeSpan::DownstreamConnection);
+  args.set_schema(::Wasm::Common::nodeInfoSchema().data(),
+                  ::Wasm::Common::nodeInfoSchema().size());
+  std::string in;
+  args.set_name(std::string(::Wasm::Common::kUpstreamMetadataKey));
+  args.SerializeToString(&in);
+  proxy_call_foreign_function(function.data(), function.size(), in.data(),
+                              in.size(), nullptr, nullptr);
+  args.set_name(std::string(::Wasm::Common::kDownstreamMetadataKey));
+  args.SerializeToString(&in);
+  proxy_call_foreign_function(function.data(), function.size(), in.data(),
+                              in.size(), nullptr, nullptr);
+
   return true;
 }
 

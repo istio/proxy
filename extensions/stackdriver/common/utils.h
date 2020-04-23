@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "absl/strings/str_cat.h"
 #include "envoy/config/core/v3/grpc_service.pb.h"
 #include "extensions/common/context.h"
 #include "google/api/monitored_resource.pb.h"
@@ -41,6 +42,13 @@ struct StackdriverStubOption {
 void buildEnvoyGrpcService(
     const StackdriverStubOption &option,
     ::envoy::config::core::v3::GrpcService *grpc_service);
+
+// Returns "owner" information for a node. If that information
+// has been directly set, that value is returned. If not, and the owner
+// can be entirely derived from platform metadata, this will derive the
+// owner. Currently, this is only supported for GCE Instances. For
+// anything else, this will return the empty string.
+std::string getOwner(const ::Wasm::Common::FlatNode &node);
 
 // Gets monitored resource proto based on the type and node metadata info.
 // Only two types of monitored resource could be returned: k8s_container or

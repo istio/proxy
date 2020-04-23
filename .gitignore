@@ -14,4 +14,5 @@ test/envoye2e/http_metadata_exchange/testoutput
 .vscode
 /extensions/common/flatbuffers
 /extensions/common/node_info_generated.h
+/extensions/common/node_info_bfbs_generated.h
 /extensions/common/proxy_expr.h

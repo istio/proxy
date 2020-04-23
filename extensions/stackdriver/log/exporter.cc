@@ -88,11 +88,12 @@ void ExporterImpl::exportLogs(
         const google::logging::v2::WriteLogEntriesRequest>>& requests,
     bool is_on_done) {
   is_on_done_ = is_on_done;
+  HeaderStringPairs initial_metadata;
   for (const auto& req : requests) {
     auto result = context_->grpcSimpleCall(
         grpc_service_string_, kGoogleLoggingService,
-        kGoogleWriteLogEntriesMethod, *req, kDefaultTimeoutMillisecond,
-        success_callback_, failure_callback_);
+        kGoogleWriteLogEntriesMethod, initial_metadata, *req,
+        kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
     if (result != WasmResult::Ok) {
       LOG_WARN("failed to make stackdriver logging export call");
       break;

@@ -15,6 +15,13 @@
 
 syntax = "proto3";
 
+// clang-format off
+// $title: Metadata Exchange Config
+// $description: Configuration for Metadata Exchange Filter.
+// $location: https://istio.io/docs/reference/config/proxy_extensions/metadata_exchange.html.
+// $weight: 20
+// clang-format on
+
 package metadata_exchange;
 
 import "google/protobuf/wrappers.proto";

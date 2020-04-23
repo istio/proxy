@@ -76,18 +76,6 @@ class PluginRootContext : public RootContext {
   uint32_t max_peer_cache_size_{DefaultNodeCacheMaxSize};
 };
 
-class PluginRootContextOutbound : public PluginRootContext {
- public:
-  PluginRootContextOutbound(uint32_t id, StringView root_id)
-      : PluginRootContext(id, root_id){};
-};
-
-class PluginRootContextInbound : public PluginRootContext {
- public:
-  PluginRootContextInbound(uint32_t id, StringView root_id)
-      : PluginRootContext(id, root_id){};
-};
-
 // Per-stream context.
 class PluginContext : public Context {
  public:
