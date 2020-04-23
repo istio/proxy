@@ -153,7 +153,7 @@ genrule(
     srcs = ["@com_github_nlohmann_json_single_header//file"],
     outs = ["nlohmann_json.hpp"],
     cmd = "cp $< $@",
-    )
+)
 
 envoy_cc_library(
     name = "json_lib",
