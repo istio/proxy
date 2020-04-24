@@ -293,7 +293,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         }
         return true;
       })) {
-    LOG_WARN("failed to parse 'dimensions'");
+    LOG_WARN("failed to parse 'definitions'");
     return false;
   }
 
@@ -414,7 +414,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
       1, "proxy",
       absl::StrCat(flatbuffers::GetString(local_node.istio_version()), ";"));
   return true;
-}  // namespace Stats
+}
 
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
