@@ -15,10 +15,18 @@
 
 syntax = "proto3";
 
+// $title: AccessLogPolicy Config
+// $description: Configuration for AccessLogPolicy Filter.
+// $location: https://istio.io/docs/reference/config/proxy_extensions/accesslogpolicy.html
+// $weight: 20
+// This filter logs all error requests. Success requests are repeatedly logged
+// once per source ip and source principal in the configured log window
+// duration.
 package accesslogpolicy.config.v1alpha1;
 
 import "google/protobuf/duration.proto";
 
+// Top level Config for Access Log Policy Config Filter.
 message AccessLogPolicyConfig {
   // next id: 3
 
