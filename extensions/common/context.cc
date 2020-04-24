@@ -99,7 +99,8 @@ void extractServiceName(const std::string& host,
 //   part as destination service name. Otherwise, fallback to use destination
 //   host for destination service name.
 void getDestinationService(const std::string& dest_namespace,
-                           bool use_host_header, std::string* dest_svc_host,
+                           bool use_host_header, std::string* request_host,
+                           std::string* dest_svc_host,
                            std::string* dest_svc_name) {
   std::string cluster_name;
   getValue({"cluster_name"}, &cluster_name);
@@ -108,6 +109,7 @@ void getDestinationService(const std::string& dest_namespace,
                                            kAuthorityHeaderKey)
                              ->toString()
                        : "unknown";
+  *request_host = *dest_svc_host;
 
   // override the cluster name if this is being sent to the
   // blackhole or passthrough cluster
@@ -143,6 +145,7 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
   // Get destination service name and host based on cluster name and host
   // header.
   getDestinationService(destination_namespace, use_host_header_fallback,
+                        &request_info->request_host,
                         &request_info->destination_service_host,
                         &request_info->destination_service_name);
 
@@ -348,7 +351,6 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   }
 
   getValue({"request", "url_path"}, &request_info->url_path);
-  getValue({"request", "host"}, &request_info->url_host);
   getValue({"request", "scheme"}, &request_info->url_scheme);
 }
 

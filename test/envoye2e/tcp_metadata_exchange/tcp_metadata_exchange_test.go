@@ -100,6 +100,7 @@ const ServerTransportSocket = `transport_socket:
       require_client_certificate: true`
 
 func TestTCPMetadataExchange(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServerNetworkFilters":     ServerMXFilter + ServerStatsFilter,
 		"ClientNetworkFilters":     ClientStatsFilter,
@@ -157,6 +158,7 @@ func TestTCPMetadataExchange(t *testing.T) {
 }
 
 func TestTCPMetadataExchangeNoAlpn(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServerNetworkFilters":     ServerMXFilter + ServerStatsFilter,
 		"DisableDirectResponse":    "true",

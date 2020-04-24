@@ -246,6 +246,7 @@ var TestCases = []struct {
 
 func TestStatsPayload(t *testing.T) {
 	env.SkipTSanASan(t)
+	t.Parallel()
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
@@ -290,6 +291,7 @@ func TestStatsPayload(t *testing.T) {
 
 func TestStatsParallel(t *testing.T) {
 	env.SkipTSanASan(t)
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":               "1",
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
@@ -351,6 +353,7 @@ func TestStatsParallel(t *testing.T) {
 }
 
 func TestStatsGrpc(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":               "10",
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",

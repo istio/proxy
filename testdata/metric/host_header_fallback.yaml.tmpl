@@ -50,6 +50,8 @@ metric:
     value: "-"
   - name: connection_security_policy
     value: unknown
+  - name: request_host
+    value: 127.0.0.1:{{ .Ports.ClientPort }}
   - name: configurable_metric_a
     value: localhost:server
   - name: configurable_metric_b

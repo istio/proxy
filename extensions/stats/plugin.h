@@ -95,7 +95,8 @@ using google::protobuf::util::Status;
   FIELD_FUNC(response_code)                  \
   FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)
+  FIELD_FUNC(connection_security_policy)     \
+  FIELD_FUNC(request_host)
 
 // Aggregate metric values in a shared and reusable bag.
 using IstioDimensions = std::vector<std::string>;

@@ -44,5 +44,7 @@ metric:
     value: "200"
   - name: connection_security_policy
     value: unknown
+  - name: request_host
+    value: 127.0.0.1:{{ .Ports.ClientPort }}
   - name: configurable_metric_a
     value: gateway

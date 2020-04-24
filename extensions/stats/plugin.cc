@@ -157,6 +157,7 @@ void map_request(IstioDimensions& instance,
   instance[response_flags] = request.response_flag;
   instance[connection_security_policy] = absl::AsciiStrToLower(std::string(
       ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy)));
+  instance[request_host] = request.request_host;
 }
 
 // maps peer_node and request to dimensions.

@@ -112,7 +112,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
       ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS;
   request_info.duration = 10000000000;  // 10s in nanoseconds
   request_info.url_scheme = "http";
-  request_info.url_host = "httpbin.org";
+  request_info.request_host = "httpbin.org";
   request_info.url_path = "/headers";
   request_info.request_id = "123";
   request_info.b3_trace_id = "123abc";

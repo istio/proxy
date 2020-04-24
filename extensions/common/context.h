@@ -113,6 +113,9 @@ struct RequestInfo {
   // The path portion of the URL without the query string.
   std::string request_url_path;
 
+  // Request host header.
+  std::string request_host;
+
   // Service authentication policy (NONE, MUTUAL_TLS)
   ServiceAuthenticationPolicy service_auth_policy =
       ServiceAuthenticationPolicy::Unspecified;
@@ -137,7 +140,6 @@ struct RequestInfo {
 
   // HTTP URL related attributes.
   std::string url_path;
-  std::string url_host;
   std::string url_scheme;
 
   // TCP variables.
