@@ -17,7 +17,8 @@ syntax = "proto3";
 
 // $title: AccessLogPolicy Config
 // $description: Configuration for AccessLogPolicy Filter.
-// $location: https://istio.io/docs/reference/config/proxy_extensions/accesslogpolicy.html
+// $location:
+// https://istio.io/docs/reference/config/proxy_extensions/accesslogpolicy.html
 // $weight: 20
 // This filter logs all error requests. Success requests are repeatedly logged
 // once per source ip and source principal in the configured log window
