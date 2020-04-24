@@ -123,6 +123,12 @@ lint: lint-copyright-banner format-go lint-go tidy-go
 protoc = protoc -I common-protos -I extensions
 protoc_gen_docs_plugin := --docs_out=warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
 
+attributegen_path := extensions/attributegen
+attributegen_protos := $(wildcard $(attributegen_path)/*.proto)
+attributegen_docs := $(attributegen_protos:.proto=.pb.html)
+$(attributegen_docs): $(attributegen_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(attributegen_path) $^
+
 metadata_exchange_path := extensions/metadata_exchange
 metadata_exchange_protos := $(wildcard $(metadata_exchange_path)/*.proto)
 metadata_exchange_docs := $(metadata_exchange_protos:.proto=.pb.html)
@@ -141,7 +147,7 @@ stackdriver_docs := $(stackdriver_protos:.proto=.pb.html)
 $(stackdriver_docs): $(stackdriver_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stackdriver_path) $^
 
-extensions-docs: $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs)
+extensions-docs: $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs)
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
