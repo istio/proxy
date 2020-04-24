@@ -147,8 +147,8 @@ stackdriver_docs := $(stackdriver_protos:.proto=.pb.html)
 $(stackdriver_docs): $(stackdriver_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stackdriver_path) $^
 
-accesslog_policy_path := extensions/access_log_policy
-accesslog_policy_protos := $(wildcard $(accesslog_policy_path)/config/v1alpha1/*.proto)
+accesslog_policy_path := extensions/access_log_policy/config/v1alpha1
+accesslog_policy_protos := $(wildcard $(accesslog_policy_path)/*.proto)
 accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
 $(accesslog_policy_docs): $(accesslog_policy_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
