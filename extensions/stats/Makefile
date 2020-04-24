@@ -4,7 +4,7 @@ CPP_CONTEXT_LIB = ${CPP_API}/proxy_wasm_intrinsics.cc
 ABSL = /root/abseil-cpp
 ABSL_CPP = ${ABSL}/absl/strings/str_cat.cc ${ABSL}/absl/strings/str_split.cc ${ABSL}/absl/strings/numbers.cc ${ABSL}/absl/strings/ascii.cc ${ABSL}/absl/time/duration.cc ${ABSL}/absl/numeric/int128.cc
 
-COMMON_SRCS = extensions/common/context.cc extensions/common/util.cc extensions/common/json.cc
+COMMON_SRCS = extensions/common/context.cc extensions/common/util.cc extensions/common/json_util.cc
 
 all: plugin.wasm
 
