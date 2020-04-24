@@ -272,9 +272,14 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         auto value =
             JsonGetField<std::string>(definition, "value").value_or("");
         if (name.empty() || value.empty()) {
-          return true;
+          LOG_WARN("empty name or value in  'definitions'");
+          return false;
         }
         auto token = addIntExpression(value);
+        if (!token.has_value()) {
+          LOG_WARN(absl::StrCat("failed to construct expression: ", value));
+          return false;
+        }
         auto& factory = factories[name];
         factory.name = name;
         factory.extractor =
