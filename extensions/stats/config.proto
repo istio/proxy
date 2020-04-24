@@ -73,6 +73,7 @@ message PluginConfig {
   // maximum size of the peer metadata cache.
   // A long lived proxy that connects with many transient peers can build up a
   // large cache. To turn off the cache, set this field to a negative value.
+  // DEPRECATED.
   int32 max_peer_cache_size = 2;
 
   // prefix to add to stats emitted by the plugin.

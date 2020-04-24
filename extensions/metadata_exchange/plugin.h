@@ -73,7 +73,7 @@ class PluginRootContext : public RootContext {
 
   // maps peer ID to the decoded peer flat buffer
   std::unordered_map<std::string, std::string> cache_;
-  uint32_t max_peer_cache_size_{DefaultNodeCacheMaxSize};
+  int64_t max_peer_cache_size_{DefaultNodeCacheMaxSize};
 };
 
 // Per-stream context.

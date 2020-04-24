@@ -37,17 +37,11 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        ":config_cc_proto",
         "//extensions/common:context",
+        "//extensions/common:json_util",
         "@envoy//api/wasm/cpp/contrib:contrib_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
-)
-
-cc_proto_library(
-    name = "config_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = ["config_proto"],
 )
 
 proto_library(

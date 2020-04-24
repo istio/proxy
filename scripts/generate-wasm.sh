@@ -90,6 +90,7 @@ if [ -n "${DST_BUCKET}" ]; then
   TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
   trap "rm -rf ${TMP_WASM}" EXIT
   for i in `find . -name "*.wasm" -type f`; do
+    ls -lh ${i}
     # Get name of the plugin
     PLUGIN_NAME=$(basename $(dirname ${i}))
     # Rename the plugin file and generate sha256 for it

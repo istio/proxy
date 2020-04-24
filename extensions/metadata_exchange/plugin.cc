@@ -19,8 +19,8 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/metadata_exchange/config.pb.h"
-#include "google/protobuf/util/json_util.h"
+#include "extensions/common/json_util.h"
+#include "extensions/common/proto_util.h"
 
 #ifndef NULL_PLUGIN
 
@@ -98,18 +98,17 @@ bool PluginRootContext::onConfigure(size_t) {
 
   // Parse configuration JSON string.
   std::unique_ptr<WasmData> configuration = getConfiguration();
-  google::protobuf::util::JsonParseOptions json_options;
-  json_options.ignore_unknown_fields = true;
-  metadata_exchange::PluginConfig config;
-  const auto status = google::protobuf::util::JsonStringToMessage(
-      configuration->toString(), &config, json_options);
-  if (!status.ok()) {
-    logWarn(absl::StrCat("cannot parse plugin configuration JSON string ",
-                         configuration->toString()));
+  auto j = ::Wasm::Common::JsonParse(configuration->view());
+  if (!j.is_object()) {
+    logWarn(absl::StrCat("cannot parse plugin configuration JSON string: ",
+                         configuration->view(), j.dump()));
     return false;
   }
-  if (config.has_max_peer_cache_size()) {
-    max_peer_cache_size_ = config.max_peer_cache_size().value();
+
+  auto max_peer_cache_size =
+      ::Wasm::Common::JsonGetField<int64_t>(j, "max_peer_cache_size");
+  if (max_peer_cache_size.has_value()) {
+    max_peer_cache_size_ = max_peer_cache_size.value();
   }
 
   // Declare filter state property type.

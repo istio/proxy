@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "extensions/common/proto_util.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"

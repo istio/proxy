@@ -20,8 +20,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
-#include "extensions/stats/config.pb.h"
-#include "google/protobuf/util/json_util.h"
+#include "extensions/common/json_util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -65,12 +64,6 @@ const std::string vDash = "-";
 const std::string default_field_separator = ";.;";
 const std::string default_value_separator = "=.=";
 const std::string default_stat_prefix = "istio";
-
-using google::protobuf::util::JsonParseOptions;
-using google::protobuf::util::Status;
-
-#define CONFIG_DEFAULT(name) \
-  config_.name().empty() ? default_##name : config_.name()
 
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
@@ -252,7 +245,7 @@ class PluginRootContext : public RootContext {
   const std::vector<MetricFactory>& defaultMetrics();
   // Update the dimensions and the expressions data structures with the new
   // configuration.
-  void initializeDimensions();
+  bool initializeDimensions(const ::nlohmann::json& j);
   // Destroy host resources for the allocated expressions.
   void cleanupExpressions();
   // Allocate an expression if necessary and return its token position.
@@ -261,7 +254,6 @@ class PluginRootContext : public RootContext {
   Optional<uint32_t> addIntExpression(const std::string& input);
 
  private:
-  stats::PluginConfig config_;
   std::string local_node_info_;
   std::string empty_node_info_;
 

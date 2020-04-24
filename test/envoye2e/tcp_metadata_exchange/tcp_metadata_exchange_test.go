@@ -51,7 +51,7 @@ const ServerStatsFilter = `
           code:
             local: { inline_string: "envoy.wasm.stats" }
         configuration: |
-          { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "1s" }`
+          { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }`
 
 const ClientStatsFilter = `
 - name: envoy.filters.network.wasm
@@ -66,7 +66,7 @@ const ClientStatsFilter = `
           code:
             local: { inline_string: "envoy.wasm.stats" }
         configuration: |
-          { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;", tcp_reporting_duration: "1s" }`
+          { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }`
 
 const ClientTransportSocket = `transport_socket:
   name: tls
