@@ -299,7 +299,6 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         return true;
       })) {
     LOG_WARN("failed to parse 'definitions'");
-    return false;
   }
 
   // Process the dimension overrides.
@@ -368,7 +367,6 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         return true;
       })) {
     LOG_WARN("failed to parse 'metrics'");
-    return false;
   }
 
   // Local data does not change, so populate it on config load.
