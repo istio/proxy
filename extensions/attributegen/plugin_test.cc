@@ -199,9 +199,9 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
     Extensions::Common::Wasm::createWasmForTesting(
         proto_config.config().vm_config(), plugin_, scope_, cluster_manager_,
         init_manager_, dispatcher_, random_, *api, lifecycle_notifier_,
+        remote_data_provider_,
         std::unique_ptr<Envoy::Extensions::Common::Wasm::Context>(
             root_context_),
-        remote_data_provider_,
         [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; });
     // wasm_ is set correctly
     // This will only call onStart.
