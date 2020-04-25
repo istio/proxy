@@ -26,10 +26,10 @@ syntax = "proto3";
 //  1. All requests resulting in errors are logged.
 //  2. First successful request within log_window_duration from a specific
 //  source ip (source principal) is logged.
-// The plugin records its decision in the access_log_policy with a value of
-// "no". A downstream plugin may honor the the attribute. For example,
-// Stackdriver plugin will not produce an access log entry if this attribute is
-// set.
+// The plugin records its decision in the istio.access_log_policy attribute with
+// a value of "no". A downstream plugin may honor the the attribute. For
+// example, Stackdriver plugin will not produce an access log entry if this
+// attribute is set.
 package accesslogpolicy.config.v1alpha1;
 
 import "google/protobuf/duration.proto";
