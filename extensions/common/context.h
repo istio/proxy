@@ -39,7 +39,7 @@ constexpr StringView kDownstreamMetadataKey = "downstream_peer";
 const std::string kMetadataNotFoundValue =
     "envoy.wasm.metadata_exchange.peer_unknown";
 
-constexpr StringView kAccessLogPolicyKey = "access_log_policy";
+constexpr StringView kAccessLogPolicyKey = "istio.access_log_policy";
 
 // Header keys
 constexpr StringView kAuthorityHeaderKey = ":authority";
