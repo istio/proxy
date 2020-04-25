@@ -23,6 +23,9 @@ syntax = "proto3";
 // This filter logs all error requests. Success requests are repeatedly logged
 // once per source ip and source principal in the configured log window
 // duration.
+// This filter should be placed before an access log producer filter in the
+// filterchain. It sets envoy filterstate with key "access_log_policy" and
+// value "no", if the access log producer should sample this access log.
 package accesslogpolicy.config.v1alpha1;
 
 import "google/protobuf/duration.proto";
