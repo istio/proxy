@@ -1,9 +1,22 @@
 ---
-title: accesslogpolicy.config.v1alpha1
+title: AccessLogPolicy Config
+description: Configuration for AccessLogPolicy Filter.
 layout: protoc-gen-docs
 generator: protoc-gen-docs
+location:
+weight: 20
 number_of_entries: 1
 ---
+<p>Accesslog Policy plugin is a stateful http log sampler.
+It decides whether a request is logged based on the following rules.
+ 1. All requests resulting in errors are logged.
+ 2. First successful request within log<em>window</em>duration from a specific
+ source ip (source principal) is logged.
+The plugin records its decision in the access<em>log</em>policy with a value of
+&ldquo;no&rdquo;. A downstream plugin may honor the the attribute. For example,
+Stackdriver plugin will not produce an access log entry if this attribute is
+set.</p>
+
 <h2 id="AccessLogPolicyConfig">AccessLogPolicyConfig</h2>
 <section>
 <p>Top level Config for Access Log Policy Config Filter.</p>
