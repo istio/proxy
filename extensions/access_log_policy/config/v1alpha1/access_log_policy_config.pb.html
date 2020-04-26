@@ -1,0 +1,60 @@
+---
+title: AccessLogPolicy Config
+description: Configuration for AccessLogPolicy Filter.
+layout: protoc-gen-docs
+generator: protoc-gen-docs
+location:
+weight: 20
+number_of_entries: 1
+---
+<p>Accesslog Policy plugin is a stateful http log sampler.
+It decides whether a request is logged based on the following rules.
+ 1. All requests resulting in errors are logged.
+ 2. First successful request within log<em>window</em>duration from a specific
+ source ip (source principal) is logged.
+The plugin records its decision in the istio.access<em>log</em>policy attribute with
+a value of &ldquo;no&rdquo;. A downstream plugin may honor the the attribute. For
+example, Stackdriver plugin will not produce an access log entry if this
+attribute is set.</p>
+
+<h2 id="AccessLogPolicyConfig">AccessLogPolicyConfig</h2>
+<section>
+<p>Top level Config for Access Log Policy Config Filter.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="AccessLogPolicyConfig-log_window_duration">
+<td><code>logWindowDuration</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>Optional. Allows specifying logging window for successful requests.
+The default duration is <code>12h</code>.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="AccessLogPolicyConfig-max_client_cache_size">
+<td><code>maxClientCacheSize</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Optional. Allows specifying max client cache size.
+The default is 500 entries.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>

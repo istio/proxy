@@ -15,10 +15,26 @@
 
 syntax = "proto3";
 
+// $title: AccessLogPolicy Config
+// $description: Configuration for AccessLogPolicy Filter.
+// $location:
+// https://istio.io/docs/reference/config/proxy_extensions/accesslogpolicy.html
+// $weight: 20
+
+// Accesslog Policy plugin is a stateful http log sampler.
+// It decides whether a request is logged based on the following rules.
+//  1. All requests resulting in errors are logged.
+//  2. First successful request within log_window_duration from a specific
+//  source ip (source principal) is logged.
+// The plugin records its decision in the istio.access_log_policy attribute with
+// a value of "no". A downstream plugin may honor the the attribute. For
+// example, Stackdriver plugin will not produce an access log entry if this
+// attribute is set.
 package accesslogpolicy.config.v1alpha1;
 
 import "google/protobuf/duration.proto";
 
+// Top level Config for Access Log Policy Config Filter.
 message AccessLogPolicyConfig {
   // next id: 3
 

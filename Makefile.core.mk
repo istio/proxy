@@ -148,7 +148,13 @@ stackdriver_docs := $(stackdriver_protos:.proto=.pb.html)
 $(stackdriver_docs): $(stackdriver_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stackdriver_path) $^
 
-extensions-docs: $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs)
+accesslog_policy_path := extensions/access_log_policy/config/v1alpha1
+accesslog_policy_protos := $(wildcard $(accesslog_policy_path)/*.proto)
+accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
+$(accesslog_policy_docs): $(accesslog_policy_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
+
+extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
