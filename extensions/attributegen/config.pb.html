@@ -184,7 +184,7 @@ value.</p>
 expression</a>
 that may use <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition">builtin attributes</a>.</p>
 
-<p>Example:
+<p>{{<tabset category-name="example">}} Example:
 {{<tab name="attribute-match" >}}</p>
 
 <pre><code class="language-yaml">   {
@@ -208,7 +208,8 @@ efficiently.</p>
   in(request.method, ['GET', 'HEAD'])&quot;}
 </code></pre>
 
-<p>{{</tab>}}</p>
+<p>{{</tab>}}
+{{</tabset>}}</p>
 
 <p>An empty condition evaluates to <code>true</code> and should be used to provide a
 default value.</p>
