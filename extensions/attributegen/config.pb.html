@@ -1,7 +1,7 @@
 ---
 title: AttributeGen Config
 description: Configuration for Attribute Generation plugin.
-location: https://istio.io/docs/reference/config/attributegen.html
+location: https://istio.io/docs/reference/config/proxy_extensions/attributegen.html
 layout: protoc-gen-docs
 generator: protoc-gen-docs
 schema: istio.attributegen
@@ -104,47 +104,6 @@ example, all response codes in 200s are mapped to <code>2xx</code>.</p>
 <p>If multiple AttributeGene configurations produce the same attribute, the
 result of the last configuration will be visible to downstream filters.</p>
 
-<h2 id="PluginConfig">PluginConfig</h2>
-<section>
-<p>Top level configuration to generate new attributes based on attributes of the
-proxied traffic.</p>
-
-<table class="message-fields">
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Description</th>
-<th>Required</th>
-</tr>
-</thead>
-<tbody>
-<tr id="PluginConfig-debug">
-<td><code>debug</code></td>
-<td><code>bool</code></td>
-<td>
-<p>The following settings should be rarely used.
-Enable debug for this filter.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-<tr id="PluginConfig-attributes">
-<td><code>attributes</code></td>
-<td><code><a href="#AttributeGeneration">AttributeGeneration[]</a></code></td>
-<td>
-<p>Multiple independent attribute generation configurations.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-</tbody>
-</table>
-</section>
 <h2 id="AttributeGeneration">AttributeGeneration</h2>
 <section>
 <p>AttributeGeneration define generation of one attribute.</p>
@@ -268,6 +227,47 @@ No
 <td><code>string</code></td>
 <td>
 <p>If condition evaluates to true, return the <code>value</code>.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="PluginConfig">PluginConfig</h2>
+<section>
+<p>Top level configuration to generate new attributes based on attributes of the
+proxied traffic.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="PluginConfig-debug">
+<td><code>debug</code></td>
+<td><code>bool</code></td>
+<td>
+<p>The following settings should be rarely used.
+Enable debug for this filter.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-attributes">
+<td><code>attributes</code></td>
+<td><code><a href="#AttributeGeneration">AttributeGeneration[]</a></code></td>
+<td>
+<p>Multiple independent attribute generation configurations.</p>
 
 </td>
 <td>
