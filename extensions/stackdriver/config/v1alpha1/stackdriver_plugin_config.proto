@@ -26,9 +26,9 @@ package stackdriver.config.v1alpha1;
 
 import "google/protobuf/duration.proto";
 
-message PluginConfig {
-  // next id: 9
+// next id: 9
 
+message PluginConfig {
   // Optional. Controls whether to export server access log.
   bool disable_server_access_logging = 1;
 
