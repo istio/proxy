@@ -46,8 +46,9 @@ named <code>istio.operationId</code> using <code>request.url_path</code> and <co
 </code></pre>
 
 <p>{{</tab>}}
-{{</tabset>}}
-If the Stats plugin runs after AttributeGen, it can use <code>istio.operationId</code>
+{{</tabset>}}</p>
+
+<p>If the Stats plugin runs after AttributeGen, it can use <code>istio.operationId</code>
 to populate a dimension on a metric.</p>
 
 <p>The following is an example of response codes being mapped into a smaller
@@ -103,6 +104,47 @@ example, all response codes in 200s are mapped to <code>2xx</code>.</p>
 <p>If multiple AttributeGene configurations produce the same attribute, the
 result of the last configuration will be visible to downstream filters.</p>
 
+<h2 id="PluginConfig">PluginConfig</h2>
+<section>
+<p>Top level configuration to generate new attributes based on attributes of the
+proxied traffic.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="PluginConfig-debug">
+<td><code>debug</code></td>
+<td><code>bool</code></td>
+<td>
+<p>The following settings should be rarely used.
+Enable debug for this filter.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-attributes">
+<td><code>attributes</code></td>
+<td><code><a href="#AttributeGeneration">AttributeGeneration[]</a></code></td>
+<td>
+<p>Multiple independent attribute generation configurations.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
 <h2 id="AttributeGeneration">AttributeGeneration</h2>
 <section>
 <p>AttributeGeneration define generation of one attribute.</p>
@@ -184,7 +226,9 @@ value.</p>
 expression</a>
 that may use <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition">builtin attributes</a>.</p>
 
-<p>Example:
+<p>Example:</p>
+
+<p>{{<tabset category-name="example">}}
 {{<tab name="attribute-match" >}}</p>
 
 <pre><code class="language-yaml">   {
@@ -208,7 +252,8 @@ efficiently.</p>
   in(request.method, ['GET', 'HEAD'])&quot;}
 </code></pre>
 
-<p>{{</tab>}}</p>
+<p>{{</tab>}}
+{{</tabset>}}</p>
 
 <p>An empty condition evaluates to <code>true</code> and should be used to provide a
 default value.</p>
@@ -223,47 +268,6 @@ No
 <td><code>string</code></td>
 <td>
 <p>If condition evaluates to true, return the <code>value</code>.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-</tbody>
-</table>
-</section>
-<h2 id="PluginConfig">PluginConfig</h2>
-<section>
-<p>Top level configuration to generate new attributes based on attributes of the
-proxied traffic.</p>
-
-<table class="message-fields">
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Description</th>
-<th>Required</th>
-</tr>
-</thead>
-<tbody>
-<tr id="PluginConfig-debug">
-<td><code>debug</code></td>
-<td><code>bool</code></td>
-<td>
-<p>The following settings should be rarely used.
-Enable debug for this filter.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-<tr id="PluginConfig-attributes">
-<td><code>attributes</code></td>
-<td><code><a href="#AttributeGeneration">AttributeGeneration[]</a></code></td>
-<td>
-<p>Multiple independent attribute generation configurations.</p>
 
 </td>
 <td>

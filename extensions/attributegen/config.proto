@@ -60,6 +60,7 @@ syntax = "proto3";
 // ```
 // {{</tab>}}
 // {{</tabset>}}
+//
 // If the Stats plugin runs after AttributeGen, it can use `istio.operationId`
 // to populate a dimension on a metric.
 //
@@ -169,6 +170,8 @@ message Match {
   // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition).
   //
   // Example:
+  //
+  // {{<tabset category-name="example">}}
   // {{<tab name="attribute-match" >}}
   // ```yaml
   //    {
@@ -191,6 +194,7 @@ message Match {
   //   in(request.method, ['GET', 'HEAD'])"}
   // ```
   // {{</tab>}}
+  // {{</tabset>}}
   //
   // An empty condition evaluates to `true` and should be used to provide a
   // default value.
