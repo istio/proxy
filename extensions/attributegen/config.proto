@@ -18,7 +18,7 @@ syntax = "proto3";
 // $schema: istio.attributegen
 // $title: AttributeGen Config
 // $description: Configuration for Attribute Generation plugin.
-// $location: https://istio.io/docs/reference/config/attributegen.html
+// $location: https://istio.io/docs/reference/config/proxy_extensions/attributegen.html
 // $weight: 20
 
 // AttributeGen plugin uses [builtin attributes]

@@ -17,8 +17,7 @@ syntax = "proto3";
 
 // $title: AccessLogPolicy Config
 // $description: Configuration for AccessLogPolicy Filter.
-// $location:
-// https://istio.io/docs/reference/config/proxy_extensions/accesslogpolicy.html
+// $location: https://istio.io/docs/reference/config/proxy_extensions/accesslogpolicy.html
 // $weight: 20
 
 // Accesslog Policy plugin is a stateful http log sampler.
