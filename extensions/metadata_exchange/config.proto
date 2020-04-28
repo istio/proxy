@@ -18,7 +18,7 @@ syntax = "proto3";
 // clang-format off
 // $title: Metadata Exchange Config
 // $description: Configuration for Metadata Exchange Filter.
-// $location: https://istio.io/docs/reference/config/proxy_extensions/metadata_exchange.html.
+// $location: https://istio.io/docs/reference/config/proxy_extensions/metadata_exchange.html
 // $weight: 20
 // clang-format on
 
@@ -26,8 +26,9 @@ package metadata_exchange;
 
 import "google/protobuf/wrappers.proto";
 
+// next id: 2
+
 message PluginConfig {
-  // next id: 2
   // maximum size of the peer metadata cache.
   // A long lived proxy that connects with many transient peers can build up a
   // large cache. To turn off the cache, set this field to zero.

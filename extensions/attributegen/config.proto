@@ -15,11 +15,13 @@
 
 syntax = "proto3";
 
+// clang-format off
 // $schema: istio.attributegen
 // $title: AttributeGen Config
 // $description: Configuration for Attribute Generation plugin.
-// $location: https://istio.io/docs/reference/config/attributegen.html
+// $location: https://istio.io/docs/reference/config/proxy_extensions/attributegen.html
 // $weight: 20
+// clang-format on
 
 // AttributeGen plugin uses [builtin attributes]
 // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
