@@ -23,7 +23,7 @@ import (
 )
 
 const ServerMXFilter = `
-- name: envoy.filters.network.metadata_exchange
+- name: istio.metadata_exchange
   typed_config: 
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
     type_url: envoy.tcp.metadataexchange.config.MetadataExchange
@@ -31,7 +31,7 @@ const ServerMXFilter = `
       protocol: mx-protocol`
 
 const ClientMXFilter = `
-- name: envoy.filters.network.upstream.metadata_exchange
+- name: istio.metadata_exchange
   typed_config: 
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
     type_url: envoy.tcp.metadataexchange.config.MetadataExchange
@@ -39,10 +39,10 @@ const ClientMXFilter = `
       protocol: mx-protocol`
 
 const ServerStatsFilter = `
-- name: envoy.filters.network.wasm
+- name: istio.stats
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    type_url: envoy.extensions.filters.network.wasm.v3.Wasm
     value:
       config:
         root_id: "stats_inbound"
@@ -54,10 +54,10 @@ const ServerStatsFilter = `
           { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }`
 
 const ClientStatsFilter = `
-- name: envoy.filters.network.wasm
+- name: istio.stats
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    type_url: envoy.extensions.filters.network.wasm.v3.Wasm
     value:
       config:
         root_id: "stats_outbound"
