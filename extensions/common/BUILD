@@ -47,8 +47,23 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
+        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "proto_util",
+    srcs = [
+        "proto_util.cc",
+    ],
+    hdrs = [
+        "proto_util.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":node_info_fb_cc",
         "@com_google_protobuf//:protobuf",
-        "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
 )
@@ -63,12 +78,13 @@ envoy_cc_library(
 )
 
 envoy_cc_test(
-    name = "context_test",
+    name = "proto_util_test",
     size = "small",
-    srcs = ["context_test.cc"],
+    srcs = ["proto_util_test.cc"],
     repository = "@envoy",
     deps = [
-        ":context",
+        ":node_info_fb_cc",
+        ":proto_util",
         "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
@@ -96,15 +112,16 @@ envoy_cc_test(
 )
 
 envoy_cc_binary(
-    name = "context_speed_test",
+    name = "proto_util_speed_test",
     testonly = True,
-    srcs = ["context_speed_test.cc"],
+    srcs = ["proto_util_speed_test.cc"],
     external_deps = [
         "benchmark",
     ],
     repository = "@envoy",
     deps = [
-        ":context",
+        ":node_info_fb_cc",
+        ":proto_util",
         "@envoy//source/common/stream_info:filter_state_lib",
         "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
         "@envoy//source/extensions/common/wasm:wasm_lib",
@@ -129,4 +146,25 @@ cc_library(
     features = ["-parse_headers"],
     linkstatic = True,
     deps = ["@com_github_google_flatbuffers//:runtime_cc"],
+)
+
+genrule(
+    name = "nlohmann_json_hpp",
+    srcs = ["@com_github_nlohmann_json_single_header//file"],
+    outs = ["nlohmann_json.hpp"],
+    cmd = "cp $< $@",
+)
+
+envoy_cc_library(
+    name = "json_util",
+    srcs = ["json_util.cc"],
+    hdrs = [
+        "json_util.h",
+        ":nlohmann_json_hpp",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
 )

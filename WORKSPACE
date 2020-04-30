@@ -17,7 +17,7 @@
 workspace(name = "io_istio_proxy")
 
 # http_archive is not a native function since bazel 0.19
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 load(
     "//:repositories.bzl",
     "docker_dependencies",
@@ -37,11 +37,11 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit time: 4/20/20
+# Commit time: 4/24/20
 # Used by scripts/generate-wasm.sh
-ENVOY_SHA = "54db920505bc313e37d86921746dd1bf46dc1aa5"
+ENVOY_SHA = "ad7f85b4a264e731be03e05bceaf1aeb1c70641f"
 
-ENVOY_SHA256 = "d1b5546f830e1722bf1af6fde551a624346abf02540c3638e5a41941ff16c036"
+ENVOY_SHA256 = "6a36c3c709c05af8427cb4a0aaadd8abd54bcacb4b616255e28a6ef75d631665"
 
 ENVOY_ORG = "istio"
 
@@ -122,4 +122,12 @@ http_archive(
     sha256 = "b8efbc25721e76780752bad775a97c3f77a0250271e2db37fc747b20e8b0f24a",
     strip_prefix = "flatbuffers-" + FLAT_BUFFERS_SHA,
     url = "https://github.com/google/flatbuffers/archive/" + FLAT_BUFFERS_SHA + ".tar.gz",
+)
+
+http_file(
+    name = "com_github_nlohmann_json_single_header",
+    sha256 = "3b5d2b8f8282b80557091514d8ab97e27f9574336c804ee666fda673a9b59926",
+    urls = [
+        "https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp",
+    ],
 )

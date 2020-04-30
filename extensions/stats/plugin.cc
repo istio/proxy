@@ -16,10 +16,8 @@
 #include "extensions/stats/plugin.h"
 
 #include "absl/strings/ascii.h"
+#include "absl/time/time.h"
 #include "extensions/common/util.h"
-#include "google/protobuf/util/time_util.h"
-
-using google::protobuf::util::TimeUtil;
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -45,7 +43,13 @@ namespace Plugin {
 
 namespace Stats {
 
-constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
+const uint32_t kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
+
+using ::nlohmann::json;
+using ::Wasm::Common::JsonArrayIterate;
+using ::Wasm::Common::JsonGetField;
+using ::Wasm::Common::JsonObjectIterate;
+using ::Wasm::Common::JsonValueAs;
 
 namespace {
 
@@ -240,15 +244,15 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
   return default_metrics;
 }
 
-void PluginRootContext::initializeDimensions() {
+bool PluginRootContext::initializeDimensions(const json& j) {
   // Clean-up existing expressions.
   cleanupExpressions();
 
-  // Maps factory name to a factory instance
+  // Maps metric factory name to a factory instance
   Map<std::string, MetricFactory> factories;
-  // Maps factory name to a list of tags.
+  // Maps metric factory name to a list of tags.
   Map<std::string, std::vector<MetricTag>> metric_tags;
-  // Maps factory name to a map from a tag name to an optional index.
+  // Maps metric factory name to a map from a tag name to an optional index.
   // Empty index means the tag needs to be removed.
   Map<std::string, Map<std::string, Optional<size_t>>> metric_indexes;
 
@@ -263,74 +267,106 @@ void PluginRootContext::initializeDimensions() {
   }
 
   // Process the metric definitions (overriding existing).
-  for (const auto& definition : config_.definitions()) {
-    if (definition.name().empty() || definition.value().empty()) {
-      continue;
-    }
-    auto token = addIntExpression(definition.value());
-    auto& factory = factories[definition.name()];
-    factory.name = definition.name();
-    factory.extractor =
-        [token](const ::Wasm::Common::RequestInfo&) -> uint64_t {
-      int64_t result = 0;
-      evaluateExpression(token.value(), &result);
-      return result;
-    };
-    switch (definition.type()) {
-      case stats::MetricType::COUNTER:
+  if (!JsonArrayIterate(j, "definitions", [&](const json& definition) -> bool {
+        auto name = JsonGetField<std::string>(definition, "name").value_or("");
+        auto value =
+            JsonGetField<std::string>(definition, "value").value_or("");
+        if (name.empty() || value.empty()) {
+          LOG_WARN("empty name or value in  'definitions'");
+          return false;
+        }
+        auto token = addIntExpression(value);
+        if (!token.has_value()) {
+          LOG_WARN(absl::StrCat("failed to construct expression: ", value));
+          return false;
+        }
+        auto& factory = factories[name];
+        factory.name = name;
+        factory.extractor =
+            [token](const ::Wasm::Common::RequestInfo&) -> uint64_t {
+          int64_t result = 0;
+          evaluateExpression(token.value(), &result);
+          return result;
+        };
         factory.type = MetricType::Counter;
-        break;
-      case stats::MetricType::GAUGE:
-        factory.type = MetricType::Gauge;
-        break;
-      case stats::MetricType::HISTOGRAM:
-        factory.type = MetricType::Histogram;
-        break;
-      default:
-        break;
-    }
+        auto type =
+            JsonGetField<absl::string_view>(definition, "type").value_or("");
+        if (type == "GAUGE") {
+          factory.type = MetricType::Gauge;
+        } else if (type == "HISTOGRAM") {
+          factory.type = MetricType::Histogram;
+        }
+        return true;
+      })) {
+    LOG_WARN("failed to parse 'definitions'");
   }
 
   // Process the dimension overrides.
-  for (const auto& metric : config_.metrics()) {
-    // Sort tag override tags to keep the order of tags deterministic.
-    std::vector<std::string> tags;
-    const auto size = metric.dimensions().size();
-    tags.reserve(size);
-    for (const auto& dim : metric.dimensions()) {
-      tags.push_back(dim.first);
-    }
-    std::sort(tags.begin(), tags.end());
+  if (!JsonArrayIterate(j, "metrics", [&](const json& metric) -> bool {
+        // Sort tag override tags to keep the order of tags deterministic.
+        std::vector<std::string> tags;
+        if (!JsonObjectIterate(metric, "dimensions",
+                               [&](std::string dim) -> bool {
+                                 tags.push_back(dim);
+                                 return true;
+                               })) {
+          LOG_WARN("failed to parse 'metric.dimensions'");
+          return false;
+        }
+        std::sort(tags.begin(), tags.end());
 
-    for (const auto& factory_it : factories) {
-      if (!metric.name().empty() && metric.name() != factory_it.first) {
-        continue;
-      }
-      auto& indexes = metric_indexes[factory_it.first];
-      // Process tag deletions.
-      for (const auto& tag : metric.tags_to_remove()) {
-        auto it = indexes.find(tag);
-        if (it != indexes.end()) {
-          it->second = {};
+        auto name = JsonGetField<std::string>(metric, "name").value_or("");
+        for (const auto& factory_it : factories) {
+          if (!name.empty() && name != factory_it.first) {
+            continue;
+          }
+          auto& indexes = metric_indexes[factory_it.first];
+
+          // Process tag deletions.
+          if (!JsonArrayIterate(
+                  metric, "tags_to_remove", [&](const json& tag) -> bool {
+                    auto tag_string = JsonValueAs<std::string>(tag);
+                    if (!tag_string.has_value()) {
+                      LOG_WARN(
+                          absl::StrCat("unexpected tag to remove", tag.dump()));
+                      return false;
+                    }
+                    auto it = indexes.find(tag_string.value());
+                    if (it != indexes.end()) {
+                      it->second = {};
+                    }
+                    return true;
+                  })) {
+            LOG_WARN("failed to parse 'tags_to_remove'");
+            return false;
+          }
+
+          // Process tag overrides.
+          for (const auto& tag : tags) {
+            auto expr_string =
+                JsonValueAs<std::string>(metric["dimensions"][tag]);
+            if (!expr_string.has_value()) {
+              LOG_WARN("failed to parse 'dimensions' value");
+              return false;
+            }
+            auto expr_index = addStringExpression(expr_string.value());
+            Optional<size_t> value = {};
+            if (expr_index.has_value()) {
+              value = count_standard_labels + expr_index.value();
+            }
+            auto it = indexes.find(tag);
+            if (it != indexes.end()) {
+              it->second = value;
+            } else {
+              metric_tags[factory_it.first].push_back(
+                  {tag, MetricTag::TagType::String});
+              indexes[tag] = value;
+            }
+          }
         }
-      }
-      // Process tag overrides.
-      for (const auto& tag : tags) {
-        auto expr_index = addStringExpression(metric.dimensions().at(tag));
-        Optional<size_t> value = {};
-        if (expr_index.has_value()) {
-          value = count_standard_labels + expr_index.value();
-        }
-        auto it = indexes.find(tag);
-        if (it != indexes.end()) {
-          it->second = value;
-        } else {
-          metric_tags[factory_it.first].push_back(
-              {tag, MetricTag::TagType::String});
-          indexes[tag] = value;
-        }
-      }
-    }
+        return true;
+      })) {
+    LOG_WARN("failed to parse 'metrics'");
   }
 
   // Local data does not change, so populate it on config load.
@@ -342,9 +378,12 @@ void PluginRootContext::initializeDimensions() {
   map_node(istio_dimensions_, outbound_, local_node);
 
   // Instantiate stat factories using the new dimensions
-  auto field_separator = CONFIG_DEFAULT(field_separator);
-  auto value_separator = CONFIG_DEFAULT(value_separator);
-  auto stat_prefix = CONFIG_DEFAULT(stat_prefix);
+  auto field_separator = JsonGetField<std::string>(j, "field_separator")
+                             .value_or(default_field_separator);
+  auto value_separator = JsonGetField<std::string>(j, "value_separator")
+                             .value_or(default_value_separator);
+  auto stat_prefix =
+      JsonGetField<std::string>(j, "stat_prefix").value_or(default_stat_prefix);
 
   // prepend "_" to opt out of automatic namespacing
   // If "_" is not prepended, envoy_ is automatically added by prometheus
@@ -377,27 +416,24 @@ void PluginRootContext::initializeDimensions() {
   build.record(
       1, "proxy",
       absl::StrCat(flatbuffers::GetString(local_node.istio_version()), ";"));
+  return true;
 }
 
 bool PluginRootContext::onConfigure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
-  // Parse configuration JSON string.
-  JsonParseOptions json_options;
-  json_options.ignore_unknown_fields = true;
-  Status status =
-      JsonStringToMessage(configuration->toString(), &config_, json_options);
-  if (status != Status::OK) {
-    LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
-                          configuration->toString()));
-    return false;
-  }
-
-  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
+  if (!::Wasm::Common::extractPartialLocalNodeFlatBuffer(&local_node_info_)) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
   }
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
+
+  auto j = ::Wasm::Common::JsonParse(configuration->view());
+  if (!j.is_object()) {
+    LOG_WARN(absl::StrCat("cannot parse configuration as JSON: ",
+                          configuration->view()));
+    return false;
+  }
 
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
@@ -407,16 +443,25 @@ bool PluginRootContext::onConfigure(size_t) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
 
-  debug_ = config_.debug();
-  use_host_header_fallback_ = !config_.disable_host_header_fallback();
+  debug_ = JsonGetField<bool>(j, "debug").value_or(false);
+  use_host_header_fallback_ =
+      !JsonGetField<bool>(j, "disable_host_header_fallback").value_or(false);
 
-  initializeDimensions();
+  if (!initializeDimensions(j)) {
+    return false;
+  }
 
-  long long tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
-  if (config_.has_tcp_reporting_duration()) {
-    tcp_report_duration_milis =
-        ::google::protobuf::util::TimeUtil::DurationToMilliseconds(
-            config_.tcp_reporting_duration());
+  uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
+  auto tcp_reporting_duration =
+      JsonGetField<std::string>(j, "tcp_reporting_duration");
+  absl::Duration duration;
+  if (tcp_reporting_duration.has_value()) {
+    if (absl::ParseDuration(tcp_reporting_duration.value(), &duration)) {
+      tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
+    } else {
+      LOG_WARN(absl::StrCat("failed to parse 'tcp_reporting_duration': ",
+                            tcp_reporting_duration.value()));
+    }
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
 
@@ -441,7 +486,7 @@ Optional<size_t> PluginRootContext::addStringExpression(
   if (it == input_expressions_.end()) {
     uint32_t token = 0;
     if (createExpression(input, &token) != WasmResult::Ok) {
-      LOG_WARN(absl::StrCat("Cannot create an expression: " + input));
+      LOG_WARN(absl::StrCat("cannot create an expression: " + input));
       return {};
     }
     size_t result = expressions_.size();
@@ -456,7 +501,7 @@ Optional<uint32_t> PluginRootContext::addIntExpression(
     const std::string& input) {
   uint32_t token = 0;
   if (createExpression(input, &token) != WasmResult::Ok) {
-    LOG_WARN(absl::StrCat("Cannot create a value expression: " + input));
+    LOG_WARN(absl::StrCat("cannot create a value expression: " + input));
     return {};
   }
   int_expressions_.push_back(token);

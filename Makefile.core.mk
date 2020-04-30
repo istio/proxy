@@ -81,6 +81,7 @@ build_envoy_asan:
 wasm_include:
 	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_generated.h $(TOP)/extensions/common/
 	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_bfbs_generated.h $(TOP)/extensions/common/
+	cp -f $$(bazel info bazel-bin)/extensions/common/nlohmann_json.hpp $(TOP)/extensions/common/
 	cp -fLR $$(bazel info bazel-bin)/external/com_github_google_flatbuffers/_virtual_includes/runtime_cc/flatbuffers $(TOP)/extensions/common/
 	cp -f $$(bazel info output_base)/external/envoy/api/wasm/cpp/contrib/proxy_expr.h $(TOP)/extensions/common/
 
@@ -123,6 +124,12 @@ lint: lint-copyright-banner format-go lint-go tidy-go
 protoc = protoc -I common-protos -I extensions
 protoc_gen_docs_plugin := --docs_out=warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
 
+attributegen_path := extensions/attributegen
+attributegen_protos := $(wildcard $(attributegen_path)/*.proto)
+attributegen_docs := $(attributegen_protos:.proto=.pb.html)
+$(attributegen_docs): $(attributegen_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(attributegen_path) $^
+
 metadata_exchange_path := extensions/metadata_exchange
 metadata_exchange_protos := $(wildcard $(metadata_exchange_path)/*.proto)
 metadata_exchange_docs := $(metadata_exchange_protos:.proto=.pb.html)
@@ -141,7 +148,13 @@ stackdriver_docs := $(stackdriver_protos:.proto=.pb.html)
 $(stackdriver_docs): $(stackdriver_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stackdriver_path) $^
 
-extensions-docs: $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs)
+accesslog_policy_path := extensions/access_log_policy/config/v1alpha1
+accesslog_policy_protos := $(wildcard $(accesslog_policy_path)/*.proto)
+accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
+$(accesslog_policy_docs): $(accesslog_policy_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
+
+extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy

@@ -198,10 +198,10 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
     // vm.
     Extensions::Common::Wasm::createWasmForTesting(
         proto_config.config().vm_config(), plugin_, scope_, cluster_manager_,
-        init_manager_, dispatcher_, random_, *api,
+        init_manager_, dispatcher_, random_, *api, lifecycle_notifier_,
+        remote_data_provider_,
         std::unique_ptr<Envoy::Extensions::Common::Wasm::Context>(
             root_context_),
-        remote_data_provider_,
         [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; });
     // wasm_ is set correctly
     // This will only call onStart.
@@ -274,6 +274,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   NiceMock<Http::MockStreamEncoderFilterCallbacks> encoder_callbacks_;
   NiceMock<Envoy::StreamInfo::MockStreamInfo> request_stream_info_;
   NiceMock<LocalInfo::MockLocalInfo> local_info_;
+  NiceMock<Server::MockServerLifecycleNotifier> lifecycle_notifier_;
   envoy::config::core::v3::Metadata listener_metadata_;
   TestRoot* root_context_ = nullptr;
   Config::DataSource::RemoteAsyncDataProviderPtr remote_data_provider_;
