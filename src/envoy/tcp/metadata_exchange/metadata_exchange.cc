@@ -228,7 +228,7 @@ void MetadataExchangeFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
     config_->stats().initial_header_not_found_.inc();
     setMetadataNotFoundFilterState();
     ENVOY_LOG(warn,
-              "Incorrect istio-peer-exchange Alpn magic. Peer missing tcp "
+              "Incorrect istio-peer-exchange ALPN magic. Peer missing TCP "
               "MetadataExchange filter.");
     conn_state_ = Invalid;
     return;
