@@ -216,7 +216,7 @@ void MetadataExchangeFilter::tryReadInitialProxyHeader(Buffer::Instance& data) {
   if (data.length() < initial_header_length) {
     config_->stats().initial_header_not_found_.inc();
     // Not enough data to read. Wait for it to come.
-    ENVOY_LOG(trace,
+    ENVOY_LOG(debug,
               "Alpn Protocol matched. Waiting to read more initial header.");
     conn_state_ = NeedMoreDataInitialHeader;
     return;
@@ -246,7 +246,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   }
   if (data.length() < proxy_data_length_) {
     // Not enough data to read. Wait for it to come.
-    ENVOY_LOG(trace, "Alpn Protocol matched. Waiting to read more metadata.");
+    ENVOY_LOG(debug, "Alpn Protocol matched. Waiting to read more metadata.");
     conn_state_ = NeedMoreDataProxyHeader;
     return;
   }
@@ -257,7 +257,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   if (!proxy_data.ParseFromString(proxy_data_buf)) {
     config_->stats().header_not_found_.inc();
     setMetadataNotFoundFilterState();
-    ENVOY_LOG(trace,
+    ENVOY_LOG(warn,
               "Alpn protocol matched. Magic matched. Metadata Not found.");
     conn_state_ = Invalid;
     return;
