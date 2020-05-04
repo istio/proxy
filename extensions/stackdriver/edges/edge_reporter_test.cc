@@ -20,6 +20,7 @@
 #include "extensions/common/proto_util.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "google/protobuf/text_format.h"
+#include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "google/protobuf/util/time_util.h"
 #include "gtest/gtest.h"

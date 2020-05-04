@@ -56,6 +56,7 @@ envoy_cc_library(
         ":constants",
         "//extensions/common:context",
         "@com_google_googleapis//google/monitoring/v3:monitoring_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
     ],
 )
 
@@ -73,6 +74,6 @@ envoy_cc_library(
         "//extensions/stackdriver/log:__pkg__",
     ],
     deps = [
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
     ],
 )

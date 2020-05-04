@@ -14,5 +14,7 @@
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.null.stackdriver" }
-        configuration: >-
-          {"enableMeshEdgesReporting": "true", "meshEdgesReportingDuration": "1s"}
+        configuration:
+          "@type": "type.googleapis.com/google.protobuf.StringValue"
+          value: |
+            {"enableMeshEdgesReporting": "true", "meshEdgesReportingDuration": "1s"}

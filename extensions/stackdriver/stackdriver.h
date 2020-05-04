@@ -32,14 +32,10 @@
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 #else
 
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+namespace proxy_wasm {
+namespace null_plugin {
 #endif
 
 namespace Stackdriver {
@@ -50,7 +46,7 @@ constexpr long int kDefaultEdgeEpochReportDurationNanoseconds =
     600000000000;  // 10m
 
 #ifdef NULL_PLUGIN
-NULL_PLUGIN_REGISTRY;
+PROXY_WASM_NULL_PLUGIN_REGISTRY;
 #endif
 
 // StackdriverRootContext is the root context for all streams processed by the
@@ -157,10 +153,6 @@ static RegisterContextFactory register_InboundStackdriverContext(
 }  // namespace Stackdriver
 
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

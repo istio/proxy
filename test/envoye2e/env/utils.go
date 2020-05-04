@@ -29,6 +29,13 @@ func GetDefaultEnvoyBin() string {
 	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
 }
 
+func GetBazelBin() string {
+	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
+	// Instead we rely on symbolic link src/envoy/envoy in the workspace
+	workspace, _ := exec.Command("bazel", "info", "workspace").Output()
+	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/")
+}
+
 func SkipTSanASan(t *testing.T) {
 	if os.Getenv("TSAN") != "" || os.Getenv("ASAN") != "" {
 		t.Skip("https://github.com/istio/istio/issues/21273")

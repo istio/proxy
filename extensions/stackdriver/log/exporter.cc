@@ -19,18 +19,13 @@
 #include "extensions/stackdriver/common/metrics.h"
 
 #ifdef NULL_PLUGIN
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+
+#include "envoy/config/core/v3/grpc_service.pb.h"
+
+namespace proxy_wasm {
+namespace null_plugin {
 
 using envoy::config::core::v3::GrpcService;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::GrpcStatus;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::logInfo;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 
 #endif
 
@@ -107,10 +102,6 @@ void ExporterImpl::exportLogs(
 }  // namespace Extensions
 
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

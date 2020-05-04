@@ -28,19 +28,10 @@
 
 #else  // NULL_PLUGIN
 
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
-
-using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
-using NullPluginRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::FilterStatus;
+namespace proxy_wasm {
+namespace null_plugin {
 
 #endif  // NULL_PLUGIN
 
@@ -367,7 +358,7 @@ class PluginContext : public Context {
 };
 
 #ifdef NULL_PLUGIN
-NULL_PLUGIN_REGISTRY;
+PROXY_WASM_NULL_PLUGIN_REGISTRY;
 #endif
 
 static RegisterContextFactory register_Stats(
@@ -386,10 +377,6 @@ static RegisterContextFactory register_StatsInbound(
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

@@ -9,5 +9,7 @@
           runtime: envoy.wasm.runtime.null
           code:
             local: { inline_string: "envoy.wasm.stats" }
-        configuration: |
-          { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }
+        configuration:
+          "@type": "type.googleapis.com/google.protobuf.StringValue"
+          value: |
+            { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }

@@ -14,37 +14,20 @@
  */
 
 #include "common/common/base64.h"
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Wasm {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace MetadataExchange {
 namespace Plugin {
-::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry*
-    context_registry_{};
+NullPluginRegistry* context_registry_{};
 }  // namespace Plugin
 
 // Registration glue
-
-class MetadataExchangeFactory
-    : public ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory {
- public:
-  std::string name() const override { return "envoy.wasm.metadata_exchange"; }
-  std::unique_ptr<::Envoy::Extensions::Common::Wasm::Null::NullVmPlugin>
-  create() const override {
-    return std::make_unique<
-        ::Envoy::Extensions::Common::Wasm::Null::NullPlugin>(
-        Plugin::context_registry_);
-  }
-};
-
-static Registry::RegisterFactory<
-    MetadataExchangeFactory,
-    ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory>
-    register_;
+RegisterNullVmPluginFactory register_http_metadata_exchange_filter(
+    "envoy.wasm.metadata_exchange",
+    []() { return std::make_unique<NullPlugin>(Plugin::context_registry_); });
 
 }  // namespace MetadataExchange
-}  // namespace Wasm
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm

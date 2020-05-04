@@ -47,7 +47,7 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
     ],
 )
 
@@ -64,7 +64,7 @@ envoy_cc_library(
     deps = [
         ":node_info_fb_cc",
         "@com_google_protobuf//:protobuf",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
     ],
 )
 
@@ -166,5 +166,20 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
+)
+
+cc_library(
+    name = "json_util_wasm",
+    srcs = ["json_util.cc"],
+    hdrs = [
+        "json_util.h",
+        ":nlohmann_json_hpp",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_absl_wasm//absl/strings",
+        "@com_google_absl_wasm//absl/types:optional",
     ],
 )

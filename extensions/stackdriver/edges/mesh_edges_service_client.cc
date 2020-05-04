@@ -21,18 +21,10 @@
 #include "google/protobuf/util/time_util.h"
 
 #ifdef NULL_PLUGIN
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+namespace proxy_wasm {
+namespace null_plugin {
 
 using envoy::config::core::v3::GrpcService;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::GrpcStatus;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::logDebug;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::logWarn;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 #endif
 
 constexpr char kMeshEdgesService[] =
@@ -91,10 +83,6 @@ void MeshEdgesServiceClientImpl::reportTrafficAssertions(
 }  // namespace Extensions
 
 #ifdef NULL_PLUGIN
-}  // namespace plugin
-}  // namespace null
-}  // namespace wasm
-}  // namespace common
-}  // namespace extensions
-}  // namespace envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

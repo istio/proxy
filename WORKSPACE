@@ -37,20 +37,19 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit time: 5/4/20
-# Used by scripts/generate-wasm.sh
-ENVOY_SHA = "0e2c9c0c67e71ff358f6755fbbfdc998426b1c46"
+# Commit time: 5/19/20
+ENVOY_SHA = "ee990c97332793e29eff11fa2773996857a5f5d3"
 
-ENVOY_SHA256 = "f5ef2aba7e7d86fd4cc037d3902c387cf9d6905b7099ec2eb2d0e4f6592649f5"
+ENVOY_SHA256 = "92b0d107d316371165c6ecd83ca24d0b1e791224a737ba386e9d58217d517209"
 
-ENVOY_ORG = "istio"
+ENVOY_ORG = "envoyproxy"
 
-ENVOY_REPO = "envoy"
+ENVOY_REPO = "envoy-wasm"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
 http_archive(
-    name = ENVOY_REPO,
+    name = "envoy",
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
@@ -130,4 +129,17 @@ http_file(
     urls = [
         "https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp",
     ],
+)
+
+COM_GOOGLE_ABSL_WASM_SHA = "768eb2ca2857342673fcd462792ce04b8bac3fa3"
+
+http_archive(
+    name = "com_google_absl_wasm",
+    patch_args = ["-p1"],
+    patches = [
+        "@io_istio_proxy//:bazel/patches/absl.patch",
+    ],
+    sha256 = "bc9dd47d9676b016a8bec86f4e1cdc3edd22042bd9d7948a7b355f600974565e",
+    strip_prefix = "abseil-cpp-" + COM_GOOGLE_ABSL_WASM_SHA,
+    url = "https://github.com/abseil/abseil-cpp/archive/" + COM_GOOGLE_ABSL_WASM_SHA + ".tar.gz",
 )
