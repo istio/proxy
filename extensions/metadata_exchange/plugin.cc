@@ -25,24 +25,21 @@
 #ifndef NULL_PLUGIN
 
 #include "base64.h"
-#include "declare_property.pb.h"
+#include "extensions/metadata_exchange/declare_property.pb.h"
 
 #else
 
 #include "common/common/base64.h"
 #include "source/extensions/common/wasm/declare_property.pb.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Wasm {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace MetadataExchange {
 namespace Plugin {
 
-using namespace ::Envoy::Extensions::Common::Wasm::Null::Plugin;
-using NullPluginRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
+PROXY_WASM_NULL_PLUGIN_REGISTRY;
 
-NULL_PLUGIN_REGISTRY;
+using Base64 = Envoy::Base64;
 
 #endif
 
@@ -125,13 +122,17 @@ bool PluginRootContext::onConfigure(size_t size) {
   return true;
 }
 
-bool PluginRootContext::configure(size_t) {
+bool PluginRootContext::configure(size_t configuration_size) {
+  const char* configuration = nullptr;
+  size_t size;
+  proxy_get_buffer_bytes(WasmBufferType::PluginConfiguration, 0,
+                         configuration_size, &configuration, &size);
+  StringView configuration_view(configuration, size);
   // Parse configuration JSON string.
-  std::unique_ptr<WasmData> configuration = getConfiguration();
-  auto j = ::Wasm::Common::JsonParse(configuration->view());
+  auto j = ::Wasm::Common::JsonParse(configuration_view);
   if (!j.is_object()) {
     LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
-                          configuration->view(), j.dump()));
+                          configuration_view, j.dump()));
     return false;
   }
 
@@ -266,7 +267,6 @@ FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
 #ifdef NULL_PLUGIN
 }  // namespace Plugin
 }  // namespace MetadataExchange
-}  // namespace Wasm
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

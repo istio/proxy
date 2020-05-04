@@ -24,9 +24,9 @@
 
 #else  // NULL_PLUGIN
 
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
+using proxy_wasm::null_plugin::getMessageValue;
 
 #endif  // NULL_PLUGIN
 

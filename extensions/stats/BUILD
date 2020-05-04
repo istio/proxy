@@ -23,6 +23,10 @@ load(
     "envoy_cc_test",
     "envoy_package",
 )
+load(
+    "@envoy//bazel/wasm:wasm.bzl",
+    "wasm_cc_binary",
+)
 
 envoy_package()
 
@@ -39,8 +43,24 @@ envoy_cc_library(
     deps = [
         "//extensions/common:context",
         "//extensions/common:json_util",
-        "@envoy//api/wasm/cpp/contrib:contrib_lib",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
+    ],
+)
+
+wasm_cc_binary(
+    name = "plugin.wasm",
+    srcs = [
+        "plugin.cc",
+        "plugin.h",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    deps = [
+        "//extensions/common",
+        "@com_google_absl_wasm//absl/strings",
+        "@com_google_absl_wasm//absl/time",
+        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
 

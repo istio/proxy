@@ -28,20 +28,12 @@ static const std::string EMPTY_STRING;
 
 #else
 
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Wasm {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace MetadataExchange {
 namespace Plugin {
-
-using namespace Envoy::Extensions::Common::Wasm::Null::Plugin;
-
-// TODO(jplevyak): move these into the base envoy repo
-using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
-using NullPluginRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
 
 #endif
 
@@ -103,7 +95,6 @@ class PluginContext : public Context {
 #ifdef NULL_PLUGIN
 }  // namespace Plugin
 }  // namespace MetadataExchange
-}  // namespace Wasm
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif
