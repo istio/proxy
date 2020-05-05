@@ -24,202 +24,20 @@ import (
 	"istio.io/proxy/test/envoye2e/env"
 )
 
-const StackdriverClientHTTPListener = `
-name: client
-traffic_direction: OUTBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ClientPort }}
-filter_chains:
-- filters:
-  - name: http
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: client{{ .N }}
-      http_filters:
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                runtime: "envoy.wasm.runtime.null"
-                code:
-                  local: { inline_string: "envoy.wasm.metadata_exchange" }
-              configuration: |
-                { "max_peer_cache_size": 20 }
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              root_id: "stackdriver_outbound"
-              vm_config:
-                {{- if .Vars.ReloadVM }}
-                vm_id: "stackdriver_outbound_{{ .Vars.Version }}"
-                {{- else }}
-                vm_id: "stackdriver_outbound"
-                {{- end }}
-                runtime: "envoy.wasm.runtime.null"
-                code:
-                  local: { inline_string: "envoy.wasm.null.stackdriver" }
-              configuration: >-
-                {}
-      - name: envoy.filters.http.router
-      route_config:
-        name: client
-        virtual_hosts:
-        - name: client
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              cluster: outbound|9080|http|server.default.svc.cluster.local
-              timeout: 0s
-`
-
-const StackdriverServerHTTPListener = `
-name: server
-traffic_direction: INBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ServerPort }}
-filter_chains:
-- filters:
-  - name: http
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: server{{ .N }}
-      http_filters:
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                runtime: "envoy.wasm.runtime.null"
-                code:
-                  local: { inline_string: "envoy.wasm.metadata_exchange" }
-              configuration: |
-                { "max_peer_cache_size": 20 }
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              root_id: "stackdriver_inbound"
-              vm_config:
-                {{- if .Vars.ReloadVM }}
-                vm_id: "stackdriver_inbound_{{ .Vars.Version }}"
-                {{- else }}
-                vm_id: "stackdriver_inbound"
-                {{- end }}
-                runtime: "envoy.wasm.runtime.null"
-                code:
-                  local: { inline_string: "envoy.wasm.null.stackdriver" }
-              configuration: >-
-                {"enableMeshEdgesReporting": "true", "meshEdgesReportingDuration": "1s"}
-      - name: envoy.filters.http.router
-      route_config:
-        name: server
-        virtual_hosts:
-        - name: server
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              cluster: inbound|9080|http|server.default.svc.cluster.local
-              timeout: 0s
-{{ .Vars.ServerTLSContext | indent 2 }}
-`
-
-const StackdriverAndAccessLogFilter = `
-name: server
-traffic_direction: INBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ServerPort }}
-filter_chains:
-- filters:
-  - name: http
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: server{{ .N }}
-      http_filters:
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                runtime: "envoy.wasm.runtime.null"
-                code:
-                  local: { inline_string: "envoy.wasm.metadata_exchange" }
-              configuration: |
-                { "max_peer_cache_size": 20 }
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                runtime: "envoy.wasm.runtime.null"
-                code:
-                  local: { inline_string: "envoy.wasm.access_log_policy" }
-              configuration: "{ log_window_duration: \"{{ .Vars.LogWindowDuration }}\" }"
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              root_id: "stackdriver_inbound"
-              vm_config:
-                {{- if .Vars.ReloadVM }}
-                vm_id: "stackdriver_inbound_{{ .Vars.Version }}"
-                {{- else }}
-                vm_id: "stackdriver_inbound"
-                {{- end }}
-                runtime: "envoy.wasm.runtime.null"
-                code:
-                  local: { inline_string: "envoy.wasm.null.stackdriver" }
-              configuration: >-
-                {}
-      - name: envoy.filters.http.router
-      route_config:
-        name: server
-        virtual_hosts:
-        - name: server
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              cluster: inbound|9080|http|server.default.svc.cluster.local
-              timeout: 0s
-{{ .Vars.ServerTLSContext | indent 2 }}`
-
 func TestStackdriverPayload(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
+		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
 	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
 
@@ -228,8 +46,8 @@ func TestStackdriverPayload(t *testing.T) {
 			&driver.XDS{},
 			sd,
 			&driver.SecureTokenService{Port: params.Ports.STSPort},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
@@ -255,14 +73,18 @@ func TestStackdriverPayload(t *testing.T) {
 }
 
 func TestStackdriverPayloadGateway(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"RequestPath":           "echo",
-		"SDLogStatusCode":       "200",
-		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
-		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"RequestPath":            "echo",
+		"SDLogStatusCode":        "200",
+		"EnableMetadataExchange": "true",
+		"StackdriverRootCAFile":  driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":   driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":            driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
 	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
 
@@ -272,8 +94,11 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 			sd,
 			&driver.SecureTokenService{Port: params.Ports.STSPort},
 			&driver.Update{Node: "server", Version: "0",
-				Clusters:  []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
-				Listeners: []string{StackdriverClientHTTPListener, StackdriverServerHTTPListener}},
+				Clusters: []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+				}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.Repeat{N: 1, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
@@ -298,9 +123,11 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 }
 
 func TestStackdriverPayloadWithTLS(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "MUTUAL_TLS",
 		"SDLogStatusCode":             "200",
+		"EnableMetadataExchange":      "true",
 		"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
 		"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
@@ -311,6 +138,8 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ClientTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
 	params.Vars["ServerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
 	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
 
@@ -319,8 +148,8 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 			&driver.XDS{},
 			sd,
 			&driver.SecureTokenService{Port: params.Ports.STSPort},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
@@ -347,15 +176,19 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 
 // Expects estimated 20s log dumping interval from stackdriver
 func TestStackdriverReload(t *testing.T) {
+	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
+		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
 	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
 	if err := (&driver.Scenario{
@@ -363,14 +196,14 @@ func TestStackdriverReload(t *testing.T) {
 			&driver.XDS{},
 			sd,
 			&driver.SecureTokenService{Port: params.Ports.STSPort},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{2 * time.Second},
 			&driver.Repeat{N: 5, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
-			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "1", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "1", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Sleep{2 * time.Second},
 			&driver.Repeat{N: 5, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
@@ -391,16 +224,20 @@ func TestStackdriverReload(t *testing.T) {
 }
 
 func TestStackdriverVMReload(t *testing.T) {
+	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
+		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"ReloadVM":                    "true",
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
 	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
 	if err := (&driver.Scenario{
@@ -408,15 +245,23 @@ func TestStackdriverVMReload(t *testing.T) {
 			&driver.XDS{},
 			sd,
 			&driver.SecureTokenService{Port: params.Ports.STSPort},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "1", Listeners: []string{
+				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
+			&driver.Update{Node: "server", Version: "1", Listeners: []string{
+				driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
 				[]driver.SDLogEntry{
@@ -435,14 +280,18 @@ func TestStackdriverVMReload(t *testing.T) {
 }
 
 func TestStackdriverGCEInstances(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
+		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/gce_client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/gce_server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
 	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
 	if err := (&driver.Scenario{
@@ -450,15 +299,16 @@ func TestStackdriverGCEInstances(t *testing.T) {
 			&driver.XDS{},
 			sd,
 			&driver.SecureTokenService{Port: params.Ports.STSPort},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
-			&driver.Sleep{1 * time.Second},
-			&driver.Update{Node: "client", Version: "1", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "1", Listeners: []string{StackdriverServerHTTPListener}},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/gce_client_request_count.yaml.tmpl", "testdata/stackdriver/gce_server_request_count.yaml.tmpl"},
 				nil,
@@ -472,21 +322,28 @@ func TestStackdriverGCEInstances(t *testing.T) {
 
 // Expects estimated 20s log dumping interval from stackdriver
 func TestStackdriverParallel(t *testing.T) {
+	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"SDLogStatusCode":       "200",
-		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+		"SDLogStatusCode":        "200",
+		"EnableMetadataExchange": "true",
+		"StackdriverRootCAFile":  driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":   driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 	sd := &driver.Stackdriver{Port: params.Ports.SDPort, Delay: 100 * time.Millisecond}
+
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
 			&driver.SecureTokenService{Port: params.Ports.STSPort},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
@@ -505,8 +362,12 @@ func TestStackdriverParallel(t *testing.T) {
 					Duration: 20 * time.Second,
 					Step: &driver.Scenario{
 						[]driver.Step{
-							&driver.Update{Node: "client", Version: "{{.N}}", Listeners: []string{StackdriverClientHTTPListener}},
-							&driver.Update{Node: "server", Version: "{{.N}}", Listeners: []string{StackdriverServerHTTPListener}},
+							&driver.Update{Node: "client", Version: "{{.N}}", Listeners: []string{
+								driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+							}},
+							&driver.Update{Node: "server", Version: "{{.N}}", Listeners: []string{
+								driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+							}},
 							// may need short delay so we don't eat all the CPU
 							&driver.Sleep{100 * time.Millisecond},
 						},
@@ -520,6 +381,7 @@ func TestStackdriverParallel(t *testing.T) {
 }
 
 func TestStackdriverAccessLog(t *testing.T) {
+	t.Parallel()
 	var TestCases = []struct {
 		name              string
 		logWindowDuration string
@@ -546,6 +408,9 @@ func TestStackdriverAccessLog(t *testing.T) {
 
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
+				params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
 			sd := &driver.Stackdriver{Port: params.Ports.SDPort}
 			respCode, _ := strconv.Atoi(tt.respCode)
@@ -554,8 +419,12 @@ func TestStackdriverAccessLog(t *testing.T) {
 					&driver.XDS{},
 					sd,
 					&driver.SecureTokenService{Port: params.Ports.STSPort},
-					&driver.Update{Node: "client", Version: "0", Listeners: []string{StackdriverClientHTTPListener}},
-					&driver.Update{Node: "server", Version: "0", Listeners: []string{StackdriverAndAccessLogFilter}},
+					&driver.Update{Node: "client", Version: "0", Listeners: []string{
+						params.LoadTestData("testdata/listener/client.yaml.tmpl"),
+					}},
+					&driver.Update{Node: "server", Version: "0", Listeners: []string{
+						params.LoadTestData("testdata/listener/server.yaml.tmpl"),
+					}},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 					&driver.Sleep{Duration: 1 * time.Second},

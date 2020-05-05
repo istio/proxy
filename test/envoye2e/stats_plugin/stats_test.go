@@ -30,133 +30,6 @@ import (
 	"istio.io/proxy/test/envoye2e/env"
 )
 
-const StatsClientHTTPListener = `
-name: client
-traffic_direction: OUTBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ClientPort }}
-filter_chains:
-- filters:
-  - name: http
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: client{{ .N }}
-      http_filters:
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                runtime: {{ .Vars.WasmRuntime }}
-                code:
-                  local: { {{ .Vars.MetadataExchangeFilterCode }} }
-              configuration: |
-                { "max_peer_cache_size": 20 }
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              root_id: "stats_outbound"
-              vm_config:
-                vm_id: stats_outbound{{ .N }}
-                runtime: {{ .Vars.WasmRuntime }}
-                code:
-                  local: { {{ .Vars.StatsFilterCode }} }
-              configuration: |
-                {{ .Vars.StatsFilterClientConfig }}
-      - name: envoy.filters.http.router
-      route_config:
-        name: client
-        virtual_hosts:
-        - name: client
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              {{- if .Vars.ClientListenerCluster }}
-              cluster: {{ .Vars.ClientListenerCluster }}
-              {{- else }}
-              cluster: outbound|9080|http|server.default.svc.cluster.local
-              {{- end }}
-              timeout: 0s
-`
-
-const StatsServerHTTPListener = `
-name: server
-traffic_direction: INBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ServerPort }}
-filter_chains:
-- filters:
-  - name: http
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: server{{ .N }}
-      http_filters:
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                runtime: {{ .Vars.WasmRuntime }}
-                code:
-                  local: { {{ .Vars.MetadataExchangeFilterCode }} }
-              configuration: |
-                { "max_peer_cache_size": 20 }
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              root_id: "stats_inbound"
-              vm_config:
-                vm_id: stats_inbound{{ .N }}
-                runtime: {{ .Vars.WasmRuntime }}
-                code:
-                  local: { {{ .Vars.StatsFilterCode }} }
-              configuration: |
-                {{ .Vars.StatsFilterServerConfig }}
-      - name: envoy.filters.http.router
-      route_config:
-        name: server
-        virtual_hosts:
-        - name: server
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              cluster: inbound|9080|http|server.default.svc.cluster.local
-              timeout: 0s
-{{ .Vars.ServerTLSContext | indent 2 }}
-`
-
-const ClientStaticCluster = `- name: host_header
-  connect_timeout: 1s
-  type: STATIC
-  http2_protocol_options: {}
-  load_assignment:
-    cluster_name: host_header
-    endpoints:
-    - lb_endpoints:
-      - endpoint:
-          address:
-            socket_address:
-              address: 127.0.0.1
-              port_value: {{ .Ports.ServerPort }}`
-
 func skipWasm(t *testing.T, runtime string) {
 	if os.Getenv("WASM") != "" {
 		if runtime != "envoy.wasm.runtime.v8" {
@@ -197,11 +70,11 @@ var Runtimes = []struct {
 }
 
 var TestCases = []struct {
-	Name                  string
-	ClientConfig          string
-	ClientListenerCluster string
-	ClientStats           map[string]driver.StatMatcher
-	ServerStats           map[string]driver.StatMatcher
+	Name              string
+	ClientConfig      string
+	ServerClusterName string
+	ClientStats       map[string]driver.StatMatcher
+	ServerStats       map[string]driver.StatMatcher
 }{
 	{
 		Name:         "Default",
@@ -227,18 +100,18 @@ var TestCases = []struct {
 		},
 	},
 	{
-		Name:                  "UseHostHeader",
-		ClientConfig:          "testdata/stats/client_config.yaml",
-		ClientListenerCluster: "host_header",
+		Name:              "UseHostHeader",
+		ClientConfig:      "testdata/stats/client_config.yaml",
+		ServerClusterName: "host_header",
 		ClientStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/host_header_fallback.yaml.tmpl"},
 		},
 		ServerStats: map[string]driver.StatMatcher{},
 	},
 	{
-		Name:                  "DisableHostHeader",
-		ClientConfig:          "testdata/stats/client_config_disable_header_fallback.yaml",
-		ClientListenerCluster: "host_header",
+		Name:              "DisableHostHeader",
+		ClientConfig:      "testdata/stats/client_config_disable_header_fallback.yaml",
+		ServerClusterName: "host_header",
 		ClientStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/disable_host_header_fallback.yaml.tmpl"},
 		},
@@ -254,22 +127,28 @@ func TestStatsPayload(t *testing.T) {
 				skipWasm(t, runtime.WasmRuntime)
 				params := driver.NewTestParams(t, map[string]string{
 					"RequestCount":               "10",
+					"EnableMetadataExchange":     "true",
 					"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
 					"StatsFilterCode":            runtime.StatsFilterCode,
 					"WasmRuntime":                runtime.WasmRuntime,
 					"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 					"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
 					"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
-					"ClientStaticCluster":        ClientStaticCluster,
-					"ClientListenerCluster":      testCase.ClientListenerCluster,
+					"ServerClusterName":          testCase.ServerClusterName,
 				}, envoye2e.ProxyE2ETests)
 				params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 				params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+				params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+				params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 				if err := (&driver.Scenario{
 					[]driver.Step{
 						&driver.XDS{},
-						&driver.Update{Node: "client", Version: "0", Listeners: []string{StatsClientHTTPListener}},
-						&driver.Update{Node: "server", Version: "0", Listeners: []string{StatsServerHTTPListener}},
+						&driver.Update{
+							Node:      "client",
+							Version:   "0",
+							Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+							Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+						&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 						&driver.Sleep{1 * time.Second},
@@ -297,6 +176,7 @@ func TestStatsParallel(t *testing.T) {
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
 		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
 		"WasmRuntime":                "envoy.wasm.runtime.null",
+		"EnableMetadataExchange":     "true",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
@@ -307,12 +187,14 @@ func TestStatsParallel(t *testing.T) {
 	serverRequestTotal := &dto.MetricFamily{}
 	params.LoadTestProto("testdata/metric/client_request_total.yaml.tmpl", clientRequestTotal)
 	params.LoadTestProto("testdata/metric/server_request_total.yaml.tmpl", serverRequestTotal)
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StatsClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StatsServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
@@ -332,8 +214,16 @@ func TestStatsParallel(t *testing.T) {
 					Duration: 10 * time.Second,
 					Step: &driver.Scenario{
 						[]driver.Step{
-							&driver.Update{Node: "client", Version: "{{.N}}", Listeners: []string{StatsClientHTTPListener}},
-							&driver.Update{Node: "server", Version: "{{.N}}", Listeners: []string{StatsServerHTTPListener}},
+							&driver.Update{
+								Node:      "client",
+								Version:   "{{.N}}",
+								Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")},
+							},
+							&driver.Update{
+								Node:      "server",
+								Version:   "{{.N}}",
+								Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")},
+							},
 							// may need short delay so we don't eat all the CPU
 							&driver.Sleep{100 * time.Millisecond},
 						},
@@ -361,18 +251,21 @@ func TestStatsGrpc(t *testing.T) {
 		"DisableDirectResponse":      "true",
 		"UsingGrpcBackend":           "true",
 		"GrpcResponseStatus":         "7",
+		"EnableMetadataExchange":     "true",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{StatsClientHTTPListener}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{StatsServerHTTPListener}},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},

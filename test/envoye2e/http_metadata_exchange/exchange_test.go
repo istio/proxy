@@ -26,47 +26,6 @@ import (
 	"istio.io/proxy/test/envoye2e/driver"
 )
 
-const ServerHTTPListener = `
-name: server
-traffic_direction: INBOUND
-address:
-  socket_address:
-    address: 127.0.0.1
-    port_value: {{ .Ports.ServerPort }}
-filter_chains:
-- filters:
-  - name: envoy.http_connection_manager
-    typed_config:
-      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-      codec_type: AUTO
-      stat_prefix: server
-      http_filters:
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                runtime: envoy.wasm.runtime.null
-                code:
-                  local:
-                    inline_string: envoy.wasm.metadata_exchange
-              configuration: |
-                { "max_peer_cache_size": 20 }
-      - name: envoy.router
-      route_config:
-        name: server
-        virtual_hosts:
-        - name: server
-          domains: ["*"]
-          routes:
-          - match: { prefix: / }
-            route:
-              cluster: inbound|9080|http|server.default.svc.cluster.local
-              timeout: 0s
-`
-
 func EncodeMetadata(t *testing.T, p *driver.Params) string {
 	pb := &pstruct.Struct{}
 	err := p.FillYAML("{"+p.Vars["ClientMetadata"]+"}", pb)
@@ -81,13 +40,15 @@ func EncodeMetadata(t *testing.T, p *driver.Params) string {
 }
 
 func TestHTTPExchange(t *testing.T) {
-	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
+	params := driver.NewTestParams(t, map[string]string{
+		"EnableMetadataExchange": "true",
+	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{ServerHTTPListener}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.HTTPCall{

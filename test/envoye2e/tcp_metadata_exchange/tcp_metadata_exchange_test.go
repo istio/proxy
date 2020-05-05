@@ -22,96 +22,20 @@ import (
 	"istio.io/proxy/test/envoye2e/driver"
 )
 
-const ServerMXFilter = `
-- name: istio.metadata_exchange
-  typed_config: 
-    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.tcp.metadataexchange.config.MetadataExchange
-    value:
-      protocol: mx-protocol`
-
-const ClientMXFilter = `
-- name: istio.metadata_exchange
-  typed_config: 
-    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.tcp.metadataexchange.config.MetadataExchange
-    value:
-      protocol: mx-protocol`
-
-const ServerStatsFilter = `
-- name: istio.stats
-  typed_config:
-    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.extensions.filters.network.wasm.v3.Wasm
-    value:
-      config:
-        root_id: "stats_inbound"
-        vm_config:
-          runtime: envoy.wasm.runtime.null
-          code:
-            local: { inline_string: "envoy.wasm.stats" }
-        configuration: |
-          { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }`
-
-const ClientStatsFilter = `
-- name: istio.stats
-  typed_config:
-    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.extensions.filters.network.wasm.v3.Wasm
-    value:
-      config:
-        root_id: "stats_outbound"
-        vm_config:
-          runtime: envoy.wasm.runtime.null
-          code:
-            local: { inline_string: "envoy.wasm.stats" }
-        configuration: |
-          { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }`
-
-const ClientTransportSocket = `transport_socket:
-  name: tls
-  typed_config:
-    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-    value:
-      common_tls_context:
-        alpn_protocols:
-        - {{ .Vars.AlpnProtocol }}
-        tls_certificates:
-        - certificate_chain: { filename: "testdata/certs/client.cert" }
-          private_key: { filename: "testdata/certs/client-key.cert" }
-        validation_context:
-          trusted_ca: { filename: "testdata/certs/root.cert" }`
-
-const ServerTransportSocket = `transport_socket:
-  name: tls
-  typed_config:
-    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
-    value:
-      common_tls_context:
-        alpn_protocols:
-        - {{ .Vars.AlpnProtocol }}
-        tls_certificates:
-        - certificate_chain: { filename: "testdata/certs/server.cert" }
-          private_key: { filename: "testdata/certs/server-key.cert" }
-        validation_context:
-          trusted_ca: { filename: "testdata/certs/root.cert" }
-      require_client_certificate: true`
-
 func TestTCPMetadataExchange(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
-		"ServerNetworkFilters":     ServerMXFilter + ServerStatsFilter,
-		"ClientNetworkFilters":     ClientStatsFilter,
-		"ClientUpstreamFilters":    ClientMXFilter,
-		"DisableDirectResponse":    "true",
-		"AlpnProtocol":             "mx-protocol",
-		"ClientClusterTLSContext":  ClientTransportSocket,
-		"ServerListenerTLSContext": ServerTransportSocket,
-		"StatsConfig":              driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"DisableDirectResponse": "true",
+		"AlpnProtocol":          "mx-protocol",
+		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+		params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
 
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
@@ -158,15 +82,18 @@ func TestTCPMetadataExchange(t *testing.T) {
 
 func TestTCPMetadataExchangeNoAlpn(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
-		"ServerNetworkFilters":     ServerMXFilter + ServerStatsFilter,
-		"DisableDirectResponse":    "true",
-		"AlpnProtocol":             "some-protocol",
-		"ClientClusterTLSContext":  ClientTransportSocket,
-		"ServerListenerTLSContext": ServerTransportSocket,
-		"StatsConfig":              driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"DisableDirectResponse": "true",
+		"AlpnProtocol":          "some-protocol",
+		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+		params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
 
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{

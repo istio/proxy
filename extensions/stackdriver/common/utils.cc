@@ -95,7 +95,7 @@ std::string getOwner(const ::Wasm::Common::FlatNode &node) {
   auto created_by = platform_metadata->LookupByKey(kGCECreatedByKey.data());
   if (created_by) {
     return absl::StrCat("//compute.googleapis.com/",
-                        flatbuffers::GetString(created_by->value()));
+                        created_by->value()->string_view());
   }
 
   // then handle unmanaged GCE Instance case
@@ -106,10 +106,9 @@ std::string getOwner(const ::Wasm::Common::FlatNode &node) {
     // Should be of the form:
     // //compute.googleapis.com/projects/%s/zones/%s/instances/%s
     return absl::StrCat("//compute.googleapis.com/projects/",
-                        flatbuffers::GetString(project->value()), "/zones/",
-                        flatbuffers::GetString(location->value()),
-                        "/instances/",
-                        flatbuffers::GetString(instance_id->value()));
+                        project->value()->string_view(), "/zones/",
+                        location->value()->string_view(), "/instances/",
+                        instance_id->value()->string_view());
   }
 
   return "";
