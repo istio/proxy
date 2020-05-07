@@ -587,8 +587,15 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   for (size_t i = 0; i < expressions_.size(); i++) {
     if (!evaluateExpression(expressions_[i],
                             &istio_dimensions_.at(count_standard_labels + i))) {
-      LOG_TRACE(absl::StrCat("Failed to evaluate expression at slot: " +
-                             std::to_string(i)));
+      std::string expression_str;
+      for (const auto& expression : input_expressions_) {
+        if (expression.second == i) {
+          expression_str = expression.first;
+          break;
+        }
+      }
+      LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", expression_str,
+                             "> at slot: ", std::to_string(i)));
       istio_dimensions_[count_standard_labels + i] = "";
     }
   }
