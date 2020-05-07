@@ -135,7 +135,6 @@ static_resources:
                       local:
                         inline_string: envoy.wasm.attributegen
                     runtime: envoy.wasm.runtime.null
-                    vm_id: attributegen_inbound
           - name: istio.metadata_exchange
             typed_config:
               '@type': type.googleapis.com/udpa.type.v1.TypedStruct
