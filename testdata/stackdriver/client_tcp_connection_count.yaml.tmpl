@@ -1,0 +1,34 @@
+metric:
+  labels:
+    destination_canonical_revision: version-1
+    destination_canonical_service_name: ratings
+    destination_canonical_service_namespace: default
+    destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
+    destination_port: '{{ .Ports.ServerPort }}'
+    destination_principal: "{{ .Vars.DestinationPrincipal }}"
+    destination_service_name: server
+    destination_service_namespace: default
+    destination_workload_name: ratings-v1
+    destination_workload_namespace: default
+    mesh_uid: mesh
+    request_protocol: tcp
+    service_authentication_policy: "" # TODO: upstream TLS indicator is not reported
+    source_canonical_revision: version-1
+    source_canonical_service_name: productpage-v1
+    source_canonical_service_namespace: default
+    source_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
+    source_principal: "{{ .Vars.SourcePrincipal }}"
+    source_workload_name: productpage-v1
+    source_workload_namespace: default
+  type: istio.io/service/client/connection_open_count
+points:
+- value:
+    int64Value: "10"
+resource:
+  labels:
+    cluster_name: test-cluster
+    location: us-east4-b
+    namespace_name: default
+    pod_name: productpage-v1-84975bc778-pxz2w
+    project_id: test-project
+  type: k8s_pod

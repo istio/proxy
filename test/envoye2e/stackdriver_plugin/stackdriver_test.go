@@ -66,7 +66,7 @@ func TestStackdriverPayload(t *testing.T) {
 						LogEntryCount: 10,
 					},
 				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"},
+				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -120,7 +120,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 						LogEntryCount: 1,
 					},
 				},
-				nil,
+				nil, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -176,7 +176,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 						LogEntryCount: 10,
 					},
 				},
-				nil,
+				nil, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -232,7 +232,7 @@ func TestStackdriverReload(t *testing.T) {
 						LogEntryCount: 10,
 					},
 				},
-				nil,
+				nil, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -293,7 +293,7 @@ func TestStackdriverVMReload(t *testing.T) {
 						LogEntryCount: 10,
 					},
 				},
-				nil,
+				nil, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -338,7 +338,8 @@ func TestStackdriverGCEInstances(t *testing.T) {
 			sd.Check(params,
 				[]string{"testdata/stackdriver/gce_client_request_count.yaml.tmpl", "testdata/stackdriver/gce_server_request_count.yaml.tmpl"},
 				nil,
-				[]string{"testdata/stackdriver/gce_traffic_assertion.yaml.tmpl"},
+
+				[]string{"testdata/stackdriver/gce_traffic_assertion.yaml.tmpl"}, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -487,12 +488,75 @@ func TestStackdriverAccessLog(t *testing.T) {
 								LogEntryCount: tt.logEntryCount,
 							},
 						},
-						nil,
+						nil, true,
 					),
 				},
 			}).Run(params); err != nil {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestStackdriverTCPMetadataExchange(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "MUTUAL_TLS",
+		"SDLogStatusCode":             "200",
+		"EnableMetadataExchange":      "true",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
+		"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
+		"DisableDirectResponse":       "true",
+		"AlpnProtocol":                "mx-protocol",
+		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+		params.LoadTestData("testdata/filters/stackdriver_network_inbound.yaml.tmpl")
+	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/stackdriver_network_outbound.yaml.tmpl")
+	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+
+	sd := &Stackdriver{Port: sdPort}
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{
+				Node:      "client",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
+			},
+			&driver.Update{
+				Node:      "server",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.TCPServer{Prefix: "hello"},
+			&driver.Repeat{
+				N:    10,
+				Step: &driver.TCPConnection{},
+			},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl", "testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
+				nil, nil, false,
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
 	}
 }

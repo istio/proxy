@@ -140,6 +140,12 @@ std::string getMonitoringEndpoint() {
   return monitoring_endpoint;
 }
 
+void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
+  request_info.tcp_connections_opened = 0;
+  request_info.tcp_sent_bytes = 0;
+  request_info.tcp_received_bytes = 0;
+}
+
 }  // namespace
 
 // onConfigure == false makes the proxy crash.
@@ -151,7 +157,7 @@ bool StackdriverRootContext::onConfigure(size_t size) {
 
 bool StackdriverRootContext::configure(size_t configuration_size) {
   // onStart is called prior to onConfigure
-  if (enableServerAccessLog() || enableEdgeReporting()) {
+  if (enableServerAccessLog() || enableEdgeReporting() || enableTCPMetrics()) {
     proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
   } else {
     proxy_set_tick_period_milliseconds(0);
@@ -286,6 +292,24 @@ void StackdriverRootContext::onTick() {
       last_edge_new_report_call_nanos_ = cur;
     }
   }
+  if (enableTCPMetrics()) {
+    for (auto const& item : tcp_request_queue_) {
+      // requestinfo is null, so continue.
+      if (item.second == nullptr) {
+        continue;
+      }
+      Context* context = getContext(item.first);
+      if (context == nullptr) {
+        continue;
+      }
+      context->setEffectiveContext();
+      if (recordTCP(item.first)) {
+        // Clear existing data in TCP metrics, so that we don't double count the
+        // metrics.
+        clearTcpMetrics(*item.second);
+      }
+    }
+  }
 }
 
 bool StackdriverRootContext::onDone() {
@@ -299,6 +323,14 @@ bool StackdriverRootContext::onDone() {
     done = false;
   }
   // TODO: add on done for edge.
+  for (auto const& item : tcp_request_queue_) {
+    // requestinfo is null, so continue.
+    if (item.second == nullptr) {
+      continue;
+    }
+    recordTCP(item.first);
+  }
+  tcp_request_queue_.clear();
   return done;
 }
 
@@ -311,17 +343,16 @@ void StackdriverRootContext::record() {
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
           getValue({metadata_key}, &peer) ? peer.data()
                                           : empty_node_info_.data());
-  const ::Wasm::Common::FlatNode& local_node =
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+  const ::Wasm::Common::FlatNode& local_node = getLocalNode();
   const ::Wasm::Common::FlatNode& destination_node_info =
       outbound ? peer_node : local_node;
 
   ::Wasm::Common::RequestInfo request_info;
   ::Wasm::Common::populateHTTPRequestInfo(
-      isOutbound(), useHostHeaderFallback(), &request_info,
+      outbound, useHostHeaderFallback(), &request_info,
       flatbuffers::GetString(destination_node_info.namespace_()));
   ::Extensions::Stackdriver::Metric::record(
-      isOutbound(), local_node, peer_node, request_info,
+      outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
@@ -329,7 +360,7 @@ void StackdriverRootContext::record() {
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
-    if (!getValue({::Wasm::Common::kDownstreamMetadataIdKey}, &peer_id)) {
+    if (!getPeerId(peer_id)) {
       LOG_DEBUG(absl::StrCat(
           "cannot get metadata for: ", ::Wasm::Common::kDownstreamMetadataIdKey,
           "; skipping edge."));
@@ -337,6 +368,56 @@ void StackdriverRootContext::record() {
     }
     edge_reporter_->addEdge(request_info, peer_id, peer_node);
   }
+}
+
+bool StackdriverRootContext::recordTCP(uint32_t id) {
+  const bool outbound = isOutbound();
+  std::string peer_id;
+  getPeerId(peer_id);
+  std::string peer;
+  bool peer_found = getValue(
+      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
+  const ::Wasm::Common::FlatNode& peer_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+          peer_found ? peer.data() : empty_node_info_.data());
+  const ::Wasm::Common::FlatNode& local_node = getLocalNode();
+  const ::Wasm::Common::FlatNode& destination_node_info =
+      outbound ? peer_node : local_node;
+
+  auto req_iter = tcp_request_queue_.find(id);
+  if (req_iter == tcp_request_queue_.end() || req_iter->second == nullptr) {
+    return false;
+  }
+  ::Wasm::Common::RequestInfo& request_info = *req_iter->second;
+  // For TCP, if peer metadata is not available, peer id is set as not found.
+  // Otherwise, we wait for metadata exchange to happen before we report  any
+  // metric.
+  // We keep waiting if response flags is zero, as that implies, there has
+  // been no error in connection.
+  uint64_t response_flags = 0;
+  getValue({"response", "flags"}, &response_flags);
+  if (!peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
+      response_flags == 0) {
+    return false;
+  }
+  if (!request_info.is_populated) {
+    ::Wasm::Common::populateTCPRequestInfo(
+        outbound, &request_info,
+        flatbuffers::GetString(destination_node_info.namespace_()));
+  }
+  // Record TCP Metrics.
+  if (enableTCPMetrics()) {
+    ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node,
+                                                 peer_node, request_info);
+  }
+
+  // Add LogEntry to Logger. Log Entries are batched and sent on timer
+  // to Stackdriver Logging Service.
+  if (enableServerAccessLog() && shouldLogThisRequest()) {
+    ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
+    logger_->addLogEntry(request_info, peer_node);
+  }
+  return true;
 }
 
 inline bool StackdriverRootContext::isOutbound() {
@@ -351,6 +432,10 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
 
+inline bool StackdriverRootContext::enableTCPMetrics() {
+  return config_.enable_tcp_metrics();
+}
+
 bool StackdriverRootContext::shouldLogThisRequest() {
   std::string shouldLog = "";
   if (!getValue({::Wasm::Common::kAccessLogPolicyKey}, &shouldLog)) {
@@ -358,6 +443,29 @@ bool StackdriverRootContext::shouldLogThisRequest() {
     return true;
   }
   return shouldLog != "no";
+}
+
+void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {
+  std::unique_ptr<::Wasm::Common::RequestInfo> request_info =
+      std::make_unique<::Wasm::Common::RequestInfo>();
+  request_info->tcp_connections_opened++;
+  tcp_request_queue_[id] = std::move(request_info);
+}
+
+void StackdriverRootContext::deleteFromTCPRequestQueue(uint32_t id) {
+  tcp_request_queue_.erase(id);
+}
+
+void StackdriverRootContext::incrementReceivedBytes(uint32_t id, size_t size) {
+  tcp_request_queue_[id]->tcp_received_bytes += size;
+}
+
+void StackdriverRootContext::incrementSentBytes(uint32_t id, size_t size) {
+  tcp_request_queue_[id]->tcp_sent_bytes += size;
+}
+
+void StackdriverRootContext::incrementConnectionClosed(uint32_t id) {
+  tcp_request_queue_[id]->tcp_connections_closed++;
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.
@@ -370,6 +478,12 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
 
 void StackdriverContext::onLog() {
   if (!getRootContext()->initialized()) {
+    return;
+  }
+  if (is_tcp_) {
+    getRootContext()->incrementConnectionClosed(context_id_);
+    getRootContext()->recordTCP(context_id_);
+    getRootContext()->deleteFromTCPRequestQueue(context_id_);
     return;
   }
   // Record telemetry based on request info.

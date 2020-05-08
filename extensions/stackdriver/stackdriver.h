@@ -71,8 +71,26 @@ class StackdriverRootContext : public RootContext {
 
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
 
+  // Records telemetry for the current active stream/connection.
+  bool recordTCP(uint32_t id);
   // Records telemetry for the current active stream.
   void record();
+  void addToTCPRequestQueue(uint32_t id);
+  void deleteFromTCPRequestQueue(uint32_t id);
+  void incrementReceivedBytes(uint32_t id, size_t size);
+  void incrementSentBytes(uint32_t id, size_t size);
+  void incrementConnectionClosed(uint32_t id);
+  bool getPeerId(std::string& peer_id) {
+    bool found =
+        getValue({isOutbound() ? ::Wasm::Common::kUpstreamMetadataIdKey
+                               : ::Wasm::Common::kDownstreamMetadataIdKey},
+                 &peer_id);
+    return found;
+  }
+  const ::Wasm::Common::FlatNode& getLocalNode() {
+    return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+        local_node_info_.data());
+  }
 
   bool initialized() const { return initialized_; };
 
@@ -84,6 +102,9 @@ class StackdriverRootContext : public RootContext {
 
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();
+
+  // Indicates whether or not to report TCP Metrics.
+  bool enableTCPMetrics();
 
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
@@ -114,19 +135,52 @@ class StackdriverRootContext : public RootContext {
 
   bool use_host_header_fallback_;
   bool initialized_ = false;
+  std::unordered_map<uint32_t, std::shared_ptr<::Wasm::Common::RequestInfo>>
+      tcp_request_queue_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as
 // the request stream itself.
 class StackdriverContext : public Context {
  public:
-  StackdriverContext(uint32_t id, RootContext* root) : Context(id, root) {}
+  StackdriverContext(uint32_t id, RootContext* root)
+      : Context(id, root), is_tcp_(false), context_id_(id) {}
   void onLog() override;
+
+  FilterStatus onNewConnection() override {
+    if (!getRootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
+
+    is_tcp_ = true;
+    getRootContext()->addToTCPRequestQueue(context_id_);
+    return FilterStatus::Continue;
+  }
+
+  // Called on onData call, so counting the data that is received.
+  FilterStatus onDownstreamData(size_t size, bool) override {
+    if (!getRootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
+    getRootContext()->incrementReceivedBytes(context_id_, size);
+    return FilterStatus::Continue;
+  }
+  // Called on onWrite call, so counting the data that is sent.
+  FilterStatus onUpstreamData(size_t size, bool) override {
+    if (!getRootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
+    getRootContext()->incrementSentBytes(context_id_, size);
+    return FilterStatus::Continue;
+  }
 
  private:
   // Gets root Stackdriver context that this stream Stackdriver context
   // associated with.
   StackdriverRootContext* getRootContext();
+
+  bool is_tcp_;
+  uint32_t context_id_;
 };
 
 class StackdriverOutboundRootContext : public StackdriverRootContext {

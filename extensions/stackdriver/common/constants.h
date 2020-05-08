@@ -29,6 +29,23 @@ constexpr char kClientResponseBytesMeasure[] = "client/response_bytes_measure";
 constexpr char kClientRoundtripLatenciesMeasure[] =
     "client/roundtrip_latencies_measure";
 
+constexpr char kServerConnectionsOpenCountMeasure[] =
+    "server/connection_open_count_measure";
+constexpr char kServerConnectionsCloseCountMeasure[] =
+    "server/connection_close_count_measure";
+constexpr char kServerReceivedBytesCountMeasure[] =
+    "server/received_bytes_count_measure";
+constexpr char kServerSentBytesCountMeasure[] =
+    "server/sent_bytes_count_measure";
+constexpr char kClientConnectionsOpenCountMeasure[] =
+    "client/connection_open_count_measure";
+constexpr char kClientConnectionsCloseCountMeasure[] =
+    "client/connection_close_count_measure";
+constexpr char kClientReceivedBytesCountMeasure[] =
+    "client/received_bytes_count_measure";
+constexpr char kClientSentBytesCountMeasure[] =
+    "client/sent_bytes_count_measure";
+
 // View names of metrics.
 constexpr char kServerRequestCountView[] = "server/request_count";
 constexpr char kServerRequestBytesView[] = "server/request_bytes";
@@ -38,6 +55,19 @@ constexpr char kClientRequestCountView[] = "client/request_count";
 constexpr char kClientRequestBytesView[] = "client/request_bytes";
 constexpr char kClientResponseBytesView[] = "client/response_bytes";
 constexpr char kClientRoundtripLatenciesView[] = "client/roundtrip_latencies";
+
+constexpr char kServerConnectionsOpenCountView[] =
+    "server/connection_open_count";
+constexpr char kServerConnectionsCloseCountView[] =
+    "server/connection_close_count";
+constexpr char kServerReceivedBytesCountView[] = "server/received_bytes_count";
+constexpr char kServerSentBytesCountView[] = "server/sent_bytes_count";
+constexpr char kClientConnectionsOpenCountView[] =
+    "client/connection_open_count";
+constexpr char kClientConnectionsCloseCountView[] =
+    "client/connection_close_count";
+constexpr char kClientReceivedBytesCountView[] = "client/received_bytes_count";
+constexpr char kClientSentBytesCountView[] = "client/sent_bytes_count";
 
 // Prefix for Istio metrics.
 constexpr char kIstioMetricPrefix[] = "istio.io/service/";
