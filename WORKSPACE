@@ -34,14 +34,14 @@ bind(
     actual = "//external:ssl",
 )
 
-# 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
+# 1. Determine SHA256 `wget https://github.com/istio/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Commit time: 4/24/20
 # Used by scripts/generate-wasm.sh
-ENVOY_SHA = "ad7f85b4a264e731be03e05bceaf1aeb1c70641f"
+ENVOY_SHA = "c0035b1842d883a1dc1fa202cf62be492023b6cd"
 
-ENVOY_SHA256 = "6a36c3c709c05af8427cb4a0aaadd8abd54bcacb4b616255e28a6ef75d631665"
+ENVOY_SHA256 = "0789925bc4a3b805c1dd81f7888cca0fec2915cbdd9e6c3a68a47247c3aea845"
 
 ENVOY_ORG = "istio"
 
