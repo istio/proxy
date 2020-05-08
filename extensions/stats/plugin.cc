@@ -593,7 +593,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                             &istio_dimensions_.at(count_standard_labels + i))) {
       LOG_TRACE(absl::StrCat("Failed to evaluate expression: <",
                              expressions_[i].expression, ">"));
-      istio_dimensions_[count_standard_labels + i] = "";
+      istio_dimensions_[count_standard_labels + i] = "unknown";
     }
   }
 
