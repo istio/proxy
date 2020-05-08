@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client_test
+package stackdriverplugin
 
 import (
 	"strconv"
@@ -34,18 +34,23 @@ func TestStackdriverPayload(t *testing.T) {
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
+
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
-	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
-			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
@@ -54,7 +59,7 @@ func TestStackdriverPayload(t *testing.T) {
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
-				[]driver.SDLogEntry{
+				[]SDLogEntry{
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  "testdata/stackdriver/server_access_log_entry.yaml.tmpl",
@@ -82,17 +87,21 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 		"StackdriverTokenFile":   driver.TestPath("testdata/certs/access-token"),
 		"StatsConfig":            driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
-	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
-			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "server", Version: "0",
 				Clusters: []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
 				Listeners: []string{
@@ -104,7 +113,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 			&driver.Repeat{N: 1, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				nil,
-				[]driver.SDLogEntry{
+				[]SDLogEntry{
 					{
 						LogBaseFile:   "testdata/stackdriver/gateway_access_log.yaml.tmpl",
 						LogEntryFile:  "testdata/stackdriver/gateway_access_log_entry.yaml.tmpl",
@@ -134,6 +143,10 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ClientTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
@@ -141,13 +154,13 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
-	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
-			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
@@ -156,7 +169,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
-				[]driver.SDLogEntry{
+				[]SDLogEntry{
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  "testdata/stackdriver/server_access_log_entry.yaml.tmpl",
@@ -185,17 +198,21 @@ func TestStackdriverReload(t *testing.T) {
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
-	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+	sd := &Stackdriver{Port: sdPort}
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
-			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
@@ -208,7 +225,7 @@ func TestStackdriverReload(t *testing.T) {
 			&driver.Repeat{N: 5, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
-				[]driver.SDLogEntry{
+				[]SDLogEntry{
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  "testdata/stackdriver/server_access_log_entry.yaml.tmpl",
@@ -234,17 +251,22 @@ func TestStackdriverVMReload(t *testing.T) {
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"ReloadVM":                    "true",
 	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
-	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+	sd := &Stackdriver{Port: sdPort}
+
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
-			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{
 				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
 			}},
@@ -264,7 +286,7 @@ func TestStackdriverVMReload(t *testing.T) {
 			}},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
-				[]driver.SDLogEntry{
+				[]SDLogEntry{
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  "testdata/stackdriver/server_access_log_entry.yaml.tmpl",
@@ -288,17 +310,21 @@ func TestStackdriverGCEInstances(t *testing.T) {
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/gce_client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/gce_server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
-	sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+	sd := &Stackdriver{Port: sdPort}
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
-			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{
 				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
 			}},
@@ -329,17 +355,22 @@ func TestStackdriverParallel(t *testing.T) {
 		"StackdriverRootCAFile":  driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":   driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
-	sd := &driver.Stackdriver{Port: params.Ports.SDPort, Delay: 100 * time.Millisecond}
+
+	sd := &Stackdriver{Port: sdPort, Delay: 100 * time.Millisecond}
 
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
 			sd,
-			&driver.SecureTokenService{Port: params.Ports.STSPort},
+			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{
 				driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{
@@ -406,19 +437,23 @@ func TestStackdriverAccessLog(t *testing.T) {
 				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 			}, envoye2e.ProxyE2ETests)
 
+			sdPort := params.Ports.Max + 1
+			stsPort := params.Ports.Max + 2
+			params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+			params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
 				params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 
-			sd := &driver.Stackdriver{Port: params.Ports.SDPort}
+			sd := &Stackdriver{Port: sdPort}
 			respCode, _ := strconv.Atoi(tt.respCode)
 			if err := (&driver.Scenario{
 				Steps: []driver.Step{
 					&driver.XDS{},
 					sd,
-					&driver.SecureTokenService{Port: params.Ports.STSPort},
+					&SecureTokenService{Port: stsPort},
 					&driver.Update{Node: "client", Version: "0", Listeners: []string{
 						params.LoadTestData("testdata/listener/client.yaml.tmpl"),
 					}},
@@ -445,7 +480,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 					},
 					sd.Check(params,
 						nil,
-						[]driver.SDLogEntry{
+						[]SDLogEntry{
 							{
 								LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 								LogEntryFile:  "testdata/stackdriver/server_access_log_entry.yaml.tmpl",

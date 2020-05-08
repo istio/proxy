@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package driver
+package stackdriverplugin
 
 import (
 	"context"
@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	"istio.io/proxy/test/envoye2e/driver"
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	jsonpb "github.com/golang/protobuf/jsonpb"
@@ -340,8 +341,8 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 	var options []grpc.ServerOption
 	if enableTLS {
 		creds, err := credentials.NewServerTLSFromFile(
-			TestPath("testdata/certs/stackdriver.pem"),
-			TestPath("testdata/certs/stackdriver.key"))
+			driver.TestPath("testdata/certs/stackdriver.pem"),
+			driver.TestPath("testdata/certs/stackdriver.key"))
 		if err != nil {
 			log.Fatalf("failed to read certificate: %v", err)
 		}
