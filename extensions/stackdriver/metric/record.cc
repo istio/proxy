@@ -25,6 +25,7 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
+
 using TagKeyValueList =
     std::vector<std::pair<opencensus::tags::TagKey, std::string>>;
 
@@ -219,9 +220,19 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
          {serverResponseBytesMeasure(), request_info.response_size}},
         tagMap);
   } else {
-    opencensus::stats::Record({{serverRequestCountMeasure(), 1},
-                               {serverResponseLatenciesMeasure(), latency_ms}},
-                              tagMap);
+    if (record_http_size_metrics) {
+      opencensus::stats::Record(
+          {{serverRequestCountMeasure(), 1},
+           {serverResponseLatenciesMeasure(), latency_ms},
+           {serverRequestBytesMeasure(), request_info.request_size},
+           {serverResponseBytesMeasure(), request_info.response_size}},
+          tagMap);
+    } else {
+      opencensus::stats::Record(
+          {{serverRequestCountMeasure(), 1},
+           {serverResponseLatenciesMeasure(), latency_ms}},
+          tagMap);
+    }
   }
 }
 

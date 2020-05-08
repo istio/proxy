@@ -80,7 +80,11 @@ class StackdriverRootContext : public RootContext {
   void deleteFromTCPRequestQueue(uint32_t id);
   void incrementReceivedBytes(uint32_t id, size_t size);
   void incrementSentBytes(uint32_t id, size_t size);
+  void incrementTotalReceivedBytes(uint32_t id, size_t size);
+  void incrementTotalSentBytes(uint32_t id, size_t size);
   void incrementConnectionClosed(uint32_t id);
+  void setConnectionState(uint32_t id,
+                          ::Wasm::Common::TCPConnectionState state);
   bool getPeerId(std::string& peer_id) {
     bool found =
         getValue({isOutbound() ? ::Wasm::Common::kUpstreamMetadataIdKey
@@ -103,6 +107,12 @@ class StackdriverRootContext : public RootContext {
 
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();
+
+  // Indicates whether or not to report TCP Metrics.
+  bool enableTCPMetrics();
+
+  // Indicates whether or not to report TCP Logs.
+  bool enableTCPServerAccessLog();
 
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
@@ -155,6 +165,8 @@ class StackdriverContext : public Context {
 
     is_tcp_ = true;
     getRootContext()->addToTCPRequestQueue(context_id_);
+    getRootContext()->setConnectionState(
+        context_id_, ::Wasm::Common::TCPConnectionState::Open);
     return FilterStatus::Continue;
   }
 
@@ -164,6 +176,9 @@ class StackdriverContext : public Context {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementReceivedBytes(context_id_, size);
+    getRootContext()->incrementTotalReceivedBytes(context_id_, size);
+    getRootContext()->setConnectionState(
+        context_id_, ::Wasm::Common::TCPConnectionState::Connected);
     return FilterStatus::Continue;
   }
   // Called on onWrite call, so counting the data that is sent.
@@ -172,6 +187,9 @@ class StackdriverContext : public Context {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementSentBytes(context_id_, size);
+    getRootContext()->incrementTotalSentBytes(context_id_, size);
+    getRootContext()->setConnectionState(
+        context_id_, ::Wasm::Common::TCPConnectionState::Connected);
     return FilterStatus::Continue;
   }
 

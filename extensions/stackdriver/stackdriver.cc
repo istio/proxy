@@ -51,6 +51,7 @@ using ::Wasm::Common::kDownstreamMetadataKey;
 using ::Wasm::Common::kUpstreamMetadataIdKey;
 using ::Wasm::Common::kUpstreamMetadataKey;
 using ::Wasm::Common::RequestInfo;
+using ::Wasm::Common::TCPConnectionState;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
@@ -203,7 +204,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     }
   }
 
-  if (!logger_ && enableServerAccessLog()) {
+  if (!logger_ && (enableServerAccessLog() || enableTCPServerAccessLog())) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
     auto logging_stub_option = stub_option;
@@ -270,7 +271,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
 bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
-  if (enableServerAccessLog()) {
+  if (enableServerAccessLog() || enableTCPServerAccessLog()) {
     logger_->exportLogEntry(/* is_on_done= */ false);
   }
   if (enableEdgeReporting()) {
@@ -313,7 +314,7 @@ bool StackdriverRootContext::onDone() {
   // called, but onConfigure is not triggered. onConfigure is only triggered in
   // thread local VM, which makes it possible that logger_ is empty ptr even
   // when logging is enabled.
-  if (logger_ && enableServerAccessLog() &&
+  if (logger_ && (enableServerAccessLog() || enableTCPServerAccessLog()) &&
       logger_->exportLogEntry(/* is_on_done= */ true)) {
     done = false;
   }
@@ -334,6 +335,7 @@ void StackdriverRootContext::record() {
   const auto& metadata_key =
       outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
   std::string peer;
+  getValue({metadata_key}, &peer);
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
           getValue({metadata_key}, &peer) ? peer.data()
@@ -351,7 +353,7 @@ void StackdriverRootContext::record() {
       !config_.disable_http_size_metrics());
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node);
+    logger_->addLogEntry(request_info, peer_node, false);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
@@ -363,6 +365,56 @@ void StackdriverRootContext::record() {
     }
     edge_reporter_->addEdge(request_info, peer_id, peer_node);
   }
+  return;
+}
+
+bool StackdriverRootContext::recordTCP(uint32_t id) {
+  const bool outbound = isOutbound();
+  std::string peer_id;
+  getPeerId(peer_id);
+  std::string peer;
+  bool peer_found = getValue(
+      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
+  const ::Wasm::Common::FlatNode& peer_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+          peer_found ? peer.data() : empty_node_info_.data());
+  const ::Wasm::Common::FlatNode& local_node = getLocalNode();
+  const ::Wasm::Common::FlatNode& destination_node_info =
+      outbound ? peer_node : local_node;
+
+  if (tcp_request_queue_[id] == nullptr) {
+    return false;
+  }
+  ::Wasm::Common::RequestInfo request_info = *tcp_request_queue_[id];
+  // For TCP, if peer metadata is not available, peer id is set as not found.
+  // Otherwise, we wait for metadata exchange to happen before we report  any
+  // metric.
+  // We keep waiting if response flags is zero, as that implies, there has
+  // been no error in connection.
+  uint64_t response_flags = 0;
+  getValue({"response", "flags"}, &response_flags);
+  if (!peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
+      response_flags == 0) {
+    return false;
+  }
+  if (!request_info.is_populated) {
+    ::Wasm::Common::populateTCPRequestInfo(
+        outbound, &request_info,
+        flatbuffers::GetString(destination_node_info.namespace_()));
+  }
+  // Record TCP Metrics.
+  ::Extensions::Stackdriver::Metric::record(
+      outbound, local_node, peer_node, request_info,
+      !config_.disable_http_size_metrics(), enableTCPMetrics(),
+      true /* is_tcp */);
+
+  // Add LogEntry to Logger. Log Entries are batched and sent on timer
+  // to Stackdriver Logging Service.
+  if (enableTCPServerAccessLog() && shouldLogThisRequest()) {
+    ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+    logger_->addLogEntry(request_info, peer_node, true);
+  }
+  return true;
 }
 
 bool StackdriverRootContext::recordTCP(uint32_t id) {
@@ -418,6 +470,14 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
 
+inline bool StackdriverRootContext::enableTCPMetrics() {
+  return config_.enable_tcp_metrics();
+}
+
+inline bool StackdriverRootContext::enableTCPServerAccessLog() {
+  return config_.enable_tcp_server_access_logging() && !isOutbound();
+}
+
 bool StackdriverRootContext::shouldLogThisRequest() {
   std::string shouldLog = "";
   if (!getValue({::Wasm::Common::kAccessLogPolicyKey}, &shouldLog)) {
@@ -450,6 +510,20 @@ void StackdriverRootContext::incrementConnectionClosed(uint32_t id) {
   tcp_request_queue_[id]->tcp_connections_closed++;
 }
 
+void StackdriverRootContext::incrementTotalReceivedBytes(uint32_t id,
+                                                         size_t size) {
+  tcp_request_queue_[id]->tcp_total_received_bytes += size;
+}
+
+void StackdriverRootContext::incrementTotalSentBytes(uint32_t id, size_t size) {
+  tcp_request_queue_[id]->tcp_total_sent_bytes += size;
+}
+
+void StackdriverRootContext::setConnectionState(
+    uint32_t id, ::Wasm::Common::TCPConnectionState state) {
+  tcp_request_queue_[id]->tcp_connection_state = state;
+}
+
 // TODO(bianpengyuan) Add final export once root context supports onDone.
 // https://github.com/envoyproxy/envoy-wasm/issues/240
 
@@ -464,6 +538,14 @@ void StackdriverContext::onLog() {
   }
   if (is_tcp_) {
     getRootContext()->incrementConnectionClosed(context_id_);
+    getRootContext()->recordTCP(context_id_);
+    getRootContext()->deleteFromTCPRequestQueue(context_id_);
+    return;
+  }
+  if (is_tcp_) {
+    getRootContext()->incrementConnectionClosed(context_id_);
+    getRootContext()->setConnectionState(
+        context_id_, ::Wasm::Common::TCPConnectionState::Close);
     getRootContext()->recordTCP(context_id_);
     getRootContext()->deleteFromTCPRequestQueue(context_id_);
     return;
