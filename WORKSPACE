@@ -42,9 +42,9 @@ ENVOY_PROJECT = "istio"
 
 ENVOY_REPO = "envoy"
 
-ENVOY_SHA = "fccea1f2b320fa56f4deae6c35007479e4fc3404"
+ENVOY_SHA = "1d0e9b0427c3278bb6fc5386cf8a9569db4f9d63"
 
-ENVOY_SHA256 = "1078c146d15d4edd25c848bc318b67702e89ee6e618f0eea639711a526cad242"
+ENVOY_SHA256 = "beb49ec57c8fdf8263bace6830982256b8b45bd5c4a98f9b2fbbd0568b7e94ef"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
