@@ -104,14 +104,14 @@ static_resources:
           - name: istio.attributegen
             typed_config:
               '@type': type.googleapis.com/udpa.type.v1.TypedStruct
-              type_url: type.googleapis.com/envoy.config.filter.http.wasm.v2.Wasm
+              type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
               value:
                 config:
                   configuration: |
-                    {
+                    { "debug": "true",
                       "attributes": [
                         {
-                          "output_attribute": "istio.operationId",
+                          "output_attribute": "istio_operationId",
                           "match": [
                             {
                               "value": "GetStatus",
@@ -120,7 +120,7 @@ static_resources:
                           ]
                         },
                         {
-                          "output_attribute": "istio.responseClass",
+                          "output_attribute": "istio_responseClass",
                           "match": [
                             {
                               "value": "2xx",
@@ -138,7 +138,7 @@ static_resources:
           - name: istio.metadata_exchange
             typed_config:
               '@type': type.googleapis.com/udpa.type.v1.TypedStruct
-              type_url: type.googleapis.com/envoy.config.filter.http.wasm.v2.Wasm
+              type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
               value:
                 config:
                   configuration: "{\"name\": \"envoy.wasm.metadata_exchange\"}"
@@ -150,11 +150,21 @@ static_resources:
           - name: istio.stats
             typed_config:
               '@type': type.googleapis.com/udpa.type.v1.TypedStruct
-              type_url: type.googleapis.com/envoy.config.filter.http.wasm.v2.Wasm
+              type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
               value:
                 config:
-                  configuration: "{\n  \"debug\": \"false\",\n  \"stat_prefix\"\
-                    : \"istio\",\n}\n"
+                  configuration: |
+                    {
+                      "debug": "true",
+                      "stat_prefix": "istio",
+                      "metrics": [
+                      {
+                        "name": "requests_total",
+                        "dimensions": {
+                          "request_operation": "istio_operationId"
+                         }
+                      }
+                    ]}
                   root_id: stats_inbound
                   vm_config:
                     code:
