@@ -138,7 +138,8 @@ message AttributeGeneration {
   Phase phase = 1;
 
   // The name of the attribute that is populated on a successful match.
-  // An attribute name SHOULD NOT contain a `.`. You may use underscores for namespacing instead.
+  // An attribute name SHOULD NOT contain a `.`. You may use underscores for
+  // namespacing instead.
   //
   // Example: `istio_operationId`
   //
