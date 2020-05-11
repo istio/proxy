@@ -283,9 +283,13 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         auto& factory = factories[name];
         factory.name = name;
         factory.extractor =
-            [token](const ::Wasm::Common::RequestInfo&) -> uint64_t {
+            [token, name,
+             value](const ::Wasm::Common::RequestInfo&) -> uint64_t {
           int64_t result = 0;
-          evaluateExpression(token.value(), &result);
+          if (!evaluateExpression(token.value(), &result)) {
+            LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", value,
+                                   "> for dimension:<", name, ">"));
+          }
           return result;
         };
         factory.type = MetricType::Counter;
@@ -469,8 +473,8 @@ bool PluginRootContext::onConfigure(size_t) {
 }
 
 void PluginRootContext::cleanupExpressions() {
-  for (uint32_t token : expressions_) {
-    exprDelete(token);
+  for (const auto& expression : expressions_) {
+    exprDelete(expression.token);
   }
   expressions_.clear();
   input_expressions_.clear();
@@ -491,7 +495,7 @@ Optional<size_t> PluginRootContext::addStringExpression(
     }
     size_t result = expressions_.size();
     input_expressions_[input] = result;
-    expressions_.push_back(token);
+    expressions_.push_back({.token = token, .expression = input});
     return result;
   }
   return it->second;
@@ -585,11 +589,11 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                       empty_node_info_.data()),
       request_info);
   for (size_t i = 0; i < expressions_.size(); i++) {
-    if (!evaluateExpression(expressions_[i],
+    if (!evaluateExpression(expressions_[i].token,
                             &istio_dimensions_.at(count_standard_labels + i))) {
-      LOG_TRACE(absl::StrCat("Failed to evaluate expression at slot: " +
-                             std::to_string(i)));
-      istio_dimensions_[count_standard_labels + i] = "";
+      LOG_TRACE(absl::StrCat("Failed to evaluate expression: <",
+                             expressions_[i].expression, ">"));
+      istio_dimensions_[count_standard_labels + i] = "unknown";
     }
   }
 

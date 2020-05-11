@@ -259,8 +259,12 @@ class PluginRootContext : public RootContext {
 
   IstioDimensions istio_dimensions_;
 
+  struct expressionInfo {
+    uint32_t token;
+    std::string expression;
+  };
   // String expressions evaluated into dimensions
-  std::vector<uint32_t> expressions_;
+  std::vector<struct expressionInfo> expressions_;
   Map<std::string, size_t> input_expressions_;
 
   // Int expressions evaluated to metric values
