@@ -12,7 +12,7 @@ number_of_entries: 3
 as inputs and produces new attributes that can be used by downstream plugins.</p>
 
 <p>The following is an example of a configuration that produces one attribute
-named <code>istio.operationId</code> using <code>request.url_path</code> and <code>request.method</code>.</p>
+named <code>istio_operationId</code> using <code>request.url_path</code> and <code>request.method</code>.</p>
 
 <p>{{<tabset category-name="example">}}
 {{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
@@ -20,7 +20,7 @@ named <code>istio.operationId</code> using <code>request.url_path</code> and <co
 <pre><code class="language-yaml">{
   &quot;attributes&quot;: [
     {
-      &quot;output_attribute&quot;: &quot;istio.operationId&quot;,
+      &quot;output_attribute&quot;: &quot;istio_operationId&quot;,
       &quot;match&quot;: [
         {
           &quot;value&quot;: &quot;ListBooks&quot;,
@@ -48,11 +48,11 @@ named <code>istio.operationId</code> using <code>request.url_path</code> and <co
 <p>{{</tab>}}
 {{</tabset>}}</p>
 
-<p>If the Stats plugin runs after AttributeGen, it can use <code>istio.operationId</code>
+<p>If the Stats plugin runs after AttributeGen, it can use <code>istio_operationId</code>
 to populate a dimension on a metric.</p>
 
 <p>The following is an example of response codes being mapped into a smaller
-number of response classes as the <code>istio.responseClass</code> attribute. For
+number of response classes as the <code>istio_responseClass</code> attribute. For
 example, all response codes in 200s are mapped to <code>2xx</code>.</p>
 
 <p>{{<tabset category-name="example">}}
@@ -61,7 +61,7 @@ example, all response codes in 200s are mapped to <code>2xx</code>.</p>
 <pre><code class="language-yaml">{
   &quot;attributes&quot;: [
     {
-      &quot;output_attribute&quot;: &quot;istio.responseClass&quot;,
+      &quot;output_attribute&quot;: &quot;istio_responseClass&quot;,
       &quot;match&quot;: [
         {
           &quot;value&quot;: &quot;2xx&quot;,
@@ -122,11 +122,13 @@ result of the last configuration will be visible to downstream filters.</p>
 <td><code>outputAttribute</code></td>
 <td><code>string</code></td>
 <td>
-<p>The name of the attribute that is populated on a successful match.</p>
+<p>The name of the attribute that is populated on a successful match.
+An attribute name SHOULD NOT contain a <code>.</code>. You may use underscores for
+namespacing instead.</p>
 
-<p>Example: <code>istio.operationId</code></p>
+<p>Example: <code>istio_operationId</code></p>
 
-<p><code>istio.</code> attribute namespace is reserved by Istio.</p>
+<p><code>istio_</code> attribute namespace is reserved by Istio.</p>
 
 <p>AttributeGeneration may fail to evaluate when an attribute is not
 available. For example, <code>response.code</code> may not be available when a request
