@@ -72,7 +72,12 @@ constexpr StringView kGrpcStatus = "grpc_status";
 static RegisterContextFactory register_AccessLogPolicy(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
-bool PluginRootContext::onConfigure(size_t) {
+bool PluginRootContext::onConfigure(size_t size) {
+  initialized_ = configure(size);
+  return true;
+}
+
+bool PluginRootContext::configure(size_t) {
   if (::Wasm::Common::TrafficDirection::Inbound !=
       ::Wasm::Common::getTrafficDirection()) {
     logError("ASM Acess Logging Policy is an inbound filter only.");
@@ -115,6 +120,10 @@ void PluginRootContext::updateLastLogTimeNanos(const IstioDimensions& key,
 }
 
 void PluginContext::onLog() {
+  if (!rootContext()->initialized()) {
+    return;
+  }
+
   // Check if request is a failure.
   if (isRequestFailed()) {
     LOG_TRACE("Setting logging to true as we got error log");

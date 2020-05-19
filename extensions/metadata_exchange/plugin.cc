@@ -88,7 +88,14 @@ void PluginRootContext::updateMetadataValue() {
       Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
-bool PluginRootContext::onConfigure(size_t) {
+// onConfigure == false makes the proxy crash.
+// Only policy plugins should return false.
+bool PluginRootContext::onConfigure(size_t size) {
+  initialized_ = configure(size);
+  return true;
+}
+
+bool PluginRootContext::configure(size_t) {
   updateMetadataValue();
   if (!getValue({"node", "id"}, &node_id_)) {
     logDebug("cannot get node ID");
@@ -171,6 +178,9 @@ bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
 }
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
+  if (!rootContext()->initialized()) {
+    return FilterHeadersStatus::Continue;
+  }
   // strip and store downstream peer metadata
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
@@ -214,6 +224,9 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
 }
 
 FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
+  if (!rootContext()->initialized()) {
+    return FilterHeadersStatus::Continue;
+  }
   // strip and store upstream peer metadata
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
