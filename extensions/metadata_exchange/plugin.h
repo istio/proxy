@@ -77,7 +77,7 @@ class PluginRootContext : public RootContext {
   std::unordered_map<std::string, std::string> cache_;
   int64_t max_peer_cache_size_{DefaultNodeCacheMaxSize};
 
-  bool initialized_;
+  bool initialized_ = false;
 };
 
 // Per-stream context.

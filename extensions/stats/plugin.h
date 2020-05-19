@@ -291,7 +291,7 @@ class PluginRootContext : public RootContext {
       tcp_request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
-  bool initialized_;
+  bool initialized_ = false;
 };
 
 class PluginRootContextOutbound : public PluginRootContext {
