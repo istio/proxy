@@ -423,7 +423,14 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   return true;
 }
 
-bool PluginRootContext::onConfigure(size_t) {
+// onConfigure == false makes the proxy crash.
+// Only policy plugins should return false.
+bool PluginRootContext::onConfigure(size_t size) {
+  initialized_ = configure(size);
+  return true;
+}
+
+bool PluginRootContext::configure(size_t) {
   std::unique_ptr<WasmData> configuration = getConfiguration();
   if (!::Wasm::Common::extractPartialLocalNodeFlatBuffer(&local_node_info_)) {
     LOG_WARN("cannot parse local node metadata ");
