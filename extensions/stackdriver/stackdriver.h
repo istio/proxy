@@ -117,7 +117,7 @@ class StackdriverRootContext : public RootContext {
       kDefaultEdgeEpochReportDurationNanoseconds;
 
   bool use_host_header_fallback_;
-  bool initialized_;
+  bool initialized_ = false;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

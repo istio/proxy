@@ -82,7 +82,7 @@ class PluginRootContext : public RootContext {
   int32_t max_client_cache_size_ = DefaultClientCacheMaxSize;
   long long log_time_duration_nanos_;
 
-  bool initialized_;
+  bool initialized_ = false;
 };
 
 // Per-stream context.
