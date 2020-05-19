@@ -462,7 +462,7 @@ func TestStackdriverGCEInstances(t *testing.T) {
 			sd.Check(params,
 				[]string{"testdata/stackdriver/gce_client_request_count.yaml.tmpl", "testdata/stackdriver/gce_server_request_count.yaml.tmpl"},
 				nil,
-				nil,
+				[]string{"testdata/stackdriver/gce_traffic_assertion.yaml.tmpl"},
 			),
 		},
 	}).Run(params); err != nil {

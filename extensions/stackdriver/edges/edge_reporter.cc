@@ -49,10 +49,14 @@ void instanceFromMetadata(const ::Wasm::Common::FlatNode& node_info,
   auto namespace_ = node_info.namespace_()
                         ? node_info.namespace_()->string_view()
                         : absl::string_view();
-  if (name.size() > 0 && namespace_.size() > 0) {
+
+  if (Common::isRawGCEInstance(node_info)) {
+    instance->set_uid(Common::getGCEInstanceUID(node_info));
+  } else if (name.size() > 0 && namespace_.size() > 0) {
     absl::StrAppend(instance->mutable_uid(), "kubernetes://", name, ".",
                     namespace_);
   }
+
   // TODO(douglas-reid): support more than just GCP ?
   const auto platform_metadata = node_info.platform_metadata();
   if (platform_metadata) {

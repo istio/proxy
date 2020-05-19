@@ -1,0 +1,23 @@
+parent: projects/test-project
+mesh_uid: mesh
+traffic_assertions:
+- protocol: PROTOCOL_HTTP
+  destination_service_name: server
+  destination_service_namespace: default
+  source:
+    uid: //compute.googleapis.com/projects/test-project/zones/us-east4-b/instances/productpage-vm
+    location: us-east4-b
+    owner_uid: //compute.googleapis.com/projects/test-project/zones/us-east4-b/instances/productpage-vm
+    workload_name: productpage-v1
+    workload_namespace: default
+    canonical_service: productpage-v1
+    canonical_revision: version-1
+  destination:
+    uid: //compute.googleapis.com/projects/test-project/zones/us-east4-b/instances/ratings-v1-vm
+    location: us-east4-b
+    owner_uid: //compute.googleapis.com/projects/23412341234/instanceGroupManagers/324234
+    workload_name: ratings-v1
+    workload_namespace: default
+    canonical_service: ratings
+    canonical_revision: version-1
+
