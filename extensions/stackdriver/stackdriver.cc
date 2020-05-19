@@ -147,7 +147,14 @@ std::string getMonitoringEndpoint() {
 
 }  // namespace
 
-bool StackdriverRootContext::onConfigure(size_t) {
+// onConfigure == false makes the proxy crash.
+// Only policy plugins should return false.
+bool StackdriverRootContext::onConfigure(size_t size) {
+  initialized_ = configure(size);
+  return true;
+}
+
+bool StackdriverRootContext::configure(size_t) {
   // onStart is called prior to onConfigure
   if (enableServerAccessLog() || enableEdgeReporting()) {
     proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
@@ -362,6 +369,9 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
+  if (!getRootContext()->initialized()) {
+    return;
+  }
   // Record telemetry based on request info.
   getRootContext()->record();
 }

@@ -228,6 +228,7 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
+  bool configure(size_t);
   bool onDone() override;
   void onTick() override;
   // Report will return false when peer metadata exchange is not found for TCP,
@@ -239,6 +240,7 @@ class PluginRootContext : public RootContext {
   void addToTCPRequestQueue(
       uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
   void deleteFromTCPRequestQueue(uint32_t id);
+  bool initialized() const { return initialized_; };
 
  protected:
   const std::vector<MetricTag>& defaultTags();
@@ -289,6 +291,7 @@ class PluginRootContext : public RootContext {
       tcp_request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
+  bool initialized_ = false;
 };
 
 class PluginRootContextOutbound : public PluginRootContext {
@@ -312,6 +315,9 @@ class PluginContext : public Context {
   }
 
   void onLog() override {
+    if (!rootContext()->initialized()) {
+      return;
+    }
     if (is_tcp_) {
       cleanupTCPOnClose();
     }
@@ -319,6 +325,9 @@ class PluginContext : public Context {
   };
 
   FilterStatus onNewConnection() override {
+    if (!rootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
     is_tcp_ = true;
     request_info_->tcp_connections_opened++;
     rootContext()->addToTCPRequestQueue(context_id_, request_info_);
@@ -327,11 +336,17 @@ class PluginContext : public Context {
 
   // Called on onData call, so counting the data that is received.
   FilterStatus onDownstreamData(size_t size, bool) override {
+    if (!rootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
     request_info_->tcp_received_bytes += size;
     return FilterStatus::Continue;
   }
   // Called on onWrite call, so counting the data that is sent.
   FilterStatus onUpstreamData(size_t size, bool) override {
+    if (!rootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
     request_info_->tcp_sent_bytes += size;
     return FilterStatus::Continue;
   }
