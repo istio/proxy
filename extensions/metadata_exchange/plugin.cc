@@ -100,7 +100,7 @@ bool PluginRootContext::onConfigure(size_t size) {
                          " value:", metadata_value_, " node:", node_id_));
 
   // Parse configuration JSON string.
-  if (!configure(size)) {
+  if (size > 0 && !configure(size)) {
     LOG_WARN("configuration has errrors, but initialzation can continue.");
   }
 
