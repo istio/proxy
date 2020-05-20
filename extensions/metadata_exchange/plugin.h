@@ -66,7 +66,6 @@ class PluginRootContext : public RootContext {
   StringView metadataValue() { return metadata_value_; };
   StringView nodeId() { return node_id_; };
   bool updatePeer(StringView key, StringView peer_id, StringView peer_header);
-  bool initialized() const { return initialized_; };
 
  private:
   void updateMetadataValue();
@@ -76,8 +75,6 @@ class PluginRootContext : public RootContext {
   // maps peer ID to the decoded peer flat buffer
   std::unordered_map<std::string, std::string> cache_;
   int64_t max_peer_cache_size_{DefaultNodeCacheMaxSize};
-
-  bool initialized_ = false;
 };
 
 // Per-stream context.
