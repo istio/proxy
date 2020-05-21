@@ -80,36 +80,62 @@ void buildEnvoyGrpcService(
   }
 }
 
+bool isRawGCEInstance(const ::Wasm::Common::FlatNode &node) {
+  auto platform_metadata = node.platform_metadata();
+  if (!platform_metadata) {
+    return false;
+  }
+  auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
+  auto cluster_name = platform_metadata->LookupByKey(kGCPClusterNameKey);
+  return instance_id && !cluster_name;
+}
+
+std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode &node) {
+  auto platform_metadata = node.platform_metadata();
+  if (!platform_metadata) {
+    return "";
+  }
+
+  auto project = platform_metadata->LookupByKey(kGCPProjectKey);
+  auto location = platform_metadata->LookupByKey(kGCPLocationKey);
+  auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
+
+  auto name = node.name() ? node.name()->string_view() : absl::string_view();
+  if (name.size() == 0 && instance_id) {
+    name = instance_id->value()->string_view();
+  }
+
+  if (name.size() > 0 && project && location) {
+    return absl::StrCat("//compute.googleapis.com/projects/",
+                        project->value()->string_view(), "/zones/",
+                        location->value()->string_view(), "/instances/", name);
+  }
+
+  return "";
+}
+
 std::string getOwner(const ::Wasm::Common::FlatNode &node) {
   // do not override supplied owner
   if (node.owner()) {
     return flatbuffers::GetString(node.owner());
   }
 
-  auto platform_metadata = node.platform_metadata();
-  if (!platform_metadata) {
-    return "";
-  }
+  // only attempt for GCE Instances at this point. Support for other
+  // platforms will have to be added later. We also don't try to discover
+  // owners for GKE workload instances, as those should be handled by the
+  // sidecar injector.
+  if (isRawGCEInstance(node)) {
+    auto platform_metadata = node.platform_metadata();
+    if (!platform_metadata) {
+      return "";
+    }
+    auto created_by = platform_metadata->LookupByKey(kGCECreatedByKey.data());
+    if (created_by) {
+      return absl::StrCat("//compute.googleapis.com/",
+                          created_by->value()->string_view());
+    }
 
-  // only attempt for GCE Instances at this point, first check for MIG.
-  auto created_by = platform_metadata->LookupByKey(kGCECreatedByKey.data());
-  if (created_by) {
-    return absl::StrCat("//compute.googleapis.com/",
-                        flatbuffers::GetString(created_by->value()));
-  }
-
-  // then handle unmanaged GCE Instance case
-  auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
-  auto project = platform_metadata->LookupByKey(kGCPProjectNumberKey.data());
-  auto location = platform_metadata->LookupByKey(kGCPLocationKey);
-  if (instance_id && project && location) {
-    // Should be of the form:
-    // //compute.googleapis.com/projects/%s/zones/%s/instances/%s
-    return absl::StrCat("//compute.googleapis.com/projects/",
-                        flatbuffers::GetString(project->value()), "/zones/",
-                        flatbuffers::GetString(location->value()),
-                        "/instances/",
-                        flatbuffers::GetString(instance_id->value()));
+    return getGCEInstanceUID(node);
   }
 
   return "";

@@ -156,7 +156,11 @@ func (s *checkStackdriver) Run(p *Params) error {
 	verfiedLatency := false
 	for i := 0; i < 30; i++ {
 		s.sd.Lock()
-		foundAllLogs = reflect.DeepEqual(s.sd.ls, s.lwant)
+		if len(s.lwant) == 0 {
+			foundAllLogs = true
+		} else {
+			foundAllLogs = reflect.DeepEqual(s.sd.ls, s.lwant)
+		}
 		if !foundAllLogs {
 			log.Printf("got log entries %d, want %d\n", len(s.sd.ls), len(s.lwant))
 			if len(s.sd.ls) >= len(s.lwant) {
@@ -171,12 +175,14 @@ func (s *checkStackdriver) Run(p *Params) error {
 			}
 		}
 
-		foundAllMetrics = reflect.DeepEqual(s.sd.ts, s.twant)
+		if len(s.twant) == 0 {
+			foundAllMetrics = true
+		} else {
+			foundAllMetrics = reflect.DeepEqual(s.sd.ts, s.twant)
+		}
 		if !foundAllMetrics {
 			log.Printf("got metrics %d, want %d\n", len(s.sd.ts), len(s.twant))
-			if len(s.twant) == 0 {
-				foundAllMetrics = true
-			} else if len(s.sd.ts) >= len(s.twant) {
+			if len(s.sd.ts) >= len(s.twant) {
 				for got := range s.sd.ts {
 					log.Println(got)
 				}
@@ -188,12 +194,14 @@ func (s *checkStackdriver) Run(p *Params) error {
 			}
 		}
 
-		foundAllEdge = reflect.DeepEqual(s.sd.es, s.ewant)
+		if len(s.ewant) == 0 {
+			foundAllEdge = true
+		} else {
+			foundAllEdge = reflect.DeepEqual(s.sd.es, s.ewant)
+		}
 		if !foundAllEdge {
 			log.Printf("got edges %d, want %d\n", len(s.sd.es), len(s.ewant))
-			if len(s.ewant) == 0 {
-				foundAllEdge = true
-			} else if len(s.sd.es) >= len(s.ewant) {
+			if len(s.sd.es) >= len(s.ewant) {
 				for got := range s.sd.es {
 					log.Println(got)
 				}
