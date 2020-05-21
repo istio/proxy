@@ -17,12 +17,12 @@ package main
 import (
 	"log"
 
-	fs "istio.io/proxy/test/envoye2e/driver"
+	sd "istio.io/proxy/test/envoye2e/stackdriver_plugin"
 )
 
 func main() {
 	log.Println("Run Stackdriver server, listening on port 8090")
-	if err := fs.RunFakeStackdriver(8090); err != nil {
+	if err := sd.RunFakeStackdriver(8090); err != nil {
 		log.Printf("Stackdriver server failed %v", err)
 	}
 }

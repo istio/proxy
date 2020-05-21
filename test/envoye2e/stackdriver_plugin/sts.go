@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package driver
+package stackdriverplugin
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
 )
 
@@ -47,9 +48,9 @@ var (
 }`, ExpectedBearer)
 )
 
-var _ Step = &SecureTokenService{}
+var _ driver.Step = &SecureTokenService{}
 
-func (sts *SecureTokenService) Run(_ *Params) error {
+func (sts *SecureTokenService) Run(_ *driver.Params) error {
 	sts.server = &http.Server{
 		Addr:         fmt.Sprintf(":%d", sts.Port),
 		Handler:      sts,
