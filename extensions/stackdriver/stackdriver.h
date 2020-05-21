@@ -65,6 +65,7 @@ class StackdriverRootContext : public RootContext {
   ~StackdriverRootContext() = default;
 
   bool onConfigure(size_t) override;
+  bool configure(size_t);
   bool onStart(size_t) override;
   void onTick() override;
   bool onDone() override;
@@ -76,6 +77,8 @@ class StackdriverRootContext : public RootContext {
 
   // Records telemetry for the current active stream.
   void record();
+
+  bool initialized() const { return initialized_; };
 
  private:
   // Indicates whether to export server access log or not.
@@ -114,6 +117,7 @@ class StackdriverRootContext : public RootContext {
       kDefaultEdgeEpochReportDurationNanoseconds;
 
   bool use_host_header_fallback_;
+  bool initialized_ = false;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

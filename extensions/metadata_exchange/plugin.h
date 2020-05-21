@@ -59,6 +59,7 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
+  bool configure(size_t);
   bool onStart(size_t) override { return true; };
   void onTick() override{};
 

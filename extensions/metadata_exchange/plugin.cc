@@ -55,7 +55,7 @@ bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
 
   mcs.SetSerializationDeterministic(true);
   if (!metadata.SerializeToCodedStream(&mcs)) {
-    logWarn("unable to serialize metadata");
+    LOG_WARN("unable to serialize metadata");
     return false;
   }
   return true;
@@ -69,7 +69,7 @@ static RegisterContextFactory register_MetadataExchange(
 void PluginRootContext::updateMetadataValue() {
   google::protobuf::Struct node_metadata;
   if (!getMessageValue({"node", "metadata"}, &node_metadata)) {
-    logWarn("cannot get node metadata");
+    LOG_WARN("cannot get node metadata");
     return;
   }
 
@@ -77,7 +77,7 @@ void PluginRootContext::updateMetadataValue() {
   const auto status =
       ::Wasm::Common::extractNodeMetadataValue(node_metadata, &metadata);
   if (!status.ok()) {
-    logWarn(status.message().ToString());
+    LOG_WARN(status.message().ToString());
     return;
   }
 
@@ -88,27 +88,20 @@ void PluginRootContext::updateMetadataValue() {
       Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
-bool PluginRootContext::onConfigure(size_t) {
+// Metadata exchange has sane defaults and therefore it will be fully
+// functional even with configuration errors.
+// A configuration error thrown here will cause the proxy to crash.
+bool PluginRootContext::onConfigure(size_t size) {
   updateMetadataValue();
   if (!getValue({"node", "id"}, &node_id_)) {
-    logDebug("cannot get node ID");
+    LOG_DEBUG("cannot get node ID");
   }
-  logDebug(absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_,
-                        " node:", node_id_));
+  LOG_DEBUG(absl::StrCat("metadata_value_ id:", id(),
+                         " value:", metadata_value_, " node:", node_id_));
 
   // Parse configuration JSON string.
-  std::unique_ptr<WasmData> configuration = getConfiguration();
-  auto j = ::Wasm::Common::JsonParse(configuration->view());
-  if (!j.is_object()) {
-    logWarn(absl::StrCat("cannot parse plugin configuration JSON string: ",
-                         configuration->view(), j.dump()));
-    return false;
-  }
-
-  auto max_peer_cache_size =
-      ::Wasm::Common::JsonGetField<int64_t>(j, "max_peer_cache_size");
-  if (max_peer_cache_size.has_value()) {
-    max_peer_cache_size_ = max_peer_cache_size.value();
+  if (size > 0 && !configure(size)) {
+    LOG_WARN("configuration has errrors, but initialzation can continue.");
   }
 
   // Declare filter state property type.
@@ -129,6 +122,24 @@ bool PluginRootContext::onConfigure(size_t) {
   proxy_call_foreign_function(function.data(), function.size(), in.data(),
                               in.size(), nullptr, nullptr);
 
+  return true;
+}
+
+bool PluginRootContext::configure(size_t) {
+  // Parse configuration JSON string.
+  std::unique_ptr<WasmData> configuration = getConfiguration();
+  auto j = ::Wasm::Common::JsonParse(configuration->view());
+  if (!j.is_object()) {
+    LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
+                          configuration->view(), j.dump()));
+    return false;
+  }
+
+  auto max_peer_cache_size =
+      ::Wasm::Common::JsonGetField<int64_t>(j, "max_peer_cache_size");
+  if (max_peer_cache_size.has_value()) {
+    max_peer_cache_size_ = max_peer_cache_size.value();
+  }
   return true;
 }
 
@@ -162,7 +173,7 @@ bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
     if (static_cast<uint32_t>(cache_.size()) > max_peer_cache_size_) {
       auto it = cache_.begin();
       cache_.erase(cache_.begin(), std::next(it, max_peer_cache_size_ / 4));
-      logDebug(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
+      LOG_DEBUG(absl::StrCat("cleaned cache, new cache_size:", cache_.size()));
     }
     cache_.emplace(std::move(id), out);
   }
@@ -189,7 +200,7 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
     if (!rootContext()->updatePeer(::Wasm::Common::kDownstreamMetadataKey,
                                    downstream_metadata_id->view(),
                                    downstream_metadata_value->view())) {
-      logDebug("cannot set downstream peer node");
+      LOG_DEBUG("cannot set downstream peer node");
     }
   } else {
     metadata_received_ = false;
@@ -230,7 +241,7 @@ FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
     if (!rootContext()->updatePeer(::Wasm::Common::kUpstreamMetadataKey,
                                    upstream_metadata_id->view(),
                                    upstream_metadata_value->view())) {
-      logDebug("cannot set upstream peer node");
+      LOG_DEBUG("cannot set upstream peer node");
     }
   }
 

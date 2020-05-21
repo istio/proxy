@@ -61,6 +61,7 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
+  bool configure(size_t);
 
   long long lastLogTimeNanos(const IstioDimensions& key) {
     if (cache_.contains(key)) {
@@ -72,6 +73,7 @@ class PluginRootContext : public RootContext {
   void updateLastLogTimeNanos(const IstioDimensions& key,
                               long long last_log_time_nanos);
   long long logTimeDurationNanos() { return log_time_duration_nanos_; };
+  bool initialized() const { return initialized_; };
 
  private:
   accesslogpolicy::config::v1alpha1::AccessLogPolicyConfig config_;
@@ -79,6 +81,8 @@ class PluginRootContext : public RootContext {
   absl::flat_hash_map<IstioDimensions, long long> cache_;
   int32_t max_client_cache_size_ = DefaultClientCacheMaxSize;
   long long log_time_duration_nanos_;
+
+  bool initialized_ = false;
 };
 
 // Per-stream context.
