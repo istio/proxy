@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2016 Istio Authors. All Rights Reserved.
+# Copyright 2020 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,17 +16,23 @@
 #
 ################################################################################
 
-if git rev-parse --verify --quiet HEAD >/dev/null; then
-  echo "BUILD_SCM_REVISION $(git rev-parse --verify HEAD)"
-else
-  exit 1
+if [ -z "${BUILD_SCM_REVISION}" ]; then
+  if git rev-parse --verify --quiet HEAD >/dev/null; then
+    BUILD_SCM_REVISION="$(git rev-parse --verify HEAD)"
+  else
+    exit 1
+  fi
 fi
 
-if git diff-index --quiet HEAD; then
-  echo "BUILD_SCM_STATUS Clean"
-else
-  echo "BUILD_SCM_STATUS Modified"
+if [ -z "${BUILD_SCM_STATUS}" ]; then
+  if git diff-index --quiet HEAD; then
+    BUILD_SCM_STATUS="Clean"
+  else
+    BUILD_SCM_STATUS="Modified"
+  fi
 fi
 
+echo "BUILD_SCM_REVISION ${BUILD_SCM_REVISION}"
+echo "BUILD_SCM_STATUS ${BUILD_SCM_STATUS}"
 echo "BUILD_CONFIG ${BUILD_CONFIG:-default}"
 echo "DOCKER_REPOSITORY ${DOCKER_REPOSITORY:-istio-testing/envoy}"
