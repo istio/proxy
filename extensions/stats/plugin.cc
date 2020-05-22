@@ -427,11 +427,8 @@ bool PluginRootContext::onConfigure(size_t size) {
 }
 
 bool PluginRootContext::configure(size_t configuration_size) {
-  const char* configuration = nullptr;
-  size_t size;
-  proxy_get_buffer_bytes(WasmBufferType::PluginConfiguration, 0,
-                         configuration_size, &configuration, &size);
-  StringView configuration_view(configuration, size);
+  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
+                                           0, configuration_size);
   if (!::Wasm::Common::extractPartialLocalNodeFlatBuffer(&local_node_info_)) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
@@ -439,10 +436,10 @@ bool PluginRootContext::configure(size_t configuration_size) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
-  auto j = ::Wasm::Common::JsonParse(configuration_view);
+  auto j = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!j.is_object()) {
     LOG_WARN(absl::StrCat("cannot parse configuration as JSON: ",
-                          configuration_view));
+                          configuration_data->view()));
     return false;
   }
 

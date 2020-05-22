@@ -93,11 +93,9 @@ Optional<bool> AttributeGenerator::evaluate(std::string* val) const {
 // It is the responsibility of the control plane to send valid configuration.
 // AttributeGen plugin will not return `false`.
 bool PluginRootContext::onConfigure(size_t configuration_size) {
-  const char* configuration_ptr = nullptr;
-  size_t size;
-  proxy_get_buffer_bytes(WasmBufferType::PluginConfiguration, 0,
-                         configuration_size, &configuration_ptr, &size);
-  std::string configuration(configuration_ptr, size);
+  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
+                                           0, configuration_size);
+  auto configuration = configuration_data->toString();
   // Parse configuration JSON string.
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
@@ -123,7 +121,6 @@ bool PluginRootContext::onConfigure(size_t configuration_size) {
     LOG_WARN(
         "Config Error: attributegen plugin rejected invalid configuration");
   }
-
   return true;
 }
 

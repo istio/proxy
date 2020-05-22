@@ -170,39 +170,16 @@ envoy_cc_library(
 )
 
 cc_library(
-    name = "common",
-    srcs = [
-        "context.cc",
-        "json_util.cc",
-        "util.cc",
-    ],
+    name = "json_util_wasm",
+    srcs = ["json_util.cc"],
     hdrs = [
-        "context.h",
         "json_util.h",
-        "util.h",
         ":nlohmann_json_hpp",
     ],
     copts = ["-UNULL_PLUGIN"],
+    visibility = ["//visibility:public"],
     deps = [
-        ":node_info_fb_cc",
         "@com_google_absl_wasm//absl/strings",
         "@com_google_absl_wasm//absl/types:optional",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
-    ],
-)
-
-cc_library(
-    name = "wasm_proto_util",
-    srcs = [
-        "proto_util.cc",
-    ],
-    hdrs = [
-        "proto_util.h",
-    ],
-    copts = ["-UNULL_PLUGIN"],
-    deps = [
-        ":node_info_fb_cc",
-        "@com_google_absl_wasm//absl/strings",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
     ],
 )

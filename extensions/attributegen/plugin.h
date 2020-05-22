@@ -24,7 +24,7 @@
 
 #include "proxy_wasm_intrinsics.h"
 // Do not reorder.
-#include "extensions/common/proxy_expr.h"
+#include "contrib/proxy_expr.h"
 
 #else  // NULL_PLUGIN
 

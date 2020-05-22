@@ -160,11 +160,9 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   // Parse configuration JSON string.
   std::string configuration = "{}";
   if (configuration_size > 0) {
-    const char* configuration_ptr = nullptr;
-    size_t size;
-    proxy_get_buffer_bytes(WasmBufferType::PluginConfiguration, 0,
-                           configuration_size, &configuration_ptr, &size);
-    configuration = std::string(configuration_ptr, size);
+    auto configuration_data = getBufferBytes(
+        WasmBufferType::PluginConfiguration, 0, configuration_size);
+    configuration = configuration_data->toString();
   }
 
   // TODO: add config validation to reject the listener if project id is not in

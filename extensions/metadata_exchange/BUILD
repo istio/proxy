@@ -51,21 +51,4 @@ cc_proto_library(
     deps = [":declare_property_proto"],
 )
 
-wasm_cc_binary(
-    name = "plugin.wasm",
-    srcs = [
-        "base64.h",
-        "plugin.cc",
-        "plugin.h",
-    ],
-    copts = ["-UNULL_PLUGIN"],
-    deps = [
-        ":declare_property_proto_cc",
-        "//extensions/common",
-        "//extensions/common:wasm_proto_util",
-        "@com_google_absl_wasm//absl/strings",
-        "@com_google_absl_wasm//absl/time",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
-        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
-    ],
-)
+exports_files(["base64.h"])

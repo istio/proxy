@@ -174,7 +174,7 @@ do
 done
 
 # Build and publish Wasm plugins
-extensions=(stats metadata_exchange)
+extensions=(stats metadata_exchange attributegen)
 TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
 trap "rm -rf ${TMP_WASM}" EXIT
 for extension in "${extensions[@]}"; do
@@ -184,7 +184,7 @@ for extension in "${extensions[@]}"; do
     WASM_NAME="${extension}-${SHA}.wasm"
     WASM_PATH="${TMP_WASM}/${WASM_NAME}"
     SHA256_PATH="${WASM_PATH}.sha256"
-    BAZEL_TARGET="$(bazel info output_path)/k8-fastbuild/bin/extensions/${extension}/plugin.wasm"
+    BAZEL_TARGET="$(bazel info output_path)/k8-fastbuild/bin/extensions/${extension}.wasm"
     cp ${BAZEL_TARGET} ${WASM_PATH}
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
     

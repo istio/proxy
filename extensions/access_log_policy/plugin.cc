@@ -81,11 +81,9 @@ bool PluginRootContext::configure(size_t configuration_size) {
     logError("ASM Acess Logging Policy is an inbound filter only.");
     return false;
   }
-  const char* configuration_ptr = nullptr;
-  size_t size;
-  proxy_get_buffer_bytes(WasmBufferType::PluginConfiguration, 0,
-                         configuration_size, &configuration_ptr, &size);
-  std::string configuration(configuration_ptr, size);
+  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
+                                           0, configuration_size);
+  auto configuration = configuration_data->toString();
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
   Status status = JsonStringToMessage(configuration, &config_, json_options);
