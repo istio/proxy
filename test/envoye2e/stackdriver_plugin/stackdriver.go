@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package driver
+package stackdriverplugin
 
 import (
 	"fmt"
@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
+	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
 )
 
@@ -50,9 +51,9 @@ type SDLogEntry struct {
 	LogEntryCount int
 }
 
-var _ Step = &Stackdriver{}
+var _ driver.Step = &Stackdriver{}
 
-func (sd *Stackdriver) Run(p *Params) error {
+func (sd *Stackdriver) Run(p *driver.Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
@@ -109,7 +110,7 @@ func (sd *Stackdriver) Cleanup() {
 	close(sd.done)
 }
 
-func (sd *Stackdriver) Check(p *Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string) Step {
+func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string) driver.Step {
 	// check as sets of strings by marshaling to proto
 	twant := make(map[string]struct{})
 	for _, t := range tsFiles {
@@ -149,7 +150,7 @@ type checkStackdriver struct {
 	ewant map[string]struct{}
 }
 
-func (s *checkStackdriver) Run(p *Params) error {
+func (s *checkStackdriver) Run(p *driver.Params) error {
 	foundAllLogs := false
 	foundAllMetrics := false
 	foundAllEdge := false
