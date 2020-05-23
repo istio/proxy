@@ -82,7 +82,7 @@ build_wasm:
 	bazel build //extensions/attributegen:plugin.wasm
 
 check_wasm: build_envoy
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
+	env GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
 
 clean:
 	@bazel clean
