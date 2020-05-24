@@ -46,21 +46,21 @@ export BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-fastbuild/bin
 export BAZEL_BUILD_RBE_JOBS=0
 
 # Use GCP service account when available.
-# if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-#   echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
-#   gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
-# 
-#   # Use RBE when logged in.
-#   BAZEL_BUILD_RBE_INSTANCE="${BAZEL_BUILD_RBE_INSTANCE:-projects/istio-testing/instances/default_instance}"
-#   BAZEL_BUILD_RBE_CACHE="${BAZEL_BUILD_RBE_CACHE:-grpcs://remotebuildexecution.googleapis.com}"
-#   BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
-#   if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
-#     if [[ "${BAZEL_BUILD_RBE_JOBS}" -gt 0 ]]; then
-#       echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (execute)"
-#       export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
-#     elif [[ -n "${BAZEL_BUILD_RBE_CACHE}" ]]; then
-#       echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (cache)"
-#       export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
-#     fi
-#   fi
-# fi
+if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
+  gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+
+  # Use RBE when logged in.
+  BAZEL_BUILD_RBE_INSTANCE="${BAZEL_BUILD_RBE_INSTANCE:-projects/istio-testing/instances/default_instance}"
+  BAZEL_BUILD_RBE_CACHE="${BAZEL_BUILD_RBE_CACHE:-grpcs://remotebuildexecution.googleapis.com}"
+  BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
+  if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
+    if [[ "${BAZEL_BUILD_RBE_JOBS}" -gt 0 ]]; then
+      echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (execute)"
+      export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
+    elif [[ -n "${BAZEL_BUILD_RBE_CACHE}" ]]; then
+      echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (cache)"
+      export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
+    fi
+  fi
+fi

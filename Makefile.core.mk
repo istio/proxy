@@ -77,9 +77,9 @@ build_envoy_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 
 build_wasm:
-	bazel build //extensions:stats.wasm
-	bazel build //extensions:metadata_exchange.wasm
-	bazel build //extensions:attributegen.wasm
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //extensions:stats.wasm
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //extensions:metadata_exchange.wasm
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //extensions:attributegen.wasm
 
 check_wasm: build_envoy
 	env GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
