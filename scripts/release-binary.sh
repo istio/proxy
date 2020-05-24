@@ -177,9 +177,9 @@ done
 extensions=(stats metadata_exchange attributegen)
 TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
 trap "rm -rf ${TMP_WASM}" EXIT
-for extension in "${extensions[@]}"; do
-  bazel build //extensions/${extension}:plugin.wasm
-  if [ -n "${DST}" ]; then
+make build_wasm
+if [ -n "${DST}" ]; then
+  for extension in "${extensions[@]}"; do
     # Rename the plugin file and generate sha256 for it
     WASM_NAME="${extension}-${SHA}.wasm"
     WASM_PATH="${TMP_WASM}/${WASM_NAME}"
@@ -193,5 +193,5 @@ for extension in "${extensions[@]}"; do
       && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
       || echo "Pushing the WASM file ${WASM_NAME}"
     gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST_BUCKET}"
-  fi
-done
+  done
+fi
