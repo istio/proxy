@@ -1,4 +1,4 @@
-# Copyright 2018 Istio Authors. All Rights Reserved.
+# Copyright 2020 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,30 +18,28 @@
 package(default_visibility = ["//visibility:public"])
 
 load(
-    "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_proto_library",
-)
-
-load(
     "//:wasm.bzl",
-    "wasm_cc_proto_library"
+    "wasm_cc_library",
 )
 
-envoy_proto_library(
-    name = "context_proto",
-    srcs = ["context.proto"],
-    external_deps = ["well_known_protos"],
-)
-
-proto_library(
-    name = "context_proto_wasm",
-    srcs = ["context.proto"],
+wasm_cc_library(
+    name = "base",
+    srcs = ["base.cc"],
+    hdrs = ["base.h"],
     deps = [
-        "@com_google_protobuf//:struct_proto",
+        "//external:authentication_policy_config_cc_proto",
+        "//src/envoy/http/authn_wasm:filter_context_lib",
+        "//src/istio/authn:context_proto_cc_wasm",
+        "@com_google_abseil//absl/strings",
     ],
 )
 
-wasm_cc_proto_library(
-    name = "context_proto_cc_wasm",
-    deps = ":context_proto_wasm"
+wasm_cc_library(
+    name = "peer",
+    srcs = ["peer.cc"],
+    hdrs = ["peer.h"],
+    deps = [
+        ":base",
+        "//external:authentication_policy_config_cc_proto",
+    ],
 )

@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn_wasm/authenticator/authenticator.h"
-
 namespace Envoy {
 namespace Http {
 namespace Istio {

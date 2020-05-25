@@ -15,6 +15,7 @@
 ################################################################################
 #
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load(":x_tools_imports.bzl", "go_x_tools_imports_repositories")
 
 GOOGLETEST = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0"
@@ -350,6 +351,13 @@ py_proto_library(
             actual = "@mixerapi_git//:tcp_cluster_rewrite_config_cc_proto",
         )
 
+def wasm_dependencies():
+    protobuf_dependencies()
+    zlib_dependencies()
+    proxy_wasm_cpp_sdk_dependencies()
+    emscripten_toolchain_dependencies()
+    abseil_dependencies()
+
 def mixerapi_dependencies():
     go_x_tools_imports_repositories()
     mixerapi_repositories()
@@ -360,4 +368,129 @@ def docker_dependencies():
         sha256 = "413bb1ec0895a8d3249a01edf24b82fd06af3c8633c9fb833a0cb1d4b234d46d",
         strip_prefix = "rules_docker-0.12.0",
         urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.12.0/rules_docker-v0.12.0.tar.gz"],
+    )
+
+def emscripten_toolchain_dependencies():
+    BUILD = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])"""
+    http_archive(
+        name = "emscripten_toolchain",
+        sha256 = "4ac0f1f3de8b3f1373d435cd7e58bd94de4146e751f099732167749a229b443b",
+        build_file_content = BUILD,
+        patch_cmds = [
+            "./emsdk install 1.39.6-upstream",
+            "./emsdk activate --embedded 1.39.6-upstream",
+        ],
+        strip_prefix = "emsdk-1.39.6",
+        urls = ["https://github.com/emscripten-core/emsdk/archive/1.39.6.tar.gz"],
+    )
+
+def proxy_wasm_cpp_sdk_dependencies():
+    http_archive(
+        name = "proxy_wasm_cpp_sdk",
+        sha256 = "3531281b8190ff532b730e92c1f247a2b87995f17a4fd9eaf2ebac6136fbc308",
+        strip_prefix = "proxy-wasm-cpp-sdk-96927d814b3ec14893b56793e122125e095654c7",
+        urls = ["https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/archive/96927d814b3ec14893b56793e122125e095654c7.tar.gz"],
+    )
+
+# This repository is needed to use abseil when wasm build.
+# Now we can't use dependencies on external package with wasm. We should implement like `envoy_wasm_cc_binary` to utilize
+# dependencies of envoy package.
+def abseil_dependencies():
+    http_archive(
+        name = "com_google_abseil",
+        sha256 = "2693730730247afb0e7cb2d41664ac2af3ad75c79944efd266be40ba944179b9",
+        strip_prefix = "abseil-cpp-06f0e767d13d4d68071c4fc51e25724e0fc8bc74",
+        # 2020-03-03
+        urls = ["https://github.com/abseil/abseil-cpp/archive/06f0e767d13d4d68071c4fc51e25724e0fc8bc74.tar.gz"],
+    )
+
+# The build strategy to build zlib which is depend by protobuf is not appropriate for emscripten. We should override to
+# use pure build strategy for protobuf
+def protobuf_dependencies():
+    git_repository(
+        name = "com_google_protobuf",
+        remote = "https://github.com/protocolbuffers/protobuf",
+        commit = "655310ca192a6e3a050e0ca0b7084a2968072260",
+    )
+
+# This is a dependency of protobuf. In general, the configuration which is defined in protobuf. But, we can't utilize it because
+# bazel will use envoy's definition of zlib build. It will cause confusing behavior of emscripten. Specifically, emcc.py will put out
+# the failure message of interpreting `libz.so.1.2.11.1-motley`. It is because of invalid prefix of the name of shared library. emcc can't
+# regard it as valid shared library. So we decided to introduce the phase of zlib build directly.
+def zlib_dependencies():
+    ZLIB_BUILD = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # BSD/MIT-like license (for zlib)
+
+_ZLIB_HEADERS = [
+    "crc32.h",
+    "deflate.h",
+    "gzguts.h",
+    "inffast.h",
+    "inffixed.h",
+    "inflate.h",
+    "inftrees.h",
+    "trees.h",
+    "zconf.h",
+    "zlib.h",
+    "zutil.h",
+]
+
+_ZLIB_PREFIXED_HEADERS = ["zlib/include/" + hdr for hdr in _ZLIB_HEADERS]
+
+# In order to limit the damage from the `includes` propagation
+# via `:zlib`, copy the public headers to a subdirectory and
+# expose those.
+genrule(
+    name = "copy_public_headers",
+    srcs = _ZLIB_HEADERS,
+    outs = _ZLIB_PREFIXED_HEADERS,
+    cmd = "cp $(SRCS) $(@D)/zlib/include/",
+)
+
+cc_library(
+    name = "zlib",
+    srcs = [
+        "adler32.c",
+        "compress.c",
+        "crc32.c",
+        "deflate.c",
+        "gzclose.c",
+        "gzlib.c",
+        "gzread.c",
+        "gzwrite.c",
+        "infback.c",
+        "inffast.c",
+        "inflate.c",
+        "inftrees.c",
+        "trees.c",
+        "uncompr.c",
+        "zutil.c",
+        # Include the un-prefixed headers in srcs to work
+        # around the fact that zlib isn't consistent in its
+        # choice of <> or "" delimiter when including itself.
+    ] + _ZLIB_HEADERS,
+    hdrs = _ZLIB_PREFIXED_HEADERS,
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "-Wno-unused-variable",
+            "-Wno-implicit-function-declaration",
+        ],
+    }),
+    includes = ["zlib/include/"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+    http_archive(
+        name = "zlib",
+        build_file_content = ZLIB_BUILD,
+        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+        strip_prefix = "zlib-1.2.11",
+        urls = [
+            "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+            "https://zlib.net/zlib-1.2.11.tar.gz",
+        ],
     )

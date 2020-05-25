@@ -18,11 +18,13 @@ workspace(name = "io_istio_proxy")
 
 # http_archive is not a native function since bazel 0.19
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load(
     "//:repositories.bzl",
     "docker_dependencies",
     "googletest_repositories",
     "mixerapi_dependencies",
+    "wasm_dependencies",
 )
 
 googletest_repositories()
@@ -41,6 +43,10 @@ bind(
 ENVOY_SHA = "d29f7a659ba736aab97697a7bcfc69a71bc66b66"
 
 ENVOY_SHA256 = "ffc2b25af02242a95bf0e65b2f9c4ac0248fb07ade6b5bb3517be934340dfec9"
+
+# wasm dependencies
+
+wasm_dependencies()
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.

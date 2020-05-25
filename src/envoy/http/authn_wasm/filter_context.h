@@ -18,9 +18,9 @@
 #include <unordered_map>
 #include <memory>
 
-#include <absl/strings/string_view.h>
+#include "absl/strings/string_view.h"
 
-#include "istio/authn/context.pb.h"
+#include "src/istio/authn/context.pb.h"
 #include "authentication/v1alpha1/policy.pb.h"
 
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
