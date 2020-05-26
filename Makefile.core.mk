@@ -81,7 +81,9 @@ build_wasm:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //extensions:metadata_exchange.wasm
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) //extensions:attributegen.wasm
 
-check_wasm: build_envoy
+# NOTE: build_wasm has to happen before build_envoy, since the integration test references bazel-bin symbol link for envoy binary,
+# which will be overwritten if wasm build happens after envoy.
+check_wasm: build_wasm build_envoy
 	env GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
 
 clean:

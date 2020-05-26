@@ -184,7 +184,7 @@ if [ -n "${DST}" ]; then
     WASM_NAME="${extension}-${SHA}.wasm"
     WASM_PATH="${TMP_WASM}/${WASM_NAME}"
     SHA256_PATH="${WASM_PATH}.sha256"
-    BAZEL_TARGET="$(bazel info output_path)/k8-fastbuild/bin/extensions/${extension}.wasm"
+    BAZEL_TARGET="$(bazel info bazel-bin)/extensions/${extension}.wasm"
     cp ${BAZEL_TARGET} ${WASM_PATH}
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
     

@@ -22,11 +22,6 @@ load(
 
 envoy_cc_binary(
     name = "envoy",
-    data = [
-        "//extensions:attributegen.wasm",
-        "//extensions:metadata_exchange.wasm",
-        "//extensions:stats.wasm",
-    ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
