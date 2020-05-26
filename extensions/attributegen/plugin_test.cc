@@ -418,8 +418,7 @@ TEST_P(AttributeGenFilterTest, OperationFileGet) {
       {":path", "/shelves/a101/books/b1122"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verifyRequest(request_headers, response_headers, attribute, true,
-  "GetBook");
+  verifyRequest(request_headers, response_headers, attribute, true, "GetBook");
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
@@ -432,8 +431,7 @@ TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
       {":path", "/shelves/-----/books/b1122"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verifyRequest(request_headers, response_headers, attribute, false,
-  "GetBook");
+  verifyRequest(request_headers, response_headers, attribute, false, "GetBook");
 }
 
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
