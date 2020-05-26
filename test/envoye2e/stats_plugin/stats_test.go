@@ -64,8 +64,8 @@ var Runtimes = []struct {
 		WasmRuntime:                "envoy.wasm.runtime.null",
 	},
 	{
-		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelBin(), "extensions/metadata_exchange.wasm"),
-		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelBin(), "extensions/stats.wasm"),
+		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/metadata_exchange.wasm"),
+		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.wasm"),
 		WasmRuntime:                "envoy.wasm.runtime.v8",
 	},
 }

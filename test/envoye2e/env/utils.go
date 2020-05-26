@@ -29,10 +29,10 @@ func GetDefaultEnvoyBin() string {
 	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
 }
 
-func GetBazelBin() string {
-	// Note: `bazel info bazel-bin` always returns fastbuild, not opt or dbg)
-	bazelBin, _ := exec.Command("bazel", "info", "bazel-bin").Output()
-	return strings.TrimSuffix(string(bazelBin), "\n")
+func GetBazelOptOut() string {
+	// `make build_wasm` puts generated wasm modules into k8-opt.
+	bazelOutput, _ := exec.Command("bazel", "info", "output_path").Output()
+	return filepath.Join(strings.TrimSuffix(string(bazelOutput), "\n"), "k8-opt/bin/")
 }
 
 func SkipTSanASan(t *testing.T) {
