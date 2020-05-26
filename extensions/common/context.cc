@@ -285,9 +285,12 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->request_protocol = kProtocolHTTP;
   }
 
+  std::string operation_id;
   request_info->request_operation =
-      getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
-          ->toString();
+      getValue({::Wasm::Common::kRequestOperationKey}, &operation_id)
+          ? operation_id
+          : getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
+                ->toString();
 
   if (!outbound) {
     uint64_t destination_port = 0;
