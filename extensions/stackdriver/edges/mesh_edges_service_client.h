@@ -23,13 +23,9 @@
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 #else
 
-#include "extensions/common/wasm/null/null_plugin.h"
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+#include "include/proxy-wasm/null_plugin.h"
+namespace proxy_wasm {
+namespace null_plugin {
 
 #endif
 
@@ -83,10 +79,6 @@ class MeshEdgesServiceClientImpl : public MeshEdgesServiceClient {
 }  // namespace Extensions
 
 #ifdef NULL_PLUGIN
-}  // namespace plugin
-}  // namespace null
-}  // namespace wasm
-}  // namespace common
-}  // namespace extensions
-}  // namespace envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

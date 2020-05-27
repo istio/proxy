@@ -8,4 +8,7 @@
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.access_log_policy" }
-        configuration: "{ log_window_duration: \"{{ .Vars.LogWindowDuration }}\" }"
+        configuration:
+          "@type": "type.googleapis.com/google.protobuf.StringValue"
+          value: |
+            { log_window_duration: "{{ .Vars.LogWindowDuration }}" }

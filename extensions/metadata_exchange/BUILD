@@ -5,6 +5,10 @@ load(
     "envoy_cc_library",
     "envoy_package",
 )
+load(
+    "@envoy//bazel/wasm:wasm.bzl",
+    "wasm_cc_binary",
+)
 
 envoy_package()
 
@@ -25,7 +29,7 @@ envoy_cc_library(
         "//extensions/common:proto_util",
         "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm:declare_property_cc_proto",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
     ],
 )
 
@@ -36,3 +40,15 @@ proto_library(
         "@com_google_protobuf//:wrappers_proto",
     ],
 )
+
+proto_library(
+    name = "declare_property_proto",
+    srcs = ["declare_property.proto"],
+)
+
+cc_proto_library(
+    name = "declare_property_proto_cc",
+    deps = [":declare_property_proto"],
+)
+
+exports_files(["base64.h"])

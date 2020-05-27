@@ -21,6 +21,7 @@
 #include "absl/strings/str_split.h"
 #include "extensions/common/istio_dimensions.h"
 #include "google/protobuf/util/json_util.h"
+#include "google/protobuf/util/time_util.h"
 
 #ifndef NULL_PLUGIN
 
@@ -29,18 +30,15 @@
 #else
 
 #include "common/common/base64.h"
-namespace Envoy {
-namespace Extensions {
-namespace Wasm {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace AccessLogPolicy {
 namespace Plugin {
-using namespace ::Envoy::Extensions::Common::Wasm::Null::Plugin;
-using NullPluginRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
+
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
-NULL_PLUGIN_REGISTRY;
+PROXY_WASM_NULL_PLUGIN_REGISTRY;
 
 #endif
 
@@ -77,20 +75,21 @@ bool PluginRootContext::onConfigure(size_t size) {
   return true;
 }
 
-bool PluginRootContext::configure(size_t) {
+bool PluginRootContext::configure(size_t configuration_size) {
   if (::Wasm::Common::TrafficDirection::Inbound !=
       ::Wasm::Common::getTrafficDirection()) {
     logError("ASM Acess Logging Policy is an inbound filter only.");
     return false;
   }
-  WasmDataPtr configuration = getConfiguration();
+  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
+                                           0, configuration_size);
+  auto configuration = configuration_data->toString();
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
-  Status status =
-      JsonStringToMessage(configuration->toString(), &config_, json_options);
+  Status status = JsonStringToMessage(configuration, &config_, json_options);
   if (status != Status::OK) {
     logWarn("Cannot parse AccessLog plugin configuration JSON string " +
-            configuration->toString() + ", " + status.message().ToString());
+            configuration + ", " + status.message().ToString());
     return false;
   }
 
@@ -109,8 +108,8 @@ bool PluginRootContext::configure(size_t) {
   return true;
 }
 
-void PluginRootContext::updateLastLogTimeNanos(const IstioDimensions& key,
-                                               long long last_log_time_nanos) {
+void PluginRootContext::updateLastLogTimeNanos(
+    const Wasm::Common::IstioDimensions& key, long long last_log_time_nanos) {
   if (int32_t(cache_.size()) > max_client_cache_size_) {
     auto it = cache_.begin();
     cache_.erase(cache_.begin(), std::next(it, max_client_cache_size_ / 4));
@@ -167,7 +166,7 @@ bool PluginContext::isRequestFailed() {
   // Check if gRPC request is a failure.
   int64_t grpc_response_code = 0;
   if (::Wasm::Common::kGrpcContentTypes.count(
-          getHeaderMapValue(Common::Wasm::HeaderMapType::RequestHeaders,
+          getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
                             ::Wasm::Common::kContentTypeHeaderKey)
               ->toString()) != 0 &&
       getValue({kResponse, kGrpcStatus}, &grpc_response_code) &&
@@ -181,7 +180,6 @@ bool PluginContext::isRequestFailed() {
 #ifdef NULL_PLUGIN
 }  // namespace Plugin
 }  // namespace AccessLogPolicy
-}  // namespace Wasm
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

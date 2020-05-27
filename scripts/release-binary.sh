@@ -172,3 +172,26 @@ do
     fi
   fi
 done
+
+# Build and publish Wasm plugins
+extensions=(stats metadata_exchange attributegen)
+TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
+trap "rm -rf ${TMP_WASM}" EXIT
+make build_wasm
+if [ -n "${DST}" ]; then
+  for extension in "${extensions[@]}"; do
+    # Rename the plugin file and generate sha256 for it
+    WASM_NAME="${extension}-${SHA}.wasm"
+    WASM_PATH="${TMP_WASM}/${WASM_NAME}"
+    SHA256_PATH="${WASM_PATH}.sha256"
+    BAZEL_TARGET="$(bazel info output_path)/k8-opt/bin/extensions/${extension}.wasm"
+    cp ${BAZEL_TARGET} ${WASM_PATH}
+    sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
+    
+    # push wasm files and sha to the given bucket
+    gsutil stat "${DST_BUCKET}/${WASM_NAME}" \
+      && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
+      || echo "Pushing the WASM file ${WASM_NAME}"
+    gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST_BUCKET}"
+  done
+fi

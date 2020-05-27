@@ -39,8 +39,8 @@ envoy_cc_library(
     deps = [
         "//extensions/common:context",
         "//extensions/common:json_util",
-        "@envoy//api/wasm/cpp/contrib:contrib_lib",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
 

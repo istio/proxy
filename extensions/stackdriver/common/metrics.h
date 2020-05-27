@@ -18,14 +18,10 @@
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 #else
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+namespace proxy_wasm {
+namespace null_plugin {
 
 #endif
 
@@ -43,10 +39,6 @@ uint32_t newExportCallMetric(const std::string& type, bool success);
 }  // namespace Extensions
 
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

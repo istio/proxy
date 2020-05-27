@@ -19,6 +19,7 @@
 // metadata) and that information can only be observed at the end (i.e from
 // request to mixer backends).
 
+#include "envoy/config/trace/v3/zipkin.pb.h"
 #include "fmt/printf.h"
 #include "gmock/gmock.h"
 #include "include/istio/utils/attribute_names.h"

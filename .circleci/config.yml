@@ -25,7 +25,6 @@ jobs:
           paths:
             - /Users/distiller/.cache/bazel
             - /Users/distiller/Library/Caches/bazelisk/
-      - run: make test
 
 workflows:
   version: 2

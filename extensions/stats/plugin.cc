@@ -21,21 +21,17 @@
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
-#include "extensions/common/proxy_expr.h"
+#include "contrib/proxy_expr.h"
 #include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
 
-#include "extensions/common/wasm/null/null.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+namespace proxy_wasm {
+namespace null_plugin {
 
-#include "api/wasm/cpp/contrib/proxy_expr.h"
+#include "contrib/proxy_expr.h"
 
 #endif  // NULL_PLUGIN
 
@@ -430,8 +426,9 @@ bool PluginRootContext::onConfigure(size_t size) {
   return true;
 }
 
-bool PluginRootContext::configure(size_t) {
-  std::unique_ptr<WasmData> configuration = getConfiguration();
+bool PluginRootContext::configure(size_t configuration_size) {
+  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
+                                           0, configuration_size);
   if (!::Wasm::Common::extractPartialLocalNodeFlatBuffer(&local_node_info_)) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
@@ -439,10 +436,10 @@ bool PluginRootContext::configure(size_t) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
-  auto j = ::Wasm::Common::JsonParse(configuration->view());
+  auto j = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!j.is_object()) {
     LOG_WARN(absl::StrCat("cannot parse configuration as JSON: ",
-                          configuration->view()));
+                          configuration_data->view()));
     return false;
   }
 
@@ -649,26 +646,16 @@ void PluginRootContext::deleteFromTCPRequestQueue(uint32_t id) {
 #ifdef NULL_PLUGIN
 NullPluginRegistry* context_registry_{};
 
-class StatsFactory : public NullVmPluginFactory {
- public:
-  std::string name() const override { return "envoy.wasm.stats"; }
+RegisterNullVmPluginFactory register_stats_filter("envoy.wasm.stats", []() {
+  return std::make_unique<NullPlugin>(context_registry_);
+});
 
-  std::unique_ptr<NullVmPlugin> create() const override {
-    return std::make_unique<NullPlugin>(context_registry_);
-  }
-};
-
-static Registry::RegisterFactory<StatsFactory, NullVmPluginFactory> register_;
 #endif
 
 }  // namespace Stats
 
 #ifdef NULL_PLUGIN
 // WASM_EPILOG
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

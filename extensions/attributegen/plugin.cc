@@ -20,14 +20,10 @@
 
 #else  // NULL_PLUGIN
 
-#include "extensions/common/wasm/null/null.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Common {
-namespace Wasm {
-namespace Null {
-namespace Plugin {
+namespace proxy_wasm {
+namespace null_plugin {
 
 #endif  // NULL_PLUGIN
 
@@ -96,20 +92,21 @@ Optional<bool> AttributeGenerator::evaluate(std::string* val) const {
 // If it returns `false` the Proxy will crash.
 // It is the responsibility of the control plane to send valid configuration.
 // AttributeGen plugin will not return `false`.
-bool PluginRootContext::onConfigure(size_t) {
-  std::unique_ptr<WasmData> configuration = getConfiguration();
+bool PluginRootContext::onConfigure(size_t configuration_size) {
+  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
+                                           0, configuration_size);
+  auto configuration = configuration_data->toString();
   // Parse configuration JSON string.
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
   istio::attributegen::PluginConfig config;
-  Status status =
-      JsonStringToMessage(configuration->toString(), &config, json_options);
+  Status status = JsonStringToMessage(configuration, &config, json_options);
   if (status != Status::OK) {
     LOG_WARN(
         absl::StrCat("Config Error: cannot parse 'attributegen' plugin "
                      "configuration JSON string [YAML is "
                      "not supported]: ",
-                     configuration->toString()));
+                     configuration));
     incrementMetric(config_errors_, 1);
     return true;
   }
@@ -124,7 +121,6 @@ bool PluginRootContext::onConfigure(size_t) {
     LOG_WARN(
         "Config Error: attributegen plugin rejected invalid configuration");
   }
-
   return true;
 }
 
@@ -211,27 +207,15 @@ void PluginRootContext::attributeGen(EvalPhase phase) {
 #ifdef NULL_PLUGIN
 NullPluginRegistry* context_registry_{};
 
-class AttributeGenFactory : public NullVmPluginFactory {
- public:
-  std::string name() const override { return "envoy.wasm.attributegen"; }
-
-  std::unique_ptr<NullVmPlugin> create() const override {
-    return std::make_unique<NullPlugin>(context_registry_);
-  }
-};
-
-static Registry::RegisterFactory<AttributeGenFactory, NullVmPluginFactory>
-    register_;
+RegisterNullVmPluginFactory register_attribute_gen_filter(
+    "envoy.wasm.attributegen",
+    []() { return std::make_unique<NullPlugin>(context_registry_); });
 #endif
 
 }  // namespace AttributeGen
 
 #ifdef NULL_PLUGIN
 // WASM_EPILOG
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif

@@ -27,8 +27,7 @@ namespace Stackdriver {
 namespace Log {
 
 #ifdef NULL_PLUGIN
-using Envoy::Extensions::Common::Wasm::Null::Plugin::Extensions::Stackdriver::
-    Log::Exporter;
+using proxy_wasm::null_plugin::Extensions::Stackdriver::Log::Exporter;
 #endif
 
 // Logger records access logs and exports them to Stackdriver.

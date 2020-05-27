@@ -29,6 +29,12 @@ func GetDefaultEnvoyBin() string {
 	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
 }
 
+func GetBazelOptOut() string {
+	// `make build_wasm` puts generated wasm modules into k8-opt.
+	bazelOutput, _ := exec.Command("bazel", "info", "output_path").Output()
+	return filepath.Join(strings.TrimSuffix(string(bazelOutput), "\n"), "k8-opt/bin/")
+}
+
 func SkipTSanASan(t *testing.T) {
 	if os.Getenv("TSAN") != "" || os.Getenv("ASAN") != "" {
 		t.Skip("https://github.com/istio/istio/issues/21273")
