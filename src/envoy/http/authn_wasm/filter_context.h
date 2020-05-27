@@ -15,42 +15,36 @@
 
 #pragma once
 
-#include <unordered_map>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include "src/istio/authn/context.pb.h"
 #include "authentication/v1alpha1/policy.pb.h"
-
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-#include "envoy/config/core/v3/base.pb.h"
-
-#include "src/envoy/http/authn_wasm/connection_context.h"
-#include "src/envoy/http/authn_wasm/cert.h"
-
 #include "proxy_wasm_intrinsics.h"
+#include "src/envoy/http/authn_wasm/connection_context.h"
+#include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
+namespace Wasm {
 namespace Http {
-namespace Istio {
 namespace AuthN {
 
-using HeaderMap = std::unordered_map<absl::string_view, absl::string_view>;
+using HeaderMap = std::vector<std::pair<absl::string_view, absl::string_view>>;
 
 // FilterContext holds inputs, such as request dynamic metadata and connection
 // and result data for authentication process.
 class FilterContext {
-public:
+ public:
   FilterContext(
-    const HeaderMap& header_map,
-    const ConnectionContext& connection_context,
-    const envoy::config::core::v3::Metadata& dynamic_metadata,
-    const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
+      const HeaderMap& header_map, const ConnectionContext& connection_context,
+      // const envoy::config::core::v3::Metadata& dynamic_metadata,
+      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
       : header_map_(header_map),
         connection_context_(connection_context),
-        dynamic_metadata_(dynamic_metadata),
+        // dynamic_metadata_(dynamic_metadata),
         filter_config_(filter_config) {}
 
   // Sets peer result based on authenticated payload. Input payload can be null,
@@ -70,32 +64,47 @@ public:
   const istio::authn::Result& authenticationResult() { return result_; }
 
   // Accessor to the filter config
-  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig& filterConfig() const {
+  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
+  filterConfig() const {
     return filter_config_;
   }
 
   // Gets JWT payload (output from JWT filter) for given issuer. If non-empty
   // payload found, returns true and set the output payload string. Otherwise,
   // returns false.
-  bool getJwtPayload(const std::string& issuer, std::string* payload) const { return true; };
+  bool getJwtPayload(const std::string& issuer, std::string* payload) const {
+    return true;
+  };
 
   // Return header map.
   const HeaderMap& headerMap() { return header_map_; }
 
-private:
+  const ConnectionContext& connectionContext() const {
+    return connection_context_;
+  }
+
+ private:
   // TODO(shikugawa): JWT implementation, required metadata retrieval.
   // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
   // filter metadata and write to |payload|.
   bool getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
-                                       std::string* payload) const { return true; };
+                                       std::string* payload) const {
+    return true;
+  };
   // Helper function for getJwtPayload(). It gets the jwt payload from Istio jwt
   // filter metadata and write to |payload|.
   bool getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
-                                       std::string* payload) const { return true; };
+                                       std::string* payload) const {
+    return true;
+  };
 
   // Const reference to request info dynamic metadata. This provides data that
   // output from other filters, e.g JWT.
-  const envoy::config::core::v3::Metadata& dynamic_metadata_;
+  // TODO(shikugawa): Now we can't build this type of message into wasm. Because
+  // emscripten standalone mode haven't support pthread yet. Maybe this problem
+  // is caused by google/re2 which is used to build envoy_api. So we should
+  // define metadata for wasm. const envoy::config::core::v3::Metadata&
+  // dynamic_metadata_;
 
   // http request header
   const HeaderMap& header_map_;
@@ -111,9 +120,9 @@ private:
       filter_config_;
 };
 
-using FilterContextPtr = std::unique_ptr<FilterContext>;
+using FilterContextPtr = std::shared_ptr<FilterContext>;
 
 }  // namespace AuthN
-}  // namespace Istio
 }  // namespace Http
+}  // namespace Wasm
 }  // namespace Envoy

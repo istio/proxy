@@ -21,10 +21,9 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_proto_library",
 )
-
 load(
     "//:wasm.bzl",
-    "wasm_cc_proto_library"
+    "wasm_cc_proto_library",
 )
 
 envoy_proto_library(
@@ -43,5 +42,5 @@ proto_library(
 
 wasm_cc_proto_library(
     name = "context_proto_cc_wasm",
-    deps = ":context_proto_wasm"
+    deps = ":context_proto_wasm",
 )

@@ -15,36 +15,38 @@
 
 #pragma once
 
-#include "authentication/v1alpha1/policy.pb.h"
+#include <memory>
+
 #include "src/envoy/http/authn_wasm/authenticator/base.h"
 
 namespace Envoy {
+namespace Wasm {
 namespace Http {
-namespace Istio {
 namespace AuthN {
 
 // PeerAuthenticator performs peer authentication for given policy.
 class PeerAuthenticator : public AuthenticatorBase {
-public:
-  using PeerAuthenticatorPtr = std::unique_ptr<PeerAuthenticator>;
-
-  static PeerAuthenticatorPtr create(FilterContext* filter_context) {
+ public:
+  static std::unique_ptr<PeerAuthenticator> create(
+      FilterContextPtr filter_context) {
     return std::make_unique<PeerAuthenticator>(
-      filter_context, filter_context->filterConfig().policy());
+        filter_context, filter_context->filterConfig().policy());
   }
 
   bool run(istio::authn::Payload*) override;
 
-private:
-  PeerAuthenticator(FilterContext* filter_context,
+  PeerAuthenticator(FilterContextPtr filter_context,
                     const istio::authentication::v1alpha1::Policy& policy);
 
+ private:
   // Reference to the authentication policy that the authenticator should
   // enforce. Typically, the actual object is owned by filter.
   const istio::authentication::v1alpha1::Policy& policy_;
 };
 
+using PeerAuthenticatorPtr = std::unique_ptr<PeerAuthenticator>;
+
 }  // namespace AuthN
-}  // namespace Istio
 }  // namespace Http
+}  // namespace Wasm
 }  // namespace Envoy

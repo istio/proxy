@@ -31,6 +31,7 @@ wasm_cc_library(
         "//src/envoy/http/authn_wasm:filter_context_lib",
         "//src/istio/authn:context_proto_cc_wasm",
         "@com_google_abseil//absl/strings",
+        "@envoy//include/envoy/http:header_map_interface",
     ],
 )
 

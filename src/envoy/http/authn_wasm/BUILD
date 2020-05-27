@@ -24,25 +24,32 @@ load(
 )
 
 wasm_cc_library(
-    name = "cert_interface",
+    name = "cert_lib",
+    srcs = ["cert.cc"],
     hdrs = ["cert.h"],
+    deps = [
+        "@com_google_abseil//absl/strings",
+        "@com_google_abseil//absl/types:optional",
+    ],
 )
 
 wasm_cc_library(
-    name = "connection_context_interface",
+    name = "connection_context_lib",
+    srcs = ["connection_context.cc"],
     hdrs = ["connection_context.h"],
     deps = [
-        ":cert_interface",
+        ":cert_lib",
         "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
     ],
 )
 
 wasm_cc_library(
     name = "filter_context_lib",
+    srcs = ["filter_context.cc"],
     hdrs = ["filter_context.h"],
     deps = [
-        ":cert_interface",
-        ":connection_context_interface",
+        ":cert_lib",
+        ":connection_context_lib",
         "//external:authentication_policy_config_cc_proto",
         "//src/envoy/utils:filter_names_lib",
         "//src/istio/authn:context_proto_cc_wasm",
@@ -65,7 +72,7 @@ wasm_cc_binary(
     srcs = ["filter.cc"],
     deps = [
         ":authn_filter_interface",
-        ":connection_context_interface",
+        ":connection_context_lib",
         "//external:authentication_policy_config_cc_proto",
         "//src/envoy/http/authn_wasm/authenticator:peer",
         "@com_google_protobuf//:protobuf",

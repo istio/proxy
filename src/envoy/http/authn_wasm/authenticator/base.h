@@ -17,22 +17,21 @@
 
 #include <memory>
 
-#include "src/envoy/http/authn_wasm/filter_context.h"
-
 #include "authentication/v1alpha1/policy.pb.h"
+#include "src/envoy/http/authn_wasm/filter_context.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace Envoy {
+namespace Wasm {
 namespace Http {
-namespace Istio {
 namespace AuthN {
 
 // AuthenticatorBase is the base class for authenticator. It provides functions
 // to perform individual authentication methods, which can be used to construct
 // compound authentication flow.
 class AuthenticatorBase {
-public:
-  AuthenticatorBase(FilterContext* filter_context);
+ public:
+  AuthenticatorBase(FilterContextPtr filter_context);
   virtual ~AuthenticatorBase();
 
   // Perform authentication.
@@ -52,14 +51,16 @@ public:
                            istio::authn::Payload* payload);
 
   // Mutable accessor to filter context.
-  FilterContextPtr& filterContext() { return filter_context_; }
+  FilterContextPtr filterContext() { return filter_context_; }
 
-private:
+ private:
+  bool validateTrustDomain() const;
+
   // Pointer to filter state. Do not own.
   FilterContextPtr filter_context_;
 };
 
 }  // namespace AuthN
-}  // namespace Istio
 }  // namespace Http
+}  // namespace Wasm
 }  // namespace Envoy

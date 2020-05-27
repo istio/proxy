@@ -13,64 +13,47 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn_wasm/filter.h"
-#include "src/envoy/http/authn_wasm/connection_context.h"
-#include "src/envoy/http/authn_wasm/authenticator/peer.h" 
-
+#include "absl/strings/str_cat.h"
+#include "authentication/v1alpha1/policy.pb.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/json_util.h"
-
-#include "authentication/v1alpha1/policy.pb.h"
+#include "src/envoy/http/authn_wasm/authenticator/peer.h"
+#include "src/envoy/http/authn_wasm/connection_context.h"
+#include "src/envoy/http/authn_wasm/filter.h"
 
 namespace Envoy {
-namespace Extensions {
 namespace Wasm {
+namespace Http {
 namespace AuthN {
-
-Istio::AuthN::HeaderMap void unmarshalPairs(const Pairs& pairs) {
-  Istio::AuthN::HeaderMap header_map;
-  for (auto&& [key, value]: pairs) {
-    header_map[key] = value;
-  }
-  return header_map;
-}
-
-bool AuthnRootContext::onConfigure(size_t) {
-  WasmDataPtr configuration = getConfiguration();
-  google::protobuf::util::JsonParseOptions json_options;
-  google::protobuf::util::Status status = JsonStringToMessage(configuration->toString(),
-                                      &filter_config_, json_options);
-
-  if (status != google::protobuf::util::Status::OK) {
-    logError("Cannot parse authentication filter config: " + configuration->toString());
-    return false;
-  }
-
-  logInfo("Istio AuthN filter is started with this configuration: ", configuration->toString());
-  return true;
-}
 
 FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t) {
   const auto context = ConnectionContext();
-  const auto metadata = getValue({"metadata"});
+  std::string metadata;
+
+  if (!getValue({"metadata"}, &metadata)) {
+    logError("Failed to read metadata");
+    return FilterHeadersStatus::StopIteration;
+  }
+
+  const auto request_headers = getRequestHeaderPairs()->pairs();
+
   filter_context_.reset(
-    new Istio::AuthN::FilterContext(
-      unmarshalPairs(getRequestHeader()->pairs()), context, metadata, filter_config_));
+      new FilterContext(request_headers, context, filterConfig()));
 
   istio::authn::Payload payload;
 
-  if (PeerAuthenticator::create(filter_context_) && filter_config_.policy().peer_is_optional()) {
+  if (PeerAuthenticator::create(filter_context_) &&
+      filterConfig().policy().peer_is_optional()) {
     logError("Peer authentication failed.");
     return FilterHeadersStatus::StopIteration;
   }
 
   // TODO(shikugawa): origin authenticator
   // TODO(shikugawa): save authenticate result state as dynamic metadata
-
   return FilterHeadersStatus::Continue;
 }
 
-}
-}
-}
-}
+}  // namespace AuthN
+}  // namespace Http
+}  // namespace Wasm
+}  // namespace Envoy

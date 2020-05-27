@@ -36,7 +36,7 @@ def _cc_library_wasm_transition_impl(settings, attr):
         # into WASM build configuration
         "//command_line_option:copt": [],
         "//command_line_option:cxxopt": ["-std=c++17"],
-        "//command_line_option:linkopt": [], 
+        "//command_line_option:linkopt": [],
     }
 
 wasm_transition = transition(
@@ -57,8 +57,8 @@ cc_library_wasm_transition = transition(
     outputs = [
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
-        "//command_line_option:linkopt", 
-    ]
+        "//command_line_option:linkopt",
+    ],
 )
 
 def _wasm_binary_impl(ctx):
@@ -123,12 +123,12 @@ def wasm_cc_library(name, **kwargs):
 
     wasm_library(
         name = name,
-        deps = ":" + lib_name
+        deps = ":" + lib_name,
     )
 
 def wasm_cc_proto_library(name, deps):
     proto_name = "_proto_" + name
-    
+
     cc_proto_library(
         name = proto_name,
         deps = [deps],
@@ -136,5 +136,5 @@ def wasm_cc_proto_library(name, deps):
 
     wasm_library(
         name = name,
-        deps = ":" + proto_name
+        deps = ":" + proto_name,
     )

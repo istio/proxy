@@ -15,16 +15,14 @@
 
 #pragma once
 
-#include "proxy_wasm_intrinsics.h"
 #include "absl/strings/string_view.h"
-
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-
+#include "proxy_wasm_intrinsics.h"
 #include "src/envoy/http/authn_wasm/authenticator/base.h"
 
 namespace Envoy {
-namespace Extensions {
 namespace Wasm {
+namespace Http {
 namespace AuthN {
 
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
@@ -34,23 +32,26 @@ using StringView = absl::string_view;
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
 class AuthnRootContext : public RootContext {
-public:
+ public:
   AuthnRootContext(uint32_t id, absl::string_view root_id)
       : RootContext(id, root_id) {}
   ~AuthnRootContext() {}
 
   // RootContext
   bool validateConfiguration(size_t) override { return true; }
-  bool onConfigure(size_t) override;
+  bool onConfigure(size_t) override { return true; };
   bool onStart(size_t) override { return true; }
   void onTick() override {}
   void onQueueReady(uint32_t) override {}
   bool onDone() override { return true; }
 
   // Low level HTTP/gRPC interface.
-  void onHttpCallResponse(uint32_t token, uint32_t headers, size_t body_size, uint32_t trailers) override {}
-  void onGrpcReceiveInitialMetadata(uint32_t token, uint32_t headers) override {}
-  void onGrpcReceiveTrailingMetadata(uint32_t token, uint32_t trailers) override {}
+  void onHttpCallResponse(uint32_t token, uint32_t headers, size_t body_size,
+                          uint32_t trailers) override {}
+  void onGrpcReceiveInitialMetadata(uint32_t token, uint32_t headers) override {
+  }
+  void onGrpcReceiveTrailingMetadata(uint32_t token,
+                                     uint32_t trailers) override {}
   void onGrpcReceive(uint32_t token, size_t body_size) override {}
   void onGrpcClose(uint32_t token, GrpcStatus status) override {}
 
@@ -62,36 +63,52 @@ public:
 
 // Per-stream context.
 class AuthnContext : public Context {
-public:
+ public:
   explicit AuthnContext(uint32_t id, RootContext* root) : Context(id, root) {}
   ~AuthnContext() = default;
 
   void onCreate() override {}
-  
+
   // Context
   FilterStatus onNewConnection() override { return FilterStatus::Continue; }
-  FilterStatus onDownstreamData(size_t, bool) override { return FilterStatus::Continue; }
-  FilterStatus onUpstreamData(size_t, bool) override { return FilterStatus::Continue; }
+  FilterStatus onDownstreamData(size_t, bool) override {
+    return FilterStatus::Continue;
+  }
+  FilterStatus onUpstreamData(size_t, bool) override {
+    return FilterStatus::Continue;
+  }
   void onDownstreamConnectionClose(PeerType) override {}
   void onUpstreamConnectionClose(PeerType) override {}
   FilterHeadersStatus onRequestHeaders(uint32_t) override;
-  FilterMetadataStatus onRequestMetadata(uint32_t) override { return FilterMetadataStatus::Continue; }
-  FilterDataStatus onRequestBody(size_t, bool) override { return FilterDataStatus::Continue; }
-  FilterTrailersStatus onRequestTrailers(uint32_t) override { return FilterTrailersStatus::Continue; }
-  FilterHeadersStatus onResponseHeaders(uint32_t) override { return FilterHeadersStatus::Continue; }
-  FilterMetadataStatus onResponseMetadata(uint32_t) override { return FilterMetadataStatus::Continue; }
-  FilterDataStatus onResponseBody(size_t, bool) override { return FilterDataStatus::Continue; }
-  FilterTrailersStatus onResponseTrailers(uint32_t) override { return FilterTrailersStatus::Continue; }
+  FilterMetadataStatus onRequestMetadata(uint32_t) override {
+    return FilterMetadataStatus::Continue;
+  }
+  FilterDataStatus onRequestBody(size_t, bool) override {
+    return FilterDataStatus::Continue;
+  }
+  FilterTrailersStatus onRequestTrailers(uint32_t) override {
+    return FilterTrailersStatus::Continue;
+  }
+  FilterHeadersStatus onResponseHeaders(uint32_t) override {
+    return FilterHeadersStatus::Continue;
+  }
+  FilterMetadataStatus onResponseMetadata(uint32_t) override {
+    return FilterMetadataStatus::Continue;
+  }
+  FilterDataStatus onResponseBody(size_t, bool) override {
+    return FilterDataStatus::Continue;
+  }
+  FilterTrailersStatus onResponseTrailers(uint32_t) override {
+    return FilterTrailersStatus::Continue;
+  }
   void onDone() override {}
   void onLog() override {}
 
-  const FilterConfig& filterConfig() {
-    return rootContext()->filterConfig();
-  };
+  const FilterConfig& filterConfig() { return rootContext()->filterConfig(); };
 
-private:
-  std::unique_ptr<Envoy::Http::Istio::AuthN::AuthenticatorBase> createPeerAuthenticator(
-    Envoy::Http::Istio::AuthN::FilterContext* filter_context);
+ private:
+  std::unique_ptr<AuthenticatorBase> createPeerAuthenticator(
+      FilterContextPtr filter_context);
   // TODO(shikugawa): origin authenticator implementation.
   // std::unique_ptr<istio::AuthN::AuthenticatorBase> createOriginAuthenticator(
   //   istio::AuthN::FilterContext* filter_context);
@@ -102,13 +119,13 @@ private:
 
   // Context for authentication process. Created in decodeHeader to start
   // authentication process.
-  std::unique_ptr<Envoy::Http::Istio::AuthN::FilterContext> filter_context_;
+  FilterContextPtr filter_context_;
 };
 
 static RegisterContextFactory register_AuthnWasm(
     CONTEXT_FACTORY(AuthnContext), ROOT_FACTORY(AuthnRootContext));
 
-}  // namespace AuthnWasm
+}  // namespace AuthN
+}  // namespace Http
 }  // namespace Wasm
-}  // namespace Extensions
 }  // namespace Envoy
