@@ -4,7 +4,6 @@ jobs:
   macos:
     macos:
       xcode: "11.0.0"
-    resource_class: large
     environment:
       - BAZEL_STARTUP_ARGS: "--output_base /Users/distiller/.cache/bazel"
       - BAZEL_BUILD_ARGS: "--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=all -c opt"
@@ -26,7 +25,6 @@ jobs:
           paths:
             - /Users/distiller/.cache/bazel
             - /Users/distiller/Library/Caches/bazelisk/
-      - run: make test
 
 workflows:
   version: 2
