@@ -189,9 +189,9 @@ if [ -n "${DST}" ]; then
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
     
     # push wasm files and sha to the given bucket
-    gsutil stat "${DST_BUCKET}/${WASM_NAME}" \
+    gsutil stat "${DST}/${WASM_NAME}" \
       && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
       || echo "Pushing the WASM file ${WASM_NAME}"
-    gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST_BUCKET}"
+    gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST}"
   done
 fi
