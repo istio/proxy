@@ -75,11 +75,15 @@ class ExporterImpl : public Exporter {
   // Indicates if the current exporting is triggered by root context onDone. If
   // this is true, gRPC callback needs to call proxy_done to indicate that async
   // call finishes.
-  bool is_on_done_;
+  bool is_on_done_ = false;
 
   // Callbacks for gRPC calls.
   std::function<void(size_t)> success_callback_;
   std::function<void(GrpcStatus)> failure_callback_;
+
+  // Record in flight export calls. When ondone is triggered, export call needs
+  // to be zero before calling proxy_done.
+  int in_flight_export_call_ = 0;
 };
 
 }  // namespace Log

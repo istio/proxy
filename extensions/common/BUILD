@@ -24,6 +24,11 @@ load(
     "envoy_cc_test",
     "envoy_package",
 )
+load(
+    "@com_github_google_flatbuffers//:build_defs.bzl",
+    "DEFAULT_FLATC_ARGS",
+    "flatbuffer_library_public",
+)
 
 envoy_package()
 
@@ -41,7 +46,23 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        ":node_info_cc_proto",
+        ":node_info_fb_cc",
+        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "proto_util",
+    srcs = [
+        "proto_util.cc",
+    ],
+    hdrs = [
+        "proto_util.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":node_info_fb_cc",
         "@com_google_protobuf//:protobuf",
         "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
     ],
@@ -56,41 +77,14 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
 )
 
-envoy_cc_library(
-    name = "node_info_cache",
-    srcs = [
-        "node_info_cache.cc",
-    ],
-    hdrs = [
-        "node_info_cache.h",
-    ],
-    repository = "@envoy",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":context",
-        ":node_info_cc_proto",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
-    ],
-)
-
-cc_proto_library(
-    name = "node_info_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = ["node_info_proto"],
-)
-
-proto_library(
-    name = "node_info_proto",
-    srcs = ["node_info.proto"],
-)
-
 envoy_cc_test(
-    name = "context_test",
+    name = "proto_util_test",
     size = "small",
-    srcs = ["context_test.cc"],
+    srcs = ["proto_util_test.cc"],
     repository = "@envoy",
     deps = [
-        ":context",
+        ":node_info_fb_cc",
+        ":proto_util",
         "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
@@ -118,14 +112,59 @@ envoy_cc_test(
 )
 
 envoy_cc_binary(
-    name = "context_speed_test",
-    srcs = ["context_speed_test.cc"],
+    name = "proto_util_speed_test",
+    testonly = True,
+    srcs = ["proto_util_speed_test.cc"],
     external_deps = [
         "benchmark",
     ],
     repository = "@envoy",
     deps = [
-        ":context",
+        ":node_info_fb_cc",
+        ":proto_util",
+        "@envoy//source/common/stream_info:filter_state_lib",
+        "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
+)
+
+flatbuffer_library_public(
+    name = "node_info_fbs",
+    srcs = ["node_info.fbs"],
+    outs = [
+        "node_info_bfbs_generated.h",
+        "node_info_generated.h",
+    ],
+    flatc_args = DEFAULT_FLATC_ARGS + ["--bfbs-gen-embed"],
+    language_flag = "-c",
+)
+
+cc_library(
+    name = "node_info_fb_cc",
+    srcs = [":node_info_fbs"],
+    hdrs = [":node_info_fbs"],
+    features = ["-parse_headers"],
+    linkstatic = True,
+    deps = ["@com_github_google_flatbuffers//:runtime_cc"],
+)
+
+genrule(
+    name = "nlohmann_json_hpp",
+    srcs = ["@com_github_nlohmann_json_single_header//file"],
+    outs = ["nlohmann_json.hpp"],
+    cmd = "cp $< $@",
+)
+
+envoy_cc_library(
+    name = "json_util",
+    srcs = ["json_util.cc"],
+    hdrs = [
+        "json_util.h",
+        ":nlohmann_json_hpp",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
         "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )

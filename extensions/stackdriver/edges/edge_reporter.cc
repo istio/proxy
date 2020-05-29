@@ -41,40 +41,70 @@ using google::cloud::meshtelemetry::v1alpha1::
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 
 namespace {
-void instanceFromMetadata(const ::wasm::common::NodeInfo& node_info,
+void instanceFromMetadata(const ::Wasm::Common::FlatNode& node_info,
                           WorkloadInstance* instance) {
   // TODO(douglas-reid): support more than just kubernetes instances
-  if ((node_info.name().length() > 0) &&
-      (node_info.namespace_().length() > 0)) {
-    absl::StrAppend(instance->mutable_uid(), "kubernetes://", node_info.name(),
-                    ".", node_info.namespace_());
-  }
-  // TODO(douglas-reid): support more than just GCP ?
-  const auto& platform_metadata = node_info.platform_metadata();
-  const auto location_iter = platform_metadata.find(Common::kGCPLocationKey);
-  if (location_iter != platform_metadata.end()) {
-    instance->set_location(location_iter->second);
-  }
-  const auto cluster_iter = platform_metadata.find(Common::kGCPClusterNameKey);
-  if (cluster_iter != platform_metadata.end()) {
-    instance->set_cluster_name(cluster_iter->second);
+  auto name =
+      node_info.name() ? node_info.name()->string_view() : absl::string_view();
+  auto namespace_ = node_info.namespace_()
+                        ? node_info.namespace_()->string_view()
+                        : absl::string_view();
+
+  if (Common::isRawGCEInstance(node_info)) {
+    instance->set_uid(Common::getGCEInstanceUID(node_info));
+  } else if (name.size() > 0 && namespace_.size() > 0) {
+    absl::StrAppend(instance->mutable_uid(), "kubernetes://", name, ".",
+                    namespace_);
   }
 
-  instance->set_owner_uid(node_info.owner());
-  instance->set_workload_name(node_info.workload_name());
-  instance->set_workload_namespace(node_info.namespace_());
+  // TODO(douglas-reid): support more than just GCP ?
+  const auto platform_metadata = node_info.platform_metadata();
+  if (platform_metadata) {
+    const auto location_iter =
+        platform_metadata->LookupByKey(Common::kGCPLocationKey);
+    if (location_iter) {
+      instance->set_location(flatbuffers::GetString(location_iter->value()));
+    }
+    const auto cluster_iter =
+        platform_metadata->LookupByKey(Common::kGCPClusterNameKey);
+    if (cluster_iter) {
+      instance->set_cluster_name(flatbuffers::GetString(cluster_iter->value()));
+    }
+  }
+
+  instance->set_owner_uid(Common::getOwner(node_info));
+  instance->set_workload_name(
+      flatbuffers::GetString(node_info.workload_name()));
+  instance->set_workload_namespace(
+      flatbuffers::GetString(node_info.namespace_()));
+
+  const auto labels = node_info.labels();
+  if (labels) {
+    const auto svc_iter =
+        labels->LookupByKey(Wasm::Common::kCanonicalServiceLabelName.data());
+    if (svc_iter) {
+      instance->set_canonical_service(
+          flatbuffers::GetString(svc_iter->value()));
+    }
+    const auto rev_iter = labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceRevisionLabelName.data());
+    if (rev_iter) {
+      instance->set_canonical_revision(
+          flatbuffers::GetString(rev_iter->value()));
+    }
+  }
 };
 
 }  // namespace
 
-EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
+EdgeReporter::EdgeReporter(const ::Wasm::Common::FlatNode& local_node_info,
                            std::unique_ptr<MeshEdgesServiceClient> edges_client,
                            int batch_size)
     : EdgeReporter(local_node_info, std::move(edges_client), batch_size, []() {
         return TimeUtil::NanosecondsToTimestamp(getCurrentTimeNanoseconds());
       }) {}
 
-EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
+EdgeReporter::EdgeReporter(const ::Wasm::Common::FlatNode& local_node_info,
                            std::unique_ptr<MeshEdgesServiceClient> edges_client,
                            int batch_size, TimestampFn now)
     : edges_client_(std::move(edges_client)),
@@ -83,14 +113,18 @@ EdgeReporter::EdgeReporter(const ::wasm::common::NodeInfo& local_node_info,
   current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
   epoch_current_request_ = std::make_unique<ReportTrafficAssertionsRequest>();
 
-  const auto iter =
-      local_node_info.platform_metadata().find(Common::kGCPProjectKey);
-  if (iter != local_node_info.platform_metadata().end()) {
-    current_request_->set_parent("projects/" + iter->second);
-    epoch_current_request_->set_parent("projects/" + iter->second);
+  const auto platform_metadata = local_node_info.platform_metadata();
+  if (platform_metadata) {
+    const auto iter = platform_metadata->LookupByKey(Common::kGCPProjectKey);
+    if (iter) {
+      current_request_->set_parent("projects/" +
+                                   flatbuffers::GetString(iter->value()));
+      epoch_current_request_->set_parent("projects/" +
+                                         flatbuffers::GetString(iter->value()));
+    }
   }
 
-  std::string mesh_id = local_node_info.mesh_id();
+  std::string mesh_id = flatbuffers::GetString(local_node_info.mesh_id());
   if (mesh_id.empty()) {
     mesh_id = "unknown";
   }
@@ -105,7 +139,7 @@ EdgeReporter::~EdgeReporter() {}
 // ONLY inbound
 void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
                            const std::string& peer_metadata_id_key,
-                           const ::wasm::common::NodeInfo& peer_node_info) {
+                           const ::Wasm::Common::FlatNode& peer_node_info) {
   const auto& peer = known_peers_.emplace(peer_metadata_id_key);
   if (!peer.second) {
     // peer edge already exists

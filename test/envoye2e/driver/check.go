@@ -16,28 +16,103 @@ package driver
 
 import (
 	"fmt"
-
-	"istio.io/proxy/test/envoye2e/env"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/http/httputil"
+	"time"
 )
 
-type Get struct {
+const (
+	DefaultTimeout = 10 * time.Second
+	None           = "-"
+	Any            = "*"
+)
+
+type HTTPCall struct {
+	// Method
+	Method string
+	// URL path
+	Path string
+	// Port specifies the port in 127.0.0.1:PORT
 	Port uint16
+	// Body is the expected body
 	Body string
+	// RequestHeaders to send with the request
+	RequestHeaders map[string]string
+	// ResponseCode to expect
+	ResponseCode int
+	// ResponseHeaders to expect
+	ResponseHeaders map[string]string
+	// Timeout (must be set to avoid the default)
+	Timeout time.Duration
 }
 
-var _ Step = &Get{}
+func Get(port uint16, body string) Step {
+	return &HTTPCall{
+		Method: http.MethodGet,
+		Port:   port,
+		Body:   body,
+	}
+}
 
-func (g *Get) Run(_ *Params) error {
-	code, body, err := env.HTTPGet(fmt.Sprintf("http://127.0.0.1:%d", g.Port))
+func (g *HTTPCall) Run(_ *Params) error {
+	url := fmt.Sprintf("http://127.0.0.1:%d%v", g.Port, g.Path)
+	if g.Timeout == 0 {
+		g.Timeout = DefaultTimeout
+	}
+	req, err := http.NewRequest(g.Method, url, nil)
 	if err != nil {
 		return err
 	}
-	if code != 200 {
+	for key, val := range g.RequestHeaders {
+		req.Header.Add(key, val)
+	}
+	dump, _ := httputil.DumpRequest(req, false)
+	log.Printf("HTTP request:\n%s", string(dump))
+
+	client := &http.Client{Timeout: g.Timeout}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	code := resp.StatusCode
+	wantCode := 200
+	if g.ResponseCode != 0 {
+		wantCode = g.ResponseCode
+	}
+	if code != wantCode {
 		return fmt.Errorf("error code for :%d: %d", g.Port, code)
 	}
+
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
+	body := string(bodyBytes)
 	if g.Body != "" && g.Body != body {
 		return fmt.Errorf("got body %q, want %q", body, g.Body)
 	}
+
+	for key, val := range g.ResponseHeaders {
+		got := resp.Header.Get(key)
+		switch val {
+		case Any:
+			if got == "" {
+				return fmt.Errorf("got response header %q, want any", got)
+			}
+		case None:
+			if got != "" {
+				return fmt.Errorf("got response header %q, want none", got)
+			}
+		default:
+			if got != val {
+				return fmt.Errorf("got response header %q, want %q", got, val)
+			}
+		}
+	}
+
 	return nil
 }
-func (g *Get) Cleanup() {}
+func (g *HTTPCall) Cleanup() {}

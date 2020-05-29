@@ -20,7 +20,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "extensions/common/istio_dimensions.h"
-#include "extensions/common/node_info.pb.h"
 #include "google/protobuf/util/json_util.h"
 
 #ifndef NULL_PLUGIN
@@ -73,7 +72,12 @@ constexpr StringView kGrpcStatus = "grpc_status";
 static RegisterContextFactory register_AccessLogPolicy(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
-bool PluginRootContext::onConfigure(size_t) {
+bool PluginRootContext::onConfigure(size_t size) {
+  initialized_ = configure(size);
+  return true;
+}
+
+bool PluginRootContext::configure(size_t) {
   if (::Wasm::Common::TrafficDirection::Inbound !=
       ::Wasm::Common::getTrafficDirection()) {
     logError("ASM Acess Logging Policy is an inbound filter only.");
@@ -85,7 +89,7 @@ bool PluginRootContext::onConfigure(size_t) {
   Status status =
       JsonStringToMessage(configuration->toString(), &config_, json_options);
   if (status != Status::OK) {
-    logWarn("Cannot parse Stackdriver plugin configuration JSON string " +
+    logWarn("Cannot parse AccessLog plugin configuration JSON string " +
             configuration->toString() + ", " + status.message().ToString());
     return false;
   }
@@ -116,6 +120,10 @@ void PluginRootContext::updateLastLogTimeNanos(const IstioDimensions& key,
 }
 
 void PluginContext::onLog() {
+  if (!rootContext()->initialized()) {
+    return;
+  }
+
   // Check if request is a failure.
   if (isRequestFailed()) {
     LOG_TRACE("Setting logging to true as we got error log");

@@ -15,19 +15,12 @@
 package env
 
 import (
-	"fmt"
-	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
-
-func GetDefaultIstioOut() string {
-	return fmt.Sprintf("%s/out/%s_%s", build.Default.GOPATH, runtime.GOOS, runtime.GOARCH)
-}
 
 func GetDefaultEnvoyBin() string {
 	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
@@ -40,4 +33,8 @@ func SkipTSanASan(t *testing.T) {
 	if os.Getenv("TSAN") != "" || os.Getenv("ASAN") != "" {
 		t.Skip("https://github.com/istio/istio/issues/21273")
 	}
+}
+
+func IsTSanASan() bool {
+	return os.Getenv("TSAN") != "" || os.Getenv("ASAN") != ""
 }

@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "absl/strings/str_cat.h"
 #include "envoy/config/core/v3/grpc_service.pb.h"
 #include "extensions/common/context.h"
 #include "google/api/monitored_resource.pb.h"
@@ -42,11 +43,28 @@ void buildEnvoyGrpcService(
     const StackdriverStubOption &option,
     ::envoy::config::core::v3::GrpcService *grpc_service);
 
+// Determines if the proxy is running directly on GCE instance (VM).
+// If the proxy is running on GKE-managed VM, this will return false.
+// The determination is made based on available `platform_metadata`
+// for the node.
+bool isRawGCEInstance(const ::Wasm::Common::FlatNode &node);
+
+// Returns the unique identifier for a Raw GCE Instance. If the node
+// is not a GCE Instance, the empty string will be returned.
+std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode &node);
+
+// Returns "owner" information for a node. If that information
+// has been directly set, that value is returned. If not, and the owner
+// can be entirely derived from platform metadata, this will derive the
+// owner. Currently, this is only supported for GCE Instances. For
+// anything else, this will return the empty string.
+std::string getOwner(const ::Wasm::Common::FlatNode &node);
+
 // Gets monitored resource proto based on the type and node metadata info.
 // Only two types of monitored resource could be returned: k8s_container or
 // k8s_pod.
 void getMonitoredResource(const std::string &monitored_resource_type,
-                          const ::wasm::common::NodeInfo &local_node_info,
+                          const ::Wasm::Common::FlatNode &local_node_info,
                           google::api::MonitoredResource *monitored_resource);
 
 // Set secure exchange service gRPC call credential.

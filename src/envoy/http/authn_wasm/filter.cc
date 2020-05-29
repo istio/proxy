@@ -28,28 +28,30 @@ namespace AuthN {
 
 FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t) {
   const auto context = ConnectionContext();
-  std::string metadata;
+  std::string metadata_bytes;
 
-  if (!getValue({"metadata"}, &metadata)) {
+  if (!getValue({"metadata"}, &metadata_bytes)) {
     logError("Failed to read metadata");
     return FilterHeadersStatus::StopIteration;
   }
 
+  istio::authn::Metadata metadata;
+  metadata.ParseFromString(metadata_bytes);
   const auto request_headers = getRequestHeaderPairs()->pairs();
 
   filter_context_.reset(
-      new FilterContext(request_headers, context, filterConfig()));
+      new FilterContext(request_headers, metadata, filterConfig()));
 
   istio::authn::Payload payload;
 
-  if (PeerAuthenticator::create(filter_context_) &&
-      filterConfig().policy().peer_is_optional()) {
+  if (!PeerAuthenticator::create(filter_context_)->run(&payload) &&
+      !filterConfig().policy().peer_is_optional()) {
     logError("Peer authentication failed.");
     return FilterHeadersStatus::StopIteration;
   }
 
-  // TODO(shikugawa): origin authenticator
-  // TODO(shikugawa): save authenticate result state as dynamic metadata
+  // if (!)
+
   return FilterHeadersStatus::Continue;
 }
 

@@ -59,6 +59,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(
       decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
       decoder_callbacks_->connection(), filter_config_));
 
+  std::cout << decoder_callbacks_->streamInfo().dynamicMetadata().DebugString() << std::endl;
   Payload payload;
 
   if (!createPeerAuthenticator(filter_context_.get())->run(&payload) &&

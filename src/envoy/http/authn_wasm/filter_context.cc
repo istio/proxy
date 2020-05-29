@@ -16,11 +16,24 @@
 #include "absl/strings/str_cat.h"
 #include "src/envoy/http/authn_wasm/filter_context.h"
 #include "src/envoy/utils/filter_names.h"
+// #include ""
 
 namespace Envoy {
 namespace Wasm {
 namespace Http {
 namespace AuthN {
+
+FilterContext::FilterContext(
+    const RawHeaderMap& raw_header_map,
+    const ConnectionContext& connection_context,
+    const istio::authn::Metadata& dynamic_metadata,
+    const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
+        filter_config)
+    : connection_context_(connection_context),
+      dynamic_metadata_(dynamic_metadata),
+      filter_config_(filter_config) {
+  createHeaderMap(raw_header_map);
+}
 
 void FilterContext::setPeerResult(const istio::authn::Payload* payload) {
   if (payload != nullptr) {
@@ -68,6 +81,12 @@ void FilterContext::setPrincipal(
       // format. e.g. logDebug("Invalid binding value", binding)
       logDebug("Invalid binding value");
       return;
+  }
+}
+
+void FilterContext::createHeaderMap(RawHeaderMap& raw_header_map) {
+  for (const auto& header : header_map) {
+    header_map_[header.first] = header.second;
   }
 }
 

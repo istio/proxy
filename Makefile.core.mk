@@ -22,6 +22,7 @@ BAZEL_TARGETS ?= //...
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/...
 HUB ?=
 TAG ?=
+repo_dir := .
 
 ifeq "$(origin CC)" "default"
 CC := clang
@@ -75,13 +76,22 @@ build_envoy_tsan:
 build_envoy_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 
-build_wasm:
+# Implicitly depends on build, but does not require a specific configuration
+.PHONY: wasm_include
+wasm_include:
+	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_generated.h $(TOP)/extensions/common/
+	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_bfbs_generated.h $(TOP)/extensions/common/
+	cp -f $$(bazel info bazel-bin)/extensions/common/nlohmann_json.hpp $(TOP)/extensions/common/
+	cp -fLR $$(bazel info bazel-bin)/external/com_github_google_flatbuffers/_virtual_includes/runtime_cc/flatbuffers $(TOP)/extensions/common/
+	cp -f $$(bazel info output_base)/external/envoy/api/wasm/cpp/contrib/proxy_expr.h $(TOP)/extensions/common/
+
+build_wasm: wasm_include
 	$(foreach file, $(shell find extensions -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true
 
 check_wasm:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	./scripts/generate-wasm.sh -b
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on WASM=true go test ./test/envoye2e/stats/...
+	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
 
 clean:
 	@bazel clean
@@ -111,6 +121,41 @@ lint: lint-copyright-banner format-go lint-go tidy-go
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 
+protoc = protoc -I common-protos -I extensions
+protoc_gen_docs_plugin := --docs_out=warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
+
+attributegen_path := extensions/attributegen
+attributegen_protos := $(wildcard $(attributegen_path)/*.proto)
+attributegen_docs := $(attributegen_protos:.proto=.pb.html)
+$(attributegen_docs): $(attributegen_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(attributegen_path) $^
+
+metadata_exchange_path := extensions/metadata_exchange
+metadata_exchange_protos := $(wildcard $(metadata_exchange_path)/*.proto)
+metadata_exchange_docs := $(metadata_exchange_protos:.proto=.pb.html)
+$(metadata_exchange_docs): $(metadata_exchange_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(metadata_exchange_path) $^
+
+stats_path := extensions/stats
+stats_protos := $(wildcard $(stats_path)/*.proto)
+stats_docs := $(stats_protos:.proto=.pb.html)
+$(stats_docs): $(stats_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stats_path) $^
+
+stackdriver_path := extensions/stackdriver/config/v1alpha1
+stackdriver_protos := $(wildcard $(stackdriver_path)/*.proto)
+stackdriver_docs := $(stackdriver_protos:.proto=.pb.html)
+$(stackdriver_docs): $(stackdriver_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stackdriver_path) $^
+
+accesslog_policy_path := extensions/access_log_policy/config/v1alpha1
+accesslog_policy_protos := $(wildcard $(accesslog_policy_path)/*.proto)
+accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
+$(accesslog_policy_docs): $(accesslog_policy_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
+
+extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
+
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
 
@@ -120,9 +165,9 @@ artifacts:
 test_release:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 
-push_release:
+push_release: build
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p && ./scripts/generate-wasm.sh -b -p -d "$(RELEASE_GCS_PATH)"
 
-.PHONY: build clean test check artifacts
+.PHONY: build clean test check artifacts extensions-proto
 
 include common/Makefile.common.mk

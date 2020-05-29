@@ -22,6 +22,20 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Common {
 
+namespace {
+
+const std::string getContainerName(
+    const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>
+        *containers) {
+  if (containers && containers->size() == 1) {
+    return flatbuffers::GetString(containers->Get(0));
+  }
+
+  return kIstioProxyContainerName;
+}
+
+}  // namespace
+
 using google::api::MonitoredResource;
 
 void buildEnvoyGrpcService(
@@ -66,8 +80,69 @@ void buildEnvoyGrpcService(
   }
 }
 
+bool isRawGCEInstance(const ::Wasm::Common::FlatNode &node) {
+  auto platform_metadata = node.platform_metadata();
+  if (!platform_metadata) {
+    return false;
+  }
+  auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
+  auto cluster_name = platform_metadata->LookupByKey(kGCPClusterNameKey);
+  return instance_id && !cluster_name;
+}
+
+std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode &node) {
+  auto platform_metadata = node.platform_metadata();
+  if (!platform_metadata) {
+    return "";
+  }
+
+  auto project = platform_metadata->LookupByKey(kGCPProjectKey);
+  auto location = platform_metadata->LookupByKey(kGCPLocationKey);
+  auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
+
+  auto name = node.name() ? node.name()->string_view() : absl::string_view();
+  if (name.size() == 0 && instance_id) {
+    name = instance_id->value()->string_view();
+  }
+
+  if (name.size() > 0 && project && location) {
+    return absl::StrCat("//compute.googleapis.com/projects/",
+                        project->value()->string_view(), "/zones/",
+                        location->value()->string_view(), "/instances/", name);
+  }
+
+  return "";
+}
+
+std::string getOwner(const ::Wasm::Common::FlatNode &node) {
+  // do not override supplied owner
+  if (node.owner()) {
+    return flatbuffers::GetString(node.owner());
+  }
+
+  // only attempt for GCE Instances at this point. Support for other
+  // platforms will have to be added later. We also don't try to discover
+  // owners for GKE workload instances, as those should be handled by the
+  // sidecar injector.
+  if (isRawGCEInstance(node)) {
+    auto platform_metadata = node.platform_metadata();
+    if (!platform_metadata) {
+      return "";
+    }
+    auto created_by = platform_metadata->LookupByKey(kGCECreatedByKey.data());
+    if (created_by) {
+      return absl::StrCat("//compute.googleapis.com/",
+                          created_by->value()->string_view());
+    }
+
+    return getGCEInstanceUID(node);
+  }
+
+  return "";
+}
+
 void getMonitoredResource(const std::string &monitored_resource_type,
-                          const ::wasm::common::NodeInfo &local_node_info,
+                          const ::Wasm::Common::FlatNode &local_node_info,
                           MonitoredResource *monitored_resource) {
   if (!monitored_resource) {
     return;
@@ -76,32 +151,53 @@ void getMonitoredResource(const std::string &monitored_resource_type,
   monitored_resource->set_type(monitored_resource_type);
   auto platform_metadata = local_node_info.platform_metadata();
 
-  (*monitored_resource->mutable_labels())[kProjectIDLabel] =
-      platform_metadata[kGCPProjectKey];
+  if (platform_metadata) {
+    auto project_key = platform_metadata->LookupByKey(kGCPProjectKey);
+    if (project_key) {
+      (*monitored_resource->mutable_labels())[kProjectIDLabel] =
+          flatbuffers::GetString(project_key->value());
+    }
+  }
 
   if (monitored_resource_type == kGCEInstanceMonitoredResource) {
     // gce_instance
-
-    (*monitored_resource->mutable_labels())[kGCEInstanceIDLabel] =
-        platform_metadata[kGCPGCEInstanceIDKey];
-    (*monitored_resource->mutable_labels())[kZoneLabel] =
-        platform_metadata[kGCPLocationKey];
+    if (platform_metadata) {
+      auto instance_id_label =
+          platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
+      if (instance_id_label) {
+        (*monitored_resource->mutable_labels())[kGCEInstanceIDLabel] =
+            flatbuffers::GetString(instance_id_label->value());
+      }
+      auto zone_label = platform_metadata->LookupByKey(kGCPLocationKey);
+      if (zone_label) {
+        (*monitored_resource->mutable_labels())[kZoneLabel] =
+            flatbuffers::GetString(zone_label->value());
+      }
+    }
   } else {
     // k8s_pod or k8s_container
+    if (platform_metadata) {
+      auto location_label = platform_metadata->LookupByKey(kGCPLocationKey);
+      if (location_label) {
+        (*monitored_resource->mutable_labels())[kLocationLabel] =
+            flatbuffers::GetString(location_label->value());
+      }
+      auto cluster_name = platform_metadata->LookupByKey(kGCPClusterNameKey);
+      if (cluster_name) {
+        (*monitored_resource->mutable_labels())[kClusterNameLabel] =
+            flatbuffers::GetString(cluster_name->value());
+      }
+    }
 
-    (*monitored_resource->mutable_labels())[kLocationLabel] =
-        platform_metadata[kGCPLocationKey];
-    (*monitored_resource->mutable_labels())[kClusterNameLabel] =
-        platform_metadata[kGCPClusterNameKey];
     (*monitored_resource->mutable_labels())[kNamespaceNameLabel] =
-        local_node_info.namespace_();
+        flatbuffers::GetString(local_node_info.namespace_());
     (*monitored_resource->mutable_labels())[kPodNameLabel] =
-        local_node_info.name();
+        flatbuffers::GetString(local_node_info.name());
 
     if (monitored_resource_type == kContainerMonitoredResource) {
       // Fill in container_name of k8s_container monitored resource.
-      (*monitored_resource->mutable_labels())[kContainerNameLabel] =
-          kIstioProxyContainerName;
+      auto container = getContainerName(local_node_info.app_containers());
+      (*monitored_resource->mutable_labels())[kContainerNameLabel] = container;
     }
   }
 }

@@ -25,6 +25,7 @@ namespace Http {
 namespace AuthN {
 
 // PeerAuthenticator performs peer authentication for given policy.
+// This is only to use connection level authentication.
 class PeerAuthenticator : public AuthenticatorBase {
  public:
   static std::unique_ptr<PeerAuthenticator> create(
@@ -35,7 +36,7 @@ class PeerAuthenticator : public AuthenticatorBase {
 
   bool run(istio::authn::Payload*) override;
 
-  PeerAuthenticator(FilterContextPtr filter_context,
+  explicit PeerAuthenticator(FilterContextPtr filter_context,
                     const istio::authentication::v1alpha1::Policy& policy);
 
  private:

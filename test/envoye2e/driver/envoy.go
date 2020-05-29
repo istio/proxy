@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"time"
 
-	core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	v2 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
+	bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 
 	// Preload proto definitions
 	_ "github.com/cncf/udpa/go/udpa/type/v1"
@@ -122,7 +122,7 @@ func (e *Envoy) Cleanup() {
 }
 
 func getAdminPort(bootstrap string) (uint32, error) {
-	pb := &v2.Bootstrap{}
+	pb := &bootstrap_v3.Bootstrap{}
 	if err := ReadYAML(bootstrap, pb); err != nil {
 		return 0, err
 	}

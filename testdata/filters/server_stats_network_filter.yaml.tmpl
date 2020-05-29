@@ -1,0 +1,13 @@
+- name: envoy.filters.network.wasm
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        root_id: "stats_inbound"
+        vm_config:
+          runtime: envoy.wasm.runtime.null
+          code:
+            local: { inline_string: "envoy.wasm.stats" }
+        configuration: |
+          { "debug": "false", "field_separator": ";.;", "tcp_reporting_duration": "1s" }

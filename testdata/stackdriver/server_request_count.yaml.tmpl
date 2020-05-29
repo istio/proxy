@@ -4,7 +4,7 @@ metric:
     destination_canonical_service_name: ratings
     destination_canonical_service_namespace: default
     destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
-    destination_port: '{{ .Vars.ServerPort }}'
+    destination_port: '{{ .Ports.ServerPort }}'
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
     destination_service_name: server
     destination_service_namespace: default
@@ -29,7 +29,7 @@ points:
 resource:
   labels:
     cluster_name: test-cluster
-    container_name: istio-proxy
+    container_name: server
     location: us-east4-b
     namespace_name: default
     pod_name: ratings-v1-84975bc778-pxz2w

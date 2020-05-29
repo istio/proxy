@@ -161,7 +161,8 @@ void JwtAuthenticator::FetchPubkey(PubkeyCacheItem *issuer) {
       std::move(message), *this, Http::AsyncClient::RequestOptions());
 }
 
-void JwtAuthenticator::onSuccess(ResponseMessagePtr &&response) {
+void JwtAuthenticator::onSuccess(const AsyncClient::Request &,
+                                 ResponseMessagePtr &&response) {
   request_ = nullptr;
   uint64_t status_code = Http::Utility::getResponseStatus(response->headers());
   if (status_code == 200) {
@@ -182,7 +183,8 @@ void JwtAuthenticator::onSuccess(ResponseMessagePtr &&response) {
   }
 }
 
-void JwtAuthenticator::onFailure(AsyncClient::FailureReason) {
+void JwtAuthenticator::onFailure(const AsyncClient::Request &,
+                                 AsyncClient::FailureReason) {
   request_ = nullptr;
   ENVOY_LOG(debug, "fetch pubkey [uri = {}]: failed", uri_);
   DoneWithStatus(Status::FAILED_FETCH_PUBKEY);

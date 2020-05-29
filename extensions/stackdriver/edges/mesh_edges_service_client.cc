@@ -17,6 +17,7 @@
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/metrics.h"
 #include "google/protobuf/util/time_util.h"
 
 #ifdef NULL_PLUGIN
@@ -37,7 +38,7 @@ using Envoy::Extensions::Common::Wasm::Null::Plugin::StringView;
 constexpr char kMeshEdgesService[] =
     "google.cloud.meshtelemetry.v1alpha1.MeshEdgesService";
 constexpr char kReportTrafficAssertions[] = "ReportTrafficAssertions";
-constexpr int kDefaultTimeoutMillisecond = 10000;  // 10 seconds
+constexpr int kDefaultTimeoutMillisecond = 60000;  // 60 seconds
 
 namespace Extensions {
 namespace Stackdriver {
@@ -50,13 +51,17 @@ MeshEdgesServiceClientImpl::MeshEdgesServiceClientImpl(
     RootContext* root_context,
     const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option)
     : context_(root_context) {
-  success_callback_ = [](size_t) {
+  auto success_counter = Common::newExportCallMetric("edge", true);
+  auto failure_counter = Common::newExportCallMetric("edge", false);
+  success_callback_ = [success_counter](size_t) {
+    incrementMetric(success_counter, 1);
     // TODO(douglas-reid): improve logging message.
     logDebug(
         "successfully sent MeshEdgesService ReportTrafficAssertionsRequest");
   };
 
-  failure_callback_ = [](GrpcStatus status) {
+  failure_callback_ = [failure_counter](GrpcStatus status) {
+    incrementMetric(failure_counter, 1);
     // TODO(douglas-reid): add retry (and other) logic
     logWarn("MeshEdgesService ReportTrafficAssertionsRequest failure: " +
             std::to_string(static_cast<int>(status)) + " " +
@@ -74,9 +79,11 @@ void MeshEdgesServiceClientImpl::reportTrafficAssertions(
   LOG_TRACE("mesh edge services client: sending request '" +
             request.DebugString() + "'");
 
-  context_->grpcSimpleCall(
-      grpc_service_, kMeshEdgesService, kReportTrafficAssertions, request,
-      kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
+  HeaderStringPairs initial_metadata;
+  context_->grpcSimpleCall(grpc_service_, kMeshEdgesService,
+                           kReportTrafficAssertions, initial_metadata, request,
+                           kDefaultTimeoutMillisecond, success_callback_,
+                           failure_callback_);
 }
 
 }  // namespace Edges

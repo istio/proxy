@@ -17,6 +17,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
 #include "google/protobuf/util/json_util.h"
 
@@ -45,6 +46,8 @@ namespace Common {
 
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";
+const char kBlackHoleRouteName[] = "block_all";
+const char kPassThroughRouteName[] = "allow_any";
 const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
 const char kInboundPassthroughClusterIpv6[] = "InboundPassthroughClusterIpv6";
 
@@ -105,6 +108,16 @@ void getDestinationService(const std::string& dest_namespace,
                                            kAuthorityHeaderKey)
                              ->toString()
                        : "unknown";
+
+  // override the cluster name if this is being sent to the
+  // blackhole or passthrough cluster
+  std::string route_name;
+  getValue({"route_name"}, &route_name);
+  if (route_name == kBlackHoleRouteName) {
+    cluster_name = kBlackHoleCluster;
+  } else if (route_name == kPassThroughRouteName) {
+    cluster_name = kPassThroughCluster;
+  }
 
   if (cluster_name == kBlackHoleCluster ||
       cluster_name == kPassThroughCluster ||
@@ -185,66 +198,64 @@ TrafficDirection getTrafficDirection() {
   return TrafficDirection::Unspecified;
 }
 
-using google::protobuf::util::JsonStringToMessage;
-using google::protobuf::util::MessageToJsonString;
+void extractEmptyNodeFlatBuffer(std::string* out) {
+  flatbuffers::FlatBufferBuilder fbb;
+  FlatNodeBuilder node(fbb);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+              fbb.GetSize());
+}
 
-// Custom-written and lenient struct parser.
-google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct& metadata,
-    wasm::common::NodeInfo* node_info) {
-  for (const auto& it : metadata.fields()) {
-    if (it.first == "NAME") {
-      node_info->set_name(it.second.string_value());
-    } else if (it.first == "NAMESPACE") {
-      node_info->set_namespace_(it.second.string_value());
-    } else if (it.first == "OWNER") {
-      node_info->set_owner(it.second.string_value());
-    } else if (it.first == "WORKLOAD_NAME") {
-      node_info->set_workload_name(it.second.string_value());
-    } else if (it.first == "ISTIO_VERSION") {
-      node_info->set_istio_version(it.second.string_value());
-    } else if (it.first == "MESH_ID") {
-      node_info->set_mesh_id(it.second.string_value());
-    } else if (it.first == "LABELS") {
-      auto* labels = node_info->mutable_labels();
-      for (const auto& labels_it : it.second.struct_value().fields()) {
-        (*labels)[labels_it.first] = labels_it.second.string_value();
-      }
-    } else if (it.first == "PLATFORM_METADATA") {
-      auto* platform_metadata = node_info->mutable_platform_metadata();
-      for (const auto& platform_it : it.second.struct_value().fields()) {
-        (*platform_metadata)[platform_it.first] =
-            platform_it.second.string_value();
-      }
+bool extractPartialLocalNodeFlatBuffer(std::string* out) {
+  flatbuffers::FlatBufferBuilder fbb;
+  flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
+      workload_name, istio_version, mesh_id, cluster_id;
+  std::vector<flatbuffers::Offset<KeyVal>> labels;
+  std::string value;
+  if (getValue({"node", "metadata", "NAME"}, &value)) {
+    name = fbb.CreateString(value);
+  }
+  if (getValue({"node", "metadata", "NAMESPACE"}, &value)) {
+    namespace_ = fbb.CreateString(value);
+  }
+  if (getValue({"node", "metadata", "OWNER"}, &value)) {
+    owner = fbb.CreateString(value);
+  }
+  if (getValue({"node", "metadata", "WORKLOAD_NAME"}, &value)) {
+    workload_name = fbb.CreateString(value);
+  }
+  if (getValue({"node", "metadata", "ISTIO_VERSION"}, &value)) {
+    istio_version = fbb.CreateString(value);
+  }
+  if (getValue({"node", "metadata", "MESH_ID"}, &value)) {
+    mesh_id = fbb.CreateString(value);
+  }
+  if (getValue({"node", "metadata", "CLUSTER_ID"}, &value)) {
+    cluster_id = fbb.CreateString(value);
+  }
+  for (const auto& label : kDefaultLabels) {
+    if (getValue({"node", "metadata", "LABELS", label}, &value)) {
+      labels.push_back(
+          CreateKeyVal(fbb, fbb.CreateString(label), fbb.CreateString(value)));
     }
   }
-  return google::protobuf::util::Status::OK;
-}
 
-google::protobuf::util::Status extractNodeMetadataGeneric(
-    const google::protobuf::Struct& metadata,
-    wasm::common::NodeInfo* node_info) {
-  google::protobuf::util::JsonOptions json_options;
-  std::string metadata_json_struct;
-  auto status =
-      MessageToJsonString(metadata, &metadata_json_struct, json_options);
-  if (status != google::protobuf::util::Status::OK) {
-    return status;
-  }
-  google::protobuf::util::JsonParseOptions json_parse_options;
-  json_parse_options.ignore_unknown_fields = true;
-  return JsonStringToMessage(metadata_json_struct, node_info,
-                             json_parse_options);
-}
-
-google::protobuf::util::Status extractLocalNodeMetadata(
-    wasm::common::NodeInfo* node_info) {
-  google::protobuf::Struct node;
-  if (!getMessageValue({"node", "metadata"}, &node)) {
-    return google::protobuf::util::Status(
-        google::protobuf::util::error::Code::NOT_FOUND, "metadata not found");
-  }
-  return extractNodeMetadata(node, node_info);
+  auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_namespace_(namespace_);
+  node.add_owner(owner);
+  node.add_workload_name(workload_name);
+  node.add_istio_version(istio_version);
+  node.add_mesh_id(mesh_id);
+  node.add_cluster_id(cluster_id);
+  node.add_labels(labels_offset);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+              fbb.GetSize());
+  return true;
 }
 
 // Host header is used if use_host_header_fallback==true.
@@ -290,6 +301,12 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"response", "total_size"}, &request_info->response_size);
 }
 
+absl::string_view nodeInfoSchema() {
+  return absl::string_view(
+      reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
+      FlatNodeBinarySchema::size());
+}
+
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   getValue({"source", "address"}, &request_info->source_address);
   getValue({"destination", "address"}, &request_info->destination_address);
@@ -317,42 +334,6 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
   populateRequestInfo(outbound, false, request_info, destination_namespace);
 
   request_info->request_protocol = kProtocolTCP;
-}
-
-google::protobuf::util::Status extractNodeMetadataValue(
-    const google::protobuf::Struct& node_metadata,
-    google::protobuf::Struct* metadata) {
-  if (metadata == nullptr) {
-    return google::protobuf::util::Status(
-        google::protobuf::util::error::INVALID_ARGUMENT,
-        "metadata provided is null");
-  }
-  const auto key_it = node_metadata.fields().find("EXCHANGE_KEYS");
-  if (key_it == node_metadata.fields().end()) {
-    return google::protobuf::util::Status(
-        google::protobuf::util::error::INVALID_ARGUMENT,
-        "metadata exchange key is missing");
-  }
-
-  const auto& keys_value = key_it->second;
-  if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
-    return google::protobuf::util::Status(
-        google::protobuf::util::error::INVALID_ARGUMENT,
-        "metadata exchange key is not a string");
-  }
-
-  // select keys from the metadata using the keys
-  const std::set<std::string> keys =
-      absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
-  for (auto key : keys) {
-    const auto entry_it = node_metadata.fields().find(key);
-    if (entry_it == node_metadata.fields().end()) {
-      continue;
-    }
-    (*metadata->mutable_fields())[key] = entry_it->second;
-  }
-
-  return google::protobuf::util::Status(google::protobuf::util::error::OK, "");
 }
 
 }  // namespace Common

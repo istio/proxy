@@ -24,6 +24,7 @@ metrics:
       source_version: "'_' + node.metadata['LABELS']['app']" # same as above expression
       request_protocol: request.protocol
       destination_version: "'_' + (has(node.metadata.LABELS.version) ? node.metadata.LABELS.version : 'unknown')"
+      destination_service_namespace: "'_' + upstream_peer.labels['app'].value"
       destination_app: "cannot _ parse"
       destination_workload: "cannot_evaluate"
     tags_to_remove:

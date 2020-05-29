@@ -17,8 +17,9 @@
 workspace(name = "io_istio_proxy")
 
 # http_archive is not a native function since bazel 0.19
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
 load(
     "//:repositories.bzl",
     "docker_dependencies",
@@ -39,10 +40,15 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# envoy-wasm commit time: Wed Mar 20 20:46:00 2020 -0700
-ENVOY_SHA = "d29f7a659ba736aab97697a7bcfc69a71bc66b66"
+# Commit time: 5/4/20
+# Used by scripts/generate-wasm.sh
+ENVOY_SHA = "0e2c9c0c67e71ff358f6755fbbfdc998426b1c46"
 
-ENVOY_SHA256 = "ffc2b25af02242a95bf0e65b2f9c4ac0248fb07ade6b5bb3517be934340dfec9"
+ENVOY_SHA256 = "f5ef2aba7e7d86fd4cc037d3902c387cf9d6905b7099ec2eb2d0e4f6592649f5"
+
+ENVOY_ORG = "istio"
+
+ENVOY_REPO = "envoy"
 
 # wasm dependencies
 
@@ -51,10 +57,10 @@ wasm_dependencies()
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
 http_archive(
-    name = "envoy",
+    name = ENVOY_REPO,
     sha256 = ENVOY_SHA256,
-    strip_prefix = "envoy-wasm-" + ENVOY_SHA,
-    url = "https://github.com/envoyproxy/envoy-wasm/archive/" + ENVOY_SHA + ".tar.gz",
+    strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
+    url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
 load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
@@ -115,3 +121,20 @@ container_pull(
 )
 
 # End of docker dependencies
+
+FLAT_BUFFERS_SHA = "a83caf5910644ba1c421c002ef68e42f21c15f9f"
+
+http_archive(
+    name = "com_github_google_flatbuffers",
+    sha256 = "b8efbc25721e76780752bad775a97c3f77a0250271e2db37fc747b20e8b0f24a",
+    strip_prefix = "flatbuffers-" + FLAT_BUFFERS_SHA,
+    url = "https://github.com/google/flatbuffers/archive/" + FLAT_BUFFERS_SHA + ".tar.gz",
+)
+
+http_file(
+    name = "com_github_nlohmann_json_single_header",
+    sha256 = "3b5d2b8f8282b80557091514d8ab97e27f9574336c804ee666fda673a9b59926",
+    urls = [
+        "https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp",
+    ],
+)

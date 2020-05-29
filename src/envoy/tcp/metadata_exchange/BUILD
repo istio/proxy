@@ -39,6 +39,7 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         "//extensions/common:context",
+        "//extensions/common:proto_util",
         "//src/envoy/tcp/metadata_exchange/config:metadata_exchange_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/base:endian",

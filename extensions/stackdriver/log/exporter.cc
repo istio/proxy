@@ -16,6 +16,7 @@
 #include "extensions/stackdriver/log/exporter.h"
 
 #include "extensions/stackdriver/common/constants.h"
+#include "extensions/stackdriver/common/metrics.h"
 
 #ifdef NULL_PLUGIN
 namespace Envoy {
@@ -46,19 +47,31 @@ ExporterImpl::ExporterImpl(
     const ::Extensions::Stackdriver::Common::StackdriverStubOption&
         stub_option) {
   context_ = root_context;
-  success_callback_ = [this](size_t) {
-    logDebug("successfully sent Stackdriver logging request");
-    if (is_on_done_) {
+  auto success_counter = Common::newExportCallMetric("logging", true);
+  auto failure_counter = Common::newExportCallMetric("logging", false);
+  success_callback_ = [this, success_counter](size_t) {
+    incrementMetric(success_counter, 1);
+    LOG_DEBUG("successfully sent Stackdriver logging request");
+    in_flight_export_call_ -= 1;
+    if (in_flight_export_call_ < 0) {
+      LOG_WARN("in flight report call should not be negative");
+    }
+    if (in_flight_export_call_ <= 0 && is_on_done_) {
       proxy_done();
     }
   };
 
-  failure_callback_ = [this](GrpcStatus status) {
+  failure_callback_ = [this, failure_counter](GrpcStatus status) {
     // TODO(bianpengyuan): add retry.
+    incrementMetric(failure_counter, 1);
     logWarn("Stackdriver logging api call error: " +
             std::to_string(static_cast<int>(status)) +
             getStatus().second->toString());
-    if (is_on_done_) {
+    in_flight_export_call_ -= 1;
+    if (in_flight_export_call_ < 0) {
+      LOG_WARN("in flight report call should not be negative");
+    }
+    if (in_flight_export_call_ <= 0 && is_on_done_) {
       proxy_done();
     }
   };
@@ -75,11 +88,17 @@ void ExporterImpl::exportLogs(
         const google::logging::v2::WriteLogEntriesRequest>>& requests,
     bool is_on_done) {
   is_on_done_ = is_on_done;
+  HeaderStringPairs initial_metadata;
   for (const auto& req : requests) {
-    context_->grpcSimpleCall(grpc_service_string_, kGoogleLoggingService,
-                             kGoogleWriteLogEntriesMethod, *req,
-                             kDefaultTimeoutMillisecond, success_callback_,
-                             failure_callback_);
+    auto result = context_->grpcSimpleCall(
+        grpc_service_string_, kGoogleLoggingService,
+        kGoogleWriteLogEntriesMethod, initial_metadata, *req,
+        kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
+    if (result != WasmResult::Ok) {
+      LOG_WARN("failed to make stackdriver logging export call");
+      break;
+    }
+    in_flight_export_call_ += 1;
   }
 }
 

@@ -59,7 +59,9 @@ constexpr char kZoneLabel[] = "zone";
 constexpr char kGCPLocationKey[] = "gcp_location";
 constexpr char kGCPClusterNameKey[] = "gcp_gke_cluster_name";
 constexpr char kGCPProjectKey[] = "gcp_project";
+constexpr absl::string_view kGCPProjectNumberKey = "gcp_project_number";
 constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
+constexpr absl::string_view kGCECreatedByKey = "gcp_gce_instance_created_by";
 
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
@@ -77,6 +79,8 @@ constexpr char kInsecureStackdriverEndpointKey[] =
 constexpr char kMonitoringEndpointKey[] = "STACKDRIVER_MONITORING_ENDPOINT";
 constexpr char kMonitoringExportIntervalKey[] =
     "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
+constexpr char kLoggingExportIntervalKey[] =
+    "STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS";
 constexpr char kTokenFile[] = "STACKDRIVER_TOKEN_FILE";
 constexpr char kCACertFile[] = "STACKDRIVER_ROOT_CA_FILE";
 

@@ -16,14 +16,12 @@
 #include "extensions/stats/plugin.h"
 
 #include "absl/strings/ascii.h"
+#include "absl/time/time.h"
 #include "extensions/common/util.h"
-#include "extensions/stats/proxy_expr.h"
-#include "google/protobuf/util/time_util.h"
-
-using google::protobuf::util::TimeUtil;
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
+#include "extensions/common/proxy_expr.h"
 #include "proxy_wasm_intrinsics.h"
 
 #else  // NULL_PLUGIN
@@ -37,66 +35,107 @@ namespace Wasm {
 namespace Null {
 namespace Plugin {
 
+#include "api/wasm/cpp/contrib/proxy_expr.h"
+
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
 
 namespace Stats {
 
-constexpr long long kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
-// No healthy upstream.
-constexpr uint64_t kNoHealthyUpstream = 0x2;
+const uint32_t kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
+
+using ::nlohmann::json;
+using ::Wasm::Common::JsonArrayIterate;
+using ::Wasm::Common::JsonGetField;
+using ::Wasm::Common::JsonObjectIterate;
+using ::Wasm::Common::JsonValueAs;
 
 namespace {
 
+// Efficient way to assign flatbuffer to a vector of strings.
+// After C++17 could be simplified to a basic assignment.
+#define FB_ASSIGN(name, v) \
+  instance[name].assign((v) ? (v)->c_str() : nullptr, (v) ? (v)->size() : 0);
 void map_node(IstioDimensions& instance, bool is_source,
-              const wasm::common::NodeInfo& node) {
+              const ::Wasm::Common::FlatNode& node) {
+  // Ensure all properties are set (and cleared when necessary).
   if (is_source) {
-    instance[source_workload] = node.workload_name();
-    instance[source_workload_namespace] = node.namespace_();
+    FB_ASSIGN(source_workload, node.workload_name());
+    FB_ASSIGN(source_workload_namespace, node.namespace_());
 
     auto source_labels = node.labels();
-    instance[source_app] = source_labels["app"];
-    instance[source_version] = source_labels["version"];
+    if (source_labels) {
+      auto app_iter = source_labels->LookupByKey("app");
+      auto app = app_iter ? app_iter->value() : nullptr;
+      FB_ASSIGN(source_app, app);
 
-    auto name = source_labels["service.istio.io/canonical-name"];
-    if (name.empty()) {
-      name = node.workload_name();
-    }
-    instance[source_canonical_service] = name;
+      auto version_iter = source_labels->LookupByKey("version");
+      auto version = version_iter ? version_iter->value() : nullptr;
+      FB_ASSIGN(source_version, version);
 
-    auto rev = source_labels["service.istio.io/canonical-revision"];
-    if (rev.empty()) {
-      rev = "latest";
+      auto canonical_name = source_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceLabelName.data());
+      auto name =
+          canonical_name ? canonical_name->value() : node.workload_name();
+      FB_ASSIGN(source_canonical_service, name);
+
+      auto rev = source_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
+      if (rev) {
+        FB_ASSIGN(source_canonical_revision, rev->value());
+      } else {
+        instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
+      }
+    } else {
+      instance[source_app] = "";
+      instance[source_version] = "";
+      instance[source_canonical_service] = "";
+      instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
-    instance[source_canonical_revision] = rev;
   } else {
-    instance[destination_workload] = node.workload_name();
-    instance[destination_workload_namespace] = node.namespace_();
+    FB_ASSIGN(destination_workload, node.workload_name());
+    FB_ASSIGN(destination_workload_namespace, node.namespace_());
 
     auto destination_labels = node.labels();
-    instance[destination_app] = destination_labels["app"];
-    instance[destination_version] = destination_labels["version"];
+    if (destination_labels) {
+      auto app_iter = destination_labels->LookupByKey("app");
+      auto app = app_iter ? app_iter->value() : nullptr;
+      FB_ASSIGN(destination_app, app);
 
-    auto name = destination_labels["service.istio.io/canonical-name"];
-    if (name.empty()) {
-      name = node.workload_name();
+      auto version_iter = destination_labels->LookupByKey("version");
+      auto version = version_iter ? version_iter->value() : nullptr;
+      FB_ASSIGN(destination_version, version);
+
+      auto canonical_name = destination_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceLabelName.data());
+      auto name =
+          canonical_name ? canonical_name->value() : node.workload_name();
+      FB_ASSIGN(destination_canonical_service, name);
+
+      auto rev = destination_labels->LookupByKey(
+          ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
+      if (rev) {
+        FB_ASSIGN(destination_canonical_revision, rev->value());
+      } else {
+        instance[destination_canonical_revision] =
+            ::Wasm::Common::kLatest.data();
+      }
+    } else {
+      instance[destination_app] = "";
+      instance[destination_version] = "";
+      instance[destination_canonical_service] = "";
+      instance[destination_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
-    instance[destination_canonical_service] = name;
 
-    auto rev = destination_labels["service.istio.io/canonical-revision"];
-    if (rev.empty()) {
-      rev = "latest";
-    }
-    instance[destination_canonical_revision] = rev;
-
-    instance[destination_service_namespace] = node.namespace_();
+    FB_ASSIGN(destination_service_namespace, node.namespace_());
   }
 }
+#undef FB_ASSIGN
 
 // Called during request processing.
 void map_peer(IstioDimensions& instance, bool outbound,
-              const wasm::common::NodeInfo& peer_node) {
+              const ::Wasm::Common::FlatNode& peer_node) {
   map_node(instance, !outbound, peer_node);
 }
 
@@ -126,7 +165,7 @@ void map_request(IstioDimensions& instance,
 
 // maps peer_node and request to dimensions.
 void map(IstioDimensions& instance, bool outbound,
-         const wasm::common::NodeInfo& peer_node,
+         const ::Wasm::Common::FlatNode& peer_node,
          const ::Wasm::Common::RequestInfo& request) {
   map_peer(instance, outbound, peer_node);
   map_request(instance, request);
@@ -205,15 +244,15 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
   return default_metrics;
 }
 
-void PluginRootContext::initializeDimensions() {
+bool PluginRootContext::initializeDimensions(const json& j) {
   // Clean-up existing expressions.
   cleanupExpressions();
 
-  // Maps factory name to a factory instance
+  // Maps metric factory name to a factory instance
   Map<std::string, MetricFactory> factories;
-  // Maps factory name to a list of tags.
+  // Maps metric factory name to a list of tags.
   Map<std::string, std::vector<MetricTag>> metric_tags;
-  // Maps factory name to a map from a tag name to an optional index.
+  // Maps metric factory name to a map from a tag name to an optional index.
   // Empty index means the tag needs to be removed.
   Map<std::string, Map<std::string, Optional<size_t>>> metric_indexes;
 
@@ -228,85 +267,127 @@ void PluginRootContext::initializeDimensions() {
   }
 
   // Process the metric definitions (overriding existing).
-  for (const auto& definition : config_.definitions()) {
-    if (definition.name().empty() || definition.value().empty()) {
-      continue;
-    }
-    auto token = addIntExpression(definition.value());
-    auto& factory = factories[definition.name()];
-    factory.name = definition.name();
-    factory.extractor =
-        [token](const ::Wasm::Common::RequestInfo&) -> uint64_t {
-      int64_t result = 0;
-      evaluateExpression(token.value(), &result);
-      return result;
-    };
-    switch (definition.type()) {
-      case stats::MetricType::COUNTER:
+  if (!JsonArrayIterate(j, "definitions", [&](const json& definition) -> bool {
+        auto name = JsonGetField<std::string>(definition, "name").value_or("");
+        auto value =
+            JsonGetField<std::string>(definition, "value").value_or("");
+        if (name.empty() || value.empty()) {
+          LOG_WARN("empty name or value in  'definitions'");
+          return false;
+        }
+        auto token = addIntExpression(value);
+        if (!token.has_value()) {
+          LOG_WARN(absl::StrCat("failed to construct expression: ", value));
+          return false;
+        }
+        auto& factory = factories[name];
+        factory.name = name;
+        factory.extractor =
+            [token, name,
+             value](const ::Wasm::Common::RequestInfo&) -> uint64_t {
+          int64_t result = 0;
+          if (!evaluateExpression(token.value(), &result)) {
+            LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", value,
+                                   "> for dimension:<", name, ">"));
+          }
+          return result;
+        };
         factory.type = MetricType::Counter;
-        break;
-      case stats::MetricType::GAUGE:
-        factory.type = MetricType::Gauge;
-        break;
-      case stats::MetricType::HISTOGRAM:
-        factory.type = MetricType::Histogram;
-        break;
-      default:
-        break;
-    }
+        auto type =
+            JsonGetField<absl::string_view>(definition, "type").value_or("");
+        if (type == "GAUGE") {
+          factory.type = MetricType::Gauge;
+        } else if (type == "HISTOGRAM") {
+          factory.type = MetricType::Histogram;
+        }
+        return true;
+      })) {
+    LOG_WARN("failed to parse 'definitions'");
   }
 
   // Process the dimension overrides.
-  for (const auto& metric : config_.metrics()) {
-    // Sort tag override tags to keep the order of tags deterministic.
-    std::vector<std::string> tags;
-    const auto size = metric.dimensions().size();
-    tags.reserve(size);
-    for (const auto& dim : metric.dimensions()) {
-      tags.push_back(dim.first);
-    }
-    std::sort(tags.begin(), tags.end());
+  if (!JsonArrayIterate(j, "metrics", [&](const json& metric) -> bool {
+        // Sort tag override tags to keep the order of tags deterministic.
+        std::vector<std::string> tags;
+        if (!JsonObjectIterate(metric, "dimensions",
+                               [&](std::string dim) -> bool {
+                                 tags.push_back(dim);
+                                 return true;
+                               })) {
+          LOG_WARN("failed to parse 'metric.dimensions'");
+          return false;
+        }
+        std::sort(tags.begin(), tags.end());
 
-    for (const auto& factory_it : factories) {
-      if (!metric.name().empty() && metric.name() != factory_it.first) {
-        continue;
-      }
-      auto& indexes = metric_indexes[factory_it.first];
-      // Process tag deletions.
-      for (const auto& tag : metric.tags_to_remove()) {
-        auto it = indexes.find(tag);
-        if (it != indexes.end()) {
-          it->second = {};
+        auto name = JsonGetField<std::string>(metric, "name").value_or("");
+        for (const auto& factory_it : factories) {
+          if (!name.empty() && name != factory_it.first) {
+            continue;
+          }
+          auto& indexes = metric_indexes[factory_it.first];
+
+          // Process tag deletions.
+          if (!JsonArrayIterate(
+                  metric, "tags_to_remove", [&](const json& tag) -> bool {
+                    auto tag_string = JsonValueAs<std::string>(tag);
+                    if (!tag_string.has_value()) {
+                      LOG_WARN(
+                          absl::StrCat("unexpected tag to remove", tag.dump()));
+                      return false;
+                    }
+                    auto it = indexes.find(tag_string.value());
+                    if (it != indexes.end()) {
+                      it->second = {};
+                    }
+                    return true;
+                  })) {
+            LOG_WARN("failed to parse 'tags_to_remove'");
+            return false;
+          }
+
+          // Process tag overrides.
+          for (const auto& tag : tags) {
+            auto expr_string =
+                JsonValueAs<std::string>(metric["dimensions"][tag]);
+            if (!expr_string.has_value()) {
+              LOG_WARN("failed to parse 'dimensions' value");
+              return false;
+            }
+            auto expr_index = addStringExpression(expr_string.value());
+            Optional<size_t> value = {};
+            if (expr_index.has_value()) {
+              value = count_standard_labels + expr_index.value();
+            }
+            auto it = indexes.find(tag);
+            if (it != indexes.end()) {
+              it->second = value;
+            } else {
+              metric_tags[factory_it.first].push_back(
+                  {tag, MetricTag::TagType::String});
+              indexes[tag] = value;
+            }
+          }
         }
-      }
-      // Process tag overrides.
-      for (const auto& tag : tags) {
-        auto expr_index = addStringExpression(metric.dimensions().at(tag));
-        Optional<size_t> value = {};
-        if (expr_index.has_value()) {
-          value = count_standard_labels + expr_index.value();
-        }
-        auto it = indexes.find(tag);
-        if (it != indexes.end()) {
-          it->second = value;
-        } else {
-          metric_tags[factory_it.first].push_back(
-              {tag, MetricTag::TagType::String});
-          indexes[tag] = value;
-        }
-      }
-    }
+        return true;
+      })) {
+    LOG_WARN("failed to parse 'metrics'");
   }
 
   // Local data does not change, so populate it on config load.
   istio_dimensions_.resize(count_standard_labels + expressions_.size());
   istio_dimensions_[reporter] = outbound_ ? source : destination;
-  map_node(istio_dimensions_, outbound_, local_node_info_);
+
+  const auto& local_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+  map_node(istio_dimensions_, outbound_, local_node);
 
   // Instantiate stat factories using the new dimensions
-  auto field_separator = CONFIG_DEFAULT(field_separator);
-  auto value_separator = CONFIG_DEFAULT(value_separator);
-  auto stat_prefix = CONFIG_DEFAULT(stat_prefix);
+  auto field_separator = JsonGetField<std::string>(j, "field_separator")
+                             .value_or(default_field_separator);
+  auto value_separator = JsonGetField<std::string>(j, "value_separator")
+                             .value_or(default_value_separator);
+  auto stat_prefix =
+      JsonGetField<std::string>(j, "stat_prefix").value_or(default_stat_prefix);
 
   // prepend "_" to opt out of automatic namespacing
   // If "_" is not prepended, envoy_ is automatically added by prometheus
@@ -336,29 +417,34 @@ void PluginRootContext::initializeDimensions() {
   Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
                {MetricTag{"component", MetricTag::TagType::String},
                 MetricTag{"tag", MetricTag::TagType::String}});
-  build.record(1, "proxy", absl::StrCat(local_node_info_.istio_version(), ";"));
+  build.record(
+      1, "proxy",
+      absl::StrCat(flatbuffers::GetString(local_node.istio_version()), ";"));
+  return true;
 }
 
-bool PluginRootContext::onConfigure(size_t) {
-  std::unique_ptr<WasmData> configuration = getConfiguration();
-  // Parse configuration JSON string.
-  JsonParseOptions json_options;
-  json_options.ignore_unknown_fields = true;
-  Status status =
-      JsonStringToMessage(configuration->toString(), &config_, json_options);
-  if (status != Status::OK) {
-    LOG_WARN(absl::StrCat("Cannot parse plugin configuration JSON string ",
-                          configuration->toString()));
-    return false;
-  }
+// onConfigure == false makes the proxy crash.
+// Only policy plugins should return false.
+bool PluginRootContext::onConfigure(size_t size) {
+  initialized_ = configure(size);
+  return true;
+}
 
-  status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
-  if (status != Status::OK) {
+bool PluginRootContext::configure(size_t) {
+  std::unique_ptr<WasmData> configuration = getConfiguration();
+  if (!::Wasm::Common::extractPartialLocalNodeFlatBuffer(&local_node_info_)) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
   }
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
+
+  auto j = ::Wasm::Common::JsonParse(configuration->view());
+  if (!j.is_object()) {
+    LOG_WARN(absl::StrCat("cannot parse configuration as JSON: ",
+                          configuration->view()));
+    return false;
+  }
 
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
@@ -368,17 +454,25 @@ bool PluginRootContext::onConfigure(size_t) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
 
-  debug_ = config_.debug();
-  use_host_header_fallback_ = !config_.disable_host_header_fallback();
-  node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
+  debug_ = JsonGetField<bool>(j, "debug").value_or(false);
+  use_host_header_fallback_ =
+      !JsonGetField<bool>(j, "disable_host_header_fallback").value_or(false);
 
-  initializeDimensions();
+  if (!initializeDimensions(j)) {
+    return false;
+  }
 
-  long long tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
-  if (config_.has_tcp_reporting_duration()) {
-    tcp_report_duration_milis =
-        ::google::protobuf::util::TimeUtil::DurationToMilliseconds(
-            config_.tcp_reporting_duration());
+  uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
+  auto tcp_reporting_duration =
+      JsonGetField<std::string>(j, "tcp_reporting_duration");
+  absl::Duration duration;
+  if (tcp_reporting_duration.has_value()) {
+    if (absl::ParseDuration(tcp_reporting_duration.value(), &duration)) {
+      tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
+    } else {
+      LOG_WARN(absl::StrCat("failed to parse 'tcp_reporting_duration': ",
+                            tcp_reporting_duration.value()));
+    }
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
 
@@ -386,8 +480,8 @@ bool PluginRootContext::onConfigure(size_t) {
 }
 
 void PluginRootContext::cleanupExpressions() {
-  for (uint32_t token : expressions_) {
-    exprDelete(token);
+  for (const auto& expression : expressions_) {
+    exprDelete(expression.token);
   }
   expressions_.clear();
   input_expressions_.clear();
@@ -403,12 +497,12 @@ Optional<size_t> PluginRootContext::addStringExpression(
   if (it == input_expressions_.end()) {
     uint32_t token = 0;
     if (createExpression(input, &token) != WasmResult::Ok) {
-      LOG_WARN(absl::StrCat("Cannot create an expression: " + input));
+      LOG_WARN(absl::StrCat("cannot create an expression: " + input));
       return {};
     }
     size_t result = expressions_.size();
     input_expressions_[input] = result;
-    expressions_.push_back(token);
+    expressions_.push_back({.token = token, .expression = input});
     return result;
   }
   return it->second;
@@ -418,7 +512,7 @@ Optional<uint32_t> PluginRootContext::addIntExpression(
     const std::string& input) {
   uint32_t token = 0;
   if (createExpression(input, &token) != WasmResult::Ok) {
-    LOG_WARN(absl::StrCat("Cannot create a value expression: " + input));
+    LOG_WARN(absl::StrCat("cannot create a value expression: " + input));
     return {};
   }
   int_expressions_.push_back(token);
@@ -455,45 +549,58 @@ void PluginRootContext::onTick() {
 bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                bool is_tcp) {
   std::string peer_id;
-  const auto peer_node_ptr = node_info_cache_.getPeerById(
-      peer_metadata_id_key_, peer_metadata_key_, peer_id);
+  getValue({peer_metadata_id_key_}, &peer_id);
 
-  const wasm::common::NodeInfo& peer_node =
-      peer_node_ptr ? *peer_node_ptr : ::Wasm::Common::EmptyNodeInfo;
+  std::string peer;
+  const ::Wasm::Common::FlatNode* peer_node =
+      getValue({peer_metadata_key_}, &peer)
+          ? flatbuffers::GetRoot<::Wasm::Common::FlatNode>(peer.data())
+          : nullptr;
 
   // map and overwrite previous mapping.
-  const auto& destination_node_info = outbound_ ? peer_node : local_node_info_;
+  const ::Wasm::Common::FlatNode* destination_node_info =
+      outbound_ ? peer_node
+                : flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+                      local_node_info_.data());
+  std::string destination_namespace =
+      destination_node_info && destination_node_info->namespace_()
+          ? destination_node_info->namespace_()->str()
+          : "";
 
   if (is_tcp) {
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report  any
     // metric.
-    // We skip this wait  if upstream is unhealthy as we won't get peer metadata
-    // in that case.
+    // We keep waiting if response flags is zero, as that implies, there has
+    // been no error in connection.
     uint64_t response_flags = 0;
     getValue({"response", "flags"}, &response_flags);
-    if (peer_node_ptr == nullptr &&
+    if (peer_node == nullptr &&
         peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
-        !(response_flags & kNoHealthyUpstream)) {
+        response_flags == 0) {
       return false;
     }
     if (!request_info.is_populated) {
-      ::Wasm::Common::populateTCPRequestInfo(
-          outbound_, &request_info, destination_node_info.namespace_());
+      ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info,
+                                             destination_namespace);
     }
   } else {
     ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
                                             &request_info,
-                                            destination_node_info.namespace_());
+                                            destination_namespace);
   }
 
-  map(istio_dimensions_, outbound_, peer_node, request_info);
+  map(istio_dimensions_, outbound_,
+      peer_node ? *peer_node
+                : *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+                      empty_node_info_.data()),
+      request_info);
   for (size_t i = 0; i < expressions_.size(); i++) {
-    if (!evaluateExpression(expressions_[i],
+    if (!evaluateExpression(expressions_[i].token,
                             &istio_dimensions_.at(count_standard_labels + i))) {
-      LOG_TRACE(absl::StrCat("Failed to evaluate expression at slot: " +
-                             std::to_string(i)));
-      istio_dimensions_[count_standard_labels + i] = "";
+      LOG_TRACE(absl::StrCat("Failed to evaluate expression: <",
+                             expressions_[i].expression, ">"));
+      istio_dimensions_[count_standard_labels + i] = "unknown";
     }
   }
 

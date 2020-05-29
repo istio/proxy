@@ -16,6 +16,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -31,24 +32,25 @@ namespace Wasm {
 namespace Http {
 namespace AuthN {
 
-using HeaderMap = std::vector<std::pair<absl::string_view, absl::string_view>>;
+using RawHeaderMap =
+    std::vector<std::pair<absl::string_view, absl::string_view>>;
+// TODO(shikugawa): use Envoy::Http::HeaderMapImpl. Because which is optimized
+// to process headers.
+using HeaderMap = std::unordered_map<absl::string_view, absl::string_view>;
 
-// FilterContext holds inputs, such as request dynamic metadata and connection
-// and result data for authentication process.
+// FilterContext holds inputs, such as request dynamic metadata and
+// connection and result data for authentication process.
 class FilterContext {
  public:
   FilterContext(
-      const HeaderMap& header_map, const ConnectionContext& connection_context,
-      // const envoy::config::core::v3::Metadata& dynamic_metadata,
+      const RawHeaderMap& raw_header_map,
+      const ConnectionContext& connection_context,
+      const istio::authn::Metadata& dynamic_metadata,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-          filter_config)
-      : header_map_(header_map),
-        connection_context_(connection_context),
-        // dynamic_metadata_(dynamic_metadata),
-        filter_config_(filter_config) {}
+          filter_config);
 
-  // Sets peer result based on authenticated payload. Input payload can be null,
-  // which basically changes nothing.
+  // Sets peer result based on authenticated payload. Input payload can be
+  // null, which basically changes nothing.
   void setPeerResult(const istio::authn::Payload* payload);
 
   // Sets origin result based on authenticated payload. Input payload can be
@@ -77,13 +79,15 @@ class FilterContext {
   };
 
   // Return header map.
-  const HeaderMap& headerMap() { return header_map_; }
+  const HeaderMap& HeaderMap() { return header_map_; }
 
   const ConnectionContext& connectionContext() const {
     return connection_context_;
   }
 
  private:
+  void createHeaderMap(RawHeaderMap& raw_header_map);
+
   // TODO(shikugawa): JWT implementation, required metadata retrieval.
   // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
   // filter metadata and write to |payload|.
@@ -100,14 +104,10 @@ class FilterContext {
 
   // Const reference to request info dynamic metadata. This provides data that
   // output from other filters, e.g JWT.
-  // TODO(shikugawa): Now we can't build this type of message into wasm. Because
-  // emscripten standalone mode haven't support pthread yet. Maybe this problem
-  // is caused by google/re2 which is used to build envoy_api. So we should
-  // define metadata for wasm. const envoy::config::core::v3::Metadata&
-  // dynamic_metadata_;
+  const istio::authn::Metadata& dynamic_metadata_;
 
   // http request header
-  const HeaderMap& header_map_;
+  HeaderMap& header_map_;
 
   // context of established connection
   const ConnectionContext& connection_context_;

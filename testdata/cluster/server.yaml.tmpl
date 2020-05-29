@@ -1,12 +1,20 @@
-name: server
+{{- if .Vars.ServerClusterName }}
+name: {{ .Vars.ServerClusterName }}
+{{- else }}
+name: outbound|9080|http|server.default.svc.cluster.local
+{{- end }}
 connect_timeout: 1s
 type: STATIC
 load_assignment:
-  cluster_name: server
+  {{- if .Vars.ServerClusterName }}
+  cluster_name: {{ .Vars.ServerClusterName }}
+  {{- else }}
+  cluster_name: outbound|9080|http|server.default.svc.cluster.local
+  {{- end }}
   endpoints:
   - lb_endpoints:
     - endpoint:
         address:
           socket_address:
             address: 127.0.0.1
-            port_value: {{ .Vars.ServerPort }}
+            port_value: {{ .Ports.ServerPort }}

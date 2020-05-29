@@ -25,17 +25,29 @@ namespace Metric {
 
 using google::protobuf::util::MessageDifferencer;
 
-wasm::common::NodeInfo nodeInfo() {
-  wasm::common::NodeInfo node_info;
-  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
-      "test_project";
-  (*node_info.mutable_platform_metadata())[Common::kGCPClusterNameKey] =
-      "test_cluster";
-  (*node_info.mutable_platform_metadata())[Common::kGCPLocationKey] =
-      "test_location";
-  node_info.set_namespace_("test_namespace");
-  node_info.set_name("test_pod");
-  return node_info;
+const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
+  auto name = fbb.CreateString("test_pod");
+  auto namespace_ = fbb.CreateString("test_namespace");
+  std::vector<flatbuffers::Offset<::Wasm::Common::KeyVal>> platform_metadata = {
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPProjectKey),
+                                   fbb.CreateString("test_project")),
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPClusterNameKey),
+                                   fbb.CreateString("test_cluster")),
+      ::Wasm::Common::CreateKeyVal(fbb,
+                                   fbb.CreateString(Common::kGCPLocationKey),
+                                   fbb.CreateString("test_location"))};
+  auto platform_metadata_offset =
+      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  ::Wasm::Common::FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_namespace_(namespace_);
+  node.add_platform_metadata(platform_metadata_offset);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      fbb.GetBufferPointer());
 }
 
 google::api::MonitoredResource serverMonitoredResource() {
@@ -71,16 +83,16 @@ google::api::MonitoredResource clientMonitoredResource() {
 }
 
 TEST(RegistryTest, getStackdriverOptionsProjectID) {
-  wasm::common::NodeInfo node_info;
-  (*node_info.mutable_platform_metadata())[Common::kGCPProjectKey] =
-      "test_project";
+  flatbuffers::FlatBufferBuilder fbb;
+  const auto& node_info = nodeInfo(fbb);
   ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
   auto options = getStackdriverOptions(node_info, stub_option);
   EXPECT_EQ(options.project_id, "test_project");
 }
 
 TEST(RegistryTest, getStackdriverOptionsMonitoredResource) {
-  auto node_info = nodeInfo();
+  flatbuffers::FlatBufferBuilder fbb;
+  const auto& node_info = nodeInfo(fbb);
   auto expected_server_monitored_resource = serverMonitoredResource();
   auto expected_client_monitored_resource = clientMonitoredResource();
 

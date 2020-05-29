@@ -21,6 +21,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "extensions/common/proto_util.h"
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
@@ -54,7 +55,6 @@ using ::Wasm::Common::kDownstreamMetadataIdKey;
 using ::Wasm::Common::kDownstreamMetadataKey;
 using ::Wasm::Common::kUpstreamMetadataIdKey;
 using ::Wasm::Common::kUpstreamMetadataKey;
-using ::wasm::common::NodeInfo;
 using ::Wasm::Common::RequestInfo;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
@@ -65,13 +65,23 @@ namespace {
 
 // Get metric export interval from node metadata. Returns 60 seconds if interval
 // is not found in metadata.
-int getExportInterval() {
+int getMonitoringExportInterval() {
   std::string interval_s = "";
   if (getValue({"node", "metadata", kMonitoringExportIntervalKey},
                &interval_s)) {
     return std::stoi(interval_s);
   }
   return 60;
+}
+
+// Get logging export interval from node metadata in milliseconds. Returns 60
+// seconds if interval is not found in metadata.
+int getLoggingExportIntervalMilliseconds() {
+  std::string interval_s = "";
+  if (getValue({"node", "metadata", kLoggingExportIntervalKey}, &interval_s)) {
+    return std::stoi(interval_s) * 1000;
+  }
+  return kDefaultLogExportMilliseconds;
 }
 
 // Get port of security token exchange server from node metadata, if not
@@ -137,10 +147,17 @@ std::string getMonitoringEndpoint() {
 
 }  // namespace
 
-bool StackdriverRootContext::onConfigure(size_t) {
+// onConfigure == false makes the proxy crash.
+// Only policy plugins should return false.
+bool StackdriverRootContext::onConfigure(size_t size) {
+  initialized_ = configure(size);
+  return true;
+}
+
+bool StackdriverRootContext::configure(size_t) {
   // onStart is called prior to onConfigure
   if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_set_tick_period_milliseconds(kDefaultLogExportMilliseconds);
+    proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
   } else {
     proxy_set_tick_period_milliseconds(0);
   }
@@ -158,14 +175,15 @@ bool StackdriverRootContext::onConfigure(size_t) {
     return false;
   }
 
-  status = ::Wasm::Common::extractLocalNodeMetadata(&local_node_info_);
-  if (status != Status::OK) {
-    logWarn("cannot extract local node metadata: " + status.ToString());
+  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
+    logWarn("cannot extract local node metadata");
     return false;
   }
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
+  const ::Wasm::Common::FlatNode& local_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
 
   // Common stackdriver stub option for logging, edge and monitoring.
   ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
@@ -175,23 +193,25 @@ bool StackdriverRootContext::onConfigure(size_t) {
   stub_option.secure_endpoint = getSecureEndpoint();
   stub_option.insecure_endpoint = getInsecureEndpoint();
   stub_option.monitoring_endpoint = getMonitoringEndpoint();
-  const auto& platform_metadata = local_node_info_.platform_metadata();
-  const auto project_iter = platform_metadata.find(kGCPProjectKey);
-  if (project_iter != platform_metadata.end()) {
-    stub_option.project_id = project_iter->second;
+  const auto platform_metadata = local_node.platform_metadata();
+  if (platform_metadata) {
+    const auto project_iter = platform_metadata->LookupByKey(kGCPProjectKey);
+    if (project_iter) {
+      stub_option.project_id = flatbuffers::GetString(project_iter->value());
+    }
   }
 
-  if (!logger_) {
+  if (!logger_ && enableServerAccessLog()) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
     auto logging_stub_option = stub_option;
     logging_stub_option.default_endpoint = kLoggingService;
     auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
     // logger takes ownership of exporter.
-    logger_ = std::make_unique<Logger>(local_node_info_, std::move(exporter));
+    logger_ = std::make_unique<Logger>(local_node, std::move(exporter));
   }
 
-  if (!edge_reporter_) {
+  if (!edge_reporter_ && enableEdgeReporting()) {
     // edge reporter should only be initiated once, for now there is no reason
     // to recreate edge reporter because of config update.
     auto edge_stub_option = stub_option;
@@ -202,11 +222,10 @@ bool StackdriverRootContext::onConfigure(size_t) {
     if (config_.max_edges_batch_size() > 0 &&
         config_.max_edges_batch_size() <= 1000) {
       edge_reporter_ = std::make_unique<EdgeReporter>(
-          local_node_info_, std::move(edges_client),
-          config_.max_edges_batch_size());
+          local_node, std::move(edges_client), config_.max_edges_batch_size());
     } else {
       edge_reporter_ = std::make_unique<EdgeReporter>(
-          local_node_info_, std::move(edges_client),
+          local_node, std::move(edges_client),
           ::Extensions::Stackdriver::Edges::kDefaultAssertionBatchSize);
     }
   }
@@ -224,8 +243,6 @@ bool StackdriverRootContext::onConfigure(size_t) {
     edge_new_report_duration_nanos_ = kDefaultEdgeNewReportDurationNanoseconds;
   }
 
-  node_info_cache_.setMaxCacheSize(config_.max_peer_cache_size());
-
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -238,9 +255,9 @@ bool StackdriverRootContext::onConfigure(size_t) {
   auto monitoring_stub_option = stub_option;
   monitoring_stub_option.default_endpoint = kMonitoringService;
   opencensus::exporters::stats::StackdriverExporter::Register(
-      getStackdriverOptions(local_node_info_, monitoring_stub_option));
+      getStackdriverOptions(local_node, monitoring_stub_option));
   opencensus::stats::StatsExporter::SetInterval(
-      absl::Seconds(getExportInterval()));
+      absl::Seconds(getMonitoringExportInterval()));
 
   // Register opencensus measures and views.
   registerViews();
@@ -286,47 +303,44 @@ bool StackdriverRootContext::onDone() {
 }
 
 void StackdriverRootContext::record() {
-  const auto peer_node_info_ptr = getPeerNode();
-  const NodeInfo& peer_node_info =
-      peer_node_info_ptr ? *peer_node_info_ptr : ::Wasm::Common::EmptyNodeInfo;
-  const auto& destination_node_info =
-      isOutbound() ? peer_node_info : local_node_info_;
+  const bool outbound = isOutbound();
+  const auto& metadata_key =
+      outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
+  std::string peer;
+  const ::Wasm::Common::FlatNode& peer_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+          getValue({metadata_key}, &peer) ? peer.data()
+                                          : empty_node_info_.data());
+  const ::Wasm::Common::FlatNode& local_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+  const ::Wasm::Common::FlatNode& destination_node_info =
+      outbound ? peer_node : local_node;
 
   ::Wasm::Common::RequestInfo request_info;
-  ::Wasm::Common::populateHTTPRequestInfo(isOutbound(), useHostHeaderFallback(),
-                                          &request_info,
-                                          destination_node_info.namespace_());
-  ::Extensions::Stackdriver::Metric::record(isOutbound(), local_node_info_,
-                                            peer_node_info, request_info);
+  ::Wasm::Common::populateHTTPRequestInfo(
+      isOutbound(), useHostHeaderFallback(), &request_info,
+      flatbuffers::GetString(destination_node_info.namespace_()));
+  ::Extensions::Stackdriver::Metric::record(
+      isOutbound(), local_node, peer_node, request_info,
+      !config_.disable_http_size_metrics());
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node_info);
+    logger_->addLogEntry(request_info, peer_node);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
-    if (!getValue({"filter_state", ::Wasm::Common::kDownstreamMetadataIdKey},
-                  &peer_id)) {
+    if (!getValue({::Wasm::Common::kDownstreamMetadataIdKey}, &peer_id)) {
       LOG_DEBUG(absl::StrCat(
           "cannot get metadata for: ", ::Wasm::Common::kDownstreamMetadataIdKey,
           "; skipping edge."));
       return;
     }
-    edge_reporter_->addEdge(request_info, peer_id, peer_node_info);
+    edge_reporter_->addEdge(request_info, peer_id, peer_node);
   }
 }
 
 inline bool StackdriverRootContext::isOutbound() {
   return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
-}
-
-::Wasm::Common::NodeInfoPtr StackdriverRootContext::getPeerNode() {
-  bool isOutbound = this->isOutbound();
-  const auto& id_key =
-      isOutbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey;
-  const auto& metadata_key =
-      isOutbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
-  std::string peer_id;
-  return node_info_cache_.getPeerById(id_key, metadata_key, peer_id);
 }
 
 inline bool StackdriverRootContext::enableServerAccessLog() {
@@ -339,8 +353,7 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
 
 bool StackdriverRootContext::shouldLogThisRequest() {
   std::string shouldLog = "";
-  if (!getValue({"filter_state", ::Wasm::Common::kAccessLogPolicyKey},
-                &shouldLog)) {
+  if (!getValue({::Wasm::Common::kAccessLogPolicyKey}, &shouldLog)) {
     LOG_DEBUG("cannot get envoy access log info from filter state.");
     return true;
   }
@@ -356,6 +369,9 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
+  if (!getRootContext()->initialized()) {
+    return;
+  }
   // Record telemetry based on request info.
   getRootContext()->record();
 }

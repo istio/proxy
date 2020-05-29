@@ -20,10 +20,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
-#include "extensions/common/node_info.pb.h"
-#include "extensions/common/node_info_cache.h"
-#include "extensions/stats/config.pb.h"
-#include "google/protobuf/util/json_util.h"
+#include "extensions/common/json_util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -67,12 +64,6 @@ const std::string vDash = "-";
 const std::string default_field_separator = ";.;";
 const std::string default_value_separator = "=.=";
 const std::string default_stat_prefix = "istio";
-
-using google::protobuf::util::JsonParseOptions;
-using google::protobuf::util::Status;
-
-#define CONFIG_DEFAULT(name) \
-  config_.name().empty() ? default_##name : config_.name()
 
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
@@ -226,15 +217,18 @@ class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, StringView root_id)
       : RootContext(id, root_id) {
-    Metric cache_count(MetricType::Counter, "statsfilter",
-                       {MetricTag{"cache", MetricTag::TagType::String}});
-    cache_hits_ = cache_count.resolve("hit");
-    cache_misses_ = cache_count.resolve("miss");
+    Metric cache_count(MetricType::Counter, "metric_cache_count",
+                       {MetricTag{"wasm_filter", MetricTag::TagType::String},
+                        MetricTag{"cache", MetricTag::TagType::String}});
+    cache_hits_ = cache_count.resolve("stats_filter", "hit");
+    cache_misses_ = cache_count.resolve("stats_filter", "miss");
+    ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
   }
 
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
+  bool configure(size_t);
   bool onDone() override;
   void onTick() override;
   // Report will return false when peer metadata exchange is not found for TCP,
@@ -246,13 +240,14 @@ class PluginRootContext : public RootContext {
   void addToTCPRequestQueue(
       uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
   void deleteFromTCPRequestQueue(uint32_t id);
+  bool initialized() const { return initialized_; };
 
  protected:
   const std::vector<MetricTag>& defaultTags();
   const std::vector<MetricFactory>& defaultMetrics();
   // Update the dimensions and the expressions data structures with the new
   // configuration.
-  void initializeDimensions();
+  bool initializeDimensions(const ::nlohmann::json& j);
   // Destroy host resources for the allocated expressions.
   void cleanupExpressions();
   // Allocate an expression if necessary and return its token position.
@@ -261,14 +256,17 @@ class PluginRootContext : public RootContext {
   Optional<uint32_t> addIntExpression(const std::string& input);
 
  private:
-  stats::PluginConfig config_;
-  wasm::common::NodeInfo local_node_info_;
-  ::Wasm::Common::NodeInfoCache node_info_cache_;
+  std::string local_node_info_;
+  std::string empty_node_info_;
 
   IstioDimensions istio_dimensions_;
 
+  struct expressionInfo {
+    uint32_t token;
+    std::string expression;
+  };
   // String expressions evaluated into dimensions
-  std::vector<uint32_t> expressions_;
+  std::vector<struct expressionInfo> expressions_;
   Map<std::string, size_t> input_expressions_;
 
   // Int expressions evaluated to metric values
@@ -293,6 +291,7 @@ class PluginRootContext : public RootContext {
       tcp_request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
+  bool initialized_ = false;
 };
 
 class PluginRootContextOutbound : public PluginRootContext {
@@ -316,6 +315,9 @@ class PluginContext : public Context {
   }
 
   void onLog() override {
+    if (!rootContext()->initialized()) {
+      return;
+    }
     if (is_tcp_) {
       cleanupTCPOnClose();
     }
@@ -323,6 +325,9 @@ class PluginContext : public Context {
   };
 
   FilterStatus onNewConnection() override {
+    if (!rootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
     is_tcp_ = true;
     request_info_->tcp_connections_opened++;
     rootContext()->addToTCPRequestQueue(context_id_, request_info_);
@@ -331,11 +336,17 @@ class PluginContext : public Context {
 
   // Called on onData call, so counting the data that is received.
   FilterStatus onDownstreamData(size_t size, bool) override {
+    if (!rootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
     request_info_->tcp_received_bytes += size;
     return FilterStatus::Continue;
   }
   // Called on onWrite call, so counting the data that is sent.
   FilterStatus onUpstreamData(size_t size, bool) override {
+    if (!rootContext()->initialized()) {
+      return FilterStatus::Continue;
+    }
     request_info_->tcp_sent_bytes += size;
     return FilterStatus::Continue;
   }

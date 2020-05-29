@@ -12,3 +12,8 @@ test/envoye2e/tcp_metadata_exchange/testoutput
 test/envoye2e/http_metadata_exchange/testoutput
 *.wasm
 .vscode
+/extensions/common/flatbuffers
+/extensions/common/node_info_generated.h
+/extensions/common/node_info_bfbs_generated.h
+/extensions/common/proxy_expr.h
+/extensions/common/nlohmann_json.hpp

@@ -41,7 +41,7 @@ bool PeerAuthenticator::run(istio::authn::Payload* payload) {
         success = validateX509(method.mtls(), payload);
         break;
       case istio::authentication::v1alpha1::PeerAuthenticationMethod::
-          ParamsCase::kJwt:
+          ParamsCase::kJwt: // This is deprecated.
         success = validateJwt(method.jwt(), payload);
         break;
       default:

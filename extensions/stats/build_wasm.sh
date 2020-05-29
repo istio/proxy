@@ -15,6 +15,9 @@
 # limitations under the License.
 
 set -e
+set -x
 
-docker run -e uid="$(id -u)" -e gid="$(id -g)" -v $PWD:/work -w /work -v $(realpath $PWD/../../extensions):/work/extensions gcr.io/istio-testing/wasmsdk:v3 bash /build_wasm.sh
-rmdir extensions
+WS=$(bazel info workspace)
+source ${WS}/scripts/build_wasm.inc
+
+build_wasm

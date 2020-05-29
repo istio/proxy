@@ -18,8 +18,8 @@
 #include <set>
 
 #include "absl/strings/string_view.h"
-#include "extensions/common/node_info.pb.h"
-#include "google/protobuf/struct.pb.h"
+#include "extensions/common/node_info_generated.h"
+#include "flatbuffers/flatbuffers.h"
 
 namespace Wasm {
 namespace Common {
@@ -29,20 +29,16 @@ using StringView = absl::string_view;
 // Node metadata
 constexpr StringView WholeNodeKey = ".";
 
-constexpr StringView kUpstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.upstream_id";
-constexpr StringView kUpstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.upstream";
+constexpr StringView kUpstreamMetadataIdKey = "upstream_peer_id";
+constexpr StringView kUpstreamMetadataKey = "upstream_peer";
 
-constexpr StringView kDownstreamMetadataIdKey =
-    "envoy.wasm.metadata_exchange.downstream_id";
-constexpr StringView kDownstreamMetadataKey =
-    "envoy.wasm.metadata_exchange.downstream";
+constexpr StringView kDownstreamMetadataIdKey = "downstream_peer_id";
+constexpr StringView kDownstreamMetadataKey = "downstream_peer";
 
 const std::string kMetadataNotFoundValue =
     "envoy.wasm.metadata_exchange.peer_unknown";
 
-constexpr StringView kAccessLogPolicyKey = "envoy.wasm.access_log.log";
+constexpr StringView kAccessLogPolicyKey = "istio.access_log_policy";
 
 // Header keys
 constexpr StringView kAuthorityHeaderKey = ":authority";
@@ -53,8 +49,21 @@ const std::string kProtocolHTTP = "http";
 const std::string kProtocolGRPC = "grpc";
 const std::string kProtocolTCP = "tcp";
 
+constexpr absl::string_view kCanonicalServiceLabelName =
+    "service.istio.io/canonical-name";
+constexpr absl::string_view kCanonicalServiceRevisionLabelName =
+    "service.istio.io/canonical-revision";
+constexpr absl::string_view kLatest = "latest";
+
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
+
+const std::set<std::string> kDefaultLabels{
+    "app",
+    "version",
+    "service.istio.io/canonical-name",
+    "service.istio.io/canonical-revision",
+};
 
 enum class ServiceAuthenticationPolicy : int64_t {
   Unspecified = 0,
@@ -150,8 +159,6 @@ struct RequestInfo {
 // Some or all part may be populated depending on need.
 struct RequestContext {
   const bool outbound;
-  const wasm::common::NodeInfo& source;
-  const wasm::common::NodeInfo& destination;
   const Common::RequestInfo& request;
 };
 
@@ -165,20 +172,17 @@ enum class TrafficDirection : int64_t {
 // Retrieves the traffic direction from the configuration context.
 TrafficDirection getTrafficDirection();
 
-// Extracts NodeInfo from proxy node metadata passed in as a protobuf struct.
-// It converts the metadata struct to a JSON struct and parse NodeInfo proto
-// from that JSON struct.
-// Returns status of protocol/JSON operations.
-google::protobuf::util::Status extractNodeMetadata(
-    const google::protobuf::Struct& metadata,
-    wasm::common::NodeInfo* node_info);
-google::protobuf::util::Status extractNodeMetadataGeneric(
-    const google::protobuf::Struct& metadata,
-    wasm::common::NodeInfo* node_info);
+// Convenience routine to create an empty node flatbuffer.
+void extractEmptyNodeFlatBuffer(std::string* out);
 
-// Read from local node metadata and populate node_info.
-google::protobuf::util::Status extractLocalNodeMetadata(
-    wasm::common::NodeInfo* node_info);
+// Extra partial local node metadata into a flatbuffer.
+// This populates a subset of nested labels and platform metadata to avoid
+// parsing a protobuf from the host.
+// See https://github.com/envoyproxy/envoy-wasm/issues/485.
+bool extractPartialLocalNodeFlatBuffer(std::string* out);
+
+// Returns flatbuffer schema for node info.
+absl::string_view nodeInfoSchema();
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
@@ -194,13 +198,6 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info);
 // the request context.
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
                             const std::string& destination_namespace);
-
-// Extracts node metadata value. It looks for values of all the keys
-// corresponding to EXCHANGE_KEYS in node_metadata and populates it in
-// google::protobuf::Value pointer that is passed in.
-google::protobuf::util::Status extractNodeMetadataValue(
-    const google::protobuf::Struct& node_metadata,
-    google::protobuf::Struct* metadata);
 
 }  // namespace Common
 }  // namespace Wasm
