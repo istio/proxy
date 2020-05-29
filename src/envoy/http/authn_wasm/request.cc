@@ -13,15 +13,20 @@
  * limitations under the License.
  */
 
+#include "src/envoy/http/authn_wasm/request.h"
+
 #include "absl/strings/str_cat.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/http/headers.h"
-#include "src/envoy/http/authn_wasm/authenticator/origin.h"
 
-namespace Envoy {
-namespace Wasm {
+#ifdef NULL_PLUGIN
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
+
+#endif
 
 RequestAuthenticator::RequestAuthenticator(
     FilterContextPtr filter_context,
@@ -59,11 +64,13 @@ RequestAuthenticator::run(istio::authn::Payload* payload) {
     logDebug("CORS preflight request allowed regardless of JWT policy");
     return true;
   }
-
-  
 }
+
+#ifdef NULL_PLUGIN
 
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

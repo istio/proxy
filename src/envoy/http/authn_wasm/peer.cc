@@ -13,14 +13,24 @@
  * limitations under the License.
  */
 
-#include "absl/strings/str_cat.h"
-#include "proxy_wasm_intrinsics.h"
-#include "src/envoy/http/authn_wasm/authenticator/peer.h"
+#include "src/envoy/http/authn_wasm/peer.h"
 
-namespace Envoy {
-namespace Wasm {
+#include "absl/strings/str_cat.h"
+
+#ifndef NULL_PLUGIN
+#include "proxy_wasm_intrinsics.h"
+#else
+#include "include/proxy-wasm/null_plugin.h"
+
+using proxy_wasm::null_plugin::logDebug;
+using proxy_wasm::null_plugin::logError;
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
+
+#endif
 
 PeerAuthenticator::PeerAuthenticator(
     FilterContextPtr filter_context,
@@ -41,7 +51,7 @@ bool PeerAuthenticator::run(istio::authn::Payload* payload) {
         success = validateX509(method.mtls(), payload);
         break;
       case istio::authentication::v1alpha1::PeerAuthenticationMethod::
-          ParamsCase::kJwt: // This is deprecated.
+          ParamsCase::kJwt:  // This is deprecated.
         success = validateJwt(method.jwt(), payload);
         break;
       default:
@@ -63,7 +73,11 @@ bool PeerAuthenticator::run(istio::authn::Payload* payload) {
   return success;
 }
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

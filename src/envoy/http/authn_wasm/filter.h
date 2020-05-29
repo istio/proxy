@@ -18,12 +18,22 @@
 #include "absl/strings/string_view.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "proxy_wasm_intrinsics.h"
-#include "src/envoy/http/authn_wasm/authenticator/base.h"
+#include "src/envoy/http/authn_wasm/base.h"
 
-namespace Envoy {
-namespace Wasm {
+#ifndef NULL_PLUGIN
+#include "proxy_wasm_intrinsics.h"
+#else
+#include "include/proxy-wasm/null_plugin.h"
+
+using proxy_wasm::null_plugin::logDebug;
+using proxy_wasm::null_plugin::logError;
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
+
+#endif
 
 using istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig;
 using StringView = absl::string_view;
@@ -125,7 +135,11 @@ class AuthnContext : public Context {
 static RegisterContextFactory register_AuthnWasm(
     CONTEXT_FACTORY(AuthnContext), ROOT_FACTORY(AuthnRootContext));
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

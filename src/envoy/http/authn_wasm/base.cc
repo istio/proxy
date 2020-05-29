@@ -13,30 +13,40 @@
  * limitations under the License.
  */
 
+#include "src/envoy/http/authn_wasm/base.h"
+
 #include <cstdlib>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "envoy/http/header_map.h"
-#include "src/envoy/http/authn_wasm/authenticator/base.h"
 
-namespace Envoy {
-namespace Wasm {
+#ifndef NULL_PLUGIN
+#include "proxy_wasm_intrinsics.h"
+#else
+#include "include/proxy-wasm/null_plugin.h"
+
+using proxy_wasm::null_plugin::logDebug;
+using proxy_wasm::null_plugin::logError;
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
 
+#endif
+
 namespace {
 // The default header name for an exchanged token
-static constexpr absl::string_view kExchangedTokenHeaderName =
-    "ingress-authorization";
+// static constexpr absl::string_view kExchangedTokenHeaderName =
+// "ingress-authorization";
 
 // Returns whether the header for an exchanged token is found
-bool FindHeaderOfExchangedToken(
-    const istio::authentication::v1alpha1::Jwt& jwt) {
-  return (jwt.jwt_headers_size() == 1 &&
-          Envoy::Http::LowerCaseString(kExchangedTokenHeaderName.data()) ==
-              Envoy::Http::LowerCaseString(jwt.jwt_headers(0)));
-}
+// bool FindHeaderOfExchangedToken(
+//     const istio::authentication::v1alpha1::Jwt& jwt) {
+//   return (jwt.jwt_headers_size() == 1 &&
+//           Envoy::Http::LowerCaseString(kExchangedTokenHeaderName.data()) ==
+//               Envoy::Http::LowerCaseString(jwt.jwt_headers(0)));
+// }
 
 }  // namespace
 
@@ -48,9 +58,9 @@ AuthenticatorBase::~AuthenticatorBase() {}
 bool AuthenticatorBase::validateTrustDomain() const {
   const auto& conn_context = filter_context_->connectionContext();
   if (conn_context.peerCertificateInfo() == nullptr) {
-    logError(absl::StrCat(
-        "trust domain validation failed: failed to extract peer certificate ",
-        "info"));
+    logError(
+        "trust domain validation failed: failed to extract peer certificate "
+        "info");
     return false;
   }
 
@@ -63,8 +73,8 @@ bool AuthenticatorBase::validateTrustDomain() const {
 
   if (conn_context.localCertificateInfo() == nullptr) {
     logError(
-        absl::StrCat("trust domain validation failed: failed to extract local ",
-                     "certificate info"));
+        "trust domain validation failed: failed to extract local certificate "
+        "info");
     return false;
   }
 
@@ -76,7 +86,7 @@ bool AuthenticatorBase::validateTrustDomain() const {
   }
 
   if (peer_trust_domain.value() != local_trust_domain.value()) {
-    logError(absl::StrCat("trust domain validation failed: peer trust domain ",
+    logError(absl::StrCat("trust domain validation failed: peer trust domain",
                           peer_trust_domain.value()));
     logError(absl::StrCat("different from local trust domain ",
                           local_trust_domain.value()));
@@ -135,13 +145,16 @@ bool AuthenticatorBase::validateX509(
 }
 
 // TODO(shikugawa): implement validateJWT
-bool AuthenticatorBase::validateJwt(
-    const istio::authentication::v1alpha1::Jwt& params,
-    istio::authn::Payload* payload) {
+bool AuthenticatorBase::validateJwt(const istio::authentication::v1alpha1::Jwt&,
+                                    istio::authn::Payload*) {
   return true;
 }
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

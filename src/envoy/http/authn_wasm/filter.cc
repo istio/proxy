@@ -13,21 +13,25 @@
  * limitations under the License.
  */
 
+#include "src/envoy/http/authn_wasm/filter.h"
+
 #include "absl/strings/str_cat.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/json_util.h"
-#include "src/envoy/http/authn_wasm/authenticator/peer.h"
 #include "src/envoy/http/authn_wasm/connection_context.h"
-#include "src/envoy/http/authn_wasm/filter.h"
+#include "src/envoy/http/authn_wasm/peer.h"
 
-namespace Envoy {
-namespace Wasm {
+#ifdef NULL_PLUGIN
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
 
+#endif
+
 FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t) {
-  const auto context = ConnectionContext();
   std::string metadata_bytes;
 
   if (!getValue({"metadata"}, &metadata_bytes)) {
@@ -39,8 +43,8 @@ FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t) {
   metadata.ParseFromString(metadata_bytes);
   const auto request_headers = getRequestHeaderPairs()->pairs();
 
-  filter_context_.reset(
-      new FilterContext(request_headers, metadata, filterConfig()));
+  filter_context_.reset(new FilterContext(ConnectionContext(), request_headers,
+                                          metadata, filterConfig()));
 
   istio::authn::Payload payload;
 
@@ -55,7 +59,11 @@ FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t) {
   return FilterHeadersStatus::Continue;
 }
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

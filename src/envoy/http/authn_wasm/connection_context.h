@@ -18,13 +18,22 @@
 #include <memory>
 
 #include "absl/strings/string_view.h"
-#include "proxy_wasm_intrinsics.h"
 #include "src/envoy/http/authn_wasm/cert.h"
 
-namespace Envoy {
-namespace Wasm {
+#ifndef NULL_PLUGIN
+#include "proxy_wasm_intrinsics.h"
+#else
+#include "include/proxy-wasm/null_plugin.h"
+
+using proxy_wasm::null_plugin::getProperty;
+using proxy_wasm::null_plugin::logDebug;
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
+
+#endif
 
 constexpr absl::string_view Connection = "connection";
 constexpr absl::string_view TlsVersion = "tls_version";
@@ -35,7 +44,7 @@ constexpr absl::string_view Mtls = "mtls";
 
 class ConnectionContext {
  public:
-  ConnectionContext();
+  ConnectionContext() = default;
 
   bool isMtls() const { return mtls_; }
 
@@ -59,7 +68,11 @@ class ConnectionContext {
   bool mtls_;
 };
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

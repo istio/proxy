@@ -18,63 +18,38 @@
 package(default_visibility = ["//visibility:public"])
 
 load(
-    "//:wasm.bzl",
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
+)
+load(
+    "@envoy//bazel/wasm:wasm.bzl",
     "wasm_cc_binary",
-    "wasm_cc_library",
-)
-
-wasm_cc_library(
-    name = "cert_lib",
-    srcs = ["cert.cc"],
-    hdrs = ["cert.h"],
-    deps = [
-        "@com_google_abseil//absl/strings",
-        "@com_google_abseil//absl/types:optional",
-    ],
-)
-
-wasm_cc_library(
-    name = "connection_context_lib",
-    srcs = ["connection_context.cc"],
-    hdrs = ["connection_context.h"],
-    deps = [
-        ":cert_lib",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
-    ],
-)
-
-wasm_cc_library(
-    name = "filter_context_lib",
-    srcs = ["filter_context.cc"],
-    hdrs = ["filter_context.h"],
-    deps = [
-        ":cert_lib",
-        ":connection_context_lib",
-        "//external:authentication_policy_config_cc_proto",
-        "//src/envoy/utils:filter_names_lib",
-        "//src/istio/authn:context_proto_cc_wasm",
-        "@com_google_abseil//absl/strings",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
-    ],
-)
-
-wasm_cc_library(
-    name = "authn_filter_interface",
-    hdrs = ["filter.h"],
-    deps = [
-        "//src/envoy/http/authn_wasm/authenticator:base",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
-    ],
 )
 
 wasm_cc_binary(
-    name = "authn_wasm_binary",
-    srcs = ["filter.cc"],
+    name = "authn_filter.wasm",
+    srcs = [
+        "base.cc",
+        "base.h",
+        "cert.h",
+        "connection_context.cc",
+        "connection_context.h",
+        "filter.cc",
+        "filter.h",
+        "filter_context.cc",
+        "filter_context.h",
+        "peer.cc",
+        "peer.h",
+    ],
+    copts = ["-UNULL_PLUGIN"],
     deps = [
-        ":authn_filter_interface",
-        ":connection_context_lib",
         "//external:authentication_policy_config_cc_proto",
-        "//src/envoy/http/authn_wasm/authenticator:peer",
+        "//src/envoy/utils:filter_names_lib",
+        "//src/istio/authn:context_proto_cc_wasm",
+        "@com_google_absl_wasm//absl/strings",
+        "@com_google_absl_wasm//absl/types:optional",
         "@com_google_protobuf//:protobuf",
+        # "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
     ],
 )

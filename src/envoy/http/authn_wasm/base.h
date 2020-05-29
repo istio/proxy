@@ -21,10 +21,14 @@
 #include "src/envoy/http/authn_wasm/filter_context.h"
 #include "src/istio/authn/context.pb.h"
 
-namespace Envoy {
-namespace Wasm {
+#ifdef NULL_PLUGIN
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
+
+#endif
 
 // AuthenticatorBase is the base class for authenticator. It provides functions
 // to perform individual authentication methods, which can be used to construct
@@ -60,7 +64,11 @@ class AuthenticatorBase {
   FilterContextPtr filter_context_;
 };
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

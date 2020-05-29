@@ -23,28 +23,37 @@
 #include "absl/strings/string_view.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-#include "proxy_wasm_intrinsics.h"
 #include "src/envoy/http/authn_wasm/connection_context.h"
 #include "src/istio/authn/context.pb.h"
 
-namespace Envoy {
-namespace Wasm {
+#ifndef NULL_PLUGIN
+#include "proxy_wasm_intrinsics.h"
+#else
+#include "include/proxy-wasm/null_plugin.h"
+
+using proxy_wasm::null_plugin::getProperty;
+using proxy_wasm::null_plugin::logDebug;
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
+
+#endif
 
 using RawHeaderMap =
     std::vector<std::pair<absl::string_view, absl::string_view>>;
 // TODO(shikugawa): use Envoy::Http::HeaderMapImpl. Because which is optimized
 // to process headers.
-using HeaderMap = std::unordered_map<absl::string_view, absl::string_view>;
+using HeaderMap = std::unordered_map<std::string, std::string>;
 
 // FilterContext holds inputs, such as request dynamic metadata and
 // connection and result data for authentication process.
 class FilterContext {
  public:
   FilterContext(
+      ConnectionContext&& connection_context,
       const RawHeaderMap& raw_header_map,
-      const ConnectionContext& connection_context,
       const istio::authn::Metadata& dynamic_metadata,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config);
@@ -74,40 +83,32 @@ class FilterContext {
   // Gets JWT payload (output from JWT filter) for given issuer. If non-empty
   // payload found, returns true and set the output payload string. Otherwise,
   // returns false.
-  bool getJwtPayload(const std::string& issuer, std::string* payload) const {
-    return true;
-  };
+  bool getJwtPayload(const std::string&, std::string*) const { return true; };
 
   // Return header map.
-  const HeaderMap& HeaderMap() { return header_map_; }
+  const HeaderMap& requestHeader() { return header_map_; }
 
   const ConnectionContext& connectionContext() const {
     return connection_context_;
   }
 
  private:
-  void createHeaderMap(RawHeaderMap& raw_header_map);
+  void createHeaderMap(const RawHeaderMap& raw_header_map);
 
   // TODO(shikugawa): JWT implementation, required metadata retrieval.
   // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
   // filter metadata and write to |payload|.
-  bool getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
-                                       std::string* payload) const {
+  bool getJwtPayloadFromEnvoyJwtFilter(const std::string&, std::string*) const {
     return true;
   };
   // Helper function for getJwtPayload(). It gets the jwt payload from Istio jwt
   // filter metadata and write to |payload|.
-  bool getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
-                                       std::string* payload) const {
+  bool getJwtPayloadFromIstioJwtFilter(const std::string&, std::string*) const {
     return true;
   };
 
-  // Const reference to request info dynamic metadata. This provides data that
-  // output from other filters, e.g JWT.
-  const istio::authn::Metadata& dynamic_metadata_;
-
   // http request header
-  HeaderMap& header_map_;
+  HeaderMap header_map_;
 
   // context of established connection
   const ConnectionContext& connection_context_;
@@ -118,11 +119,19 @@ class FilterContext {
   // Store the Istio authn filter config.
   const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
       filter_config_;
+
+  // Const reference to request info dynamic metadata. This provides data that
+  // output from other filters, e.g JWT.
+  const istio::authn::Metadata& dynamic_metadata_;
 };
 
 using FilterContextPtr = std::shared_ptr<FilterContext>;
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

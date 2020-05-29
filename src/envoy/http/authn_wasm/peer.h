@@ -15,26 +15,32 @@
 
 #pragma once
 
-#include "authentication/v1alpha1/policy.pb.h"
-#include "src/envoy/http/authn_wasm/authenticator/base.h"
+#include <memory>
 
-namespace Envoy {
-namespace Wasm {
+#include "src/envoy/http/authn_wasm/base.h"
+
+#ifdef NULL_PLUGIN
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
 
-// This authenticator performs to authenticate on request level.
-class RequestAuthenticator : public AuthenticatorBase {
+#endif
+
+// PeerAuthenticator performs peer authentication for given policy.
+// This is only to use connection level authentication.
+class PeerAuthenticator : public AuthenticatorBase {
  public:
-  static std::unique_ptr<RequestAuthenticator> create(
+  static std::unique_ptr<PeerAuthenticator> create(
       FilterContextPtr filter_context) {
-    return std::make_unique<RequestAuthenticator>(
+    return std::make_unique<PeerAuthenticator>(
         filter_context, filter_context->filterConfig().policy());
   }
 
   bool run(istio::authn::Payload*) override;
 
-  explicit RequestAuthenticator(
+  explicit PeerAuthenticator(
       FilterContextPtr filter_context,
       const istio::authentication::v1alpha1::Policy& policy);
 
@@ -44,9 +50,13 @@ class RequestAuthenticator : public AuthenticatorBase {
   const istio::authentication::v1alpha1::Policy& policy_;
 };
 
-using RequestAuthenticatorPtr = std::unique_ptr<RequestAuthenticator>;
+using PeerAuthenticatorPtr = std::unique_ptr<PeerAuthenticator>;
+
+#ifdef NULL_PLUGIN
 
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif

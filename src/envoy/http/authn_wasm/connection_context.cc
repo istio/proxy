@@ -13,11 +13,14 @@
  * limitations under the License.
  */
 
-namespace Envoy {
-namespace Wasm {
+#ifdef NULL_PLUGIN
+
+namespace proxy_wasm {
+namespace null_plugin {
 namespace Http {
 namespace AuthN {
 
+#endif
 // ConnectionContext::ConnectionContext() {
 //   if (isTls()) {
 // peer_cert_info_ = std::make_unique<TlsPeerCertificateInfo>();
@@ -29,7 +32,11 @@ namespace AuthN {
 //   }
 // }
 
+#ifdef NULL_PLUGIN
+
 }  // namespace AuthN
 }  // namespace Http
-}  // namespace Wasm
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
+
+#endif
