@@ -19,7 +19,6 @@
 #include "absl/strings/str_split.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
-#include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -28,14 +27,10 @@
 #else  // NULL_PLUGIN
 
 #include "absl/strings/str_split.h"
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-using Envoy::Extensions::Common::Wasm::HeaderMapType;
-using Envoy::Extensions::Common::Wasm::WasmResult;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getHeaderMapValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getMessageValue;
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getValue;
+using proxy_wasm::null_plugin::getHeaderMapValue;
+using proxy_wasm::null_plugin::getValue;
 
 #endif  // NULL_PLUGIN
 
@@ -104,7 +99,7 @@ void getDestinationService(const std::string& dest_namespace,
   std::string cluster_name;
   getValue({"cluster_name"}, &cluster_name);
   *dest_svc_host = use_host_header
-                       ? getHeaderMapValue(HeaderMapType::RequestHeaders,
+                       ? getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
                                            kAuthorityHeaderKey)
                              ->toString()
                        : "unknown";
@@ -275,9 +270,10 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"response", "grpc_status"}, &grpc_status_code);
   request_info->grpc_status = grpc_status_code;
 
-  if (kGrpcContentTypes.count(getHeaderMapValue(HeaderMapType::RequestHeaders,
-                                                kContentTypeHeaderKey)
-                                  ->toString()) != 0) {
+  if (kGrpcContentTypes.count(
+          getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
+                            kContentTypeHeaderKey)
+              ->toString()) != 0) {
     request_info->request_protocol = kProtocolGRPC;
   } else {
     // TODO Add http/1.1, http/1.0, http/2 in a separate attribute.
@@ -286,7 +282,7 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   }
 
   request_info->request_operation =
-      getHeaderMapValue(HeaderMapType::RequestHeaders, kMethodHeaderKey)
+      getHeaderMapValue(WasmHeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
 
   if (!outbound) {

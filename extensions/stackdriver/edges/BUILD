@@ -58,6 +58,7 @@ envoy_cc_library(
     hdrs = [
         "mesh_edges_service_client.h",
     ],
+    copts = ["-DPROXY_WASM_PROTOBUF=1"],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
@@ -66,7 +67,7 @@ envoy_cc_library(
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/common:metrics",
         "//extensions/stackdriver/common:utils",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
     ],
 )
 
@@ -85,7 +86,7 @@ envoy_cc_library(
         ":mesh_edges_service_client",
         "//extensions/common:context",
         "//extensions/stackdriver/common:constants",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
     ],
 )
 

@@ -42,8 +42,8 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":config_cc_proto",
-        "@envoy//api/wasm/cpp/contrib:contrib_lib",
-        "@envoy//source/extensions/common/wasm/null:null_plugin_lib",
+        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
 
@@ -69,10 +69,6 @@ envoy_extension_cc_test(
     repository = "@envoy",
     deps = [
         ":attributegen_plugin",
-        "//external:abseil_hash_testing",
-        "@envoy//source/common/stream_info:stream_info_lib",
-        "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
         "@envoy//source/extensions/filters/http/wasm:wasm_filter_lib",
         "@envoy//test/mocks/grpc:grpc_mocks",
         "@envoy//test/mocks/http:http_mocks",
@@ -84,5 +80,6 @@ envoy_extension_cc_test(
         "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:environment_lib",
         "@envoy//test/test_common:utility_lib",
+        "@envoy//test/test_common:wasm_lib",
     ],
 )

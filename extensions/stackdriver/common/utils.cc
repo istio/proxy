@@ -38,9 +38,8 @@ const std::string getContainerName(
 
 using google::api::MonitoredResource;
 
-void buildEnvoyGrpcService(
-    const StackdriverStubOption &stub_option,
-    ::envoy::config::core::v3::GrpcService *grpc_service) {
+void buildEnvoyGrpcService(const StackdriverStubOption &stub_option,
+                           GrpcService *grpc_service) {
   if (!stub_option.insecure_endpoint.empty()) {
     // Do not set up credential if insecure endpoint is provided. This is only
     // for testing.
@@ -56,14 +55,13 @@ void buildEnvoyGrpcService(
           ->add_call_credentials()
           ->mutable_google_compute_engine();
     } else {
-      ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
-          grpc_service->mutable_google_grpc()
-              ->add_call_credentials()
-              ->mutable_sts_service(),
-          stub_option.sts_port,
-          stub_option.test_token_path.empty()
-              ? ::Extensions::Stackdriver::Common::kSTSSubjectTokenPath
-              : stub_option.test_token_path);
+      setSTSCallCredentialOptions(grpc_service->mutable_google_grpc()
+                                      ->add_call_credentials()
+                                      ->mutable_sts_service(),
+                                  stub_option.sts_port,
+                                  stub_option.test_token_path.empty()
+                                      ? kSTSSubjectTokenPath
+                                      : stub_option.test_token_path);
       auto initial_metadata = grpc_service->add_initial_metadata();
       initial_metadata->set_key("x-goog-user-project");
       initial_metadata->set_value(stub_option.project_id);
@@ -73,10 +71,9 @@ void buildEnvoyGrpcService(
         ->mutable_channel_credentials()
         ->mutable_ssl_credentials()
         ->mutable_root_certs()
-        ->set_filename(
-            stub_option.test_root_pem_path.empty()
-                ? ::Extensions::Stackdriver::Common::kDefaultRootCertFile
-                : stub_option.test_root_pem_path);
+        ->set_filename(stub_option.test_root_pem_path.empty()
+                           ? kDefaultRootCertFile
+                           : stub_option.test_root_pem_path);
   }
 }
 

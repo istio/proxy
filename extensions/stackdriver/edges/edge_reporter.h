@@ -28,11 +28,12 @@ namespace Stackdriver {
 namespace Edges {
 
 #ifdef NULL_PLUGIN
-using Envoy::Extensions::Common::Wasm::Null::Plugin::Extensions::Stackdriver::
-    Edges::MeshEdgesServiceClient;
+using proxy_wasm::null_plugin::getCurrentTimeNanoseconds;
+using proxy_wasm::null_plugin::Extensions::Stackdriver::Edges::
+    MeshEdgesServiceClient;
+
 #endif
 
-using Envoy::Extensions::Common::Wasm::Null::Plugin::getCurrentTimeNanoseconds;
 using google::cloud::meshtelemetry::v1alpha1::ReportTrafficAssertionsRequest;
 using google::cloud::meshtelemetry::v1alpha1::WorkloadInstance;
 using google::protobuf::util::TimeUtil;

@@ -16,10 +16,16 @@
 #pragma once
 
 #include "absl/strings/str_cat.h"
-#include "envoy/config/core/v3/grpc_service.pb.h"
 #include "extensions/common/context.h"
 #include "google/api/monitored_resource.pb.h"
 #include "grpcpp/grpcpp.h"
+
+#ifndef NULL_PLUGIN
+#include "api/wasm/cpp/proxy_wasm_intrinsics.h"
+#else
+#include "envoy/config/core/v3/grpc_service.pb.h"
+using GrpcService = ::envoy::config::core::v3::GrpcService;
+#endif
 
 namespace Extensions {
 namespace Stackdriver {
@@ -39,9 +45,8 @@ struct StackdriverStubOption {
 };
 
 // Build Envoy GrpcService proto based on the given stub option.
-void buildEnvoyGrpcService(
-    const StackdriverStubOption &option,
-    ::envoy::config::core::v3::GrpcService *grpc_service);
+void buildEnvoyGrpcService(const StackdriverStubOption &option,
+                           GrpcService *grpc_service);
 
 // Determines if the proxy is running directly on GCE instance (VM).
 // If the proxy is running on GKE-managed VM, this will return false.

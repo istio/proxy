@@ -76,22 +76,15 @@ build_envoy_tsan:
 build_envoy_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 
-# Implicitly depends on build, but does not require a specific configuration
-.PHONY: wasm_include
-wasm_include:
-	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_generated.h $(TOP)/extensions/common/
-	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_bfbs_generated.h $(TOP)/extensions/common/
-	cp -f $$(bazel info bazel-bin)/extensions/common/nlohmann_json.hpp $(TOP)/extensions/common/
-	cp -fLR $$(bazel info bazel-bin)/external/com_github_google_flatbuffers/_virtual_includes/runtime_cc/flatbuffers $(TOP)/extensions/common/
-	cp -f $$(bazel info output_base)/external/envoy/api/wasm/cpp/contrib/proxy_expr.h $(TOP)/extensions/common/
+build_wasm:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:stats.wasm
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:metadata_exchange.wasm
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:attributegen.wasm
 
-build_wasm: wasm_include
-	$(foreach file, $(shell find extensions -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true
-
-check_wasm:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
-	./scripts/generate-wasm.sh -b
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
+# NOTE: build_wasm has to happen before build_envoy, since the integration test references bazel-bin symbol link for envoy binary,
+# which will be overwritten if wasm build happens after envoy.
+check_wasm: build_wasm build_envoy
+	env GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
 
 clean:
 	@bazel clean
@@ -166,7 +159,7 @@ test_release:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 
 push_release: build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p && ./scripts/generate-wasm.sh -b -p -d "$(RELEASE_GCS_PATH)"
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p
 
 .PHONY: build clean test check artifacts extensions-proto
 

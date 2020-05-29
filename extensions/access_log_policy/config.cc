@@ -16,35 +16,18 @@
 #include "common/common/base64.h"
 #include "extensions/access_log_policy/plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Wasm {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace AccessLogPolicy {
 namespace Plugin {
-::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry*
-    context_registry_{};
+NullPluginRegistry* context_registry_{};
 }  // namespace Plugin
 
 // Registration glue
-
-class AccessLogPolicyFactory
-    : public ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory {
- public:
-  std::string name() const override { return "envoy.wasm.access_log_policy"; }
-  std::unique_ptr<::Envoy::Extensions::Common::Wasm::Null::NullVmPlugin>
-  create() const override {
-    return std::make_unique<
-        ::Envoy::Extensions::Common::Wasm::Null::NullPlugin>(
-        Plugin::context_registry_);
-  }
-};
-
-static Registry::RegisterFactory<
-    AccessLogPolicyFactory,
-    ::Envoy::Extensions::Common::Wasm::Null::NullVmPluginFactory>
-    register_;
+RegisterNullVmPluginFactory register_access_log_policy_filter(
+    "envoy.wasm.access_log_policy",
+    []() { return std::make_unique<NullPlugin>(Plugin::context_registry_); });
 
 }  // namespace AccessLogPolicy
-}  // namespace Wasm
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm

@@ -14,5 +14,6 @@
           runtime: "envoy.wasm.runtime.null"
           code:
             local: { inline_string: "envoy.wasm.null.stackdriver" }
-        configuration: >-
-          {}
+        configuration:
+          "@type": "type.googleapis.com/google.protobuf.StringValue"
+          value: ""

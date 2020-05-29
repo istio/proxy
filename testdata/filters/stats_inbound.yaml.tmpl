@@ -10,5 +10,7 @@
           runtime: {{ .Vars.WasmRuntime }}
           code:
             local: { {{ .Vars.StatsFilterCode }} }
-        configuration: |
-          {{ .Vars.StatsFilterServerConfig }}
+        configuration:
+          "@type": "type.googleapis.com/google.protobuf.StringValue"
+          value: |
+            {{ .Vars.StatsFilterServerConfig }}

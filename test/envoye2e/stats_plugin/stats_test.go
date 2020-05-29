@@ -17,6 +17,7 @@ package client
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -63,8 +64,8 @@ var Runtimes = []struct {
 		WasmRuntime:                "envoy.wasm.runtime.null",
 	},
 	{
-		MetadataExchangeFilterCode: "filename: extensions/metadata_exchange/plugin.wasm",
-		StatsFilterCode:            "filename: extensions/stats/plugin.wasm",
+		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/metadata_exchange.wasm"),
+		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.wasm"),
 		WasmRuntime:                "envoy.wasm.runtime.v8",
 	},
 }

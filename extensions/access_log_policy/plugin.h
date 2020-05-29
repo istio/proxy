@@ -31,21 +31,12 @@ static const std::string EMPTY_STRING;
 
 #else
 
-#include "extensions/common/wasm/null/null_plugin.h"
+#include "include/proxy-wasm/null_plugin.h"
 
-namespace Envoy {
-namespace Extensions {
-namespace Wasm {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace AccessLogPolicy {
 namespace Plugin {
-
-using namespace Envoy::Extensions::Common::Wasm::Null::Plugin;
-
-// TODO(jplevyak): move these into the base envoy repo
-using WasmResult = Envoy::Extensions::Common::Wasm::WasmResult;
-using NullPluginRegistry =
-    ::Envoy::Extensions::Common::Wasm::Null::NullPluginRegistry;
-using ::Wasm::Common::IstioDimensions;
 
 #endif
 
@@ -63,14 +54,14 @@ class PluginRootContext : public RootContext {
   bool onConfigure(size_t) override;
   bool configure(size_t);
 
-  long long lastLogTimeNanos(const IstioDimensions& key) {
+  long long lastLogTimeNanos(const Wasm::Common::IstioDimensions& key) {
     if (cache_.contains(key)) {
       return cache_[key];
     }
     return 0;
   }
 
-  void updateLastLogTimeNanos(const IstioDimensions& key,
+  void updateLastLogTimeNanos(const Wasm::Common::IstioDimensions& key,
                               long long last_log_time_nanos);
   long long logTimeDurationNanos() { return log_time_duration_nanos_; };
   bool initialized() const { return initialized_; };
@@ -78,7 +69,7 @@ class PluginRootContext : public RootContext {
  private:
   accesslogpolicy::config::v1alpha1::AccessLogPolicyConfig config_;
   // Cache storing last log time by a client.
-  absl::flat_hash_map<IstioDimensions, long long> cache_;
+  absl::flat_hash_map<Wasm::Common::IstioDimensions, long long> cache_;
   int32_t max_client_cache_size_ = DefaultClientCacheMaxSize;
   long long log_time_duration_nanos_;
 
@@ -108,13 +99,12 @@ class PluginContext : public Context {
   };
   bool isRequestFailed();
 
-  IstioDimensions istio_dimensions_;
+  Wasm::Common::IstioDimensions istio_dimensions_;
 };
 
 #ifdef NULL_PLUGIN
 }  // namespace Plugin
 }  // namespace AccessLogPolicy
-}  // namespace Wasm
-}  // namespace Extensions
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm
 #endif
