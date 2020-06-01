@@ -477,7 +477,7 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
 }
 
 void StackdriverContext::onLog() {
-  if (!getRootContext()->initialized()) {
+  if (!is_initialized_) {
     return;
   }
   if (is_tcp_) {

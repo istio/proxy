@@ -144,11 +144,14 @@ class StackdriverRootContext : public RootContext {
 class StackdriverContext : public Context {
  public:
   StackdriverContext(uint32_t id, RootContext* root)
-      : Context(id, root), is_tcp_(false), context_id_(id) {}
+      : Context(id, root),
+        is_tcp_(false),
+        context_id_(id),
+        is_initialized_(getRootContext()->initialized()) {}
   void onLog() override;
 
   FilterStatus onNewConnection() override {
-    if (!getRootContext()->initialized()) {
+    if (!is_initialized_) {
       return FilterStatus::Continue;
     }
 
@@ -159,7 +162,7 @@ class StackdriverContext : public Context {
 
   // Called on onData call, so counting the data that is received.
   FilterStatus onDownstreamData(size_t size, bool) override {
-    if (!getRootContext()->initialized()) {
+    if (!is_initialized_) {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementReceivedBytes(context_id_, size);
@@ -167,7 +170,7 @@ class StackdriverContext : public Context {
   }
   // Called on onWrite call, so counting the data that is sent.
   FilterStatus onUpstreamData(size_t size, bool) override {
-    if (!getRootContext()->initialized()) {
+    if (!is_initialized_) {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementSentBytes(context_id_, size);
@@ -181,6 +184,7 @@ class StackdriverContext : public Context {
 
   bool is_tcp_;
   uint32_t context_id_;
+  const bool is_initialized_;
 };
 
 class StackdriverOutboundRootContext : public StackdriverRootContext {
