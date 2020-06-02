@@ -420,9 +420,9 @@ TEST_P(JwtVerificationFilterIntegrationTestWithInjectedJwtResult,
   EXPECT_TRUE(request_stream_backend->complete());
 
   response->waitForEndStream();
-  codec_client->close();
   ASSERT_TRUE(fake_upstream_connection_backend->close());
   ASSERT_TRUE(fake_upstream_connection_backend->waitForDisconnect());
+  codec_client->close();
 }
 
 }  // namespace Envoy
