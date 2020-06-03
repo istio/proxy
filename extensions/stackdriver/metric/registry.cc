@@ -247,9 +247,9 @@ StackdriverOptions getStackdriverOptions(
     view_descriptor.RegisterForExport();                            \
   }
 
-#define ADD_TAGS ADD_COMMON_TAGS ADD_HTTP_HRPC_TAGS
+#define ADD_TAGS ADD_COMMON_TAGS ADD_HTTP_GRPC_TAGS
 
-#define ADD_HTTP_HRPC_TAGS \
+#define ADD_HTTP_GRPC_TAGS \
   .add_column(requestOperationKey()).add_column(responseCodeKey())
 
 #define ADD_COMMON_TAGS                                      \

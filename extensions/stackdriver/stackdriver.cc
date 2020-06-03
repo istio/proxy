@@ -157,7 +157,7 @@ bool StackdriverRootContext::onConfigure(size_t size) {
 
 bool StackdriverRootContext::configure(size_t configuration_size) {
   // onStart is called prior to onConfigure
-  if (enableServerAccessLog() || enableEdgeReporting() || enableTCPMetrics()) {
+  if (enableServerAccessLog() || enableEdgeReporting()) {
     proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
   } else {
     proxy_set_tick_period_milliseconds(0);
@@ -292,22 +292,21 @@ void StackdriverRootContext::onTick() {
       last_edge_new_report_call_nanos_ = cur;
     }
   }
-  if (enableTCPMetrics()) {
-    for (auto const& item : tcp_request_queue_) {
-      // requestinfo is null, so continue.
-      if (item.second == nullptr) {
-        continue;
-      }
-      Context* context = getContext(item.first);
-      if (context == nullptr) {
-        continue;
-      }
-      context->setEffectiveContext();
-      if (recordTCP(item.first)) {
-        // Clear existing data in TCP metrics, so that we don't double count the
-        // metrics.
-        clearTcpMetrics(*item.second);
-      }
+
+  for (auto const& item : tcp_request_queue_) {
+    // requestinfo is null, so continue.
+    if (item.second == nullptr) {
+      continue;
+    }
+    Context* context = getContext(item.first);
+    if (context == nullptr) {
+      continue;
+    }
+    context->setEffectiveContext();
+    if (recordTCP(item.first)) {
+      // Clear existing data in TCP metrics, so that we don't double count the
+      // metrics.
+      clearTcpMetrics(*item.second);
     }
   }
 }
@@ -406,13 +405,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
         flatbuffers::GetString(destination_node_info.namespace_()));
   }
   // Record TCP Metrics.
-  if (enableTCPMetrics()) {
-    ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node,
-                                                 peer_node, request_info);
-  }
+  ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node,
+                                               request_info);
 
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
+  // TODO(gargnupur): make this TCP specific.
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     logger_->addLogEntry(request_info, peer_node);
@@ -430,10 +428,6 @@ inline bool StackdriverRootContext::enableServerAccessLog() {
 
 inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
-}
-
-inline bool StackdriverRootContext::enableTCPMetrics() {
-  return config_.enable_tcp_metrics();
 }
 
 bool StackdriverRootContext::shouldLogThisRequest() {

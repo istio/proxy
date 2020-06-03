@@ -26,7 +26,7 @@ package stackdriver.config.v1alpha1;
 
 import "google/protobuf/duration.proto";
 
-// next id: 10
+// next id: 9
 
 message PluginConfig {
   // Optional. Controls whether to export server access log.
@@ -68,7 +68,4 @@ message PluginConfig {
   // metrics for HTTP traffic. Defaults to false (request and response size
   // metrics are enabled).
   bool disable_http_size_metrics = 8;
-
-  // Optional. Allows enabling of reporting of the metrics for TCP traffic.
-  bool enable_tcp_metrics = 9;
 }

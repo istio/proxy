@@ -71,7 +71,8 @@ class StackdriverRootContext : public RootContext {
 
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
 
-  // Records telemetry for the current active stream/connection.
+  // Records telemetry for the current active stream/connection. Returns true,
+  // if request was recorded.
   bool recordTCP(uint32_t id);
   // Records telemetry for the current active stream.
   void record();
@@ -102,9 +103,6 @@ class StackdriverRootContext : public RootContext {
 
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();
-
-  // Indicates whether or not to report TCP Metrics.
-  bool enableTCPMetrics();
 
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
