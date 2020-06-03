@@ -157,11 +157,7 @@ bool StackdriverRootContext::onConfigure(size_t size) {
 
 bool StackdriverRootContext::configure(size_t configuration_size) {
   // onStart is called prior to onConfigure
-  if (enableServerAccessLog() || enableEdgeReporting()) {
-    proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
-  } else {
-    proxy_set_tick_period_milliseconds(0);
-  }
+  proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
 
   // Parse configuration JSON string.
   std::string configuration = "{}";
