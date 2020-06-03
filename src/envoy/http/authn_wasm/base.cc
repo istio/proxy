@@ -19,6 +19,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "common/json/json_loader.h"
 
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"
@@ -37,16 +38,103 @@ namespace AuthN {
 
 namespace {
 // The default header name for an exchanged token
-// static constexpr absl::string_view kExchangedTokenHeaderName =
-// "ingress-authorization";
+static constexpr absl::string_view kExchangedTokenHeaderName =
+    "ingress-authorization";
 
 // Returns whether the header for an exchanged token is found
-// bool FindHeaderOfExchangedToken(
-//     const istio::authentication::v1alpha1::Jwt& jwt) {
-//   return (jwt.jwt_headers_size() == 1 &&
-//           Envoy::Http::LowerCaseString(kExchangedTokenHeaderName.data()) ==
-//               Envoy::Http::LowerCaseString(jwt.jwt_headers(0)));
-// }
+bool FindHeaderOfExchangedToken(
+    const istio::authentication::v1alpha1::Jwt& jwt) {
+  return (jwt.jwt_headers_size() == 1 &&
+          Envoy::Http::LowerCaseString(kExchangedTokenHeaderName.data()) ==
+              Envoy::Http::LowerCaseString(jwt.jwt_headers(0)));
+}
+
+// The JWT audience key name
+static constexpr absl::string_view kJwtAudienceKey = "aud";
+// The JWT issuer key name
+static constexpr absl::string_view kJwtIssuerKey = "iss";
+// The key name for the original claims in an exchanged token
+static constexpr absl::string_view kExchangedTokenOriginalPayload =
+    "original_claims";
+
+bool ExtractOriginalPayload(const std::string& token,
+                            std::string* original_payload) {
+  Envoy::Json::ObjectSharedPtr json_obj;
+  try {
+    json_obj = Json::Factory::loadFromString(token);
+  } catch (...) {
+    return false;
+  }
+
+  if (json_obj->hasObject(kExchangedTokenOriginalPayload) == false) {
+    return false;
+  }
+
+  Envoy::Json::ObjectSharedPtr original_payload_obj;
+  try {
+    auto original_payload_obj =
+        json_obj->getObject(kExchangedTokenOriginalPayload);
+    *original_payload = original_payload_obj->asJsonString();
+    logDebug(absl::StrCat(__FUNCTION__,
+                          ": the original payload in exchanged token is ",
+                          *original_payload));
+  } catch (...) {
+    logDebug(absl::StrCat(
+        __FUNCTION__,
+        ": original_payload in exchanged token is of invalid format."));
+    return false;
+  }
+
+  return true;
+}
+
+bool ProcessJwtPayload(const std::string& payload_str,
+                       istio::authn::JwtPayload* payload) {
+  Envoy::Json::ObjectSharedPtr json_obj;
+  try {
+    json_obj = Json::Factory::loadFromString(payload_str);
+    ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
+              json_obj->asJsonString());
+  } catch (...) {
+    return false;
+  }
+
+  *payload->mutable_raw_claims() = payload_str;
+
+  auto claims = payload->mutable_claims()->mutable_fields();
+  // Extract claims as string lists
+  json_obj->iterate([json_obj, claims](const std::string& key,
+                                       const Json::Object&) -> bool {
+    // In current implementation, only string/string list objects are extracted
+    std::vector<std::string> list;
+    ExtractStringList(key, *json_obj, &list);
+    for (auto s : list) {
+      (*claims)[key].mutable_list_value()->add_values()->set_string_value(s);
+    }
+    return true;
+  });
+  // Copy audience to the audience in context.proto
+  if (claims->find(kJwtAudienceKey) != claims->end()) {
+    for (const auto& v : (*claims)[kJwtAudienceKey].list_value().values()) {
+      payload->add_audiences(v.string_value());
+    }
+  }
+
+  // Build user
+  if (claims->find(kJwtIssuerKey) != claims->end() &&
+      claims->find("sub") != claims->end()) {
+    payload->set_user(
+        (*claims)[kJwtIssuerKey].list_value().values().Get(0).string_value() +
+        "/" + (*claims)["sub"].list_value().values().Get(0).string_value());
+  }
+  // Build authorized presenter (azp)
+  if (claims->find("azp") != claims->end()) {
+    payload->set_presenter(
+        (*claims)["azp"].list_value().values().Get(0).string_value());
+  }
+
+  return true;
+}
 
 }  // namespace
 
@@ -141,12 +229,62 @@ bool AuthenticatorBase::validateX509(
 
   // For TLS connection with valid certificate, validate trust domain for both
   // PERMISSIVE and STRICT mode.
-  return validateTrustDomain();
+  return validateTrustDomain(conn_context);
 }
 
-// TODO(shikugawa): implement validateJWT
-bool AuthenticatorBase::validateJwt(const istio::authentication::v1alpha1::Jwt&,
-                                    istio::authn::Payload*) {
+bool AuthenticatorBase::validateJwt(
+    const istio::authentication::v1alpha1::Jwt& jwt,
+    istio::authn::Payload* payload) {
+  auto jwt_payload = filterContext()->getJwtPayload(jwt.issuer());
+
+  if (jwt_payload.has_value()) {
+    std::string payload_to_process = jwt_payload;
+    std::string original_payload;
+
+    if (FindHeaderOfExchangedToken(jwt)) {
+      if (ExtractOriginalPayload(jwt_payload, &original_payload)) {
+        // When the header of an exchanged token is found and the token
+        // contains the claim of the original payload, the original payload
+        // is extracted and used as the token payload.
+        payload_to_process = original_payload;
+      } else {
+        // When the header of an exchanged token is found but the token
+        // does not contain the claim of the original payload, it
+        // is regarded as an invalid exchanged token.
+        logError(absl::StrCat(
+            "Expect exchanged-token with original payload claim. Received: ",
+            jwt_payload));
+        return false;
+      }
+    }
+    ProcessJwtPayload(payload_to_process, payload->mutable_jwt());
+  }
+  return false;
+}
+
+bool AuthenticatorBase::validateTrustDomain(
+    const ConnectionContext& connection) const {
+  auto peer_trust_domain = connection.peerCertificateInfo()->getTrustDomain();
+  if (!peer_trust_domain.has_value()) {
+    logError("trust domain validation failed: cannot get peer trust domain");
+    return false;
+  }
+
+  auto local_trust_domain = connection.localCertificateInfo()->getTrustDomain();
+  if (!local_trust_domain.has_value()) {
+    logError("trust domain validation failed: cannot get local trust domain");
+    return false;
+  }
+
+  if (peer_trust_domain.value() != local_trust_domain.value()) {
+    logError(absl::StrCat("trust domain validation failed: peer trust domain ",
+                          peer_trust_domain.value(),
+                          " different from local trust domain ",
+                          local_trust_domain.value()));
+    return false;
+  }
+
+  logDebug("trust domain validation succeeded");
   return true;
 }
 

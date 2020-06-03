@@ -58,7 +58,7 @@ class AuthenticatorBase {
   FilterContextPtr filterContext() { return filter_context_; }
 
  private:
-  bool validateTrustDomain() const;
+  bool validateTrustDomain(const ConnectionContext& connection) const;
 
   // Pointer to filter state. Do not own.
   FilterContextPtr filter_context_;

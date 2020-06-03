@@ -144,3 +144,25 @@ http_archive(
     strip_prefix = "abseil-cpp-" + COM_GOOGLE_ABSL_WASM_SHA,
     url = "https://github.com/abseil/abseil-cpp/archive/" + COM_GOOGLE_ABSL_WASM_SHA + ".tar.gz",
 )
+
+COM_GITHUB_TENCENT_RAPIDJSON = "dfbe1db9da455552f7a9ad5d2aea17dd9d832ac1"
+
+RAPIDJSON_BUILD = """
+licenses(["notice"])  # Apache 2
+
+cc_library(
+    name = "rapidjson",
+    hdrs = glob(["include/rapidjson/**/*.h"]),
+    defines = ["RAPIDJSON_HAS_STDSTRING=1"],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+http_archive(
+    name = "com_github_tencent_rapidjson",
+    build_file_content = RAPIDJSON_BUILD,
+    sha256 = "a2faafbc402394df0fa94602df4b5e4befd734aad6bb55dfef46f62fcaf1090b",
+    strip_prefix = "rapidjson-" + COM_GITHUB_TENCENT_RAPIDJSON,
+    url = "https://github.com/Tencent/rapidjson/archive/" + COM_GITHUB_TENCENT_RAPIDJSON + ".tar.gz",
+)

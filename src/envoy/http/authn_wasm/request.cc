@@ -64,6 +64,47 @@ RequestAuthenticator::run(istio::authn::Payload* payload) {
     logDebug("CORS preflight request allowed regardless of JWT policy");
     return true;
   }
+
+  absl::string_view path;
+  if (filterContext()->headerMap().find(":path") != filterContext()->headerMap().end()) {
+    path = filterContext()->headerMap().at(":path");
+
+    size_t offset = path.find_first_of("?#");
+    if (offset != absl::string_view::npos) {
+      path.remove_suffix(path.length() - offset);
+    }
+    logTrace(absl::StrCat("Got request path {}", path));
+  } else {
+    logError(absl::StrCat("Failed to get request path, JWT will always be used for validation"));
+  }
+
+  bool triggered = false;
+  bool triggered_success = false;
+  for (const auto& method : policy_.origins()) {
+    const auto& jwt = method.jwt();
+
+    if (AuthnUtils::ShouldValidateJwtPerPath(path, jwt)) {
+      logDebug("Validating request path ", path, " for jwt ", jwt.DebugString());
+      // set triggered to true if any of the jwt trigger rule matched.
+      triggered = true;
+      if (validateJwt(jwt, payload)) {
+        ENVOY_LOG(debug, "JWT validation succeeded");
+        triggered_success = true;
+        break;
+      }
+    }
+  }
+
+  // returns true if no jwt was triggered, or triggered and success.
+  if (!triggered || triggered_success) {
+    filterContext()->setOriginResult(payload);
+    filterContext()->setPrincipal(policy_.principal_binding());
+    logDebug("Origin authenticator succeeded");
+    return true;
+  }
+
+  logDebug("Origin authenticator failed");
+  return false;
 }
 
 #ifdef NULL_PLUGIN

@@ -15,6 +15,8 @@
 
 #include "src/envoy/http/authn_wasm/filter_context.h"
 
+#include <string>
+
 #include "absl/strings/str_cat.h"
 #include "src/envoy/utils/filter_names.h"
 
@@ -80,8 +82,6 @@ void FilterContext::setPrincipal(
       return;
     default:
       // Should never come here.
-      // TODO(shikugawa): add wasm logger and enable to write logging like under
-      // format. e.g. logDebug("Invalid binding value", binding)
       logDebug("Invalid binding value");
       return;
   }
@@ -91,6 +91,78 @@ void FilterContext::createHeaderMap(const RawHeaderMap& raw_header_map) {
   for (const auto& header : raw_header_map) {
     header_map_.emplace(header.first.data(), header.second.data());
   }
+}
+
+absl::optional<std::string> getJwtPayload(const std::string& issuer) const {
+  auto jwt_payload = getJwtPayloadFromEnvoyJwtFilter(issuer);
+  if (jwt_payload.has_value()) {
+    return jwt_payload;
+  }
+
+  jwt_payload = getJwtPayloadFromIstioJwtFilter(issuer);
+  if (jwt_payload.has_value()) {
+    return jwt_payload;
+  }
+
+  return absl::nullopt;
+}
+
+absl::optional<std::string> FilterContext::getJwtPayloadFromEnvoyJwtFilter(
+    const std::string& issuer) const {
+  // Try getting the Jwt payload from Envoy jwt_authn filter.
+  auto filter_it = dynamic_metadata_.filter_metadata().find(
+      Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+  if (filter_it == dynamic_metadata_.filter_metadata().end()) {
+    logDebug("No dynamic_metadata found for filter ",
+             Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+    return absl::nullopt;
+  }
+
+  const auto& data_struct = filter_it->second;
+
+  const auto entry_it = data_struct.fields().find(issuer);
+  if (entry_it == data_struct.fields().end()) {
+    return absl::nullopt;
+  }
+
+  if (entry_it->second.struct_value().fields().empty()) {
+    return absl::nullopt;
+  }
+
+  std::string payload;
+  // Serialize the payload from Envoy jwt filter first before writing it to
+  // |payload|.
+  // TODO (pitlv2109): Return protobuf Struct instead of string, once Istio jwt
+  // filter is removed. Also need to change how Istio authn filter processes the
+  // jwt payload.
+  Protobuf::util::MessageToJsonString(entry_it->second.struct_value(),
+                                      &payload);
+  return payload;
+}
+
+absl::optional<std::string> FilterContext::getJwtPayloadFromIstioJwtFilter(
+    const std::string& issuer) const {
+  // Try getting the Jwt payload from Istio jwt-auth filter.
+  auto filter_it =
+      dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
+  if (filter_it == dynamic_metadata_.filter_metadata().end()) {
+    logDebug("No dynamic_metadata found for filter ",
+             Utils::IstioFilterName::kJwt);
+    return absl::nullopt;
+  }
+
+  const auto& data_struct = filter_it->second;
+
+  const auto entry_it = data_struct.fields().find(issuer);
+  if (entry_it == data_struct.fields().end()) {
+    return absl::nullopt;
+  }
+
+  if (entry_it->second.string_value().empty()) {
+    return absl::nullopt;
+  }
+
+  return entry_it->second.string_value();
 }
 
 #ifdef NULL_PLUGIN

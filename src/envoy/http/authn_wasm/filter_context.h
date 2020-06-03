@@ -83,7 +83,7 @@ class FilterContext {
   // Gets JWT payload (output from JWT filter) for given issuer. If non-empty
   // payload found, returns true and set the output payload string. Otherwise,
   // returns false.
-  bool getJwtPayload(const std::string&, std::string*) const { return true; };
+  absl::optional<std::string> getJwtPayload(const std::string& issuer) const;
 
   // Return header map.
   const HeaderMap& requestHeader() { return header_map_; }
@@ -95,17 +95,15 @@ class FilterContext {
  private:
   void createHeaderMap(const RawHeaderMap& raw_header_map);
 
-  // TODO(shikugawa): JWT implementation, required metadata retrieval.
   // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
   // filter metadata and write to |payload|.
-  bool getJwtPayloadFromEnvoyJwtFilter(const std::string&, std::string*) const {
-    return true;
-  };
+  absl::optional<std::string> getJwtPayloadFromEnvoyJwtFilter(
+      const std::string& issuer) const;
+
   // Helper function for getJwtPayload(). It gets the jwt payload from Istio jwt
   // filter metadata and write to |payload|.
-  bool getJwtPayloadFromIstioJwtFilter(const std::string&, std::string*) const {
-    return true;
-  };
+  absl::optional<std::string> getJwtPayloadFromIstioJwtFilter(
+      const std::string& issuer) const;
 
   // http request header
   HeaderMap header_map_;
