@@ -710,7 +710,7 @@ TEST_F(JwtTestJwks, OkTokenJwkRSAPublicKeyOptionalAlgKid) {
 
 TEST_F(JwtTestJwks, OkNoKidLogExp) {
   google::protobuf::Struct payload;
-  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayloadLongExp, &payload);
   DoTest(ds.kJwtNoKidLongExp, ds.kPublicKeyRSA, "jwks", true, Status::OK,
          payload);
 }

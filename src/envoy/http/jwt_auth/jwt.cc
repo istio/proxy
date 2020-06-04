@@ -348,18 +348,19 @@ Jwt::Jwt(const std::string &jwt) {
   }
 
   // Header may contain "kid", which should be a string if exists.
-  auto actual_kid_value = getProtoMapStringValue(header_fields, "kid");
-  if (!actual_kid_value.has_value()) {
+  const auto kid_iter = header_fields.find("kid");
+  if (kid_iter != header_fields.end() && kid_iter->second.kind_case() != google::protobuf::Value::kStringValue) {
     UpdateStatus(Status::JWT_HEADER_BAD_KID);
     return;
   }
 
-  kid_ = actual_kid_value.value();
+  kid_ = kid_iter != header_fields.end() ? kid_iter->second.string_value() : "";
 
   // Parse payload json
   payload_str_base64url_ =
       std::string(jwt_split[1].begin(), jwt_split[1].end());
   payload_str_ = Base64UrlDecode(payload_str_base64url_);
+
   status = google::protobuf::util::JsonStringToMessage(payload_str_, &payload_);
 
   if (!status.ok()) {
@@ -376,15 +377,7 @@ Jwt::Jwt(const std::string &jwt) {
   // "aud" can be either string array or string.
   // Try as string array, read it as empty array if doesn't exist.
   auto actual_aud = getProtoMapListStringValue(payload_fields, "aud");
-  if (!actual_aud.has_value()) {
-    auto single_aud = getProtoMapStringValue(payload_fields, "aud");
-
-    if (!single_aud.has_value()) {
-      UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
-      return;
-    }
-    aud_.emplace_back(single_aud.value());
-  } else {
+  if (actual_aud.has_value()) {
     aud_ = actual_aud.value();
   }
 
@@ -682,7 +675,7 @@ bool Pubkeys::ExtractPubkeyFromJwkEC(const ProtobufMapType& jwk_field) {
   EvpPkeyGetter e;
   pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str.value(), y_str.value());
   if (e.GetStatus() == Status::OK) {
-    keys_.push_back(std::move(pubkey));
+    keys_.emplace_back(std::move(pubkey));
   } else {
     UpdateStatus(e.GetStatus());
   }
