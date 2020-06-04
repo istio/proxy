@@ -403,14 +403,6 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // Record TCP Metrics.
   ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node,
                                                request_info);
-
-  // Add LogEntry to Logger. Log Entries are batched and sent on timer
-  // to Stackdriver Logging Service.
-  // TODO(gargnupur): make this TCP specific.
-  if (enableServerAccessLog() && shouldLogThisRequest()) {
-    ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node);
-  }
   return true;
 }
 
