@@ -69,7 +69,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 				sd.Lock()
 				sd.tsReq = append(sd.tsReq, req)
 				for _, ts := range req.TimeSeries {
-					if strings.HasSuffix(ts.Metric.Type, "request_count") {
+					if strings.HasSuffix(ts.Metric.Type, "request_count") || strings.HasSuffix(ts.Metric.Type, "connection_open_count") {
 						// clear the timestamps for comparison
 						ts.Points[0].Interval = nil
 						sd.ts[proto.MarshalTextString(ts)] = struct{}{}
@@ -110,7 +110,7 @@ func (sd *Stackdriver) Cleanup() {
 	close(sd.done)
 }
 
-func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string) driver.Step {
+func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string, verifyLatency bool) driver.Step {
 	// check as sets of strings by marshaling to proto
 	twant := make(map[string]struct{})
 	for _, t := range tsFiles {
@@ -136,18 +136,20 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 		ewant[proto.MarshalTextString(pb)] = struct{}{}
 	}
 	return &checkStackdriver{
-		sd:    sd,
-		twant: twant,
-		lwant: lwant,
-		ewant: ewant,
+		sd:                    sd,
+		twant:                 twant,
+		lwant:                 lwant,
+		ewant:                 ewant,
+		verifyResponseLatency: verifyLatency,
 	}
 }
 
 type checkStackdriver struct {
-	sd    *Stackdriver
-	twant map[string]struct{}
-	lwant map[string]struct{}
-	ewant map[string]struct{}
+	sd                    *Stackdriver
+	twant                 map[string]struct{}
+	lwant                 map[string]struct{}
+	ewant                 map[string]struct{}
+	verifyResponseLatency bool
 }
 
 func (s *checkStackdriver) Run(p *driver.Params) error {
@@ -213,13 +215,17 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 			}
 		}
 
-		// Sanity check response latency
-		for _, r := range s.sd.tsReq {
-			if verfied, err := verifyResponseLatency(r); err != nil {
-				return fmt.Errorf("failed to verify latency metric: %v", err)
-			} else if verfied {
-				verfiedLatency = true
-				break
+		if !s.verifyResponseLatency {
+			verfiedLatency = true
+		} else {
+			// Sanity check response latency
+			for _, r := range s.sd.tsReq {
+				if verfied, err := verifyResponseLatency(r); err != nil {
+					return fmt.Errorf("failed to verify latency metric: %v", err)
+				} else if verfied {
+					verfiedLatency = true
+					break
+				}
 			}
 		}
 		s.sd.Unlock()
