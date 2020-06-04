@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
-#include "envoy/json/json_object.h"
 #include "openssl/ec.h"
 #include "openssl/evp.h"
+#include "google/protobuf/struct.pb.h"
 
 namespace Envoy {
 namespace Http {
@@ -133,6 +133,8 @@ class WithStatus {
 class Pubkeys;
 class Jwt;
 
+using ProtobufMapType = google::protobuf::Map<std::string, google::protobuf::Value>;
+
 // JWT Verifier class.
 //
 // Usage example:
@@ -187,10 +189,10 @@ class Jwt : public WithStatus {
   // the error detail.
   Jwt(const std::string& jwt);
 
-  // It returns a pointer to a JSON object of the header of the given JWT.
+  // It returns a reference to a protobuf Struct of the header of the given JWT.
   // When the given JWT has a format error, it returns nullptr.
   // It returns the header JSON even if the signature is invalid.
-  Json::ObjectSharedPtr Header();
+  google::protobuf::Struct& Header();
 
   // They return a string (or base64url-encoded string) of the header JSON of
   // the given JWT.
@@ -204,10 +206,10 @@ class Jwt : public WithStatus {
   // string if "kid" does not exist in the header.
   const std::string& Kid();
 
-  // It returns a pointer to a JSON object of the payload of the given JWT.
+  // It returns a reference to protobuf struct of the payload of the given JWT.
   // When the given jWT has a format error, it returns nullptr.
   // It returns the payload JSON even if the signature is invalid.
-  Json::ObjectSharedPtr Payload();
+  google::protobuf::Struct& Payload();
 
   // They return a string (or base64url-encoded string) of the payload JSON of
   // the given JWT.
@@ -231,10 +233,10 @@ class Jwt : public WithStatus {
   int64_t Exp();
 
  private:
-  Json::ObjectSharedPtr header_;
+  google::protobuf::Struct header_;
   std::string header_str_;
   std::string header_str_base64url_;
-  Json::ObjectSharedPtr payload_;
+  google::protobuf::Struct payload_;
   std::string payload_str_;
   std::string payload_str_base64url_;
   std::string signature_;
@@ -270,9 +272,9 @@ class Pubkeys : public WithStatus {
   void CreateFromPemCore(const std::string& pkey_pem);
   void CreateFromJwksCore(const std::string& pkey_jwks);
   // Extracts the public key from a jwk key (jkey) and sets it to keys_;
-  void ExtractPubkeyFromJwk(Json::ObjectSharedPtr jwk_json);
-  void ExtractPubkeyFromJwkRSA(Json::ObjectSharedPtr jwk_json);
-  void ExtractPubkeyFromJwkEC(Json::ObjectSharedPtr jwk_json);
+  bool ExtractPubkeyFromJwk(const ProtobufMapType& jwk_field);
+  bool ExtractPubkeyFromJwkRSA(const ProtobufMapType& jwk_field);
+  bool ExtractPubkeyFromJwkEC(const ProtobufMapType& jwk_field);
 
   class Pubkey {
    public:

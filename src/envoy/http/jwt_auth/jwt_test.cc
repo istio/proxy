@@ -18,8 +18,9 @@
 #include <tuple>
 
 #include "common/common/utility.h"
-#include "common/json/json_loader.h"
 #include "test/test_common/utility.h"
+#include "google/protobuf/struct.pb.h"
+#include "google/protobuf/util/json_util.h"
 
 namespace Envoy {
 namespace Http {
@@ -512,15 +513,15 @@ class DatasetJwk {
 
 namespace {
 
-bool EqJson(Json::ObjectSharedPtr p1, Json::ObjectSharedPtr p2) {
-  return p1->asJsonString() == p2->asJsonString();
+bool EqJson(const google::protobuf::Struct& p1, const google::protobuf::Struct& p2) {
+  return p1.DebugString() == p2.DebugString();
 }
 }  // namespace
 
 class JwtTest : public testing::Test {
  protected:
   void DoTest(std::string jwt_str, std::string pkey, std::string pkey_type,
-              bool verified, Status status, Json::ObjectSharedPtr payload) {
+              bool verified, Status status, google::protobuf::Struct payload) {
     Jwt jwt(jwt_str);
     Verifier v;
     std::unique_ptr<Pubkeys> key;
@@ -534,7 +535,7 @@ class JwtTest : public testing::Test {
     EXPECT_EQ(verified, v.Verify(jwt, *key));
     EXPECT_EQ(status, v.GetStatus());
     if (verified) {
-      ASSERT_TRUE(jwt.Payload());
+      ASSERT_TRUE(jwt.Payload().fields().size() != 0);
       EXPECT_TRUE(EqJson(payload, jwt.Payload()));
     }
   }
@@ -548,17 +549,20 @@ class JwtTestPem : public JwtTest {
 };
 
 TEST_F(JwtTestPem, OK) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
   DoTest(ds.kJwt, ds.kPublicKey, "pem", true, Status::OK, payload);
 }
 
 TEST_F(JwtTestPem, OKWithAlgRs384) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
   DoTest(ds.kJwtRs384, ds.kPublicKey, "pem", true, Status::OK, payload);
 }
 
 TEST_F(JwtTestPem, OKWithAlgRs512) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
   DoTest(ds.kJwtRs512, ds.kPublicKey, "pem", true, Status::OK, payload);
 }
 
@@ -572,20 +576,20 @@ TEST_F(JwtTestPem, InvalidSignature) {
   invalid_jwt[ds.kJwt.length() - 2] =
       ds.kJwt[ds.kJwt.length() - 2] != 'a' ? 'a' : 'b';
   DoTest(invalid_jwt, ds.kPublicKey, "pem", false,
-         Status::JWT_INVALID_SIGNATURE, nullptr);
+         Status::JWT_INVALID_SIGNATURE, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, InvalidPublicKey) {
   auto invalid_pubkey = ds.kPublicKey;
   invalid_pubkey[0] = ds.kPublicKey[0] != 'a' ? 'a' : 'b';
   DoTest(ds.kJwt, invalid_pubkey, "pem", false, Status::PEM_PUBKEY_PARSE_ERROR,
-         nullptr);
+         google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, PublicKeyInvalidBase64) {
   auto invalid_pubkey = "a";
   DoTest(ds.kJwt, invalid_pubkey, "pem", false, Status::PEM_PUBKEY_BAD_BASE64,
-         nullptr);
+         google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, Base64urlBadInputHeader) {
@@ -595,7 +599,7 @@ TEST_F(JwtTestPem, Base64urlBadInputHeader) {
                                ds.kJwtSignatureEncoded},
       ".");
   DoTest(invalid_jwt, ds.kPublicKey, "pem", false,
-         Status::JWT_HEADER_PARSE_ERROR, nullptr);
+         Status::JWT_HEADER_PARSE_ERROR, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, Base64urlBadInputPayload) {
@@ -605,7 +609,7 @@ TEST_F(JwtTestPem, Base64urlBadInputPayload) {
                                ds.kJwtSignatureEncoded},
       ".");
   DoTest(invalid_jwt, ds.kPublicKey, "pem", false,
-         Status::JWT_PAYLOAD_PARSE_ERROR, nullptr);
+         Status::JWT_PAYLOAD_PARSE_ERROR, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, Base64urlBadinputSignature) {
@@ -615,43 +619,43 @@ TEST_F(JwtTestPem, Base64urlBadinputSignature) {
                                invalid_signature},
       ".");
   DoTest(invalid_jwt, ds.kPublicKey, "pem", false,
-         Status::JWT_SIGNATURE_PARSE_ERROR, nullptr);
+         Status::JWT_SIGNATURE_PARSE_ERROR, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, JwtInvalidNumberOfDots) {
   auto invalid_jwt = ds.kJwt + '.';
   DoTest(invalid_jwt, ds.kPublicKey, "pem", false, Status::JWT_BAD_FORMAT,
-         nullptr);
+         google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, JsonBadInputHeader) {
   DoTest(ds.kJwtWithBadJsonHeader, ds.kPublicKey, "pem", false,
-         Status::JWT_HEADER_PARSE_ERROR, nullptr);
+         Status::JWT_HEADER_PARSE_ERROR, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, JsonBadInputPayload) {
   DoTest(ds.kJwtWithBadJsonPayload, ds.kPublicKey, "pem", false,
-         Status::JWT_PAYLOAD_PARSE_ERROR, nullptr);
+         Status::JWT_PAYLOAD_PARSE_ERROR, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, AlgAbsentInHeader) {
   DoTest(ds.kJwtWithAlgAbsent, ds.kPublicKey, "pem", false,
-         Status::JWT_HEADER_NO_ALG, nullptr);
+         Status::JWT_HEADER_NO_ALG, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, AlgIsNotString) {
   DoTest(ds.kJwtWithAlgIsNotString, ds.kPublicKey, "pem", false,
-         Status::JWT_HEADER_BAD_ALG, nullptr);
+         Status::JWT_HEADER_BAD_ALG, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, InvalidAlg) {
   DoTest(ds.kJwtWithInvalidAlg, ds.kPublicKey, "pem", false,
-         Status::ALG_NOT_IMPLEMENTED, nullptr);
+         Status::ALG_NOT_IMPLEMENTED, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestPem, Es256Alg) {
   DoTest(ds.kJwtWithES256Alg, ds.kPublicKey, "pem", false,
-         Status::JWT_INVALID_SIGNATURE, nullptr);
+         Status::JWT_INVALID_SIGNATURE, google::protobuf::Struct());
 }
 
 TEST(JwtSubExtractionTest, NonEmptyJwtSubShouldEqual) {
@@ -673,12 +677,14 @@ class JwtTestJwks : public JwtTest {
 };
 
 TEST_F(JwtTestJwks, OkNoKid) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
   DoTest(ds.kJwtNoKid, ds.kPublicKeyRSA, "jwks", true, Status::OK, payload);
 }
 
 TEST_F(JwtTestJwks, OkTokenJwkRSAPublicKeyOptionalAlgKid) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
   // Remove "alg" claim from public key.
   std::string alg_claim = "\"alg\": \"RS256\",";
   std::string pubkey_no_alg = ds.kPublicKeyRSA;
@@ -703,58 +709,61 @@ TEST_F(JwtTestJwks, OkTokenJwkRSAPublicKeyOptionalAlgKid) {
 }
 
 TEST_F(JwtTestJwks, OkNoKidLogExp) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayloadLongExp);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
   DoTest(ds.kJwtNoKidLongExp, ds.kPublicKeyRSA, "jwks", true, Status::OK,
          payload);
 }
 
 TEST_F(JwtTestJwks, OkCorrectKid) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayload);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayload, &payload);
   DoTest(ds.kJwtWithCorrectKid, ds.kPublicKeyRSA, "jwks", true, Status::OK,
          payload);
 }
 
 TEST_F(JwtTestJwks, IncorrectKid) {
   DoTest(ds.kJwtWithIncorrectKid, ds.kPublicKeyRSA, "jwks", false,
-         Status::JWT_INVALID_SIGNATURE, nullptr);
+         Status::JWT_INVALID_SIGNATURE, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, NonExistKid) {
   DoTest(ds.kJwtWithNonExistKid, ds.kPublicKeyRSA, "jwks", false,
-         Status::KID_ALG_UNMATCH, nullptr);
+         Status::KID_ALG_UNMATCH, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, BadFormatKid) {
   DoTest(ds.kJwtWithBadFormatKid, ds.kPublicKeyRSA, "jwks", false,
-         Status::JWT_HEADER_BAD_KID, nullptr);
+         Status::JWT_HEADER_BAD_KID, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, JwkBadJson) {
   std::string invalid_pubkey = "foobar";
   DoTest(ds.kJwtNoKid, invalid_pubkey, "jwks", false, Status::JWK_PARSE_ERROR,
-         nullptr);
+         google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, JwkNoKeys) {
   std::string invalid_pubkey = R"EOF({"foo":"bar"})EOF";
   DoTest(ds.kJwtNoKid, invalid_pubkey, "jwks", false, Status::JWK_NO_KEYS,
-         nullptr);
+         google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, JwkBadKeys) {
   std::string invalid_pubkey = R"EOF({"keys":"foobar"})EOF";
   DoTest(ds.kJwtNoKid, invalid_pubkey, "jwks", false, Status::JWK_BAD_KEYS,
-         nullptr);
+         google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, JwkBadPublicKey) {
   std::string invalid_pubkey = R"EOF({"keys":[]})EOF";
   DoTest(ds.kJwtNoKid, invalid_pubkey, "jwks", false,
-         Status::JWK_NO_VALID_PUBKEY, nullptr);
+         Status::JWK_NO_VALID_PUBKEY, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, OkTokenJwkEC) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayloadEC);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayloadEC, &payload);
   // ES256-signed token with kid specified.
   DoTest(ds.kTokenEC, ds.kPublicKeyJwkEC, "jwks", true, Status::OK, payload);
   // ES256-signed token without kid specified.
@@ -763,7 +772,8 @@ TEST_F(JwtTestJwks, OkTokenJwkEC) {
 }
 
 TEST_F(JwtTestJwks, OkTokenJwkECPublicKeyOptionalAlgKid) {
-  auto payload = Json::Factory::loadFromString(ds.kJwtPayloadEC);
+  google::protobuf::Struct payload;
+  google::protobuf::util::JsonStringToMessage(ds.kJwtPayloadEC, &payload);
   // Remove "alg" claim from public key.
   std::string alg_claim = "\"alg\": \"ES256\",";
   std::string pubkey_no_alg = ds.kPublicKeyJwkEC;
@@ -787,19 +797,19 @@ TEST_F(JwtTestJwks, OkTokenJwkECPublicKeyOptionalAlgKid) {
 
 TEST_F(JwtTestJwks, NonExistKidEC) {
   DoTest(ds.kJwtWithNonExistKidEC, ds.kPublicKeyJwkEC, "jwks", false,
-         Status::KID_ALG_UNMATCH, nullptr);
+         Status::KID_ALG_UNMATCH, google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, InvalidPublicKeyEC) {
   auto invalid_pubkey = ds.kPublicKeyJwkEC;
   invalid_pubkey.replace(12, 9, "kty\":\"RSA");
   DoTest(ds.kTokenEC, invalid_pubkey, "jwks", false, Status::KID_ALG_UNMATCH,
-         nullptr);
+         google::protobuf::Struct());
 }
 
 TEST_F(JwtTestJwks, DebugSegFault) {
   DoTest(ds.kJwtNoKid, ds.kBadPublicKeyRSA, "jwks", false,
-         Status::JWK_RSA_PUBKEY_PARSE_ERROR, nullptr);
+         Status::JWK_RSA_PUBKEY_PARSE_ERROR, google::protobuf::Struct());
 }
 
 }  // namespace JwtAuth
