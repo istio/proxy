@@ -25,7 +25,6 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-
 using TagKeyValueList =
     std::vector<std::pair<opencensus::tags::TagKey, std::string>>;
 

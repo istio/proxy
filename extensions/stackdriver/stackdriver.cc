@@ -382,55 +382,6 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   const ::Wasm::Common::FlatNode& destination_node_info =
       outbound ? peer_node : local_node;
 
-  if (tcp_request_queue_[id] == nullptr) {
-    return false;
-  }
-  ::Wasm::Common::RequestInfo request_info = *tcp_request_queue_[id];
-  // For TCP, if peer metadata is not available, peer id is set as not found.
-  // Otherwise, we wait for metadata exchange to happen before we report  any
-  // metric.
-  // We keep waiting if response flags is zero, as that implies, there has
-  // been no error in connection.
-  uint64_t response_flags = 0;
-  getValue({"response", "flags"}, &response_flags);
-  if (!peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
-      response_flags == 0) {
-    return false;
-  }
-  if (!request_info.is_populated) {
-    ::Wasm::Common::populateTCPRequestInfo(
-        outbound, &request_info,
-        flatbuffers::GetString(destination_node_info.namespace_()));
-  }
-  // Record TCP Metrics.
-  ::Extensions::Stackdriver::Metric::record(
-      outbound, local_node, peer_node, request_info,
-      !config_.disable_http_size_metrics(), enableTCPMetrics(),
-      true /* is_tcp */);
-
-  // Add LogEntry to Logger. Log Entries are batched and sent on timer
-  // to Stackdriver Logging Service.
-  if (enableTCPServerAccessLog() && shouldLogThisRequest()) {
-    ::Wasm::Common::populateExtendedRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node, true);
-  }
-  return true;
-}
-
-bool StackdriverRootContext::recordTCP(uint32_t id) {
-  const bool outbound = isOutbound();
-  std::string peer_id;
-  getPeerId(peer_id);
-  std::string peer;
-  bool peer_found = getValue(
-      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
-  const ::Wasm::Common::FlatNode& peer_node =
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          peer_found ? peer.data() : empty_node_info_.data());
-  const ::Wasm::Common::FlatNode& local_node = getLocalNode();
-  const ::Wasm::Common::FlatNode& destination_node_info =
-      outbound ? peer_node : local_node;
-
   auto req_iter = tcp_request_queue_.find(id);
   if (req_iter == tcp_request_queue_.end() || req_iter->second == nullptr) {
     return false;
@@ -455,6 +406,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // Record TCP Metrics.
   ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node,
                                                request_info);
+  // Add LogEntry to Logger. Log Entries are batched and sent on timer
+  // to Stackdriver Logging Service.
+  if (enableTCPServerAccessLog() && shouldLogThisRequest()) {
+    ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+    logger_->addLogEntry(request_info, peer_node, true);
+  }
   return true;
 }
 
