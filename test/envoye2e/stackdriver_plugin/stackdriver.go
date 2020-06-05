@@ -90,14 +90,14 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						entry.HttpRequest.RemoteIp = ""
 					}
 					delete(entry.Labels, "request_id")
-					delete(entry.Labels, "tcp_remote_ip")
-					delete(entry.Labels, "tcp_remote_port")
-					delete(entry.Labels, "tcp_server_port")
-					delete(entry.Labels, "tcp_sent_bytes")
-					delete(entry.Labels, "tcp_received_bytes")
+					delete(entry.Labels, "source_ip")
+					delete(entry.Labels, "source_port")
+					delete(entry.Labels, "destination_port")
+					delete(entry.Labels, "total_sent_bytes")
+					delete(entry.Labels, "total_received_bytes")
 					// because of the timing of the test, logging can happen at the end or
 					// in the middle of the request.
-					delete(entry.Labels, "tcp_connection_state")
+					delete(entry.Labels, "connection_state")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}

@@ -204,7 +204,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     }
   }
 
-  if (!logger_ && (enableServerAccessLog() || enableTCPServerAccessLog())) {
+  if (!logger_ && (enableServerAccessLog())) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
     auto logging_stub_option = stub_option;
@@ -271,7 +271,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
 bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
-  if (enableServerAccessLog() || enableTCPServerAccessLog()) {
+  if (enableServerAccessLog()) {
     logger_->exportLogEntry(/* is_on_done= */ false);
   }
   if (enableEdgeReporting()) {
@@ -314,7 +314,7 @@ bool StackdriverRootContext::onDone() {
   // called, but onConfigure is not triggered. onConfigure is only triggered in
   // thread local VM, which makes it possible that logger_ is empty ptr even
   // when logging is enabled.
-  if (logger_ && (enableServerAccessLog() || enableTCPServerAccessLog()) &&
+  if (logger_ && (enableServerAccessLog()) &&
       logger_->exportLogEntry(/* is_on_done= */ true)) {
     done = false;
   }
@@ -352,7 +352,7 @@ void StackdriverRootContext::record() {
       !config_.disable_http_size_metrics());
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node, false);
+    logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ false);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
@@ -406,9 +406,9 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
                                                request_info);
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
-  if (enableTCPServerAccessLog() && shouldLogThisRequest()) {
+  if (enableServerAccessLog()) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node, true);
+    logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ true);
   }
   return true;
 }
@@ -423,10 +423,6 @@ inline bool StackdriverRootContext::enableServerAccessLog() {
 
 inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
-}
-
-inline bool StackdriverRootContext::enableTCPServerAccessLog() {
-  return !config_.disable_tcp_server_access_logging() && !isOutbound();
 }
 
 bool StackdriverRootContext::shouldLogThisRequest() {

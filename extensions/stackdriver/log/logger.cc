@@ -221,13 +221,13 @@ void Logger::addTCPLabelsToLogEntry(
     const ::Wasm::Common::RequestInfo& request_info,
     google::logging::v2::LogEntry* log_entry) {
   auto label_map = log_entry->mutable_labels();
-  (*label_map)["tcp_remote_ip"] = request_info.source_address;
-  (*label_map)["tcp_server_ip"] = request_info.destination_address;
-  (*label_map)["tcp_remote_port"] = request_info.source_port;
-  (*label_map)["tcp_server_port"] = request_info.destination_port;
-  (*label_map)["tcp_sent_bytes"] = request_info.tcp_total_sent_bytes;
-  (*label_map)["tcp_received_bytes"] = request_info.tcp_total_received_bytes;
-  (*label_map)["tcp_connection_state"] =
+  (*label_map)["source_ip"] = request_info.source_address;
+  (*label_map)["destination_ip"] = request_info.destination_address;
+  (*label_map)["source_port"] = request_info.source_port;
+  (*label_map)["destination_port"] = request_info.destination_port;
+  (*label_map)["total_sent_bytes"] = request_info.tcp_total_sent_bytes;
+  (*label_map)["total_received_bytes"] = request_info.tcp_total_received_bytes;
+  (*label_map)["connection_state"] =
       std::string(::Wasm::Common::TCPConnectionStateString(
           request_info.tcp_connection_state));
 }
