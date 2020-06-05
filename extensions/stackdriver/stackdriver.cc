@@ -335,7 +335,6 @@ void StackdriverRootContext::record() {
   const auto& metadata_key =
       outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
   std::string peer;
-  getValue({metadata_key}, &peer);
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
           getValue({metadata_key}, &peer) ? peer.data()
@@ -365,7 +364,6 @@ void StackdriverRootContext::record() {
     }
     edge_reporter_->addEdge(request_info, peer_id, peer_node);
   }
-  return;
 }
 
 bool StackdriverRootContext::recordTCP(uint32_t id) {
@@ -427,12 +425,8 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
 
-inline bool StackdriverRootContext::enableTCPMetrics() {
-  return config_.enable_tcp_metrics();
-}
-
 inline bool StackdriverRootContext::enableTCPServerAccessLog() {
-  return config_.enable_tcp_server_access_logging() && !isOutbound();
+  return !config_.disable_tcp_server_access_logging() && !isOutbound();
 }
 
 bool StackdriverRootContext::shouldLogThisRequest() {
@@ -491,12 +485,6 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
 
 void StackdriverContext::onLog() {
   if (!is_initialized_) {
-    return;
-  }
-  if (is_tcp_) {
-    getRootContext()->incrementConnectionClosed(context_id_);
-    getRootContext()->recordTCP(context_id_);
-    getRootContext()->deleteFromTCPRequestQueue(context_id_);
     return;
   }
   if (is_tcp_) {

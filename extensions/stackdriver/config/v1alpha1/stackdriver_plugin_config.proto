@@ -26,13 +26,13 @@ package stackdriver.config.v1alpha1;
 
 import "google/protobuf/duration.proto";
 
-// next id: 11
+// next id: 10
 message PluginConfig {
   // Optional. Controls whether to export server access log.
   bool disable_server_access_logging = 1;
 
   // Optional. Controls whether to export TCP server access log.
-  bool enable_tcp_server_access_logging = 10;
+  bool disable_tcp_server_access_logging = 9;
 
   // Optional. FQDN of destination service that the request routed to, e.g.
   // productpage.default.svc.cluster.local. If not provided, request host header
@@ -70,7 +70,4 @@ message PluginConfig {
   // metrics for HTTP traffic. Defaults to false (request and response size
   // metrics are enabled).
   bool disable_http_size_metrics = 8;
-
-  // Optional. Allows enabling of reporting of the metrics for TCP traffic.
-  bool enable_tcp_metrics = 9;
 }

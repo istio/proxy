@@ -108,9 +108,6 @@ class StackdriverRootContext : public RootContext {
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();
 
-  // Indicates whether or not to report TCP Metrics.
-  bool enableTCPMetrics();
-
   // Indicates whether or not to report TCP Logs.
   bool enableTCPServerAccessLog();
 

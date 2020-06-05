@@ -95,6 +95,9 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 					delete(entry.Labels, "tcp_server_port")
 					delete(entry.Labels, "tcp_sent_bytes")
 					delete(entry.Labels, "tcp_received_bytes")
+					// because of the timing of the test, logging can happen at the end or
+					// in the middle of the request.
+					delete(entry.Labels, "tcp_connection_state")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
