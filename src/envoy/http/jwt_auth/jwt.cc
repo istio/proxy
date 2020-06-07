@@ -248,7 +248,9 @@ template <>
 absl::optional<std::vector<std::string>> getProtoListValue(
     const ProtobufMapType &struct_value, std::string key) {
   const auto field_iter = struct_value.find(key);
-  if (field_iter == struct_value.end()) {
+  if (field_iter == struct_value.end() ||
+      field_iter->second.kind_case() !=
+          google::protobuf::Value::KindCase::kListValue) {
     return absl::nullopt;
   }
   std::vector<std::string> list_values;
@@ -265,7 +267,9 @@ template <>
 absl::optional<std::vector<google::protobuf::Struct>> getProtoListValue(
     const ProtobufMapType &struct_value, std::string key) {
   const auto field_iter = struct_value.find(key);
-  if (field_iter == struct_value.end()) {
+  if (field_iter == struct_value.end() ||
+      field_iter->second.kind_case() !=
+          google::protobuf::Value::KindCase::kListValue) {
     return absl::nullopt;
   }
   std::vector<google::protobuf::Struct> list_values;
