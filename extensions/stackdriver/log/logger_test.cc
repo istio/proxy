@@ -178,55 +178,11 @@ std::string write_log_request_json = R"({
   ]
 })";
 
-std::string write_tcp_log_request_json = R"({
-  "logName":"projects/test_project/logs/server-accesslog-stackdriver",
-  "resource":{
-     "type":"k8s_container",
-     "labels":{
-        "cluster_name":"test_cluster",
-        "pod_name":"test_pod",
-        "location":"test_location",
-        "namespace_name":"test_namespace",
-        "project_id":"test_project",
-        "container_name":"istio-proxy"
-     }
-  },
-  "labels":{
-     "destination_workload":"test_workload",
-     "mesh_uid":"mesh",
-     "destination_namespace":"test_namespace",
-     "destination_name":"test_pod"
-  },
-  "entries":[
-     {
-        "timestamp":"1970-01-01T00:00:00Z",
-        "severity":"INFO",
-        "labels":{
-           "source_name":"test_peer_pod",
-           "destination_principal":"destination_principal",
-           "destination_service_host":"httpbin.org",
-           "request_id":"123",
-           "source_namespace":"test_peer_namespace",
-           "source_principal":"source_principal",
-           "service_authentication_policy":"MUTUAL_TLS",
-           "source_workload":"test_peer_workload",
-           "response_flag":"-",
-           "protocol":"tcp"
-        },
-        "trace":"projects/test_project/traces/123abc",
-        "spanId":"abc123",
-        "traceSampled":true
-     }
-  ]
-})";
-
-google::logging::v2::WriteLogEntriesRequest expectedRequest(int log_entry_count,
-                                                            bool is_tcp) {
+google::logging::v2::WriteLogEntriesRequest expectedRequest(
+    int log_entry_count) {
   google::logging::v2::WriteLogEntriesRequest req;
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
-      is_tcp ? write_tcp_log_request_json : write_log_request_json, &req,
-      options);
+  JsonStringToMessage(write_log_request_json, &req, options);
   for (int i = 1; i < log_entry_count; i++) {
     auto* new_entry = req.mutable_entries()->Add();
     new_entry->CopyFrom(req.entries()[0]);
@@ -251,30 +207,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
               std::string diff;
               MessageDifferencer differ;
               differ.ReportDifferencesToString(&diff);
-              if (!differ.Compare(expectedRequest(1, false), *req)) {
-                FAIL() << "unexpected log entry " << diff << "\n";
-              }
-            }
-          }));
-  logger->exportLogEntry(/* is_on_done = */ false);
-}
-
-TEST(LoggerTest, TestWriteTCPLogEntry) {
-  auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
-  auto exporter_ptr = exporter.get();
-  flatbuffers::FlatBufferBuilder local, peer;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), true);
-  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
-      .WillOnce(::testing::Invoke(
-          [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
-             bool) {
-            for (const auto& req : requests) {
-              std::string diff;
-              MessageDifferencer differ;
-              differ.ReportDifferencesToString(&diff);
-              if (!differ.Compare(expectedRequest(1, true), *req)) {
+              if (!differ.Compare(expectedRequest(1), *req)) {
                 FAIL() << "unexpected log entry " << diff << "\n";
               }
             }
@@ -301,7 +234,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
               std::string diff;
               MessageDifferencer differ;
               differ.ReportDifferencesToString(&diff);
-              if (!differ.Compare(expectedRequest(3, false), *req)) {
+              if (!differ.Compare(expectedRequest(3), *req)) {
                 FAIL() << "unexpected log entry " << diff << "\n";
               }
             }
