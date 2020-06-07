@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
+#include "google/protobuf/struct.pb.h"
 #include "openssl/ec.h"
 #include "openssl/evp.h"
-#include "google/protobuf/struct.pb.h"
 
 namespace Envoy {
 namespace Http {
@@ -133,7 +133,9 @@ class WithStatus {
 class Pubkeys;
 class Jwt;
 
-using ProtobufMapType = google::protobuf::Map<std::string, google::protobuf::Value>;
+using ProtobufMapType =
+    google::protobuf::Map<std::string, google::protobuf::Value>;
+using ProtobufListValueType = google::protobuf::ListValue;
 
 // JWT Verifier class.
 //
@@ -288,7 +290,7 @@ class Pubkeys : public WithStatus {
     bool pem_format_ = false;
     std::string alg_;
   };
-  std::vector<std::unique_ptr<Pubkey> > keys_;
+  std::vector<std::unique_ptr<Pubkey>> keys_;
 
   /*
    * TODO: try not to use friend function

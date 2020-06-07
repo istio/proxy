@@ -18,9 +18,9 @@
 #include <tuple>
 
 #include "common/common/utility.h"
-#include "test/test_common/utility.h"
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/util/json_util.h"
+#include "test/test_common/utility.h"
 
 namespace Envoy {
 namespace Http {
@@ -513,7 +513,8 @@ class DatasetJwk {
 
 namespace {
 
-bool EqJson(const google::protobuf::Struct& p1, const google::protobuf::Struct& p2) {
+bool EqJson(const google::protobuf::Struct& p1,
+            const google::protobuf::Struct& p2) {
   return p1.DebugString() == p2.DebugString();
 }
 }  // namespace
