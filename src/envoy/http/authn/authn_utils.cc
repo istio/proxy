@@ -44,37 +44,47 @@ static const std::string kExchangedTokenOriginalPayload = "original_claims";
 bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
                                    istio::authn::JwtPayload* payload) {
   google::protobuf::Struct payload_obj;
-  const auto status = google::protobuf::util::JsonStringToMessage(payload_str, &payload_obj);
+  const auto status =
+      google::protobuf::util::JsonStringToMessage(payload_str, &payload_obj);
   if (!status.ok()) {
     return false;
   }
   ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
-              payload_obj.DebugString());
+            payload_obj.DebugString());
 
   *payload->mutable_raw_claims() = payload_str;
 
   auto claims = payload->mutable_claims()->mutable_fields();
   // Extract claims as string lists
-  for (const auto& pair: payload_obj.fields()) {
+  for (const auto& pair : payload_obj.fields()) {
     std::vector<std::string> claim_values;
     switch (pair.second.kind_case()) {
-    case google::protobuf::Value::kStringValue: {
-      auto claim_values = absl::StrSplit(pair.second.string_value(), ' ', absl::SkipEmpty());
-      for (const auto claim_value : claim_values) {
-        (*claims)[pair.first].mutable_list_value()->add_values()->set_string_value(std::string(claim_value));
+      case google::protobuf::Value::kStringValue: {
+        auto claim_values =
+            absl::StrSplit(pair.second.string_value(), ' ', absl::SkipEmpty());
+        for (const auto claim_value : claim_values) {
+          (*claims)[pair.first]
+              .mutable_list_value()
+              ->add_values()
+              ->set_string_value(std::string(claim_value));
+        }
+        break;
       }
-      break;
-    }
-    case google::protobuf::Value::kListValue: {
-      auto claim_values = pair.second.list_value().values();
-      for (auto claim_value = claim_values.begin(); claim_value != claim_values.end(); ++claim_value) {
-        assert(claim_value->kind_case() == google::protobuf::Value::kStringValue);
-        (*claims)[pair.first].mutable_list_value()->add_values()->set_string_value(claim_value->string_value());
+      case google::protobuf::Value::kListValue: {
+        auto claim_values = pair.second.list_value().values();
+        for (auto claim_value = claim_values.begin();
+             claim_value != claim_values.end(); ++claim_value) {
+          assert(claim_value->kind_case() ==
+                 google::protobuf::Value::kStringValue);
+          (*claims)[pair.first]
+              .mutable_list_value()
+              ->add_values()
+              ->set_string_value(claim_value->string_value());
+        }
+        break;
       }
-      break;
-    }
-    default:
-      break;
+      default:
+        break;
     }
   }
 
@@ -89,7 +99,8 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   if (claims->find(kJwtIssuerKey) != claims->end() &&
       claims->find(kJwtSubjectKey) != claims->end()) {
     payload->set_user(
-        (*claims)[kJwtIssuerKey].list_value().values().Get(0).string_value() + "/" +
+        (*claims)[kJwtIssuerKey].list_value().values().Get(0).string_value() +
+        "/" +
         (*claims)[kJwtSubjectKey].list_value().values().Get(0).string_value());
   }
   // Build authorized presenter (azp)
@@ -104,20 +115,23 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
 bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
                                         std::string* original_payload) {
   google::protobuf::Struct payload_obj;
-  const auto status = google::protobuf::util::JsonStringToMessage(token, &payload_obj);
+  const auto status =
+      google::protobuf::util::JsonStringToMessage(token, &payload_obj);
   if (!status.ok()) {
     return false;
   }
   ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__,
-              payload_obj.DebugString());
+            payload_obj.DebugString());
   const auto& payload_obj_fields = payload_obj.fields();
 
-  if (payload_obj_fields.find(kExchangedTokenOriginalPayload) == payload_obj_fields.end()) {
+  if (payload_obj_fields.find(kExchangedTokenOriginalPayload) ==
+      payload_obj_fields.end()) {
     return false;
   }
 
   try {
-    auto original_payload_value = *payload_obj_fields.find(kExchangedTokenOriginalPayload);
+    auto original_payload_value =
+        *payload_obj_fields.find(kExchangedTokenOriginalPayload);
     *original_payload = original_payload_value.second.DebugString();
     ENVOY_LOG(debug, "{}: the original payload in exchanged token is {}",
               __FUNCTION__, *original_payload);
