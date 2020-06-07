@@ -19,7 +19,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "common/json/json_loader.h"
 
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"

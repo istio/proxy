@@ -44,13 +44,11 @@ wasm_cc_binary(
     copts = ["-UNULL_PLUGIN"],
     deps = [
         "//external:authentication_policy_config_cc_proto",
-        "//external:com_github_tencent_rapidjson",
         "//src/envoy/utils:filter_names_lib",
         "//src/istio/authn:context_proto_cc_wasm",
         "@com_google_absl_wasm//absl/strings",
         "@com_google_absl_wasm//absl/types:optional",
         "@com_google_protobuf//:protobuf",
-        "@envoy//source/common/json:json_loader_lib",
         "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
     ],
 )
