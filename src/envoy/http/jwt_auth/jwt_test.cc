@@ -534,7 +534,6 @@ class JwtTest : public testing::Test {
       ASSERT_TRUE(0);
     }
     EXPECT_EQ(verified, v.Verify(jwt, *key));
-    std::cout << static_cast<int>(status) << " " << static_cast<int>(v.GetStatus()) << std::endl;
     EXPECT_EQ(status, v.GetStatus());
     if (verified) {
       ASSERT_TRUE(jwt.Payload().fields().size() != 0);
