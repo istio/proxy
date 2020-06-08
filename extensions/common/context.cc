@@ -143,15 +143,16 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
 
   getValue({"request", "url_path"}, &request_info->request_url_path);
 
+  uint64_t destination_port = 0;
   if (outbound) {
-    uint64_t destination_port = 0;
     getValue({"upstream", "port"}, &destination_port);
-    request_info->destination_port = destination_port;
     getValue({"upstream", "uri_san_peer_certificate"},
              &request_info->destination_principal);
     getValue({"upstream", "uri_san_local_certificate"},
              &request_info->source_principal);
   } else {
+    getValue({"destination", "port"}, &destination_port);
+
     bool mtls = false;
     if (getValue({"connection", "mtls"}, &mtls)) {
       request_info->service_auth_policy =
@@ -163,6 +164,7 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
     getValue({"connection", "uri_san_peer_certificate"},
              &request_info->source_principal);
   }
+  request_info->destination_port = destination_port;
 
   uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
@@ -181,7 +183,20 @@ StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
       break;
   }
   return {};
-  ;
+}
+
+StringView TCPConnectionStateString(TCPConnectionState state) {
+  switch (state) {
+    case TCPConnectionState::Open:
+      return kOpen;
+    case TCPConnectionState::Connected:
+      return kConnected;
+    case TCPConnectionState::Close:
+      return kClose;
+    default:
+      break;
+  }
+  return {};
 }
 
 // Retrieves the traffic direction from the configuration context.
@@ -285,12 +300,6 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
       getHeaderMapValue(WasmHeaderMapType::RequestHeaders, kMethodHeaderKey)
           ->toString();
 
-  if (!outbound) {
-    uint64_t destination_port = 0;
-    getValue({"destination", "port"}, &destination_port);
-    request_info->destination_port = destination_port;
-  }
-
   getValue({"request", "time"}, &request_info->start_time);
   getValue({"request", "duration"}, &request_info->duration);
   getValue({"request", "total_size"}, &request_info->request_size);
@@ -304,8 +313,7 @@ absl::string_view nodeInfoSchema() {
 }
 
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
-  getValue({"source", "address"}, &request_info->source_address);
-  getValue({"destination", "address"}, &request_info->destination_address);
+  populateExtendedRequestInfo(request_info);
 
   getValue({"request", "referer"}, &request_info->referer);
   getValue({"request", "user_agent"}, &request_info->user_agent);
@@ -322,6 +330,12 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   getValue({"request", "url_path"}, &request_info->url_path);
   getValue({"request", "host"}, &request_info->url_host);
   getValue({"request", "scheme"}, &request_info->url_scheme);
+}
+
+void populateExtendedRequestInfo(RequestInfo* request_info) {
+  getValue({"source", "address"}, &request_info->source_address);
+  getValue({"destination", "address"}, &request_info->destination_address);
+  getValue({"source", "port"}, &request_info->source_port);
 }
 
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,

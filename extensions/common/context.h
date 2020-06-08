@@ -71,10 +71,21 @@ enum class ServiceAuthenticationPolicy : int64_t {
   MutualTLS = 2,
 };
 
+enum class TCPConnectionState : int64_t {
+  Unspecified = 0,
+  Open = 1,
+  Connected = 2,
+  Close = 3,
+};
+
 constexpr StringView kMutualTLS = "MUTUAL_TLS";
 constexpr StringView kNone = "NONE";
+constexpr StringView kOpen = "OPEN";
+constexpr StringView kConnected = "CONNECTED";
+constexpr StringView kClose = "CLOSE";
 
 StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
+StringView TCPConnectionStateString(TCPConnectionState state);
 
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
@@ -93,6 +104,9 @@ struct RequestInfo {
 
   // Destination port that the request targets.
   uint32_t destination_port = 0;
+
+  // Source port of the client.
+  uint32_t source_port = 0;
 
   // Protocol used the request (HTTP/1.1, gRPC, etc).
   std::string request_protocol;
@@ -151,6 +165,9 @@ struct RequestInfo {
   int64_t tcp_connections_closed = 0;
   int64_t tcp_sent_bytes = 0;
   int64_t tcp_received_bytes = 0;
+  int64_t tcp_total_sent_bytes = 0;
+  int64_t tcp_total_received_bytes = 0;
+  TCPConnectionState tcp_connection_state = TCPConnectionState::Unspecified;
 
   bool is_populated = false;
 };
@@ -193,6 +210,10 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header,
 // populateExtendedHTTPRequestInfo populates the extra fields in RequestInfo
 // struct, includes trace headers, request id headers, and url.
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info);
+
+// populateExtendedRequestInfo populates the extra fields in RequestInfo
+// source address, destination address.
+void populateExtendedRequestInfo(RequestInfo* request_info);
 
 // populateTCPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.

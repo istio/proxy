@@ -553,7 +553,14 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 			},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl", "testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
-				nil, nil, false,
+				[]SDLogEntry{
+					{
+						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
+						LogEntryFile:  "testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl",
+						LogEntryCount: 10,
+					},
+				},
+				nil, false,
 			),
 		},
 	}).Run(params); err != nil {
