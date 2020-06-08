@@ -80,8 +80,6 @@ class StackdriverRootContext : public RootContext {
   void deleteFromTCPRequestQueue(uint32_t id);
   void incrementReceivedBytes(uint32_t id, size_t size);
   void incrementSentBytes(uint32_t id, size_t size);
-  void incrementTotalReceivedBytes(uint32_t id, size_t size);
-  void incrementTotalSentBytes(uint32_t id, size_t size);
   void incrementConnectionClosed(uint32_t id);
   void setConnectionState(uint32_t id,
                           ::Wasm::Common::TCPConnectionState state);
@@ -173,7 +171,6 @@ class StackdriverContext : public Context {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementReceivedBytes(context_id_, size);
-    getRootContext()->incrementTotalReceivedBytes(context_id_, size);
     getRootContext()->setConnectionState(
         context_id_, ::Wasm::Common::TCPConnectionState::Connected);
     return FilterStatus::Continue;
@@ -184,7 +181,6 @@ class StackdriverContext : public Context {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementSentBytes(context_id_, size);
-    getRootContext()->incrementTotalSentBytes(context_id_, size);
     getRootContext()->setConnectionState(
         context_id_, ::Wasm::Common::TCPConnectionState::Connected);
     return FilterStatus::Continue;

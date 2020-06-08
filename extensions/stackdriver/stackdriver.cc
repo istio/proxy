@@ -204,7 +204,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     }
   }
 
-  if (!logger_ && (enableServerAccessLog())) {
+  if (!logger_ && enableServerAccessLog()) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
     auto logging_stub_option = stub_option;
@@ -314,7 +314,7 @@ bool StackdriverRootContext::onDone() {
   // called, but onConfigure is not triggered. onConfigure is only triggered in
   // thread local VM, which makes it possible that logger_ is empty ptr even
   // when logging is enabled.
-  if (logger_ && (enableServerAccessLog()) &&
+  if (logger_ && enableServerAccessLog() &&
       logger_->exportLogEntry(/* is_on_done= */ true)) {
     done = false;
   }
@@ -447,23 +447,16 @@ void StackdriverRootContext::deleteFromTCPRequestQueue(uint32_t id) {
 
 void StackdriverRootContext::incrementReceivedBytes(uint32_t id, size_t size) {
   tcp_request_queue_[id]->tcp_received_bytes += size;
+  tcp_request_queue_[id]->tcp_total_received_bytes += size;
 }
 
 void StackdriverRootContext::incrementSentBytes(uint32_t id, size_t size) {
   tcp_request_queue_[id]->tcp_sent_bytes += size;
+  tcp_request_queue_[id]->tcp_total_sent_bytes += size;
 }
 
 void StackdriverRootContext::incrementConnectionClosed(uint32_t id) {
   tcp_request_queue_[id]->tcp_connections_closed++;
-}
-
-void StackdriverRootContext::incrementTotalReceivedBytes(uint32_t id,
-                                                         size_t size) {
-  tcp_request_queue_[id]->tcp_total_received_bytes += size;
-}
-
-void StackdriverRootContext::incrementTotalSentBytes(uint32_t id, size_t size) {
-  tcp_request_queue_[id]->tcp_total_sent_bytes += size;
 }
 
 void StackdriverRootContext::setConnectionState(
