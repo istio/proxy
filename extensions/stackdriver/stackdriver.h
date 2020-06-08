@@ -76,6 +76,7 @@ class StackdriverRootContext : public RootContext {
   bool recordTCP(uint32_t id);
   // Records telemetry for the current active stream.
   void record();
+  // Functions for TCP connection's RequestInfo queue.
   void addToTCPRequestQueue(uint32_t id);
   void deleteFromTCPRequestQueue(uint32_t id);
   void incrementReceivedBytes(uint32_t id, size_t size);
@@ -83,6 +84,7 @@ class StackdriverRootContext : public RootContext {
   void incrementConnectionClosed(uint32_t id);
   void setConnectionState(uint32_t id,
                           ::Wasm::Common::TCPConnectionState state);
+
   bool getPeerId(std::string& peer_id) {
     bool found =
         getValue({isOutbound() ? ::Wasm::Common::kUpstreamMetadataIdKey
