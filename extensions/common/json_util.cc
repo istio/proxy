@@ -20,12 +20,13 @@
 namespace Wasm {
 namespace Common {
 
-::nlohmann::json JsonParse(absl::string_view str) {
-  return ::nlohmann::json::parse(str, nullptr, false);
+::nlohmann::json JsonParse(absl::string_view str, const bool allow_exceptions) {
+  return ::nlohmann::json::parse(str, nullptr, allow_exceptions);
 }
 
 template <>
-absl::optional<int64_t> JsonValueAs<int64_t>(const ::nlohmann::json& j) {
+absl::optional<int64_t> JsonValueAs<int64_t>(const ::nlohmann::json& j,
+                                             const bool allow_exception) {
   if (j.is_number()) {
     return j.get<int64_t>();
   } else if (j.is_string()) {
@@ -34,29 +35,58 @@ absl::optional<int64_t> JsonValueAs<int64_t>(const ::nlohmann::json& j) {
       return result;
     }
   }
+  if (allow_exception) {
+    throw JsonParserTypeErrorException::create(302,
+                                               "Type must be string or number");
+  }
+  return absl::nullopt;
+}
+
+template <>
+absl::optional<uint64_t> JsonValueAs<uint64_t>(const ::nlohmann::json& j,
+                                               const bool allow_exception) {
+  if (j.is_number()) {
+    return j.get<uint64_t>();
+  } else if (j.is_string()) {
+    uint64_t result = 0;
+    if (absl::SimpleAtoi(j.get_ref<std::string const&>(), &result)) {
+      return result;
+    }
+  }
+  if (allow_exception) {
+    throw JsonParserTypeErrorException::create(302,
+                                               "Type must be number or string");
+  }
   return absl::nullopt;
 }
 
 template <>
 absl::optional<absl::string_view> JsonValueAs<absl::string_view>(
-    const ::nlohmann::json& j) {
+    const ::nlohmann::json& j, const bool allow_exception) {
   if (j.is_string()) {
     return absl::string_view(j.get_ref<std::string const&>());
+  }
+  if (allow_exception) {
+    throw JsonParserTypeErrorException::create(302, "Type must be string");
   }
   return absl::nullopt;
 }
 
 template <>
 absl::optional<std::string> JsonValueAs<std::string>(
-    const ::nlohmann::json& j) {
+    const ::nlohmann::json& j, const bool allow_exception) {
   if (j.is_string()) {
     return j.get<std::string>();
+  }
+  if (allow_exception) {
+    throw JsonParserTypeErrorException::create(302, "Type must be string");
   }
   return absl::nullopt;
 }
 
 template <>
-absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j) {
+absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j,
+                                       const bool allow_exception) {
   if (j.is_boolean()) {
     return j.get<bool>();
   }
@@ -68,9 +98,14 @@ absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j) {
       return false;
     }
   }
+  if (allow_exception) {
+    throw JsonParserTypeErrorException::create(
+        302, "Type must be boolean or string(true/false)");
+  }
   return absl::nullopt;
 }
 
+template <>
 bool JsonArrayIterate(
     const ::nlohmann::json& j, absl::string_view field,
     const std::function<bool(const ::nlohmann::json& elt)>& visitor) {
@@ -82,6 +117,27 @@ bool JsonArrayIterate(
     return false;
   }
   for (const auto& elt : it.value().items()) {
+    assert(elt.value().is_object());
+    if (!visitor(elt.value())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <>
+bool JsonArrayIterate(
+    const ::nlohmann::json& j, absl::string_view field,
+    const std::function<bool(const std::string& elt)>& visitor) {
+  auto it = j.find(field);
+  if (it == j.end()) {
+    return true;
+  }
+  if (!it.value().is_array()) {
+    return false;
+  }
+  for (const auto& elt : it.value().items()) {
+    assert(elt.value().is_string());
     if (!visitor(elt.value())) {
       return false;
     }
@@ -99,7 +155,7 @@ bool JsonObjectIterate(const ::nlohmann::json& j, absl::string_view field,
     return false;
   }
   for (const auto& elt : it.value().items()) {
-    auto key = JsonValueAs<std::string>(elt.key());
+    auto key = JsonValueAs<std::string>(elt.key(), false);
     if (!key.has_value()) {
       return false;
     }
