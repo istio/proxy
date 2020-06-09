@@ -20,12 +20,12 @@
 namespace Wasm {
 namespace Common {
 
-::nlohmann::json JsonParse(absl::string_view str, const bool allow_exceptions) {
-  return ::nlohmann::json::parse(str, nullptr, allow_exceptions);
+JsonObject JsonParse(absl::string_view str, const bool allow_exceptions) {
+  return JsonObject::parse(str, nullptr, allow_exceptions);
 }
 
 template <>
-absl::optional<int64_t> JsonValueAs<int64_t>(const ::nlohmann::json& j,
+absl::optional<int64_t> JsonValueAs<int64_t>(const JsonObject& j,
                                              const bool allow_exception) {
   if (j.is_number()) {
     return j.get<int64_t>();
@@ -43,7 +43,7 @@ absl::optional<int64_t> JsonValueAs<int64_t>(const ::nlohmann::json& j,
 }
 
 template <>
-absl::optional<uint64_t> JsonValueAs<uint64_t>(const ::nlohmann::json& j,
+absl::optional<uint64_t> JsonValueAs<uint64_t>(const JsonObject& j,
                                                const bool allow_exception) {
   if (j.is_number()) {
     return j.get<uint64_t>();
@@ -62,7 +62,7 @@ absl::optional<uint64_t> JsonValueAs<uint64_t>(const ::nlohmann::json& j,
 
 template <>
 absl::optional<absl::string_view> JsonValueAs<absl::string_view>(
-    const ::nlohmann::json& j, const bool allow_exception) {
+    const JsonObject& j, const bool allow_exception) {
   if (j.is_string()) {
     return absl::string_view(j.get_ref<std::string const&>());
   }
@@ -74,7 +74,7 @@ absl::optional<absl::string_view> JsonValueAs<absl::string_view>(
 
 template <>
 absl::optional<std::string> JsonValueAs<std::string>(
-    const ::nlohmann::json& j, const bool allow_exception) {
+    const JsonObject& j, const bool allow_exception) {
   if (j.is_string()) {
     return j.get<std::string>();
   }
@@ -85,7 +85,7 @@ absl::optional<std::string> JsonValueAs<std::string>(
 }
 
 template <>
-absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j,
+absl::optional<bool> JsonValueAs<bool>(const JsonObject& j,
                                        const bool allow_exception) {
   if (j.is_boolean()) {
     return j.get<bool>();
@@ -107,8 +107,8 @@ absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j,
 
 template <>
 bool JsonArrayIterate(
-    const ::nlohmann::json& j, absl::string_view field,
-    const std::function<bool(const ::nlohmann::json& elt)>& visitor) {
+    const JsonObject& j, absl::string_view field,
+    const std::function<bool(const JsonObject& elt)>& visitor) {
   auto it = j.find(field);
   if (it == j.end()) {
     return true;
@@ -127,7 +127,7 @@ bool JsonArrayIterate(
 
 template <>
 bool JsonArrayIterate(
-    const ::nlohmann::json& j, absl::string_view field,
+    const JsonObject& j, absl::string_view field,
     const std::function<bool(const std::string& elt)>& visitor) {
   auto it = j.find(field);
   if (it == j.end()) {
@@ -145,7 +145,7 @@ bool JsonArrayIterate(
   return true;
 }
 
-bool JsonObjectIterate(const ::nlohmann::json& j, absl::string_view field,
+bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
                        const std::function<bool(std::string key)>& visitor) {
   auto it = j.find(field);
   if (it == j.end()) {
