@@ -79,11 +79,11 @@ build_envoy_asan:
 # Implicitly depends on build, but does not require a specific configuration
 .PHONY: wasm_include
 wasm_include:
-	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_generated.h $(TOP)/extensions/common/
-	cp -f $$(bazel info bazel-bin)/extensions/common/node_info_bfbs_generated.h $(TOP)/extensions/common/
-	cp -f $$(bazel info bazel-bin)/extensions/common/nlohmann_json.hpp $(TOP)/extensions/common/
-	cp -fLR $$(bazel info bazel-bin)/external/com_github_google_flatbuffers/_virtual_includes/runtime_cc/flatbuffers $(TOP)/extensions/common/
-	cp -f $$(bazel info output_base)/external/envoy/api/wasm/cpp/contrib/proxy_expr.h $(TOP)/extensions/common/
+	cp -f $$(bazel info bazel-bin $(BAZEL_BUILD_ARGS))/extensions/common/node_info_generated.h $(TOP)/extensions/common/
+	cp -f $$(bazel info bazel-bin $(BAZEL_BUILD_ARGS))/extensions/common/node_info_bfbs_generated.h $(TOP)/extensions/common/
+	cp -f $$(bazel info bazel-bin $(BAZEL_BUILD_ARGS))/extensions/common/nlohmann_json.hpp $(TOP)/extensions/common/
+	cp -fLR $$(bazel info bazel-bin $(BAZEL_BUILD_ARGS))/external/com_github_google_flatbuffers/_virtual_includes/runtime_cc/flatbuffers $(TOP)/extensions/common/
+	cp -f $$(bazel info output_base $(BAZEL_BUILD_ARGS))/external/envoy/api/wasm/cpp/contrib/proxy_expr.h $(TOP)/extensions/common/
 
 build_wasm: wasm_include
 	$(foreach file, $(shell find extensions -name build_wasm.sh), cd $(TOP)/$(shell dirname $(file)) && bash ./build_wasm.sh &&) true
