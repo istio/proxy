@@ -47,6 +47,7 @@ function usage() {
   echo "$0
     -d  The bucket name to store proxy binary (optional).
         If not provided, both envoy binary push and docker image push are skipped.
+    -l  The local destination to store proxy binary (optional).
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
         Cannot be used together with -d option.
     -p  Push envoy docker image.
@@ -54,9 +55,10 @@ function usage() {
   exit 1
 }
 
-while getopts d:ip arg ; do
+while getopts d:l:ip arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
+    l) LOCAL_DST="${OPTARG}";;
     i) CHECK=0;;
     p) PUSH_DOCKER_IMAGE=1;;
     *) usage;;
@@ -67,6 +69,11 @@ echo "Destination bucket: $DST"
 
 if [ "${DST}" == "none" ]; then
   DST=""
+fi
+
+echo "Local Destination: $LOCAL_DST"
+if [ "${LOCAL_DST}" == "none" ]; then
+  LOCAL_DST=""
 fi
 
 # Make sure the release binaries are built on x86_64 Ubuntu 16.04 (Xenial)
@@ -144,6 +151,12 @@ do
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
   fi
 
+  if [ -n "${LOCAL_DST}" ]; then
+    # Copy it to local destination.
+    echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${LOCAL_DST}/"
+    cp -f "${BINARY_NAME}" "${SHA256_NAME}" "${LOCAL_DST}/"
+  fi
+
   echo "Building ${config} docker image"
   bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
     //tools/docker:envoy_distroless \
@@ -170,6 +183,12 @@ do
       echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
       gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
     fi
+
+    if [ -n "${LOCAL_DST}" ]; then
+      # Copy it to local destination.
+      echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${LOCAL_DST}/"
+      cp -f "${BINARY_NAME}" "${SHA256_NAME}" "${LOCAL_DST}/"
+    fi
   fi
 done
 
@@ -178,7 +197,7 @@ extensions=(stats metadata_exchange attributegen)
 TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
 trap "rm -rf ${TMP_WASM}" EXIT
 make build_wasm
-if [ -n "${DST}" ]; then
+if [ -n "${DST}" ] || [ -n "${LOCAL_DST}" ]; then
   for extension in "${extensions[@]}"; do
     # Rename the plugin file and generate sha256 for it
     WASM_NAME="${extension}-${SHA}.wasm"
@@ -188,10 +207,17 @@ if [ -n "${DST}" ]; then
     cp ${BAZEL_TARGET} ${WASM_PATH}
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
     
-    # push wasm files and sha to the given bucket
-    gsutil stat "${DST}/${WASM_NAME}" \
-      && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
-      || echo "Pushing the WASM file ${WASM_NAME}"
-    gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST}"
+    if [ -n "${DST}" ]; then
+      # push wasm files and sha to the given bucket
+      gsutil stat "${DST}/${WASM_NAME}" \
+        && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
+        || echo "Pushing the WASM file ${WASM_NAME}"
+      gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST}"
+    fi
+
+    if [ -n "${LOCAL_DST}" ]; then
+      # push wasm files and sha to local destination
+      cp -f "${WASM_PATH}" "${SHA256_PATH}" "${LOCAL_DST}"
+    fi
   done
 fi
