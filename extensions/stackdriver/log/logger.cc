@@ -110,7 +110,8 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
 }
 
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                         const ::Wasm::Common::FlatNode& peer_node_info) {
+                         const ::Wasm::Common::FlatNode& peer_node_info,
+                         bool is_tcp) {
   // create a new log entry
   auto* log_entries = log_entries_request_->mutable_entries();
   auto* new_entry = log_entries->Add();
@@ -160,24 +161,14 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   (*label_map)["service_authentication_policy"] =
       std::string(::Wasm::Common::AuthenticationPolicyString(
           request_info.service_auth_policy));
+  (*label_map)["protocol"] = request_info.request_protocol;
 
-  // Insert HTTPRequest
-  auto http_request = new_entry->mutable_http_request();
-  http_request->set_request_method(request_info.request_operation);
-  http_request->set_request_url(request_info.url_scheme + "://" +
-                                request_info.url_host + request_info.url_path);
-  http_request->set_request_size(request_info.request_size);
-  http_request->set_status(request_info.response_code);
-  http_request->set_response_size(request_info.response_size);
-  http_request->set_user_agent(request_info.user_agent);
-  http_request->set_remote_ip(request_info.source_address);
-  http_request->set_server_ip(request_info.destination_address);
-  http_request->set_protocol(request_info.request_protocol);
-  *http_request->mutable_latency() =
-      google::protobuf::util::TimeUtil::NanosecondsToDuration(
-          request_info.duration);
-  http_request->set_referer(request_info.referer);
-
+  if (is_tcp) {
+    addTCPLabelsToLogEntry(request_info, new_entry);
+  } else {
+    // Insert HTTPRequest
+    fillHTTPRequestInLogEntry(request_info, new_entry);
+  }
   // Insert trace headers, if exist.
   if (request_info.b3_trace_sampled) {
     new_entry->set_trace("projects/" + project_id_ + "/traces/" +
@@ -224,6 +215,41 @@ bool Logger::exportLogEntry(bool is_on_done) {
   exporter_->exportLogs(request_queue_, is_on_done);
   request_queue_.clear();
   return true;
+}
+
+void Logger::addTCPLabelsToLogEntry(
+    const ::Wasm::Common::RequestInfo& request_info,
+    google::logging::v2::LogEntry* log_entry) {
+  auto label_map = log_entry->mutable_labels();
+  (*label_map)["source_ip"] = request_info.source_address;
+  (*label_map)["destination_ip"] = request_info.destination_address;
+  (*label_map)["source_port"] = request_info.source_port;
+  (*label_map)["destination_port"] = request_info.destination_port;
+  (*label_map)["total_sent_bytes"] = request_info.tcp_total_sent_bytes;
+  (*label_map)["total_received_bytes"] = request_info.tcp_total_received_bytes;
+  (*label_map)["connection_state"] =
+      std::string(::Wasm::Common::TCPConnectionStateString(
+          request_info.tcp_connection_state));
+}
+
+void Logger::fillHTTPRequestInLogEntry(
+    const ::Wasm::Common::RequestInfo& request_info,
+    google::logging::v2::LogEntry* log_entry) {
+  auto http_request = log_entry->mutable_http_request();
+  http_request->set_request_method(request_info.request_operation);
+  http_request->set_request_url(request_info.url_scheme + "://" +
+                                request_info.url_host + request_info.url_path);
+  http_request->set_request_size(request_info.request_size);
+  http_request->set_status(request_info.response_code);
+  http_request->set_response_size(request_info.response_size);
+  http_request->set_user_agent(request_info.user_agent);
+  http_request->set_remote_ip(request_info.source_address);
+  http_request->set_server_ip(request_info.destination_address);
+  http_request->set_protocol(request_info.request_protocol);
+  *http_request->mutable_latency() =
+      google::protobuf::util::TimeUtil::NanosecondsToDuration(
+          request_info.duration);
+  http_request->set_referer(request_info.referer);
 }
 
 }  // namespace Log

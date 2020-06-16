@@ -51,6 +51,7 @@ using ::Wasm::Common::kDownstreamMetadataKey;
 using ::Wasm::Common::kUpstreamMetadataIdKey;
 using ::Wasm::Common::kUpstreamMetadataKey;
 using ::Wasm::Common::RequestInfo;
+using ::Wasm::Common::TCPConnectionState;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
@@ -351,7 +352,7 @@ void StackdriverRootContext::record() {
       !config_.disable_http_size_metrics());
   if (enableServerAccessLog() && shouldLogThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node);
+    logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ false);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
@@ -403,6 +404,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // Record TCP Metrics.
   ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node,
                                                request_info);
+  // Add LogEntry to Logger. Log Entries are batched and sent on timer
+  // to Stackdriver Logging Service.
+  if (enableServerAccessLog()) {
+    ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+    logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ true);
+  }
   return true;
 }
 
@@ -440,14 +447,21 @@ void StackdriverRootContext::deleteFromTCPRequestQueue(uint32_t id) {
 
 void StackdriverRootContext::incrementReceivedBytes(uint32_t id, size_t size) {
   tcp_request_queue_[id]->tcp_received_bytes += size;
+  tcp_request_queue_[id]->tcp_total_received_bytes += size;
 }
 
 void StackdriverRootContext::incrementSentBytes(uint32_t id, size_t size) {
   tcp_request_queue_[id]->tcp_sent_bytes += size;
+  tcp_request_queue_[id]->tcp_total_sent_bytes += size;
 }
 
 void StackdriverRootContext::incrementConnectionClosed(uint32_t id) {
   tcp_request_queue_[id]->tcp_connections_closed++;
+}
+
+void StackdriverRootContext::setConnectionState(
+    uint32_t id, ::Wasm::Common::TCPConnectionState state) {
+  tcp_request_queue_[id]->tcp_connection_state = state;
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.
@@ -464,6 +478,8 @@ void StackdriverContext::onLog() {
   }
   if (is_tcp_) {
     getRootContext()->incrementConnectionClosed(context_id_);
+    getRootContext()->setConnectionState(
+        context_id_, ::Wasm::Common::TCPConnectionState::Close);
     getRootContext()->recordTCP(context_id_);
     getRootContext()->deleteFromTCPRequestQueue(context_id_);
     return;

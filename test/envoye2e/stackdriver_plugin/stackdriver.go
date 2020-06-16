@@ -83,11 +83,21 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 				// clear the timestamps, latency request id, and req/resp size for comparison
 				for _, entry := range req.Entries {
 					entry.Timestamp = nil
-					entry.HttpRequest.RequestSize = 0
-					entry.HttpRequest.ResponseSize = 0
-					entry.HttpRequest.Latency = nil
-					entry.HttpRequest.RemoteIp = ""
+					if entry.HttpRequest != nil {
+						entry.HttpRequest.RequestSize = 0
+						entry.HttpRequest.ResponseSize = 0
+						entry.HttpRequest.Latency = nil
+						entry.HttpRequest.RemoteIp = ""
+					}
 					delete(entry.Labels, "request_id")
+					delete(entry.Labels, "source_ip")
+					delete(entry.Labels, "source_port")
+					delete(entry.Labels, "destination_port")
+					delete(entry.Labels, "total_sent_bytes")
+					delete(entry.Labels, "total_received_bytes")
+					// because of the timing of the test, logging can happen at the end or
+					// in the middle of the request.
+					delete(entry.Labels, "connection_state")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}

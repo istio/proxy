@@ -126,11 +126,11 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   return request_info;
 }
 
-std::string write_log_request_json = R"({ 
+std::string write_log_request_json = R"({
   "logName":"projects/test_project/logs/server-accesslog-stackdriver",
-  "resource":{ 
+  "resource":{
      "type":"k8s_container",
-     "labels":{ 
+     "labels":{
         "cluster_name":"test_cluster",
         "pod_name":"test_pod",
         "location":"test_location",
@@ -139,15 +139,15 @@ std::string write_log_request_json = R"({
         "container_name":"istio-proxy"
      }
   },
-  "labels":{ 
+  "labels":{
      "destination_workload":"test_workload",
      "mesh_uid":"mesh",
      "destination_namespace":"test_namespace",
      "destination_name":"test_pod"
   },
-  "entries":[ 
+  "entries":[
      {
-        "httpRequest":{ 
+        "httpRequest":{
            "requestMethod":"GET",
            "requestUrl":"http://httpbin.org/headers",
            "userAgent":"chrome",
@@ -159,7 +159,7 @@ std::string write_log_request_json = R"({
         },
         "timestamp":"1970-01-01T00:00:00Z",
         "severity":"INFO",
-        "labels":{ 
+        "labels":{
            "source_name":"test_peer_pod",
            "destination_principal":"destination_principal",
            "destination_service_host":"httpbin.org",
@@ -168,7 +168,8 @@ std::string write_log_request_json = R"({
            "source_principal":"source_principal",
            "service_authentication_policy":"MUTUAL_TLS",
            "source_workload":"test_peer_workload",
-           "response_flag":"-"
+           "response_flag":"-",
+           "protocol":"HTTP"
         },
         "trace":"projects/test_project/traces/123abc",
         "spanId":"abc123",
@@ -196,7 +197,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -221,7 +222,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   auto logger =
       std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
   for (int i = 0; i < 9; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
