@@ -45,7 +45,7 @@ using ::nlohmann::json;
 using ::Wasm::Common::JsonArrayIterate;
 using ::Wasm::Common::JsonGetField;
 using ::Wasm::Common::JsonObjectIterate;
-using ::Wasm::Common::JsonValue;
+using ::Wasm::Common::JsonValueAs;
 
 namespace {
 
@@ -347,7 +347,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
           // Process tag overrides.
           for (const auto& tag : tags) {
             auto expr_string =
-                JsonValue<std::string>(metric["dimensions"][tag]);
+                JsonValueAs<std::string>(metric["dimensions"][tag]);
             if (expr_string.second !=
                 Wasm::Common::JsonParserResultDetail::OK) {
               LOG_WARN("failed to parse 'dimensions' value");
@@ -466,15 +466,15 @@ bool PluginRootContext::configure(size_t configuration_size) {
   }
 
   uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
-  auto tcp_reporting_duration =
-      JsonGetField<std::string>(j, "tcp_reporting_duration").first;
+  auto tcp_reporting_duration_field =
+      JsonGetField<std::string>(j, "tcp_reporting_duration");
   absl::Duration duration;
-  if (tcp_reporting_duration.has_value()) {
-    if (absl::ParseDuration(tcp_reporting_duration.value(), &duration)) {
+  if (tcp_reporting_duration_field.detail() == ::Wasm::Common::JsonParserResultDetail::OK) {
+    if (absl::ParseDuration(tcp_reporting_duration_field.fetch(), &duration)) {
       tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
     } else {
       LOG_WARN(absl::StrCat("failed to parse 'tcp_reporting_duration': ",
-                            tcp_reporting_duration.value()));
+                            tcp_reporting_duration_field.fetch()));
     }
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
