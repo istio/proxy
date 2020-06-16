@@ -26,51 +26,62 @@ namespace Wasm {
 namespace Common {
 
 using JsonObject = ::nlohmann::json;
+using JsonObjectValueType = ::nlohmann::detail::value_t;
 using JsonParserException = ::nlohmann::detail::exception;
 using JsonParserOutOfRangeException = ::nlohmann::detail::out_of_range;
 using JsonParserTypeErrorException = ::nlohmann::detail::type_error;
 
+enum JsonParserErrorDetail {
+  OUT_OF_RANGE,
+  TYPE_ERROR,
+  PARSE_ERROR,
+};
+
+struct JsonParseError {
+  JsonParserErrorDetail error_detail_;
+  std::string message_;
+};
+
 // Parse JSON. Returns the discarded value if fails.
-JsonObject JsonParse(absl::string_view str,
-                     const bool allow_exceptions = false);
+absl::optional<JsonObject> JsonParse(absl::string_view str);
 
 template <typename T>
-absl::optional<T> JsonValueAs(const JsonObject&, const bool) {
+std::pair<absl::optional<T>, absl::optional<JsonParseError>> JsonValueAs(
+    const JsonObject&) {
   static_assert(true, "Unsupported Type");
 }
 
 template <>
-absl::optional<absl::string_view> JsonValueAs<absl::string_view>(
-    const JsonObject& j, const bool allow_exception);
+std::pair<absl::optional<absl::string_view>, absl::optional<JsonParseError>>
+JsonValueAs<absl::string_view>(const JsonObject& j);
 
 template <>
-absl::optional<std::string> JsonValueAs<std::string>(
-    const JsonObject& j, const bool allow_exception);
+std::pair<absl::optional<std::string>, absl::optional<JsonParseError>>
+JsonValueAs<std::string>(const JsonObject& j);
 
 template <>
-absl::optional<int64_t> JsonValueAs<int64_t>(const JsonObject& j,
-                                             const bool allow_exception);
+std::pair<absl::optional<int64_t>, absl::optional<JsonParseError>>
+JsonValueAs<int64_t>(const JsonObject& j);
 
 template <>
-absl::optional<uint64_t> JsonValueAs<uint64_t>(const JsonObject& j,
-                                               const bool allow_exception);
+std::pair<absl::optional<uint64_t>, absl::optional<JsonParseError>>
+JsonValueAs<uint64_t>(const JsonObject& j);
 
 template <>
-absl::optional<bool> JsonValueAs<bool>(const JsonObject& j,
-                                       const bool allow_exception);
+std::pair<absl::optional<bool>, absl::optional<JsonParseError>>
+JsonValueAs<bool>(const JsonObject& j);
 
 template <typename T>
-absl::optional<T> JsonGetField(const JsonObject& j, absl::string_view field,
-                               const bool allow_exception = false) {
+std::pair<absl::optional<T>, absl::optional<JsonParseError>> JsonGetField(
+    const JsonObject& j, absl::string_view field) {
   auto it = j.find(field);
   if (it == j.end()) {
-    if (allow_exception) {
-      throw JsonParserOutOfRangeException::create(
-          403, "Key " + std::string(field) + " is not found");
-    }
-    return absl::nullopt;
+    return std::make_pair(
+        absl::nullopt,
+        JsonParseError{JsonParserErrorDetail::OUT_OF_RANGE,
+                       "Key " + std::string(field) + " is not found"});
   }
-  return JsonValueAs<T>(it.value(), allow_exception);
+  return JsonValueAs<T>(it.value());
 }
 
 // Iterate over an optional array field.
