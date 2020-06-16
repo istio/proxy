@@ -469,7 +469,8 @@ bool PluginRootContext::configure(size_t configuration_size) {
   auto tcp_reporting_duration_field =
       JsonGetField<std::string>(j, "tcp_reporting_duration");
   absl::Duration duration;
-  if (tcp_reporting_duration_field.detail() == ::Wasm::Common::JsonParserResultDetail::OK) {
+  if (tcp_reporting_duration_field.detail() ==
+      ::Wasm::Common::JsonParserResultDetail::OK) {
     if (absl::ParseDuration(tcp_reporting_duration_field.fetch(), &duration)) {
       tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
     } else {
