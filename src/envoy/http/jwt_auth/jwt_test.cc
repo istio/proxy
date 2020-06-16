@@ -537,6 +537,8 @@ class JwtTest : public testing::Test {
       EXPECT_TRUE(EqJson(*payload, jwt.Payload()));
     }
   }
+
+  Wasm::Common::JsonParser parser_;
 };
 
 // Test cases w/ PEM-formatted public key
@@ -547,20 +549,21 @@ class JwtTestPem : public JwtTest {
 };
 
 TEST_F(JwtTestPem, OK) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayload);
-  DoTest(ds.kJwt, ds.kPublicKey, "pem", true, Status::OK, &payload.value());
+  parser_.parse(ds.kJwtPayload);
+  auto payload = parser_.object();
+  DoTest(ds.kJwt, ds.kPublicKey, "pem", true, Status::OK, &payload);
 }
 
 TEST_F(JwtTestPem, OKWithAlgRs384) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayload);
-  DoTest(ds.kJwtRs384, ds.kPublicKey, "pem", true, Status::OK,
-         &payload.value());
+  parser_.parse(ds.kJwtPayload);
+  auto payload = parser_.object();
+  DoTest(ds.kJwtRs384, ds.kPublicKey, "pem", true, Status::OK, &payload);
 }
 
 TEST_F(JwtTestPem, OKWithAlgRs512) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayload);
-  DoTest(ds.kJwtRs512, ds.kPublicKey, "pem", true, Status::OK,
-         &payload.value());
+  parser_.parse(ds.kJwtPayload);
+  auto payload = parser_.object();
+  DoTest(ds.kJwtRs512, ds.kPublicKey, "pem", true, Status::OK, &payload);
 }
 
 TEST_F(JwtTestPem, MultiAudiences) {
@@ -674,13 +677,14 @@ class JwtTestJwks : public JwtTest {
 };
 
 TEST_F(JwtTestJwks, OkNoKid) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayload);
-  DoTest(ds.kJwtNoKid, ds.kPublicKeyRSA, "jwks", true, Status::OK,
-         &payload.value());
+  parser_.parse(ds.kJwtPayload);
+  auto payload = parser_.object();
+  DoTest(ds.kJwtNoKid, ds.kPublicKeyRSA, "jwks", true, Status::OK, &payload);
 }
 
 TEST_F(JwtTestJwks, OkTokenJwkRSAPublicKeyOptionalAlgKid) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayload);
+  parser_.parse(ds.kJwtPayload);
+  auto payload = parser_.object();
   // Remove "alg" claim from public key.
   std::string alg_claim = "\"alg\": \"RS256\",";
   std::string pubkey_no_alg = ds.kPublicKeyRSA;
@@ -689,8 +693,7 @@ TEST_F(JwtTestJwks, OkTokenJwkRSAPublicKeyOptionalAlgKid) {
     pubkey_no_alg.erase(alg_pos, alg_claim.length());
     alg_pos = pubkey_no_alg.find(alg_claim);
   }
-  DoTest(ds.kJwtNoKid, pubkey_no_alg, "jwks", true, Status::OK,
-         &payload.value());
+  DoTest(ds.kJwtNoKid, pubkey_no_alg, "jwks", true, Status::OK, &payload);
 
   // Remove "kid" claim from public key.
   std::string kid_claim1 =
@@ -702,20 +705,21 @@ TEST_F(JwtTestJwks, OkTokenJwkRSAPublicKeyOptionalAlgKid) {
   pubkey_no_kid.erase(kid_pos, kid_claim1.length());
   kid_pos = pubkey_no_kid.find(kid_claim2);
   pubkey_no_kid.erase(kid_pos, kid_claim2.length());
-  DoTest(ds.kJwtNoKid, pubkey_no_kid, "jwks", true, Status::OK,
-         &payload.value());
+  DoTest(ds.kJwtNoKid, pubkey_no_kid, "jwks", true, Status::OK, &payload);
 }
 
 TEST_F(JwtTestJwks, OkNoKidLogExp) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayloadLongExp);
+  parser_.parse(ds.kJwtPayloadLongExp);
+  auto payload = parser_.object();
   DoTest(ds.kJwtNoKidLongExp, ds.kPublicKeyRSA, "jwks", true, Status::OK,
-         &payload.value());
+         &payload);
 }
 
 TEST_F(JwtTestJwks, OkCorrectKid) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayload);
+  parser_.parse(ds.kJwtPayload);
+  auto payload = parser_.object();
   DoTest(ds.kJwtWithCorrectKid, ds.kPublicKeyRSA, "jwks", true, Status::OK,
-         &payload.value());
+         &payload);
 }
 
 TEST_F(JwtTestJwks, IncorrectKid) {
@@ -758,17 +762,18 @@ TEST_F(JwtTestJwks, JwkBadPublicKey) {
 }
 
 TEST_F(JwtTestJwks, OkTokenJwkEC) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayloadEC);
+  parser_.parse(ds.kJwtPayloadEC);
+  auto payload = parser_.object();
   // ES256-signed token with kid specified.
-  DoTest(ds.kTokenEC, ds.kPublicKeyJwkEC, "jwks", true, Status::OK,
-         &payload.value());
+  DoTest(ds.kTokenEC, ds.kPublicKeyJwkEC, "jwks", true, Status::OK, &payload);
   // ES256-signed token without kid specified.
   DoTest(ds.kTokenECNoKid, ds.kPublicKeyJwkEC, "jwks", true, Status::OK,
-         &payload.value());
+         &payload);
 }
 
 TEST_F(JwtTestJwks, OkTokenJwkECPublicKeyOptionalAlgKid) {
-  auto payload = Wasm::Common::JsonParse(ds.kJwtPayloadEC);
+  parser_.parse(ds.kJwtPayloadEC);
+  auto payload = parser_.object();
   // Remove "alg" claim from public key.
   std::string alg_claim = "\"alg\": \"ES256\",";
   std::string pubkey_no_alg = ds.kPublicKeyJwkEC;
@@ -777,8 +782,7 @@ TEST_F(JwtTestJwks, OkTokenJwkECPublicKeyOptionalAlgKid) {
     pubkey_no_alg.erase(alg_pos, alg_claim.length());
     alg_pos = pubkey_no_alg.find(alg_claim);
   }
-  DoTest(ds.kTokenEC, pubkey_no_alg, "jwks", true, Status::OK,
-         &payload.value());
+  DoTest(ds.kTokenEC, pubkey_no_alg, "jwks", true, Status::OK, &payload);
 
   // Remove "kid" claim from public key.
   std::string kid_claim1 = ",\"kid\": \"abc\"";
@@ -788,8 +792,7 @@ TEST_F(JwtTestJwks, OkTokenJwkECPublicKeyOptionalAlgKid) {
   pubkey_no_kid.erase(kid_pos, kid_claim1.length());
   kid_pos = pubkey_no_kid.find(kid_claim2);
   pubkey_no_kid.erase(kid_pos, kid_claim2.length());
-  DoTest(ds.kTokenEC, pubkey_no_kid, "jwks", true, Status::OK,
-         &payload.value());
+  DoTest(ds.kTokenEC, pubkey_no_kid, "jwks", true, Status::OK, &payload);
 }
 
 TEST_F(JwtTestJwks, NonExistKidEC) {

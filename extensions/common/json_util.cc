@@ -20,87 +20,94 @@
 namespace Wasm {
 namespace Common {
 
-absl::optional<JsonObject> JsonParse(absl::string_view str) {
+void JsonParser::parse(absl::string_view str) {
+  reset();
   const auto result = JsonObject::parse(str, nullptr, false);
   if (result.empty() || result.is_discarded()) {
-    return absl::nullopt;
+    detail_ = JsonParserResultDetail::PARSE_ERROR;
+    return;
   }
-  return result;
+  detail_ = JsonParserResultDetail::OK;
+  object_ = result;
+  return;
+}
+
+void JsonParser::reset() {
+  object_ = JsonObject{};
+  detail_ = JsonParserResultDetail::EMPTY;
 }
 
 template <>
-std::pair<absl::optional<int64_t>, absl::optional<JsonParseError>>
-JsonValueAs<int64_t>(const JsonObject& j) {
+std::pair<absl::optional<int64_t>, JsonParserResultDetail> JsonValueAs<int64_t>(
+    const JsonObject& j) {
   if (j.is_number()) {
-    return std::make_pair(j.get<int64_t>(), absl::nullopt);
+    return std::make_pair(j.get<int64_t>(), JsonParserResultDetail::OK);
   } else if (j.is_string()) {
     int64_t result = 0;
     if (absl::SimpleAtoi(j.get_ref<std::string const&>(), &result)) {
-      return std::make_pair(result, absl::nullopt);
+      return std::make_pair(result, JsonParserResultDetail::OK);
+    } else {
+      return std::make_pair(absl::nullopt,
+                            JsonParserResultDetail::INVALID_VALUE);
     }
   }
-  return std::make_pair(absl::nullopt,
-                        JsonParseError{JsonParserErrorDetail::TYPE_ERROR,
-                                       "Type must be string or number"});
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
 template <>
-std::pair<absl::optional<uint64_t>, absl::optional<JsonParseError>>
+std::pair<absl::optional<uint64_t>, JsonParserResultDetail>
 JsonValueAs<uint64_t>(const JsonObject& j) {
   if (j.is_number()) {
-    return std::make_pair(j.get<uint64_t>(), absl::nullopt);
+    return std::make_pair(j.get<uint64_t>(), JsonParserResultDetail::OK);
   } else if (j.is_string()) {
     uint64_t result = 0;
     if (absl::SimpleAtoi(j.get_ref<std::string const&>(), &result)) {
-      return std::make_pair(result, absl::nullopt);
+      return std::make_pair(result, JsonParserResultDetail::OK);
+    } else {
+      return std::make_pair(absl::nullopt,
+                            JsonParserResultDetail::INVALID_VALUE);
     }
   }
-  return std::make_pair(absl::nullopt,
-                        JsonParseError{JsonParserErrorDetail::TYPE_ERROR,
-                                       "Type must be string or number"});
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
 template <>
-std::pair<absl::optional<absl::string_view>, absl::optional<JsonParseError>>
+std::pair<absl::optional<absl::string_view>, JsonParserResultDetail>
 JsonValueAs<absl::string_view>(const JsonObject& j) {
   if (j.is_string()) {
     return std::make_pair(absl::string_view(j.get_ref<std::string const&>()),
-                          absl::nullopt);
+                          JsonParserResultDetail::OK);
   }
-  return std::make_pair(
-      absl::nullopt,
-      JsonParseError{JsonParserErrorDetail::TYPE_ERROR, "Type must be string"});
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
 template <>
-std::pair<absl::optional<std::string>, absl::optional<JsonParseError>>
+std::pair<absl::optional<std::string>, JsonParserResultDetail>
 JsonValueAs<std::string>(const JsonObject& j) {
   if (j.is_string()) {
-    return std::make_pair(j.get<std::string>(), absl::nullopt);
+    return std::make_pair(j.get<std::string>(), JsonParserResultDetail::OK);
   }
-  return std::make_pair(
-      absl::nullopt,
-      JsonParseError{JsonParserErrorDetail::TYPE_ERROR, "Type must be string"});
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
 template <>
-std::pair<absl::optional<bool>, absl::optional<JsonParseError>>
-JsonValueAs<bool>(const JsonObject& j) {
+std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
+    const JsonObject& j) {
   if (j.is_boolean()) {
-    return std::make_pair(j.get<bool>(), absl::nullopt);
+    return std::make_pair(j.get<bool>(), JsonParserResultDetail::OK);
   }
   if (j.is_string()) {
     const std::string& v = j.get_ref<std::string const&>();
     if (v == "true") {
-      return std::make_pair(true, absl::nullopt);
+      return std::make_pair(true, JsonParserResultDetail::OK);
     } else if (v == "false") {
-      return std::make_pair(false, absl::nullopt);
+      return std::make_pair(false, JsonParserResultDetail::OK);
+    } else {
+      return std::make_pair(absl::nullopt,
+                            JsonParserResultDetail::INVALID_VALUE);
     }
   }
-  return std::make_pair(
-      absl::nullopt,
-      JsonParseError{JsonParserErrorDetail::TYPE_ERROR,
-                     "Type must be boolean or string(true/false)"});
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
 template <>
@@ -153,11 +160,11 @@ bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
     return false;
   }
   for (const auto& elt : it.value().items()) {
-    auto result = JsonValueAs<std::string>(elt.key());
-    if (!result.first.has_value()) {
+    auto json_value = JsonValueAs<std::string>(elt.key());
+    if (json_value.second != JsonParserResultDetail::OK) {
       return false;
     }
-    if (!visitor(result.first.value())) {
+    if (!visitor(json_value.first.value())) {
       return false;
     }
   }

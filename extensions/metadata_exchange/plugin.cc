@@ -138,10 +138,11 @@ bool PluginRootContext::configure(size_t configuration_size) {
     return false;
   }
 
-  auto max_peer_cache_size_result =
+  auto max_peer_cache_size_field =
       ::Wasm::Common::JsonGetField<int64_t>(j.value(), "max_peer_cache_size");
-  if (max_peer_cache_size_result.first.has_value()) {
-    max_peer_cache_size_ = max_peer_cache_size_result.first.value();
+  if (max_peer_cache_size_value.detail() !=
+      Wasm::Common::JsonParserResultDetail::OK) {
+    max_peer_cache_size_ = max_peer_cache_size_value.fetch();
   }
   return true;
 }
