@@ -117,21 +117,9 @@ JsonGetField<T>::JsonGetField(const JsonObject& j, absl::string_view field) {
 // Iterate over an optional array field.
 // Returns false if set and not an array, or any of the visitor calls returns
 // false.
-template <typename T>
-bool JsonArrayIterate(const JsonObject&, absl::string_view,
-                      const std::function<bool(const T& elt)>&) {
-  static_assert(true, "Unsupported type");
-}
-
-template <>
 bool JsonArrayIterate(
     const JsonObject& j, absl::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor);
-
-template <>
-bool JsonArrayIterate<std::string>(
-    const JsonObject& j, absl::string_view field,
-    const std::function<bool(const std::string& elt)>& visitor);
 
 // Iterate over an optional object field key set.
 // Returns false if set and not an object, or any of the visitor calls returns

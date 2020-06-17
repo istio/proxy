@@ -263,48 +263,46 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   }
 
   // Process the metric definitions (overriding existing).
-  if (!JsonArrayIterate<json>(
-          j, "definitions", [&](const json& definition) -> bool {
-            auto name =
-                JsonGetField<std::string>(definition, "name").fetch_or("");
-            auto value =
-                JsonGetField<std::string>(definition, "value").fetch_or("");
-            if (name.empty() || value.empty()) {
-              LOG_WARN("empty name or value in  'definitions'");
-              return false;
-            }
-            auto token = addIntExpression(value);
-            if (!token.has_value()) {
-              LOG_WARN(absl::StrCat("failed to construct expression: ", value));
-              return false;
-            }
-            auto& factory = factories[name];
-            factory.name = name;
-            factory.extractor =
-                [token, name,
-                 value](const ::Wasm::Common::RequestInfo&) -> uint64_t {
-              int64_t result = 0;
-              if (!evaluateExpression(token.value(), &result)) {
-                LOG_TRACE(absl::StrCat("Failed to evaluate expression: <",
-                                       value, "> for dimension:<", name, ">"));
-              }
-              return result;
-            };
-            factory.type = MetricType::Counter;
-            auto type = JsonGetField<absl::string_view>(definition, "type")
-                            .fetch_or("");
-            if (type == "GAUGE") {
-              factory.type = MetricType::Gauge;
-            } else if (type == "HISTOGRAM") {
-              factory.type = MetricType::Histogram;
-            }
-            return true;
-          })) {
+  if (!JsonArrayIterate(j, "definitions", [&](const json& definition) -> bool {
+        auto name = JsonGetField<std::string>(definition, "name").fetch_or("");
+        auto value =
+            JsonGetField<std::string>(definition, "value").fetch_or("");
+        if (name.empty() || value.empty()) {
+          LOG_WARN("empty name or value in  'definitions'");
+          return false;
+        }
+        auto token = addIntExpression(value);
+        if (!token.has_value()) {
+          LOG_WARN(absl::StrCat("failed to construct expression: ", value));
+          return false;
+        }
+        auto& factory = factories[name];
+        factory.name = name;
+        factory.extractor =
+            [token, name,
+             value](const ::Wasm::Common::RequestInfo&) -> uint64_t {
+          int64_t result = 0;
+          if (!evaluateExpression(token.value(), &result)) {
+            LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", value,
+                                   "> for dimension:<", name, ">"));
+          }
+          return result;
+        };
+        factory.type = MetricType::Counter;
+        auto type =
+            JsonGetField<absl::string_view>(definition, "type").fetch_or("");
+        if (type == "GAUGE") {
+          factory.type = MetricType::Gauge;
+        } else if (type == "HISTOGRAM") {
+          factory.type = MetricType::Histogram;
+        }
+        return true;
+      })) {
     LOG_WARN("failed to parse 'definitions'");
   }
 
   // Process the dimension overrides.
-  if (!JsonArrayIterate<json>(j, "metrics", [&](const json& metric) -> bool {
+  if (!JsonArrayIterate(j, "metrics", [&](const json& metric) -> bool {
         // Sort tag override tags to keep the order of tags deterministic.
         std::vector<std::string> tags;
         if (!JsonObjectIterate(metric, "dimensions",
@@ -325,7 +323,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
           auto& indexes = metric_indexes[factory_it.first];
 
           // Process tag deletions.
-          if (!JsonArrayIterate<json>(
+          if (!JsonArrayIterate(
                   metric, "tags_to_remove", [&](const json& tag) -> bool {
                     auto tag_string = JsonValueAs<std::string>(tag);
                     if (tag_string.second !=

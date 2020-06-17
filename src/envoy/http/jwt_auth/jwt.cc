@@ -318,9 +318,14 @@ Jwt::Jwt(const std::string &jwt) {
 
   // "aud" can be either string array or string.
   // Try as string array, read it as empty array if doesn't exist.
-  if (!Wasm::Common::JsonArrayIterate<std::string>(
-          payload_, "aud", [&](const std::string &obj) -> bool {
-            aud_.emplace_back(obj);
+  if (!Wasm::Common::JsonArrayIterate(
+          payload_, "aud", [&](const Wasm::Common::JsonObject &obj) -> bool {
+            auto str_obj_result = Wasm::Common::JsonValueAs<std::string>(obj);
+            if (str_obj_result.second !=
+                Wasm::Common::JsonParserResultDetail::OK) {
+              return false;
+            }
+            aud_.emplace_back(str_obj_result.first.value());
             return true;
           })) {
     auto aud_field = Wasm::Common::JsonGetField<std::string>(payload_, "aud");
@@ -504,7 +509,7 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
     return;
   }
 
-  if (!Wasm::Common::JsonArrayIterate<Wasm::Common::JsonObject>(
+  if (!Wasm::Common::JsonArrayIterate(
           jwks_json, "keys", [&](const Wasm::Common::JsonObject &obj) -> bool {
             key_refs.emplace_back(
                 std::reference_wrapper<const Wasm::Common::JsonObject>(obj));

@@ -110,7 +110,6 @@ std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
   return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
-template <>
 bool JsonArrayIterate(
     const JsonObject& j, absl::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor) {
@@ -122,27 +121,6 @@ bool JsonArrayIterate(
     return false;
   }
   for (const auto& elt : it.value().items()) {
-    assert(elt.value().is_object());
-    if (!visitor(elt.value())) {
-      return false;
-    }
-  }
-  return true;
-}
-
-template <>
-bool JsonArrayIterate(
-    const JsonObject& j, absl::string_view field,
-    const std::function<bool(const std::string& elt)>& visitor) {
-  auto it = j.find(field);
-  if (it == j.end()) {
-    return true;
-  }
-  if (!it.value().is_array()) {
-    return false;
-  }
-  for (const auto& elt : it.value().items()) {
-    assert(elt.value().is_string());
     if (!visitor(elt.value())) {
       return false;
     }
