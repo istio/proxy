@@ -384,12 +384,31 @@ Jwt::Jwt(const std::string &jwt) {
 
   // "aud" can be either string array or string.
   // Try as string array, read it as empty array if doesn't exist.
+<<<<<<< HEAD
   auto actual_list_aud = getProtoListValue<std::string>(payload_fields, "aud");
   if (actual_list_aud.has_value()) {
     aud_ = actual_list_aud.value();
   } else {
     auto actual_str_aud = getProtoMapValue<std::string>(payload_fields, "aud");
     if (actual_str_aud.has_value()) aud_.emplace_back(actual_str_aud.value());
+=======
+  if (!Wasm::Common::JsonArrayIterate(
+          payload_, "aud", [&](const Wasm::Common::JsonObject &obj) -> bool {
+            auto str_obj_result = Wasm::Common::JsonValueAs<std::string>(obj);
+            if (str_obj_result.second !=
+                Wasm::Common::JsonParserResultDetail::OK) {
+              return false;
+            }
+            aud_.emplace_back(str_obj_result.first.value());
+            return true;
+          })) {
+    auto aud_field = Wasm::Common::JsonGetField<std::string>(payload_, "aud");
+    if (aud_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+      UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
+      return;
+    }
+    aud_.emplace_back(aud_field.fetch());
+>>>>>>> e598b67b... fix
   }
 
   // Set up signature
@@ -564,9 +583,18 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
     return;
   }
 
+<<<<<<< HEAD
   auto actual_keys =
       getProtoListValue<google::protobuf::Struct>(jwks_field, "keys");
   if (!actual_keys.has_value()) {
+=======
+  if (!Wasm::Common::JsonArrayIterate(
+          jwks_json, "keys", [&](const Wasm::Common::JsonObject &obj) -> bool {
+            key_refs.emplace_back(
+                std::reference_wrapper<const Wasm::Common::JsonObject>(obj));
+            return true;
+          })) {
+>>>>>>> e598b67b... fix
     UpdateStatus(Status::JWK_BAD_KEYS);
     return;
   }

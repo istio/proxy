@@ -65,6 +65,7 @@ absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j) {
     if (v == "true") {
       return true;
     } else if (v == "false") {
+<<<<<<< HEAD
       return false;
     }
   }
@@ -74,6 +75,20 @@ absl::optional<bool> JsonValueAs<bool>(const ::nlohmann::json& j) {
 bool JsonArrayIterate(
     const ::nlohmann::json& j, absl::string_view field,
     const std::function<bool(const ::nlohmann::json& elt)>& visitor) {
+=======
+      return std::make_pair(false, JsonParserResultDetail::OK);
+    } else {
+      return std::make_pair(absl::nullopt,
+                            JsonParserResultDetail::INVALID_VALUE);
+    }
+  }
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
+}
+
+bool JsonArrayIterate(
+    const JsonObject& j, absl::string_view field,
+    const std::function<bool(const JsonObject& elt)>& visitor) {
+>>>>>>> e598b67b... fix
   auto it = j.find(field);
   if (it == j.end()) {
     return true;

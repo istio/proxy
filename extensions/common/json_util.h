@@ -58,8 +58,13 @@ absl::optional<T> JsonGetField(const ::nlohmann::json& j,
 // Returns false if set and not an array, or any of the visitor calls returns
 // false.
 bool JsonArrayIterate(
+<<<<<<< HEAD
     const ::nlohmann::json& j, absl::string_view field,
     const std::function<bool(const ::nlohmann::json& elt)>& visitor);
+=======
+    const JsonObject& j, absl::string_view field,
+    const std::function<bool(const JsonObject& elt)>& visitor);
+>>>>>>> e598b67b... fix
 
 // Iterate over an optional object field key set.
 // Returns false if set and not an object, or any of the visitor calls returns
