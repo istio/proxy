@@ -59,9 +59,9 @@ ExporterImpl::ExporterImpl(
   failure_callback_ = [this, failure_counter](GrpcStatus status) {
     // TODO(bianpengyuan): add retry.
     incrementMetric(failure_counter, 1);
-    logWarn("Stackdriver logging api call error: " +
-            std::to_string(static_cast<int>(status)) +
-            getStatus().second->toString());
+    LOG_WARN("Stackdriver logging api call error: " +
+             std::to_string(static_cast<int>(status)) +
+             getStatus().second->toString());
     in_flight_export_call_ -= 1;
     if (in_flight_export_call_ < 0) {
       LOG_WARN("in flight report call should not be negative");

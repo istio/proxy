@@ -69,7 +69,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 				sd.Lock()
 				sd.tsReq = append(sd.tsReq, req)
 				for _, ts := range req.TimeSeries {
-					if strings.HasSuffix(ts.Metric.Type, "request_count") {
+					if strings.HasSuffix(ts.Metric.Type, "request_count") || strings.HasSuffix(ts.Metric.Type, "connection_open_count") {
 						// clear the timestamps for comparison
 						ts.Points[0].Interval = nil
 						sd.ts[proto.MarshalTextString(ts)] = struct{}{}
@@ -83,11 +83,21 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 				// clear the timestamps, latency request id, and req/resp size for comparison
 				for _, entry := range req.Entries {
 					entry.Timestamp = nil
-					entry.HttpRequest.RequestSize = 0
-					entry.HttpRequest.ResponseSize = 0
-					entry.HttpRequest.Latency = nil
-					entry.HttpRequest.RemoteIp = ""
+					if entry.HttpRequest != nil {
+						entry.HttpRequest.RequestSize = 0
+						entry.HttpRequest.ResponseSize = 0
+						entry.HttpRequest.Latency = nil
+						entry.HttpRequest.RemoteIp = ""
+					}
 					delete(entry.Labels, "request_id")
+					delete(entry.Labels, "source_ip")
+					delete(entry.Labels, "source_port")
+					delete(entry.Labels, "destination_port")
+					delete(entry.Labels, "total_sent_bytes")
+					delete(entry.Labels, "total_received_bytes")
+					// because of the timing of the test, logging can happen at the end or
+					// in the middle of the request.
+					delete(entry.Labels, "connection_state")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
@@ -110,7 +120,7 @@ func (sd *Stackdriver) Cleanup() {
 	close(sd.done)
 }
 
-func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string) driver.Step {
+func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string, verifyLatency bool) driver.Step {
 	// check as sets of strings by marshaling to proto
 	twant := make(map[string]struct{})
 	for _, t := range tsFiles {
@@ -136,18 +146,20 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 		ewant[proto.MarshalTextString(pb)] = struct{}{}
 	}
 	return &checkStackdriver{
-		sd:    sd,
-		twant: twant,
-		lwant: lwant,
-		ewant: ewant,
+		sd:                    sd,
+		twant:                 twant,
+		lwant:                 lwant,
+		ewant:                 ewant,
+		verifyResponseLatency: verifyLatency,
 	}
 }
 
 type checkStackdriver struct {
-	sd    *Stackdriver
-	twant map[string]struct{}
-	lwant map[string]struct{}
-	ewant map[string]struct{}
+	sd                    *Stackdriver
+	twant                 map[string]struct{}
+	lwant                 map[string]struct{}
+	ewant                 map[string]struct{}
+	verifyResponseLatency bool
 }
 
 func (s *checkStackdriver) Run(p *driver.Params) error {
@@ -213,13 +225,17 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 			}
 		}
 
-		// Sanity check response latency
-		for _, r := range s.sd.tsReq {
-			if verfied, err := verifyResponseLatency(r); err != nil {
-				return fmt.Errorf("failed to verify latency metric: %v", err)
-			} else if verfied {
-				verfiedLatency = true
-				break
+		if !s.verifyResponseLatency {
+			verfiedLatency = true
+		} else {
+			// Sanity check response latency
+			for _, r := range s.sd.tsReq {
+				if verfied, err := verifyResponseLatency(r); err != nil {
+					return fmt.Errorf("failed to verify latency metric: %v", err)
+				} else if verfied {
+					verfiedLatency = true
+					break
+				}
 			}
 		}
 		s.sd.Unlock()

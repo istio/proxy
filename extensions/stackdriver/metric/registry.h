@@ -74,6 +74,14 @@ opencensus::stats::MeasureInt64 clientRequestCountMeasure();
 opencensus::stats::MeasureInt64 clientRequestBytesMeasure();
 opencensus::stats::MeasureInt64 clientResponseBytesMeasure();
 opencensus::stats::MeasureDouble clientRoundtripLatenciesMeasure();
+opencensus::stats::MeasureInt64 serverConnectionsOpenCountMeasure();
+opencensus::stats::MeasureInt64 serverConnectionsCloseCountMeasure();
+opencensus::stats::MeasureInt64 serverReceivedBytesCountMeasure();
+opencensus::stats::MeasureInt64 serverSentBytesCountMeasure();
+opencensus::stats::MeasureInt64 clientConnectionsOpenCountMeasure();
+opencensus::stats::MeasureInt64 clientConnectionsCloseCountMeasure();
+opencensus::stats::MeasureInt64 clientReceivedBytesCountMeasure();
+opencensus::stats::MeasureInt64 clientSentBytesCountMeasure();
 
 }  // namespace Metric
 }  // namespace Stackdriver

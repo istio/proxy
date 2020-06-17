@@ -37,14 +37,14 @@ class Logger {
   // exports to Stackdriver backend with the given exporter.
   // log_request_size_limit is the size limit of a logging request:
   // https://cloud.google.com/logging/quotas.
-  Logger(const ::Wasm::Common::FlatNode &local_node_info,
+  Logger(const ::Wasm::Common::FlatNode& local_node_info,
          std::unique_ptr<Exporter> exporter,
          int log_request_size_limit = 4000000 /* 4 Mb */);
 
   // Add a new log entry based on the given request information and peer node
   // information.
-  void addLogEntry(const ::Wasm::Common::RequestInfo &request_info,
-                   const ::Wasm::Common::FlatNode &peer_node_info);
+  void addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                   const ::Wasm::Common::FlatNode& peer_node_info, bool is_tcp);
 
   // Export and clean the buffered WriteLogEntriesRequests. Returns true if
   // async call is made to export log entry, otherwise returns false if nothing
@@ -56,6 +56,15 @@ class Logger {
   // either by a timer or by request size limit. Returns false if there is no
   // log entry to be exported.
   bool flush();
+
+  // Add TCP Specific labels to LogEntry.
+  void addTCPLabelsToLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                              google::logging::v2::LogEntry* log_entry);
+
+  // Fill Http_Request entry in LogEntry.
+  void fillHTTPRequestInLogEntry(
+      const ::Wasm::Common::RequestInfo& request_info,
+      google::logging::v2::LogEntry* log_entry);
 
   // Buffer for WriteLogEntriesRequests that are to be exported.
   std::vector<

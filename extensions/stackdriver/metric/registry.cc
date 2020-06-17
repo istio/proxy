@@ -169,6 +169,14 @@ StackdriverOptions getStackdriverOptions(
       server_monitored_resource;
   options.per_metric_monitored_resource[kServerResponseLatenciesView] =
       server_monitored_resource;
+  options.per_metric_monitored_resource[kServerConnectionsOpenCountView] =
+      server_monitored_resource;
+  options.per_metric_monitored_resource[kServerConnectionsCloseCountView] =
+      server_monitored_resource;
+  options.per_metric_monitored_resource[kServerReceivedBytesCountView] =
+      server_monitored_resource;
+  options.per_metric_monitored_resource[kServerSentBytesCountView] =
+      server_monitored_resource;
   options.per_metric_monitored_resource[kClientRequestCountView] =
       client_monitored_resource;
   options.per_metric_monitored_resource[kClientRequestBytesView] =
@@ -177,6 +185,15 @@ StackdriverOptions getStackdriverOptions(
       client_monitored_resource;
   options.per_metric_monitored_resource[kClientRoundtripLatenciesView] =
       client_monitored_resource;
+  options.per_metric_monitored_resource[kClientConnectionsOpenCountView] =
+      client_monitored_resource;
+  options.per_metric_monitored_resource[kClientConnectionsCloseCountView] =
+      client_monitored_resource;
+  options.per_metric_monitored_resource[kClientReceivedBytesCountView] =
+      client_monitored_resource;
+  options.per_metric_monitored_resource[kClientSentBytesCountView] =
+      client_monitored_resource;
+
   options.metric_name_prefix = kIstioMetricPrefix;
   return options;
 }
@@ -193,6 +210,17 @@ StackdriverOptions getStackdriverOptions(
             .set_aggregation(Aggregation::Count()) ADD_TAGS; \
     View view(view_descriptor);                              \
     view_descriptor.RegisterForExport();                     \
+  }
+
+#define REGISTER_TCP_COUNT_VIEW(_v)                                 \
+  void register##_v##View() {                                       \
+    const ViewDescriptor view_descriptor =                          \
+        ViewDescriptor()                                            \
+            .set_name(k##_v##View)                                  \
+            .set_measure(k##_v##Measure)                            \
+            .set_aggregation(Aggregation::Count()) ADD_COMMON_TAGS; \
+    View view(view_descriptor);                                     \
+    view_descriptor.RegisterForExport();                            \
   }
 
 #define REGISTER_DISTRIBUTION_VIEW(_v)                              \
@@ -219,15 +247,18 @@ StackdriverOptions getStackdriverOptions(
     view_descriptor.RegisterForExport();                            \
   }
 
-#define ADD_TAGS                                             \
-  .add_column(requestOperationKey())                         \
-      .add_column(requestProtocolKey())                      \
+#define ADD_TAGS ADD_COMMON_TAGS ADD_HTTP_GRPC_TAGS
+
+#define ADD_HTTP_GRPC_TAGS \
+  .add_column(requestOperationKey()).add_column(responseCodeKey())
+
+#define ADD_COMMON_TAGS                                      \
+  .add_column(requestProtocolKey())                          \
       .add_column(serviceAuthenticationPolicyKey())          \
       .add_column(meshUIDKey())                              \
       .add_column(destinationServiceNameKey())               \
       .add_column(destinationServiceNamespaceKey())          \
       .add_column(destinationPortKey())                      \
-      .add_column(responseCodeKey())                         \
       .add_column(sourcePrincipalKey())                      \
       .add_column(sourceWorkloadNameKey())                   \
       .add_column(sourceWorkloadNamespaceKey())              \
@@ -252,6 +283,14 @@ REGISTER_COUNT_VIEW(ClientRequestCount)
 REGISTER_BYTES_DISTRIBUTION_VIEW(ClientRequestBytes)
 REGISTER_BYTES_DISTRIBUTION_VIEW(ClientResponseBytes)
 REGISTER_DISTRIBUTION_VIEW(ClientRoundtripLatencies)
+REGISTER_TCP_COUNT_VIEW(ServerConnectionsOpenCount)
+REGISTER_TCP_COUNT_VIEW(ServerConnectionsCloseCount)
+REGISTER_TCP_COUNT_VIEW(ServerReceivedBytesCount)
+REGISTER_TCP_COUNT_VIEW(ServerSentBytesCount)
+REGISTER_TCP_COUNT_VIEW(ClientConnectionsOpenCount)
+REGISTER_TCP_COUNT_VIEW(ClientConnectionsCloseCount)
+REGISTER_TCP_COUNT_VIEW(ClientReceivedBytesCount)
+REGISTER_TCP_COUNT_VIEW(ClientSentBytesCount)
 
 /*
  * measure function macros
@@ -272,6 +311,16 @@ MEASURE_FUNC(clientRequestCount, ClientRequestCount, 1, Int64)
 MEASURE_FUNC(clientRequestBytes, ClientRequestBytes, By, Int64)
 MEASURE_FUNC(clientResponseBytes, ClientResponseBytes, By, Int64)
 MEASURE_FUNC(clientRoundtripLatencies, ClientRoundtripLatencies, ms, Double)
+MEASURE_FUNC(serverConnectionsOpenCount, ServerConnectionsOpenCount, By, Int64)
+MEASURE_FUNC(serverConnectionsCloseCount, ServerConnectionsCloseCount, By,
+             Int64)
+MEASURE_FUNC(serverReceivedBytesCount, ServerReceivedBytesCount, By, Int64)
+MEASURE_FUNC(serverSentBytesCount, ServerSentBytesCount, By, Int64)
+MEASURE_FUNC(clientConnectionsOpenCount, ClientConnectionsOpenCount, By, Int64)
+MEASURE_FUNC(clientConnectionsCloseCount, ClientConnectionsCloseCount, By,
+             Int64)
+MEASURE_FUNC(clientReceivedBytesCount, ClientReceivedBytesCount, By, Int64)
+MEASURE_FUNC(clientSentBytesCount, ClientSentBytesCount, By, Int64)
 
 void registerViews() {
   // Register measure first, which views depend on.
@@ -283,6 +332,14 @@ void registerViews() {
   clientRequestBytesMeasure();
   clientResponseBytesMeasure();
   clientRoundtripLatenciesMeasure();
+  serverConnectionsOpenCountMeasure();
+  serverConnectionsCloseCountMeasure();
+  serverReceivedBytesCountMeasure();
+  serverSentBytesCountMeasure();
+  clientConnectionsOpenCountMeasure();
+  clientConnectionsCloseCountMeasure();
+  clientReceivedBytesCountMeasure();
+  clientSentBytesCountMeasure();
 
   // Register views to export;
   registerServerRequestCountView();
@@ -293,6 +350,14 @@ void registerViews() {
   registerClientRequestBytesView();
   registerClientResponseBytesView();
   registerClientRoundtripLatenciesView();
+  registerServerConnectionsOpenCountView();
+  registerServerConnectionsCloseCountView();
+  registerServerReceivedBytesCountView();
+  registerServerSentBytesCountView();
+  registerClientConnectionsOpenCountView();
+  registerClientConnectionsCloseCountView();
+  registerClientReceivedBytesCountView();
+  registerClientSentBytesCountView();
 }
 
 /*
