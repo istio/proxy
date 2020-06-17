@@ -14,7 +14,7 @@
  */
 
 #include "absl/strings/str_cat.h"
-#include "src/envoy/http/authn/peer_authenticator.h"
+#include "extensions/authn/peer_authenticator.h"
 
 #include "common/http/utility.h"
 #include "src/envoy/utils/utils.h"

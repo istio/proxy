@@ -33,7 +33,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        "@com_google_protobuf//:protobuf",
+        "//extensions/common:json_util",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )

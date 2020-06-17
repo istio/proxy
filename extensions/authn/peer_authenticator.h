@@ -16,7 +16,7 @@
 #pragma once
 
 #include "authentication/v1alpha1/policy.pb.h"
-#include "src/envoy/http/authn/authenticator_base.h"
+#include "extensions/authn/authenticator_base.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN

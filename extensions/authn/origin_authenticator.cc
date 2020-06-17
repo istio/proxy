@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/origin_authenticator.h"
+#include "extensions/authn/origin_authenticator.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/match.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/http/headers.h"
 #include "common/http/utility.h"
-#include "src/envoy/http/authn/authn_utils.h"
+#include "extensions/authn/authn_utils.h"
 
 using istio::authn::Payload;
 

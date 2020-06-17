@@ -25,49 +25,24 @@ load(
 )
 
 envoy_cc_library(
-    name = "authenticator",
-    srcs = [
-        "authenticator_base.cc",
-        "authn_utils.cc",
-        "filter_context.cc",
-        "origin_authenticator.cc",
-        "peer_authenticator.cc",
-    ],
-    hdrs = [
-        "authenticator_base.h",
-        "authn_utils.h",
-        "filter_context.h",
-        "origin_authenticator.h",
-        "peer_authenticator.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        "//external:authentication_policy_config_cc_proto",
-        "//src/envoy/http/jwt_auth:jwt_lib",
-        "//src/envoy/utils:filter_names_lib",
-        "//src/envoy/utils:utils_lib",
-        "//src/istio/authn:context_proto_cc_proto",
-        "@envoy//source/common/http:headers_lib",
-    ],
-)
-
-envoy_cc_library(
     name = "authn_plugin",
     srcs = [
         "plugin.cc",
+        "authenticator_base.cc",
+        "filter_context.cc",
     ],
     hdrs = [
         "plugin.h",
+        "authenticator_base.h",
+        "filter_context.h",
     ],
     repository = "@envoy",
+    visibility = ["//visibility:public"],
     deps = [
-        ":authenticator",
-        "//external:authentication_policy_config_cc_proto",
-        "//src/envoy/utils:authn_lib",
-        "//src/envoy/utils:filter_names_lib",
-        "//src/envoy/utils:utils_lib",
-        "//src/istio/authn:context_proto_cc_proto",
-        "@envoy//source/exe:envoy_common_lib",
+        "//extensions/common:context",
+        "//extensions/common:json_util",
+        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
 

@@ -17,8 +17,7 @@
 
 #include "absl/strings/string_view.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-#include "proxy_wasm_intrinsics.h"
-#include "src/envoy/http/authn_wasm/base.h"
+#include "extensions/authn/authenticator_base.h"
 
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"

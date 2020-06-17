@@ -20,14 +20,13 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "common/common/assert.h"
 #include "common/common/base64.h"
 #include "common/common/utility.h"
-#include "google/protobuf/util/json_util.h"
+#include "common/json/json_loader.h"
 #include "openssl/bn.h"
 #include "openssl/ecdsa.h"
 #include "openssl/evp.h"
@@ -238,75 +237,6 @@ class EvpPkeyGetter : public WithStatus {
   }
 };
 
-template <typename T>
-absl::optional<std::vector<T>> getProtoListValue(const ProtobufMapType &,
-                                                 std::string) {
-  static_assert(true, "Unsupported Type");
-}
-
-template <>
-absl::optional<std::vector<std::string>> getProtoListValue(
-    const ProtobufMapType &struct_value, std::string key) {
-  const auto field_iter = struct_value.find(key);
-  if (field_iter == struct_value.end()) {
-    return absl::nullopt;
-  }
-  std::vector<std::string> list_values;
-  for (const auto &value : field_iter->second.list_value().values()) {
-    if (value.kind_case() != google::protobuf::Value::KindCase::kStringValue) {
-      return absl::nullopt;
-    }
-    list_values.emplace_back(value.string_value());
-  }
-  return list_values;
-}
-
-template <>
-absl::optional<std::vector<google::protobuf::Struct>> getProtoListValue(
-    const ProtobufMapType &struct_value, std::string key) {
-  const auto field_iter = struct_value.find(key);
-  if (field_iter == struct_value.end()) {
-    return absl::nullopt;
-  }
-  std::vector<google::protobuf::Struct> list_values;
-  for (const auto &value : field_iter->second.list_value().values()) {
-    if (value.kind_case() != google::protobuf::Value::KindCase::kStructValue) {
-      return absl::nullopt;
-    }
-    list_values.emplace_back(value.struct_value());
-  }
-  return list_values;
-}
-
-template <typename T>
-absl::optional<T> getProtoMapValue(const ProtobufMapType &, std::string) {
-  static_assert(true, "Unsupported Type");
-}
-
-template <>
-absl::optional<std::string> getProtoMapValue(
-    const ProtobufMapType &struct_value, std::string key) {
-  const auto field_iter = struct_value.find(key);
-  if (field_iter == struct_value.end() ||
-      field_iter->second.kind_case() !=
-          google::protobuf::Value::KindCase::kStringValue) {
-    return absl::nullopt;
-  }
-  return field_iter->second.string_value();
-}
-
-template <>
-absl::optional<uint64_t> getProtoMapValue(const ProtobufMapType &struct_value,
-                                          std::string key) {
-  const auto field_iter = struct_value.find(key);
-  if (field_iter == struct_value.end() ||
-      field_iter->second.kind_case() !=
-          google::protobuf::Value::KindCase::kNumberValue) {
-    return absl::nullopt;
-  }
-  return field_iter->second.number_value();
-}
-
 }  // namespace
 
 Jwt::Jwt(const std::string &jwt) {
@@ -322,32 +252,31 @@ Jwt::Jwt(const std::string &jwt) {
   }
 
   // Parse header json
+  auto parser = Wasm::Common::JsonParser();
   header_str_base64url_ = std::string(jwt_split[0].begin(), jwt_split[0].end());
   header_str_ = Base64UrlDecode(header_str_base64url_);
 
-  auto status =
-      google::protobuf::util::JsonStringToMessage(header_str_, &header_);
-  if (!status.ok()) {
+  parser.parse(header_str_);
+  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
     return;
+  } else {
+    header_ = parser.object();
   }
 
   // Header should contain "alg".
-  const auto header_fields = header_.fields();
-  const auto alg_field_iter = header_fields.find("alg");
-
-  if (alg_field_iter == header_fields.end()) {
+  if (header_.find("alg") == header_.end()) {
     UpdateStatus(Status::JWT_HEADER_NO_ALG);
     return;
   }
 
-  if (alg_field_iter->second.kind_case() !=
-      google::protobuf::Value::kStringValue) {
+  auto alg_field = Wasm::Common::JsonGetField<std::string>(header_, "alg");
+  if (alg_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWT_HEADER_BAD_ALG);
     return;
   }
+  alg_ = alg_field.fetch();
 
-  alg_ = alg_field_iter->second.string_value();
   if (alg_ != "RS256" && alg_ != "ES256" && alg_ != "RS384" &&
       alg_ != "RS512") {
     UpdateStatus(Status::ALG_NOT_IMPLEMENTED);
@@ -355,46 +284,40 @@ Jwt::Jwt(const std::string &jwt) {
   }
 
   // Header may contain "kid", which should be a string if exists.
-  const auto kid_iter = header_fields.find("kid");
-  if (kid_iter != header_fields.end() &&
-      kid_iter->second.kind_case() != google::protobuf::Value::kStringValue) {
-    UpdateStatus(Status::JWT_HEADER_BAD_KID);
-    return;
+  auto kid_field = Wasm::Common::JsonGetField<std::string>(header_, "kid");
+  if (kid_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+    if (kid_field.detail() ==
+        Wasm::Common::JsonParserResultDetail::TYPE_ERROR) {
+      UpdateStatus(Status::JWT_HEADER_BAD_KID);
+      return;
+    } else if (kid_field.detail() ==
+               Wasm::Common::JsonParserResultDetail::OUT_OF_RANGE) {
+      kid_ = "";
+    } else {
+      return;
+    }
+  } else {
+    kid_ = kid_field.fetch();
   }
-
-  kid_ = kid_iter != header_fields.end() ? kid_iter->second.string_value() : "";
 
   // Parse payload json
   payload_str_base64url_ =
       std::string(jwt_split[1].begin(), jwt_split[1].end());
   payload_str_ = Base64UrlDecode(payload_str_base64url_);
-
-  status = google::protobuf::util::JsonStringToMessage(payload_str_, &payload_);
-
-  if (!status.ok()) {
+  parser.parse(payload_str_);
+  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
     return;
+  } else {
+    payload_ = parser.object();
   }
 
-  const auto payload_fields = payload_.fields();
-
-  iss_ = getProtoMapValue<std::string>(payload_fields, "iss").value_or("");
-  sub_ = getProtoMapValue<std::string>(payload_fields, "sub").value_or("");
-  exp_ = getProtoMapValue<uint64_t>(payload_fields, "exp").value_or(0);
+  iss_ = Wasm::Common::JsonGetField<std::string>(payload_, "iss").fetch_or("");
+  sub_ = Wasm::Common::JsonGetField<std::string>(payload_, "sub").fetch_or("");
+  exp_ = Wasm::Common::JsonGetField<uint64_t>(payload_, "exp").fetch_or(0);
 
   // "aud" can be either string array or string.
   // Try as string array, read it as empty array if doesn't exist.
-<<<<<<< HEAD
-<<<<<<< HEAD
-  auto actual_list_aud = getProtoListValue<std::string>(payload_fields, "aud");
-  if (actual_list_aud.has_value()) {
-    aud_ = actual_list_aud.value();
-  } else {
-    auto actual_str_aud = getProtoMapValue<std::string>(payload_fields, "aud");
-    if (actual_str_aud.has_value()) aud_.emplace_back(actual_str_aud.value());
-=======
-=======
->>>>>>> e598b67b... fix
   if (!Wasm::Common::JsonArrayIterate(
           payload_, "aud", [&](const Wasm::Common::JsonObject &obj) -> bool {
             auto str_obj_result = Wasm::Common::JsonValueAs<std::string>(obj);
@@ -411,7 +334,6 @@ Jwt::Jwt(const std::string &jwt) {
       return;
     }
     aud_.emplace_back(aud_field.fetch());
->>>>>>> e598b67b... fix
   }
 
   // Set up signature
@@ -538,7 +460,7 @@ bool Verifier::Verify(const Jwt &jwt, const Pubkeys &pubkeys) {
 }
 
 // Returns the parsed header.
-google::protobuf::Struct &Jwt::Header() { return header_; }
+Wasm::Common::JsonObject &Jwt::Header() { return header_; }
 
 const std::string &Jwt::HeaderStr() { return header_str_; }
 const std::string &Jwt::HeaderStrBase64Url() { return header_str_base64url_; }
@@ -546,7 +468,7 @@ const std::string &Jwt::Alg() { return alg_; }
 const std::string &Jwt::Kid() { return kid_; }
 
 // Returns payload JSON.
-google::protobuf::Struct &Jwt::Payload() { return payload_; }
+Wasm::Common::JsonObject &Jwt::Payload() { return payload_; }
 
 const std::string &Jwt::PayloadStr() { return payload_str_; }
 const std::string &Jwt::PayloadStrBase64Url() { return payload_str_base64url_; }
@@ -563,50 +485,42 @@ void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   key_ptr->pem_format_ = true;
   UpdateStatus(e.GetStatus());
   if (e.GetStatus() == Status::OK) {
-    keys_.emplace_back(std::move(key_ptr));
+    keys_.push_back(std::move(key_ptr));
   }
 }
 
 void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
   keys_.clear();
 
-  google::protobuf::Struct jwks_object;
-  auto status =
-      google::protobuf::util::JsonStringToMessage(pkey_jwks, &jwks_object);
-  if (!status.ok()) {
+  auto parser = Wasm::Common::JsonParser();
+  Wasm::Common::JsonObject jwks_json;
+  parser.parse(pkey_jwks);
+  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWK_PARSE_ERROR);
     return;
+  } else {
+    jwks_json = parser.object();
   }
 
-  const auto jwks_field = jwks_object.fields();
-  const auto keys_iter = jwks_field.find("keys");
+  std::vector<std::reference_wrapper<const Wasm::Common::JsonObject>> key_refs;
 
-  if (keys_iter == jwks_field.end()) {
+  if (jwks_json.find("keys") == jwks_json.end()) {
     UpdateStatus(Status::JWK_NO_KEYS);
     return;
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  auto actual_keys =
-      getProtoListValue<google::protobuf::Struct>(jwks_field, "keys");
-  if (!actual_keys.has_value()) {
-=======
-=======
->>>>>>> e598b67b... fix
   if (!Wasm::Common::JsonArrayIterate(
           jwks_json, "keys", [&](const Wasm::Common::JsonObject &obj) -> bool {
             key_refs.emplace_back(
                 std::reference_wrapper<const Wasm::Common::JsonObject>(obj));
             return true;
           })) {
->>>>>>> e598b67b... fix
     UpdateStatus(Status::JWK_BAD_KEYS);
     return;
   }
 
-  for (const auto &jwk_field : actual_keys.value()) {
-    if (!ExtractPubkeyFromJwk(jwk_field.fields())) {
+  for (auto &key_ref : key_refs) {
+    if (!ExtractPubkeyFromJwk(key_ref.get())) {
       continue;
     }
   }
@@ -616,69 +530,68 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
   }
 }
 
-bool Pubkeys::ExtractPubkeyFromJwk(const ProtobufMapType &jwk_field) {
+bool Pubkeys::ExtractPubkeyFromJwk(const Wasm::Common::JsonObject &jwk_json) {
   // Check "kty" parameter, it should exist.
   // https://tools.ietf.org/html/rfc7517#section-4.1
   // If "kty" is missing, getString throws an exception.
-  auto kty = getProtoMapValue<std::string>(jwk_field, "kty");
-  if (!kty.has_value()) {
+  auto kty_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "kty");
+  if (kty_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     return false;
   }
 
   // Extract public key according to "kty" value.
   // https://tools.ietf.org/html/rfc7518#section-6.1
-  if (kty.value() == "EC") {
-    return ExtractPubkeyFromJwkEC(jwk_field);
-  } else if (kty.value() == "RSA") {
-    return ExtractPubkeyFromJwkRSA(jwk_field);
+  if (kty_field.fetch() == "EC") {
+    return ExtractPubkeyFromJwkEC(jwk_json);
+  } else if (kty_field.fetch() == "RSA") {
+    return ExtractPubkeyFromJwkRSA(jwk_json);
   }
 
   return false;
 }
 
-bool Pubkeys::ExtractPubkeyFromJwkRSA(const ProtobufMapType &jwk_field) {
+bool Pubkeys::ExtractPubkeyFromJwkRSA(
+    const Wasm::Common::JsonObject &jwk_json) {
   std::unique_ptr<Pubkey> pubkey(new Pubkey());
+  std::string n_str, e_str;
 
   // "kid" and "alg" are optional, if they do not exist, set them to "".
   // https://tools.ietf.org/html/rfc7517#page-8
-  if (jwk_field.find("kid") != jwk_field.end()) {
-    auto actual_kid = getProtoMapValue<std::string>(jwk_field, "kid");
-    if (!actual_kid.has_value()) {
-      return false;
-    }
-    pubkey->kid_ = actual_kid.value();
+  auto kid_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "kid");
+  if (kid_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
+    pubkey->kid_ = kid_field.fetch();
     pubkey->kid_specified_ = true;
   }
 
-  if (jwk_field.find("alg") != jwk_field.end()) {
-    auto actual_alg = getProtoMapValue<std::string>(jwk_field, "alg");
+  auto alg_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "alg");
+  if (alg_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
     // Allow only "RS" prefixed algorithms.
     // https://tools.ietf.org/html/rfc7518#section-3.1
-    if (!actual_alg.has_value() ||
-        !(actual_alg.value() == "RS256" || actual_alg.value() == "RS384" ||
-          actual_alg.value() == "RS512")) {
+    if (!(alg_field.fetch() == "RS256" || alg_field.fetch() == "RS384" ||
+          alg_field.fetch() == "RS512")) {
       return false;
     }
-    pubkey->alg_ = actual_alg.value();
+    pubkey->alg_ = alg_field.fetch();
     pubkey->alg_specified_ = true;
   }
 
-  auto actual_kty = getProtoMapValue<std::string>(jwk_field, "kty");
-  assert(actual_kty.has_value());
-
-  pubkey->kty_ = actual_kty.value();
-
-  auto n_str = getProtoMapValue<std::string>(jwk_field, "n");
-  auto e_str = getProtoMapValue<std::string>(jwk_field, "e");
-
-  if (!n_str.has_value() || !e_str.has_value()) {
+  auto pubkey_kty_field =
+      Wasm::Common::JsonGetField<std::string>(jwk_json, "kty");
+  assert(pubkey_kty_field.detail() == Wasm::Common::JsonParserResultDetail::OK);
+  pubkey->kty_ = pubkey_kty_field.fetch();
+  auto n_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "n");
+  auto e_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "e");
+  if (n_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK ||
+      e_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     return false;
   }
+  n_str = n_str_field.fetch();
+  e_str = e_str_field.fetch();
 
   EvpPkeyGetter e;
-  pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str.value(), e_str.value());
+  pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
   if (e.GetStatus() == Status::OK) {
-    keys_.emplace_back(std::move(pubkey));
+    keys_.push_back(std::move(pubkey));
   } else {
     UpdateStatus(e.GetStatus());
   }
@@ -686,44 +599,46 @@ bool Pubkeys::ExtractPubkeyFromJwkRSA(const ProtobufMapType &jwk_field) {
   return true;
 }
 
-bool Pubkeys::ExtractPubkeyFromJwkEC(const ProtobufMapType &jwk_field) {
+bool Pubkeys::ExtractPubkeyFromJwkEC(const Wasm::Common::JsonObject &jwk_json) {
   std::unique_ptr<Pubkey> pubkey(new Pubkey());
+  std::string x_str, y_str;
 
-  if (jwk_field.find("kid") != jwk_field.end()) {
-    auto actual_kid = getProtoMapValue<std::string>(jwk_field, "kid");
-    if (!actual_kid.has_value()) {
-      return false;
-    }
-    pubkey->kid_ = actual_kid.value();
+  // "kid" and "alg" are optional, if they do not exist, set them to "".
+  // https://tools.ietf.org/html/rfc7517#page-8
+  auto kid_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "kid");
+  if (kid_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
+    pubkey->kid_ = kid_field.fetch();
     pubkey->kid_specified_ = true;
   }
 
-  if (jwk_field.find("alg") != jwk_field.end()) {
-    auto actual_alg = getProtoMapValue<std::string>(jwk_field, "alg");
-    if (!actual_alg.has_value() || actual_alg.value() != "ES256") {
+  auto alg_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "alg");
+  if (alg_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
+    // Allow only "RS" prefixed algorithms.
+    // https://tools.ietf.org/html/rfc7518#section-3.1
+    if (alg_field.fetch() != "ES256") {
       return false;
     }
-    pubkey->alg_ = actual_alg.value();
+    pubkey->alg_ = alg_field.fetch();
     pubkey->alg_specified_ = true;
   }
 
-  auto actual_kty = getProtoMapValue<std::string>(jwk_field, "kty");
-  if (!actual_kty.has_value()) {
+  auto pubkey_kty_field =
+      Wasm::Common::JsonGetField<std::string>(jwk_json, "kty");
+  assert(pubkey_kty_field.detail() == Wasm::Common::JsonParserResultDetail::OK);
+  pubkey->kty_ = pubkey_kty_field.fetch();
+  auto x_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "x");
+  auto y_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "y");
+  if (x_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK ||
+      y_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     return false;
   }
-  pubkey->kty_ = actual_kty.value();
-
-  auto x_str = getProtoMapValue<std::string>(jwk_field, "x");
-  auto y_str = getProtoMapValue<std::string>(jwk_field, "y");
-
-  if (!x_str.has_value() || !y_str.has_value()) {
-    return false;
-  }
+  x_str = x_str_field.fetch();
+  y_str = y_str_field.fetch();
 
   EvpPkeyGetter e;
-  pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str.value(), y_str.value());
+  pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
   if (e.GetStatus() == Status::OK) {
-    keys_.emplace_back(std::move(pubkey));
+    keys_.push_back(std::move(pubkey));
   } else {
     UpdateStatus(e.GetStatus());
   }

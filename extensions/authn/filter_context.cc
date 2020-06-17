@@ -14,7 +14,7 @@
  */
 
 #include "absl/strings/str_cat.h"
-#include "src/envoy/http/authn/filter_context.h"
+#include "extensions/authn/filter_context.h"
 
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"

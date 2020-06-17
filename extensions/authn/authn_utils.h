@@ -18,7 +18,7 @@
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/common/utility.h"
 #include "envoy/http/header_map.h"
-#include "envoy/json/json_object.h"
+#include "extensions/common/json_util.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace iaapi = istio::authentication::v1alpha1;

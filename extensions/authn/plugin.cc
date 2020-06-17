@@ -13,14 +13,10 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn_wasm/filter.h"
+#include "extensions/authn/plugin.h"
 
 #include "absl/strings/str_cat.h"
 #include "authentication/v1alpha1/policy.pb.h"
-#include "google/protobuf/text_format.h"
-#include "google/protobuf/util/json_util.h"
-#include "src/envoy/http/authn_wasm/connection_context.h"
-#include "src/envoy/http/authn_wasm/peer.h"
 
 #ifdef NULL_PLUGIN
 
