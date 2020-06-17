@@ -265,9 +265,15 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   // Process the metric definitions (overriding existing).
   if (!JsonArrayIterate(j, "definitions", [&](const json& definition) -> bool {
 <<<<<<< HEAD
+<<<<<<< HEAD
         auto name = JsonGetField<std::string>(definition, "name").value_or("");
         auto value =
             JsonGetField<std::string>(definition, "value").value_or("");
+=======
+        auto name = JsonGetField<std::string>(definition, "name").fetch_or("");
+        auto value =
+            JsonGetField<std::string>(definition, "value").fetch_or("");
+>>>>>>> e598b67b... fix
 =======
         auto name = JsonGetField<std::string>(definition, "name").fetch_or("");
         auto value =
@@ -297,7 +303,11 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         factory.type = MetricType::Counter;
         auto type =
 <<<<<<< HEAD
+<<<<<<< HEAD
             JsonGetField<absl::string_view>(definition, "type").value_or("");
+=======
+            JsonGetField<absl::string_view>(definition, "type").fetch_or("");
+>>>>>>> e598b67b... fix
 =======
             JsonGetField<absl::string_view>(definition, "type").fetch_or("");
 >>>>>>> e598b67b... fix

@@ -64,6 +64,9 @@ bool JsonArrayIterate(
 =======
     const JsonObject& j, absl::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor);
+<<<<<<< HEAD
+>>>>>>> e598b67b... fix
+=======
 >>>>>>> e598b67b... fix
 
 // Iterate over an optional object field key set.
