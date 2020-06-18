@@ -29,11 +29,11 @@ envoy_cc_library(
     srcs = ["jwt.cc"],
     hdrs = ["jwt.h"],
     external_deps = [
-        "rapidjson",
         "ssl",
     ],
     repository = "@envoy",
     deps = [
+        "//extensions/common:json_util",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )

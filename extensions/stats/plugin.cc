@@ -264,9 +264,9 @@ bool PluginRootContext::initializeDimensions(const json& j) {
 
   // Process the metric definitions (overriding existing).
   if (!JsonArrayIterate(j, "definitions", [&](const json& definition) -> bool {
-        auto name = JsonGetField<std::string>(definition, "name").value_or("");
+        auto name = JsonGetField<std::string>(definition, "name").fetch_or("");
         auto value =
-            JsonGetField<std::string>(definition, "value").value_or("");
+            JsonGetField<std::string>(definition, "value").fetch_or("");
         if (name.empty() || value.empty()) {
           LOG_WARN("empty name or value in  'definitions'");
           return false;
@@ -290,7 +290,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         };
         factory.type = MetricType::Counter;
         auto type =
-            JsonGetField<absl::string_view>(definition, "type").value_or("");
+            JsonGetField<absl::string_view>(definition, "type").fetch_or("");
         if (type == "GAUGE") {
           factory.type = MetricType::Gauge;
         } else if (type == "HISTOGRAM") {
@@ -315,7 +315,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         }
         std::sort(tags.begin(), tags.end());
 
-        auto name = JsonGetField<std::string>(metric, "name").value_or("");
+        auto name = JsonGetField<std::string>(metric, "name").fetch_or("");
         for (const auto& factory_it : factories) {
           if (!name.empty() && name != factory_it.first) {
             continue;
@@ -326,12 +326,13 @@ bool PluginRootContext::initializeDimensions(const json& j) {
           if (!JsonArrayIterate(
                   metric, "tags_to_remove", [&](const json& tag) -> bool {
                     auto tag_string = JsonValueAs<std::string>(tag);
-                    if (!tag_string.has_value()) {
+                    if (tag_string.second !=
+                        Wasm::Common::JsonParserResultDetail::OK) {
                       LOG_WARN(
                           absl::StrCat("unexpected tag to remove", tag.dump()));
                       return false;
                     }
-                    auto it = indexes.find(tag_string.value());
+                    auto it = indexes.find(tag_string.first.value());
                     if (it != indexes.end()) {
                       it->second = {};
                     }
@@ -345,11 +346,12 @@ bool PluginRootContext::initializeDimensions(const json& j) {
           for (const auto& tag : tags) {
             auto expr_string =
                 JsonValueAs<std::string>(metric["dimensions"][tag]);
-            if (!expr_string.has_value()) {
+            if (expr_string.second !=
+                Wasm::Common::JsonParserResultDetail::OK) {
               LOG_WARN("failed to parse 'dimensions' value");
               return false;
             }
-            auto expr_index = addStringExpression(expr_string.value());
+            auto expr_index = addStringExpression(expr_string.first.value());
             Optional<size_t> value = {};
             if (expr_index.has_value()) {
               value = count_standard_labels + expr_index.value();
@@ -379,11 +381,11 @@ bool PluginRootContext::initializeDimensions(const json& j) {
 
   // Instantiate stat factories using the new dimensions
   auto field_separator = JsonGetField<std::string>(j, "field_separator")
-                             .value_or(default_field_separator);
+                             .fetch_or(default_field_separator);
   auto value_separator = JsonGetField<std::string>(j, "value_separator")
-                             .value_or(default_value_separator);
+                             .fetch_or(default_value_separator);
   auto stat_prefix =
-      JsonGetField<std::string>(j, "stat_prefix").value_or(default_stat_prefix);
+      JsonGetField<std::string>(j, "stat_prefix").fetch_or(default_stat_prefix);
 
   // prepend "_" to opt out of automatic namespacing
   // If "_" is not prepended, envoy_ is automatically added by prometheus
@@ -436,7 +438,9 @@ bool PluginRootContext::configure(size_t configuration_size) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
-  auto j = ::Wasm::Common::JsonParse(configuration_data->view());
+  auto json_parser = ::Wasm::Common::JsonParser();
+  json_parser.parse(configuration_data->view());
+  auto j = json_parser.object();
   if (!j.is_object()) {
     LOG_WARN(absl::StrCat("cannot parse configuration as JSON: ",
                           configuration_data->view()));
@@ -451,24 +455,25 @@ bool PluginRootContext::configure(size_t configuration_size) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
 
-  debug_ = JsonGetField<bool>(j, "debug").value_or(false);
+  debug_ = JsonGetField<bool>(j, "debug").fetch_or(false);
   use_host_header_fallback_ =
-      !JsonGetField<bool>(j, "disable_host_header_fallback").value_or(false);
+      !JsonGetField<bool>(j, "disable_host_header_fallback").fetch_or(false);
 
   if (!initializeDimensions(j)) {
     return false;
   }
 
   uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
-  auto tcp_reporting_duration =
+  auto tcp_reporting_duration_field =
       JsonGetField<std::string>(j, "tcp_reporting_duration");
   absl::Duration duration;
-  if (tcp_reporting_duration.has_value()) {
-    if (absl::ParseDuration(tcp_reporting_duration.value(), &duration)) {
+  if (tcp_reporting_duration_field.detail() ==
+      ::Wasm::Common::JsonParserResultDetail::OK) {
+    if (absl::ParseDuration(tcp_reporting_duration_field.fetch(), &duration)) {
       tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
     } else {
       LOG_WARN(absl::StrCat("failed to parse 'tcp_reporting_duration': ",
-                            tcp_reporting_duration.value()));
+                            tcp_reporting_duration_field.fetch()));
     }
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);
