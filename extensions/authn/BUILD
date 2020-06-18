@@ -30,11 +30,13 @@ envoy_cc_library(
         "plugin.cc",
         "authenticator_base.cc",
         "filter_context.cc",
+        "authn_utils.cc",
     ],
     hdrs = [
         "plugin.h",
         "authenticator_base.h",
         "filter_context.h",
+        "authn_utils.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],

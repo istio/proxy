@@ -52,8 +52,8 @@ wasm_cc_binary(
   srcs = [
     "//extensions/authn:authenticator_base.h",
     "//extensions/authn:authenticator_base.cc",
-    # "//extensions/authn:authn_utils.h",
-    # "//extensions/authn:authn_utils.cc",
+    "//extensions/authn:authn_utils.h",
+    "//extensions/authn:authn_utils.cc",
     "//extensions/authn:filter_context.h",
     "//extensions/authn:filter_context.cc",
     # "//extensions/authn:origin_authenticator.h",
@@ -67,11 +67,14 @@ wasm_cc_binary(
   deps = [
     "//external:authentication_policy_config_cc_proto",
     "//src/istio/authn:context_proto_cc_wasm",
+    "//src/envoy/utils:filter_names_lib",
     "//extensions/common:json_util_wasm",
     "@com_google_absl_wasm//absl/strings",
     "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
     "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
+    "@envoy//include/envoy/http:filter_interface",
     "@envoy//source/common/http:headers_lib",
+    "@envoy//source/extensions/filters/http:well_known_names",
     "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
   ],
 )
