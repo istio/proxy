@@ -44,7 +44,7 @@ ENVOY_SHA = "d665726028b781d8f8c7c65261bc77476ca51d69"
 
 ENVOY_SHA256 = "44730ec63eb8d3892d35d7fc24292f0701bddf2df54465b878e2a61fad0cb7f8"
 
-ENVOY_ORG = "istio"
+ENVOY_ORG = "istio-private"
 
 ENVOY_REPO = "envoy"
 
