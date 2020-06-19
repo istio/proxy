@@ -68,6 +68,7 @@ wasm_cc_binary(
     "//external:authentication_policy_config_cc_proto",
     "//src/istio/authn:context_proto_cc_wasm",
     "//src/envoy/utils:filter_names_lib",
+    "//src/envoy/http/jwt_auth:jwt_lib",
     "//extensions/common:json_util_wasm",
     "@com_google_absl_wasm//absl/strings",
     "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",

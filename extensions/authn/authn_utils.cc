@@ -20,7 +20,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
-#include "common/json/json_loader.h"
+#include "extensions/common/json_util.h"
 #include "google/protobuf/struct.pb.h"
 #include "src/envoy/http/jwt_auth/jwt.h"
 
@@ -52,61 +52,48 @@ static const std::string kJwtIssuerKey = "iss";
 // The key name for the original claims in an exchanged token
 static const std::string kExchangedTokenOriginalPayload = "original_claims";
 
-// Extract JWT claim as a string list.
-// This function only extracts string and string list claims.
-// A string claim is extracted as a string list of 1 item.
-// A string claim with whitespace is extracted as a string list with each
-// sub-string delimited with the whitespace.
-void ExtractStringList(const std::string& key, const Envoy::Json::Object& obj,
-                       std::vector<std::string>* list) {
-  // First, try as string
-  try {
-    // Try as string, will throw execption if object type is not string.
-    const std::vector<std::string> keys =
-        absl::StrSplit(obj.getString(key), ' ', absl::SkipEmpty());
-    for (auto key : keys) {
-      list->push_back(key);
-    }
-  } catch (Json::Exception& e) {
-    // Not convertable to string
-  }
-  // Next, try as string array
-  try {
-    std::vector<std::string> vector = obj.getStringArray(key);
-    for (const std::string v : vector) {
-      list->push_back(v);
-    }
-  } catch (Json::Exception& e) {
-    // Not convertable to string array
-  }
-}
 };  // namespace
 
 bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
                                    istio::authn::JwtPayload* payload) {
-  Envoy::Json::ObjectSharedPtr json_obj;
-  try {
-    json_obj = Json::Factory::loadFromString(payload_str);
-    logDebug(absl::StrCat("{}: json object is {}", __FUNCTION__,
-              json_obj->asJsonString()));
-  } catch (...) {
+  auto parser = Wasm::Common::JsonParser();
+  parser.parse(payload_str);
+  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     return false;
   }
+  auto json_obj = parser.object();
+  ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__, json_obj.dump());
 
   *payload->mutable_raw_claims() = payload_str;
 
   auto claims = payload->mutable_claims()->mutable_fields();
   // Extract claims as string lists
-  json_obj->iterate([json_obj, claims](const std::string& key,
-                                       const Json::Object&) -> bool {
-    // In current implementation, only string/string list objects are extracted
-    std::vector<std::string> list;
-    ExtractStringList(key, *json_obj, &list);
-    for (auto s : list) {
-      (*claims)[key].mutable_list_value()->add_values()->set_string_value(s);
-    }
-    return true;
-  });
+  Wasm::Common::JsonObjectIterate(
+      json_obj, [&json_obj, &claims](const std::string& key) -> bool {
+        // In current implementation, only string/string list objects are
+        // extracted
+        std::vector<std::string> list;
+        auto field_value =
+            Wasm::Common::JsonGetField<std::vector<std::string>>(json_obj, key);
+        if (field_value.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+          auto str_field_value =
+              Wasm::Common::JsonGetField<std::string>(json_obj, key);
+          if (str_field_value.detail() !=
+              Wasm::Common::JsonParserResultDetail::OK) {
+            return true;
+          }
+          list =
+              absl::StrSplit(str_field_value.fetch(), ' ', absl::SkipEmpty());
+        } else {
+          list = field_value.fetch();
+        }
+        for (auto& s : list) {
+          (*claims)[key].mutable_list_value()->add_values()->set_string_value(
+              s);
+        }
+        return true;
+      });
+
   // Copy audience to the audience in context.proto
   if (claims->find(kJwtAudienceKey) != claims->end()) {
     for (const auto& v : (*claims)[kJwtAudienceKey].list_value().values()) {
@@ -132,28 +119,28 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
 
 bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
                                         std::string* original_payload) {
-  Envoy::Json::ObjectSharedPtr json_obj;
-  try {
-    json_obj = Json::Factory::loadFromString(token);
-  } catch (...) {
+  auto parser = Wasm::Common::JsonParser();
+  parser.parse(token);
+  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+    return false;
+  }
+  auto json_obj = parser.object();
+
+  if (!json_obj.contains(kExchangedTokenOriginalPayload)) {
     return false;
   }
 
-  if (json_obj->hasObject(kExchangedTokenOriginalPayload) == false) {
-    return false;
-  }
-
-  Envoy::Json::ObjectSharedPtr original_payload_obj;
-  try {
-    auto original_payload_obj =
-        json_obj->getObject(kExchangedTokenOriginalPayload);
-    *original_payload = original_payload_obj->asJsonString();
-    logDebug("{}: the original payload in exchanged token is {}", __FUNCTION__, *original_payload);
-  } catch (...) {
-    logDebug("{}: original_payload in exchanged token is of invalid format.",
+  auto original_payload_obj =
+      Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(
+          json_obj, kExchangedTokenOriginalPayload);
+  if (original_payload_obj.detail() !=
+      Wasm::Common::JsonParserResultDetail::OK) {
+    ENVOY_LOG(debug,
+              "{}: original_payload in exchanged token is of invalid format.",
               __FUNCTION__);
     return false;
   }
+  *original_payload = original_payload_obj.fetch().dump();
 
   return true;
 }
