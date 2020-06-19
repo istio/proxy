@@ -82,6 +82,14 @@ template <>
 std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
     const JsonObject& j);
 
+template <>
+std::pair<absl::optional<std::vector<std::string>>, JsonParserResultDetail>
+JsonValueAs<std::vector<std::string>>(const JsonObject& j);
+
+template <>
+std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
+JsonValueAs<JsonObject>(const JsonObject& j);
+
 template <class T>
 class JsonGetField {
  public:
@@ -125,6 +133,9 @@ bool JsonArrayIterate(
 // Returns false if set and not an object, or any of the visitor calls returns
 // false.
 bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
+                       const std::function<bool(std::string key)>& visitor);
+
+bool JsonObjectIterate(const JsonObject& j,
                        const std::function<bool(std::string key)>& visitor);
 
 }  // namespace Common
