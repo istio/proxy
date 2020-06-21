@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 class Base64 {
  public:
   static std::string encode(const char* input, uint64_t length,
@@ -27,14 +29,14 @@ class Base64 {
   static std::string encode(const char* input, uint64_t length) {
     return encode(input, length, true);
   }
-  static std::string decodeWithoutPadding(std::string_view input);
+  static std::string decodeWithoutPadding(absl::string_view input);
 };
 
 // clang-format off
-inline constexpr char CHAR_TABLE[] =
+constexpr char CHAR_TABLE[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-inline constexpr unsigned char REVERSE_LOOKUP_TABLE[256] = {
+constexpr unsigned char REVERSE_LOOKUP_TABLE[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63,
     52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,
@@ -46,6 +48,10 @@ inline constexpr unsigned char REVERSE_LOOKUP_TABLE[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64};
+
+constexpr unsigned char REVERSE_LOOKUP_TABLE_BASE64_URL[256] = {
+  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64, 63, 64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
+};
 // clang-format on
 
 inline bool decodeBase(const uint8_t cur_char, uint64_t pos, std::string& ret,
@@ -139,6 +145,48 @@ inline void encodeLast(uint64_t pos, uint8_t last_char, std::string& ret,
   }
 }
 
+std::string Base64UrlDecode(std::string input) {
+  // allow at most 2 padding letters at the end of the input, only if input
+  // length is divisible by 4
+  int len = input.length();
+  if (len % 4 == 0) {
+    if (input[len - 1] == '=') {
+      input.pop_back();
+      if (input[len - 2] == '=') {
+        input.pop_back();
+      }
+    }
+  }
+  // if input contains non-base64url character, return empty string
+  // Note: padding letter must not be contained
+  if (std::find_if(input.begin(), input.end(), [](auto c) -> bool {
+        return REVERSE_LOOKUP_TABLE_BASE64_URL[static_cast<int32_t>(c)] & 64;
+      }) != input.end()) {
+    return "";
+  }
+
+  // base64url is using '-', '_' instead of '+', '/' in base64 string.
+  std::replace(input.begin(), input.end(), '-', '+');
+  std::replace(input.begin(), input.end(), '_', '/');
+
+  // base64 string should be padded with '=' so as to the length of the string
+  // is divisible by 4.
+  switch (input.length() % 4) {
+    case 0:
+      break;
+    case 2:
+      input += "==";
+      break;
+    case 3:
+      input += "=";
+      break;
+    default:
+      // * an invalid base64url input. return empty string.
+      return "";
+  }
+  return Base64::decodeWithoutPadding(input);
+}
+
 inline std::string Base64::encode(const char* input, uint64_t length,
                                   bool add_padding) {
   uint64_t output_length = (length + 2) / 3 * 4;
@@ -157,9 +205,9 @@ inline std::string Base64::encode(const char* input, uint64_t length,
   return ret;
 }
 
-inline std::string Base64::decodeWithoutPadding(StringView input) {
+inline std::string Base64::decodeWithoutPadding(absl::string_view input) {
   if (input.empty()) {
-    return EMPTY_STRING;
+    return "";
   }
 
   // At most last two chars can be '='.
@@ -185,14 +233,14 @@ inline std::string Base64::decodeWithoutPadding(StringView input) {
   ret.reserve(max_length);
   for (uint64_t i = 0; i < last; ++i) {
     if (!decodeBase(input[i], i, ret, REVERSE_LOOKUP_TABLE)) {
-      return EMPTY_STRING;
+      return "";
     }
   }
 
   if (!decodeLast(input[last], last, ret, REVERSE_LOOKUP_TABLE)) {
-    return EMPTY_STRING;
+    return "";
   }
 
-  ASSERT(ret.size() == max_length);
+  assert(ret.size() == max_length);
   return ret;
 }
