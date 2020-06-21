@@ -25,7 +25,7 @@
 
 #ifndef NULL_PLUGIN
 
-#include "base64.h"
+#include "extensions/common/base64.h"
 
 #else
 
