@@ -34,6 +34,8 @@ namespace AuthN {
 
 #endif  // NULL_PLUGIN
 
+using Envoy::Network::Connection;
+
 // AuthenticatorBase is the base class for authenticator. It provides functions
 // to perform individual authentication methods, which can be used to construct
 // compound authentication flow.
@@ -65,7 +67,7 @@ class AuthenticatorBase {
   // Pointer to filter state. Do not own.
   FilterContext& filter_context_;
 
-  bool validateTrustDomain(const Network::Connection* connection) const;
+  bool validateTrustDomain(const Connection* connection) const;
 };
 
 #ifdef NULL_PLUGIN

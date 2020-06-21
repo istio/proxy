@@ -17,7 +17,9 @@
 
 #include "absl/strings/string_view.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-#include "extensions/authn/authenticator_base.h"
+// #include "extensions/authn/authenticator_base.h"
+
+#include "envoy/config/core/v3/base.pb.h"
 
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"
@@ -63,10 +65,10 @@ class AuthnRootContext : public RootContext {
   void onGrpcReceive(uint32_t token, size_t body_size) override {}
   void onGrpcClose(uint32_t token, GrpcStatus status) override {}
 
-  const FilterConfig& filterConfig() { return filter_config_; };
+  // const FilterConfig& filterConfig() { return filter_config_; };
 
- private:
-  FilterConfig filter_config_;
+//  private:
+  // FilterConfig filter_config_;
 };
 
 // Per-stream context.
@@ -87,7 +89,7 @@ class AuthnContext : public Context {
   }
   void onDownstreamConnectionClose(PeerType) override {}
   void onUpstreamConnectionClose(PeerType) override {}
-  FilterHeadersStatus onRequestHeaders(uint32_t) override;
+  FilterHeadersStatus onRequestHeaders(uint32_t, bool) override;
   FilterMetadataStatus onRequestMetadata(uint32_t) override {
     return FilterMetadataStatus::Continue;
   }
@@ -97,7 +99,7 @@ class AuthnContext : public Context {
   FilterTrailersStatus onRequestTrailers(uint32_t) override {
     return FilterTrailersStatus::Continue;
   }
-  FilterHeadersStatus onResponseHeaders(uint32_t) override {
+  FilterHeadersStatus onResponseHeaders(uint32_t, bool) override {
     return FilterHeadersStatus::Continue;
   }
   FilterMetadataStatus onResponseMetadata(uint32_t) override {
@@ -112,22 +114,22 @@ class AuthnContext : public Context {
   void onDone() override {}
   void onLog() override {}
 
-  const FilterConfig& filterConfig() { return rootContext()->filterConfig(); };
+  // const FilterConfig& filterConfig() { return rootContext()->filterConfig(); };
 
  private:
-  std::unique_ptr<AuthenticatorBase> createPeerAuthenticator(
-      FilterContextPtr filter_context);
+  // std::unique_ptr<AuthenticatorBase> createPeerAuthenticator(
+      // FilterContext* filter_context);
   // TODO(shikugawa): origin authenticator implementation.
   // std::unique_ptr<istio::AuthN::AuthenticatorBase> createOriginAuthenticator(
   //   istio::AuthN::FilterContext* filter_context);
 
-  inline AuthnRootContext* rootContext() {
-    return dynamic_cast<AuthnRootContext*>(this->root());
-  };
+  // inline AuthnRootContext* rootContext() {
+  //   return dynamic_cast<AuthnRootContext*>(this->root());
+  // };
 
   // Context for authentication process. Created in decodeHeader to start
   // authentication process.
-  FilterContextPtr filter_context_;
+  // FilterContext* filter_context_;
 };
 
 #ifdef NULL_PLUGIN

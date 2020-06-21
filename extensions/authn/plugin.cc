@@ -26,7 +26,7 @@ namespace AuthN {
 
 #endif
 
-FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t) {
+FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t, bool) {
   return FilterHeadersStatus::Continue;
 }
 

@@ -24,18 +24,20 @@ load(
     "envoy_cc_test",
 )
 
-envoy_cc_library(
+cc_library(
     name = "jwt_lib",
     srcs = ["jwt.cc"],
     hdrs = ["jwt.h"],
-    external_deps = [
-        "ssl",
-    ],
-    repository = "@envoy",
+    # external_deps = [
+    #     "ssl",
+    # ],
+    # repository = "@envoy",
     deps = [
+        "//external:ssl",
         "//extensions/common:json_util_wasm",
-        "@envoy//source/common/common:base64_lib",
-        "@envoy//source/common/common:assert_lib",
+        # "@envoy//source/common/common:base64_lib",
+        # "@envoy//source/common/common:assert_lib",
+        # "@envoy//source/common/common:utility_lib",
     ],
 )
 

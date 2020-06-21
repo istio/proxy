@@ -17,7 +17,6 @@
 #include "extensions/authn/filter_context.h"
 
 #include "src/envoy/utils/filter_names.h"
-#include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
 using istio::authn::Result;
@@ -43,6 +42,10 @@ using proxy_wasm::null_plugin::logError;
 using proxy_wasm::null_plugin::logWarn;
 
 #endif  // NULL_PLUGIN
+
+using google::protobuf::util::MessageToJsonString;
+using Envoy::Utils::IstioFilterName;
+using Envoy::Extensions::HttpFilters::HttpFilterNames;
 
 void FilterContext::setPeerResult(const Payload* payload) {
   if (payload != nullptr) {
@@ -84,7 +87,7 @@ void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
       return;
     default:
       // Should never come here.
-      logError("Invalid binding value {}", binding);
+      logError(absl::StrCat("Invalid binding value ", binding));
       return;
   }
 }
@@ -101,10 +104,10 @@ bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(
     const std::string& issuer, std::string* payload) const {
   // Try getting the Jwt payload from Envoy jwt_authn filter.
   auto filter_it = dynamic_metadata_.filter_metadata().find(
-      Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
+      HttpFilterNames::get().JwtAuthn);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
     logDebug(absl::StrCat("No dynamic_metadata found for filter {}",
-              Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn));
+              HttpFilterNames::get().JwtAuthn));
     return false;
   }
 
@@ -124,7 +127,7 @@ bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(
   // TODO (pitlv2109): Return protobuf Struct instead of string, once Istio jwt
   // filter is removed. Also need to change how Istio authn filter processes the
   // jwt payload.
-  Protobuf::util::MessageToJsonString(entry_it->second.struct_value(), payload);
+  MessageToJsonString(entry_it->second.struct_value(), payload);
   return true;
 }
 
@@ -132,10 +135,9 @@ bool FilterContext::getJwtPayloadFromIstioJwtFilter(
     const std::string& issuer, std::string* payload) const {
   // Try getting the Jwt payload from Istio jwt-auth filter.
   auto filter_it =
-      dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
+      dynamic_metadata_.filter_metadata().find(IstioFilterName::kJwt);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
-    logDebug("No dynamic_metadata found for filter {}",
-              Utils::IstioFilterName::kJwt);
+    logDebug(absl::StrCat("No dynamic_metadata found for filter ", IstioFilterName::kJwt));
     return false;
   }
 

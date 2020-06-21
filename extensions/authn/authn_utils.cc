@@ -20,9 +20,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
+
 #include "extensions/common/json_util.h"
 #include "google/protobuf/struct.pb.h"
-#include "src/envoy/http/jwt_auth/jwt.h"
+// #include "src/envoy/http/jwt_auth/jwt.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -62,7 +63,7 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
     return false;
   }
   auto json_obj = parser.object();
-  ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__, json_obj.dump());
+  logDebug(absl::StrCat(__FUNCTION__, ": json object is ", json_obj.dump()));
 
   *payload->mutable_raw_claims() = payload_str;
 
@@ -134,10 +135,10 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
       Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(
           json_obj, kExchangedTokenOriginalPayload);
   if (original_payload_obj.detail() !=
-      Wasm::Common::JsonParserResultDetail::OK) {
-    ENVOY_LOG(debug,
-              "{}: original_payload in exchanged token is of invalid format.",
-              __FUNCTION__);
+    Wasm::Common::JsonParserResultDetail::OK) {
+
+    logDebug(absl::StrCat(__FUNCTION__, ": original_payload in exchanged token is of invalid format."));
+
     return false;
   }
   *original_payload = original_payload_obj.fetch().dump();

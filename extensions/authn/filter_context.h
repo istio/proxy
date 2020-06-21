@@ -38,13 +38,16 @@ namespace AuthN {
 
 #endif  // NULL_PLUGIN
 
+using Envoy::Http::RequestHeaderMap;
+using Envoy::Network::Connection;
+
 // FilterContext holds inputs, such as request dynamic metadata and connection
 // and result data for authentication process.
 class FilterContext {
  public:
   FilterContext(
       const envoy::config::core::v3::Metadata& dynamic_metadata,
-      const RequestHeaderMap& header_map, const Network::Connection* connection,
+      const RequestHeaderMap& header_map, const Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
           filter_config)
       : dynamic_metadata_(dynamic_metadata),
@@ -70,7 +73,7 @@ class FilterContext {
   const istio::authn::Result& authenticationResult() { return result_; }
 
   // Accessor to connection
-  const Network::Connection* connection() { return connection_; }
+  const Connection* connection() { return connection_; }
   // Accessor to the filter config
   const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
   filter_config() const {
@@ -103,7 +106,7 @@ class FilterContext {
   const RequestHeaderMap& header_map_;
 
   // Pointer to network connection of the request.
-  const Network::Connection* connection_;
+  const Connection* connection_;
 
   // Holds authentication attribute outputs.
   istio::authn::Result result_;

@@ -23,10 +23,11 @@
 #include <utility>
 #include <vector>
 
-#include "common/common/assert.h"
+#include <iostream>
+#include "absl/strings/str_split.h"
+// #include "common/common/assert.h"
 #include "common/common/base64.h"
-#include "common/common/utility.h"
-#include "common/json/json_loader.h"
+// #include "common/common/utility.h"
 #include "openssl/bn.h"
 #include "openssl/ecdsa.h"
 #include "openssl/evp.h"
@@ -75,68 +76,68 @@ namespace {
 // https://opensource.apple.com/source/QuickTimeStreamingServer/QuickTimeStreamingServer-452/CommonUtilitiesLib/base64.c
 //
 // and modified the position of 62 ('+' to '-') and 63 ('/' to '_')
-const uint8_t kReverseLookupTableBase64Url[256] = {
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-    61, 64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64,
-    63, 64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-    43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64};
+// const uint8_t kReverseLookupTableBase64Url[256] = {
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+//     61, 64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
+//     11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64,
+//     63, 64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+//     43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+//     64, 64, 64, 64, 64, 64, 64, 64, 64};
 
-bool IsNotBase64UrlChar(int8_t c) {
-  return kReverseLookupTableBase64Url[static_cast<int32_t>(c)] & 64;
-}
+// bool IsNotBase64UrlChar(int8_t c) {
+//   return kReverseLookupTableBase64Url[static_cast<int32_t>(c)] & 64;
+// }
 
 }  // namespace
 
-std::string Base64UrlDecode(std::string input) {
-  // allow at most 2 padding letters at the end of the input, only if input
-  // length is divisible by 4
-  int len = input.length();
-  if (len % 4 == 0) {
-    if (input[len - 1] == '=') {
-      input.pop_back();
-      if (input[len - 2] == '=') {
-        input.pop_back();
-      }
-    }
-  }
-  // if input contains non-base64url character, return empty string
-  // Note: padding letter must not be contained
-  if (std::find_if(input.begin(), input.end(), IsNotBase64UrlChar) !=
-      input.end()) {
-    return "";
-  }
+// std::string Base64UrlDecode(std::string input) {
+//   // allow at most 2 padding letters at the end of the input, only if input
+//   // length is divisible by 4
+//   int len = input.length();
+//   if (len % 4 == 0) {
+//     if (input[len - 1] == '=') {
+//       input.pop_back();
+//       if (input[len - 2] == '=') {
+//         input.pop_back();
+//       }
+//     }
+//   }
+//   // if input contains non-base64url character, return empty string
+//   // Note: padding letter must not be contained
+//   if (std::find_if(input.begin(), input.end(), IsNotBase64UrlChar) !=
+//       input.end()) {
+//     return "";
+//   }
 
-  // base64url is using '-', '_' instead of '+', '/' in base64 string.
-  std::replace(input.begin(), input.end(), '-', '+');
-  std::replace(input.begin(), input.end(), '_', '/');
+//   // base64url is using '-', '_' instead of '+', '/' in base64 string.
+//   std::replace(input.begin(), input.end(), '-', '+');
+//   std::replace(input.begin(), input.end(), '_', '/');
 
-  // base64 string should be padded with '=' so as to the length of the string
-  // is divisible by 4.
-  switch (input.length() % 4) {
-    case 0:
-      break;
-    case 2:
-      input += "==";
-      break;
-    case 3:
-      input += "=";
-      break;
-    default:
-      // * an invalid base64url input. return empty string.
-      return "";
-  }
-  return Base64::decode(input);
-}
+//   // base64 string should be padded with '=' so as to the length of the string
+//   // is divisible by 4.
+//   switch (input.length() % 4) {
+//     case 0:
+//       break;
+//     case 2:
+//       input += "==";
+//       break;
+//     case 3:
+//       input += "=";
+//       break;
+//     default:
+//       // * an invalid base64url input. return empty string.
+//       return "";
+//   }
+//   return Base64::decode(input);
+// }
 
 namespace {
 
@@ -157,84 +158,84 @@ class EvpPkeyGetter : public WithStatus {
  public:
   EvpPkeyGetter() {}
 
-  bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
-    std::string pkey_der = Base64::decode(pkey_pem);
-    if (pkey_der == "") {
-      UpdateStatus(Status::PEM_PUBKEY_BAD_BASE64);
-      return nullptr;
-    }
-    auto rsa = bssl::UniquePtr<RSA>(
-        RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()));
-    if (!rsa) {
-      UpdateStatus(Status::PEM_PUBKEY_PARSE_ERROR);
-    }
-    return EvpPkeyFromRsa(rsa.get());
-  }
+//   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromStr(const std::string &pkey_pem) {
+//     std::string pkey_der = Base64::decode(pkey_pem);
+//     if (pkey_der == "") {
+//       UpdateStatus(Status::PEM_PUBKEY_BAD_BASE64);
+//       return nullptr;
+//     }
+//     auto rsa = bssl::UniquePtr<RSA>(
+//         RSA_public_key_from_bytes(CastToUChar(pkey_der), pkey_der.length()));
+//     if (!rsa) {
+//       UpdateStatus(Status::PEM_PUBKEY_PARSE_ERROR);
+//     }
+//     return EvpPkeyFromRsa(rsa.get());
+//   }
 
-  bssl::UniquePtr<EVP_PKEY> EvpPkeyFromJwkRSA(const std::string &n,
-                                              const std::string &e) {
-    return EvpPkeyFromRsa(RsaFromJwk(n, e).get());
-  }
+//   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromJwkRSA(const std::string &n,
+//                                               const std::string &e) {
+//     return EvpPkeyFromRsa(RsaFromJwk(n, e).get());
+//   }
 
-  bssl::UniquePtr<EC_KEY> EcKeyFromJwkEC(const std::string &x,
-                                         const std::string &y) {
-    bssl::UniquePtr<EC_KEY> ec_key(
-        EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
-    if (!ec_key) {
-      UpdateStatus(Status::FAILED_CREATE_EC_KEY);
-      return nullptr;
-    }
-    bssl::UniquePtr<BIGNUM> bn_x = BigNumFromBase64UrlString(x);
-    bssl::UniquePtr<BIGNUM> bn_y = BigNumFromBase64UrlString(y);
-    if (!bn_x || !bn_y) {
-      // EC public key field is missing or has parse error.
-      UpdateStatus(Status::JWK_EC_PUBKEY_PARSE_ERROR);
-      return nullptr;
-    }
+//   bssl::UniquePtr<EC_KEY> EcKeyFromJwkEC(const std::string &x,
+//                                          const std::string &y) {
+//     bssl::UniquePtr<EC_KEY> ec_key(
+//         EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
+//     if (!ec_key) {
+//       UpdateStatus(Status::FAILED_CREATE_EC_KEY);
+//       return nullptr;
+//     }
+//     bssl::UniquePtr<BIGNUM> bn_x = BigNumFromBase64UrlString(x);
+//     bssl::UniquePtr<BIGNUM> bn_y = BigNumFromBase64UrlString(y);
+//     if (!bn_x || !bn_y) {
+//       // EC public key field is missing or has parse error.
+//       UpdateStatus(Status::JWK_EC_PUBKEY_PARSE_ERROR);
+//       return nullptr;
+//     }
 
-    if (EC_KEY_set_public_key_affine_coordinates(ec_key.get(), bn_x.get(),
-                                                 bn_y.get()) == 0) {
-      UpdateStatus(Status::JWK_EC_PUBKEY_PARSE_ERROR);
-      return nullptr;
-    }
-    return ec_key;
-  }
+//     if (EC_KEY_set_public_key_affine_coordinates(ec_key.get(), bn_x.get(),
+//                                                  bn_y.get()) == 0) {
+//       UpdateStatus(Status::JWK_EC_PUBKEY_PARSE_ERROR);
+//       return nullptr;
+//     }
+//     return ec_key;
+//   }
 
- private:
-  // In the case where rsa is nullptr, UpdateStatus() should be called
-  // appropriately elsewhere.
-  bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(RSA *rsa) {
-    if (!rsa) {
-      return nullptr;
-    }
-    bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
-    EVP_PKEY_set1_RSA(key.get(), rsa);
-    return key;
-  }
+//  private:
+//   // In the case where rsa is nullptr, UpdateStatus() should be called
+//   // appropriately elsewhere.
+//   bssl::UniquePtr<EVP_PKEY> EvpPkeyFromRsa(RSA *rsa) {
+//     if (!rsa) {
+//       return nullptr;
+//     }
+//     bssl::UniquePtr<EVP_PKEY> key(EVP_PKEY_new());
+//     EVP_PKEY_set1_RSA(key.get(), rsa);
+//     return key;
+//   }
 
-  bssl::UniquePtr<BIGNUM> BigNumFromBase64UrlString(const std::string &s) {
-    std::string s_decoded = Base64UrlDecode(s);
-    if (s_decoded == "") {
-      return nullptr;
-    }
-    return bssl::UniquePtr<BIGNUM>(
-        BN_bin2bn(CastToUChar(s_decoded), s_decoded.length(), NULL));
-  };
+//   bssl::UniquePtr<BIGNUM> BigNumFromBase64UrlString(const std::string &s) {
+//     std::string s_decoded = Base64UrlDecode(s);
+//     if (s_decoded == "") {
+//       return nullptr;
+//     }
+//     return bssl::UniquePtr<BIGNUM>(
+//         BN_bin2bn(CastToUChar(s_decoded), s_decoded.length(), NULL));
+//   };
 
-  bssl::UniquePtr<RSA> RsaFromJwk(const std::string &n, const std::string &e) {
-    bssl::UniquePtr<RSA> rsa(RSA_new());
-    // It crash if RSA object couldn't be created.
-    assert(rsa);
+//   bssl::UniquePtr<RSA> RsaFromJwk(const std::string &n, const std::string &e) {
+//     bssl::UniquePtr<RSA> rsa(RSA_new());
+//     // It crash if RSA object couldn't be created.
+//     assert(rsa);
 
-    rsa->n = BigNumFromBase64UrlString(n).release();
-    rsa->e = BigNumFromBase64UrlString(e).release();
-    if (!rsa->n || !rsa->e) {
-      // RSA public key field is missing or has parse error.
-      UpdateStatus(Status::JWK_RSA_PUBKEY_PARSE_ERROR);
-      return nullptr;
-    }
-    return rsa;
-  }
+//     rsa->n = BigNumFromBase64UrlString(n).release();
+//     rsa->e = BigNumFromBase64UrlString(e).release();
+//     if (!rsa->n || !rsa->e) {
+//       // RSA public key field is missing or has parse error.
+//       UpdateStatus(Status::JWK_RSA_PUBKEY_PARSE_ERROR);
+//       return nullptr;
+//     }
+//     return rsa;
+//   }
 };
 
 }  // namespace
@@ -245,7 +246,8 @@ Jwt::Jwt(const std::string &jwt) {
     UpdateStatus(Status::JWT_BAD_FORMAT);
     return;
   }
-  auto jwt_split = StringUtil::splitToken(jwt, ".");
+  std::vector<std::string> jwt_split = absl::StrSplit(jwt, ".");
+  // auto jwt_split = StringUtil::splitToken(jwt, ".");
   if (jwt_split.size() != 3) {
     UpdateStatus(Status::JWT_BAD_FORMAT);
     return;
@@ -254,7 +256,8 @@ Jwt::Jwt(const std::string &jwt) {
   // Parse header json
   auto parser = Wasm::Common::JsonParser();
   header_str_base64url_ = std::string(jwt_split[0].begin(), jwt_split[0].end());
-  header_str_ = Base64UrlDecode(header_str_base64url_);
+  // header_str_ = Base64UrlDecode(header_str_base64url_);
+  header_str_ = header_str_base64url_;
 
   parser.parse(header_str_);
   if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
@@ -303,7 +306,8 @@ Jwt::Jwt(const std::string &jwt) {
   // Parse payload json
   payload_str_base64url_ =
       std::string(jwt_split[1].begin(), jwt_split[1].end());
-  payload_str_ = Base64UrlDecode(payload_str_base64url_);
+  // payload_str_ = Base64UrlDecode(payload_str_base64url_);
+  payload_str_ = payload_str_base64url_;
   parser.parse(payload_str_);
   if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
@@ -337,8 +341,8 @@ Jwt::Jwt(const std::string &jwt) {
   }
 
   // Set up signature
-  signature_ =
-      Base64UrlDecode(std::string(jwt_split[2].begin(), jwt_split[2].end()));
+  signature_ = "";
+      // Base64UrlDecode(std::string(jwt_split[2].begin(), jwt_split[2].end()));
   if (signature_ == "") {
     // Signature is a bad Base64url input.
     UpdateStatus(Status::JWT_SIGNATURE_PARSE_ERROR);
@@ -481,7 +485,7 @@ void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
   keys_.clear();
   std::unique_ptr<Pubkey> key_ptr(new Pubkey());
   EvpPkeyGetter e;
-  key_ptr->evp_pkey_ = e.EvpPkeyFromStr(pkey_pem);
+  // key_ptr->evp_pkey_ = e.EvpPkeyFromStr(pkey_pem);
   key_ptr->pem_format_ = true;
   UpdateStatus(e.GetStatus());
   if (e.GetStatus() == Status::OK) {
@@ -589,7 +593,7 @@ bool Pubkeys::ExtractPubkeyFromJwkRSA(
   e_str = e_str_field.fetch();
 
   EvpPkeyGetter e;
-  pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
+  // pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
   if (e.GetStatus() == Status::OK) {
     keys_.push_back(std::move(pubkey));
   } else {
@@ -636,7 +640,7 @@ bool Pubkeys::ExtractPubkeyFromJwkEC(const Wasm::Common::JsonObject &jwk_json) {
   y_str = y_str_field.fetch();
 
   EvpPkeyGetter e;
-  pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
+  // pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);
   if (e.GetStatus() == Status::OK) {
     keys_.push_back(std::move(pubkey));
   } else {
@@ -657,7 +661,8 @@ std::unique_ptr<Pubkeys> Pubkeys::CreateFrom(const std::string &pkey,
       keys->CreateFromPemCore(pkey);
       break;
     default:
-      PANIC("can not reach here");
+      std::cout << "" << std::endl;
+      // PANIC("can not reach here");
   }
   return keys;
 }

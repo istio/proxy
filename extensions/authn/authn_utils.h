@@ -15,9 +15,9 @@
 
 #pragma once
 
+#include "absl/strings/string_view.h"
+
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/common/utility.h"
-#include "envoy/http/header_map.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace iaapi = istio::authentication::v1alpha1;

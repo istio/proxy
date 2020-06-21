@@ -46,6 +46,10 @@ using proxy_wasm::null_plugin::logWarn;
 
 #endif  // NULL_PLUGIN
 
+using Envoy::Http::LowerCaseString;
+using Envoy::Utils::GetTrustDomain;
+using Envoy::Utils::GetPrincipal;
+
 namespace {
 // The default header name for an exchanged token
 static const std::string kExchangedTokenHeaderName = "ingress-authorization";
@@ -65,15 +69,15 @@ AuthenticatorBase::AuthenticatorBase(FilterContext* filter_context)
 AuthenticatorBase::~AuthenticatorBase() {}
 
 bool AuthenticatorBase::validateTrustDomain(
-    const Network::Connection* connection) const {
+    const Connection* connection) const {
   std::string peer_trust_domain;
-  if (!Utils::GetTrustDomain(connection, true, &peer_trust_domain)) {
+  if (!GetTrustDomain(connection, true, &peer_trust_domain)) {
     logError("trust domain validation failed: cannot get peer trust domain");
     return false;
   }
 
   std::string local_trust_domain;
-  if (!Utils::GetTrustDomain(connection, false, &local_trust_domain)) {
+  if (!GetTrustDomain(connection, false, &local_trust_domain)) {
     logError("trust domain validation failed: cannot get local trust domain");
     return false;
   }
@@ -89,7 +93,7 @@ bool AuthenticatorBase::validateTrustDomain(
 
 bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
                                      Payload* payload) const {
-  const Network::Connection* connection = filter_context_.connection();
+  const Connection* connection = filter_context_.connection();
   if (connection == nullptr) {
     // It's wrong if connection does not exist.
     logError("validateX509 failed: null connection.");
@@ -99,7 +103,7 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
   const bool has_user =
       connection->ssl() != nullptr &&
       connection->ssl()->peerCertificatePresented() &&
-      Utils::GetPrincipal(connection, true,
+      GetPrincipal(connection, true,
                           payload->mutable_x509()->mutable_user());
   logDebug(absl::StrCat("validateX509 mode {}: ssl={}, has_user={}", iaapi::MutualTls::Mode_Name(mtls.mode()), connection->ssl() != nullptr, has_user));
 
