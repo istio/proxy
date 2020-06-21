@@ -33,8 +33,8 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
+        "//extensions/common:base64",
         "//extensions/common:json_util",
-        "@envoy//source/exe:envoy_common_lib",
     ],
 )
 

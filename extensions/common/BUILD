@@ -183,3 +183,21 @@ cc_library(
         "@com_google_absl_wasm//absl/types:optional",
     ],
 )
+
+envoy_cc_library(
+    name = "base64",
+    hdrs = [
+        "base64.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "base64_wasm",
+    hdrs = [
+        "base64.h",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    visibility = ["//visibility:public"],
+)
