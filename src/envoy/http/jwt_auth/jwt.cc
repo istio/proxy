@@ -26,7 +26,6 @@
 #include "common/common/assert.h"
 #include "common/common/base64.h"
 #include "common/common/utility.h"
-#include "common/json/json_loader.h"
 #include "openssl/bn.h"
 #include "openssl/ecdsa.h"
 #include "openssl/evp.h"
