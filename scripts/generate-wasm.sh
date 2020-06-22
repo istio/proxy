@@ -73,7 +73,7 @@ if [[ "$(docker images -q ${WASM_SDK_IMAGE}:${WASM_SDK_TAG} 2> /dev/null)" == ""
   # Rebuild and push
   cd api/wasm/cpp && docker build -t ${WASM_SDK_IMAGE}:${WASM_SDK_TAG} -f Dockerfile-sdk .
   if [[ ${PUSH_DOCKER_IMAGE} == 1 ]]; then
-    docker push ${WASM_SDK_IMAGE}:${WASM_SDK_TAG} || "fail to push to ${WASM_SDK_IMAGE} hub"
+    docker push ${WASM_SDK_IMAGE}:${WASM_SDK_TAG} || echo "fail to push to ${WASM_SDK_IMAGE} hub"
   fi
 fi
 
