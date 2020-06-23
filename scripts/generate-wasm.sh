@@ -46,7 +46,7 @@ done
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
 ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
-ENVOY_PROJECT="$(grep -Pom1 "^ENVOY_PROJECT = \"\K[a-zA-Z0-9]*" "${WORKSPACE}")"
+ENVOY_PROJECT="$(grep -Pom1 "^ENVOY_PROJECT = \"\K[a-zA-Z0-9-]*" "${WORKSPACE}")"
 ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z0-9]*" "${WORKSPACE}")"
 IMAGE=gcr.io/istio-testing/wasmsdk
 TAG=${ENVOY_SHA}
@@ -100,7 +100,7 @@ if [ -n "${DST_BUCKET}" ]; then
     SHA256_PATH="${WASM_PATH}.sha256"
     cp ${i} ${WASM_PATH}
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
-    
+
     # push wasm files and sha to the given bucket
     gsutil stat "${DST_BUCKET}/${WASM_NAME}" \
       && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
