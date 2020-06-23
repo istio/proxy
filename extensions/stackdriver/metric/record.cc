@@ -173,39 +173,39 @@ TagKeyValueList getInboundTagMap(
 // https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
 uint32_t httpCodeFromGrpc(uint32_t grpc_status) {
   switch (grpc_status) {
-    case 0:
+    case 0: // OK
       return 200;
-    case 1:
+    case 1: // CANCELLED
       return 499;
-    case 2:
+    case 2: // UNKNOWN
       return 500;
-    case 3:
+    case 3: // INVALID_ARGUMENT
       return 400;
-    case 4:
+    case 4: // DEADLINE_EXCEEDED
       return 504;
-    case 5:
+    case 5: // NOT_FOUND
       return 404;
-    case 6:
+    case 6: // ALREADY_EXISTS
       return 409;
-    case 7:
+    case 7: // PERMISSION_DENIED
       return 403;
-    case 8:
+    case 8: // RESOURCE_EXHAUSTED
       return 429;
-    case 9:
+    case 9: // FAILED_PRECONDITION
       return 400;
-    case 10:
+    case 10: // ABORTED
       return 409;
-    case 11:
+    case 11: // OUT_OF_RANGE
       return 400;
-    case 12:
+    case 12: // UNIMPLEMENTED
       return 501;
-    case 13:
+    case 13: // INTERNAL
       return 500;
-    case 14:
+    case 14: // UNAVAILABLE
       return 503;
-    case 15:
+    case 15: // DATA_LOSS
       return 500;
-    case 16:
+    case 16: // UNAUTHENTICATED
       return 401;
     default:
       return 500;
