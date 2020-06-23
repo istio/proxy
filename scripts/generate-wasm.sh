@@ -64,7 +64,7 @@ if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
   TMP_DIR=$(mktemp -d -t istio-envoy-XXXXXXXXXX)
   trap "rm -rf ${TMP_DIR}" EXIT
 
-  if [[ -z ${ENVOY_DIR} ]]; then
+  if [[ -z "${ENVOY_DIR}" ]]; then
     cd ${TMP_DIR}
     git clone https://github.com/${ENVOY_ORG}/${ENVOY_REPO}
     cd ${ENVOY_REPO}
