@@ -73,7 +73,7 @@ if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
   # Rebuild and push
   cd api/wasm/cpp && docker build -t ${IMAGE}:${TAG} -f Dockerfile-sdk .
   if [[ ${PUSH_DOCKER_IMAGE} == 1 ]]; then
-    docker push ${IMAGE}:${TAG} || "fail to push to gcr.io/istio-testing hub"
+    docker push ${IMAGE}:${TAG} || echo "fail to push to gcr.io/istio-testing hub"
   fi
 fi
 
