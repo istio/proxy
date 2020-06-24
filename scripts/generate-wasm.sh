@@ -64,10 +64,17 @@ if [[ "$(docker images -q ${IMAGE}:${TAG} 2> /dev/null)" == "" ]]; then
   TMP_DIR=$(mktemp -d -t istio-envoy-XXXXXXXXXX)
   trap "rm -rf ${TMP_DIR}" EXIT
 
+  if [[ -z "${ENVOY_DIR}" ]]; then
+    cd ${TMP_DIR}
+    git clone https://github.com/${ENVOY_ORG}/${ENVOY_REPO}
+    cd ${ENVOY_REPO}
+  else
+    # ENVOY_DIR is absolute path of local envoy dir used for Wasm build.
+    cp -r ${ENVOY_DIR} ${TMP_DIR}
+    cd ${TMP_DIR}/$(basename "${ENVOY_DIR}")
+  fi
+
   # Check out to envoy SHA
-  cd ${TMP_DIR}
-  git clone https://github.com/${ENVOY_PROJECT}/${ENVOY_REPO}
-  cd ${ENVOY_REPO}
   git checkout ${ENVOY_SHA}
 
   # Rebuild and push
