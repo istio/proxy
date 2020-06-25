@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include "absl/strings/str_cat.h"
 #include "extensions/authn/filter_context.h"
 
+#include "absl/strings/str_cat.h"
 #include "src/envoy/utils/filter_names.h"
 
 using istio::authn::Payload;
@@ -36,22 +36,23 @@ namespace proxy_wasm {
 namespace null_plugin {
 namespace AuthN {
 
-using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logDebug;
 using proxy_wasm::null_plugin::logError;
+using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logWarn;
 
 #endif  // NULL_PLUGIN
 
-using google::protobuf::util::MessageToJsonString;
-using Envoy::Utils::IstioFilterName;
 using Envoy::Extensions::HttpFilters::HttpFilterNames;
+using Envoy::Utils::IstioFilterName;
+using google::protobuf::util::MessageToJsonString;
 
 void FilterContext::setPeerResult(const Payload* payload) {
   if (payload != nullptr) {
     switch (payload->payload_case()) {
       case Payload::kX509:
-        logDebug(absl::StrCat("Set peer from X509: {}", payload->x509().user()));
+        logDebug(
+            absl::StrCat("Set peer from X509: {}", payload->x509().user()));
         result_.set_peer_user(payload->x509().user());
         break;
       case Payload::kJwt:
@@ -77,12 +78,13 @@ void FilterContext::setOriginResult(const Payload* payload) {
 void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
   switch (binding) {
     case iaapi::PrincipalBinding::USE_PEER:
-      logDebug(absl::StrCat("Set principal from peer: {}", result_.peer_user()));
+      logDebug(
+          absl::StrCat("Set principal from peer: {}", result_.peer_user()));
       result_.set_principal(result_.peer_user());
       return;
     case iaapi::PrincipalBinding::USE_ORIGIN:
       logDebug(absl::StrCat("Set principal from origin: {}",
-                result_.origin().user()));
+                            result_.origin().user()));
       result_.set_principal(result_.origin().user());
       return;
     default:
@@ -103,11 +105,11 @@ bool FilterContext::getJwtPayload(const std::string& issuer,
 bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(
     const std::string& issuer, std::string* payload) const {
   // Try getting the Jwt payload from Envoy jwt_authn filter.
-  auto filter_it = dynamic_metadata_.filter_metadata().find(
-      HttpFilterNames::get().JwtAuthn);
+  auto filter_it =
+      dynamic_metadata_.filter_metadata().find(HttpFilterNames::get().JwtAuthn);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
     logDebug(absl::StrCat("No dynamic_metadata found for filter {}",
-              HttpFilterNames::get().JwtAuthn));
+                          HttpFilterNames::get().JwtAuthn));
     return false;
   }
 
@@ -137,7 +139,8 @@ bool FilterContext::getJwtPayloadFromIstioJwtFilter(
   auto filter_it =
       dynamic_metadata_.filter_metadata().find(IstioFilterName::kJwt);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
-    logDebug(absl::StrCat("No dynamic_metadata found for filter ", IstioFilterName::kJwt));
+    logDebug(absl::StrCat("No dynamic_metadata found for filter ",
+                          IstioFilterName::kJwt));
     return false;
   }
 

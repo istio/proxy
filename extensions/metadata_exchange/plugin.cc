@@ -24,7 +24,7 @@
 
 #ifndef NULL_PLUGIN
 
-#include "base64.h"
+#include "extensions/common/base64.h"
 #include "extensions/metadata_exchange/declare_property.pb.h"
 
 #else

@@ -17,10 +17,9 @@
 
 #include <regex>
 
-#include "absl/strings/str_cat.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-
 #include "extensions/common/json_util.h"
 #include "google/protobuf/struct.pb.h"
 // #include "src/envoy/http/jwt_auth/jwt.h"
@@ -38,9 +37,9 @@ namespace proxy_wasm {
 namespace null_plugin {
 namespace AuthN {
 
-using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logDebug;
 using proxy_wasm::null_plugin::logError;
+using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logWarn;
 
 #endif  // NULL_PLUGIN
@@ -135,9 +134,10 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
       Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(
           json_obj, kExchangedTokenOriginalPayload);
   if (original_payload_obj.detail() !=
-    Wasm::Common::JsonParserResultDetail::OK) {
-
-    logDebug(absl::StrCat(__FUNCTION__, ": original_payload in exchanged token is of invalid format."));
+      Wasm::Common::JsonParserResultDetail::OK) {
+    logDebug(absl::StrCat(
+        __FUNCTION__,
+        ": original_payload in exchanged token is of invalid format."));
 
     return false;
   }
@@ -214,4 +214,3 @@ bool AuthnUtils::ShouldValidateJwtPerPath(absl::string_view path,
 }  // namespace null_plugin
 }  // namespace proxy_wasm
 #endif
-

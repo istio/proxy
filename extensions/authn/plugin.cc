@@ -30,7 +30,6 @@ FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t, bool) {
   return FilterHeadersStatus::Continue;
 }
 
-
 #ifdef NULL_PLUGIN
 }  // namespace AuthN
 }  // namespace null_plugin

@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 
-#include "absl/strings/str_cat.h"
 #include "extensions/authn/authenticator_base.h"
 
+#include "absl/strings/str_cat.h"
 #include "common/common/assert.h"
-#include "common/config/metadata.h"
 #include "extensions/authn/authn_utils.h"
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"
@@ -39,16 +38,16 @@ namespace proxy_wasm {
 namespace null_plugin {
 namespace AuthN {
 
-using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logDebug;
 using proxy_wasm::null_plugin::logError;
+using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logWarn;
 
 #endif  // NULL_PLUGIN
 
 using Envoy::Http::LowerCaseString;
-using Envoy::Utils::GetTrustDomain;
 using Envoy::Utils::GetPrincipal;
+using Envoy::Utils::GetTrustDomain;
 
 namespace {
 // The default header name for an exchanged token
@@ -83,7 +82,10 @@ bool AuthenticatorBase::validateTrustDomain(
   }
 
   if (peer_trust_domain != local_trust_domain) {
-    logError(absl::StrCat("trust domain validation failed: peer trust domain {} different from local trust domain {}", peer_trust_domain, local_trust_domain));
+    logError(
+        absl::StrCat("trust domain validation failed: peer trust domain {} "
+                     "different from local trust domain {}",
+                     peer_trust_domain, local_trust_domain));
     return false;
   }
 
@@ -103,9 +105,10 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
   const bool has_user =
       connection->ssl() != nullptr &&
       connection->ssl()->peerCertificatePresented() &&
-      GetPrincipal(connection, true,
-                          payload->mutable_x509()->mutable_user());
-  logDebug(absl::StrCat("validateX509 mode {}: ssl={}, has_user={}", iaapi::MutualTls::Mode_Name(mtls.mode()), connection->ssl() != nullptr, has_user));
+      GetPrincipal(connection, true, payload->mutable_x509()->mutable_user());
+  logDebug(absl::StrCat("validateX509 mode {}: ssl={}, has_user={}",
+                        iaapi::MutualTls::Mode_Name(mtls.mode()),
+                        connection->ssl() != nullptr, has_user));
 
   if (!has_user) {
     // For plaintext connection, return value depend on mode:
@@ -146,7 +149,9 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
         // When the header of an exchanged token is found but the token
         // does not contain the claim of the original payload, it
         // is regarded as an invalid exchanged token.
-        logError(absl::StrCat("Expect exchanged-token with original payload claim. Received: {}", jwt_payload));
+        logError(absl::StrCat(
+            "Expect exchanged-token with original payload claim. Received: {}",
+            jwt_payload));
         return false;
       }
     }

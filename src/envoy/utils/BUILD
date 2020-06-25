@@ -70,21 +70,20 @@ envoy_cc_library(
     ],
 )
 
-envoy_cc_library(
-  name = "utils_wasm_lib",
+cc_library(
+  name = "utils_lib_wasm",
   srcs = [
     "utils.cc"
   ],
   hdrs = [
     "utils.h"
   ],
-  repository = "@envoy",
   visibility = ["//visibility:public"],
   deps = [
     "//include/istio/mixerclient:headers_lib",
     "//include/istio/utils:headers_lib",
     "@envoy//include/envoy/network:connection_interface",
-    "@envoy//source/common/http:headers_lib",
+    "@envoy//include/envoy/http:header_map_interface",
   ]
 )
 

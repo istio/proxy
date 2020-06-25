@@ -15,11 +15,10 @@
 
 #include "extensions/authn/origin_authenticator.h"
 
-#include "absl/strings/str_cat.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/http/headers.h"
-#include "common/http/utility.h"
 #include "extensions/authn/authn_utils.h"
 
 using istio::authn::Payload;
@@ -35,9 +34,9 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 #include "include/proxy-wasm/null_plugin.h"
 
-using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logDebug;
 using proxy_wasm::null_plugin::logError;
+using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logWarn;
 
 namespace proxy_wasm {
@@ -46,10 +45,13 @@ namespace AuthN {
 
 #endif  // NULL_PLUGIN
 
-bool isCORSPreflightRequest(const Http::RequestHeaderMap& headers) {
+using Envoy::Http::Headers;
+using Envoy::Http::RequestHeaderMap;
+
+bool isCORSPreflightRequest(const RequestHeaderMap& headers) {
   return headers.Method() &&
          headers.Method()->value().getStringView() ==
-             Http::Headers::get().MethodValues.Options &&
+             Headers::get().MethodValues.Options &&
          headers.Origin() && !headers.Origin()->value().empty() &&
          headers.AccessControlRequestMethod() &&
          !headers.AccessControlRequestMethod()->value().empty();
@@ -66,9 +68,10 @@ bool OriginAuthenticator::run(Payload* payload) {
     // does not provide any origin method so this code should
     // never reach. However, it's ok to treat it as authentication
     // fails.
-    logWarn(absl::StrCat("Principal is binded to origin, but no method specified in "
-              "policy {}",
-              policy_.DebugString()));
+    logWarn(absl::StrCat(
+        "Principal is binded to origin, but no method specified in "
+        "policy {}",
+        policy_.DebugString()));
     return false;
   }
 
@@ -91,8 +94,9 @@ bool OriginAuthenticator::run(Payload* payload) {
     }
     logTrace(absl::StrCat("Got request path {}", path));
   } else {
-    logError("Failed to get request path, JWT will always be used for "
-              "validation");
+    logError(
+        "Failed to get request path, JWT will always be used for "
+        "validation");
   }
 
   bool triggered = false;
@@ -102,7 +106,7 @@ bool OriginAuthenticator::run(Payload* payload) {
 
     if (AuthnUtils::ShouldValidateJwtPerPath(path, jwt)) {
       logDebug(absl::StrCat("Validating request path {} for jwt {}", path,
-                jwt.DebugString()));
+                            jwt.DebugString()));
       // set triggered to true if any of the jwt trigger rule matched.
       triggered = true;
       if (validateJwt(jwt, payload)) {

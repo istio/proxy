@@ -67,7 +67,7 @@ class AuthnRootContext : public RootContext {
 
   // const FilterConfig& filterConfig() { return filter_config_; };
 
-//  private:
+  //  private:
   // FilterConfig filter_config_;
 };
 
@@ -114,11 +114,12 @@ class AuthnContext : public Context {
   void onDone() override {}
   void onLog() override {}
 
-  // const FilterConfig& filterConfig() { return rootContext()->filterConfig(); };
+  // const FilterConfig& filterConfig() { return rootContext()->filterConfig();
+  // };
 
  private:
   // std::unique_ptr<AuthenticatorBase> createPeerAuthenticator(
-      // FilterContext* filter_context);
+  // FilterContext* filter_context);
   // TODO(shikugawa): origin authenticator implementation.
   // std::unique_ptr<istio::AuthN::AuthenticatorBase> createOriginAuthenticator(
   //   istio::AuthN::FilterContext* filter_context);

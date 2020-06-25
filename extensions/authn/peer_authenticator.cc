@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#include "absl/strings/str_cat.h"
 #include "extensions/authn/peer_authenticator.h"
 
-#include "common/http/utility.h"
+#include "absl/strings/str_cat.h"
 #include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;
 
 namespace iaapi = istio::authentication::v1alpha1;
+
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
 
@@ -31,9 +31,9 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 #include "include/proxy-wasm/null_plugin.h"
 
-using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logDebug;
 using proxy_wasm::null_plugin::logError;
+using proxy_wasm::null_plugin::logTrace;
 using proxy_wasm::null_plugin::logWarn;
 
 namespace proxy_wasm {

@@ -48,43 +48,34 @@ wasm_cc_binary(
 )
 
 wasm_cc_binary(
-  name = "authn.wasm",
-  srcs = [
-    # "//extensions/authn:authenticator_base.h",
-    # "//extensions/authn:authenticator_base.cc",
-    "//extensions/authn:authn_utils.h",
-    "//extensions/authn:authn_utils.cc",
-    # "//extensions/authn:filter_context.h",
-    # "//extensions/authn:filter_context.cc",
-    # "//extensions/authn:origin_authenticator.h",
-    # "//extensions/authn:origin_authenticator.cc",
-    # "//extensions/authn:peer_authenticator.h",
-    # "//extensions/authn:peer_authenticator.cc",
-    # "//extensions/authn:plugin.h",
-    # "//extensions/authn:plugin.cc",
-  ],
-  copts = ["-UNULL_PLUGIN"],
-  deps = [
-    "//external:authentication_policy_config_cc_proto",
-    "//src/istio/authn:context_proto_cc_wasm",
-    # "//src/envoy/utils:filter_names_lib",
-    # "//src/envoy/utils:utils_wasm_lib",
-    "//src/envoy/http/jwt_auth:jwt_lib", # こいつのせい
-    "//extensions/common:json_util_wasm",
-    # --------
-    "@com_google_absl_wasm//absl/strings",
-    "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
-    "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
-    # --------
-    # "@envoy//include/envoy/http:filter_interface",
-    # -------
-    # "@envoy//source/common/common:utility_lib",
-    # "@envoy//source/common/http:headers_lib",
-    # ------------
-    # "@envoy//source/extensions/filters/http:well_known_names",
-    # "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
-    # "@envoy_api//envoy/api/v2/core:pkg_cc_proto"
-  ],
+    name = "authn.wasm",
+    srcs = [
+        "//extensions/authn:authenticator_base.h",
+        "//extensions/authn:authenticator_base.cc",
+        "//extensions/authn:authn_utils.h",
+        "//extensions/authn:authn_utils.cc",
+        "//extensions/authn:filter_context.h",
+        "//extensions/authn:filter_context.cc",
+        "//extensions/authn:origin_authenticator.h",
+        "//extensions/authn:origin_authenticator.cc",
+        "//extensions/authn:peer_authenticator.h",
+        "//extensions/authn:peer_authenticator.cc",
+        "//extensions/authn:plugin.h",
+        "//extensions/authn:plugin.cc",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    deps = [
+        "//external:authentication_policy_config_cc_proto",
+        "//src/istio/authn:context_proto_cc_wasm",
+        "//src/envoy/utils:filter_names_lib",
+        "//src/envoy/utils:utils_lib_wasm",
+        "//src/envoy/http/jwt_auth:jwt_lib_wasm",
+        "@com_google_absl_wasm//absl/strings",
+        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
+        "@envoy//source/common/http:headers_lib",
+        "@envoy//source/extensions/filters/http:well_known_names",
+    ],
 )
 
 wasm_cc_binary(

@@ -16,7 +16,6 @@
 #pragma once
 
 #include "absl/strings/string_view.h"
-
 #include "authentication/v1alpha1/policy.pb.h"
 #include "src/istio/authn/context.pb.h"
 
