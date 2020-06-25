@@ -84,12 +84,3 @@ message Result {
   // JwtPayload for origin authenticated attributes.
   JwtPayload origin = 3;
 }
-
-// This is a transplantation of envoy_api Metadata. We can't build envoy_api
-// with wasm because one of dependencies is required google/re2 , which depends
-// on pthread. Now emscripten doesn't have pthread support.
-message Metadata {
-  // Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
-  // namespace is reserved for Envoy's built-in filters.
-  map<string, google.protobuf.Struct> filter_metadata = 1;
-}

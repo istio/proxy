@@ -21,10 +21,6 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_proto_library",
 )
-load(
-    "//:wasm.bzl",
-    "wasm_cc_proto_library",
-)
 
 envoy_proto_library(
     name = "context_proto",
@@ -32,15 +28,9 @@ envoy_proto_library(
     external_deps = ["well_known_protos"],
 )
 
-proto_library(
-    name = "context_proto_wasm",
-    srcs = ["context.proto"],
-    deps = [
-        "@com_google_protobuf//:struct_proto",
-    ],
-)
-
-wasm_cc_proto_library(
+cc_proto_library(
     name = "context_proto_cc_wasm",
-    deps = ":context_proto_wasm",
+    deps = [
+        ":context_proto",
+    ],
 )

@@ -38,10 +38,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit time: 6/17/20
-ENVOY_SHA = "5f51ecd39b2462ca3ec5947c5dbb0e492f36fa53"
+# Commit time: 6/25/20
+ENVOY_SHA = "55fb4cc96779806d28c20d114327520763cfa602"
 
-ENVOY_SHA256 = "0219971a5dd9e7f5d54ce9300dd9784f0090671770a7f557bbf68a622ea14e7e"
+ENVOY_SHA256 = "42931787b8205c2c12c31614f3e2240b931fa6f998551208b8d469b8d003cddf"
 
 ENVOY_ORG = "Shikugawa"
 
@@ -49,16 +49,11 @@ ENVOY_REPO = "envoy-wasm"
 
 # To override with local envoy, just pass `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or
 # persist the option in `user.bazelrc`.
-# http_archive(
-#     name = "envoy",
-#     sha256 = ENVOY_SHA256,
-#     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
-#     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
-# )
-
-local_repository(
-  name = "envoy",
-  path = "/home/shimizurei/envoy-wasm",
+http_archive(
+    name = "envoy",
+    sha256 = ENVOY_SHA256,
+    strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
+    url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
 load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
@@ -152,26 +147,4 @@ http_archive(
     sha256 = "bc9dd47d9676b016a8bec86f4e1cdc3edd22042bd9d7948a7b355f600974565e",
     strip_prefix = "abseil-cpp-" + COM_GOOGLE_ABSL_WASM_SHA,
     url = "https://github.com/abseil/abseil-cpp/archive/" + COM_GOOGLE_ABSL_WASM_SHA + ".tar.gz",
-)
-
-COM_GITHUB_TENCENT_RAPIDJSON = "dfbe1db9da455552f7a9ad5d2aea17dd9d832ac1"
-
-RAPIDJSON_BUILD = """
-licenses(["notice"])  # Apache 2
-
-cc_library(
-    name = "rapidjson",
-    hdrs = glob(["include/rapidjson/**/*.h"]),
-    defines = ["RAPIDJSON_HAS_STDSTRING=1"],
-    includes = ["include"],
-    visibility = ["//visibility:public"],
-)
-"""
-
-http_archive(
-    name = "com_github_tencent_rapidjson",
-    build_file_content = RAPIDJSON_BUILD,
-    sha256 = "a2faafbc402394df0fa94602df4b5e4befd734aad6bb55dfef46f62fcaf1090b",
-    strip_prefix = "rapidjson-" + COM_GITHUB_TENCENT_RAPIDJSON,
-    url = "https://github.com/Tencent/rapidjson/archive/" + COM_GITHUB_TENCENT_RAPIDJSON + ".tar.gz",
 )
