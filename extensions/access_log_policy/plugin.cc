@@ -37,6 +37,7 @@ namespace Plugin {
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
+using proxy_wasm::WasmHeaderMapType;
 
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
 

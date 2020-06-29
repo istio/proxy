@@ -179,7 +179,7 @@ bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
   return true;
 }
 
-FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
+FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
   // strip and store downstream peer metadata
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
@@ -222,7 +222,7 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   return FilterHeadersStatus::Continue;
 }
 
-FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
+FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t, bool) {
   // strip and store upstream peer metadata
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&

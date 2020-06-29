@@ -37,10 +37,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit time: 5/19/20
-ENVOY_SHA = "ee990c97332793e29eff11fa2773996857a5f5d3"
+# Commit time: 6/29/20
+ENVOY_SHA = "ede27304cf02bf243c4d403240b65d9e1ed22957"
 
-ENVOY_SHA256 = "92b0d107d316371165c6ecd83ca24d0b1e791224a737ba386e9d58217d517209"
+ENVOY_SHA256 = "89cda1e62b2ed3afce538afc84e3ff6e892a290d5ef55982dc5d1fdf423e292b"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -66,6 +66,10 @@ envoy_api_dependencies()
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
 envoy_dependencies()
+
+load("@envoy//bazel:repositories_extra.bzl", "envoy_dependencies_extra")
+
+envoy_dependencies_extra()
 
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 

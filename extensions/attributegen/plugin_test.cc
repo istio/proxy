@@ -346,7 +346,7 @@ TEST_P(AttributeGenFilterTest, UnparseableConfig) {
   setupConfig({.plugin_config = plugin_config});
   EXPECT_EQ(root_context_->readMetric(
                 "wasm_filter.attributegen.type.config.error_count"),
-            1);
+            2);
 }
 
 TEST_P(AttributeGenFilterTest, BadExpr) {
@@ -359,7 +359,7 @@ TEST_P(AttributeGenFilterTest, BadExpr) {
   setupConfig({.plugin_config = plugin_config});
   EXPECT_EQ(root_context_->readMetric(
                 "wasm_filter.attributegen.type.config.error_count"),
-            1);
+            2);
 }
 
 TEST_P(AttributeGenFilterTest, NoMatch) {
