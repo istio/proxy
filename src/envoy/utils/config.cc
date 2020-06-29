@@ -37,7 +37,7 @@ const std::string kDefaultMixerClusterName("mixer_server");
 // ReadConfig() finds config from |json| that matches version |config_version|,
 // and parses config into |message|. Returns true if config is read and parsed
 // successfully.
-bool ReadConfig(const Json::Object &json, const std::string &config_version,
+bool ReadConfig(const Wasm::Common::JsonObject &json, const std::string &config_version,
                 Message *message) {
   if (!json.hasObject(config_version)) {
     return false;
