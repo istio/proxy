@@ -25,6 +25,51 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
+namespace {
+// See:
+// https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
+uint32_t httpCodeFromGrpc(uint32_t grpc_status) {
+  switch (grpc_status) {
+    case 0:  // OK
+      return 200;
+    case 1:  // CANCELLED
+      return 499;
+    case 2:  // UNKNOWN
+      return 500;
+    case 3:  // INVALID_ARGUMENT
+      return 400;
+    case 4:  // DEADLINE_EXCEEDED
+      return 504;
+    case 5:  // NOT_FOUND
+      return 404;
+    case 6:  // ALREADY_EXISTS
+      return 409;
+    case 7:  // PERMISSION_DENIED
+      return 403;
+    case 8:  // RESOURCE_EXHAUSTED
+      return 429;
+    case 9:  // FAILED_PRECONDITION
+      return 400;
+    case 10:  // ABORTED
+      return 409;
+    case 11:  // OUT_OF_RANGE
+      return 400;
+    case 12:  // UNIMPLEMENTED
+      return 501;
+    case 13:  // INTERNAL
+      return 500;
+    case 14:  // UNAVAILABLE
+      return 503;
+    case 15:  // DATA_LOSS
+      return 500;
+    case 16:  // UNAUTHENTICATED
+      return 401;
+    default:
+      return 500;
+  }
+}
+}  // namespace
+
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
             const ::Wasm::Common::RequestInfo& request_info,
@@ -68,6 +113,11 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
   const auto peer_canonical_rev =
       peer_rev_iter ? peer_rev_iter->value() : nullptr;
 
+  const auto& response_code =
+      request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
+          ? httpCodeFromGrpc(request_info.grpc_status)
+          : request_info.response_code;
+
   if (is_outbound) {
     opencensus::tags::TagMap tagMap = {
         {meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
@@ -80,7 +130,7 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
         {destinationServiceNamespaceKey(),
          flatbuffers::GetString(peer_node_info.namespace_())},
         {destinationPortKey(), std::to_string(request_info.destination_port)},
-        {responseCodeKey(), std::to_string(request_info.response_code)},
+        {responseCodeKey(), std::to_string(response_code)},
         {sourcePrincipalKey(), request_info.source_principal},
         {sourceWorkloadNameKey(),
          flatbuffers::GetString(local_node_info.workload_name())},
@@ -135,7 +185,7 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
       {destinationServiceNamespaceKey(),
        flatbuffers::GetString(local_node_info.namespace_())},
       {destinationPortKey(), std::to_string(request_info.destination_port)},
-      {responseCodeKey(), std::to_string(request_info.response_code)},
+      {responseCodeKey(), std::to_string(response_code)},
       {sourcePrincipalKey(), request_info.source_principal},
       {sourceWorkloadNameKey(),
        flatbuffers::GetString(peer_node_info.workload_name())},
