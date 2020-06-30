@@ -85,7 +85,8 @@ template <>
 std::pair<absl::optional<std::string>, JsonParserResultDetail>
 JsonValueAs<std::string>(const JsonObject& j) {
   if (j.is_string()) {
-    return std::make_pair(j.get<std::string>(), JsonParserResultDetail::OK);
+    return std::make_pair(j.get_ref<std::string const&>(),
+                          JsonParserResultDetail::OK);
   }
   return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
