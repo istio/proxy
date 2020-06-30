@@ -36,18 +36,7 @@ enum JsonParserResultDetail {
   INVALID_VALUE,
 };
 
-class JsonParser {
- public:
-  void parse(absl::string_view str);
-  JsonObject object() { return object_; };
-  const JsonParserResultDetail& detail() { return detail_; }
-
- private:
-  void reset();
-
-  JsonParserResultDetail detail_{JsonParserResultDetail::EMPTY};
-  JsonObject object_{};
-};
+std::pair<JsonObject, JsonParserResultDetail> JsonParse(absl::string_view str);
 
 template <typename T>
 std::pair<absl::optional<T>, JsonParserResultDetail> JsonValueAs(

@@ -251,16 +251,15 @@ Jwt::Jwt(const std::string &jwt) {
   }
 
   // Parse header json
-  auto parser = Wasm::Common::JsonParser();
   header_str_base64url_ = std::string(jwt_split[0].begin(), jwt_split[0].end());
   header_str_ = Base64UrlDecode(header_str_base64url_);
 
-  parser.parse(header_str_);
-  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+  auto result = Wasm::Common::JsonParse(header_str_);
+  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
     return;
   } else {
-    header_ = parser.object();
+    header_ = result.first;
   }
 
   // Header should contain "alg".
@@ -303,12 +302,12 @@ Jwt::Jwt(const std::string &jwt) {
   payload_str_base64url_ =
       std::string(jwt_split[1].begin(), jwt_split[1].end());
   payload_str_ = Base64UrlDecode(payload_str_base64url_);
-  parser.parse(payload_str_);
-  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+  result = Wasm::Common::JsonParse(payload_str_);
+  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
     return;
   } else {
-    payload_ = parser.object();
+    payload_ = result.first;
   }
 
   iss_ = Wasm::Common::JsonGetField<std::string>(payload_, "iss").fetch_or("");
@@ -491,14 +490,13 @@ void Pubkeys::CreateFromPemCore(const std::string &pkey_pem) {
 void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
   keys_.clear();
 
-  auto parser = Wasm::Common::JsonParser();
   Wasm::Common::JsonObject jwks_json;
-  parser.parse(pkey_jwks);
-  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+  auto result = Wasm::Common::JsonParse(pkey_jwks);
+  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
     UpdateStatus(Status::JWK_PARSE_ERROR);
     return;
   } else {
-    jwks_json = parser.object();
+    jwks_json = result.first;
   }
 
   std::vector<std::reference_wrapper<const Wasm::Common::JsonObject>> key_refs;
