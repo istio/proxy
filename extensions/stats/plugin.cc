@@ -438,9 +438,8 @@ bool PluginRootContext::configure(size_t configuration_size) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
-  auto json_parser = ::Wasm::Common::JsonParser();
-  json_parser.parse(configuration_data->view());
-  auto j = json_parser.object();
+  auto result = ::Wasm::Common::JsonParse(configuration_data->view());
+  auto j = result.first;
   if (!j.is_object()) {
     LOG_WARN(absl::StrCat("cannot parse configuration as JSON: ",
                           configuration_data->view()));

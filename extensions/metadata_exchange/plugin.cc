@@ -126,14 +126,13 @@ bool PluginRootContext::configure(size_t configuration_size) {
   auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
                                            0, configuration_size);
   // Parse configuration JSON string.
-  auto parser = ::Wasm::Common::JsonParser();
-  parser.parse(configuration_data->view());
-  if (parser.detail() != ::Wasm::Common::JsonParserResultDetail::OK) {
+  auto result = ::Wasm::Common::JsonParse(configuration_data->view());
+  if (result.second != ::Wasm::Common::JsonParserResultDetail::OK) {
     LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
                           configuration_data->view()));
     return false;
   }
-  auto j = parser.object();
+  auto j = result.first;
   if (!j.is_object()) {
     LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
                           configuration_data->view(), j.dump()));
