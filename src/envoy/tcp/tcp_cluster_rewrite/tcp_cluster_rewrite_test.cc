@@ -64,7 +64,7 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
         std::make_unique<TcpProxy::PerConnectionCluster>(
             "hello.ns1.svc.cluster.local"),
         StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+        StreamInfo::FilterState::LifeSpan::Connection);
     filter_->onNewConnection();
 
     EXPECT_TRUE(
@@ -89,7 +89,7 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
         TcpProxy::PerConnectionCluster::key(),
         std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.global"),
         StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+        StreamInfo::FilterState::LifeSpan::Connection);
     filter_->onNewConnection();
 
     EXPECT_TRUE(
@@ -114,7 +114,7 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
         TcpProxy::PerConnectionCluster::key(),
         std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.global"),
         StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+        StreamInfo::FilterState::LifeSpan::Connection);
     filter_->onNewConnection();
 
     EXPECT_TRUE(

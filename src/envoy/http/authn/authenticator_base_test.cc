@@ -89,7 +89,7 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
   virtual ~ValidateX509Test() {}
 
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  Envoy::Http::RequestHeaderMapImpl header_{};
+  Envoy::Http::TestRequestHeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{
       envoy::config::core::v3::Metadata::default_instance(), header_,
@@ -231,7 +231,7 @@ class ValidateJwtTest : public testing::Test,
   // StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   envoy::config::core::v3::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  Envoy::Http::RequestHeaderMapImpl header_{};
+  Envoy::Http::TestRequestHeaderMapImpl header_{};
   FilterConfig filter_config_{};
   FilterContext filter_context_{dynamic_metadata_, header_, &connection_,
                                 filter_config_};

@@ -531,8 +531,8 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, TracingHeader) {
 
   waitForNextUpstreamRequest(0);
   // Send backend response.
-  upstream_request_->encodeHeaders(Http::TestHeaderMapImpl{{":status", "200"}},
-                                   true);
+  upstream_request_->encodeHeaders(
+      Http::TestRequestHeaderMapImpl{{":status", "200"}}, true);
   response->waitForEndStream();
 
   ::istio::mixer::v1::ReportRequest report_request;

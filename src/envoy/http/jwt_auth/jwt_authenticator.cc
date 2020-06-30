@@ -73,8 +73,10 @@ void JwtAuthenticator::Verify(RequestHeaderMap &headers,
       Http::Headers::get().MethodValues.Options ==
           headers.Method()->value().getStringView() &&
       headers.Origin() && !headers.Origin()->value().empty() &&
-      headers.AccessControlRequestMethod() &&
-      !headers.AccessControlRequestMethod()->value().empty()) {
+      headers.get(Http::Headers::get().AccessControlRequestMethod) &&
+      !headers.get(Http::Headers::get().AccessControlRequestMethod)
+           ->value()
+           .empty()) {
     ENVOY_LOG(debug, "CORS preflight request is passed through.");
     DoneWithStatus(Status::OK);
     return;

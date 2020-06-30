@@ -35,8 +35,10 @@ bool isCORSPreflightRequest(const Http::RequestHeaderMap& headers) {
          headers.Method()->value().getStringView() ==
              Http::Headers::get().MethodValues.Options &&
          headers.Origin() && !headers.Origin()->value().empty() &&
-         headers.AccessControlRequestMethod() &&
-         !headers.AccessControlRequestMethod()->value().empty();
+         headers.get(Http::Headers::get().AccessControlRequestMethod) &&
+         !headers.get(Http::Headers::get().AccessControlRequestMethod)
+              ->value()
+              .empty();
 }
 
 OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context,

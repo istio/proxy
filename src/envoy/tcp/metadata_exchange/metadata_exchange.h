@@ -28,6 +28,7 @@
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/proto_util.h"
 #include "extensions/common/wasm/wasm_state.h"
+#include "source/extensions/common/wasm/declare_property.pb.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
@@ -86,7 +87,7 @@ class MetadataExchangeConfig {
     static const WasmStatePrototype* const prototype = new WasmStatePrototype(
         true, ::Envoy::Extensions::Common::Wasm::WasmType::FlatBuffers,
         ::Wasm::Common::nodeInfoSchema(),
-        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+        StreamInfo::FilterState::LifeSpan::Connection);
     return *prototype;
   }
 

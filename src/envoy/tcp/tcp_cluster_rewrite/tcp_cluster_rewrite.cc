@@ -69,7 +69,7 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
           TcpProxy::PerConnectionCluster::key(),
           std::make_unique<TcpProxy::PerConnectionCluster>(final_cluster_name),
           StreamInfo::FilterState::StateType::Mutable,
-          StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+          StreamInfo::FilterState::LifeSpan::Connection);
     } catch (const EnvoyException& e) {
       ENVOY_CONN_LOG(critical, "tcp_cluster_rewrite: error setting data: {}",
                      read_callbacks_->connection(), e.what());

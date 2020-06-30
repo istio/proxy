@@ -54,6 +54,7 @@ envoy_cc_library(
         "@envoy//source/common/network:utility_lib",
         "@envoy//source/common/protobuf",
         "@envoy//source/common/protobuf:utility_lib",
+        "@envoy//source/extensions/common/wasm:declare_property_cc_proto",
         "@envoy//source/extensions/common/wasm:wasm_interoperation_lib",
         "@envoy//source/extensions/filters/network:well_known_names",
     ],
