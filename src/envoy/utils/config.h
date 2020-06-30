@@ -30,7 +30,7 @@ bool ReadV2Config(const Wasm::Common::JsonObject &json,
                   ::google::protobuf::Message *message);
 
 // Read Mixer filter v1 config.
-bool ReadV1Config(const Json::Common::Object &json,
+bool ReadV1Config(const Wasm::Common::JsonObject &json,
                   ::google::protobuf::Message *message);
 }  // namespace Utils
 }  // namespace Envoy
