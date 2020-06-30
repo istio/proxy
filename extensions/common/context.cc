@@ -39,6 +39,8 @@ using proxy_wasm::null_plugin::getValue;
 namespace Wasm {
 namespace Common {
 
+using proxy_wasm::WasmHeaderMapType;
+
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";
 const char kBlackHoleRouteName[] = "block_all";

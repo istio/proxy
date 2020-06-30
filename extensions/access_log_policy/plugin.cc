@@ -56,6 +56,8 @@ bool setFilterStateValue(bool log) {
 
 }  // namespace
 
+using proxy_wasm::WasmHeaderMapType;
+
 constexpr long long kDefaultLogWindowDurationNanoseconds =
     43200000000000;  // 12h
 
