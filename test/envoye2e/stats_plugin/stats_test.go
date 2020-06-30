@@ -231,7 +231,6 @@ func TestStatsParallel(t *testing.T) {
 					},
 				},
 			},
-			// &driver.Sleep{10000 * time.Second},
 			&driver.Stats{params.Ports.ClientAdmin, map[string]driver.StatMatcher{
 				"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
 			}},

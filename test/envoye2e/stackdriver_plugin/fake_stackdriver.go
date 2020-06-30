@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+
 	"istio.io/proxy/test/envoye2e/driver"
 
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
@@ -121,7 +122,7 @@ func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSer
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
-	log.Printf("receive CreateTimeSeriesRequest %+v", *req)
+	log.Printf("receive CreateTimeSeriesRequest %v", req.String())
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	s.listTSResp.TimeSeries = append(s.listTSResp.TimeSeries, req.TimeSeries...)
@@ -137,7 +138,7 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
-	log.Printf("receive WriteLogEntriesRequest %+v", *req)
+	log.Printf("receive WriteLogEntriesRequest %v", req.String())
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, entry := range req.Entries {
@@ -176,7 +177,7 @@ func (s *LoggingServer) ListMonitoredResourceDescriptors(
 func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 	ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (
 	*edgespb.ReportTrafficAssertionsResponse, error) {
-	log.Printf("receive ReportTrafficAssertionsRequest %+v", *req)
+	log.Printf("receive ReportTrafficAssertionsRequest %v", req.String())
 	e.RcvTrafficAssertionsReq <- req
 	time.Sleep(e.delay)
 	return &edgespb.ReportTrafficAssertionsResponse{}, nil
@@ -274,7 +275,7 @@ func getID(id string) (uint64, error) {
 
 // BatchWriteSpans implements BatchWriteSpans method.
 func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.BatchWriteSpansRequest) (*empty.Empty, error) {
-	log.Printf("receive BatchWriteSpansRequest %+v", *req)
+	log.Printf("receive BatchWriteSpansRequest %+v", req.String())
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, span := range req.Spans {
