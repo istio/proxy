@@ -26,10 +26,6 @@ namespace Wasm {
 namespace Common {
 
 using JsonObject = ::nlohmann::json;
-using JsonObjectValueType = ::nlohmann::detail::value_t;
-using JsonParserException = ::nlohmann::detail::exception;
-using JsonParserOutOfRangeException = ::nlohmann::detail::out_of_range;
-using JsonParserTypeErrorException = ::nlohmann::detail::type_error;
 
 enum JsonParserResultDetail {
   EMPTY,
