@@ -29,6 +29,7 @@
 #include "absl/strings/str_split.h"
 #include "include/proxy-wasm/null_plugin.h"
 
+using proxy_wasm::WasmHeaderMapType;
 using proxy_wasm::null_plugin::getHeaderMapValue;
 using proxy_wasm::null_plugin::getValue;
 
@@ -38,8 +39,6 @@ using proxy_wasm::null_plugin::getValue;
 
 namespace Wasm {
 namespace Common {
-
-using proxy_wasm::WasmHeaderMapType;
 
 const char kBlackHoleCluster[] = "BlackHoleCluster";
 const char kPassThroughCluster[] = "PassthroughCluster";

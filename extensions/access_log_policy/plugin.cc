@@ -38,6 +38,8 @@ namespace Plugin {
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
+using proxy_wasm::WasmHeaderMapType;
+
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
 
 #endif
@@ -55,8 +57,6 @@ bool setFilterStateValue(bool log) {
 }
 
 }  // namespace
-
-using proxy_wasm::WasmHeaderMapType;
 
 constexpr long long kDefaultLogWindowDurationNanoseconds =
     43200000000000;  // 12h
