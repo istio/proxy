@@ -22,7 +22,7 @@ namespace Common {
 
 absl::optional<JsonObject> JsonParse(absl::string_view str) {
   const auto result = JsonObject::parse(str, nullptr, false);
-  if (result.empty() || result.is_discarded() || !result.is_object()) {
+  if (result.is_discarded() || !result.is_object()) {
     return absl::nullopt;
   }
   return result;
