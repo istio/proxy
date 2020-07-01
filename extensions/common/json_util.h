@@ -28,15 +28,13 @@ namespace Common {
 using JsonObject = ::nlohmann::json;
 
 enum JsonParserResultDetail {
-  EMPTY,
   OK,
   OUT_OF_RANGE,
   TYPE_ERROR,
-  PARSE_ERROR,
   INVALID_VALUE,
 };
 
-std::pair<JsonObject, JsonParserResultDetail> JsonParse(absl::string_view str);
+absl::optional<JsonObject> JsonParse(absl::string_view str);
 
 template <typename T>
 std::pair<absl::optional<T>, JsonParserResultDetail> JsonValueAs(
@@ -69,8 +67,8 @@ class JsonGetField {
  public:
   JsonGetField(const JsonObject& j, absl::string_view field);
   const JsonParserResultDetail& detail() { return detail_; }
-  T fetch() { return object_; }
-  T fetch_or(T v) {
+  T value() { return object_; }
+  T value_or(T v) {
     if (detail_ != JsonParserResultDetail::OK)
       return v;
     else

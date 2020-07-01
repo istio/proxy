@@ -255,12 +255,11 @@ Jwt::Jwt(const std::string &jwt) {
   header_str_ = Base64UrlDecode(header_str_base64url_);
 
   auto result = Wasm::Common::JsonParse(header_str_);
-  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
+  if (!result.has_value()) {
     UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
     return;
-  } else {
-    header_ = result.first;
   }
+  header_ = result.value();
 
   // Header should contain "alg".
   if (header_.find("alg") == header_.end()) {
@@ -273,7 +272,7 @@ Jwt::Jwt(const std::string &jwt) {
     UpdateStatus(Status::JWT_HEADER_BAD_ALG);
     return;
   }
-  alg_ = alg_field.fetch();
+  alg_ = alg_field.value();
 
   if (alg_ != "RS256" && alg_ != "ES256" && alg_ != "RS384" &&
       alg_ != "RS512") {
@@ -295,7 +294,7 @@ Jwt::Jwt(const std::string &jwt) {
       return;
     }
   } else {
-    kid_ = kid_field.fetch();
+    kid_ = kid_field.value();
   }
 
   // Parse payload json
@@ -303,16 +302,15 @@ Jwt::Jwt(const std::string &jwt) {
       std::string(jwt_split[1].begin(), jwt_split[1].end());
   payload_str_ = Base64UrlDecode(payload_str_base64url_);
   result = Wasm::Common::JsonParse(payload_str_);
-  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
+  if (!result.has_value()) {
     UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
     return;
-  } else {
-    payload_ = result.first;
   }
+  payload_ = result.value();
 
-  iss_ = Wasm::Common::JsonGetField<std::string>(payload_, "iss").fetch_or("");
-  sub_ = Wasm::Common::JsonGetField<std::string>(payload_, "sub").fetch_or("");
-  exp_ = Wasm::Common::JsonGetField<uint64_t>(payload_, "exp").fetch_or(0);
+  iss_ = Wasm::Common::JsonGetField<std::string>(payload_, "iss").value_or("");
+  sub_ = Wasm::Common::JsonGetField<std::string>(payload_, "sub").value_or("");
+  exp_ = Wasm::Common::JsonGetField<uint64_t>(payload_, "exp").value_or(0);
 
   // "aud" can be either string array or string.
   // Try as string array, read it as empty array if doesn't exist.
@@ -331,7 +329,7 @@ Jwt::Jwt(const std::string &jwt) {
       UpdateStatus(Status::JWT_PAYLOAD_PARSE_ERROR);
       return;
     }
-    aud_.emplace_back(aud_field.fetch());
+    aud_.emplace_back(aud_field.value());
   }
 
   // Set up signature
@@ -492,12 +490,11 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
 
   Wasm::Common::JsonObject jwks_json;
   auto result = Wasm::Common::JsonParse(pkey_jwks);
-  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
+  if (!result.has_value()) {
     UpdateStatus(Status::JWK_PARSE_ERROR);
     return;
-  } else {
-    jwks_json = result.first;
   }
+  jwks_json = result.value();
 
   std::vector<std::reference_wrapper<const Wasm::Common::JsonObject>> key_refs;
 
@@ -538,9 +535,9 @@ bool Pubkeys::ExtractPubkeyFromJwk(const Wasm::Common::JsonObject &jwk_json) {
 
   // Extract public key according to "kty" value.
   // https://tools.ietf.org/html/rfc7518#section-6.1
-  if (kty_field.fetch() == "EC") {
+  if (kty_field.value() == "EC") {
     return ExtractPubkeyFromJwkEC(jwk_json);
-  } else if (kty_field.fetch() == "RSA") {
+  } else if (kty_field.value() == "RSA") {
     return ExtractPubkeyFromJwkRSA(jwk_json);
   }
 
@@ -556,7 +553,7 @@ bool Pubkeys::ExtractPubkeyFromJwkRSA(
   // https://tools.ietf.org/html/rfc7517#page-8
   auto kid_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "kid");
   if (kid_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
-    pubkey->kid_ = kid_field.fetch();
+    pubkey->kid_ = kid_field.value();
     pubkey->kid_specified_ = true;
   }
 
@@ -564,26 +561,26 @@ bool Pubkeys::ExtractPubkeyFromJwkRSA(
   if (alg_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
     // Allow only "RS" prefixed algorithms.
     // https://tools.ietf.org/html/rfc7518#section-3.1
-    if (!(alg_field.fetch() == "RS256" || alg_field.fetch() == "RS384" ||
-          alg_field.fetch() == "RS512")) {
+    if (!(alg_field.value() == "RS256" || alg_field.value() == "RS384" ||
+          alg_field.value() == "RS512")) {
       return false;
     }
-    pubkey->alg_ = alg_field.fetch();
+    pubkey->alg_ = alg_field.value();
     pubkey->alg_specified_ = true;
   }
 
   auto pubkey_kty_field =
       Wasm::Common::JsonGetField<std::string>(jwk_json, "kty");
   assert(pubkey_kty_field.detail() == Wasm::Common::JsonParserResultDetail::OK);
-  pubkey->kty_ = pubkey_kty_field.fetch();
+  pubkey->kty_ = pubkey_kty_field.value();
   auto n_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "n");
   auto e_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "e");
   if (n_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK ||
       e_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     return false;
   }
-  n_str = n_str_field.fetch();
-  e_str = e_str_field.fetch();
+  n_str = n_str_field.value();
+  e_str = e_str_field.value();
 
   EvpPkeyGetter e;
   pubkey->evp_pkey_ = e.EvpPkeyFromJwkRSA(n_str, e_str);
@@ -604,7 +601,7 @@ bool Pubkeys::ExtractPubkeyFromJwkEC(const Wasm::Common::JsonObject &jwk_json) {
   // https://tools.ietf.org/html/rfc7517#page-8
   auto kid_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "kid");
   if (kid_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
-    pubkey->kid_ = kid_field.fetch();
+    pubkey->kid_ = kid_field.value();
     pubkey->kid_specified_ = true;
   }
 
@@ -612,25 +609,25 @@ bool Pubkeys::ExtractPubkeyFromJwkEC(const Wasm::Common::JsonObject &jwk_json) {
   if (alg_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
     // Allow only "RS" prefixed algorithms.
     // https://tools.ietf.org/html/rfc7518#section-3.1
-    if (alg_field.fetch() != "ES256") {
+    if (alg_field.value() != "ES256") {
       return false;
     }
-    pubkey->alg_ = alg_field.fetch();
+    pubkey->alg_ = alg_field.value();
     pubkey->alg_specified_ = true;
   }
 
   auto pubkey_kty_field =
       Wasm::Common::JsonGetField<std::string>(jwk_json, "kty");
   assert(pubkey_kty_field.detail() == Wasm::Common::JsonParserResultDetail::OK);
-  pubkey->kty_ = pubkey_kty_field.fetch();
+  pubkey->kty_ = pubkey_kty_field.value();
   auto x_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "x");
   auto y_str_field = Wasm::Common::JsonGetField<std::string>(jwk_json, "y");
   if (x_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK ||
       y_str_field.detail() != Wasm::Common::JsonParserResultDetail::OK) {
     return false;
   }
-  x_str = x_str_field.fetch();
-  y_str = y_str_field.fetch();
+  x_str = x_str_field.value();
+  y_str = y_str_field.value();
 
   EvpPkeyGetter e;
   pubkey->ec_key_ = e.EcKeyFromJwkEC(x_str, y_str);

@@ -20,12 +20,12 @@
 namespace Wasm {
 namespace Common {
 
-std::pair<JsonObject, JsonParserResultDetail> JsonParse(absl::string_view str) {
+absl::optional<JsonObject> JsonParse(absl::string_view str) {
   const auto result = JsonObject::parse(str, nullptr, false);
-  if (result.empty() || result.is_discarded()) {
-    return std::make_pair(result, JsonParserResultDetail::PARSE_ERROR);
+  if (result.empty() || result.is_discarded() || !result.is_object()) {
+    return absl::nullopt;
   }
-  return std::make_pair(result, JsonParserResultDetail::OK);
+  return result;
 }
 
 template <>
