@@ -38,7 +38,7 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # istio/envoy commit date: Jun 02 2020
-ENVOY_PROJECT = "istio-private"
+ENVOY_PROJECT = "istio"
 
 ENVOY_REPO = "envoy"
 
