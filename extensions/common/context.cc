@@ -29,6 +29,7 @@
 #include "absl/strings/str_split.h"
 #include "include/proxy-wasm/null_plugin.h"
 
+using proxy_wasm::WasmHeaderMapType;
 using proxy_wasm::null_plugin::getHeaderMapValue;
 using proxy_wasm::null_plugin::getValue;
 
