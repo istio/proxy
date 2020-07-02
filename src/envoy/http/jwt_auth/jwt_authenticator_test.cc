@@ -16,7 +16,6 @@
 #include "src/envoy/http/jwt_auth/jwt_authenticator.h"
 
 #include "common/http/message_impl.h"
-#include "common/json/json_loader.h"
 #include "gtest/gtest.h"
 #include "test/mocks/upstream/mocks.h"
 #include "test/test_common/utility.h"

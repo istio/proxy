@@ -126,17 +126,19 @@ bool PluginRootContext::configure(size_t configuration_size) {
   auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
                                            0, configuration_size);
   // Parse configuration JSON string.
-  auto j = ::Wasm::Common::JsonParse(configuration_data->view());
-  if (!j.is_object()) {
+  auto result = ::Wasm::Common::JsonParse(configuration_data->view());
+  if (!result.has_value()) {
     LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
-                          configuration_data->view(), j.dump()));
+                          configuration_data->view()));
     return false;
   }
 
-  auto max_peer_cache_size =
+  auto j = result.value();
+  auto max_peer_cache_size_field =
       ::Wasm::Common::JsonGetField<int64_t>(j, "max_peer_cache_size");
-  if (max_peer_cache_size.has_value()) {
-    max_peer_cache_size_ = max_peer_cache_size.value();
+  if (max_peer_cache_size_field.detail() ==
+      Wasm::Common::JsonParserResultDetail::OK) {
+    max_peer_cache_size_ = max_peer_cache_size_field.value();
   }
   return true;
 }
