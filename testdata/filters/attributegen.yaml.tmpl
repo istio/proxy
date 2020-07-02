@@ -5,8 +5,8 @@
     value:
       config:
         vm_config:
-          vm_id: stats_outbound{{ .N }}
           runtime: {{ .Vars.WasmRuntime }}
+          vm_id: stats_outbound{{ .N }}
           code:
             local: { inline_string: "envoy.wasm.attributegen" }
         configuration:

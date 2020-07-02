@@ -307,7 +307,6 @@ func TestAttributeGen(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl") + params.LoadTestData("testdata/filters/attributegen.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
-
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
