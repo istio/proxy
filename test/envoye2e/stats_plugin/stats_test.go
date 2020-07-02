@@ -261,7 +261,7 @@ func TestStatsGrpc(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
-
+	fmt.Println("THIS IS SERVERHTTPFILTERS", params.Vars["ClientHTTPFilters"])
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
@@ -285,6 +285,47 @@ func TestStatsGrpc(t *testing.T) {
 				Matchers: map[string]driver.StatMatcher{
 					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total.yaml.tmpl"},
 				}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAttributeGen(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"RequestCount":               "10",
+		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
+		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
+		"WasmRuntime":                "envoy.wasm.runtime.null",
+		"DisableDirectResponse":      "true",
+		"EnableMetadataExchange":     "true",
+		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl") + params.LoadTestData("testdata/filters/attributegen.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ClientPort,
+					Body: "hello, world!",
+				},
+			},
+			&driver.Sleep{Duration: 10 * time.Second},
+			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+				"istio_responseClass": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)

@@ -1,0 +1,29 @@
+- name: istio.attributegen
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          vm_id: stats_outbound{{ .N }}
+          runtime: {{ .Vars.WasmRuntime }}
+          code:
+            local: { inline_string: "envoy.wasm.attributegen" }
+        configuration:
+          attributes:
+          - output_attribute: istio_responseClass
+            match:
+            - value: 2xx
+              condition: response.code >= 200 && response.code <= 299
+            - value: 3xx
+              condition: response.code >= 300 && response.code <= 399
+            - value: '404'
+              condition: response.code == 404
+            - value: '429'
+              condition: response.code == 429
+            - value: '503'
+              condition: response.code == 503
+            - value: 5xx
+              condition: response.code >= 500 && response.code <= 599
+            - value: 4xx
+              condition: response.code >= 400 && response.code <= 499
