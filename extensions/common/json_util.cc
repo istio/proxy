@@ -22,12 +22,21 @@
 namespace Wasm {
 namespace Common {
 
+<<<<<<< HEAD
 absl::optional<JsonObject> JsonParse(absl::string_view str) {
   const auto result = JsonObject::parse(str, nullptr, false);
   if (result.is_discarded() || !result.is_object()) {
     return absl::nullopt;
   }
   return result;
+=======
+std::pair<JsonObject, JsonParserResultDetail> JsonParse(absl::string_view str) {
+  const auto result = JsonObject::parse(str, nullptr, false);
+  if (result.empty() || result.is_discarded()) {
+    return std::make_pair(result, JsonParserResultDetail::PARSE_ERROR);
+  }
+  return std::make_pair(result, JsonParserResultDetail::OK);
+>>>>>>> 4416c37920614173978e1230bd95b72685e4f301
 }
 
 template <>
@@ -80,6 +89,35 @@ JsonValueAs<std::string>(const JsonObject& j) {
   if (j.is_string()) {
     return std::make_pair(j.get_ref<std::string const&>(),
                           JsonParserResultDetail::OK);
+<<<<<<< HEAD
+=======
+  }
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
+}
+
+template <>
+std::pair<absl::optional<std::vector<std::string>>, JsonParserResultDetail>
+JsonValueAs<std::vector<std::string>>(const JsonObject& j) {
+  if (j.is_array()) {
+    std::vector<std::string> values;
+    for (const auto& elt : j) {
+      if (!elt.is_string()) {
+        return std::make_pair(absl::nullopt,
+                              JsonParserResultDetail::TYPE_ERROR);
+      }
+      values.emplace_back(elt);
+    }
+    return std::make_pair(values, JsonParserResultDetail::OK);
+  }
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
+}
+
+template <>
+std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
+JsonValueAs<JsonObject>(const JsonObject& j) {
+  if (j.is_object()) {
+    return std::make_pair(j.get<JsonObject>(), JsonParserResultDetail::OK);
+>>>>>>> 4416c37920614173978e1230bd95b72685e4f301
   }
   return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
