@@ -39,12 +39,11 @@ static const std::string kExchangedTokenOriginalPayload = "original_claims";
 
 bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
                                    istio::authn::JwtPayload* payload) {
-  auto parser = Wasm::Common::JsonParser();
-  parser.parse(payload_str);
-  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+  auto result = Wasm::Common::JsonParse(payload_str);
+  if (!result.has_value()) {
     return false;
   }
-  auto json_obj = parser.object();
+  auto json_obj = result.value();
   ENVOY_LOG(debug, "{}: json object is {}", __FUNCTION__, json_obj.dump());
 
   *payload->mutable_raw_claims() = payload_str;
@@ -102,12 +101,11 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
 
 bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
                                         std::string* original_payload) {
-  auto parser = Wasm::Common::JsonParser();
-  parser.parse(token);
-  if (parser.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+  auto result = Wasm::Common::JsonParse(token);
+  if (!result.has_value()) {
     return false;
   }
-  auto json_obj = parser.object();
+  auto json_obj = result.value();
 
   if (!json_obj.contains(kExchangedTokenOriginalPayload)) {
     return false;

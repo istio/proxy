@@ -15,8 +15,6 @@
 
 #include "extensions/common/json_util.h"
 
-#include <vector>
-
 #include "absl/strings/numbers.h"
 
 namespace Wasm {
@@ -104,6 +102,32 @@ std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
   return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
+template <>
+std::pair<absl::optional<std::vector<std::string>>, JsonParserResultDetail>
+JsonValueAs<std::vector<std::string>>(const JsonObject& j) {
+  if (j.is_array()) {
+    std::vector<std::string> values;
+    for (const auto& elt : j) {
+      if (!elt.is_string()) {
+        return std::make_pair(absl::nullopt,
+                              JsonParserResultDetail::TYPE_ERROR);
+      }
+      values.emplace_back(elt);
+    }
+    return std::make_pair(values, JsonParserResultDetail::OK);
+  }
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
+}
+
+template <>
+std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
+JsonValueAs<JsonObject>(const JsonObject& j) {
+  if (j.is_object()) {
+    return std::make_pair(j.get<JsonObject>(), JsonParserResultDetail::OK);
+  }
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
+}
+
 bool JsonArrayIterate(
     const JsonObject& j, absl::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor) {
@@ -132,6 +156,20 @@ bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
     return false;
   }
   for (const auto& elt : it.value().items()) {
+    auto json_value = JsonValueAs<std::string>(elt.key());
+    if (json_value.second != JsonParserResultDetail::OK) {
+      return false;
+    }
+    if (!visitor(json_value.first.value())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool JsonObjectIterate(const JsonObject& j,
+                       const std::function<bool(std::string key)>& visitor) {
+  for (const auto& elt : j.items()) {
     auto json_value = JsonValueAs<std::string>(elt.key());
     if (json_value.second != JsonParserResultDetail::OK) {
       return false;
