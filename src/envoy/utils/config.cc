@@ -45,7 +45,7 @@ bool ReadConfig(const Wasm::Common::JsonObject &json,
     return false;
   }
 
-  std::string config_str = field.fetch().dump();
+  std::string config_str = field.value().dump();
   Status status = ParseJsonMessage(config_str, message);
   auto &logger = Logger::Registry::getLog(Logger::Id::config);
   if (status.ok()) {

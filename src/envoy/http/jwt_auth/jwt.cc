@@ -255,17 +255,9 @@ Jwt::Jwt(const std::string &jwt) {
   header_str_ = Base64UrlDecode(header_str_base64url_);
 
   auto result = Wasm::Common::JsonParse(header_str_);
-<<<<<<< HEAD
   if (!result.has_value()) {
     UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
     return;
-=======
-  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
-    UpdateStatus(Status::JWT_HEADER_PARSE_ERROR);
-    return;
-  } else {
-    header_ = result.first;
->>>>>>> 4416c37920614173978e1230bd95b72685e4f301
   }
   header_ = result.value();
 
@@ -507,17 +499,9 @@ void Pubkeys::CreateFromJwksCore(const std::string &pkey_jwks) {
 
   Wasm::Common::JsonObject jwks_json;
   auto result = Wasm::Common::JsonParse(pkey_jwks);
-<<<<<<< HEAD
   if (!result.has_value()) {
     UpdateStatus(Status::JWK_PARSE_ERROR);
     return;
-=======
-  if (result.second != Wasm::Common::JsonParserResultDetail::OK) {
-    UpdateStatus(Status::JWK_PARSE_ERROR);
-    return;
-  } else {
-    jwks_json = result.first;
->>>>>>> 4416c37920614173978e1230bd95b72685e4f301
   }
   jwks_json = result.value();
 

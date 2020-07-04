@@ -34,11 +34,7 @@ enum JsonParserResultDetail {
   INVALID_VALUE,
 };
 
-<<<<<<< HEAD
 absl::optional<JsonObject> JsonParse(absl::string_view str);
-=======
-std::pair<JsonObject, JsonParserResultDetail> JsonParse(absl::string_view str);
->>>>>>> 4416c37920614173978e1230bd95b72685e4f301
 
 template <typename T>
 std::pair<absl::optional<T>, JsonParserResultDetail> JsonValueAs(

@@ -66,9 +66,9 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
             return true;
           }
           list =
-              absl::StrSplit(str_field_value.fetch(), ' ', absl::SkipEmpty());
+              absl::StrSplit(str_field_value.value(), ' ', absl::SkipEmpty());
         } else {
-          list = field_value.fetch();
+          list = field_value.value();
         }
         for (auto& s : list) {
           (*claims)[key].mutable_list_value()->add_values()->set_string_value(
@@ -123,7 +123,7 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
               __FUNCTION__);
     return false;
   }
-  *original_payload = original_payload_obj.fetch().dump();
+  *original_payload = original_payload_obj.value().dump();
 
   return true;
 }

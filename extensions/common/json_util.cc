@@ -64,7 +64,7 @@ JsonValueAs<uint64_t>(const JsonObject& j) {
   return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
-template<>
+template <>
 std::pair<absl::optional<absl::string_view>, JsonParserResultDetail>
 JsonValueAs<absl::string_view>(const JsonObject& j) {
   if (j.is_string()) {
