@@ -86,7 +86,7 @@ class MetadataExchangeConfig {
     static const WasmStatePrototype* const prototype = new WasmStatePrototype(
         true, ::Envoy::Extensions::Common::Wasm::WasmType::FlatBuffers,
         ::Wasm::Common::nodeInfoSchema(),
-        StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+        StreamInfo::FilterState::LifeSpan::Connection);
     return *prototype;
   }
 

@@ -23,6 +23,11 @@ namespace Http {
 namespace JwtAuth {
 namespace {
 
+Http::RegisterCustomInlineHeader<
+    Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
+    access_control_request_method(
+        Http::Headers::get().AccessControlRequestMethod);
+
 // The HTTP header to pass verified token payload.
 const LowerCaseString kJwtPayloadKey("sec-istio-auth-userinfo");
 
@@ -73,8 +78,7 @@ void JwtAuthenticator::Verify(RequestHeaderMap &headers,
       Http::Headers::get().MethodValues.Options ==
           headers.Method()->value().getStringView() &&
       headers.Origin() && !headers.Origin()->value().empty() &&
-      headers.AccessControlRequestMethod() &&
-      !headers.AccessControlRequestMethod()->value().empty()) {
+      !headers.getInlineValue(access_control_request_method.handle()).empty()) {
     ENVOY_LOG(debug, "CORS preflight request is passed through.");
     DoneWithStatus(Status::OK);
     return;

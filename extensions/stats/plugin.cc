@@ -438,15 +438,14 @@ bool PluginRootContext::configure(size_t configuration_size) {
   outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
               ::Wasm::Common::getTrafficDirection();
 
-  auto json_parser = ::Wasm::Common::JsonParser();
-  json_parser.parse(configuration_data->view());
-  auto j = json_parser.object();
-  if (!j.is_object()) {
-    LOG_WARN(absl::StrCat("cannot parse configuration as JSON: ",
+  auto result = ::Wasm::Common::JsonParse(configuration_data->view());
+  if (!result.has_value()) {
+    LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
                           configuration_data->view()));
     return false;
   }
 
+  auto j = result.value();
   if (outbound_) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
@@ -469,11 +468,11 @@ bool PluginRootContext::configure(size_t configuration_size) {
   absl::Duration duration;
   if (tcp_reporting_duration_field.detail() ==
       ::Wasm::Common::JsonParserResultDetail::OK) {
-    if (absl::ParseDuration(tcp_reporting_duration_field.fetch(), &duration)) {
+    if (absl::ParseDuration(tcp_reporting_duration_field.value(), &duration)) {
       tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
     } else {
       LOG_WARN(absl::StrCat("failed to parse 'tcp_reporting_duration': ",
-                            tcp_reporting_duration_field.fetch()));
+                            tcp_reporting_duration_field.value()));
     }
   }
   proxy_set_tick_period_milliseconds(tcp_report_duration_milis);

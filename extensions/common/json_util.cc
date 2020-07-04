@@ -22,21 +22,12 @@
 namespace Wasm {
 namespace Common {
 
-void JsonParser::parse(absl::string_view str) {
-  reset();
+absl::optional<JsonObject> JsonParse(absl::string_view str) {
   const auto result = JsonObject::parse(str, nullptr, false);
-  if (result.empty() || result.is_discarded()) {
-    detail_ = JsonParserResultDetail::PARSE_ERROR;
-    return;
+  if (result.is_discarded() || !result.is_object()) {
+    return absl::nullopt;
   }
-  detail_ = JsonParserResultDetail::OK;
-  object_ = result;
-  return;
-}
-
-void JsonParser::reset() {
-  object_ = JsonObject{};
-  detail_ = JsonParserResultDetail::EMPTY;
+  return result;
 }
 
 template <>
@@ -87,33 +78,8 @@ template <>
 std::pair<absl::optional<std::string>, JsonParserResultDetail>
 JsonValueAs<std::string>(const JsonObject& j) {
   if (j.is_string()) {
-    return std::make_pair(j.get<std::string>(), JsonParserResultDetail::OK);
-  }
-  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
-}
-
-template <>
-std::pair<absl::optional<std::vector<std::string>>, JsonParserResultDetail>
-JsonValueAs<std::vector<std::string>>(const JsonObject& j) {
-  if (j.is_array()) {
-    std::vector<std::string> values;
-    for (const auto& elt : j) {
-      if (!elt.is_string()) {
-        return std::make_pair(absl::nullopt,
-                              JsonParserResultDetail::TYPE_ERROR);
-      }
-      values.emplace_back(elt);
-    }
-    return std::make_pair(values, JsonParserResultDetail::OK);
-  }
-  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
-}
-
-template <>
-std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
-JsonValueAs<JsonObject>(const JsonObject& j) {
-  if (j.is_object()) {
-    return std::make_pair(j.get<JsonObject>(), JsonParserResultDetail::OK);
+    return std::make_pair(j.get_ref<std::string const&>(),
+                          JsonParserResultDetail::OK);
   }
   return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
@@ -166,28 +132,11 @@ bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
     return false;
   }
   for (const auto& elt : it.value().items()) {
-    auto json_key = JsonValueAs<std::string>(elt.key());
-    if (json_key.second != JsonParserResultDetail::OK) {
+    auto json_value = JsonValueAs<std::string>(elt.key());
+    if (json_value.second != JsonParserResultDetail::OK) {
       return false;
     }
-    if (!visitor(json_key.first.value())) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool JsonObjectIterate(const JsonObject& j,
-                       const std::function<bool(std::string key)>& visitor) {
-  if (!j.is_object()) {
-    return false;
-  }
-  for (const auto& elt : j.items()) {
-    auto json_key = JsonValueAs<std::string>(elt.key());
-    if (json_key.second != JsonParserResultDetail::OK) {
-      return false;
-    }
-    if (!visitor(json_key.first.value())) {
+    if (!visitor(json_value.first.value())) {
       return false;
     }
   }

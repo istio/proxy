@@ -26,32 +26,15 @@ namespace Wasm {
 namespace Common {
 
 using JsonObject = ::nlohmann::json;
-using JsonObjectValueType = ::nlohmann::detail::value_t;
-using JsonParserException = ::nlohmann::detail::exception;
-using JsonParserOutOfRangeException = ::nlohmann::detail::out_of_range;
-using JsonParserTypeErrorException = ::nlohmann::detail::type_error;
 
 enum JsonParserResultDetail {
-  EMPTY,
   OK,
   OUT_OF_RANGE,
   TYPE_ERROR,
-  PARSE_ERROR,
   INVALID_VALUE,
 };
 
-class JsonParser {
- public:
-  void parse(absl::string_view str);
-  JsonObject object() { return object_; };
-  const JsonParserResultDetail& detail() { return detail_; }
-
- private:
-  void reset();
-
-  JsonParserResultDetail detail_{JsonParserResultDetail::EMPTY};
-  JsonObject object_{};
-};
+absl::optional<JsonObject> JsonParse(absl::string_view str);
 
 template <typename T>
 std::pair<absl::optional<T>, JsonParserResultDetail> JsonValueAs(
@@ -79,21 +62,13 @@ template <>
 std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
     const JsonObject& j);
 
-template <>
-std::pair<absl::optional<std::vector<std::string>>, JsonParserResultDetail>
-JsonValueAs<std::vector<std::string>>(const JsonObject& j);
-
-template <>
-std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
-JsonValueAs<JsonObject>(const JsonObject& j);
-
 template <class T>
 class JsonGetField {
  public:
   JsonGetField(const JsonObject& j, absl::string_view field);
   const JsonParserResultDetail& detail() { return detail_; }
-  T fetch() { return object_; }
-  T fetch_or(T v) {
+  T value() { return object_; }
+  T value_or(T v) {
     if (detail_ != JsonParserResultDetail::OK)
       return v;
     else
@@ -130,9 +105,6 @@ bool JsonArrayIterate(
 // Returns false if set and not an object, or any of the visitor calls returns
 // false.
 bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
-                       const std::function<bool(std::string key)>& visitor);
-
-bool JsonObjectIterate(const JsonObject& j,
                        const std::function<bool(std::string key)>& visitor);
 
 }  // namespace Common
