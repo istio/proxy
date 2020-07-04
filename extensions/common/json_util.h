@@ -15,8 +15,6 @@
 
 #pragma once
 
-#include <utility>
-
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "extensions/common/nlohmann_json.hpp"
