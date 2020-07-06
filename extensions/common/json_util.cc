@@ -119,7 +119,7 @@ JsonValueAs<std::vector<absl::string_view>>(const JsonObject& j) {
       if (!values.first.has_value()) {
         values.first = std::vector<absl::string_view>();
       }
-      values.first->emplace_back(elt);
+      values.first->emplace_back(elt.get_ref<std::string const&>());
     }
     return values;
   }
@@ -139,7 +139,7 @@ JsonValueAs<JsonObject>(const JsonObject& j) {
 bool JsonArrayIterate(
     const JsonObject& j, absl::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor) {
-  auto it = j.find(field.data());
+  auto it = j.find(field);
   if (it == j.end()) {
     return true;
   }
@@ -156,7 +156,7 @@ bool JsonArrayIterate(
 
 bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
                        const std::function<bool(std::string key)>& visitor) {
-  auto it = j.find(field.data());
+  auto it = j.find(field);
   if (it == j.end()) {
     return true;
   }
