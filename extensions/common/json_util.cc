@@ -139,7 +139,7 @@ JsonValueAs<JsonObject>(const JsonObject& j) {
 bool JsonArrayIterate(
     const JsonObject& j, absl::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor) {
-  auto it = j.find(field);
+  auto it = j.find(field.data());
   if (it == j.end()) {
     return true;
   }
@@ -156,7 +156,7 @@ bool JsonArrayIterate(
 
 bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
                        const std::function<bool(std::string key)>& visitor) {
-  auto it = j.find(field);
+  auto it = j.find(field.data());
   if (it == j.end()) {
     return true;
   }
