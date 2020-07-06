@@ -51,6 +51,7 @@ func init() {
 			"TestStatsGrpc",
 			"TestTCPMetadataExchange",
 			"TestTCPMetadataExchangeNoAlpn",
+			"TestAttributeGen",
 		},
 	}
 }

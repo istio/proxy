@@ -1,0 +1,786 @@
+=== RUN   TestAttributeGen
+2020/07/06 19:13:53 XDS server starting on 20545
+2020/07/06 19:13:53 update config for "client" with version "0"
+
+name: client
+traffic_direction: OUTBOUND
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: 20542
+filter_chains:
+- filters:
+  - name: http
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      stat_prefix: client
+      http_filters:
+      - name: envoy.filters.http.wasm
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: envoy.wasm.runtime.null
+                code:
+                  local: { inline_string: "envoy.wasm.metadata_exchange" }
+              configuration:
+                "@type": "type.googleapis.com/google.protobuf.StringValue"
+                value: |
+                  { "max_peer_cache_size": 20 }
+      - name: envoy.filters.http.wasm
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stats_outbound"
+              vm_config:
+                vm_id: stats_outbound0
+                runtime: envoy.wasm.runtime.null
+                code:
+                  local: { inline_string: "envoy.wasm.stats" }
+              configuration:
+                "@type": "type.googleapis.com/google.protobuf.StringValue"
+                value: |
+                  {"debug":"false","field_separator":";.;","max_peer_cache_size":20,"metrics":[{"dimensions":{"configurable_metric_a":"(request.host.startsWith('127.0.0.1') ? 'localhost:' : request.host) + string(upstream_peer_id)","configurable_metric_b":"request.protocol"}}]}
+      
+      
+      - name: envoy.router
+      route_config:
+        name: client
+        virtual_hosts:
+        - name: client
+          domains: ["*"]
+          routes:
+          - match: { prefix: / }
+            route:
+              cluster: outbound|9080|http|server.default.svc.cluster.local
+              timeout: 0s
+
+2020/07/06 19:13:53 update config for "server" with version "0"
+
+name: server
+traffic_direction: INBOUND
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: 20543
+filter_chains:
+- filters:
+  - name: http
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      stat_prefix: server
+      http_filters:
+      - name: envoy.filters.http.wasm
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              vm_config:
+                runtime: envoy.wasm.runtime.null
+                code:
+                  local: { inline_string: "envoy.wasm.metadata_exchange" }
+              configuration:
+                "@type": "type.googleapis.com/google.protobuf.StringValue"
+                value: |
+                  { "max_peer_cache_size": 20 }
+      - name: envoy.filters.http.wasm
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "stats_inbound"
+              vm_config:
+                vm_id: stats_inbound0
+                runtime: envoy.wasm.runtime.null
+                code:
+                  local: { inline_string: "envoy.wasm.stats" }
+              configuration:
+                "@type": "type.googleapis.com/google.protobuf.StringValue"
+                value: |
+                  {"debug":"true","field_separator":";.;","max_peer_cache_size":20,"metrics":[{"dimensions":{"response_code":"istio_responseClass"},"name":"requests_total"}],"stat_prefix":"istio","value_separator":"=="}- name: istio.attributegen
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+          value:
+            config:
+              root_id: "attributegen"
+              vm_config:
+                vm_id: attributegen0
+                runtime: envoy.wasm.runtime.null
+                code:
+                  local: { inline_string: "envoy.wasm.attributegen" }
+              configuration:
+                "@type": "type.googleapis.com/google.protobuf.StringValue"
+                value: |
+                  attributes:
+                  - outputAttribute: istio_responseClass
+                    match:
+                    - value: 2xx
+                      condition: response_code >= 200 && response_code <= 299
+      
+      - name: envoy.router
+      route_config:
+        name: server
+        virtual_hosts:
+        - name: server
+          domains: ["*"]
+          routes:
+          - match: { prefix: / }
+            route:
+              cluster: inbound|9080|http|server.default.svc.cluster.local
+              timeout: 0s
+  
+
+2020/07/06 19:13:53 envoy bootstrap:
+node:
+  id: server
+  cluster: test-cluster
+  metadata: { "APP_CONTAINERS": ["server"],
+"CONFIG_NAMESPACE": "default",
+"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
+"INCLUDE_INBOUND_PORTS": "9080",
+"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
+"INTERCEPTION_MODE": "REDIRECT",
+"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
+"ISTIO_VERSION": "1.5-dev",
+"LABELS": {
+    "app": "ratings",
+    "pod-template-hash": "84975bc778",
+    "version": "v1",
+    "service.istio.io/canonical-name": "ratings",
+    "service.istio.io/canonical-revision": "version-1"
+},
+"MESH_ID": "mesh",
+"NAME": "ratings-v1-84975bc778-pxz2w",
+"NAMESPACE": "default",
+"OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1",
+"PLATFORM_METADATA": {
+    "gcp_gke_cluster_name": "test-cluster",
+    "gcp_location": "us-east4-b",
+    "gcp_project": "test-project"
+},
+"POD_NAME": "ratings-v1-84975bc778-pxz2w",
+"SERVICE_ACCOUNT": "bookinfo-ratings",
+"SECURE_STACKDRIVER_ENDPOINT": "localhost:",
+"STACKDRIVER_ROOT_CA_FILE": "",
+"STACKDRIVER_TOKEN_FILE": "",
+"STS_PORT": "",
+"STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS": "20",
+"STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS": "20",
+"WORKLOAD_NAME": "ratings-v1",
+"app": "ratings",
+"istio": "sidecar",
+"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container ratings",
+"pod-template-hash": "84975bc778",
+"version": "v1"
+ }
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 20544
+stats_config:
+  use_all_default_tags: true
+  stats_tags:
+  - tag_name: "reporter"
+    regex: "(reporter=\\.=(.*?);\\.;)"
+  - tag_name: "source_namespace"
+    regex: "(source_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "source_workload"
+    regex: "(source_workload=\\.=(.*?);\\.;)"
+  - tag_name: "source_canonical_service"
+    regex: "(source_canonical_service=\\.=(.*?);\\.;)"
+  - tag_name: "source_canonical_revision"
+    regex: "(source_canonical_revision=\\.=(.*?);\\.;)"
+  - tag_name: "source_workload_namespace"
+    regex: "(source_workload_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "source_principal"
+    regex: "(source_principal=\\.=(.*?);\\.;)"
+  - tag_name: "source_app"
+    regex: "(source_app=\\.=(.*?);\\.;)"
+  - tag_name: "source_version"
+    regex: "(source_version=\\.=(.*?);\\.;)"
+  - tag_name: "destination_namespace"
+    regex: "(destination_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "destination_workload"
+    regex: "(destination_workload=\\.=(.*?);\\.;)"
+  - tag_name: "destination_workload_namespace"
+    regex: "(destination_workload_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "destination_principal"
+    regex: "(destination_principal=\\.=(.*?);\\.;)"
+  - tag_name: "destination_app"
+    regex: "(destination_app=\\.=(.*?);\\.;)"
+  - tag_name: "destination_version"
+    regex: "(destination_version=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service"
+    regex: "(destination_service=\\.=(.*?);\\.;)"
+  - tag_name: "destination_canonical_service"
+    regex: "(destination_canonical_service=\\.=(.*?);\\.;)"
+  - tag_name: "destination_canonical_revision"
+    regex: "(destination_canonical_revision=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service_name"
+    regex: "(destination_service_name=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service_namespace"
+    regex: "(destination_service_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "request_protocol"
+    regex: "(request_protocol=\\.=(.*?);\\.;)"
+  - tag_name: "response_code"
+    regex: "(response_code=\\.=(.*?);\\.;)|_rq(_(\\.d{3}))$"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
+  - tag_name: "response_flags"
+    regex: "(response_flags=\\.=(.*?);\\.;)"
+  - tag_name: "connection_security_policy"
+    regex: "(connection_security_policy=\\.=(.*?);\\.;)"
+# Extra regexes used for configurable metrics
+  - tag_name: "configurable_metric_a"
+    regex: "(configurable_metric_a=\\.=(.*?);\\.;)"
+  - tag_name: "configurable_metric_b"
+    regex: "(configurable_metric_b=\\.=(.*?);\\.;)"
+# Internal monitoring
+  - tag_name: "cache"
+    regex: "(cache\\.(.*?)\\.)"
+  - tag_name: "component"
+    regex: "(component\\.(.*?)\\.)"
+  - tag_name: "tag"
+    regex: "(tag\\.(.*?);\\.)"
+  - tag_name: "wasm_filter"
+    regex: "(wasm_filter\\.(.*?)\\.)"
+
+dynamic_resources:
+  ads_config:
+    api_type: GRPC
+    transport_api_version: V3
+    grpc_services:
+    - envoy_grpc:
+        cluster_name: xds_cluster
+  cds_config:
+    ads: {}
+    resource_api_version: V3
+  lds_config:
+    ads: {}
+    resource_api_version: V3
+static_resources:
+  clusters:
+  - connect_timeout: 1s
+    load_assignment:
+      cluster_name: xds_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: 20545
+    http2_protocol_options: {}
+    name: xds_cluster
+  - name: inbound|9080|http|server.default.svc.cluster.local
+    connect_timeout: 1s
+    type: STATIC
+    load_assignment:
+      cluster_name: inbound|9080|http|server.default.svc.cluster.local
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: 20540
+  
+
+2020/07/06 19:13:53 admin port 20544
+2020/07/06 19:13:53 envoy cmd [/usr/local/google/home/vicenteferrara/proxy/bazel-bin/src/envoy/envoy -c /tmp/envoy-bootstrap-791837626.yaml -l info --concurrency 1 --disable-hot-restart --drain-time-s 4]
+2020/07/06 19:13:53 Pinging URL:  http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 HTTP GET http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 Get "http://127.0.0.1:20544/ready": dial tcp 127.0.0.1:20544: connect: connection refused
+2020/07/06 19:13:53 Will wait 200ms and try again.
+2020/07/06 19:13:53 Pinging URL:  http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 HTTP GET http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 Get "http://127.0.0.1:20544/ready": dial tcp 127.0.0.1:20544: connect: connection refused
+2020/07/06 19:13:53 Will wait 200ms and try again.
+[2020-07-06 19:13:53.510][1643296][info][main] [external/envoy/source/server/server.cc:257] initializing epoch 0 (hot restart version=disabled)
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:259] statically linked extensions:
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.thrift_proxy.protocols: auto, binary, binary/non-strict, compact, twitter
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.health_checkers: envoy.health_checkers.redis
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.thrift_proxy.filters: envoy.filters.thrift.rate_limit, envoy.filters.thrift.router
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.stats_sinks: envoy.dog_statsd, envoy.metrics_service, envoy.stat_sinks.dog_statsd, envoy.stat_sinks.hystrix, envoy.stat_sinks.metrics_service, envoy.stat_sinks.statsd, envoy.statsd
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.resource_monitors: envoy.resource_monitors.fixed_heap, envoy.resource_monitors.injected_resource
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.upstream_network: envoy.filters.network.upstream.metadata_exchange
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.grpc_credentials: envoy.grpc_credentials.aws_iam, envoy.grpc_credentials.default, envoy.grpc_credentials.file_based_metadata
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   wasm_vm: envoy.wasm
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.transport_sockets.downstream: envoy.transport_sockets.alts, envoy.transport_sockets.raw_buffer, envoy.transport_sockets.tap, envoy.transport_sockets.tls, raw_buffer, tls
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.http: envoy.buffer, envoy.cors, envoy.csrf, envoy.ext_authz, envoy.fault, envoy.filters.http.adaptive_concurrency, envoy.filters.http.aws_lambda, envoy.filters.http.aws_request_signing, envoy.filters.http.buffer, envoy.filters.http.cache, envoy.filters.http.cors, envoy.filters.http.csrf, envoy.filters.http.dynamic_forward_proxy, envoy.filters.http.dynamo, envoy.filters.http.ext_authz, envoy.filters.http.fault, envoy.filters.http.grpc_http1_bridge, envoy.filters.http.grpc_http1_reverse_bridge, envoy.filters.http.grpc_json_transcoder, envoy.filters.http.grpc_stats, envoy.filters.http.grpc_web, envoy.filters.http.gzip, envoy.filters.http.header_to_metadata, envoy.filters.http.health_check, envoy.filters.http.ip_tagging, envoy.filters.http.jwt_authn, envoy.filters.http.lua, envoy.filters.http.on_demand, envoy.filters.http.original_src, envoy.filters.http.ratelimit, envoy.filters.http.rbac, envoy.filters.http.router, envoy.filters.http.squash, envoy.filters.http.tap, envoy.filters.http.wasm, envoy.grpc_http1_bridge, envoy.grpc_json_transcoder, envoy.grpc_web, envoy.gzip, envoy.health_check, envoy.http_dynamo_filter, envoy.ip_tagging, envoy.lua, envoy.rate_limit, envoy.router, envoy.squash, istio.alpn, istio_authn, jwt-auth, mixer
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.route_matchers: default
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.thrift_proxy.transports: auto, framed, header, unframed
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.tracers: envoy.dynamic.ot, envoy.lightstep, envoy.tracers.datadog, envoy.tracers.dynamic_ot, envoy.tracers.lightstep, envoy.tracers.opencensus, envoy.tracers.xray, envoy.tracers.zipkin, envoy.zipkin
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.resolvers: envoy.ip
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.udp_listener: envoy.filters.udp.dns_filter, envoy.filters.udp_listener.udp_proxy
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.serializers: dubbo.hessian2
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.retry_host_predicates: envoy.retry_host_predicates.omit_canary_hosts, envoy.retry_host_predicates.omit_host_metadata, envoy.retry_host_predicates.previous_hosts
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   http_cache_factory: envoy.extensions.http.cache.simple
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.protocols: dubbo
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.clusters: envoy.cluster.eds, envoy.cluster.logical_dns, envoy.cluster.original_dst, envoy.cluster.static, envoy.cluster.strict_dns, envoy.clusters.aggregate, envoy.clusters.dynamic_forward_proxy, envoy.clusters.redis
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.listener: envoy.filters.listener.http_inspector, envoy.filters.listener.original_dst, envoy.filters.listener.original_src, envoy.filters.listener.proxy_protocol, envoy.filters.listener.tls_inspector, envoy.listener.http_inspector, envoy.listener.original_dst, envoy.listener.original_src, envoy.listener.proxy_protocol, envoy.listener.tls_inspector
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.filters: envoy.filters.dubbo.router
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.transport_sockets.upstream: envoy.transport_sockets.alts, envoy.transport_sockets.raw_buffer, envoy.transport_sockets.tap, envoy.transport_sockets.tls, raw_buffer, tls
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.access_loggers: envoy.access_loggers.file, envoy.access_loggers.http_grpc, envoy.access_loggers.tcp_grpc, envoy.access_loggers.wasm, envoy.file_access_log, envoy.http_grpc_access_log, envoy.tcp_grpc_access_log, envoy.wasm_access_log
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.udp_listeners: raw_udp_listener
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.retry_priorities: envoy.retry_priorities.previous_priorities
+[2020-07-06 19:13:53.511][1643296][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.network: envoy.client_ssl_auth, envoy.echo, envoy.ext_authz, envoy.filters.network.client_ssl_auth, envoy.filters.network.direct_response, envoy.filters.network.dubbo_proxy, envoy.filters.network.echo, envoy.filters.network.ext_authz, envoy.filters.network.http_connection_manager, envoy.filters.network.kafka_broker, envoy.filters.network.local_ratelimit, envoy.filters.network.metadata_exchange, envoy.filters.network.mongo_proxy, envoy.filters.network.mysql_proxy, envoy.filters.network.ratelimit, envoy.filters.network.rbac, envoy.filters.network.redis_proxy, envoy.filters.network.sni_cluster, envoy.filters.network.sni_dynamic_forward_proxy, envoy.filters.network.tcp_cluster_rewrite, envoy.filters.network.tcp_proxy, envoy.filters.network.thrift_proxy, envoy.filters.network.wasm, envoy.filters.network.zookeeper_proxy, envoy.http_connection_manager, envoy.mongo_proxy, envoy.ratelimit, envoy.redis_proxy, envoy.tcp_proxy, forward_downstream_sni, mixer, sni_verifier
+2020/07/06 19:13:53 Pinging URL:  http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 HTTP GET http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 Get "http://127.0.0.1:20544/ready": dial tcp 127.0.0.1:20544: connect: connection refused
+2020/07/06 19:13:53 Will wait 200ms and try again.
+2020/07/06 19:13:53 Pinging URL:  http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 HTTP GET http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 Get "http://127.0.0.1:20544/ready": dial tcp 127.0.0.1:20544: connect: connection refused
+2020/07/06 19:13:53 Will wait 200ms and try again.
+[2020-07-06 19:13:53.820][1643296][info][main] [external/envoy/source/server/server.cc:342] admin address: 127.0.0.1:20544
+[2020-07-06 19:13:53.951][1643296][info][main] [external/envoy/source/server/server.cc:481] runtime: layers:
+  - name: base
+    static_layer:
+      {}
+  - name: admin
+    admin_layer:
+      {}
+2020/07/06 19:13:53 Pinging URL:  http://127.0.0.1:20544/ready
+2020/07/06 19:13:53 HTTP GET http://127.0.0.1:20544/ready
+[2020-07-06 19:13:53.971][1643296][info][config] [external/envoy/source/server/configuration_impl.cc:103] loading tracing configuration
+[2020-07-06 19:13:53.971][1643296][info][config] [external/envoy/source/server/configuration_impl.cc:69] loading 0 static secret(s)
+[2020-07-06 19:13:53.971][1643296][info][config] [external/envoy/source/server/configuration_impl.cc:75] loading 2 cluster(s)
+[2020-07-06 19:13:55.329][1643296][info][upstream] [external/envoy/source/common/upstream/cluster_manager_impl.cc:167] cm init: initializing cds
+[2020-07-06 19:13:55.398][1643296][info][config] [external/envoy/source/server/configuration_impl.cc:79] loading 0 listener(s)
+[2020-07-06 19:13:55.399][1643296][info][config] [external/envoy/source/server/configuration_impl.cc:129] loading stats sink configuration
+[2020-07-06 19:13:55.427][1643296][info][main] [external/envoy/source/server/server.cc:576] starting main dispatch loop
+2020/07/06 19:13:55 xds debug: respond type.googleapis.com/envoy.config.cluster.v3.Cluster[] version "" with version "0"
+2020/07/06 19:13:55 Will wait 200ms and try again.
+[2020-07-06 19:13:55.487][1643296][info][upstream] [external/envoy/source/common/upstream/cds_api_impl.cc:77] cds: add 0 cluster(s), remove 2 cluster(s)
+[2020-07-06 19:13:55.487][1643296][info][upstream] [external/envoy/source/common/upstream/cluster_manager_impl.cc:171] cm init: all clusters initialized
+[2020-07-06 19:13:55.487][1643296][info][main] [external/envoy/source/server/server.cc:555] all clusters initialized. initializing init manager
+2020/07/06 19:13:55 xds debug: respond type.googleapis.com/envoy.config.listener.v3.Listener[] version "" with version "0"
+2020/07/06 19:13:55 xds debug: open watch 1 for type.googleapis.com/envoy.config.cluster.v3.Cluster[] from nodeID "server", version "0"
+2020/07/06 19:13:55 Pinging URL:  http://127.0.0.1:20544/ready
+2020/07/06 19:13:55 HTTP GET http://127.0.0.1:20544/ready
+[2020-07-06 19:13:55.859][1643296][warning][misc] [bazel-out/k8-fastbuild/bin/external/envoy/source/extensions/common/_virtual_includes/utility_lib/extensions/common/utility.h:65] Using deprecated extension name 'envoy.router' for 'envoy.filters.http.router'. This name will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2020-07-06 19:13:55.886][1643296][info][upstream] [external/envoy/source/server/lds_api.cc:76] lds: add/update listener 'server'
+[2020-07-06 19:13:55.886][1643296][info][config] [external/envoy/source/server/listener_manager_impl.cc:796] all dependencies initialized. starting workers
+2020/07/06 19:13:55 xds debug: open watch 2 for type.googleapis.com/envoy.config.listener.v3.Listener[] from nodeID "server", version "0"
+2020/07/06 19:13:55 Server is up and running...
+2020/07/06 19:13:55 envoy bootstrap:
+node:
+  id: client
+  cluster: test-cluster
+  metadata: { "APP_CONTAINERS": ["test", "bonzai"],
+"CONFIG_NAMESPACE": "default",
+"EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
+"INCLUDE_INBOUND_PORTS": "9080",
+"INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
+"INTERCEPTION_MODE": "REDIRECT",
+"ISTIO_PROXY_SHA": "istio-proxy:47e4559b8e4f0d516c0d17b233d127a3deb3d7ce",
+"ISTIO_VERSION": "1.5-dev",
+"LABELS": {
+    "app": "productpage",
+    "pod-template-hash": "84975bc778",
+    "version": "v1",
+    "service.istio.io/canonical-name": "productpage-v1",
+    "service.istio.io/canonical-revision": "version-1"
+},
+"MESH_ID": "mesh",
+"NAME": "productpage-v1-84975bc778-pxz2w",
+"NAMESPACE": "default",
+"OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1",
+"PLATFORM_METADATA": {
+    "gcp_gke_cluster_name": "test-cluster",
+    "gcp_location": "us-east4-b",
+    "gcp_project": "test-project"
+},
+"POD_NAME": "productpage-v1-84975bc778-pxz2w",
+"SERVICE_ACCOUNT": "bookinfo-productpage",
+"SECURE_STACKDRIVER_ENDPOINT": "localhost:",
+"STACKDRIVER_ROOT_CA_FILE": "",
+"STACKDRIVER_TOKEN_FILE": "",
+"STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS": "20",
+"STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS": "20",
+"STS_PORT": "",
+"WORKLOAD_NAME": "productpage-v1",
+"app": "productpage",
+"istio": "sidecar",
+"kubernetes.io/limit-ranger": "LimitRanger plugin set: cpu request for container productpage",
+"pod-template-hash": "84975bc778",
+"version": "v1"
+ }
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 20541
+stats_config:
+  use_all_default_tags: true
+  stats_tags:
+  - tag_name: "reporter"
+    regex: "(reporter=\\.=(.*?);\\.;)"
+  - tag_name: "source_namespace"
+    regex: "(source_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "source_workload"
+    regex: "(source_workload=\\.=(.*?);\\.;)"
+  - tag_name: "source_canonical_service"
+    regex: "(source_canonical_service=\\.=(.*?);\\.;)"
+  - tag_name: "source_canonical_revision"
+    regex: "(source_canonical_revision=\\.=(.*?);\\.;)"
+  - tag_name: "source_workload_namespace"
+    regex: "(source_workload_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "source_principal"
+    regex: "(source_principal=\\.=(.*?);\\.;)"
+  - tag_name: "source_app"
+    regex: "(source_app=\\.=(.*?);\\.;)"
+  - tag_name: "source_version"
+    regex: "(source_version=\\.=(.*?);\\.;)"
+  - tag_name: "destination_namespace"
+    regex: "(destination_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "destination_workload"
+    regex: "(destination_workload=\\.=(.*?);\\.;)"
+  - tag_name: "destination_workload_namespace"
+    regex: "(destination_workload_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "destination_principal"
+    regex: "(destination_principal=\\.=(.*?);\\.;)"
+  - tag_name: "destination_app"
+    regex: "(destination_app=\\.=(.*?);\\.;)"
+  - tag_name: "destination_version"
+    regex: "(destination_version=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service"
+    regex: "(destination_service=\\.=(.*?);\\.;)"
+  - tag_name: "destination_canonical_service"
+    regex: "(destination_canonical_service=\\.=(.*?);\\.;)"
+  - tag_name: "destination_canonical_revision"
+    regex: "(destination_canonical_revision=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service_name"
+    regex: "(destination_service_name=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service_namespace"
+    regex: "(destination_service_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "request_protocol"
+    regex: "(request_protocol=\\.=(.*?);\\.;)"
+  - tag_name: "response_code"
+    regex: "(response_code=\\.=(.*?);\\.;)|_rq(_(\\.d{3}))$"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
+  - tag_name: "response_flags"
+    regex: "(response_flags=\\.=(.*?);\\.;)"
+  - tag_name: "connection_security_policy"
+    regex: "(connection_security_policy=\\.=(.*?);\\.;)"
+# Extra regexes used for configurable metrics
+  - tag_name: "configurable_metric_a"
+    regex: "(configurable_metric_a=\\.=(.*?);\\.;)"
+  - tag_name: "configurable_metric_b"
+    regex: "(configurable_metric_b=\\.=(.*?);\\.;)"
+# Internal monitoring
+  - tag_name: "cache"
+    regex: "(cache\\.(.*?)\\.)"
+  - tag_name: "component"
+    regex: "(component\\.(.*?)\\.)"
+  - tag_name: "tag"
+    regex: "(tag\\.(.*?);\\.)"
+  - tag_name: "wasm_filter"
+    regex: "(wasm_filter\\.(.*?)\\.)"
+
+dynamic_resources:
+  ads_config:
+    api_type: GRPC
+    transport_api_version: V3
+    grpc_services:
+    - envoy_grpc:
+        cluster_name: xds_cluster
+  cds_config:
+    ads: {}
+    resource_api_version: V3
+  lds_config:
+    ads: {}
+    resource_api_version: V3
+static_resources:
+  clusters:
+  - connect_timeout: 1s
+    load_assignment:
+      cluster_name: xds_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: 20545
+    http2_protocol_options: {}
+    name: xds_cluster
+  - name: outbound|9080|http|server.default.svc.cluster.local
+    connect_timeout: 1s
+    type: STATIC
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: outbound|9080|http|server.default.svc.cluster.local
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: 20543
+    
+  
+
+2020/07/06 19:13:55 admin port 20541
+2020/07/06 19:13:55 envoy cmd [/usr/local/google/home/vicenteferrara/proxy/bazel-bin/src/envoy/envoy -c /tmp/envoy-bootstrap-103993297.yaml -l info --concurrency 1 --disable-hot-restart --drain-time-s 4]
+2020/07/06 19:13:55 Pinging URL:  http://127.0.0.1:20541/ready
+2020/07/06 19:13:55 HTTP GET http://127.0.0.1:20541/ready
+2020/07/06 19:13:55 Get "http://127.0.0.1:20541/ready": dial tcp 127.0.0.1:20541: connect: connection refused
+2020/07/06 19:13:55 Will wait 200ms and try again.
+2020/07/06 19:13:56 Pinging URL:  http://127.0.0.1:20541/ready
+2020/07/06 19:13:56 HTTP GET http://127.0.0.1:20541/ready
+2020/07/06 19:13:56 Get "http://127.0.0.1:20541/ready": dial tcp 127.0.0.1:20541: connect: connection refused
+2020/07/06 19:13:56 Will wait 200ms and try again.
+[2020-07-06 19:13:56.308][1643336][info][main] [external/envoy/source/server/server.cc:257] initializing epoch 0 (hot restart version=disabled)
+[2020-07-06 19:13:56.308][1643336][info][main] [external/envoy/source/server/server.cc:259] statically linked extensions:
+[2020-07-06 19:13:56.308][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.resource_monitors: envoy.resource_monitors.fixed_heap, envoy.resource_monitors.injected_resource
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.retry_host_predicates: envoy.retry_host_predicates.omit_canary_hosts, envoy.retry_host_predicates.omit_host_metadata, envoy.retry_host_predicates.previous_hosts
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.udp_listeners: raw_udp_listener
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.retry_priorities: envoy.retry_priorities.previous_priorities
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.tracers: envoy.dynamic.ot, envoy.lightstep, envoy.tracers.datadog, envoy.tracers.dynamic_ot, envoy.tracers.lightstep, envoy.tracers.opencensus, envoy.tracers.xray, envoy.tracers.zipkin, envoy.zipkin
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.filters: envoy.filters.dubbo.router
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.http: envoy.buffer, envoy.cors, envoy.csrf, envoy.ext_authz, envoy.fault, envoy.filters.http.adaptive_concurrency, envoy.filters.http.aws_lambda, envoy.filters.http.aws_request_signing, envoy.filters.http.buffer, envoy.filters.http.cache, envoy.filters.http.cors, envoy.filters.http.csrf, envoy.filters.http.dynamic_forward_proxy, envoy.filters.http.dynamo, envoy.filters.http.ext_authz, envoy.filters.http.fault, envoy.filters.http.grpc_http1_bridge, envoy.filters.http.grpc_http1_reverse_bridge, envoy.filters.http.grpc_json_transcoder, envoy.filters.http.grpc_stats, envoy.filters.http.grpc_web, envoy.filters.http.gzip, envoy.filters.http.header_to_metadata, envoy.filters.http.health_check, envoy.filters.http.ip_tagging, envoy.filters.http.jwt_authn, envoy.filters.http.lua, envoy.filters.http.on_demand, envoy.filters.http.original_src, envoy.filters.http.ratelimit, envoy.filters.http.rbac, envoy.filters.http.router, envoy.filters.http.squash, envoy.filters.http.tap, envoy.filters.http.wasm, envoy.grpc_http1_bridge, envoy.grpc_json_transcoder, envoy.grpc_web, envoy.gzip, envoy.health_check, envoy.http_dynamo_filter, envoy.ip_tagging, envoy.lua, envoy.rate_limit, envoy.router, envoy.squash, istio.alpn, istio_authn, jwt-auth, mixer
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.grpc_credentials: envoy.grpc_credentials.aws_iam, envoy.grpc_credentials.default, envoy.grpc_credentials.file_based_metadata
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.transport_sockets.downstream: envoy.transport_sockets.alts, envoy.transport_sockets.raw_buffer, envoy.transport_sockets.tap, envoy.transport_sockets.tls, raw_buffer, tls
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.protocols: dubbo
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.upstream_network: envoy.filters.network.upstream.metadata_exchange
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.resolvers: envoy.ip
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   http_cache_factory: envoy.extensions.http.cache.simple
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.thrift_proxy.filters: envoy.filters.thrift.rate_limit, envoy.filters.thrift.router
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.network: envoy.client_ssl_auth, envoy.echo, envoy.ext_authz, envoy.filters.network.client_ssl_auth, envoy.filters.network.direct_response, envoy.filters.network.dubbo_proxy, envoy.filters.network.echo, envoy.filters.network.ext_authz, envoy.filters.network.http_connection_manager, envoy.filters.network.kafka_broker, envoy.filters.network.local_ratelimit, envoy.filters.network.metadata_exchange, envoy.filters.network.mongo_proxy, envoy.filters.network.mysql_proxy, envoy.filters.network.ratelimit, envoy.filters.network.rbac, envoy.filters.network.redis_proxy, envoy.filters.network.sni_cluster, envoy.filters.network.sni_dynamic_forward_proxy, envoy.filters.network.tcp_cluster_rewrite, envoy.filters.network.tcp_proxy, envoy.filters.network.thrift_proxy, envoy.filters.network.wasm, envoy.filters.network.zookeeper_proxy, envoy.http_connection_manager, envoy.mongo_proxy, envoy.ratelimit, envoy.redis_proxy, envoy.tcp_proxy, forward_downstream_sni, mixer, sni_verifier
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.health_checkers: envoy.health_checkers.redis
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.serializers: dubbo.hessian2
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.clusters: envoy.cluster.eds, envoy.cluster.logical_dns, envoy.cluster.original_dst, envoy.cluster.static, envoy.cluster.strict_dns, envoy.clusters.aggregate, envoy.clusters.dynamic_forward_proxy, envoy.clusters.redis
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   wasm_vm: envoy.wasm
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.dubbo_proxy.route_matchers: default
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.udp_listener: envoy.filters.udp.dns_filter, envoy.filters.udp_listener.udp_proxy
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.thrift_proxy.protocols: auto, binary, binary/non-strict, compact, twitter
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.access_loggers: envoy.access_loggers.file, envoy.access_loggers.http_grpc, envoy.access_loggers.tcp_grpc, envoy.access_loggers.wasm, envoy.file_access_log, envoy.http_grpc_access_log, envoy.tcp_grpc_access_log, envoy.wasm_access_log
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.thrift_proxy.transports: auto, framed, header, unframed
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.filters.listener: envoy.filters.listener.http_inspector, envoy.filters.listener.original_dst, envoy.filters.listener.original_src, envoy.filters.listener.proxy_protocol, envoy.filters.listener.tls_inspector, envoy.listener.http_inspector, envoy.listener.original_dst, envoy.listener.original_src, envoy.listener.proxy_protocol, envoy.listener.tls_inspector
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.stats_sinks: envoy.dog_statsd, envoy.metrics_service, envoy.stat_sinks.dog_statsd, envoy.stat_sinks.hystrix, envoy.stat_sinks.metrics_service, envoy.stat_sinks.statsd, envoy.statsd
+[2020-07-06 19:13:56.309][1643336][info][main] [external/envoy/source/server/server.cc:261]   envoy.transport_sockets.upstream: envoy.transport_sockets.alts, envoy.transport_sockets.raw_buffer, envoy.transport_sockets.tap, envoy.transport_sockets.tls, raw_buffer, tls
+2020/07/06 19:13:56 Pinging URL:  http://127.0.0.1:20541/ready
+2020/07/06 19:13:56 HTTP GET http://127.0.0.1:20541/ready
+2020/07/06 19:13:56 Get "http://127.0.0.1:20541/ready": dial tcp 127.0.0.1:20541: connect: connection refused
+2020/07/06 19:13:56 Will wait 200ms and try again.
+2020/07/06 19:13:56 Pinging URL:  http://127.0.0.1:20541/ready
+2020/07/06 19:13:56 HTTP GET http://127.0.0.1:20541/ready
+2020/07/06 19:13:56 Get "http://127.0.0.1:20541/ready": dial tcp 127.0.0.1:20541: connect: connection refused
+2020/07/06 19:13:56 Will wait 200ms and try again.
+[2020-07-06 19:13:56.598][1643336][info][main] [external/envoy/source/server/server.cc:342] admin address: 127.0.0.1:20541
+[2020-07-06 19:13:56.708][1643336][info][main] [external/envoy/source/server/server.cc:481] runtime: layers:
+  - name: base
+    static_layer:
+      {}
+  - name: admin
+    admin_layer:
+      {}
+[2020-07-06 19:13:56.727][1643336][info][config] [external/envoy/source/server/configuration_impl.cc:103] loading tracing configuration
+[2020-07-06 19:13:56.727][1643336][info][config] [external/envoy/source/server/configuration_impl.cc:69] loading 0 static secret(s)
+[2020-07-06 19:13:56.727][1643336][info][config] [external/envoy/source/server/configuration_impl.cc:75] loading 2 cluster(s)
+2020/07/06 19:13:56 Pinging URL:  http://127.0.0.1:20541/ready
+2020/07/06 19:13:56 HTTP GET http://127.0.0.1:20541/ready
+[2020-07-06 19:13:57.987][1643336][info][upstream] [external/envoy/source/common/upstream/cluster_manager_impl.cc:167] cm init: initializing cds
+[2020-07-06 19:13:58.052][1643336][info][config] [external/envoy/source/server/configuration_impl.cc:79] loading 0 listener(s)
+[2020-07-06 19:13:58.052][1643336][info][config] [external/envoy/source/server/configuration_impl.cc:129] loading stats sink configuration
+[2020-07-06 19:13:58.079][1643336][info][main] [external/envoy/source/server/server.cc:576] starting main dispatch loop
+2020/07/06 19:13:58 xds debug: respond type.googleapis.com/envoy.config.cluster.v3.Cluster[] version "" with version "0"
+2020/07/06 19:13:58 Will wait 200ms and try again.
+[2020-07-06 19:13:58.135][1643336][info][upstream] [external/envoy/source/common/upstream/cds_api_impl.cc:77] cds: add 0 cluster(s), remove 2 cluster(s)
+[2020-07-06 19:13:58.135][1643336][info][upstream] [external/envoy/source/common/upstream/cluster_manager_impl.cc:171] cm init: all clusters initialized
+[2020-07-06 19:13:58.135][1643336][info][main] [external/envoy/source/server/server.cc:555] all clusters initialized. initializing init manager
+2020/07/06 19:13:58 xds debug: respond type.googleapis.com/envoy.config.listener.v3.Listener[] version "" with version "0"
+2020/07/06 19:13:58 xds debug: open watch 3 for type.googleapis.com/envoy.config.cluster.v3.Cluster[] from nodeID "client", version "0"
+2020/07/06 19:13:58 Pinging URL:  http://127.0.0.1:20541/ready
+2020/07/06 19:13:58 HTTP GET http://127.0.0.1:20541/ready
+[2020-07-06 19:13:58.522][1643336][warning][misc] [bazel-out/k8-fastbuild/bin/external/envoy/source/extensions/common/_virtual_includes/utility_lib/extensions/common/utility.h:65] Using deprecated extension name 'envoy.router' for 'envoy.filters.http.router'. This name will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2020-07-06 19:13:58.547][1643336][info][upstream] [external/envoy/source/server/lds_api.cc:76] lds: add/update listener 'client'
+[2020-07-06 19:13:58.547][1643336][info][config] [external/envoy/source/server/listener_manager_impl.cc:796] all dependencies initialized. starting workers
+2020/07/06 19:13:58 Server is up and running...
+2020/07/06 19:13:58 sleeping 1s
+2020/07/06 19:13:58 xds debug: open watch 4 for type.googleapis.com/envoy.config.listener.v3.Listener[] from nodeID "client", version "0"
+2020/07/06 19:13:59 repeat 0 out of 10
+2020/07/06 19:13:59 HTTP request:
+GET / HTTP/1.1
+Host: 127.0.0.1:20542
+
+[2020-07-06 19:13:59.736][1643305][critical][main] [external/envoy/source/exe/terminate_handler.cc:13] std::terminate called! (possible uncaught exception, see trace)
+[2020-07-06 19:13:59.736][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:91] Backtrace (use tools/stack_decode.py to get line numbers):
+[2020-07-06 19:13:59.736][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:92] Envoy version: 2eedaaecd535b5b879d33a202ad857a70c5d2533/1.15.0-dev/Clean/DEBUG/BoringSSL
+[2020-07-06 19:13:59.832][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #0: Envoy::TerminateHandler::logOnTerminate()::$_0::operator()() [0x55db5656352f]
+[2020-07-06 19:13:59.907][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #1: Envoy::TerminateHandler::logOnTerminate()::$_0::__invoke() [0x55db565634c9]
+[2020-07-06 19:13:59.982][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #2: std::__terminate() [0x55db574879b3]
+[2020-07-06 19:14:00.059][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #3: proxy_wasm::WasmVm::error() [0x55db546495c6]
+[2020-07-06 19:14:00.128][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #4: proxy_wasm::NullPlugin::error() [0x55db54648c79]
+[2020-07-06 19:14:00.203][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #5: proxy_wasm::NullPlugin::ensureContext() [0x55db5461f077]
+[2020-07-06 19:14:00.278][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #6: proxy_wasm::NullPlugin::onCreate() [0x55db5461ff74]
+[2020-07-06 19:14:00.347][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #7: proxy_wasm::NullPlugin::getFunction()::$_4::operator()() [0x55db54627300]
+[2020-07-06 19:14:00.419][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #8: std::__1::__invoke<>() [0x55db5462727a]
+[2020-07-06 19:14:00.491][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #9: std::__1::__invoke_void_return_wrapper<>::__call<>() [0x55db546271dc]
+[2020-07-06 19:14:00.568][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #10: std::__1::__function::__alloc_func<>::operator()() [0x55db5462716c]
+[2020-07-06 19:14:00.641][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #11: std::__1::__function::__func<>::operator()() [0x55db5462627d]
+[2020-07-06 19:14:00.712][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #12: std::__1::__function::__value_func<>::operator()() [0x55db54614092]
+[2020-07-06 19:14:00.787][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #13: std::__1::function<>::operator()() [0x55db5460904a]
+[2020-07-06 19:14:00.858][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #14: proxy_wasm::ContextBase::onCreate() [0x55db546012f2]
+[2020-07-06 19:14:00.931][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #15: proxy_wasm::ContextBase::onRequestHeaders() [0x55db54602e66]
+[2020-07-06 19:14:01.002][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #16: Envoy::Extensions::Common::Wasm::Context::decodeHeaders() [0x55db540f2ec9]
+[2020-07-06 19:14:01.080][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #17: Envoy::Http::ConnectionManagerImpl::ActiveStreamDecoderFilter::decodeHeaders() [0x55db55fea178]
+[2020-07-06 19:14:01.155][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #18: Envoy::Http::ConnectionManagerImpl::ActiveStream::decodeHeaders() [0x55db55fc9875]
+[2020-07-06 19:14:01.227][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #19: Envoy::Http::ConnectionManagerImpl::ActiveStream::decodeHeaders() [0x55db55fc85e7]
+[2020-07-06 19:14:01.298][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #20: Envoy::Http::Http2::ConnectionImpl::ServerStreamImpl::decodeHeaders() [0x55db5601a1c8]
+[2020-07-06 19:14:01.372][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #21: Envoy::Http::Http2::ConnectionImpl::onFrameReceived() [0x55db5601de1f]
+[2020-07-06 19:14:01.444][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #22: Envoy::Http::Http2::ConnectionImpl::Http2Callbacks::Http2Callbacks()::$_12::operator()() [0x55db56022ce8]
+[2020-07-06 19:14:01.514][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #23: Envoy::Http::Http2::ConnectionImpl::Http2Callbacks::Http2Callbacks()::$_12::__invoke() [0x55db56022cb5]
+[2020-07-06 19:14:01.587][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #24: session_call_on_frame_received [0x55db56463fb2]
+[2020-07-06 19:14:01.658][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #25: session_after_header_block_received [0x55db56469d57]
+[2020-07-06 19:14:01.728][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #26: nghttp2_session_mem_recv [0x55db56467664]
+[2020-07-06 19:14:01.797][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #27: Envoy::Http::Http2::ConnectionImpl::dispatch() [0x55db5601cfa6]
+[2020-07-06 19:14:01.866][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #28: Envoy::Http::Http2::ServerConnectionImpl::dispatch() [0x55db56022068]
+[2020-07-06 19:14:01.936][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #29: Envoy::Http::ConnectionManagerImpl::onData() [0x55db55fc1a3c]
+[2020-07-06 19:14:02.005][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #30: Envoy::Network::FilterManagerImpl::onContinueReading() [0x55db55934635]
+[2020-07-06 19:14:02.074][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #31: Envoy::Network::FilterManagerImpl::onRead() [0x55db559347ce]
+[2020-07-06 19:14:02.142][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #32: Envoy::Network::ConnectionImpl::onRead() [0x55db55923878]
+[2020-07-06 19:14:02.212][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #33: Envoy::Network::ConnectionImpl::onReadReady() [0x55db5592656e]
+[2020-07-06 19:14:02.281][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #34: Envoy::Network::ConnectionImpl::onFileEvent() [0x55db559255e5]
+[2020-07-06 19:14:02.351][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #35: Envoy::Network::ConnectionImpl::ConnectionImpl()::$_2::operator()() [0x55db5592b97e]
+[2020-07-06 19:14:02.421][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #36: std::__1::__invoke<>() [0x55db5592b941]
+[2020-07-06 19:14:02.492][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #37: std::__1::__invoke_void_return_wrapper<>::__call<>() [0x55db5592b8e2]
+[2020-07-06 19:14:02.566][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #38: std::__1::__function::__alloc_func<>::operator()() [0x55db5592b8a2]
+[2020-07-06 19:14:02.638][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #39: std::__1::__function::__func<>::operator()() [0x55db5592a9e3]
+[2020-07-06 19:14:02.710][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #40: std::__1::__function::__value_func<>::operator()() [0x55db5591935d]
+[2020-07-06 19:14:02.783][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #41: std::__1::function<>::operator()() [0x55db559192ff]
+[2020-07-06 19:14:02.857][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #42: Envoy::Event::FileEventImpl::assignEvents()::$_0::operator()() [0x55db55918fe2]
+[2020-07-06 19:14:02.928][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #43: Envoy::Event::FileEventImpl::assignEvents()::$_0::__invoke() [0x55db55918f46]
+[2020-07-06 19:14:03.000][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #44: event_persist_closure [0x55db5644746e]
+[2020-07-06 19:14:03.073][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #45: event_process_active_single_queue [0x55db56446a98]
+[2020-07-06 19:14:03.144][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #46: event_process_active [0x55db5644125a]
+[2020-07-06 19:14:03.217][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #47: event_base_loop [0x55db5644012c]
+[2020-07-06 19:14:03.286][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #48: Envoy::Event::LibeventScheduler::run() [0x55db5594bd18]
+[2020-07-06 19:14:03.357][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #49: Envoy::Event::DispatcherImpl::run() [0x55db5590df0a]
+[2020-07-06 19:14:03.433][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #50: Envoy::Server::WorkerImpl::threadRoutine() [0x55db558e04e1]
+[2020-07-06 19:14:03.503][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #51: Envoy::Server::WorkerImpl::start()::$_4::operator()() [0x55db558e798c]
+[2020-07-06 19:14:03.573][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #52: std::__1::__invoke<>() [0x55db558e794d]
+[2020-07-06 19:14:03.644][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #53: std::__1::__invoke_void_return_wrapper<>::__call<>() [0x55db558e78fd]
+[2020-07-06 19:14:03.715][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #54: std::__1::__function::__alloc_func<>::operator()() [0x55db558e78cd]
+[2020-07-06 19:14:03.789][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #55: std::__1::__function::__func<>::operator()() [0x55db558e69fe]
+[2020-07-06 19:14:03.863][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #56: std::__1::__function::__value_func<>::operator()() [0x55db52a79fa5]
+[2020-07-06 19:14:03.944][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #57: std::__1::function<>::operator()() [0x55db52a79f65]
+[2020-07-06 19:14:04.020][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #58: Envoy::Thread::ThreadImplPosix::ThreadImplPosix()::$_0::operator()() [0x55db565da8e2]
+[2020-07-06 19:14:04.094][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #59: Envoy::Thread::ThreadImplPosix::ThreadImplPosix()::$_0::__invoke() [0x55db565da8b5]
+[2020-07-06 19:14:04.094][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #60: start_thread [0x7f0e0d74ff27]
+[2020-07-06 19:14:04.094][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:104] Caught Aborted, suspect faulting address 0xc2ace00191320
+[2020-07-06 19:14:04.094][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:91] Backtrace (use tools/stack_decode.py to get line numbers):
+[2020-07-06 19:14:04.094][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:92] Envoy version: 2eedaaecd535b5b879d33a202ad857a70c5d2533/1.15.0-dev/Clean/DEBUG/BoringSSL
+[2020-07-06 19:14:04.165][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #0: Envoy::SignalAction::sigHandler() [0x55db5655c52c]
+[2020-07-06 19:14:04.165][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #1: __restore_rt [0x7f0e0d75b110]
+[2020-07-06 19:14:04.165][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #2: Envoy::TerminateHandler::logOnTerminate()::$_0::__invoke() [0x55db565634c9]
+[2020-07-06 19:14:04.165][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #3: std::__terminate() [0x55db574879b3]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #4: proxy_wasm::WasmVm::error() [0x55db546495c6]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #5: proxy_wasm::NullPlugin::error() [0x55db54648c79]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #6: proxy_wasm::NullPlugin::ensureContext() [0x55db5461f077]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #7: proxy_wasm::NullPlugin::onCreate() [0x55db5461ff74]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #8: proxy_wasm::NullPlugin::getFunction()::$_4::operator()() [0x55db54627300]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #9: std::__1::__invoke<>() [0x55db5462727a]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #10: std::__1::__invoke_void_return_wrapper<>::__call<>() [0x55db546271dc]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #11: std::__1::__function::__alloc_func<>::operator()() [0x55db5462716c]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #12: std::__1::__function::__func<>::operator()() [0x55db5462627d]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #13: std::__1::__function::__value_func<>::operator()() [0x55db54614092]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #14: std::__1::function<>::operator()() [0x55db5460904a]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #15: proxy_wasm::ContextBase::onCreate() [0x55db546012f2]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #16: proxy_wasm::ContextBase::onRequestHeaders() [0x55db54602e66]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #17: Envoy::Extensions::Common::Wasm::Context::decodeHeaders() [0x55db540f2ec9]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #18: Envoy::Http::ConnectionManagerImpl::ActiveStreamDecoderFilter::decodeHeaders() [0x55db55fea178]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #19: Envoy::Http::ConnectionManagerImpl::ActiveStream::decodeHeaders() [0x55db55fc9875]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #20: Envoy::Http::ConnectionManagerImpl::ActiveStream::decodeHeaders() [0x55db55fc85e7]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #21: Envoy::Http::Http2::ConnectionImpl::ServerStreamImpl::decodeHeaders() [0x55db5601a1c8]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #22: Envoy::Http::Http2::ConnectionImpl::onFrameReceived() [0x55db5601de1f]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #23: Envoy::Http::Http2::ConnectionImpl::Http2Callbacks::Http2Callbacks()::$_12::operator()() [0x55db56022ce8]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #24: Envoy::Http::Http2::ConnectionImpl::Http2Callbacks::Http2Callbacks()::$_12::__invoke() [0x55db56022cb5]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #25: session_call_on_frame_received [0x55db56463fb2]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #26: session_after_header_block_received [0x55db56469d57]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #27: nghttp2_session_mem_recv [0x55db56467664]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #28: Envoy::Http::Http2::ConnectionImpl::dispatch() [0x55db5601cfa6]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #29: Envoy::Http::Http2::ServerConnectionImpl::dispatch() [0x55db56022068]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #30: Envoy::Http::ConnectionManagerImpl::onData() [0x55db55fc1a3c]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #31: Envoy::Network::FilterManagerImpl::onContinueReading() [0x55db55934635]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #32: Envoy::Network::FilterManagerImpl::onRead() [0x55db559347ce]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #33: Envoy::Network::ConnectionImpl::onRead() [0x55db55923878]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #34: Envoy::Network::ConnectionImpl::onReadReady() [0x55db5592656e]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #35: Envoy::Network::ConnectionImpl::onFileEvent() [0x55db559255e5]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #36: Envoy::Network::ConnectionImpl::ConnectionImpl()::$_2::operator()() [0x55db5592b97e]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #37: std::__1::__invoke<>() [0x55db5592b941]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #38: std::__1::__invoke_void_return_wrapper<>::__call<>() [0x55db5592b8e2]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #39: std::__1::__function::__alloc_func<>::operator()() [0x55db5592b8a2]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #40: std::__1::__function::__func<>::operator()() [0x55db5592a9e3]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #41: std::__1::__function::__value_func<>::operator()() [0x55db5591935d]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #42: std::__1::function<>::operator()() [0x55db559192ff]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #43: Envoy::Event::FileEventImpl::assignEvents()::$_0::operator()() [0x55db55918fe2]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #44: Envoy::Event::FileEventImpl::assignEvents()::$_0::__invoke() [0x55db55918f46]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #45: event_persist_closure [0x55db5644746e]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #46: event_process_active_single_queue [0x55db56446a98]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #47: event_process_active [0x55db5644125a]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #48: event_base_loop [0x55db5644012c]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #49: Envoy::Event::LibeventScheduler::run() [0x55db5594bd18]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #50: Envoy::Event::DispatcherImpl::run() [0x55db5590df0a]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #51: Envoy::Server::WorkerImpl::threadRoutine() [0x55db558e04e1]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #52: Envoy::Server::WorkerImpl::start()::$_4::operator()() [0x55db558e798c]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #53: std::__1::__invoke<>() [0x55db558e794d]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #54: std::__1::__invoke_void_return_wrapper<>::__call<>() [0x55db558e78fd]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #55: std::__1::__function::__alloc_func<>::operator()() [0x55db558e78cd]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #56: std::__1::__function::__func<>::operator()() [0x55db558e69fe]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #57: std::__1::__function::__value_func<>::operator()() [0x55db52a79fa5]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #58: std::__1::function<>::operator()() [0x55db52a79f65]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #59: Envoy::Thread::ThreadImplPosix::ThreadImplPosix()::$_0::operator()() [0x55db565da8e2]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #60: Envoy::Thread::ThreadImplPosix::ThreadImplPosix()::$_0::__invoke() [0x55db565da8b5]
+[2020-07-06 19:14:04.166][1643305][critical][backtrace] [bazel-out/k8-fastbuild/bin/external/envoy/source/server/_virtual_includes/backtrace_lib/server/backtrace.h:96] #61: start_thread [0x7f0e0d74ff27]
+ActiveStream 0x55db5905a400, stream_id_: 1316866163277747421, state_.has_continue_headers_: 0, state_.is_head_request_: 0, state_.decoding_headers_only_: 0, state_.encoding_headers_only_: 0
+request_headers_: 
+  ':authority', '127.0.0.1:20542'
+  ':path', '/'
+  ':method', 'GET'
+  ':scheme', 'http'
+  'user-agent', 'Go-http-client/1.1'
+  'accept-encoding', 'gzip'
+  'x-forwarded-proto', 'http'
+  'x-request-id', '5a44bc3b-d7c0-4c32-9f42-2e9e37c2d3c4'
+request_trailers_: null
+response_headers_: null
+response_trailers_: null
+&stream_info_: 
+  StreamInfoImpl 0x55db5905a548, protocol_: 2, response_code_: null, response_code_details_: null, health_check_request_: 0, route_name_: 
+2020/07/06 19:14:04 stop envoy ...
+2020/07/06 19:14:04 HTTP POST http://127.0.0.1:20541/quitquitquit
+[2020-07-06 19:14:04.562][1643336][info][main] [external/envoy/source/server/server.cc:635] shutting down server instance
+[2020-07-06 19:14:04.562][1643336][info][main] [external/envoy/source/server/server.cc:687] Notifying 0 callback(s) with completion.
+[2020-07-06 19:14:04.563][1643336][info][main] [external/envoy/source/server/server.cc:582] main dispatch loop exited
+[2020-07-06 19:14:04.584][1643336][warning][config] [bazel-out/k8-fastbuild/bin/external/envoy/source/common/config/_virtual_includes/grpc_stream_lib/common/config/grpc_stream.h:92] StreamAggregatedResources gRPC config stream closed: 13, 
+[2020-07-06 19:14:04.589][1643336][info][main] [external/envoy/source/server/server.cc:628] exiting
+2020/07/06 19:14:04 stop envoy ... done
+2020/07/06 19:14:04 removing temp config file
+2020/07/06 19:14:04 stop envoy ...
+2020/07/06 19:14:04 HTTP POST http://127.0.0.1:20544/quitquitquit
+2020/07/06 19:14:04 Post "http://127.0.0.1:20544/quitquitquit": dial tcp 127.0.0.1:20544: connect: connection refused
+2020/07/06 19:14:04 stop envoy ... done
+2020/07/06 19:14:04 signal: aborted
+2020/07/06 19:14:04 removing temp config file
+2020/07/06 19:14:04 stopping XDS server
+    TestAttributeGen: stats_test.go:331: error code for :20542: 503
+--- FAIL: TestAttributeGen (11.94s)
+FAIL
+exit status 1
+FAIL	istio.io/proxy/test/envoye2e/stats_plugin	12.407s

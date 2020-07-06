@@ -301,7 +301,8 @@ func TestAttributeGen(t *testing.T) {
 		"EnableMetadataExchange":     "true",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/stats_filter_config.yaml"),
+		"ResponseCodeClass":		  "2xx",
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -321,10 +322,11 @@ func TestAttributeGen(t *testing.T) {
 					Body: "hello, world!",
 				},
 			},
-			&driver.Sleep{Duration: 10 * time.Second},
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"istio_responseClass": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
-			}},
+			&driver.Stats{
+				AdminPort: params.Ports.ServerAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
+				}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
