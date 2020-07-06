@@ -103,20 +103,28 @@ std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
 }
 
 template <>
-std::pair<absl::optional<std::vector<std::string>>, JsonParserResultDetail>
-JsonValueAs<std::vector<std::string>>(const JsonObject& j) {
+std::pair<absl::optional<std::vector<absl::string_view>>,
+          JsonParserResultDetail>
+JsonValueAs<std::vector<absl::string_view>>(const JsonObject& j) {
+  std::pair<absl::optional<std::vector<absl::string_view>>,
+            JsonParserResultDetail>
+      values = std::make_pair(absl::nullopt, JsonParserResultDetail::OK);
   if (j.is_array()) {
-    std::vector<std::string> values;
     for (const auto& elt : j) {
       if (!elt.is_string()) {
-        return std::make_pair(absl::nullopt,
-                              JsonParserResultDetail::TYPE_ERROR);
+        values.first = absl::nullopt;
+        values.second = JsonParserResultDetail::TYPE_ERROR;
+        return values;
       }
-      values.emplace_back(elt);
+      if (!values.first.has_value()) {
+        values.first = std::vector<absl::string_view>();
+      }
+      values.first->emplace_back(elt);
     }
-    return std::make_pair(values, JsonParserResultDetail::OK);
+    return values;
   }
-  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
+  values.second = JsonParserResultDetail::TYPE_ERROR;
+  return values;
 }
 
 template <>

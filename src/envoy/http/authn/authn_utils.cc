@@ -54,24 +54,25 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
       json_obj, [&json_obj, &claims](const std::string& key) -> bool {
         // In current implementation, only string/string list objects are
         // extracted
-        std::vector<std::string> list;
+        std::vector<absl::string_view> list;
         auto field_value =
-            Wasm::Common::JsonGetField<std::vector<std::string>>(json_obj, key);
+            Wasm::Common::JsonGetField<std::vector<absl::string_view>>(json_obj,
+                                                                       key);
         if (field_value.detail() != Wasm::Common::JsonParserResultDetail::OK) {
           auto str_field_value =
-              Wasm::Common::JsonGetField<std::string>(json_obj, key);
+              Wasm::Common::JsonGetField<absl::string_view>(json_obj, key);
           if (str_field_value.detail() !=
               Wasm::Common::JsonParserResultDetail::OK) {
             return true;
           }
-          list =
-              absl::StrSplit(str_field_value.value(), ' ', absl::SkipEmpty());
+          list = absl::StrSplit(str_field_value.value().data(), ' ',
+                                absl::SkipEmpty());
         } else {
           list = field_value.value();
         }
         for (auto& s : list) {
           (*claims)[key].mutable_list_value()->add_values()->set_string_value(
-              s);
+              std::string(s));
         }
         return true;
       });

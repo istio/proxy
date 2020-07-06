@@ -67,8 +67,9 @@ std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
 JsonValueAs<JsonObject>(const JsonObject& j);
 
 template <>
-std::pair<absl::optional<std::vector<std::string>>, JsonParserResultDetail>
-JsonValueAs<std::vector<std::string>>(const JsonObject& j);
+std::pair<absl::optional<std::vector<absl::string_view>>,
+          JsonParserResultDetail>
+JsonValueAs<std::vector<absl::string_view>>(const JsonObject& j);
 
 template <class T>
 class JsonGetField {
