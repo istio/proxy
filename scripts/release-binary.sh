@@ -104,13 +104,13 @@ do
       CONFIG_PARAMS="--config=release"
       BINARY_BASE_NAME="envoy-alpha"
       PACKAGE_BASE_NAME="istio-proxy"
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info "${BAZEL_BUILD_ARGS}" output_path)/k8-opt/bin"
       ;;
     "release-symbol")
       CONFIG_PARAMS="--config=release-symbol"
       BINARY_BASE_NAME="envoy-symbol"
       PACKAGE_BASE_NAME=""
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info "${BAZEL_BUILD_ARGS}" output_path)/k8-opt/bin"
       ;;
     "asan")
       # NOTE: libc++ is dynamically linked in this build.
@@ -118,13 +118,13 @@ do
       CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
       BINARY_BASE_NAME="envoy-asan"
       PACKAGE_BASE_NAME=""
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info "${BAZEL_BUILD_ARGS}" output_path)/k8-opt/bin"
       ;;
     "debug")
       CONFIG_PARAMS="--config=debug"
       BINARY_BASE_NAME="envoy-debug"
       PACKAGE_BASE_NAME="istio-proxy-debug"
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-dbg/bin"
+      BAZEL_OUT="$(bazel info "${BAZEL_BUILD_ARGS}" output_path)/k8-dbg/bin"
       ;;
   esac
 
@@ -133,7 +133,7 @@ do
   echo "Building ${config} proxy"
   BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.tar.gz"
   SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.sha256"
-  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //src/envoy:envoy_tar
+  bazel build "${BAZEL_BUILD_ARGS}" ${CONFIG_PARAMS} //src/envoy:envoy_tar
   BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
   cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
   sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -145,13 +145,13 @@ do
   fi
 
   echo "Building ${config} docker image"
-  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
+  bazel build "${BAZEL_BUILD_ARGS}" ${CONFIG_PARAMS} \
     //tools/docker:envoy_distroless \
     //tools/docker:envoy_ubuntu
 
   if [ "${PUSH_DOCKER_IMAGE}" -eq 1 ]; then
     echo "Pushing ${config} docker image"
-    bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
+    bazel run "${BAZEL_BUILD_ARGS}" ${CONFIG_PARAMS} \
       //tools/docker:push_envoy_distroless \
       //tools/docker:push_envoy_ubuntu
   fi
@@ -160,7 +160,7 @@ do
     echo "Building ${config} debian package"
     BINARY_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.deb"
     SHA256_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.sha256"
-    bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //tools/deb:istio-proxy
+    bazel build "${BAZEL_BUILD_ARGS}" ${CONFIG_PARAMS} //tools/deb:istio-proxy
     BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
     cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
     sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
@@ -176,7 +176,7 @@ done
 # Build and publish Wasm plugins
 extensions=(stats metadata_exchange attributegen)
 TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
-trap "rm -rf ${TMP_WASM}" EXIT
+trap 'rm -rf ${TMP_WASM}' EXIT
 make build_wasm
 if [ -n "${DST}" ]; then
   for extension in "${extensions[@]}"; do
@@ -185,7 +185,7 @@ if [ -n "${DST}" ]; then
     WASM_PATH="${TMP_WASM}/${WASM_NAME}"
     SHA256_PATH="${WASM_PATH}.sha256"
     BAZEL_TARGET="$(bazel info output_path)/k8-opt/bin/extensions/${extension}.wasm"
-    cp ${BAZEL_TARGET} ${WASM_PATH}
+    cp "${BAZEL_TARGET}" "${WASM_PATH}"
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
     
     # push wasm files and sha to the given bucket
