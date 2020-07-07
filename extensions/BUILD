@@ -62,6 +62,7 @@ wasm_cc_binary(
     ],
     copts = ["-UNULL_PLUGIN"],
     deps = [
+        "//extensions/common:base64_wasm",
         "//extensions/common:json_util_wasm",
         "//extensions/common:node_info_fb_cc",
         "//extensions/metadata_exchange:declare_property_proto_cc",
