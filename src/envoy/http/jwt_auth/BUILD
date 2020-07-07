@@ -38,18 +38,6 @@ envoy_cc_library(
     ],
 )
 
-cc_library(
-    name = "jwt_lib_wasm",
-    srcs = ["jwt.cc"],
-    hdrs = ["jwt.h"],
-    copts = ["-UNULL_PLUGIN"],
-    deps = [
-        "//extensions/common:base64_wasm",
-        "//extensions/common:json_util_wasm",
-        "//external:ssl",
-    ],
-)
-
 envoy_cc_library(
     name = "jwt_authenticator_lib",
     srcs = [

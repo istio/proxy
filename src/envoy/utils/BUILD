@@ -63,6 +63,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        "//extensions/common:json_util",
         "//external:mixer_client_config_cc_proto",
         "//src/istio/control/http:control_lib",
         "//src/istio/mixerclient:mixerclient_lib",

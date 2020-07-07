@@ -24,7 +24,7 @@
 
 #ifndef NULL_PLUGIN
 
-#include "extensions/common/base64.h"
+#include "base64.h"
 #include "extensions/metadata_exchange/declare_property.pb.h"
 
 #else
@@ -126,25 +126,19 @@ bool PluginRootContext::configure(size_t configuration_size) {
   auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
                                            0, configuration_size);
   // Parse configuration JSON string.
-  auto parser = ::Wasm::Common::JsonParser();
-  parser.parse(configuration_data->view());
-  if (parser.detail() != ::Wasm::Common::JsonParserResultDetail::OK) {
+  auto result = ::Wasm::Common::JsonParse(configuration_data->view());
+  if (!result.has_value()) {
     LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
                           configuration_data->view()));
     return false;
   }
-  auto j = parser.object();
-  if (!j.is_object()) {
-    LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
-                          configuration_data->view(), j.dump()));
-    return false;
-  }
 
+  auto j = result.value();
   auto max_peer_cache_size_field =
       ::Wasm::Common::JsonGetField<int64_t>(j, "max_peer_cache_size");
   if (max_peer_cache_size_field.detail() ==
       Wasm::Common::JsonParserResultDetail::OK) {
-    max_peer_cache_size_ = max_peer_cache_size_field.fetch();
+    max_peer_cache_size_ = max_peer_cache_size_field.value();
   }
   return true;
 }
@@ -187,7 +181,7 @@ bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
   return true;
 }
 
-FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
+FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
   // strip and store downstream peer metadata
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
   if (downstream_metadata_id != nullptr &&
@@ -230,7 +224,7 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t) {
   return FilterHeadersStatus::Continue;
 }
 
-FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t) {
+FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t, bool) {
   // strip and store upstream peer metadata
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
   if (upstream_metadata_id != nullptr &&
