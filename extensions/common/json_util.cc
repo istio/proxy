@@ -102,6 +102,40 @@ std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
   return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
+template <>
+std::pair<absl::optional<std::vector<absl::string_view>>,
+          JsonParserResultDetail>
+JsonValueAs<std::vector<absl::string_view>>(const JsonObject& j) {
+  std::pair<absl::optional<std::vector<absl::string_view>>,
+            JsonParserResultDetail>
+      values = std::make_pair(absl::nullopt, JsonParserResultDetail::OK);
+  if (j.is_array()) {
+    for (const auto& elt : j) {
+      if (!elt.is_string()) {
+        values.first = absl::nullopt;
+        values.second = JsonParserResultDetail::TYPE_ERROR;
+        return values;
+      }
+      if (!values.first.has_value()) {
+        values.first = std::vector<absl::string_view>();
+      }
+      values.first->emplace_back(elt.get_ref<std::string const&>());
+    }
+    return values;
+  }
+  values.second = JsonParserResultDetail::TYPE_ERROR;
+  return values;
+}
+
+template <>
+std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
+JsonValueAs<JsonObject>(const JsonObject& j) {
+  if (j.is_object()) {
+    return std::make_pair(j.get<JsonObject>(), JsonParserResultDetail::OK);
+  }
+  return std::make_pair(absl::nullopt, JsonParserResultDetail::TYPE_ERROR);
+}
+
 bool JsonArrayIterate(
     const JsonObject& j, absl::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor) {
@@ -130,6 +164,20 @@ bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
     return false;
   }
   for (const auto& elt : it.value().items()) {
+    auto json_value = JsonValueAs<std::string>(elt.key());
+    if (json_value.second != JsonParserResultDetail::OK) {
+      return false;
+    }
+    if (!visitor(json_value.first.value())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool JsonObjectIterate(const JsonObject& j,
+                       const std::function<bool(std::string key)>& visitor) {
+  for (const auto& elt : j.items()) {
     auto json_value = JsonValueAs<std::string>(elt.key());
     if (json_value.second != JsonParserResultDetail::OK) {
       return false;
