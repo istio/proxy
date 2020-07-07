@@ -192,12 +192,3 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
 )
-
-cc_library(
-    name = "base64_wasm",
-    hdrs = [
-        "base64.h",
-    ],
-    copts = ["-UNULL_PLUGIN"],
-    visibility = ["//visibility:public"],
-)
