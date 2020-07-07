@@ -197,10 +197,10 @@ envoy_cc_library(
 # This problem is resolved on https://github.com/abseil/abseil-cpp/pull/721
 # so we can destroy after that merged into upstream
 cc_library(
-  name = "base64_wasm",
-  hdrs = [
-    "base64.h",
-  ],
-  copts = ["-UNULL_PLUGIN"],
-  visibility = ["//visibility:public"],
+    name = "base64_wasm",
+    hdrs = [
+        "base64.h",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    visibility = ["//visibility:public"],
 )
