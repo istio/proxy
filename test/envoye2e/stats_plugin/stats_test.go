@@ -297,7 +297,6 @@ func TestAttributeGen(t *testing.T) {
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
 		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
 		"WasmRuntime":                "envoy.wasm.runtime.null",
-		"DisableDirectResponse":      "true",
 		"EnableMetadataExchange":     "true",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
@@ -306,10 +305,10 @@ func TestAttributeGen(t *testing.T) {
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl") + params.LoadTestData("testdata/filters/attributegen.yaml.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/attributegen.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 	if err := (&driver.Scenario{
-		Steps: []driver.Step{
+		[]driver.Step{
 			&driver.XDS{},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},

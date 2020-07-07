@@ -4,7 +4,6 @@
     type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
     value:
       config:
-        root_id: "attributegen"
         vm_config:
           vm_id: attributegen{{ .N }}
           runtime: {{ .Vars.WasmRuntime }}
@@ -13,8 +12,16 @@
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
-            attributes:
-            - outputAttribute: istio_responseClass
-              match:
-              - value: 2xx
-                condition: response_code >= 200 && response_code <= 299
+            {
+              "attributes": [
+                {
+                  "output_attribute": "istio_responseClass",
+                  "match": [
+                    {
+                      "value": "2xx",
+                      "condition": "response.code >= 200 && response.code <= 299"
+                    }
+                  ]
+                }
+              ]
+            }
