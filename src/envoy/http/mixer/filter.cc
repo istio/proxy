@@ -150,7 +150,7 @@ void Filter::setDecoderFilterCallbacks(
 }
 
 void Filter::completeCheck(const CheckResponseInfo& info) {
-  const Status& status = info.status();
+  const google::protobuf::util::Status& status = info.status();
 
   ENVOY_LOG(debug, "Called Mixer::Filter : check complete {}",
             status.ToString());

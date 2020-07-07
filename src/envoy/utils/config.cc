@@ -37,13 +37,15 @@ const std::string kDefaultMixerClusterName("mixer_server");
 // ReadConfig() finds config from |json| that matches version |config_version|,
 // and parses config into |message|. Returns true if config is read and parsed
 // successfully.
-bool ReadConfig(const Json::Object &json, const std::string &config_version,
-                Message *message) {
-  if (!json.hasObject(config_version)) {
+bool ReadConfig(const Wasm::Common::JsonObject &json,
+                const std::string &config_version, Message *message) {
+  auto field = Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(
+      json, config_version);
+  if (field.detail() == Wasm::Common::JsonParserResultDetail::OUT_OF_RANGE) {
     return false;
   }
 
-  std::string config_str = json.getObject(config_version)->asJsonString();
+  std::string config_str = field.value().dump();
   Status status = ParseJsonMessage(config_str, message);
   auto &logger = Logger::Registry::getLog(Logger::Id::config);
   if (status.ok()) {
@@ -69,11 +71,11 @@ void SetDefaultMixerClusters(TransportConfig *config) {
   }
 }
 
-bool ReadV2Config(const Json::Object &json, Message *message) {
+bool ReadV2Config(const Wasm::Common::JsonObject &json, Message *message) {
   return ReadConfig(json, kV2Config, message);
 }
 
-bool ReadV1Config(const Json::Object &json, Message *message) {
+bool ReadV1Config(const Wasm::Common::JsonObject &json, Message *message) {
   return ReadConfig(json, kV1Config, message);
 }
 
