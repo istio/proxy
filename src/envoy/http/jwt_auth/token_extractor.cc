@@ -28,7 +28,7 @@ namespace JwtAuth {
 namespace {
 
 // The autorization bearer prefix.
-const std::string kBearerPrefix = "Bearer ";
+const std::string kBearerPrefix = "bearer ";
 
 // The query parameter name to get JWT token.
 const std::string kParamAccessToken = "access_token";
@@ -71,7 +71,7 @@ void JwtTokenExtractor::Extract(
     if (entry) {
       // Extract token from header.
       auto value = entry->value().getStringView();
-      if (absl::StartsWith(value, kBearerPrefix)) {
+      if (absl::StartsWith(LowerCaseString(value), kBearerPrefix)) {
         value.remove_prefix(kBearerPrefix.length());
         tokens->emplace_back(new Token(std::string(value),
                                        authorization_issuers_, true, nullptr));

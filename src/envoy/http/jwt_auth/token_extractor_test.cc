@@ -139,6 +139,25 @@ TEST_F(JwtTokenExtractorTest, TestDefaultParamLocation) {
   EXPECT_FALSE(tokens[0]->IsIssuerAllowed("unknown_issuer"));
 }
 
+TEST_F(JwtTokenExtractorTest, TestLowerBearerHeaderToken) {
+  auto headers =
+      TestRequestHeaderMapImpl{{"Authorization", "bearer jwt_token"}};
+  std::vector<std::unique_ptr<JwtTokenExtractor::Token>> tokens;
+  extractor_->Extract(headers, &tokens);
+  EXPECT_EQ(tokens.size(), 1);
+  EXPECT_EQ(tokens[0]->token(), "jwt_token");
+
+  EXPECT_TRUE(tokens[0]->IsIssuerAllowed("issuer1"));
+  EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer2"));
+  EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer3"));
+  EXPECT_FALSE(tokens[0]->IsIssuerAllowed("issuer4"));
+  EXPECT_FALSE(tokens[0]->IsIssuerAllowed("unknown_issuer"));
+
+  // Test token remove
+  tokens[0]->Remove(&headers);
+  EXPECT_FALSE(headers.Authorization());
+}
+
 TEST_F(JwtTokenExtractorTest, TestCustomHeaderToken) {
   std::vector<std::string> headerVals = {"jwt_token", "istio jwt_token"};
 
