@@ -50,7 +50,6 @@ wasm_cc_binary(
 wasm_cc_binary(
     name = "metadata_exchange.wasm",
     srcs = [
-        "//extensions/common:base64.h",
         "//extensions/common:context.cc",
         "//extensions/common:context.h",
         "//extensions/common:proto_util.cc",

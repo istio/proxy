@@ -110,8 +110,6 @@ enum class Status {
 
 std::string StatusToString(Status status);
 
-std::string Base64UrlDecode(std::string input);
-
 // Base class to keep the status that represents "OK" or the first failure
 // reason
 class WithStatus {
