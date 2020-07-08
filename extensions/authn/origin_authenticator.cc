@@ -45,16 +45,18 @@ namespace AuthN {
 
 #endif  // NULL_PLUGIN
 
-using Envoy::Http::Headers;
-using Envoy::Http::RequestHeaderMap;
+Envoy::Http::RegisterCustomInlineHeader<
+    Envoy::Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
+    access_control_request_method(
+        Envoy::Http::Headers::get().AccessControlRequestMethod);
 
-bool isCORSPreflightRequest(const RequestHeaderMap& headers) {
+bool isCORSPreflightRequest(const Envoy::Http::RequestHeaderMap& headers) {
   return headers.Method() &&
          headers.Method()->value().getStringView() ==
-             Headers::get().MethodValues.Options &&
+             Envoy::Http::Headers::get().MethodValues.Options &&
          headers.Origin() && !headers.Origin()->value().empty() &&
-         headers.AccessControlRequestMethod() &&
-         !headers.AccessControlRequestMethod()->value().empty();
+         !headers.getInlineValue(access_control_request_method.handle())
+              .empty();
 }
 
 OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context,

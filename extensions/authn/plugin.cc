@@ -30,6 +30,10 @@ FilterHeadersStatus AuthnContext::onRequestHeaders(uint32_t, bool) {
   return FilterHeadersStatus::Continue;
 }
 
+const FilterConfig& AuthnContext::filterConfig() {
+  return dynamic_cast<AuthnRootContext*>(this->root())->filterConfig();
+};
+
 #ifdef NULL_PLUGIN
 }  // namespace AuthN
 }  // namespace null_plugin

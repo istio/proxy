@@ -17,7 +17,7 @@
 
 #include "absl/strings/string_view.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-// #include "extensions/authn/authenticator_base.h"
+#include "extensions/authn/authenticator_base.h"
 
 #include "envoy/config/core/v3/base.pb.h"
 
@@ -47,28 +47,10 @@ class AuthnRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~AuthnRootContext() {}
 
-  // RootContext
-  bool validateConfiguration(size_t) override { return true; }
-  bool onConfigure(size_t) override { return true; };
-  bool onStart(size_t) override { return true; }
-  void onTick() override {}
-  void onQueueReady(uint32_t) override {}
-  bool onDone() override { return true; }
+  const FilterConfig& filterConfig() { return filter_config_; };
 
-  // Low level HTTP/gRPC interface.
-  void onHttpCallResponse(uint32_t token, uint32_t headers, size_t body_size,
-                          uint32_t trailers) override {}
-  void onGrpcReceiveInitialMetadata(uint32_t token, uint32_t headers) override {
-  }
-  void onGrpcReceiveTrailingMetadata(uint32_t token,
-                                     uint32_t trailers) override {}
-  void onGrpcReceive(uint32_t token, size_t body_size) override {}
-  void onGrpcClose(uint32_t token, GrpcStatus status) override {}
-
-  // const FilterConfig& filterConfig() { return filter_config_; };
-
-  //  private:
-  // FilterConfig filter_config_;
+ private:
+  FilterConfig filter_config_;
 };
 
 // Per-stream context.
@@ -77,45 +59,9 @@ class AuthnContext : public Context {
   explicit AuthnContext(uint32_t id, RootContext* root) : Context(id, root) {}
   ~AuthnContext() = default;
 
-  void onCreate() override {}
-
-  // Context
-  FilterStatus onNewConnection() override { return FilterStatus::Continue; }
-  FilterStatus onDownstreamData(size_t, bool) override {
-    return FilterStatus::Continue;
-  }
-  FilterStatus onUpstreamData(size_t, bool) override {
-    return FilterStatus::Continue;
-  }
-  void onDownstreamConnectionClose(PeerType) override {}
-  void onUpstreamConnectionClose(PeerType) override {}
   FilterHeadersStatus onRequestHeaders(uint32_t, bool) override;
-  FilterMetadataStatus onRequestMetadata(uint32_t) override {
-    return FilterMetadataStatus::Continue;
-  }
-  FilterDataStatus onRequestBody(size_t, bool) override {
-    return FilterDataStatus::Continue;
-  }
-  FilterTrailersStatus onRequestTrailers(uint32_t) override {
-    return FilterTrailersStatus::Continue;
-  }
-  FilterHeadersStatus onResponseHeaders(uint32_t, bool) override {
-    return FilterHeadersStatus::Continue;
-  }
-  FilterMetadataStatus onResponseMetadata(uint32_t) override {
-    return FilterMetadataStatus::Continue;
-  }
-  FilterDataStatus onResponseBody(size_t, bool) override {
-    return FilterDataStatus::Continue;
-  }
-  FilterTrailersStatus onResponseTrailers(uint32_t) override {
-    return FilterTrailersStatus::Continue;
-  }
-  void onDone() override {}
-  void onLog() override {}
 
-  // const FilterConfig& filterConfig() { return rootContext()->filterConfig();
-  // };
+  const FilterConfig& filterConfig();
 
  private:
   // std::unique_ptr<AuthenticatorBase> createPeerAuthenticator(
@@ -123,14 +69,6 @@ class AuthnContext : public Context {
   // TODO(shikugawa): origin authenticator implementation.
   // std::unique_ptr<istio::AuthN::AuthenticatorBase> createOriginAuthenticator(
   //   istio::AuthN::FilterContext* filter_context);
-
-  // inline AuthnRootContext* rootContext() {
-  //   return dynamic_cast<AuthnRootContext*>(this->root());
-  // };
-
-  // Context for authentication process. Created in decodeHeader to start
-  // authentication process.
-  // FilterContext* filter_context_;
 };
 
 #ifdef NULL_PLUGIN
