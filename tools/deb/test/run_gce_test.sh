@@ -44,7 +44,7 @@ function istioRun() {
   local NAME=$1
   local CMD=$2
 
-  gcloud compute ssh --project $PROJECT --zone $ISTIO_ZONE $NAME --command "$CMD"
+  gcloud compute ssh --project "$PROJECT" --zone "$ISTIO_ZONE" "$NAME" --command "$CMD"
 }
 
 # Copy files to the VM
@@ -55,7 +55,8 @@ function istioCopy() {
   shift
   local FILES=$*
 
-  gcloud compute scp --project $PROJECT --zone $ISTIO_ZONE $FILES ${NAME}:
+  # shellcheck disable=SC2086
+  gcloud compute scp --project "$PROJECT" --zone "$ISTIO_ZONE" $FILES "${NAME}:"
 }
 
 
@@ -66,26 +67,26 @@ function istioVMInit() {
   local IMAGE=${2:-debian-9-stretch-v20170816}
   local IMAGE_PROJECT=${3:-debian-cloud}
 
-  gcloud compute --project $PROJECT instances  describe $NAME  --zone ${ISTIO_ZONE} >/dev/null
-  if [[ $? == 0 ]] ; then
+  if gcloud compute --project "$PROJECT" instances  describe "$NAME"  --zone "${ISTIO_ZONE}" >/dev/null ; then
 
-    gcloud compute --project $PROJECT \
-     instances reset $NAME \
-     --zone $ISTIO_ZONE \
+    gcloud compute --project "$PROJECT" \
+     instances reset "$NAME" \
+     --zone "$ISTIO_ZONE" \
 
   else
 
-    gcloud compute --project $PROJECT \
-     instances create $NAME \
-     --zone $ISTIO_ZONE \
+    # shellcheck disable=SC2140
+    gcloud compute --project "$PROJECT" \
+     instances create "$NAME" \
+     --zone "$ISTIO_ZONE" \
      --machine-type "n1-standard-1" \
      --subnet default \
      --can-ip-forward \
-     --service-account $ACCOUNT \
+     --service-account "$ACCOUNT" \
      --scopes "https://www.googleapis.com/auth/cloud-platform" \
      --tags "http-server","https-server" \
-     --image $IMAGE \
-     --image-project $IMAGE_PROJECT \
+     --image "$IMAGE" \
+     --image-project "$IMAGE_PROJECT" \
      --boot-disk-size "10" \
      --boot-disk-type "pd-standard" \
      --boot-disk-device-name "debtest"
@@ -95,8 +96,7 @@ function istioVMInit() {
   # Wait for machine to start up ssh
   for i in {1..10}
   do
-    istioRun $NAME 'echo hi'
-    if [[ $? -ne 0 ]] ; then
+    if ! istioRun "$NAME" 'echo hi' ; then
         echo Waiting for startup $?
         sleep 5
     else
@@ -113,18 +113,18 @@ function istioVMInit() {
 
 function istioVMDelete() {
   local NAME=${1:-$TESTVM}
-  gcloud compute -q --project $PROJECT --zone $ISTIO_ZONE instances delete $NAME --zone $ISTIO_ZONE
+  gcloud compute -q --project "$PROJECT" --zone "$ISTIO_ZONE" instances delete "$NAME" --zone "$ISTIO_ZONE"
 }
 
 # Helper to get the external IP of a raw VM
 function istioVMExternalIP() {
-  local NAME=${1:-$TESTVM}
-  gcloud compute --project $PROJECT instances describe $NAME --zone $ISTIO_ZONE --format='value(networkInterfaces[0].accessConfigs[0].natIP)'
+  local NAME=${TESTVM}
+  gcloud compute --project "$PROJECT" instances describe "$NAME" --zone "$ISTIO_ZONE" --format='value(networkInterfaces[0].accessConfigs[0].natIP)'
 }
 
 function istioVMInternalIP() {
   local NAME=${1:-$TESTVM}
-  gcloud compute --project $PROJECT instances describe $NAME  --zone $ISTIO_ZONE --format='value(networkInterfaces[0].networkIP)'
+  gcloud compute --project "$PROJECT" instances describe "$NAME"  --zone "$ISTIO_ZONE" --format='value(networkInterfaces[0].networkIP)'
 }
 
 # Initialize the K8S cluster, generating config files for the raw VMs.
@@ -184,12 +184,13 @@ spec:
     istio: mixer
 EOF
 
+  # shellcheck disable=SC2034
   for i in {1..10}
   do
     PILOT_IP=$(kubectl get service istio-pilot-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     ISTIO_DNS=$(kubectl get -n kube-system service dns-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     MIXER_IP=$(kubectl get service mixer-ilb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    if [ ${PILOT_IP} == "" -o  ${PILOT_IP} == "" -o ${MIXER_IP} == "" ] ; then
+    if [ "${PILOT_IP}" == "" ] || [ "${PILOT_IP}" == "" ] || [ "${MIXER_IP}" == "" ] ; then
         echo Waiting for ILBs
         sleep 10
     else
@@ -197,18 +198,20 @@ EOF
     fi
   done
 
-  if [ ${PILOT_IP} == "" -o  ${PILOT_IP} == "" -o ${MIXER_IP} == "" ] ; then
+  if [ "${PILOT_IP}" == "" ] || [ "${PILOT_IP}" == "" ] || [ "${MIXER_IP}" == "" ] ; then
     echo "Failed to create ILBs"
     exit 1
   fi
 
   #/etc/dnsmasq.d/kubedns
   echo "server=/default.svc.cluster.local/$ISTIO_DNS" > kubedns
-  echo "address=/istio-mixer/$MIXER_IP" >> kubedns
-  echo "address=/mixer-server/$MIXER_IP" >> kubedns
-  echo "address=/istio-pilot/$PILOT_IP" >> kubedns
+  { 
+    echo "address=/istio-mixer/$MIXER_IP"
+    echo "address=/mixer-server/$MIXER_IP"
+    echo "address=/istio-pilot/$PILOT_IP"
+  } >> kubedns
 
-  CIDR=$(gcloud container clusters describe ${K8SCLUSTER} --zone=${ISTIO_ZONE} --format "value(servicesIpv4Cidr)")
+  CIDR=$(gcloud container clusters describe "${K8SCLUSTER}" --zone="${ISTIO_ZONE}" --format "value(servicesIpv4Cidr)")
   echo "ISTIO_SERVICE_CIDR=$CIDR" > cluster.env
 
 }
@@ -285,13 +288,13 @@ function istioProvisionTestWorker() {
 
  istioPrepareCluster
 
- istioRun $NAME "sudo rm -f istio-*.deb machine_setup.sh"
+ istioRun "$NAME" "sudo rm -f istio-*.deb machine_setup.sh"
 
  # Copy deb, helper and config files
- istioCopy $NAME kubedns cluster.env tools/deb/test/machine_setup.sh $PROXY_DIR/bazel-bin/tools/deb/*.deb
+ istioCopy "$NAME" kubedns cluster.env tools/deb/test/machine_setup.sh "$PROXY_DIR"/bazel-bin/tools/deb/*.deb
 
 
- istioRun $NAME "sudo bash -c ./machine_setup.sh $NAME"
+ istioRun "$NAME" "sudo bash -c ./machine_setup.sh $NAME"
 
 }
 
@@ -301,29 +304,31 @@ function ingressIP() {
 
 function setUp() {
 
- LOCAL_IP=$(istioVMInternalIP $TESTVM)
+ LOCAL_IP=$(istioVMInternalIP "$TESTVM")
 
  # Configure a service for the local nginx server, and add an ingress route
- istioConfigHttpService rawvm 80 $LOCAL_IP
+ istioConfigHttpService rawvm 80 "$LOCAL_IP"
  istioRoute "/${TESTVM}/" rawvm 80
 }
 
 # Verify that cluster (istio-ingress) can reach the VM.
 function testClusterToRawVM() {
-  local INGRESS=$(ingressIP)
+  local INGRESS
+  INGRESS=$(ingressIP)
 
   # -f == fail, return != 0 if status code is not 200
-  curl -f http://$INGRESS/${TESTVM}/
+  curl -f http://"$INGRESS"/"${TESTVM}"/
 
   echo $?
 }
 
 # Verify that the VM can reach the cluster. Use the local http server running on the VM.
 function testRawVMToCluster() {
-  local RAWVM=$(istioVMExternalIP)
+  local RAWVM
+  RAWVM=$(istioVMExternalIP)
 
   # -f == fail, return != 0 if status code is not 200
-  curl -f http://${RAWVM}:9411/zipkin/
+  curl -f http://"${RAWVM}":9411/zipkin/
 
   echo $?
 }
@@ -335,17 +340,17 @@ function test() {
 
 function trearDown() {
   # TODO: it is also possible to reset the VM, may be faster
-  istioVMDelete ${TESTVM}
+  istioVMDelete "${TESTVM}"
 }
 
 if [[ ${1:-} == "init" ]] ; then
-  istioProvisionTestWorker ${TESTVM}
+  istioProvisionTestWorker "${TESTVM}"
 elif [[ ${1:-} == "test" ]] ; then
   setUp
   test
 else
-  istioVMInit ${TESTVM}
-  istioProvisionTestWorker ${TESTVM}
+  istioVMInit "${TESTVM}"
+  istioProvisionTestWorker "${TESTVM}"
   setUp
   test
 fi
