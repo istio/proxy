@@ -40,6 +40,12 @@ DST=""
 # Verify that we're building binaries on Ubuntu 16.04 (Xenial).
 CHECK=1
 
+# Defines the base binary name for artifacts. For example, this will be "envoy-debug".
+BINARY_NAME="${BINARY_NAME:-"envoy"}"
+
+# If enabled, we will just build the Envoy binary rather then docker images, deb, wasm, etc
+BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
+
 # Push envoy docker image.
 PUSH_DOCKER_IMAGE=0
 
@@ -54,7 +60,7 @@ function usage() {
   exit 1
 }
 
-while getopts d:ip arg ; do
+while getopts d:ipc arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
     i) CHECK=0;;
@@ -149,6 +155,10 @@ do
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
   fi
 
+  if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
+    continue
+  fi
+
   echo "Building ${config} docker image"
   # shellcheck disable=SC2086
   bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
@@ -180,6 +190,11 @@ do
     fi
   fi
 done
+
+# Exit early to skip wasm build
+if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
+  exit 0
+fi
 
 # Build and publish Wasm plugins
 extensions=(stats metadata_exchange attributegen)
