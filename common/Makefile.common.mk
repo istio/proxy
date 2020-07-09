@@ -21,18 +21,12 @@
 
 FINDFILES=find . \( -path ./common-protos -o -path ./.git -o -path ./out -o -path ./.github -o -path ./licenses \) -prune -o -type f
 XARGS = xargs -0 -r
-LINT_SCRIPTS_DIR ?= .
 
 lint-dockerfiles:
 	@${FINDFILES} -name 'Dockerfile*' -print0 | ${XARGS} hadolint -c ./common/config/.hadolint.yml
 
 lint-scripts:
 	@${FINDFILES} -name '*.sh' -print0 | ${XARGS} shellcheck
-
-lint-scripts-dir:
-	@find ${LINT_SCRIPTS_DIR} \( -path ./common-protos -o -path ./.git -o -path ./out -o -path ./.github -o -path ./licenses \) -prune -o -type f -name '*.sh' -print0 |\
-		${XARGS} shellcheck
-
 
 # TODO(nmittler): disabled pipefail due to grep failing when no files contain "{{". Need to investigate options.
 lint-yaml:
