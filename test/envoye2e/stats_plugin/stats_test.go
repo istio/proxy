@@ -121,7 +121,7 @@ var TestCases = []struct {
 }
 
 func TestStatsPayload(t *testing.T) {
-	env.SkipTSanASan(t)
+		env.SkipTSanASan(t)
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
@@ -321,11 +321,13 @@ func TestAttributeGen(t *testing.T) {
 					Body: "hello, world!",
 				},
 			},
-			&driver.Stats{
-				AdminPort: params.Ports.ServerAdmin,
-				Matchers: map[string]driver.StatMatcher{
-					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
-				}},
+			&driver.Sleep{Duration: 5 * time.Second},
+			/*&driver.Stats{params.Ports.ClientAdmin, map[string]driver.StatMatcher{
+				"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
+			}},*/
+			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+				"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
