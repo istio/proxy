@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Copyright 2017 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-WD=$(dirname $0)
-WD=$(cd $WD; pwd)
-ROOT=$(dirname $WD)
+WD=$(dirname "$0")
+WD=$(cd "$WD" || exit 1; pwd)
+ROOT=$(dirname "$WD")
 WORKSPACE="${ROOT}/WORKSPACE"
 
 # Exit immediately for non zero status
@@ -24,6 +26,7 @@ set -u
 # Print commands
 set -x
 
+# shellcheck disable=SC2034
 GOPATH=/home/prow/go
 ROOT=/go/src
 
@@ -40,7 +43,9 @@ if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
 fi
 
 # e2e tests under //test/envoye2e/... use Bazel artifacts.
-export BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-fastbuild/bin"
+# shellcheck disable=SC2086
+BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-fastbuild/bin"
+export BAZEL_OUT
 
 # Disable RBE execution due to failures like https://prow.istio.io/view/gcs/istio-prow/pr-logs/pull/istio_proxy/2633/release-test_proxy/211
 export BAZEL_BUILD_RBE_JOBS=0
