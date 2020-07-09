@@ -48,10 +48,10 @@ function build_all() {
     (cd "$GOPATH"/src/istio.io || exit 1; git clone https://github.com/istio/mixer)
   fi
 
-  pushd "$GOPATH"/src/istio.io/pilot
+  pushd "$GOPATH"/src/istio.io/pilot || exit 1
   bazel build ...
   ./bin/init.sh
-  popd
+  popd || exit 1
 
   (cd "$GOPATH"/src/istio.io/mixer || exit 1; bazel build ...)
   bazel build tools/deb/...
