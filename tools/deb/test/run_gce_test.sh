@@ -96,7 +96,6 @@ function istioVMInit() {
   # Wait for machine to start up ssh
   for i in {1..10}
   do
-    istioRun "$NAME" 'echo hi'
     if ! istioRun "$NAME" 'echo hi' ; then
         echo Waiting for startup $?
         sleep 5

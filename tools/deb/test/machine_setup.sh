@@ -36,8 +36,7 @@ cp cluster.env /var/lib/istio/envoy
 echo "ISTIO_INBOUND_PORTS=80" > /var/lib/istio/envoy/sidecar.env
 
 # Update DHCP - if needed
-if ! grep "^prepend domain-name-servers 127.0.0.1;" /etc/dhcp/dhclient.conf > /dev/null
-then
+if ! grep "^prepend domain-name-servers 127.0.0.1;" /etc/dhcp/dhclient.conf > /dev/null ; then
   echo 'prepend domain-name-servers 127.0.0.1;' >> /etc/dhcp/dhclient.conf
   # TODO: find a better way to re-trigger dhclient
   dhclient -v -1
