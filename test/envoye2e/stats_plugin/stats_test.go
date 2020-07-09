@@ -120,8 +120,22 @@ var TestCases = []struct {
 	},
 }
 
+var AttributeGenRuntimes = []struct {
+	AttributeGenFilterCode string
+	WasmRuntime     string
+}{
+	{
+		AttributeGenFilterCode:    "inline_string: \"envoy.wasm.attributegen\"",
+		WasmRuntime:        		"envoy.wasm.runtime.null",
+	},
+	{
+		AttributeGenFilterCode:    "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/attributegen.wasm"),
+		WasmRuntime:        		"envoy.wasm.runtime.v8",
+	},
+}
+
 func TestStatsPayload(t *testing.T) {
-		env.SkipTSanASan(t)
+	env.SkipTSanASan(t)
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
@@ -292,44 +306,47 @@ func TestStatsGrpc(t *testing.T) {
 }
 
 func TestAttributeGen(t *testing.T) {
-	params := driver.NewTestParams(t, map[string]string{
-		"RequestCount":               "10",
-		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
-		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
-		"WasmRuntime":                "envoy.wasm.runtime.null",
-		"EnableMetadataExchange":     "true",
-		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/stats_filter_config.yaml"),
-		"ResponseCodeClass":		  "2xx",
-	}, envoye2e.ProxyE2ETests)
-	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/attributegen.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
-	if err := (&driver.Scenario{
-		[]driver.Step{
-			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{Duration: 1 * time.Second},
-			&driver.Repeat{N: 10,
-				Step: &driver.HTTPCall{
-					Port: params.Ports.ClientPort,
-					Body: "hello, world!",
+	for _, runtime := range AttributeGenRuntimes {
+		t.Run(runtime.WasmRuntime, func(t *testing.T) {
+			skipWasm(t, runtime.WasmRuntime)
+			params := driver.NewTestParams(t, map[string]string{
+				"RequestCount":               "10",
+				"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
+				"StatsFilterCode": 			  "inline_string: \"envoy.wasm.stats\"",
+				"AttributeGenFilterConfig":   runtime.AttributeGenFilterCode,
+				"WasmRuntime":                runtime.WasmRuntime,
+				"EnableMetadataExchange":     "true",
+				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/stats_filter_config.yaml"),
+				"ResponseCodeClass":		  "2xx",
+			}, envoye2e.ProxyE2ETests)
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/attributegen.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+			if err := (&driver.Scenario{
+				[]driver.Step{
+					&driver.XDS{},
+					&driver.Update{Node: "client", Version: "0", Listeners:[]string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+					&driver.Update{Node: "server", Version: "0", Listeners:[]string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					&driver.Repeat{N: 10,
+						Step: &driver.HTTPCall{
+							Port: params.Ports.ClientPort,
+							Body: "hello, world!",
+						},
+					},
+					&driver.Sleep{Duration: 5 * time.Second},
+					&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+						"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
+					}},
 				},
-			},
-			&driver.Sleep{Duration: 5 * time.Second},
-			/*&driver.Stats{params.Ports.ClientAdmin, map[string]driver.StatMatcher{
-				"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
-			}},*/
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
-			}},
-		},
-	}).Run(params); err != nil {
-		t.Fatal(err)
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }

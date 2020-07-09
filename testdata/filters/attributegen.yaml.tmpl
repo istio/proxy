@@ -8,7 +8,7 @@
           vm_id: attributegen{{ .N }}
           runtime: {{ .Vars.WasmRuntime }}
           code:
-            local: { inline_string: "envoy.wasm.attributegen" }
+            local: { {{ .Vars.AttributeGenFilterConfig }} }
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
