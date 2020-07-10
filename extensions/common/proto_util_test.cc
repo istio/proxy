@@ -46,7 +46,7 @@ constexpr absl::string_view node_metadata_json = R"###(
    "WORKLOAD_NAME":"test_workload",
    "OWNER":"test_owner",
    "NAME":"test_pod",
-   "APP_CONTAINERS": [ "test", "hello" ]
+   "APP_CONTAINERS": "test,hello"
 }
 )###";
 
