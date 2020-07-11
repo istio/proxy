@@ -314,8 +314,9 @@ func TestAttributeGen(t *testing.T) {
 				"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
 				"StatsFilterCode": 			  "inline_string: \"envoy.wasm.stats\"",
 				"AttributeGenFilterConfig":   runtime.AttributeGenFilterCode,
-				"WasmRuntime":                runtime.WasmRuntime,
+				"AttributeGenWasmRuntime":    runtime.WasmRuntime,
 				"EnableMetadataExchange":     "true",
+				"WasmRuntime":				  "envoy.wasm.runtime.null",
 				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/stats_filter_config.yaml"),
@@ -339,7 +340,6 @@ func TestAttributeGen(t *testing.T) {
 							Body: "hello, world!",
 						},
 					},
-					&driver.Sleep{Duration: 5 * time.Second},
 					&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 						"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
 					}},
