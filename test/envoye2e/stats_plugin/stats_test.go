@@ -126,11 +126,11 @@ var AttributeGenRuntimes = []struct {
 }{
 	{
 		AttributeGenFilterCode:    "inline_string: \"envoy.wasm.attributegen\"",
-		WasmRuntime:        		"envoy.wasm.runtime.null",
+		WasmRuntime:        	   "envoy.wasm.runtime.null",
 	},
 	{
 		AttributeGenFilterCode:    "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/attributegen.wasm"),
-		WasmRuntime:        		"envoy.wasm.runtime.v8",
+		WasmRuntime:        	   "envoy.wasm.runtime.v8",
 	},
 }
 
@@ -204,7 +204,6 @@ func TestStatsParallel(t *testing.T) {
 	params.LoadTestProto("testdata/metric/server_request_total.yaml.tmpl", serverRequestTotal)
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
-
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
@@ -275,7 +274,6 @@ func TestStatsGrpc(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
-	fmt.Println("THIS IS SERVERHTTPFILTERS", params.Vars["ClientHTTPFilters"])
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
