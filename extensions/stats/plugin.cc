@@ -550,11 +550,11 @@ void PluginRootContext::onTick() {
 bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                bool is_tcp) {
   std::string peer_id;
-  getValue({peer_metadata_id_key_}, &peer_id);
+  bool peer_found = getValue({peer_metadata_id_key_}, &peer_id);
 
   std::string peer;
   const ::Wasm::Common::FlatNode* peer_node =
-      getValue({peer_metadata_key_}, &peer)
+      peer_found && getValue({peer_metadata_key_}, &peer)
           ? flatbuffers::GetRoot<::Wasm::Common::FlatNode>(peer.data())
           : nullptr;
 
@@ -576,9 +576,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     // been no error in connection.
     uint64_t response_flags = 0;
     getValue({"response", "flags"}, &response_flags);
-    if (peer_node == nullptr &&
-        peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
-        response_flags == 0) {
+    if (!peer_found && response_flags == 0) {
       return false;
     }
     if (!request_info.is_populated) {
