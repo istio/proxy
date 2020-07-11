@@ -21,7 +21,6 @@
 #include "absl/strings/str_split.h"
 #include "extensions/common/json_util.h"
 #include "google/protobuf/struct.pb.h"
-#include "src/envoy/http/jwt_auth/jwt.h"
 
 namespace Envoy {
 namespace Http {

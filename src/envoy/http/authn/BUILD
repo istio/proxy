@@ -43,7 +43,6 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         "//external:authentication_policy_config_cc_proto",
-        "//src/envoy/http/jwt_auth:jwt_lib",
         "//src/envoy/utils:filter_names_lib",
         "//src/envoy/utils:utils_lib",
         "//src/istio/authn:context_proto_cc_proto",
