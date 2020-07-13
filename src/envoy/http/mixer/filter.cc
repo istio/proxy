@@ -113,7 +113,7 @@ FilterTrailersStatus Filter::decodeTrailers(RequestTrailerMap& trailers) {
 void Filter::UpdateHeaders(
     HeaderMap& headers, const ::google::protobuf::RepeatedPtrField<
                             ::istio::mixer::v1::HeaderOperation>& operations) {
-  for (auto const iter : operations) {
+  for (const auto& iter : operations) {
     switch (iter.operation()) {
       case ::istio::mixer::v1::HeaderOperation_Operation_REPLACE:
         headers.remove(LowerCaseString(iter.name()));
