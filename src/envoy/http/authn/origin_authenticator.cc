@@ -42,8 +42,8 @@ bool isCORSPreflightRequest(const Http::RequestHeaderMap& headers) {
   return headers.Method() &&
          headers.Method()->value().getStringView() ==
              Http::Headers::get().MethodValues.Options &&
-        !headers.getInlineValue(origin_handle.handle()).empty() &&
-        !headers.getInlineValue(access_control_request_method_handle.handle())
+         !headers.getInlineValue(origin_handle.handle()).empty() &&
+         !headers.getInlineValue(access_control_request_method_handle.handle())
               .empty();
 }
 
