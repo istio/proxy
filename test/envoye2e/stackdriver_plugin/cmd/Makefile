@@ -18,12 +18,12 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SD_PATH := $(dir $(MKFILE_PATH))
 IMG := gcr.io/istio-testing/fake-stackdriver
-TAG := 3.0
+TAG := 4.0
 
 all: build_and_push clean
 
 build_and_push:
-	cd $(SD_PATH) && go build main.go
+	cd $(SD_PATH) && GOOS=linux GOARCH=amd64 go build main.go
 	docker build $(SD_PATH) -t $(IMG):$(TAG)
 	docker push $(IMG):$(TAG)
 	rm $(SD_PATH)/main

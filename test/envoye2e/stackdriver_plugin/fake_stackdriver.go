@@ -62,6 +62,8 @@ type LoggingServer struct {
 
 // MeshEdgesServiceServer is a fake stackdriver server which implements all of mesh edge service method.
 type MeshEdgesServiceServer struct {
+	sync.Mutex
+	batch                   edgespb.ReportTrafficAssertionsRequest
 	delay                   time.Duration
 	RcvTrafficAssertionsReq chan *edgespb.ReportTrafficAssertionsRequest
 }
@@ -178,9 +180,26 @@ func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
 	ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (
 	*edgespb.ReportTrafficAssertionsResponse, error) {
 	log.Printf("receive ReportTrafficAssertionsRequest %v", req.String())
+	// for now, don't worry about mesh_uid and/or parent info in the request.
+	// that can be added later if we want to test multi-project/multi-mesh
+	// handling.
+	e.Lock()
+	e.batch.TrafficAssertions = append(e.batch.TrafficAssertions, req.TrafficAssertions...)
+	e.Unlock()
 	e.RcvTrafficAssertionsReq <- req
 	time.Sleep(e.delay)
 	return &edgespb.ReportTrafficAssertionsResponse{}, nil
+}
+
+// TrafficAssertions returns the batch of TrafficAssertions reported to the server in the form
+// of a JSON-serialized string of a ReportTrafficAssertionsRequest proto.
+func (e *MeshEdgesServiceServer) TrafficAssertions(w http.ResponseWriter, r *http.Request) {
+	e.Lock()
+	var m jsonpb.Marshaler
+	if err := m.Marshal(w, &e.batch); err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+	e.Unlock()
 }
 
 // GetTimeSeries returns all received time series in a ListTimeSeriesResponse as a marshaled json string
@@ -195,7 +214,7 @@ func (s *MetricServer) GetTimeSeries(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// GetLogEntries returns all received log entries in a ReportTrafficAssertionsRequest as a marshaled json string.
+// GetLogEntries returns all received log entries in a ListLogEntriesResponse as a marshaled json string.
 func (s *LoggingServer) GetLogEntries(w http.ResponseWriter, req *http.Request) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -252,6 +271,17 @@ func (s *TracesServer) ListTraces(ctx context.Context, req *cloudtracev1.ListTra
 	return &s.listTracesResp, nil
 }
 
+// Traces returns the batch of Tracess reported to the server in the form
+// of a JSON-serialized string of a ListTracesResponse proto.
+func (s *TracesServer) Traces(w http.ResponseWriter, r *http.Request) {
+	s.mux.Lock()
+	var m jsonpb.Marshaler
+	if err := m.Marshal(w, &s.listTracesResp); err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+	s.mux.Unlock()
+}
+
 // GetTrace implements GetTrace method.
 func (s *TracesServer) GetTrace(context.Context, *cloudtracev1.GetTraceRequest) (*cloudtracev1.Trace, error) {
 	log.Fatal("Unimplemented Method")
@@ -279,7 +309,7 @@ func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.Ba
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, span := range req.Spans {
-		re := regexp.MustCompile(`projects\/(\w+)\/traces\/(\w+)\/spans\/(\w+)`)
+		re := regexp.MustCompile(`projects\/([\w-]+)\/traces\/(\w+)\/spans\/(\w+)`)
 		match := re.FindStringSubmatch(span.Name)
 		if len(match) < 4 {
 			log.Printf("span name not in correct format: %v", span.Name)
@@ -303,6 +333,7 @@ func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.Ba
 			ParentSpanId: parentSpanID,
 			StartTime:    span.StartTime,
 			EndTime:      span.EndTime,
+			Labels:       make(map[string]string),
 		}
 		// Add Labels, so that test can query it using filters.
 		newTraceSpan.Labels["span"] = span.DisplayName.GetValue()
@@ -320,6 +351,7 @@ func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.Ba
 					newTraceSpan,
 				},
 			}
+			s.listTracesResp.Traces = append(s.listTracesResp.Traces, s.traceMap[traceID])
 		}
 	}
 
@@ -419,6 +451,24 @@ func RunFakeStackdriver(port uint16) error {
 		RcvTracesReq: make(chan *cloudtracev2.BatchWriteSpansRequest, 100),
 		traceMap:     make(map[string]*cloudtracev1.Trace),
 	}
+
+	// need something to chew through the channels to avoid deadlock when more
+	// than 100 requests are received in testing
+	go func() {
+		for {
+			select {
+			case <-fsdms.RcvMetricReq:
+				log.Printf("metric req received")
+			case <-fsdls.RcvLoggingReq:
+				log.Printf("log req received")
+			case <-edgesSvc.RcvTrafficAssertionsReq:
+				log.Printf("traffic assertion req received")
+			case <-traceSvc.RcvTracesReq:
+				log.Printf("trace req received")
+			}
+		}
+	}()
+
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
 	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
 	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
@@ -431,8 +481,11 @@ func RunFakeStackdriver(port uint16) error {
 	}
 	http.HandleFunc("/timeseries", fsdms.GetTimeSeries)
 	http.HandleFunc("/logentries", fsdls.GetLogEntries)
+	http.HandleFunc("/trafficassertions", edgesSvc.TrafficAssertions)
+	http.HandleFunc("/traces", traceSvc.Traces)
+
 	go func() {
-		// start an http endpoint to serve time series in json text
+		// start an http endpoint to serve responses in json text
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port+1), nil))
 	}()
 	return grpcServer.Serve(lis)
