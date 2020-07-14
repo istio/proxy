@@ -44,8 +44,12 @@ class Logger {
   // Add a new log entry based on the given request information and peer node
   // information.
   void addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                   const ::Wasm::Common::FlatNode& peer_node_info, bool is_tcp);
-
+                   const ::Wasm::Common::FlatNode& peer_node_info);
+  // Add a new tcp log entry based on the given request information and peer
+  // node information.
+  void addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                      const ::Wasm::Common::FlatNode& peer_node_info,
+                      long int log_time);
   // Export and clean the buffered WriteLogEntriesRequests. Returns true if
   // async call is made to export log entry, otherwise returns false if nothing
   // exported.
@@ -66,6 +70,10 @@ class Logger {
       const ::Wasm::Common::RequestInfo& request_info,
       google::logging::v2::LogEntry* log_entry);
 
+  // Generic method to fill log entry and flush it.
+  void fillAndFlushLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                            const ::Wasm::Common::FlatNode& peer_node_info,
+                            google::logging::v2::LogEntry* new_entry);
   // Buffer for WriteLogEntriesRequests that are to be exported.
   std::vector<
       std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>

@@ -48,7 +48,7 @@ type Stackdriver struct {
 
 type SDLogEntry struct {
 	LogBaseFile   string
-	LogEntryFile  string
+	LogEntryFile  []string
 	LogEntryCount int
 }
 
@@ -96,9 +96,6 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 					delete(entry.Labels, "destination_port")
 					delete(entry.Labels, "total_sent_bytes")
 					delete(entry.Labels, "total_received_bytes")
-					// because of the timing of the test, logging can happen at the end or
-					// in the middle of the request.
-					delete(entry.Labels, "connection_state")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
@@ -132,11 +129,13 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 	lwant := make(map[string]struct{})
 	for _, l := range lsFiles {
 		pb := &logging.WriteLogEntriesRequest{}
-		e := &logging.LogEntry{}
 		p.LoadTestProto(l.LogBaseFile, pb)
-		p.LoadTestProto(l.LogEntryFile, e)
 		for i := 0; i < l.LogEntryCount; i++ {
-			pb.Entries = append(pb.Entries, e)
+			for _, logEntryFile := range l.LogEntryFile {
+				e := &logging.LogEntry{}
+				p.LoadTestProto(logEntryFile, e)
+				pb.Entries = append(pb.Entries, e)
+			}
 		}
 		lwant[proto.MarshalTextString(pb)] = struct{}{}
 	}
