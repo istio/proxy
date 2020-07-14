@@ -95,8 +95,10 @@ TagKeyValueList getOutboundTagMap(
     const ::Wasm::Common::FlatNode& peer_node_info,
     const ::Wasm::Common::RequestInfo& request_info) {
   TagKeyValueList outboundMap = {
-      {meshUIDKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
-      {requestProtocolKey(), unknownIfEmpty(std::string(request_info.request_protocol))},
+      {meshUIDKey(),
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
+      {requestProtocolKey(),
+       unknownIfEmpty(std::string(request_info.request_protocol))},
       {serviceAuthenticationPolicyKey(),
        unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
            request_info.service_auth_policy)))},
@@ -104,8 +106,10 @@ TagKeyValueList getOutboundTagMap(
        unknownIfEmpty(std::string(request_info.destination_service_name))},
       {destinationServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
-      {destinationPortKey(), unknownIfEmpty(std::to_string(request_info.destination_port))},
-      {sourcePrincipalKey(), unknownIfEmpty(std::string(request_info.source_principal))},
+      {destinationPortKey(),
+       unknownIfEmpty(std::to_string(request_info.destination_port))},
+      {sourcePrincipalKey(),
+       unknownIfEmpty(std::string(request_info.source_principal))},
       {sourceWorkloadNameKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.workload_name()))},
       {sourceWorkloadNamespaceKey(),
@@ -122,11 +126,14 @@ TagKeyValueList getOutboundTagMap(
        unknownIfEmpty(getPeerCanonicalName(peer_node_info))},
       {destinationCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
-      {destinationCanonicalRevisionKey(), unknownIfEmpty(getPeerCanonicalRev(peer_node_info))},
-      {sourceCanonicalServiceNameKey(), unknownIfEmpty(getLocalCanonicalName(local_node_info))},
+      {destinationCanonicalRevisionKey(),
+       unknownIfEmpty(getPeerCanonicalRev(peer_node_info))},
+      {sourceCanonicalServiceNameKey(),
+       unknownIfEmpty(getLocalCanonicalName(local_node_info))},
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
-      {sourceCanonicalRevisionKey(), unknownIfEmpty(getLocalCanonicalRev(local_node_info))}};
+      {sourceCanonicalRevisionKey(),
+       unknownIfEmpty(getLocalCanonicalRev(local_node_info))}};
   return outboundMap;
 }
 
@@ -135,8 +142,10 @@ TagKeyValueList getInboundTagMap(
     const ::Wasm::Common::FlatNode& peer_node_info,
     const ::Wasm::Common::RequestInfo& request_info) {
   TagKeyValueList inboundMap = {
-      {meshUIDKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
-      {requestProtocolKey(), unknownIfEmpty(std::string(request_info.request_protocol))},
+      {meshUIDKey(),
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
+      {requestProtocolKey(),
+       unknownIfEmpty(std::string(request_info.request_protocol))},
       {serviceAuthenticationPolicyKey(),
        unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
            request_info.service_auth_policy)))},
@@ -144,8 +153,10 @@ TagKeyValueList getInboundTagMap(
        unknownIfEmpty(std::string(request_info.destination_service_name))},
       {destinationServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
-      {destinationPortKey(), unknownIfEmpty(std::to_string(request_info.destination_port))},
-      {sourcePrincipalKey(), unknownIfEmpty(std::string(request_info.source_principal))},
+      {destinationPortKey(),
+       unknownIfEmpty(std::to_string(request_info.destination_port))},
+      {sourcePrincipalKey(),
+       unknownIfEmpty(std::string(request_info.source_principal))},
       {sourceWorkloadNameKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.workload_name()))},
       {sourceWorkloadNamespaceKey(),
@@ -157,17 +168,20 @@ TagKeyValueList getInboundTagMap(
        unknownIfEmpty(flatbuffers::GetString(local_node_info.workload_name()))},
       {destinationWorkloadNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
-      {destinationOwnerKey(), unknownIfEmpty(Common::getOwner(local_node_info))},
+      {destinationOwnerKey(),
+       unknownIfEmpty(Common::getOwner(local_node_info))},
       {destinationCanonicalServiceNameKey(),
        unknownIfEmpty(getLocalCanonicalName(local_node_info))},
       {destinationCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
       {destinationCanonicalRevisionKey(),
        unknownIfEmpty(getLocalCanonicalRev(local_node_info))},
-      {sourceCanonicalServiceNameKey(), unknownIfEmpty(getPeerCanonicalName(peer_node_info))},
+      {sourceCanonicalServiceNameKey(),
+       unknownIfEmpty(getPeerCanonicalName(peer_node_info))},
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
-      {sourceCanonicalRevisionKey(), unknownIfEmpty(getPeerCanonicalRev(peer_node_info))}};
+      {sourceCanonicalRevisionKey(),
+       unknownIfEmpty(getPeerCanonicalRev(peer_node_info))}};
   return inboundMap;
 }
 

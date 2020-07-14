@@ -226,7 +226,7 @@ void setSTSCallCredentialOptions(
   sts_options->scope = kSTSScope;
 }
 
-const std::string& unknownIfEmpty(const std::string& val) {
+const std::string &unknownIfEmpty(const std::string &val) {
   if (val.empty()) {
     return kUnknownLabel;
   }
