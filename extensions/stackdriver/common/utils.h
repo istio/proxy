@@ -81,6 +81,9 @@ void setSTSCallCredentialOptions(
     ::grpc::experimental::StsCredentialsOptions *sts_options,
     const std::string &sts_port, const std::string &token_path);
 
+
+const std::string& unknownIfEmpty(const std::string& val);
+
 }  // namespace Common
 }  // namespace Stackdriver
 }  // namespace Extensions
