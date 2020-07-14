@@ -69,9 +69,10 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
                          fbb.CreateString(platform_it.second.string_value())));
       }
     } else if (it.first == "APP_CONTAINERS") {
-      for (const auto& containers_it : it.second.list_value().values()) {
-        app_containers.push_back(
-            fbb.CreateString(containers_it.string_value()));
+      std::vector<absl::string_view> containers =
+          absl::StrSplit(it.second.string_value(), ',');
+      for (const auto& container : containers) {
+        app_containers.push_back(fbb.CreateString(container));
       }
     }
   }
