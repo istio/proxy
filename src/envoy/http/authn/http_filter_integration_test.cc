@@ -45,12 +45,15 @@ static const char kJwtIssuer[] = "some@issuer";
 
 static const char kAuthnFilterWithJwt[] = R"(
     name: istio_authn
-    config:
-      policy:
-        origins:
-        - jwt:
-            issuer: some@issuer
-            jwks_uri: http://localhost:8081/)";
+    typed_config:
+      '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: "type.googleapis.com/istio.authentication.v1alpha1.Policy"
+      value:
+        policy:
+          origins:
+          - jwt:
+              issuer: some@issuer
+              jwks_uri: http://localhost:8081/)";
 
 // Payload data to inject. Note the iss claim intentionally set different from
 // kJwtIssuer.
@@ -64,14 +67,17 @@ std::string MakeHeaderToMetadataConfig() {
   return fmt::sprintf(
       R"(
     name: %s
-    config:
-      request_rules:
-      - header: x-mock-metadata-injection
-        on_header_missing:
-          metadata_namespace: %s
-          key: %s
-          value: "%s"
-          type: STRING)",
+    typed_config:
+      '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: type.googleapis.com/envoy.extensions.filters.http.header_to_metadata.v3.Config
+      value:
+        request_rules:
+        - header: x-mock-metadata-injection
+          on_header_missing:
+            metadata_namespace: %s
+            key: %s
+            value: "%s"
+            type: STRING)",
       Extensions::HttpFilters::HttpFilterNames::get().HeaderToMetadata,
       Utils::IstioFilterName::kJwt, kJwtIssuer,
       StringUtil::escape(kMockJwtPayload));
@@ -105,10 +111,13 @@ TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
 TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
   config_helper_.addFilter(R"(
     name: istio_authn
-    config:
-      policy:
-        peers:
-        - mtls: {})");
+    typed_config:
+      '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: "type.googleapis.com/istio.authentication.v1alpha1.Policy"
+      value:
+        policy:
+          peers:
+          - mtls: {})");
   initialize();
 
   // AuthN filter use MTls, but request doesn't have certificate, request

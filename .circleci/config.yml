@@ -19,7 +19,9 @@ jobs:
           keys:
             - macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
       - run: rm ~/.gitconfig
-      - run: make build_envoy
+      - run:
+          command: make build_envoy
+          no_output_timeout: "60m"
       - save_cache:
           key: macos_fastbuild-bazel-cache-{{ checksum "WORKSPACE" }}-{{ checksum ".bazelrc" }}
           paths:

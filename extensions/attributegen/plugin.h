@@ -128,7 +128,7 @@ class PluginContext : public Context {
 
   void onLog() override { rootContext()->attributeGen(OnLog); };
 
-  FilterHeadersStatus onRequestHeaders(uint32_t) override {
+  FilterHeadersStatus onRequestHeaders(uint32_t, bool) override {
     rootContext()->attributeGen(OnRequest);
     return FilterHeadersStatus::Continue;
   }

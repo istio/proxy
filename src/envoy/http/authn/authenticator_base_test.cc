@@ -89,16 +89,17 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
   virtual ~ValidateX509Test() {}
 
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  Envoy::Http::RequestHeaderMapImpl header_{};
+  Http::RequestHeaderMapPtr header_ =
+      Envoy::Http::RequestHeaderMapImpl::create();
   FilterConfig filter_config_{};
   FilterContext filter_context_{
-      envoy::config::core::v3::Metadata::default_instance(), header_,
+      envoy::config::core::v3::Metadata::default_instance(), *header_,
       &connection_, filter_config_};
 
   MockAuthenticatorBase authenticator_{&filter_context_};
 
   void SetUp() override {
-    mtls_params_.set_mode(GetParam());
+    mtls_params_.set_mode(ValidateX509Test::GetParam());
     payload_ = new Payload();
   }
 
@@ -113,7 +114,7 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
 
 TEST_P(ValidateX509Test, PlaintextConnection) {
   // Should return false except mode is PERMISSIVE (accept plaintext)
-  if (GetParam() == iaapi::MutualTls::PERMISSIVE) {
+  if (ValidateX509Test::GetParam() == iaapi::MutualTls::PERMISSIVE) {
     EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
   } else {
     EXPECT_FALSE(authenticator_.validateX509(mtls_params_, payload_));
@@ -127,7 +128,7 @@ TEST_P(ValidateX509Test, SslConnectionWithNoPeerCert) {
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl));
 
   // Should return false except mode is PERMISSIVE (accept plaintext).
-  if (GetParam() == iaapi::MutualTls::PERMISSIVE) {
+  if (ValidateX509Test::GetParam() == iaapi::MutualTls::PERMISSIVE) {
     EXPECT_TRUE(authenticator_.validateX509(mtls_params_, payload_));
   } else {
     EXPECT_FALSE(authenticator_.validateX509(mtls_params_, payload_));
@@ -231,9 +232,10 @@ class ValidateJwtTest : public testing::Test,
   // StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   envoy::config::core::v3::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  Envoy::Http::RequestHeaderMapImpl header_{};
+  Http::RequestHeaderMapPtr header_ =
+      Envoy::Http::RequestHeaderMapImpl::create();
   FilterConfig filter_config_{};
-  FilterContext filter_context_{dynamic_metadata_, header_, &connection_,
+  FilterContext filter_context_{dynamic_metadata_, *header_, &connection_,
                                 filter_config_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 
