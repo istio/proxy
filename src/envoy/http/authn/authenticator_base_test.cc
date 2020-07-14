@@ -309,8 +309,9 @@ TEST_F(ValidateJwtTest, NoJwtPayloadOutput) {
 TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
   jwt_.set_issuer("issuer@foo.com");
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
-      .MergeFrom(MessageUtil::keyValueStruct("foo", "bar"));
+  (*dynamic_metadata_.mutable_filter_metadata())
+      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+          .MergeFrom(MessageUtil::keyValueStruct("foo", "bar"));
 
   // When there is no JWT payload for given issuer in request info dynamic
   // metadata, validateJwt() should return nullptr and failure.
@@ -320,8 +321,9 @@ TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
   jwt_.set_issuer("issuer@foo.com");
-  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
-      .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
+  (*dynamic_metadata_.mutable_filter_metadata())
+      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+          .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
   // EXPECT_CALL(request_info_, dynamicMetadata());
 
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
@@ -330,9 +332,16 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
   jwt_.set_issuer("issuer@foo.com");
-  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
-      .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com",
-                                             kSecIstioAuthUserinfoHeaderValue));
+  google::protobuf::Struct header_payload;
+  JsonStringToMessage(kSecIstioAuthUserinfoHeaderValue, &header_payload,
+                      google::protobuf::util::JsonParseOptions{});
+  google::protobuf::Struct payload;
+  (*payload.mutable_fields())["issuer@foo.com"]
+      .mutable_struct_value()
+      ->CopyFrom(header_payload);
+  (*dynamic_metadata_.mutable_filter_metadata())
+      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+          .MergeFrom(payload);
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -354,16 +363,26 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
       &expected_payload, google::protobuf::util::JsonParseOptions{});
 
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
-  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+  MessageDifferencer diff;
+  const google::protobuf::FieldDescriptor* field =
+      expected_payload.jwt().GetDescriptor()->FindFieldByName("raw_claims");
+  diff.IgnoreField(field);
+  EXPECT_TRUE(diff.Compare(expected_payload, *payload_));
 }
 
 TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
   jwt_.set_issuer("token-service");
   jwt_.add_jwt_headers(kExchangedTokenHeaderName);
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
-      .MergeFrom(
-          MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+  google::protobuf::Struct exchange_token_payload;
+  JsonStringToMessage(kExchangedTokenPayload, &exchange_token_payload,
+                      google::protobuf::util::JsonParseOptions{});
+  google::protobuf::Struct payload;
+  (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
+      exchange_token_payload);
+  (*dynamic_metadata_.mutable_filter_metadata())
+      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+          .MergeFrom(payload);
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -398,9 +417,16 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
   jwt_.set_issuer("token-service");
   jwt_.add_jwt_headers(kExchangedTokenHeaderName);
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
-      .MergeFrom(MessageUtil::keyValueStruct(
-          "token-service", kExchangedTokenPayloadNoOriginalClaims));
+  google::protobuf::Struct exchange_token_payload;
+  JsonStringToMessage(kExchangedTokenPayloadNoOriginalClaims,
+                      &exchange_token_payload,
+                      google::protobuf::util::JsonParseOptions{});
+  google::protobuf::Struct payload;
+  (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
+      exchange_token_payload);
+  (*dynamic_metadata_.mutable_filter_metadata())
+      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+          .MergeFrom(payload);
 
   // When no original_claims in an exchanged token, the token
   // is treated as invalid.
@@ -410,9 +436,15 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
 TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
   jwt_.set_issuer("token-service");
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Utils::IstioFilterName::kJwt]
-      .MergeFrom(
-          MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+  google::protobuf::Struct exchange_token_payload;
+  JsonStringToMessage(kExchangedTokenPayload, &exchange_token_payload,
+                      google::protobuf::util::JsonParseOptions{});
+  google::protobuf::Struct payload;
+  (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
+      exchange_token_payload);
+  (*dynamic_metadata_.mutable_filter_metadata())
+      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+          .MergeFrom(payload);
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -434,7 +466,11 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
   // When an exchanged token is not in the intended header, the token
   // is treated as a normal token with its claims extracted.
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
-  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, *payload_));
+  MessageDifferencer diff;
+  const google::protobuf::FieldDescriptor* field =
+      expected_payload.jwt().GetDescriptor()->FindFieldByName("raw_claims");
+  diff.IgnoreField(field);
+  EXPECT_TRUE(diff.Compare(expected_payload, *payload_));
 }
 
 }  // namespace

@@ -17,8 +17,6 @@
 
 #include "absl/strings/string_view.h"
 #include "common/common/base64.h"
-#include "src/envoy/http/jwt_auth/jwt.h"
-#include "src/envoy/http/jwt_auth/jwt_authenticator.h"
 #include "src/envoy/utils/authn.h"
 #include "src/envoy/utils/header_update.h"
 #include "src/envoy/utils/utils.h"
