@@ -19,7 +19,6 @@
 #include "common/common/logger.h"
 #include "common/common/utility.h"
 #include "envoy/http/header_map.h"
-#include "envoy/json/json_object.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace iaapi = istio::authentication::v1alpha1;

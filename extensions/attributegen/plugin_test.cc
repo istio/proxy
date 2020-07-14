@@ -78,7 +78,8 @@ class TestFilter : public Envoy::Extensions::Common::Wasm::Context {
 
 class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
  public:
-  TestRoot() {}
+  TestRoot(Wasm* wasm, Envoy::Extensions::Common::Wasm::PluginSharedPtr plugin)
+      : Context(wasm, plugin) {}
 
   // MOCK_CONTEXT_LOG_;
 
@@ -152,7 +153,6 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
                     ? c.name
                     : readfile(params.testdata_dir + "/" + c.name);
 
-    root_context_ = new TestRoot();
     WasmFilterConfig proto_config;
     proto_config.mutable_config()->mutable_vm_config()->set_vm_id("vm_id");
     proto_config.mutable_config()->mutable_vm_config()->set_runtime(
@@ -171,23 +171,27 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
 
     auto vm_id = "";
     plugin_ = std::make_shared<Extensions::Common::Wasm::Plugin>(
-        c.name, c.root_id, vm_id, c.plugin_config, TrafficDirection::INBOUND,
-        local_info_, &listener_metadata_);
+        c.name, c.root_id, vm_id, c.plugin_config, false,
+        TrafficDirection::INBOUND, local_info_, &listener_metadata_);
     // creates a base VM
     // This is synchronous, even though it happens thru a callback due to null
     // vm.
-    Extensions::Common::Wasm::createWasmForTesting(
+    Extensions::Common::Wasm::createWasm(
         proto_config.config().vm_config(), plugin_, scope_, cluster_manager_,
         init_manager_, dispatcher_, random_, *api, lifecycle_notifier_,
         remote_data_provider_,
-        std::unique_ptr<Envoy::Extensions::Common::Wasm::Context>(
-            root_context_),
-        [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; });
-    // wasm_ is set correctly
-    // This will only call onStart.
-    auto config_status = wasm_->wasm()->configure(root_context_, plugin_);
-    if (!config_status) {
-      throw EnvoyException("Configuration failed");
+        [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; },
+        [](Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
+          return new TestRoot(wasm, plugin);
+        });
+    if (wasm_) {
+      wasm_ = getOrCreateThreadLocalWasm(
+          wasm_, plugin_, dispatcher_,
+          [root_context = &root_context_](
+              Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
+            *root_context = new TestRoot(wasm, plugin);
+            return *root_context;
+          });
     }
     if (!c.do_not_add_filter) {
       setupFilter(c.root_id);
@@ -346,7 +350,7 @@ TEST_P(AttributeGenFilterTest, UnparseableConfig) {
   setupConfig({.plugin_config = plugin_config});
   EXPECT_EQ(root_context_->readMetric(
                 "wasm_filter.attributegen.type.config.error_count"),
-            1);
+            2);
 }
 
 TEST_P(AttributeGenFilterTest, BadExpr) {
@@ -359,7 +363,7 @@ TEST_P(AttributeGenFilterTest, BadExpr) {
   setupConfig({.plugin_config = plugin_config});
   EXPECT_EQ(root_context_->readMetric(
                 "wasm_filter.attributegen.type.config.error_count"),
-            1);
+            2);
 }
 
 TEST_P(AttributeGenFilterTest, NoMatch) {

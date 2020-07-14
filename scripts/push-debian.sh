@@ -67,13 +67,15 @@ fi
 # Symlinks don't work, use full path as a temporary workaround.
 # See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
+# shellcheck disable=SC2086
 BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
 BAZEL_BINARY="${BAZEL_OUT}/tools/deb/istio-proxy"
 
+# shellcheck disable=SC2086
 bazel build ${BAZEL_BUILD_ARGS} --config=release ${BAZEL_TARGET}
 
 if [[ -n "${GCS_PATH}" ]]; then
-  gsutil -m cp -r "${BAZEL_BINARY}.deb" ${GCS_PATH}/
+  gsutil -m cp -r "${BAZEL_BINARY}.deb" "${GCS_PATH}"/
 fi
 
 if [[ -n "${OUTPUT_DIR}" ]]; then

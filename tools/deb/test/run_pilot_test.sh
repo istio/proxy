@@ -27,61 +27,61 @@ PILOT=${PILOT:-${GOPATH}/src/istio.io/pilot}
 # Build debian and binaries for all components we'll test on the VM
 # Will checkout mixer, pilot and proxy in the expected locations/
 function build_all() {
-  mkdir -p $WS/go/src/istio.io
+  mkdir -p "$WS"/go/src/istio.io
 
 
   if [[ -d $GOPATH/src/istio.io/pilot ]]; then
-    (cd $GOPATH/src/istio.io/pilot; git pull upstream master)
+    (cd "$GOPATH"/src/istio.io/pilot || exit 1; git pull upstream master)
   else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/pilot)
+    (cd "$GOPATH"/src/istio.io || exit 1; git clone https://github.com/istio/pilot)
   fi
 
   if [[ -d $GOPATH/src/istio.io/istio ]]; then
-    (cd $GOPATH/src/istio.io/istio; git pull upstream master)
+    (cd "$GOPATH"/src/istio.io/istio || exit 1; git pull upstream master)
   else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/istio)
+    (cd "$GOPATH"/src/istio.io || exit 1; git clone https://github.com/istio/istio)
   fi
 
   if [[ -d $GOPATH/src/istio.io/mixer ]]; then
-    (cd $GOPATH/src/istio.io/mixer; git pull upstream master)
+    (cd "$GOPATH"/src/istio.io/mixer || exit 1; git pull upstream master)
   else
-    (cd $GOPATH/src/istio.io; git clone https://github.com/istio/mixer)
+    (cd "$GOPATH"/src/istio.io || exit 1; git clone https://github.com/istio/mixer)
   fi
 
-  pushd $GOPATH/src/istio.io/pilot
+  pushd "$GOPATH"/src/istio.io/pilot || exit 1
   bazel build ...
   ./bin/init.sh
-  popd
+  popd || exit 1
 
-  (cd $GOPATH/src/istio.io/mixer; bazel build ...)
+  (cd "$GOPATH"/src/istio.io/mixer || exit 1; bazel build ...)
   bazel build tools/deb/...
 
 }
 
 function kill_all() {
   if [[ -f $LOG_DIR/pilot.pid ]] ; then
-    kill -9 $(cat $LOG_DIR/pilot.pid)
-    kill -9 $(cat $LOG_DIR/mixer.pid)
-    kill -9 $(cat $LOG_DIR/envoy.pid)
-    kill -9 $(cat $LOG_DIR/test_server.pid)
+    kill -9 "$(cat "$LOG_DIR"/pilot.pid)"
+    kill -9 "$(cat "$LOG_DIR"/mixer.pid)"
+    kill -9 "$(cat "$LOG_DIR"/envoy.pid)"
+    kill -9 "$(cat "$LOG_DIR"/test_server.pid)"
   fi
 }
 
 # Start pilot, envoy and mixer for local integration testing.
 function start_all() {
-  mkdir -p $LOG_DIR
-  POD_NAME=pilot POD_NAMESPACE=default  ${PILOT}/bazel-bin/cmd/pilot-discovery/pilot-discovery discovery -n default --kubeconfig ~/.kube/config &
-  echo $! > $LOG_DIR/pilot.pid
+  mkdir -p "$LOG_DIR"
+  POD_NAME=pilot POD_NAMESPACE=default  "${PILOT}"/bazel-bin/cmd/pilot-discovery/pilot-discovery discovery -n default --kubeconfig ~/.kube/config &
+  echo $! > "$LOG_DIR"/pilot.pid
 
-  ${GOPATH}/src/istio.io/mixer/bazel-bin/cmd/server/mixs server --configStoreURL=fs:${GOPATH}/src/istio.io/mixer/testdata/configroot -v=2 --logtostderr &
-  echo $! > $LOG_DIR/mixer.pid
+  "${GOPATH}"/src/istio.io/mixer/bazel-bin/cmd/server/mixs server --configStoreURL=fs:"${GOPATH}"/src/istio.io/mixer/testdata/configroot -v=2 --logtostderr &
+  echo $! > "$LOG_DIR"/mixer.pid
 
-  ${GOPATH}/src/istio.io/pilot/bazel-bin/test/server/server --port 9999 > $LOG_DIR/test_server.log 2>&1 &
-  echo $! > $LOG_DIR/test_server.pid
+  "${GOPATH}"/src/istio.io/pilot/bazel-bin/test/server/server --port 9999 > "$LOG_DIR"/test_server.log 2>&1 &
+  echo $! > "$LOG_DIR"/test_server.pid
 
   # 'lds' disabled, so we can use manual config.
   bazel-bin/src/envoy/envoy -c tools/deb/test/envoy_local.json --restart-epoch 0 --drain-time-s 2 --parent-shutdown-time-s 3 --service-cluster istio-proxy --service-node sidecar~172.17.0.2~mysvc.~svc.cluster.local &
-  echo $! > $LOG_DIR/envoy.pid
+  echo $! > "$LOG_DIR"/envoy.pid
 }
 
 # Add a service and endpoint to K8S.

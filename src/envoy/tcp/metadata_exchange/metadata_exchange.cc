@@ -302,15 +302,14 @@ void MetadataExchangeFilter::updatePeer(
   read_callbacks_->connection().streamInfo().filterState()->setData(
       absl::StrCat("wasm.", key), std::move(state),
       StreamInfo::FilterState::StateType::Mutable,
-      StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+      StreamInfo::FilterState::LifeSpan::Connection);
 }
 
 void MetadataExchangeFilter::updatePeerId(absl::string_view key,
                                           absl::string_view value) {
   WasmStatePrototype prototype(
       true, ::Envoy::Extensions::Common::Wasm::WasmType::String,
-      absl::string_view(),
-      StreamInfo::FilterState::LifeSpan::DownstreamConnection);
+      absl::string_view(), StreamInfo::FilterState::LifeSpan::Connection);
   auto state =
       std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(prototype);
   state->setValue(value);

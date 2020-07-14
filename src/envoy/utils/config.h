@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "envoy/json/json_object.h"
+#include "extensions/common/json_util.h"
 #include "mixer/v1/config/client/client_config.pb.h"
 
 namespace Envoy {
@@ -26,11 +26,11 @@ void SetDefaultMixerClusters(
     ::istio::mixer::v1::config::client::TransportConfig *config);
 
 // Read Mixer filter v2 config.
-bool ReadV2Config(const Json::Object &json,
+bool ReadV2Config(const Wasm::Common::JsonObject &json,
                   ::google::protobuf::Message *message);
 
 // Read Mixer filter v1 config.
-bool ReadV1Config(const Json::Object &json,
+bool ReadV1Config(const Wasm::Common::JsonObject &json,
                   ::google::protobuf::Message *message);
 }  // namespace Utils
 }  // namespace Envoy

@@ -77,8 +77,8 @@ class PluginContext : public Context {
   }
 
   void onCreate() override{};
-  FilterHeadersStatus onRequestHeaders(uint32_t) override;
-  FilterHeadersStatus onResponseHeaders(uint32_t) override;
+  FilterHeadersStatus onRequestHeaders(uint32_t, bool) override;
+  FilterHeadersStatus onResponseHeaders(uint32_t, bool) override;
 
  private:
   inline PluginRootContext* rootContext() {

@@ -110,7 +110,7 @@ check:
 	@echo >&2 "Please use \"make lint\" instead."
 	@false
 
-lint: lint-copyright-banner format-go lint-go tidy-go
+lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 

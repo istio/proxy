@@ -125,15 +125,18 @@ Http::TestRequestHeaderMapImpl HeadersWithToken(const std::string& token) {
 std::string MakeJwtFilterConfig() {
   constexpr char kJwtFilterTemplate[] = R"(
   name: %s
-  config:
-    rules:
-    - issuer: "testing@secure.istio.io"
-      local_jwks:
-        inline_string: "%s"
-    - issuer: "testing-rbac@secure.istio.io"
-      local_jwks:
-        inline_string: "%s"
-    allow_missing_or_failed: true
+  typed_config:
+    '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: "type.googleapis.com/istio.envoy.config.filter.http.jwt_auth.v2alpha1.JwtAuthentication"
+    value:
+      rules:
+      - issuer: "testing@secure.istio.io"
+        local_jwks:
+          inline_string: "%s"
+      - issuer: "testing-rbac@secure.istio.io"
+        local_jwks:
+          inline_string: "%s"
+      allow_missing_or_failed: true
   )";
   // From
   // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json
@@ -156,16 +159,19 @@ std::string MakeJwtFilterConfig() {
 std::string MakeAuthFilterConfig() {
   constexpr char kAuthnFilterWithJwtTemplate[] = R"(
     name: %s
-    config:
-      policy:
-        origins:
-        - jwt:
-            issuer: testing@secure.istio.io
-            jwks_uri: http://localhost:8081/
-        - jwt:
-            issuer: testing-rbac@secure.istio.io
-            jwks_uri: http://localhost:8081/
-        principalBinding: USE_ORIGIN
+    typed_config:
+      '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: "type.googleapis.com/istio.authentication.v1alpha1.Policy"
+      value:
+        policy:
+          origins:
+          - jwt:
+              issuer: testing@secure.istio.io
+              jwks_uri: http://localhost:8081/
+          - jwt:
+              issuer: testing-rbac@secure.istio.io
+              jwks_uri: http://localhost:8081/
+          principalBinding: USE_ORIGIN
 )";
   return fmt::sprintf(kAuthnFilterWithJwtTemplate,
                       Utils::IstioFilterName::kAuthentication);
@@ -174,20 +180,23 @@ std::string MakeAuthFilterConfig() {
 std::string MakeRbacFilterConfig() {
   constexpr char kRbacFilterTemplate[] = R"(
   name: envoy.filters.http.rbac
-  config:
-    rules:
-      policies:
-        "foo":
-          permissions:
-            - any: true
-          principals:
-            - metadata:
-                filter: %s
-                path:
-                  - key: %s
-                value:
-                  string_match:
-                    exact: %s
+  typed_config:
+    '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: "type.googleapis.com/extensions.filters.http.rbac.v3.RBAC"
+    value:
+      rules:
+        policies:
+          "foo":
+            permissions:
+              - any: true
+            principals:
+              - metadata:
+                  filter: %s
+                  path:
+                    - key: %s
+                  value:
+                    string_match:
+                      exact: %s
 )";
   return fmt::sprintf(
       kRbacFilterTemplate, Utils::IstioFilterName::kAuthentication,
@@ -197,23 +206,26 @@ std::string MakeRbacFilterConfig() {
 std::string MakeMixerFilterConfig() {
   constexpr char kMixerFilterTemplate[] = R"(
   name: mixer
-  config:
-    defaultDestinationService: "default"
-    mixerAttributes:
-      attributes: {
-      }
-    serviceConfigs: {
-      "default": {}
-    }
-    transport:
-      attributes_for_mixer_proxy:
+  typed_config:
+    '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: "type.googleapis.com/istio.mixer.v1.config.client.ServiceConfig"
+    value:
+      defaultDestinationService: "default"
+      mixerAttributes:
         attributes: {
-          "source.uid": {
-            string_value: %s
-          }
         }
-      report_cluster: %s
-      check_cluster: %s
+      serviceConfigs: {
+        "default": {}
+      }
+      transport:
+        attributes_for_mixer_proxy:
+          attributes: {
+            "source.uid": {
+              string_value: %s
+            }
+          }
+        report_cluster: %s
+        check_cluster: %s
   )";
   return fmt::sprintf(kMixerFilterTemplate, kSourceUID, kTelemetryBackend,
                       kPolicyBackend);
