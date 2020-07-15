@@ -201,26 +201,6 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "jwt_auth_config_proto_lib",
-    srcs = glob(
-        ["envoy/config/filter/http/jwt_auth/v2alpha1/*.proto", ],
-    ),
-    visibility = ["//visibility:public"],
-    deps = [
-        "@com_github_gogo_protobuf//:gogo_proto",
-        "@com_google_protobuf//:duration_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "jwt_auth_config_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":jwt_auth_config_proto_lib",
-    ],
-)
-
-proto_library(
     name = "alpn_filter_config_proto_lib",
     srcs = glob(
         ["envoy/config/filter/http/alpn/v2alpha1/*.proto", ],
@@ -336,10 +316,6 @@ py_proto_library(
         native.bind(
             name = "authentication_policy_config_cc_proto",
             actual = "@mixerapi_git//:authentication_policy_config_cc_proto",
-        )
-        native.bind(
-            name = "jwt_auth_config_cc_proto",
-            actual = "@mixerapi_git//:jwt_auth_config_cc_proto",
         )
         native.bind(
             name = "alpn_filter_config_cc_proto",

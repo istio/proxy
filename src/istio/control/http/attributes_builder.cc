@@ -137,7 +137,7 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
     return;
   }
 
-  static const std::set<std::string> kForwardWhitelist = {
+  static const std::set<std::string> kForwardAllowlist = {
       utils::AttributeName::kSourceUID,
       utils::AttributeName::kSourceNamespace,
       utils::AttributeName::kDestinationServiceName,
@@ -148,7 +148,7 @@ void AttributesBuilder::ExtractForwardedAttributes(CheckData *check_data) {
 
   auto fwd = v2_format.attributes();
   utils::AttributesBuilder builder(attributes_);
-  for (const auto &attribute : kForwardWhitelist) {
+  for (const auto &attribute : kForwardAllowlist) {
     const auto &iter = fwd.find(attribute);
     if (iter != fwd.end() && !iter->second.string_value().empty()) {
       builder.AddString(attribute, iter->second.string_value());

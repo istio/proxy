@@ -14,14 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-WD=$(dirname $0)
-WD=$(cd $WD; pwd)
-ROOT=$(dirname $WD)
+WD=$(dirname "$0")
+WD=$(cd "$WD" || exit 1 ; pwd)
 
 #######################################
 # Presubmit script triggered by Prow. #
 #######################################
-
+# shellcheck disable=SC1090
 source "${WD}/proxy-common.inc"
 
 echo 'Test building release artifacts'

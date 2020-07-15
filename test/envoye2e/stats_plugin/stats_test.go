@@ -76,6 +76,7 @@ var TestCases = []struct {
 	ServerClusterName string
 	ClientStats       map[string]driver.StatMatcher
 	ServerStats       map[string]driver.StatMatcher
+	TestParallel      bool
 }{
 	{
 		Name:         "Default",
@@ -87,6 +88,7 @@ var TestCases = []struct {
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
 			"istio_build":          &driver.ExactStat{"testdata/metric/istio_build.yaml"},
 		},
+		TestParallel: true,
 	},
 	{
 		Name:         "Customized",
@@ -99,6 +101,7 @@ var TestCases = []struct {
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
 			"istio_build":          &driver.ExactStat{"testdata/metric/istio_build.yaml"},
 		},
+		TestParallel: true,
 	},
 	{
 		Name:              "UseHostHeader",
@@ -172,74 +175,77 @@ func TestStatsPayload(t *testing.T) {
 
 func TestStatsParallel(t *testing.T) {
 	env.SkipTSanASan(t)
-	params := driver.NewTestParams(t, map[string]string{
-		"RequestCount":               "1",
-		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
-		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
-		"WasmRuntime":                "envoy.wasm.runtime.null",
-		"EnableMetadataExchange":     "true",
-		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
-	}, envoye2e.ProxyE2ETests)
-	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	clientRequestTotal := &dto.MetricFamily{}
-	serverRequestTotal := &dto.MetricFamily{}
-	params.LoadTestProto("testdata/metric/client_request_total.yaml.tmpl", clientRequestTotal)
-	params.LoadTestProto("testdata/metric/server_request_total.yaml.tmpl", serverRequestTotal)
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+	for _, testCase := range TestCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			if !testCase.TestParallel {
+				t.Skip("Skip parallel testing")
+			}
+			params := driver.NewTestParams(t, map[string]string{
+				"RequestCount":               "1",
+				"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
+				"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
+				"WasmRuntime":                "envoy.wasm.runtime.null",
+				"EnableMetadataExchange":     "true",
+				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
+				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+			}, envoye2e.ProxyE2ETests)
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			clientRequestTotal := &dto.MetricFamily{}
+			serverRequestTotal := &dto.MetricFamily{}
+			params.LoadTestProto("testdata/metric/client_request_total.yaml.tmpl", clientRequestTotal)
+			params.LoadTestProto("testdata/metric/server_request_total.yaml.tmpl", serverRequestTotal)
+			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 
-	if err := (&driver.Scenario{
-		[]driver.Step{
-			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
-			driver.Get(params.Ports.ClientPort, "hello, world!"),
-			&driver.Fork{
-				Fore: &driver.Scenario{
-					[]driver.Step{
-						&driver.Sleep{1 * time.Second},
-						&driver.Repeat{
-							Duration: 9 * time.Second,
-							Step:     driver.Get(params.Ports.ClientPort, "hello, world!"),
-						},
-						capture{},
-					},
-				},
-				Back: &driver.Repeat{
-					Duration: 10 * time.Second,
-					Step: &driver.Scenario{
-						[]driver.Step{
-							&driver.Update{
-								Node:      "client",
-								Version:   "{{.N}}",
-								Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")},
+			if err := (&driver.Scenario{
+				[]driver.Step{
+					&driver.XDS{},
+					&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+					&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Sleep{1 * time.Second},
+					driver.Get(params.Ports.ClientPort, "hello, world!"),
+					&driver.Fork{
+						Fore: &driver.Scenario{
+							[]driver.Step{
+								&driver.Sleep{1 * time.Second},
+								&driver.Repeat{
+									Duration: 9 * time.Second,
+									Step:     driver.Get(params.Ports.ClientPort, "hello, world!"),
+								},
+								capture{},
 							},
-							&driver.Update{
-								Node:      "server",
-								Version:   "{{.N}}",
-								Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")},
+						},
+						Back: &driver.Repeat{
+							Duration: 10 * time.Second,
+							Step: &driver.Scenario{
+								[]driver.Step{
+									&driver.Update{
+										Node:      "client",
+										Version:   "{{.N}}",
+										Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")},
+									},
+									&driver.Update{
+										Node:      "server",
+										Version:   "{{.N}}",
+										Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")},
+									},
+									// may need short delay so we don't eat all the CPU
+									&driver.Sleep{100 * time.Millisecond},
+								},
 							},
-							// may need short delay so we don't eat all the CPU
-							&driver.Sleep{100 * time.Millisecond},
 						},
 					},
+					&driver.Stats{params.Ports.ClientAdmin, testCase.ClientStats},
+					&driver.Stats{params.Ports.ServerAdmin, testCase.ServerStats},
 				},
-			},
-			&driver.Stats{params.Ports.ClientAdmin, map[string]driver.StatMatcher{
-				"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
-			}},
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
-			}},
-		},
-	}).Run(params); err != nil {
-		t.Fatal(err)
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

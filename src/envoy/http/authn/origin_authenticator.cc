@@ -32,15 +32,18 @@ namespace AuthN {
 
 Http::RegisterCustomInlineHeader<
     Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
-    access_control_request_method(
-        Http::Headers::get().AccessControlRequestMethod);
+    access_control_request_method_handle(
+        Http::CustomHeaders::get().AccessControlRequestMethod);
+Http::RegisterCustomInlineHeader<
+    Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
+    origin_handle(Http::CustomHeaders::get().Origin);
 
 bool isCORSPreflightRequest(const Http::RequestHeaderMap& headers) {
   return headers.Method() &&
          headers.Method()->value().getStringView() ==
              Http::Headers::get().MethodValues.Options &&
-         headers.Origin() && !headers.Origin()->value().empty() &&
-         !headers.getInlineValue(access_control_request_method.handle())
+         !headers.getInlineValue(origin_handle.handle()).empty() &&
+         !headers.getInlineValue(access_control_request_method_handle.handle())
               .empty();
 }
 

@@ -36,8 +36,7 @@ cp cluster.env /var/lib/istio/envoy
 echo "ISTIO_INBOUND_PORTS=80" > /var/lib/istio/envoy/sidecar.env
 
 # Update DHCP - if needed
-grep "^prepend domain-name-servers 127.0.0.1;" /etc/dhcp/dhclient.conf > /dev/null
-if [[ $? != 0 ]]; then
+if ! grep "^prepend domain-name-servers 127.0.0.1;" /etc/dhcp/dhclient.conf > /dev/null ; then
   echo 'prepend domain-name-servers 127.0.0.1;' >> /etc/dhcp/dhclient.conf
   # TODO: find a better way to re-trigger dhclient
   dhclient -v -1
@@ -46,8 +45,8 @@ fi
 # Install istio binaries
 dpkg -i istio-*.deb;
 
-mkdir /var/www/html/$NAME
-echo "VM $NAME" > /var/www/html/$NAME/index.html
+mkdir /var/www/html/"$NAME"
+echo "VM $NAME" > /var/www/html/"$NAME"/index.html
 
 cat <<EOF > /etc/nginx/conf.d/zipkin.conf
 server {
