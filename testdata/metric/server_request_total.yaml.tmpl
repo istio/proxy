@@ -47,7 +47,11 @@ metric:
     value: http
     {{- end }}
   - name: response_code
+    {{- if .Vars.ResponseCodeClass }}
+    value: {{ .Vars.ResponseCodeClass }}
+    {{- else }}
     value: "200"
+    {{- end }}
   - name: grpc_response_status
     value: "{{ .Vars.GrpcResponseStatus }}"
   - name: response_flags
