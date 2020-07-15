@@ -68,6 +68,11 @@ var Runtimes = []struct {
 		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.wasm"),
 		WasmRuntime:                "envoy.wasm.runtime.v8",
 	},
+	{
+		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/metadata_exchange.compiled.wasm"),
+		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.compiled.wasm"),
+		WasmRuntime:                "envoy.wasm.runtime.v8",
+	},
 }
 
 var TestCases = []struct {
