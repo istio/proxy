@@ -102,7 +102,7 @@ params := driver.NewTestParams(t, map[string]string{
 				"WasmRuntime":				  "envoy.wasm.runtime.null",
 				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/stats_filter_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/request_classification_config.yaml"),
 				"ResponseCodeClass":		  "2xx",
 			}, envoye2e.ProxyE2ETests)
 ```
