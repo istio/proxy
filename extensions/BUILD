@@ -81,7 +81,6 @@ wasm_cc_binary(
 wasm_cc_binary(
     name = "metadata_exchange.wasm",
     srcs = [
-        "//extensions/common:base64.h",
         "//extensions/common:context.cc",
         "//extensions/common:context.h",
         "//extensions/common:proto_util.cc",
@@ -93,6 +92,7 @@ wasm_cc_binary(
     ],
     copts = ["-UNULL_PLUGIN"],
     deps = [
+        "//extensions/common:base64_wasm",
         "//extensions/common:json_util_wasm",
         "//extensions/common:node_info_fb_cc",
         "//extensions/metadata_exchange:declare_property_proto_cc",
