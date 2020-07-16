@@ -432,7 +432,8 @@ bool StackdriverRootContext::shouldLogThisRequest(
     LOG_DEBUG("cannot get envoy access log info from filter state.");
     return true;
   }
-  request_info.sampled = (shouldLog != "no");
+  // Add label log_sampled if Access Log Policy sampling was applied to logs.
+  request_info.log_sampled = (shouldLog != "no");
   return shouldLog != "no";
 }
 
