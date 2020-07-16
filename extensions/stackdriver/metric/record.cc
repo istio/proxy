@@ -26,6 +26,7 @@ namespace Stackdriver {
 namespace Metric {
 
 namespace {
+
 // See:
 // https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
 uint32_t httpCodeFromGrpc(uint32_t grpc_status) {
@@ -69,6 +70,8 @@ uint32_t httpCodeFromGrpc(uint32_t grpc_status) {
   }
 }
 }  // namespace
+
+using Common::unknownIfEmpty;
 
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
@@ -120,40 +123,45 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
 
   if (is_outbound) {
     opencensus::tags::TagMap tagMap = {
-        {meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
-        {requestOperationKey(), operation},
-        {requestProtocolKey(), request_info.request_protocol},
+        {meshUIDKey(),
+         unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
+        {requestOperationKey(), unknownIfEmpty(operation)},
+        {requestProtocolKey(), unknownIfEmpty(request_info.request_protocol)},
         {serviceAuthenticationPolicyKey(),
-         ::Wasm::Common::AuthenticationPolicyString(
-             request_info.service_auth_policy)},
-        {destinationServiceNameKey(), request_info.destination_service_name},
+         unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
+             request_info.service_auth_policy)))},
+        {destinationServiceNameKey(),
+         unknownIfEmpty(request_info.destination_service_name)},
         {destinationServiceNamespaceKey(),
-         flatbuffers::GetString(peer_node_info.namespace_())},
-        {destinationPortKey(), std::to_string(request_info.destination_port)},
-        {responseCodeKey(), std::to_string(response_code)},
-        {sourcePrincipalKey(), request_info.source_principal},
-        {sourceWorkloadNameKey(),
-         flatbuffers::GetString(local_node_info.workload_name())},
+         unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+        {destinationPortKey(),
+         unknownIfEmpty(std::to_string(request_info.destination_port))},
+        {responseCodeKey(), unknownIfEmpty(std::to_string(response_code))},
+        {sourcePrincipalKey(), unknownIfEmpty(request_info.source_principal)},
+        {sourceWorkloadNameKey(), unknownIfEmpty(flatbuffers::GetString(
+                                      local_node_info.workload_name()))},
         {sourceWorkloadNamespaceKey(),
-         flatbuffers::GetString(local_node_info.namespace_())},
-        {sourceOwnerKey(), Common::getOwner(local_node_info)},
-        {destinationPrincipalKey(), request_info.destination_principal},
-        {destinationWorkloadNameKey(),
-         flatbuffers::GetString(peer_node_info.workload_name())},
+         unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
+        {sourceOwnerKey(), unknownIfEmpty(Common::getOwner(local_node_info))},
+        {destinationPrincipalKey(),
+         unknownIfEmpty(request_info.destination_principal)},
+        {destinationWorkloadNameKey(), unknownIfEmpty(flatbuffers::GetString(
+                                           peer_node_info.workload_name()))},
         {destinationWorkloadNamespaceKey(),
-         flatbuffers::GetString(peer_node_info.namespace_())},
-        {destinationOwnerKey(), Common::getOwner(peer_node_info)},
+         unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+        {destinationOwnerKey(),
+         unknownIfEmpty(Common::getOwner(peer_node_info))},
         {destinationCanonicalServiceNameKey(),
-         flatbuffers::GetString(peer_canonical_name)},
+         unknownIfEmpty(flatbuffers::GetString(peer_canonical_name))},
         {destinationCanonicalServiceNamespaceKey(),
-         flatbuffers::GetString(peer_node_info.namespace_())},
+         unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
         {destinationCanonicalRevisionKey(),
          peer_canonical_rev ? peer_canonical_rev->str()
                             : ::Wasm::Common::kLatest.data()},
         {sourceCanonicalServiceNameKey(),
-         flatbuffers::GetString(local_canonical_name)},
+         unknownIfEmpty(flatbuffers::GetString(local_canonical_name))},
         {sourceCanonicalServiceNamespaceKey(),
-         flatbuffers::GetString(local_node_info.namespace_())},
+         unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
         {sourceCanonicalRevisionKey(), local_canonical_rev
                                            ? local_canonical_rev->str()
                                            : ::Wasm::Common::kLatest.data()}};
@@ -175,40 +183,45 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
   }
 
   opencensus::tags::TagMap tagMap = {
-      {meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
-      {requestOperationKey(), operation},
-      {requestProtocolKey(), request_info.request_protocol},
+      {meshUIDKey(),
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
+      {requestOperationKey(), unknownIfEmpty(operation)},
+      {requestProtocolKey(), unknownIfEmpty(request_info.request_protocol)},
       {serviceAuthenticationPolicyKey(),
-       ::Wasm::Common::AuthenticationPolicyString(
-           request_info.service_auth_policy)},
-      {destinationServiceNameKey(), request_info.destination_service_name},
+       unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
+           request_info.service_auth_policy)))},
+      {destinationServiceNameKey(),
+       unknownIfEmpty(request_info.destination_service_name)},
       {destinationServiceNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
-      {destinationPortKey(), std::to_string(request_info.destination_port)},
-      {responseCodeKey(), std::to_string(response_code)},
-      {sourcePrincipalKey(), request_info.source_principal},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
+      {destinationPortKey(),
+       unknownIfEmpty(std::to_string(request_info.destination_port))},
+      {responseCodeKey(), unknownIfEmpty(std::to_string(response_code))},
+      {sourcePrincipalKey(), unknownIfEmpty(request_info.source_principal)},
       {sourceWorkloadNameKey(),
-       flatbuffers::GetString(peer_node_info.workload_name())},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.workload_name()))},
       {sourceWorkloadNamespaceKey(),
-       flatbuffers::GetString(peer_node_info.namespace_())},
-      {sourceOwnerKey(), Common::getOwner(peer_node_info)},
-      {destinationPrincipalKey(), request_info.destination_principal},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+      {sourceOwnerKey(), unknownIfEmpty(Common::getOwner(peer_node_info))},
+      {destinationPrincipalKey(),
+       unknownIfEmpty(request_info.destination_principal)},
       {destinationWorkloadNameKey(),
-       flatbuffers::GetString(local_node_info.workload_name())},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.workload_name()))},
       {destinationWorkloadNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
-      {destinationOwnerKey(), Common::getOwner(local_node_info)},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
+      {destinationOwnerKey(),
+       unknownIfEmpty(Common::getOwner(local_node_info))},
       {destinationCanonicalServiceNameKey(),
-       flatbuffers::GetString(local_canonical_name)},
+       unknownIfEmpty(flatbuffers::GetString(local_canonical_name))},
       {destinationCanonicalServiceNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
       {destinationCanonicalRevisionKey(), local_canonical_rev
                                               ? local_canonical_rev->str()
                                               : ::Wasm::Common::kLatest.data()},
       {sourceCanonicalServiceNameKey(),
-       flatbuffers::GetString(peer_canonical_name)},
+       unknownIfEmpty(flatbuffers::GetString(peer_canonical_name))},
       {sourceCanonicalServiceNamespaceKey(),
-       flatbuffers::GetString(peer_node_info.namespace_())},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
       {sourceCanonicalRevisionKey(), peer_canonical_rev
                                          ? peer_canonical_rev->str()
                                          : ::Wasm::Common::kLatest.data()}};
