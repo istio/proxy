@@ -18,9 +18,9 @@
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/protobuf/protobuf.h"
 #include "envoy/config/core/v3/base.pb.h"
+#include "extensions/authn/test_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "extensions/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/utility.h"
 
@@ -84,8 +84,9 @@ class PeerAuthenticatorTest : public testing::Test {
 TEST_F(PeerAuthenticatorTest, EmptyPolicy) {
   createAuthenticator();
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
@@ -95,7 +96,7 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
         }
       }
     )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateX509(_, _))
@@ -116,7 +117,7 @@ TEST_F(PeerAuthenticatorTest, TlsOnlyPass) {
         }
       }
     )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateX509(_, _))
@@ -138,15 +139,16 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
         }
       }
     )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateX509(_, _))
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(false)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsOnlyFail) {
@@ -157,7 +159,7 @@ TEST_F(PeerAuthenticatorTest, TlsOnlyFail) {
         }
       }
     )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateX509(_, _))
@@ -167,8 +169,9 @@ TEST_F(PeerAuthenticatorTest, TlsOnlyFail) {
   authenticator_->run(payload_);
   // When TLS authentication failse, the authenticated attribute should be
   // empty.
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
@@ -179,7 +182,7 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
       }
     }
   )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
@@ -199,15 +202,16 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
       }
     }
   )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(false)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, Multiple) {
@@ -226,7 +230,7 @@ TEST_F(PeerAuthenticatorTest, Multiple) {
       }
     }
   )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
 
@@ -259,7 +263,7 @@ TEST_F(PeerAuthenticatorTest, TlsFailAndJwtSucceed) {
       }
     }
   )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateX509(_, _))
@@ -292,7 +296,7 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
       }
     }
   )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateX509(_, _))
@@ -303,8 +307,9 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
       .WillRepeatedly(
           DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsFailJwtFail) {
@@ -323,7 +328,7 @@ TEST_F(PeerAuthenticatorTest, TlsFailJwtFail) {
       }
     }
   )",
-                                                    &policy_));
+                                                           &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateX509(_, _))
@@ -335,11 +340,12 @@ TEST_F(PeerAuthenticatorTest, TlsFailJwtFail) {
           DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   authenticator_->run(payload_);
   // validateX509 and validateJwt fail, result should be empty.
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+                                     filter_context_.authenticationResult()));
 }
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace Http
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm

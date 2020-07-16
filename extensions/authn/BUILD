@@ -45,15 +45,15 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "//external:authentication_policy_config_cc_proto",
-        "//src/istio/authn:context_proto_cc_proto",
-        "//src/envoy/utils:filter_names_lib",
-        "//src/envoy/utils:utils_lib",
         "//extensions/common:context",
         "//extensions/common:json_util",
+        "//external:authentication_policy_config_cc_proto",
+        "//src/envoy/utils:filter_names_lib",
+        "//src/envoy/utils:utils_lib",
+        "//src/istio/authn:context_proto_cc_proto",
+        "@envoy//source/common/http:headers_lib",
         "@proxy_wasm_cpp_host//:lib",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
-        "@envoy//source/common/http:headers_lib",
     ],
 )
 

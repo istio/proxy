@@ -48,5 +48,5 @@ istio::authn::Result AuthNResultFromString(const std::string& text) {
 
 }  // namespace TestUtilities
 }  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
+}  // namespace null_plugin
+}  // namespace proxy_wasm

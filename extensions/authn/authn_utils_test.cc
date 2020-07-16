@@ -170,7 +170,8 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudListTest) {
         }
       }
       raw_claims: ")" +
-          Envoy::StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueList) +
+          Envoy::StringUtil::escape(
+              kSecIstioAuthUserInfoHeaderWithAudValueList) +
           R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
@@ -235,7 +236,8 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
         }
       }
       raw_claims: ")" +
-          Envoy::StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueArray) +
+          Envoy::StringUtil::escape(
+              kSecIstioAuthUserInfoHeaderWithAudValueArray) +
           R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
@@ -345,5 +347,5 @@ TEST(AuthnUtilsTest, ShouldValidateJwtPerPathDefault) {
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace Http
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm

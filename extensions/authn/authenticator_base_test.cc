@@ -19,8 +19,8 @@
 #include "common/protobuf/protobuf.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
-#include "gmock/gmock.h"
 #include "extensions/authn/test_utils.h"
+#include "gmock/gmock.h"
 #include "src/envoy/utils/filter_names.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
@@ -85,7 +85,7 @@ class MockAuthenticatorBase : public AuthenticatorBase {
 class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode> {
  public:
   virtual ~ValidateX509Test() {}
-  
+
   NiceMock<Envoy::Network::MockConnection> connection_{};
   Envoy::Http::TestRequestHeaderMapImpl header_{};
   FilterConfig filter_config_{};
@@ -303,7 +303,8 @@ TEST_F(ValidateJwtTest, NoJwtPayloadOutput) {
 TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
   jwt_.set_issuer("issuer@foo.com");
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
       .MergeFrom(Envoy::MessageUtil::keyValueStruct("foo", "bar"));
 
   // When there is no JWT payload for given issuer in request info dynamic
@@ -314,8 +315,10 @@ TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
   jwt_.set_issuer("issuer@foo.com");
-  (*dynamic_metadata_.mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
-      .MergeFrom(Envoy::MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
+      .MergeFrom(
+          Envoy::MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
   // EXPECT_CALL(request_info_, dynamicMetadata());
 
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
@@ -324,9 +327,10 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
   jwt_.set_issuer("issuer@foo.com");
-  (*dynamic_metadata_.mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
-      .MergeFrom(Envoy::MessageUtil::keyValueStruct("issuer@foo.com",
-                                             kSecIstioAuthUserinfoHeaderValue));
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
+      .MergeFrom(Envoy::MessageUtil::keyValueStruct(
+          "issuer@foo.com", kSecIstioAuthUserinfoHeaderValue));
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -355,9 +359,10 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
   jwt_.set_issuer("token-service");
   jwt_.add_jwt_headers(kExchangedTokenHeaderName);
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
-      .MergeFrom(
-          Envoy::MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
+      .MergeFrom(Envoy::MessageUtil::keyValueStruct("token-service",
+                                                    kExchangedTokenPayload));
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -392,7 +397,8 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
   jwt_.set_issuer("token-service");
   jwt_.add_jwt_headers(kExchangedTokenHeaderName);
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
       .MergeFrom(Envoy::MessageUtil::keyValueStruct(
           "token-service", kExchangedTokenPayloadNoOriginalClaims));
 
@@ -404,9 +410,10 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
 TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
   jwt_.set_issuer("token-service");
 
-  (*dynamic_metadata_.mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
-      .MergeFrom(
-          Envoy::MessageUtil::keyValueStruct("token-service", kExchangedTokenPayload));
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Envoy::Utils::IstioFilterName::kJwt]
+      .MergeFrom(Envoy::MessageUtil::keyValueStruct("token-service",
+                                                    kExchangedTokenPayload));
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -433,5 +440,5 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace Http
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm

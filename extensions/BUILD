@@ -66,11 +66,11 @@ wasm_cc_binary(
     copts = ["-UNULL_PLUGIN"],
     deps = [
         "//external:authentication_policy_config_cc_proto",
+        "//external:abseil_strings",
         "//src/istio/authn:context_proto_cc_wasm",
         "//src/envoy/utils:filter_names_lib",
         "//src/envoy/utils:utils_lib_wasm",
         "//src/envoy/http/jwt_auth:jwt_lib_wasm",
-        "@com_google_absl_wasm//absl/strings",
         "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
         "@envoy//source/common/http:headers_lib",

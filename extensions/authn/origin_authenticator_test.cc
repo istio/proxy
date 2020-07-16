@@ -18,9 +18,9 @@
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/protobuf/protobuf.h"
 #include "envoy/config/core/v3/base.pb.h"
+#include "extensions/authn/test_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "extensions/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/utility.h"
 
@@ -231,8 +231,8 @@ TEST_P(OriginAuthenticatorTest, Empty) {
   if (set_peer_) {
     initial_result_.set_principal("bar");
   }
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      initial_result_, filter_context_.authenticationResult()));
 }
 
 // It should fail if the binding is USE_ORIGIN but origin methods are empty.
@@ -261,13 +261,13 @@ TEST_P(OriginAuthenticatorTest, ZeroMethodPass) {
   }
 
   EXPECT_TRUE(authenticator_->run(&jwt_extra_payload_));
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(expected_result,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      expected_result, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
-  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy,
-                                                    &policy_));
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(
+      kSingleOriginMethodPolicy, &policy_));
 
   createAuthenticator();
 
@@ -276,13 +276,13 @@ TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
-  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy,
-                                                    &policy_));
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(
+      kSingleOriginMethodPolicy, &policy_));
 
   createAuthenticator();
 
@@ -291,13 +291,13 @@ TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(false)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, CORSPreflight) {
-  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy,
-                                                    &policy_));
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(
+      kSingleOriginMethodPolicy, &policy_));
 
   createAuthenticator();
 
@@ -320,8 +320,8 @@ TEST_P(OriginAuthenticatorTest, TriggeredWithNullPath) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleRuleTriggered) {
@@ -336,8 +336,8 @@ TEST_P(OriginAuthenticatorTest, SingleRuleTriggered) {
 
   setPath("/allow");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleRuleTriggeredWithComponents) {
@@ -395,8 +395,8 @@ TEST_P(OriginAuthenticatorTest, SingleExcludeRuleTriggeredWithQueryParam) {
 
   setPath("/login?a=b&c=d");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, Multiple) {
@@ -412,8 +412,8 @@ TEST_P(OriginAuthenticatorTest, Multiple) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleFail) {
@@ -429,8 +429,8 @@ TEST_P(OriginAuthenticatorTest, MultipleFail) {
           DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationSucceeded) {
@@ -447,8 +447,8 @@ TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationSucceeded) {
 
   setPath("/allow");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationFailed) {
@@ -464,8 +464,8 @@ TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationFailed) {
 
   setPath("/two");
   EXPECT_FALSE(authenticator_->run(payload_));
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleRuleNotTriggered) {
@@ -477,12 +477,13 @@ TEST_P(OriginAuthenticatorTest, MultipleRuleNotTriggered) {
 
   setPath("/bad");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
-  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(kPeerBinding, &policy_));
+  ASSERT_TRUE(
+      Envoy::Protobuf::TextFormat::ParseFromString(kPeerBinding, &policy_));
   // Expected principal is from peer_user.
   expected_result_when_pass_.set_principal(initial_result_.peer_user());
 
@@ -493,12 +494,13 @@ TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
-  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(kPeerBinding, &policy_));
+  ASSERT_TRUE(
+      Envoy::Protobuf::TextFormat::ParseFromString(kPeerBinding, &policy_));
   createAuthenticator();
 
   // All fail.
@@ -507,8 +509,8 @@ TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(false)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
+      initial_result_, filter_context_.authenticationResult()));
 }
 
 INSTANTIATE_TEST_SUITE_P(OriginAuthenticatorTests, OriginAuthenticatorTest,
@@ -516,5 +518,5 @@ INSTANTIATE_TEST_SUITE_P(OriginAuthenticatorTests, OriginAuthenticatorTest,
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace Http
-}  // namespace Envoy
+}  // namespace null_plugin
+}  // namespace proxy_wasm

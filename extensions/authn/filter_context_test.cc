@@ -44,7 +44,6 @@ class FilterContextTest : public testing::Test {
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 };
 
-
 TEST_F(FilterContextTest, SetPeerResult) {
   filter_context_.setPeerResult(&x509_payload_);
   EXPECT_TRUE(Envoy::TestUtility::protoEqual(
@@ -54,33 +53,36 @@ TEST_F(FilterContextTest, SetPeerResult) {
 
 TEST_F(FilterContextTest, SetOriginResult) {
   filter_context_.setOriginResult(&jwt_payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
         }
       )"),
-                                      filter_context_.authenticationResult()));
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, SetBoth) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setOriginResult(&jwt_payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         peer_user: "foo"
         origin {
           user: "bar"
           presenter: "istio.io"
         }
       )"),
-                                      filter_context_.authenticationResult()));
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, UseOrigin) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setOriginResult(&jwt_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_ORIGIN);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         principal: "bar"
         peer_user: "foo"
         origin {
@@ -88,41 +90,44 @@ TEST_F(FilterContextTest, UseOrigin) {
           presenter: "istio.io"
         }
       )"),
-                                      filter_context_.authenticationResult()));
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, UseOriginOnEmptyOrigin) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_ORIGIN);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         peer_user: "foo"
       )"),
-                                      filter_context_.authenticationResult()));
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, PrincipalUsePeer) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_PEER);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         principal: "foo"
         peer_user: "foo"
       )"),
-                                      filter_context_.authenticationResult()));
+                                     filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, PrincipalUsePeerOnEmptyPeer) {
   filter_context_.setOriginResult(&jwt_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_PEER);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(
+      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
         }
       )"),
-                                      filter_context_.authenticationResult()));
+                                     filter_context_.authenticationResult()));
 }
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
+}  // namespace null_plugin
+}  // namespace proxy_wasm
