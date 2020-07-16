@@ -127,6 +127,8 @@ constexpr char kMonitoringService[] = "monitoring.googleapis.com";
 constexpr char kLoggingService[] = "logging.googleapis.com";
 constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
 
+const std::string kUnknownLabel = "unknown";
+
 }  // namespace Common
 }  // namespace Stackdriver
 }  // namespace Extensions
