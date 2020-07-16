@@ -179,8 +179,8 @@ cc_library(
     copts = ["-UNULL_PLUGIN"],
     visibility = ["//visibility:public"],
     deps = [
-        "//external:abseil_strings",
         "//external:abseil_optional",
+        "//external:abseil_strings",
     ],
 )
 
