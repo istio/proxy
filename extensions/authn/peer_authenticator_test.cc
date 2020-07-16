@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/peer_authenticator.h"
+#include "extensions/authn/peer_authenticator.h"
 
 #include "authentication/v1alpha1/policy.pb.h"
 #include "common/protobuf/protobuf.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/envoy/http/authn/test_utils.h"
+#include "extensions/authn/test_utils.h"
 #include "test/mocks/http/mocks.h"
 #include "test/test_common/utility.h"
 
@@ -35,9 +35,8 @@ using testing::Return;
 using testing::SetArgPointee;
 using testing::StrictMock;
 
-namespace Envoy {
-namespace Http {
-namespace Istio {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace AuthN {
 namespace {
 
@@ -85,12 +84,12 @@ class PeerAuthenticatorTest : public testing::Test {
 TEST_F(PeerAuthenticatorTest, EmptyPolicy) {
   createAuthenticator();
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
       peers {
         mtls {
         }
@@ -104,13 +103,13 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
       TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsOnlyPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
       peers {
         mtls {
           allow_tls: true
@@ -127,13 +126,13 @@ TEST_F(PeerAuthenticatorTest, TlsOnlyPass) {
   authenticator_->run(payload_);
   // When client certificate is present on TLS, authenticated attribute
   // should be extracted.
-  EXPECT_TRUE(TestUtility::protoEqual(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
       TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
       peers {
         mtls {
         }
@@ -146,12 +145,12 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(false)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsOnlyFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
       peers {
         mtls {
           allow_tls: true
@@ -168,12 +167,12 @@ TEST_F(PeerAuthenticatorTest, TlsOnlyFail) {
   authenticator_->run(payload_);
   // When TLS authentication failse, the authenticated attribute should be
   // empty.
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
     peers {
       jwt {
         issuer: "abc.xyz"
@@ -187,13 +186,13 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(true)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
       TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
     peers {
       jwt {
         issuer: "abc.xyz"
@@ -207,12 +206,12 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(false)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, Multiple) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
     peers {
       mtls {}
     }
@@ -239,13 +238,13 @@ TEST_F(PeerAuthenticatorTest, Multiple) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
       TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsFailAndJwtSucceed) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
     peers {
       mtls { allow_tls: true }
     }
@@ -272,13 +271,13 @@ TEST_F(PeerAuthenticatorTest, TlsFailAndJwtSucceed) {
   authenticator_->run(payload_);
   // validateX509 fail and validateJwt succeeds,
   // result should be "foo", as expected as in jwt_payload.
-  EXPECT_TRUE(TestUtility::protoEqual(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
       TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
     peers {
       mtls {}
     }
@@ -304,12 +303,12 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
       .WillRepeatedly(
           DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsFailJwtFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(R"(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(R"(
     peers {
       mtls { allow_tls: true }
     }
@@ -336,12 +335,11 @@ TEST_F(PeerAuthenticatorTest, TlsFailJwtFail) {
           DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   authenticator_->run(payload_);
   // validateX509 and validateJwt fail, result should be empty.
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
 }
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

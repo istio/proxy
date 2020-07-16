@@ -19,9 +19,8 @@
 #include "gmock/gmock.h"
 #include "src/istio/authn/context.pb.h"
 
-namespace Envoy {
-namespace Http {
-namespace Istio {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace AuthN {
 namespace TestUtilities {
 
@@ -43,7 +42,7 @@ istio::authn::Payload CreateJwtPayload(const std::string& user,
 
 istio::authn::Result AuthNResultFromString(const std::string& text) {
   istio::authn::Result result;
-  EXPECT_TRUE(Protobuf::TextFormat::ParseFromString(text, &result));
+  EXPECT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(text, &result));
   return result;
 }
 
@@ -51,4 +50,3 @@ istio::authn::Result AuthNResultFromString(const std::string& text) {
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http
-}  // namespace Envoy

@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "src/envoy/http/authn/filter_context.h"
+#include "extensions/authn/filter_context.h"
 
 #include "envoy/config/core/v3/base.pb.h"
-#include "src/envoy/http/authn/test_utils.h"
+#include "extensions/authn/test_utils.h"
 #include "test/test_common/utility.h"
 
 using istio::authn::Payload;
@@ -24,9 +24,8 @@ using testing::StrictMock;
 
 namespace iaapi = istio::authentication::v1alpha1;
 
-namespace Envoy {
-namespace Http {
-namespace Istio {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace AuthN {
 namespace {
 
@@ -45,16 +44,17 @@ class FilterContextTest : public testing::Test {
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 };
 
+
 TEST_F(FilterContextTest, SetPeerResult) {
   filter_context_.setPeerResult(&x509_payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
       TestUtilities::AuthNResultFromString("peer_user: \"foo\""),
       filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, SetOriginResult) {
   filter_context_.setOriginResult(&jwt_payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
@@ -66,7 +66,7 @@ TEST_F(FilterContextTest, SetOriginResult) {
 TEST_F(FilterContextTest, SetBoth) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setOriginResult(&jwt_payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         peer_user: "foo"
         origin {
           user: "bar"
@@ -80,7 +80,7 @@ TEST_F(FilterContextTest, UseOrigin) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setOriginResult(&jwt_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_ORIGIN);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         principal: "bar"
         peer_user: "foo"
         origin {
@@ -94,7 +94,7 @@ TEST_F(FilterContextTest, UseOrigin) {
 TEST_F(FilterContextTest, UseOriginOnEmptyOrigin) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_ORIGIN);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         peer_user: "foo"
       )"),
                                       filter_context_.authenticationResult()));
@@ -103,7 +103,7 @@ TEST_F(FilterContextTest, UseOriginOnEmptyOrigin) {
 TEST_F(FilterContextTest, PrincipalUsePeer) {
   filter_context_.setPeerResult(&x509_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_PEER);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         principal: "foo"
         peer_user: "foo"
       )"),
@@ -113,7 +113,7 @@ TEST_F(FilterContextTest, PrincipalUsePeer) {
 TEST_F(FilterContextTest, PrincipalUsePeerOnEmptyPeer) {
   filter_context_.setOriginResult(&jwt_payload_);
   filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_PEER);
-  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
+  EXPECT_TRUE(Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
         origin {
           user: "bar"
           presenter: "istio.io"
@@ -126,4 +126,3 @@ TEST_F(FilterContextTest, PrincipalUsePeerOnEmptyPeer) {
 }  // namespace AuthN
 }  // namespace Istio
 }  // namespace Http
-}  // namespace Envoy

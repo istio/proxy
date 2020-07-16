@@ -12,19 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "src/envoy/http/authn/authn_utils.h"
+#include "extensions/authn/authn_utils.h"
 
 #include "common/common/base64.h"
 #include "common/common/utility.h"
-#include "src/envoy/http/authn/test_utils.h"
+#include "extensions/authn/test_utils.h"
 #include "test/test_common/utility.h"
 
 using google::protobuf::util::MessageDifferencer;
 using istio::authn::JwtPayload;
 
-namespace Envoy {
-namespace Http {
-namespace Istio {
+namespace proxy_wasm {
+namespace null_plugin {
 namespace AuthN {
 namespace {
 
@@ -61,7 +60,7 @@ const std::string kSecIstioAuthUserInfoHeaderWithAudValueArray =
 
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
   JwtPayload payload, expected_payload;
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(
       R"(
       user: "issuer@foo.com/sub@foo.com"
       audiences: ["aud1"]
@@ -108,7 +107,7 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserinfoHeaderValue) + R"(")",
+          Envoy::StringUtil::escape(kSecIstioAuthUserinfoHeaderValue) + R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected.
@@ -120,7 +119,7 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
 
 TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudListTest) {
   JwtPayload payload, expected_payload;
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(
       R"(
       user: "issuer@foo.com/sub@foo.com"
       audiences: "aud1"
@@ -171,7 +170,7 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudListTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueList) +
+          Envoy::StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueList) +
           R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
@@ -185,7 +184,7 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudListTest) {
 
 TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
   JwtPayload payload, expected_payload;
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+  ASSERT_TRUE(Envoy::Protobuf::TextFormat::ParseFromString(
       R"(
       user: "issuer@foo.com/sub@foo.com"
       audiences: "aud1"
@@ -236,7 +235,7 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueArray) +
+          Envoy::StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueArray) +
           R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
@@ -346,6 +345,5 @@ TEST(AuthnUtilsTest, ShouldValidateJwtPerPathDefault) {
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace Istio
 }  // namespace Http
 }  // namespace Envoy

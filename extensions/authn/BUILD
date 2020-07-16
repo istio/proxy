@@ -32,7 +32,7 @@ envoy_cc_library(
         "filter_context.cc",
         "origin_authenticator.cc",
         "peer_authenticator.cc",
-        "plugin.cc",
+        # "plugin.cc",
     ],
     hdrs = [
         "authenticator_base.h",
@@ -40,7 +40,7 @@ envoy_cc_library(
         "filter_context.h",
         "origin_authenticator.h",
         "peer_authenticator.h",
-        "plugin.h",
+        # "plugin.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
@@ -71,7 +71,7 @@ envoy_cc_test(
     srcs = ["filter_context_test.cc"],
     repository = "@envoy",
     deps = [
-        ":authenticator",
+        ":authn_plugin",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/test_common:utility_lib",
@@ -83,7 +83,7 @@ envoy_cc_test(
     srcs = ["authenticator_base_test.cc"],
     repository = "@envoy",
     deps = [
-        ":authenticator",
+        ":authn_plugin",
         ":test_utils",
         "//src/envoy/utils:filter_names_lib",
         "@envoy//test/mocks/network:network_mocks",
@@ -97,7 +97,7 @@ envoy_cc_test(
     srcs = ["authn_utils_test.cc"],
     repository = "@envoy",
     deps = [
-        ":authenticator",
+        ":authn_plugin",
         ":test_utils",
         "@envoy//test/test_common:utility_lib",
     ],
@@ -108,7 +108,7 @@ envoy_cc_test(
     srcs = ["peer_authenticator_test.cc"],
     repository = "@envoy",
     deps = [
-        ":authenticator",
+        ":authn_plugin",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/test_common:utility_lib",
@@ -120,36 +120,36 @@ envoy_cc_test(
     srcs = ["origin_authenticator_test.cc"],
     repository = "@envoy",
     deps = [
-        ":authenticator",
+        ":authn_plugin",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )
 
-envoy_cc_test(
-    name = "http_filter_test",
-    srcs = ["http_filter_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":filter_lib",
-        ":test_utils",
-        "//external:authentication_policy_config_cc_proto",
-        "@envoy//source/common/http:header_map_lib",
-        "@envoy//test/mocks/http:http_mocks",
-        "@envoy//test/test_common:utility_lib",
-    ],
-)
+# envoy_cc_test(
+#     name = "http_filter_test",
+#     srcs = ["http_filter_test.cc"],
+#     repository = "@envoy",
+#     deps = [
+#         ":filter_lib",
+#         ":test_utils",
+#         "//external:authentication_policy_config_cc_proto",
+#         "@envoy//source/common/http:header_map_lib",
+#         "@envoy//test/mocks/http:http_mocks",
+#         "@envoy//test/test_common:utility_lib",
+#     ],
+# )
 
-envoy_cc_test(
-    name = "http_filter_integration_test",
-    srcs = ["http_filter_integration_test.cc"],
-    data = glob(["testdata/*"]),
-    repository = "@envoy",
-    deps = [
-        ":filter_lib",
-        "//src/envoy/utils:filter_names_lib",
-        "@envoy//source/common/common:utility_lib",
-        "@envoy//test/integration:http_protocol_integration_lib",
-    ],
-)
+# envoy_cc_test(
+#     name = "http_filter_integration_test",
+#     srcs = ["http_filter_integration_test.cc"],
+#     data = glob(["testdata/*"]),
+#     repository = "@envoy",
+#     deps = [
+#         ":filter_lib",
+#         "//src/envoy/utils:filter_names_lib",
+#         "@envoy//source/common/common:utility_lib",
+#         "@envoy//test/integration:http_protocol_integration_lib",
+#     ],
+# )

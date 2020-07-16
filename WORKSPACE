@@ -43,7 +43,7 @@ ENVOY_SHA = "a84abd3b451f2c7149d778d5f1d0d3c5c0733b20"
 
 ENVOY_SHA256 = "1df6f62968869163bba12ca0c2f51feb1d65e7b3ef44569a011c5a1106076dcb"
 
-ENVOY_ORG = "Shikugawa"
+ENVOY_ORG = "envoyproxy"
 
 ENVOY_REPO = "envoy-wasm"
 
