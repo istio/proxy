@@ -30,7 +30,7 @@
 #else
 
 #include "common/common/base64.h"
-#include "source/extensions/common/wasm/declare_property.pb.h"
+#include "source/extensions/common/wasm/ext/declare_property.pb.h"
 
 namespace proxy_wasm {
 namespace null_plugin {
