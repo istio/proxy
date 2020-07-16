@@ -484,7 +484,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 						[]SDLogEntry{
 							{
 								LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
-								LogEntryFile:  "testdata/stackdriver/server_access_log_entry.yaml.tmpl",
+								LogEntryFile:  "testdata/stackdriver/server_access_log_entry_sampled.yaml.tmpl",
 								LogEntryCount: tt.logEntryCount,
 							},
 						},

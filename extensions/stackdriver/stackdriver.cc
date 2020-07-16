@@ -350,7 +350,7 @@ void StackdriverRootContext::record() {
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
-  if (enableServerAccessLog() && shouldLogThisRequest()) {
+  if (enableServerAccessLog() && shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ false);
   }
@@ -425,12 +425,14 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
 
-bool StackdriverRootContext::shouldLogThisRequest() {
+bool StackdriverRootContext::shouldLogThisRequest(
+    ::Wasm::Common::RequestInfo& request_info) {
   std::string shouldLog = "";
   if (!getValue({::Wasm::Common::kAccessLogPolicyKey}, &shouldLog)) {
     LOG_DEBUG("cannot get envoy access log info from filter state.");
     return true;
   }
+  request_info.sampled = (shouldLog != "no");
   return shouldLog != "no";
 }
 

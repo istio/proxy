@@ -103,7 +103,7 @@ class StackdriverRootContext : public RootContext {
   // Indicates whether to export server access log or not.
   bool enableServerAccessLog();
 
-  bool shouldLogThisRequest();
+  bool shouldLogThisRequest(::Wasm::Common::RequestInfo& request_info);
 
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();
