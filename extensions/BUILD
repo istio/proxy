@@ -88,7 +88,7 @@ wasm_cc_binary(
         "//extensions/common:json_util_wasm",
         "//extensions/common:node_info_fb_cc",
         "//external:abseil_strings",
-        "//external:abseil_time",,
+        "//external:abseil_time",
         "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
