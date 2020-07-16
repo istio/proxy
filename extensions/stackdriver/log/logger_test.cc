@@ -170,6 +170,7 @@ std::string write_log_request_json = R"({
            "source_workload":"test_peer_workload",
            "response_flag":"-",
            "protocol":"HTTP"
+           "filtered":"False"
         },
         "trace":"projects/test_project/traces/123abc",
         "spanId":"abc123",
