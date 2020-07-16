@@ -16,6 +16,7 @@
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
 
 #include "common/buffer/buffer_impl.h"
+#include "common/network/address_impl.h"
 #include "common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
 #include "google/protobuf/util/message_differencer.h"
@@ -57,9 +58,15 @@ class MetadataExchangeFilterTest : public testing::Test {
  public:
   MetadataExchangeFilterTest() { ENVOY_LOG_MISC(info, "test"); }
 
-  void initialize() {
-    config_ = std::make_shared<MetadataExchangeConfig>(
-        stat_prefix_, "istio2", FilterDirection::Downstream, scope_);
+  void initialize(
+      enum FilterDirection direction = FilterDirection::Downstream) {
+    address_ =
+        std::make_shared<Network::Address::Ipv4Instance>("127.0.0.1", 80);
+    config_ = std::make_shared<MetadataExchangeConfig>(stat_prefix_, "istio2",
+                                                       direction, scope_);
+    read_filter_callbacks_.connection_.remote_address_ = address_;
+    EXPECT_CALL(read_filter_callbacks_.connection_, streamInfo())
+        .WillRepeatedly(ReturnRef(stream_info_));
     filter_ = std::make_unique<MetadataExchangeFilter>(config_, local_info_);
     filter_->initializeReadFilterCallbacks(read_filter_callbacks_);
     filter_->initializeWriteFilterCallbacks(write_filter_callbacks_);
@@ -69,8 +76,6 @@ class MetadataExchangeFilterTest : public testing::Test {
     (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("namespace, labels");
     (*node_metadata_map)["namespace"].set_string_value("default");
     (*node_metadata_map)["labels"].set_string_value("{app, details}");
-    EXPECT_CALL(read_filter_callbacks_.connection_, streamInfo())
-        .WillRepeatedly(ReturnRef(stream_info_));
     EXPECT_CALL(local_info_, node()).WillRepeatedly(ReturnRef(metadata_node_));
   }
 
@@ -97,6 +102,8 @@ class MetadataExchangeFilterTest : public testing::Test {
   NiceMock<LocalInfo::MockLocalInfo> local_info_;
   NiceMock<Envoy::StreamInfo::MockStreamInfo> stream_info_;
   envoy::config::core::v3::Node metadata_node_;
+  std::shared_ptr<Network::Address::Ipv4Instance> address_{
+      std::make_shared<Network::Address::Ipv4Instance>("127.0.0.1", 80)};
 };
 
 TEST_F(MetadataExchangeFilterTest, MetadataExchangeFound) {
@@ -136,6 +143,59 @@ TEST_F(MetadataExchangeFilterTest, MetadataExchangeNotFound) {
   EXPECT_EQ(Envoy::Network::FilterStatus::Continue,
             filter_->onData(data, false));
   EXPECT_EQ(1UL, config_->stats().alpn_protocol_not_found_.value());
+}
+
+TEST_F(MetadataExchangeFilterTest, MetadataUpstreamPortSet) {
+  initialize();
+  initializeStructValues();
+
+  ::Envoy::Buffer::OwnedImpl data;
+  MetadataExchangeInitialHeader initial_header;
+  Envoy::ProtobufWkt::Any productpage_any_value;
+  *productpage_any_value.mutable_type_url() =
+      "type.googleapis.com/google.protobuf.Struct";
+  *productpage_any_value.mutable_value() =
+      productpage_value_.SerializeAsString();
+  ConstructProxyHeaderData(data, productpage_any_value, &initial_header);
+  ::Envoy::Buffer::OwnedImpl world{"world"};
+  data.add(world);
+  auto port = stream_info_.filter_state_
+                  ->getDataReadOnly<::Envoy::StreamInfo::UInt32AccessorImpl>(
+                      "istio.bts.remote.port");
+  EXPECT_EQ(80, port.value());
+  EXPECT_EQ(Envoy::Network::FilterStatus::Continue,
+            filter_->onData(data, false));
+}
+
+TEST_F(MetadataExchangeFilterTest, MetadataUpstreamPortDelivered) {
+  initialize(FilterDirection::Upstream);
+  initializeStructValues();
+
+  ::Envoy::Buffer::OwnedImpl data;
+  MetadataExchangeInitialHeader initial_header;
+  Envoy::ProtobufWkt::Any productpage_any_value;
+  *productpage_any_value.mutable_type_url() =
+      "type.googleapis.com/google.protobuf.Struct";
+  // Add remote port here.
+  (*productpage_value_.mutable_fields())[ExchangeMetadataHeaderRemotePort]
+      .set_number_value(81);
+  *productpage_any_value.mutable_value() =
+      productpage_value_.SerializeAsString();
+
+  ConstructProxyHeaderData(data, productpage_any_value, &initial_header);
+
+  ::Envoy::Buffer::OwnedImpl world{"world"};
+  data.add(world);
+
+  EXPECT_CALL(read_filter_callbacks_.connection_, nextProtocol())
+      .WillOnce(Return("istio2"));
+  EXPECT_EQ(Envoy::Network::FilterStatus::Continue,
+            filter_->onData(data, false));
+
+  auto port = stream_info_.filter_state_
+                  ->getDataReadOnly<::Envoy::StreamInfo::UInt32AccessorImpl>(
+                      "istio.bts.remote.port");
+  EXPECT_EQ(81, port.value());
 }
 
 }  // namespace MetadataExchange

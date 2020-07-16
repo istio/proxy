@@ -30,6 +30,7 @@
 namespace Envoy {
 namespace Tcp {
 namespace MetadataExchange {
+
 namespace {
 
 std::unique_ptr<::Envoy::Buffer::OwnedImpl> constructProxyHeaderData(
@@ -192,6 +193,10 @@ void MetadataExchangeFilter::writeNodeMetadata() {
     (*data.mutable_fields())[ExchangeMetadataHeaderId].set_string_value(
         metadata_id);
   }
+  if (remote_port_.has_value()) {
+    (*data.mutable_fields())[ExchangeMetadataHeaderRemotePort].set_number_value(
+        remote_port_.value());
+  }
   if (data.fields_size() > 0) {
     Envoy::ProtobufWkt::Any metadata_any_value;
     *metadata_any_value.mutable_type_url() = StructTypeUrl;
@@ -280,6 +285,17 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
                      : ::Wasm::Common::kUpstreamMetadataIdKey,
                  val.string_value());
   }
+  // Only metadata_exchange from BTS tunnel listener(upstream) 15008 will read
+  // from peer. The idea of the listener would extract the orginal port from
+  // peer to replace 15008.
+  if (config_->filter_direction_ == FilterDirection::Upstream) {
+    const auto key_metadata_remote_port_it =
+        value_struct.fields().find(ExchangeMetadataHeaderRemotePort);
+    if (key_metadata_remote_port_it != value_struct.fields().end()) {
+      Envoy::ProtobufWkt::Value val = key_metadata_remote_port_it->second;
+      updateRemotePort(val.number_value());
+    }
+  }
 }
 
 void MetadataExchangeFilter::updatePeer(
@@ -316,6 +332,14 @@ void MetadataExchangeFilter::updatePeerId(absl::string_view key,
   read_callbacks_->connection().streamInfo().filterState()->setData(
       absl::StrCat("wasm.", key), std::move(state),
       StreamInfo::FilterState::StateType::Mutable, prototype.life_span_);
+}
+
+void MetadataExchangeFilter::updateRemotePort(uint32_t remote_port) {
+  read_callbacks_->connection().streamInfo().filterState()->setData(
+      "istio.bts.remote.port",
+      std::make_shared<::Envoy::StreamInfo::UInt32AccessorImpl>(remote_port),
+      StreamInfo::FilterState::StateType::Mutable,
+      StreamInfo::FilterState::LifeSpan::Connection);
 }
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {

@@ -17,7 +17,10 @@
 
 #include <string>
 
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_split.h"
 #include "common/protobuf/protobuf.h"
+#include "common/stream_info/uint32_accessor_impl.h"
 #include "envoy/local_info/local_info.h"
 #include "envoy/network/filter.h"
 #include "envoy/runtime/runtime.h"
@@ -100,6 +103,9 @@ class MetadataExchangeConfig {
 
 using MetadataExchangeConfigSharedPtr = std::shared_ptr<MetadataExchangeConfig>;
 
+constexpr char ExchangeMetadataHeaderRemotePort[] =
+    "x-envoy-peer-metadata-port";
+
 /**
  * A MetadataExchange filter instance. One per connection.
  */
@@ -121,8 +127,26 @@ class MetadataExchangeFilter : public Network::Filter,
   void initializeReadFilterCallbacks(
       Network::ReadFilterCallbacks& callbacks) override {
     read_callbacks_ = &callbacks;
-    // read_callbacks_->connection().addConnectionCallbacks(*this);
+
+    // Downstream set from connection and upstream read from data.
+    if (config_->filter_direction_ == FilterDirection::Downstream) {
+      auto remote_address =
+          callbacks.connection().remoteAddress()->asStringView();
+      std::vector<absl::string_view> fragments =
+          absl::StrSplit(remote_address, ':', absl::SkipEmpty());
+      uint32_t port_value;
+
+      if (fragments.empty() ||
+          !absl::SimpleAtoi(*fragments.rbegin(), &port_value)) {
+        ENVOY_LOG(debug, "cannot find port for remote address {}",
+                  remote_address);
+      } else {
+        remote_port_ = absl::make_optional(port_value);
+        updateRemotePort(remote_port_.value());
+      }
+    }
   }
+
   void initializeWriteFilterCallbacks(
       Network::WriteFilterCallbacks& callbacks) override {
     write_callbacks_ = &callbacks;
@@ -145,6 +169,8 @@ class MetadataExchangeFilter : public Network::Filter,
   void updatePeer(const Envoy::ProtobufWkt::Struct& struct_value);
   void updatePeerId(absl::string_view key, absl::string_view value);
 
+  void updateRemotePort(uint32_t server_port);
+
   // Helper function to get Dynamic metadata.
   void getMetadata(google::protobuf::Struct* metadata);
 
@@ -164,6 +190,8 @@ class MetadataExchangeFilter : public Network::Filter,
   Network::WriteFilterCallbacks* write_callbacks_{};
   // Stores the length of proxy data that contains node metadata.
   uint64_t proxy_data_length_{0};
+  // Stores the address of remote port.
+  absl::optional<uint32_t> remote_port_;
 
   const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
@@ -183,7 +211,7 @@ class MetadataExchangeFilter : public Network::Filter,
     Done,                       // Alpn Protocol Found and all the read is done
     Invalid,                    // Invalid state, all operations fail
   } conn_state_;
-};
+};  // namespace MetadataExchange
 
 }  // namespace MetadataExchange
 }  // namespace Tcp
