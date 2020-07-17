@@ -37,7 +37,7 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit time: 6/30/20
+# Commit time: 7/16/20
 ENVOY_SHA = "daedee6261878708fddea5607156a27a1939cef7"
 
 ENVOY_SHA256 = "8e9f3b17be216db09ab6d550413bce0ba8bb8dd00f790f32c69bfb21e2d35523"
@@ -133,17 +133,4 @@ http_file(
     urls = [
         "https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp",
     ],
-)
-
-COM_GOOGLE_ABSL_WASM_SHA = "768eb2ca2857342673fcd462792ce04b8bac3fa3"
-
-http_archive(
-    name = "com_google_absl_wasm",
-    patch_args = ["-p1"],
-    patches = [
-        "@io_istio_proxy//:bazel/patches/absl.patch",
-    ],
-    sha256 = "bc9dd47d9676b016a8bec86f4e1cdc3edd22042bd9d7948a7b355f600974565e",
-    strip_prefix = "abseil-cpp-" + COM_GOOGLE_ABSL_WASM_SHA,
-    url = "https://github.com/abseil/abseil-cpp/archive/" + COM_GOOGLE_ABSL_WASM_SHA + ".tar.gz",
 )
