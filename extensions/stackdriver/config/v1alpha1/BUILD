@@ -29,5 +29,6 @@ proto_library(
     srcs = ["stackdriver_plugin_config.proto"],
     deps = [
         "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:wrappers_proto",
     ],
 )

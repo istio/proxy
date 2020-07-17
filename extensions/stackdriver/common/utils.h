@@ -42,6 +42,7 @@ struct StackdriverStubOption {
   std::string insecure_endpoint;
   std::string monitoring_endpoint;
   std::string project_id;
+  bool enable_log_compression;
 };
 
 // Build Envoy GrpcService proto based on the given stub option.
