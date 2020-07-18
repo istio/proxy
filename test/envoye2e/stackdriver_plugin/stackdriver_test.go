@@ -510,7 +510,7 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 		{"NoAlpn", "some-protocol", "true", "true"},
 	}
 
-	for index, tt := range TestCases {
+	for _, tt := range TestCases {
 		t.Run(tt.name, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
 				"ServiceAuthenticationPolicy": "MUTUAL_TLS",
