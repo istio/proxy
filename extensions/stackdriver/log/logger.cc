@@ -162,6 +162,7 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
       std::string(::Wasm::Common::AuthenticationPolicyString(
           request_info.service_auth_policy));
   (*label_map)["protocol"] = request_info.request_protocol;
+  (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
 
   if (is_tcp) {
     addTCPLabelsToLogEntry(request_info, new_entry);

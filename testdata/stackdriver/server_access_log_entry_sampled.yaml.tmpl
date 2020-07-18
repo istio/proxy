@@ -1,3 +1,9 @@
+http_request:
+  request_method: "GET"
+  request_url: "http://127.0.0.1:{{ .Ports.ClientPort }}/{{ .Vars.RequestPath }}"
+  server_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
+  protocol: "http"
+  status: {{ .Vars.SDLogStatusCode }}
 labels:
   destination_principal: "{{ .Vars.DestinationPrincipal }}"
   destination_service_host: server.default.svc.cluster.local
@@ -11,7 +17,6 @@ labels:
   source_canonical_service: productpage-v1
   source_canonical_revision: version-1
   source_version: v1
-  destination_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
-  protocol: tcp
-  log_sampled: "false"
+  protocol: http
+  log_sampled: "true"
 severity: INFO

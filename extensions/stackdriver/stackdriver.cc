@@ -350,7 +350,7 @@ void StackdriverRootContext::record() {
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
-  if (enableServerAccessLog() && shouldLogThisRequest()) {
+  if (enableServerAccessLog() && shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ false);
   }
@@ -425,13 +425,16 @@ inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
 
-bool StackdriverRootContext::shouldLogThisRequest() {
+bool StackdriverRootContext::shouldLogThisRequest(
+    ::Wasm::Common::RequestInfo& request_info) {
   std::string shouldLog = "";
   if (!getValue({::Wasm::Common::kAccessLogPolicyKey}, &shouldLog)) {
     LOG_DEBUG("cannot get envoy access log info from filter state.");
     return true;
   }
-  return shouldLog != "no";
+  // Add label log_sampled if Access Log Policy sampling was applied to logs.
+  request_info.log_sampled = (shouldLog != "no");
+  return request_info.log_sampled;
 }
 
 void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {
