@@ -499,145 +499,92 @@ func TestStackdriverAccessLog(t *testing.T) {
 }
 
 func TestStackdriverTCPMetadataExchange(t *testing.T) {
-	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy": "MUTUAL_TLS",
-		"SDLogStatusCode":             "200",
-		"EnableMetadataExchange":      "true",
-		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
-		"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
-		"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
-		"DisableDirectResponse":       "true",
-		"AlpnProtocol":                "mx-protocol",
-		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-	}, envoye2e.ProxyE2ETests)
-	sdPort := params.Ports.Max + 1
-	stsPort := params.Ports.Max + 2
-	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
-	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
-	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
-		params.LoadTestData("testdata/filters/stackdriver_network_inbound.yaml.tmpl")
-	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
-	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/stackdriver_network_outbound.yaml.tmpl")
-	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
-	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
-
-	sd := &Stackdriver{Port: sdPort}
-
-	if err := (&driver.Scenario{
-		Steps: []driver.Step{
-			&driver.XDS{},
-			sd,
-			&SecureTokenService{Port: stsPort},
-			&driver.Update{
-				Node:      "client",
-				Version:   "0",
-				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
-				Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
-			},
-			&driver.Update{
-				Node:      "server",
-				Version:   "0",
-				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
-				Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
-			},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Sleep{Duration: 1 * time.Second},
-			&driver.TCPServer{Prefix: "hello"},
-			&driver.Repeat{
-				N:    10,
-				Step: &driver.TCPConnection{},
-			},
-			sd.Check(params,
-				[]string{"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl", "testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
-				[]SDLogEntry{
-					{
-						LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",
-						LogEntryFile: []string{"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
-							"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl"},
-						LogEntryCount: 10,
-					},
-				},
-				nil, false,
-			),
-		},
-	}).Run(params); err != nil {
-		t.Fatal(err)
+	t.Parallel()
+	var TestCases = []struct {
+		name               string
+		alpnProtocol       string
+		sourceUnknown      string
+		destinationUnknown string
+	}{
+		{"BaseCase", "mx-protocol", "", ""},
+		{"NoAlpn", "some-protocol", "true", "true"},
 	}
-}
 
-func TestStackdriverTCPMetadataExchangeNoAlpn(t *testing.T) {
-	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy": "MUTUAL_TLS",
-		"SDLogStatusCode":             "200",
-		"EnableMetadataExchange":      "true",
-		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
-		"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
-		"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
-		"DisableDirectResponse":       "true",
-		"AlpnProtocol":                "some-protocol",
-		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"SourceUnknownOnClose":        "true",
-		"SourceUnknownOnOpen":         "true",
-	}, envoye2e.ProxyE2ETests)
-	sdPort := params.Ports.Max + 1
-	stsPort := params.Ports.Max + 2
-	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
-	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
-	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
-		params.LoadTestData("testdata/filters/stackdriver_network_inbound.yaml.tmpl")
-	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
-	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/stackdriver_network_outbound.yaml.tmpl")
-	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
-	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+	for index, tt := range TestCases {
+		t.Run(tt.name, func(t *testing.T) {
+			params := driver.NewTestParams(t, map[string]string{
+				"ServiceAuthenticationPolicy": "MUTUAL_TLS",
+				"SDLogStatusCode":             "200",
+				"EnableMetadataExchange":      "true",
+				"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+				"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
+				"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
+				"DisableDirectResponse":       "true",
+				"AlpnProtocol":                tt.alpnProtocol,
+				"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"SourceUnknownOnClose":        tt.sourceUnknown,
+				"SourceUnknownOnOpen":         tt.sourceUnknown,
+				"DestinationUnknown":          tt.destinationUnknown,
+				"SourceUnknown":               tt.sourceUnknown,
+			}, envoye2e.ProxyE2ETests)
 
-	sd := &Stackdriver{Port: sdPort}
+			sdPort := params.Ports.Max + 1
+			stsPort := params.Ports.Max + 2
+			params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+			params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+				params.LoadTestData("testdata/filters/stackdriver_network_inbound.yaml.tmpl")
+			params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+			params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/stackdriver_network_outbound.yaml.tmpl")
+			params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+			params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
 
-	if err := (&driver.Scenario{
-		Steps: []driver.Step{
-			&driver.XDS{},
-			sd,
-			&SecureTokenService{Port: stsPort},
-			&driver.Update{
-				Node:      "client",
-				Version:   "0",
-				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
-				Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
-			},
-			&driver.Update{
-				Node:      "server",
-				Version:   "0",
-				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
-				Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
-			},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Sleep{Duration: 1 * time.Second},
-			&driver.TCPServer{Prefix: "hello"},
-			&driver.Repeat{
-				N:    10,
-				Step: &driver.TCPConnection{},
-			},
-			sd.Check(params,
-				nil,
-				[]SDLogEntry{
-					{
-						LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",
-						LogEntryFile: []string{"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
-							"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl"},
-						LogEntryCount: 10,
+			sd := &Stackdriver{Port: sdPort}
+
+			if err := (&driver.Scenario{
+				Steps: []driver.Step{
+					&driver.XDS{},
+					sd,
+					&SecureTokenService{Port: stsPort},
+					&driver.Update{
+						Node:      "client",
+						Version:   "0",
+						Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
+						Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
 					},
+					&driver.Update{
+						Node:      "server",
+						Version:   "0",
+						Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
+						Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
+					},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					&driver.TCPServer{Prefix: "hello"},
+					&driver.Repeat{
+						N:    10,
+						Step: &driver.TCPConnection{},
+					},
+					sd.Check(params,
+						[]string{"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl", "testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
+						[]SDLogEntry{
+							{
+								LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",
+								LogEntryFile: []string{"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryCount: 10,
+							},
+						},
+						nil, false,
+					),
 				},
-				nil, false,
-			),
-		},
-	}).Run(params); err != nil {
-		t.Fatal(err)
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }

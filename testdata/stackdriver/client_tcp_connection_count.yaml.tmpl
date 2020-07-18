@@ -1,19 +1,31 @@
 metric:
   labels:
+    {{- if .Vars.DestinationUnknown }}
+    destination_canonical_revision: latest
+    destination_canonical_service_name: "unknown"
+    destination_canonical_service_namespace: "unknown"
+    destination_owner: "unknown"
+    destination_port: '{{ .Ports.ServerPort }}'
+    destination_service_name: "server.default.svc.cluster.local"
+    destination_service_namespace: "unknown"
+    destination_workload_name: "unknown"
+    destination_workload_namespace: "unknown"
+    {{- else }}
     destination_canonical_revision: version-1
     destination_canonical_service_name: ratings
     destination_canonical_service_namespace: default
     destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
     destination_port: '{{ .Ports.ServerPort }}'
+    destination_service_name: server
+    destination_service_namespace: default
+    destination_workload_name: ratings-v1
+    destination_workload_namespace: default
+    {{- end }}
     {{- if .Vars.DestinationPrincipal }}
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
     {{- else }}
     destination_principal: unknown
     {{- end }}
-    destination_service_name: server
-    destination_service_namespace: default
-    destination_workload_name: ratings-v1
-    destination_workload_namespace: default
     mesh_uid: mesh
     request_protocol: tcp
     service_authentication_policy: unknown # TODO: upstream TLS indicator is not reported
