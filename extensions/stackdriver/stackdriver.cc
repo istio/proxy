@@ -434,7 +434,7 @@ bool StackdriverRootContext::shouldLogThisRequest(
   }
   // Add label log_sampled if Access Log Policy sampling was applied to logs.
   request_info.log_sampled = (shouldLog != "no");
-  return shouldLog != "no";
+  return request_info.log_sampled;
 }
 
 void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {
