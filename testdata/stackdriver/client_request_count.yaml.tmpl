@@ -5,7 +5,11 @@ metric:
     destination_canonical_service_namespace: default
     destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
     destination_port: '{{ .Ports.ServerPort }}'
+    {{- if .Vars.DestinationPrincipal }}
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
+    {{- else }}
+    destination_principal: unknown
+    {{- end }}
     destination_service_name: server
     destination_service_namespace: default
     destination_workload_name: ratings-v1
@@ -14,12 +18,16 @@ metric:
     request_operation: GET
     request_protocol: http
     response_code: "200"
-    service_authentication_policy: "" # TODO: upstream TLS indicator is not reported
+    service_authentication_policy: unknown # TODO: upstream TLS indicator is not reported
     source_canonical_revision: version-1
     source_canonical_service_name: productpage-v1
     source_canonical_service_namespace: default
     source_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
+    {{- if .Vars.SourcePrincipal }}
     source_principal: "{{ .Vars.SourcePrincipal }}"
+    {{- else }}
+    source_principal: unknown
+    {{- end }}
     source_workload_name: productpage-v1
     source_workload_namespace: default
   type: istio.io/service/client/request_count
