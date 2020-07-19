@@ -183,6 +183,7 @@ void Logger::fillAndFlushLogEntry(
       std::string(::Wasm::Common::AuthenticationPolicyString(
           request_info.service_auth_policy));
   (*label_map)["protocol"] = request_info.request_protocol;
+  (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
 
   // Insert trace headers, if exist.
   if (request_info.b3_trace_sampled) {

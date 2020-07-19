@@ -170,6 +170,7 @@ struct RequestInfo {
   TCPConnectionState tcp_connection_state = TCPConnectionState::Unspecified;
 
   bool is_populated = false;
+  bool log_sampled = false;
 };
 
 // RequestContext contains all the information available in the request.

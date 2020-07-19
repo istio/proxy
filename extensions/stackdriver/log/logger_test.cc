@@ -169,7 +169,8 @@ std::string write_log_request_json = R"({
            "service_authentication_policy":"MUTUAL_TLS",
            "source_workload":"test_peer_workload",
            "response_flag":"-",
-           "protocol":"HTTP"
+           "protocol":"HTTP",
+           "log_sampled":"false"
         },
         "trace":"projects/test_project/traces/123abc",
         "spanId":"abc123",
