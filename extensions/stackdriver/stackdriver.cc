@@ -513,9 +513,6 @@ void StackdriverRootContext::logTCPOpenOnTimeout(
         outbound, record_info.request_info.get(), destination_namespace);
     ::Wasm::Common::populateExtendedRequestInfo(record_info.request_info.get());
     logTCPOpen(record_info, peer_node);
-    // Set is_populated to false, so that populateTCPRequestInfo can be called
-    // again when peer metadata is available by RecordTCP.
-    record_info.request_info->is_populated = false;
   }
 }
 
@@ -523,20 +520,22 @@ void StackdriverRootContext::logTCPOpen(
     StackdriverRootContext::TcpRecordInfo& record_info,
     const ::Wasm::Common::FlatNode& peer_node) {
   // Log TCP Open event log, if it has not been logged before.
-  if (!record_info.tcp_open_log_entry_logged) {
-    auto state = record_info.request_info->tcp_connection_state;
-    // It's possible that for a short lived TCP connection, we log TCP
-    // Connection Open log entry on connection close. To make a distinction
-    // between open and close log entries, we change the state to Open here.
-    record_info.request_info->tcp_connection_state =
-        state == ::Wasm::Common::TCPConnectionState::Close
-            ? ::Wasm::Common::TCPConnectionState::Open
-            : state;
-    logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                            record_info.request_info->start_time);
-    record_info.tcp_open_log_entry_logged = true;
-    record_info.request_info->tcp_connection_state = state;
+  if (record_info.tcp_open_log_entry_logged) {
+    return;
   }
+
+  auto state = record_info.request_info->tcp_connection_state;
+  // It's possible that for a short lived TCP connection, we log TCP
+  // Connection Open log entry on connection close. To make a distinction
+  // between open and close log entries, we change the state to Open here.
+  record_info.request_info->tcp_connection_state =
+      state == ::Wasm::Common::TCPConnectionState::Close
+          ? ::Wasm::Common::TCPConnectionState::Open
+          : state;
+  logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                          record_info.request_info->start_time);
+  record_info.tcp_open_log_entry_logged = true;
+  record_info.request_info->tcp_connection_state = state;
 }
 
 void StackdriverContext::onLog() {
