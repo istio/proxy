@@ -104,7 +104,7 @@ class StackdriverRootContext : public RootContext {
   // Stores information about TCP request.
   struct TcpRecordInfo {
     std::unique_ptr<::Wasm::Common::RequestInfo> request_info;
-    bool tcp_open_log_entry_logged;
+    bool tcp_open_entry_logged;
   };
 
   // Indicates whether to export server access log or not.

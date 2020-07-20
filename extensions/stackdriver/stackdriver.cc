@@ -401,16 +401,20 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
 
   // For TCP, if peer metadata is not available, peer id is set as not found.
   // Otherwise, we wait for metadata exchange to happen before we report  any
-  // metric.
+  // metric before a timeout.
   // We keep waiting if response flags is zero, as that implies, there has
   // been no error in connection.
   uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
-  if (!peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
-      response_flags == 0) {
-    logTCPOpenOnTimeout(
-        record_info, flatbuffers::GetString(destination_node_info.namespace_()),
-        outbound, peer_node);
+  auto cur = static_cast<long int>(
+      proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
+  bool waiting_for_metadata =
+      !peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue;
+  bool no_error = response_flags == 0;
+  bool log_open_on_timeout =
+      !record_info.tcp_open_entry_logged &&
+      (cur - request_info.start_time) > tcp_log_entry_timeout_;
+  if (waiting_for_metadata && no_error && !log_open_on_timeout) {
     return false;
   }
   if (!request_info.is_populated) {
@@ -425,9 +429,23 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // to Stackdriver Logging Service.
   if (enableServerAccessLog()) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
-    logTCPOpen(record_info, peer_node);
+    // It's possible that for a short lived TCP connection, we log TCP
+    // Connection Open log entry on connection close.
+    if (!record_info.tcp_open_entry_logged &&
+        request_info.tcp_connection_state ==
+            ::Wasm::Common::TCPConnectionState::Close) {
+      logTCPOpen(record_info, peer_node);
+    }
     logger_->addTcpLogEntry(request_info, peer_node,
                             getCurrentTimeNanoseconds());
+  }
+  if (log_open_on_timeout) {
+    // If we logged the request on timeout, for outbound requests, we try to
+    // populate the request info again when metadata is available.
+    request_info.is_populated = outbound ? false : true;
+  }
+  if (!record_info.tcp_open_entry_logged) {
+    record_info.tcp_open_entry_logged = true;
   }
   return true;
 }
@@ -465,7 +483,7 @@ void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {
   std::unique_ptr<StackdriverRootContext::TcpRecordInfo> record_info =
       std::make_unique<StackdriverRootContext::TcpRecordInfo>();
   record_info->request_info = std::move(request_info);
-  record_info->tcp_open_log_entry_logged = false;
+  record_info->tcp_open_entry_logged = false;
   tcp_request_queue_[id] = std::move(record_info);
 }
 
@@ -500,45 +518,15 @@ StackdriverRootContext* StackdriverContext::getRootContext() {
   return dynamic_cast<StackdriverRootContext*>(root);
 }
 
-void StackdriverRootContext::logTCPOpenOnTimeout(
-    StackdriverRootContext::TcpRecordInfo& record_info,
-    const std::string& destination_namespace, bool outbound,
-    const ::Wasm::Common::FlatNode& peer_node) {
-  auto cur = static_cast<long int>(
-      proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
-  ::Wasm::Common::RequestInfo& request_info = *record_info.request_info;
-  // Attempt to log TCP Open Event if tcp open request log has timed out and it
-  // has not been logged before.
-  if (enableServerAccessLog() && !record_info.tcp_open_log_entry_logged &&
-      ((cur - request_info.start_time) > tcp_log_entry_timeout_)) {
-    // Populate RequestInfo with local node information.
-    ::Wasm::Common::populateTCPRequestInfo(
-        outbound, record_info.request_info.get(), destination_namespace);
-    ::Wasm::Common::populateExtendedRequestInfo(record_info.request_info.get());
-    logTCPOpen(record_info, peer_node);
-  }
-}
-
 void StackdriverRootContext::logTCPOpen(
     StackdriverRootContext::TcpRecordInfo& record_info,
     const ::Wasm::Common::FlatNode& peer_node) {
-  // Log TCP Open event log, if it has not been logged before.
-  if (record_info.tcp_open_log_entry_logged) {
-    return;
-  }
-
-  auto state = record_info.request_info->tcp_connection_state;
-  // It's possible that for a short lived TCP connection, we log TCP
-  // Connection Open log entry on connection close. To make a distinction
-  // between open and close log entries, we change the state to Open here.
   record_info.request_info->tcp_connection_state =
-      state == ::Wasm::Common::TCPConnectionState::Close
-          ? ::Wasm::Common::TCPConnectionState::Open
-          : state;
+      ::Wasm::Common::TCPConnectionState::Open;
   logger_->addTcpLogEntry(*record_info.request_info, peer_node,
                           record_info.request_info->start_time);
-  record_info.tcp_open_log_entry_logged = true;
-  record_info.request_info->tcp_connection_state = state;
+  record_info.request_info->tcp_connection_state =
+      ::Wasm::Common::TCPConnectionState::Close;
 }
 
 void StackdriverContext::onLog() {
