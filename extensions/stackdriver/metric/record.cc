@@ -30,6 +30,8 @@ using TagKeyValueList =
 
 namespace {
 
+using Common::unknownIfEmpty;
+
 std::string getLocalCanonicalName(
     const ::Wasm::Common::FlatNode& local_node_info) {
   const auto local_labels = local_node_info.labels();
@@ -93,38 +95,43 @@ TagKeyValueList getOutboundTagMap(
     const ::Wasm::Common::FlatNode& peer_node_info,
     const ::Wasm::Common::RequestInfo& request_info) {
   TagKeyValueList outboundMap = {
-      {meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
-      {requestProtocolKey(), std::string(request_info.request_protocol)},
+      {meshUIDKey(),
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
+      {requestProtocolKey(), unknownIfEmpty(request_info.request_protocol)},
       {serviceAuthenticationPolicyKey(),
-       std::string(::Wasm::Common::AuthenticationPolicyString(
-           request_info.service_auth_policy))},
+       unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
+           request_info.service_auth_policy)))},
       {destinationServiceNameKey(),
-       std::string(request_info.destination_service_name)},
+       unknownIfEmpty(request_info.destination_service_name)},
       {destinationServiceNamespaceKey(),
-       flatbuffers::GetString(peer_node_info.namespace_())},
-      {destinationPortKey(), std::to_string(request_info.destination_port)},
-      {sourcePrincipalKey(), std::string(request_info.source_principal)},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+      {destinationPortKey(),
+       unknownIfEmpty(std::to_string(request_info.destination_port))},
+      {sourcePrincipalKey(), unknownIfEmpty(request_info.source_principal)},
       {sourceWorkloadNameKey(),
-       flatbuffers::GetString(local_node_info.workload_name())},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.workload_name()))},
       {sourceWorkloadNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
-      {sourceOwnerKey(), Common::getOwner(local_node_info)},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
+      {sourceOwnerKey(), unknownIfEmpty(Common::getOwner(local_node_info))},
       {destinationPrincipalKey(),
-       std::string(request_info.destination_principal)},
+       unknownIfEmpty(request_info.destination_principal)},
       {destinationWorkloadNameKey(),
-       flatbuffers::GetString(peer_node_info.workload_name())},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.workload_name()))},
       {destinationWorkloadNamespaceKey(),
-       flatbuffers::GetString(peer_node_info.namespace_())},
-      {destinationOwnerKey(), Common::getOwner(peer_node_info)},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+      {destinationOwnerKey(), unknownIfEmpty(Common::getOwner(peer_node_info))},
       {destinationCanonicalServiceNameKey(),
-       getPeerCanonicalName(peer_node_info)},
+       unknownIfEmpty(getPeerCanonicalName(peer_node_info))},
       {destinationCanonicalServiceNamespaceKey(),
-       flatbuffers::GetString(peer_node_info.namespace_())},
-      {destinationCanonicalRevisionKey(), getPeerCanonicalRev(peer_node_info)},
-      {sourceCanonicalServiceNameKey(), getLocalCanonicalName(local_node_info)},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+      {destinationCanonicalRevisionKey(),
+       unknownIfEmpty(getPeerCanonicalRev(peer_node_info))},
+      {sourceCanonicalServiceNameKey(),
+       unknownIfEmpty(getLocalCanonicalName(local_node_info))},
       {sourceCanonicalServiceNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
-      {sourceCanonicalRevisionKey(), getLocalCanonicalRev(local_node_info)}};
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
+      {sourceCanonicalRevisionKey(),
+       unknownIfEmpty(getLocalCanonicalRev(local_node_info))}};
   return outboundMap;
 }
 
@@ -133,39 +140,44 @@ TagKeyValueList getInboundTagMap(
     const ::Wasm::Common::FlatNode& peer_node_info,
     const ::Wasm::Common::RequestInfo& request_info) {
   TagKeyValueList inboundMap = {
-      {meshUIDKey(), flatbuffers::GetString(local_node_info.mesh_id())},
-      {requestProtocolKey(), std::string(request_info.request_protocol)},
+      {meshUIDKey(),
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
+      {requestProtocolKey(), unknownIfEmpty(request_info.request_protocol)},
       {serviceAuthenticationPolicyKey(),
-       std::string(::Wasm::Common::AuthenticationPolicyString(
-           request_info.service_auth_policy))},
+       unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
+           request_info.service_auth_policy)))},
       {destinationServiceNameKey(),
-       std::string(request_info.destination_service_name)},
+       unknownIfEmpty(request_info.destination_service_name)},
       {destinationServiceNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
-      {destinationPortKey(), std::to_string(request_info.destination_port)},
-      {sourcePrincipalKey(), std::string(request_info.source_principal)},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
+      {destinationPortKey(),
+       unknownIfEmpty(std::to_string(request_info.destination_port))},
+      {sourcePrincipalKey(), unknownIfEmpty(request_info.source_principal)},
       {sourceWorkloadNameKey(),
-       flatbuffers::GetString(peer_node_info.workload_name())},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.workload_name()))},
       {sourceWorkloadNamespaceKey(),
-       flatbuffers::GetString(peer_node_info.namespace_())},
-      {sourceOwnerKey(), Common::getOwner(peer_node_info)},
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+      {sourceOwnerKey(), unknownIfEmpty(Common::getOwner(peer_node_info))},
       {destinationPrincipalKey(),
-       std::string(request_info.destination_principal)},
+       unknownIfEmpty(request_info.destination_principal)},
       {destinationWorkloadNameKey(),
-       flatbuffers::GetString(local_node_info.workload_name())},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.workload_name()))},
       {destinationWorkloadNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
-      {destinationOwnerKey(), Common::getOwner(local_node_info)},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
+      {destinationOwnerKey(),
+       unknownIfEmpty(Common::getOwner(local_node_info))},
       {destinationCanonicalServiceNameKey(),
-       getLocalCanonicalName(local_node_info)},
+       unknownIfEmpty(getLocalCanonicalName(local_node_info))},
       {destinationCanonicalServiceNamespaceKey(),
-       flatbuffers::GetString(local_node_info.namespace_())},
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
       {destinationCanonicalRevisionKey(),
-       getLocalCanonicalRev(local_node_info)},
-      {sourceCanonicalServiceNameKey(), getPeerCanonicalName(peer_node_info)},
+       unknownIfEmpty(getLocalCanonicalRev(local_node_info))},
+      {sourceCanonicalServiceNameKey(),
+       unknownIfEmpty(getPeerCanonicalName(peer_node_info))},
       {sourceCanonicalServiceNamespaceKey(),
-       flatbuffers::GetString(peer_node_info.namespace_())},
-      {sourceCanonicalRevisionKey(), getPeerCanonicalRev(peer_node_info)}};
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
+      {sourceCanonicalRevisionKey(),
+       unknownIfEmpty(getPeerCanonicalRev(peer_node_info))}};
   return inboundMap;
 }
 

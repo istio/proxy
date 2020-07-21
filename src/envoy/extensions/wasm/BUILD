@@ -1,4 +1,4 @@
-# Copyright 2019 Istio Authors. All Rights Reserved.
+# Copyright 2020 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,20 +15,22 @@
 ################################################################################
 #
 
-cc_proto_library(
-    name = "stackdriver_plugin_config_cc_proto",
-    visibility = [
-        "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/metric:__pkg__",
-    ],
-    deps = ["stackdriver_plugin_config_proto"],
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
 )
 
-proto_library(
-    name = "stackdriver_plugin_config_proto",
-    srcs = ["stackdriver_plugin_config.proto"],
+envoy_cc_library(
+    name = "wasm_lib",
+    srcs = [
+        "wasm.cc",
+    ],
+    hdrs = [
+        "context.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
     deps = [
-        "@com_google_protobuf//:duration_proto",
-        "@com_google_protobuf//:wrappers_proto",
+        "@envoy//source/extensions/common/wasm:wasm_hdr",
     ],
 )

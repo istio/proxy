@@ -5,7 +5,11 @@ metric:
     destination_canonical_service_namespace: default
     destination_owner: //compute.googleapis.com/projects/23412341234/instanceGroupManagers/324234
     destination_port: '{{ .Ports.ServerPort }}'
+    {{- if .Vars.DestinationPrincipal }}
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
+    {{- else }}
+    destination_principal: unknown
+    {{- end }}
     destination_service_name: server
     destination_service_namespace: default
     destination_workload_name: ratings-v1
@@ -19,7 +23,11 @@ metric:
     source_canonical_service_name: productpage-v1
     source_canonical_service_namespace: default
     source_owner: //compute.googleapis.com/projects/test-project/zones/us-east4-b/instances/productpage-vm
+    {{- if .Vars.SourcePrincipal }}
     source_principal: "{{ .Vars.SourcePrincipal }}"
+    {{- else }}
+    source_principal: unknown
+    {{- end }}
     source_workload_name: productpage-v1
     source_workload_namespace: default
   type: istio.io/service/server/request_count

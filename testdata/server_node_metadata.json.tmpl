@@ -29,7 +29,14 @@
 "STACKDRIVER_TOKEN_FILE": "{{ .Vars.StackdriverTokenFile }}",
 "STS_PORT": "{{ .Vars.STSPort  }}",
 "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS": "20",
+{{- if .Vars.StackdriverLoggingExportIntervalSecs }}
+"STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS": "{{ .Vars.StackdriverLoggingExportIntervalSecs }}",
+{{- else }}
 "STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS": "20",
+{{- end }}
+{{- if .Vars.StackdriverTcpLogEntryTimeoutSecs }}
+"STACKDRIVER_TCP_LOG_ENTRY_TIMEOUT_SECS": "{{ .Vars.StackdriverTcpLogEntryTimeoutSecs }}",
+{{- end }}
 "WORKLOAD_NAME": "ratings-v1",
 "app": "ratings",
 "istio": "sidecar",

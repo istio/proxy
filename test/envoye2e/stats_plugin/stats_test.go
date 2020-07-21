@@ -68,6 +68,11 @@ var Runtimes = []struct {
 		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.wasm"),
 		WasmRuntime:                "envoy.wasm.runtime.v8",
 	},
+	{
+		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/metadata_exchange.compiled.wasm"),
+		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.compiled.wasm"),
+		WasmRuntime:                "envoy.wasm.runtime.v8",
+	},
 }
 
 var TestCases = []struct {
@@ -120,6 +125,20 @@ var TestCases = []struct {
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/disable_host_header_fallback.yaml.tmpl"},
 		},
 		ServerStats: map[string]driver.StatMatcher{},
+	},
+}
+
+var AttributeGenRuntimes = []struct {
+	AttributeGenFilterCode string
+	WasmRuntime            string
+}{
+	{
+		AttributeGenFilterCode: "inline_string: \"envoy.wasm.attributegen\"",
+		WasmRuntime:            "envoy.wasm.runtime.null",
+	},
+	{
+		AttributeGenFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/attributegen.wasm"),
+		WasmRuntime:            "envoy.wasm.runtime.v8",
 	},
 }
 
@@ -267,7 +286,6 @@ func TestStatsGrpc(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
-
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
@@ -294,5 +312,52 @@ func TestStatsGrpc(t *testing.T) {
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestAttributeGen(t *testing.T) {
+	for _, runtime := range AttributeGenRuntimes {
+		t.Run(runtime.WasmRuntime, func(t *testing.T) {
+			skipWasm(t, runtime.WasmRuntime)
+			params := driver.NewTestParams(t, map[string]string{
+				"RequestCount":               "10",
+				"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
+				"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
+				"AttributeGenFilterConfig":   runtime.AttributeGenFilterCode,
+				"AttributeGenWasmRuntime":    runtime.WasmRuntime,
+				"EnableMetadataExchange":     "true",
+				"WasmRuntime":                "envoy.wasm.runtime.null",
+				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/request_classification_config.yaml"),
+				"ResponseCodeClass":          "2xx",
+			}, envoye2e.ProxyE2ETests)
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/attributegen.yaml.tmpl") + "\n" +
+				params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+			if err := (&driver.Scenario{
+				[]driver.Step{
+					&driver.XDS{},
+					&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+					&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					&driver.Repeat{N: 10,
+						Step: &driver.HTTPCall{
+							Port: params.Ports.ClientPort,
+							Body: "hello, world!",
+						},
+					},
+					&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+						"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
+					}},
+				},
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }

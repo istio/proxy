@@ -74,6 +74,12 @@ ExporterImpl::ExporterImpl(
   // Construct grpc_service for the Stackdriver gRPC call.
   GrpcService grpc_service;
   grpc_service.mutable_google_grpc()->set_stat_prefix("stackdriver_logging");
+  if (stub_option.enable_log_compression) {
+    (*grpc_service.mutable_google_grpc()
+          ->mutable_channel_args()
+          ->mutable_args())[GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM]
+        .set_int_value(GRPC_COMPRESS_GZIP);
+  }
   buildEnvoyGrpcService(stub_option, &grpc_service);
   grpc_service.SerializeToString(&grpc_service_string_);
 }

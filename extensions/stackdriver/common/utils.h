@@ -42,6 +42,7 @@ struct StackdriverStubOption {
   std::string insecure_endpoint;
   std::string monitoring_endpoint;
   std::string project_id;
+  bool enable_log_compression;
 };
 
 // Build Envoy GrpcService proto based on the given stub option.
@@ -80,6 +81,9 @@ void setSTSCallCredentialOptions(
 void setSTSCallCredentialOptions(
     ::grpc::experimental::StsCredentialsOptions *sts_options,
     const std::string &sts_port, const std::string &token_path);
+
+// Return unknown if the given value is empty string.
+const std::string &unknownIfEmpty(const std::string &val);
 
 }  // namespace Common
 }  // namespace Stackdriver
