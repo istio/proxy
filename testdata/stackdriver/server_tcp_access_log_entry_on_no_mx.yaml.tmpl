@@ -3,32 +3,16 @@ labels:
   destination_service_host: server.default.svc.cluster.local
   response_flag: "-"
   service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
-  {{- if .Vars.SourceUnknownOnClose }}
-  source_name: ""
-  {{- else }}
   source_name: productpage-v1-84975bc778-pxz2w
-  {{- end }}
-  {{- if .Vars.SourceUnknownOnClose }}
-  source_namespace: ""
-  {{- else }}
   source_namespace: default
-  {{- end }}
   source_principal: "{{ .Vars.SourcePrincipal }}"
-  {{- if .Vars.SourceUnknownOnClose }}
-  source_workload: ""
-  {{- else }}
   source_workload: productpage-v1
-  {{- end }}
-  {{- if .Vars.SourceUnknownOnClose }}
-  # Don't log canonical stuff.
-  {{- else }}
   source_app: productpage
   source_canonical_service: productpage-v1
   source_canonical_revision: version-1
   source_version: v1
-  {{- end }}
   destination_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
   protocol: tcp
-  connection_state: "CLOSE"
+  connection_state: "OPEN"
   log_sampled: "false"
 severity: INFO

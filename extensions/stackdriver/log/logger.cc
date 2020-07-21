@@ -109,9 +109,22 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
   exporter_ = std::move(exporter);
 }
 
+void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                            const ::Wasm::Common::FlatNode& peer_node_info,
+                            long int log_time) {
+  // create a new log entry
+  auto* log_entries = log_entries_request_->mutable_entries();
+  auto* new_entry = log_entries->Add();
+
+  *new_entry->mutable_timestamp() =
+      google::protobuf::util::TimeUtil::NanosecondsToTimestamp(log_time);
+
+  addTCPLabelsToLogEntry(request_info, new_entry);
+  fillAndFlushLogEntry(request_info, peer_node_info, new_entry);
+}
+
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                         const ::Wasm::Common::FlatNode& peer_node_info,
-                         bool is_tcp) {
+                         const ::Wasm::Common::FlatNode& peer_node_info) {
   // create a new log entry
   auto* log_entries = log_entries_request_->mutable_entries();
   auto* new_entry = log_entries->Add();
@@ -119,6 +132,14 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   *new_entry->mutable_timestamp() =
       google::protobuf::util::TimeUtil::NanosecondsToTimestamp(
           request_info.start_time);
+  fillHTTPRequestInLogEntry(request_info, new_entry);
+  fillAndFlushLogEntry(request_info, peer_node_info, new_entry);
+}
+
+void Logger::fillAndFlushLogEntry(
+    const ::Wasm::Common::RequestInfo& request_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    google::logging::v2::LogEntry* new_entry) {
   new_entry->set_severity(::google::logging::type::INFO);
   auto label_map = new_entry->mutable_labels();
   (*label_map)["request_id"] = request_info.request_id;
@@ -164,12 +185,6 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   (*label_map)["protocol"] = request_info.request_protocol;
   (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
 
-  if (is_tcp) {
-    addTCPLabelsToLogEntry(request_info, new_entry);
-  } else {
-    // Insert HTTPRequest
-    fillHTTPRequestInLogEntry(request_info, new_entry);
-  }
   // Insert trace headers, if exist.
   if (request_info.b3_trace_sampled) {
     new_entry->set_trace("projects/" + project_id_ + "/traces/" +
@@ -224,10 +239,13 @@ void Logger::addTCPLabelsToLogEntry(
   auto label_map = log_entry->mutable_labels();
   (*label_map)["source_ip"] = request_info.source_address;
   (*label_map)["destination_ip"] = request_info.destination_address;
-  (*label_map)["source_port"] = request_info.source_port;
-  (*label_map)["destination_port"] = request_info.destination_port;
-  (*label_map)["total_sent_bytes"] = request_info.tcp_total_sent_bytes;
-  (*label_map)["total_received_bytes"] = request_info.tcp_total_received_bytes;
+  (*label_map)["source_port"] = std::to_string(request_info.source_port);
+  (*label_map)["destination_port"] =
+      std::to_string(request_info.destination_port);
+  (*label_map)["total_sent_bytes"] =
+      std::to_string(request_info.tcp_total_sent_bytes);
+  (*label_map)["total_received_bytes"] =
+      std::to_string(request_info.tcp_total_received_bytes);
   (*label_map)["connection_state"] =
       std::string(::Wasm::Common::TCPConnectionStateString(
           request_info.tcp_connection_state));

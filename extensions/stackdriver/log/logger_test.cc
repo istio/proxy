@@ -198,7 +198,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -223,7 +223,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   auto logger =
       std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
   for (int i = 0; i < 9; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(

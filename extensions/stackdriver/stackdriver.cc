@@ -80,6 +80,16 @@ int getLoggingExportIntervalMilliseconds() {
   return kDefaultLogExportMilliseconds;
 }
 
+// Get logging export interval from node metadata in nanoseconds. Returns 60
+// seconds if interval is not found in metadata.
+long int getTcpLogEntryTimeoutNanoseconds() {
+  std::string interval_s = "";
+  if (getValue({"node", "metadata", kTcpLogEntryTimeoutKey}, &interval_s)) {
+    return std::stoi(interval_s) * 1000000000;
+  }
+  return kDefaultTcpLogEntryTimeoutNanoseconds;
+}
+
 // Get port of security token exchange server from node metadata, if not
 // provided or "0" is provided, emtpy will be returned.
 std::string getSTSPort() {
@@ -212,6 +222,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
     // logger takes ownership of exporter.
     logger_ = std::make_unique<Logger>(local_node, std::move(exporter));
+    tcp_log_entry_timeout_ = getTcpLogEntryTimeoutNanoseconds();
   }
 
   if (!edge_reporter_ && enableEdgeReporting()) {
@@ -271,9 +282,6 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
 bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
-  if (enableServerAccessLog()) {
-    logger_->exportLogEntry(/* is_on_done= */ false);
-  }
   if (enableEdgeReporting()) {
     auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
     if ((cur - last_edge_epoch_report_call_nanos_) >
@@ -303,8 +311,12 @@ void StackdriverRootContext::onTick() {
     if (recordTCP(item.first)) {
       // Clear existing data in TCP metrics, so that we don't double count the
       // metrics.
-      clearTcpMetrics(*item.second);
+      clearTcpMetrics(*(item.second->request_info));
     }
+  }
+
+  if (enableServerAccessLog()) {
+    logger_->exportLogEntry(/* is_on_done= */ false);
   }
 }
 
@@ -352,7 +364,7 @@ void StackdriverRootContext::record() {
       !config_.disable_http_size_metrics());
   if (enableServerAccessLog() && shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ false);
+    logger_->addLogEntry(request_info, peer_node);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
@@ -384,16 +396,25 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   if (req_iter == tcp_request_queue_.end() || req_iter->second == nullptr) {
     return false;
   }
-  ::Wasm::Common::RequestInfo& request_info = *req_iter->second;
+  StackdriverRootContext::TcpRecordInfo& record_info = *(req_iter->second);
+  ::Wasm::Common::RequestInfo& request_info = *(record_info.request_info);
+
   // For TCP, if peer metadata is not available, peer id is set as not found.
   // Otherwise, we wait for metadata exchange to happen before we report  any
-  // metric.
+  // metric before a timeout.
   // We keep waiting if response flags is zero, as that implies, there has
   // been no error in connection.
   uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
-  if (!peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue &&
-      response_flags == 0) {
+  auto cur = static_cast<long int>(
+      proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
+  bool waiting_for_metadata =
+      !peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue;
+  bool no_error = response_flags == 0;
+  bool log_open_on_timeout =
+      !record_info.tcp_open_entry_logged &&
+      (cur - request_info.start_time) > tcp_log_entry_timeout_;
+  if (waiting_for_metadata && no_error && !log_open_on_timeout) {
     return false;
   }
   if (!request_info.is_populated) {
@@ -408,7 +429,28 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // to Stackdriver Logging Service.
   if (enableServerAccessLog()) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node, /* is_tcp = */ true);
+    // It's possible that for a short lived TCP connection, we log TCP
+    // Connection Open log entry on connection close.
+    if (!record_info.tcp_open_entry_logged &&
+        request_info.tcp_connection_state ==
+            ::Wasm::Common::TCPConnectionState::Close) {
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Open;
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                              record_info.request_info->start_time);
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Close;
+    }
+    logger_->addTcpLogEntry(request_info, peer_node,
+                            getCurrentTimeNanoseconds());
+  }
+  if (log_open_on_timeout) {
+    // If we logged the request on timeout, for outbound requests, we try to
+    // populate the request info again when metadata is available.
+    request_info.is_populated = outbound ? false : true;
+  }
+  if (!record_info.tcp_open_entry_logged) {
+    record_info.tcp_open_entry_logged = true;
   }
   return true;
 }
@@ -441,7 +483,13 @@ void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {
   std::unique_ptr<::Wasm::Common::RequestInfo> request_info =
       std::make_unique<::Wasm::Common::RequestInfo>();
   request_info->tcp_connections_opened++;
-  tcp_request_queue_[id] = std::move(request_info);
+  request_info->start_time = static_cast<long int>(
+      proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
+  std::unique_ptr<StackdriverRootContext::TcpRecordInfo> record_info =
+      std::make_unique<StackdriverRootContext::TcpRecordInfo>();
+  record_info->request_info = std::move(request_info);
+  record_info->tcp_open_entry_logged = false;
+  tcp_request_queue_[id] = std::move(record_info);
 }
 
 void StackdriverRootContext::deleteFromTCPRequestQueue(uint32_t id) {
@@ -449,22 +497,22 @@ void StackdriverRootContext::deleteFromTCPRequestQueue(uint32_t id) {
 }
 
 void StackdriverRootContext::incrementReceivedBytes(uint32_t id, size_t size) {
-  tcp_request_queue_[id]->tcp_received_bytes += size;
-  tcp_request_queue_[id]->tcp_total_received_bytes += size;
+  tcp_request_queue_[id]->request_info->tcp_received_bytes += size;
+  tcp_request_queue_[id]->request_info->tcp_total_received_bytes += size;
 }
 
 void StackdriverRootContext::incrementSentBytes(uint32_t id, size_t size) {
-  tcp_request_queue_[id]->tcp_sent_bytes += size;
-  tcp_request_queue_[id]->tcp_total_sent_bytes += size;
+  tcp_request_queue_[id]->request_info->tcp_sent_bytes += size;
+  tcp_request_queue_[id]->request_info->tcp_total_sent_bytes += size;
 }
 
 void StackdriverRootContext::incrementConnectionClosed(uint32_t id) {
-  tcp_request_queue_[id]->tcp_connections_closed++;
+  tcp_request_queue_[id]->request_info->tcp_connections_closed++;
 }
 
 void StackdriverRootContext::setConnectionState(
     uint32_t id, ::Wasm::Common::TCPConnectionState state) {
-  tcp_request_queue_[id]->tcp_connection_state = state;
+  tcp_request_queue_[id]->request_info->tcp_connection_state = state;
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.

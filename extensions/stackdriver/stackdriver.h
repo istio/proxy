@@ -43,7 +43,8 @@ namespace Stackdriver {
 constexpr long int kDefaultEdgeNewReportDurationNanoseconds =
     60000000000;  // 1m
 constexpr long int kDefaultEdgeEpochReportDurationNanoseconds =
-    600000000000;  // 10m
+    600000000000;                                                        // 10m
+constexpr long int kDefaultTcpLogEntryTimeoutNanoseconds = 60000000000;  // 1m
 
 #ifdef NULL_PLUGIN
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
@@ -100,6 +101,12 @@ class StackdriverRootContext : public RootContext {
   bool initialized() const { return initialized_; };
 
  private:
+  // Stores information about TCP request.
+  struct TcpRecordInfo {
+    std::unique_ptr<::Wasm::Common::RequestInfo> request_info;
+    bool tcp_open_entry_logged;
+  };
+
   // Indicates whether to export server access log or not.
   bool enableServerAccessLog();
 
@@ -138,9 +145,13 @@ class StackdriverRootContext : public RootContext {
   long int edge_epoch_report_duration_nanos_ =
       kDefaultEdgeEpochReportDurationNanoseconds;
 
+  long int tcp_log_entry_timeout_ = kDefaultTcpLogEntryTimeoutNanoseconds;
+
   bool use_host_header_fallback_;
   bool initialized_ = false;
-  std::unordered_map<uint32_t, std::shared_ptr<::Wasm::Common::RequestInfo>>
+
+  std::unordered_map<uint32_t,
+                     std::unique_ptr<StackdriverRootContext::TcpRecordInfo>>
       tcp_request_queue_;
 };
 
