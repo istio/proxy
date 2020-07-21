@@ -206,6 +206,8 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   stub_option.secure_endpoint = getSecureEndpoint();
   stub_option.insecure_endpoint = getInsecureEndpoint();
   stub_option.monitoring_endpoint = getMonitoringEndpoint();
+  stub_option.enable_log_compression = config_.has_enable_log_compression() &&
+                                       config_.enable_log_compression().value();
   const auto platform_metadata = local_node.platform_metadata();
   if (platform_metadata) {
     const auto project_iter = platform_metadata->LookupByKey(kGCPProjectKey);
