@@ -118,17 +118,6 @@ class StackdriverRootContext : public RootContext {
   // Indicates whether or not to report TCP Logs.
   bool enableTCPServerAccessLog();
 
-  // Helper functions to log the tcp request on open. On NewConnection, we don't
-  // have peer metadata available, thus we wait for peer metadata to be
-  // available. If it's available within a timeout, it is logged  via logTCPOpen
-  // function else via logTCPOpenOnTimeout function.
-  void logTCPOpenOnTimeout(StackdriverRootContext::TcpRecordInfo& record_info,
-                           const std::string& destination_namespace,
-                           bool outbound,
-                           const ::Wasm::Common::FlatNode& peer_node);
-  void logTCPOpen(StackdriverRootContext::TcpRecordInfo& record_info,
-                  const ::Wasm::Common::FlatNode& peer_node);
-
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
 

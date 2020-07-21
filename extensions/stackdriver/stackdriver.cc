@@ -434,7 +434,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     if (!record_info.tcp_open_entry_logged &&
         request_info.tcp_connection_state ==
             ::Wasm::Common::TCPConnectionState::Close) {
-      logTCPOpen(record_info, peer_node);
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Open;
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                              record_info.request_info->start_time);
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Close;
     }
     logger_->addTcpLogEntry(request_info, peer_node,
                             getCurrentTimeNanoseconds());
@@ -516,17 +521,6 @@ void StackdriverRootContext::setConnectionState(
 StackdriverRootContext* StackdriverContext::getRootContext() {
   RootContext* root = this->root();
   return dynamic_cast<StackdriverRootContext*>(root);
-}
-
-void StackdriverRootContext::logTCPOpen(
-    StackdriverRootContext::TcpRecordInfo& record_info,
-    const ::Wasm::Common::FlatNode& peer_node) {
-  record_info.request_info->tcp_connection_state =
-      ::Wasm::Common::TCPConnectionState::Open;
-  logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                          record_info.request_info->start_time);
-  record_info.request_info->tcp_connection_state =
-      ::Wasm::Common::TCPConnectionState::Close;
 }
 
 void StackdriverContext::onLog() {
