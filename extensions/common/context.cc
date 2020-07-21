@@ -337,6 +337,7 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
   getValue({"source", "address"}, &request_info->source_address);
   getValue({"destination", "address"}, &request_info->destination_address);
   getValue({"source", "port"}, &request_info->source_port);
+  getValue({"connection_id"}, &request_info->connection_id);
 }
 
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,

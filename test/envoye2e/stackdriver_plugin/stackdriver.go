@@ -96,6 +96,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 					delete(entry.Labels, "destination_port")
 					delete(entry.Labels, "total_sent_bytes")
 					delete(entry.Labels, "total_received_bytes")
+					delete(entry.Labels, "connection_id")
 				}
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
