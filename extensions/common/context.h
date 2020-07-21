@@ -142,6 +142,9 @@ struct RequestInfo {
   std::string source_principal;
   std::string destination_principal;
 
+  // Connection id of the TCP connection.
+  uint64_t connection_id;
+
   // The following fields will only be populated by calling
   // populateExtendedHTTPRequestInfo.
   std::string source_address;

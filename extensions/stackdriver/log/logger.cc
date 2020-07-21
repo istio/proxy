@@ -184,6 +184,7 @@ void Logger::fillAndFlushLogEntry(
           request_info.service_auth_policy));
   (*label_map)["protocol"] = request_info.request_protocol;
   (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
+  (*label_map)["connection_id"] = std::to_string(request_info.connection_id);
 
   // Insert trace headers, if exist.
   if (request_info.b3_trace_sampled) {

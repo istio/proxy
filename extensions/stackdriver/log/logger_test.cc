@@ -123,6 +123,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.referer = "www.google.com";
   request_info.source_address = "1.1.1.1";
   request_info.destination_address = "2.2.2.2";
+  request_info.connection_id = 0;
   return request_info;
 }
 
@@ -170,7 +171,8 @@ std::string write_log_request_json = R"({
            "source_workload":"test_peer_workload",
            "response_flag":"-",
            "protocol":"HTTP",
-           "log_sampled":"false"
+           "log_sampled":"false",
+           "connection_id":"0"
         },
         "trace":"projects/test_project/traces/123abc",
         "spanId":"abc123",
