@@ -106,7 +106,7 @@ bool PluginRootContext::onConfigure(size_t size) {
   envoy::source::extensions::common::wasm::DeclarePropertyArguments args;
   args.set_type(envoy::source::extensions::common::wasm::WasmType::FlatBuffers);
   args.set_span(
-      envoy::source::extensions::common::wasm::LifeSpan::DownstreamConnection);
+      envoy::source::extensions::common::wasm::LifeSpan::DownstreamRequest);
   args.set_schema(::Wasm::Common::nodeInfoSchema().data(),
                   ::Wasm::Common::nodeInfoSchema().size());
   std::string in;
@@ -114,6 +114,7 @@ bool PluginRootContext::onConfigure(size_t size) {
   args.SerializeToString(&in);
   proxy_call_foreign_function(function.data(), function.size(), in.data(),
                               in.size(), nullptr, nullptr);
+
   args.set_name(std::string(::Wasm::Common::kDownstreamMetadataKey));
   args.SerializeToString(&in);
   proxy_call_foreign_function(function.data(), function.size(), in.data(),
