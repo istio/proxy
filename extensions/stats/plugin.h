@@ -225,8 +225,8 @@ class PluginRootContext : public RootContext {
   // Report will return false when peer metadata exchange is not found for TCP,
   // so that we wait to report metrics till we find peer metadata or get
   // information that it's not available.
-  bool report(::Wasm::Common::RequestInfo& request_info, bool is_tcp);
-  bool outbound() const { return outbound_; }
+  bool report(::Wasm::Common::RequestInfo& request_info, bool is_tcp,
+              bool is_outbound);
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
   void addToTCPRequestQueue(
       uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
@@ -238,7 +238,7 @@ class PluginRootContext : public RootContext {
   const std::vector<MetricFactory>& defaultMetrics();
   // Update the dimensions and the expressions data structures with the new
   // configuration.
-  bool initializeDimensions(const ::nlohmann::json& j);
+  bool initializeDimensions(const ::nlohmann::json& j, bool is_outbound);
   // Destroy host resources for the allocated expressions.
   void cleanupExpressions();
   // Allocate an expression if necessary and return its token position.
@@ -265,7 +265,6 @@ class PluginRootContext : public RootContext {
 
   StringView peer_metadata_id_key_;
   StringView peer_metadata_key_;
-  bool outbound_;
   bool debug_;
   bool use_host_header_fallback_;
 
@@ -312,7 +311,9 @@ class PluginContext : public Context {
     if (is_tcp_) {
       cleanupTCPOnClose();
     }
-    rootContext()->report(*request_info_, is_tcp_);
+    is_outbound = ::Wasm::Common::TrafficDirection::Outbound ==
+                  ::Wasm::Common::getTrafficDirection();
+    rootContext()->report(*request_info_, is_tcp_, is_outbound);
   };
 
   FilterStatus onNewConnection() override {
