@@ -240,7 +240,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
   return default_metrics;
 }
 
-bool PluginRootContext::initializeDimensions(const json& j) {
+bool PluginRootContext::initializeDimensions(const json& j, bool is_outbound) {
   // Clean-up existing expressions.
   cleanupExpressions();
 
@@ -373,11 +373,11 @@ bool PluginRootContext::initializeDimensions(const json& j) {
 
   // Local data does not change, so populate it on config load.
   istio_dimensions_.resize(count_standard_labels + expressions_.size());
-  istio_dimensions_[reporter] = outbound_ ? source : destination;
+  istio_dimensions_[reporter] = is_outbound ? source : destination;
 
   const auto& local_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
-  map_node(istio_dimensions_, outbound_, local_node);
+  map_node(istio_dimensions_, is_outbound, local_node);
 
   // Instantiate stat factories using the new dimensions
   auto field_separator = JsonGetField<std::string>(j, "field_separator")
@@ -435,8 +435,8 @@ bool PluginRootContext::configure(size_t configuration_size) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
   }
-  outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
-              ::Wasm::Common::getTrafficDirection();
+  bool is_outbound = ::Wasm::Common::TrafficDirection::Outbound ==
+                     ::Wasm::Common::getTrafficDirection();
 
   auto result = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!result.has_value()) {
@@ -446,7 +446,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
   }
 
   auto j = result.value();
-  if (outbound_) {
+  if (is_outbound) {
     peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
     peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
   } else {
@@ -458,7 +458,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
   use_host_header_fallback_ =
       !JsonGetField<bool>(j, "disable_host_header_fallback").value_or(false);
 
-  if (!initializeDimensions(j)) {
+  if (!initializeDimensions(j, is_outbound)) {
     return false;
   }
 
@@ -539,7 +539,9 @@ void PluginRootContext::onTick() {
       continue;
     }
     context->setEffectiveContext();
-    if (report(*item.second, true)) {
+    bool is_outbound = ::Wasm::Common::TrafficDirection::Outbound ==
+                       ::Wasm::Common::getTrafficDirection();
+    if (report(*item.second, true, is_outbound)) {
       // Clear existing data in TCP metrics, so that we don't double count the
       // metrics.
       clearTcpMetrics(*item.second);
@@ -548,7 +550,7 @@ void PluginRootContext::onTick() {
 }
 
 bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
-                               bool is_tcp) {
+                               bool is_tcp, bool is_outbound) {
   std::string peer_id;
   bool peer_found = getValue({peer_metadata_id_key_}, &peer_id);
 
@@ -560,9 +562,9 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
 
   // map and overwrite previous mapping.
   const ::Wasm::Common::FlatNode* destination_node_info =
-      outbound_ ? peer_node
-                : flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-                      local_node_info_.data());
+      is_outbound ? peer_node
+                  : flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+                        local_node_info_.data());
   std::string destination_namespace =
       destination_node_info && destination_node_info->namespace_()
           ? destination_node_info->namespace_()->str()
@@ -580,16 +582,16 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
       return false;
     }
     if (!request_info.is_populated) {
-      ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info,
+      ::Wasm::Common::populateTCPRequestInfo(is_outbound, &request_info,
                                              destination_namespace);
     }
   } else {
-    ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
-                                            &request_info,
-                                            destination_namespace);
+    ::Wasm::Common::populateHTTPRequestInfo(
+        is_outbound, useHostHeaderFallback(), &request_info,
+        destination_namespace);
   }
 
-  map(istio_dimensions_, outbound_,
+  map(istio_dimensions_, is_outbound,
       peer_node ? *peer_node
                 : *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
                       empty_node_info_.data()),
