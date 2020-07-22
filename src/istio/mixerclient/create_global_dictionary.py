@@ -39,7 +39,7 @@ namespace {
 
 /*
  * Automatically generated global dictionary from
- * https://github.com/istio/api/blob/master/mixer/v1/global_dictionary.yaml
+ * https://github.com/istio/api/blob/release-1.7/mixer/v1/global_dictionary.yaml
  * by run:
  *  ./create_global_dictionary.py \
  *    bazel-mixerclient/external/mixerapi_git/mixer/v1/global_dictionary.yaml \

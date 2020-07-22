@@ -122,7 +122,7 @@ std::string MakeJwtFilterConfig() {
             - allow_missing_or_failed:
   )";
   // From
-  // https://github.com/istio/istio/blob/master/security/tools/jwt/samples/jwks.json
+  // https://github.com/istio/istio/blob/release-1.7/security/tools/jwt/samples/jwks.json
   constexpr char kJwksInline[] =
       "{ \"keys\":[ "
       "{\"e\":\"AQAB\",\"kid\":\"DHFbpoIUqrY8t2zpA2qXfCmr5VO5ZEr4RzHU_-envvQ\","
