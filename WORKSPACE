@@ -38,11 +38,11 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Commit date: 7/20/20
-ENVOY_SHA = "5dca4c64067783b463af7698411dd7a1d9cc5333"
+ENVOY_SHA = "1e379813e901f0d21f2ac6e41e5fe5cee4789237"
 
-ENVOY_SHA256 = "4550dfbf5fff8b73c8a3a5fe616c7541dad6e079c93f186c5183a9d56a5d628a"
+ENVOY_SHA256 = "511dd20471c86b894a354d2452d72f81584de88bdb41b94b7d1181e05fffc6c6"
 
-ENVOY_ORG = "envoyproxy"
+ENVOY_ORG = "jplevyak"
 
 ENVOY_REPO = "envoy-wasm"
 

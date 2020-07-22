@@ -14,6 +14,7 @@
  */
 #include "extensions/common/wasm/wasm.h"
 
+#include "common/stats/utility.h"
 #include "src/envoy/extensions/wasm/context.h"
 
 namespace Envoy {
@@ -21,6 +22,24 @@ namespace Extensions {
 namespace Common {
 namespace Wasm {
 namespace Istio {
+namespace {
+
+// This is unfortunately very complicated because
+struct ConfigStats {
+  ConfigStats(Stats::SymbolTable& symbol_table)
+      : stat_name_pool_(symbol_table) {}
+  Stats::StatNamePool stat_name_pool_;
+  // NB: Use pointers because references must be initialized in the
+  // initialization list which then would then require that all the component
+  // stat names to be member variables because stat_name_pool_.add() does not
+  // dedup so we can not create them as temporaries.
+  Stats::Counter* permanent_read_error_;
+  Stats::Counter* eventually_consistent_read_;
+  Stats::Counter* invalid_module_;
+  Stats::Counter* invalid_configuration_;
+};
+
+}  // namespace
 
 class IstioWasmVmIntegration : public EnvoyWasmVmIntegration {
  public:
@@ -77,7 +96,7 @@ class IstioWasmExtension : public EnvoyWasm {
   void resetStats() override;
 
  private:
-  std::unique_ptr<CreateWasmStats> create_wasm_stats_;
+  std::map<std::string, std::unique_ptr<ConfigStats>> config_stats_;
 };
 
 std::unique_ptr<EnvoyWasmVmIntegration>
@@ -115,22 +134,94 @@ WasmHandleExtensionCloneFactory IstioWasmExtension::wasmCloneFactory() {
   };
 }
 
+static std::string statsKey(const PluginSharedPtr& plugin) {
+  auto sep = std::string("\t");
+  return plugin->name_ + sep + plugin->runtime_;
+}
+
 void IstioWasmExtension::onEvent(WasmEvent event,
                                  const PluginSharedPtr& plugin) {
   EnvoyWasm::onEvent(event, plugin);
+  auto key = statsKey(plugin);
+  auto& stats = config_stats_.at(key);
+  switch (event) {
+    case EnvoyWasm::WasmEvent::Ok:
+    case EnvoyWasm::WasmEvent::RemoteLoadCacheHit:
+      break;
+    case EnvoyWasm::WasmEvent::RemoteLoadCacheNegativeHit:
+      stats->permanent_read_error_->inc();
+      break;
+    case EnvoyWasm::WasmEvent::RemoteLoadCacheMiss:
+      stats->eventually_consistent_read_->inc();
+      break;
+    case EnvoyWasm::WasmEvent::RemoteLoadCacheFetchSuccess:
+      break;
+    case EnvoyWasm::WasmEvent::RemoteLoadCacheFetchFailure:
+      stats->permanent_read_error_->inc();
+      break;
+    case EnvoyWasm::WasmEvent::UnableToCreateVM:
+    case EnvoyWasm::WasmEvent::UnableToCloneVM:
+    case EnvoyWasm::WasmEvent::MissingFunction:
+    case EnvoyWasm::WasmEvent::UnableToInitializeCode:
+      stats->invalid_module_->inc();
+      break;
+    case EnvoyWasm::WasmEvent::StartFailed:
+    case EnvoyWasm::WasmEvent::ConfigureFailed:
+      stats->invalid_configuration_->inc();
+      break;
+    case EnvoyWasm::WasmEvent::RuntimeError:
+      break;
+  }
 }
 
 void IstioWasmExtension::onRemoteCacheEntriesChanged(int entries) {
   EnvoyWasm::onRemoteCacheEntriesChanged(entries);
-  create_wasm_stats_->remote_load_cache_entries_.set(entries);
 }
 
+// NB: the "scope" here is tied to the lifetime of the filter chain in many
+// cases and may disappear. Code in envoy detects that and will call
+// resetStats().
 void IstioWasmExtension::createStats(const Stats::ScopeSharedPtr& scope,
                                      const PluginSharedPtr& plugin) {
   EnvoyWasm::createStats(scope, plugin);
+  auto istio_version = plugin->local_info_.node()
+                           .metadata()
+                           .fields()
+                           .at("ISTIO_VERSION")
+                           .string_value();
+  auto key = statsKey(plugin);
+  if (config_stats_.find(key) == config_stats_.end()) {
+    auto new_stats = std::make_unique<ConfigStats>(scope->symbolTable());
+    auto& pool = new_stats->stat_name_pool_;
+    auto prefix = pool.add("wasm_config_error");
+    auto error_type = pool.add("error_type");
+    auto plugin_name = pool.add("plugin_name");
+    auto name = pool.add(plugin->name_);
+    auto proxy_version = pool.add("proxy_version");
+    auto version = pool.add(istio_version);
+    auto vm = pool.add("vm");
+    auto runtime = pool.add(plugin->runtime_);
+    new_stats->permanent_read_error_ = &Stats::Utility::counterFromElements(
+        *scope, {prefix, error_type, pool.add("permanent_read_errors"),
+                 plugin_name, name, proxy_version, version, vm, runtime});
+    new_stats->eventually_consistent_read_ =
+        &Stats::Utility::counterFromElements(
+            *scope, {prefix, error_type, pool.add("eventually_consistent_read"),
+                     plugin_name, name, proxy_version, version, vm, runtime});
+    new_stats->invalid_module_ = &Stats::Utility::counterFromElements(
+        *scope, {prefix, error_type, pool.add("invalid_module"), plugin_name,
+                 name, proxy_version, version, vm, runtime});
+    new_stats->invalid_configuration_ = &Stats::Utility::counterFromElements(
+        *scope, {prefix, error_type, pool.add("invalid_configuration"),
+                 plugin_name, name, proxy_version, version, vm, runtime});
+    config_stats_[key] = std::move(new_stats);
+  }
 }
 
-void IstioWasmExtension::resetStats() { EnvoyWasm::resetStats(); }
+void IstioWasmExtension::resetStats() {
+  EnvoyWasm::resetStats();
+  config_stats_.clear();
+}
 
 REGISTER_WASM_EXTENSION(IstioWasmExtension);
 

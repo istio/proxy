@@ -171,7 +171,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
 
     auto vm_id = "";
     plugin_ = std::make_shared<Extensions::Common::Wasm::Plugin>(
-        c.name, c.root_id, vm_id, c.plugin_config, false,
+        c.name, c.root_id, vm_id, params.runtime, c.plugin_config, false,
         TrafficDirection::INBOUND, local_info_, &listener_metadata_);
     // creates a base VM
     // This is synchronous, even though it happens thru a callback due to null
