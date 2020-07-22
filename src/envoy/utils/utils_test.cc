@@ -16,8 +16,6 @@
 #include "src/envoy/utils/utils.h"
 
 #include "gmock/gmock.h"
-#include "mixer/v1/config/client/client_config.pb.h"
-#include "src/istio/mixerclient/check_context.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
 #include "test/mocks/stream_info/mocks.h"
@@ -25,7 +23,6 @@
 
 namespace {
 
-using Envoy::Utils::CheckResponseInfoToStreamInfo;
 using Envoy::Utils::ParseJsonMessage;
 using testing::NiceMock;
 using testing::Return;
@@ -72,51 +69,6 @@ class UtilsTest : public testing::TestWithParam<bool> {
     }
   }
 };
-
-TEST(UtilsTest, ParseNormalMessage) {
-  std::string config_str = R"({
-        "default_destination_service": "service.svc.cluster.local",
-      })";
-  ::istio::mixer::v1::config::client::HttpClientConfig http_config;
-
-  auto status = ParseJsonMessage(config_str, &http_config);
-  EXPECT_OK(status) << status;
-  EXPECT_EQ(http_config.default_destination_service(),
-            "service.svc.cluster.local");
-}
-
-TEST(UtilsTest, ParseMessageWithUnknownField) {
-  std::string config_str = R"({
-        "default_destination_service": "service.svc.cluster.local",
-        "unknown_field": "xxx",
-      })";
-  ::istio::mixer::v1::config::client::HttpClientConfig http_config;
-
-  EXPECT_OK(ParseJsonMessage(config_str, &http_config));
-  EXPECT_EQ(http_config.default_destination_service(),
-            "service.svc.cluster.local");
-}
-
-TEST(UtilsTest, CheckResponseInfoToStreamInfo) {
-  auto attributes = std::make_shared<::istio::mixerclient::SharedAttributes>();
-  ::istio::mixerclient::CheckContext check_response(
-      0U, false /* fail_open */, attributes);  // by default status is unknown
-  Envoy::StreamInfo::MockStreamInfo mock_stream_info;
-
-  EXPECT_CALL(
-      mock_stream_info,
-      setResponseFlag(
-          Envoy::StreamInfo::ResponseFlag::UnauthorizedExternalService));
-  EXPECT_CALL(mock_stream_info, setDynamicMetadata(_, _))
-      .WillOnce(Invoke(
-          [](const std::string& key, const Envoy::ProtobufWkt::Struct& value) {
-            EXPECT_EQ("istio.mixer", key);
-            EXPECT_EQ(1, value.fields().count("status"));
-            EXPECT_EQ("UNKNOWN", value.fields().at("status").string_value());
-          }));
-
-  CheckResponseInfoToStreamInfo(check_response, mock_stream_info);
-}
 
 TEST_P(UtilsTest, GetPrincipal) {
   std::vector<std::string> sans{"spiffe://foo/bar", "bad"};

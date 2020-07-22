@@ -16,8 +16,6 @@
 #include "src/envoy/utils/utils.h"
 
 #include "absl/strings/match.h"
-#include "include/istio/utils/attributes_builder.h"
-#include "mixer/v1/attributes.pb.h"
 
 using ::google::protobuf::Message;
 using ::google::protobuf::Struct;
@@ -202,19 +200,6 @@ Status ParseJsonMessage(const std::string& json, Message* output) {
   ::google::protobuf::util::JsonParseOptions options;
   options.ignore_unknown_fields = true;
   return ::google::protobuf::util::JsonStringToMessage(json, output, options);
-}
-
-void CheckResponseInfoToStreamInfo(
-    const istio::mixerclient::CheckResponseInfo& check_response,
-    StreamInfo::StreamInfo& stream_info) {
-  if (!check_response.status().ok()) {
-    stream_info.setResponseFlag(
-        StreamInfo::ResponseFlag::UnauthorizedExternalService);
-    ProtobufWkt::Struct metadata;
-    auto& fields = *metadata.mutable_fields();
-    fields["status"].set_string_value(check_response.status().ToString());
-    stream_info.setDynamicMetadata(istio::utils::kMixerMetadataKey, metadata);
-  }
 }
 
 }  // namespace Utils

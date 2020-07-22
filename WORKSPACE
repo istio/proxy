@@ -22,12 +22,12 @@ load(
     "//:repositories.bzl",
     "docker_dependencies",
     "googletest_repositories",
-    "mixerapi_dependencies",
+    "istioapi_dependencies",
 )
 
 googletest_repositories()
 
-mixerapi_dependencies()
+istioapi_dependencies()
 
 bind(
     name = "boringssl_crypto",

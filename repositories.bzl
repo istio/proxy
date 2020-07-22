@@ -110,7 +110,7 @@ ISTIO_API_SHA256 = "5bf68ef13f4b9e769b7ca0a9ce83d9da5263eed9b1223c4cbb388a6ad552
 GOGOPROTO_RELEASE = "1.2.1"
 GOGOPROTO_SHA256 = "99e423905ba8921e86817607a5294ffeedb66fdd4a85efce5eb2848f715fdb3a"
 
-def mixerapi_repositories(bind = True):
+def istioapi_repositories(bind = True):
     BUILD = """
 # Copyright 2018 Istio Authors. All Rights Reserved.
 #
@@ -128,54 +128,6 @@ def mixerapi_repositories(bind = True):
 #
 ################################################################################
 #
-
-proto_library(
-    name = "mixer_api_protos_lib",
-    srcs = glob(
-        [
-            "mixer/v1/*.proto",
-        ],
-    ),
-    visibility = ["//visibility:public"],
-    deps = [
-        "@com_github_gogo_protobuf//:gogo_proto",
-        "@com_google_googleapis//google/rpc:status_proto",
-        "@com_google_protobuf//:duration_proto",
-        "@com_google_protobuf//:timestamp_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "mixer_api_cc_proto",
-    deps = [
-        ":mixer_api_protos_lib",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-proto_library(
-    name = "mixer_client_config_proto_lib",
-    srcs = glob(
-        [
-        "mixer/v1/config/client/*.proto",
-        ],
-    ),
-    visibility = ["//visibility:public"],
-    deps = [
-        ":mixer_api_protos_lib",
-        "@com_github_gogo_protobuf//:gogo_proto",
-        "@com_google_googleapis//google/api:field_behavior_proto",
-        "@com_google_protobuf//:duration_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "mixer_client_config_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":mixer_client_config_proto_lib",
-    ],
-)
 
 proto_library(
     name = "authentication_policy_config_proto_lib",
@@ -238,12 +190,6 @@ cc_proto_library(
     ],
 )
 
-filegroup(
-    name = "global_dictionary_file",
-    srcs = ["mixer/v1/global_dictionary.yaml"],
-    visibility = ["//visibility:public"],
-)
-
 """
     GOGOPROTO_BUILD = """
 load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
@@ -298,7 +244,7 @@ py_proto_library(
         sha256 = GOGOPROTO_SHA256,
     )
     http_archive(
-        name = "mixerapi_git",
+        name = "istioapi_git",
         build_file_content = BUILD,
         strip_prefix = "api-" + ISTIO_API,
         url = "https://github.com/istio/api/archive/" + ISTIO_API + ".tar.gz",
@@ -306,29 +252,21 @@ py_proto_library(
     )
     if bind:
         native.bind(
-            name = "mixer_api_cc_proto",
-            actual = "@mixerapi_git//:mixer_api_cc_proto",
-        )
-        native.bind(
-            name = "mixer_client_config_cc_proto",
-            actual = "@mixerapi_git//:mixer_client_config_cc_proto",
-        )
-        native.bind(
             name = "authentication_policy_config_cc_proto",
-            actual = "@mixerapi_git//:authentication_policy_config_cc_proto",
+            actual = "@istioapi_git//:authentication_policy_config_cc_proto",
         )
         native.bind(
             name = "alpn_filter_config_cc_proto",
-            actual = "@mixerapi_git//:alpn_filter_config_cc_proto",
+            actual = "@istioapi_git//:alpn_filter_config_cc_proto",
         )
         native.bind(
             name = "tcp_cluster_rewrite_config_cc_proto",
-            actual = "@mixerapi_git//:tcp_cluster_rewrite_config_cc_proto",
+            actual = "@istioapi_git//:tcp_cluster_rewrite_config_cc_proto",
         )
 
-def mixerapi_dependencies():
+def istioapi_dependencies():
     go_x_tools_imports_repositories()
-    mixerapi_repositories()
+    istioapi_repositories()
 
 def docker_dependencies():
     http_archive(
