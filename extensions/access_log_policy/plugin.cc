@@ -160,7 +160,7 @@ bool PluginContext::isRequestFailed() {
   // Check if HTTP request is a failure.
   int64_t http_response_code = 0;
   if (getValue({kResponse, kCode}, &http_response_code) &&
-      http_response_code != 200) {
+      http_response_code >= 400) {
     return true;
   }
 
