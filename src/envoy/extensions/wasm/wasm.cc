@@ -24,7 +24,6 @@ namespace Wasm {
 namespace Istio {
 namespace {
 
-// This is unfortunately very complicated because
 struct ConfigStats {
   ConfigStats(Stats::SymbolTable& symbol_table)
       : stat_name_pool_(symbol_table) {}
@@ -193,7 +192,7 @@ void IstioWasmExtension::createStats(const Stats::ScopeSharedPtr& scope,
   if (config_stats_.find(key) == config_stats_.end()) {
     auto new_stats = std::make_unique<ConfigStats>(scope->symbolTable());
     auto& pool = new_stats->stat_name_pool_;
-    auto prefix = pool.add("wasm_config_error");
+    auto prefix = pool.add("istio_wasm_config_errors_total");
     auto error_type = pool.add("error_type");
     auto plugin_name = pool.add("plugin_name");
     auto name = pool.add(plugin->name_);
