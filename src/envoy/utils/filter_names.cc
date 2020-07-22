@@ -21,7 +21,7 @@ namespace Utils {
 // TODO: using more standard naming, e.g istio.jwt, istio.authn
 // TODO(yangminzhu): istio jwt filter has been removed. This can be removed as
 // well, which needs code change to make authn filter integration test pass:
-// https://github.com/istio/proxy/blob/master/src/envoy/http/authn/http_filter_integration_test.cc.
+// https://github.com/istio/proxy/blob/release-1.7/src/envoy/http/authn/http_filter_integration_test.cc.
 const char IstioFilterName::kJwt[] = "jwt-auth";
 const char IstioFilterName::kAuthentication[] = "istio_authn";
 const char IstioFilterName::kAlpn[] = "istio.alpn";

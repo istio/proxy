@@ -31,21 +31,21 @@ function build_all() {
 
 
   if [[ -d $GOPATH/src/istio.io/pilot ]]; then
-    (cd "$GOPATH"/src/istio.io/pilot || exit 1; git pull upstream master)
+    (cd "$GOPATH"/src/istio.io/pilot || exit 1; git pull upstream release-1.7)
   else
-    (cd "$GOPATH"/src/istio.io || exit 1; git clone https://github.com/istio/pilot)
+    (cd "$GOPATH"/src/istio.io || exit 1; git clone -b release-1.7 https://github.com/istio/pilot)
   fi
 
   if [[ -d $GOPATH/src/istio.io/istio ]]; then
-    (cd "$GOPATH"/src/istio.io/istio || exit 1; git pull upstream master)
+    (cd "$GOPATH"/src/istio.io/istio || exit 1; git pull upstream release-1.7)
   else
-    (cd "$GOPATH"/src/istio.io || exit 1; git clone https://github.com/istio/istio)
+    (cd "$GOPATH"/src/istio.io || exit 1; git clone -b release-1.7 https://github.com/istio/istio)
   fi
 
   if [[ -d $GOPATH/src/istio.io/mixer ]]; then
-    (cd "$GOPATH"/src/istio.io/mixer || exit 1; git pull upstream master)
+    (cd "$GOPATH"/src/istio.io/mixer || exit 1; git pull upstream release-1.7)
   else
-    (cd "$GOPATH"/src/istio.io || exit 1; git clone https://github.com/istio/mixer)
+    (cd "$GOPATH"/src/istio.io || exit 1; git clone -b release-1.7 https://github.com/istio/mixer)
   fi
 
   pushd "$GOPATH"/src/istio.io/pilot || exit 1
