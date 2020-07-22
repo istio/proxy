@@ -29,9 +29,9 @@ envoy_cc_test(
     ],
     repository = "@envoy",
     deps = [
-        "//src/istio/utils:attribute_names_lib",
         "//src/envoy/http/authn:filter_lib",
         "//src/envoy/utils:filter_names_lib",
+        "//src/istio/utils:attribute_names_lib",
         "@envoy//source/common/common:utility_lib",
         "@envoy//test/integration:http_protocol_integration_lib",
     ],
@@ -42,9 +42,9 @@ envoy_cc_test(
     srcs = ["exchanged_token_integration_test.cc"],
     repository = "@envoy",
     deps = [
-        "//src/istio/utils:attribute_names_lib",
         "//src/envoy/http/authn:filter_lib",
         "//src/envoy/utils:filter_names_lib",
+        "//src/istio/utils:attribute_names_lib",
         "@envoy//source/common/common:utility_lib",
         "@envoy//test/integration:http_protocol_integration_lib",
     ],
