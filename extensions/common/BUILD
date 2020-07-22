@@ -183,3 +183,24 @@ cc_library(
         "//external:abseil_strings",
     ],
 )
+
+envoy_cc_library(
+    name = "base64",
+    hdrs = [
+        "base64.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+)
+
+# TODO(shikugawa): These redundant build strategy is caused by the build problem of abseil.
+# This problem is resolved on https://github.com/abseil/abseil-cpp/pull/721
+# so we can destroy after that merged into upstream
+cc_library(
+    name = "base64_wasm",
+    hdrs = [
+        "base64.h",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    visibility = ["//visibility:public"],
+)

@@ -48,6 +48,37 @@ wasm_cc_binary(
 )
 
 wasm_cc_binary(
+    name = "authn.wasm",
+    srcs = [
+        "//extensions/authn:authenticator_base.h",
+        "//extensions/authn:authenticator_base.cc",
+        "//extensions/authn:authn_utils.h",
+        "//extensions/authn:authn_utils.cc",
+        "//extensions/authn:filter_context.h",
+        "//extensions/authn:filter_context.cc",
+        "//extensions/authn:origin_authenticator.h",
+        "//extensions/authn:origin_authenticator.cc",
+        "//extensions/authn:peer_authenticator.h",
+        "//extensions/authn:peer_authenticator.cc",
+        "//extensions/authn:plugin.h",
+        "//extensions/authn:plugin.cc",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    deps = [
+        "//external:authentication_policy_config_cc_proto",
+        "//external:abseil_strings",
+        "//src/istio/authn:context_proto_cc_wasm",
+        "//src/envoy/utils:filter_names_lib",
+        "//src/envoy/utils:utils_lib_wasm",
+        "//src/envoy/http/jwt_auth:jwt_lib_wasm",
+        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
+        "@envoy//source/common/http:headers_lib",
+        "@envoy//source/extensions/filters/http:well_known_names",
+    ],
+)
+
+wasm_cc_binary(
     name = "metadata_exchange.wasm",
     srcs = [
         "//extensions/common:context.cc",
@@ -56,12 +87,12 @@ wasm_cc_binary(
         "//extensions/common:proto_util.h",
         "//extensions/common:util.cc",
         "//extensions/common:util.h",
-        "//extensions/metadata_exchange:base64.h",
         "//extensions/metadata_exchange:plugin.cc",
         "//extensions/metadata_exchange:plugin.h",
     ],
     copts = ["-UNULL_PLUGIN"],
     deps = [
+        "//extensions/common:base64_wasm",
         "//extensions/common:json_util_wasm",
         "//extensions/common:node_info_fb_cc",
         "//extensions/metadata_exchange:declare_property_proto_cc",

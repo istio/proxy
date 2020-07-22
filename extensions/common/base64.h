@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 class Base64 {
  public:
   static std::string encode(const char* input, uint64_t length,
@@ -27,14 +29,14 @@ class Base64 {
   static std::string encode(const char* input, uint64_t length) {
     return encode(input, length, true);
   }
-  static std::string decodeWithoutPadding(std::string_view input);
+  static std::string decodeWithoutPadding(absl::string_view input);
 };
 
 // clang-format off
-inline constexpr char CHAR_TABLE[] =
+constexpr char CHAR_TABLE[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-inline constexpr unsigned char REVERSE_LOOKUP_TABLE[256] = {
+constexpr unsigned char REVERSE_LOOKUP_TABLE[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63,
     52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,
@@ -157,9 +159,9 @@ inline std::string Base64::encode(const char* input, uint64_t length,
   return ret;
 }
 
-inline std::string Base64::decodeWithoutPadding(StringView input) {
+inline std::string Base64::decodeWithoutPadding(absl::string_view input) {
   if (input.empty()) {
-    return EMPTY_STRING;
+    return "";
   }
 
   // At most last two chars can be '='.
@@ -185,14 +187,14 @@ inline std::string Base64::decodeWithoutPadding(StringView input) {
   ret.reserve(max_length);
   for (uint64_t i = 0; i < last; ++i) {
     if (!decodeBase(input[i], i, ret, REVERSE_LOOKUP_TABLE)) {
-      return EMPTY_STRING;
+      return "";
     }
   }
 
   if (!decodeLast(input[last], last, ret, REVERSE_LOOKUP_TABLE)) {
-    return EMPTY_STRING;
+    return "";
   }
 
-  ASSERT(ret.size() == max_length);
+  assert(ret.size() == max_length);
   return ret;
 }

@@ -27,3 +27,10 @@ envoy_proto_library(
     srcs = ["context.proto"],
     external_deps = ["well_known_protos"],
 )
+
+cc_proto_library(
+    name = "context_proto_cc_wasm",
+    deps = [
+        ":context_proto",
+    ],
+)

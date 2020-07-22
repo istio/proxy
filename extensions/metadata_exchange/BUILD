@@ -50,5 +50,3 @@ cc_proto_library(
     name = "declare_property_proto_cc",
     deps = [":declare_property_proto"],
 )
-
-exports_files(["base64.h"])

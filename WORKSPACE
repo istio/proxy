@@ -18,6 +18,7 @@ workspace(name = "io_istio_proxy")
 
 # http_archive is not a native function since bazel 0.19
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load(
     "//:repositories.bzl",
     "docker_dependencies",
