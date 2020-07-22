@@ -421,9 +421,12 @@ func TestStackdriverAccessLog(t *testing.T) {
 		respCode          string
 		logEntryCount     int
 	}{
-		{"StackdriverAndAccessLogPlugin", "15s", 0, "200", 1},
-		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, "200", 2},
-		{"AllErrorRequestsGetsLogged", "1s", 0, "500", 10},
+		{"StackdriverAndAccessLogPluginFor200OK", "15s", 0, "200", 1},
+		{"StackdriverAndAccessLogPluginFor307TemporaryRedirect", "15s", 0, "307", 1},
+		{"RequestGetsLoggedAgainFor200OK", "1s", 1 * time.Second, "200", 2},
+		{"RequestGetsLoggedAgainFor307TemporaryRedirect", "1s", 1 * time.Second, "307", 2},
+		{"AllErrorRequestsGetsLoggedFor403Forbidden", "1s", 0, "403", 10},
+		{"AllErrorRequestsGetsLoggedFor500InternalServerError", "1s", 0, "500", 10},
 	}
 
 	for _, tt := range TestCases {
