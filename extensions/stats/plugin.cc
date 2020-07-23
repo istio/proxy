@@ -435,8 +435,6 @@ bool PluginRootContext::configure(size_t configuration_size) {
     LOG_WARN("cannot parse local node metadata ");
     return false;
   }
-  outbound_ = ::Wasm::Common::TrafficDirection::Outbound ==
-              ::Wasm::Common::getTrafficDirection();
 
   auto result = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!result.has_value()) {
