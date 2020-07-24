@@ -1,0 +1,10 @@
+{
+  "basic_auth_configuration": [
+    { 
+      "request_path":"/api/reviews/pay",
+      "match": "exact",
+      "request_methods":[ "GET", "POST" ],
+      "credentials":[ "admin:admin", "admin2:admin2" ] 
+    }
+  ]
+}
