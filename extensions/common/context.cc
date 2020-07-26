@@ -229,8 +229,11 @@ google::protobuf::util::Status extractNodeMetadata(
             platform_it.second.string_value();
       }
     } else if (it.first == "APP_CONTAINERS") {
-      for (const auto& containers_it : it.second.list_value().values()) {
-        node_info->add_app_containers(containers_it.string_value());
+      std::vector<absl::string_view> containers =
+          absl::StrSplit(it.second.string_value(), ',');
+
+      for (const auto& containers_it : containers) {
+        node_info->add_app_containers(std::string(containers_it));
       }
     }
   }
