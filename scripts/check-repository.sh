@@ -28,7 +28,7 @@ fi
 
 # Check whether workspace file has `ENVOY_SHA = "` presented.
 # This is needed by release builder to resolve envoy dep sha to tag.
-if ! grep -q 'ENVOY_SHA = "' WORKSPACE; then
-  echo "'ENVOY_SHA = ' does not present in WORKSPACE file, release builder depends on it to resolve envoy dep sha to tag."
+if ! grep -Pq "ENVOY_SHA = \"[a-zA-Z0-9]{40}\"" WORKSPACE; then
+  echo "'ENVOY_SHA' is not set properly in WORKSPACE file, release builder depends on it to resolve envoy dep sha to tag."
   exit 1
 fi
