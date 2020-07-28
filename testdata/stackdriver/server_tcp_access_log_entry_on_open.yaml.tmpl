@@ -31,4 +31,9 @@ labels:
   protocol: tcp
   connection_state: "OPEN"
   log_sampled: "false"
+  upstream_cluster: "inbound|9080|tcp|server.default.svc.cluster.local"
+  route_name: ""
+  requested_server_name: "server.com"
+  x-envoy-original-dst-host: ""
+  x-envoy-original-path: ""
 severity: INFO

@@ -142,7 +142,7 @@ void Logger::fillAndFlushLogEntry(
     google::logging::v2::LogEntry* new_entry) {
   new_entry->set_severity(::google::logging::type::INFO);
   auto label_map = new_entry->mutable_labels();
-  (*label_map)["request_id"] = request_info.request_id;
+
   (*label_map)["source_name"] = flatbuffers::GetString(peer_node_info.name());
   (*label_map)["source_workload"] =
       flatbuffers::GetString(peer_node_info.workload_name());
@@ -185,6 +185,13 @@ void Logger::fillAndFlushLogEntry(
   (*label_map)["protocol"] = request_info.request_protocol;
   (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
   (*label_map)["connection_id"] = std::to_string(request_info.connection_id);
+  (*label_map)["route_name"] = request_info.route_name;
+  (*label_map)["upstream_host"] = request_info.upstream_host;
+  (*label_map)["upstream_cluster"] = request_info.upstream_cluster;
+  (*label_map)["requested_server_name"] = request_info.request_serever_name;
+  (*label_map)["x-envoy-original-path"] = request_info.x_envoy_original_path;
+  (*label_map)["x-envoy-original-dst-host"] =
+      request_info.x_envoy_original_dst_host;
 
   // Insert trace headers, if exist.
   if (request_info.b3_trace_sampled) {
@@ -270,6 +277,8 @@ void Logger::fillHTTPRequestInLogEntry(
       google::protobuf::util::TimeUtil::NanosecondsToDuration(
           request_info.duration);
   http_request->set_referer(request_info.referer);
+  auto label_map = log_entry->mutable_labels();
+  (*label_map)["request_id"] = request_info.request_id;
 }
 
 }  // namespace Log

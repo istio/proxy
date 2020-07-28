@@ -19,4 +19,9 @@ labels:
   source_version: v1
   protocol: http
   log_sampled: "true"
+  upstream_cluster: "inbound|9080|http|server.default.svc.cluster.local"
+  route_name: ""
+  requested_server_name: ""
+  x-envoy-original-dst-host: ""
+  x-envoy-original-path: ""
 severity: INFO
