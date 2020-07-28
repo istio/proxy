@@ -105,8 +105,8 @@ cc_library(
 # 1) find the ISTIO_API SHA you want in git
 # 2) wget https://github.com/istio/api/archive/$ISTIO_API_SHA.tar.gz && sha256sum $ISTIO_API_SHA.tar.gz
 #
-ISTIO_API = "31d048906d97fb7f6b1fa8e250d3fa07456c5acc"
-ISTIO_API_SHA256 = "5bf68ef13f4b9e769b7ca0a9ce83d9da5263eed9b1223c4cbb388a6ad5520e01"
+ISTIO_API = "597c9cfc0332eb1411773ae0cc514ca617df18c2"
+ISTIO_API_SHA256 = "586e5071f42c43f850a1271f7fbf705a797c5107fb61b3d2a5c13b6776d03388"
 GOGOPROTO_RELEASE = "1.2.1"
 GOGOPROTO_SHA256 = "99e423905ba8921e86817607a5294ffeedb66fdd4a85efce5eb2848f715fdb3a"
 
@@ -149,6 +149,29 @@ cc_proto_library(
     visibility = ["//visibility:public"],
     deps = [
         ":authentication_policy_config_proto_lib",
+    ],
+)
+
+proto_library(
+    name = "security_authentication_config_proto_lib",
+    srcs = glob(
+        ["security/v1beta1/*.proto",
+         "envoy/config/filter/http/authn/v2alpha2/*.proto",
+         "type/v1beta1/*.proto",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_googleapis//google/api:field_behavior_proto",
+        "@com_github_gogo_protobuf//:gogo_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "security_authentication_config_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":security_authentication_config_proto_lib",
     ],
 )
 
@@ -254,6 +277,10 @@ py_proto_library(
         native.bind(
             name = "authentication_policy_config_cc_proto",
             actual = "@istioapi_git//:authentication_policy_config_cc_proto",
+        )
+        native.bind(
+            name = "security_authentication_config_cc_proto",
+            actual = "@istioapi_git//:security_authentication_config_cc_proto",
         )
         native.bind(
             name = "alpn_filter_config_cc_proto",

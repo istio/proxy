@@ -22,8 +22,7 @@
 using google::protobuf::util::MessageDifferencer;
 using istio::authn::JwtPayload;
 
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
 namespace {
 
@@ -250,102 +249,26 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
 
-TEST(AuthnUtilsTest, MatchString) {
-  iaapi::StringMatch match;
-  EXPECT_FALSE(AuthnUtils::MatchString(nullptr, match));
-  EXPECT_FALSE(AuthnUtils::MatchString("", match));
+TEST(AuthnUtilsTest, ExtractOriginalPayloadTest) {
+  std::string payload_str;
+  std::string token = R"(
+     {
+       "iss": "token-service",
+       "sub": "subject",
+       "aud": ["aud1", "aud2"],
+       "original_claims": {
+         "iss": "https://accounts.example.com",
+         "sub": "example-subject",
+         "email": "user@example.com"
+       }
+     }
+   )";
+  EXPECT_TRUE(AuthnUtils::ExtractOriginalPayload(token, &payload_str));
 
-  match.set_exact("exact");
-  EXPECT_TRUE(AuthnUtils::MatchString("exact", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("exac", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("exacy", match));
-
-  match.set_prefix("prefix");
-  EXPECT_TRUE(AuthnUtils::MatchString("prefix-1", match));
-  EXPECT_TRUE(AuthnUtils::MatchString("prefix", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("prefi", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("prefiy", match));
-
-  match.set_suffix("suffix");
-  EXPECT_TRUE(AuthnUtils::MatchString("1-suffix", match));
-  EXPECT_TRUE(AuthnUtils::MatchString("suffix", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("suffi", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("suffiy", match));
-
-  match.set_regex(".+abc.+");
-  EXPECT_TRUE(AuthnUtils::MatchString("1-abc-1", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("1-abc", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("abc-1", match));
-  EXPECT_FALSE(AuthnUtils::MatchString("1-ac-1", match));
-}
-
-TEST(AuthnUtilsTest, ShouldValidateJwtPerPathExcluded) {
-  iaapi::Jwt jwt;
-
-  // Create a rule that triggers on everything except /good-x and /allow-x.
-  auto* rule = jwt.add_trigger_rules();
-  rule->add_excluded_paths()->set_exact("/good-x");
-  rule->add_excluded_paths()->set_exact("/allow-x");
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-1", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
-
-  // Change the rule to only triggers on prefix /good and /allow.
-  rule->add_included_paths()->set_prefix("/good");
-  rule->add_included_paths()->set_prefix("/allow");
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-1", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
-}
-
-TEST(AuthnUtilsTest, ShouldValidateJwtPerPathIncluded) {
-  iaapi::Jwt jwt;
-
-  // Create a rule that triggers on everything with prefix /good and /allow.
-  auto* rule = jwt.add_trigger_rules();
-  rule->add_included_paths()->set_prefix("/good");
-  rule->add_included_paths()->set_prefix("/allow");
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-2", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
-
-  // Change the rule to also exclude /allow-x and /good-x.
-  rule->add_excluded_paths()->set_exact("/good-x");
-  rule->add_excluded_paths()->set_exact("/allow-x");
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/good-x", jwt));
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/allow-x", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/good-2", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/allow-1", jwt));
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
-}
-
-TEST(AuthnUtilsTest, ShouldValidateJwtPerPathDefault) {
-  iaapi::Jwt jwt;
-
-  // Always trigger when path is unavailable.
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("", jwt));
-
-  // Always trigger when there is no rules in jwt.
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/test", jwt));
-
-  // Add a rule that triggers on everything except /hello.
-  jwt.add_trigger_rules()->add_excluded_paths()->set_exact("/hello");
-  EXPECT_FALSE(AuthnUtils::ShouldValidateJwtPerPath("/hello", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
-
-  // Add another rule that triggers on path /hello.
-  jwt.add_trigger_rules()->add_included_paths()->set_exact("/hello");
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/hello", jwt));
-  EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
+  std::string token2 = "{}";
+  EXPECT_FALSE(AuthnUtils::ExtractOriginalPayload(token2, &payload_str));
 }
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+}  // namespace Extensions

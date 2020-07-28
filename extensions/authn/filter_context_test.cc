@@ -22,10 +22,7 @@
 using istio::authn::Payload;
 using testing::StrictMock;
 
-namespace iaapi = istio::authentication::v1alpha1;
-
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
 namespace {
 
@@ -38,18 +35,10 @@ class FilterContextTest : public testing::Test {
   // This test suit does not use connection, so ok to use null for it.
   FilterContext filter_context_{metadata_, header_, nullptr,
                                 istio::envoy::config::filter::http::authn::
-                                    v2alpha1::FilterConfig::default_instance()};
+                                    v2alpha2::FilterConfig::default_instance()};
 
-  Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 };
-
-TEST_F(FilterContextTest, SetPeerResult) {
-  filter_context_.setPeerResult(&x509_payload_);
-  EXPECT_TRUE(Envoy::TestUtility::protoEqual(
-      TestUtilities::AuthNResultFromString("peer_user: \"foo\""),
-      filter_context_.authenticationResult()));
-}
 
 TEST_F(FilterContextTest, SetOriginResult) {
   filter_context_.setOriginResult(&jwt_payload_);
@@ -63,71 +52,6 @@ TEST_F(FilterContextTest, SetOriginResult) {
                                      filter_context_.authenticationResult()));
 }
 
-TEST_F(FilterContextTest, SetBoth) {
-  filter_context_.setPeerResult(&x509_payload_);
-  filter_context_.setOriginResult(&jwt_payload_);
-  EXPECT_TRUE(
-      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
-        peer_user: "foo"
-        origin {
-          user: "bar"
-          presenter: "istio.io"
-        }
-      )"),
-                                     filter_context_.authenticationResult()));
-}
-
-TEST_F(FilterContextTest, UseOrigin) {
-  filter_context_.setPeerResult(&x509_payload_);
-  filter_context_.setOriginResult(&jwt_payload_);
-  filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_ORIGIN);
-  EXPECT_TRUE(
-      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
-        principal: "bar"
-        peer_user: "foo"
-        origin {
-          user: "bar"
-          presenter: "istio.io"
-        }
-      )"),
-                                     filter_context_.authenticationResult()));
-}
-
-TEST_F(FilterContextTest, UseOriginOnEmptyOrigin) {
-  filter_context_.setPeerResult(&x509_payload_);
-  filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_ORIGIN);
-  EXPECT_TRUE(
-      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
-        peer_user: "foo"
-      )"),
-                                     filter_context_.authenticationResult()));
-}
-
-TEST_F(FilterContextTest, PrincipalUsePeer) {
-  filter_context_.setPeerResult(&x509_payload_);
-  filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_PEER);
-  EXPECT_TRUE(
-      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
-        principal: "foo"
-        peer_user: "foo"
-      )"),
-                                     filter_context_.authenticationResult()));
-}
-
-TEST_F(FilterContextTest, PrincipalUsePeerOnEmptyPeer) {
-  filter_context_.setOriginResult(&jwt_payload_);
-  filter_context_.setPrincipal(iaapi::PrincipalBinding::USE_PEER);
-  EXPECT_TRUE(
-      Envoy::TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(
-        origin {
-          user: "bar"
-          presenter: "istio.io"
-        }
-      )"),
-                                     filter_context_.authenticationResult()));
-}
-
 }  // namespace
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+}  // namespace Extensions

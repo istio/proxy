@@ -20,32 +20,21 @@
 #include "security/v1beta1/request_authentication.pb.h"
 #include "src/istio/authn/context.pb.h"
 
-// WASM_PROLOG
-#ifndef NULL_PLUGIN
-
-#include "proxy_wasm_intrinsics.h"
-
-#else  // NULL_PLUGIN
-
-#include "include/proxy-wasm/null_plugin.h"
-
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
 
-#endif  // NULL_PLUGIN
-
 class IRequestAuthenticator {
-public:
-    virtual ~IRequestAuthenticator() = default;
+ public:
+  virtual ~IRequestAuthenticator() = default;
 
-    // Validates JWT given the jwt params. If JWT is validated, it will extract
-    // attributes and claims (JwtPayload), returns status SUCCESS.
-    // Otherwise, returns status FAILED.
-    virtual bool validateJwt(istio::authn::JwtPayload* jwt) PURE;
+  // Validates JWT given the jwt params. If JWT is validated, it will extract
+  // attributes and claims (JwtPayload), returns status SUCCESS.
+  // Otherwise, returns status FAILED.
+  virtual bool validateJwt(istio::authn::JwtPayload* jwt) PURE;
 };
 
-// RequestAuthenticator performs origin authentication for given credential rule.
+// RequestAuthenticator performs origin authentication for given credential
+// rule.
 class RequestAuthenticator : public IRequestAuthenticator {
  public:
   RequestAuthenticator(
@@ -68,8 +57,5 @@ class RequestAuthenticator : public IRequestAuthenticator {
   FilterContextPtr filter_context_;
 };
 
-#ifdef NULL_PLUGIN
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
-#endif
+}  // namespace Extensions

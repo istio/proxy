@@ -25,14 +25,10 @@
 #include "test/test_common/utility.h"
 
 using google::protobuf::util::MessageDifferencer;
-using istio::authn::JwtPayload;
 using istio::authn::Result;
-using testing::NiceMock;
 using testing::Return;
-using testing::StrictMock;
 
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
 namespace {
 
@@ -202,7 +198,8 @@ TEST_F(ValidateJwtTest, HasJwtPayloadOutPutButWithInvalidData) {
 }
 
 TEST_F(ValidateJwtTest, MultipleJwtRulesWithValidJwt) {
-  std::array<std::string, 3> issuer{"issuer2@foo.com", "issuer1@foo.com", "issuer@foo.com"};
+  std::array<std::string, 3> issuer{"issuer2@foo.com", "issuer1@foo.com",
+                                    "issuer@foo.com"};
   for (auto&& i : issuer) {
     istio::security::v1beta1::JWTRule jwt_rule;
     jwt_rule.set_issuer(i);
@@ -221,7 +218,8 @@ TEST_F(ValidateJwtTest, MultipleJwtRulesWithValidJwt) {
 }
 
 TEST_F(ValidateJwtTest, MultipleJwtRulesWithInvalidJwt) {
-  std::array<std::string, 3> issuer{"issuer2@foo.com", "issuer1@foo.com", "issuer@foo.com"};
+  std::array<std::string, 3> issuer{"issuer2@foo.com", "issuer1@foo.com",
+                                    "issuer@foo.com"};
   for (auto&& i : issuer) {
     istio::security::v1beta1::JWTRule jwt_rule;
     jwt_rule.set_issuer(i);
@@ -371,7 +369,7 @@ static constexpr absl::string_view kSingleOriginMethodPolicy = R"(
 )";
 
 class MockRequestAuthenticator : public RequestAuthenticator {
-public:
+ public:
   MockRequestAuthenticator(
       FilterContextPtr filter_context,
       const istio::security::v1beta1::RequestAuthentication& policy);
@@ -379,8 +377,9 @@ public:
 };
 
 MockRequestAuthenticator::MockRequestAuthenticator(
-      FilterContextPtr filter_context,
-      const istio::security::v1beta1::RequestAuthentication& policy) : RequestAuthenticator(filter_context, policy) {}
+    FilterContextPtr filter_context,
+    const istio::security::v1beta1::RequestAuthentication& policy)
+    : RequestAuthenticator(filter_context, policy) {}
 
 class RequestAuthenticatorTest : public testing::Test {
  public:
@@ -389,8 +388,8 @@ class RequestAuthenticatorTest : public testing::Test {
 
   void createAuthenticator() {
     authenticator_.reset();
-    authenticator_ =
-        std::make_unique<MockRequestAuthenticator>(filter_context_, request_authentication_policy_);
+    authenticator_ = std::make_unique<MockRequestAuthenticator>(
+        filter_context_, request_authentication_policy_);
   }
 
  protected:
@@ -401,7 +400,8 @@ class RequestAuthenticatorTest : public testing::Test {
       envoy::config::core::v3::Metadata::default_instance(), header_, nullptr,
       istio::envoy::config::filter::http::authn::v2alpha2::FilterConfig::
           default_instance())};
-  istio::security::v1beta1::RequestAuthentication request_authentication_policy_;
+  istio::security::v1beta1::RequestAuthentication
+      request_authentication_policy_;
   istio::authn::Payload jwt_payload_;
   Result expected_result_;
 };
@@ -410,8 +410,8 @@ TEST_F(RequestAuthenticatorTest, Empty) {
   createAuthenticator();
 
   EXPECT_FALSE(authenticator_->run(&jwt_payload_));
-  EXPECT_TRUE(
-          MessageDifferencer::Equals(expected_result_, filter_context_->authenticationResult()));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      expected_result_, filter_context_->authenticationResult()));
 }
 
 TEST_F(RequestAuthenticatorTest, Pass) {
@@ -419,7 +419,7 @@ TEST_F(RequestAuthenticatorTest, Pass) {
       kSingleOriginMethodPolicy.data(), &request_authentication_policy_));
   jwt_payload_ = TestUtilities::CreateJwtPayload("foo", "istio.io");
   createAuthenticator();
-  
+
   EXPECT_CALL(*authenticator_, validateJwt(_)).WillOnce(Return(true));
   EXPECT_TRUE(authenticator_->run(&jwt_payload_));
 }
@@ -439,5 +439,4 @@ TEST_F(RequestAuthenticatorTest, CORSPreflight) {
 
 }  // namespace
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+}  // namespace Extensions

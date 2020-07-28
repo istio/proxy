@@ -21,20 +21,8 @@
 
 using istio::authn::Payload;
 
-// WASM_PROLOG
-#ifndef NULL_PLUGIN
-
-#include "proxy_wasm_intrinsics.h"
-
-#else  // NULL_PLUGIN
-
-#include "include/proxy-wasm/null_plugin.h"
-
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
-
-#endif  // NULL_PLUGIN
 
 namespace {
 // The default header name for an exchanged token
@@ -69,14 +57,13 @@ bool isCORSPreflightRequest(const Envoy::Http::RequestHeaderMap& headers) {
 RequestAuthenticator::RequestAuthenticator(
     FilterContextPtr filter_context,
     const istio::security::v1beta1::RequestAuthentication& policy)
-    : request_authentication_policy_(policy),filter_context_(filter_context) {}
+    : request_authentication_policy_(policy), filter_context_(filter_context) {}
 
 bool RequestAuthenticator::run(Payload* payload) {
   if (isCORSPreflightRequest(filter_context_->headerMap())) {
     // The CORS preflight doesn't include user credentials, allow regardless of
     // JWT policy. See
     // http://www.w3.org/TR/cors/#cross-origin-request-with-preflight.
-    // logDebug("CORS preflight request allowed regardless of JWT policy");
     return true;
   }
 
@@ -123,7 +110,7 @@ bool RequestAuthenticator::validateJwt(istio::authn::JwtPayload* jwt) {
       // is extracted and used as the token payload.
       payload_to_process = original_payload;
     }
-    std::cout << payload_to_process << std::endl;
+
     if (AuthnUtils::ProcessJwtPayload(payload_to_process, jwt)) {
       return true;
     }
@@ -131,8 +118,5 @@ bool RequestAuthenticator::validateJwt(istio::authn::JwtPayload* jwt) {
   return false;
 }
 
-#ifdef NULL_PLUGIN
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
-#endif
+}  // namespace Extensions

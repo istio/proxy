@@ -23,26 +23,8 @@
 #include "extensions/common/json_util.h"
 #include "google/protobuf/struct.pb.h"
 
-// WASM_PROLOG
-#ifndef NULL_PLUGIN
-
-#include "proxy_wasm_intrinsics.h"
-
-#else  // NULL_PLUGIN
-
-#include "include/proxy-wasm/null_plugin.h"
-
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
-
-using proxy_wasm::null_plugin::logDebug;
-using proxy_wasm::null_plugin::logError;
-using proxy_wasm::null_plugin::logTrace;
-using proxy_wasm::null_plugin::logWarn;
-
-#endif  // NULL_PLUGIN
-
 namespace {
 // The JWT audience key name
 static const std::string kJwtAudienceKey = "aud";
@@ -60,7 +42,6 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
     return false;
   }
   auto json_obj = result.value();
-  // logDebug(absl::StrCat(__FUNCTION__, ": json object is ", json_obj.dump()));
 
   *payload->mutable_raw_claims() = payload_str;
 
@@ -133,8 +114,6 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
           json_obj, kExchangedTokenOriginalPayload);
   if (original_payload_obj.detail() !=
       Wasm::Common::JsonParserResultDetail::OK) {
-    // logDebug(absl::StrCat(__FUNCTION__, ": original_payload in exchanged
-    // token is of invalid format."));
     return false;
   }
   *original_payload = original_payload_obj.value().dump();
@@ -142,74 +121,5 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
   return true;
 }
 
-// bool AuthnUtils::MatchString(absl::string_view str,
-//                              const iaapi::StringMatch& match) {
-//   switch (match.match_type_case()) {
-//     case iaapi::StringMatch::kExact: {
-//       return match.exact() == str;
-//     }
-//     case iaapi::StringMatch::kPrefix: {
-//       return absl::StartsWith(str, match.prefix());
-//     }
-//     case iaapi::StringMatch::kSuffix: {
-//       return absl::EndsWith(str, match.suffix());
-//     }
-//     case iaapi::StringMatch::kRegex: {
-//       return std::regex_match(std::string(str), std::regex(match.regex()));
-//     }
-//     default:
-//       return false;
-//   }
-// }
-
-// static bool matchRule(absl::string_view path,
-//                       const iaapi::Jwt_TriggerRule& rule) {
-//   for (const auto& excluded : rule.excluded_paths()) {
-//     if (AuthnUtils::MatchString(path, excluded)) {
-//       // The rule is not matched if any of excluded_paths matched.
-//       return false;
-//     }
-//   }
-
-//   if (rule.included_paths_size() > 0) {
-//     for (const auto& included : rule.included_paths()) {
-//       if (AuthnUtils::MatchString(path, included)) {
-//         // The rule is matched if any of included_paths matched.
-//         return true;
-//       }
-//     }
-
-//     // The rule is not matched if included_paths is not empty and none of
-//     them
-//     // matched.
-//     return false;
-//   }
-
-//   // The rule is matched if none of excluded_paths matched and included_paths
-//   is
-//   // empty.
-//   return true;
-// }
-
-// bool AuthnUtils::ShouldValidateJwtPerPath(absl::string_view path,
-//                                           const iaapi::Jwt& jwt) {
-//   // If the path is empty which shouldn't happen for a HTTP request or if
-//   // there are no trigger rules at all, then simply return true as if
-//   there're
-//   // no per-path jwt support.
-//   if (path == "" || jwt.trigger_rules_size() == 0) {
-//     return true;
-//   }
-//   for (const auto& rule : jwt.trigger_rules()) {
-//     if (matchRule(path, rule)) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
-
-#ifdef NULL_PLUGIN
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
-#endif
+}  // namespace Extensions

@@ -19,8 +19,7 @@
 #include "gmock/gmock.h"
 #include "src/istio/authn/context.pb.h"
 
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
 namespace TestUtilities {
 
@@ -48,5 +47,4 @@ istio::authn::Result AuthNResultFromString(const std::string& text) {
 
 }  // namespace TestUtilities
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+}  // namespace Extensions

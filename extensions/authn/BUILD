@@ -44,8 +44,6 @@ envoy_cc_library(
         "//src/istio/authn:context_proto_cc_proto",
         "@envoy//source/common/http:headers_lib",
         "@envoy//source/exe:envoy_common_lib",
-        "@proxy_wasm_cpp_host//:lib",
-        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
 
@@ -59,9 +57,6 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
-    copts = [
-        "-DTEST"
-    ],
     deps = [
         ":authenticator_essential_lib",
     ],
@@ -78,11 +73,11 @@ envoy_cc_test_library(
 
 envoy_cc_test(
     name = "request_authenticator_test",
-    repository = "@envoy",
     srcs = ["request_authenticator_test.cc"],
+    repository = "@envoy",
     deps = [
-        ":test_utils",
         ":request_authenticator_lib",
+        ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
@@ -93,6 +88,7 @@ envoy_cc_test(
     srcs = ["filter_context_test.cc"],
     repository = "@envoy",
     deps = [
+        ":authenticator_essential_lib",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/test_common:utility_lib",
@@ -104,6 +100,7 @@ envoy_cc_test(
     srcs = ["authn_utils_test.cc"],
     repository = "@envoy",
     deps = [
+        ":authenticator_essential_lib",
         ":test_utils",
         "@envoy//test/test_common:utility_lib",
     ],

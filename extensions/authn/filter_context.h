@@ -21,20 +21,8 @@
 #include "extensions/filters/http/well_known_names.h"
 #include "src/istio/authn/context.pb.h"
 
-// WASM_PROLOG
-#ifndef NULL_PLUGIN
-
-#include "proxy_wasm_intrinsics.h"
-
-#else  // NULL_PLUGIN
-
-#include "include/proxy-wasm/null_plugin.h"
-
-namespace proxy_wasm {
-namespace null_plugin {
+namespace Extensions {
 namespace AuthN {
-
-#endif  // NULL_PLUGIN
 
 using Envoy::Http::RequestHeaderMap;
 using Envoy::Network::Connection;
@@ -47,44 +35,38 @@ class FilterContext {
       const envoy::config::core::v3::Metadata& dynamic_metadata,
       const RequestHeaderMap& header_map, const Connection* connection,
       const istio::envoy::config::filter::http::authn::v2alpha2::FilterConfig&
-          filter_config)
-      : dynamic_metadata_(dynamic_metadata),
-        header_map_(header_map),
-        connection_(connection),
-        filter_config_(filter_config) {}
-  virtual ~FilterContext() {}
+          filter_config);
 
-  // Sets peer result based on authenticated payload. Input payload can be null,
-  // which basically changes nothing.
-  void setPeerResult(const istio::authn::Payload* payload);
+  virtual ~FilterContext() {}
 
   // Sets origin result based on authenticated payload. Input payload can be
   // null, which basically changes nothing.
   void setOriginResult(const istio::authn::Payload* payload);
-
-  // Returns the authentication result.
-  const istio::authn::Result& authenticationResult() { return result_; }
-
-  // Accessor to connection
-  const Connection* connection() { return connection_; }
-  // Accessor to the filter config
-  const istio::envoy::config::filter::http::authn::v2alpha2::FilterConfig&
-  filter_config() const {
-    return filter_config_;
-  }
 
   // Gets JWT payload (output from JWT filter) for given issuer. If non-empty
   // payload found, returns true and set the output payload string. Otherwise,
   // returns false.
   bool getJwtPayload(const std::string& issuer, std::string* payload) const;
 
+  // Returns the authentication result.
+  const istio::authn::Result& authenticationResult() { return result_; }
+
+  // Accessor to connection
+  const Connection* connection() { return connection_; }
+
   const RequestHeaderMap& headerMap() const { return header_map_; }
+
+  const istio::envoy::config::filter::http::authn::v2alpha2::FilterConfig&
+  filterConfig() {
+    return filter_config_;
+  }
 
  private:
   // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
   // filter metadata and write to |payload|.
   bool getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
                                        std::string* payload) const;
+
   // Helper function for getJwtPayload(). It gets the jwt payload from Istio jwt
   // filter metadata and write to |payload|.
   bool getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
@@ -111,8 +93,5 @@ class FilterContext {
 
 using FilterContextPtr = std::shared_ptr<FilterContext>;
 
-#ifdef NULL_PLUGIN
 }  // namespace AuthN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
-#endif
+}  // namespace Extensions
