@@ -190,7 +190,7 @@ void Logger::fillAndFlushLogEntry(
   (*label_map)["upstream_cluster"] = request_info.upstream_cluster;
   (*label_map)["requested_server_name"] = request_info.request_serever_name;
   (*label_map)["x-envoy-original-path"] = request_info.x_envoy_original_path;
-  (*label_map)["x-envoy-original-dst-path"] =
+  (*label_map)["x-envoy-original-dst-host"] =
       request_info.x_envoy_original_dst_host;
 
   // Insert trace headers, if exist.
