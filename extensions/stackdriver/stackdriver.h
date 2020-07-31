@@ -107,8 +107,15 @@ class StackdriverRootContext : public RootContext {
     bool tcp_open_entry_logged;
   };
 
-  // Indicates whether to export server access log or not.
-  bool enableServerAccessLog();
+  // Indicates whether to export any kind of access log or not.
+  bool enableAccessLog();
+
+  // Indicates whether to export all server/client access log or not.
+  bool enableAllAccessLog();
+
+  // Indicates whether to export any client access log or not when there was an
+  // error in request/connection.
+  bool enableClientAccessLogOnError();
 
   bool shouldLogThisRequest(::Wasm::Common::RequestInfo& request_info);
 

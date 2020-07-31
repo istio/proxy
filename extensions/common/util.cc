@@ -15,6 +15,8 @@
 
 #include <string>
 
+#include "extensions/common/context.h"
+
 namespace Wasm {
 namespace Common {
 
@@ -24,7 +26,6 @@ namespace {
 // access API does not support returning response flags as a short string since
 // it is not owned by any object and always generated on demand:
 // https://github.com/envoyproxy/envoy/blob/v1.12.0/source/common/stream_info/utility.cc#L8
-const std::string NONE = "-";
 const std::string DOWNSTREAM_CONNECTION_TERMINATION = "DC";
 const std::string FAILED_LOCAL_HEALTH_CHECK = "LH";
 const std::string NO_HEALTHY_UPSTREAM = "UH";
@@ -163,7 +164,7 @@ const std::string parseResponseFlag(uint64_t response_flag) {
     appendString(result, std::to_string(response_flag));
   }
 
-  return result.empty() ? NONE : result;
+  return result.empty() ? ::Wasm::Common::NONE : result;
 }
 
 }  // namespace Common

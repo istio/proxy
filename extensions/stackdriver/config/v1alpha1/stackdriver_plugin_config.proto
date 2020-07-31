@@ -27,10 +27,23 @@ package stackdriver.config.v1alpha1;
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
-// next id: 10
+// next id: 12
 message PluginConfig {
+  // Types of Access logs to export.
+  enum AccessLogging {
+    // No Logs.
+    NONE = 0;
+    // All logs including both success and error logs.
+    FULL = 1;
+    // All error logs. This is currently only available for outbound/client side
+    // logs. A request is classified as error when `status>=400 or
+    // response_flag != "-"`
+    ERRORS_ONLY = 2;
+  };
+
   // Optional. Controls whether to export server access log.
-  bool disable_server_access_logging = 1;
+  // This is deprecated in favor of AccessLogging enum.
+  bool disable_server_access_logging = 1 [deprecated = true];
 
   // Optional. FQDN of destination service that the request routed to, e.g.
   // productpage.default.svc.cluster.local. If not provided, request host header
@@ -71,4 +84,7 @@ message PluginConfig {
 
   // Optional. Allows enabling log compression for stackdriver access logs.
   google.protobuf.BoolValue enable_log_compression = 9;
+
+  // Optional. Controls what type of logs to export..
+  AccessLogging access_logging = 10;
 }
