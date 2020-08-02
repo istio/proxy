@@ -55,7 +55,7 @@ PROXY_WASM_NULL_PLUGIN_REGISTRY;
 // interactions that outlives individual stream, e.g. timer, async calls.
 class StackdriverRootContext : public RootContext {
  public:
-  StackdriverRootContext(uint32_t id, StringView root_id)
+  StackdriverRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {
     ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
   }
@@ -211,13 +211,13 @@ class StackdriverContext : public Context {
 
 class StackdriverOutboundRootContext : public StackdriverRootContext {
  public:
-  StackdriverOutboundRootContext(uint32_t id, StringView root_id)
+  StackdriverOutboundRootContext(uint32_t id, std::string_view root_id)
       : StackdriverRootContext(id, root_id) {}
 };
 
 class StackdriverInboundRootContext : public StackdriverRootContext {
  public:
-  StackdriverInboundRootContext(uint32_t id, StringView root_id)
+  StackdriverInboundRootContext(uint32_t id, std::string_view root_id)
       : StackdriverRootContext(id, root_id) {}
 };
 

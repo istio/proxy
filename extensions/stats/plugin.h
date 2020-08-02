@@ -39,12 +39,11 @@ namespace null_plugin {
 
 namespace Stats {
 
-using StringView = absl::string_view;
 template <typename K, typename V>
 using Map = std::unordered_map<K, V>;
 template <typename T>
 
-constexpr StringView Sep = "#@";
+constexpr std::string_view Sep = "#@";
 
 // The following need to be std::strings because the receiver expects a string.
 const std::string unknown = "unknown";
@@ -158,7 +157,7 @@ class StatGen {
   };
 
   StatGen() = delete;
-  inline StringView name() const { return metric_.name; };
+  inline std::string_view name() const { return metric_.name; };
   inline bool is_tcp_metric() const { return is_tcp_; }
 
   // Resolve metric based on provided dimension values by
@@ -206,7 +205,7 @@ class StatGen {
 // for interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
  public:
-  PluginRootContext(uint32_t id, StringView root_id, bool is_outbound)
+  PluginRootContext(uint32_t id, std::string_view root_id, bool is_outbound)
       : RootContext(id, root_id), outbound_(is_outbound) {
     Metric cache_count(MetricType::Counter, "metric_cache_count",
                        {MetricTag{"wasm_filter", MetricTag::TagType::String},
@@ -241,9 +240,9 @@ class PluginRootContext : public RootContext {
   // Destroy host resources for the allocated expressions.
   void cleanupExpressions();
   // Allocate an expression if necessary and return its token position.
-  Optional<size_t> addStringExpression(const std::string& input);
+  std::optional<size_t> addStringExpression(const std::string& input);
   // Allocate an int expression and return its token if successful.
-  Optional<uint32_t> addIntExpression(const std::string& input);
+  std::optional<uint32_t> addIntExpression(const std::string& input);
 
  private:
   std::string local_node_info_;
@@ -262,8 +261,8 @@ class PluginRootContext : public RootContext {
   // Int expressions evaluated to metric values
   std::vector<uint32_t> int_expressions_;
 
-  StringView peer_metadata_id_key_;
-  StringView peer_metadata_key_;
+  std::string_view peer_metadata_id_key_;
+  std::string_view peer_metadata_key_;
   bool outbound_;
   bool debug_;
   bool use_host_header_fallback_;
@@ -286,13 +285,13 @@ class PluginRootContext : public RootContext {
 
 class PluginRootContextOutbound : public PluginRootContext {
  public:
-  PluginRootContextOutbound(uint32_t id, StringView root_id)
+  PluginRootContextOutbound(uint32_t id, std::string_view root_id)
       : PluginRootContext(id, root_id, /* is outbound */ true){};
 };
 
 class PluginRootContextInbound : public PluginRootContext {
  public:
-  PluginRootContextInbound(uint32_t id, StringView root_id)
+  PluginRootContextInbound(uint32_t id, std::string_view root_id)
       : PluginRootContext(id, root_id, /* is outbound */ false){};
 };
 

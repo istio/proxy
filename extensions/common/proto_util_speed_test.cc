@@ -31,7 +31,7 @@ namespace Common {
 
 using namespace google::protobuf::util;
 
-constexpr absl::string_view node_metadata_json = R"###(
+constexpr std::string_view node_metadata_json = R"###(
 {
    "NAME":"test_pod",
    "NAMESPACE":"test_namespace",
@@ -52,14 +52,14 @@ constexpr absl::string_view node_metadata_json = R"###(
 }
 )###";
 
-constexpr absl::string_view metadata_id_key =
+constexpr std::string_view metadata_id_key =
     "envoy.wasm.metadata_exchange.downstream_id";
-constexpr absl::string_view metadata_key =
+constexpr std::string_view metadata_key =
     "envoy.wasm.metadata_exchange.downstream";
-constexpr absl::string_view node_id = "test_pod.test_namespace";
+constexpr std::string_view node_id = "test_pod.test_namespace";
 
 static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
-                    absl::string_view key, absl::string_view value) {
+                    std::string_view key, std::string_view value) {
   Envoy::Extensions::Common::Wasm::WasmStatePrototype prototype;
   auto state_ptr =
       std::make_unique<Envoy::Extensions::Common::Wasm::WasmState>(prototype);
@@ -69,7 +69,7 @@ static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
 }
 
 static const std::string& getData(
-    Envoy::StreamInfo::FilterStateImpl& filter_state, absl::string_view key) {
+    Envoy::StreamInfo::FilterStateImpl& filter_state, std::string_view key) {
   return filter_state
       .getDataReadOnly<Envoy::Extensions::Common::Wasm::WasmState>(key)
       .value();
@@ -87,8 +87,8 @@ static void BM_ReadFlatBuffer(benchmark::State& state) {
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
   setData(
       filter_state, metadata_key,
-      absl::string_view(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                        fbb.GetSize()));
+      std::string_view(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                       fbb.GetSize()));
 
   size_t size = 0;
   for (auto _ : state) {

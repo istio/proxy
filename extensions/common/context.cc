@@ -26,7 +26,6 @@
 
 #else  // NULL_PLUGIN
 
-#include "absl/strings/str_split.h"
 #include "include/proxy-wasm/null_plugin.h"
 
 using proxy_wasm::WasmHeaderMapType;
@@ -123,7 +122,7 @@ void getDestinationService(const std::string& dest_namespace,
     return;
   }
 
-  std::vector<absl::string_view> parts = absl::StrSplit(cluster_name, '|');
+  std::vector<std::string_view> parts = absl::StrSplit(cluster_name, '|');
   if (parts.size() == 4) {
     *dest_svc_host = std::string(parts[3].data(), parts[3].size());
   }
@@ -178,7 +177,8 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
 
 }  // namespace
 
-StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
+std::string_view AuthenticationPolicyString(
+    ServiceAuthenticationPolicy policy) {
   switch (policy) {
     case ServiceAuthenticationPolicy::None:
       return kNone;
@@ -190,7 +190,7 @@ StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
   return {};
 }
 
-StringView TCPConnectionStateString(TCPConnectionState state) {
+std::string_view TCPConnectionStateString(TCPConnectionState state) {
   switch (state) {
     case TCPConnectionState::Open:
       return kOpen;
@@ -311,8 +311,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"response", "total_size"}, &request_info->response_size);
 }
 
-absl::string_view nodeInfoSchema() {
-  return absl::string_view(
+std::string_view nodeInfoSchema() {
+  return std::string_view(
       reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
       FlatNodeBinarySchema::size());
 }

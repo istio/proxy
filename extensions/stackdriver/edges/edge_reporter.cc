@@ -45,10 +45,10 @@ void instanceFromMetadata(const ::Wasm::Common::FlatNode& node_info,
                           WorkloadInstance* instance) {
   // TODO(douglas-reid): support more than just kubernetes instances
   auto name =
-      node_info.name() ? node_info.name()->string_view() : absl::string_view();
+      node_info.name() ? node_info.name()->string_view() : std::string_view();
   auto namespace_ = node_info.namespace_()
                         ? node_info.namespace_()->string_view()
-                        : absl::string_view();
+                        : std::string_view();
 
   if (Common::isRawGCEInstance(node_info)) {
     instance->set_uid(Common::getGCEInstanceUID(node_info));

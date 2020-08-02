@@ -60,13 +60,13 @@ bool setFilterStateValue(bool log) {
 constexpr long long kDefaultLogWindowDurationNanoseconds =
     43200000000000;  // 12h
 
-constexpr StringView kSource = "source";
-constexpr StringView kAddress = "address";
-constexpr StringView kConnection = "connection";
-constexpr StringView kUriSanPeerCertificate = "uri_san_peer_certificate";
-constexpr StringView kResponse = "response";
-constexpr StringView kCode = "code";
-constexpr StringView kGrpcStatus = "grpc_status";
+constexpr std::string_view kSource = "source";
+constexpr std::string_view kAddress = "address";
+constexpr std::string_view kConnection = "connection";
+constexpr std::string_view kUriSanPeerCertificate = "uri_san_peer_certificate";
+constexpr std::string_view kResponse = "response";
+constexpr std::string_view kCode = "code";
+constexpr std::string_view kGrpcStatus = "grpc_status";
 
 static RegisterContextFactory register_AccessLogPolicy(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
