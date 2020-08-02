@@ -35,11 +35,15 @@ using google::protobuf::util::TimeUtil;
 
 // Name of the HTTP server access log.
 constexpr char kServerAccessLogName[] = "server-accesslog-stackdriver";
+constexpr char kAuditAccessLogName[] = "server-accesslog-stackdriver-audit";
 
 Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
                std::unique_ptr<Exporter> exporter, int log_request_size_limit) {
   // Initalize the current WriteLogEntriesRequest.
   log_entries_request_ =
+      std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
+
+  audit_entries_request_ =
       std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
 
   // Set log names.
@@ -52,6 +56,9 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
   }
   log_entries_request_->set_log_name("projects/" + project_id_ + "/logs/" +
                                      kServerAccessLogName);
+
+  audit_entries_request_->set_log_name("projects/" + project_id_ + "/logs/" +
+                                       kAuditAccessLogName);
 
   std::string resource_type = Common::kContainerMonitoredResource;
   const auto cluster_iter =
@@ -68,9 +75,19 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
   Common::getMonitoredResource(resource_type, local_node_info,
                                &monitored_resource);
   log_entries_request_->mutable_resource()->CopyFrom(monitored_resource);
+  audit_entries_request_->mutable_resource()->CopyFrom(monitored_resource);
 
+  setCommonLabels(log_entries_request_, local_node_info);
+  setCommonLabels(audit_entries_request_, local_node_info);
+  log_request_size_limit_ = log_request_size_limit;
+  exporter_ = std::move(exporter);
+}
+
+void Logger::setCommonLabels(
+    const std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>& log_req,
+    const ::Wasm::Common::FlatNode& local_node_info) {
   // Set common labels shared by all entries.
-  auto label_map = log_entries_request_->mutable_labels();
+  auto label_map = log_req->mutable_labels();
   (*label_map)["destination_name"] =
       flatbuffers::GetString(local_node_info.name());
   (*label_map)["destination_workload"] =
@@ -105,8 +122,6 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
           flatbuffers::GetString(rev_iter->value());
     }
   }
-  log_request_size_limit_ = log_request_size_limit;
-  exporter_ = std::move(exporter);
 }
 
 void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
@@ -121,6 +136,19 @@ void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
 
   addTCPLabelsToLogEntry(request_info, new_entry);
   fillAndFlushLogEntry(request_info, peer_node_info, new_entry);
+}
+
+void Logger::addAuditEntry(const ::Wasm::Common::RequestInfo& request_info,
+                           const ::Wasm::Common::FlatNode& peer_node_info) {
+  // create a new log entry
+  auto* audit_entries = audit_entries_request_->mutable_entries();
+  auto* new_entry = audit_entries->Add();
+
+  *new_entry->mutable_timestamp() =
+      google::protobuf::util::TimeUtil::NanosecondsToTimestamp(
+          request_info.start_time);
+  fillHTTPRequestInLogEntry(request_info, new_entry);
+  fillAndFlushAuditEntry(request_info, peer_node_info, new_entry);
 }
 
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
@@ -209,25 +237,99 @@ void Logger::fillAndFlushLogEntry(
   }
 }
 
+void Logger::fillAndFlushAuditEntry(
+    const ::Wasm::Common::RequestInfo& request_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    google::logging::v2::LogEntry* new_entry) {
+  new_entry->set_severity(::google::logging::type::INFO);
+  auto label_map = new_entry->mutable_labels();
+  (*label_map)["destination_principal"] = request_info.destination_principal;
+  (*label_map)["destination_service_host"] =
+      request_info.destination_service_host;
+  (*label_map)["source_namespace"] =
+      flatbuffers::GetString(peer_node_info.namespace_());
+  (*label_map)["source_workload"] =
+      flatbuffers::GetString(peer_node_info.workload_name());
+
+  (*label_map)["source_principal"] = request_info.source_principal;
+
+  // Add source app and version label if exist.
+  const auto peer_labels = peer_node_info.labels();
+  if (peer_labels) {
+    auto version_iter = peer_labels->LookupByKey("version");
+    if (version_iter) {
+      (*label_map)["source_version"] =
+          flatbuffers::GetString(version_iter->value());
+    }
+    auto app_iter = peer_labels->LookupByKey("app");
+    if (app_iter) {
+      (*label_map)["source_app"] = flatbuffers::GetString(app_iter->value());
+    }
+    auto ics_iter = peer_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceLabelName.data());
+    if (ics_iter) {
+      (*label_map)["source_canonical_service"] =
+          flatbuffers::GetString(ics_iter->value());
+    }
+    auto rev_iter = peer_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceRevisionLabelName.data());
+    if (rev_iter) {
+      (*label_map)["source_canonical_revision"] =
+          flatbuffers::GetString(rev_iter->value());
+    }
+  }
+
+  // Insert trace headers, if exist.
+  if (request_info.b3_trace_sampled) {
+    new_entry->set_trace("projects/" + project_id_ + "/traces/" +
+                         request_info.b3_trace_id);
+    new_entry->set_span_id(request_info.b3_span_id);
+    new_entry->set_trace_sampled(request_info.b3_trace_sampled);
+  }
+
+  // Accumulate estimated size of the request. If the current request exceeds
+  // the size limit, flush the request out.
+  audit_size_ += new_entry->ByteSizeLong();
+  if (audit_size_ > log_request_size_limit_) {
+    flush();
+  }
+}
+
 bool Logger::flush() {
-  if (size_ == 0) {
+  if (size_ == 0 && audit_size_ == 0) {
     // This flush is triggered by timer and does not have any log entries.
     return false;
   }
 
-  // Reconstruct a new WriteLogRequest.
-  std::unique_ptr<google::logging::v2::WriteLogEntriesRequest> cur =
-      std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
-  cur->set_log_name(log_entries_request_->log_name());
-  cur->mutable_resource()->CopyFrom(log_entries_request_->resource());
-  *cur->mutable_labels() = log_entries_request_->labels();
+  if (size_ != 0) {
+    // Reconstruct a new WriteLogRequest.
+    std::unique_ptr<google::logging::v2::WriteLogEntriesRequest> cur =
+        std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
+    cur->set_log_name(log_entries_request_->log_name());
+    cur->mutable_resource()->CopyFrom(log_entries_request_->resource());
+    *cur->mutable_labels() = log_entries_request_->labels();
 
-  // Swap the new request with the old one and export it.
-  log_entries_request_.swap(cur);
-  request_queue_.emplace_back(std::move(cur));
+    // Swap the new request with the old one and export it.
+    log_entries_request_.swap(cur);
+    request_queue_.emplace_back(std::move(cur));
 
-  // Reset size counter.
-  size_ = 0;
+    // Reset size counters.
+    size_ = 0;
+  }
+
+  if (audit_size_ != 0) {
+    std::unique_ptr<google::logging::v2::WriteLogEntriesRequest> cur_audit =
+        std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
+    cur_audit->set_log_name(audit_entries_request_->log_name());
+    cur_audit->mutable_resource()->CopyFrom(audit_entries_request_->resource());
+    *cur_audit->mutable_labels() = audit_entries_request_->labels();
+
+    audit_entries_request_.swap(cur_audit);
+    request_queue_.emplace_back(std::move(cur_audit));
+
+    audit_size_ = 0;
+  }
+
   return true;
 }
 

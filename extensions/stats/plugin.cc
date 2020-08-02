@@ -501,7 +501,7 @@ Optional<size_t> PluginRootContext::addStringExpression(
     }
     size_t result = expressions_.size();
     input_expressions_[input] = result;
-    expressions_.push_back({.token = token, .expression = input});
+    expressions_.push_back({token, input});
     return result;
   }
   return it->second;

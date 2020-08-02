@@ -50,6 +50,11 @@ class Logger {
   void addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                       const ::Wasm::Common::FlatNode& peer_node_info,
                       long int log_time);
+
+  // Add a new audit entry based on the given request information and peer node
+  // information.
+  void addAuditEntry(const ::Wasm::Common::RequestInfo& request_info,
+                     const ::Wasm::Common::FlatNode& peer_node_info);
   // Export and clean the buffered WriteLogEntriesRequests. Returns true if
   // async call is made to export log entry, otherwise returns false if nothing
   // exported.
@@ -60,6 +65,11 @@ class Logger {
   // either by a timer or by request size limit. Returns false if there is no
   // log entry to be exported.
   bool flush();
+
+  void setCommonLabels(
+      const std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>&
+          log_req,
+      const ::Wasm::Common::FlatNode& local_node_info);
 
   // Add TCP Specific labels to LogEntry.
   void addTCPLabelsToLogEntry(const ::Wasm::Common::RequestInfo& request_info,
@@ -74,6 +84,10 @@ class Logger {
   void fillAndFlushLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                             const ::Wasm::Common::FlatNode& peer_node_info,
                             google::logging::v2::LogEntry* new_entry);
+
+  void fillAndFlushAuditEntry(const ::Wasm::Common::RequestInfo& request_info,
+                              const ::Wasm::Common::FlatNode& peer_node_info,
+                              google::logging::v2::LogEntry* new_entry);
   // Buffer for WriteLogEntriesRequests that are to be exported.
   std::vector<
       std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>
@@ -83,8 +97,15 @@ class Logger {
   std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>
       log_entries_request_;
 
+  // Audit entry request that audit entries are written into.
+  std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>
+      audit_entries_request_;
+
   // Estimated size of the current WriteLogEntriesRequest.
   int size_ = 0;
+
+  // Estimated size of the current audit WriteLogEntriesRequest.
+  int audit_size_ = 0;
 
   // Size limit of a WriteLogEntriesRequest. If current WriteLogEntriesRequest
   // exceeds this size limit, flush() will be triggered.
