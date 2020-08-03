@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package extension_server
+package extensionserver
 
 import (
 	"context"
@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	// ApiType for extension configs.
-	ApiType = "type.googleapis.com/envoy.config.core.v3.TypedExtensionConfig"
+	// APIType for extension configs.
+	APIType = "type.googleapis.com/envoy.config.core.v3.TypedExtensionConfig"
 )
 
 // ExtensionServer is the main server instance.
@@ -42,19 +42,19 @@ var _ extensionservice.ExtensionConfigDiscoveryServiceServer = &ExtensionServer{
 
 func New(ctx context.Context) *ExtensionServer {
 	out := &ExtensionServer{}
-	out.cache = cache.NewLinearCache(ApiType, nil)
+	out.cache = cache.NewLinearCache(APIType, nil)
 	out.Server = server.NewServer(ctx, out.cache, out)
 	return out
 }
 
 func (es *ExtensionServer) StreamExtensionConfigs(stream extensionservice.ExtensionConfigDiscoveryService_StreamExtensionConfigsServer) error {
-	return es.Server.StreamHandler(stream, ApiType)
+	return es.Server.StreamHandler(stream, APIType)
 }
 func (es *ExtensionServer) DeltaExtensionConfigs(_ extensionservice.ExtensionConfigDiscoveryService_DeltaExtensionConfigsServer) error {
 	return status.Errorf(codes.Unimplemented, "not implemented")
 }
 func (es *ExtensionServer) FetchExtensionConfigs(ctx context.Context, req *discovery.DiscoveryRequest) (*discovery.DiscoveryResponse, error) {
-	req.TypeUrl = ApiType
+	req.TypeUrl = APIType
 	return es.Server.Fetch(ctx, req)
 }
 func (es *ExtensionServer) Update(config *core.TypedExtensionConfig) error {

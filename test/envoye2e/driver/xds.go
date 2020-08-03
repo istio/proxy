@@ -20,7 +20,7 @@ import (
 	"log"
 	"net"
 
-	"istio.io/proxy/tools/extension_server"
+	"istio.io/proxy/tools/extensionserver"
 
 	cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -40,7 +40,7 @@ type XDS struct {
 
 // XDSServer is a struct holding xDS state.
 type XDSServer struct {
-	Extensions *extension_server.ExtensionServer
+	Extensions *extensionserver.ExtensionServer
 	Cache      cache.SnapshotCache
 }
 
@@ -49,7 +49,7 @@ var _ Step = &XDS{}
 func (x *XDS) Run(p *Params) error {
 	log.Printf("XDS server starting on %d\n", p.XDS)
 	x.grpc = grpc.NewServer()
-	p.Config.Extensions = extension_server.New(context.Background())
+	p.Config.Extensions = extensionserver.New(context.Background())
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(x.grpc, p.Config.Extensions)
 	p.Config.Cache = cache.NewSnapshotCache(false, cache.IDHash{}, x)
 	xdsServer := server.NewServer(context.Background(), p.Config.Cache, nil)

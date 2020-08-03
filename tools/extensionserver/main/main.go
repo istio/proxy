@@ -25,7 +25,7 @@ import (
 
 	discoveryservice "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
-	"istio.io/proxy/tools/extension_server"
+	"istio.io/proxy/tools/extensionserver"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 
 var (
 	port   uint
-	server *extension_server.ExtensionServer
+	server *extensionserver.ExtensionServer
 )
 
 func init() {
@@ -49,7 +49,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := extension_server.New(context.Background())
+	server := extensionserver.New(context.Background())
 	discoveryservice.RegisterAggregatedDiscoveryServiceServer(grpcServer, server)
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, server)
 
@@ -57,4 +57,5 @@ func main() {
 	if err = grpcServer.Serve(lis); err != nil {
 		log.Println(err)
 	}
+	_ = server
 }
