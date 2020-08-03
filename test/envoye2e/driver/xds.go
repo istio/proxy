@@ -23,6 +23,7 @@ import (
 	"istio.io/proxy/tools/extension_server"
 
 	cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
@@ -34,8 +35,13 @@ import (
 
 // XDS creates an xDS server
 type XDS struct {
-	grpc            *grpc.Server
-	extensionserver *extension_server.ExtensionServer
+	grpc *grpc.Server
+}
+
+// XDSServer is a struct holding xDS state.
+type XDSServer struct {
+	Extensions *extension_server.ExtensionServer
+	Cache      cache.SnapshotCache
 }
 
 var _ Step = &XDS{}
@@ -43,16 +49,15 @@ var _ Step = &XDS{}
 func (x *XDS) Run(p *Params) error {
 	log.Printf("XDS server starting on %d\n", p.XDS)
 	x.grpc = grpc.NewServer()
-	x.extensionserver = extension_server.New(context.Background())
+	p.Config.Extensions = extension_server.New(context.Background())
+	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(x.grpc, p.Config.Extensions)
+	p.Config.Cache = cache.NewSnapshotCache(false, cache.IDHash{}, x)
+	xdsServer := server.NewServer(context.Background(), p.Config.Cache, nil)
+	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.XDS))
 	if err != nil {
 		return err
 	}
-
-	p.Config = cache.NewSnapshotCache(false, cache.IDHash{}, x)
-	xdsServer := server.NewServer(context.Background(), p.Config, nil)
-	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
-	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(x.grpc, x.extensionserver)
 
 	go func() {
 		_ = x.grpc.Serve(lis)
@@ -115,7 +120,29 @@ func (u *Update) Run(p *Params) error {
 	snap := cache.Snapshot{}
 	snap.Resources[types.Cluster] = cache.NewResources(version, clusters)
 	snap.Resources[types.Listener] = cache.NewResources(version, listeners)
-	return p.Config.SetSnapshot(u.Node, snap)
+	return p.Config.Cache.SetSnapshot(u.Node, snap)
 }
 
 func (u *Update) Cleanup() {}
+
+type UpdateExtensions struct {
+	Extensions []string
+}
+
+var _ Step = &UpdateExtensions{}
+
+func (u *UpdateExtensions) Run(p *Params) error {
+	for _, extension := range u.Extensions {
+		out := &core.TypedExtensionConfig{}
+		if err := p.FillYAML(extension, out); err != nil {
+			return err
+		}
+		log.Printf("updating extension config %q", out.Name)
+		if err := p.Config.Extensions.Update(out); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u *UpdateExtensions) Cleanup() {}

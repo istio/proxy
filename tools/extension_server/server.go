@@ -17,6 +17,7 @@ package extension_server
 import (
 	"context"
 
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -47,15 +48,18 @@ func New(ctx context.Context) *ExtensionServer {
 }
 
 func (es *ExtensionServer) StreamExtensionConfigs(stream extensionservice.ExtensionConfigDiscoveryService_StreamExtensionConfigsServer) error {
-	return status.Errorf(codes.Unimplemented, "not implemented")
+	return es.Server.StreamHandler(stream, ApiType)
 }
 func (es *ExtensionServer) DeltaExtensionConfigs(_ extensionservice.ExtensionConfigDiscoveryService_DeltaExtensionConfigsServer) error {
 	return status.Errorf(codes.Unimplemented, "not implemented")
 }
 func (es *ExtensionServer) FetchExtensionConfigs(ctx context.Context, req *discovery.DiscoveryRequest) (*discovery.DiscoveryResponse, error) {
-	if req == nil {
-		return nil, status.Errorf(codes.Unavailable, "empty request")
-	}
 	req.TypeUrl = ApiType
 	return es.Server.Fetch(ctx, req)
+}
+func (es *ExtensionServer) Update(config *core.TypedExtensionConfig) error {
+	return es.cache.UpdateResource(config.Name, config)
+}
+func (es *ExtensionServer) Delete(name string) error {
+	return es.cache.DeleteResource(name)
 }
