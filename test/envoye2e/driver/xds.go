@@ -20,9 +20,12 @@ import (
 	"log"
 	"net"
 
+	"istio.io/proxy/tools/extension_server"
+
 	cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
@@ -31,7 +34,8 @@ import (
 
 // XDS creates an xDS server
 type XDS struct {
-	grpc *grpc.Server
+	grpc            *grpc.Server
+	extensionserver *extension_server.ExtensionServer
 }
 
 var _ Step = &XDS{}
@@ -39,6 +43,7 @@ var _ Step = &XDS{}
 func (x *XDS) Run(p *Params) error {
 	log.Printf("XDS server starting on %d\n", p.XDS)
 	x.grpc = grpc.NewServer()
+	x.extensionserver = extension_server.New(context.Background())
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.XDS))
 	if err != nil {
 		return err
@@ -47,6 +52,7 @@ func (x *XDS) Run(p *Params) error {
 	p.Config = cache.NewSnapshotCache(false, cache.IDHash{}, x)
 	xdsServer := server.NewServer(context.Background(), p.Config, nil)
 	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
+	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(x.grpc, x.extensionserver)
 
 	go func() {
 		_ = x.grpc.Serve(lis)
