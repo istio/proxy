@@ -23,6 +23,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	discoveryservice "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
 	"istio.io/proxy/tools/extensionserver"
@@ -53,9 +54,13 @@ func main() {
 	discoveryservice.RegisterAggregatedDiscoveryServiceServer(grpcServer, server)
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, server)
 
+	// load some config
+	server.Update(&core.TypedExtensionConfig{
+		Name: "test",
+	})
+
 	log.Printf("management server listening on %d\n", port)
 	if err = grpcServer.Serve(lis); err != nil {
 		log.Println(err)
 	}
-	_ = server
 }
