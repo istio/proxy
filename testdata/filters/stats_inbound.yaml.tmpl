@@ -1,4 +1,4 @@
-- name: stats_inbound
+- name: stats_inbound{{.N}}
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
     type_url: envoy.extensions.filters.http.wasm.v3.Wasm

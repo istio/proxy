@@ -1,4 +1,4 @@
-- name: mx_inbound
+- name: mx_outbound{{.N}}
   config_discovery:
     config_source:
       api_config_source:
@@ -8,7 +8,7 @@
         - envoy_grpc:
             cluster_name: xds_cluster
     type_urls: ["envoy.extensions.filters.http.wasm.v3.Wasm"]
-- name: stats_inbound
+- name: stats_outbound{{.N}}
   config_discovery:
     config_source:
       api_config_source:
