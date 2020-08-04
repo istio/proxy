@@ -21,7 +21,6 @@ import (
 	wasm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/wasm/v3"
 	v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/wasm/v3"
 	ptypes "github.com/golang/protobuf/ptypes"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/golang/protobuf/ptypes/wrappers"
 )
 
