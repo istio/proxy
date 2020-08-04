@@ -176,12 +176,7 @@ void Logger::fillAndFlushLogEntry(
       (*label_map)["source_app"] = flatbuffers::GetString(app_iter->value());
     }
     if (label_map->find("source_canonical_service") == label_map->end()) {
-      auto ics_iter = peer_labels->LookupByKey(
-          Wasm::Common::kCanonicalServiceLabelName.data());
-      if (ics_iter) {
-        (*label_map)["source_canonical_service"] =
-            flatbuffers::GetString(ics_iter->value());
-      }
+      setSourceCanonicalService(peer_node_info, label_map);
     }
     auto rev_iter = peer_labels->LookupByKey(
         Wasm::Common::kCanonicalServiceRevisionLabelName.data());
@@ -261,8 +256,11 @@ void Logger::addTCPLabelsToLogEntry(
       label_map->find("source_canonical_service") != label_map->end()
           ? (*label_map)["source_canonical_service"]
           : flatbuffers::GetString(peer_node_info.workload_name()),
-      "-->",
-      log_entries_request_->labels().at("destination_canonical_service")));
+      " --> ",
+      log_entries_request_->labels().find("destination_canonical_service") !=
+              log_entries_request_->labels().end()
+          ? log_entries_request_->labels().at("destination_canonical_service")
+          : request_info.destination_service_name));
   (*label_map)["source_ip"] = request_info.source_address;
   (*label_map)["destination_ip"] = request_info.destination_address;
   (*label_map)["source_port"] = std::to_string(request_info.source_port);
