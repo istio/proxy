@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"reflect"
 
 	"google.golang.org/grpc"
 
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	discoveryservice "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
 	"istio.io/proxy/tools/extensionserver"
@@ -35,11 +35,33 @@ const (
 
 var (
 	port   uint
+	dir    string
 	server *extensionserver.ExtensionServer
+	names  = make(map[string]struct{})
 )
 
 func init() {
 	flag.UintVar(&port, "port", 8080, "xDS management server port")
+	flag.StringVar(&dir, "c", "", "Configuration file directory")
+}
+
+func apply(config *extensionserver.Config) {
+	next := make(map[string]struct{})
+	for _, ext := range config.Extensions {
+		config, err := extensionserver.Convert(ext)
+		if err != nil {
+			log.Printf("error loading extension %q: %v\n", ext.Name, err)
+			continue
+		}
+		server.Update(config)
+		next[ext.Name] = struct{}{}
+		delete(names, ext.Name)
+	}
+	for name := range names {
+		server.Delete(name)
+	}
+	names = next
+	log.Printf("loaded extensions %v\n", reflect.ValueOf(names).MapKeys())
 }
 
 func main() {
@@ -50,14 +72,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := extensionserver.New(context.Background())
+	server = extensionserver.New(context.Background())
 	discoveryservice.RegisterAggregatedDiscoveryServiceServer(grpcServer, server)
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, server)
 
-	// load some config
-	server.Update(&core.TypedExtensionConfig{
-		Name: "test",
-	})
+	log.Printf("watching directory %q\n", dir)
+	go func() {
+		err := extensionserver.Watch(dir, apply)
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 
 	log.Printf("management server listening on %d\n", port)
 	if err = grpcServer.Serve(lis); err != nil {

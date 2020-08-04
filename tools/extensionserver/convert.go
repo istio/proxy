@@ -1,0 +1,87 @@
+// Copyright Istio Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package extensionserver
+
+import (
+	"io/ioutil"
+
+	//	udpa "github.com/cncf/udpa/go/udpa/type/v1"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	wasm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/wasm/v3"
+	v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/wasm/v3"
+	ptypes "github.com/golang/protobuf/ptypes"
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/golang/protobuf/ptypes/wrappers"
+)
+
+func pstring(value string) *structpb.Value {
+	return &structpb.Value{
+		Kind: &structpb.Value_StringValue{
+			StringValue: value,
+		},
+	}
+}
+
+// Convert to an envoy config.
+func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
+	// wrap configuration into StringValue
+	json, err := ext.Configuration.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	configuration, err := ptypes.MarshalAny(&wrappers.StringValue{Value: string(json)})
+	if err != nil {
+		return nil, err
+	}
+
+	// load code as bytes
+	code, err := ioutil.ReadFile(ext.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	// create plugin config
+	plugin := &wasm.Wasm{
+		Config: &v3.PluginConfig{
+			RootId: ext.RootID,
+			VmConfig: &v3.PluginConfig_InlineVmConfig{
+				InlineVmConfig: &v3.VmConfig{
+					VmId:    ext.VMID,
+					Runtime: "envoy.wasm.runtime.v8",
+					Code: &core.AsyncDataSource{
+						Specifier: &core.AsyncDataSource_Local{
+							Local: &core.DataSource{
+								Specifier: &core.DataSource_InlineBytes{
+									InlineBytes: code,
+								},
+							},
+						},
+					},
+					AllowPrecompiled: true,
+				},
+			},
+			Configuration: configuration,
+		},
+	}
+
+	typed, err := ptypes.MarshalAny(plugin)
+	if err != nil {
+		return nil, err
+	}
+	return &core.TypedExtensionConfig{
+		Name:        ext.Name,
+		TypedConfig: typed,
+	}, nil
+}

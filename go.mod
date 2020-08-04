@@ -9,6 +9,7 @@ require (
 	github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354
 	github.com/d4l3k/messagediff v1.2.2-0.20180726183240-b9e99b2f9263
 	github.com/envoyproxy/go-control-plane v0.9.7-0.20200803203158-9877870102f1
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/kr/pretty v0.1.0 // indirect
