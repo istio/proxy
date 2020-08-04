@@ -30,6 +30,21 @@
 namespace Extensions {
 namespace Stackdriver {
 namespace Log {
+namespace {
+void setSourceCanonicalService(
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    google::protobuf::Map<std::string, std::string>* label_map) {
+  const auto peer_labels = peer_node_info.labels();
+  if (peer_labels) {
+    auto ics_iter = peer_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceLabelName.data());
+    if (ics_iter) {
+      (*label_map)["source_canonical_service"] =
+          flatbuffers::GetString(ics_iter->value());
+    }
+  }
+}
+}  // namespace
 
 using google::protobuf::util::TimeUtil;
 
@@ -119,7 +134,7 @@ void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   *new_entry->mutable_timestamp() =
       google::protobuf::util::TimeUtil::NanosecondsToTimestamp(log_time);
 
-  addTCPLabelsToLogEntry(request_info, new_entry);
+  addTCPLabelsToLogEntry(request_info, peer_node_info, new_entry);
   fillAndFlushLogEntry(request_info, peer_node_info, new_entry);
 }
 
@@ -160,11 +175,13 @@ void Logger::fillAndFlushLogEntry(
     if (app_iter) {
       (*label_map)["source_app"] = flatbuffers::GetString(app_iter->value());
     }
-    auto ics_iter = peer_labels->LookupByKey(
-        Wasm::Common::kCanonicalServiceLabelName.data());
-    if (ics_iter) {
-      (*label_map)["source_canonical_service"] =
-          flatbuffers::GetString(ics_iter->value());
+    if (label_map->find("source_canonical_service") == label_map->end()) {
+      auto ics_iter = peer_labels->LookupByKey(
+          Wasm::Common::kCanonicalServiceLabelName.data());
+      if (ics_iter) {
+        (*label_map)["source_canonical_service"] =
+            flatbuffers::GetString(ics_iter->value());
+      }
     }
     auto rev_iter = peer_labels->LookupByKey(
         Wasm::Common::kCanonicalServiceRevisionLabelName.data());
@@ -236,8 +253,16 @@ bool Logger::exportLogEntry(bool is_on_done) {
 
 void Logger::addTCPLabelsToLogEntry(
     const ::Wasm::Common::RequestInfo& request_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
     google::logging::v2::LogEntry* log_entry) {
   auto label_map = log_entry->mutable_labels();
+  setSourceCanonicalService(peer_node_info, label_map);
+  log_entry->set_text_payload(absl::StrCat(
+      label_map->find("source_canonical_service") != label_map->end()
+          ? (*label_map)["source_canonical_service"]
+          : flatbuffers::GetString(peer_node_info.workload_name()),
+      "-->",
+      log_entries_request_->labels().at("destination_canonical_service")));
   (*label_map)["source_ip"] = request_info.source_address;
   (*label_map)["destination_ip"] = request_info.destination_address;
   (*label_map)["source_port"] = std::to_string(request_info.source_port);
