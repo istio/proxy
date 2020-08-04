@@ -61,7 +61,7 @@ func apply(config *extensionserver.Config) {
 	}
 	for name := range names {
 		if err := server.Delete(name); err != nil {
-			log.Printlf("error deleting extension %q: %v\n", ext.Name, err)
+			log.Printf("error deleting extension %q: %v\n", name, err)
 		}
 	}
 	names = next
