@@ -59,7 +59,7 @@ func Read(data []byte) (*Config, error) {
 // Load configuration files from a directory
 func Load(dir string) *Config {
 	out := &Config{}
-	_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(dir, func(path string, info os.FileInfo, _ error) error {
 		if info != nil && info.IsDir() {
 			return nil
 		}

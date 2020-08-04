@@ -17,7 +17,6 @@ package extensionserver
 import (
 	"io/ioutil"
 
-	//	udpa "github.com/cncf/udpa/go/udpa/type/v1"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	wasm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/wasm/v3"
 	v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/wasm/v3"
@@ -26,15 +25,8 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 )
 
-func pstring(value string) *structpb.Value {
-	return &structpb.Value{
-		Kind: &structpb.Value_StringValue{
-			StringValue: value,
-		},
-	}
-}
-
 // Convert to an envoy config.
+// It so happens that 1.7 and 1.8 match in terms protobuf bytes, but not JSON.
 func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
 	// wrap configuration into StringValue
 	json, err := ext.Configuration.MarshalJSON()

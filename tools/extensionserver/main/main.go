@@ -53,12 +53,16 @@ func apply(config *extensionserver.Config) {
 			log.Printf("error loading extension %q: %v\n", ext.Name, err)
 			continue
 		}
-		server.Update(config)
+		if err = server.Update(config); err != nil {
+			log.Printf("error updating extension %q: %v\n", ext.Name, err)
+		}
 		next[ext.Name] = struct{}{}
 		delete(names, ext.Name)
 	}
 	for name := range names {
-		server.Delete(name)
+		if err := server.Delete(name); err != nil {
+			log.Printlf("error deleting extension %q: %v\n", ext.Name, err)
+		}
 	}
 	names = next
 	log.Printf("loaded extensions %v\n", reflect.ValueOf(names).MapKeys())
