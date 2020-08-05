@@ -252,15 +252,17 @@ void Logger::addTCPLabelsToLogEntry(
     google::logging::v2::LogEntry* log_entry) {
   auto label_map = log_entry->mutable_labels();
   setSourceCanonicalService(peer_node_info, label_map);
-  log_entry->set_text_payload(absl::StrCat(
-      label_map->find("source_canonical_service") != label_map->end()
-          ? (*label_map)["source_canonical_service"]
-          : flatbuffers::GetString(peer_node_info.workload_name()),
-      " --> ",
-      log_entries_request_->labels().find("destination_canonical_service") !=
-              log_entries_request_->labels().end()
-          ? log_entries_request_->labels().at("destination_canonical_service")
-          : request_info.destination_service_name));
+  auto source_cs_iter = label_map->find("source_canonical_service");
+  auto destination_cs_iter =
+      log_entries_request_->labels().find("destination_canonical_service");
+  log_entry->set_text_payload(
+      absl::StrCat(source_cs_iter != label_map->end()
+                       ? source_cs_iter->second
+                       : flatbuffers::GetString(peer_node_info.workload_name()),
+                   " --> ",
+                   destination_cs_iter != log_entries_request_->labels().end()
+                       ? destination_cs_iter->second
+                       : request_info.destination_service_name));
   (*label_map)["source_ip"] = request_info.source_address;
   (*label_map)["destination_ip"] = request_info.destination_address;
   (*label_map)["source_port"] = std::to_string(request_info.source_port);

@@ -103,7 +103,7 @@ struct RequestInfo {
   int64_t response_size = 0;
 
   // Destination port that the request targets.
-  uint64_t destination_port = 0;
+  uint32_t destination_port = 0;
 
   // Source port of the client.
   uint64_t source_port = 0;
