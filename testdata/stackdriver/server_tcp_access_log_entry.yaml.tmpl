@@ -32,3 +32,8 @@ labels:
   connection_state: "CLOSE"
   log_sampled: "false"
 severity: INFO
+{{- if .Vars.SourceUnknownOnClose }}
+text_payload: " --> ratings"
+{{- else }}
+text_payload: "productpage-v1 --> ratings"
+{{- end }}
