@@ -115,7 +115,7 @@ test_tsan:
 
 test_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) --test_args="-l trace" $(BAZEL_CONFIG_DEV) -- //src/istio/utils:utils_test
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) --test_arg="-l trace" $(BAZEL_CONFIG_DEV) -- //src/istio/utils:utils_test
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test ./...
 
 check:
