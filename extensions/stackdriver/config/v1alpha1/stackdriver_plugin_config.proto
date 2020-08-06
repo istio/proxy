@@ -27,10 +27,14 @@ package stackdriver.config.v1alpha1;
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
-// next id: 10
+// next id: 11
 message PluginConfig {
-  // Optional. Controls whether to export server access log.
+  // Optional. Controls whether to export server access log. This does not
+  // affect audit logging
   bool disable_server_access_logging = 1;
+
+  // Optional. Controls whether to export audit log.
+  bool enable_server_access_auditting = 10;
 
   // Optional. FQDN of destination service that the request routed to, e.g.
   // productpage.default.svc.cluster.local. If not provided, request host header

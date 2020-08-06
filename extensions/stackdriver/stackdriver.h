@@ -112,6 +112,11 @@ class StackdriverRootContext : public RootContext {
 
   bool shouldLogThisRequest(::Wasm::Common::RequestInfo& request_info);
 
+  // Indicates whether to export server audit log or not.
+  bool enableServerAccessAudit();
+
+  bool shouldAuditThisRequest();
+
   // Indicates whether or not to report edges to Stackdriver.
   bool enableEdgeReporting();
 

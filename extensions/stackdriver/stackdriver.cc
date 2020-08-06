@@ -25,6 +25,7 @@
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
+#include "stackdriver.h"
 
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -364,10 +365,17 @@ void StackdriverRootContext::record() {
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
+
   if (enableServerAccessLog() && shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     logger_->addLogEntry(request_info, peer_node);
   }
+
+  if (enableServerAccessAudit() && shouldAuditThisRequest()) {
+    ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
+    logger_->addAuditEntry(request_info, peer_node);
+  }
+
   if (enableEdgeReporting()) {
     std::string peer_id;
     if (!getPeerId(peer_id)) {
@@ -465,6 +473,10 @@ inline bool StackdriverRootContext::enableServerAccessLog() {
   return !config_.disable_server_access_logging() && !isOutbound();
 }
 
+inline bool StackdriverRootContext::enableServerAccessAudit() {
+  return config_.enable_server_access_auditting() && !isOutbound();
+}
+
 inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
@@ -479,6 +491,10 @@ bool StackdriverRootContext::shouldLogThisRequest(
   // Add label log_sampled if Access Log Policy sampling was applied to logs.
   request_info.log_sampled = (shouldLog != "no");
   return request_info.log_sampled;
+}
+
+bool StackdriverRootContext::shouldAuditThisRequest() {
+  return Wasm::Common::getAuditPolicy();
 }
 
 void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {

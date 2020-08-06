@@ -149,9 +149,7 @@ std::string write_audit_request_json = R"({
   },
   "labels":{
      "destination_workload":"test_workload",
-     "mesh_uid":"mesh",
-     "destination_namespace":"test_namespace",
-     "destination_name":"test_pod"
+     "destination_namespace":"test_namespace"
   },
   "entries":[
      {
@@ -170,7 +168,6 @@ std::string write_audit_request_json = R"({
         "labels":{
            "destination_principal":"destination_principal",
            "destination_service_host":"httpbin.org",
-           "request_id":"123",
            "source_namespace":"test_peer_namespace",
            "source_principal":"source_principal",
            "source_workload":"test_peer_workload",
@@ -324,8 +321,44 @@ TEST(LoggerTest, TestWriteAuditEntry) {
               MessageDifferencer differ;
               differ.ReportDifferencesToString(&diff);
               if (!differ.Compare(expectedRequest(1, true), *req)) {
-                FAIL() << "unexpected log entry " << diff << "\n";
+                FAIL() << "unexpected audit entry " << diff << "\n";
               }
+            }
+          }));
+  logger->exportLogEntry(/* is_on_done = */ false);
+}
+
+TEST(LoggerTest, TestWriteAuditAndLogEntry) {
+  auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
+  auto exporter_ptr = exporter.get();
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
+  for (int i = 0; i < 5; i++) {
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
+    logger->addAuditEntry(requestInfo(), peerNodeInfo(peer));
+  }
+  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
+      .WillOnce(::testing::Invoke(
+          [](const std::vector<std::unique_ptr<
+                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+             bool) {
+            bool foundAudit = false;
+            bool foundLog = false;
+            std::string diff;
+            EXPECT_EQ(requests.size(), 2);
+            for (const auto& req : requests) {
+              MessageDifferencer differ;
+              differ.ReportDifferencesToString(&diff);
+              if (differ.Compare(expectedRequest(5, true), *req)) {
+                foundAudit = true;
+              }
+
+              if (differ.Compare(expectedRequest(5, false), *req)) {
+                foundLog = true;
+              }
+            }
+            if (!(foundAudit && foundLog)) {
+              FAIL() << "unexpected entries, last difference: " << diff << "\n";
             }
           }));
   logger->exportLogEntry(/* is_on_done = */ false);
