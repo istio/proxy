@@ -37,3 +37,8 @@ labels:
   x-envoy-original-dst-host: ""
   x-envoy-original-path: ""
 severity: INFO
+{{- if .Vars.SourceUnknownOnOpen }}
+text_payload: " --> ratings"
+{{- else }}
+text_payload: "productpage-v1 --> ratings"
+{{- end }}
