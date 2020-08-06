@@ -108,7 +108,7 @@ struct RequestInfo {
   uint32_t destination_port = 0;
 
   // Source port of the client.
-  uint32_t source_port = 0;
+  uint64_t source_port = 0;
 
   // Protocol used the request (HTTP/1.1, gRPC, etc).
   std::string request_protocol;

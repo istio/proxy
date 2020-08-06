@@ -93,7 +93,8 @@ class Logger {
 
   // Add TCP Specific labels to LogEntry.
   void addTCPLabelsToEntry(const ::Wasm::Common::RequestInfo& request_info,
-                           google::logging::v2::LogEntry* log_entry);
+                              const ::Wasm::Common::FlatNode& peer_node_info,
+                              google::logging::v2::LogEntry* log_entry);
 
   // Fill Http_Request entry in LogEntry.
   void fillHTTPRequestInEntry(const ::Wasm::Common::RequestInfo& request_info,

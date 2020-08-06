@@ -115,7 +115,9 @@ void getDestinationService(const std::string& dest_namespace,
     return;
   }
 
-  if (cluster_name == kInboundPassthroughClusterIpv4 ||
+  if (cluster_name == kBlackHoleCluster ||
+      cluster_name == kPassThroughCluster ||
+      cluster_name == kInboundPassthroughClusterIpv4 ||
       cluster_name == kInboundPassthroughClusterIpv6) {
     *dest_svc_name = cluster_name;
     return;
