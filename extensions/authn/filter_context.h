@@ -18,6 +18,7 @@
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha2/config.pb.h"
 #include "envoy/network/connection.h"
+#include "extensions/authn/connection_context.h"
 #include "extensions/filters/http/well_known_names.h"
 #include "src/istio/authn/context.pb.h"
 
@@ -33,7 +34,8 @@ class FilterContext {
  public:
   FilterContext(
       const envoy::config::core::v3::Metadata& dynamic_metadata,
-      const RequestHeaderMap& header_map, const Connection* connection,
+      const RequestHeaderMap& header_map,
+      const ConnectionContextPtr connection_context,
       const istio::envoy::config::filter::http::authn::v2alpha2::FilterConfig&
           filter_config);
 
@@ -42,6 +44,10 @@ class FilterContext {
   // Sets origin result based on authenticated payload. Input payload can be
   // null, which basically changes nothing.
   void setOriginResult(const istio::authn::Payload* payload);
+
+  // Sets peer authentication result based on authenticated payload. Input
+  // payload can be null, which basically changes nothing.
+  void setPeerAuthenticationResult(const istio::authn::Payload* payload);
 
   // Gets JWT payload (output from JWT filter) for given issuer. If non-empty
   // payload found, returns true and set the output payload string. Otherwise,
@@ -52,7 +58,7 @@ class FilterContext {
   const istio::authn::Result& authenticationResult() { return result_; }
 
   // Accessor to connection
-  const Connection* connection() { return connection_; }
+  const ConnectionContextPtr connectionContext() { return connection_context_; }
 
   const RequestHeaderMap& headerMap() const { return header_map_; }
 
@@ -80,8 +86,8 @@ class FilterContext {
   // that could be used to decide if a JWT should be used for validation.
   const RequestHeaderMap& header_map_;
 
-  // Pointer to network connection of the request.
-  const Connection* connection_;
+  // Connection context
+  const ConnectionContextPtr connection_context_;
 
   // Holds authentication attribute outputs.
   istio::authn::Result result_;

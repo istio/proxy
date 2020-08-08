@@ -28,10 +28,12 @@ envoy_cc_library(
     name = "authenticator_essential_lib",
     srcs = [
         "authn_utils.cc",
+        "connection_context.cc",
         "filter_context.cc",
     ],
     hdrs = [
         "authn_utils.h",
+        "connection_context.h",
         "filter_context.h",
     ],
     repository = "@envoy",
@@ -62,6 +64,21 @@ envoy_cc_library(
     ],
 )
 
+envoy_cc_library(
+    name = "peer_authenticator_lib",
+    srcs = [
+        "peer_authenticator.cc",
+    ],
+    hdrs = [
+        "peer_authenticator.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":authenticator_essential_lib",
+    ],
+)
+
 envoy_cc_test_library(
     name = "test_utils",
     hdrs = ["test_utils.h"],
@@ -77,6 +94,31 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":request_authenticator_lib",
+        ":test_utils",
+        "@envoy//test/mocks/http:http_mocks",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "connection_context_test",
+    srcs = ["connection_context_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":request_authenticator_lib",
+        ":test_utils",
+        "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/ssl:ssl_mocks",
+        "@envoy//test/test_common:utility_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "peer_authenticator_test",
+    srcs = ["peer_authenticator_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":peer_authenticator_lib",
         ":test_utils",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/test_common:utility_lib",

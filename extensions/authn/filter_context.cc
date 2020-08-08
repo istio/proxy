@@ -30,12 +30,13 @@ using google::protobuf::util::MessageToJsonString;
 
 FilterContext::FilterContext(
     const envoy::config::core::v3::Metadata& dynamic_metadata,
-    const RequestHeaderMap& header_map, const Connection* connection,
+    const RequestHeaderMap& header_map,
+    const ConnectionContextPtr connection_context,
     const istio::envoy::config::filter::http::authn::v2alpha2::FilterConfig&
         filter_config)
     : dynamic_metadata_(dynamic_metadata),
       header_map_(header_map),
-      connection_(connection),
+      connection_context_(connection_context),
       filter_config_(filter_config) {}
 
 void FilterContext::setOriginResult(const Payload* payload) {
@@ -45,6 +46,12 @@ void FilterContext::setOriginResult(const Payload* payload) {
   // it's ok just to check jwt payload.
   if (payload != nullptr && payload->has_jwt()) {
     *result_.mutable_origin() = payload->jwt();
+  }
+}
+
+void FilterContext::setPeerAuthenticationResult(const Payload* payload) {
+  if (payload != nullptr && payload->has_x509()) {
+    result_.set_peer_user(payload->x509().user());
   }
 }
 
