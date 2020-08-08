@@ -14,7 +14,15 @@
 
 licenses(["notice"])
 
-cc_library(
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
+    "envoy_cc_test",
+)
+
+envoy_cc_library(
     name = "utils_lib",
     srcs = [
         "utils.cc",
@@ -22,6 +30,7 @@ cc_library(
     hdrs = [
         "utils.h",
     ],
+    repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         ":attribute_names_lib",
@@ -29,18 +38,17 @@ cc_library(
     ],
 )
 
-cc_test(
+envoy_cc_test(
     name = "utils_test",
     size = "small",
     srcs = ["utils_test.cc"],
-    linkstatic = 1,
+    repository = "@envoy",
     deps = [
         ":utils_lib",
-        "//external:googletest_main",
     ],
 )
 
-cc_library(
+envoy_cc_library(
     name = "attribute_names_lib",
     srcs = [
         "attribute_names.cc",
@@ -48,5 +56,6 @@ cc_library(
     hdrs = [
         "attribute_names.h",
     ],
+    repository = "@envoy",
     visibility = ["//visibility:public"],
 )
