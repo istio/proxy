@@ -15,8 +15,6 @@
 
 #pragma once
 
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "extensions/common/nlohmann_json.hpp"
 
 /**
@@ -34,47 +32,46 @@ enum JsonParserResultDetail {
   INVALID_VALUE,
 };
 
-absl::optional<JsonObject> JsonParse(absl::string_view str);
+std::optional<JsonObject> JsonParse(std::string_view str);
 
 template <typename T>
-std::pair<absl::optional<T>, JsonParserResultDetail> JsonValueAs(
+std::pair<std::optional<T>, JsonParserResultDetail> JsonValueAs(
     const JsonObject&) {
   static_assert(true, "Unsupported Type");
 }
 
 template <>
-std::pair<absl::optional<absl::string_view>, JsonParserResultDetail>
-JsonValueAs<absl::string_view>(const JsonObject& j);
+std::pair<std::optional<std::string_view>, JsonParserResultDetail>
+JsonValueAs<std::string_view>(const JsonObject& j);
 
 template <>
-std::pair<absl::optional<std::string>, JsonParserResultDetail>
+std::pair<std::optional<std::string>, JsonParserResultDetail>
 JsonValueAs<std::string>(const JsonObject& j);
 
 template <>
-std::pair<absl::optional<int64_t>, JsonParserResultDetail> JsonValueAs<int64_t>(
+std::pair<std::optional<int64_t>, JsonParserResultDetail> JsonValueAs<int64_t>(
     const JsonObject& j);
 
 template <>
-std::pair<absl::optional<uint64_t>, JsonParserResultDetail>
+std::pair<std::optional<uint64_t>, JsonParserResultDetail>
 JsonValueAs<uint64_t>(const JsonObject& j);
 
 template <>
-std::pair<absl::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
+std::pair<std::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
     const JsonObject& j);
 
 template <>
-std::pair<absl::optional<JsonObject>, JsonParserResultDetail>
+std::pair<std::optional<JsonObject>, JsonParserResultDetail>
 JsonValueAs<JsonObject>(const JsonObject& j);
 
 template <>
-std::pair<absl::optional<std::vector<absl::string_view>>,
-          JsonParserResultDetail>
-JsonValueAs<std::vector<absl::string_view>>(const JsonObject& j);
+std::pair<std::optional<std::vector<std::string_view>>, JsonParserResultDetail>
+JsonValueAs<std::vector<std::string_view>>(const JsonObject& j);
 
 template <class T>
 class JsonGetField {
  public:
-  JsonGetField(const JsonObject& j, absl::string_view field);
+  JsonGetField(const JsonObject& j, std::string_view field);
   const JsonParserResultDetail& detail() { return detail_; }
   T value() { return object_; }
   T value_or(T v) {
@@ -90,7 +87,7 @@ class JsonGetField {
 };
 
 template <class T>
-JsonGetField<T>::JsonGetField(const JsonObject& j, absl::string_view field) {
+JsonGetField<T>::JsonGetField(const JsonObject& j, std::string_view field) {
   auto it = j.find(field);
   if (it == j.end()) {
     detail_ = JsonParserResultDetail::OUT_OF_RANGE;
@@ -107,13 +104,13 @@ JsonGetField<T>::JsonGetField(const JsonObject& j, absl::string_view field) {
 // Returns false if set and not an array, or any of the visitor calls returns
 // false.
 bool JsonArrayIterate(
-    const JsonObject& j, absl::string_view field,
+    const JsonObject& j, std::string_view field,
     const std::function<bool(const JsonObject& elt)>& visitor);
 
 // Iterate over an optional object field key set.
 // Returns false if set and not an object, or any of the visitor calls returns
 // false.
-bool JsonObjectIterate(const JsonObject& j, absl::string_view field,
+bool JsonObjectIterate(const JsonObject& j, std::string_view field,
                        const std::function<bool(std::string key)>& visitor);
 bool JsonObjectIterate(const JsonObject& j,
                        const std::function<bool(std::string key)>& visitor);

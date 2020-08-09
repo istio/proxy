@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_deb", "pkg_tar")
+load("@rules_pkg//:pkg.bzl", "pkg_deb", "pkg_tar")
 
 # TODO: decide the proper location for binaries and configs and update the file.
 # Current layout for binaries matches 0.1 and docker images.

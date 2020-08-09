@@ -47,8 +47,8 @@ Config::Config(Stats::Scope& scope, size_t max_client_hello_size)
         Filter* filter = static_cast<Filter*>(SSL_get_app_data(ssl));
 
         if (filter != nullptr) {
-          filter->onServername(
-              SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name));
+          filter->onServername(absl::NullSafeStringView(
+              SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name)));
         }
 
         // Return an error to stop the handshake; we have what we wanted

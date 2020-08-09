@@ -34,7 +34,7 @@ namespace Common {
 using namespace google::protobuf;
 using namespace google::protobuf::util;
 
-constexpr absl::string_view node_metadata_json = R"###(
+constexpr std::string_view node_metadata_json = R"###(
 {
    "NAMESPACE":"test_namespace",
    "CLUSTER_ID": "test-cluster",

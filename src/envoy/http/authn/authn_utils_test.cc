@@ -251,7 +251,7 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
 
 TEST(AuthnUtilsTest, MatchString) {
   iaapi::StringMatch match;
-  EXPECT_FALSE(AuthnUtils::MatchString(nullptr, match));
+  EXPECT_FALSE(AuthnUtils::MatchString({}, match));
   EXPECT_FALSE(AuthnUtils::MatchString("", match));
 
   match.set_exact("exact");

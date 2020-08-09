@@ -37,8 +37,9 @@ namespace Plugin {
 
 #endif
 
-constexpr StringView ExchangeMetadataHeader = "x-envoy-peer-metadata";
-constexpr StringView ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
+constexpr std::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
+constexpr std::string_view ExchangeMetadataHeaderId =
+    "x-envoy-peer-metadata-id";
 const size_t DefaultNodeCacheMaxSize = 500;
 
 // PluginRootContext is the root context for all streams processed by the
@@ -46,7 +47,7 @@ const size_t DefaultNodeCacheMaxSize = 500;
 // interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
  public:
-  PluginRootContext(uint32_t id, StringView root_id)
+  PluginRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {}
   ~PluginRootContext() = default;
 
@@ -55,9 +56,10 @@ class PluginRootContext : public RootContext {
   bool onStart(size_t) override { return true; };
   void onTick() override{};
 
-  StringView metadataValue() { return metadata_value_; };
-  StringView nodeId() { return node_id_; };
-  bool updatePeer(StringView key, StringView peer_id, StringView peer_header);
+  std::string_view metadataValue() { return metadata_value_; };
+  std::string_view nodeId() { return node_id_; };
+  bool updatePeer(std::string_view key, std::string_view peer_id,
+                  std::string_view peer_header);
 
  private:
   void updateMetadataValue();
@@ -84,8 +86,10 @@ class PluginContext : public Context {
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
-  inline StringView metadataValue() { return rootContext()->metadataValue(); };
-  inline StringView nodeId() { return rootContext()->nodeId(); }
+  inline std::string_view metadataValue() {
+    return rootContext()->metadataValue();
+  };
+  inline std::string_view nodeId() { return rootContext()->nodeId(); }
 
   ::Wasm::Common::TrafficDirection direction_;
   bool metadata_received_{true};

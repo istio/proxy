@@ -78,17 +78,14 @@ void ExtractHeaders(const Http::HeaderMap& header_map,
   };
   Context ctx(exclusives, headers);
   header_map.iterate(
-      [](const Http::HeaderEntry& header,
-         void* context) -> Http::HeaderMap::Iterate {
-        Context* ctx = static_cast<Context*>(context);
+      [&ctx](const Http::HeaderEntry& header) -> Http::HeaderMap::Iterate {
         auto key = std::string(header.key().getStringView());
         auto value = std::string(header.value().getStringView());
-        if (ctx->exclusives.count(key) == 0) {
-          ctx->headers[key] = value;
+        if (ctx.exclusives.count(key) == 0) {
+          ctx.headers[key] = value;
         }
         return Http::HeaderMap::Iterate::Continue;
-      },
-      &ctx);
+      });
 }
 
 void FindHeaders(const Http::HeaderMap& header_map,
@@ -103,17 +100,14 @@ void FindHeaders(const Http::HeaderMap& header_map,
   };
   Context ctx(inclusives, headers);
   header_map.iterate(
-      [](const Http::HeaderEntry& header,
-         void* context) -> Http::HeaderMap::Iterate {
-        Context* ctx = static_cast<Context*>(context);
+      [&ctx](const Http::HeaderEntry& header) -> Http::HeaderMap::Iterate {
         auto key = std::string(header.key().getStringView());
         auto value = std::string(header.value().getStringView());
-        if (ctx->inclusives.count(key) != 0) {
-          ctx->headers[key] = value;
+        if (ctx.inclusives.count(key) != 0) {
+          ctx.headers[key] = value;
         }
         return Http::HeaderMap::Iterate::Continue;
-      },
-      &ctx);
+      });
 }
 
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
