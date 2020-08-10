@@ -30,6 +30,21 @@
 namespace Extensions {
 namespace Stackdriver {
 namespace Log {
+namespace {
+void setSourceCanonicalService(
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    google::protobuf::Map<std::string, std::string>* label_map) {
+  const auto peer_labels = peer_node_info.labels();
+  if (peer_labels) {
+    auto ics_iter = peer_labels->LookupByKey(
+        Wasm::Common::kCanonicalServiceLabelName.data());
+    if (ics_iter) {
+      (*label_map)["source_canonical_service"] =
+          flatbuffers::GetString(ics_iter->value());
+    }
+  }
+}
+}  // namespace
 
 using google::protobuf::util::TimeUtil;
 
@@ -119,7 +134,7 @@ void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
   *new_entry->mutable_timestamp() =
       google::protobuf::util::TimeUtil::NanosecondsToTimestamp(log_time);
 
-  addTCPLabelsToLogEntry(request_info, new_entry);
+  addTCPLabelsToLogEntry(request_info, peer_node_info, new_entry);
   fillAndFlushLogEntry(request_info, peer_node_info, new_entry);
 }
 
@@ -142,7 +157,7 @@ void Logger::fillAndFlushLogEntry(
     google::logging::v2::LogEntry* new_entry) {
   new_entry->set_severity(::google::logging::type::INFO);
   auto label_map = new_entry->mutable_labels();
-  (*label_map)["request_id"] = request_info.request_id;
+
   (*label_map)["source_name"] = flatbuffers::GetString(peer_node_info.name());
   (*label_map)["source_workload"] =
       flatbuffers::GetString(peer_node_info.workload_name());
@@ -160,11 +175,8 @@ void Logger::fillAndFlushLogEntry(
     if (app_iter) {
       (*label_map)["source_app"] = flatbuffers::GetString(app_iter->value());
     }
-    auto ics_iter = peer_labels->LookupByKey(
-        Wasm::Common::kCanonicalServiceLabelName.data());
-    if (ics_iter) {
-      (*label_map)["source_canonical_service"] =
-          flatbuffers::GetString(ics_iter->value());
+    if (label_map->find("source_canonical_service") == label_map->end()) {
+      setSourceCanonicalService(peer_node_info, label_map);
     }
     auto rev_iter = peer_labels->LookupByKey(
         Wasm::Common::kCanonicalServiceRevisionLabelName.data());
@@ -185,6 +197,13 @@ void Logger::fillAndFlushLogEntry(
   (*label_map)["protocol"] = request_info.request_protocol;
   (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
   (*label_map)["connection_id"] = std::to_string(request_info.connection_id);
+  (*label_map)["route_name"] = request_info.route_name;
+  (*label_map)["upstream_host"] = request_info.upstream_host;
+  (*label_map)["upstream_cluster"] = request_info.upstream_cluster;
+  (*label_map)["requested_server_name"] = request_info.request_serever_name;
+  (*label_map)["x-envoy-original-path"] = request_info.x_envoy_original_path;
+  (*label_map)["x-envoy-original-dst-host"] =
+      request_info.x_envoy_original_dst_host;
 
   // Insert trace headers, if exist.
   if (request_info.b3_trace_sampled) {
@@ -236,8 +255,21 @@ bool Logger::exportLogEntry(bool is_on_done) {
 
 void Logger::addTCPLabelsToLogEntry(
     const ::Wasm::Common::RequestInfo& request_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
     google::logging::v2::LogEntry* log_entry) {
   auto label_map = log_entry->mutable_labels();
+  setSourceCanonicalService(peer_node_info, label_map);
+  auto source_cs_iter = label_map->find("source_canonical_service");
+  auto destination_cs_iter =
+      log_entries_request_->labels().find("destination_canonical_service");
+  log_entry->set_text_payload(
+      absl::StrCat(source_cs_iter != label_map->end()
+                       ? source_cs_iter->second
+                       : flatbuffers::GetString(peer_node_info.workload_name()),
+                   " --> ",
+                   destination_cs_iter != log_entries_request_->labels().end()
+                       ? destination_cs_iter->second
+                       : request_info.destination_service_name));
   (*label_map)["source_ip"] = request_info.source_address;
   (*label_map)["destination_ip"] = request_info.destination_address;
   (*label_map)["source_port"] = std::to_string(request_info.source_port);
@@ -270,6 +302,8 @@ void Logger::fillHTTPRequestInLogEntry(
       google::protobuf::util::TimeUtil::NanosecondsToDuration(
           request_info.duration);
   http_request->set_referer(request_info.referer);
+  auto label_map = log_entry->mutable_labels();
+  (*label_map)["request_id"] = request_info.request_id;
 }
 
 }  // namespace Log

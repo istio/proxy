@@ -124,6 +124,13 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.source_address = "1.1.1.1";
   request_info.destination_address = "2.2.2.2";
   request_info.connection_id = 0;
+  request_info.route_name = "redirect";
+  request_info.upstream_cluster =
+      "inbound|9080|http|server.default.svc.cluster.local";
+  request_info.upstream_host = "1.1.1.1:1000";
+  request_info.request_serever_name = "server.com";
+  request_info.x_envoy_original_dst_host = "tmp.com";
+  request_info.x_envoy_original_path = "/tmp";
   return request_info;
 }
 
@@ -172,7 +179,13 @@ std::string write_log_request_json = R"({
            "response_flag":"-",
            "protocol":"HTTP",
            "log_sampled":"false",
-           "connection_id":"0"
+           "connection_id":"0",
+           "upstream_cluster": "inbound|9080|http|server.default.svc.cluster.local",
+           "route_name": "redirect",
+           "requested_server_name": "server.com",
+           "x-envoy-original-dst-host": "tmp.com",
+           "x-envoy-original-path": "/tmp",
+           "upstream_host": "1.1.1.1:1000"
         },
         "trace":"projects/test_project/traces/123abc",
         "spanId":"abc123",
@@ -224,7 +237,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger =
       std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
-  for (int i = 0; i < 9; i++) {
+  for (int i = 0; i < 10; i++) {
     logger->addLogEntry(requestInfo(), peerNodeInfo(peer));
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
@@ -232,12 +245,12 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
           [](const std::vector<std::unique_ptr<
                  const google::logging::v2::WriteLogEntriesRequest>>& requests,
              bool) {
-            EXPECT_EQ(requests.size(), 3);
+            EXPECT_EQ(requests.size(), 5);
             for (const auto& req : requests) {
               std::string diff;
               MessageDifferencer differ;
               differ.ReportDifferencesToString(&diff);
-              if (!differ.Compare(expectedRequest(3), *req)) {
+              if (!differ.Compare(expectedRequest(2), *req)) {
                 FAIL() << "unexpected log entry " << diff << "\n";
               }
             }

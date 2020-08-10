@@ -44,6 +44,8 @@ constexpr StringView kAccessLogPolicyKey = "istio.access_log_policy";
 constexpr StringView kAuthorityHeaderKey = ":authority";
 constexpr StringView kMethodHeaderKey = ":method";
 constexpr StringView kContentTypeHeaderKey = "content-type";
+constexpr StringView kEnvoyOriginalDstHostKey = "x-envoy-original-dst-host";
+constexpr StringView kEnvoyOriginalPathKey = "x-envoy-original-path";
 
 const std::string kProtocolHTTP = "http";
 const std::string kProtocolGRPC = "grpc";
@@ -106,7 +108,7 @@ struct RequestInfo {
   uint32_t destination_port = 0;
 
   // Source port of the client.
-  uint32_t source_port = 0;
+  uint64_t source_port = 0;
 
   // Protocol used the request (HTTP/1.1, gRPC, etc).
   std::string request_protocol;
@@ -149,6 +151,14 @@ struct RequestInfo {
   // populateExtendedHTTPRequestInfo.
   std::string source_address;
   std::string destination_address;
+
+  // Additional fields for access log.
+  std::string route_name;
+  std::string upstream_host;
+  std::string upstream_cluster;
+  std::string request_serever_name;
+  std::string x_envoy_original_path;
+  std::string x_envoy_original_dst_host;
 
   // Important Headers.
   std::string referer;
