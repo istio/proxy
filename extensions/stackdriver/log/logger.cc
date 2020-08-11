@@ -160,7 +160,7 @@ void Logger::initializeLogEntryRequest(
   log_entries_request_map_[log_entry_type]->size = 0;
   auto log_entries_request =
       log_entries_request_map_[log_entry_type]->request.get();
-  std::string log_name = outbound ? kClientAccessLogName : kServerAccessLogName;
+  const std::string& log_name = outbound ? kClientAccessLogName : kServerAccessLogName;
   log_entries_request->set_log_name("projects/" + project_id_ + "/logs/" +
                                     log_name);
 
