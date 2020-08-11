@@ -115,9 +115,9 @@ test_tsan:
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) TSAN=true GO111MODULE=on go test ./...
 
 test_centos:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) ENVOY_STDLIB="libstdc++" && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) ENVOY_STDLIB="libstdc++" && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) -- $(CENTOS_BAZEL_TEST_TARGETS)
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test ./...
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
+	# TODO: re-enable IPv6 tests
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) --test_filter="-*IPv6*" -- $(CENTOS_BAZEL_TEST_TARGETS)
 
 check:
 	@echo >&2 "Please use \"make lint\" instead."
