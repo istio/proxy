@@ -113,9 +113,9 @@ class StackdriverRootContext : public RootContext {
   // Indicates whether to export all server/client access log or not.
   bool enableAllAccessLog();
 
-  // Indicates whether to export any client access log or not when there was an
+  // Indicates whether to export any access log or not when there was an
   // error in request/connection.
-  bool enableClientAccessLogOnError();
+  bool enableAccessLogOnError();
 
   bool shouldLogThisRequest(::Wasm::Common::RequestInfo& request_info);
 

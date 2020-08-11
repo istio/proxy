@@ -364,7 +364,7 @@ void StackdriverRootContext::record() {
       outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
   if ((enableAllAccessLog() ||
-       (enableClientAccessLogOnError() &&
+       (enableAccessLogOnError() &&
         (request_info.response_code >= 400 ||
          request_info.response_flag != ::Wasm::Common::NONE))) &&
       shouldLogThisRequest(request_info)) {
@@ -432,7 +432,7 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
                                                request_info);
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
-  if (enableAllAccessLog() || (enableClientAccessLogOnError() && !no_error)) {
+  if (enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
     // It's possible that for a short lived TCP connection, we log TCP
     // Connection Open log entry on connection close.
@@ -465,7 +465,7 @@ inline bool StackdriverRootContext::isOutbound() {
 }
 
 inline bool StackdriverRootContext::enableAccessLog() {
-  return enableAllAccessLog() || enableClientAccessLogOnError();
+  return enableAllAccessLog() || enableAccessLogOnError();
 }
 
 inline bool StackdriverRootContext::enableAllAccessLog() {
@@ -476,10 +476,9 @@ inline bool StackdriverRootContext::enableAllAccessLog() {
              stackdriver::config::v1alpha1::PluginConfig::FULL;
 }
 
-inline bool StackdriverRootContext::enableClientAccessLogOnError() {
+inline bool StackdriverRootContext::enableAccessLogOnError() {
   return config_.access_logging() ==
-             stackdriver::config::v1alpha1::PluginConfig::ERRORS_ONLY &&
-         isOutbound();
+         stackdriver::config::v1alpha1::PluginConfig::ERRORS_ONLY;
 }
 
 inline bool StackdriverRootContext::enableEdgeReporting() {
