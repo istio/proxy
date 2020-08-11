@@ -97,7 +97,7 @@ std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode &node) {
   auto location = platform_metadata->LookupByKey(kGCPLocationKey);
   auto instance_id = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
 
-  auto name = node.name() ? node.name()->string_view() : absl::string_view();
+  auto name = node.name() ? node.name()->string_view() : std::string_view();
   if (name.size() == 0 && instance_id) {
     name = instance_id->value()->string_view();
   }

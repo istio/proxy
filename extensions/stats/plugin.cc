@@ -250,7 +250,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   Map<std::string, std::vector<MetricTag>> metric_tags;
   // Maps metric factory name to a map from a tag name to an optional index.
   // Empty index means the tag needs to be removed.
-  Map<std::string, Map<std::string, Optional<size_t>>> metric_indexes;
+  Map<std::string, Map<std::string, std::optional<size_t>>> metric_indexes;
 
   // Seed the common metric tags with the default set.
   const std::vector<MetricTag>& default_tags = defaultTags();
@@ -290,7 +290,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         };
         factory.type = MetricType::Counter;
         auto type =
-            JsonGetField<absl::string_view>(definition, "type").value_or("");
+            JsonGetField<std::string_view>(definition, "type").value_or("");
         if (type == "GAUGE") {
           factory.type = MetricType::Gauge;
         } else if (type == "HISTOGRAM") {
@@ -352,7 +352,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
               return false;
             }
             auto expr_index = addStringExpression(expr_string.first.value());
-            Optional<size_t> value = {};
+            std::optional<size_t> value = {};
             if (expr_index.has_value()) {
               value = count_standard_labels + expr_index.value();
             }
@@ -490,7 +490,7 @@ void PluginRootContext::cleanupExpressions() {
   int_expressions_.clear();
 }
 
-Optional<size_t> PluginRootContext::addStringExpression(
+std::optional<size_t> PluginRootContext::addStringExpression(
     const std::string& input) {
   auto it = input_expressions_.find(input);
   if (it == input_expressions_.end()) {
@@ -507,7 +507,7 @@ Optional<size_t> PluginRootContext::addStringExpression(
   return it->second;
 }
 
-Optional<uint32_t> PluginRootContext::addIntExpression(
+std::optional<uint32_t> PluginRootContext::addIntExpression(
     const std::string& input) {
   uint32_t token = 0;
   if (createExpression(input, &token) != WasmResult::Ok) {

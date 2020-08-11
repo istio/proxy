@@ -38,10 +38,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 7/20/20
-ENVOY_SHA = "5dca4c64067783b463af7698411dd7a1d9cc5333"
+# Commit date: 2020-08-05
+ENVOY_SHA = "9ad2c737438c6f51f42bb588517a84603e9a8132"
 
-ENVOY_SHA256 = "4550dfbf5fff8b73c8a3a5fe616c7541dad6e079c93f186c5183a9d56a5d628a"
+ENVOY_SHA256 = "2b433916da4e1e2b6a1a7c2cac760dffaffb3d3c9c6d6efd44193926437f0a0a"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -80,6 +80,21 @@ load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
 
 antlr_dependencies(471)
 
+# Bazel @rules_pkg
+
+http_archive(
+    name = "rules_pkg",
+    sha256 = "aeca78988341a2ee1ba097641056d168320ecc51372ef7ff8e64b139516a4937",
+    urls = [
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.2.6/rules_pkg-0.2.6.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.2.6/rules_pkg-0.2.6.tar.gz",
+    ],
+)
+
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
 # Docker dependencies
 
 docker_dependencies()
@@ -94,6 +109,10 @@ container_repositories()
 load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
 
 container_deps()
+
+load("@io_bazel_rules_docker//repositories:pip_repositories.bzl", "pip_deps")
+
+pip_deps()
 
 load(
     "@io_bazel_rules_docker//container:container.bzl",

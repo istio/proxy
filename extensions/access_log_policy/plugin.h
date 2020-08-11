@@ -47,7 +47,7 @@ const size_t DefaultClientCacheMaxSize = 500;
 // interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
  public:
-  PluginRootContext(uint32_t id, StringView root_id)
+  PluginRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {}
   ~PluginRootContext() = default;
 

@@ -83,8 +83,7 @@ class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
 
   // MOCK_CONTEXT_LOG_;
 
-  proxy_wasm::WasmResult defineMetric(proxy_wasm::MetricType type,
-                                      absl::string_view name,
+  proxy_wasm::WasmResult defineMetric(uint32_t type, std::string_view name,
                                       uint32_t* metric_id_ptr) override {
     auto rs = Envoy::Extensions::Common::Wasm::Context::defineMetric(
         type, name, metric_id_ptr);
@@ -94,7 +93,7 @@ class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
     return rs;
   }
 
-  uint64_t readMetric(absl::string_view name) {
+  uint64_t readMetric(std::string_view name) {
     auto mid = metrics_.find(std::string(name));
     if (mid == metrics_.end()) {
       return 0;
@@ -171,7 +170,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
 
     auto vm_id = "";
     plugin_ = std::make_shared<Extensions::Common::Wasm::Plugin>(
-        c.name, c.root_id, vm_id, c.plugin_config, false,
+        c.name, c.root_id, vm_id, params.runtime, c.plugin_config, false,
         TrafficDirection::INBOUND, local_info_, &listener_metadata_);
     // creates a base VM
     // This is synchronous, even though it happens thru a callback due to null
@@ -245,7 +244,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   Stats::ScopeSharedPtr scope_;
   NiceMock<ThreadLocal::MockInstance> tls_;
   NiceMock<Event::MockDispatcher> dispatcher_;
-  NiceMock<Runtime::MockRandomGenerator> random_;
+  NiceMock<Random::MockRandomGenerator> random_;
   NiceMock<Upstream::MockClusterManager> cluster_manager_;
   NiceMock<Init::MockManager> init_manager_;
   WasmHandleSharedPtr wasm_;

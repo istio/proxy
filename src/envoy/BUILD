@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_binary",

@@ -20,7 +20,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
-#include "absl/strings/string_view.h"
 
 namespace Wasm {
 namespace Common {

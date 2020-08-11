@@ -33,12 +33,12 @@ namespace AttributeGen {
 
 // class Match
 // Returns the result of evaluation or nothing in case of an error.
-Optional<bool> Match::evaluate() const {
+std::optional<bool> Match::evaluate() const {
   if (condition_.empty()) {
     return true;
   }
 
-  Optional<bool> ret = {};
+  std::optional<bool> ret = {};
 
   const std::string function = "expr_evaluate";
   char* out = nullptr;
@@ -57,7 +57,7 @@ Optional<bool> Match::evaluate() const {
   } else {
     // we have a bool.
     bool matched = *reinterpret_cast<bool*>(out);
-    ret = Optional<bool>{matched};
+    ret = std::optional<bool>{matched};
   }
 
   if (out != nullptr) {
@@ -72,7 +72,7 @@ Optional<bool> Match::evaluate() const {
 // class AttributeGenerator
 
 // If evaluation is successful returns true and sets result.
-Optional<bool> AttributeGenerator::evaluate(std::string* val) const {
+std::optional<bool> AttributeGenerator::evaluate(std::string* val) const {
   for (const auto& match : matches_) {
     auto eval_status = match.evaluate();
     if (!eval_status) {

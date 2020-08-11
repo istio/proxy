@@ -157,7 +157,7 @@ inline std::string Base64::encode(const char* input, uint64_t length,
   return ret;
 }
 
-inline std::string Base64::decodeWithoutPadding(StringView input) {
+inline std::string Base64::decodeWithoutPadding(std::string_view input) {
   if (input.empty()) {
     return EMPTY_STRING;
   }

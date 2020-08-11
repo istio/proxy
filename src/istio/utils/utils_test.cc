@@ -36,7 +36,7 @@ class UtilsTest : public ::testing::Test {
   }
 };
 
-TEST_F(UtilsTest, GetSourceNamespace) {
+TEST_F(UtilsTest, TestGetSourceNamespace) {
   checkFalse("");
   checkFalse("cluster.local");
   checkFalse("cluster.local/");
