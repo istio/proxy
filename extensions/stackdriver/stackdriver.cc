@@ -216,7 +216,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     }
   }
 
-  if (!logger_ && enableServerAccessLog()) {
+  if (!logger_ && enableAccessLog()) {
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
     auto logging_stub_option = stub_option;
@@ -317,7 +317,7 @@ void StackdriverRootContext::onTick() {
     }
   }
 
-  if (enableServerAccessLog()) {
+  if (enableAccessLog()) {
     logger_->exportLogEntry(/* is_on_done= */ false);
   }
 }
@@ -328,7 +328,7 @@ bool StackdriverRootContext::onDone() {
   // called, but onConfigure is not triggered. onConfigure is only triggered in
   // thread local VM, which makes it possible that logger_ is empty ptr even
   // when logging is enabled.
-  if (logger_ && enableServerAccessLog() &&
+  if (logger_ && enableAccessLog() &&
       logger_->exportLogEntry(/* is_on_done= */ true)) {
     done = false;
   }
@@ -346,13 +346,12 @@ bool StackdriverRootContext::onDone() {
 
 void StackdriverRootContext::record() {
   const bool outbound = isOutbound();
-  const auto& metadata_key =
-      outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey;
   std::string peer;
+  bool peer_found = getValue(
+      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          getValue({metadata_key}, &peer) ? peer.data()
-                                          : empty_node_info_.data());
+          peer_found ? peer.data() : empty_node_info_.data());
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
   const ::Wasm::Common::FlatNode& destination_node_info =
       outbound ? peer_node : local_node;
@@ -364,9 +363,13 @@ void StackdriverRootContext::record() {
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
-  if (enableServerAccessLog() && shouldLogThisRequest(request_info)) {
+  if ((enableAllAccessLog() ||
+       (enableAccessLogOnError() &&
+        (request_info.response_code >= 400 ||
+         request_info.response_flag != ::Wasm::Common::NONE))) &&
+      shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node);
+    logger_->addLogEntry(request_info, peer_node, outbound);
   }
   if (enableEdgeReporting()) {
     std::string peer_id;
@@ -429,7 +432,7 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
                                                request_info);
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
-  if (enableServerAccessLog()) {
+  if (enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
     // It's possible that for a short lived TCP connection, we log TCP
     // Connection Open log entry on connection close.
@@ -439,12 +442,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
       logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                              record_info.request_info->start_time);
+                              record_info.request_info->start_time, outbound);
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
     logger_->addTcpLogEntry(request_info, peer_node,
-                            getCurrentTimeNanoseconds());
+                            getCurrentTimeNanoseconds(), outbound);
   }
   if (log_open_on_timeout) {
     // If we logged the request on timeout, for outbound requests, we try to
@@ -461,8 +464,21 @@ inline bool StackdriverRootContext::isOutbound() {
   return direction_ == ::Wasm::Common::TrafficDirection::Outbound;
 }
 
-inline bool StackdriverRootContext::enableServerAccessLog() {
-  return !config_.disable_server_access_logging() && !isOutbound();
+inline bool StackdriverRootContext::enableAccessLog() {
+  return enableAllAccessLog() || enableAccessLogOnError();
+}
+
+inline bool StackdriverRootContext::enableAllAccessLog() {
+  // TODO(gargnupur): Remove (!config_.disable_server_access_logging() &&
+  // !isOutbound) once disable_server_access_logging config is removed.
+  return (!config_.disable_server_access_logging() && !isOutbound()) ||
+         config_.access_logging() ==
+             stackdriver::config::v1alpha1::PluginConfig::FULL;
+}
+
+inline bool StackdriverRootContext::enableAccessLogOnError() {
+  return config_.access_logging() ==
+         stackdriver::config::v1alpha1::PluginConfig::ERRORS_ONLY;
 }
 
 inline bool StackdriverRootContext::enableEdgeReporting() {

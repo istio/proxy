@@ -16,4 +16,5 @@
             local: { inline_string: "envoy.wasm.null.stackdriver" }
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
-          value: ""
+          value: |
+            {"access_logging": "FULL"}
