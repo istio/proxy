@@ -50,16 +50,16 @@ using google::protobuf::util::TimeUtil;
 
 // Name of the HTTP server access log.
 constexpr char kServerAccessLogName[] = "server-accesslog-stackdriver";
-constexpr char kAuditAccessLogName[] = "server-accesslog-stackdriver-audit";
+constexpr char kAuditAccessLogName[] = "istio-audit-log";
 
 Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
                std::unique_ptr<Exporter> exporter, int log_request_size_limit) {
-  // Initalize the current WriteLogEntriesRequest.
-  log_entries_request_ =
-      std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
-
-  audit_entries_request_ =
-      std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
+  
+  // Initialize WriteLogEntriesRequests
+  log_entries_request_map_[LogEntryType::Server] = std::make_unique<WriteLogEntryRequest>();
+  log_entries_request_map_[LogEntryType::Server]->request = std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
+  log_entries_request_map_[LogEntryType::ServerAudit] = std::make_unique<WriteLogEntryRequest>();
+  log_entries_request_map_[LogEntryType::ServerAudit]->request = std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
 
   // Set log names.
   const auto platform_metadata = local_node_info.platform_metadata();
@@ -69,10 +69,11 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
   if (project_iter) {
     project_id_ = flatbuffers::GetString(project_iter->value());
   }
-  log_entries_request_->set_log_name("projects/" + project_id_ + "/logs/" +
+
+  log_entries_request_map_[LogEntryType::Server]->request->set_log_name("projects/" + project_id_ + "/logs/" +
                                      kServerAccessLogName);
 
-  audit_entries_request_->set_log_name("projects/" + project_id_ + "/logs/" +
+  log_entries_request_map_[LogEntryType::ServerAudit]->request->set_log_name("projects/" + project_id_ + "/logs/" +
                                        kAuditAccessLogName);
 
   std::string resource_type = Common::kContainerMonitoredResource;
@@ -89,19 +90,18 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
   google::api::MonitoredResource monitored_resource;
   Common::getMonitoredResource(resource_type, local_node_info,
                                &monitored_resource);
-  log_entries_request_->mutable_resource()->CopyFrom(monitored_resource);
-  audit_entries_request_->mutable_resource()->CopyFrom(monitored_resource);
+  log_entries_request_map_[LogEntryType::Server]->request->mutable_resource()->CopyFrom(monitored_resource);
+  log_entries_request_map_[LogEntryType::ServerAudit]->request->mutable_resource()->CopyFrom(monitored_resource);
 
-  setCommonLabels(local_node_info, false);
-  setCommonLabels(local_node_info, true);
+  setCommonLabels(local_node_info, LogEntryType::Server);
+  setCommonLabels(local_node_info, LogEntryType::ServerAudit);
   log_request_size_limit_ = log_request_size_limit;
   exporter_ = std::move(exporter);
 }
 
 void Logger::setCommonLabels(const ::Wasm::Common::FlatNode& local_node_info,
-                             bool for_audit) {
-  auto& entries_request =
-      (for_audit ? audit_entries_request_ : log_entries_request_);
+                             LogEntryType log_type) {
+  auto& entries_request = log_entries_request_map_[log_type]->request;
   // Set common labels shared by all entries.
   auto label_map = entries_request->mutable_labels();
   (*label_map)["destination_workload"] =
@@ -110,7 +110,7 @@ void Logger::setCommonLabels(const ::Wasm::Common::FlatNode& local_node_info,
       flatbuffers::GetString(local_node_info.namespace_());
 
   // Don't set if audit request
-  if (!for_audit) {
+  if (!isAuditEntry(log_type)) {
     (*label_map)["destination_name"] =
         flatbuffers::GetString(local_node_info.name());
     (*label_map)["mesh_uid"] =
@@ -146,47 +146,24 @@ void Logger::setCommonLabels(const ::Wasm::Common::FlatNode& local_node_info,
   }
 }
 
-void Logger::addTcpAuditEntry(const ::Wasm::Common::RequestInfo& request_info,
-                              const ::Wasm::Common::FlatNode& peer_node_info,
-                              long int log_time) {
-  addTcpEntry(request_info, peer_node_info, log_time, true);
-}
-
 void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                            const ::Wasm::Common::FlatNode& peer_node_info,
-                            long int log_time) {
-  addTcpEntry(request_info, peer_node_info, log_time, false);
-}
-
-void Logger::addTcpEntry(const ::Wasm::Common::RequestInfo& request_info,
                          const ::Wasm::Common::FlatNode& peer_node_info,
-                         long int log_time, bool for_audit) {
+                         long int log_time, LogEntryType log_type) {
   // create a new log entry
-  auto* log_entries = log_entries_request_->mutable_entries();
+  auto* log_entries = log_entries_request_map_[log_type]->request->mutable_entries();
   auto* new_entry = log_entries->Add();
 
   *new_entry->mutable_timestamp() =
       google::protobuf::util::TimeUtil::NanosecondsToTimestamp(log_time);
 
-  addTCPLabelsToEntry(request_info, peer_node_info, new_entry);
-  fillAndFlushEntry(request_info, peer_node_info, new_entry, for_audit);
-}
-
-void Logger::addAuditEntry(const ::Wasm::Common::RequestInfo& request_info,
-                           const ::Wasm::Common::FlatNode& peer_node_info) {
-  addEntry(request_info, peer_node_info, true);
+  addTCPLabelsToLogEntry(request_info, peer_node_info, new_entry);
+  fillAndFlushLogEntry(request_info, peer_node_info, new_entry, log_type);
 }
 
 void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                         const ::Wasm::Common::FlatNode& peer_node_info) {
-  addEntry(request_info, peer_node_info, false);
-}
-
-void Logger::addEntry(const ::Wasm::Common::RequestInfo& request_info,
                       const ::Wasm::Common::FlatNode& peer_node_info,
-                      bool for_audit) {
-  auto& entries_request =
-      (for_audit ? audit_entries_request_ : log_entries_request_);
+                      LogEntryType log_type) {
+  auto& entries_request = log_entries_request_map_[log_type]->request;
   // create a new log entry
   auto* log_entries = entries_request->mutable_entries();
   auto* new_entry = log_entries->Add();
@@ -194,18 +171,18 @@ void Logger::addEntry(const ::Wasm::Common::RequestInfo& request_info,
   *new_entry->mutable_timestamp() =
       google::protobuf::util::TimeUtil::NanosecondsToTimestamp(
           request_info.start_time);
-  fillHTTPRequestInEntry(request_info, new_entry, for_audit);
-  fillAndFlushEntry(request_info, peer_node_info, new_entry, for_audit);
+  fillHTTPRequestInLogEntry(request_info, new_entry, log_type);
+  fillAndFlushLogEntry(request_info, peer_node_info, new_entry, log_type);
 }
 
-void Logger::fillAndFlushEntry(const ::Wasm::Common::RequestInfo& request_info,
+void Logger::fillAndFlushLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                                const ::Wasm::Common::FlatNode& peer_node_info,
                                google::logging::v2::LogEntry* new_entry,
-                               bool for_audit) {
+                               LogEntryType log_type) {
   new_entry->set_severity(::google::logging::type::INFO);
   auto label_map = new_entry->mutable_labels();
 
-  if (!for_audit) {
+  if (!isAuditEntry(log_type)) {
     (*label_map)["source_name"] = flatbuffers::GetString(peer_node_info.name());
   }
   (*label_map)["source_workload"] =
@@ -240,7 +217,7 @@ void Logger::fillAndFlushEntry(const ::Wasm::Common::RequestInfo& request_info,
   (*label_map)["destination_principal"] = request_info.destination_principal;
   (*label_map)["source_principal"] = request_info.source_principal;
 
-  if (!for_audit) {
+  if (!isAuditEntry(log_type)) {
     (*label_map)["response_flag"] = request_info.response_flag;
     (*label_map)["service_authentication_policy"] =
         std::string(::Wasm::Common::AuthenticationPolicyString(
@@ -267,17 +244,16 @@ void Logger::fillAndFlushEntry(const ::Wasm::Common::RequestInfo& request_info,
 
   // Accumulate estimated size of the request. If the current request exceeds
   // the size limit, flush the request out.
-  auto& req_size = for_audit ? audit_size_ : size_;
+  auto& req_size = log_entries_request_map_[log_type]->size;
   req_size += new_entry->ByteSizeLong();
   if (req_size > log_request_size_limit_) {
-    flush(for_audit);
+    flush(log_type);
   }
 }
 
-bool Logger::flush(bool for_audit) {
-  auto& req_size = for_audit ? audit_size_ : size_;
-  auto& entries_request =
-      for_audit ? audit_entries_request_ : log_entries_request_;
+bool Logger::flush(LogEntryType log_type) {
+  auto& entries_request = log_entries_request_map_[log_type]->request;
+  auto& req_size = log_entries_request_map_[log_type]->size;
 
   if (req_size == 0) {
     // This flush is triggered by timer and does not have any log entries.
@@ -303,8 +279,8 @@ bool Logger::flush(bool for_audit) {
 
 bool Logger::exportLogEntry(bool is_on_done) {
   // Try to flush both audit and regular log
-  bool flush_reg = flush(false);
-  bool flush_audit = flush(true);
+  bool flush_reg = flush(LogEntryType::Server);
+  bool flush_audit = flush(LogEntryType::ServerAudit);
   if (!flush_reg && !flush_audit && request_queue_.empty()) {
     // No log entry needs to export.
     return false;
@@ -315,7 +291,7 @@ bool Logger::exportLogEntry(bool is_on_done) {
   return true;
 }
 
-void Logger::addTCPLabelsToEntry(
+void Logger::addTCPLabelsToLogEntry(
     const ::Wasm::Common::RequestInfo& request_info,
     const ::Wasm::Common::FlatNode& peer_node_info,
     google::logging::v2::LogEntry* log_entry) {
@@ -346,9 +322,9 @@ void Logger::addTCPLabelsToEntry(
           request_info.tcp_connection_state));
 }
 
-void Logger::fillHTTPRequestInEntry(
+void Logger::fillHTTPRequestInLogEntry(
     const ::Wasm::Common::RequestInfo& request_info,
-    google::logging::v2::LogEntry* log_entry, bool for_audit) {
+    google::logging::v2::LogEntry* log_entry, LogEntryType log_type) {
   auto http_request = log_entry->mutable_http_request();
   http_request->set_request_method(request_info.request_operation);
   http_request->set_request_url(request_info.url_scheme + "://" +
@@ -365,10 +341,15 @@ void Logger::fillHTTPRequestInEntry(
           request_info.duration);
   http_request->set_referer(request_info.referer);
   auto label_map = log_entry->mutable_labels();
-  if (!for_audit) {
+  if (!isAuditEntry(log_type)) {
     (*label_map)["request_id"] = request_info.request_id;
   }
 }
+
+inline bool Logger::isAuditEntry(LogEntryType type) {
+  return type == LogEntryType::ServerAudit;
+}
+
 
 }  // namespace Log
 }  // namespace Stackdriver
