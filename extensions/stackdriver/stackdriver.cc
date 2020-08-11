@@ -373,7 +373,8 @@ void StackdriverRootContext::record() {
 
   if (enableServerAccessAudit() && shouldAuditThisRequest()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node, Logger::LogEntryType::ServerAudit);
+    logger_->addLogEntry(request_info, peer_node,
+                         Logger::LogEntryType::ServerAudit);
   }
 
   if (enableEdgeReporting()) {
@@ -447,12 +448,14 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
       logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                              record_info.request_info->start_time, Logger::LogEntryType::Server);
+                              record_info.request_info->start_time,
+                              Logger::LogEntryType::Server);
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
     logger_->addTcpLogEntry(request_info, peer_node,
-                            getCurrentTimeNanoseconds(), Logger::LogEntryType::ServerAudit);
+                            getCurrentTimeNanoseconds(),
+                            Logger::LogEntryType::Server);
   }
   if (log_open_on_timeout) {
     // If we logged the request on timeout, for outbound requests, we try to

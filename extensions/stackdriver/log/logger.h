@@ -41,13 +41,14 @@ class Logger {
          std::unique_ptr<Exporter> exporter,
          int log_request_size_limit = 4000000 /* 4 Mb */);
 
-  // Type of log Entry.
+  // Type of log entry.
   enum LogEntryType { ServerAudit, Server };
 
   // Add a new log entry based on the given request information and peer node
   // information.
   void addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                   const ::Wasm::Common::FlatNode& peer_node_info, LogEntryType log_type);
+                   const ::Wasm::Common::FlatNode& peer_node_info,
+                   LogEntryType log_type);
 
   // Add a new tcp log entry based on the given request information and peer
   // node information.
@@ -69,6 +70,10 @@ class Logger {
     int size;
   };
 
+  void initializeLogEntryRequest(
+      const google::api::MonitoredResource& monitored_resource,
+      const ::Wasm::Common::FlatNode& local_node_info, LogEntryType log_type);
+
   // Flush rotates the current WriteLogEntriesRequest. This will be
   // triggered either by a timer or by request size limit. Returns false if
   // there is no log entry to be exported.
@@ -80,20 +85,21 @@ class Logger {
 
   // Add TCP Specific labels to LogEntry.
   void addTCPLabelsToLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                           const ::Wasm::Common::FlatNode& peer_node_info,
-                           google::logging::v2::LogEntry* log_entry);
+                              const ::Wasm::Common::FlatNode& peer_node_info,
+                              google::logging::v2::LogEntry* log_entry);
 
   // Fill Http_Request entry in LogEntry.
-  void fillHTTPRequestInLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                              google::logging::v2::LogEntry* log_entry,
-                              LogEntryType log_type);
+  void fillHTTPRequestInLogEntry(
+      const ::Wasm::Common::RequestInfo& request_info,
+      google::logging::v2::LogEntry* log_entry, LogEntryType log_type);
 
   // Generic method to fill log entry and flush it.
   void fillAndFlushLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                         const ::Wasm::Common::FlatNode& peer_node_info,
-                         google::logging::v2::LogEntry* new_entry,
-                         LogEntryType log_type);
+                            const ::Wasm::Common::FlatNode& peer_node_info,
+                            google::logging::v2::LogEntry* new_entry,
+                            LogEntryType log_type);
 
+  // Checsk if the LogEntryType is for audit entries.
   inline bool isAuditEntry(LogEntryType type);
 
   // Buffer for WriteLogEntriesRequests that are to be exported.
@@ -101,14 +107,7 @@ class Logger {
       std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>
       request_queue_;
 
-  // Request that the new log entry should be written into.
-  std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>
-      log_entries_request_;
-
-  // Audit entry request that audit entries are written into.
-  std::unique_ptr<google::logging::v2::WriteLogEntriesRequest>
-      audit_entries_request_;
-
+  // Map containing the different types of WriteLogEntryRequests
   std::unordered_map<Logger::LogEntryType,
                      std::unique_ptr<Logger::WriteLogEntryRequest>>
       log_entries_request_map_;
