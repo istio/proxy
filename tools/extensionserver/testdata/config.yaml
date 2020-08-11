@@ -1,5 +1,5 @@
 extensions:
 - name: metadata_exchange
-  path: bazel-bin/extensions/metadata_exchange.compiled.wasm
+  path: bazel-bin/extensions/metadata_exchange.wasm
   configuration:
-    max_peer_cache_size: 30
+    max_peer_cache_size: 60

@@ -384,6 +384,15 @@ func TestStatsECDS(t *testing.T) {
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/extension_config_inbound.yaml.tmpl")
 			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/extension_config_outbound.yaml.tmpl")
+
+			updateExtensions :=
+				&driver.UpdateExtensions{Extensions: []string{
+					driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl"),
+				},
+				}
 			if err := (&driver.Scenario{
 				[]driver.Step{
 					&driver.XDS{},
@@ -393,13 +402,7 @@ func TestStatsECDS(t *testing.T) {
 						Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
 						Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 					&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
-					&driver.UpdateExtensions{Extensions: []string{
-						params.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl"),
-						params.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl"),
-						params.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl"),
-						params.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl"),
-					},
-					},
+					updateExtensions,
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 					&driver.Sleep{1 * time.Second},

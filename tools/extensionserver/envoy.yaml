@@ -61,3 +61,26 @@ admin:
 node:
   id: test
   cluster: test
+  metadata: {
+    "EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
+    "INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
+    "LABELS": {
+        "app": "ratings",
+        "pod-template-hash": "84975bc778",
+        "version": "v1",
+        "service.istio.io/canonical-name": "ratings",
+        "service.istio.io/canonical-revision": "version-1"
+    },
+    "MESH_ID": "mesh",
+    "NAME": "ratings-v1-84975bc778-pxz2w",
+    "NAMESPACE": "default",
+    "OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1",
+    "PLATFORM_METADATA": {
+        "gcp_gke_cluster_name": "test-cluster",
+        "gcp_location": "us-east4-b",
+        "gcp_project": "test-project"
+    },
+    "POD_NAME": "ratings-v1-84975bc778-pxz2w",
+    "SERVICE_ACCOUNT": "bookinfo-ratings",
+    "WORKLOAD_NAME": "ratings-v1",
+  }
