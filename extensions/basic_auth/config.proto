@@ -22,23 +22,20 @@ syntax = "proto3";
 // The following is an example of a configuration that restricts access to
 // given path prefixes, request methods and credentials.
 // {
-//  "pathPrefixes": [
-//    {
-//      "pathPrefix":"/reviews",
-//      "requestMethods":[ "GET", "POST" ],
-//      "credentials":[ "admin:admin", "admin2:admin2" ]
-//    },
-//    {
-//      "pathPrefix":"/something",
-//      "requestMethods":[ "GET" ],
-//      "credentials":[ "ok:test1" ]
-//    },
-//    {
-//      "pathPrefix":"/pay",
-//      "requestMethods":[ "POST" ],
-//      "credentials":[ "" ]
-//    }
-//  ]
+//   "basic_auth_rules": [
+//     {
+//       "request_path":"/api/reviews/pay",
+//       "match": "exact",
+//       "request_methods":[ "GET", "POST" ],
+//       "credentials":[ "admin:admin", "admin2:admin2" ]
+//     },
+//     {
+//       "request_path":"/api",
+//       "match": "prefix",
+//       "request_methods":[ "GET", "POST" ],
+//       "credentials":[ "admin:admin", "admin2:admin2" ]
+//     }
+//   ]
 // }
 
 package basic_auth;
@@ -52,7 +49,7 @@ message PluginConfig {
 
 message BasicAuth {
   // HTTP path prefix to restrict access to.
-  string request_path = 1;
+  PathMatcher request_path = 1;
 
   // HTTP requets method operations such as GET, POST, HEAD, PUT, and DELETE.
   repeated string request_methods = 2;

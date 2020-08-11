@@ -65,7 +65,7 @@ var TestCases = []struct {
 	},
 	{
 		Name:           "IncorrectCredentials",
-		Method:         "GET",
+		Method:         "POST",
 		Path:           "/api/reviews/pay",
 		RequestHeaders: map[string]string{"Authorization": "Basic AtRtaW46YWRtaW4="},
 		ResponseCode:   401,

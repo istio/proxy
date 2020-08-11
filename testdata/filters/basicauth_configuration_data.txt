@@ -1,5 +1,5 @@
 {
-  "basic_auth_configuration": [
+  "basic_auth_rules": [
     { 
       "request_path":"/api/reviews/pay",
       "match": "exact",

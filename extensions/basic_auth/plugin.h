@@ -40,13 +40,12 @@ namespace Plugin {
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
-
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
  public:
-  PluginRootContext(uint32_t id, StringView root_id)
+  PluginRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {}
   ~PluginRootContext() {}
   bool onConfigure(size_t) override;

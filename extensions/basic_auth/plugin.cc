@@ -128,8 +128,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
   //  }
   //}
   if (!JsonArrayIterate(
-          j, "basic_auth_configuration",
-          [&](const json& configuration) -> bool {
+          j, "basic_auth_rules", [&](const json& configuration) -> bool {
             auto request_path =
                 JsonGetField<std::string>(configuration, "request_path")
                     .value_or("");
@@ -247,12 +246,10 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
     const auto& exact_rule = basic_auth_configuration["exact"][request_path];
     auto method_iter = exact_rule.request_methods.find(method);
     auto empty_method_iter = exact_rule.request_methods.find("");
-
     auto method_size = exact_rule.request_methods.size();
     // Check if request method is part of the methods array.
     if (method_iter != exact_rule.request_methods.end()) {
       auto authorization_header = getRequestHeader("authorization")->toString();
-
       return credentialsCheck(exact_rule, authorization_header);
       // If request method is not pat of methods array. Check if the methods
       // array is empty. If that's not the case, the request method should have
