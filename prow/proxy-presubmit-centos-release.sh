@@ -23,6 +23,8 @@ WD=$(cd "$WD" || exit 1 ; pwd)
 # shellcheck disable=SC1090
 source "${WD}/proxy-common.inc"
 
+echo "$(uname -s)-$(uname -m)"
+cat "${WD}/../WORKSPACE"
 echo 'Run tests'
 make test_centos
 
