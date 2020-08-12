@@ -61,12 +61,6 @@ class Logger {
   // exported.
   bool exportLogEntry(bool is_on_done);
 
-  // Helper method check whether the LogEntryType is for audit logs.
-  static inline bool isAuditEntry(LogEntryType type);
-
-  // Helper method to check whether the LogEntryType is for outbound/client logs
-  static inline bool isClientEntry(LogEntryType type);
-
  private:
   // Stores log entry request and it's size.
   struct WriteLogEntryRequest {

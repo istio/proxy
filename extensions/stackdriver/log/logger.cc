@@ -196,7 +196,8 @@ void Logger::initializeLogEntryRequest(
   setMonitoredResource(local_node_info, resource_type, log_entries_request);
   auto label_map = log_entries_request->mutable_labels();
   if (!audit) {
-    (*label_map)["mesh_uid"] = flatbuffers::GetString(local_node_info.mesh_id());
+    (*label_map)["mesh_uid"] =
+        flatbuffers::GetString(local_node_info.mesh_id());
   }
   // Set common destination labels shared by all inbound/server entries.
   outbound ? fillSourceLabels(local_node_info, label_map, audit)
@@ -434,14 +435,6 @@ void Logger::fillHTTPRequestInLogEntry(
   if (!audit) {
     (*label_map)["request_id"] = request_info.request_id;
   }
-}
-
-inline bool Logger::isAuditEntry(LogEntryType type) {
-  return type == LogEntryType::ServerAudit || type == LogEntryType::ClientAudit;
-}
-
-inline bool Logger::isClientEntry(LogEntryType type) {
-  return type == LogEntryType::Client || type == LogEntryType::ClientAudit;
 }
 
 }  // namespace Log

@@ -260,8 +260,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                      false, false);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -287,8 +286,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
       std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
 
   for (int i = 0; i < 10; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                        false, false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
@@ -313,8 +311,7 @@ TEST(LoggerTest, TestWriteAuditEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                      false, true);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, true);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -338,10 +335,8 @@ TEST(LoggerTest, TestWriteAuditAndLogEntry) {
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
   for (int i = 0; i < 5; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                        false, false);
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                        false, true);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, true);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
