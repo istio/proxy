@@ -285,6 +285,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger =
       std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
+
   for (int i = 0; i < 10; i++) {
     logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
                         Logger::LogEntryType::Server);

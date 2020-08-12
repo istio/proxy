@@ -42,7 +42,7 @@ class Logger {
          int log_request_size_limit = 4000000 /* 4 Mb */);
 
   // Type of log entry.
-  enum LogEntryType { ServerAudit, Server };
+  enum LogEntryType { Client, ClientAudit, Server, ServerAudit };
 
   // Add a new log entry based on the given request information and peer node
   // information.
@@ -61,6 +61,12 @@ class Logger {
   // exported.
   bool exportLogEntry(bool is_on_done);
 
+  // Helper method check whether the LogEntryType is for audit logs.
+  static inline bool isAuditEntry(LogEntryType type);
+
+  // Helper method to check whether the LogEntryType is for outbound/client logs
+  static inline bool isClientEntry(LogEntryType type);
+
  private:
   // Stores log entry request and it's size.
   struct WriteLogEntryRequest {
@@ -70,23 +76,17 @@ class Logger {
     int size;
   };
 
-  void initializeLogEntryRequest(
-      const google::api::MonitoredResource& monitored_resource,
-      const ::Wasm::Common::FlatNode& local_node_info, LogEntryType log_type);
-
-  // Flush rotates the current WriteLogEntriesRequest. This will be
-  // triggered either by a timer or by request size limit. Returns false if
-  // there is no log entry to be exported.
-  bool flush(LogEntryType log_type);
-
-  // Set labels which don't change between requests.
-  void setCommonLabels(const ::Wasm::Common::FlatNode& local_node_info,
-                       LogEntryType log_type);
+  // Flush rotates the current WriteLogEntriesRequest. This will be triggered
+  // either by a timer or by request size limit. Returns false if there is no
+  // log entry to be exported.
+  bool flush();
+  void flush(Logger::LogEntryType log_entry_type);
 
   // Add TCP Specific labels to LogEntry.
   void addTCPLabelsToLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                               const ::Wasm::Common::FlatNode& peer_node_info,
-                              google::logging::v2::LogEntry* log_entry);
+                              google::logging::v2::LogEntry* log_entry,
+                              Logger::LogEntryType log_entry_type);
 
   // Fill Http_Request entry in LogEntry.
   void fillHTTPRequestInLogEntry(
@@ -99,15 +99,28 @@ class Logger {
                             google::logging::v2::LogEntry* new_entry,
                             LogEntryType log_type);
 
-  // Checsk if the LogEntryType is for audit entries.
-  inline bool isAuditEntry(LogEntryType type);
+  // Helper method to initialize log entry request.
+  void initializeLogEntryRequest(
+      const flatbuffers::Vector<flatbuffers::Offset<Wasm::Common::KeyVal>>*
+          platform_metadata,
+      const ::Wasm::Common::FlatNode& local_node_info,
+      LogEntryType log_entry_type);
+
+  // Helper method to get Log Entry Type.
+  Logger::LogEntryType GetLogEntryType(bool outbound) {
+    if (outbound) {
+      return Logger::LogEntryType::Client;
+    }
+    return Logger::LogEntryType::Server;
+  }
 
   // Buffer for WriteLogEntriesRequests that are to be exported.
   std::vector<
       std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>
       request_queue_;
 
-  // Map containing the different types of WriteLogEntryRequests
+  // Stores client/server requests that the new log entry should be written
+  // into.
   std::unordered_map<Logger::LogEntryType,
                      std::unique_ptr<Logger::WriteLogEntryRequest>>
       log_entries_request_map_;

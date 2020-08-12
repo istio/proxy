@@ -65,6 +65,11 @@ func TestStackdriverPayload(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
 				},
 				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
 			),
@@ -119,11 +124,16 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/gateway_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 1,
 					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_gateway_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/client_gateway_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 1,
+					},
 				},
 				nil, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_gateway_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -173,6 +183,11 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
 				},
@@ -229,6 +244,11 @@ func TestStackdriverReload(t *testing.T) {
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
 				},
@@ -290,6 +310,11 @@ func TestStackdriverVMReload(t *testing.T) {
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
 				},
@@ -412,30 +437,59 @@ func TestStackdriverParallel(t *testing.T) {
 	}
 }
 
+func getSdLogEntries(noClientLogs bool, logEntryCount int) []SDLogEntry {
+	logEntries := []SDLogEntry{
+		{
+			LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
+			LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry_sampled.yaml.tmpl"},
+			LogEntryCount: logEntryCount,
+		},
+	}
+
+	if !noClientLogs {
+		logEntries = append(logEntries, SDLogEntry{
+			LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+			LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
+			LogEntryCount: 10,
+		})
+	}
+
+	return logEntries
+}
+
 func TestStackdriverAccessLog(t *testing.T) {
 	t.Parallel()
 	var TestCases = []struct {
-		name              string
-		logWindowDuration string
-		sleepDuration     time.Duration
-		respCode          string
-		logEntryCount     int
+		name                   string
+		logWindowDuration      string
+		sleepDuration          time.Duration
+		respCode               string
+		logEntryCount          int
+		justSendErrorClientLog string
+		enableMetadataExchange string
+		sourceUnknown          string
+		destinationUnknown     string
 	}{
-		{"StackdriverAndAccessLogPlugin", "15s", 0, "200", 1},
-		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, "201", 2},
-		{"AllErrorRequestsGetsLogged", "1s", 0, "403", 10},
+		{"StackdriverAndAccessLogPlugin", "15s", 0, "200", 1, "", "true", "", ""},
+		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, "201", 2, "", "true", "", ""},
+		{"AllErrorRequestsGetsLogged", "1s", 0, "403", 10, "", "true", "", ""},
+		{"AllClientErrorRequestsGetsLoggedOnNoMxAndError", "1s", 0, "403", 10, "true", "false", "true", "true"},
+		{"NoClientRequestsGetsLoggedOnErrorConfigAndAllSuccessRequests", "15s", 0, "200", 1, "true", "false", "true", "true"},
 	}
 
 	for _, tt := range TestCases {
 		t.Run(tt.name, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
 				"LogWindowDuration":           tt.logWindowDuration,
-				"EnableMetadataExchange":      "true",
+				"EnableMetadataExchange":      tt.enableMetadataExchange,
 				"ServiceAuthenticationPolicy": "NONE",
 				"DirectResponseCode":          tt.respCode,
 				"SDLogStatusCode":             tt.respCode,
 				"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+				"JustSendErrorClientLog":      tt.justSendErrorClientLog,
+				"DestinationUnknown":          tt.destinationUnknown,
+				"SourceUnknown":               tt.sourceUnknown,
 			}, envoye2e.ProxyE2ETests)
 
 			sdPort := params.Ports.Max + 1
@@ -480,14 +534,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 						},
 					},
 					sd.Check(params,
-						nil,
-						[]SDLogEntry{
-							{
-								LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
-								LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry_sampled.yaml.tmpl"},
-								LogEntryCount: tt.logEntryCount,
-							},
-						},
+						nil, getSdLogEntries(tt.justSendErrorClientLog == "true" && tt.respCode == "200", tt.logEntryCount),
 						nil, true,
 					),
 				},
@@ -576,6 +623,12 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 								LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",
 								LogEntryFile: []string{"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
 									"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryCount: 10,
+							},
+							{
+								LogBaseFile: "testdata/stackdriver/client_access_log.yaml.tmpl",
+								LogEntryFile: []string{"testdata/stackdriver/client_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl"},
 								LogEntryCount: 10,
 							},
 						},
