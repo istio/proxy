@@ -55,7 +55,7 @@ class PluginRootContext : public RootContext {
     std::unordered_set<std::string> request_methods;
     std::unordered_set<std::string> encoded_credentials;
   };
-  std::unordered_map<
+  const std::unordered_map<
       std::string,
       std::unordered_map<std::string, PluginRootContext::headerData>>
   basicAuthConfigurationValue() {
@@ -76,8 +76,8 @@ class PluginContext : public Context {
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
   FilterHeadersStatus onRequestHeaders(uint32_t, bool) override;
   FilterHeadersStatus credentialsCheck(
-      std::unordered_map<std::string,
-                         PluginRootContext::headerData>::mapped_type,
+      const std::unordered_map<std::string,
+                               PluginRootContext::headerData>::mapped_type,
       std::string);
 
  private:

@@ -43,6 +43,7 @@ using Base64 = Envoy::Base64;
 using ::nlohmann::json;
 using ::Wasm::Common::JsonArrayIterate;
 using ::Wasm::Common::JsonGetField;
+using ::Wasm::Common::JsonObjectIterate;
 using ::Wasm::Common::JsonValueAs;
 
 static RegisterContextFactory register_BasicAuth(
@@ -52,7 +53,7 @@ namespace {
 void deniedNoAccessToCredentials() {
   sendLocalResponse(401,
                     "Request denied by Basic Auth check. No credential "
-                    "has accessed to specified prefix path.",
+                    "has access to requested path.",
                     "", {});
 }
 
@@ -77,18 +78,17 @@ void deniedInvalidCredentials() {
                     "", {});
 }
 
-void deniedNoAcessToMethod() {
-  sendLocalResponse(401,
-                    "Request denied by Basic Auth check. No method "
-                    "has access to specified prefix path.",
-                    "", {});
+void deniedNoAccessToMethod() {
+  sendLocalResponse(
+      401, "Request denied by Basic Auth check. Request method not authorized",
+      "", {});
 }
 }  // namespace
 
 bool PluginRootContext::onConfigure(size_t size) {
   // Parse configuration JSON string.
   if (size > 0 && !configure(size)) {
-    LOG_WARN("configuration has errors, but initialzation can continue.");
+    LOG_WARN("configuration has errors initialization will not continue.");
     return false;
   }
   return true;
@@ -129,11 +129,27 @@ bool PluginRootContext::configure(size_t configuration_size) {
   //}
   if (!JsonArrayIterate(
           j, "basic_auth_rules", [&](const json& configuration) -> bool {
-            auto request_path =
-                JsonGetField<std::string>(configuration, "request_path")
-                    .value_or("");
-            auto match =
-                JsonGetField<std::string>(configuration, "match").value_or("");
+            std::string match;
+            std::string request_path;
+            if (!JsonObjectIterate(
+                    configuration, "request_path",
+                    [&](std::string pattern) -> bool {
+                      match = pattern;
+                      auto path = JsonGetField<std::string>(
+                                      configuration["request_path"], pattern)
+                                      .value_or("");
+                      auto path_string = JsonValueAs<std::string>(path);
+                      if (path_string.second !=
+                          Wasm::Common::JsonParserResultDetail::OK) {
+                        LOG_WARN("unexpected request path");
+                        return false;
+                      }
+                      request_path = path;
+                      return true;
+                    })) {
+              LOG_WARN("Failed to parse configuration for request path.");
+              return false;
+            }
             if (request_path == "" || match == "") {
               return false;
             }
@@ -175,7 +191,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
             auto path_iter = basic_auth_configuration_.find(match);
             if (path_iter != basic_auth_configuration_.end() &&
                 path_iter->second.find(request_path) !=
-                    basic_auth_configuration_[match].end()) {
+                    path_iter->second.end()) {
               for (auto& methods : header.request_methods) {
                 basic_auth_configuration_[match][request_path]
                     .request_methods.insert(methods);
@@ -256,7 +272,7 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
       // access.
     } else if (method_size == 1 &&
                empty_method_iter != exact_rule.request_methods.end()) {
-      deniedNoAcessToMethod();
+      deniedNoAccessToMethod();
       return FilterHeadersStatus::StopIteration;
     }
   }
@@ -283,7 +299,7 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
           return credentialsCheck(prefix_rule, authorization_header);
         } else if (method_size == 1 &&
                    empty_method_iter != prefix_rule.request_methods.end()) {
-          deniedNoAcessToMethod();
+          deniedNoAccessToMethod();
           return FilterHeadersStatus::StopIteration;
         }
       }
@@ -311,7 +327,7 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
           return credentialsCheck(suffix_rule, authorization_header);
         } else if (method_size == 1 &&
                    empty_method_iter != suffix_rule.request_methods.end()) {
-          deniedNoAcessToMethod();
+          deniedNoAccessToMethod();
           return FilterHeadersStatus::StopIteration;
         }
       }
