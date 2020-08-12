@@ -83,8 +83,6 @@ void fillDestinationLabels(
   if (!audit) {
     (*label_map)["destination_name"] =
         flatbuffers::GetString(destination_node_info.name());
-    (*label_map)["mesh_uid"] =
-        flatbuffers::GetString(destination_node_info.mesh_id());
   }
 
   // Add destination app and version label if exist.
