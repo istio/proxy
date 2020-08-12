@@ -370,15 +370,12 @@ void StackdriverRootContext::record() {
          request_info.response_flag != ::Wasm::Common::NONE))) &&
       shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(
-        request_info, peer_node,
-        outbound ? Logger::LogEntryType::Server : Logger::LogEntryType::Client);
-  }
+    logger_->addLogEntry(request_info, peer_node, outbound, false /* audit */);
 
-  if (enableServerAccessAudit() && shouldAuditThisRequest()) {
-    ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node,
-                         Logger::LogEntryType::ServerAudit);
+    if (enableAuditLog() && shouldAuditThisRequest()) {
+      ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
+      logger_->addLogEntry(request_info, peer_node, outbound, true /* audit */);
+    }
   }
 
   if (enableEdgeReporting()) {
@@ -452,14 +449,19 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
       logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                              record_info.request_info->start_time,
-                              Logger::LogEntryType::Server);
+                              record_info.request_info->start_time, outbound,
+                              false /* audit */);
+      if (enableAuditLog() && shouldAuditThisRequest()) {
+        logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                                record_info.request_info->start_time, outbound,
+                                true /* audit */);
+      }
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
     logger_->addTcpLogEntry(request_info, peer_node,
-                            getCurrentTimeNanoseconds(),
-                            Logger::LogEntryType::Server);
+                            getCurrentTimeNanoseconds(), outbound,
+                            false /* audit */);
   }
   if (log_open_on_timeout) {
     // If we logged the request on timeout, for outbound requests, we try to
@@ -493,8 +495,8 @@ inline bool StackdriverRootContext::enableAccessLogOnError() {
          stackdriver::config::v1alpha1::PluginConfig::ERRORS_ONLY;
 }
 
-inline bool StackdriverRootContext::enableServerAccessAudit() {
-  return config_.audit_server_access() && !isOutbound();
+inline bool StackdriverRootContext::enableAuditLog() {
+  return config_.enable_audit_log();
 }
 
 inline bool StackdriverRootContext::enableEdgeReporting() {

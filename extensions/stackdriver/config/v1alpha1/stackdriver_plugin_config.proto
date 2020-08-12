@@ -46,7 +46,7 @@ message PluginConfig {
   bool disable_server_access_logging = 1 [deprecated = true];
 
   // Optional. Controls whether to export audit log.
-  bool audit_server_access = 11;
+  bool enable_audit_log = 11;
 
   // Optional. FQDN of destination service that the request routed to, e.g.
   // productpage.default.svc.cluster.local. If not provided, request host header

@@ -135,7 +135,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
 }
 
 std::string write_audit_request_json = R"({
-  "logName":"projects/test_project/logs/istio-audit-log",
+  "logName":"projects/test_project/logs/server-istio-audit-log",
   "resource":{
      "type":"k8s_container",
      "labels":{
@@ -261,7 +261,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
   logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                      Logger::LogEntryType::Server);
+                      false, false);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -288,7 +288,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
 
   for (int i = 0; i < 10; i++) {
     logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                        Logger::LogEntryType::Server);
+                        false, false);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
@@ -314,7 +314,7 @@ TEST(LoggerTest, TestWriteAuditEntry) {
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
   logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                      Logger::LogEntryType::ServerAudit);
+                      false, true);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -339,9 +339,9 @@ TEST(LoggerTest, TestWriteAuditAndLogEntry) {
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
   for (int i = 0; i < 5; i++) {
     logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                        Logger::LogEntryType::Server);
+                        false, false);
     logger->addLogEntry(requestInfo(), peerNodeInfo(peer),
-                        Logger::LogEntryType::ServerAudit);
+                        false, true);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
