@@ -1,0 +1,8 @@
+extensions:
+- name: stats
+  path: bazel-bin/extensions/stats.wasm
+  vm_id: stats_inbound
+  root_id: stats_inbound
+  configuration:
+    debug: false
+    field_separator: ";.;"

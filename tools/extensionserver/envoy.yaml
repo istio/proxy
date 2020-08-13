@@ -36,6 +36,16 @@ static_resources:
                   - envoy_grpc:
                       cluster_name: xds_cluster
               type_urls: ["envoy.extensions.filters.http.wasm.v3.Wasm"]
+          - name: stats
+            config_discovery:
+              config_source:
+                api_config_source:
+                  api_type: GRPC
+                  transport_api_version: V3
+                  grpc_services:
+                  - envoy_grpc:
+                      cluster_name: xds_cluster
+              type_urls: ["envoy.extensions.filters.http.wasm.v3.Wasm"]
           - name: front-router
             typed_config:
               "@type": type.googleapis.com/envoy.config.filter.http.router.v2.Router

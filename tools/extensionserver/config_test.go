@@ -23,17 +23,19 @@ import (
 )
 
 func TestRead(t *testing.T) {
-	data, err := ioutil.ReadFile("testdata/config.yaml")
-	if err != nil {
-		t.Fatal(err)
+	for _, file := range []string{"metadata_exchange", "stats"} {
+		data, err := ioutil.ReadFile("testdata/" + file + ".yaml")
+		if err != nil {
+			t.Fatal(err)
+		}
+		out, err := extensionserver.Read(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		js, err := json.Marshal(out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(string(js))
 	}
-	out, err := extensionserver.Read(data)
-	if err != nil {
-		t.Fatal(err)
-	}
-	js, err := json.Marshal(out)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(js))
 }

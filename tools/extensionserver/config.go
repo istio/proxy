@@ -35,7 +35,7 @@ type Extension struct {
 	// Path to the extension code
 	Path string `json:"path,omitempty"`
 	// VMID (optional)
-	VMID string `json:"id,omitempty"`
+	VMID string `json:"vm_id,omitempty"`
 	// RootID (optional)
 	RootID string `json:"root_id,omitempty"`
 }
