@@ -304,6 +304,25 @@ py_proto_library(
         url = "https://github.com/istio/api/archive/" + ISTIO_API + ".tar.gz",
         sha256 = ISTIO_API_SHA256,
     )
+    http_archive(
+        name = "antlr4_runtimes",
+        build_file_content = """
+package(default_visibility = ["//visibility:public"])
+cc_library(
+    name = "cpp",
+    srcs = glob(["runtime/Cpp/runtime/src/**/*.cpp"]),
+    hdrs = glob(["runtime/Cpp/runtime/src/**/*.h"]),
+    includes = ["runtime/Cpp/runtime/src"],
+)
+""",
+        sha256 = "46f5e1af5f4bd28ade55cb632f9a069656b31fc8c2408f9aa045f9b5f5caad64",
+        patch_args = ["-p1"],
+        # Patches ASAN violation of initialization fiasco
+        patches = ["@envoy//bazel:antlr.patch"],
+        strip_prefix = "antlr4-4.7.2",
+        urls = ["https://github.com/antlr/antlr4/archive/4.7.2.tar.gz"],
+    )
+
     if bind:
         native.bind(
             name = "mixer_api_cc_proto",
