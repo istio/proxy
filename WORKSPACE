@@ -40,9 +40,9 @@ bind(
 # commit date: 06/30/2020
 # Used by scripts/generate-wasm.sh
 
-ENVOY_SHA = "79fc5875a60ff73ef14d8f7dc480487317921517"
+ENVOY_SHA = "e5870c9878eac2f336e73028f30dd48ca393dc37"
 
-ENVOY_SHA256 = "96b495e09feb7071d0299b562e63ca5372fa9a1c58cf868b8bdf15df50ee88ad"
+ENVOY_SHA256 = "8bc1b8068f5980dc43c534e31b900afc3aff1062f5d3feb55adb99dcb5f5af71"
 
 ENVOY_ORG = "istio"
 
@@ -75,7 +75,7 @@ envoy_dependency_imports()
 
 load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
 
-antlr_dependencies(471)
+antlr_dependencies(472)
 
 # Docker dependencies
 
