@@ -77,7 +77,7 @@ envoy_dependency_imports()
 
 load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
 
-antlr_dependencies(471)
+antlr_dependencies(472)
 
 # Docker dependencies
 
