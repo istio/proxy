@@ -22,17 +22,15 @@ import (
 	"testing"
 )
 
-func GetDefaultEnvoyBin() string {
+func GetBazelBin() string {
 	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
 	// Instead we rely on symbolic link src/envoy/envoy in the workspace
 	workspace, _ := exec.Command("bazel", "info", "workspace").Output()
-	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
+	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/")
 }
 
-func GetBazelOptOut() string {
-	// `make build_wasm` puts generated wasm modules into k8-opt.
-	bazelOutput, _ := exec.Command("bazel", "info", "output_path").Output()
-	return filepath.Join(strings.TrimSuffix(string(bazelOutput), "\n"), "k8-opt/bin/")
+func GetDefaultEnvoyBin() string {
+	return filepath.Join(GetBazelBin(), "src/envoy/")
 }
 
 func SkipTSanASan(t *testing.T) {
