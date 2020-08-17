@@ -69,7 +69,9 @@ func (ext *Extension) Prefetch() error {
 	}
 
 	h := sha256.New()
-	h.Write(code)
+	if _, err = h.Write(code); err != nil {
+		return err
+	}
 	sha256 := fmt.Sprintf("%x", h.Sum(nil))
 	if ext.SHA256 != "" && ext.SHA256 != sha256 {
 		return fmt.Errorf("mis-matched SHA256 for %q: got %q, want %q", ext.Name, sha256, ext.SHA256)

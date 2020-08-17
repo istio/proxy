@@ -60,13 +60,13 @@ type Extension struct {
 	Runtime string `json:"runtime,omitempty"`
 }
 
-func (c *Config) merge(that *Config) {
-	c.Extensions = append(c.Extensions, that.Extensions...)
+func (config *Config) merge(that *Config) {
+	config.Extensions = append(config.Extensions, that.Extensions...)
 }
 
-func (c *Config) validate() []error {
+func (config *Config) validate() []error {
 	var out []error
-	for _, extension := range c.Extensions {
+	for _, extension := range config.Extensions {
 		if errors := extension.validate(); len(errors) > 0 {
 			out = append(out, errors...)
 		}
@@ -74,12 +74,12 @@ func (c *Config) validate() []error {
 	return out
 }
 
-func (e *Extension) validate() []error {
+func (ext *Extension) validate() []error {
 	var out []error
-	if e.Path != "" && e.URL != "" || e.Path == "" && e.URL == "" {
+	if ext.Path != "" && ext.URL != "" || ext.Path == "" && ext.URL == "" {
 		out = append(out, fmt.Errorf("exactly one of 'path' and 'url' must be set"))
 	}
-	if e.Name == "" {
+	if ext.Name == "" {
 		out = append(out, fmt.Errorf("'name' is required"))
 	}
 	return out
