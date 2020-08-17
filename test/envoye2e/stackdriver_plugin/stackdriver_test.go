@@ -261,6 +261,7 @@ func TestStackdriverReload(t *testing.T) {
 }
 
 func TestStackdriverVMReload(t *testing.T) {
+	t.Skip("See issue https://github.com/istio/istio/issues/26548")
 	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
