@@ -16,6 +16,7 @@ package extensionserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -26,28 +27,62 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-// Extension configuration
-type Extension struct {
-	// Name of the extension
-	Name string `json:"name"`
-	// Configuration passed as JSON string
-	Configuration json.RawMessage `json:"configuration"`
-	// Path to the extension code
-	Path string `json:"path,omitempty"`
-	// VMID (optional)
-	VMID string `json:"vm_id,omitempty"`
-	// RootID (optional)
-	RootID string `json:"root_id,omitempty"`
-}
-
 // Config for the extension server
 type Config struct {
 	// Extensions list
 	Extensions []*Extension `json:"extensions"`
 }
 
+// Extension configuration
+type Extension struct {
+	// Name of the extension. Must match the resource name in ECDS
+	Name string `json:"name"`
+
+	// Configuration passed as JSON string.
+	Configuration json.RawMessage `json:"configuration"`
+
+	// Path to the extension code (one of path or URL must be specified).
+	Path string `json:"path,omitempty"`
+
+	// URL to the extension code (one of path or URL must be specified).
+	URL string `json:"url,omitempty"`
+
+	// SHA256 of the content (optional)
+	SHA256 string `json:"sha256,omitempty"`
+
+	// VMID (optional).
+	VMID string `json:"vm_id,omitempty"`
+
+	// RootID (optional).
+	RootID string `json:"root_id,omitempty"`
+
+	// Runtime (optional, defaults to v8).
+	Runtime string `json:"runtime,omitempty"`
+}
+
 func (c *Config) merge(that *Config) {
 	c.Extensions = append(c.Extensions, that.Extensions...)
+}
+
+func (c *Config) validate() []error {
+	var out []error
+	for _, extension := range c.Extensions {
+		if errors := extension.validate(); len(errors) > 0 {
+			out = append(out, errors...)
+		}
+	}
+	return out
+}
+
+func (e *Extension) validate() []error {
+	var out []error
+	if e.Path != "" && e.URL != "" || e.Path == "" && e.URL == "" {
+		out = append(out, fmt.Errorf("exactly one of 'path' and 'url' must be set"))
+	}
+	if e.Name == "" {
+		out = append(out, fmt.Errorf("'name' is required"))
+	}
+	return out
 }
 
 // Read loads a configuration
@@ -75,6 +110,14 @@ func Load(dir string) *Config {
 		config, err := Read(data)
 		if err != nil {
 			log.Printf("error parsing file %q: %v\n", path, err)
+			return nil
+		}
+		if errs := config.validate(); len(errs) > 0 {
+			log.Printf("validation error in file %q: %v\n", path, errs)
+			return nil
+		}
+		if err := config.Prefetch(); err != nil {
+			log.Printf("error fetching extensions in file %q: %v\n", path, err)
 			return nil
 		}
 		out.merge(config)

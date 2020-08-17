@@ -15,7 +15,8 @@
 package extensionserver
 
 import (
-	"io/ioutil"
+	"log"
+	"strings"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	wasm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/wasm/v3"
@@ -37,10 +38,18 @@ func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
 		return nil, err
 	}
 
-	// load code as bytes
-	code, err := ioutil.ReadFile(ext.Path)
-	if err != nil {
-		return nil, err
+	// detect the runtime
+	runtime := "envoy.wasm.runtime.v8"
+	switch strings.ToLower(ext.Runtime) {
+	case "v8", "":
+		break
+	case "native":
+		runtime = "envoy.wasm.runtime.null"
+	case "wavm":
+		runtime = "envoy.wasm.runtime.wavm"
+	default:
+		log.Printf("unknown runtime %q, defaulting to v8\n", ext.Runtime)
+
 	}
 
 	// create plugin config
@@ -50,12 +59,12 @@ func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
 			VmConfig: &v3.PluginConfig_InlineVmConfig{
 				InlineVmConfig: &v3.VmConfig{
 					VmId:    ext.VMID,
-					Runtime: "envoy.wasm.runtime.v8",
+					Runtime: runtime,
 					Code: &core.AsyncDataSource{
 						Specifier: &core.AsyncDataSource_Local{
 							Local: &core.DataSource{
 								Specifier: &core.DataSource_InlineBytes{
-									InlineBytes: code,
+									InlineBytes: prefetch[ext.SHA256],
 								},
 							},
 						},
