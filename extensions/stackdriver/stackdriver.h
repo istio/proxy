@@ -55,7 +55,7 @@ PROXY_WASM_NULL_PLUGIN_REGISTRY;
 // interactions that outlives individual stream, e.g. timer, async calls.
 class StackdriverRootContext : public RootContext {
  public:
-  StackdriverRootContext(uint32_t id, StringView root_id)
+  StackdriverRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {
     ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
   }
@@ -107,8 +107,15 @@ class StackdriverRootContext : public RootContext {
     bool tcp_open_entry_logged;
   };
 
-  // Indicates whether to export server access log or not.
-  bool enableServerAccessLog();
+  // Indicates whether to export any kind of access log or not.
+  bool enableAccessLog();
+
+  // Indicates whether to export all server/client access log or not.
+  bool enableAllAccessLog();
+
+  // Indicates whether to export any access log or not when there was an
+  // error in request/connection.
+  bool enableAccessLogOnError();
 
   bool shouldLogThisRequest(::Wasm::Common::RequestInfo& request_info);
 
@@ -211,13 +218,13 @@ class StackdriverContext : public Context {
 
 class StackdriverOutboundRootContext : public StackdriverRootContext {
  public:
-  StackdriverOutboundRootContext(uint32_t id, StringView root_id)
+  StackdriverOutboundRootContext(uint32_t id, std::string_view root_id)
       : StackdriverRootContext(id, root_id) {}
 };
 
 class StackdriverInboundRootContext : public StackdriverRootContext {
  public:
-  StackdriverInboundRootContext(uint32_t id, StringView root_id)
+  StackdriverInboundRootContext(uint32_t id, std::string_view root_id)
       : StackdriverRootContext(id, root_id) {}
 };
 

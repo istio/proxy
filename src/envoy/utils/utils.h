@@ -21,7 +21,6 @@
 #include "envoy/http/header_map.h"
 #include "envoy/network/connection.h"
 #include "google/protobuf/util/json_util.h"
-#include "include/istio/mixerclient/check_response.h"
 
 namespace Envoy {
 namespace Utils {
@@ -62,11 +61,6 @@ bool GetRequestedServerName(const Network::Connection* connection,
 // Parse JSON string into message.
 ::google::protobuf::util::Status ParseJsonMessage(
     const std::string& json, ::google::protobuf::Message* output);
-
-// Add result of check to envoy stream info to allow better logging.
-void CheckResponseInfoToStreamInfo(
-    const istio::mixerclient::CheckResponseInfo& check_response,
-    StreamInfo::StreamInfo& stream_info);
 
 }  // namespace Utils
 }  // namespace Envoy

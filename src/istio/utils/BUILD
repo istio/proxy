@@ -14,73 +14,48 @@
 
 licenses(["notice"])
 
-cc_library(
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_library",
+    "envoy_cc_test",
+)
+
+envoy_cc_library(
     name = "utils_lib",
     srcs = [
-        "local_attributes.cc",
-        "logger.cc",
-        "protobuf.cc",
-        "status.cc",
         "utils.cc",
     ],
     hdrs = [
-        "logger.h",
         "utils.h",
     ],
+    repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         ":attribute_names_lib",
-        "//external:mixer_client_config_cc_proto",
         "//external:protobuf",
-        "//include/istio/utils:attribute_names_header",
-        "//include/istio/utils:headers_lib",
     ],
 )
 
-cc_test(
+envoy_cc_test(
     name = "utils_test",
     size = "small",
     srcs = ["utils_test.cc"],
-    linkstatic = 1,
+    repository = "@envoy",
     deps = [
         ":utils_lib",
-        "//external:googletest_main",
     ],
 )
 
-cc_test(
-    name = "simple_lru_cache_test",
-    size = "small",
-    srcs = ["simple_lru_cache_test.cc"],
-    linkopts = [
-        "-lm",
-        "-lpthread",
-    ],
-    linkstatic = 1,
-    deps = [
-        "//external:googletest_main",
-        "//include/istio/utils:simple_lru_cache",
-    ],
-)
-
-cc_test(
-    name = "logger_test",
-    size = "small",
-    srcs = ["logger_test.cc"],
-    linkstatic = 1,
-    deps = [
-        ":utils_lib",
-        "//external:googletest_main",
-    ],
-)
-
-cc_library(
+envoy_cc_library(
     name = "attribute_names_lib",
     srcs = [
         "attribute_names.cc",
     ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//include/istio/utils:attribute_names_header",
+    hdrs = [
+        "attribute_names.h",
     ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
 )

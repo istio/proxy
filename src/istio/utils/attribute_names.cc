@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "include/istio/utils/attribute_names.h"
+#include "src/istio/utils/attribute_names.h"
 
 namespace istio {
 namespace utils {

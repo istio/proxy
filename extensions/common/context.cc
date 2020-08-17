@@ -26,7 +26,6 @@
 
 #else  // NULL_PLUGIN
 
-#include "absl/strings/str_split.h"
 #include "include/proxy-wasm/null_plugin.h"
 
 using proxy_wasm::WasmHeaderMapType;
@@ -96,9 +95,9 @@ void extractServiceName(const std::string& host,
 //   host for destination service name.
 void getDestinationService(const std::string& dest_namespace,
                            bool use_host_header, std::string* dest_svc_host,
-                           std::string* dest_svc_name) {
-  std::string cluster_name;
-  getValue({"cluster_name"}, &cluster_name);
+                           std::string* dest_svc_name,
+                           const std::string& cluster_name,
+                           const std::string& route_name) {
   *dest_svc_host = use_host_header
                        ? getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
                                            kAuthorityHeaderKey)
@@ -107,12 +106,12 @@ void getDestinationService(const std::string& dest_namespace,
 
   // override the cluster name if this is being sent to the
   // blackhole or passthrough cluster
-  std::string route_name;
-  getValue({"route_name"}, &route_name);
   if (route_name == kBlackHoleRouteName) {
-    cluster_name = kBlackHoleCluster;
+    *dest_svc_name = kBlackHoleCluster;
+    return;
   } else if (route_name == kPassThroughRouteName) {
-    cluster_name = kPassThroughCluster;
+    *dest_svc_name = kPassThroughCluster;
+    return;
   }
 
   if (cluster_name == kBlackHoleCluster ||
@@ -123,7 +122,7 @@ void getDestinationService(const std::string& dest_namespace,
     return;
   }
 
-  std::vector<absl::string_view> parts = absl::StrSplit(cluster_name, '|');
+  std::vector<std::string_view> parts = absl::StrSplit(cluster_name, '|');
   if (parts.size() == 4) {
     *dest_svc_host = std::string(parts[3].data(), parts[3].size());
   }
@@ -135,12 +134,16 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
                          RequestInfo* request_info,
                          const std::string& destination_namespace) {
   request_info->is_populated = true;
+  getValue({"cluster_name"}, &request_info->upstream_cluster);
+  getValue({"route_name"}, &request_info->route_name);
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.
   getDestinationService(destination_namespace, use_host_header_fallback,
                         &request_info->destination_service_host,
-                        &request_info->destination_service_name);
+                        &request_info->destination_service_name,
+                        request_info->upstream_cluster,
+                        request_info->route_name);
 
   getValue({"request", "url_path"}, &request_info->request_url_path);
 
@@ -174,7 +177,8 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
 
 }  // namespace
 
-StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
+std::string_view AuthenticationPolicyString(
+    ServiceAuthenticationPolicy policy) {
   switch (policy) {
     case ServiceAuthenticationPolicy::None:
       return kNone;
@@ -186,7 +190,7 @@ StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
   return {};
 }
 
-StringView TCPConnectionStateString(TCPConnectionState state) {
+std::string_view TCPConnectionStateString(TCPConnectionState state) {
   switch (state) {
     case TCPConnectionState::Open:
       return kOpen;
@@ -307,8 +311,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"response", "total_size"}, &request_info->response_size);
 }
 
-absl::string_view nodeInfoSchema() {
-  return absl::string_view(
+std::string_view nodeInfoSchema() {
+  return std::string_view(
       reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
       FlatNodeBinarySchema::size());
 }
@@ -338,6 +342,17 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
   getValue({"destination", "address"}, &request_info->destination_address);
   getValue({"source", "port"}, &request_info->source_port);
   getValue({"connection_id"}, &request_info->connection_id);
+  getValue({"upstream", "address"}, &request_info->upstream_host);
+  getValue({"connection", "requested_server_name"},
+           &request_info->request_serever_name);
+  auto envoy_original_path = getHeaderMapValue(
+      WasmHeaderMapType::RequestHeaders, kEnvoyOriginalPathKey);
+  request_info->x_envoy_original_path =
+      envoy_original_path ? envoy_original_path->toString() : "";
+  auto envoy_original_dst_host = getHeaderMapValue(
+      WasmHeaderMapType::RequestHeaders, kEnvoyOriginalDstHostKey);
+  request_info->x_envoy_original_dst_host =
+      envoy_original_dst_host ? envoy_original_dst_host->toString() : "";
 }
 
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,

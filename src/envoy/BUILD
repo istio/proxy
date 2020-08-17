@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_binary",
@@ -33,10 +33,8 @@ envoy_cc_binary(
         "//src/envoy/extensions/wasm:wasm_lib",
         "//src/envoy/http/alpn:config_lib",
         "//src/envoy/http/authn:filter_lib",
-        "//src/envoy/http/mixer:filter_lib",
         "//src/envoy/tcp/forward_downstream_sni:config_lib",
         "//src/envoy/tcp/metadata_exchange:config_lib",
-        "//src/envoy/tcp/mixer:filter_lib",
         "//src/envoy/tcp/sni_verifier:config_lib",
         "//src/envoy/tcp/tcp_cluster_rewrite:config_lib",
         "@envoy//source/exe:envoy_main_entry_lib",

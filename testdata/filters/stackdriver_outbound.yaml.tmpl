@@ -16,4 +16,9 @@
             local: { inline_string: "envoy.wasm.null.stackdriver" }
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
-          value: ""
+          value: |
+            {{- if .Vars.JustSendErrorClientLog }}
+            {"access_logging": "ERRORS_ONLY"}
+            {{- else }}
+            {"access_logging": "FULL"}
+            {{- end }}

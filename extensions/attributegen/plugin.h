@@ -41,8 +41,6 @@ namespace null_plugin {
 
 namespace AttributeGen {
 
-using StringView = absl::string_view;
-
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
@@ -54,7 +52,7 @@ class Match {
         condition_token_(condition_token),
         value_(value){};
 
-  Optional<bool> evaluate() const;
+  std::optional<bool> evaluate() const;
   const std::string& value() const { return value_; };
 
  private:
@@ -76,7 +74,7 @@ class AttributeGenerator {
         matches_(std::move(matches)) {}
 
   // If evaluation is successful returns true and sets result.
-  Optional<bool> evaluate(std::string* val) const;
+  std::optional<bool> evaluate(std::string* val) const;
   EvalPhase phase() const { return phase_; }
   const std::string& outputAttribute() const { return output_attribute_; }
 
@@ -91,7 +89,7 @@ class AttributeGenerator {
 // for interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
  public:
-  PluginRootContext(uint32_t id, StringView root_id)
+  PluginRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {
     Metric error_count(MetricType::Counter, "error_count",
                        {MetricTag{"wasm_filter", MetricTag::TagType::String},

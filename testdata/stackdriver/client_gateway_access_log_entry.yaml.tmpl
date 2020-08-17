@@ -1,7 +1,7 @@
 http_request:
   request_method: "GET"
   request_url: "http://127.0.0.1:{{ .Ports.ClientPort }}/"
-  server_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
+  server_ip: "127.0.0.1:{{ .Ports.ClientPort }}"
   protocol: "http"
   status: 200
 labels:
@@ -9,17 +9,17 @@ labels:
   destination_service_host: server.default.svc.cluster.local
   protocol: http
   response_flag: "-"
-  service_authentication_policy: NONE
-  source_name: ratings-v1-84975bc778-pxz2w
-  source_namespace: default
+  service_authentication_policy: ""
   source_principal: ""
-  source_workload: ratings-v1
-  source_app: ratings
-  source_version: v1
-  source_canonical_service: ratings
-  source_canonical_revision: version-1
+  destination_name: ratings-v1-84975bc778-pxz2w
+  destination_namespace: default
+  destination_workload: ratings-v1
+  destination_app: ratings
+  destination_version: v1
+  destination_canonical_revision: version-1
+  destination_canonical_service: ratings
   log_sampled: "false"
-  upstream_cluster: "inbound|9080|http|server.default.svc.cluster.local"
+  upstream_cluster: "outbound|9080|http|server.default.svc.cluster.local"
   route_name: ""
   requested_server_name: ""
   x-envoy-original-dst-host: ""

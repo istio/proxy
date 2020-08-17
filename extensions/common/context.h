@@ -17,43 +17,43 @@
 
 #include <set>
 
-#include "absl/strings/string_view.h"
 #include "extensions/common/node_info_generated.h"
 #include "flatbuffers/flatbuffers.h"
 
 namespace Wasm {
 namespace Common {
 
-using StringView = absl::string_view;
-
 // Node metadata
-constexpr StringView WholeNodeKey = ".";
+constexpr std::string_view WholeNodeKey = ".";
 
-constexpr StringView kUpstreamMetadataIdKey = "upstream_peer_id";
-constexpr StringView kUpstreamMetadataKey = "upstream_peer";
+constexpr std::string_view kUpstreamMetadataIdKey = "upstream_peer_id";
+constexpr std::string_view kUpstreamMetadataKey = "upstream_peer";
 
-constexpr StringView kDownstreamMetadataIdKey = "downstream_peer_id";
-constexpr StringView kDownstreamMetadataKey = "downstream_peer";
+constexpr std::string_view kDownstreamMetadataIdKey = "downstream_peer_id";
+constexpr std::string_view kDownstreamMetadataKey = "downstream_peer";
 
 const std::string kMetadataNotFoundValue =
     "envoy.wasm.metadata_exchange.peer_unknown";
 
-constexpr StringView kAccessLogPolicyKey = "istio.access_log_policy";
+constexpr std::string_view kAccessLogPolicyKey = "istio.access_log_policy";
 
 // Header keys
-constexpr StringView kAuthorityHeaderKey = ":authority";
-constexpr StringView kMethodHeaderKey = ":method";
-constexpr StringView kContentTypeHeaderKey = "content-type";
+constexpr std::string_view kAuthorityHeaderKey = ":authority";
+constexpr std::string_view kMethodHeaderKey = ":method";
+constexpr std::string_view kContentTypeHeaderKey = "content-type";
+constexpr std::string_view kEnvoyOriginalDstHostKey =
+    "x-envoy-original-dst-host";
+constexpr std::string_view kEnvoyOriginalPathKey = "x-envoy-original-path";
 
 const std::string kProtocolHTTP = "http";
 const std::string kProtocolGRPC = "grpc";
 const std::string kProtocolTCP = "tcp";
 
-constexpr absl::string_view kCanonicalServiceLabelName =
+constexpr std::string_view kCanonicalServiceLabelName =
     "service.istio.io/canonical-name";
-constexpr absl::string_view kCanonicalServiceRevisionLabelName =
+constexpr std::string_view kCanonicalServiceRevisionLabelName =
     "service.istio.io/canonical-revision";
-constexpr absl::string_view kLatest = "latest";
+constexpr std::string_view kLatest = "latest";
 
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
@@ -78,14 +78,17 @@ enum class TCPConnectionState : int64_t {
   Close = 3,
 };
 
-constexpr StringView kMutualTLS = "MUTUAL_TLS";
-constexpr StringView kNone = "NONE";
-constexpr StringView kOpen = "OPEN";
-constexpr StringView kConnected = "CONNECTED";
-constexpr StringView kClose = "CLOSE";
+constexpr std::string_view kMutualTLS = "MUTUAL_TLS";
+constexpr std::string_view kNone = "NONE";
+constexpr std::string_view kOpen = "OPEN";
+constexpr std::string_view kConnected = "CONNECTED";
+constexpr std::string_view kClose = "CLOSE";
 
-StringView AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
-StringView TCPConnectionStateString(TCPConnectionState state);
+std::string_view AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
+std::string_view TCPConnectionStateString(TCPConnectionState state);
+
+// None response flag.
+const std::string NONE = "-";
 
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
@@ -106,7 +109,7 @@ struct RequestInfo {
   uint32_t destination_port = 0;
 
   // Source port of the client.
-  uint32_t source_port = 0;
+  uint64_t source_port = 0;
 
   // Protocol used the request (HTTP/1.1, gRPC, etc).
   std::string request_protocol;
@@ -149,6 +152,14 @@ struct RequestInfo {
   // populateExtendedHTTPRequestInfo.
   std::string source_address;
   std::string destination_address;
+
+  // Additional fields for access log.
+  std::string route_name;
+  std::string upstream_host;
+  std::string upstream_cluster;
+  std::string request_serever_name;
+  std::string x_envoy_original_path;
+  std::string x_envoy_original_dst_host;
 
   // Important Headers.
   std::string referer;
@@ -203,7 +214,7 @@ void extractEmptyNodeFlatBuffer(std::string* out);
 bool extractPartialLocalNodeFlatBuffer(std::string* out);
 
 // Returns flatbuffer schema for node info.
-absl::string_view nodeInfoSchema();
+std::string_view nodeInfoSchema();
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.

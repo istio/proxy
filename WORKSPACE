@@ -22,12 +22,12 @@ load(
     "//:repositories.bzl",
     "docker_dependencies",
     "googletest_repositories",
-    "mixerapi_dependencies",
+    "istioapi_dependencies",
 )
 
 googletest_repositories()
 
-mixerapi_dependencies()
+istioapi_dependencies()
 
 bind(
     name = "boringssl_crypto",
@@ -37,12 +37,13 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy-wasm/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 7/20/20
-ENVOY_SHA = "1e379813e901f0d21f2ac6e41e5fe5cee4789237"
+# Note: this is needed by release builder to resolve envoy dep sha to tag.
+# Commit date: 2020-08-12
+ENVOY_SHA = "001f043a1287964e8f8710ba2d447d790f4c53c8"
 
-ENVOY_SHA256 = "511dd20471c86b894a354d2452d72f81584de88bdb41b94b7d1181e05fffc6c6"
+ENVOY_SHA256 = "a9127e50ce3b5f75b1772d27b87d4780d4b48401939ef7d6be4957beff869324"
 
-ENVOY_ORG = "jplevyak"
+ENVOY_ORG = "envoyproxy"
 
 ENVOY_REPO = "envoy-wasm"
 
@@ -79,6 +80,21 @@ load("@rules_antlr//antlr:deps.bzl", "antlr_dependencies")
 
 antlr_dependencies(471)
 
+# Bazel @rules_pkg
+
+http_archive(
+    name = "rules_pkg",
+    sha256 = "aeca78988341a2ee1ba097641056d168320ecc51372ef7ff8e64b139516a4937",
+    urls = [
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.2.6/rules_pkg-0.2.6.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.2.6/rules_pkg-0.2.6.tar.gz",
+    ],
+)
+
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
 # Docker dependencies
 
 docker_dependencies()
@@ -93,6 +109,10 @@ container_repositories()
 load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
 
 container_deps()
+
+load("@io_bazel_rules_docker//repositories:pip_repositories.bzl", "pip_deps")
+
+pip_deps()
 
 load(
     "@io_bazel_rules_docker//container:container.bzl",

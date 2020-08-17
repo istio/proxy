@@ -18,7 +18,6 @@
 #include "envoy/network/connection.h"
 #include "envoy/registry/registry.h"
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
-#include "src/envoy/utils/config.h"
 
 namespace Envoy {
 namespace Tcp {

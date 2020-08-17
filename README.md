@@ -10,7 +10,7 @@ Client Side Features:
 
 - *Connection Management*. The Proxy manages connections to services, handling health checking, retry, failover, and flow control.
 
-- *Monitoring & Logging*. The Proxy can report client-side metrics and logs to the Mixer.
+- *Monitoring & Logging*. The Proxy can report client-side metrics and logs.
 
 Server Side Features:
 
@@ -18,9 +18,9 @@ Server Side Features:
 
 - *Protocol Translation*. The Proxy is a gRPC gateway, providing translation between JSON-REST and gRPC.
 
-- *Authentication & Authorization*. The Proxy supports multiple authentication mechanisms, and can use the client identities to perform authorization checks through the Mixer.
+- *Authentication & Authorization*. The Proxy supports multiple authentication mechanisms, and can use the client identities to perform authorization checks.
 
-- *Monitoring & Logging*. The Proxy can report server-side metrics and logs to the Mixer.
+- *Monitoring & Logging*. The Proxy can report server-side metrics and logs.
 
 Please see [istio.io](https://istio.io)
 to learn about the overall Istio project and how to get in touch with us. To learn how you can

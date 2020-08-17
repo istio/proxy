@@ -144,8 +144,9 @@ bool PluginRootContext::configure(size_t configuration_size) {
   return true;
 }
 
-bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
-                                   StringView peer_header) {
+bool PluginRootContext::updatePeer(std::string_view key,
+                                   std::string_view peer_id,
+                                   std::string_view peer_header) {
   std::string id = std::string(peer_id);
   if (max_peer_cache_size_ > 0) {
     auto it = cache_.find(id);
@@ -165,8 +166,8 @@ bool PluginRootContext::updatePeer(StringView key, StringView peer_id,
   if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
     return false;
   }
-  StringView out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                 fbb.GetSize());
+  std::string_view out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                       fbb.GetSize());
   setFilterState(key, out);
 
   if (max_peer_cache_size_ > 0) {
