@@ -373,7 +373,6 @@ void StackdriverRootContext::record() {
     logger_->addLogEntry(request_info, peer_node, outbound, false /* audit */);
 
     if (enableAuditLog() && shouldAuditThisRequest()) {
-      ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
       logger_->addLogEntry(request_info, peer_node, outbound, true /* audit */);
     }
   }
@@ -462,6 +461,11 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     logger_->addTcpLogEntry(request_info, peer_node,
                             getCurrentTimeNanoseconds(), outbound,
                             false /* audit */);
+    if (enableAuditLog() && shouldAuditThisRequest()) {
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                              record_info.request_info->start_time, outbound,
+                              true /* audit */);
+    }
   }
   if (log_open_on_timeout) {
     // If we logged the request on timeout, for outbound requests, we try to

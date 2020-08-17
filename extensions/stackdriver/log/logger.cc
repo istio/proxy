@@ -197,7 +197,8 @@ void Logger::initializeLogEntryRequest(
     (*label_map)["mesh_uid"] =
         flatbuffers::GetString(local_node_info.mesh_id());
   }
-  // Set common destination labels shared by all inbound/server entries.
+
+  // Set common labels shared by all client entries or server entries
   outbound ? fillSourceLabels(local_node_info, label_map, audit)
            : fillDestinationLabels(local_node_info, label_map, audit);
 }
