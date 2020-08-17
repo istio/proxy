@@ -419,7 +419,10 @@ func TestStatsFailure(t *testing.T) {
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			enableStats(t, params.Vars)
-			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+			params.Vars["ServerHTTPFilters"] =
+				driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+					params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
+					driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 			if err := (&driver.Scenario{
 				[]driver.Step{
 					&driver.XDS{},
