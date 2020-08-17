@@ -235,8 +235,8 @@ void populateExtendedRequestInfo(RequestInfo* request_info);
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
                             const std::string& destination_namespace);
 
-// Read value of 'access_log_hint' key in envoy dynamic metadata which
-// determines whether to audit a request
+// Read value of 'access_log_hint' key from envoy dynamic metadata which
+// determines whether to audit a request or not.
 bool getAuditPolicy();
 
 }  // namespace Common
