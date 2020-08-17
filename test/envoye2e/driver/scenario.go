@@ -118,6 +118,13 @@ func (p *Params) Fill(s string) (string, error) {
 				pad := strings.Repeat(" ", n)
 				return pad + strings.Replace(s, "\n", "\n"+pad, -1)
 			},
+			"fill": func(s string) string {
+				out, err := p.Fill(s)
+				if err != nil {
+					panic(err)
+				}
+				return out
+			},
 		}).
 		Parse(s))
 	var b bytes.Buffer

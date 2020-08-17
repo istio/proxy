@@ -1,10 +1,10 @@
-- name: envoy.filters.http.wasm
+- name: stats_outbound{{ .N }}
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
     type_url: envoy.extensions.filters.http.wasm.v3.Wasm
     value:
       config:
-        root_id: "stats_outbound"
+        root_id: stats_outbound
         vm_config:
           vm_id: stats_outbound{{ .N }}
           runtime: {{ .Vars.WasmRuntime }}
@@ -14,5 +14,5 @@
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
-            {{ .Vars.StatsFilterClientConfig }}
+            {{ .Vars.StatsFilterClientConfig | fill }}
 

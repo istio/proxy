@@ -40,11 +40,11 @@ func EncodeMetadata(t *testing.T, p *driver.Params) string {
 }
 
 func TestHTTPExchange(t *testing.T) {
-	params := driver.NewTestParams(t, map[string]string{
-		"EnableMetadataExchange": "true",
-	}, envoye2e.ProxyE2ETests)
+	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
