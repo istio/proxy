@@ -153,7 +153,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
             if (request_path == "" || match == "") {
               return false;
             }
-            struct headerData header;
+            struct MethodsCredentialsRule header;
             if (!JsonArrayIterate(
                     configuration, "request_methods",
                     [&](const json& methods) -> bool {
@@ -212,9 +212,8 @@ bool PluginRootContext::configure(size_t configuration_size) {
 }
 
 FilterHeadersStatus PluginContext::credentialsCheck(
-    std::unordered_map<std::string, PluginRootContext::headerData>::mapped_type
-        rule,
-    std::string authorization_header) {
+    const PluginRootContext::MethodsCredentialsRule& rule,
+    const std::string& authorization_header) {
   auto credential_iter = rule.encoded_credentials.find("");
   auto credential_size = rule.encoded_credentials.size();
   // Check if credential set is of of size 1 and its an empty string.
@@ -248,7 +247,7 @@ FilterHeadersStatus PluginContext::credentialsCheck(
 }
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
-  auto basic_auth_configuration = basicAuthConfigurationValue();
+  auto basic_auth_configuration = rootContext()->basicAuthConfigurationValue();
   auto request_path = getRequestHeader(":path")->toString();
   auto exact_match_iter = basic_auth_configuration.find("exact");
   // The following checks if the there's a match pattern present in

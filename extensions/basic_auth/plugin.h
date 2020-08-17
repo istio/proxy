@@ -40,6 +40,7 @@ namespace Plugin {
 
 using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
+
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
@@ -49,15 +50,14 @@ class PluginRootContext : public RootContext {
       : RootContext(id, root_id) {}
   ~PluginRootContext() {}
   bool onConfigure(size_t) override;
-  PluginRootContext();
 
-  struct headerData {
+  struct MethodsCredentialsRule {
     std::unordered_set<std::string> request_methods;
     std::unordered_set<std::string> encoded_credentials;
   };
   const std::unordered_map<
-      std::string,
-      std::unordered_map<std::string, PluginRootContext::headerData>>
+      std::string, std::unordered_map<
+                       std::string, PluginRootContext::MethodsCredentialsRule>>
   basicAuthConfigurationValue() {
     return basic_auth_configuration_;
   };
@@ -65,8 +65,8 @@ class PluginRootContext : public RootContext {
  private:
   bool configure(size_t);
   std::unordered_map<
-      std::string,
-      std::unordered_map<std::string, PluginRootContext::headerData>>
+      std::string, std::unordered_map<
+                       std::string, PluginRootContext::MethodsCredentialsRule>>
       basic_auth_configuration_;
 };
 
@@ -75,20 +75,12 @@ class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
   FilterHeadersStatus onRequestHeaders(uint32_t, bool) override;
-  FilterHeadersStatus credentialsCheck(
-      const std::unordered_map<std::string,
-                               PluginRootContext::headerData>::mapped_type,
-      std::string);
 
  private:
+  FilterHeadersStatus credentialsCheck(
+      const PluginRootContext::MethodsCredentialsRule&, const std::string&);
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
-  };
-  inline std::unordered_map<
-      std::string,
-      std::unordered_map<std::string, PluginRootContext::headerData>>
-  basicAuthConfigurationValue() {
-    return rootContext()->basicAuthConfigurationValue();
   };
 };
 

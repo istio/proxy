@@ -30,5 +30,3 @@ envoy_cc_library(
         "@proxy_wasm_cpp_host//:lib",
     ],
 )
-
-exports_files(["base64.h"])

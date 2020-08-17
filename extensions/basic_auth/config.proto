@@ -20,7 +20,8 @@ syntax = "proto3";
 // $weight: 20
 
 // The following is an example of a configuration that restricts access to
-// given path prefixes, request methods and credentials.
+// given paths matching a prefix or exact pattern, request methods and
+// credentials.
 // {
 //   "basic_auth_rules": [
 //     {
@@ -41,12 +42,12 @@ package basic_auth;
 import "google/protobuf/duration.proto";
 
 message PluginConfig {
-  // Multiple independent basic auth configurations
+  // Specifies a list of basic auth rules
   repeated BasicAuth basic_auth_rules = 1;
 }
 
 message BasicAuth {
-  // HTTP path prefix to restrict access to.
+  // HTTP path to restrict access according match pattern specification.
   PathMatcher request_path = 1;
 
   // HTTP requets method operations such as GET, POST, HEAD, PUT, and DELETE.
