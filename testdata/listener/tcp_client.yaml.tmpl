@@ -9,9 +9,7 @@ listener_filters:
 - name: "envoy.filters.listener.http_inspector"
 filter_chains:
 - filters:
-{{- if .Vars.ClientNetworkFilters }}
-{{ .Vars.ClientNetworkFilters | indent 2 }}
-{{- end }}
+{{ .Vars.ClientNetworkFilters | fill | indent 2 }}
   - name: tcp_proxy
     typed_config:
       "@type": type.googleapis.com/udpa.type.v1.TypedStruct

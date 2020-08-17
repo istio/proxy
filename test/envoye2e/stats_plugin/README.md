@@ -98,7 +98,6 @@ params := driver.NewTestParams(t, map[string]string{
 				"StatsFilterCode": 			  "inline_string: \"envoy.wasm.stats\"",
 				"AttributeGenFilterConfig":   runtime.AttributeGenFilterCode,
 				"AttributeGenWasmRuntime":    runtime.WasmRuntime,
-				"EnableMetadataExchange":     "true",
 				"WasmRuntime":				  "envoy.wasm.runtime.null",
 				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
