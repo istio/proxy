@@ -19,7 +19,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -420,7 +419,7 @@ func TestStatsFailure(t *testing.T) {
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			enableStats(t, params.Vars)
-			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" + params.Vars["ServerHTTPFilters"]
+			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 			if err := (&driver.Scenario{
 				[]driver.Step{
 					&driver.XDS{},
@@ -431,16 +430,16 @@ func TestStatsFailure(t *testing.T) {
 					&driver.Sleep{Duration: 1 * time.Second},
 					&driver.Repeat{N: 10,
 						Step: &driver.HTTPCall{
-							Port: params.Ports.ClientPort,
-							Body: "hello, world!",
+							Port:         params.Ports.ClientPort,
+							Body:         "RBAC: access denied",
+							ResponseCode: 403,
 						},
 					},
 					&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 						"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
 					}},
 				},
-			}).Run(params); err != nil && !strings.Contains(err.Error(), "403") {
-
+			}).Run(params); err != nil {
 				t.Fatal(err)
 			}
 		})
