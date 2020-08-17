@@ -168,6 +168,7 @@ std::string write_audit_request_json = R"({
         "labels":{
            "destination_principal":"destination_principal",
            "destination_service_host":"httpbin.org",
+           "request_id":"123",
            "source_namespace":"test_peer_namespace",
            "source_principal":"source_principal",
            "source_workload":"test_peer_workload",

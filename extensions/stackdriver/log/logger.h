@@ -85,7 +85,7 @@ class Logger {
   // Fill Http_Request entry in LogEntry.
   void fillHTTPRequestInLogEntry(
       const ::Wasm::Common::RequestInfo& request_info,
-      google::logging::v2::LogEntry* log_entry, bool audit);
+      google::logging::v2::LogEntry* log_entry);
 
   // Generic method to fill log entry and flush it.
   void fillAndFlushLogEntry(const ::Wasm::Common::RequestInfo& request_info,
@@ -101,7 +101,7 @@ class Logger {
       bool audit);
 
   // Helper method to get Log Entry Type.
-  Logger::LogEntryType GetLogEntryType(bool outbound, bool audit) {
+  Logger::LogEntryType GetLogEntryType(bool outbound, bool audit) const {
     if (outbound) {
       if (audit) {
         return Logger::LogEntryType::ClientAudit;
