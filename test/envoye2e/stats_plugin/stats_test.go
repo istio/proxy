@@ -365,3 +365,37 @@ func TestAttributeGen(t *testing.T) {
 		})
 	}
 }
+
+func TestStatsParserRegression(t *testing.T) {
+	// This is a regression test for https://github.com/envoyproxy/envoy-wasm/issues/497
+	params := driver.NewTestParams(t, map[string]string{
+		"StatsFilterCode":         "inline_string: \"envoy.wasm.stats\"",
+		"WasmRuntime":             "envoy.wasm.runtime.null",
+		"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"ClientHTTPFilters":       driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl"),
+		"StatsFilterClientConfig": "{}",
+	}, envoye2e.ProxyE2ETests)
+	listener0 := params.LoadTestData("testdata/listener/client.yaml.tmpl")
+	params.Vars["StatsFilterClientConfig"] = driver.LoadTestJSON("testdata/stats/client_config_customized.yaml.tmpl")
+	listener1 := params.LoadTestData("testdata/listener/client.yaml.tmpl")
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node:      "client",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{listener0}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Update{
+				Node:      "client",
+				Version:   "1",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{listener1}},
+			&driver.Sleep{1 * time.Second},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
