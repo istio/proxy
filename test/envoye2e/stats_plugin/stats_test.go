@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -397,5 +398,51 @@ func TestStatsParserRegression(t *testing.T) {
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestStatsFailure(t *testing.T) {
+	env.SkipTSanASan(t)
+
+	for _, runtime := range Runtimes {
+		t.Run(runtime.WasmRuntime, func(t *testing.T) {
+			skipWasm(t, runtime.WasmRuntime)
+			params := driver.NewTestParams(t, map[string]string{
+				"RequestCount":               "10",
+				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
+				"StatsFilterCode":            runtime.StatsFilterCode,
+				"WasmRuntime":                runtime.WasmRuntime,
+				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+				"ResponseCode":               "403",
+			}, envoye2e.ProxyE2ETests)
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			enableStats(t, params.Vars)
+			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" + params.Vars["ServerHTTPFilters"]
+			if err := (&driver.Scenario{
+				[]driver.Step{
+					&driver.XDS{},
+					&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+					&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					&driver.Repeat{N: 10,
+						Step: &driver.HTTPCall{
+							Port: params.Ports.ClientPort,
+							Body: "hello, world!",
+						},
+					},
+					&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+						"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
+					}},
+				},
+			}).Run(params); err != nil && !strings.Contains(err.Error(), "403") {
+
+				t.Fatal(err)
+			}
+		})
 	}
 }
