@@ -29,7 +29,7 @@ import "google/protobuf/wrappers.proto";
 
 // next id: 12
 message PluginConfig {
-  // Types of Access logs to export.
+  // Types of Access logs to export. Does not affect audit logging.
   enum AccessLogging {
     // No Logs.
     NONE = 0;
