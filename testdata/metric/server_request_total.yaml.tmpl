@@ -49,6 +49,8 @@ metric:
   - name: response_code
     {{- if .Vars.ResponseCodeClass }}
     value: {{ .Vars.ResponseCodeClass }}
+    {{- else if .Vars.ResponseCode }}
+    value: "{{ .Vars.ResponseCode }}"
     {{- else }}
     value: "200"
     {{- end }}
