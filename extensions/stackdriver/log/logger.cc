@@ -157,9 +157,9 @@ constexpr char kServerAccessLogName[] = "server-accesslog-stackdriver";
 // Name of the client access log.
 constexpr char kClientAccessLogName[] = "client-accesslog-stackdriver";
 
-// Name of the server access log.
+// Name of the server audit access log.
 constexpr char kServerAuditLogName[] = "server-istio-audit-log";
-// Name of the client access log.
+// Name of the client audit access log.
 constexpr char kClientAuditLogName[] = "client-istio-audit-log";
 
 void Logger::initializeLogEntryRequest(

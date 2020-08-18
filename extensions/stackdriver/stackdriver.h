@@ -122,6 +122,7 @@ class StackdriverRootContext : public RootContext {
   // Indicates whether to export server audit log or not.
   bool enableAuditLog();
 
+  // Indicates whether the request should be logged based on audit policy
   bool shouldAuditThisRequest();
 
   // Indicates whether or not to report edges to Stackdriver.

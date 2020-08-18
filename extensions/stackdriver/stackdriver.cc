@@ -364,17 +364,22 @@ void StackdriverRootContext::record() {
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
+  bool extended_info_populated = false;
   if ((enableAllAccessLog() ||
        (enableAccessLogOnError() &&
         (request_info.response_code >= 400 ||
          request_info.response_flag != ::Wasm::Common::NONE))) &&
       shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
+    extended_info_populated = true;
     logger_->addLogEntry(request_info, peer_node, outbound, false /* audit */);
+  }
 
-    if (enableAuditLog() && shouldAuditThisRequest()) {
-      logger_->addLogEntry(request_info, peer_node, outbound, true /* audit */);
+  if (enableAuditLog() && shouldAuditThisRequest()) {
+    if (!extended_info_populated) {
+      ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     }
+    logger_->addLogEntry(request_info, peer_node, outbound, true /* audit */);
   }
 
   if (enableEdgeReporting()) {
@@ -450,23 +455,34 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       logger_->addTcpLogEntry(*record_info.request_info, peer_node,
                               record_info.request_info->start_time, outbound,
                               false /* audit */);
-      if (enableAuditLog() && shouldAuditThisRequest()) {
-        logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                                record_info.request_info->start_time, outbound,
-                                true /* audit */);
-      }
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
     logger_->addTcpLogEntry(request_info, peer_node,
                             getCurrentTimeNanoseconds(), outbound,
                             false /* audit */);
-    if (enableAuditLog() && shouldAuditThisRequest()) {
-      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                              record_info.request_info->start_time, outbound,
-                              true /* audit */);
-    }
   }
+
+  // It's possible that for a short lived TCP connection, we audit log TCP
+  // Connection Open log entry on connection close.
+  if (!record_info.tcp_open_entry_logged &&
+      request_info.tcp_connection_state ==
+          ::Wasm::Common::TCPConnectionState::Close) {
+    record_info.request_info->tcp_connection_state =
+        ::Wasm::Common::TCPConnectionState::Open;
+    logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                            record_info.request_info->start_time, outbound,
+                            true /* audit */);
+    record_info.request_info->tcp_connection_state =
+        ::Wasm::Common::TCPConnectionState::Close;
+  }
+
+  if (enableAuditLog() && shouldAuditThisRequest()) {
+    logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                            record_info.request_info->start_time, outbound,
+                            true /* audit */);
+  }
+
   if (log_open_on_timeout) {
     // If we logged the request on timeout, for outbound requests, we try to
     // populate the request info again when metadata is available.

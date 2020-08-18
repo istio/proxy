@@ -45,13 +45,15 @@ class Logger {
   enum LogEntryType { Client, ClientAudit, Server, ServerAudit };
 
   // Add a new log entry based on the given request information and peer node
-  // information.
+  // information. The type of entry that is added depends on outbound and audit
+  // arguments.
   void addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                    const ::Wasm::Common::FlatNode& peer_node_info,
                    bool outbound, bool audit);
 
   // Add a new tcp log entry based on the given request information and peer
-  // node information.
+  // node information. The type of entry that is added depends on outbound and
+  // audit arguments.
   void addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                       const ::Wasm::Common::FlatNode& peer_node_info,
                       long int log_time, bool outbound, bool audit);
@@ -76,7 +78,8 @@ class Logger {
   bool flush();
   void flush(LogEntryType log_entry_type);
 
-  // Add TCP Specific labels to LogEntry.
+  // Add TCP Specific labels to LogEntry. Which labels are set depends on if
+  // the entry is an audit entry or not
   void addTCPLabelsToLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                               const ::Wasm::Common::FlatNode& peer_node_info,
                               google::logging::v2::LogEntry* log_entry,
@@ -87,13 +90,17 @@ class Logger {
       const ::Wasm::Common::RequestInfo& request_info,
       google::logging::v2::LogEntry* log_entry);
 
-  // Generic method to fill log entry and flush it.
+  // Generic method to fill the log entry. The WriteLogEntriesRequest
+  // containing the log entry is flushed if the request exceeds the configured
+  // maximum size. Which request should be flushed is determined by the outbound
+  // and audit arguments.
   void fillAndFlushLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                             const ::Wasm::Common::FlatNode& peer_node_info,
                             google::logging::v2::LogEntry* new_entry,
                             bool outbound, bool audit);
 
-  // Helper method to initialize log entry request.
+  // Helper method to initialize log entry request. The type of log entry is
+  // determined by the oubound and audit arguments.
   void initializeLogEntryRequest(
       const flatbuffers::Vector<flatbuffers::Offset<Wasm::Common::KeyVal>>*
           platform_metadata,
@@ -105,16 +112,15 @@ class Logger {
     if (outbound) {
       if (audit) {
         return Logger::LogEntryType::ClientAudit;
-      } else {
-        return Logger::LogEntryType::Client;
       }
-    } else {
-      if (audit) {
-        return Logger::LogEntryType::ServerAudit;
-      } else {
-        return Logger::LogEntryType::Server;
-      }
+      return Logger::LogEntryType::Client;
     }
+
+    if (audit) {
+      return Logger::LogEntryType::ServerAudit;
+    }
+
+    return Logger::LogEntryType::Server;
   }
 
   // Buffer for WriteLogEntriesRequests that are to be exported.
