@@ -1,7 +1,7 @@
 node:
   id: server
   cluster: test-cluster
-  metadata: { {{ .Vars.ServerMetadata }} }
+  metadata: { {{ .Vars.ServerMetadata | fill }} }
 admin:
   access_log_path: /dev/null
   address:

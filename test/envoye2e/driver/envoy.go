@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
@@ -40,6 +41,8 @@ type Envoy struct {
 	tmpFile   string
 	cmd       *exec.Cmd
 	adminPort uint32
+
+	done chan error
 }
 
 var _ Step = &Envoy{}
@@ -91,6 +94,17 @@ func (e *Envoy) Run(p *Params) error {
 	if err = cmd.Start(); err != nil {
 		return err
 	}
+	e.done = make(chan error, 1)
+	go func() {
+		err := e.cmd.Wait()
+		if err != nil {
+			log.Printf("envoy process error: %v\n", err)
+			if strings.Contains(err.Error(), "segmentation fault") {
+				panic(err)
+			}
+		}
+		e.done <- err
+	}()
 
 	url := fmt.Sprintf("http://127.0.0.1:%v/ready", e.adminPort)
 	return env.WaitForHTTPServer(url)
@@ -98,27 +112,18 @@ func (e *Envoy) Run(p *Params) error {
 
 func (e *Envoy) Cleanup() {
 	log.Printf("stop envoy ...\n")
+	defer os.Remove(e.tmpFile)
 	if e.cmd != nil {
 		url := fmt.Sprintf("http://127.0.0.1:%v/quitquitquit", e.adminPort)
 		_, _, _ = env.HTTPPost(url, "", "")
-		done := make(chan error, 1)
-		go func() {
-			done <- e.cmd.Wait()
-		}()
 		select {
 		case <-time.After(3 * time.Second):
 			log.Println("envoy killed as timeout reached")
 			log.Println(e.cmd.Process.Kill())
-		case err := <-done:
+		case <-e.done:
 			log.Printf("stop envoy ... done\n")
-			if err != nil {
-				log.Println(err)
-			}
 		}
 	}
-
-	log.Println("removing temp config file")
-	os.Remove(e.tmpFile)
 }
 
 func getAdminPort(bootstrap string) (uint32, error) {

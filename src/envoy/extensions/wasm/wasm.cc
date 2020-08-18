@@ -59,6 +59,9 @@ class IstioWasm : public Wasm {
     }
     return new IstioContext(this, std::static_pointer_cast<Plugin>(plugin));
   }
+  proxy_wasm::ContextBase* createVmContext() override {
+    return new IstioContext(this);
+  }
 };
 
 class IstioWasmExtension : public EnvoyWasm {

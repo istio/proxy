@@ -24,12 +24,19 @@ import (
 	"istio.io/proxy/test/envoye2e/env"
 )
 
+func enableStackDriver(t *testing.T, vars map[string]string) {
+	t.Helper()
+	vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+}
+
 func TestStackdriverPayload(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
-		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
@@ -39,10 +46,9 @@ func TestStackdriverPayload(t *testing.T) {
 	stsPort := params.Ports.Max + 2
 	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
-	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort}
 
@@ -85,20 +91,18 @@ func TestStackdriverPayload(t *testing.T) {
 func TestStackdriverPayloadGateway(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"RequestPath":            "echo",
-		"SDLogStatusCode":        "200",
-		"EnableMetadataExchange": "true",
-		"StackdriverRootCAFile":  driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":   driver.TestPath("testdata/certs/access-token"),
-		"StatsConfig":            driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"RequestPath":           "echo",
+		"SDLogStatusCode":       "200",
+		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
 	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort}
 
@@ -146,7 +150,6 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "MUTUAL_TLS",
 		"SDLogStatusCode":             "200",
-		"EnableMetadataExchange":      "true",
 		"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
 		"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
@@ -161,8 +164,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ClientTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
 	params.Vars["ServerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort}
 
@@ -209,7 +211,6 @@ func TestStackdriverReload(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
-		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
@@ -219,8 +220,7 @@ func TestStackdriverReload(t *testing.T) {
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort}
 	if err := (&driver.Scenario{
@@ -261,12 +261,12 @@ func TestStackdriverReload(t *testing.T) {
 }
 
 func TestStackdriverVMReload(t *testing.T) {
+	t.Skip("See issue https://github.com/istio/istio/issues/26548")
 	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
-		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"ReloadVM":                    "true",
@@ -277,8 +277,7 @@ func TestStackdriverVMReload(t *testing.T) {
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort}
 
@@ -331,7 +330,6 @@ func TestStackdriverGCEInstances(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
-		"EnableMetadataExchange":      "true",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
@@ -341,8 +339,7 @@ func TestStackdriverGCEInstances(t *testing.T) {
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/gce_client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/gce_server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort}
 	if err := (&driver.Scenario{
@@ -376,10 +373,9 @@ func TestStackdriverGCEInstances(t *testing.T) {
 func TestStackdriverParallel(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"SDLogStatusCode":        "200",
-		"EnableMetadataExchange": "true",
-		"StackdriverRootCAFile":  driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":   driver.TestPath("testdata/certs/access-token"),
+		"SDLogStatusCode":       "200",
+		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -387,8 +383,7 @@ func TestStackdriverParallel(t *testing.T) {
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort, Delay: 100 * time.Millisecond}
 
@@ -466,22 +461,21 @@ func TestStackdriverAccessLog(t *testing.T) {
 		respCode               string
 		logEntryCount          int
 		justSendErrorClientLog string
-		enableMetadataExchange string
+		enableMetadataExchange bool
 		sourceUnknown          string
 		destinationUnknown     string
 	}{
-		{"StackdriverAndAccessLogPlugin", "15s", 0, "200", 1, "", "true", "", ""},
-		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, "201", 2, "", "true", "", ""},
-		{"AllErrorRequestsGetsLogged", "1s", 0, "403", 10, "", "true", "", ""},
-		{"AllClientErrorRequestsGetsLoggedOnNoMxAndError", "1s", 0, "403", 10, "true", "false", "true", "true"},
-		{"NoClientRequestsGetsLoggedOnErrorConfigAndAllSuccessRequests", "15s", 0, "200", 1, "true", "false", "true", "true"},
+		{"StackdriverAndAccessLogPlugin", "15s", 0, "200", 1, "", true, "", ""},
+		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, "201", 2, "", true, "", ""},
+		{"AllErrorRequestsGetsLogged", "1s", 0, "403", 10, "", true, "", ""},
+		{"AllClientErrorRequestsGetsLoggedOnNoMxAndError", "1s", 0, "403", 10, "true", false, "true", "true"},
+		{"NoClientRequestsGetsLoggedOnErrorConfigAndAllSuccessRequests", "15s", 0, "200", 1, "true", false, "true", "true"},
 	}
 
 	for _, tt := range TestCases {
 		t.Run(tt.name, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
 				"LogWindowDuration":           tt.logWindowDuration,
-				"EnableMetadataExchange":      tt.enableMetadataExchange,
 				"ServiceAuthenticationPolicy": "NONE",
 				"DirectResponseCode":          tt.respCode,
 				"SDLogStatusCode":             tt.respCode,
@@ -498,9 +492,15 @@ func TestStackdriverAccessLog(t *testing.T) {
 			params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
-				params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
+				driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+			if tt.enableMetadataExchange {
+				params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+					params.Vars["ServerHTTPFilters"]
+				params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl") + "\n" +
+					params.Vars["ClientHTTPFilters"]
+			}
 
 			sd := &Stackdriver{Port: sdPort}
 			respCode, _ := strconv.Atoi(tt.respCode)
@@ -562,7 +562,6 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
 				"ServiceAuthenticationPolicy": "MUTUAL_TLS",
 				"SDLogStatusCode":             "200",
-				"EnableMetadataExchange":      "true",
 				"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 				"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
