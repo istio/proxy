@@ -70,7 +70,7 @@ void setMonitoredResource(
   log_entries_request->mutable_resource()->CopyFrom(monitored_resource);
 }
 
-// Helper methods to fill destination Labels.
+// Helper methods to fill destination Labels. Which labels are filled depends on if the entry is audit or not.
 void fillDestinationLabels(
     const ::Wasm::Common::FlatNode& destination_node_info,
     google::protobuf::Map<std::string, std::string>* label_map, bool audit) {
@@ -111,7 +111,7 @@ void fillDestinationLabels(
   }
 }
 
-// Helper methods to fill source Labels.
+// Helper methods to fill source Labels. The labels filled depends on whether the log entry is audit or not.
 void fillSourceLabels(
     const ::Wasm::Common::FlatNode& source_node_info,
     google::protobuf::Map<std::string, std::string>* label_map, bool audit) {
