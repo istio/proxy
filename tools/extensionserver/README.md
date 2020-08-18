@@ -18,3 +18,17 @@ Each extension configuration has the following fields:
 
 ## Usage
 
+An experimental build of this server is available as a docker image gcr.io/istio-testing/extensionserver:alpha0.
+
+0. Follow instructions to install Istio 1.7 release, and install a demo application `bookinfo`.
+
+0. Deploy the [extension server](extensionserver.yaml) in "default" namespace.:
+  
+    kubectl apply -f extensionserver.yaml
+
+0. Note the address of the extension server in Istio parlor: `outbound|8080|grpc|extensionserver.default.svc.cluster.local`. You may need to adjust the address if using a different namespace. It is recommended that the sidecar is injected into the extensionserver.
+
+0. Validate that stats continue to be incremented:
+
+    kubectl exec -it productpage-v1-64794f5db4-zr7cr -c istio-proxy -- curl localhost:15000/stats/prometheus | grep istio_requests_total | grep reporter=\"destination\"
+

@@ -1,0 +1,57 @@
+# Encoded cluster name is outbound|8080|grpc|extensionserver.default.svc.cluster.local
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: extensionserver
+data:
+  extension.yaml: |
+    extensions:
+    - name: stats_inbound
+      url: http://storage.googleapis.com/istio-build/proxy/stats-2c2f5680dfc0fc7d5cebaccfa747d6c3764ab52b.wasm
+      vm_id: stats_inbound
+      root_id: stats_inbound
+      configuration:
+        debug: false
+        field_separator: ";.;"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extensionserver
+  labels:
+    app: extensionserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: extensionserver
+  template:
+    metadata:
+      labels:
+        app: extensionserver
+    spec:
+      containers:
+      - name: extensionserver
+        image: gcr.io/istio-testing/extensionserver:alpha0
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: config
+          mountPath: /etc/extensionserver/config
+      volumes:
+      - name: config
+        configMap:
+          name: extensionserver
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extensionserver
+spec:
+  selector:
+    app: extensionserver
+  ports:
+    - protocol: TCP
+      port: 8080
+      name: grpc
+---
