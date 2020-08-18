@@ -51,22 +51,22 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() {}
   bool onConfigure(size_t) override;
 
-  struct MethodsCredentialsRule {
-    std::unordered_set<std::string> request_methods;
+  enum MATCH_TYPE { Prefix, Exact, Suffix };
+  struct BasicAuthConfigRule {
+    std::string request_path;
+    MATCH_TYPE pattern;
     std::unordered_set<std::string> encoded_credentials;
   };
-  const std::unordered_map<
-      std::string, std::unordered_map<
-                       std::string, PluginRootContext::MethodsCredentialsRule>>
+  const std::unordered_map<std::string,
+                           std::vector<PluginRootContext::BasicAuthConfigRule>>
   basicAuthConfigurationValue() {
     return basic_auth_configuration_;
   };
 
  private:
   bool configure(size_t);
-  std::unordered_map<
-      std::string, std::unordered_map<
-                       std::string, PluginRootContext::MethodsCredentialsRule>>
+  std::unordered_map<std::string,
+                     std::vector<PluginRootContext::BasicAuthConfigRule>>
       basic_auth_configuration_;
 };
 
@@ -78,7 +78,7 @@ class PluginContext : public Context {
 
  private:
   FilterHeadersStatus credentialsCheck(
-      const PluginRootContext::MethodsCredentialsRule&, const std::string&);
+      const PluginRootContext::BasicAuthConfigRule&, const std::string&);
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
