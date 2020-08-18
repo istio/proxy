@@ -1,7 +1,7 @@
 {
   "basic_auth_rules": [
     { 
-      "request_path":{ "exact":"/api/reviews/pay" },
+      "request_path":{ "prefix":"/api" },
       "request_methods":[ "GET", "POST" ],
       "credentials":[ "admin:admin", "admin2:admin2" ] 
     }

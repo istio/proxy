@@ -50,13 +50,6 @@ static RegisterContextFactory register_BasicAuth(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
 namespace {
-void deniedNoAccessToCredentials() {
-  sendLocalResponse(401,
-                    "Request denied by Basic Auth check. No credential "
-                    "has access to requested path.",
-                    "", {});
-}
-
 void deniedNoAuthorizationHeader() {
   sendLocalResponse(401,
                     "Request denied by Basic Auth check. No Authorization "
@@ -128,57 +121,55 @@ bool PluginRootContext::configure(size_t configuration_size) {
   if (!JsonArrayIterate(
           j, "basic_auth_rules", [&](const json& configuration) -> bool {
             std::string match;
-            std::string request_path;
-            std::vector<std::string> request_methods;
+            std::string_view request_path;
+            std::vector<std::string_view> request_methods;
             if (!JsonObjectIterate(
                     configuration, "request_path",
                     [&](std::string pattern) -> bool {
                       match = pattern;
-                      auto path = JsonGetField<std::string>(
-                                      configuration["request_path"], pattern)
-                                      .value_or("");
-                      auto path_string = JsonValueAs<std::string>(path);
-                      if (path_string.second !=
-                          Wasm::Common::JsonParserResultDetail::OK) {
-                        LOG_WARN("unexpected request path");
-                        return false;
-                      }
-                      request_path = path;
+                      request_path = JsonGetField<std::string_view>(
+                                         configuration["request_path"], pattern)
+                                         .value_or("");
                       return true;
                     })) {
               LOG_WARN("Failed to parse configuration for request path.");
               return false;
             }
-            if (request_path == "" || match == "") {
+            if (request_path == "") {
+              LOG_WARN("Path inside request_path field is empty.");
               return false;
             }
+            if (match != "prefix" && match != "exact" && match != "suffix") {
+              LOG_WARN(
+                  absl::StrCat("match_pattern: ", match, " is not valid."));
+              return false;
+            }
+
             if (!JsonArrayIterate(
                     configuration, "request_methods",
-                    [&](const json& methods) -> bool {
-                      auto method = JsonValueAs<std::string>(methods);
-                      if (method.second !=
+                    [&](const json& method) -> bool {
+                      auto method_string =
+                          JsonValueAs<std::string_view>(method);
+                      if (method_string.second !=
                           Wasm::Common::JsonParserResultDetail::OK) {
-                        LOG_WARN("unexpected method");
                         return false;
                       }
-                      request_methods.push_back(
-                          std::string(method.first.value()));
+                      request_methods.push_back(method_string.first.value());
                       return true;
                     })) {
               LOG_WARN("Failed to parse configuration for request methods.");
               return false;
             }
-            struct BasicAuthConfigRule rules;
+            struct BasicAuthConfigRule rule;
             if (!JsonArrayIterate(
                     configuration, "credentials",
                     [&](const json& credentials) -> bool {
                       auto credential = JsonValueAs<std::string>(credentials);
                       if (credential.second !=
                           Wasm::Common::JsonParserResultDetail::OK) {
-                        LOG_WARN("unexpected credential");
                         return false;
                       }
-                      rules.encoded_credentials.insert(
+                      rule.encoded_credentials.insert(
                           Base64::encode(credential.first.value().data(),
                                          credential.first.value().size()));
                       return true;
@@ -188,34 +179,37 @@ bool PluginRootContext::configure(size_t configuration_size) {
             }
 
             if (match == "prefix") {
-              rules.pattern = Prefix;
+              LOG_DEBUG("IT IS A PREFIX");
+              rule.pattern = Prefix;
             } else if (match == "exact") {
-              rules.pattern = Exact;
+              rule.pattern = Exact;
             } else if (match == "suffix") {
-              rules.pattern = Suffix;
+              rule.pattern = Suffix;
             }
-            rules.request_path = request_path;
-            for (auto& methods : request_methods) {
-              basic_auth_configuration_[methods].push_back(rules);
+            rule.request_path = request_path;
+            for (auto& method : request_methods) {
+              basic_auth_configuration_[method].push_back(rule);
             }
             return true;
           })) {
-    LOG_WARN("Failed to parse configuration information.");
+    LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
+                          configuration_data->view()));
+  }
+  for (auto& itr : basic_auth_configuration_) {
+    LOG_DEBUG(absl::StrCat("METHOD: ", itr.first));
+    for (auto& itr2 : itr.second) {
+      LOG_DEBUG(absl::StrCat("REQUEST PATH: ", itr2.request_path));
+      LOG_DEBUG("PATTERN");
+      for (auto& creds : itr2.encoded_credentials) {
+        LOG_DEBUG(creds);
+      }
+    }
   }
   return true;
 }
 
-FilterHeadersStatus PluginContext::credentialsCheck(
-    const PluginRootContext::BasicAuthConfigRule& rule,
-    const std::string& authorization_header) {
-  auto credential_iter = rule.encoded_credentials.find("");
-  auto credential_size = rule.encoded_credentials.size();
-  // Check if credential set is of of size 1 and its an empty string.
-  if (credential_size == 1 &&
-      credential_iter != rule.encoded_credentials.end()) {
-    deniedNoAccessToCredentials();
-    return FilterHeadersStatus::StopIteration;
-  }
+FilterHeadersStatus PluginRootContext::credentialsCheck(
+    const BasicAuthConfigRule& rule, const std::string& authorization_header) {
   // Check if there is an authorization header
   if (authorization_header.compare("") == 0) {
     deniedNoAuthorizationHeader();
@@ -242,34 +236,51 @@ FilterHeadersStatus PluginContext::credentialsCheck(
 
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
   auto basic_auth_configuration = rootContext()->basicAuthConfigurationValue();
-  auto request_path = getRequestHeader(":path")->toString();
-  auto method = getRequestHeader(":method")->toString();
+  LOG_DEBUG("ON REQUEST HEADERS");
+  for (auto& itr : basic_auth_configuration) {
+    LOG_DEBUG(absl::StrCat("METHOD: ", std::string(itr.first)));
+    for (auto& itr2 : itr.second) {
+      LOG_DEBUG(absl::StrCat("REQUEST PATH: ", itr2.request_path));
+      LOG_DEBUG("PATTERN");
+      for (auto& creds : itr2.encoded_credentials) {
+        LOG_DEBUG(creds);
+      }
+    }
+  }
+  auto request_path_header = getRequestHeader(":path");
+  std::string_view request_path = request_path_header->view();
+  auto method_header = getRequestHeader(":method");
+  auto method = method_header->view();
   auto method_iter = basic_auth_configuration.find(method);
   // First we check if the request method is present in our container
+  LOG_DEBUG(absl::StrCat("THIS IS METHOD: ", method));
+  LOG_DEBUG(absl::StrCat("THIS IS REQUEST PATH: ", request_path));
   if (method_iter != basic_auth_configuration.end()) {
     // We iterate through our vector of struct in order to find if the
     // request_path according to given match patterns, is part of the plugin's
     // configuration data. If that's the case we check the credentials
+    LOG_DEBUG("THERE'S A METHOD MATCH");
     for (auto& rules : basic_auth_configuration[method]) {
       if (rules.pattern == PluginRootContext::MATCH_TYPE::Prefix) {
-        absl::string_view path = request_path;
-        if (absl::ConsumePrefix(&path, rules.request_path)) {
+        if (absl::StartsWith(request_path, rules.request_path)) {
           auto authorization_header =
               getRequestHeader("authorization")->toString();
-          return credentialsCheck(rules, authorization_header);
+          LOG_DEBUG("IT IS A PREFIX MATCH!!");
+          LOG_DEBUG(absl::StrCat("THIS IS METHOD: ", method));
+          LOG_DEBUG(absl::StrCat("THIS IS REQUEST PATH: ", request_path));
+          return rootContext()->credentialsCheck(rules, authorization_header);
         }
       } else if (rules.pattern == PluginRootContext::MATCH_TYPE::Exact) {
         if (rules.request_path == request_path) {
           auto authorization_header =
               getRequestHeader("authorization")->toString();
-          return credentialsCheck(rules, authorization_header);
+          return rootContext()->credentialsCheck(rules, authorization_header);
         }
       } else if (rules.pattern == PluginRootContext::MATCH_TYPE::Suffix) {
-        absl::string_view path = request_path;
-        if (absl::ConsumeSuffix(&path, rules.request_path)) {
+        if (absl::EndsWith(request_path, rules.request_path)) {
           auto authorization_header =
               getRequestHeader("authorization")->toString();
-          return credentialsCheck(rules, authorization_header);
+          return rootContext()->credentialsCheck(rules, authorization_header);
         }
       }
     }
