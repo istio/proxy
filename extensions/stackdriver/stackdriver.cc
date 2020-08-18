@@ -462,21 +462,20 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
                             false /* audit */);
   }
 
-  // It's possible that for a short lived TCP connection, we audit log TCP
-  // Connection Open log entry on connection close.
-  if (!record_info.tcp_open_entry_logged &&
-      request_info.tcp_connection_state ==
-          ::Wasm::Common::TCPConnectionState::Close) {
-    record_info.request_info->tcp_connection_state =
-        ::Wasm::Common::TCPConnectionState::Open;
-    logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                            record_info.request_info->start_time, outbound,
-                            true /* audit */);
-    record_info.request_info->tcp_connection_state =
-        ::Wasm::Common::TCPConnectionState::Close;
-  }
-
   if (enableAuditLog() && shouldAuditThisRequest()) {
+    // It's possible that for a short lived TCP connection, we audit log TCP
+    // Connection Open log entry on connection close.
+    if (!record_info.tcp_open_entry_logged &&
+        request_info.tcp_connection_state ==
+            ::Wasm::Common::TCPConnectionState::Close) {
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Open;
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                              record_info.request_info->start_time, outbound,
+                              true /* audit */);
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Close;
+    }
     logger_->addTcpLogEntry(*record_info.request_info, peer_node,
                             record_info.request_info->start_time, outbound,
                             true /* audit */);
