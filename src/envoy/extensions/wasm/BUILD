@@ -32,6 +32,7 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@envoy//source/common/stats:stats_lib",
+        "@envoy//source/common/version:version_lib",
         "@envoy//source/extensions/common/wasm:wasm_hdr",
     ],
 )

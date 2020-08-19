@@ -15,6 +15,7 @@
 #include "extensions/common/wasm/wasm.h"
 
 #include "common/stats/utility.h"
+#include "common/version/version.h"
 #include "src/envoy/extensions/wasm/context.h"
 
 namespace Envoy {
@@ -186,11 +187,12 @@ void IstioWasmExtension::onRemoteCacheEntriesChanged(int entries) {
 void IstioWasmExtension::createStats(const Stats::ScopeSharedPtr& scope,
                                      const PluginSharedPtr& plugin) {
   EnvoyWasm::createStats(scope, plugin);
-  auto istio_version = plugin->local_info_.node()
-                           .metadata()
-                           .fields()
-                           .at("ISTIO_VERSION")
-                           .string_value();
+  std::string istio_version = Envoy::VersionInfo::version();
+  auto node_metadata_fields = plugin->local_info_.node().metadata().fields();
+  auto istio_version_it = node_metadata_fields.find("ISTIO_VERSION");
+  if (istio_version_it != node_metadata_fields.end()) {
+    istio_version = istio_version_it->second.string_value();
+  }
   auto key = statsKey(plugin);
   if (config_stats_.find(key) == config_stats_.end()) {
     auto new_stats = std::make_unique<ConfigStats>(scope->symbolTable());
