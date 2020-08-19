@@ -1,4 +1,4 @@
-- name: envoy.filters.http.wasm
+- name: stackdriver_outbound
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
     type_url: envoy.extensions.filters.http.wasm.v3.Wasm
@@ -16,4 +16,9 @@
             local: { inline_string: "envoy.wasm.null.stackdriver" }
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
-          value: ""
+          value: |
+            {{- if .Vars.JustSendErrorClientLog }}
+            {"access_logging": "ERRORS_ONLY"}
+            {{- else }}
+            {"access_logging": "FULL"}
+            {{- end }}

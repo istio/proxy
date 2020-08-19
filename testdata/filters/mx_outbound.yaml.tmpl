@@ -1,0 +1,23 @@
+- name: mx_outbound{{.N}}
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: envoy.extensions.filters.http.wasm.v3.Wasm
+    value:
+      config:
+        vm_config:
+          {{- if .Vars.WasmRuntime }}
+          runtime: {{ .Vars.WasmRuntime }}
+          {{- else }}
+          runtime: envoy.wasm.runtime.null
+          {{- end }}
+          code:
+            {{- if .Vars.MetadataExchangeFilterCode }}
+            local: { {{ .Vars.MetadataExchangeFilterCode }} }
+            {{- else }}
+            local: { inline_string: "envoy.wasm.metadata_exchange" }
+            {{- end }}
+          allow_precompiled: true
+        configuration:
+          "@type": "type.googleapis.com/google.protobuf.StringValue"
+          value: |
+            { "max_peer_cache_size": 20 }

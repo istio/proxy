@@ -15,34 +15,7 @@ filter_chains:
       codec_type: AUTO
       stat_prefix: server
       http_filters:
-{{- if eq .Vars.EnableMetadataExchange "true" }}
-      - name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: envoy.extensions.filters.http.wasm.v3.Wasm
-          value:
-            config:
-              vm_config:
-                {{- if .Vars.WasmRuntime }}
-                runtime: {{ .Vars.WasmRuntime }}
-                {{- else }}
-                runtime: envoy.wasm.runtime.null
-                {{- end }}
-                code:
-                  {{- if .Vars.MetadataExchangeFilterCode }}
-                  local: { {{ .Vars.MetadataExchangeFilterCode }} }
-                  {{- else }}
-                  local: { inline_string: "envoy.wasm.metadata_exchange" }
-                  {{- end }}
-                allow_precompiled: true
-              configuration:
-                "@type": "type.googleapis.com/google.protobuf.StringValue"
-                value: |
-                  { "max_peer_cache_size": 20 }
-{{- end }}
-{{- if ne .Vars.ServerHTTPFilters "" }}
-{{ .Vars.ServerHTTPFilters | indent 6 }}
-{{- end }}
+{{ .Vars.ServerHTTPFilters | fill | indent 6 }}
       - name: envoy.router
       route_config:
         name: server
