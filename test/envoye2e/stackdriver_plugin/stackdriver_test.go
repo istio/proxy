@@ -648,7 +648,7 @@ func TestStackdriverAuditLog(t *testing.T) {
 		respCode      string
 		logEntryCount int
 	}{
-		{"StackdriverAudit", "200", 1},
+		{"StackdriverAudit", "200", 5},
 	}
 
 	for _, tt := range TestCases {
@@ -687,7 +687,7 @@ func TestStackdriverAuditLog(t *testing.T) {
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 					&driver.Sleep{Duration: 1 * time.Second},
 					&driver.Repeat{
-						N: 1,
+						N: tt.logEntryCount,
 						Step: &driver.HTTPCall{
 							Port:         params.Ports.ClientPort,
 							ResponseCode: respCode,
