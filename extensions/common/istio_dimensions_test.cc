@@ -25,26 +25,32 @@ namespace {
 TEST(WasmCommonIstioDimensionsTest, VerifyHashing) {
   EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly({
       IstioDimensions{},
-      IstioDimensions{.request_protocol = "grpc"},
-      IstioDimensions{.request_protocol = "grpc", .response_code = "200"},
-      IstioDimensions{.request_protocol = "grpc", .response_code = "400"},
-      IstioDimensions{.source_app = "app_source", .request_protocol = "grpc"},
-      IstioDimensions{.source_app = "app_source",
-                      .source_version = "v2",
-                      .request_protocol = "grpc"},
-      IstioDimensions{.source_app = "app_source",
-                      .source_version = "v2",
-                      .request_protocol = "grpc",
-                      .outbound = true},
-      IstioDimensions{.source_app = "app_source",
-                      .source_version = "v2",
-                      .request_protocol = "grpc",
-                      .outbound = true},
-      IstioDimensions{.source_app = "app_source",
-                      .source_version = "v2",
-                      .request_protocol = "grpc",
-                      .grpc_response_status = "12",
-                      .outbound = true},
+      IstioDimensions().set_request_protocol("wrpc"),
+      IstioDimensions().set_request_protocol("grpc").set_response_code("200"),
+      IstioDimensions().set_request_protocol("grpc").set_response_code("400"),
+      IstioDimensions()
+          .set_source_app("app_source")
+          .set_request_protocol("grpc"),
+      IstioDimensions()
+          .set_source_app("app_source")
+          .set_source_version("v2")
+          .set_request_protocol("grpc"),
+      IstioDimensions()
+          .set_source_app("app_source")
+          .set_source_version("v2")
+          .set_request_protocol("grpc")
+          .set_outbound(true),
+      IstioDimensions()
+          .set_source_app("app_source")
+          .set_source_version("v2")
+          .set_request_protocol("grpc")
+          .set_outbound(true),
+      IstioDimensions()
+          .set_source_app("app_source")
+          .set_source_version("v2")
+          .set_request_protocol("grpc")
+          .set_grpc_response_status("12")
+          .set_outbound(true),
   }));
 }
 
