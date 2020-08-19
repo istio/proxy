@@ -444,8 +444,8 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
   if (enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) {
-      ::Wasm::Common::populateExtendedRequestInfo(&request_info);
-      extended_info_populated = true;
+    ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+    extended_info_populated = true;
     // It's possible that for a short lived TCP connection, we log TCP
     // Connection Open log entry on connection close.
     if (!record_info.tcp_open_entry_logged &&
