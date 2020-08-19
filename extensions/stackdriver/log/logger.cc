@@ -90,7 +90,7 @@ void fillDestinationLabels(
   const auto local_labels = destination_node_info.labels();
   if (local_labels) {
     auto version_iter = local_labels->LookupByKey("version");
-    if (version_iter) {
+    if (version_iter && !audit) {
       (*label_map)["destination_version"] =
           flatbuffers::GetString(version_iter->value());
     }
@@ -169,7 +169,7 @@ void Logger::initializeLogEntryRequest(
         platform_metadata,
     const ::Wasm::Common::FlatNode& local_node_info, bool outbound,
     bool audit) {
-  const LogEntryType log_entry_type = GetLogEntryType(outbound, audit);
+  LogEntryType log_entry_type = GetLogEntryType(outbound, audit);
   log_entries_request_map_[log_entry_type]->request =
       std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
   log_entries_request_map_[log_entry_type]->size = 0;
@@ -313,7 +313,7 @@ void Logger::fillAndFlushLogEntry(
     new_entry->set_trace_sampled(request_info.b3_trace_sampled);
   }
 
-  const LogEntryType log_entry_type = GetLogEntryType(outbound, audit);
+  LogEntryType log_entry_type = GetLogEntryType(outbound, audit);
   // Accumulate estimated size of the request. If the current request exceeds
   // the size limit, flush the request out.
   log_entries_request_map_[log_entry_type]->size += new_entry->ByteSizeLong();
@@ -368,7 +368,7 @@ void Logger::addTCPLabelsToLogEntry(
     const ::Wasm::Common::RequestInfo& request_info,
     const ::Wasm::Common::FlatNode& peer_node_info,
     google::logging::v2::LogEntry* log_entry, bool outbound, bool audit) {
-  auto& entries_request =
+  const auto& entries_request =
       log_entries_request_map_[GetLogEntryType(outbound, audit)]->request;
   auto label_map = log_entry->mutable_labels();
   std::string source, destination;

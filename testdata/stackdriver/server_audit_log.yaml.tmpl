@@ -1,0 +1,16 @@
+labels:
+  destination_namespace: default
+  destination_workload: ratings-v1
+  destination_app: ratings
+  destination_canonical_service: ratings
+  destination_canonical_revision: version-1
+logName: projects/test-project/logs/server-istio-audit-log
+resource:
+  labels:
+    cluster_name: test-cluster
+    container_name: server
+    location: us-east4-b
+    namespace_name: default
+    pod_name: ratings-v1-84975bc778-pxz2w
+    project_id: test-project
+  type: k8s_container

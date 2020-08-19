@@ -440,10 +440,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // Record TCP Metrics.
   ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node,
                                                request_info);
+  bool extended_info_populated = false;
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
   if (enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) {
-    ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+      ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+      extended_info_populated = true;
     // It's possible that for a short lived TCP connection, we log TCP
     // Connection Open log entry on connection close.
     if (!record_info.tcp_open_entry_logged &&
@@ -463,6 +465,9 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   }
 
   if (enableAuditLog() && shouldAuditThisRequest()) {
+    if (!extended_info_populated) {
+      ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+    }
     // It's possible that for a short lived TCP connection, we audit log TCP
     // Connection Open log entry on connection close.
     if (!record_info.tcp_open_entry_logged &&
