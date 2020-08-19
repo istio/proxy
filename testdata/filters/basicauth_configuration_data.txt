@@ -3,7 +3,12 @@
     { 
       "request_path":{ "prefix":"/api" },
       "request_methods":[ "GET", "POST" ],
-      "credentials":[ "admin:admin", "admin2:admin2" ] 
-    }
+      "credentials":[ "ok:test", "admin:admin", "admin2:admin2" ] 
+    },
+    { 
+      "request_path":{ "exact":"/api" },
+      "request_methods":[ "GET", "POST" ],
+      "credentials":[ "admin:admin", "admin2:admin2", "ok:test" ] 
+    },
   ]
 }

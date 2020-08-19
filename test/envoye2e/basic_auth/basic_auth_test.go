@@ -59,8 +59,8 @@ var TestCases = []struct {
 	{
 		Name:           "CorrectCredentials",
 		Method:         "GET",
-		Path:           "/api/reviews/pay",
-		RequestHeaders: map[string]string{"Authorization": "Basic YWRtaW46YWRtaW4="},
+		Path:           "/api",
+		RequestHeaders: map[string]string{"Authorization": "Basic b2s6dGVzdA=="},
 		ResponseCode:   200,
 	},
 	{

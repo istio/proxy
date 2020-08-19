@@ -53,21 +53,21 @@ class PluginRootContext : public RootContext {
 
   enum MATCH_TYPE { Prefix, Exact, Suffix };
   struct BasicAuthConfigRule {
-    std::string_view request_path;
+    std::string request_path;
     MATCH_TYPE pattern;
     std::unordered_set<std::string> encoded_credentials;
   };
-  const std::unordered_map<std::string_view,
+  const std::unordered_map<std::string,
                            std::vector<PluginRootContext::BasicAuthConfigRule>>
   basicAuthConfigurationValue() {
     return basic_auth_configuration_;
   };
   FilterHeadersStatus credentialsCheck(const BasicAuthConfigRule&,
-                                       const std::string&);
+                                       std::string_view);
 
  private:
   bool configure(size_t);
-  std::unordered_map<std::string_view,
+  std::unordered_map<std::string,
                      std::vector<PluginRootContext::BasicAuthConfigRule>>
       basic_auth_configuration_;
 };
