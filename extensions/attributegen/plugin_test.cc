@@ -117,13 +117,23 @@ struct TestParams {
 // Config params
 // All default values are zero values
 // So name flags accordingly.
+#define CONFIG_PARAMS_STRING_MEMBER(_n)   \
+  ConfigParams& set_##_n(std::string s) { \
+    _n = std::string(s);                  \
+    return *this;                         \
+  }                                       \
+  std::string _n
 struct ConfigParams {
-  std::string name;
-  std::string plugin_config;
+  CONFIG_PARAMS_STRING_MEMBER(name);
+  CONFIG_PARAMS_STRING_MEMBER(plugin_config);
   // relative from testdata_dir
-  std::string plugin_config_file;
+  CONFIG_PARAMS_STRING_MEMBER(plugin_config_file);
   bool do_not_add_filter;
-  std::string root_id;
+  ConfigParams& set_do_not_add_filter(bool b) {
+    do_not_add_filter = b;
+    return *this;
+  }
+  CONFIG_PARAMS_STRING_MEMBER(root_id);
 };
 
 std::ostream& operator<<(std::ostream& os, const TestParams& s) {
@@ -276,9 +286,8 @@ using HttpFilters::Wasm::WasmHttpFilterTest;
 
 std::vector<TestParams> generateTestParams() {
   return std::vector<TestParams>{
-      {.runtime = "null", .testdata_dir = "/extensions/attributegen/testdata"},
-      // {.runtime = "v8", .testdata_dir =
-      // "/extensions/attributegen/testdata"},
+      {"null", "/extensions/attributegen/testdata"},
+      // {"v8", "/extensions/attributegen/testdata"},
   };
 }
 
@@ -318,7 +327,7 @@ TEST_P(AttributeGenFilterTest, OneMatch) {
                     "match": [{"value":
                             "GetStatus", "condition": "request.url_path.startsWith('/status')"}]}]}
   )EOF";
-  setupConfig({.plugin_config = plugin_config});
+  setupConfig(ConfigParams().set_plugin_config(plugin_config));
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
@@ -334,7 +343,7 @@ TEST_P(AttributeGenFilterTest, ExprEvalError) {
                     "match": [{"value":
                             "GetStatus", "condition": "request.url_path"}]}]}
   )EOF";
-  setupConfig({.plugin_config = plugin_config});
+  setupConfig(ConfigParams().set_plugin_config(plugin_config));
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
@@ -346,7 +355,7 @@ TEST_P(AttributeGenFilterTest, UnparseableConfig) {
   const char* plugin_config = R"EOF(
                     attributes = [ output_attribute ];
   )EOF";
-  setupConfig({.plugin_config = plugin_config});
+  setupConfig(ConfigParams().set_plugin_config(plugin_config));
   EXPECT_EQ(root_context_->readMetric(
                 "wasm_filter.attributegen.type.config.error_count"),
             2);
@@ -359,7 +368,7 @@ TEST_P(AttributeGenFilterTest, BadExpr) {
                             "GetStatus", "condition": "if a = b then return
                             5"}]}]}
   )EOF";
-  setupConfig({.plugin_config = plugin_config});
+  setupConfig(ConfigParams().set_plugin_config(plugin_config));
   EXPECT_EQ(root_context_->readMetric(
                 "wasm_filter.attributegen.type.config.error_count"),
             2);
@@ -374,7 +383,7 @@ TEST_P(AttributeGenFilterTest, NoMatch) {
                             "request.url_path.startsWith('/status') &&
                             request.method == 'POST'"}]}]}
   )EOF";
-  setupConfig({.plugin_config = plugin_config});
+  setupConfig(ConfigParams().set_plugin_config(plugin_config));
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"},
                                                  {":method", "GET"}};
@@ -386,8 +395,8 @@ TEST_P(AttributeGenFilterTest, NoMatch) {
 TEST_P(AttributeGenFilterTest, OperationFileList) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(
-      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file(
+      "operation.json"));  // testdata/operation.json
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
                                                  {":method", "GET"}};
@@ -400,8 +409,8 @@ TEST_P(AttributeGenFilterTest, OperationFileList) {
 TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(
-      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file(
+      "operation.json"));  // testdata/operation.json
 
   // needs GET to match
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
@@ -414,8 +423,8 @@ TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
 TEST_P(AttributeGenFilterTest, OperationFileGet) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(
-      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file(
+      "operation.json"));  // testdata/operation.json
 
   Http::TestRequestHeaderMapImpl request_headers{
       {":path", "/shelves/a101/books/b1122"}, {":method", "GET"}};
@@ -427,8 +436,8 @@ TEST_P(AttributeGenFilterTest, OperationFileGet) {
 TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(
-      {.plugin_config_file = "operation.json"});  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file(
+      "operation.json"));  // testdata/operation.json
   // match requires alphanumeric ids.
   Http::TestRequestHeaderMapImpl request_headers{
       {":path", "/shelves/-----/books/b1122"}, {":method", "GET"}};
@@ -440,8 +449,8 @@ TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
   const std::string attribute = "istio.responseClass";
 
-  setupConfig({.plugin_config_file =
-                   "responseCode.json"});  // testdata/responseCode.json
+  setupConfig(ConfigParams().set_plugin_config_file(
+      "responseCode.json"));  // testdata/responseCode.json
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
                                                  {":method", "GET"}};
@@ -453,8 +462,8 @@ TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch2) {
   const std::string attribute = "istio.responseClass";
 
-  setupConfig({.plugin_config_file =
-                   "responseCode.json"});  // testdata/responseCode.json
+  setupConfig(ConfigParams().set_plugin_config_file(
+      "responseCode.json"));  // testdata/responseCode.json
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
                                                  {":method", "GET"}};
@@ -466,8 +475,8 @@ TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch2) {
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch3) {
   const std::string attribute = "istio.responseClass";
 
-  setupConfig({.plugin_config_file =
-                   "responseCode.json"});  // testdata/responseCode.json
+  setupConfig(ConfigParams().set_plugin_config_file(
+      "responseCode.json"));  // testdata/responseCode.json
 
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
                                                  {":method", "GET"}};
