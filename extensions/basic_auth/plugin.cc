@@ -63,19 +63,19 @@ void deniedInvalidCredentials() {
                     "username and/or password",
                     "", {});
 }
+}  // namespace
 
-FilterHeadersStatus credentialsCheck(
+FilterHeadersStatus PluginRootContext::credentialsCheck(
     const PluginRootContext::BasicAuthConfigRule& rule,
     std::string_view authorization_header) {
   // Check if the Basic auth header starts with "Basic "
-  std::string_view authorization_header_strip =
-      absl::StripPrefix(authorization_header, "Basic ");
-  // If authorization_header_strip is the string as the original string
-  // it means there was no "Basic " prefix found.
-  if (authorization_header_strip == authorization_header) {
+  if (!absl::StartsWith(authorization_header, "Basic ")) {
     deniedNoBasicAuthData();
     return FilterHeadersStatus::StopIteration;
   }
+  std::string_view authorization_header_strip =
+      absl::StripPrefix(authorization_header, "Basic ");
+
   auto auth_credential_iter =
       rule.encoded_credentials.find(std::string(authorization_header_strip));
   // Check if encoded credential is part of the encoded_credentials
@@ -87,7 +87,6 @@ FilterHeadersStatus credentialsCheck(
 
   return FilterHeadersStatus::Continue;
 }
-}  // namespace
 
 bool PluginRootContext::onConfigure(size_t size) {
   // Parse configuration JSON string.
@@ -213,7 +212,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
   return true;
 }
 
-FilterHeadersStatus PluginRootContext::checkRequestHeaders() {
+FilterHeadersStatus PluginRootContext::check() {
   auto request_path_header = getRequestHeader(":path");
   std::string_view request_path = request_path_header->view();
   auto method = getRequestHeader(":method")->toString();

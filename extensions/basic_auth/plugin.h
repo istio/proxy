@@ -48,21 +48,20 @@ class PluginRootContext : public RootContext {
   ~PluginRootContext() {}
   bool onConfigure(size_t) override;
 
+  // check() handles the retrieval of certain headers (path,
+  // method and authorization) from the HTTP Request Header in order to compare
+  // it against the plugin's configuration data and deny or grant access to that
+  // requested path.
+  FilterHeadersStatus check();
+
+ private:
+  bool configure(size_t);
   enum MATCH_TYPE { Prefix, Exact, Suffix };
   struct BasicAuthConfigRule {
     std::string request_path;
     MATCH_TYPE pattern;
     std::unordered_set<std::string> encoded_credentials;
   };
-  FilterHeadersStatus check() { return checkRequestHeaders(); };
-
- private:
-  bool configure(size_t);
-  // checkRequestHeaders() handles the retrieval of certain headers (path,
-  // method and authorization) from the HTTP Request Header in order to compare
-  // it against the plugin's configuration data and deny or grant access to that
-  // requested path.
-  FilterHeadersStatus checkRequestHeaders();
   // The following map holds information regarding the plugin's configuration
   // data. The key will hold the request_method (GET, POST, DELETE for example)
   // The value is a vector of structs holding request_path, match_pattern and
@@ -71,6 +70,8 @@ class PluginRootContext : public RootContext {
   std::unordered_map<std::string,
                      std::vector<PluginRootContext::BasicAuthConfigRule>>
       basic_auth_configuration_;
+  FilterHeadersStatus credentialsCheck(
+      const PluginRootContext::BasicAuthConfigRule&, std::string_view);
 };
 
 // Per-stream context.
