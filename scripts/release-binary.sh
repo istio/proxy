@@ -182,7 +182,7 @@ do
 done
 
 # Build and publish Wasm plugins
-extensions=(stats metadata_exchange attributegen)
+extensions=(stats metadata_exchange attributegen basic_auth)
 TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
 trap 'rm -rf ${TMP_WASM}' EXIT
 make build_wasm
