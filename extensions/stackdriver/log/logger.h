@@ -47,6 +47,7 @@ class Logger {
   // Add a new log entry based on the given request information and peer node
   // information. The type of entry that is added depends on outbound and audit
   // arguments.
+  //
   // Audit labels:
   // - destination_canonical_revision
   // - destination_canonical_service
@@ -62,7 +63,7 @@ class Logger {
   // - source_namespace
   // - source_workload
   // - source_principal
-
+  //
   void addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                    const ::Wasm::Common::FlatNode& peer_node_info,
                    bool outbound, bool audit);
