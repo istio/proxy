@@ -363,5 +363,16 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
   request_info->request_protocol = kProtocolTCP;
 }
 
+bool getAuditPolicy() {
+  bool shouldAudit = false;
+  if (!getValue<bool>(
+          {"metadata", "filter_metadata", "envoy.common", "access_log_hint"},
+          &shouldAudit)) {
+    return false;
+  }
+
+  return shouldAudit;
+}
+
 }  // namespace Common
 }  // namespace Wasm

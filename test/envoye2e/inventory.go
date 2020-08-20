@@ -52,6 +52,7 @@ func init() {
 			"TestStatsParallel",
 			"TestStatsGrpc",
 			"TestTCPMetadataExchange",
+			"TestStackdriverAuditLog",
 			"TestTCPMetadataExchangeNoAlpn",
 			"TestAttributeGen",
 		},

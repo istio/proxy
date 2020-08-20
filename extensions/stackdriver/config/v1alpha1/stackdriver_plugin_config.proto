@@ -29,7 +29,7 @@ import "google/protobuf/wrappers.proto";
 
 // next id: 12
 message PluginConfig {
-  // Types of Access logs to export.
+  // Types of Access logs to export. Does not affect audit logging.
   enum AccessLogging {
     // No Logs.
     NONE = 0;
@@ -44,6 +44,9 @@ message PluginConfig {
   // Optional. Controls whether to export server access log.
   // This is deprecated in favor of AccessLogging enum.
   bool disable_server_access_logging = 1 [deprecated = true];
+
+  // Optional. Controls whether to export audit log.
+  bool enable_audit_log = 11;
 
   // Optional. FQDN of destination service that the request routed to, e.g.
   // productpage.default.svc.cluster.local. If not provided, request host header
