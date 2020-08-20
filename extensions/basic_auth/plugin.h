@@ -20,7 +20,12 @@
 
 #ifndef NULL_PLUGIN
 
+#include <assert.h>
+#define ASSERT(_X) assert(_X)
+
 #include "proxy_wasm_intrinsics.h"
+
+static const std::string EMPTY_STRING;
 
 #else
 
