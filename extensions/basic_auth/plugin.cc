@@ -1,4 +1,4 @@
-/* Copyright 2019 Istio Authors. All Rights Reserved.
+/* Copyright 2020 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,30 @@ void deniedInvalidCredentials() {
                     "Request denied by Basic Auth check. Invalid "
                     "username and/or password",
                     "", {});
+}
+
+FilterHeadersStatus credentialsCheck(
+    const PluginRootContext::BasicAuthConfigRule& rule,
+    std::string_view authorization_header) {
+  // Check if the Basic auth header starts with "Basic "
+  std::string_view authorization_header_strip =
+      absl::StripPrefix(authorization_header, "Basic ");
+  // If authorization_header_strip is the string as the original string
+  // it means there was no "Basic " prefix found.
+  if (authorization_header_strip == authorization_header) {
+    deniedNoBasicAuthData();
+    return FilterHeadersStatus::StopIteration;
+  }
+  auto auth_credential_iter =
+      rule.encoded_credentials.find(std::string(authorization_header_strip));
+  // Check if encoded credential is part of the encoded_credentials
+  // set from our container to grant or deny access.
+  if (auth_credential_iter == rule.encoded_credentials.end()) {
+    deniedInvalidCredentials();
+    return FilterHeadersStatus::StopIteration;
+  }
+
+  return FilterHeadersStatus::Continue;
 }
 }  // namespace
 
@@ -189,55 +213,31 @@ bool PluginRootContext::configure(size_t configuration_size) {
   return true;
 }
 
-FilterHeadersStatus PluginRootContext::credentialsCheck(
-    const BasicAuthConfigRule& rule, std::string_view authorization_header) {
-  // Check if the Basic auth header starts with "Basic "
-  if (!absl::ConsumePrefix(&authorization_header, "Basic ")) {
-    deniedNoBasicAuthData();
-    return FilterHeadersStatus::StopIteration;
-  }
-  auto auth_credential_iter =
-      rule.encoded_credentials.find(std::string(authorization_header));
-  // Check if encoded credential is part of the encoded_credentials
-  // set from our container to grant or deny access.
-  if (auth_credential_iter == rule.encoded_credentials.end()) {
-    deniedInvalidCredentials();
-    return FilterHeadersStatus::StopIteration;
-  }
-
-  return FilterHeadersStatus::Continue;
-}
-
-FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
-  auto basic_auth_configuration = rootContext()->basicAuthConfigurationValue();
+FilterHeadersStatus PluginRootContext::checkRequestHeaders() {
   auto request_path_header = getRequestHeader(":path");
   std::string_view request_path = request_path_header->view();
   auto method = getRequestHeader(":method")->toString();
-  auto method_iter = basic_auth_configuration.find(method);
+  auto method_iter = basic_auth_configuration_.find(method);
   // First we check if the request method is present in our container
-  if (method_iter != basic_auth_configuration.end()) {
+  if (method_iter != basic_auth_configuration_.end()) {
     // We iterate through our vector of struct in order to find if the
-    // request_path according to given match patterns, is part of the plugin's
+    // request_path according to given match pattern, is part of the plugin's
     // configuration data. If that's the case we check the credentials
     FilterHeadersStatus header_status = FilterHeadersStatus::Continue;
-    for (auto& rules : basic_auth_configuration[method]) {
-      if (rules.pattern == PluginRootContext::MATCH_TYPE::Prefix) {
+    auto authorization_header = getRequestHeader("authorization");
+    std::string_view authorization = authorization_header->view();
+    for (auto& rules : basic_auth_configuration_[method]) {
+      if (rules.pattern == MATCH_TYPE::Prefix) {
         if (absl::StartsWith(request_path, rules.request_path)) {
-          auto authorization_header = getRequestHeader("authorization");
-          std::string_view authorization = authorization_header->view();
-          header_status = rootContext()->credentialsCheck(rules, authorization);
+          header_status = credentialsCheck(rules, authorization);
         }
-      } else if (rules.pattern == PluginRootContext::MATCH_TYPE::Exact) {
+      } else if (rules.pattern == MATCH_TYPE::Exact) {
         if (rules.request_path == request_path) {
-          auto authorization_header = getRequestHeader("authorization");
-          std::string_view authorization = authorization_header->view();
-          header_status = rootContext()->credentialsCheck(rules, authorization);
+          header_status = credentialsCheck(rules, authorization);
         }
-      } else if (rules.pattern == PluginRootContext::MATCH_TYPE::Suffix) {
+      } else if (rules.pattern == MATCH_TYPE::Suffix) {
         if (absl::EndsWith(request_path, rules.request_path)) {
-          auto authorization_header = getRequestHeader("authorization");
-          std::string_view authorization = authorization_header->view();
-          header_status = rootContext()->credentialsCheck(rules, authorization);
+          header_status = credentialsCheck(rules, authorization);
         }
       }
       if (header_status == FilterHeadersStatus::StopIteration) {
@@ -248,6 +248,10 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
   // If there's no match against the request method or request path it means
   // that they don't have any basic auth restriction.
   return FilterHeadersStatus::Continue;
+}
+
+FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
+  return rootContext()->check();
 }
 
 #ifdef NULL_PLUGIN

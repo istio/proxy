@@ -5,11 +5,10 @@
     value:
       config:
         vm_config:
-          vm_id: basicauth{{ .N }}
           runtime: {{ .Vars.BasicAuthWasmRuntime }}
           code:
             local: { {{ .Vars.BasicAuthFilterConfig }} }
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
-            {{ .Vars.Credentials }}
+            {{ .Vars.BasicAuthConfigurationData }}

@@ -1,4 +1,4 @@
-/* Copyright 2019 Istio Authors. All Rights Reserved.
+/* Copyright 2020 Istio Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,7 @@
 
 #ifndef NULL_PLUGIN
 
-#include <assert.h>
-#define ASSERT(_X) assert(_X)
-
 #include "proxy_wasm_intrinsics.h"
-
-static const std::string EMPTY_STRING;
 
 #else
 
@@ -37,9 +32,6 @@ namespace BasicAuth {
 namespace Plugin {
 
 #endif
-
-using google::protobuf::util::JsonParseOptions;
-using google::protobuf::util::Status;
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
@@ -57,16 +49,20 @@ class PluginRootContext : public RootContext {
     MATCH_TYPE pattern;
     std::unordered_set<std::string> encoded_credentials;
   };
-  const std::unordered_map<std::string,
-                           std::vector<PluginRootContext::BasicAuthConfigRule>>
-  basicAuthConfigurationValue() {
-    return basic_auth_configuration_;
-  };
-  FilterHeadersStatus credentialsCheck(const BasicAuthConfigRule&,
-                                       std::string_view);
+  FilterHeadersStatus check() { return checkRequestHeaders(); };
 
  private:
   bool configure(size_t);
+  // checkRequestHeaders() handles the retrieval of certain headers (path,
+  // method and authorization) from the HTTP Request Header in order to compare
+  // it against the plugin's configuration data and deny or grant access to that
+  // requested path.
+  FilterHeadersStatus checkRequestHeaders();
+  // The following map holds information regarding the plugin's configuration
+  // data. The key will hold the request_method (GET, POST, DELETE for example)
+  // The value is a vector of structs holding request_path, match_pattern and
+  // encoded_credentials container at each position of the vector for a given
+  // request_method.
   std::unordered_map<std::string,
                      std::vector<PluginRootContext::BasicAuthConfigRule>>
       basic_auth_configuration_;
@@ -81,7 +77,7 @@ class PluginContext : public Context {
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
-  };
+  }
 };
 
 #ifdef NULL_PLUGIN

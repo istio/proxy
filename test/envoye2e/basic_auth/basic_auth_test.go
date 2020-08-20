@@ -1,4 +1,4 @@
-// Copyright 2019 Istio Authors
+// Copyright 2020 Istio Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,30 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package basicauthplugin
 
 import (
 	"fmt"
-	"istio.io/proxy/test/envoye2e"
-	"istio.io/proxy/test/envoye2e/driver"
-	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
 
+	"istio.io/proxy/test/envoye2e"
+	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
 )
-
-func skipWasm(t *testing.T, runtime string) {
-	if os.Getenv("WASM") != "" {
-		if runtime != "envoy.wasm.runtime.v8" {
-			t.Skip("Skip test since runtime is not v8")
-		}
-	} else if runtime == "envoy.wasm.runtime.v8" {
-		t.Skip("Skip v8 runtime test since wasm module is not generated")
-	}
-}
 
 type capture struct{}
 
@@ -47,7 +36,6 @@ func (capture) Run(p *driver.Params) error {
 	p.Vars["RequestCount"] = fmt.Sprintf("%d", p.N+prev)
 	return nil
 }
-func (capture) Cleanup() {}
 
 var TestCases = []struct {
 	Name           string
@@ -113,11 +101,11 @@ func TestBasicAuth(t *testing.T) {
 	for _, testCase := range TestCases {
 		for _, runtime := range BasicAuthRuntimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
-				skipWasm(t, runtime.WasmRuntime)
+				env.SkipWasm(t, runtime.WasmRuntime)
 				params := driver.NewTestParams(t, map[string]string{
-					"BasicAuthWasmRuntime":  runtime.WasmRuntime,
-					"BasicAuthFilterConfig": runtime.BasicAuthFilterCode,
-					"Credentials":           driver.LoadTestJSON("testdata/filters/basicauth_configuration_data.txt"),
+					"BasicAuthWasmRuntime":       runtime.WasmRuntime,
+					"BasicAuthFilterConfig":      runtime.BasicAuthFilterCode,
+					"BasicAuthConfigurationData": driver.LoadTestJSON("testdata/filters/basicauth_configuration_data.json"),
 				}, envoye2e.ProxyE2ETests)
 				params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/basicauth.yaml.tmpl")
 				if err := (&driver.Scenario{
