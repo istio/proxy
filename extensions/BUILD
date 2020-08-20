@@ -93,3 +93,23 @@ wasm_cc_binary(
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
+
+wasm_cc_binary(
+    name = "basic_auth.wasm",
+    srcs = [
+        "//extensions/basic_auth:plugin.cc",
+        "//extensions/basic_auth:plugin.h",
+        "//extensions/common:context.cc",
+        "//extensions/common:context.h",
+        "//extensions/common:util.cc",
+        "//extensions/common:util.h",
+        "//extensions/metadata_exchange:base64.h",
+    ],
+    copts = ["-UNULL_PLUGIN"],
+    deps = [
+        "//extensions/common:json_util_wasm",
+        "//extensions/common:node_info_fb_cc",
+        "//external:abseil_strings",
+        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
+    ],
+)

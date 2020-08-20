@@ -16,7 +16,6 @@ package client
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -30,16 +29,6 @@ import (
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
 )
-
-func skipWasm(t *testing.T, runtime string) {
-	if os.Getenv("WASM") != "" {
-		if runtime != "envoy.wasm.runtime.v8" {
-			t.Skip("Skip test since runtime is not v8")
-		}
-	} else if runtime == "envoy.wasm.runtime.v8" {
-		t.Skip("Skip v8 runtime test since wasm module is not generated")
-	}
-}
 
 type capture struct{}
 
@@ -155,7 +144,7 @@ func TestStatsPayload(t *testing.T) {
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
-				skipWasm(t, runtime.WasmRuntime)
+				env.SkipWasm(t, runtime.WasmRuntime)
 				params := driver.NewTestParams(t, map[string]string{
 					"RequestCount":               "10",
 					"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
@@ -323,7 +312,7 @@ func TestStatsGrpc(t *testing.T) {
 func TestAttributeGen(t *testing.T) {
 	for _, runtime := range AttributeGenRuntimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
-			skipWasm(t, runtime.WasmRuntime)
+			env.SkipWasm(t, runtime.WasmRuntime)
 			params := driver.NewTestParams(t, map[string]string{
 				"RequestCount":               "10",
 				"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
@@ -405,7 +394,7 @@ func TestStatsFailure(t *testing.T) {
 
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
-			skipWasm(t, runtime.WasmRuntime)
+			env.SkipWasm(t, runtime.WasmRuntime)
 			params := driver.NewTestParams(t, map[string]string{
 				"RequestCount":               "10",
 				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
