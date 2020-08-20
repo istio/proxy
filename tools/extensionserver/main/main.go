@@ -48,6 +48,10 @@ func init() {
 func apply(config *extensionserver.Config) {
 	next := make(map[string]struct{})
 	for _, ext := range config.Extensions {
+		if err := ext.Prefetch(); err != nil {
+			log.Printf("error prefetching extension %q: %v\n", ext.Name, err)
+			continue
+		}
 		config, err := extensionserver.Convert(ext)
 		if err != nil {
 			log.Printf("error loading extension %q: %v\n", ext.Name, err)

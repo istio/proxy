@@ -116,10 +116,6 @@ func Load(dir string) *Config {
 			log.Printf("validation error in file %q: %v\n", path, errs)
 			return nil
 		}
-		if err := config.Prefetch(); err != nil {
-			log.Printf("error fetching extensions in file %q: %v\n", path, err)
-			return nil
-		}
 		out.merge(config)
 		return nil
 	})

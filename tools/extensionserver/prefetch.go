@@ -29,16 +29,6 @@ var prefetch = make(map[string][]byte)
 
 var timeout = 5 * time.Second
 
-// Prefetch all extensions in a config.
-func (config *Config) Prefetch() error {
-	for _, ext := range config.Extensions {
-		if err := ext.Prefetch(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Prefetch re-uses the cache is sha256 is specified
 func (ext *Extension) Prefetch() error {
 	// skip if already available

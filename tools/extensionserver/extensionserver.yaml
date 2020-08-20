@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - name: extensionserver
-        image: gcr.io/istio-testing/extensionserver:alpha0
+        image: gcr.io/istio-testing/extensionserver:alpha1
         ports:
         - containerPort: 8080
         volumeMounts:
