@@ -1,13 +1,14 @@
 ---
 title: Basic Auth Config
-description: Configuration for Basic Auth Filter.
+description: Configuration for Basic Auth plugin.
+location: https://istio.io/docs/reference/config/proxy_extensions/basic_auth.html
 layout: protoc-gen-docs
 generator: protoc-gen-docs
 weight: 20
 number_of_entries: 3
 ---
 <p>The following is an example of a configuration that restricts access to
-given paths matching a prefix or exact pattern, request methods and
+given request paths matching a prefix or exact pattern, request methods and
 credentials.
 {
   &ldquo;basic<em>auth</em>rules&rdquo;: [
@@ -18,8 +19,8 @@ credentials.
     },
     {
       &ldquo;request<em>path&rdquo;:{ &ldquo;prefix&rdquo;:&ldquo;/api&rdquo; },
-      &ldquo;request</em>methods&rdquo;:[ &ldquo;GET&rdquo;, &ldquo;POST&rdquo; ],
-      &ldquo;credentials&rdquo;:[ &ldquo;admin:admin&rdquo;, &ldquo;admin2:admin2&rdquo; ]
+      &ldquo;request</em>methods&rdquo;:[ &ldquo;GET&rdquo;, &ldquo;DELETE&rdquo; ],
+      &ldquo;credentials&rdquo;:[ &ldquo;user:passwd&rdquo;, &ldquo;admin:admin&rdquo; ]
     }
   ]
 }</p>
@@ -71,7 +72,7 @@ No
 <td><code>requestPath</code></td>
 <td><code><a href="#PathMatcher">PathMatcher</a></code></td>
 <td>
-<p>HTTP path to restrict access according match pattern specification.</p>
+<p>HTTP path to restrict access according to match pattern specification.</p>
 
 </td>
 <td>
@@ -82,7 +83,7 @@ No
 <td><code>requestMethods</code></td>
 <td><code>string[]</code></td>
 <td>
-<p>HTTP requets method operations such as GET, POST, HEAD, PUT, and DELETE.</p>
+<p>HTTP request method operations such as GET, POST, HEAD, PUT, and DELETE.</p>
 
 </td>
 <td>
@@ -93,7 +94,7 @@ No
 <td><code>credentials</code></td>
 <td><code>string[]</code></td>
 <td>
-<p>Credentials provided in the form username:password.</p>
+<p>Credentials provided in the form username:password that have access.</p>
 
 </td>
 <td>
