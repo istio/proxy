@@ -58,6 +58,9 @@ type Extension struct {
 
 	// Runtime (optional, defaults to v8).
 	Runtime string `json:"runtime,omitempty"`
+
+	// Optional comment
+	Comment string `json:"comment,omitempty"`
 }
 
 func (config *Config) merge(that *Config) {

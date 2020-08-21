@@ -43,8 +43,6 @@ func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
 	switch strings.ToLower(ext.Runtime) {
 	case "v8", "":
 		break
-	case "native":
-		runtime = "envoy.wasm.runtime.null"
 	case "wavm":
 		runtime = "envoy.wasm.runtime.wavm"
 	default:
