@@ -36,16 +36,16 @@ syntax = "proto3";
 //     }
 //   ]
 // }
-
 package basic_auth;
 
-import "google/protobuf/duration.proto";
-
+// Top level configuration to restrict access using HTTP Basic Auth
+// based on Basic Auth rules defined below.
 message PluginConfig {
   // Specifies a list of basic auth rules
   repeated BasicAuth basic_auth_rules = 1;
 }
 
+// BasicAuth defines restriction rules based on three elements.
 message BasicAuth {
   // HTTP path to restrict access according match pattern specification.
   PathMatcher request_path = 1;
@@ -57,6 +57,8 @@ message BasicAuth {
   repeated string credentials = 3;
 }
 
+// Restriction rule on request_path is defined by
+// match_pattern.
 message PathMatcher {
   oneof match_pattern {
     // match exact pattern in request_path
