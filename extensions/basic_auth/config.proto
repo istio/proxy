@@ -15,12 +15,15 @@
 
 syntax = "proto3";
 
+// clang-format off
 // $title: Basic Auth Config
-// $description: Configuration for Basic Auth Filter.
+// $description: Configuration for Basic Auth plugin.
+// $location: https://istio.io/docs/reference/config/proxy_extensions/basic_auth.html
 // $weight: 20
+// clang-format on
 
 // The following is an example of a configuration that restricts access to
-// given paths matching a prefix or exact pattern, request methods and
+// given request paths matching a prefix or exact pattern, request methods and
 // credentials.
 // {
 //   "basic_auth_rules": [
@@ -31,32 +34,34 @@ syntax = "proto3";
 //     },
 //     {
 //       "request_path":{ "prefix":"/api" },
-//       "request_methods":[ "GET", "POST" ],
-//       "credentials":[ "admin:admin", "admin2:admin2" ]
+//       "request_methods":[ "GET", "DELETE" ],
+//       "credentials":[ "user:passwd", "admin:admin" ]
 //     }
 //   ]
 // }
-
 package basic_auth;
 
-import "google/protobuf/duration.proto";
-
+// Top level configuration to restrict access using HTTP Basic Auth
+// based on Basic Auth rules defined below.
 message PluginConfig {
   // Specifies a list of basic auth rules
   repeated BasicAuth basic_auth_rules = 1;
 }
 
+// BasicAuth defines restriction rules based on three elements.
 message BasicAuth {
-  // HTTP path to restrict access according match pattern specification.
+  // HTTP path to restrict access according to match pattern specification.
   PathMatcher request_path = 1;
 
-  // HTTP requets method operations such as GET, POST, HEAD, PUT, and DELETE.
+  // HTTP request method operations such as GET, POST, HEAD, PUT, and DELETE.
   repeated string request_methods = 2;
 
-  // Credentials provided in the form username:password.
+  // Credentials provided in the form username:password that have access.
   repeated string credentials = 3;
 }
 
+// Restriction rule on request_path is defined by
+// match_pattern.
 message PathMatcher {
   oneof match_pattern {
     // match exact pattern in request_path

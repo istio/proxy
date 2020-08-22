@@ -124,6 +124,12 @@ lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 protoc = protoc -I common-protos -I extensions
 protoc_gen_docs_plugin := --docs_out=warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
 
+basic_auth_path := extensions/basic_auth
+basic_auth_protos := $(wildcard $(basic_auth_path)/*.proto)
+basic_auth_docs := $(basic_auth_protos:.proto=.pb.html)
+$(basic_auth_docs): $(basic_auth_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(basic_auth_path) $^
+
 attributegen_path := extensions/attributegen
 attributegen_protos := $(wildcard $(attributegen_path)/*.proto)
 attributegen_docs := $(attributegen_protos:.proto=.pb.html)
@@ -154,7 +160,7 @@ accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
 $(accesslog_policy_docs): $(accesslog_policy_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
 
-extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
+extensions-docs:  $(basic_auth_docs) $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
