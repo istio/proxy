@@ -176,7 +176,7 @@ void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
   const auto mesh_id_it = node_metadata->fields().find("MESH_ID");
   if (mesh_id_it != node_metadata->fields().end() &&
       !mesh_id_it->second.string_value().empty() &&
-      absl::HasPrefix(mesh_id_it->second.string_value()], "proj-")) {
+      absl::StartsWith(mesh_id_it->second.string_value(), "proj-")) {
     return;
   }
 
