@@ -179,7 +179,7 @@ void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
     return;
   }
 
-  // Insert or update mesh id to default mesh id if empty.
+  // Insert or update mesh id to default format as it is missing or empty.
   auto project_number = getProjectNumber();
   auto* mesh_id_field =
       (*node_metadata->mutable_fields())["MESH_ID"].mutable_string_value();
