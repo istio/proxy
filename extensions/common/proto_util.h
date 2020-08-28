@@ -29,8 +29,12 @@ namespace Common {
 bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
                            flatbuffers::FlatBufferBuilder& fbb);
 
-// Extra local node metadata into a flatbuffer.
+// Extract local node metadata into a flatbuffer.
 bool extractLocalNodeFlatBuffer(std::string* out);
+
+// Extract given local node metadata into a flatbuffer.
+bool extractLocalNodeFlatBuffer(std::string* out,
+                                const google::protobuf::Struct& node);
 
 // Extracts node metadata value. It looks for values of all the keys
 // corresponding to EXCHANGE_KEYS in node_metadata and populates it in

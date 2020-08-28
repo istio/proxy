@@ -102,6 +102,11 @@ bool extractLocalNodeFlatBuffer(std::string* out) {
   if (!getMessageValue({"node", "metadata"}, &node)) {
     return false;
   }
+  return extractLocalNodeFlatBuffer(out, node);
+}
+
+bool extractLocalNodeFlatBuffer(std::string* out,
+                                const google::protobuf::Struct& node) {
   flatbuffers::FlatBufferBuilder fbb;
   if (!extractNodeFlatBuffer(node, fbb)) {
     return false;
