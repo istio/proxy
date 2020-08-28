@@ -183,9 +183,7 @@ void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
   auto project_number = getProjectNumber();
   auto* mesh_id_field =
       (*node_metadata->mutable_fields())["MESH_ID"].mutable_string_value();
-  if (project_number.empty()) {
-    *mesh_id_field = "unknown";
-  } else {
+  if (!project_number.empty()) {
     *mesh_id_field = absl::StrCat("proj-", project_number);
   }
 }
