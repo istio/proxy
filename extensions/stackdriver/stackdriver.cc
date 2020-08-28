@@ -175,11 +175,13 @@ void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
   }
   const auto mesh_id_it = node_metadata->fields().find("MESH_ID");
   if (mesh_id_it != node_metadata->fields().end() &&
-      !mesh_id_it->second.string_value().empty()) {
+      !mesh_id_it->second.string_value().empty() &&
+      absl::HasPrefix(mesh_id_it->second.string_value()], "proj-")) {
     return;
   }
 
-  // Insert or update mesh id to default format as it is missing or empty.
+  // Insert or update mesh id to default format as it is missing, empty, or not
+  // properly set.
   auto project_number = getProjectNumber();
   auto* mesh_id_field =
       (*node_metadata->mutable_fields())["MESH_ID"].mutable_string_value();
