@@ -151,10 +151,43 @@ std::string getMonitoringEndpoint() {
   return monitoring_endpoint;
 }
 
+// Get GCP project number.
+std::string getProjectNumber() {
+  std::string project_number;
+  if (!getValue({"node", "metadata", "PLATFORM_METADATA", kGCPProjectNumberKey},
+                &project_number)) {
+    return "";
+  }
+  return project_number;
+}
+
 void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_connections_opened = 0;
   request_info.tcp_sent_bytes = 0;
   request_info.tcp_received_bytes = 0;
+}
+
+// Get local node metadata. If mesh id is not filled or does not exist,
+// fall back to default format `proj-<project-number>`.
+void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
+  if (!getMessageValue({"node", "metadata"}, node_metadata)) {
+    return;
+  }
+  const auto mesh_id_it = node_metadata->fields().find("MESH_ID");
+  if (mesh_id_it != node_metadata->fields().end() &&
+      !mesh_id_it->second.string_value().empty() &&
+      absl::StartsWith(mesh_id_it->second.string_value(), "proj-")) {
+    return;
+  }
+
+  // Insert or update mesh id to default format as it is missing, empty, or not
+  // properly set.
+  auto project_number = getProjectNumber();
+  auto* mesh_id_field =
+      (*node_metadata->mutable_fields())["MESH_ID"].mutable_string_value();
+  if (!project_number.empty()) {
+    *mesh_id_field = absl::StrCat("proj-", project_number);
+  }
 }
 
 }  // namespace
@@ -188,7 +221,9 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
             configuration + ", " + status.message().ToString());
     return false;
   }
-  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
+  google::protobuf::Struct node;
+  getLocalNodeMetadata(&node);
+  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_, node)) {
     logWarn("cannot extract local node metadata");
     return false;
   }
