@@ -195,7 +195,7 @@ std::string write_log_request_json = R"({
   },
   "labels":{
      "destination_workload":"test_workload",
-     "mesh_uid":"proj-123",
+     "mesh_uid":"mesh",
      "destination_namespace":"test_namespace",
      "destination_name":"test_pod"
   },
