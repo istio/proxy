@@ -20,7 +20,11 @@ labels:
   destination_ip: "127.0.0.1:{{ .Ports.ClientPort }}"
   protocol: tcp
   connection_state: "CLOSE"
+  {{- if .Vars.LogSampled }}
+  log_sampled: "true"
+  {{- else }}
   log_sampled: "false"
+  {{- end }}
   upstream_cluster: "outbound|9080|tcp|server.default.svc.cluster.local"
   route_name: ""
   requested_server_name: ""

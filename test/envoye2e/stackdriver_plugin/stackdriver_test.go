@@ -436,7 +436,7 @@ func getSdLogEntries(noClientLogs bool, logEntryCount int) []SDLogEntry {
 	logEntries := []SDLogEntry{
 		{
 			LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
-			LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry_sampled.yaml.tmpl"},
+			LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
 			LogEntryCount: logEntryCount,
 		},
 	}
@@ -445,7 +445,7 @@ func getSdLogEntries(noClientLogs bool, logEntryCount int) []SDLogEntry {
 		logEntries = append(logEntries, SDLogEntry{
 			LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
 			LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
-			LogEntryCount: 10,
+			LogEntryCount: logEntryCount,
 		})
 	}
 
@@ -484,6 +484,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 				"JustSendErrorClientLog":      tt.justSendErrorClientLog,
 				"DestinationUnknown":          tt.destinationUnknown,
 				"SourceUnknown":               tt.sourceUnknown,
+				"LogSampled":                  "true",
 			}, envoye2e.ProxyE2ETests)
 
 			sdPort := params.Ports.Max + 1
@@ -494,7 +495,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
 				driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-			params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 			if tt.enableMetadataExchange {
 				params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
 					params.Vars["ServerHTTPFilters"]
@@ -536,6 +537,105 @@ func TestStackdriverAccessLog(t *testing.T) {
 					sd.Check(params,
 						nil, getSdLogEntries(tt.justSendErrorClientLog == "true" && tt.respCode == "200", tt.logEntryCount),
 						nil, true,
+					),
+				},
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestStackdriverTCPAccessLogWithSampling(t *testing.T) {
+	t.Parallel()
+	var TestCases = []struct {
+		name              string
+		logWindowDuration string
+		sleepDuration     time.Duration
+		logEntryCount     int
+	}{
+		{"StackdriverAndAccessLogPlugin", "15s", 0, 1},
+		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, 2},
+	}
+
+	for _, tt := range TestCases {
+		t.Run(tt.name, func(t *testing.T) {
+			params := driver.NewTestParams(t, map[string]string{
+				"LogWindowDuration":           tt.logWindowDuration,
+				"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+				"SDLogStatusCode":             "200",
+				"ServiceAuthenticationPolicy": "MUTUAL_TLS",
+				"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
+				"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
+				"DisableDirectResponse":       "true",
+				"AlpnProtocol":                "mx-protocol",
+				"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"LogSampled":                  "true",
+			}, envoye2e.ProxyE2ETests)
+
+			sdPort := params.Ports.Max + 1
+			stsPort := params.Ports.Max + 2
+			params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+			params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+				params.LoadTestData("testdata/filters/access_log_policy_network.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/stackdriver_network_inbound.yaml.tmpl")
+			params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+			params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/access_log_policy_network.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/stackdriver_network_outbound.yaml.tmpl")
+			params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+			params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+
+			sd := &Stackdriver{Port: sdPort}
+
+			if err := (&driver.Scenario{
+				Steps: []driver.Step{
+					&driver.XDS{},
+					sd,
+					&SecureTokenService{Port: stsPort},
+					&driver.Update{
+						Node:      "client",
+						Version:   "0",
+						Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
+						Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
+					},
+					&driver.Update{
+						Node:      "server",
+						Version:   "0",
+						Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
+						Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
+					},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					&driver.TCPServer{Prefix: "hello"},
+					&driver.Repeat{
+						N:    5,
+						Step: &driver.TCPConnection{},
+					},
+					&driver.Sleep{Duration: tt.sleepDuration},
+					&driver.Repeat{
+						N:    5,
+						Step: &driver.TCPConnection{},
+					},
+					sd.Check(params,
+						nil,
+						[]SDLogEntry{
+							{
+								LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",
+								LogEntryFile: []string{"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryCount: tt.logEntryCount,
+							},
+							{
+								LogBaseFile: "testdata/stackdriver/client_access_log.yaml.tmpl",
+								LogEntryFile: []string{"testdata/stackdriver/client_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryCount: tt.logEntryCount,
+							},
+						},
+						nil, false,
 					),
 				},
 			}).Run(params); err != nil {

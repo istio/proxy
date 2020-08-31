@@ -77,11 +77,6 @@ bool PluginRootContext::onConfigure(size_t size) {
 }
 
 bool PluginRootContext::configure(size_t configuration_size) {
-  if (::Wasm::Common::TrafficDirection::Inbound !=
-      ::Wasm::Common::getTrafficDirection()) {
-    logError("ASM Acess Logging Policy is an inbound filter only.");
-    return false;
-  }
   auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
                                            0, configuration_size);
   auto configuration = configuration_data->toString();
@@ -131,29 +126,20 @@ void PluginContext::onLog() {
     return;
   }
 
-  // If request is not a failure, check cache to see if it should be logged or
-  // not, based on last time a successful request was logged for this client ip
-  // and principal combination.
-  std::string source_ip = "";
-  getValue({kSource, kAddress}, &source_ip);
-  std::string source_principal = "";
-  getValue({kConnection, kUriSanPeerCertificate}, &source_principal);
-  istio_dimensions_.set_downstream_ip(source_ip);
-  istio_dimensions_.set_source_principal(source_principal);
-  long long last_log_time_nanos = lastLogTimeNanos();
-  auto cur = static_cast<long long>(getCurrentTimeNanoseconds());
-  if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
-    LOG_TRACE(absl::StrCat(
-        "Setting logging to true as its outside of log windown. SourceIp: ",
-        source_ip, " SourcePrincipal: ", source_principal,
-        " Window: ", logTimeDurationNanos()));
-    if (setFilterStateValue(true)) {
-      updateLastLogTimeNanos(cur);
-    }
-    return;
+  // If request is not a failure, update cache and set access log policy filter
+  // state.
+  if (!is_cache_updated_) {
+    updateCacheAndSetFilterState();
   }
+}
 
-  setFilterStateValue(false);
+FilterStatus PluginContext::onNewConnection() {
+  if (!rootContext()->initialized()) {
+    return FilterStatus::Continue;
+  }
+  updateCacheAndSetFilterState();
+  is_cache_updated_ = true;
+  return FilterStatus::Continue;
 }
 
 bool PluginContext::isRequestFailed() {
@@ -175,7 +161,37 @@ bool PluginContext::isRequestFailed() {
     return true;
   }
 
+  // Check if request is a failure.
+  uint64_t response_flags = 0;
+  if (getValue({"response", "flags"}, &response_flags) && response_flags != 0) {
+    return true;
+  }
   return false;
+}
+
+void PluginContext::updateCacheAndSetFilterState() {
+  std::string source_ip = "";
+  getValue({kSource, kAddress}, &source_ip);
+  // Get only the Ip address part of the address.
+  source_ip = source_ip.substr(0, source_ip.find_last_of(":"));
+  std::string source_principal = "";
+  getValue({kConnection, kUriSanPeerCertificate}, &source_principal);
+  istio_dimensions_.set_downstream_ip(source_ip);
+  istio_dimensions_.set_source_principal(source_principal);
+  long long last_log_time_nanos = lastLogTimeNanos();
+  auto cur = static_cast<long long>(getCurrentTimeNanoseconds());
+  if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
+    LOG_TRACE(absl::StrCat(
+        "Setting logging to true as its outside of log windown. SourceIp: ",
+        source_ip, " SourcePrincipal: ", source_principal,
+        " Window: ", logTimeDurationNanos()));
+    if (setFilterStateValue(true)) {
+      updateLastLogTimeNanos(cur);
+    }
+    return;
+  }
+
+  setFilterStateValue(false);
 }
 
 #ifdef NULL_PLUGIN

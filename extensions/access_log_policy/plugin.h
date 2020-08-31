@@ -83,6 +83,8 @@ class PluginContext : public Context {
 
   void onLog() override;
 
+  FilterStatus onNewConnection() override;
+
  private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
@@ -99,7 +101,13 @@ class PluginContext : public Context {
   };
   bool isRequestFailed();
 
+  // Check cache to see if request/connection should be logged or
+  // not, based on last time a successful request/connection was logged for this
+  // client ip and principal combination. Also, set access log policy filter
+  // state based on the decision if it should be logged or not.
+  void updateCacheAndSetFilterState();
   Wasm::Common::IstioDimensions istio_dimensions_;
+  bool is_cache_updated_;
 };
 
 #ifdef NULL_PLUGIN

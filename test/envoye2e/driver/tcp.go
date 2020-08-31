@@ -21,12 +21,15 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"time"
 )
 
 type TCPServer struct {
 	lis    net.Listener
 	Prefix string
+	// time to sleep before replying on the connection.
+	DelayWrite int
 }
 
 var _ Step = &TCPServer{}
@@ -56,7 +59,7 @@ func (t *TCPServer) serve() {
 		}
 
 		// pass an accepted connection to a handler goroutine
-		go handleConnection(conn, t.Prefix)
+		go handleConnection(conn, t.Prefix, t.DelayWrite)
 	}
 }
 
@@ -85,7 +88,7 @@ func waitForTCPServer(port uint16) error {
 	return errors.New("timeout waiting for TCP server to be ready")
 }
 
-func handleConnection(conn net.Conn, prefix string) {
+func handleConnection(conn net.Conn, prefix string, delayWrite int) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	for {
@@ -99,6 +102,10 @@ func handleConnection(conn net.Conn, prefix string) {
 		}
 		log.Printf("request: %s", bytes)
 
+		if delayWrite > 0 {
+			time.Sleep(time.Duration(delayWrite) * time.Second)
+		}
+
 		// prepend prefix and send as response
 		line := fmt.Sprintf("%s %s", prefix, bytes)
 		log.Printf("response: %s", line)
@@ -106,7 +113,11 @@ func handleConnection(conn net.Conn, prefix string) {
 	}
 }
 
-type TCPConnection struct{}
+type TCPConnection struct {
+	// A zero value for timeout means I/O operations will not time out.
+	Timeout int
+	Err     error
+}
 
 var _ Step = &TCPConnection{}
 
@@ -118,10 +129,17 @@ func (t *TCPConnection) Run(p *Params) error {
 	defer conn.Close()
 	// send to socket
 	fmt.Fprintf(conn, "world"+"\n")
+	// Set deadline on connection.
+	if t.Timeout > 0 {
+		conn.SetDeadline(time.Now().Add(time.Duration(t.Timeout) * time.Second))
+	}
 	// listen for reply
 	message, err := bufio.NewReader(conn).ReadString('\n')
-	if err != nil {
-		return fmt.Errorf("failed to read bytes from conn %v", err)
+	if err != nil && t.Err != nil && strings.Contains(err.Error(), t.Err.Error()) {
+		// This is expected.
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to read bytes from conn %v", err.Error())
 	}
 	wantMessage := "hello world\n"
 	if message != wantMessage {
