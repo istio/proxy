@@ -495,7 +495,8 @@ func TestStackdriverAccessLog(t *testing.T) {
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
 				driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-			params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
+				driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 			if tt.enableMetadataExchange {
 				params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
 					params.Vars["ServerHTTPFilters"]
@@ -581,9 +582,11 @@ func TestStackdriverTCPAccessLogWithSampling(t *testing.T) {
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
-				params.LoadTestData("testdata/filters/access_log_policy_network.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/stackdriver_network_inbound.yaml.tmpl")
+				params.LoadTestData("testdata/filters/access_log_policy_network.yaml.tmpl") + "\n" +
+				params.LoadTestData("testdata/filters/stackdriver_network_inbound.yaml.tmpl")
 			params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
-			params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/access_log_policy_network.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/stackdriver_network_outbound.yaml.tmpl")
+			params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/access_log_policy_network.yaml.tmpl") + "\n" +
+				params.LoadTestData("testdata/filters/stackdriver_network_outbound.yaml.tmpl")
 			params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
 			params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
 
@@ -762,7 +765,8 @@ func TestStackdriverAuditLog(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/rbac_log.yaml.tmpl") + "\n" +
-		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl")
+		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl")
 	sd := &Stackdriver{Port: sdPort}
 	intRespCode, _ := strconv.Atoi(respCode)
 	if err := (&driver.Scenario{
