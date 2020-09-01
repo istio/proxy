@@ -20,6 +20,9 @@ WD=$(cd "$WD" || exit 1 ; pwd)
 #######################################
 # Presubmit script triggered by Prow. #
 #######################################
+# Do not use RBE for this, RBE will run ubuntu instance
+export BAZEL_BUILD_RBE_INSTANCE=""
+
 # shellcheck disable=SC1090
 source "${WD}/proxy-common.inc"
 
