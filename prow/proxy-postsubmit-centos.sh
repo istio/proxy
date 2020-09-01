@@ -28,8 +28,6 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   gcloud auth configure-docker
 fi
 
-GIT_SHA="$(git rev-parse --verify HEAD)"
-
 GCS_BUILD_BUCKET="${GCS_BUILD_BUCKET:-istio-build}"
 
 echo 'Create and push artifacts'
