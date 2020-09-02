@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 
+	// Preload proto definitions
+	_ "github.com/cncf/udpa/go/udpa/type/v1"
 	bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 
 	// Preload proto definitions
-	_ "github.com/cncf/udpa/go/udpa/type/v1"
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 
 	"istio.io/proxy/test/envoye2e/env"

@@ -26,12 +26,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
-
-	"istio.io/proxy/test/envoye2e/driver"
-
 	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	jsonpb "github.com/golang/protobuf/jsonpb"
 	proto "github.com/golang/protobuf/proto"
@@ -42,6 +36,11 @@ import (
 	cloudtracev2 "google.golang.org/genproto/googleapis/devtools/cloudtrace/v2"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+
+	"istio.io/proxy/test/envoye2e/driver"
 )
 
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
