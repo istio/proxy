@@ -14,5 +14,5 @@
 
 # this repo is not on the container plan by default
 BUILD_WITH_CONTAINER ?= 0
-IMAGE_NAME = build-tools-proxy
+IMAGE_NAME ?= build-tools-proxy
 CGO_ENABLED = 0
