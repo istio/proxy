@@ -27,7 +27,7 @@ package stackdriver.config.v1alpha1;
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
-// next id: 12
+// next id: 14
 message PluginConfig {
   // Types of Access logs to export. Does not affect audit logging.
   enum AccessLogging {
@@ -44,6 +44,17 @@ message PluginConfig {
   // Optional. Controls whether to export server access log.
   // This is deprecated in favor of AccessLogging enum.
   bool disable_server_access_logging = 1 [deprecated = true];
+
+  // Optional. Allows configuration of the size of the LogWrite request. The
+  // size is in bytes, so that it allows for better performance. Default is 4MB.
+  // The size of one log entry within LogWrite request is approx 1Kb.
+  int32 max_log_batch_size_in_bytes = 12;
+
+  // Optional. Allows configuration of the time between calls out to the
+  // stackdriver logging service to report buffered LogWrite request.
+  // Customers can choose to report more aggressively by keeping shorter report
+  // interval if needed. Default is 10s.
+  google.protobuf.Duration log_report_duration = 13;
 
   // Optional. Controls whether to export audit log.
   bool enable_audit_log = 11;

@@ -55,7 +55,7 @@ using ::Wasm::Common::TCPConnectionState;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultLogExportMilliseconds = 10000;  // 10s
+constexpr int kDefaultTickerMilliseconds = 10000;  // 10s
 
 namespace {
 
@@ -70,14 +70,14 @@ int getMonitoringExportInterval() {
   return 60;
 }
 
-// Get logging export interval from node metadata in milliseconds. Returns 60
+// Get proxy timer interval from node metadata in milliseconds. Returns 10
 // seconds if interval is not found in metadata.
-int getLoggingExportIntervalMilliseconds() {
+int getProxyTickerIntervalMilliseconds() {
   std::string interval_s = "";
-  if (getValue({"node", "metadata", kLoggingExportIntervalKey}, &interval_s)) {
+  if (getValue({"node", "metadata", kProxyTickerIntervalKey}, &interval_s)) {
     return std::stoi(interval_s) * 1000;
   }
-  return kDefaultLogExportMilliseconds;
+  return kDefaultTickerMilliseconds;
 }
 
 // Get logging export interval from node metadata in nanoseconds. Returns 60
@@ -204,8 +204,8 @@ bool StackdriverRootContext::onConfigure(size_t size) {
 
 bool StackdriverRootContext::configure(size_t configuration_size) {
   // onStart is called prior to onConfigure
-  proxy_set_tick_period_milliseconds(getLoggingExportIntervalMilliseconds());
-
+  int proxy_tick_ms = getProxyTickerIntervalMilliseconds();
+  proxy_set_tick_period_milliseconds(getProxyTickerIntervalMilliseconds());
   // Parse configuration JSON string.
   std::string configuration = "{}";
   if (configuration_size > 0) {
@@ -225,6 +225,21 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     return false;
   }
   local_node_info_ = getLocalNodeMetadata();
+
+  if (config_.has_log_report_duration()) {
+    log_report_duration_nanos_ =
+        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
+            config_.log_report_duration());
+    long int proxy_tick_ns = proxy_tick_ms * 1000;
+    if (log_report_duration_nanos_ < (proxy_tick_ns) ||
+        log_report_duration_nanos_ % proxy_tick_ns != 0) {
+      logWarn(absl::StrCat(
+          "The duration set is less than or not a multiple of default timer's "
+          "period. Default Timer MS: ",
+          proxy_tick_ms,
+          " Lod Duration Nanosecond: ", log_report_duration_nanos_));
+    }
+  }
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
@@ -256,7 +271,12 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     logging_stub_option.default_endpoint = kLoggingService;
     auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
     // logger takes ownership of exporter.
-    logger_ = std::make_unique<Logger>(local_node, std::move(exporter));
+    if (config_.max_log_batch_size_in_bytes() > 0) {
+      logger_ = std::make_unique<Logger>(local_node, std::move(exporter),
+                                         config_.max_log_batch_size_in_bytes());
+    } else {
+      logger_ = std::make_unique<Logger>(local_node, std::move(exporter));
+    }
     tcp_log_entry_timeout_ = getTcpLogEntryTimeoutNanoseconds();
   }
 
@@ -291,6 +311,16 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   } else {
     edge_new_report_duration_nanos_ = kDefaultEdgeNewReportDurationNanoseconds;
   }
+  long int proxy_tick_ns = proxy_tick_ms * 1000;
+  if (edge_new_report_duration_nanos_ < proxy_tick_ns ||
+      edge_new_report_duration_nanos_ % proxy_tick_ns != 0) {
+    logWarn(absl::StrCat(
+        "The duration set is less than or not a multiple of default timer's "
+        "period. "
+        "Default Timer MS: ",
+        proxy_tick_ms,
+        " Edge Report Duration Nanosecond: ", edge_new_report_duration_nanos_));
+  }
 
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
@@ -317,8 +347,8 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
 bool StackdriverRootContext::onStart(size_t) { return true; }
 
 void StackdriverRootContext::onTick() {
+  auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
   if (enableEdgeReporting()) {
-    auto cur = static_cast<long int>(getCurrentTimeNanoseconds());
     if ((cur - last_edge_epoch_report_call_nanos_) >
         edge_epoch_report_duration_nanos_) {
       // end of epoch
@@ -350,8 +380,10 @@ void StackdriverRootContext::onTick() {
     }
   }
 
-  if (enableAccessLog()) {
+  if (enableAccessLog() &&
+      (cur - last_log_report_call_nanos_ > log_report_duration_nanos_)) {
     logger_->exportLogEntry(/* is_on_done= */ false);
+    last_log_report_call_nanos_ = cur;
   }
 }
 

@@ -130,6 +130,8 @@ struct RequestInfo {
   // The path portion of the URL without the query string.
   std::string request_url_path;
 
+  std::string upstream_transport_failure_reason;
+
   // Service authentication policy (NONE, MUTUAL_TLS)
   ServiceAuthenticationPolicy service_auth_policy =
       ServiceAuthenticationPolicy::Unspecified;
@@ -151,7 +153,7 @@ struct RequestInfo {
   std::string route_name;
   std::string upstream_host;
   std::string upstream_cluster;
-  std::string request_serever_name;
+  std::string requested_server_name;
   std::string x_envoy_original_path;
   std::string x_envoy_original_dst_host;
 

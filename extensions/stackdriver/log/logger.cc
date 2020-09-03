@@ -298,13 +298,29 @@ void Logger::fillAndFlushLogEntry(
     (*label_map)["protocol"] = request_info.request_protocol;
     (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
     (*label_map)["connection_id"] = std::to_string(request_info.connection_id);
-    (*label_map)["route_name"] = request_info.route_name;
-    (*label_map)["upstream_host"] = request_info.upstream_host;
+    if (!request_info.route_name.empty()) {
+      (*label_map)["route_name"] = request_info.route_name;
+    }
+    if (!request_info.upstream_host.empty()) {
+      (*label_map)["upstream_host"] = request_info.upstream_host;
+    }
     (*label_map)["upstream_cluster"] = request_info.upstream_cluster;
-    (*label_map)["requested_server_name"] = request_info.request_serever_name;
-    (*label_map)["x-envoy-original-path"] = request_info.x_envoy_original_path;
-    (*label_map)["x-envoy-original-dst-host"] =
-        request_info.x_envoy_original_dst_host;
+    if (!request_info.requested_server_name.empty()) {
+      (*label_map)["requested_server_name"] =
+          request_info.requested_server_name;
+    }
+    if (!request_info.x_envoy_original_path.empty()) {
+      (*label_map)["x-envoy-original-path"] =
+          request_info.x_envoy_original_path;
+    }
+    if (!request_info.x_envoy_original_dst_host.empty()) {
+      (*label_map)["x-envoy-original-dst-host"] =
+          request_info.x_envoy_original_dst_host;
+    }
+    if (!request_info.upstream_transport_failure_reason.empty()) {
+      (*label_map)["upstream_transport_failure_reason"] =
+          request_info.upstream_transport_failure_reason;
+    }
   }
 
   // Insert trace headers, if exist.

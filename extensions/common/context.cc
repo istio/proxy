@@ -370,7 +370,7 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
   getValue({"connection_id"}, &request_info->connection_id);
   getValue({"upstream", "address"}, &request_info->upstream_host);
   getValue({"connection", "requested_server_name"},
-           &request_info->request_serever_name);
+           &request_info->requested_server_name);
   auto envoy_original_path = getHeaderMapValue(
       WasmHeaderMapType::RequestHeaders, kEnvoyOriginalPathKey);
   request_info->x_envoy_original_path =
@@ -379,6 +379,8 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
       WasmHeaderMapType::RequestHeaders, kEnvoyOriginalDstHostKey);
   request_info->x_envoy_original_dst_host =
       envoy_original_dst_host ? envoy_original_dst_host->toString() : "";
+  getValue({"upstream", "transport_failure_reason"},
+           &request_info->upstream_transport_failure_reason);
 }
 
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
