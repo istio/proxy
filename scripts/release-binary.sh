@@ -210,8 +210,10 @@ if [ -n "${DST}" ]; then
     WASM_COMPILED_PATH="${TMP_WASM}/${WASM_COMPILED_NAME}"
     SHA256_PATH="${WASM_PATH}.sha256"
     SHA256_COMPILED_PATH="${WASM_COMPILED_PATH}.sha256"
-    BAZEL_TARGET=$(bazel info "${BAZEL_BUILD_ARGS}" output_path)/k8-opt/bin/extensions/${extension}.wasm
-    BAZEL_COMPILED_TARGET=$(bazel info "${BAZEL_BUILD_ARGS}" output_path)/k8-opt/bin/extensions/${extension}.compiled.wasm
+    # shellcheck disable=SC2086
+    BAZEL_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.wasm
+    # shellcheck disable=SC2086
+    BAZEL_COMPILED_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.compiled.wasm
     cp "${BAZEL_TARGET}" "${WASM_PATH}"
     cp "${BAZEL_COMPILED_TARGET}" "${WASM_COMPILED_PATH}"
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
