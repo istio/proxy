@@ -17,19 +17,18 @@
 WD=$(dirname "$0")
 WD=$(cd "$WD" || exit 1 ; pwd)
 
-#######################################
-# Presubmit script triggered by Prow. #
-#######################################
-# Do not use RBE for this, RBE will run ubuntu instance
-export BAZEL_BUILD_RBE_INSTANCE=""
-
+########################################
+# Postsubmit script triggered by Prow. #
+########################################
 # shellcheck disable=SC1090
 source "${WD}/proxy-common.inc"
 
-echo "$(uname -s)-$(uname -m)"
-cat "${WD}/../WORKSPACE"
-echo 'Run tests'
-make test_centos
+if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, configuring Docker..." >&2
+  gcloud auth configure-docker
+fi
 
-echo 'Test building release artifacts'
-make test_release_centos
+GCS_BUILD_BUCKET="${GCS_BUILD_BUCKET:-istio-build}"
+
+echo 'Create and push artifacts'
+make push_release_centos RELEASE_GCS_PATH="gs://${GCS_BUILD_BUCKET}/proxy"

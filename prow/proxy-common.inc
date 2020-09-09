@@ -56,7 +56,7 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
 
   # Use RBE when logged in.
-  BAZEL_BUILD_RBE_INSTANCE="${BAZEL_BUILD_RBE_INSTANCE:-projects/istio-testing/instances/default_instance}"
+  BAZEL_BUILD_RBE_INSTANCE="${BAZEL_BUILD_RBE_INSTANCE-projects/istio-testing/instances/default_instance}"
   BAZEL_BUILD_RBE_CACHE="${BAZEL_BUILD_RBE_CACHE:-grpcs://remotebuildexecution.googleapis.com}"
   BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
   if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
