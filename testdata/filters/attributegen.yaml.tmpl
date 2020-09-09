@@ -22,6 +22,19 @@
                       "condition": "response.code >= 200 && response.code <= 299"
                     }
                   ]
+                },
+                {
+                  "output_attribute": "istio_operationId",
+                  "match": [
+                    {
+                      "value": "GetMethod",
+                      "condition": "request.method == 'GET'"
+                    },
+                    {
+                      "value": "PostMethod",
+                      "condition": "request.method == 'POST'"
+                    }
+                  ]
                 }
               ]
             }

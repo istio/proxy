@@ -41,6 +41,7 @@ func init() {
 			"TestStackdriverParallel",
 			"TestStackdriverGCEInstances",
 			"TestStackdriverTCPMetadataExchange",
+			"TestStackdriverAttributeGen",
 			"TestStatsPayload/Default/envoy.wasm.runtime.null",
 			"TestStatsPayload/Customized/envoy.wasm.runtime.null",
 			"TestStatsPayload/UseHostHeader/envoy.wasm.runtime.null",

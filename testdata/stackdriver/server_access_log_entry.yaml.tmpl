@@ -1,5 +1,9 @@
 http_request:
+  {{- if .Vars.RequestOperation }}
+  request_method: "{{ .Vars.RequestOperation }}"
+  {{- else }}
   request_method: "GET"
+  {{- end }}
   request_url: "http://127.0.0.1:{{ .Ports.ClientPort }}/{{ .Vars.RequestPath }}"
   server_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
   protocol: "http"
