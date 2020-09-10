@@ -39,6 +39,7 @@ const std::string kMetadataNotFoundValue =
     "envoy.wasm.metadata_exchange.peer_unknown";
 
 constexpr StringView kAccessLogPolicyKey = "istio.access_log_policy";
+constexpr StringView kRequestOperationKey = "istio_operationId";
 
 // Header keys
 constexpr StringView kAuthorityHeaderKey = ":authority";
