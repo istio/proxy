@@ -82,9 +82,6 @@ if [ "${CHECK}" -eq 1 ]; then
     [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'Must run on Ubuntu 16.04 (Xenial).'; exit 1; }
   fi
   [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
-elif [ -n "${DST}" ]; then
-  echo "The -i option is not allowed together with -d option."
-  exit 1
 fi
 
 # The proxy binary name.
