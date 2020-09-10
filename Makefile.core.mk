@@ -182,7 +182,7 @@ test_release:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 
 test_release_centos:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BINARY_NAME=envoy-centos && ./scripts/release-binary.sh
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c
 
 push_release: build
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p
