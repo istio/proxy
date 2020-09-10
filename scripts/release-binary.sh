@@ -49,12 +49,16 @@ BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
 # Push envoy docker image.
 PUSH_DOCKER_IMAGE=0
 
+# Support CentOS builds
+BUILD_FOR_CENTOS=0
+
 function usage() {
   echo "$0
     -d  The bucket name to store proxy binary (optional).
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
         Cannot be used together with -d option.
+    -c  Build for CentOS releases. This will disable the Ubuntu Xenial check.
     -p  Push envoy docker image.
         Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY env var."
   exit 1
@@ -65,6 +69,7 @@ while getopts d:ipc arg ; do
     d) DST="${OPTARG}";;
     i) CHECK=0;;
     p) PUSH_DOCKER_IMAGE=1;;
+    c) BUILD_FOR_CENTOS=1;;
     *) usage;;
   esac
 done
@@ -76,12 +81,15 @@ if [ "${DST}" == "none" ]; then
 fi
 
 # Make sure the release binaries are built on x86_64 Ubuntu 16.04 (Xenial)
-if [ "${CHECK}" -eq 1 ]; then
+if [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 0 ]; then
   if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
     UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
     [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'Must run on Ubuntu 16.04 (Xenial).'; exit 1; }
   fi
   [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
+elif [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 1 ]; then
+  # Make sure the release binaries are built on CentOS 7
+  [[ $(</etc/centos-release tr -dc '0-9.'|cut -d \. -f1) == "7" ]] || { echo "Must run on CentOS 7, got $(cat /centos-release)"; exit 1; }
 elif [ -n "${DST}" ]; then
   echo "The -i option is not allowed together with -d option."
   exit 1
