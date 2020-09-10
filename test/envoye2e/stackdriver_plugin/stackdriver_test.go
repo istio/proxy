@@ -600,16 +600,17 @@ func TestStackdriverAttributeGen(t *testing.T) {
 		"AttributeGenWasmRuntime":     "envoy.wasm.runtime.null",
 		"AttributeGenFilterConfig":    "inline_string: \"envoy.wasm.attributegen\"",
 		"RequestOperation":            "GetMethod",
+		"EnableMetadataExchange":      "true",
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
 	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
-	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	enableStackDriver(t, params.Vars)
-	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/attributegen.yaml.tmpl") + "\n" +
-		params.Vars["ServerHTTPFilters"]
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/attributegen.yaml.tmpl") +
+		"\n" + params.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
@@ -629,11 +630,6 @@ func TestStackdriverAttributeGen(t *testing.T) {
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
 						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
-						LogEntryCount: 10,
-					},
-					{
-						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
-						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
 				},
