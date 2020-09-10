@@ -15,7 +15,11 @@ metric:
     destination_workload_name: ratings-v1
     destination_workload_namespace: default
     mesh_uid: proj-123
+    {{- if .Vars.RequestOperation }}
+    request_operation: {{ .Vars.RequestOperation }}
+    {{- else }}
     request_operation: GET
+    {{- end }}
     request_protocol: http
     response_code: "200"
     service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
