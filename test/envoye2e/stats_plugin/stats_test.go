@@ -442,7 +442,7 @@ func TestStatsECDS(t *testing.T) {
 	env.SkipTSanASan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
-			skipWasm(t, runtime.WasmRuntime)
+			env.SkipWasm(t, runtime.WasmRuntime)
 			params := driver.NewTestParams(t, map[string]string{
 				"RequestCount":               "10",
 				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
