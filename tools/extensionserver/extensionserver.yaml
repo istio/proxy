@@ -6,13 +6,10 @@ metadata:
 data:
   extension.yaml: |
     extensions:
-    - name: stats_inbound
-      url: http://storage.googleapis.com/istio-build/proxy/stats-2c2f5680dfc0fc7d5cebaccfa747d6c3764ab52b.wasm
-      vm_id: stats_inbound
-      root_id: stats_inbound
-      configuration:
-        debug: false
-        field_separator: ";.;"
+    - name: demo
+      url: https://storage.googleapis.com/istio-build/proxy/headers_rust.wasm
+      sha256: 51c05f21fd857db613120220f12b282042ca60bc7a9813b63b79eab0b0347505
+      runtime: v8
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,12 +24,14 @@ spec:
       app: extensionserver
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: extensionserver
     spec:
       containers:
       - name: extensionserver
-        image: gcr.io/istio-testing/extensionserver:alpha1
+        image: gcr.io/istio-testing/extensionserver:latest
         ports:
         - containerPort: 8080
         volumeMounts:

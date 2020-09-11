@@ -21,6 +21,7 @@ import (
 	"log"
 	"net"
 	"reflect"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -36,6 +37,7 @@ const (
 var (
 	port   uint
 	dir    string
+	sleep  time.Duration
 	server *extensionserver.ExtensionServer
 	names  = make(map[string]struct{})
 )
@@ -43,6 +45,7 @@ var (
 func init() {
 	flag.UintVar(&port, "port", 8080, "xDS management server port")
 	flag.StringVar(&dir, "c", "", "Configuration file directory")
+	flag.DurationVar(&sleep, "s", 10*time.Second, "Await starting the server for network to be ready")
 }
 
 func apply(config *extensionserver.Config) {
@@ -74,6 +77,9 @@ func apply(config *extensionserver.Config) {
 
 func main() {
 	flag.Parse()
+
+	log.Printf("waiting %v before start-up...\n", sleep)
+	time.Sleep(sleep)
 
 	grpcServer := grpc.NewServer(grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams))
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))

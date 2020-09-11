@@ -18,17 +18,18 @@ Each extension configuration has the following fields:
 
 ## Usage
 
-An experimental build of this server is available as a docker image gcr.io/istio-testing/extensionserver:alpha0.
+An experimental build of this server is available as a docker image gcr.io/istio-testing/extensionserver.
 
 0. Follow instructions to install Istio 1.7 release, and install a demo application `bookinfo`.
 
-0. Deploy the [extension server](extensionserver.yaml) in "default" namespace.:
+0. Deploy the [extension server](extensionserver.yaml) and [EnvoyFilter](envoyfilter.yaml) in "default" namespace.:
   
-    kubectl apply -f extensionserver.yaml
+    kubectl apply -f extensionserver.yaml envoyfilter.yaml
 
-0. Note the address of the extension server in Istio parlor: `outbound|8080|grpc|extensionserver.default.svc.cluster.local`. You may need to adjust the address if using a different namespace. It is recommended that the sidecar is injected into the extensionserver.
+   This step deploys the extension server with a configmap `extensionserver` that contains a simple filter `headers_rust.wasm`.
 
-0. Validate that stats continue to be incremented:
+0. Validate the demo application continues to work as before.
 
-    kubectl exec -it productpage-v1-64794f5db4-zr7cr -c istio-proxy -- curl localhost:15000/stats/prometheus | grep istio_requests_total | grep reporter=\"destination\"
+0. The filter should pause the request if `server` header is set to `envoy-wasm-pause`. Try:
 
+    curl -H "server:envoy-wasm-pause" http://<GATEWAY_IP>/productpage
