@@ -1,0 +1,157 @@
+---
+title: Basic Auth Config
+description: Configuration for Basic Auth plugin.
+location: https://istio.io/docs/reference/config/proxy_extensions/basic_auth.html
+layout: protoc-gen-docs
+generator: protoc-gen-docs
+weight: 20
+number_of_entries: 3
+---
+<p>The following is an example of a configuration that restricts access to
+given request paths matching a prefix or exact pattern, request methods and
+credentials.
+{
+  &ldquo;basic<em>auth</em>rules&rdquo;: [
+    {
+      &ldquo;request<em>path&rdquo;:{&ldquo;exact&rdquo;: &ldquo;/api/reviews/pay&rdquo;},
+      &ldquo;request</em>methods&rdquo;:[ &ldquo;GET&rdquo;, &ldquo;POST&rdquo; ],
+      &ldquo;credentials&rdquo;:[ &ldquo;admin:admin&rdquo;, &ldquo;admin2:admin2&rdquo; ]
+    },
+    {
+      &ldquo;request<em>path&rdquo;:{ &ldquo;prefix&rdquo;:&ldquo;/api&rdquo; },
+      &ldquo;request</em>methods&rdquo;:[ &ldquo;GET&rdquo;, &ldquo;DELETE&rdquo; ],
+      &ldquo;credentials&rdquo;:[ &ldquo;user:passwd&rdquo;, &ldquo;admin:admin&rdquo; ]
+    }
+  ]
+}</p>
+
+<h2 id="PluginConfig">PluginConfig</h2>
+<section>
+<p>Top level configuration to restrict access using HTTP Basic Auth
+based on Basic Auth rules defined below.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="PluginConfig-basic_auth_rules">
+<td><code>basicAuthRules</code></td>
+<td><code><a href="#BasicAuth">BasicAuth[]</a></code></td>
+<td>
+<p>Specifies a list of basic auth rules</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="BasicAuth">BasicAuth</h2>
+<section>
+<p>BasicAuth defines restriction rules based on three elements.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="BasicAuth-request_path">
+<td><code>requestPath</code></td>
+<td><code><a href="#PathMatcher">PathMatcher</a></code></td>
+<td>
+<p>HTTP path to restrict access according to match pattern specification.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="BasicAuth-request_methods">
+<td><code>requestMethods</code></td>
+<td><code>string[]</code></td>
+<td>
+<p>HTTP request method operations such as GET, POST, HEAD, PUT, and DELETE.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="BasicAuth-credentials">
+<td><code>credentials</code></td>
+<td><code>string[]</code></td>
+<td>
+<p>Credentials provided in the form username:password that have access.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="PathMatcher">PathMatcher</h2>
+<section>
+<p>Restriction rule on request<em>path is defined by
+match</em>pattern.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="PathMatcher-exact" class="oneof oneof-start">
+<td><code>exact</code></td>
+<td><code>string (oneof)</code></td>
+<td>
+<p>match exact pattern in request_path</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PathMatcher-prefix" class="oneof">
+<td><code>prefix</code></td>
+<td><code>string (oneof)</code></td>
+<td>
+<p>match prefix pattern in request_path</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PathMatcher-suffix" class="oneof">
+<td><code>suffix</code></td>
+<td><code>string (oneof)</code></td>
+<td>
+<p>match suffix pattern in request_path</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>

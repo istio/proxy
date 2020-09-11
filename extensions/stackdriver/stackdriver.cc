@@ -151,10 +151,43 @@ std::string getMonitoringEndpoint() {
   return monitoring_endpoint;
 }
 
+// Get GCP project number.
+std::string getProjectNumber() {
+  std::string project_number;
+  if (!getValue({"node", "metadata", "PLATFORM_METADATA", kGCPProjectNumberKey},
+                &project_number)) {
+    return "";
+  }
+  return project_number;
+}
+
 void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_connections_opened = 0;
   request_info.tcp_sent_bytes = 0;
   request_info.tcp_received_bytes = 0;
+}
+
+// Get local node metadata. If mesh id is not filled or does not exist,
+// fall back to default format `proj-<project-number>`.
+void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
+  if (!getMessageValue({"node", "metadata"}, node_metadata)) {
+    return;
+  }
+  const auto mesh_id_it = node_metadata->fields().find("MESH_ID");
+  if (mesh_id_it != node_metadata->fields().end() &&
+      !mesh_id_it->second.string_value().empty() &&
+      absl::StartsWith(mesh_id_it->second.string_value(), "proj-")) {
+    return;
+  }
+
+  // Insert or update mesh id to default format as it is missing, empty, or not
+  // properly set.
+  auto project_number = getProjectNumber();
+  auto* mesh_id_field =
+      (*node_metadata->mutable_fields())["MESH_ID"].mutable_string_value();
+  if (!project_number.empty()) {
+    *mesh_id_field = absl::StrCat("proj-", project_number);
+  }
 }
 
 }  // namespace
@@ -188,7 +221,9 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
             configuration + ", " + status.message().ToString());
     return false;
   }
-  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_)) {
+  google::protobuf::Struct node;
+  getLocalNodeMetadata(&node);
+  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_, node)) {
     logWarn("cannot extract local node metadata");
     return false;
   }
@@ -363,14 +398,24 @@ void StackdriverRootContext::record() {
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node, request_info,
       !config_.disable_http_size_metrics());
+  bool extended_info_populated = false;
   if ((enableAllAccessLog() ||
        (enableAccessLogOnError() &&
         (request_info.response_code >= 400 ||
          request_info.response_flag != ::Wasm::Common::NONE))) &&
       shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
-    logger_->addLogEntry(request_info, peer_node, outbound);
+    extended_info_populated = true;
+    logger_->addLogEntry(request_info, peer_node, outbound, false /* audit */);
   }
+
+  if (enableAuditLog() && shouldAuditThisRequest()) {
+    if (!extended_info_populated) {
+      ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
+    }
+    logger_->addLogEntry(request_info, peer_node, outbound, true /* audit */);
+  }
+
   if (enableEdgeReporting()) {
     std::string peer_id;
     if (!getPeerId(peer_id)) {
@@ -430,10 +475,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // Record TCP Metrics.
   ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node,
                                                request_info);
+  bool extended_info_populated = false;
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
   if (enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+    extended_info_populated = true;
     // It's possible that for a short lived TCP connection, we log TCP
     // Connection Open log entry on connection close.
     if (!record_info.tcp_open_entry_logged &&
@@ -442,13 +489,38 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
       logger_->addTcpLogEntry(*record_info.request_info, peer_node,
-                              record_info.request_info->start_time, outbound);
+                              record_info.request_info->start_time, outbound,
+                              false /* audit */);
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
     logger_->addTcpLogEntry(request_info, peer_node,
-                            getCurrentTimeNanoseconds(), outbound);
+                            getCurrentTimeNanoseconds(), outbound,
+                            false /* audit */);
   }
+
+  if (enableAuditLog() && shouldAuditThisRequest()) {
+    if (!extended_info_populated) {
+      ::Wasm::Common::populateExtendedRequestInfo(&request_info);
+    }
+    // It's possible that for a short lived TCP connection, we audit log TCP
+    // Connection Open log entry on connection close.
+    if (!record_info.tcp_open_entry_logged &&
+        request_info.tcp_connection_state ==
+            ::Wasm::Common::TCPConnectionState::Close) {
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Open;
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                              record_info.request_info->start_time, outbound,
+                              true /* audit */);
+      record_info.request_info->tcp_connection_state =
+          ::Wasm::Common::TCPConnectionState::Close;
+    }
+    logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+                            record_info.request_info->start_time, outbound,
+                            true /* audit */);
+  }
+
   if (log_open_on_timeout) {
     // If we logged the request on timeout, for outbound requests, we try to
     // populate the request info again when metadata is available.
@@ -481,6 +553,10 @@ inline bool StackdriverRootContext::enableAccessLogOnError() {
          stackdriver::config::v1alpha1::PluginConfig::ERRORS_ONLY;
 }
 
+inline bool StackdriverRootContext::enableAuditLog() {
+  return config_.enable_audit_log();
+}
+
 inline bool StackdriverRootContext::enableEdgeReporting() {
   return config_.enable_mesh_edges_reporting() && !isOutbound();
 }
@@ -495,6 +571,10 @@ bool StackdriverRootContext::shouldLogThisRequest(
   // Add label log_sampled if Access Log Policy sampling was applied to logs.
   request_info.log_sampled = (shouldLog != "no");
   return request_info.log_sampled;
+}
+
+bool StackdriverRootContext::shouldAuditThisRequest() {
+  return Wasm::Common::getAuditPolicy();
 }
 
 void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {

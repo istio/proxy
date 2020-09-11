@@ -134,6 +134,52 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   return request_info;
 }
 
+std::string write_audit_request_json = R"({
+  "logName":"projects/test_project/logs/server-istio-audit-log",
+  "resource":{
+     "type":"k8s_container",
+     "labels":{
+        "cluster_name":"test_cluster",
+        "pod_name":"test_pod",
+        "location":"test_location",
+        "namespace_name":"test_namespace",
+        "project_id":"test_project",
+        "container_name":"istio-proxy"
+     }
+  },
+  "labels":{
+     "destination_workload":"test_workload",
+     "destination_namespace":"test_namespace"
+  },
+  "entries":[
+     {
+        "httpRequest":{
+           "requestMethod":"GET",
+           "requestUrl":"http://httpbin.org/headers",
+           "userAgent":"chrome",
+           "remoteIp":"1.1.1.1",
+           "referer":"www.google.com",
+           "serverIp":"2.2.2.2",
+           "latency":"10s",
+           "protocol":"HTTP"
+        },
+        "timestamp":"1970-01-01T00:00:00Z",
+        "severity":"INFO",
+        "labels":{
+           "destination_principal":"destination_principal",
+           "destination_service_host":"httpbin.org",
+           "request_id":"123",
+           "source_namespace":"test_peer_namespace",
+           "source_principal":"source_principal",
+           "source_workload":"test_peer_workload",
+        },
+        "trace":"projects/test_project/traces/123abc",
+        "spanId":"abc123",
+        "traceSampled":true
+     }
+  ]
+})";
+
 std::string write_log_request_json = R"({
   "logName":"projects/test_project/logs/server-accesslog-stackdriver",
   "resource":{
@@ -195,10 +241,12 @@ std::string write_log_request_json = R"({
 })";
 
 google::logging::v2::WriteLogEntriesRequest expectedRequest(
-    int log_entry_count) {
+    int log_entry_count, bool for_audit = false) {
   google::logging::v2::WriteLogEntriesRequest req;
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(write_log_request_json, &req, options);
+  JsonStringToMessage(
+      (for_audit ? write_audit_request_json : write_log_request_json), &req,
+      options);
   for (int i = 1; i < log_entry_count; i++) {
     auto* new_entry = req.mutable_entries()->Add();
     new_entry->CopyFrom(req.entries()[0]);
@@ -213,7 +261,7 @@ TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -239,7 +287,7 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
       std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
 
   for (int i = 0; i < 10; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
@@ -254,6 +302,65 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
               if (!differ.Compare(expectedRequest(2), *req)) {
                 FAIL() << "unexpected log entry " << diff << "\n";
               }
+            }
+          }));
+  logger->exportLogEntry(/* is_on_done = */ false);
+}
+
+TEST(LoggerTest, TestWriteAuditEntry) {
+  auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
+  auto exporter_ptr = exporter.get();
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, true);
+  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
+      .WillOnce(::testing::Invoke(
+          [](const std::vector<std::unique_ptr<
+                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+             bool) {
+            for (const auto& req : requests) {
+              std::string diff;
+              MessageDifferencer differ;
+              differ.ReportDifferencesToString(&diff);
+              if (!differ.Compare(expectedRequest(1, true), *req)) {
+                FAIL() << "unexpected audit entry " << diff << "\n";
+              }
+            }
+          }));
+  logger->exportLogEntry(/* is_on_done = */ false);
+}
+
+TEST(LoggerTest, TestWriteAuditAndLogEntry) {
+  auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
+  auto exporter_ptr = exporter.get();
+  flatbuffers::FlatBufferBuilder local, peer;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
+  for (int i = 0; i < 5; i++) {
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, true);
+  }
+  EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
+      .WillOnce(::testing::Invoke(
+          [](const std::vector<std::unique_ptr<
+                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+             bool) {
+            bool foundAudit = false;
+            bool foundLog = false;
+            std::string diff;
+            EXPECT_EQ(requests.size(), 2);
+            for (const auto& req : requests) {
+              MessageDifferencer differ;
+              differ.ReportDifferencesToString(&diff);
+              if (differ.Compare(expectedRequest(5, true), *req)) {
+                foundAudit = true;
+              }
+
+              if (differ.Compare(expectedRequest(5, false), *req)) {
+                foundLog = true;
+              }
+            }
+            if (!(foundAudit && foundLog)) {
+              FAIL() << "unexpected entries, last difference: " << diff << "\n";
             }
           }));
   logger->exportLogEntry(/* is_on_done = */ false);

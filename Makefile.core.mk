@@ -64,6 +64,11 @@ endif
 BAZEL_OUTPUT_PATH = $(shell bazel info $(BAZEL_BUILD_ARGS) output_path)
 BAZEL_ENVOY_PATH ?= $(BAZEL_OUTPUT_PATH)/k8-fastbuild/bin/src/envoy/envoy
 
+CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
+# WASM is not build on CentOS, skip it
+# TODO can we do some sort of regex?
+CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm -extensions/common:json_util_wasm -extensions:basic_auth.wasm
+
 build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) $(BAZEL_TARGETS)
 
@@ -80,15 +85,18 @@ build_wasm:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:stats.wasm
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:metadata_exchange.wasm
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:attributegen.wasm
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:basic_auth.wasm
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) @envoy//test/tools/wee8_compile:wee8_compile_tool
 	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/stats.wasm bazel-bin/extensions/stats.compiled.wasm
 	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/metadata_exchange.wasm bazel-bin/extensions/metadata_exchange.compiled.wasm
 	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/attributegen.wasm bazel-bin/extensions/attributegen.compiled.wasm
+	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/basic_auth.wasm bazel-bin/extensions/basic_auth.compiled.wasm
 
 # NOTE: build_wasm has to happen before build_envoy, since the integration test references bazel-bin symbol link for envoy binary,
 # which will be overwritten if wasm build happens after envoy.
 check_wasm: build_wasm build_envoy
 	env GO111MODULE=on WASM=true go test ./test/envoye2e/stats_plugin/...
+	env GO111MODULE=on WASM=true go test ./test/envoye2e/basic_auth/...
 
 clean:
 	@bazel clean
@@ -110,6 +118,11 @@ test_tsan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) -- $(BAZEL_TEST_TARGETS)
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) TSAN=true GO111MODULE=on go test ./...
 
+test_centos:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
+	# TODO: re-enable IPv6 tests
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) --test_filter="-*IPv6*" -- $(CENTOS_BAZEL_TEST_TARGETS)
+
 check:
 	@echo >&2 "Please use \"make lint\" instead."
 	@false
@@ -120,6 +133,12 @@ lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 
 protoc = protoc -I common-protos -I extensions
 protoc_gen_docs_plugin := --docs_out=warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
+
+basic_auth_path := extensions/basic_auth
+basic_auth_protos := $(wildcard $(basic_auth_path)/*.proto)
+basic_auth_docs := $(basic_auth_protos:.proto=.pb.html)
+$(basic_auth_docs): $(basic_auth_protos)
+	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(basic_auth_path) $^
 
 attributegen_path := extensions/attributegen
 attributegen_protos := $(wildcard $(attributegen_path)/*.proto)
@@ -151,7 +170,7 @@ accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
 $(accesslog_policy_docs): $(accesslog_policy_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
 
-extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
+extensions-docs:  $(basic_auth_docs) $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
 deb:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
@@ -162,15 +181,20 @@ artifacts:
 test_release:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 
+test_release_centos:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c
+
 push_release: build
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p
+
+push_release_centos:
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c -d "$(RELEASE_GCS_PATH)"
 
 # Used by build container to export the build output from the docker volume cache
 exportcache:
 	mkdir -p /work/out/linux_amd64
 	cp -a /work/bazel-bin/src/envoy/envoy /work/out/linux_amd64
 	cp -a /work/bazel-bin/extensions/*wasm /work/out/linux_amd64
-
 
 .PHONY: build clean test check artifacts extensions-proto
 

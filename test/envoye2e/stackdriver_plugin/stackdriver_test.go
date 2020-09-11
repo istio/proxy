@@ -640,3 +640,129 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 		})
 	}
 }
+
+func TestStackdriverAuditLog(t *testing.T) {
+	t.Parallel()
+	respCode := "200"
+	logEntryCount := 5
+
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"DirectResponseCode":          respCode,
+		"SDLogStatusCode":             respCode,
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+	}, envoye2e.ProxyE2ETests)
+
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/rbac_log.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl")
+	sd := &Stackdriver{Port: sdPort}
+	intRespCode, _ := strconv.Atoi(respCode)
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{
+				params.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{
+				params.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: logEntryCount,
+				Step: &driver.HTTPCall{
+					Port:         params.Ports.ClientPort,
+					ResponseCode: intRespCode,
+				},
+			},
+			sd.Check(params,
+				nil, []SDLogEntry{
+					{
+						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: logEntryCount,
+					},
+					{
+						LogBaseFile:   "testdata/stackdriver/server_audit_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/server_audit_log_entry.yaml.tmpl"},
+						LogEntryCount: logEntryCount,
+					},
+				},
+				nil, true,
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStackdriverAttributeGen(t *testing.T) {
+	t.Parallel()
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"AttributeGenWasmRuntime":     "envoy.wasm.runtime.null",
+		"AttributeGenFilterConfig":    "inline_string: \"envoy.wasm.attributegen\"",
+		"RequestOperation":            "GetMethod",
+	}, envoye2e.ProxyE2ETests)
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	enableStackDriver(t, params.Vars)
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/attributegen.yaml.tmpl") + "\n" +
+		params.Vars["ServerHTTPFilters"]
+	sd := &Stackdriver{Port: sdPort}
+
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
+				[]SDLogEntry{
+					{
+						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
+				},
+				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+			),
+			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+
+}

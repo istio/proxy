@@ -18,7 +18,7 @@
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
             {{- if .Vars.JustSendErrorClientLog }}
-            {"access_logging": "ERRORS_ONLY"}
+            {"access_logging": "ERRORS_ONLY", "enable_audit_log": true}
             {{- else }}
-            {"access_logging": "FULL"}
+            {"access_logging": "FULL", "enable_audit_log": true}
             {{- end }}

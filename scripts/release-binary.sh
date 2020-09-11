@@ -40,8 +40,17 @@ DST=""
 # Verify that we're building binaries on Ubuntu 16.04 (Xenial).
 CHECK=1
 
+# Defines the base binary name for artifacts. For example, this will be "envoy-debug".
+BASE_BINARY_NAME="${BASE_BINARY_NAME:-"envoy"}"
+
+# If enabled, we will just build the Envoy binary rather then docker images, deb, wasm, etc
+BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
+
 # Push envoy docker image.
 PUSH_DOCKER_IMAGE=0
+
+# Support CentOS builds
+BUILD_FOR_CENTOS=0
 
 function usage() {
   echo "$0
@@ -49,16 +58,18 @@ function usage() {
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
         Cannot be used together with -d option.
+    -c  Build for CentOS releases. This will disable the Ubuntu Xenial check.
     -p  Push envoy docker image.
         Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY env var."
   exit 1
 }
 
-while getopts d:ip arg ; do
+while getopts d:ipc arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
     i) CHECK=0;;
     p) PUSH_DOCKER_IMAGE=1;;
+    c) BUILD_FOR_CENTOS=1;;
     *) usage;;
   esac
 done
@@ -70,12 +81,15 @@ if [ "${DST}" == "none" ]; then
 fi
 
 # Make sure the release binaries are built on x86_64 Ubuntu 16.04 (Xenial)
-if [ "${CHECK}" -eq 1 ]; then
+if [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 0 ]; then
   if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
     UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
     [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'Must run on Ubuntu 16.04 (Xenial).'; exit 1; }
   fi
   [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
+elif [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 1 ]; then
+  # Make sure the release binaries are built on CentOS 7
+  [[ $(</etc/centos-release tr -dc '0-9.'|cut -d \. -f1) == "7" ]] || { echo "Must run on CentOS 7, got $(cat /centos-release)"; exit 1; }
 elif [ -n "${DST}" ]; then
   echo "The -i option is not allowed together with -d option."
   exit 1
@@ -102,14 +116,14 @@ do
   case $config in
     "release" )
       CONFIG_PARAMS="--config=release"
-      BINARY_BASE_NAME="envoy-alpha"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-alpha"
       PACKAGE_BASE_NAME="istio-proxy"
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
       ;;
     "release-symbol")
       CONFIG_PARAMS="--config=release-symbol"
-      BINARY_BASE_NAME="envoy-symbol"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-symbol"
       PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
@@ -118,14 +132,14 @@ do
       # NOTE: libc++ is dynamically linked in this build.
       PUSH_DOCKER_IMAGE=0
       CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
-      BINARY_BASE_NAME="envoy-asan"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
       PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
       ;;
     "debug")
       CONFIG_PARAMS="--config=debug"
-      BINARY_BASE_NAME="envoy-debug"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-debug"
       PACKAGE_BASE_NAME="istio-proxy-debug"
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-dbg/bin"
@@ -147,6 +161,10 @@ do
     # Copy it to the bucket.
     echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+  fi
+
+  if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
+    continue
   fi
 
   echo "Building ${config} docker image"
@@ -181,8 +199,13 @@ do
   fi
 done
 
+# Exit early to skip wasm build
+if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
+  exit 0
+fi
+
 # Build and publish Wasm plugins
-extensions=(stats metadata_exchange attributegen)
+extensions=(stats metadata_exchange attributegen basic_auth)
 TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
 trap 'rm -rf ${TMP_WASM}' EXIT
 make build_wasm
@@ -195,8 +218,10 @@ if [ -n "${DST}" ]; then
     WASM_COMPILED_PATH="${TMP_WASM}/${WASM_COMPILED_NAME}"
     SHA256_PATH="${WASM_PATH}.sha256"
     SHA256_COMPILED_PATH="${WASM_COMPILED_PATH}.sha256"
-    BAZEL_TARGET="$(bazel info output_path)/k8-opt/bin/extensions/${extension}.wasm"
-    BAZEL_COMPILED_TARGET="$(bazel info output_path)/k8-opt/bin/extensions/${extension}.compiled.wasm"
+    # shellcheck disable=SC2086
+    BAZEL_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.wasm
+    # shellcheck disable=SC2086
+    BAZEL_COMPILED_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.compiled.wasm
     cp "${BAZEL_TARGET}" "${WASM_PATH}"
     cp "${BAZEL_COMPILED_TARGET}" "${WASM_COMPILED_PATH}"
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"

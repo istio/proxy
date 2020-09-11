@@ -36,6 +36,7 @@ const std::string kMetadataNotFoundValue =
     "envoy.wasm.metadata_exchange.peer_unknown";
 
 constexpr std::string_view kAccessLogPolicyKey = "istio.access_log_policy";
+constexpr std::string_view kRequestOperationKey = "istio_operationId";
 
 // Header keys
 constexpr std::string_view kAuthorityHeaderKey = ":authority";
@@ -234,6 +235,10 @@ void populateExtendedRequestInfo(RequestInfo* request_info);
 // the request context.
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
                             const std::string& destination_namespace);
+
+// Read value of 'access_log_hint' key from envoy dynamic metadata which
+// determines whether to audit a request or not.
+bool getAuditPolicy();
 
 }  // namespace Common
 }  // namespace Wasm

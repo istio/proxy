@@ -1,4 +1,6 @@
-# Copyright 2019 Istio Authors
+#!/bin/bash
+#
+# Copyright 2017 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# this repo is not on the container plan by default
-BUILD_WITH_CONTAINER ?= 0
-IMAGE_NAME ?= build-tools-proxy
-CGO_ENABLED = 0
+WD=$(dirname "$0")
+WD=$(cd "$WD" || exit 1 ; pwd)
+
+#######################################
+# Presubmit script triggered by Prow. #
+#######################################
+# Do not use RBE for this, RBE will run ubuntu instance
+export BAZEL_BUILD_RBE_INSTANCE=""
+
+# shellcheck disable=SC1090
+source "${WD}/proxy-common.inc"
+
+echo "$(uname -s)-$(uname -m)"
+cat "${WD}/../WORKSPACE"
+echo 'Run tests'
+make test_centos
+
+echo 'Test building release artifacts'
+make test_release_centos

@@ -1,4 +1,13 @@
-# Copyright 2019 Istio Authors
+#!/bin/bash
+
+# WARNING: DO NOT EDIT, THIS FILE IS PROBABLY A COPY
+#
+# The original version of this file is located in the https://github.com/istio/common-files repo.
+# If you're looking at this file in a different repo and want to make a change, please go to the
+# common-files repo, make the change there and check it in. Then come back to this repo and run
+# "make update-common".
+
+# Copyright Istio Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +21,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# this repo is not on the container plan by default
-BUILD_WITH_CONTAINER ?= 0
-IMAGE_NAME ?= build-tools-proxy
-CGO_ENABLED = 0
+golangci-lint run --fix -c ./common/config/.golangci-format.yml

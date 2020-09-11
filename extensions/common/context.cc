@@ -301,9 +301,13 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->request_protocol = kProtocolHTTP;
   }
 
+  std::string operation_id;
   request_info->request_operation =
-      getHeaderMapValue(WasmHeaderMapType::RequestHeaders, kMethodHeaderKey)
-          ->toString();
+      getValue({::Wasm::Common::kRequestOperationKey}, &operation_id)
+          ? operation_id
+          : getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
+                              kMethodHeaderKey)
+                ->toString();
 
   getValue({"request", "time"}, &request_info->start_time);
   getValue({"request", "duration"}, &request_info->duration);
@@ -361,6 +365,17 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
   populateRequestInfo(outbound, false, request_info, destination_namespace);
 
   request_info->request_protocol = kProtocolTCP;
+}
+
+bool getAuditPolicy() {
+  bool shouldAudit = false;
+  if (!getValue<bool>(
+          {"metadata", "filter_metadata", "envoy.common", "access_log_hint"},
+          &shouldAudit)) {
+    return false;
+  }
+
+  return shouldAudit;
 }
 
 }  // namespace Common
