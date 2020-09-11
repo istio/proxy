@@ -41,7 +41,7 @@ DST=""
 CHECK=1
 
 # Defines the base binary name for artifacts. For example, this will be "envoy-debug".
-BINARY_NAME="${BINARY_NAME:-"envoy"}"
+BASE_BINARY_NAME="${BASE_BINARY_NAME:-"envoy"}"
 
 # If enabled, we will just build the Envoy binary rather then docker images, deb, wasm, etc
 BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
@@ -116,14 +116,14 @@ do
   case $config in
     "release" )
       CONFIG_PARAMS="--config=release"
-      BINARY_BASE_NAME="envoy-alpha"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-alpha"
       PACKAGE_BASE_NAME="istio-proxy"
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
       ;;
     "release-symbol")
       CONFIG_PARAMS="--config=release-symbol"
-      BINARY_BASE_NAME="envoy-symbol"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-symbol"
       PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
@@ -132,14 +132,14 @@ do
       # NOTE: libc++ is dynamically linked in this build.
       PUSH_DOCKER_IMAGE=0
       CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
-      BINARY_BASE_NAME="envoy-asan"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
       PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
       ;;
     "debug")
       CONFIG_PARAMS="--config=debug"
-      BINARY_BASE_NAME="envoy-debug"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-debug"
       PACKAGE_BASE_NAME="istio-proxy-debug"
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-dbg/bin"
