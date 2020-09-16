@@ -71,8 +71,8 @@ func apply(config *extensionserver.Config) {
 			log.Printf("error deleting extension %q: %v\n", name, err)
 		}
 	}
+	log.Printf("loaded extensions %v, deleted %v\n", reflect.ValueOf(next).MapKeys(), reflect.ValueOf(names).MapKeys())
 	names = next
-	log.Printf("loaded extensions %v\n", reflect.ValueOf(names).MapKeys())
 }
 
 func main() {
