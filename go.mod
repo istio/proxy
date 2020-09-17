@@ -1,6 +1,6 @@
 module istio.io/proxy
 
-go 1.12
+go 1.15
 
 require (
 	github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354
