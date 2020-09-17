@@ -22,13 +22,13 @@ import (
 	"sync"
 	"time"
 
-	edgespb "cloud.google.com/go/meshtelemetry/v1alpha1"
 	"github.com/golang/protobuf/proto"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
 
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
+	edgespb "istio.io/proxy/test/envoye2e/stackdriver_plugin/edges"
 )
 
 const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
