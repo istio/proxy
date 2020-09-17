@@ -3,11 +3,12 @@ module istio.io/proxy
 go 1.12
 
 require (
-	github.com/cncf/udpa/go v0.0.0-20200327203949-e8cd3a4bb307
+	github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354
 	github.com/d4l3k/messagediff v1.2.2-0.20180726183240-b9e99b2f9263
-	github.com/envoyproxy/go-control-plane v0.9.5
+	github.com/envoyproxy/go-control-plane v0.9.7-0.20200814205829-ae1dbc93dd82
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/ghodss/yaml v1.0.0
-	github.com/golang/protobuf v1.4.1
+	github.com/golang/protobuf v1.4.2
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.9.1
@@ -18,6 +19,6 @@ require (
 	google.golang.org/grpc v1.28.0
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 	istio.io/proxy/test/envoye2e/stackdriver_plugin/edges v0.0.0-20200916170758-74d763048fa1
+	gopkg.in/yaml.v2 v2.2.8
 )
