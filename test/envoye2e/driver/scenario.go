@@ -18,15 +18,16 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"testing"
 	"text/template"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	yamlv2 "gopkg.in/yaml.v2"
 
 	"istio.io/proxy/test/envoye2e/env"
 )
@@ -34,7 +35,7 @@ import (
 type (
 	Params struct {
 		XDS    int
-		Config cache.SnapshotCache
+		Config XDSServer
 		Ports  *env.Ports
 		Vars   map[string]string
 		N      int
@@ -172,7 +173,25 @@ func (s *Scenario) Run(p *Params) error {
 func (s *Scenario) Cleanup() {}
 
 func ReadYAML(input string, pb proto.Message) error {
-	js, err := yaml.YAMLToJSON([]byte(input))
+	var jsonObj interface{}
+	err := yamlv2.Unmarshal([]byte(input), &jsonObj)
+	if err != nil {
+		return err
+	}
+	// As a special case, convert [x] to x.
+	// This is needed because jsonpb is unable to parse arrays.
+	in := reflect.ValueOf(jsonObj)
+	switch in.Kind() {
+	case reflect.Slice, reflect.Array:
+		if in.Len() == 1 {
+			jsonObj = in.Index(0).Interface()
+		}
+	}
+	yml, err := yamlv2.Marshal(jsonObj)
+	if err != nil {
+		return err
+	}
+	js, err := yaml.YAMLToJSON(yml)
 	if err != nil {
 		return err
 	}

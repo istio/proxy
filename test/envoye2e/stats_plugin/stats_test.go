@@ -389,7 +389,7 @@ func TestStatsParserRegression(t *testing.T) {
 	}
 }
 
-func TestStatsFailure(t *testing.T) {
+func TestStats403Failure(t *testing.T) {
 	env.SkipTSanASan(t)
 
 	for _, runtime := range Runtimes {
@@ -427,6 +427,66 @@ func TestStatsFailure(t *testing.T) {
 							ResponseCode: 403,
 						},
 					},
+					&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+						"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
+					}},
+				},
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestStatsECDS(t *testing.T) {
+	env.SkipTSanASan(t)
+	for _, runtime := range Runtimes {
+		t.Run(runtime.WasmRuntime, func(t *testing.T) {
+			env.SkipWasm(t, runtime.WasmRuntime)
+			params := driver.NewTestParams(t, map[string]string{
+				"RequestCount":               "10",
+				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
+				"StatsFilterCode":            runtime.StatsFilterCode,
+				"WasmRuntime":                runtime.WasmRuntime,
+				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+			}, envoye2e.ProxyE2ETests)
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/extension_config_inbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/extension_config_outbound.yaml.tmpl")
+
+			updateExtensions :=
+				&driver.UpdateExtensions{Extensions: []string{
+					driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl"),
+				},
+				}
+			if err := (&driver.Scenario{
+				[]driver.Step{
+					&driver.XDS{},
+					&driver.Update{
+						Node:      "client",
+						Version:   "0",
+						Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+						Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+					&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+					updateExtensions,
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Sleep{1 * time.Second},
+					&driver.Repeat{N: 10,
+						Step: &driver.HTTPCall{
+							Port: params.Ports.ClientPort,
+							Body: "hello, world!",
+						},
+					},
+					&driver.Stats{params.Ports.ClientAdmin, map[string]driver.StatMatcher{
+						"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
+					}},
 					&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 						"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},
 					}},
