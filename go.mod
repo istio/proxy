@@ -1,6 +1,6 @@
 module istio.io/proxy
 
-go 1.12
+go 1.15
 
 replace cloud.google.com/go/meshtelemetry/v1alpha1 v0.0.0 => ./test/envoye2e/stackdriver_plugin/edges
 
