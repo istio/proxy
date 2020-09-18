@@ -19,6 +19,6 @@ require (
 	google.golang.org/grpc v1.28.0
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	istio.io/proxy/test/envoye2e/stackdriver_plugin/edges v0.0.0-20200916170758-74d763048fa1
 	gopkg.in/yaml.v2 v2.2.8
+	istio.io/proxy/test/envoye2e/stackdriver_plugin/edges v0.0.0-20200916170758-74d763048fa1
 )

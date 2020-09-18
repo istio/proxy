@@ -20,8 +20,6 @@ import (
 	"log"
 	"net"
 
-	"istio.io/proxy/tools/extensionserver"
-
 	cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -31,6 +29,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
+
+	"istio.io/proxy/tools/extensionserver"
 )
 
 // XDS creates an xDS server

@@ -41,13 +41,13 @@ type Envoy struct {
 	// template for the bootstrap
 	Bootstrap string
 
-	// Version of Envoy to download
+	// istio proxy version to download.
+	// This specifies a minor version, and will download the latest dev build of that minor version.
 	Version string
 
-	tmpFile         string
-	downloadedEnvoy string
-	cmd             *exec.Cmd
-	adminPort       uint32
+	tmpFile   string
+	cmd       *exec.Cmd
+	adminPort uint32
 
 	done chan error
 }
@@ -157,7 +157,7 @@ func getAdminPort(bootstrap string) (uint32, error) {
 	return port.PortValue, nil
 }
 
-// downloads env based on the given branch name. Return address of donwloaded envoy.
+// downloads env based on the given branch name. Return address of downloaded envoy.
 func downloadEnvoy(ver string) (string, error) {
 	proxyDepURL := fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
 	resp, err := http.Get(proxyDepURL)
@@ -171,7 +171,9 @@ func downloadEnvoy(ver string) (string, error) {
 	}
 
 	var deps []interface{}
-	json.Unmarshal([]byte(istioDeps), &deps)
+	if err := json.Unmarshal(istioDeps, &deps); err != nil {
+		return "", err
+	}
 	proxySHA := ""
 	for _, d := range deps {
 		if dm, ok := d.(map[string]interface{}); ok && dm["repoName"].(string) == "proxy" {

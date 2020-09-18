@@ -15,7 +15,6 @@
 # limitations under the License.
 
 set -u
-set -x
 set -e
 
 function usage() {
@@ -42,14 +41,14 @@ mkdir -p "${OUT_DIR}"
 cp -R "${ROOTDIR}/testdata/bootstrap" "${OUT_DIR}"
 cp -R "${ROOTDIR}/testdata/listener" "${OUT_DIR}"
 
-cd "${OUT_DIR}"
+cd "${OUT_DIR}" || exit
 go-bindata --nocompress --nometadata --pkg testdata -o "${ROOTDIR}/testdata/testdata.gen.go" ./...
 
 if [[ "${CHECK}" == "1" ]]; then
-    pushd "$ROOTDIR"
+    pushd "$ROOTDIR" || exit
     CHANGED=$(git diff-index --name-only HEAD --)
-    popd
-    if [[ ! -z "${CHANGED}" ]]; then
+    popd || exit
+    if [[ -z "${CHANGED}" ]]; then
         echo "generated test config is not up to date, run 'make gen' to update."
         exit 1
     fi
