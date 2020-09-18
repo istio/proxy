@@ -15,9 +15,11 @@
 package driver
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,9 +41,13 @@ type Envoy struct {
 	// template for the bootstrap
 	Bootstrap string
 
-	tmpFile   string
-	cmd       *exec.Cmd
-	adminPort uint32
+	// Version of Envoy to download
+	Version string
+
+	tmpFile         string
+	downloadedEnvoy string
+	cmd             *exec.Cmd
+	adminPort       uint32
 
 	done chan error
 }
@@ -84,6 +90,11 @@ func (e *Envoy) Run(p *Params) error {
 	envoyPath := filepath.Join(env.GetDefaultEnvoyBin(), "envoy")
 	if path, exists := os.LookupEnv("ENVOY_PATH"); exists {
 		envoyPath = path
+	} else if _, err := os.Stat(envoyPath); os.IsNotExist(err) && e.Version != "" {
+		envoyPath, err = downloadEnvoy(e.Version)
+		if err != nil {
+			return fmt.Errorf("failed to download Envoy binary %v", err)
+		}
 	}
 	cmd := exec.Command(envoyPath, args...)
 	cmd.Stderr = os.Stderr
@@ -144,4 +155,59 @@ func getAdminPort(bootstrap string) (uint32, error) {
 		return 0, fmt.Errorf("missing port in bootstrap: %v", bootstrap)
 	}
 	return port.PortValue, nil
+}
+
+// downloads env based on the given branch name. Return address of donwloaded envoy.
+func downloadEnvoy(ver string) (string, error) {
+	proxyDepURL := fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
+	resp, err := http.Get(proxyDepURL)
+	if err != nil {
+		return "", fmt.Errorf("cannot get envoy sha from %v: %v", proxyDepURL, err)
+	}
+	defer resp.Body.Close()
+	istioDeps, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("cannot read body of istio deps: %v", err)
+	}
+
+	var deps []interface{}
+	json.Unmarshal([]byte(istioDeps), &deps)
+	proxySHA := ""
+	for _, d := range deps {
+		if dm, ok := d.(map[string]interface{}); ok && dm["repoName"].(string) == "proxy" {
+			proxySHA = dm["lastStableSHA"].(string)
+		}
+	}
+
+	// make temp directory to put downloaded envoy binary.
+	dir := fmt.Sprintf("%s/%s", os.TempDir(), "istio-proxy")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	dst := fmt.Sprintf("%v/envoy-%v", dir, proxySHA)
+	if _, err := os.Stat(dst); err == nil {
+		return dst, nil
+	}
+	envoyURL := fmt.Sprintf("https://storage.googleapis.com/istio-build/proxy/envoy-alpha-%v.tar.gz", proxySHA)
+	donwloadCmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fLSs %v | tar xz", envoyURL))
+	donwloadCmd.Stderr = os.Stderr
+	donwloadCmd.Stdout = os.Stdout
+	err = donwloadCmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("fail to run envoy download command: %v", err)
+	}
+	src := "usr/local/bin/envoy"
+	if _, err := os.Stat(src); err != nil {
+		return "", fmt.Errorf("fail to find downloaded envoy: %v", err)
+	}
+	defer os.RemoveAll("usr/")
+
+	cpCmd := exec.Command("cp", src, dst)
+	cpCmd.Stderr = os.Stderr
+	cpCmd.Stdout = os.Stdout
+	if err := cpCmd.Run(); err != nil {
+		return "", fmt.Errorf("fail to copy envoy binary from %v to %v: %v", src, dst, err)
+	}
+
+	return dst, nil
 }
