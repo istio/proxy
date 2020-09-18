@@ -340,6 +340,10 @@ func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.Ba
 			newTraceSpan.Labels["root"] = span.DisplayName.GetValue()
 		}
 
+		for key, val := range span.Attributes.AttributeMap {
+			newTraceSpan.Labels[key] = val.GetStringValue().Value
+		}
+
 		if existingTrace, ok := s.traceMap[traceID]; ok {
 			existingTrace.Spans = append(existingTrace.Spans, newTraceSpan)
 		} else {

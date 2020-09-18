@@ -18,7 +18,7 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SD_PATH := $(dir $(MKFILE_PATH))
 IMG := gcr.io/istio-testing/fake-stackdriver
-TAG := 4.0
+TAG := 5.0
 
 all: build_and_push clean
 
