@@ -16,6 +16,7 @@ package driver
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -157,7 +158,7 @@ func getAdminPort(bootstrap string) (uint32, error) {
 	return port.PortValue, nil
 }
 
-// downloads env based on the given branch name. Return address of downloaded envoy.
+// downloads env based on the given branch name. Return location of downloaded envoy.
 func downloadEnvoy(ver string) (string, error) {
 	proxyDepURL := fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
 	resp, err := http.Get(proxyDepURL)
@@ -180,6 +181,9 @@ func downloadEnvoy(ver string) (string, error) {
 			proxySHA = dm["lastStableSHA"].(string)
 		}
 	}
+	if proxySHA == "" {
+		return "", errors.New("cannot identify proxy SHA to download")
+	}
 
 	// make temp directory to put downloaded envoy binary.
 	dir := fmt.Sprintf("%s/%s", os.TempDir(), "istio-proxy")
@@ -191,10 +195,10 @@ func downloadEnvoy(ver string) (string, error) {
 		return dst, nil
 	}
 	envoyURL := fmt.Sprintf("https://storage.googleapis.com/istio-build/proxy/envoy-alpha-%v.tar.gz", proxySHA)
-	donwloadCmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fLSs %v | tar xz", envoyURL))
-	donwloadCmd.Stderr = os.Stderr
-	donwloadCmd.Stdout = os.Stdout
-	err = donwloadCmd.Run()
+	downloadCmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fLSs %v | tar xz", envoyURL))
+	downloadCmd.Stderr = os.Stderr
+	downloadCmd.Stdout = os.Stdout
+	err = downloadCmd.Run()
 	if err != nil {
 		return "", fmt.Errorf("fail to run envoy download command: %v", err)
 	}
