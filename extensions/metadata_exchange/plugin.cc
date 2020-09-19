@@ -19,12 +19,12 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/json_util.h"
 #include "extensions/common/proto_util.h"
+#include "extensions/common/wasm/json_util.h"
 
 #ifndef NULL_PLUGIN
 
-#include "base64.h"
+#include "extensions/common/wasm/base64.h"
 #include "extensions/metadata_exchange/declare_property.pb.h"
 
 #else
