@@ -45,9 +45,10 @@ type Envoy struct {
 
 	// Istio proxy version to download.
 	// This could be either a patch version (x.y.z), or a minor version (x.y).
-	// When minor version is provided, the latest available proxy binary will be downloaded.
-	// DownloadVersion will be ignored if proxy binary already exists at the default bazel-bin location,
-	// or ENVOY_PATH env var is set.
+	// When minor version is provided, proxy binary will downloaded based on
+	// the latest proxy SHA that istio minor version branch points to.
+	// DownloadVersion will be ignored if proxy binary already exists at the
+	// default bazel-bin location, or ENVOY_PATH env var is set.
 	DownloadVersion string
 
 	tmpFile   string
