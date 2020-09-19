@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -42,9 +43,12 @@ type Envoy struct {
 	// template for the bootstrap
 	Bootstrap string
 
-	// istio proxy version to download.
-	// This specifies a minor version, and will download the latest dev build of that minor version.
-	Version string
+	// Istio proxy version to download.
+	// This could be either a patch version (x.y.z), or a minor version (x.y).
+	// When minor version is provided, the latest available proxy binary will be downloaded.
+	// DownloadVersion will be ignored if proxy binary already exists at the default bazel-bin location,
+	// or ENVOY_PATH env var is set.
+	DownloadVersion string
 
 	tmpFile   string
 	cmd       *exec.Cmd
@@ -91,8 +95,8 @@ func (e *Envoy) Run(p *Params) error {
 	envoyPath := filepath.Join(env.GetDefaultEnvoyBin(), "envoy")
 	if path, exists := os.LookupEnv("ENVOY_PATH"); exists {
 		envoyPath = path
-	} else if _, err := os.Stat(envoyPath); os.IsNotExist(err) && e.Version != "" {
-		envoyPath, err = downloadEnvoy(e.Version)
+	} else if _, err := os.Stat(envoyPath); os.IsNotExist(err) && e.DownloadVersion != "" {
+		envoyPath, err = downloadEnvoy(e.DownloadVersion)
 		if err != nil {
 			return fmt.Errorf("failed to download Envoy binary %v", err)
 		}
@@ -160,7 +164,16 @@ func getAdminPort(bootstrap string) (uint32, error) {
 
 // downloads env based on the given branch name. Return location of downloaded envoy.
 func downloadEnvoy(ver string) (string, error) {
-	proxyDepURL := fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
+	var proxyDepURL string
+	if regexp.MustCompile("[0-9]+\\.[0-9]+\\.[0-9]+").Match([]byte(ver)) {
+		// this is a patch version string
+		proxyDepURL = fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/%v/istio.deps", ver)
+	} else if regexp.MustCompile("[0-9]+\\.[0-9]+").Match([]byte(ver)) {
+		// this is a minor version string
+		proxyDepURL = fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
+	} else {
+		return "", fmt.Errorf("envoy version %v is neither minor version nor patch version", ver)
+	}
 	resp, err := http.Get(proxyDepURL)
 	if err != nil {
 		return "", fmt.Errorf("cannot get envoy sha from %v: %v", proxyDepURL, err)
@@ -185,15 +198,21 @@ func downloadEnvoy(ver string) (string, error) {
 		return "", errors.New("cannot identify proxy SHA to download")
 	}
 
-	// make temp directory to put downloaded envoy binary.
 	dir := fmt.Sprintf("%s/%s", os.TempDir(), "istio-proxy")
+	dst := fmt.Sprintf("%v/envoy-%v", dir, proxySHA)
+	if _, err := os.Stat(dst); err == nil {
+		// If the desired envoy binary is already downloaded, skip downloading and return.
+		return dst, nil
+	}
+
+	// clean up the tmp dir before downloading to remove stale envoy binary.
+	_ = os.RemoveAll(dir)
+
+	// make temp directory to put downloaded envoy binary.
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err
 	}
-	dst := fmt.Sprintf("%v/envoy-%v", dir, proxySHA)
-	if _, err := os.Stat(dst); err == nil {
-		return dst, nil
-	}
+
 	envoyURL := fmt.Sprintf("https://storage.googleapis.com/istio-build/proxy/envoy-alpha-%v.tar.gz", proxySHA)
 	downloadCmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fLSs %v | tar xz", envoyURL))
 	downloadCmd.Stderr = os.Stderr
