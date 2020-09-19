@@ -165,10 +165,10 @@ func getAdminPort(bootstrap string) (uint32, error) {
 // downloads env based on the given branch name. Return location of downloaded envoy.
 func downloadEnvoy(ver string) (string, error) {
 	var proxyDepURL string
-	if regexp.MustCompile("[0-9]+\\.[0-9]+\\.[0-9]+").Match([]byte(ver)) {
+	if regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+`).Match([]byte(ver)) {
 		// this is a patch version string
 		proxyDepURL = fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/%v/istio.deps", ver)
-	} else if regexp.MustCompile("[0-9]+\\.[0-9]+").Match([]byte(ver)) {
+	} else if regexp.MustCompile(`[0-9]+\.[0-9]+`).Match([]byte(ver)) {
 		// this is a minor version string
 		proxyDepURL = fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
 	} else {
