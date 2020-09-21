@@ -101,7 +101,11 @@ check_wasm: build_wasm build_envoy
 clean:
 	@bazel clean
 
-gen: ;
+gen:
+	@scripts/gen-testdata.sh
+
+gen-check:
+	@scripts/gen-testdata.sh -c
 
 test:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy

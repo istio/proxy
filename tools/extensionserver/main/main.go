@@ -23,10 +23,10 @@ import (
 	"reflect"
 	"time"
 
-	"google.golang.org/grpc"
-
 	discoveryservice "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
+	"google.golang.org/grpc"
+
 	"istio.io/proxy/tools/extensionserver"
 )
 

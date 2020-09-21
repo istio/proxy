@@ -1,0 +1,652 @@
+// Code generated for package testdata by go-bindata DO NOT EDIT. (@generated)
+// sources:
+// bootstrap/client.yaml.tmpl
+// bootstrap/server.yaml.tmpl
+// bootstrap/stats.yaml.tmpl
+// listener/client.yaml.tmpl
+// listener/server.yaml.tmpl
+// listener/tcp_client.yaml.tmpl
+// listener/tcp_server.yaml.tmpl
+package testdata
+
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+)
+type asset struct {
+	bytes []byte
+	info  os.FileInfo
+}
+
+type bindataFileInfo struct {
+	name    string
+	size    int64
+	mode    os.FileMode
+	modTime time.Time
+}
+
+// Name return file name
+func (fi bindataFileInfo) Name() string {
+	return fi.name
+}
+
+// Size return file size
+func (fi bindataFileInfo) Size() int64 {
+	return fi.size
+}
+
+// Mode return file mode
+func (fi bindataFileInfo) Mode() os.FileMode {
+	return fi.mode
+}
+
+// Mode return file modify time
+func (fi bindataFileInfo) ModTime() time.Time {
+	return fi.modTime
+}
+
+// IsDir return file whether a directory
+func (fi bindataFileInfo) IsDir() bool {
+	return fi.mode&os.ModeDir != 0
+}
+
+// Sys return file is sys mode
+func (fi bindataFileInfo) Sys() interface{} {
+	return nil
+}
+
+var _bootstrapClientYamlTmpl = []byte(`node:
+  id: client
+  cluster: test-cluster
+  metadata: { {{ .Vars.ClientMetadata | fill }} }
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: {{ .Ports.ClientAdmin }}
+{{ .Vars.StatsConfig }}
+dynamic_resources:
+  ads_config:
+    api_type: GRPC
+    transport_api_version: V3
+    grpc_services:
+    - envoy_grpc:
+        cluster_name: xds_cluster
+  cds_config:
+    ads: {}
+    resource_api_version: V3
+  lds_config:
+    ads: {}
+    resource_api_version: V3
+static_resources:
+  clusters:
+  - connect_timeout: 1s
+    load_assignment:
+      cluster_name: xds_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{ .Ports.XDSPort }}
+    http2_protocol_options: {}
+    name: xds_cluster
+  - name: outbound|9080|http|server.default.svc.cluster.local
+    connect_timeout: 1s
+    type: STATIC
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: outbound|9080|http|server.default.svc.cluster.local
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{ .Ports.ServerPort }}
+{{ .Vars.ClientTLSContext | indent 4 }}
+{{ .Vars.ClientStaticCluster | indent 2 }}
+`)
+
+func bootstrapClientYamlTmplBytes() ([]byte, error) {
+	return _bootstrapClientYamlTmpl, nil
+}
+
+func bootstrapClientYamlTmpl() (*asset, error) {
+	bytes, err := bootstrapClientYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "bootstrap/client.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _bootstrapServerYamlTmpl = []byte(`node:
+  id: server
+  cluster: test-cluster
+  metadata: { {{ .Vars.ServerMetadata | fill }} }
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: {{ .Ports.ServerAdmin }}
+{{ .Vars.StatsConfig }}
+dynamic_resources:
+  ads_config:
+    api_type: GRPC
+    transport_api_version: V3
+    grpc_services:
+    - envoy_grpc:
+        cluster_name: xds_cluster
+  cds_config:
+    ads: {}
+    resource_api_version: V3
+  lds_config:
+    ads: {}
+    resource_api_version: V3
+static_resources:
+  clusters:
+  - connect_timeout: 1s
+    load_assignment:
+      cluster_name: xds_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{ .Ports.XDSPort }}
+    http2_protocol_options: {}
+    name: xds_cluster
+  - name: inbound|9080|http|server.default.svc.cluster.local
+    connect_timeout: 1s
+    type: STATIC
+    {{- if eq .Vars.UsingGrpcBackend "true" }}
+    http2_protocol_options: {}
+    {{- end }}
+    load_assignment:
+      cluster_name: inbound|9080|http|server.default.svc.cluster.local
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: {{ .Ports.BackendPort }}
+{{ .Vars.ServerStaticCluster | indent 2 }}
+{{- if ne .Vars.DisableDirectResponse "true" }}
+  listeners:
+  - name: staticreply
+    address:
+      socket_address:
+        address: 127.0.0.1
+        port_value: {{ .Ports.BackendPort }}
+    filter_chains:
+    - filters:
+      - name: http
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: staticreply
+          codec_type: AUTO
+          route_config:
+            name: staticreply
+            virtual_hosts:
+            - name: staticreply
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/"
+                direct_response:
+                  {{- if .Vars.DirectResponseCode }}
+                  status: {{ .Vars.DirectResponseCode }}
+                  {{- else }}
+                  status: 200
+                  {{- end }}
+                  body:
+                    inline_string: "hello, world!"
+          http_filters:
+          - name: envoy.filters.http.router
+{{- end }}
+`)
+
+func bootstrapServerYamlTmplBytes() ([]byte, error) {
+	return _bootstrapServerYamlTmpl, nil
+}
+
+func bootstrapServerYamlTmpl() (*asset, error) {
+	bytes, err := bootstrapServerYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "bootstrap/server.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _bootstrapStatsYamlTmpl = []byte(`stats_config:
+  use_all_default_tags: true
+  stats_tags:
+  - tag_name: "reporter"
+    regex: "(reporter=\\.=(.*?);\\.;)"
+  - tag_name: "source_namespace"
+    regex: "(source_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "source_workload"
+    regex: "(source_workload=\\.=(.*?);\\.;)"
+  - tag_name: "source_canonical_service"
+    regex: "(source_canonical_service=\\.=(.*?);\\.;)"
+  - tag_name: "source_canonical_revision"
+    regex: "(source_canonical_revision=\\.=(.*?);\\.;)"
+  - tag_name: "source_workload_namespace"
+    regex: "(source_workload_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "source_principal"
+    regex: "(source_principal=\\.=(.*?);\\.;)"
+  - tag_name: "source_app"
+    regex: "(source_app=\\.=(.*?);\\.;)"
+  - tag_name: "source_version"
+    regex: "(source_version=\\.=(.*?);\\.;)"
+  - tag_name: "destination_namespace"
+    regex: "(destination_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "destination_workload"
+    regex: "(destination_workload=\\.=(.*?);\\.;)"
+  - tag_name: "destination_workload_namespace"
+    regex: "(destination_workload_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "destination_principal"
+    regex: "(destination_principal=\\.=(.*?);\\.;)"
+  - tag_name: "destination_app"
+    regex: "(destination_app=\\.=(.*?);\\.;)"
+  - tag_name: "destination_version"
+    regex: "(destination_version=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service"
+    regex: "(destination_service=\\.=(.*?);\\.;)"
+  - tag_name: "destination_canonical_service"
+    regex: "(destination_canonical_service=\\.=(.*?);\\.;)"
+  - tag_name: "destination_canonical_revision"
+    regex: "(destination_canonical_revision=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service_name"
+    regex: "(destination_service_name=\\.=(.*?);\\.;)"
+  - tag_name: "destination_service_namespace"
+    regex: "(destination_service_namespace=\\.=(.*?);\\.;)"
+  - tag_name: "request_protocol"
+    regex: "(request_protocol=\\.=(.*?);\\.;)"
+  - tag_name: "response_code"
+    regex: "(response_code=\\.=(.*?);\\.;)|_rq(_(\\.d{3}))$"
+  - tag_name: "grpc_response_status"
+    regex: "(grpc_response_status=\\.=(.*?);\\.;)"
+  - tag_name: "response_flags"
+    regex: "(response_flags=\\.=(.*?);\\.;)"
+  - tag_name: "connection_security_policy"
+    regex: "(connection_security_policy=\\.=(.*?);\\.;)"
+# Extra regexes used for configurable metrics
+  - tag_name: "configurable_metric_a"
+    regex: "(configurable_metric_a=\\.=(.*?);\\.;)"
+  - tag_name: "configurable_metric_b"
+    regex: "(configurable_metric_b=\\.=(.*?);\\.;)"
+# Internal monitoring
+  - tag_name: "cache"
+    regex: "(cache\\.(.*?)\\.)"
+  - tag_name: "component"
+    regex: "(component\\.(.*?)\\.)"
+  - tag_name: "tag"
+    regex: "(tag\\.(.*?);\\.)"
+  - tag_name: "wasm_filter"
+    regex: "(wasm_filter\\.(.*?)\\.)"
+`)
+
+func bootstrapStatsYamlTmplBytes() ([]byte, error) {
+	return _bootstrapStatsYamlTmpl, nil
+}
+
+func bootstrapStatsYamlTmpl() (*asset, error) {
+	bytes, err := bootstrapStatsYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "bootstrap/stats.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _listenerClientYamlTmpl = []byte(`{{- if ne .Vars.ClientListeners "" }}
+{{ .Vars.ClientListeners }}
+{{- else }}
+name: client
+traffic_direction: OUTBOUND
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: {{ .Ports.ClientPort }}
+filter_chains:
+- filters:
+  - name: http
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      stat_prefix: client
+      http_filters:
+{{ .Vars.ClientHTTPFilters | fill | indent 6 }}
+      - name: envoy.router
+      route_config:
+        name: client
+        virtual_hosts:
+        - name: client
+          domains: ["*"]
+          routes:
+          - match: { prefix: / }
+            route:
+              {{- if .Vars.ServerClusterName }}
+              cluster: {{ .Vars.ServerClusterName}}
+              {{- else }}
+              cluster: outbound|9080|http|server.default.svc.cluster.local
+              {{- end }}
+              timeout: 0s
+{{- end }}
+`)
+
+func listenerClientYamlTmplBytes() ([]byte, error) {
+	return _listenerClientYamlTmpl, nil
+}
+
+func listenerClientYamlTmpl() (*asset, error) {
+	bytes, err := listenerClientYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/client.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _listenerServerYamlTmpl = []byte(`{{- if ne .Vars.ServerListeners "" }}
+{{ .Vars.ServerListeners }}
+{{- else }}
+name: server
+traffic_direction: INBOUND
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: {{ .Ports.ServerPort }}
+filter_chains:
+- filters:
+  - name: http
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      stat_prefix: server
+      http_filters:
+{{ .Vars.ServerHTTPFilters | fill | indent 6 }}
+      - name: envoy.router
+      route_config:
+        name: server
+        virtual_hosts:
+        - name: server
+          domains: ["*"]
+          routes:
+          - match: { prefix: / }
+            route:
+              cluster: inbound|9080|http|server.default.svc.cluster.local
+              timeout: 0s
+{{ .Vars.ServerTLSContext | indent 2 }}
+{{- end }}
+`)
+
+func listenerServerYamlTmplBytes() ([]byte, error) {
+	return _listenerServerYamlTmpl, nil
+}
+
+func listenerServerYamlTmpl() (*asset, error) {
+	bytes, err := listenerServerYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/server.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _listenerTcp_clientYamlTmpl = []byte(`name: client
+traffic_direction: OUTBOUND
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: {{ .Ports.ClientPort }}
+listener_filters:
+- name: "envoy.filters.listener.tls_inspector"
+- name: "envoy.filters.listener.http_inspector"
+filter_chains:
+- filters:
+{{ .Vars.ClientNetworkFilters | fill | indent 2 }}
+  - name: tcp_proxy
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      value:
+        stat_prefix: outbound_tcp
+        cluster: outbound|9080|tcp|server.default.svc.cluster.local
+`)
+
+func listenerTcp_clientYamlTmplBytes() ([]byte, error) {
+	return _listenerTcp_clientYamlTmpl, nil
+}
+
+func listenerTcp_clientYamlTmpl() (*asset, error) {
+	bytes, err := listenerTcp_clientYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/tcp_client.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _listenerTcp_serverYamlTmpl = []byte(`name: server
+traffic_direction: INBOUND
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: {{ .Ports.ServerPort }}
+listener_filters:
+- name: "envoy.filters.listener.tls_inspector"
+- name: "envoy.filters.listener.http_inspector"
+filter_chains:
+- filters:
+{{ .Vars.ServerNetworkFilters | fill | indent 2 }}
+  - name: tcp_proxy
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      value:
+        stat_prefix: inbound_tcp
+        cluster: inbound|9080|tcp|server.default.svc.cluster.local
+{{ .Vars.ServerListenerTLSContext | indent 2 }}
+`)
+
+func listenerTcp_serverYamlTmplBytes() ([]byte, error) {
+	return _listenerTcp_serverYamlTmpl, nil
+}
+
+func listenerTcp_serverYamlTmpl() (*asset, error) {
+	bytes, err := listenerTcp_serverYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/tcp_server.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+// Asset loads and returns the asset for the given name.
+// It returns an error if the asset could not be found or
+// could not be loaded.
+func Asset(name string) ([]byte, error) {
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	if f, ok := _bindata[cannonicalName]; ok {
+		a, err := f()
+		if err != nil {
+			return nil, fmt.Errorf("Asset %s can't read by error: %v", name, err)
+		}
+		return a.bytes, nil
+	}
+	return nil, fmt.Errorf("Asset %s not found", name)
+}
+
+// MustAsset is like Asset but panics when Asset would return an error.
+// It simplifies safe initialization of global variables.
+func MustAsset(name string) []byte {
+	a, err := Asset(name)
+	if err != nil {
+		panic("asset: Asset(" + name + "): " + err.Error())
+	}
+
+	return a
+}
+
+// AssetInfo loads and returns the asset info for the given name.
+// It returns an error if the asset could not be found or
+// could not be loaded.
+func AssetInfo(name string) (os.FileInfo, error) {
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	if f, ok := _bindata[cannonicalName]; ok {
+		a, err := f()
+		if err != nil {
+			return nil, fmt.Errorf("AssetInfo %s can't read by error: %v", name, err)
+		}
+		return a.info, nil
+	}
+	return nil, fmt.Errorf("AssetInfo %s not found", name)
+}
+
+// AssetNames returns the names of the assets.
+func AssetNames() []string {
+	names := make([]string, 0, len(_bindata))
+	for name := range _bindata {
+		names = append(names, name)
+	}
+	return names
+}
+
+// _bindata is a table, holding each asset generator, mapped to its name.
+var _bindata = map[string]func() (*asset, error){
+	"bootstrap/client.yaml.tmpl":    bootstrapClientYamlTmpl,
+	"bootstrap/server.yaml.tmpl":    bootstrapServerYamlTmpl,
+	"bootstrap/stats.yaml.tmpl":     bootstrapStatsYamlTmpl,
+	"listener/client.yaml.tmpl":     listenerClientYamlTmpl,
+	"listener/server.yaml.tmpl":     listenerServerYamlTmpl,
+	"listener/tcp_client.yaml.tmpl": listenerTcp_clientYamlTmpl,
+	"listener/tcp_server.yaml.tmpl": listenerTcp_serverYamlTmpl,
+}
+
+// AssetDir returns the file names below a certain
+// directory embedded in the file by go-bindata.
+// For example if you run go-bindata on data/... and data contains the
+// following hierarchy:
+//     data/
+//       foo.txt
+//       img/
+//         a.png
+//         b.png
+// then AssetDir("data") would return []string{"foo.txt", "img"}
+// AssetDir("data/img") would return []string{"a.png", "b.png"}
+// AssetDir("foo.txt") and AssetDir("notexist") would return an error
+// AssetDir("") will return []string{"data"}.
+func AssetDir(name string) ([]string, error) {
+	node := _bintree
+	if len(name) != 0 {
+		cannonicalName := strings.Replace(name, "\\", "/", -1)
+		pathList := strings.Split(cannonicalName, "/")
+		for _, p := range pathList {
+			node = node.Children[p]
+			if node == nil {
+				return nil, fmt.Errorf("Asset %s not found", name)
+			}
+		}
+	}
+	if node.Func != nil {
+		return nil, fmt.Errorf("Asset %s not found", name)
+	}
+	rv := make([]string, 0, len(node.Children))
+	for childName := range node.Children {
+		rv = append(rv, childName)
+	}
+	return rv, nil
+}
+
+type bintree struct {
+	Func     func() (*asset, error)
+	Children map[string]*bintree
+}
+
+var _bintree = &bintree{nil, map[string]*bintree{
+	"bootstrap": &bintree{nil, map[string]*bintree{
+		"client.yaml.tmpl": &bintree{bootstrapClientYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl": &bintree{bootstrapServerYamlTmpl, map[string]*bintree{}},
+		"stats.yaml.tmpl":  &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
+	}},
+	"listener": &bintree{nil, map[string]*bintree{
+		"client.yaml.tmpl":     &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":     &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
+		"tcp_client.yaml.tmpl": &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
+		"tcp_server.yaml.tmpl": &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
+	}},
+}}
+
+// RestoreAsset restores an asset under the given directory
+func RestoreAsset(dir, name string) error {
+	data, err := Asset(name)
+	if err != nil {
+		return err
+	}
+	info, err := AssetInfo(name)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
+	if err != nil {
+		return err
+	}
+	err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RestoreAssets restores an asset under the given directory recursively
+func RestoreAssets(dir, name string) error {
+	children, err := AssetDir(name)
+	// File
+	if err != nil {
+		return RestoreAsset(dir, name)
+	}
+	// Dir
+	for _, child := range children {
+		err = RestoreAssets(dir, filepath.Join(name, child))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func _filePath(dir, name string) string {
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
+}
