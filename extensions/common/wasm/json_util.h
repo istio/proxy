@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "extensions/common/nlohmann_json.hpp"
+#include "extensions/common/wasm/nlohmann_json.hpp"
 
 /**
  * Utilities for working with JSON without exceptions.

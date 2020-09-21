@@ -19,7 +19,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/json_util.h"
+#include "extensions/common/wasm/json_util.h"
 #include "google/protobuf/struct.pb.h"
 
 namespace Envoy {

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "extensions/common/json_util.h"
+#include "extensions/common/wasm/json_util.h"
 
 #include "absl/strings/numbers.h"
 

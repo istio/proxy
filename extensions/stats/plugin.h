@@ -20,7 +20,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "extensions/common/context.h"
-#include "extensions/common/json_util.h"
+#include "extensions/common/wasm/json_util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN

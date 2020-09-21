@@ -148,38 +148,18 @@ cc_library(
     deps = ["@com_github_google_flatbuffers//:runtime_cc"],
 )
 
-genrule(
-    name = "nlohmann_json_hpp",
-    srcs = ["@com_github_nlohmann_json_single_header//file"],
-    outs = ["nlohmann_json.hpp"],
-    cmd = "cp $< $@",
-)
-
 envoy_cc_library(
     name = "json_util",
-    srcs = ["json_util.cc"],
+    srcs = [
+        "//extensions/common/wasm:json_util.cc",
+    ],
     hdrs = [
-        "json_util.h",
-        ":nlohmann_json_hpp",
+        "//extensions/common/wasm:json_util.h",
+        "//extensions/common/wasm:nlohmann_json_hpp",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         "@envoy//source/extensions/common/wasm:wasm_lib",
-    ],
-)
-
-cc_library(
-    name = "json_util_wasm",
-    srcs = ["json_util.cc"],
-    hdrs = [
-        "json_util.h",
-        ":nlohmann_json_hpp",
-    ],
-    copts = ["-UNULL_PLUGIN"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//external:abseil_optional",
-        "//external:abseil_strings",
     ],
 )
