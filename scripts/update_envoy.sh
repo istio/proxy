@@ -39,10 +39,9 @@ GETSHA=$(wget "${URL}" && sha256sum "${1}".tar.gz)
 SHAArr=($GETSHA)
 SHA256=${SHAArr[0]}
 
-# Update Commit date and release branch
+# Update Commit date
 DATE=$(date +'%Y-%m-%d')
 sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
-sed -i "s/Branch: .*/Branch: ${UPDATE_BRANCH}/" "${WORKSPACE}"
 
 # Update the dependency in istio/proxy WORKSPACE
 sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$1"'"/' "${WORKSPACE}"
