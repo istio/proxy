@@ -34,8 +34,9 @@ ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 
 # Get ENVOY_SHA256
 URL="https://github.com/${ENVOY_ORG}/${ENVOY_REPO}/archive/${1}.tar.gz"
-SHA256=$(wget "${URL}" && sha256sum "${1}".tar.gz)
-SHAArr=($SHA256)
+GETSHA=$(wget "${URL}" && sha256sum "${1}".tar.gz)
+SHAArr=($GETSHA)
+SHA256=${SHAArr[0]}
 
 # Update Commit date and release branch
 DATE=$(date +'%Y-%m-%d')
@@ -43,5 +44,5 @@ sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
 sed -i "s/Branch: .*/Branch: ${UPDATE_BRANCH}/" "${WORKSPACE}"
 
 # Update the dependency in istio/proxy WORKSPACE
-sed -i "s/ENVOY_SHA = .*/ENVOY_SHA = ${1}/" "${WORKSPACE}"
-sed -i "s/ENVOY_SHA256 = .*/ENVOY_SHA256 = ${SHAArr[0]}/" "${WORKSPACE}"
+sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$1"'"/' "${WORKSPACE}"
+sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${WORKSPACE}"
