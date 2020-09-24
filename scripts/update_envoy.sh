@@ -16,21 +16,32 @@
 
 
 # Update the Envoy SHA in istio/proxy WORKSPACE with the first argument
+
+# Exit immediately for non zero status
 set -e
+# Check unset variables
+set -u
+# Print commands
+set -x
 
 UPDATE_BRANCH=${UPDATE_BRANCH:-"master"}
 
-SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOTDIR=$(dirname "${SCRIPTPATH}")
-cd "${ROOTDIR}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+WORKSPACE=${ROOT}/WORKSPACE
+
+ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 
 # Get ENVOY_SHA256
-SHA256=$(wget https://github.com/istio/envoy/archive/$1.tar.gz && sha256sum $1.tar.gz)
+URL="https://github.com/${ENVOY_ORG}/${ENVOY_REPO}/archive/${1}.tar.gz"
+SHA256=$(wget "${URL}" && sha256sum "${1}".tar.gz)
+SHAArr=($SHA256)
 
 # Update Commit date and release branch
-sed -i '{ s/"Commit date": .*/ "Commit date": "'"$DATE"'"/  }' WORKSPACE
-sed -i '{ s/"Branch": .*/ "Branch": "'"$UPDATE_BRANCH"'"/  }' WORKSPACE
+DATE=$(date +'%Y-%m-%d')
+sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
+sed -i "s/Branch: .*/Branch: ${UPDATE_BRANCH}/" "${WORKSPACE}"
 
 # Update the dependency in istio/proxy WORKSPACE
-sed -i '{ s/"ENVOY_SHA" = .*/"ENVOY_SHA" = "'"$1"'"/  }' WORKSPACE
-sed -i '{ s/"ENVOY_SHA256" = .*/"ENVOY_SHA256" = "'"$SHA256"'"/  }' WORKSPACE
+sed -i "s/ENVOY_SHA = .*/ENVOY_SHA = ${1}/" "${WORKSPACE}"
+sed -i "s/ENVOY_SHA256 = .*/ENVOY_SHA256 = ${SHAArr[0]}/" "${WORKSPACE}"
