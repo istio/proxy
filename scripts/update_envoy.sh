@@ -15,7 +15,8 @@
 # limitations under the License.
 
 
-# Update the Envoy SHA in istio/proxy WORKSPACE with the first argument
+# Update the Envoy SHA in istio/proxy WORKSPACE with the first argument (aka ENVOY_SHA) and
+# the second argument (aka ENVOY_SHA commit date)
 
 # Exit immediately for non zero status
 set -e
@@ -39,9 +40,8 @@ GETSHA=$(wget "${URL}" && sha256sum "${1}".tar.gz)
 SHAArr=($GETSHA)
 SHA256=${SHAArr[0]}
 
-# Update Commit date
-DATE=$(date +'%Y-%m-%d')
-sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
+# Update ENVOY_SHA commit date
+sed -i "s/Commit date: .*/Commit date: ${2}/" "${WORKSPACE}"
 
 # Update the dependency in istio/proxy WORKSPACE
 sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$1"'"/' "${WORKSPACE}"
