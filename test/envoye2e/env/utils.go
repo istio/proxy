@@ -22,17 +22,45 @@ import (
 	"testing"
 )
 
-func GetDefaultEnvoyBin() string {
+func GetDefaultEnvoyBin() (string, error) {
+	// Get bazel args if any
+	buildArgs := os.Getenv("BAZEL_BUILD_ARGS")
+
 	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
 	// Instead we rely on symbolic link src/envoy/envoy in the workspace
-	workspace, _ := exec.Command("bazel", "info", "workspace").Output()
-	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/")
+	workspace, err := exec.Command("bazel", buildArgs, "info", "workspace").Output()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/src/envoy/"), nil
 }
 
-func GetBazelOptOut() string {
+func GetDefaultEnvoyBinOrDie() string {
+	p, err := GetDefaultEnvoyBin()
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
+func GetBazelOptOut() (string, error) {
+	// Get bazel args if any
+	buildArgs := os.Getenv("BAZEL_BUILD_ARGS")
+
 	// `make build_wasm` puts generated wasm modules into k8-opt.
-	bazelOutput, _ := exec.Command("bazel", "info", "output_path").Output()
-	return filepath.Join(strings.TrimSuffix(string(bazelOutput), "\n"), "k8-opt/bin/")
+	bazelOutput, err := exec.Command("bazel", buildArgs, "info", "output_path").Output()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(strings.TrimSuffix(string(bazelOutput), "\n"), "k8-opt/bin/"), nil
+}
+
+func GetBazelOptOutOrDie() string {
+	p, err := GetBazelOptOut()
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 func SkipTSanASan(t *testing.T) {

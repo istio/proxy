@@ -64,13 +64,13 @@ var Runtimes = []struct {
 		WasmRuntime:                "envoy.wasm.runtime.null",
 	},
 	{
-		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/metadata_exchange.wasm"),
-		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.wasm"),
+		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOutOrDie(), "extensions/metadata_exchange.wasm"),
+		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOutOrDie(), "extensions/stats.wasm"),
 		WasmRuntime:                "envoy.wasm.runtime.v8",
 	},
 	{
-		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/metadata_exchange.compiled.wasm"),
-		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/stats.compiled.wasm"),
+		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelOptOutOrDie(), "extensions/metadata_exchange.compiled.wasm"),
+		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelOptOutOrDie(), "extensions/stats.compiled.wasm"),
 		WasmRuntime:                "envoy.wasm.runtime.v8",
 	},
 }
@@ -137,7 +137,7 @@ var AttributeGenRuntimes = []struct {
 		WasmRuntime:            "envoy.wasm.runtime.null",
 	},
 	{
-		AttributeGenFilterCode: "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/attributegen.wasm"),
+		AttributeGenFilterCode: "filename: " + filepath.Join(env.GetBazelOptOutOrDie(), "extensions/attributegen.wasm"),
 		WasmRuntime:            "envoy.wasm.runtime.v8",
 	},
 }
