@@ -92,7 +92,7 @@ var BasicAuthRuntimes = []struct {
 		WasmRuntime:         "envoy.wasm.runtime.null",
 	},
 	{
-		BasicAuthFilterCode: "filename: " + filepath.Join(env.GetBazelBin(), "extensions/basic_auth.wasm"),
+		BasicAuthFilterCode: "filename: " + filepath.Join(env.GetBazelBinOrDie(), "extensions/basic_auth.wasm"),
 		WasmRuntime:         "envoy.wasm.runtime.v8",
 	},
 }

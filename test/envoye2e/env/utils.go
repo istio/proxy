@@ -22,15 +22,41 @@ import (
 	"testing"
 )
 
-func GetBazelBin() string {
+func GetBazelBin() (string, error) {
+	// Get bazel args if any
+	buildArgs := os.Getenv("BAZEL_BUILD_ARGS")
+
 	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
 	// Instead we rely on symbolic link src/envoy/envoy in the workspace
-	workspace, _ := exec.Command("bazel", "info", "workspace").Output()
-	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/")
+	args := []string{"info", "workspace"}
+	if buildArgs != "" {
+		args = append(args, strings.Split(buildArgs, " ")...)
+	}
+	workspace, err := exec.Command("bazel", args...).Output()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/"), nil
 }
 
-func GetDefaultEnvoyBin() string {
-	return filepath.Join(GetBazelBin(), "src/envoy/")
+func GetBazelBinOrDie() string {
+	bin, err := GetBazelBin()
+	if err != nil {
+		panic(err)
+	}
+	return bin
+}
+
+func GetDefaultEnvoyBin() (string, error) {
+	bin, err := GetBazelBin()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(bin, "src/envoy/"), nil
+}
+
+func GetDefaultEnvoyBinOrDie() string {
+	return filepath.Join(GetBazelBinOrDie(), "src/envoy/")
 }
 
 func SkipTSanASan(t *testing.T) {
