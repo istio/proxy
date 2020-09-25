@@ -38,9 +38,9 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Commit date: 2020-09-08 - Branch: release-1.7
-ENVOY_SHA = "376cc83bc44d9b90355f9a736797b27100e85177"
+ENVOY_SHA = "13c0682af1efb956ac64661960f53f6d45108d76"
 
-ENVOY_SHA256 = "b7824f5b31e23252025ced988cf184bf59479ada4438db3817ff24c18ec0f849"
+ENVOY_SHA256 = "c6d66bdf0a5b8bccf76e42a0e66c1ce61e629ca77cbfa3590524d7f5d777501f"
 
 ENVOY_ORG = "istio"
 

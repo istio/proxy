@@ -86,7 +86,7 @@ var AttributeGenRuntimes = []struct {
 		WasmRuntime:        	   "envoy.wasm.runtime.null",
 	},
 	{
-		AttributeGenFilterCode:    "filename: " + filepath.Join(env.GetBazelOptOut(), "extensions/attributegen.wasm"),
+		AttributeGenFilterCode:    "filename: " + filepath.Join(env.GetBazelOptOutOrDie(), "extensions/attributegen.wasm"),
 		WasmRuntime:        	   "envoy.wasm.runtime.v8",
 	},
 }
