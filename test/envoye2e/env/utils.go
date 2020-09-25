@@ -28,7 +28,11 @@ func GetDefaultEnvoyBin() (string, error) {
 
 	// Note: `bazel info bazel-bin` returns incorrect path to a binary (always fastbuild, not opt or dbg)
 	// Instead we rely on symbolic link src/envoy/envoy in the workspace
-	workspace, err := exec.Command("bazel", buildArgs, "info", "workspace").Output()
+	args := []string{"info", "workspace"}
+	if buildArgs != "" {
+		args = append(args, strings.Split(buildArgs, " ")...)
+	}
+	workspace, err := exec.Command("bazel", args...).Output()
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +52,11 @@ func GetBazelOptOut() (string, error) {
 	buildArgs := os.Getenv("BAZEL_BUILD_ARGS")
 
 	// `make build_wasm` puts generated wasm modules into k8-opt.
-	bazelOutput, err := exec.Command("bazel", buildArgs, "info", "output_path").Output()
+	args := []string{"info", "output_path"}
+	if buildArgs != "" {
+		args = append(args, strings.Split(buildArgs, " ")...)
+	}
+	bazelOutput, err := exec.Command("bazel", args...).Output()
 	if err != nil {
 		return "", err
 	}
