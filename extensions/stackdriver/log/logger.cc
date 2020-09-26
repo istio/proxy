@@ -285,6 +285,8 @@ void Logger::fillAndFlushLogEntry(
 
   (*label_map)["destination_service_host"] =
       request_info.destination_service_host;
+  (*label_map)["destination_service_name"] =
+      request_info.destination_service_name;
   (*label_map)["destination_principal"] = request_info.destination_principal;
   (*label_map)["source_principal"] = request_info.source_principal;
 

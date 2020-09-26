@@ -51,6 +51,7 @@ class Logger {
   // Audit labels:
   // - destination_canonical_revision
   // - destination_canonical_service
+  // - destination_service_name
   // - destination_namespace
   // - destination_principal
   // - destination_service_host
