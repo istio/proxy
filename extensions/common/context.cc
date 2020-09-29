@@ -30,6 +30,7 @@
 
 using proxy_wasm::WasmHeaderMapType;
 using proxy_wasm::null_plugin::getHeaderMapValue;
+using proxy_wasm::null_plugin::getProperty;
 using proxy_wasm::null_plugin::getValue;
 
 #endif  // NULL_PLUGIN
@@ -222,11 +223,12 @@ void extractEmptyNodeFlatBuffer(std::string* out) {
               fbb.GetSize());
 }
 
-bool extractPartialLocalNodeFlatBuffer(std::string* out) {
+void extractLocalNodeFlatBuffer(std::string* out) {
   flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
       workload_name, istio_version, mesh_id, cluster_id;
-  std::vector<flatbuffers::Offset<KeyVal>> labels;
+  std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
+  std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   std::string value;
   if (getValue({"node", "metadata", "NAME"}, &value)) {
     name = fbb.CreateString(value);
@@ -249,14 +251,33 @@ bool extractPartialLocalNodeFlatBuffer(std::string* out) {
   if (getValue({"node", "metadata", "CLUSTER_ID"}, &value)) {
     cluster_id = fbb.CreateString(value);
   }
-  for (const auto& label : kDefaultLabels) {
-    if (getValue({"node", "metadata", "LABELS", label}, &value)) {
-      labels.push_back(
-          CreateKeyVal(fbb, fbb.CreateString(label), fbb.CreateString(value)));
+  {
+    auto buf = getProperty({"node", "metadata", "LABELS"});
+    if (buf.has_value()) {
+      for (const auto& [key, val] : buf.value()->pairs()) {
+        labels.push_back(CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
+      }
+    }
+  }
+  {
+    auto buf = getProperty({"node", "metadata", "PLATFORM_METADATA"});
+    if (buf.has_value()) {
+      for (const auto& [key, val] : buf.value()->pairs()) {
+        platform_metadata.push_back(CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
+      }
+    }
+  }
+  if (getValue({"node", "metadata", "APP_CONTAINERS"}, &value)) {
+    std::vector<std::string_view> containers = absl::StrSplit(value, ',');
+    for (const auto& container : containers) {
+      app_containers.push_back(fbb.CreateString(container));
     }
   }
 
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  auto platform_metadata_offset =
+      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  auto app_containers_offset = fbb.CreateVector(app_containers);
   FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
@@ -266,11 +287,12 @@ bool extractPartialLocalNodeFlatBuffer(std::string* out) {
   node.add_mesh_id(mesh_id);
   node.add_cluster_id(cluster_id);
   node.add_labels(labels_offset);
+  node.add_platform_metadata(platform_metadata_offset);
+  node.add_app_containers(app_containers_offset);
   auto data = node.Finish();
   fbb.Finish(data);
   out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
               fbb.GetSize());
-  return true;
 }
 
 // Host header is used if use_host_header_fallback==true.

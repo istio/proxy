@@ -208,11 +208,8 @@ TrafficDirection getTrafficDirection();
 // Convenience routine to create an empty node flatbuffer.
 void extractEmptyNodeFlatBuffer(std::string* out);
 
-// Extra partial local node metadata into a flatbuffer.
-// This populates a subset of nested labels and platform metadata to avoid
-// parsing a protobuf from the host.
-// See https://github.com/envoyproxy/envoy-wasm/issues/485.
-bool extractPartialLocalNodeFlatBuffer(std::string* out);
+// Extra local node metadata into a flatbuffer.
+void extractLocalNodeFlatBuffer(std::string* out);
 
 // Returns flatbuffer schema for node info.
 std::string_view nodeInfoSchema();

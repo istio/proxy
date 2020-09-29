@@ -97,25 +97,6 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
   return true;
 }
 
-bool extractLocalNodeFlatBuffer(std::string* out) {
-  google::protobuf::Struct node;
-  if (!getMessageValue({"node", "metadata"}, &node)) {
-    return false;
-  }
-  return extractLocalNodeFlatBuffer(out, node);
-}
-
-bool extractLocalNodeFlatBuffer(std::string* out,
-                                const google::protobuf::Struct& node) {
-  flatbuffers::FlatBufferBuilder fbb;
-  if (!extractNodeFlatBuffer(node, fbb)) {
-    return false;
-  }
-  out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-              fbb.GetSize());
-  return true;
-}
-
 google::protobuf::util::Status extractNodeMetadataValue(
     const google::protobuf::Struct& node_metadata,
     google::protobuf::Struct* metadata) {
