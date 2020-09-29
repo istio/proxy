@@ -46,7 +46,6 @@ func (s *Stats) Run(p *Params) error {
 			return err
 		}
 		reader := strings.NewReader(body)
-		log.Printf("%s\n", body)
 		metrics, err := (&expfmt.TextParser{}).TextToMetricFamilies(reader)
 		if err != nil {
 			return err
