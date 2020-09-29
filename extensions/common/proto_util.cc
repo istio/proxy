@@ -15,8 +15,10 @@
 
 #include "extensions/common/proto_util.h"
 
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/node_info_generated.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -26,8 +28,6 @@
 
 #include "include/proxy-wasm/null_plugin.h"
 
-using proxy_wasm::null_plugin::getMessageValue;
-
 #endif  // NULL_PLUGIN
 
 // END WASM_PROLOG
@@ -35,8 +35,8 @@ using proxy_wasm::null_plugin::getMessageValue;
 namespace Wasm {
 namespace Common {
 
-bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
-                           flatbuffers::FlatBufferBuilder& fbb) {
+void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
+                                     flatbuffers::FlatBufferBuilder& fbb) {
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
       workload_name, istio_version, mesh_id, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
@@ -94,43 +94,80 @@ bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
   node.add_app_containers(app_containers_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-  return true;
 }
 
-google::protobuf::util::Status extractNodeMetadataValue(
-    const google::protobuf::Struct& node_metadata,
-    google::protobuf::Struct* metadata) {
-  if (metadata == nullptr) {
-    return google::protobuf::util::Status(
-        google::protobuf::util::error::INVALID_ARGUMENT,
-        "metadata provided is null");
-  }
-  const auto key_it = node_metadata.fields().find("EXCHANGE_KEYS");
-  if (key_it == node_metadata.fields().end()) {
-    return google::protobuf::util::Status(
-        google::protobuf::util::error::INVALID_ARGUMENT,
-        "metadata exchange key is missing");
-  }
+std::string extractNodeFlatBufferFromStruct(
+    const google::protobuf::Struct& metadata) {
+  flatbuffers::FlatBufferBuilder fbb;
+  extractNodeFlatBufferFromStruct(metadata, fbb);
+  return std::string(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
+                     fbb.GetSize());
+}
 
-  const auto& keys_value = key_it->second;
-  if (keys_value.kind_case() != google::protobuf::Value::kStringValue) {
-    return google::protobuf::util::Status(
-        google::protobuf::util::error::INVALID_ARGUMENT,
-        "metadata exchange key is not a string");
+void extractStructFromNodeFlatBuffer(const FlatNode& node,
+                                     google::protobuf::Struct* metadata) {
+  if (node.name()) {
+    (*metadata->mutable_fields())["NAME"].set_string_value(node.name()->str());
   }
-
-  // select keys from the metadata using the keys
-  const std::set<std::string> keys =
-      absl::StrSplit(keys_value.string_value(), ',', absl::SkipWhitespace());
-  for (auto key : keys) {
-    const auto entry_it = node_metadata.fields().find(key);
-    if (entry_it == node_metadata.fields().end()) {
-      continue;
+  if (node.namespace_()) {
+    (*metadata->mutable_fields())["NAMESPACE"].set_string_value(
+        node.namespace_()->str());
+  }
+  if (node.owner()) {
+    (*metadata->mutable_fields())["OWNER"].set_string_value(
+        node.owner()->str());
+  }
+  if (node.workload_name()) {
+    (*metadata->mutable_fields())["WORKLOAD_NAME"].set_string_value(
+        node.workload_name()->str());
+  }
+  if (node.istio_version()) {
+    (*metadata->mutable_fields())["ISTIO_VERSION"].set_string_value(
+        node.istio_version()->str());
+  }
+  if (node.mesh_id()) {
+    (*metadata->mutable_fields())["MESH_ID"].set_string_value(
+        node.mesh_id()->str());
+  }
+  if (node.cluster_id()) {
+    (*metadata->mutable_fields())["CLUSTER_ID"].set_string_value(
+        node.cluster_id()->str());
+  }
+  if (node.labels()) {
+    auto* map = (*metadata->mutable_fields())["LABELS"].mutable_struct_value();
+    for (const auto keyval : *node.labels()) {
+      (*map->mutable_fields())[flatbuffers::GetString(keyval->key())]
+          .set_string_value(flatbuffers::GetString(keyval->value()));
     }
-    (*metadata->mutable_fields())[key] = entry_it->second;
   }
+  if (node.platform_metadata()) {
+    auto* map = (*metadata->mutable_fields())["PLATFORM_METADATA"]
+                    .mutable_struct_value();
+    for (const auto keyval : *node.platform_metadata()) {
+      (*map->mutable_fields())[flatbuffers::GetString(keyval->key())]
+          .set_string_value(flatbuffers::GetString(keyval->value()));
+    }
+  }
+  if (node.app_containers()) {
+    std::vector<std::string> containers;
+    for (const auto container : *node.app_containers()) {
+      containers.push_back(flatbuffers::GetString(container));
+    }
+    (*metadata->mutable_fields())["APP_CONTAINERS"].set_string_value(
+        absl::StrJoin(containers, ","));
+  }
+}
 
-  return google::protobuf::util::Status(google::protobuf::util::error::OK, "");
+bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
+                                    std::string* metadata_bytes) {
+  google::protobuf::io::StringOutputStream md(metadata_bytes);
+  google::protobuf::io::CodedOutputStream mcs(&md);
+
+  mcs.SetSerializationDeterministic(true);
+  if (!metadata.SerializeToCodedStream(&mcs)) {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace Common

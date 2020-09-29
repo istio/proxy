@@ -223,10 +223,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   }
   google::protobuf::Struct node;
   getLocalNodeMetadata(&node);
-  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_, node)) {
-    logWarn("cannot extract local node metadata");
-    return false;
-  }
+  ::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_);
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();

@@ -15,9 +15,9 @@
 
 #pragma once
 
+#include "extensions/common/node_info_generated.h"
 #include "flatbuffers/flatbuffers.h"
 #include "google/protobuf/struct.pb.h"
-#include "google/protobuf/stubs/status.h"
 
 /**
  * Utilities that require protobuf import.
@@ -26,15 +26,20 @@ namespace Wasm {
 namespace Common {
 
 // Extract node info into a flatbuffer from a struct.
-bool extractNodeFlatBuffer(const google::protobuf::Struct& metadata,
-                           flatbuffers::FlatBufferBuilder& fbb);
+void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
+                                     flatbuffers::FlatBufferBuilder& fbb);
 
-// Extracts node metadata value. It looks for values of all the keys
-// corresponding to EXCHANGE_KEYS in node_metadata and populates it in
-// google::protobuf::Value pointer that is passed in.
-google::protobuf::util::Status extractNodeMetadataValue(
-    const google::protobuf::Struct& node_metadata,
-    google::protobuf::Struct* metadata);
+// Extract node info into a flatbuffer from a struct.
+std::string extractNodeFlatBufferFromStruct(
+    const google::protobuf::Struct& metadata);
+
+// Extract struct from a flatbuffer. This is an inverse of the above function.
+void extractStructFromNodeFlatBuffer(const FlatNode& node,
+                                     google::protobuf::Struct* metadata);
+
+// Serialize deterministically a protobuf to a string.
+bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
+                                    std::string* metadata_bytes);
 
 }  // namespace Common
 }  // namespace Wasm

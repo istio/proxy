@@ -140,7 +140,7 @@ const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb,
   google::protobuf::Struct struct_info;
   google::protobuf::util::JsonStringToMessage(data, &struct_info,
                                               json_parse_options);
-  ::Wasm::Common::extractNodeFlatBuffer(struct_info, fbb);
+  ::Wasm::Common::extractNodeFlatBufferFromStruct(struct_info, fbb);
   return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
       fbb.GetBufferPointer());
 }

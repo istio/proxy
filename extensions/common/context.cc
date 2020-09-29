@@ -255,7 +255,8 @@ void extractLocalNodeFlatBuffer(std::string* out) {
     auto buf = getProperty({"node", "metadata", "LABELS"});
     if (buf.has_value()) {
       for (const auto& [key, val] : buf.value()->pairs()) {
-        labels.push_back(CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
+        labels.push_back(
+            CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
       }
     }
   }
@@ -263,7 +264,8 @@ void extractLocalNodeFlatBuffer(std::string* out) {
     auto buf = getProperty({"node", "metadata", "PLATFORM_METADATA"});
     if (buf.has_value()) {
       for (const auto& [key, val] : buf.value()->pairs()) {
-        platform_metadata.push_back(CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
+        platform_metadata.push_back(
+            CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
       }
     }
   }

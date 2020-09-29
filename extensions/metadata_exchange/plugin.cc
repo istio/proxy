@@ -15,10 +15,9 @@
 
 #include "extensions/metadata_exchange/plugin.h"
 
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/context.h"
 #include "extensions/common/proto_util.h"
 #include "extensions/common/wasm/json_util.h"
 
@@ -43,44 +42,22 @@ using Base64 = Envoy::Base64;
 
 #endif
 
-namespace {
-
-bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
-                                    std::string* metadata_bytes) {
-  google::protobuf::io::StringOutputStream md(metadata_bytes);
-  google::protobuf::io::CodedOutputStream mcs(&md);
-
-  mcs.SetSerializationDeterministic(true);
-  if (!metadata.SerializeToCodedStream(&mcs)) {
-    LOG_WARN("unable to serialize metadata");
-    return false;
-  }
-  return true;
-}
-
-}  // namespace
+namespace {}  // namespace
 
 static RegisterContextFactory register_MetadataExchange(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
 void PluginRootContext::updateMetadataValue() {
-  google::protobuf::Struct node_metadata;
-  if (!getMessageValue({"node", "metadata"}, &node_metadata)) {
-    LOG_WARN("cannot get node metadata");
-    return;
-  }
+  std::string node_info;
+  ::Wasm::Common::extractLocalNodeFlatBuffer(&node_info);
 
   google::protobuf::Struct metadata;
-  const auto status =
-      ::Wasm::Common::extractNodeMetadataValue(node_metadata, &metadata);
-  if (!status.ok()) {
-    LOG_WARN(status.message().ToString());
-    return;
-  }
+  ::Wasm::Common::extractStructFromNodeFlatBuffer(
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(node_info.data()),
+      &metadata);
 
-  // store serialized form
   std::string metadata_bytes;
-  serializeToStringDeterministic(metadata, &metadata_bytes);
+  ::Wasm::Common::serializeToStringDeterministic(metadata, &metadata_bytes);
   metadata_value_ =
       Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
@@ -163,9 +140,7 @@ bool PluginRootContext::updatePeer(std::string_view key,
   }
 
   flatbuffers::FlatBufferBuilder fbb;
-  if (!::Wasm::Common::extractNodeFlatBuffer(metadata, fbb)) {
-    return false;
-  }
+  ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata, fbb);
   std::string_view out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
                        fbb.GetSize());
   setFilterState(key, out);

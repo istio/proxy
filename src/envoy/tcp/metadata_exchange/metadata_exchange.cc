@@ -285,9 +285,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
 void MetadataExchangeFilter::updatePeer(
     const Envoy::ProtobufWkt::Struct& struct_value) {
   flatbuffers::FlatBufferBuilder fbb;
-  if (!::Wasm::Common::extractNodeFlatBuffer(struct_value, fbb)) {
-    return;
-  }
+  ::Wasm::Common::extractNodeFlatBufferFromStruct(struct_value, fbb);
 
   // Filter object captures schema by view, hence the global singleton for the
   // prototype.
@@ -320,14 +318,12 @@ void MetadataExchangeFilter::updatePeerId(absl::string_view key,
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
   if (local_info_.node().has_metadata()) {
-    google::protobuf::Struct node_metadata = local_info_.node().metadata();
-    google::protobuf::Value value_struct;
-
-    const auto status =
-        Wasm::Common::extractNodeMetadataValue(node_metadata, metadata);
-    if (!status.ok()) {
-      return;
-    }
+    flatbuffers::FlatBufferBuilder fbb;
+    ::Wasm::Common::extractNodeFlatBufferFromStruct(
+        local_info_.node().metadata(), fbb);
+    ::Wasm::Common::extractStructFromNodeFlatBuffer(
+        *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fbb.GetBufferPointer()),
+        metadata);
   }
 }
 
