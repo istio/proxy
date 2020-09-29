@@ -14,16 +14,26 @@ labels:
   destination_service_name: server
   response_flag: "-"
   service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
+  source_principal: "{{ .Vars.SourcePrincipal }}"
+  {{- if .Vars.SourceUnknown }}
+  source_name: ""
+  source_namespace: ""
+  source_workload: ""
+  {{- else }}
   source_name: productpage-v1-84975bc778-pxz2w
   source_namespace: default
-  source_principal: "{{ .Vars.SourcePrincipal }}"
   source_workload: productpage-v1
   source_app: productpage
   source_canonical_service: productpage-v1
   source_canonical_revision: version-1
   source_version: v1
+  {{- end }}
   protocol: http
+  {{- if .Vars.LogSampled }}
+  log_sampled: "true"
+  {{- else }}
   log_sampled: "false"
+  {{- end }}
   upstream_cluster: "inbound|9080|http|server.default.svc.cluster.local"
   route_name: ""
   requested_server_name: ""

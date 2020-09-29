@@ -436,7 +436,7 @@ func getSdLogEntries(noClientLogs bool, logEntryCount int) []SDLogEntry {
 	logEntries := []SDLogEntry{
 		{
 			LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
-			LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry_sampled.yaml.tmpl"},
+			LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
 			LogEntryCount: logEntryCount,
 		},
 	}
@@ -445,7 +445,7 @@ func getSdLogEntries(noClientLogs bool, logEntryCount int) []SDLogEntry {
 		logEntries = append(logEntries, SDLogEntry{
 			LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
 			LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
-			LogEntryCount: 10,
+			LogEntryCount: logEntryCount,
 		})
 	}
 
@@ -484,6 +484,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 				"JustSendErrorClientLog":      tt.justSendErrorClientLog,
 				"DestinationUnknown":          tt.destinationUnknown,
 				"SourceUnknown":               tt.sourceUnknown,
+				"LogSampled":                  "true",
 			}, envoye2e.ProxyE2ETests)
 
 			sdPort := params.Ports.Max + 1
@@ -494,7 +495,8 @@ func TestStackdriverAccessLog(t *testing.T) {
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
 				driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
-			params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
+			params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
+				driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 			if tt.enableMetadataExchange {
 				params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
 					params.Vars["ServerHTTPFilters"]
