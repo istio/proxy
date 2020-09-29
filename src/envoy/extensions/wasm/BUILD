@@ -34,5 +34,6 @@ envoy_cc_library(
         "@envoy//source/common/stats:stats_lib",
         "@envoy//source/common/version:version_lib",
         "@envoy//source/extensions/common/wasm:wasm_hdr",
+        "@envoy//source/server/admin:prometheus_stats_lib",
     ],
 )

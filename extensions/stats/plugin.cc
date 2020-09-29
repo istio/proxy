@@ -384,13 +384,10 @@ bool PluginRootContext::initializeDimensions(const json& j) {
                              .value_or(default_field_separator);
   auto value_separator = JsonGetField<std::string>(j, "value_separator")
                              .value_or(default_value_separator);
-  auto stat_prefix =
-      JsonGetField<std::string>(j, "stat_prefix").value_or(default_stat_prefix);
 
-  // prepend "_" to opt out of automatic namespacing
-  // If "_" is not prepended, envoy_ is automatically added by prometheus
-  // scraper"
-  stat_prefix = absl::StrCat("_", stat_prefix, "_");
+  // Note that stat prefix is hard-coded here, because registration must be done
+  // in the main thread at start-up.
+  auto stat_prefix = absl::StrCat(default_stat_prefix, "_");
 
   stats_ = std::vector<StatGen>();
   std::vector<MetricTag> tags;

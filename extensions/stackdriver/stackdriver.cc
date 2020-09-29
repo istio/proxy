@@ -170,9 +170,11 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
 // Get local node metadata. If mesh id is not filled or does not exist,
 // fall back to default format `proj-<project-number>`.
 void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
-  if (!getMessageValue({"node", "metadata"}, node_metadata)) {
-    return;
-  }
+  std::string local_node_info;
+  ::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info);
+  ::Wasm::Common::extractStructFromNodeFlatBuffer(
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info.data()),
+      node_metadata);
   const auto mesh_id_it = node_metadata->fields().find("MESH_ID");
   if (mesh_id_it != node_metadata->fields().end() &&
       !mesh_id_it->second.string_value().empty() &&
@@ -223,7 +225,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   }
   google::protobuf::Struct node;
   getLocalNodeMetadata(&node);
-  ::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_);
+  local_node_info_ = ::Wasm::Common::extractNodeFlatBufferFromStruct(node);
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
