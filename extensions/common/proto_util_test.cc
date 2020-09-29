@@ -99,6 +99,16 @@ TEST(ProtoUtilTest, Rountrip) {
       << metadata_struct.DebugString() << output_struct.DebugString();
 }
 
+// Test roundtrip for an empty struct (for corner cases)
+TEST(ProtoUtilTest, RountripEmpty) {
+  google::protobuf::Struct metadata_struct;
+  std::string out = extractNodeFlatBufferFromStruct(metadata_struct);
+  auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
+  google::protobuf::Struct output_struct;
+  extractStructFromNodeFlatBuffer(*peer, &output_struct);
+  EXPECT_EQ(0, output_struct.fields().size());
+}
+
 }  // namespace Common
 
 // WASM_EPILOG

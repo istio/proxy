@@ -77,10 +77,21 @@ void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
     }
   }
   // finish pre-order construction
-  auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
-  auto platform_metadata_offset =
-      fbb.CreateVectorOfSortedTables(&platform_metadata);
-  auto app_containers_offset = fbb.CreateVector(app_containers);
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>>
+      labels_offset, platform_metadata_offset;
+  if (labels.size() > 0) {
+    labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  }
+  if (platform_metadata.size() > 0) {
+    platform_metadata_offset =
+        fbb.CreateVectorOfSortedTables(&platform_metadata);
+  }
+  flatbuffers::Offset<
+      flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>>
+      app_containers_offset;
+  if (app_containers.size() > 0) {
+    app_containers_offset = fbb.CreateVector(app_containers);
+  }
   FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
