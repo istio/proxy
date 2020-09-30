@@ -84,7 +84,9 @@ static void BM_ReadFlatBuffer(benchmark::State& state) {
 
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
-  setData(filter_state, metadata_key, out);
+  setData(
+      filter_state, metadata_key,
+      std::string_view(reinterpret_cast<const char*>(out.data()), out.size()));
 
   size_t size = 0;
   for (auto _ : state) {
@@ -136,7 +138,12 @@ static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
 
       auto out = extractNodeFlatBufferFromStruct(test_struct);
 
-      node_info = cache.emplace(node_id, std::move(out)).first->second;
+      node_info =
+          cache
+              .emplace(node_id,
+                       std::string(reinterpret_cast<const char*>(out.data()),
+                                   out.size()))
+              .first->second;
     } else {
       node_info = nodeinfo_it->second;
     }

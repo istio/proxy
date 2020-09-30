@@ -30,7 +30,7 @@ void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
                                      flatbuffers::FlatBufferBuilder& fbb);
 
 // Extract node info into a flatbuffer from a struct.
-std::string extractNodeFlatBufferFromStruct(
+flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
     const google::protobuf::Struct& metadata);
 
 // Extract struct from a flatbuffer. This is an inverse of the above function.

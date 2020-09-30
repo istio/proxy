@@ -48,8 +48,7 @@ static RegisterContextFactory register_MetadataExchange(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
 void PluginRootContext::updateMetadataValue() {
-  std::string node_info;
-  ::Wasm::Common::extractLocalNodeFlatBuffer(&node_info);
+  auto node_info = ::Wasm::Common::extractLocalNodeFlatBuffer();
 
   google::protobuf::Struct metadata;
   ::Wasm::Common::extractStructFromNodeFlatBuffer(

@@ -170,8 +170,7 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
 // Get local node metadata. If mesh id is not filled or does not exist,
 // fall back to default format `proj-<project-number>`.
 void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
-  std::string local_node_info;
-  ::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info);
+  auto local_node_info = ::Wasm::Common::extractLocalNodeFlatBuffer();
   ::Wasm::Common::extractStructFromNodeFlatBuffer(
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info.data()),
       node_metadata);
@@ -385,7 +384,8 @@ void StackdriverRootContext::record() {
       {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          peer_found ? peer.data() : empty_node_info_.data());
+          peer_found ? reinterpret_cast<const uint8_t*>(peer.data())
+                     : empty_node_info_.data());
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
   const ::Wasm::Common::FlatNode& destination_node_info =
       outbound ? peer_node : local_node;
@@ -436,7 +436,8 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          peer_found ? peer.data() : empty_node_info_.data());
+          peer_found ? reinterpret_cast<const uint8_t*>(peer.data())
+                     : empty_node_info_.data());
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
   const ::Wasm::Common::FlatNode& destination_node_info =
       outbound ? peer_node : local_node;

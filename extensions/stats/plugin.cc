@@ -428,7 +428,7 @@ bool PluginRootContext::onConfigure(size_t size) {
 bool PluginRootContext::configure(size_t configuration_size) {
   auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
                                            0, configuration_size);
-  ::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_);
+  local_node_info_ = ::Wasm::Common::extractLocalNodeFlatBuffer();
 
   auto result = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!result.has_value()) {

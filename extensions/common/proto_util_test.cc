@@ -84,7 +84,7 @@ TEST(ProtoUtilTest, Rountrip) {
   EXPECT_TRUE(JsonStringToMessage(std::string(node_metadata_json),
                                   &metadata_struct, json_parse_options)
                   .ok());
-  std::string out = extractNodeFlatBufferFromStruct(metadata_struct);
+  auto out = extractNodeFlatBufferFromStruct(metadata_struct);
   auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
 
   google::protobuf::Struct output_struct;
@@ -102,7 +102,7 @@ TEST(ProtoUtilTest, Rountrip) {
 // Test roundtrip for an empty struct (for corner cases)
 TEST(ProtoUtilTest, RountripEmpty) {
   google::protobuf::Struct metadata_struct;
-  std::string out = extractNodeFlatBufferFromStruct(metadata_struct);
+  auto out = extractNodeFlatBufferFromStruct(metadata_struct);
   auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
   google::protobuf::Struct output_struct;
   extractStructFromNodeFlatBuffer(*peer, &output_struct);

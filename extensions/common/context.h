@@ -206,10 +206,10 @@ enum class TrafficDirection : int64_t {
 TrafficDirection getTrafficDirection();
 
 // Convenience routine to create an empty node flatbuffer.
-void extractEmptyNodeFlatBuffer(std::string* out);
+flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer();
 
 // Extra local node metadata into a flatbuffer.
-void extractLocalNodeFlatBuffer(std::string* out);
+flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 
 // Returns flatbuffer schema for node info.
 std::string_view nodeInfoSchema();

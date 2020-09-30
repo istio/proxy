@@ -57,7 +57,7 @@ class StackdriverRootContext : public RootContext {
  public:
   StackdriverRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {
-    ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
+    empty_node_info_ = ::Wasm::Common::extractEmptyNodeFlatBuffer();
   }
   ~StackdriverRootContext() = default;
 
@@ -135,8 +135,8 @@ class StackdriverRootContext : public RootContext {
   stackdriver::config::v1alpha1::PluginConfig config_;
 
   // Local node info extracted from node metadata.
-  std::string local_node_info_;
-  std::string empty_node_info_;
+  flatbuffers::DetachedBuffer local_node_info_;
+  flatbuffers::DetachedBuffer empty_node_info_;
 
   // Indicates the traffic direction relative to this proxy.
   ::Wasm::Common::TrafficDirection direction_{

@@ -107,12 +107,11 @@ void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
   fbb.Finish(data);
 }
 
-std::string extractNodeFlatBufferFromStruct(
+flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
     const google::protobuf::Struct& metadata) {
   flatbuffers::FlatBufferBuilder fbb;
   extractNodeFlatBufferFromStruct(metadata, fbb);
-  return std::string(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                     fbb.GetSize());
+  return fbb.Release();
 }
 
 void extractStructFromNodeFlatBuffer(const FlatNode& node,

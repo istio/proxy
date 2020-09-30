@@ -214,16 +214,15 @@ TrafficDirection getTrafficDirection() {
   return TrafficDirection::Unspecified;
 }
 
-void extractEmptyNodeFlatBuffer(std::string* out) {
+flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer() {
   flatbuffers::FlatBufferBuilder fbb;
   FlatNodeBuilder node(fbb);
   auto data = node.Finish();
   fbb.Finish(data);
-  out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-              fbb.GetSize());
+  return fbb.Release();
 }
 
-void extractLocalNodeFlatBuffer(std::string* out) {
+flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
       workload_name, istio_version, mesh_id, cluster_id;
@@ -293,8 +292,7 @@ void extractLocalNodeFlatBuffer(std::string* out) {
   node.add_app_containers(app_containers_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-  out->assign(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-              fbb.GetSize());
+  return fbb.Release();
 }
 
 // Host header is used if use_host_header_fallback==true.
