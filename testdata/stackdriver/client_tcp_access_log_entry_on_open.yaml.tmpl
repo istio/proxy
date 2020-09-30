@@ -4,11 +4,13 @@ labels:
   response_flag: "-"
   service_authentication_policy: ""
   {{- if .Vars.DestinationUnknown }}
+  destination_service_name: server.default.svc.cluster.local
   destination_name: ""
   destination_namespace: ""
   destination_workload: ""
   {{- else }}
   destination_name: ratings-v1-84975bc778-pxz2w
+  destination_service_name: server
   destination_namespace: default
   destination_workload: ratings-v1
   destination_app: ratings

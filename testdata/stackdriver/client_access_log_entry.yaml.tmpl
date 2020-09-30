@@ -18,6 +18,7 @@ labels:
   destination_name: ""
   destination_namespace: ""
   destination_workload: ""
+  destination_service_name: server.default.svc.cluster.local
   {{- else }}
   destination_name: ratings-v1-84975bc778-pxz2w
   destination_namespace: default
@@ -26,6 +27,7 @@ labels:
   destination_canonical_service: ratings
   destination_canonical_revision: version-1
   destination_version: v1
+  destination_service_name: server
   {{- end }}
   protocol: http
   log_sampled: "false"

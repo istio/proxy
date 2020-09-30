@@ -105,6 +105,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.start_time = 0;
   request_info.request_operation = "GET";
   request_info.destination_service_host = "httpbin.org";
+  request_info.destination_service_name = "httpbin";
   request_info.response_flag = "-";
   request_info.request_protocol = "HTTP";
   request_info.destination_principal = "destination_principal";
@@ -168,6 +169,7 @@ std::string write_audit_request_json = R"({
         "labels":{
            "destination_principal":"destination_principal",
            "destination_service_host":"httpbin.org",
+           "destination_service_name":"httpbin",
            "request_id":"123",
            "source_namespace":"test_peer_namespace",
            "source_principal":"source_principal",
@@ -217,6 +219,7 @@ std::string write_log_request_json = R"({
            "source_name":"test_peer_pod",
            "destination_principal":"destination_principal",
            "destination_service_host":"httpbin.org",
+           "destination_service_name":"httpbin",
            "request_id":"123",
            "source_namespace":"test_peer_namespace",
            "source_principal":"source_principal",
