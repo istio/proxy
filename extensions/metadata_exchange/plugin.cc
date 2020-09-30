@@ -42,8 +42,6 @@ using Base64 = Envoy::Base64;
 
 #endif
 
-namespace {}  // namespace
-
 static RegisterContextFactory register_MetadataExchange(
     CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
 
