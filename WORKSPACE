@@ -37,10 +37,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/istio/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2020-09-08 - Branch: release-1.7
-ENVOY_SHA = "376cc83bc44d9b90355f9a736797b27100e85177"
+# Commit date: 2020-10-03 - Branch: release-1.7
+ENVOY_SHA = "5ff81ddc86f4f789310aa91bee918af27897adfb"
 
-ENVOY_SHA256 = "b7824f5b31e23252025ced988cf184bf59479ada4438db3817ff24c18ec0f849"
+ENVOY_SHA256 = "746323d10d4e40c5826489e62234cfda756752488e79a0ea0bbfcc9068715cc5"
 
 ENVOY_ORG = "istio"
 
