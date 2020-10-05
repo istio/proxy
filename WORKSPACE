@@ -40,9 +40,9 @@ bind(
 # commit date: 06/30/2020
 # Used by scripts/generate-wasm.sh
 
-ENVOY_SHA = "a1ef7b2bef6675a92f27abc21d96c02a95d9899f"
+ENVOY_SHA = "c4e61373ef54aa4b02299226c0680aa6e54b250d"
 
-ENVOY_SHA256 = "21725cecc7b27f5d4452096322158a0a1570cc9ad95c64cc9c33306a2e03bd69"
+ENVOY_SHA256 = "b3e05232890cf3f20a9cf367964aa3d53d86607fff049c0311ac0ac223ca1fe6"
 
 ENVOY_ORG = "istio"
 
