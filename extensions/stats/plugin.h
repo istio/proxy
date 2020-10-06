@@ -212,7 +212,7 @@ class PluginRootContext : public RootContext {
                         MetricTag{"cache", MetricTag::TagType::String}});
     cache_hits_ = cache_count.resolve("stats_filter", "hit");
     cache_misses_ = cache_count.resolve("stats_filter", "miss");
-    ::Wasm::Common::extractEmptyNodeFlatBuffer(&empty_node_info_);
+    empty_node_info_ = ::Wasm::Common::extractEmptyNodeFlatBuffer();
   }
 
   ~PluginRootContext() = default;
@@ -245,8 +245,8 @@ class PluginRootContext : public RootContext {
   std::optional<uint32_t> addIntExpression(const std::string& input);
 
  private:
-  std::string local_node_info_;
-  std::string empty_node_info_;
+  flatbuffers::DetachedBuffer local_node_info_;
+  flatbuffers::DetachedBuffer empty_node_info_;
 
   IstioDimensions istio_dimensions_;
 

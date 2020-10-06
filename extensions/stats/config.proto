@@ -77,6 +77,7 @@ message PluginConfig {
   int32 max_peer_cache_size = 2;
 
   // prefix to add to stats emitted by the plugin.
+  // DEPRECATED.
   string stat_prefix = 3;  // default: "istio_"
 
   // Stats api squashes dimensions in a single string.

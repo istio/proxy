@@ -284,17 +284,14 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
 
 void MetadataExchangeFilter::updatePeer(
     const Envoy::ProtobufWkt::Struct& struct_value) {
-  flatbuffers::FlatBufferBuilder fbb;
-  if (!::Wasm::Common::extractNodeFlatBuffer(struct_value, fbb)) {
-    return;
-  }
+  const auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(struct_value);
 
   // Filter object captures schema by view, hence the global singleton for the
   // prototype.
   auto state = std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(
       MetadataExchangeConfig::nodeInfoPrototype());
-  state->setValue(absl::string_view(
-      reinterpret_cast<const char*>(fbb.GetBufferPointer()), fbb.GetSize()));
+  state->setValue(
+      absl::string_view(reinterpret_cast<const char*>(fb.data()), fb.size()));
 
   auto key = config_->filter_direction_ == FilterDirection::Downstream
                  ? ::Wasm::Common::kDownstreamMetadataKey
@@ -320,14 +317,10 @@ void MetadataExchangeFilter::updatePeerId(absl::string_view key,
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
   if (local_info_.node().has_metadata()) {
-    google::protobuf::Struct node_metadata = local_info_.node().metadata();
-    google::protobuf::Value value_struct;
-
-    const auto status =
-        Wasm::Common::extractNodeMetadataValue(node_metadata, metadata);
-    if (!status.ok()) {
-      return;
-    }
+    const auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(
+        local_info_.node().metadata());
+    ::Wasm::Common::extractStructFromNodeFlatBuffer(
+        *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fb.data()), metadata);
   }
 }
 

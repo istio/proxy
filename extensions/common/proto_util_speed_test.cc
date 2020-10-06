@@ -80,15 +80,13 @@ static void BM_ReadFlatBuffer(benchmark::State& state) {
   JsonParseOptions json_parse_options;
   JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
                       json_parse_options);
-  flatbuffers::FlatBufferBuilder fbb(1024);
-  extractNodeFlatBuffer(metadata_struct, fbb);
+  auto out = extractNodeFlatBufferFromStruct(metadata_struct);
 
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
   setData(
       filter_state, metadata_key,
-      std::string_view(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                       fbb.GetSize()));
+      std::string_view(reinterpret_cast<const char*>(out.data()), out.size()));
 
   size_t size = 0;
   for (auto _ : state) {
@@ -138,14 +136,13 @@ static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
       test_struct.ParseFromArray(bytes.data(), bytes.size());
       benchmark::DoNotOptimize(test_struct);
 
-      flatbuffers::FlatBufferBuilder fbb;
-      extractNodeFlatBuffer(test_struct, fbb);
+      auto out = extractNodeFlatBufferFromStruct(test_struct);
 
       node_info =
           cache
-              .emplace(node_id, std::string(reinterpret_cast<const char*>(
-                                                fbb.GetBufferPointer()),
-                                            fbb.GetSize()))
+              .emplace(node_id,
+                       std::string(reinterpret_cast<const char*>(out.data()),
+                                   out.size()))
               .first->second;
     } else {
       node_info = nodeinfo_it->second;
@@ -163,13 +160,3 @@ BENCHMARK(BM_WriteFlatBufferWithCache);
 #ifdef NULL_PLUGIN
 }  // namespace Wasm
 #endif
-
-// Boilerplate main(), which discovers benchmarks in the same file and runs
-// them.
-int main(int argc, char** argv) {
-  benchmark::Initialize(&argc, argv);
-  if (benchmark::ReportUnrecognizedArguments(argc, argv)) {
-    return 1;
-  }
-  benchmark::RunSpecifiedBenchmarks();
-}

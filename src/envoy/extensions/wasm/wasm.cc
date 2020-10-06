@@ -16,6 +16,7 @@
 
 #include "common/stats/utility.h"
 #include "common/version/version.h"
+#include "server/admin/prometheus_stats.h"
 #include "src/envoy/extensions/wasm/context.h"
 
 namespace Envoy {
@@ -85,7 +86,10 @@ class IstioWasm : public Wasm {
 
 class IstioWasmExtension : public EnvoyWasm {
  public:
-  IstioWasmExtension() = default;
+  IstioWasmExtension() {
+    ::Envoy::Server::PrometheusStatsFormatter::registerPrometheusNamespace(
+        "istio");
+  }
   ~IstioWasmExtension() override = default;
   std::unique_ptr<EnvoyWasmVmIntegration> createEnvoyWasmVmIntegration(
       const Stats::ScopeSharedPtr& scope, absl::string_view runtime,

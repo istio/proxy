@@ -19,7 +19,7 @@ licenses(["notice"])
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_binary",
+    "envoy_cc_benchmark_binary",
     "envoy_cc_library",
     "envoy_cc_test",
     "envoy_package",
@@ -111,9 +111,8 @@ envoy_cc_test(
     ],
 )
 
-envoy_cc_binary(
+envoy_cc_benchmark_binary(
     name = "proto_util_speed_test",
-    testonly = True,
     srcs = ["proto_util_speed_test.cc"],
     external_deps = [
         "benchmark",

@@ -169,25 +169,28 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
 
 // Get local node metadata. If mesh id is not filled or does not exist,
 // fall back to default format `proj-<project-number>`.
-void getLocalNodeMetadata(google::protobuf::Struct* node_metadata) {
-  if (!getMessageValue({"node", "metadata"}, node_metadata)) {
-    return;
-  }
-  const auto mesh_id_it = node_metadata->fields().find("MESH_ID");
-  if (mesh_id_it != node_metadata->fields().end() &&
+flatbuffers::DetachedBuffer getLocalNodeMetadata() {
+  google::protobuf::Struct node;
+  auto local_node_info = ::Wasm::Common::extractLocalNodeFlatBuffer();
+  ::Wasm::Common::extractStructFromNodeFlatBuffer(
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info.data()),
+      &node);
+  const auto mesh_id_it = node.fields().find("MESH_ID");
+  if (mesh_id_it != node.fields().end() &&
       !mesh_id_it->second.string_value().empty() &&
       absl::StartsWith(mesh_id_it->second.string_value(), "proj-")) {
-    return;
+    // do nothing
+  } else {
+    // Insert or update mesh id to default format as it is missing, empty, or
+    // not properly set.
+    auto project_number = getProjectNumber();
+    auto* mesh_id_field =
+        (*node.mutable_fields())["MESH_ID"].mutable_string_value();
+    if (!project_number.empty()) {
+      *mesh_id_field = absl::StrCat("proj-", project_number);
+    }
   }
-
-  // Insert or update mesh id to default format as it is missing, empty, or not
-  // properly set.
-  auto project_number = getProjectNumber();
-  auto* mesh_id_field =
-      (*node_metadata->mutable_fields())["MESH_ID"].mutable_string_value();
-  if (!project_number.empty()) {
-    *mesh_id_field = absl::StrCat("proj-", project_number);
-  }
+  return ::Wasm::Common::extractNodeFlatBufferFromStruct(node);
 }
 
 }  // namespace
@@ -221,12 +224,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
             configuration + ", " + status.message().ToString());
     return false;
   }
-  google::protobuf::Struct node;
-  getLocalNodeMetadata(&node);
-  if (!::Wasm::Common::extractLocalNodeFlatBuffer(&local_node_info_, node)) {
-    logWarn("cannot extract local node metadata");
-    return false;
-  }
+  local_node_info_ = getLocalNodeMetadata();
 
   direction_ = ::Wasm::Common::getTrafficDirection();
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
@@ -386,7 +384,8 @@ void StackdriverRootContext::record() {
       {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          peer_found ? peer.data() : empty_node_info_.data());
+          peer_found ? reinterpret_cast<const uint8_t*>(peer.data())
+                     : empty_node_info_.data());
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
   const ::Wasm::Common::FlatNode& destination_node_info =
       outbound ? peer_node : local_node;
@@ -437,7 +436,8 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
   const ::Wasm::Common::FlatNode& peer_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          peer_found ? peer.data() : empty_node_info_.data());
+          peer_found ? reinterpret_cast<const uint8_t*>(peer.data())
+                     : empty_node_info_.data());
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
   const ::Wasm::Common::FlatNode& destination_node_info =
       outbound ? peer_node : local_node;

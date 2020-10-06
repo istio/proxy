@@ -36,29 +36,35 @@ using namespace google::protobuf::util;
 
 constexpr std::string_view node_metadata_json = R"###(
 {
-   "NAMESPACE":"test_namespace",
-   "CLUSTER_ID": "test-cluster",
-   "PLATFORM_METADATA":{
-      "gcp_project":"test_project",
-      "gcp_cluster_location":"test_location",
-      "gcp_cluster_name":"test_cluster"
-   },
-   "WORKLOAD_NAME":"test_workload",
-   "OWNER":"test_owner",
    "NAME":"test_pod",
-   "APP_CONTAINERS": "test,hello"
+   "NAMESPACE":"test_namespace",
+   "OWNER":"test_owner",
+   "WORKLOAD_NAME":"test_workload",
+   "ISTIO_VERSION":"1.8",
+   "MESH_ID":"istio-mesh",
+   "CLUSTER_ID":"test-cluster",
+   "LABELS":{
+      "app":"test",
+      "version":"v1"
+    },
+   "PLATFORM_METADATA":{
+      "gcp_cluster_location":"test_location",
+      "gcp_cluster_name":"test_cluster",
+      "gcp_project":"test_project"
+   },
+   "APP_CONTAINERS": "hello,test"
 }
 )###";
 
 // Test all possible metadata field.
-TEST(ContextTest, extractNodeMetadata) {
+TEST(ProtoUtilTest, extractNodeMetadata) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
-                      json_parse_options);
-  flatbuffers::FlatBufferBuilder fbb(1024);
-  EXPECT_TRUE(extractNodeFlatBuffer(metadata_struct, fbb));
-  auto peer = flatbuffers::GetRoot<FlatNode>(fbb.GetBufferPointer());
+  EXPECT_TRUE(JsonStringToMessage(std::string(node_metadata_json),
+                                  &metadata_struct, json_parse_options)
+                  .ok());
+  auto out = extractNodeFlatBufferFromStruct(metadata_struct);
+  auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
   EXPECT_EQ(peer->name()->string_view(), "test_pod");
   EXPECT_EQ(peer->namespace_()->string_view(), "test_namespace");
   EXPECT_EQ(peer->owner()->string_view(), "test_owner");
@@ -71,22 +77,36 @@ TEST(ContextTest, extractNodeMetadata) {
   EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
 }
 
-// Test extractNodeMetadataValue.
-TEST(ContextTest, extractNodeMetadataValue) {
+// Test roundtripping
+TEST(ProtoUtilTest, Rountrip) {
   google::protobuf::Struct metadata_struct;
-  auto node_metadata_map = metadata_struct.mutable_fields();
-  (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("NAMESPACE,LABELS");
-  (*node_metadata_map)["NAMESPACE"].set_string_value("default");
-  (*node_metadata_map)["LABELS"].set_string_value("{app, details}");
-  google::protobuf::Struct value_struct;
-  const auto status = extractNodeMetadataValue(metadata_struct, &value_struct);
-  EXPECT_EQ(status, Status::OK);
-  auto namespace_iter = value_struct.fields().find("NAMESPACE");
-  EXPECT_TRUE(namespace_iter != value_struct.fields().end());
-  EXPECT_EQ(namespace_iter->second.string_value(), "default");
-  auto label_iter = value_struct.fields().find("LABELS");
-  EXPECT_TRUE(label_iter != value_struct.fields().end());
-  EXPECT_EQ(label_iter->second.string_value(), "{app, details}");
+  JsonParseOptions json_parse_options;
+  EXPECT_TRUE(JsonStringToMessage(std::string(node_metadata_json),
+                                  &metadata_struct, json_parse_options)
+                  .ok());
+  auto out = extractNodeFlatBufferFromStruct(metadata_struct);
+  auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
+
+  google::protobuf::Struct output_struct;
+  extractStructFromNodeFlatBuffer(*peer, &output_struct);
+
+  // Validate serialized bytes
+  std::string input_bytes;
+  EXPECT_TRUE(serializeToStringDeterministic(metadata_struct, &input_bytes));
+  std::string output_bytes;
+  EXPECT_TRUE(serializeToStringDeterministic(output_struct, &output_bytes));
+  EXPECT_EQ(input_bytes, output_bytes)
+      << metadata_struct.DebugString() << output_struct.DebugString();
+}
+
+// Test roundtrip for an empty struct (for corner cases)
+TEST(ProtoUtilTest, RountripEmpty) {
+  google::protobuf::Struct metadata_struct;
+  auto out = extractNodeFlatBufferFromStruct(metadata_struct);
+  auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
+  google::protobuf::Struct output_struct;
+  extractStructFromNodeFlatBuffer(*peer, &output_struct);
+  EXPECT_EQ(0, output_struct.fields().size());
 }
 
 }  // namespace Common

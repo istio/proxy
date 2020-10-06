@@ -5,10 +5,12 @@ location: https://istio.io/docs/reference/config/proxy_extensions/stackdriver.ht
 layout: protoc-gen-docs
 generator: protoc-gen-docs
 weight: 20
-number_of_entries: 1
+number_of_entries: 2
 ---
 <h2 id="PluginConfig">PluginConfig</h2>
 <section>
+<p>next id: 12</p>
+
 <table class="message-fields">
 <thead>
 <tr>
@@ -19,11 +21,11 @@ number_of_entries: 1
 </tr>
 </thead>
 <tbody>
-<tr id="PluginConfig-disable_server_access_logging">
-<td><code>disableServerAccessLogging</code></td>
+<tr id="PluginConfig-enable_audit_log">
+<td><code>enableAuditLog</code></td>
 <td><code>bool</code></td>
 <td>
-<p>Optional. Controls whether to export server access log.</p>
+<p>Optional. Controls whether to export audit log.</p>
 
 </td>
 <td>
@@ -121,6 +123,78 @@ metrics are enabled).</p>
 </td>
 <td>
 No
+</td>
+</tr>
+<tr id="PluginConfig-enable_log_compression">
+<td><code>enableLogCompression</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#boolvalue">BoolValue</a></code></td>
+<td>
+<p>Optional. Allows enabling log compression for stackdriver access logs.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-access_logging">
+<td><code>accessLogging</code></td>
+<td><code><a href="#PluginConfig-AccessLogging">AccessLogging</a></code></td>
+<td>
+<p>Optional. Controls what type of logs to export..</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-disable_server_access_logging" class="deprecated ">
+<td><code>disableServerAccessLogging</code></td>
+<td><code>bool</code></td>
+<td>
+<p>Optional. Controls whether to export server access log.
+This is deprecated in favor of AccessLogging enum.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="PluginConfig-AccessLogging">PluginConfig.AccessLogging</h2>
+<section>
+<p>Types of Access logs to export. Does not affect audit logging.</p>
+
+<table class="enum-values">
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="PluginConfig-AccessLogging-NONE">
+<td><code>NONE</code></td>
+<td>
+<p>No Logs.</p>
+
+</td>
+</tr>
+<tr id="PluginConfig-AccessLogging-FULL">
+<td><code>FULL</code></td>
+<td>
+<p>All logs including both success and error logs.</p>
+
+</td>
+</tr>
+<tr id="PluginConfig-AccessLogging-ERRORS_ONLY">
+<td><code>ERRORS_ONLY</code></td>
+<td>
+<p>All error logs. This is currently only available for outbound/client side
+logs. A request is classified as error when <code>status&gt;=400 or
+response_flag != &quot;-&quot;</code></p>
+
 </td>
 </tr>
 </tbody>
