@@ -35,8 +35,9 @@
 namespace Wasm {
 namespace Common {
 
-void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
-                                     flatbuffers::FlatBufferBuilder& fbb) {
+flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
+    const google::protobuf::Struct& metadata) {
+  flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
       workload_name, istio_version, mesh_id, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
@@ -105,12 +106,6 @@ void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
   node.add_app_containers(app_containers_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-}
-
-flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
-    const google::protobuf::Struct& metadata) {
-  flatbuffers::FlatBufferBuilder fbb;
-  extractNodeFlatBufferFromStruct(metadata, fbb);
   return fbb.Release();
 }
 

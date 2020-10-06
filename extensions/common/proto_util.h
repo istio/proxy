@@ -26,10 +26,6 @@ namespace Wasm {
 namespace Common {
 
 // Extract node info into a flatbuffer from a struct.
-void extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata,
-                                     flatbuffers::FlatBufferBuilder& fbb);
-
-// Extract node info into a flatbuffer from a struct.
 flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
     const google::protobuf::Struct& metadata);
 

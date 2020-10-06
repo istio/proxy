@@ -136,10 +136,8 @@ bool PluginRootContext::updatePeer(std::string_view key,
     return false;
   }
 
-  flatbuffers::FlatBufferBuilder fbb;
-  ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata, fbb);
-  std::string_view out(reinterpret_cast<const char*>(fbb.GetBufferPointer()),
-                       fbb.GetSize());
+  auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata);
+  std::string_view out(reinterpret_cast<const char*>(fb.data()), fb.size());
   setFilterState(key, out);
 
   if (max_peer_cache_size_ > 0) {
