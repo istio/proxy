@@ -65,18 +65,6 @@ func init() {
 			"TestStatsECDS/envoy.wasm.runtime.null",
 			"TestStatsECDS/envoy.wasm.runtime.v8",
 			"TestStatsECDS/envoy.wasm.runtime.v8#01",
-			"TestBasicAuth/CorrectCredentials/envoy.wasm.runtime.null",
-			"TestBasicAuth/IncorrectCredentials/envoy.wasm.runtime.null",
-			"TestBasicAuth/MissingCredentials/envoy.wasm.runtime.null",
-			"TestBasicAuth/NoPathMatch/envoy.wasm.runtime.null",
-			"TestBasicAuth/NoMethodMatch/envoy.wasm.runtime.null",
-			"TestBasicAuth/NoConfigurationCredentialsProvided/envoy.wasm.runtime.null",
-			"TestBasicAuth/CorrectCredentials/envoy.wasm.runtime.v8",
-			"TestBasicAuth/IncorrectCredentials/envoy.wasm.runtime.v8",
-			"TestBasicAuth/MissingCredentials/envoy.wasm.runtime.v8",
-			"TestBasicAuth/NoPathMatch/envoy.wasm.runtime.v8",
-			"TestBasicAuth/NoMethodMatch/envoy.wasm.runtime.v8",
-			"TestBasicAuth/NoConfigurationCredentialsProvided/envoy.wasm.runtime.v8",
 		},
 	}
 }
