@@ -1,0 +1,21 @@
+{
+  "quota_configs": [
+    { 
+      "domain": "productpage",
+      "max_tokens":2,
+      "tokens_per_fill":2,
+      "fill_interval": "1s",
+      "descriptors":{
+        "node.metadata['LABELS']['service.istio.io/canonical-name']":"{{ .Vars.CanonicalName }}",
+        "node.metadata['LABELS']['service.istio.io/canonical-revision']":"version-1"
+      }
+    },
+    {
+      "domain": "*",
+      "max_tokens":100,
+      "tokens_per_fill":10,
+      "fill_interval": "60s",
+      "descriptors":{}
+    }
+  ]
+}

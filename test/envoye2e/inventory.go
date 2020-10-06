@@ -65,6 +65,8 @@ func init() {
 			"TestStatsECDS/envoy.wasm.runtime.null",
 			"TestStatsECDS/envoy.wasm.runtime.v8",
 			"TestStatsECDS/envoy.wasm.runtime.v8#01",
+			"TestLocalRateLimitFilter/MatchConfig",
+			"TestLocalRateLimitFilter/DefaultConfig",
 		},
 	}
 }

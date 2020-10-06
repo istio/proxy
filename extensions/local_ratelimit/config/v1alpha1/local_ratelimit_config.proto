@@ -1,0 +1,60 @@
+/* Copyright 2019 Istio Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+// clang-format off
+// $title: LocalRateLimit Config
+// $description: Configuration for LocalRateLimit Filter.
+// $location: https://istio.io/docs/reference/config/proxy_extensions/localratelimit.html
+// $weight: 20
+// clang-format on
+
+// Local Ratelimit plugin provides ability to do rate limiting per instance.
+package localratelimit.config.v1alpha1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+message QuotaConfig {
+  // The maximum tokens that the bucket can hold. This is also the number of
+  // tokens that the bucket initially contains.
+  uint32 max_tokens = 1;
+
+  // The number of tokens added to the bucket during each fill interval. If not
+  // specified, defaults to a single token.
+  google.protobuf.UInt32Value tokens_per_fill = 2;
+
+  // The fill interval that tokens are added to the bucket. During each fill
+  // interval `tokens_per_fill` are added to the bucket. The bucket will never
+  // contain more than `max_tokens` tokens.
+  google.protobuf.Duration fill_interval = 3;
+
+  // Optional. Descriptors
+  // Key is the attribute expression that Istio RateLimit will understand.
+  // Value is the value on which rate limiting needs to be applied.
+  map<string, string> descriptors = 4;
+
+  string domain = 5;
+}
+
+// Top level Config for Rate Limit Config Filter.
+message LocalRateLimitConfig {
+  // next id: 1
+  // Quota configs on which we need to provide rate limiting.
+  // It is keyed by the unique name distinguishing this QuotaConfig.
+  // Ordering is based on the first match of the specified config.
+  repeated QuotaConfig quota_configs = 1;
+}
