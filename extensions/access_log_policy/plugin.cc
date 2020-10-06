@@ -77,11 +77,6 @@ bool PluginRootContext::onConfigure(size_t size) {
 }
 
 bool PluginRootContext::configure(size_t configuration_size) {
-  if (::Wasm::Common::TrafficDirection::Inbound !=
-      ::Wasm::Common::getTrafficDirection()) {
-    logError("ASM Acess Logging Policy is an inbound filter only.");
-    return false;
-  }
   auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
                                            0, configuration_size);
   auto configuration = configuration_data->toString();

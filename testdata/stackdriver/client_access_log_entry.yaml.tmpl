@@ -30,7 +30,11 @@ labels:
   destination_service_name: server
   {{- end }}
   protocol: http
+  {{- if .Vars.LogSampled }}
+  log_sampled: "true"
+  {{- else }}
   log_sampled: "false"
+  {{- end }}
   upstream_cluster: "outbound|9080|http|server.default.svc.cluster.local"
   route_name: ""
   requested_server_name: ""
