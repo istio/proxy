@@ -23,7 +23,8 @@ filter_chains:
         - name: server
           domains: ["*"]
           routes:
-          - match: { prefix: / }
+          - name: server_route
+            match: { prefix: / }
             route:
               cluster: inbound|9080|http|server.default.svc.cluster.local
               timeout: 0s
