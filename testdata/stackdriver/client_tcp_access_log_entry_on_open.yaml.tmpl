@@ -24,10 +24,6 @@ labels:
   connection_state: "OPEN"
   log_sampled: "false"
   upstream_cluster: "outbound|9080|tcp|server.default.svc.cluster.local"
-  route_name: ""
-  requested_server_name: ""
-  x-envoy-original-dst-host: ""
-  x-envoy-original-path: ""
 severity: INFO
 {{- if .Vars.DestinationUnknown }}
 text_payload: "productpage-v1 --> server.default.svc.cluster.local"
