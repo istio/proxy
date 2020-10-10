@@ -187,7 +187,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
     // vm.
     Extensions::Common::Wasm::createWasm(
         proto_config.config().vm_config(), plugin_, scope_, cluster_manager_,
-        init_manager_, dispatcher_, random_, *api, lifecycle_notifier_,
+        init_manager_, dispatcher_, *api, lifecycle_notifier_,
         remote_data_provider_,
         [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; },
         [](Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
@@ -254,7 +254,6 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   Stats::ScopeSharedPtr scope_;
   NiceMock<ThreadLocal::MockInstance> tls_;
   NiceMock<Event::MockDispatcher> dispatcher_;
-  NiceMock<Random::MockRandomGenerator> random_;
   NiceMock<Upstream::MockClusterManager> cluster_manager_;
   NiceMock<Init::MockManager> init_manager_;
   WasmHandleSharedPtr wasm_;
