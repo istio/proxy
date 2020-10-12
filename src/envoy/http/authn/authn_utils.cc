@@ -39,11 +39,12 @@ static const std::string kExchangedTokenOriginalPayload = "original_claims";
 void process(const Wasm::Common::JsonObject& json_obj,
              google::protobuf::Struct& claims) {
   for (const auto& claim : json_obj.items()) {
-    auto json_key = Wasm::Common::JsonValueAs<std::string>(claim.key());
+    auto claim_key = claim.key();
+    auto json_key = Wasm::Common::JsonValueAs<absl::string_view>(claim_key);
     if (json_key.second != Wasm::Common::JsonParserResultDetail::OK) {
       continue;
     }
-    std::string key = json_key.first.value();
+    std::string key(json_key.first.value());
 
     // 1. Try to parse as string.
     auto value_string =
