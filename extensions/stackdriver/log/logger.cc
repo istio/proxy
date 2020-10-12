@@ -150,6 +150,14 @@ void fillSourceLabels(
   }
 }
 
+void fillExtraLabels(
+    const std::unordered_map<std::string, std::string>& extra_labels,
+    google::protobuf::Map<std::string, std::string>* label_map) {
+  for (const auto& extra_label : extra_labels) {
+    (*label_map)[extra_label.first] = extra_label.second;
+  }
+}
+
 }  // namespace
 
 using google::protobuf::util::TimeUtil;
@@ -167,8 +175,9 @@ constexpr char kClientAuditLogName[] = "client-istio-audit-log";
 void Logger::initializeLogEntryRequest(
     const flatbuffers::Vector<flatbuffers::Offset<Wasm::Common::KeyVal>>*
         platform_metadata,
-    const ::Wasm::Common::FlatNode& local_node_info, bool outbound,
-    bool audit) {
+    const ::Wasm::Common::FlatNode& local_node_info,
+    const std::unordered_map<std::string, std::string>& extra_labels,
+    bool outbound, bool audit) {
   LogEntryType log_entry_type = GetLogEntryType(outbound, audit);
   log_entries_request_map_[log_entry_type]->request =
       std::make_unique<google::logging::v2::WriteLogEntriesRequest>();
@@ -203,10 +212,15 @@ void Logger::initializeLogEntryRequest(
   // Set common labels shared by all client entries or server entries
   outbound ? fillSourceLabels(local_node_info, label_map, audit)
            : fillDestinationLabels(local_node_info, label_map, audit);
+  if (!audit) {
+    fillExtraLabels(extra_labels, label_map);
+  }
 }
 
 Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
-               std::unique_ptr<Exporter> exporter, int log_request_size_limit) {
+               std::unique_ptr<Exporter> exporter,
+               const std::unordered_map<std::string, std::string>& extra_labels,
+               int log_request_size_limit) {
   const auto platform_metadata = local_node_info.platform_metadata();
   const auto project_iter =
       platform_metadata ? platform_metadata->LookupByKey(Common::kGCPProjectKey)
@@ -218,28 +232,30 @@ Logger::Logger(const ::Wasm::Common::FlatNode& local_node_info,
   // Initalize the current WriteLogEntriesRequest for client/server
   log_entries_request_map_[LogEntryType::Client] =
       std::make_unique<Logger::WriteLogEntryRequest>();
-  initializeLogEntryRequest(platform_metadata, local_node_info,
+  initializeLogEntryRequest(platform_metadata, local_node_info, extra_labels,
                             true /*outbound */, false /* audit */);
   log_entries_request_map_[Logger::LogEntryType::Server] =
       std::make_unique<Logger::WriteLogEntryRequest>();
-  initializeLogEntryRequest(platform_metadata, local_node_info,
+  initializeLogEntryRequest(platform_metadata, local_node_info, extra_labels,
                             false /* outbound */, false /* audit */);
   log_entries_request_map_[LogEntryType::ClientAudit] =
       std::make_unique<Logger::WriteLogEntryRequest>();
-  initializeLogEntryRequest(platform_metadata, local_node_info,
+  initializeLogEntryRequest(platform_metadata, local_node_info, extra_labels,
                             true /*outbound */, true /* audit */);
   log_entries_request_map_[Logger::LogEntryType::ServerAudit] =
       std::make_unique<Logger::WriteLogEntryRequest>();
-  initializeLogEntryRequest(platform_metadata, local_node_info,
+  initializeLogEntryRequest(platform_metadata, local_node_info, extra_labels,
                             false /* outbound */, true /* audit */);
 
   log_request_size_limit_ = log_request_size_limit;
   exporter_ = std::move(exporter);
 }
 
-void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                            const ::Wasm::Common::FlatNode& peer_node_info,
-                            long int log_time, bool outbound, bool audit) {
+void Logger::addTcpLogEntry(
+    const ::Wasm::Common::RequestInfo& request_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    const std::unordered_map<std::string, std::string>& extra_labels,
+    long int log_time, bool outbound, bool audit) {
   // create a new log entry
   auto* log_entries = log_entries_request_map_[GetLogEntryType(outbound, audit)]
                           ->request->mutable_entries();
@@ -250,13 +266,15 @@ void Logger::addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
 
   addTCPLabelsToLogEntry(request_info, peer_node_info, new_entry, outbound,
                          audit);
-  fillAndFlushLogEntry(request_info, peer_node_info, new_entry, outbound,
-                       audit);
+  fillAndFlushLogEntry(request_info, peer_node_info, extra_labels, new_entry,
+                       outbound, audit);
 }
 
-void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
-                         const ::Wasm::Common::FlatNode& peer_node_info,
-                         bool outbound, bool audit) {
+void Logger::addLogEntry(
+    const ::Wasm::Common::RequestInfo& request_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    const std::unordered_map<std::string, std::string>& extra_labels,
+    bool outbound, bool audit) {
   // create a new log entry
   auto* log_entries = log_entries_request_map_[GetLogEntryType(outbound, audit)]
                           ->request->mutable_entries();
@@ -266,13 +284,14 @@ void Logger::addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
       google::protobuf::util::TimeUtil::NanosecondsToTimestamp(
           request_info.start_time);
   fillHTTPRequestInLogEntry(request_info, new_entry);
-  fillAndFlushLogEntry(request_info, peer_node_info, new_entry, outbound,
-                       audit);
+  fillAndFlushLogEntry(request_info, peer_node_info, extra_labels, new_entry,
+                       outbound, audit);
 }
 
 void Logger::fillAndFlushLogEntry(
     const ::Wasm::Common::RequestInfo& request_info,
     const ::Wasm::Common::FlatNode& peer_node_info,
+    const std::unordered_map<std::string, std::string>& extra_labels,
     google::logging::v2::LogEntry* new_entry, bool outbound, bool audit) {
   new_entry->set_severity(::google::logging::type::INFO);
   auto label_map = new_entry->mutable_labels();
@@ -331,6 +350,11 @@ void Logger::fillAndFlushLogEntry(
     new_entry->set_trace_sampled(request_info.b3_trace_sampled);
   }
 
+  // This is done just before flushing, so that any customized label entry can
+  // override existing ones.
+  if (!audit) {
+    fillExtraLabels(extra_labels, new_entry->mutable_labels());
+  }
   LogEntryType log_entry_type = GetLogEntryType(outbound, audit);
   // Accumulate estimated size of the request. If the current request exceeds
   // the size limit, flush the request out.

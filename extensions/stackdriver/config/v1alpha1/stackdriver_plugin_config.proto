@@ -27,7 +27,21 @@ package stackdriver.config.v1alpha1;
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
-// next id: 14
+// Custom instance configuration overrides.
+// Provides a way to customize metrics/logs .
+message CustomConfig {
+  // (Optional) Collection of tag names and tag expressions to include in the
+  // instance. Conflicts are resolved by the tag name by overriding previously
+  // supplied values.
+  map<string, string> dimensions = 1;
+
+  // (Optional) A list of tags to remove.
+  // Not implemented yet.
+  // $hide_from_docs
+  repeated string tags_to_remove = 2;
+}
+
+// next id: 15
 message PluginConfig {
   // Types of Access logs to export. Does not affect audit logging.
   enum AccessLogging {
@@ -101,4 +115,9 @@ message PluginConfig {
 
   // Optional. Controls what type of logs to export..
   AccessLogging access_logging = 10;
+
+  // (Optional) Collection of tag names and tag expressions to include in the
+  // logs. Conflicts are resolved by the tag name by overriding previously
+  // supplied values. Does not apply to audit logs.
+  CustomConfig custom_log_config = 14;
 }

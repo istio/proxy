@@ -44,5 +44,6 @@ envoy_cc_library(
         "//extensions/stackdriver/metric",
         "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
         "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
