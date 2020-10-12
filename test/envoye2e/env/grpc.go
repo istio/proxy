@@ -17,6 +17,7 @@ package env
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"time"
@@ -33,6 +34,8 @@ import (
 type GRPCServer struct {
 	port     uint16
 	listener net.Listener
+
+	grpc_echo.UnimplementedEchoServer
 }
 
 // NewGRPCServer configures a new GRPCServer. It does not attempt to
@@ -73,6 +76,24 @@ func (g *GRPCServer) Stop() {
 // Echo implements the grpc_echo service.
 func (g *GRPCServer) Echo(ctx context.Context, req *grpc_echo.EchoRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, status.FromProto(req.ReturnStatus).Err()
+}
+
+func (g *GRPCServer) EchoStream(stream grpc_echo.Echo_EchoStreamServer) error {
+	var i uint32
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		for i = 0; i < req.ResponseCount; i++ {
+			if err = stream.Send(&empty.Empty{}); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func tryWaitForGRPCServer(addr string) error {

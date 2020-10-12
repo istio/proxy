@@ -196,7 +196,6 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
       // HTTP, HTTP/2, and GRPC metrics
       MetricFactory{
           "requests_total", MetricType::Counter,
-
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
           false},
       MetricFactory{
@@ -206,15 +205,26 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
           },
           false},
       MetricFactory{"request_bytes", MetricType::Histogram,
-
                     [](const ::Wasm::Common::RequestInfo& request_info)
                         -> uint64_t { return request_info.request_size; },
                     false},
       MetricFactory{"response_bytes", MetricType::Histogram,
-
                     [](const ::Wasm::Common::RequestInfo& request_info)
                         -> uint64_t { return request_info.response_size; },
                     false},
+      // GRPC metrics.
+      MetricFactory{
+          "request_messages", MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.request_message_count;
+          },
+          false},
+      MetricFactory{
+          "response_messages", MetricType::Counter,
+          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+            return request_info.response_message_count;
+          },
+          false},
       // TCP metrics.
       MetricFactory{"tcp_sent_bytes_total", MetricType::Counter,
                     [](const ::Wasm::Common::RequestInfo& request_info)

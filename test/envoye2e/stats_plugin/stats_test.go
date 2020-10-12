@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	dto "github.com/prometheus/client_model/go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -280,6 +281,7 @@ func TestStatsGrpc(t *testing.T) {
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	enableStats(t, params.Vars)
+
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
@@ -302,6 +304,54 @@ func TestStatsGrpc(t *testing.T) {
 				AdminPort: params.Ports.ClientAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total.yaml.tmpl"},
+				}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStatsGrpcStream(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"RequestMessages":            "3",  // 3 from stream
+		"ResponseMessages":           "13", // 13 from stream
+		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
+		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
+		"WasmRuntime":                "envoy.wasm.runtime.null",
+		"DisableDirectResponse":      "true",
+		"UsingGrpcBackend":           "true",
+		"GrpcResponseStatus":         "2",
+		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"StatsFilterClientConfig":    "{}",
+		"StatsFilterServerConfig":    "{}",
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	enableStats(t, params.Vars)
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/grpc_stats.yaml") + params.Vars["ClientHTTPFilters"]
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/grpc_stats.yaml") + params.Vars["ServerHTTPFilters"]
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.GrpcServer{},
+			&driver.GrpcStream{Counts: []uint32{1, 5, 7}},
+			&driver.Stats{
+				AdminPort: params.Ports.ServerAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_request_messages":  &driver.ExactStat{Metric: "testdata/metric/server_request_messages.yaml.tmpl"},
+					"istio_response_messages": &driver.ExactStat{Metric: "testdata/metric/server_response_messages.yaml.tmpl"},
+				}},
+			&driver.Stats{
+				AdminPort: params.Ports.ClientAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_request_messages":  &driver.ExactStat{Metric: "testdata/metric/client_request_messages.yaml.tmpl"},
+					"istio_response_messages": &driver.ExactStat{Metric: "testdata/metric/client_response_messages.yaml.tmpl"},
 				}},
 		},
 	}).Run(params); err != nil {

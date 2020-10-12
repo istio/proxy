@@ -74,3 +74,48 @@ func (g *GrpcCall) Run(p *Params) error {
 }
 
 func (g *GrpcCall) Cleanup() {}
+
+var _ Step = &GrpcStream{}
+
+type GrpcStream struct {
+	Counts []uint32
+}
+
+func (g *GrpcStream) Run(p *Params) error {
+	proxyAddr := fmt.Sprintf("127.0.0.1:%d", p.Ports.ClientPort)
+	conn, err := grpc.Dial(proxyAddr, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return fmt.Errorf("could not establish client connection to gRPC server: %v", err)
+	}
+	defer conn.Close()
+	client := grpc_echo.NewEchoClient(conn)
+
+	stream, err := client.EchoStream(context.Background())
+	if err != nil {
+		return err
+	}
+
+	var count uint32
+	i := 0
+
+	for {
+		if i >= len(g.Counts) {
+			return nil
+		}
+		count = g.Counts[i]
+		fmt.Printf("requesting %v messages at %v stream message\n", count, i)
+		err := stream.Send(&grpc_echo.StreamRequest{ResponseCount: count})
+		if err != nil {
+			return err
+		}
+		for j := 0; j < int(count); j++ {
+			_, err = stream.Recv()
+			if err != nil {
+				return err
+			}
+		}
+		i++
+	}
+}
+
+func (g *GrpcStream) Cleanup() {}

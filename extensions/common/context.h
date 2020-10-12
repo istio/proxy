@@ -181,6 +181,10 @@ struct RequestInfo {
 
   bool is_populated = false;
   bool log_sampled = false;
+
+  // gRPC variables.
+  uint64_t request_message_count = 0;
+  uint64_t response_message_count = 0;
 };
 
 // RequestContext contains all the information available in the request.
@@ -230,6 +234,10 @@ void populateExtendedRequestInfo(RequestInfo* request_info);
 // the request context.
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
                             const std::string& destination_namespace);
+
+// populateGRPCInfo fills gRPC-related information, such as message counts.
+// Returns true if all informatio is filled.
+bool populateGRPCInfo(RequestInfo* request_info);
 
 // Read value of 'access_log_hint' key from envoy dynamic metadata which
 // determines whether to audit a request or not.
