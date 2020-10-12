@@ -99,6 +99,9 @@ class StackdriverRootContext : public RootContext {
   struct TcpRecordInfo {
     std::unique_ptr<::Wasm::Common::RequestInfo> request_info;
     bool tcp_open_entry_logged;
+    // This caches evaluated extra access log labels.
+    std::unordered_map<std::string, std::string> extra_log_labels;
+    bool expressions_evaluated;
   };
 
   // Indicates whether to export any kind of access log or not.
@@ -124,6 +127,13 @@ class StackdriverRootContext : public RootContext {
 
   // Indicates whether or not to report TCP Logs.
   bool enableTCPServerAccessLog();
+
+  // Evaluate Expressions in expressions_ vector and add it in extra_labels.
+  void evaluateExpressions(
+      std::unordered_map<std::string, std::string>& extra_labels);
+
+  // Cleanup expressions in expressions_ vector.
+  void cleanupExpressions();
 
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
@@ -164,6 +174,14 @@ class StackdriverRootContext : public RootContext {
   std::unordered_map<uint32_t,
                      std::unique_ptr<StackdriverRootContext::TcpRecordInfo>>
       tcp_request_queue_;
+
+  // Stores expressions for evaluation for custom access logs.
+  struct expressionInfo {
+    uint32_t token;
+    std::string tag;
+    std::string expression;
+  };
+  std::vector<struct expressionInfo> expressions_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

@@ -1,0 +1,13 @@
+enable_audit_log: true
+access_logging: "FULL"
+custom_log_config:
+  dimensions:
+    source_workload1: "'_' + node.metadata['WORKLOAD_NAME']"
+    source_workload_namespace1: "'_' + node.metadata['NAMESPACE']"
+    source_app1: "'_' + node.metadata['LABELS']['app']"
+    source_version1: "'_' + node.metadata['LABELS']['app']" # same as above expression
+    request_protocol: request.protocol
+    destination_version: "'_' + (has(node.metadata.LABELS.version) ? node.metadata.LABELS.version : 'unknown')"
+    destination_service_namespace: "'_' + upstream_peer.labels['app'].value"
+    destination_app: "cannot _ parse | {{ .N }}"
+    destination_workload: "cannot_evaluate"

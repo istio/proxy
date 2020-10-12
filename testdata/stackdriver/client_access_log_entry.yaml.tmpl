@@ -26,7 +26,18 @@ labels:
   destination_app: ratings
   destination_canonical_service: ratings
   destination_canonical_revision: version-1
+  destination_service_name: server
+  {{- if .Vars.LogsCustomized }}
+  source_workload1: "_productpage-v1"
+  source_workload_namespace1: "_default"
+  source_app1: "_productpage"
+  source_version1: "_productpage"
+  destination_version: "_v1"
+  request_protocol: "HTTP/1.1"
+  destination_service_namespace: "_ratings"
+  {{- else }}
   destination_version: v1
+  {{- end }}
   {{- end }}
   protocol: http
   {{- if .Vars.LogSampled }}
