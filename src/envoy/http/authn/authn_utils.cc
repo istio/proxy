@@ -43,7 +43,7 @@ void process(const Wasm::Common::JsonObject& json_obj,
     if (json_key.second != Wasm::Common::JsonParserResultDetail::OK) {
       continue;
     }
-    std::string key = json_key.first.value();
+    const std::string& key = json_key.first.value();
 
     // 1. Try to parse as string.
     auto value_string =
