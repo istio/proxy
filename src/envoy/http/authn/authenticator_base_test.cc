@@ -455,7 +455,12 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
                "claims": {
                  "iss": ["token-service"],
                  "sub": ["subject"],
-                 "aud": ["aud1", "aud2"]
+                 "aud": ["aud1", "aud2"],
+                 "original_claims": {
+                   "iss": ["https://accounts.example.com"],
+                   "sub": ["example-subject"],
+                   "email": ["user@example.com"]
+                 }
                },
                "raw_claims":"\n     {\n       \"iss\": \"token-service\",\n       \"sub\": \"subject\",\n       \"aud\": [\"aud1\", \"aud2\"],\n       \"original_claims\": {\n         \"iss\": \"https://accounts.example.com\",\n         \"sub\": \"example-subject\",\n         \"email\": \"user@example.com\"\n       }\n     }\n   "
              }

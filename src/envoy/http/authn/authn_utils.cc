@@ -36,6 +36,52 @@ static const std::string kExchangedTokenOriginalPayload = "original_claims";
 
 };  // namespace
 
+void process(const Wasm::Common::JsonObject& json_obj,
+             google::protobuf::Struct& claims) {
+  for (const auto& claim : json_obj.items()) {
+    auto json_key = Wasm::Common::JsonValueAs<std::string>(claim.key());
+    if (json_key.second != Wasm::Common::JsonParserResultDetail::OK) {
+      continue;
+    }
+    const std::string& key = json_key.first.value();
+
+    // 1. Try to parse as string.
+    auto value_string =
+        Wasm::Common::JsonGetField<absl::string_view>(json_obj, key);
+    if (value_string.detail() == Wasm::Common::JsonParserResultDetail::OK) {
+      const auto list =
+          absl::StrSplit(value_string.value().data(), ' ', absl::SkipEmpty());
+      for (const auto& s : list) {
+        (*claims.mutable_fields())[key]
+            .mutable_list_value()
+            ->add_values()
+            ->set_string_value(std::string(s));
+      }
+      continue;
+    }
+    // 2. If not a string, try to parse as list of string.
+    auto value_list =
+        Wasm::Common::JsonGetField<std::vector<absl::string_view>>(json_obj,
+                                                                   key);
+    if (value_list.detail() == Wasm::Common::JsonParserResultDetail::OK) {
+      for (const auto& s : value_list.value()) {
+        (*claims.mutable_fields())[key]
+            .mutable_list_value()
+            ->add_values()
+            ->set_string_value(std::string(s));
+      }
+      continue;
+    }
+    // 3. If not list of string, try to parse as struct (nested claims).
+    auto value_struct =
+        Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(json_obj, key);
+    if (value_struct.detail() == Wasm::Common::JsonParserResultDetail::OK) {
+      auto* nested = (*claims.mutable_fields())[key].mutable_struct_value();
+      process(value_struct.value(), *nested);
+    }
+  }
+}
+
 bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
                                    istio::authn::JwtPayload* payload) {
   auto result = Wasm::Common::JsonParse(payload_str);
@@ -47,34 +93,8 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
 
   *payload->mutable_raw_claims() = payload_str;
 
+  process(json_obj, *payload->mutable_claims());
   auto claims = payload->mutable_claims()->mutable_fields();
-  // Extract claims as string lists
-  Wasm::Common::JsonObjectIterate(
-      json_obj, [&json_obj, &claims](const std::string& key) -> bool {
-        // In current implementation, only string/string list objects are
-        // extracted
-        std::vector<absl::string_view> list;
-        auto field_value =
-            Wasm::Common::JsonGetField<std::vector<absl::string_view>>(json_obj,
-                                                                       key);
-        if (field_value.detail() != Wasm::Common::JsonParserResultDetail::OK) {
-          auto str_field_value =
-              Wasm::Common::JsonGetField<absl::string_view>(json_obj, key);
-          if (str_field_value.detail() !=
-              Wasm::Common::JsonParserResultDetail::OK) {
-            return true;
-          }
-          list = absl::StrSplit(str_field_value.value().data(), ' ',
-                                absl::SkipEmpty());
-        } else {
-          list = field_value.value();
-        }
-        for (auto& s : list) {
-          (*claims)[key].mutable_list_value()->add_values()->set_string_value(
-              std::string(s));
-        }
-        return true;
-      });
 
   // Copy audience to the audience in context.proto
   if (claims->find(kJwtAudienceKey) != claims->end()) {
