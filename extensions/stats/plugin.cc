@@ -42,6 +42,7 @@ namespace Stats {
 const uint32_t kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
 
 using ::nlohmann::json;
+using ::Wasm::Common::GetStringView;
 using ::Wasm::Common::JsonArrayIterate;
 using ::Wasm::Common::JsonGetField;
 using ::Wasm::Common::JsonObjectIterate;
@@ -49,37 +50,33 @@ using ::Wasm::Common::JsonValueAs;
 
 namespace {
 
-// Efficient way to assign flatbuffer to a vector of strings.
-// After C++17 could be simplified to a basic assignment.
-#define FB_ASSIGN(name, v) \
-  instance[name].assign((v) ? (v)->c_str() : nullptr, (v) ? (v)->size() : 0);
 void map_node(IstioDimensions& instance, bool is_source,
               const ::Wasm::Common::FlatNode& node) {
   // Ensure all properties are set (and cleared when necessary).
   if (is_source) {
-    FB_ASSIGN(source_workload, node.workload_name());
-    FB_ASSIGN(source_workload_namespace, node.namespace_());
+    instance[source_workload] = GetStringView(node.workload_name());
+    instance[source_workload_namespace] = GetStringView(node.namespace_());
 
     auto source_labels = node.labels();
     if (source_labels) {
       auto app_iter = source_labels->LookupByKey("app");
       auto app = app_iter ? app_iter->value() : nullptr;
-      FB_ASSIGN(source_app, app);
+      instance[source_app] = GetStringView(app);
 
       auto version_iter = source_labels->LookupByKey("version");
       auto version = version_iter ? version_iter->value() : nullptr;
-      FB_ASSIGN(source_version, version);
+      instance[source_version] = GetStringView(version);
 
       auto canonical_name = source_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceLabelName.data());
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
-      FB_ASSIGN(source_canonical_service, name);
+      instance[source_canonical_service] = GetStringView(name);
 
       auto rev = source_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
-        FB_ASSIGN(source_canonical_revision, rev->value());
+        instance[source_canonical_revision] = GetStringView(rev->value());
       } else {
         instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
       }
@@ -90,29 +87,29 @@ void map_node(IstioDimensions& instance, bool is_source,
       instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
   } else {
-    FB_ASSIGN(destination_workload, node.workload_name());
-    FB_ASSIGN(destination_workload_namespace, node.namespace_());
+    instance[destination_workload] = GetStringView(node.workload_name());
+    instance[destination_workload_namespace] = GetStringView(node.namespace_());
 
     auto destination_labels = node.labels();
     if (destination_labels) {
       auto app_iter = destination_labels->LookupByKey("app");
       auto app = app_iter ? app_iter->value() : nullptr;
-      FB_ASSIGN(destination_app, app);
+      instance[destination_app] = GetStringView(app);
 
       auto version_iter = destination_labels->LookupByKey("version");
       auto version = version_iter ? version_iter->value() : nullptr;
-      FB_ASSIGN(destination_version, version);
+      instance[destination_version] = GetStringView(version);
 
       auto canonical_name = destination_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceLabelName.data());
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
-      FB_ASSIGN(destination_canonical_service, name);
+      instance[destination_canonical_service] = GetStringView(name);
 
       auto rev = destination_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
-        FB_ASSIGN(destination_canonical_revision, rev->value());
+        instance[destination_canonical_revision] = GetStringView(rev->value());
       } else {
         instance[destination_canonical_revision] =
             ::Wasm::Common::kLatest.data();
@@ -124,10 +121,9 @@ void map_node(IstioDimensions& instance, bool is_source,
       instance[destination_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
 
-    FB_ASSIGN(destination_service_namespace, node.namespace_());
+    instance[destination_service_namespace] = GetStringView(node.namespace_());
   }
 }
-#undef FB_ASSIGN
 
 // Called during request processing.
 void map_peer(IstioDimensions& instance, bool outbound,
@@ -623,8 +619,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   }
 
   incrementMetric(cache_misses_, 1);
-  // TODO: When we have c++17, convert to try_emplace.
-  metrics_.emplace(istio_dimensions_, stats);
+  metrics_.try_emplace(istio_dimensions_, stats);
   return true;
 }
 
