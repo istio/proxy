@@ -18,8 +18,11 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_VERSION_REQUIRED="9.0.0"
+CLANG_VERSION_REQUIRED="10.0.0"
 CLANG_FORMAT=$(command -v clang-format)
+if [[ ! -x "${CLANG_FORMAT}" ]]; then
+  CLANG_FORMAT=$(command -v clang-format-10)
+fi
 CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
 if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
   # Install required clang version to a folder and cache it.

@@ -235,5 +235,10 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
 // determines whether to audit a request or not.
 bool getAuditPolicy();
 
+// Returns a string view stored in a flatbuffers string.
+static inline std::string_view GetStringView(const flatbuffers::String* str) {
+  return str ? std::string_view(str->c_str(), str->size()) : std::string_view();
+}
+
 }  // namespace Common
 }  // namespace Wasm
