@@ -197,55 +197,55 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
       MetricFactory{
           "requests_total", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
-          false},
+          false, count_standard_labels},
       MetricFactory{
           "request_duration_milliseconds", MetricType::Histogram,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.duration /* in nanoseconds */ / 1000000;
           },
-          false},
+          false, count_standard_labels},
       MetricFactory{"request_bytes", MetricType::Histogram,
                     [](const ::Wasm::Common::RequestInfo& request_info)
                         -> uint64_t { return request_info.request_size; },
-                    false},
+                    false, count_standard_labels},
       MetricFactory{"response_bytes", MetricType::Histogram,
                     [](const ::Wasm::Common::RequestInfo& request_info)
                         -> uint64_t { return request_info.response_size; },
-                    false},
+                    false, count_standard_labels},
       // GRPC metrics.
       MetricFactory{
-          "request_messages", MetricType::Counter,
+          "request_messages_count", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.request_message_count;
           },
-          false},
+          false, count_peer_labels},
       MetricFactory{
-          "response_messages", MetricType::Counter,
+          "response_messages_count", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.response_message_count;
           },
-          false},
+          false, count_peer_labels},
       // TCP metrics.
       MetricFactory{"tcp_sent_bytes_total", MetricType::Counter,
                     [](const ::Wasm::Common::RequestInfo& request_info)
                         -> uint64_t { return request_info.tcp_sent_bytes; },
-                    true},
+                    true, count_standard_labels},
       MetricFactory{"tcp_received_bytes_total", MetricType::Counter,
                     [](const ::Wasm::Common::RequestInfo& request_info)
                         -> uint64_t { return request_info.tcp_received_bytes; },
-                    true},
+                    true, count_standard_labels},
       MetricFactory{
           "tcp_connections_opened_total", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_connections_opened;
           },
-          true},
+          true, count_standard_labels},
       MetricFactory{
           "tcp_connections_closed_total", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.tcp_connections_closed;
           },
-          true},
+          true, count_standard_labels},
   };
   return default_metrics;
 }
@@ -266,8 +266,9 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   const std::vector<MetricTag>& default_tags = defaultTags();
   for (const auto& factory : defaultMetrics()) {
     factories[factory.name] = factory;
-    metric_tags[factory.name] = default_tags;
-    for (size_t i = 0; i < count_standard_labels; i++) {
+    metric_tags[factory.name] = std::vector<MetricTag>(
+        default_tags.begin(), default_tags.begin() + factory.count_labels);
+    for (size_t i = 0; i < factory.count_labels; i++) {
       metric_indexes[factory.name][default_tags[i].name] = i;
     }
   }

@@ -98,6 +98,9 @@ STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
 const size_t count_standard_labels =
     static_cast<size_t>(StandardLabels::xxx_last_metric);
 
+const size_t count_peer_labels =
+    static_cast<size_t>(StandardLabels::destination_canonical_revision) + 1;
+
 struct HashIstioDimensions {
   size_t operator()(const IstioDimensions& c) const {
     const size_t kMul = static_cast<size_t>(0x9ddfea08eb382d69);
@@ -134,6 +137,7 @@ struct MetricFactory {
   MetricType type;
   ValueExtractorFn extractor;
   bool is_tcp;
+  size_t count_labels;
 };
 
 // StatGen creates a SimpleStat based on resolved metric_id.

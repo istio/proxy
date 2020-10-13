@@ -1,4 +1,4 @@
-name: istio_request_messages
+name: istio_request_messages_count
 type: COUNTER
 metric:
 - counter:
@@ -40,13 +40,3 @@ metric:
     value: server
   - name: destination_service_namespace
     value: default
-  - name: request_protocol
-    value: grpc
-  - name: response_code
-    value: "200"
-  - name: grpc_response_status
-    value: "{{ .Vars.GrpcResponseStatus }}"
-  - name: response_flags
-    value: DC
-  - name: connection_security_policy
-    value: unknown
