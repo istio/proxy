@@ -623,8 +623,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   }
 
   incrementMetric(cache_misses_, 1);
-  // TODO: When we have c++17, convert to try_emplace.
-  metrics_.emplace(istio_dimensions_, stats);
+  metrics_.try_emplace(istio_dimensions_, stats);
   return true;
 }
 
