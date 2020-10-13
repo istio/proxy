@@ -130,6 +130,8 @@ struct RequestInfo {
   // The path portion of the URL without the query string.
   std::string request_url_path;
 
+  std::string upstream_transport_failure_reason;
+
   // Service authentication policy (NONE, MUTUAL_TLS)
   ServiceAuthenticationPolicy service_auth_policy =
       ServiceAuthenticationPolicy::Unspecified;
@@ -151,7 +153,7 @@ struct RequestInfo {
   std::string route_name;
   std::string upstream_host;
   std::string upstream_cluster;
-  std::string request_serever_name;
+  std::string requested_server_name;
   std::string x_envoy_original_path;
   std::string x_envoy_original_dst_host;
 
@@ -232,6 +234,11 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
 // Read value of 'access_log_hint' key from envoy dynamic metadata which
 // determines whether to audit a request or not.
 bool getAuditPolicy();
+
+// Returns a string view stored in a flatbuffers string.
+static inline std::string_view GetStringView(const flatbuffers::String* str) {
+  return str ? std::string_view(str->c_str(), str->size()) : std::string_view();
+}
 
 }  // namespace Common
 }  // namespace Wasm

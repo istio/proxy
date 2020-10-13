@@ -129,7 +129,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.upstream_cluster =
       "inbound|9080|http|server.default.svc.cluster.local";
   request_info.upstream_host = "1.1.1.1:1000";
-  request_info.request_serever_name = "server.com";
+  request_info.requested_server_name = "server.com";
   request_info.x_envoy_original_dst_host = "tmp.com";
   request_info.x_envoy_original_path = "/tmp";
   return request_info;

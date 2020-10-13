@@ -45,6 +45,7 @@ constexpr long int kDefaultEdgeNewReportDurationNanoseconds =
 constexpr long int kDefaultEdgeEpochReportDurationNanoseconds =
     600000000000;                                                        // 10m
 constexpr long int kDefaultTcpLogEntryTimeoutNanoseconds = 60000000000;  // 1m
+constexpr long int kDefaultLogExportNanoseconds = 10000000000;           // 10s
 
 #ifdef NULL_PLUGIN
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
@@ -159,6 +160,10 @@ class StackdriverRootContext : public RootContext {
       kDefaultEdgeEpochReportDurationNanoseconds;
 
   long int tcp_log_entry_timeout_ = kDefaultTcpLogEntryTimeoutNanoseconds;
+
+  long int last_log_report_call_nanos_ = 0;
+
+  long int log_report_duration_nanos_ = kDefaultLogExportNanoseconds;
 
   bool use_host_header_fallback_;
   bool initialized_ = false;

@@ -113,6 +113,8 @@ constexpr char kLoggingExportIntervalKey[] =
     "STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS";
 constexpr char kTcpLogEntryTimeoutKey[] =
     "STACKDRIVER_TCP_LOG_ENTRY_TIMEOUT_SECS";
+constexpr char kProxyTickerIntervalKey[] =
+    "STACKDRIVER_PROXY_TICKER_INTERVAL_SECS";
 constexpr char kTokenFile[] = "STACKDRIVER_TOKEN_FILE";
 constexpr char kCACertFile[] = "STACKDRIVER_ROOT_CA_FILE";
 
