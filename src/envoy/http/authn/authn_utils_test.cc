@@ -58,6 +58,27 @@ const std::string kSecIstioAuthUserInfoHeaderWithAudValueArray =
          "some-other-string-claims": "some-claims-kept"
        }
      )";
+const std::string kSecIstioAuthUserInfoHeaderWithNestedClaims =
+    R"(
+       {
+         "iss": "issuer@foo.com",
+         "sub": "sub@foo.com",
+         "nested1": {
+           "aud1": "aud1a  aud1b",
+           "list1": ["list1a", "list1b"],
+           "other1": "str1",
+           "non-string-ignored": 111,
+           "nested2": {
+             "aud2": "aud2a  aud2b",
+             "list2": ["list2a", "list2b"],
+             "other2": "str2",
+             "non-string-ignored": 222
+           }
+         },
+         "non-string-will-be-ignored": 1512754205,
+         "some-other-string-claims": "some-claims-kept"
+       }
+     )";
 
 TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
   JwtPayload payload, expected_payload;
@@ -246,6 +267,139 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
       kSecIstioAuthUserInfoHeaderWithAudValueArray, &payload);
 
   EXPECT_TRUE(ret);
+  EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
+}
+
+TEST(AuthnUtilsTest, ProcessJwtPayloadWithNestedClaimsTest) {
+  JwtPayload payload, expected_payload;
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
+      R"(
+      user: "issuer@foo.com/sub@foo.com"
+      claims: {
+        fields: {
+          key: "iss"
+          value: {
+            list_value: {
+              values: {
+                string_value: "issuer@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "sub"
+          value: {
+            list_value: {
+              values: {
+                string_value: "sub@foo.com"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "some-other-string-claims"
+          value: {
+            list_value: {
+              values: {
+                string_value: "some-claims-kept"
+              }
+            }
+          }
+        }
+        fields: {
+          key: "nested1"
+          value: {
+            struct_value: {
+              fields: {
+                key: "aud1"
+                value: {
+                  list_value: {
+                    values: {
+                      string_value: "aud1a"
+                    }
+                    values: {
+                      string_value: "aud1b"
+                    }
+                  }
+                }
+              }
+              fields: {
+                key: "list1"
+                value: {
+                  list_value: {
+                    values: {
+                      string_value: "list1a"
+                    }
+                    values: {
+                      string_value: "list1b"
+                    }
+                  }
+                }
+              }
+              fields: {
+                key: "other1"
+                value: {
+                  list_value: {
+                    values: {
+                      string_value: "str1"
+                    }
+                  }
+                }
+              }
+              fields: {
+                key: "nested2"
+                value: {
+                  struct_value: {
+                    fields: {
+                      key: "aud2"
+                      value: {
+                        list_value: {
+                          values: {
+                            string_value: "aud2a"
+                          }
+                          values: {
+                            string_value: "aud2b"
+                          }
+                        }
+                      }
+                    }
+                    fields: {
+                      key: "list2"
+                      value: {
+                        list_value: {
+                          values: {
+                            string_value: "list2a"
+                          }
+                          values: {
+                            string_value: "list2b"
+                          }
+                        }
+                      }
+                    }
+                    fields: {
+                      key: "other2"
+                      value: {
+                        list_value: {
+                          values: {
+                            string_value: "str2"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      raw_claims: ")" +
+          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithNestedClaims) +
+          R"(")",
+      &expected_payload));
+
+  EXPECT_TRUE(AuthnUtils::ProcessJwtPayload(
+      kSecIstioAuthUserInfoHeaderWithNestedClaims, &payload));
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
 
