@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	// Preload proto definitions
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	dto "github.com/prometheus/client_model/go"
 	"google.golang.org/grpc/codes"
