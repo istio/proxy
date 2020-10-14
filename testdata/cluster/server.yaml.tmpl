@@ -2,6 +2,13 @@
 name: {{ .Vars.ServerClusterName }}
 {{- else }}
 name: outbound|9080|http|server.default.svc.cluster.local
+metadata:
+  filter_metadata:
+    istio:
+      services:
+        - host: server.default.svc.cluster.local
+          name: server
+          namespace: default
 {{- end }}
 connect_timeout: 1s
 type: STATIC

@@ -40,6 +40,13 @@ static_resources:
     connect_timeout: 1s
     type: STATIC
     http2_protocol_options: {}
+    metadata:
+      filter_metadata:
+        istio:
+          services:
+            - host: server.default.svc.cluster.local
+              name: server
+              namespace: default
     load_assignment:
       cluster_name: outbound|9080|http|server.default.svc.cluster.local
       endpoints:

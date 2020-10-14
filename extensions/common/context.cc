@@ -49,40 +49,6 @@ const char kInboundPassthroughClusterIpv6[] = "InboundPassthroughClusterIpv6";
 
 namespace {
 
-// Extract service name from service host.
-void extractServiceName(const std::string& host,
-                        const std::string& destination_namespace,
-                        std::string* service_name) {
-  auto name_pos = host.find_first_of(".:");
-  if (name_pos == std::string::npos) {
-    // host is already a short service name. return it directly.
-    *service_name = host;
-    return;
-  }
-  if (host[name_pos] == ':') {
-    // host is `short_service:port`, return short_service name.
-    *service_name = host.substr(0, name_pos);
-    return;
-  }
-
-  auto namespace_pos = host.find_first_of(".:", name_pos + 1);
-  std::string service_namespace = "";
-  if (namespace_pos == std::string::npos) {
-    service_namespace = host.substr(name_pos + 1);
-  } else {
-    int namespace_size = namespace_pos - name_pos - 1;
-    service_namespace = host.substr(name_pos + 1, namespace_size);
-  }
-  // check if namespace in host is same as destination namespace.
-  // If it is the same, return the first part of host as service name.
-  // Otherwise fallback to request host.
-  if (service_namespace == destination_namespace) {
-    *service_name = host.substr(0, name_pos);
-  } else {
-    *service_name = host;
-  }
-}
-
 // Get destination service host and name based on destination cluster name and
 // host header.
 // * If cluster name is one of passthrough and blackhole clusters, use cluster
@@ -94,8 +60,7 @@ void extractServiceName(const std::string& host,
 //   the second part of destination host is destination namespace, use first
 //   part as destination service name. Otherwise, fallback to use destination
 //   host for destination service name.
-void getDestinationService(const std::string& dest_namespace,
-                           bool use_host_header, std::string* dest_svc_host,
+void getDestinationService(bool use_host_header, std::string* dest_svc_host,
                            std::string* dest_svc_name,
                            const std::string& cluster_name,
                            const std::string& route_name) {
@@ -123,28 +88,37 @@ void getDestinationService(const std::string& dest_namespace,
     return;
   }
 
-  std::vector<std::string_view> parts = absl::StrSplit(cluster_name, '|');
-  if (parts.size() == 4) {
-    *dest_svc_host = std::string(parts[3].data(), parts[3].size());
+  // Get destination service name and host from cluster labels.
+  if (getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
+                "name"},
+               dest_svc_name)) {
+    getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
+              "host"},
+             dest_svc_host);
+  } else if (use_host_header) {
+    // if cluster metadata cannot be found, fallback to host header.
+    *dest_svc_host = getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
+                                       kAuthorityHeaderKey)
+                         ->toString();
+    *dest_svc_name = *dest_svc_host;
+  } else {
+    *dest_svc_host = "unknown";
+    *dest_svc_name = "unknown";
   }
-
-  extractServiceName(*dest_svc_host, dest_namespace, dest_svc_name);
 }
 
 void populateRequestInfo(bool outbound, bool use_host_header_fallback,
-                         RequestInfo* request_info,
-                         const std::string& destination_namespace) {
+                         RequestInfo* request_info) {
   request_info->is_populated = true;
   getValue({"cluster_name"}, &request_info->upstream_cluster);
   getValue({"route_name"}, &request_info->route_name);
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.
-  getDestinationService(destination_namespace, use_host_header_fallback,
-                        &request_info->destination_service_host,
-                        &request_info->destination_service_name,
-                        request_info->upstream_cluster,
-                        request_info->route_name);
+  getDestinationService(
+      use_host_header_fallback, &request_info->destination_service_host,
+      &request_info->destination_service_name, request_info->upstream_cluster,
+      request_info->route_name);
 
   getValue({"request", "url_path"}, &request_info->request_url_path);
 
@@ -295,13 +269,64 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   return fbb.Release();
 }
 
+PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
+                           const std::string_view peer_metadata_key) {
+  found_ = getValue({peer_metadata_id_key}, &peer_id_);
+  if (found_) {
+    getValue({peer_metadata_key}, &peer_node_);
+    return;
+  }
+
+  // Construct a fallback peer node metadata based on endpoint labels if it is
+  // not in filter state.
+  std::string endpoint_labels;
+  fallback_peer_node_ = extractEmptyNodeFlatBuffer();
+  if (getValue(
+          {"upstream_host_metadata", "filter_metadata", "istio", "workload"},
+          &endpoint_labels)) {
+    return;
+  }
+  std::vector<std::string_view> parts = absl::StrSplit(endpoint_labels, ';');
+  // workload label should semicolon separated four parts string:
+  // workload_name|namespace|canonical_service|canonical_revision.
+  if (parts.size() < 4) {
+    return;
+  }
+  flatbuffers::FlatBufferBuilder fbb;
+  FlatNodeBuilder node(fbb);
+  node.add_namespace_(fbb.CreateString(parts[1]));
+  node.add_workload_name(fbb.CreateString(parts[0]));
+  std::vector<flatbuffers::Offset<KeyVal>> labels;
+  if (!parts[2].empty()) {
+    labels.push_back(CreateKeyVal(fbb,
+                                  fbb.CreateString(kCanonicalServiceLabelName),
+                                  fbb.CreateString(parts[2])));
+  }
+  if (!parts[3].empty()) {
+    labels.push_back(
+        CreateKeyVal(fbb, fbb.CreateString(kCanonicalServiceRevisionLabelName),
+                     fbb.CreateString(parts[3])));
+  }
+  auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  node.add_labels(labels_offset);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  fallback_peer_node_ = fbb.Release();
+}
+
+const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
+  if (!peer_node_.empty()) {
+    return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(peer_node_.data());
+  }
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      fallback_peer_node_.data());
+}
+
 // Host header is used if use_host_header_fallback==true.
 // Normally it is ok to use host header within the mesh, but not at ingress.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
-                             RequestInfo* request_info,
-                             const std::string& destination_namespace) {
-  populateRequestInfo(outbound, use_host_header_fallback, request_info,
-                      destination_namespace);
+                             RequestInfo* request_info) {
+  populateRequestInfo(outbound, use_host_header_fallback, request_info);
 
   int64_t response_code = 0;
   if (getValue({"response", "code"}, &response_code)) {
@@ -383,10 +408,9 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
            &request_info->upstream_transport_failure_reason);
 }
 
-void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
-                            const std::string& destination_namespace) {
+void populateTCPRequestInfo(bool outbound, RequestInfo* request_info) {
   // host_header_fallback is for HTTP/gRPC only.
-  populateRequestInfo(outbound, false, request_info, destination_namespace);
+  populateRequestInfo(outbound, false, request_info);
 
   request_info->request_protocol = kProtocolTCP;
 }
