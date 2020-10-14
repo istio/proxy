@@ -27,6 +27,7 @@ metrics:
       destination_service_namespace: "'_' + upstream_peer.labels['app'].value"
       destination_app: "cannot _ parse | {{ .N }}"
       destination_workload: "cannot_evaluate"
+      route_name: route_name
     tags_to_remove:
     - grpc_response_status
   - name: request_bytes
