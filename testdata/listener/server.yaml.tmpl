@@ -26,7 +26,7 @@ filter_chains:
           - name: server_route
             match: { prefix: / }
             route:
-              cluster: inbound|9080|http|server.default.svc.cluster.local
+              cluster: server-inbound-cluster
               timeout: 0s
 {{ .Vars.ServerTLSContext | indent 2 }}
 {{- end }}

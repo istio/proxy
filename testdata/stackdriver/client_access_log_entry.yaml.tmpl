@@ -34,6 +34,6 @@ labels:
   {{- else }}
   log_sampled: "false"
   {{- end }}
-  upstream_cluster: "outbound|9080|http|server.default.svc.cluster.local"
+  upstream_cluster: "server-outbound-cluster"
   route_name: client_route
 severity: INFO

@@ -126,8 +126,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.destination_address = "2.2.2.2";
   request_info.connection_id = 0;
   request_info.route_name = "redirect";
-  request_info.upstream_cluster =
-      "inbound|9080|http|server.default.svc.cluster.local";
+  request_info.upstream_cluster = "server-inbound-cluster";
   request_info.upstream_host = "1.1.1.1:1000";
   request_info.requested_server_name = "server.com";
   request_info.x_envoy_original_dst_host = "tmp.com";
@@ -229,7 +228,7 @@ std::string write_log_request_json = R"({
            "protocol":"HTTP",
            "log_sampled":"false",
            "connection_id":"0",
-           "upstream_cluster": "inbound|9080|http|server.default.svc.cluster.local",
+           "upstream_cluster": "server-inbound-cluster",
            "route_name": "redirect",
            "requested_server_name": "server.com",
            "x-envoy-original-dst-host": "tmp.com",

@@ -88,7 +88,7 @@ static_resources:
                 port_value: {{ .Ports.XDSPort }}
     http2_protocol_options: {}
     name: xds_cluster
-  - name: outbound|9080|http|server.default.svc.cluster.local
+  - name: server-outbound-cluster
     connect_timeout: 1s
     type: STATIC
     http2_protocol_options: {}
@@ -100,7 +100,7 @@ static_resources:
               name: server
               namespace: default
     load_assignment:
-      cluster_name: outbound|9080|http|server.default.svc.cluster.local
+      cluster_name: server-outbound-cluster
       endpoints:
       - lb_endpoints:
         - endpoint:
@@ -171,7 +171,7 @@ static_resources:
                 port_value: {{ .Ports.XDSPort }}
     http2_protocol_options: {}
     name: xds_cluster
-  - name: inbound|9080|http|server.default.svc.cluster.local
+  - name: server-inbound-cluster
     connect_timeout: 1s
     type: STATIC
     {{- if eq .Vars.UsingGrpcBackend "true" }}
@@ -185,7 +185,7 @@ static_resources:
               name: server
               namespace: default
     load_assignment:
-      cluster_name: inbound|9080|http|server.default.svc.cluster.local
+      cluster_name: server-inbound-cluster
       endpoints:
       - lb_endpoints:
         - endpoint:
@@ -361,7 +361,7 @@ filter_chains:
               {{- if .Vars.ServerClusterName }}
               cluster: {{ .Vars.ServerClusterName}}
               {{- else }}
-              cluster: outbound|9080|http|server.default.svc.cluster.local
+              cluster: server-outbound-cluster
               {{- end }}
               timeout: 0s
 {{- end }}
@@ -410,7 +410,7 @@ filter_chains:
           - name: server_route
             match: { prefix: / }
             route:
-              cluster: inbound|9080|http|server.default.svc.cluster.local
+              cluster: server-inbound-cluster
               timeout: 0s
 {{ .Vars.ServerTLSContext | indent 2 }}
 {{- end }}

@@ -36,7 +36,7 @@ static_resources:
                 port_value: {{ .Ports.XDSPort }}
     http2_protocol_options: {}
     name: xds_cluster
-  - name: outbound|9080|http|server.default.svc.cluster.local
+  - name: server-outbound-cluster
     connect_timeout: 1s
     type: STATIC
     http2_protocol_options: {}
@@ -48,7 +48,7 @@ static_resources:
               name: server
               namespace: default
     load_assignment:
-      cluster_name: outbound|9080|http|server.default.svc.cluster.local
+      cluster_name: server-outbound-cluster
       endpoints:
       - lb_endpoints:
         - endpoint:

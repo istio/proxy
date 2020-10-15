@@ -36,7 +36,7 @@ static_resources:
                 port_value: {{ .Ports.XDSPort }}
     http2_protocol_options: {}
     name: xds_cluster
-  - name: inbound|9080|http|server.default.svc.cluster.local
+  - name: server-inbound-cluster
     connect_timeout: 1s
     type: STATIC
     {{- if eq .Vars.UsingGrpcBackend "true" }}
@@ -50,7 +50,7 @@ static_resources:
               name: server
               namespace: default
     load_assignment:
-      cluster_name: inbound|9080|http|server.default.svc.cluster.local
+      cluster_name: server-inbound-cluster
       endpoints:
       - lb_endpoints:
         - endpoint:
