@@ -23,7 +23,8 @@ filter_chains:
         - name: client
           domains: ["*"]
           routes:
-          - match: { prefix: / }
+          - name: client_route
+            match: { prefix: / }
             route:
               {{- if .Vars.ServerClusterName }}
               cluster: {{ .Vars.ServerClusterName}}
