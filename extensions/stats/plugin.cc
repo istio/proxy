@@ -545,10 +545,6 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
       outbound_ ? peer_node_info.get()
                 : *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
                       local_node_info_.data());
-  std::string destination_namespace =
-      destination_node_info.namespace_()
-          ? destination_node_info.namespace_()->str()
-          : "";
 
   if (is_tcp) {
     // For TCP, if peer metadata is not available, peer id is set as not found.

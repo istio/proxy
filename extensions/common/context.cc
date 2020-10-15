@@ -49,17 +49,13 @@ const char kInboundPassthroughClusterIpv6[] = "InboundPassthroughClusterIpv6";
 
 namespace {
 
-// Get destination service host and name based on destination cluster name and
-// host header.
+// Get destination service host and name based on destination cluster metadata
+// and host header.
 // * If cluster name is one of passthrough and blackhole clusters, use cluster
 //   name as destination service name and host header as destination host.
-// * If cluster name follows Istio convention (four parts separated by pipe),
-//   use the last part as destination host; Otherwise, use host header as
-//   destination host. To get destination service name from host: if destination
-//   host is already a short name, use that as destination service; otherwise if
-//   the second part of destination host is destination namespace, use first
-//   part as destination service name. Otherwise, fallback to use destination
-//   host for destination service name.
+// * Otherwise, try fetching cluster metadata for destination service name and
+//   host. If cluster metadata is not available, set destination service name
+//   the same as destination service host.
 void getDestinationService(bool use_host_header, std::string* dest_svc_host,
                            std::string* dest_svc_name,
                            const std::string& cluster_name,
@@ -88,22 +84,34 @@ void getDestinationService(bool use_host_header, std::string* dest_svc_host,
     return;
   }
 
-  // Get destination service name and host from cluster labels.
+  // Get destination service name and host from cluster labels, which is
+  // formatted as follow: cluster_metadata:
+  //   filter_metadata:
+  //     istio:
+  //       services:
+  //       - host: a.default
+  //         name: a
+  //         namespace: default
+  //       - host: b.default
+  //         name: b
+  //         namespace: default
+  // Multiple services could be added to a inbound cluster when they are bound
+  // to the same port. Currently we use the first service in the list (the
+  // oldest service) to get destination service information. Ideally client will
+  // forward the canonical host to the server side so that it could accurately
+  // identify the intended host.
   if (getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
                 "name"},
                dest_svc_name)) {
     getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
               "host"},
              dest_svc_host);
-  } else if (use_host_header) {
-    // if cluster metadata cannot be found, fallback to host header.
-    *dest_svc_host = getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
-                                       kAuthorityHeaderKey)
-                         ->toString();
-    *dest_svc_name = *dest_svc_host;
   } else {
-    *dest_svc_host = "unknown";
-    *dest_svc_name = "unknown";
+    // if cluster metadata cannot be found, fallback to destination service
+    // host. If host header fallback is enabled, this will be host header. If
+    // host header fallback is disabled, this will be unknown. This could happen
+    // if a request does not route to any cluster.
+    *dest_svc_name = *dest_svc_host;
   }
 }
 
@@ -288,7 +296,7 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
   }
   std::vector<std::string_view> parts = absl::StrSplit(endpoint_labels, ';');
   // workload label should semicolon separated four parts string:
-  // workload_name|namespace|canonical_service|canonical_revision.
+  // workload_name;namespace;canonical_service;canonical_revision.
   if (parts.size() < 4) {
     return;
   }
@@ -321,7 +329,8 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
 
 const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
   if (!peer_node_.empty()) {
-    return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(peer_node_.data());
+    return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+        reinterpret_cast<const uint8_t*>(peer_node_.data()));
   }
   return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
       fallback_peer_node_.data());

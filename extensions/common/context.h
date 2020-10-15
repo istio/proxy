@@ -223,7 +223,7 @@ class PeerNodeInfo {
  private:
   bool found_ = false;
   std::string peer_id_;
-  std::string peer_node_;
+  flatbuffers::DetachedBuffer peer_node_;
   flatbuffers::DetachedBuffer fallback_peer_node_;
 };
 
