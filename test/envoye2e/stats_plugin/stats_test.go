@@ -321,7 +321,6 @@ func TestStatsGrpcStream(t *testing.T) {
 		"WasmRuntime":                "envoy.wasm.runtime.null",
 		"DisableDirectResponse":      "true",
 		"UsingGrpcBackend":           "true",
-		"GrpcResponseStatus":         "2",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StatsFilterClientConfig":    "{}",
 		"StatsFilterServerConfig":    "{}",

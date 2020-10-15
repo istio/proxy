@@ -400,6 +400,8 @@ bool populateGRPCInfo(RequestInfo* request_info) {
   if (!getValue({"filter_state", GrpcStatsName}, &value)) {
     return false;
   }
+  // The expected byte serialization of grpc_stats filter is "x,y" where "x"
+  // is the request message count and "y" is the response message count.
   std::vector<std::string_view> parts = absl::StrSplit(value, ',');
   if (parts.size() == 2) {
     return absl::SimpleAtoi(parts[0], &request_info->request_message_count) &&

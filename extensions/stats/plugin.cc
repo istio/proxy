@@ -208,7 +208,9 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                     [](const ::Wasm::Common::RequestInfo& request_info)
                         -> uint64_t { return request_info.response_size; },
                     false, count_standard_labels},
-      // GRPC metrics.
+      // GRPC streaming metrics.
+      // These metrics are dimensioned by peer labels as a minimum.
+      // TODO: consider adding connection security policy
       MetricFactory{
           "request_messages_count", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {

@@ -236,7 +236,7 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
                             const std::string& destination_namespace);
 
 // populateGRPCInfo fills gRPC-related information, such as message counts.
-// Returns true if all informatio is filled.
+// Returns true if all information is filled.
 bool populateGRPCInfo(RequestInfo* request_info);
 
 // Read value of 'access_log_hint' key from envoy dynamic metadata which

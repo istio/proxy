@@ -95,14 +95,8 @@ func (g *GrpcStream) Run(p *Params) error {
 		return err
 	}
 
-	var count uint32
-	i := 0
-
-	for {
-		if i >= len(g.Counts) {
-			return nil
-		}
-		count = g.Counts[i]
+	for i := 0; i < len(g.Counts); i++ {
+		count := g.Counts[i]
 		fmt.Printf("requesting %v messages at %v stream message\n", count, i)
 		err := stream.Send(&grpc_echo.StreamRequest{ResponseCount: count})
 		if err != nil {
@@ -114,8 +108,8 @@ func (g *GrpcStream) Run(p *Params) error {
 				return err
 			}
 		}
-		i++
 	}
+	return nil
 }
 
 func (g *GrpcStream) Cleanup() {}
