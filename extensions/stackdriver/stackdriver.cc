@@ -417,8 +417,8 @@ void StackdriverRootContext::record() {
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
 
   ::Wasm::Common::RequestInfo request_info;
-  ::Wasm::Common::populateHTTPRequestInfo(
-      outbound, useHostHeaderFallback(), &request_info);
+  ::Wasm::Common::populateHTTPRequestInfo(outbound, useHostHeaderFallback(),
+                                          &request_info);
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node_info.get(), request_info,
       !config_.disable_http_size_metrics());
@@ -488,8 +488,7 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     return false;
   }
   if (!request_info.is_populated) {
-    ::Wasm::Common::populateTCPRequestInfo(
-        outbound, &request_info);
+    ::Wasm::Common::populateTCPRequestInfo(outbound, &request_info);
   }
   // Record TCP Metrics.
   ::Extensions::Stackdriver::Metric::recordTCP(

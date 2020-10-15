@@ -281,7 +281,7 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
   // not in filter state.
   std::string endpoint_labels;
   fallback_peer_node_ = extractEmptyNodeFlatBuffer();
-  if (getValue(
+  if (!getValue(
           {"upstream_host_metadata", "filter_metadata", "istio", "workload"},
           &endpoint_labels)) {
     return;
@@ -292,11 +292,12 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
   if (parts.size() < 4) {
     return;
   }
+
   flatbuffers::FlatBufferBuilder fbb;
-  FlatNodeBuilder node(fbb);
-  node.add_namespace_(fbb.CreateString(parts[1]));
-  node.add_workload_name(fbb.CreateString(parts[0]));
+  flatbuffers::Offset<flatbuffers::String> workload_name, namespace_;
   std::vector<flatbuffers::Offset<KeyVal>> labels;
+  workload_name = fbb.CreateString(parts[0]);
+  namespace_ = fbb.CreateString(parts[1]);
   if (!parts[2].empty()) {
     labels.push_back(CreateKeyVal(fbb,
                                   fbb.CreateString(kCanonicalServiceLabelName),
@@ -308,6 +309,10 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
                      fbb.CreateString(parts[3])));
   }
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+
+  FlatNodeBuilder node(fbb);
+  node.add_workload_name(workload_name);
+  node.add_namespace_(namespace_);
   node.add_labels(labels_offset);
   auto data = node.Finish();
   fbb.Finish(data);

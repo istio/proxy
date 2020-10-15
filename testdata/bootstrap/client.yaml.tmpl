@@ -56,5 +56,9 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{ .Ports.ServerPort }}
+          metadata:
+            filter_metadata:
+              istio:
+                workload: ratings-v1;default;ratings;version-1
 {{ .Vars.ClientTLSContext | indent 4 }}
 {{ .Vars.ClientStaticCluster | indent 2 }}
