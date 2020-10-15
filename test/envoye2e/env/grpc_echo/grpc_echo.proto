@@ -24,6 +24,11 @@ message EchoRequest {
   google.rpc.Status return_status = 1;
 }
 
+message StreamRequest {
+  uint32 response_count = 1;
+}
+
 service Echo {
-  rpc Echo(EchoRequest) returns (google.protobuf.Empty) {}
+  rpc Echo(EchoRequest) returns (google.protobuf.Empty);
+  rpc EchoStream(stream StreamRequest) returns (stream google.protobuf.Empty);
 }

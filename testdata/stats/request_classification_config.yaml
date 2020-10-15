@@ -1,6 +1,4 @@
 debug: "true"
-max_peer_cache_size: 20
-stat_prefix: istio
 field_separator: ";.;"
 metrics:
   - name: requests_total

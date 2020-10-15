@@ -47,6 +47,9 @@ const char kPassThroughRouteName[] = "allow_any";
 const char kInboundPassthroughClusterIpv4[] = "InboundPassthroughClusterIpv4";
 const char kInboundPassthroughClusterIpv6[] = "InboundPassthroughClusterIpv6";
 
+// Well-known name for the grpc_stats filter.
+constexpr std::string_view GrpcStatsName = "envoy.filters.http.grpc_stats";
+
 namespace {
 
 // Extract service name from service host.
@@ -317,6 +320,7 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                             kContentTypeHeaderKey)
               ->toString()) != 0) {
     request_info->request_protocol = kProtocolGRPC;
+    populateGRPCInfo(request_info);
   } else {
     // TODO Add http/1.1, http/1.0, http/2 in a separate attribute.
     // http|grpc classification is compatible with Mixerclient
@@ -389,6 +393,21 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
   populateRequestInfo(outbound, false, request_info, destination_namespace);
 
   request_info->request_protocol = kProtocolTCP;
+}
+
+bool populateGRPCInfo(RequestInfo* request_info) {
+  std::string value;
+  if (!getValue({"filter_state", GrpcStatsName}, &value)) {
+    return false;
+  }
+  // The expected byte serialization of grpc_stats filter is "x,y" where "x"
+  // is the request message count and "y" is the response message count.
+  std::vector<std::string_view> parts = absl::StrSplit(value, ',');
+  if (parts.size() == 2) {
+    return absl::SimpleAtoi(parts[0], &request_info->request_message_count) &&
+           absl::SimpleAtoi(parts[1], &request_info->response_message_count);
+  }
+  return false;
 }
 
 bool getAuditPolicy() {

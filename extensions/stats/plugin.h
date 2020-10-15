@@ -98,6 +98,9 @@ STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
 const size_t count_standard_labels =
     static_cast<size_t>(StandardLabels::xxx_last_metric);
 
+const size_t count_peer_labels =
+    static_cast<size_t>(StandardLabels::destination_canonical_revision) + 1;
+
 struct HashIstioDimensions {
   size_t operator()(const IstioDimensions& c) const {
     const size_t kMul = static_cast<size_t>(0x9ddfea08eb382d69);
@@ -115,17 +118,23 @@ using ValueExtractorFn =
 // SimpleStat record a pre-resolved metric based on the values function.
 class SimpleStat {
  public:
-  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn)
-      : metric_id_(metric_id), value_fn_(value_fn){};
+  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn, MetricType type)
+      : metric_id_(metric_id), value_fn_(value_fn), type_(type){};
 
   inline void record(const ::Wasm::Common::RequestInfo& request_info) {
-    recordMetric(metric_id_, value_fn_(request_info));
+    const uint64_t val = value_fn_(request_info);
+    // Optimization: do not record 0 COUNTER values
+    if (type_ == MetricType::Counter && val == 0) {
+      return;
+    }
+    recordMetric(metric_id_, val);
   };
 
   uint32_t metric_id_;
 
  private:
   ValueExtractorFn value_fn_;
+  MetricType type_;
 };
 
 // MetricFactory creates a stat generator given tags.
@@ -134,6 +143,7 @@ struct MetricFactory {
   MetricType type;
   ValueExtractorFn extractor;
   bool is_tcp;
+  size_t count_labels;
 };
 
 // StatGen creates a SimpleStat based on resolved metric_id.
@@ -190,7 +200,7 @@ class StatGen {
     }
     n.append(metric_.name);
     auto metric_id = metric_.resolveFullName(n);
-    return SimpleStat(metric_id, extractor_);
+    return SimpleStat(metric_id, extractor_, metric_.type);
   };
 
  private:
