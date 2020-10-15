@@ -279,6 +279,7 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
 
 PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
                            const std::string_view peer_metadata_key) {
+  fallback_peer_node_ = extractEmptyNodeFlatBuffer();
   found_ = getValue({peer_metadata_id_key}, &peer_id_);
   if (found_) {
     getValue({peer_metadata_key}, &peer_node_);
@@ -293,7 +294,6 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
   // Construct a fallback peer node metadata based on endpoint labels if it is
   // not in filter state.
   std::string endpoint_labels;
-  fallback_peer_node_ = extractEmptyNodeFlatBuffer();
   if (!getValue(
           {"upstream_host_metadata", "filter_metadata", "istio", "workload"},
           &endpoint_labels)) {
