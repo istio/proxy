@@ -291,6 +291,8 @@ var _bootstrapStatsYamlTmpl = []byte(`stats_config:
     regex: "(configurable_metric_a=\\.=(.*?);\\.;)"
   - tag_name: "configurable_metric_b"
     regex: "(configurable_metric_b=\\.=(.*?);\\.;)"
+  - tag_name: "route_name"
+    regex: "(route_name=\\.=(.*?);\\.;)"
 # Internal monitoring
   - tag_name: "cache"
     regex: "(cache\\.(.*?)\\.)"
@@ -342,7 +344,8 @@ filter_chains:
         - name: client
           domains: ["*"]
           routes:
-          - match: { prefix: / }
+          - name: client_route
+            match: { prefix: / }
             route:
               {{- if .Vars.ServerClusterName }}
               cluster: {{ .Vars.ServerClusterName}}
@@ -393,7 +396,8 @@ filter_chains:
         - name: server
           domains: ["*"]
           routes:
-          - match: { prefix: / }
+          - name: server_route
+            match: { prefix: / }
             route:
               cluster: inbound|9080|http|server.default.svc.cluster.local
               timeout: 0s
