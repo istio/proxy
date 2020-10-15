@@ -47,11 +47,11 @@ metric:
     value: http
     {{- end }}
   - name: response_code
-    value: "503"
+    value: "200"
   - name: grpc_response_status
     value: "{{ .Vars.GrpcResponseStatus }}"
   - name: response_flags
-    value: "UF"
+    value: "-"
   - name: connection_security_policy
     value: unknown
   - name: configurable_metric_a

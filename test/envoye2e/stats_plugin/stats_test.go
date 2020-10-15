@@ -504,22 +504,25 @@ func TestStatsEndpointLabels(t *testing.T) {
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
 		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
 		"WasmRuntime":                "envoy.wasm.runtime.null",
+		"EnableEndpointMetadata":     "true",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	enableStats(t, params.Vars)
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
-			&driver.GrpcServer{},
 			&driver.Repeat{N: 10,
 				Step: &driver.HTTPCall{
 					Port:         params.Ports.ClientPort,
-					ResponseCode: 503,
+					ResponseCode: 200,
 				},
 			},
 			&driver.Stats{

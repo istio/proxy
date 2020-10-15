@@ -108,10 +108,12 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{ .Ports.ServerPort }}
+          {{- if eq .Vars.EnableEndpointMetadata "true" }}
           metadata:
             filter_metadata:
               istio:
                 workload: ratings-v1;default;ratings;version-1
+          {{- end }}
 {{ .Vars.ClientTLSContext | indent 4 }}
 {{ .Vars.ClientStaticCluster | indent 2 }}
 `)

@@ -333,7 +333,7 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
 }
 
 const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
-  if (!peer_node_.empty()) {
+  if (found_) {
     return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
         reinterpret_cast<const uint8_t*>(peer_node_.data()));
   }
