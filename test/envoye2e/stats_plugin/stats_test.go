@@ -344,14 +344,14 @@ func TestStatsGrpcStream(t *testing.T) {
 			&driver.Stats{
 				AdminPort: params.Ports.ServerAdmin,
 				Matchers: map[string]driver.StatMatcher{
-					"istio_request_messages_count":  &driver.ExactStat{Metric: "testdata/metric/server_request_messages.yaml.tmpl"},
-					"istio_response_messages_count": &driver.ExactStat{Metric: "testdata/metric/server_response_messages.yaml.tmpl"},
+					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/server_request_messages.yaml.tmpl"},
+					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/server_response_messages.yaml.tmpl"},
 				}},
 			&driver.Stats{
 				AdminPort: params.Ports.ClientAdmin,
 				Matchers: map[string]driver.StatMatcher{
-					"istio_request_messages_count":  &driver.ExactStat{Metric: "testdata/metric/client_request_messages.yaml.tmpl"},
-					"istio_response_messages_count": &driver.ExactStat{Metric: "testdata/metric/client_response_messages.yaml.tmpl"},
+					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/client_request_messages.yaml.tmpl"},
+					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/client_response_messages.yaml.tmpl"},
 				}},
 		},
 	}).Run(params); err != nil {

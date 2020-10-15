@@ -212,13 +212,13 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
       // These metrics are dimensioned by peer labels as a minimum.
       // TODO: consider adding connection security policy
       MetricFactory{
-          "request_messages_count", MetricType::Counter,
+          "request_messages_total", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.request_message_count;
           },
           false, count_peer_labels},
       MetricFactory{
-          "response_messages_count", MetricType::Counter,
+          "response_messages_total", MetricType::Counter,
           [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
             return request_info.response_message_count;
           },
