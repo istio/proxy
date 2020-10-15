@@ -284,6 +284,11 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
     getValue({peer_metadata_key}, &peer_node_);
     return;
   }
+  if (peer_metadata_id_key == kDownstreamMetadataIdKey) {
+    // Downstream peer's metadata will never be in localhost endpoint. Skip
+    // looking for it.
+    return;
+  }
 
   // Construct a fallback peer node metadata based on endpoint labels if it is
   // not in filter state.
