@@ -540,12 +540,6 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   Wasm::Common::PeerNodeInfo peer_node_info(peer_metadata_id_key_,
                                             peer_metadata_key_);
 
-  // map and overwrite previous mapping.
-  const ::Wasm::Common::FlatNode& destination_node_info =
-      outbound_ ? peer_node_info.get()
-                : *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-                      local_node_info_.data());
-
   if (is_tcp) {
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report any
