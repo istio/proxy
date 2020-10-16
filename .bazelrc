@@ -3,7 +3,7 @@
 # =====================================================================
 
 # Keep envoy.bazelrc up-to-date by run:
-# curl -sSL https://raw.githubusercontent.com/envoyproxy/envoy-wasm/master/.bazelrc > envoy.bazelrc
+# curl -sSL https://raw.githubusercontent.com/istio/envoy/release-1.8/.bazelrc > envoy.bazelrc
 import %workspace%/envoy.bazelrc
 
 # Overrides workspace_status_command
