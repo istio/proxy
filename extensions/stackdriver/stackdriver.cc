@@ -459,8 +459,8 @@ void StackdriverRootContext::record() {
     if (!extended_info_populated) {
       ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     }
-    logger_->addLogEntry(request_info, peer_node_info.get(), extra_labels,
-                         outbound, true /* audit */);
+    logger_->addLogEntry(request_info, peer_node_info.get(), {}, outbound,
+                         true /* audit */);
   }
 
   if (enableEdgeReporting()) {
