@@ -29,7 +29,7 @@ filter_chains:
               {{- if .Vars.ServerClusterName }}
               cluster: {{ .Vars.ServerClusterName}}
               {{- else }}
-              cluster: outbound|9080|http|server.default.svc.cluster.local
+              cluster: server-outbound-cluster
               {{- end }}
               timeout: 0s
 {{- end }}

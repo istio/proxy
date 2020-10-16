@@ -411,23 +411,16 @@ bool StackdriverRootContext::onDone() {
 
 void StackdriverRootContext::record() {
   const bool outbound = isOutbound();
-  std::string peer;
-  bool peer_found = getValue(
-      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
-  const ::Wasm::Common::FlatNode& peer_node =
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          peer_found ? reinterpret_cast<const uint8_t*>(peer.data())
-                     : empty_node_info_.data());
+  Wasm::Common::PeerNodeInfo peer_node_info(
+      {outbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey},
+      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey});
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
-  const ::Wasm::Common::FlatNode& destination_node_info =
-      outbound ? peer_node : local_node;
 
   ::Wasm::Common::RequestInfo request_info;
-  ::Wasm::Common::populateHTTPRequestInfo(
-      outbound, useHostHeaderFallback(), &request_info,
-      flatbuffers::GetString(destination_node_info.namespace_()));
+  ::Wasm::Common::populateHTTPRequestInfo(outbound, useHostHeaderFallback(),
+                                          &request_info);
   ::Extensions::Stackdriver::Metric::record(
-      outbound, local_node, peer_node, request_info,
+      outbound, local_node, peer_node_info.get(), request_info,
       !config_.disable_http_size_metrics());
   bool extended_info_populated = false;
   if ((enableAllAccessLog() ||
@@ -437,42 +430,36 @@ void StackdriverRootContext::record() {
       shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     extended_info_populated = true;
-    logger_->addLogEntry(request_info, peer_node, outbound, false /* audit */);
+    logger_->addLogEntry(request_info, peer_node_info.get(), outbound,
+                         false /* audit */);
   }
 
   if (enableAuditLog() && shouldAuditThisRequest()) {
     if (!extended_info_populated) {
       ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     }
-    logger_->addLogEntry(request_info, peer_node, outbound, true /* audit */);
+    logger_->addLogEntry(request_info, peer_node_info.get(), outbound,
+                         true /* audit */);
   }
 
   if (enableEdgeReporting()) {
-    std::string peer_id;
-    if (!getPeerId(peer_id)) {
+    if (!peer_node_info.found()) {
       LOG_DEBUG(absl::StrCat(
           "cannot get metadata for: ", ::Wasm::Common::kDownstreamMetadataIdKey,
           "; skipping edge."));
       return;
     }
-    edge_reporter_->addEdge(request_info, peer_id, peer_node);
+    edge_reporter_->addEdge(request_info, peer_node_info.getId(),
+                            peer_node_info.get());
   }
 }
 
 bool StackdriverRootContext::recordTCP(uint32_t id) {
   const bool outbound = isOutbound();
-  std::string peer_id;
-  getPeerId(peer_id);
-  std::string peer;
-  bool peer_found = getValue(
-      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey}, &peer);
-  const ::Wasm::Common::FlatNode& peer_node =
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-          peer_found ? reinterpret_cast<const uint8_t*>(peer.data())
-                     : empty_node_info_.data());
+  Wasm::Common::PeerNodeInfo peer_node_info(
+      {outbound ? kUpstreamMetadataIdKey : kDownstreamMetadataIdKey},
+      {outbound ? kUpstreamMetadataKey : kDownstreamMetadataKey});
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
-  const ::Wasm::Common::FlatNode& destination_node_info =
-      outbound ? peer_node : local_node;
 
   auto req_iter = tcp_request_queue_.find(id);
   if (req_iter == tcp_request_queue_.end() || req_iter->second == nullptr) {
@@ -491,7 +478,8 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   auto cur = static_cast<long int>(
       proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
   bool waiting_for_metadata =
-      !peer_found && peer_id != ::Wasm::Common::kMetadataNotFoundValue;
+      !peer_node_info.found() &&
+      peer_node_info.getId() != ::Wasm::Common::kMetadataNotFoundValue;
   bool no_error = response_flags == 0;
   bool log_open_on_timeout =
       !record_info.tcp_open_entry_logged &&
@@ -500,13 +488,11 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     return false;
   }
   if (!request_info.is_populated) {
-    ::Wasm::Common::populateTCPRequestInfo(
-        outbound, &request_info,
-        flatbuffers::GetString(destination_node_info.namespace_()));
+    ::Wasm::Common::populateTCPRequestInfo(outbound, &request_info);
   }
   // Record TCP Metrics.
-  ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node,
-                                               request_info);
+  ::Extensions::Stackdriver::Metric::recordTCP(
+      outbound, local_node, peer_node_info.get(), request_info);
   bool extended_info_populated = false;
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
@@ -520,13 +506,13 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
             ::Wasm::Common::TCPConnectionState::Close) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
-      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
                               record_info.request_info->start_time, outbound,
                               false /* audit */);
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
-    logger_->addTcpLogEntry(request_info, peer_node,
+    logger_->addTcpLogEntry(request_info, peer_node_info.get(),
                             getCurrentTimeNanoseconds(), outbound,
                             false /* audit */);
   }
@@ -542,13 +528,13 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
             ::Wasm::Common::TCPConnectionState::Close) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
-      logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
                               record_info.request_info->start_time, outbound,
                               true /* audit */);
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
-    logger_->addTcpLogEntry(*record_info.request_info, peer_node,
+    logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
                             record_info.request_info->start_time, outbound,
                             true /* audit */);
   }

@@ -11,6 +11,7 @@ http_request:
 labels:
   destination_principal: "{{ .Vars.DestinationPrincipal }}"
   destination_service_host: server.default.svc.cluster.local
+  destination_service_name: server
   response_flag: "-"
   service_authentication_policy: ""
   source_principal: "{{ .Vars.SourcePrincipal }}"
@@ -18,7 +19,6 @@ labels:
   destination_name: ""
   destination_namespace: ""
   destination_workload: ""
-  destination_service_name: server.default.svc.cluster.local
   {{- else }}
   destination_name: ratings-v1-84975bc778-pxz2w
   destination_namespace: default
@@ -27,7 +27,6 @@ labels:
   destination_canonical_service: ratings
   destination_canonical_revision: version-1
   destination_version: v1
-  destination_service_name: server
   {{- end }}
   protocol: http
   {{- if .Vars.LogSampled }}
@@ -35,6 +34,6 @@ labels:
   {{- else }}
   log_sampled: "false"
   {{- end }}
-  upstream_cluster: "outbound|9080|http|server.default.svc.cluster.local"
+  upstream_cluster: "server-outbound-cluster"
   route_name: client_route
 severity: INFO

@@ -1,7 +1,14 @@
 {{- if .Vars.ServerClusterName }}
 name: {{ .Vars.ServerClusterName }}
 {{- else }}
-name: outbound|9080|http|server.default.svc.cluster.local
+name: server-outbound-cluster
+metadata:
+  filter_metadata:
+    istio:
+      services:
+        - host: server.default.svc.cluster.local
+          name: server
+          namespace: default
 {{- end }}
 connect_timeout: 1s
 type: STATIC
@@ -9,7 +16,7 @@ load_assignment:
   {{- if .Vars.ServerClusterName }}
   cluster_name: {{ .Vars.ServerClusterName }}
   {{- else }}
-  cluster_name: outbound|9080|http|server.default.svc.cluster.local
+  cluster_name: server-outbound-cluster
   {{- end }}
   endpoints:
   - lb_endpoints:

@@ -87,13 +87,6 @@ class StackdriverRootContext : public RootContext {
   void setConnectionState(uint32_t id,
                           ::Wasm::Common::TCPConnectionState state);
 
-  bool getPeerId(std::string& peer_id) {
-    bool found =
-        getValue({isOutbound() ? ::Wasm::Common::kUpstreamMetadataIdKey
-                               : ::Wasm::Common::kDownstreamMetadataIdKey},
-                 &peer_id);
-    return found;
-  }
   const ::Wasm::Common::FlatNode& getLocalNode() {
     return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
         local_node_info_.data());

@@ -216,11 +216,25 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 // Returns flatbuffer schema for node info.
 std::string_view nodeInfoSchema();
 
+class PeerNodeInfo {
+ public:
+  PeerNodeInfo(const std::string_view peer_metadata_id_key,
+               const std::string_view peer_metadata_key);
+  const ::Wasm::Common::FlatNode& get() const;
+  const std::string& getId() const { return peer_id_; }
+  bool found() const { return found_; }
+
+ private:
+  bool found_ = false;
+  std::string peer_id_;
+  std::string peer_node_;
+  flatbuffers::DetachedBuffer fallback_peer_node_;
+};
+
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header,
-                             RequestInfo* request_info,
-                             const std::string& destination_namespace);
+                             RequestInfo* request_info);
 
 // populateExtendedHTTPRequestInfo populates the extra fields in RequestInfo
 // struct, includes trace headers, request id headers, and url.
@@ -232,8 +246,7 @@ void populateExtendedRequestInfo(RequestInfo* request_info);
 
 // populateTCPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void populateTCPRequestInfo(bool outbound, RequestInfo* request_info,
-                            const std::string& destination_namespace);
+void populateTCPRequestInfo(bool outbound, RequestInfo* request_info);
 
 // populateGRPCInfo fills gRPC-related information, such as message counts.
 // Returns true if all information is filled.

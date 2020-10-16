@@ -1,16 +1,15 @@
 labels:
   destination_principal: "{{ .Vars.DestinationPrincipal }}"
   destination_service_host: server.default.svc.cluster.local
+  destination_service_name: server
   response_flag: "-"
   service_authentication_policy: ""
   {{- if .Vars.DestinationUnknown }}
-  destination_service_name: server.default.svc.cluster.local
   destination_name: ""
   destination_namespace: ""
   destination_workload: ""
   {{- else }}
   destination_name: ratings-v1-84975bc778-pxz2w
-  destination_service_name: server
   destination_namespace: default
   destination_workload: ratings-v1
   destination_app: ratings
@@ -26,7 +25,7 @@ labels:
   upstream_cluster: "outbound|9080|tcp|server.default.svc.cluster.local"
 severity: INFO
 {{- if .Vars.DestinationUnknown }}
-text_payload: "productpage-v1 --> server.default.svc.cluster.local"
+text_payload: "productpage-v1 --> server"
 {{- else }}
 text_payload: "productpage-v1 --> ratings"
 {{- end }}

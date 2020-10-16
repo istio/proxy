@@ -36,12 +36,19 @@ static_resources:
                 port_value: {{ .Ports.XDSPort }}
     http2_protocol_options: {}
     name: xds_cluster
-  - name: outbound|9080|http|server.default.svc.cluster.local
+  - name: server-outbound-cluster
     connect_timeout: 1s
     type: STATIC
     http2_protocol_options: {}
+    metadata:
+      filter_metadata:
+        istio:
+          services:
+            - host: server.default.svc.cluster.local
+              name: server
+              namespace: default
     load_assignment:
-      cluster_name: outbound|9080|http|server.default.svc.cluster.local
+      cluster_name: server-outbound-cluster
       endpoints:
       - lb_endpoints:
         - endpoint:
@@ -49,5 +56,11 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{ .Ports.ServerPort }}
+          {{- if eq .Vars.EnableEndpointMetadata "true" }}
+          metadata:
+            filter_metadata:
+              istio:
+                workload: ratings-v1;default;ratings;version-1
+          {{- end }}
 {{ .Vars.ClientTLSContext | indent 4 }}
 {{ .Vars.ClientStaticCluster | indent 2 }}
