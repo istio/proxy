@@ -274,7 +274,6 @@ class PluginRootContext : public RootContext {
   std::string_view peer_metadata_id_key_;
   std::string_view peer_metadata_key_;
   bool outbound_;
-  bool debug_;
   bool use_host_header_fallback_;
 
   int64_t cache_hits_accumulator_ = 0;
@@ -309,7 +308,7 @@ class PluginRootContextInbound : public PluginRootContext {
 class PluginContext : public Context {
  public:
   explicit PluginContext(uint32_t id, RootContext* root)
-      : Context(id, root), is_tcp_(false), context_id_(id) {
+      : Context(id, root), is_tcp_(false) {
     request_info_ = std::make_shared<::Wasm::Common::RequestInfo>();
   }
 
@@ -329,7 +328,7 @@ class PluginContext : public Context {
     }
     is_tcp_ = true;
     request_info_->tcp_connections_opened++;
-    rootContext()->addToTCPRequestQueue(context_id_, request_info_);
+    rootContext()->addToTCPRequestQueue(id(), request_info_);
     return FilterStatus::Continue;
   }
 
@@ -356,12 +355,11 @@ class PluginContext : public Context {
   };
 
   void cleanupTCPOnClose() {
-    rootContext()->deleteFromTCPRequestQueue(context_id_);
+    rootContext()->deleteFromTCPRequestQueue(id());
     request_info_->tcp_connections_closed++;
   }
 
   bool is_tcp_;
-  uint32_t context_id_;
   std::shared_ptr<::Wasm::Common::RequestInfo> request_info_;
 };
 

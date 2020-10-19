@@ -449,7 +449,7 @@ void StackdriverRootContext::record() {
           "; skipping edge."));
       return;
     }
-    edge_reporter_->addEdge(request_info, peer_node_info.getId(),
+    edge_reporter_->addEdge(request_info, peer_node_info.id(),
                             peer_node_info.get());
   }
 }
@@ -477,9 +477,7 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   getValue({"response", "flags"}, &response_flags);
   auto cur = static_cast<long int>(
       proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
-  bool waiting_for_metadata =
-      !peer_node_info.found() &&
-      peer_node_info.getId() != ::Wasm::Common::kMetadataNotFoundValue;
+  bool waiting_for_metadata = peer_node_info.maybeWaiting();
   bool no_error = response_flags == 0;
   bool log_open_on_timeout =
       !record_info.tcp_open_entry_logged &&
