@@ -49,12 +49,8 @@ class PluginRootContext : public RootContext {
  public:
   PluginRootContext(uint32_t id, std::string_view root_id)
       : RootContext(id, root_id) {}
-  ~PluginRootContext() = default;
-
   bool onConfigure(size_t) override;
   bool configure(size_t);
-  bool onStart(size_t) override { return true; };
-  void onTick() override{};
 
   std::string_view metadataValue() { return metadata_value_; };
   std::string_view nodeId() { return node_id_; };
@@ -78,7 +74,6 @@ class PluginContext : public Context {
     direction_ = ::Wasm::Common::getTrafficDirection();
   }
 
-  void onCreate() override{};
   FilterHeadersStatus onRequestHeaders(uint32_t, bool) override;
   FilterHeadersStatus onResponseHeaders(uint32_t, bool) override;
 

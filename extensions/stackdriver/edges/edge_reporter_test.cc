@@ -146,7 +146,7 @@ flatbuffers::DetachedBuffer nodeInfo(const std::string& data) {
   ::Wasm::Common::RequestInfo request_info;
   request_info.destination_service_host = "httpbin.org";
   request_info.destination_service_name = "httpbin";
-  request_info.request_protocol = "HTTP";
+  request_info.request_protocol = ::Wasm::Common::Protocol::HTTP;
   return request_info;
 }
 

@@ -107,7 +107,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.destination_service_host = "httpbin.org";
   request_info.destination_service_name = "httpbin";
   request_info.response_flag = "-";
-  request_info.request_protocol = "HTTP";
+  request_info.request_protocol = ::Wasm::Common::Protocol::HTTP;
   request_info.destination_principal = "destination_principal";
   request_info.source_principal = "source_principal";
   request_info.service_auth_policy =
@@ -161,7 +161,7 @@ std::string write_audit_request_json = R"({
            "referer":"www.google.com",
            "serverIp":"2.2.2.2",
            "latency":"10s",
-           "protocol":"HTTP"
+           "protocol":"http"
         },
         "timestamp":"1970-01-01T00:00:00Z",
         "severity":"INFO",
@@ -210,7 +210,7 @@ std::string write_log_request_json = R"({
            "referer":"www.google.com",
            "serverIp":"2.2.2.2",
            "latency":"10s",
-           "protocol":"HTTP"
+           "protocol":"http"
         },
         "timestamp":"1970-01-01T00:00:00Z",
         "severity":"INFO",
@@ -225,7 +225,7 @@ std::string write_log_request_json = R"({
            "service_authentication_policy":"MUTUAL_TLS",
            "source_workload":"test_peer_workload",
            "response_flag":"-",
-           "protocol":"HTTP",
+           "protocol":"http",
            "log_sampled":"false",
            "connection_id":"0",
            "upstream_cluster": "server-inbound-cluster",
