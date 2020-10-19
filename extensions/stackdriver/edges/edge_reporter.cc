@@ -155,11 +155,10 @@ void EdgeReporter::addEdge(const ::Wasm::Common::RequestInfo& request_info,
   edge->mutable_destination()->CopyFrom(node_instance_);
 
   auto protocol = request_info.request_protocol;
-  if (protocol == "http" || protocol == "HTTP") {
+  // TODO: add support for HTTPS
+  if (protocol == ::Wasm::Common::Protocol::HTTP) {
     edge->set_protocol(TrafficAssertion_Protocol_PROTOCOL_HTTP);
-  } else if (protocol == "https" || protocol == "HTTPS") {
-    edge->set_protocol(TrafficAssertion_Protocol_PROTOCOL_HTTPS);
-  } else if (protocol == "grpc" || protocol == "GRPC") {
+  } else if (protocol == ::Wasm::Common::Protocol::GRPC) {
     edge->set_protocol(TrafficAssertion_Protocol_PROTOCOL_GRPC);
   } else {
     edge->set_protocol(TrafficAssertion_Protocol_PROTOCOL_TCP);
