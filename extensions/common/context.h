@@ -217,7 +217,7 @@ flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer();
 flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 
 // Extract upstream peer metadata from upstream host metadata.
-// Returns true if the metadat is found in the upstream host metadata.
+// Returns true if the metadata is found in the upstream host metadata.
 bool extractPeerMetadataFromUpstreamHostMetadata(
     flatbuffers::FlatBufferBuilder& fbb);
 

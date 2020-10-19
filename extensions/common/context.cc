@@ -322,26 +322,25 @@ bool extractPeerMetadataFromUpstreamHostMetadata(
 
 PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
                            const std::string_view peer_metadata_key) {
+  // Attempt to read from filter_state first.
   found_ = getValue({peer_metadata_id_key}, &peer_id_);
-  if (peer_id_ == kMetadataNotFoundValue) {
-    // Sentinel value is preserved as ID to implement maybeWaiting.
-    found_ = false;
-    fallback_peer_node_ = extractEmptyNodeFlatBuffer();
-    return;
-  }
-  if (found_) {
+  if (found_ && peer_id_ != kMetadataNotFoundValue) {
     getValue({peer_metadata_key}, &peer_node_);
     return;
   }
+
+  // Sentinel value is preserved as ID to implement maybeWaiting.
+  found_ = false;
+
+  // Downstream peer metadata will never be in localhost endpoint. Skip
+  // looking for it.
   if (peer_metadata_id_key == kDownstreamMetadataIdKey) {
-    // Downstream peer's metadata will never be in localhost endpoint. Skip
-    // looking for it.
     fallback_peer_node_ = extractEmptyNodeFlatBuffer();
     return;
   }
 
   // Construct a fallback peer node metadata based on endpoint labels if it is
-  // not in filter state.
+  // not in filter state. This may happen before metadata is received as well.
   flatbuffers::FlatBufferBuilder fbb;
   if (extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
     fallback_peer_node_ = fbb.Release();
