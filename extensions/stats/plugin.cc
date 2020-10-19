@@ -455,7 +455,6 @@ bool PluginRootContext::configure(size_t configuration_size) {
     peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
   }
 
-  debug_ = JsonGetField<bool>(j, "debug").value_or(false);
   use_host_header_fallback_ =
       !JsonGetField<bool>(j, "disable_host_header_fallback").value_or(false);
 
@@ -561,7 +560,7 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     // been no error in connection.
     uint64_t response_flags = 0;
     getValue({"response", "flags"}, &response_flags);
-    if (!peer_node_info.found() && response_flags == 0) {
+    if (peer_node_info.maybeWaiting() && response_flags == 0) {
       return false;
     }
     if (!request_info.is_populated) {

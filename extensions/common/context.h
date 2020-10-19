@@ -32,6 +32,9 @@ constexpr std::string_view kUpstreamMetadataKey = "upstream_peer";
 constexpr std::string_view kDownstreamMetadataIdKey = "downstream_peer_id";
 constexpr std::string_view kDownstreamMetadataKey = "downstream_peer";
 
+// Sentinel value assigned to peer metadata ID key, indicating that the peer
+// metadata is absent. This is different from a missing peer metadata ID key
+// which could indicate that the metadata is not received yet.
 const std::string kMetadataNotFoundValue =
     "envoy.wasm.metadata_exchange.peer_unknown";
 
@@ -213,19 +216,33 @@ flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer();
 // address access.
 flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 
+// Extract upstream peer metadata from upstream host metadata.
+// Returns true if the metadata is found in the upstream host metadata.
+bool extractPeerMetadataFromUpstreamHostMetadata(
+    flatbuffers::FlatBufferBuilder& fbb);
+
 // Returns flatbuffer schema for node info.
 std::string_view nodeInfoSchema();
 
 class PeerNodeInfo {
  public:
-  PeerNodeInfo(const std::string_view peer_metadata_id_key,
-               const std::string_view peer_metadata_key);
+  explicit PeerNodeInfo(const std::string_view peer_metadata_id_key,
+                        const std::string_view peer_metadata_key);
+  PeerNodeInfo() = delete;
   const ::Wasm::Common::FlatNode& get() const;
-  const std::string& getId() const { return peer_id_; }
+  const std::string& id() const { return peer_id_; }
+
+  // Found indicates whether both ID and metadata is available.
   bool found() const { return found_; }
 
+  // Maybe waiting indicates that the metadata is not found but may arrive
+  // later.
+  bool maybeWaiting() const {
+    return !found_ && peer_id_ != ::Wasm::Common::kMetadataNotFoundValue;
+  }
+
  private:
-  bool found_ = false;
+  bool found_;
   std::string peer_id_;
   std::string peer_node_;
   flatbuffers::DetachedBuffer fallback_peer_node_;

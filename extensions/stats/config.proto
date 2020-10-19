@@ -68,6 +68,7 @@ message PluginConfig {
   // next id: 7
   // The following settings should be rarely used.
   // Enable debug for this filter.
+  // DEPRECATED.
   bool debug = 1;
 
   // maximum size of the peer metadata cache.

@@ -280,36 +280,21 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   return fbb.Release();
 }
 
-PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
-                           const std::string_view peer_metadata_key) {
-  fallback_peer_node_ = extractEmptyNodeFlatBuffer();
-  found_ = getValue({peer_metadata_id_key}, &peer_id_);
-  if (found_) {
-    getValue({peer_metadata_key}, &peer_node_);
-    return;
-  }
-  if (peer_metadata_id_key == kDownstreamMetadataIdKey) {
-    // Downstream peer's metadata will never be in localhost endpoint. Skip
-    // looking for it.
-    return;
-  }
-
-  // Construct a fallback peer node metadata based on endpoint labels if it is
-  // not in filter state.
+bool extractPeerMetadataFromUpstreamHostMetadata(
+    flatbuffers::FlatBufferBuilder& fbb) {
   std::string endpoint_labels;
   if (!getValue(
           {"upstream_host_metadata", "filter_metadata", "istio", "workload"},
           &endpoint_labels)) {
-    return;
+    return false;
   }
   std::vector<std::string_view> parts = absl::StrSplit(endpoint_labels, ';');
   // workload label should semicolon separated four parts string:
   // workload_name;namespace;canonical_service;canonical_revision.
   if (parts.size() < 4) {
-    return;
+    return false;
   }
 
-  flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> workload_name, namespace_;
   std::vector<flatbuffers::Offset<KeyVal>> labels;
   workload_name = fbb.CreateString(parts[0]);
@@ -332,7 +317,36 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
   node.add_labels(labels_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-  fallback_peer_node_ = fbb.Release();
+  return true;
+}
+
+PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
+                           const std::string_view peer_metadata_key) {
+  // Attempt to read from filter_state first.
+  found_ = getValue({peer_metadata_id_key}, &peer_id_);
+  if (found_ && peer_id_ != kMetadataNotFoundValue) {
+    getValue({peer_metadata_key}, &peer_node_);
+    return;
+  }
+
+  // Sentinel value is preserved as ID to implement maybeWaiting.
+  found_ = false;
+
+  // Downstream peer metadata will never be in localhost endpoint. Skip
+  // looking for it.
+  if (peer_metadata_id_key == kDownstreamMetadataIdKey) {
+    fallback_peer_node_ = extractEmptyNodeFlatBuffer();
+    return;
+  }
+
+  // Construct a fallback peer node metadata based on endpoint labels if it is
+  // not in filter state. This may happen before metadata is received as well.
+  flatbuffers::FlatBufferBuilder fbb;
+  if (extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
+    fallback_peer_node_ = fbb.Release();
+  } else {
+    fallback_peer_node_ = extractEmptyNodeFlatBuffer();
+  }
 }
 
 const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
