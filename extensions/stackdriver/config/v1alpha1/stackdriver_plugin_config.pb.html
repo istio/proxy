@@ -5,11 +5,12 @@ location: https://istio.io/docs/reference/config/proxy_extensions/stackdriver.ht
 layout: protoc-gen-docs
 generator: protoc-gen-docs
 weight: 20
-number_of_entries: 2
+number_of_entries: 3
 ---
-<h2 id="PluginConfig">PluginConfig</h2>
+<h2 id="CustomConfig">CustomConfig</h2>
 <section>
-<p>next id: 12</p>
+<p>Custom instance configuration overrides.
+Provides a way to customize metrics/logs .</p>
 
 <table class="message-fields">
 <thead>
@@ -21,6 +22,63 @@ number_of_entries: 2
 </tr>
 </thead>
 <tbody>
+<tr id="CustomConfig-dimensions">
+<td><code>dimensions</code></td>
+<td><code>map&lt;string,&nbsp;string&gt;</code></td>
+<td>
+<p>(Optional) Collection of tag names and tag expressions to include in the
+instance. Conflicts are resolved by the tag name by overriding previously
+supplied values.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="PluginConfig">PluginConfig</h2>
+<section>
+<p>next id: 15</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="PluginConfig-max_log_batch_size_in_bytes">
+<td><code>maxLogBatchSizeInBytes</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Optional. Allows configuration of the size of the LogWrite request. The
+size is in bytes, so that it allows for better performance. Default is 4MB.
+The size of one log entry within LogWrite request is approx 1Kb.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-log_report_duration">
+<td><code>logReportDuration</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>Optional. Allows configuration of the time between calls out to the
+stackdriver logging service to report buffered LogWrite request.
+Customers can choose to report more aggressively by keeping shorter report
+interval if needed. Default is 10s.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
 <tr id="PluginConfig-enable_audit_log">
 <td><code>enableAuditLog</code></td>
 <td><code>bool</code></td>
@@ -141,6 +199,19 @@ No
 <td><code><a href="#PluginConfig-AccessLogging">AccessLogging</a></code></td>
 <td>
 <p>Optional. Controls what type of logs to export..</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-custom_log_config">
+<td><code>customLogConfig</code></td>
+<td><code><a href="#CustomConfig">CustomConfig</a></code></td>
+<td>
+<p>(Optional) Collection of tag names and tag expressions to include in the
+logs. Conflicts are resolved by the tag name by overriding previously
+supplied values. Does not apply to audit logs.</p>
 
 </td>
 <td>
