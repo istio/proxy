@@ -337,15 +337,19 @@ class PluginContext : public Context {
   };
 
   // HTTP streams start with headers.
-  // Metadata should be available (if any) at the time of adding to the queue.
-  // Since HTTP metadata exchange uses headers in both directions, this is a
-  // safe place to register for both inbound and outbound streams.
-  FilterHeadersStatus onResponseHeaders(uint32_t, bool) override {
+  FilterHeadersStatus onRequestHeaders(uint32_t, bool) override {
     ::Wasm::Common::populateRequestProtocol(&request_info_);
     // Save host value for recurrent reporting
     if (rootContext()->useHostHeaderFallback()) {
       getValue({"request", "host"}, &request_info_.url_host);
     }
+    return FilterHeadersStatus::Continue;
+  }
+
+  // Metadata should be available (if any) at the time of adding to the queue.
+  // Since HTTP metadata exchange uses headers in both directions, this is a
+  // safe place to register for both inbound and outbound streams.
+  FilterHeadersStatus onResponseHeaders(uint32_t, bool) override {
     rootContext()->addToRequestQueue(id(), &request_info_);
     return FilterHeadersStatus::Continue;
   }
