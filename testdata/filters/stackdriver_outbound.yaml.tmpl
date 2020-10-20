@@ -18,7 +18,9 @@
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
             {{- if .Vars.JustSendErrorClientLog }}
-            {{ .Vars.StackdriverFilterClientErrorConfig | fill }}
+            {"access_logging": "ERRORS_ONLY", "enable_audit_log": true}
+            {{- else if .Vars.StackdriverFilterCustomClientConfig }}
+            {{ .Vars.StackdriverFilterCustomClientConfig | fill }}
             {{- else }}
-            {{ .Vars.StackdriverFilterClientConfig | fill }}
+            {"access_logging": "FULL", "enable_audit_log": true}
             {{- end }}

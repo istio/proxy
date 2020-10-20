@@ -35,12 +35,11 @@ func enableStackDriver(t *testing.T, vars map[string]string) {
 func TestStackdriverPayload(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "NONE",
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StatsConfig":                   driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 
 	sdPort := params.Ports.Max + 1
@@ -92,12 +91,11 @@ func TestStackdriverPayload(t *testing.T) {
 func TestStackdriverPayloadGateway(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"RequestPath":                   "echo",
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StatsConfig":                   driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"RequestPath":           "echo",
+		"SDLogStatusCode":       "200",
+		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -150,14 +148,13 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 func TestStackdriverPayloadWithTLS(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "MUTUAL_TLS",
-		"SDLogStatusCode":               "200",
-		"SourcePrincipal":               "spiffe://cluster.local/ns/default/sa/client",
-		"DestinationPrincipal":          "spiffe://cluster.local/ns/default/sa/server",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StatsConfig":                   driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"ServiceAuthenticationPolicy": "MUTUAL_TLS",
+		"SDLogStatusCode":             "200",
+		"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
+		"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -212,11 +209,10 @@ func TestStackdriverReload(t *testing.T) {
 	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "NONE",
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -269,12 +265,11 @@ func TestStackdriverVMReload(t *testing.T) {
 	t.Parallel()
 	env.SkipTSanASan(t)
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "NONE",
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"ReloadVM":                      "true",
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"ReloadVM":                    "true",
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -333,11 +328,10 @@ func TestStackdriverVMReload(t *testing.T) {
 func TestStackdriverGCEInstances(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "NONE",
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -379,10 +373,9 @@ func TestStackdriverGCEInstances(t *testing.T) {
 func TestStackdriverParallel(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"SDLogStatusCode":       "200",
+		"StackdriverRootCAFile": driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":  driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -482,18 +475,16 @@ func TestStackdriverAccessLog(t *testing.T) {
 	for _, tt := range TestCases {
 		t.Run(tt.name, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
-				"LogWindowDuration":                  tt.logWindowDuration,
-				"ServiceAuthenticationPolicy":        "NONE",
-				"DirectResponseCode":                 tt.respCode,
-				"SDLogStatusCode":                    tt.respCode,
-				"StackdriverRootCAFile":              driver.TestPath("testdata/certs/stackdriver.pem"),
-				"StackdriverTokenFile":               driver.TestPath("testdata/certs/access-token"),
-				"JustSendErrorClientLog":             tt.justSendErrorClientLog,
-				"DestinationUnknown":                 tt.destinationUnknown,
-				"SourceUnknown":                      tt.sourceUnknown,
-				"LogSampled":                         "true",
-				"StackdriverFilterClientConfig":      driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
-				"StackdriverFilterClientErrorConfig": driver.LoadTestJSON("testdata/stackdriver/client_error_config.yaml.tmpl"),
+				"LogWindowDuration":           tt.logWindowDuration,
+				"ServiceAuthenticationPolicy": "NONE",
+				"DirectResponseCode":          tt.respCode,
+				"SDLogStatusCode":             tt.respCode,
+				"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+				"JustSendErrorClientLog":      tt.justSendErrorClientLog,
+				"DestinationUnknown":          tt.destinationUnknown,
+				"SourceUnknown":               tt.sourceUnknown,
+				"LogSampled":                  "true",
 			}, envoye2e.ProxyE2ETests)
 
 			sdPort := params.Ports.Max + 1
@@ -571,20 +562,19 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 	for _, tt := range TestCases {
 		t.Run(tt.name, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
-				"ServiceAuthenticationPolicy":   "MUTUAL_TLS",
-				"SDLogStatusCode":               "200",
-				"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-				"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-				"SourcePrincipal":               "spiffe://cluster.local/ns/default/sa/client",
-				"DestinationPrincipal":          "spiffe://cluster.local/ns/default/sa/server",
-				"DisableDirectResponse":         "true",
-				"AlpnProtocol":                  tt.alpnProtocol,
-				"StatsConfig":                   driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-				"SourceUnknownOnClose":          tt.sourceUnknown,
-				"SourceUnknownOnOpen":           tt.sourceUnknown,
-				"DestinationUnknown":            tt.destinationUnknown,
-				"SourceUnknown":                 tt.sourceUnknown,
-				"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+				"ServiceAuthenticationPolicy": "MUTUAL_TLS",
+				"SDLogStatusCode":             "200",
+				"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+				"SourcePrincipal":             "spiffe://cluster.local/ns/default/sa/client",
+				"DestinationPrincipal":        "spiffe://cluster.local/ns/default/sa/server",
+				"DisableDirectResponse":       "true",
+				"AlpnProtocol":                tt.alpnProtocol,
+				"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"SourceUnknownOnClose":        tt.sourceUnknown,
+				"SourceUnknownOnOpen":         tt.sourceUnknown,
+				"DestinationUnknown":          tt.destinationUnknown,
+				"SourceUnknown":               tt.sourceUnknown,
 			}, envoye2e.ProxyE2ETests)
 
 			sdPort := params.Ports.Max + 1
@@ -659,12 +649,11 @@ func TestStackdriverAuditLog(t *testing.T) {
 	logEntryCount := 5
 
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "NONE",
-		"DirectResponseCode":            respCode,
-		"SDLogStatusCode":               respCode,
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"ServiceAuthenticationPolicy": "NONE",
+		"DirectResponseCode":          respCode,
+		"SDLogStatusCode":             respCode,
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 	}, envoye2e.ProxyE2ETests)
 
 	sdPort := params.Ports.Max + 1
@@ -723,15 +712,14 @@ func TestStackdriverAuditLog(t *testing.T) {
 func TestStackdriverAttributeGen(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "NONE",
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StatsConfig":                   driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"AttributeGenWasmRuntime":       "envoy.wasm.runtime.null",
-		"AttributeGenFilterConfig":      "inline_string: \"envoy.wasm.attributegen\"",
-		"RequestOperation":              "GetMethod",
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config.yaml.tmpl"),
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"AttributeGenWasmRuntime":     "envoy.wasm.runtime.null",
+		"AttributeGenFilterConfig":    "inline_string: \"envoy.wasm.attributegen\"",
+		"RequestOperation":            "GetMethod",
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1
 	stsPort := params.Ports.Max + 2
@@ -783,13 +771,13 @@ func TestStackdriverAttributeGen(t *testing.T) {
 func TestStackdriverCustomAccessLog(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
-		"ServiceAuthenticationPolicy":   "NONE",
-		"SDLogStatusCode":               "200",
-		"StackdriverRootCAFile":         driver.TestPath("testdata/certs/stackdriver.pem"),
-		"StackdriverTokenFile":          driver.TestPath("testdata/certs/access-token"),
-		"StatsConfig":                   driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StackdriverFilterClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config_customized.yaml.tmpl"),
-		"LogsCustomized":                "true",
+		"ServiceAuthenticationPolicy":         "NONE",
+		"SDLogStatusCode":                     "200",
+		"StackdriverRootCAFile":               driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":                driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":                         driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"StackdriverFilterCustomClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config_customized.yaml.tmpl"),
+		"LogsCustomized":                      "true",
 	}, envoye2e.ProxyE2ETests)
 
 	sdPort := params.Ports.Max + 1
@@ -814,7 +802,7 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 			&driver.Sleep{1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
-				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
+				nil,
 				[]SDLogEntry{
 					{
 						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
