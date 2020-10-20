@@ -305,8 +305,9 @@ void MetadataExchangeFilter::updatePeer(
 void MetadataExchangeFilter::updatePeerId(absl::string_view key,
                                           absl::string_view value) {
   WasmStatePrototype prototype(
-      true, ::Envoy::Extensions::Common::Wasm::WasmType::String,
-      absl::string_view(), StreamInfo::FilterState::LifeSpan::Connection);
+      /* read_only = */ false,
+      ::Envoy::Extensions::Common::Wasm::WasmType::String, absl::string_view(),
+      StreamInfo::FilterState::LifeSpan::Connection);
   auto state =
       std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(prototype);
   state->setValue(value);
