@@ -120,38 +120,40 @@ void populateDestinationService(bool use_host_header,
 
 void populateRequestInfo(bool outbound, bool use_host_header_fallback,
                          RequestInfo* request_info) {
-  if (!request_info->is_populated) {
-    request_info->is_populated = true;
-
-    getValue({"cluster_name"}, &request_info->upstream_cluster);
-    getValue({"route_name"}, &request_info->route_name);
-    // Fill in request info.
-    // Get destination service name and host based on cluster name and host
-    // header.
-    populateDestinationService(use_host_header_fallback, request_info);
-    uint64_t destination_port = 0;
-    if (outbound) {
-      getValue({"upstream", "port"}, &destination_port);
-      getValue({"upstream", "uri_san_peer_certificate"},
-               &request_info->destination_principal);
-      getValue({"upstream", "uri_san_local_certificate"},
-               &request_info->source_principal);
-    } else {
-      getValue({"destination", "port"}, &destination_port);
-
-      bool mtls = false;
-      if (getValue({"connection", "mtls"}, &mtls)) {
-        request_info->service_auth_policy =
-            mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
-                 : ::Wasm::Common::ServiceAuthenticationPolicy::None;
-      }
-      getValue({"connection", "uri_san_local_certificate"},
-               &request_info->destination_principal);
-      getValue({"connection", "uri_san_peer_certificate"},
-               &request_info->source_principal);
-    }
-    request_info->destination_port = destination_port;
+  if (request_info->is_populated) {
+    return;
   }
+
+  request_info->is_populated = true;
+
+  getValue({"cluster_name"}, &request_info->upstream_cluster);
+  getValue({"route_name"}, &request_info->route_name);
+  // Fill in request info.
+  // Get destination service name and host based on cluster name and host
+  // header.
+  populateDestinationService(use_host_header_fallback, request_info);
+  uint64_t destination_port = 0;
+  if (outbound) {
+    getValue({"upstream", "port"}, &destination_port);
+    getValue({"upstream", "uri_san_peer_certificate"},
+             &request_info->destination_principal);
+    getValue({"upstream", "uri_san_local_certificate"},
+             &request_info->source_principal);
+  } else {
+    getValue({"destination", "port"}, &destination_port);
+
+    bool mtls = false;
+    if (getValue({"connection", "mtls"}, &mtls)) {
+      request_info->service_auth_policy =
+          mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
+               : ::Wasm::Common::ServiceAuthenticationPolicy::None;
+    }
+    getValue({"connection", "uri_san_local_certificate"},
+             &request_info->destination_principal);
+    getValue({"connection", "uri_san_peer_certificate"},
+             &request_info->source_principal);
+  }
+  request_info->destination_port = destination_port;
 }
 
 std::string_view AuthenticationPolicyString(

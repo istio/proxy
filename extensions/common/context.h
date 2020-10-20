@@ -62,7 +62,7 @@ constexpr std::string_view kLatest = "latest";
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
 
-enum class ServiceAuthenticationPolicy : int8_t {
+enum class ServiceAuthenticationPolicy : uint8_t {
   Unspecified = 0,
   None = 1,
   MutualTLS = 2,
