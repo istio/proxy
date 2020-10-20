@@ -54,6 +54,8 @@ const std::string default_field_separator = ";.;";
 const std::string default_value_separator = "=.=";
 const std::string default_stat_prefix = "istio";
 
+// The order of the fields is important! The metrics indicate the cut-off line
+// using an index.
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
   FIELD_FUNC(source_workload)                \

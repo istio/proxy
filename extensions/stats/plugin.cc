@@ -190,7 +190,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                     [](::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
                     static_cast<uint32_t>(Protocol::HTTP) |
                         static_cast<uint32_t>(Protocol::GRPC),
-                    count_standard_labels, false},
+                    count_standard_labels, /* recurrent */ false},
       MetricFactory{"request_duration_milliseconds", MetricType::Histogram,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       return request_info.duration /* in nanoseconds */ /
@@ -198,21 +198,21 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                     },
                     static_cast<uint32_t>(Protocol::HTTP) |
                         static_cast<uint32_t>(Protocol::GRPC),
-                    count_standard_labels, false},
+                    count_standard_labels, /* recurrent */ false},
       MetricFactory{"request_bytes", MetricType::Histogram,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       return request_info.request_size;
                     },
                     static_cast<uint32_t>(Protocol::HTTP) |
                         static_cast<uint32_t>(Protocol::GRPC),
-                    count_standard_labels, false},
+                    count_standard_labels, /* recurrent */ false},
       MetricFactory{"response_bytes", MetricType::Histogram,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       return request_info.response_size;
                     },
                     static_cast<uint32_t>(Protocol::HTTP) |
                         static_cast<uint32_t>(Protocol::GRPC),
-                    count_standard_labels, false},
+                    count_standard_labels, /* recurrent */ false},
 
       // GRPC streaming metrics.
       // These metrics are dimensioned by peer labels as a minimum.
@@ -226,7 +226,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                       return out;
                     },
                     static_cast<uint32_t>(Protocol::GRPC), count_peer_labels,
-                    true},
+                    /* recurrent */ true},
       MetricFactory{"response_messages_total", MetricType::Counter,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       uint64_t out = request_info.response_message_count -
@@ -236,7 +236,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                       return out;
                     },
                     static_cast<uint32_t>(Protocol::GRPC), count_peer_labels,
-                    true},
+                    /* recurrent */ true},
 
       // TCP metrics.
       MetricFactory{"tcp_sent_bytes_total", MetricType::Counter,
@@ -246,7 +246,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                       return out;
                     },
                     static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
-                    true},
+                    /* recurrent */ true},
       MetricFactory{"tcp_received_bytes_total", MetricType::Counter,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       uint64_t out = 0;
@@ -254,7 +254,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                       return out;
                     },
                     static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
-                    true},
+                    /* recurrent */ true},
       MetricFactory{"tcp_connections_opened_total", MetricType::Counter,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       uint8_t out = 0;
@@ -262,13 +262,13 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                       return out;
                     },
                     static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
-                    true},
+                    /* recurrent */ true},
       MetricFactory{"tcp_connections_closed_total", MetricType::Counter,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       return request_info.tcp_connections_closed;
                     },
                     static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
-                    false},
+                    /* recurrent */ false},
   };
   return default_metrics;
 }
