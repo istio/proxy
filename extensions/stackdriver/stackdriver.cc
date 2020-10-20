@@ -267,10 +267,10 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     }
   }
 
-  if (!logger_ && enableAccessLog()) {
+  if (enableAccessLog()) {
     std::unordered_map<std::string, std::string> extra_labels;
+    cleanupExpressions();
     if (config_.has_custom_log_config()) {
-      cleanupExpressions();
       for (const auto& dimension : config_.custom_log_config().dimensions()) {
         uint32_t token;
         if (createExpression(dimension.second, &token) != WasmResult::Ok) {
@@ -283,17 +283,19 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     }
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto logging_stub_option = stub_option;
-    logging_stub_option.default_endpoint = kLoggingService;
-    auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
-    // logger takes ownership of exporter.
-    if (config_.max_log_batch_size_in_bytes() > 0) {
-      logger_ = std::make_unique<Logger>(local_node, std::move(exporter),
-                                         extra_labels,
-                                         config_.max_log_batch_size_in_bytes());
-    } else {
-      logger_ = std::make_unique<Logger>(local_node, std::move(exporter),
-                                         extra_labels);
+    if (!logger_) {
+      auto logging_stub_option = stub_option;
+      logging_stub_option.default_endpoint = kLoggingService;
+      auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
+      // logger takes ownership of exporter.
+      if (config_.max_log_batch_size_in_bytes() > 0) {
+        logger_ = std::make_unique<Logger>(
+            local_node, std::move(exporter), extra_labels,
+            config_.max_log_batch_size_in_bytes());
+      } else {
+        logger_ = std::make_unique<Logger>(local_node, std::move(exporter),
+                                           extra_labels);
+      }
     }
     tcp_log_entry_timeout_ = getTcpLogEntryTimeoutNanoseconds();
   }
