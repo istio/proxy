@@ -567,6 +567,7 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                bool end_stream) {
   // HTTP peer metadata should be done by the time report is called for a
   // request info. TCP metadata might still be awaiting.
+  // Upstream host should be selected for metadata fallback.
   Wasm::Common::PeerNodeInfo peer_node_info(peer_metadata_id_key_,
                                             peer_metadata_key_);
   if (request_info.request_protocol == Protocol::TCP) {
@@ -589,11 +590,6 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
       ::Wasm::Common::populateHTTPRequestInfo(
           outbound_, useHostHeaderFallback(), &request_info);
     } else {
-      // Await for upstream host selection to resolve destination service.
-      int64_t port;
-      if (!getValue({"upstream", "port"}, &port)) {
-        return;
-      }
       ::Wasm::Common::populateRequestInfo(outbound_, useHostHeaderFallback(),
                                           &request_info);
       if (request_info.request_protocol == Protocol::GRPC) {
