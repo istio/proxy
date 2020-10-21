@@ -19,6 +19,8 @@
           value: |
             {{- if .Vars.JustSendErrorClientLog }}
             {"access_logging": "ERRORS_ONLY", "enable_audit_log": true}
+            {{- else if .Vars.StackdriverFilterCustomClientConfig }}
+            {{ .Vars.StackdriverFilterCustomClientConfig | fill }}
             {{- else }}
             {"access_logging": "FULL", "enable_audit_log": true}
             {{- end }}
