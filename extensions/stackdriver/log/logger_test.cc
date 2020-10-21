@@ -262,8 +262,11 @@ TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
+  std::unordered_map<std::string, std::string> extra_labels;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
+                                         extra_labels);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
+                      false);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -285,11 +288,13 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
-  auto logger =
-      std::make_unique<Logger>(nodeInfo(local), std::move(exporter), 1200);
+  std::unordered_map<std::string, std::string> extra_labels;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
+                                         extra_labels, 1200);
 
   for (int i = 0; i < 10; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
+                        false);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
@@ -313,8 +318,11 @@ TEST(LoggerTest, TestWriteAuditEntry) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, true);
+  std::unordered_map<std::string, std::string> extra_labels;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
+                                         extra_labels);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
+                      true);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
           [](const std::vector<std::unique_ptr<
@@ -336,10 +344,14 @@ TEST(LoggerTest, TestWriteAuditAndLogEntry) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter));
+  std::unordered_map<std::string, std::string> extra_labels;
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
+                                         extra_labels);
   for (int i = 0; i < 5; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, false);
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), false, true);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
+                        false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
+                        true);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(

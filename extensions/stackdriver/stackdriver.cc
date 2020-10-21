@@ -35,6 +35,9 @@
 namespace proxy_wasm {
 namespace null_plugin {
 #endif
+
+#include "contrib/proxy_expr.h"
+
 namespace Stackdriver {
 
 using namespace opencensus::exporters::stats;
@@ -264,18 +267,35 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     }
   }
 
-  if (!logger_ && enableAccessLog()) {
+  if (enableAccessLog()) {
+    std::unordered_map<std::string, std::string> extra_labels;
+    cleanupExpressions();
+    if (config_.has_custom_log_config()) {
+      for (const auto& dimension : config_.custom_log_config().dimensions()) {
+        uint32_t token;
+        if (createExpression(dimension.second, &token) != WasmResult::Ok) {
+          LOG_TRACE(absl::StrCat("Could not create expression for ",
+                                 dimension.second));
+          continue;
+        }
+        expressions_.push_back({token, dimension.first, dimension.second});
+      }
+    }
     // logger should only be initiated once, for now there is no reason to
     // recreate logger because of config update.
-    auto logging_stub_option = stub_option;
-    logging_stub_option.default_endpoint = kLoggingService;
-    auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
-    // logger takes ownership of exporter.
-    if (config_.max_log_batch_size_in_bytes() > 0) {
-      logger_ = std::make_unique<Logger>(local_node, std::move(exporter),
-                                         config_.max_log_batch_size_in_bytes());
-    } else {
-      logger_ = std::make_unique<Logger>(local_node, std::move(exporter));
+    if (!logger_) {
+      auto logging_stub_option = stub_option;
+      logging_stub_option.default_endpoint = kLoggingService;
+      auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
+      // logger takes ownership of exporter.
+      if (config_.max_log_batch_size_in_bytes() > 0) {
+        logger_ = std::make_unique<Logger>(
+            local_node, std::move(exporter), extra_labels,
+            config_.max_log_batch_size_in_bytes());
+      } else {
+        logger_ = std::make_unique<Logger>(local_node, std::move(exporter),
+                                           extra_labels);
+      }
     }
     tcp_log_entry_timeout_ = getTcpLogEntryTimeoutNanoseconds();
   }
@@ -406,6 +426,7 @@ bool StackdriverRootContext::onDone() {
     recordTCP(item.first);
   }
   tcp_request_queue_.clear();
+  cleanupExpressions();
   return done;
 }
 
@@ -429,16 +450,18 @@ void StackdriverRootContext::record() {
          request_info.response_flag != ::Wasm::Common::NONE))) &&
       shouldLogThisRequest(request_info)) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
+    std::unordered_map<std::string, std::string> extra_labels;
+    evaluateExpressions(extra_labels);
     extended_info_populated = true;
-    logger_->addLogEntry(request_info, peer_node_info.get(), outbound,
-                         false /* audit */);
+    logger_->addLogEntry(request_info, peer_node_info.get(), extra_labels,
+                         outbound, false /* audit */);
   }
 
   if (enableAuditLog() && shouldAuditThisRequest()) {
     if (!extended_info_populated) {
       ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     }
-    logger_->addLogEntry(request_info, peer_node_info.get(), outbound,
+    logger_->addLogEntry(request_info, peer_node_info.get(), {}, outbound,
                          true /* audit */);
   }
 
@@ -497,6 +520,10 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   if (enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
     extended_info_populated = true;
+    if (!record_info.expressions_evaluated) {
+      evaluateExpressions(record_info.extra_log_labels);
+      record_info.expressions_evaluated = true;
+    }
     // It's possible that for a short lived TCP connection, we log TCP
     // Connection Open log entry on connection close.
     if (!record_info.tcp_open_entry_logged &&
@@ -505,14 +532,15 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
       logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
+                              record_info.extra_log_labels,
                               record_info.request_info->start_time, outbound,
                               false /* audit */);
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
-    logger_->addTcpLogEntry(request_info, peer_node_info.get(),
-                            getCurrentTimeNanoseconds(), outbound,
-                            false /* audit */);
+    logger_->addTcpLogEntry(
+        request_info, peer_node_info.get(), record_info.extra_log_labels,
+        getCurrentTimeNanoseconds(), outbound, false /* audit */);
   }
 
   if (enableAuditLog() && shouldAuditThisRequest()) {
@@ -527,12 +555,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Open;
       logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
-                              record_info.request_info->start_time, outbound,
-                              true /* audit */);
+                              {}, record_info.request_info->start_time,
+                              outbound, true /* audit */);
       record_info.request_info->tcp_connection_state =
           ::Wasm::Common::TCPConnectionState::Close;
     }
-    logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
+    logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(), {},
                             record_info.request_info->start_time, outbound,
                             true /* audit */);
   }
@@ -627,6 +655,26 @@ void StackdriverRootContext::incrementConnectionClosed(uint32_t id) {
 void StackdriverRootContext::setConnectionState(
     uint32_t id, ::Wasm::Common::TCPConnectionState state) {
   tcp_request_queue_[id]->request_info->tcp_connection_state = state;
+}
+
+void StackdriverRootContext::evaluateExpressions(
+    std::unordered_map<std::string, std::string>& extra_labels) {
+  for (const auto& expression : expressions_) {
+    std::string value;
+    if (!evaluateExpression(expression.token, &value)) {
+      LOG_TRACE(absl::StrCat("Could not evaluate expression: ",
+                             expression.expression));
+      continue;
+    }
+    extra_labels[expression.tag] = value;
+  }
+}
+
+void StackdriverRootContext::cleanupExpressions() {
+  for (const auto& expression : expressions_) {
+    exprDelete(expression.token);
+  }
+  expressions_.clear();
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.
