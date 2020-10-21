@@ -68,7 +68,7 @@ enum class ServiceAuthenticationPolicy : uint8_t {
   MutualTLS = 2,
 };
 
-enum class TCPConnectionState : int8_t {
+enum class TCPConnectionState : uint8_t {
   Unspecified = 0,
   Open = 1,
   Connected = 2,
