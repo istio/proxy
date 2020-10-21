@@ -573,12 +573,8 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   if (request_info.request_protocol == Protocol::TCP) {
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report any
-    // metric.
-    // We keep waiting if response flags is zero, as that implies, there has
-    // been no error in connection.
-    uint64_t response_flags = 0;
-    getValue({"response", "flags"}, &response_flags);
-    if (peer_node_info.maybeWaiting() && response_flags == 0) {
+    // metric, until the end.
+    if (peer_node_info.maybeWaiting() && !end_stream) {
       return;
     }
     ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info);
