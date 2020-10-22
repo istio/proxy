@@ -59,31 +59,28 @@ namespace {
 // * Otherwise, try fetching cluster metadata for destination service name and
 //   host. If cluster metadata is not available, set destination service name
 //   the same as destination service host.
-void getDestinationService(bool use_host_header, std::string* dest_svc_host,
-                           std::string* dest_svc_name,
-                           const std::string& cluster_name,
-                           const std::string& route_name) {
-  *dest_svc_host = use_host_header
-                       ? getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
-                                           kAuthorityHeaderKey)
-                             ->toString()
-                       : "unknown";
+void populateDestinationService(bool use_host_header,
+                                RequestInfo* request_info) {
+  request_info->destination_service_host =
+      use_host_header ? request_info->url_host : "unknown";
 
   // override the cluster name if this is being sent to the
   // blackhole or passthrough cluster
+  const std::string& route_name = request_info->route_name;
   if (route_name == kBlackHoleRouteName) {
-    *dest_svc_name = kBlackHoleCluster;
+    request_info->destination_service_name = kBlackHoleCluster;
     return;
   } else if (route_name == kPassThroughRouteName) {
-    *dest_svc_name = kPassThroughCluster;
+    request_info->destination_service_name = kPassThroughCluster;
     return;
   }
 
+  const std::string& cluster_name = request_info->upstream_cluster;
   if (cluster_name == kBlackHoleCluster ||
       cluster_name == kPassThroughCluster ||
       cluster_name == kInboundPassthroughClusterIpv4 ||
       cluster_name == kInboundPassthroughClusterIpv6) {
-    *dest_svc_name = cluster_name;
+    request_info->destination_service_name = cluster_name;
     return;
   }
 
@@ -105,34 +102,36 @@ void getDestinationService(bool use_host_header, std::string* dest_svc_host,
   // identify the intended host.
   if (getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
                 "name"},
-               dest_svc_name)) {
+               &request_info->destination_service_name)) {
     getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
               "host"},
-             dest_svc_host);
+             &request_info->destination_service_host);
   } else {
     // if cluster metadata cannot be found, fallback to destination service
     // host. If host header fallback is enabled, this will be host header. If
     // host header fallback is disabled, this will be unknown. This could happen
     // if a request does not route to any cluster.
-    *dest_svc_name = *dest_svc_host;
+    request_info->destination_service_name =
+        request_info->destination_service_host;
   }
 }
 
+}  // namespace
+
 void populateRequestInfo(bool outbound, bool use_host_header_fallback,
                          RequestInfo* request_info) {
+  if (request_info->is_populated) {
+    return;
+  }
+
   request_info->is_populated = true;
+
   getValue({"cluster_name"}, &request_info->upstream_cluster);
   getValue({"route_name"}, &request_info->route_name);
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.
-  getDestinationService(
-      use_host_header_fallback, &request_info->destination_service_host,
-      &request_info->destination_service_name, request_info->upstream_cluster,
-      request_info->route_name);
-
-  getValue({"request", "url_path"}, &request_info->request_url_path);
-
+  populateDestinationService(use_host_header_fallback, request_info);
   uint64_t destination_port = 0;
   if (outbound) {
     getValue({"upstream", "port"}, &destination_port);
@@ -155,13 +154,7 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
              &request_info->source_principal);
   }
   request_info->destination_port = destination_port;
-
-  uint64_t response_flags = 0;
-  getValue({"response", "flags"}, &response_flags);
-  request_info->response_flag = parseResponseFlag(response_flags);
 }
-
-}  // namespace
 
 std::string_view AuthenticationPolicyString(
     ServiceAuthenticationPolicy policy) {
@@ -184,6 +177,20 @@ std::string_view TCPConnectionStateString(TCPConnectionState state) {
       return kConnected;
     case TCPConnectionState::Close:
       return kClose;
+    default:
+      break;
+  }
+  return {};
+}
+
+std::string_view ProtocolString(Protocol protocol) {
+  switch (protocol) {
+    case Protocol::TCP:
+      return kProtocolTCP;
+    case Protocol::HTTP:
+      return kProtocolHTTP;
+    case Protocol::GRPC:
+      return kProtocolGRPC;
     default:
       break;
   }
@@ -362,6 +369,8 @@ const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
 // Normally it is ok to use host header within the mesh, but not at ingress.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                              RequestInfo* request_info) {
+  populateRequestProtocol(request_info);
+  getValue({"request", "url_path"}, &request_info->request_url_path);
   populateRequestInfo(outbound, use_host_header_fallback, request_info);
 
   int64_t response_code = 0;
@@ -369,20 +378,16 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
     request_info->response_code = response_code;
   }
 
-  int64_t grpc_status_code = 2;
-  getValue({"response", "grpc_status"}, &grpc_status_code);
-  request_info->grpc_status = grpc_status_code;
+  uint64_t response_flags = 0;
+  if (getValue({"response", "flags"}, &response_flags)) {
+    request_info->response_flag = parseResponseFlag(response_flags);
+  }
 
-  if (kGrpcContentTypes.count(
-          getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
-                            kContentTypeHeaderKey)
-              ->toString()) != 0) {
-    request_info->request_protocol = kProtocolGRPC;
+  if (request_info->request_protocol == Protocol::GRPC) {
+    int64_t grpc_status_code = 2;
+    getValue({"response", "grpc_status"}, &grpc_status_code);
+    request_info->grpc_status = grpc_status_code;
     populateGRPCInfo(request_info);
-  } else {
-    // TODO Add http/1.1, http/1.0, http/2 in a separate attribute.
-    // http|grpc classification is compatible with Mixerclient
-    request_info->request_protocol = kProtocolHTTP;
   }
 
   std::string operation_id;
@@ -449,7 +454,25 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info) {
   // host_header_fallback is for HTTP/gRPC only.
   populateRequestInfo(outbound, false, request_info);
 
-  request_info->request_protocol = kProtocolTCP;
+  uint64_t response_flags = 0;
+  if (getValue({"response", "flags"}, &response_flags)) {
+    request_info->response_flag = parseResponseFlag(response_flags);
+  }
+
+  request_info->request_protocol = Protocol::TCP;
+}
+
+void populateRequestProtocol(RequestInfo* request_info) {
+  if (kGrpcContentTypes.count(
+          getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
+                            kContentTypeHeaderKey)
+              ->toString()) != 0) {
+    request_info->request_protocol = Protocol::GRPC;
+  } else {
+    // TODO Add http/1.1, http/1.0, http/2 in a separate attribute.
+    // http|grpc classification is compatible with Mixerclient
+    request_info->request_protocol = Protocol::HTTP;
+  }
 }
 
 bool populateGRPCInfo(RequestInfo* request_info) {

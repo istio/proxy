@@ -61,6 +61,8 @@ type (
 		Fore Step
 		Back Step
 	}
+	// Lambda captured step
+	StepFunction func(p *Params) error
 )
 
 func NewTestParams(t *testing.T, vars map[string]string, inv *env.TestInventory) *Params {
@@ -151,6 +153,12 @@ func (f *Fork) Run(p *Params) error {
 	return <-done
 }
 func (f *Fork) Cleanup() {}
+
+func (s StepFunction) Run(p *Params) error {
+	return s(p)
+}
+
+func (s StepFunction) Cleanup() {}
 
 var _ Step = &Scenario{}
 

@@ -97,7 +97,9 @@ TagKeyValueList getOutboundTagMap(
   TagKeyValueList outboundMap = {
       {meshUIDKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
-      {requestProtocolKey(), unknownIfEmpty(request_info.request_protocol)},
+      {requestProtocolKey(),
+       unknownIfEmpty(std::string(
+           ::Wasm::Common::ProtocolString(request_info.request_protocol)))},
       {serviceAuthenticationPolicyKey(),
        unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
            request_info.service_auth_policy)))},
@@ -142,7 +144,9 @@ TagKeyValueList getInboundTagMap(
   TagKeyValueList inboundMap = {
       {meshUIDKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.mesh_id()))},
-      {requestProtocolKey(), unknownIfEmpty(request_info.request_protocol)},
+      {requestProtocolKey(),
+       unknownIfEmpty(std::string(
+           ::Wasm::Common::ProtocolString(request_info.request_protocol)))},
       {serviceAuthenticationPolicyKey(),
        unknownIfEmpty(std::string(::Wasm::Common::AuthenticationPolicyString(
            request_info.service_auth_policy)))},
@@ -227,13 +231,13 @@ uint32_t httpCodeFromGrpc(uint32_t grpc_status) {
 void addHttpSpecificTags(const ::Wasm::Common::RequestInfo& request_info,
                          TagKeyValueList& tag_map) {
   const auto& operation =
-      request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
+      request_info.request_protocol == ::Wasm::Common::Protocol::GRPC
           ? request_info.request_url_path
           : request_info.request_operation;
   tag_map.emplace_back(Metric::requestOperationKey(), operation);
 
   const auto& response_code =
-      request_info.request_protocol == ::Wasm::Common::kProtocolGRPC
+      request_info.request_protocol == ::Wasm::Common::Protocol::GRPC
           ? httpCodeFromGrpc(request_info.grpc_status)
           : request_info.response_code;
   tag_map.emplace_back(Metric::responseCodeKey(),

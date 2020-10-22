@@ -49,9 +49,9 @@ constexpr std::string_view kEnvoyOriginalDstHostKey =
     "x-envoy-original-dst-host";
 constexpr std::string_view kEnvoyOriginalPathKey = "x-envoy-original-path";
 
-const std::string kProtocolHTTP = "http";
-const std::string kProtocolGRPC = "grpc";
-const std::string kProtocolTCP = "tcp";
+constexpr std::string_view kProtocolHTTP = "http";
+constexpr std::string_view kProtocolGRPC = "grpc";
+constexpr std::string_view kProtocolTCP = "tcp";
 
 constexpr std::string_view kCanonicalServiceLabelName =
     "service.istio.io/canonical-name";
@@ -62,17 +62,24 @@ constexpr std::string_view kLatest = "latest";
 const std::set<std::string> kGrpcContentTypes{
     "application/grpc", "application/grpc+proto", "application/grpc+json"};
 
-enum class ServiceAuthenticationPolicy : int64_t {
+enum class ServiceAuthenticationPolicy : uint8_t {
   Unspecified = 0,
   None = 1,
   MutualTLS = 2,
 };
 
-enum class TCPConnectionState : int64_t {
+enum class TCPConnectionState : uint8_t {
   Unspecified = 0,
   Open = 1,
   Connected = 2,
   Close = 3,
+};
+
+enum class Protocol : uint32_t {
+  Unspecified = 0x0,
+  TCP = 0x1,
+  HTTP = 0x2,
+  GRPC = 0x4,
 };
 
 constexpr std::string_view kMutualTLS = "MUTUAL_TLS";
@@ -83,6 +90,7 @@ constexpr std::string_view kClose = "CLOSE";
 
 std::string_view AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 std::string_view TCPConnectionStateString(TCPConnectionState state);
+std::string_view ProtocolString(Protocol protocol);
 
 // None response flag.
 const std::string NONE = "-";
@@ -109,7 +117,7 @@ struct RequestInfo {
   uint64_t source_port = 0;
 
   // Protocol used the request (HTTP/1.1, gRPC, etc).
-  std::string request_protocol;
+  Protocol request_protocol = Protocol::Unspecified;
 
   // Response code of the request.
   uint32_t response_code = 0;
@@ -174,12 +182,12 @@ struct RequestInfo {
   std::string url_scheme;
 
   // TCP variables.
-  int64_t tcp_connections_opened = 0;
-  int64_t tcp_connections_closed = 0;
-  int64_t tcp_sent_bytes = 0;
-  int64_t tcp_received_bytes = 0;
-  int64_t tcp_total_sent_bytes = 0;
-  int64_t tcp_total_received_bytes = 0;
+  uint8_t tcp_connections_opened = 0;
+  uint8_t tcp_connections_closed = 0;
+  uint64_t tcp_sent_bytes = 0;
+  uint64_t tcp_received_bytes = 0;
+  uint64_t tcp_total_sent_bytes = 0;
+  uint64_t tcp_total_received_bytes = 0;
   TCPConnectionState tcp_connection_state = TCPConnectionState::Unspecified;
 
   bool is_populated = false;
@@ -188,6 +196,8 @@ struct RequestInfo {
   // gRPC variables.
   uint64_t request_message_count = 0;
   uint64_t response_message_count = 0;
+  uint64_t last_request_message_count = 0;
+  uint64_t last_response_message_count = 0;
 };
 
 // RequestContext contains all the information available in the request.
@@ -248,6 +258,12 @@ class PeerNodeInfo {
   flatbuffers::DetachedBuffer fallback_peer_node_;
 };
 
+// Populate shared information between all protocols.
+// Requires that the connections are established both downstrean and upstream.
+// Caches computation using is_populated field.
+void populateRequestInfo(bool outbound, bool use_host_header_fallback,
+                         RequestInfo* request_info);
+
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header,
@@ -264,6 +280,9 @@ void populateExtendedRequestInfo(RequestInfo* request_info);
 // populateTCPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info);
+
+// Detect HTTP and gRPC request protocols.
+void populateRequestProtocol(RequestInfo* request_info);
 
 // populateGRPCInfo fills gRPC-related information, such as message counts.
 // Returns true if all information is filled.

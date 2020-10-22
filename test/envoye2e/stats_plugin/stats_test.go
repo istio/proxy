@@ -314,16 +314,14 @@ func TestStatsGrpc(t *testing.T) {
 
 func TestStatsGrpcStream(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
-		"RequestMessages":            "3",  // 3 from stream
-		"ResponseMessages":           "13", // 13 from stream
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
 		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
 		"WasmRuntime":                "envoy.wasm.runtime.null",
 		"DisableDirectResponse":      "true",
 		"UsingGrpcBackend":           "true",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StatsFilterClientConfig":    "{}",
-		"StatsFilterServerConfig":    "{}",
+		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config_grpc.yaml.tmpl"),
+		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config_grpc.yaml.tmpl"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -331,6 +329,7 @@ func TestStatsGrpcStream(t *testing.T) {
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/grpc_stats.yaml") + params.Vars["ClientHTTPFilters"]
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/grpc_stats.yaml") + params.Vars["ServerHTTPFilters"]
 
+	bidi := &driver.GrpcStream{}
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
@@ -340,7 +339,34 @@ func TestStatsGrpcStream(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.GrpcServer{},
-			&driver.GrpcStream{Counts: []uint32{1, 5, 7}},
+			bidi,
+			// Send a first batch of messages on the stream and check stats
+			bidi.Send([]uint32{1, 5, 7}),
+			driver.StepFunction(func(p *driver.Params) error {
+				p.Vars["RequestMessages"] = "3"
+				p.Vars["ResponseMessages"] = "13"
+				return nil
+			}),
+			&driver.Stats{
+				AdminPort: params.Ports.ServerAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/server_request_messages.yaml.tmpl"},
+					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/server_response_messages.yaml.tmpl"},
+				}},
+			&driver.Stats{
+				AdminPort: params.Ports.ClientAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/client_request_messages.yaml.tmpl"},
+					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/client_response_messages.yaml.tmpl"},
+				}},
+			// Send and close
+			bidi.Send([]uint32{10, 1, 1, 1, 1}),
+			bidi.Close(),
+			driver.StepFunction(func(p *driver.Params) error {
+				p.Vars["RequestMessages"] = "8"
+				p.Vars["ResponseMessages"] = "27"
+				return nil
+			}),
 			&driver.Stats{
 				AdminPort: params.Ports.ServerAdmin,
 				Matchers: map[string]driver.StatMatcher{

@@ -41,7 +41,6 @@ namespace Stats {
 
 template <typename K, typename V>
 using Map = std::unordered_map<K, V>;
-template <typename T>
 
 constexpr std::string_view Sep = "#@";
 
@@ -55,6 +54,8 @@ const std::string default_field_separator = ";.;";
 const std::string default_value_separator = "=.=";
 const std::string default_stat_prefix = "istio";
 
+// The order of the fields is important! The metrics indicate the cut-off line
+// using an index.
 #define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
   FIELD_FUNC(reporter)                       \
   FIELD_FUNC(source_workload)                \
@@ -75,10 +76,10 @@ const std::string default_stat_prefix = "istio";
   FIELD_FUNC(destination_canonical_service)  \
   FIELD_FUNC(destination_canonical_revision) \
   FIELD_FUNC(request_protocol)               \
-  FIELD_FUNC(response_code)                  \
-  FIELD_FUNC(grpc_response_status)           \
   FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)
+  FIELD_FUNC(connection_security_policy)     \
+  FIELD_FUNC(response_code)                  \
+  FIELD_FUNC(grpc_response_status)
 
 // Aggregate metric values in a shared and reusable bag.
 using IstioDimensions = std::vector<std::string>;
@@ -95,11 +96,17 @@ enum class StandardLabels : int32_t {
 STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
 #undef DECLARE_CONSTANT
 
+// All labels.
 const size_t count_standard_labels =
     static_cast<size_t>(StandardLabels::xxx_last_metric);
 
+// Labels related to peer information.
 const size_t count_peer_labels =
     static_cast<size_t>(StandardLabels::destination_canonical_revision) + 1;
+
+// Labels related to TCP streams, including peer information.
+const size_t count_tcp_labels =
+    static_cast<size_t>(StandardLabels::connection_security_policy) + 1;
 
 struct HashIstioDimensions {
   size_t operator()(const IstioDimensions& c) const {
@@ -112,16 +119,22 @@ struct HashIstioDimensions {
   }
 };
 
+// Value extractor can mutate the request info to flush data between multiple
+// reports.
 using ValueExtractorFn =
-    std::function<uint64_t(const ::Wasm::Common::RequestInfo& request_info)>;
+    std::function<uint64_t(::Wasm::Common::RequestInfo& request_info)>;
 
 // SimpleStat record a pre-resolved metric based on the values function.
 class SimpleStat {
  public:
-  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn, MetricType type)
-      : metric_id_(metric_id), value_fn_(value_fn), type_(type){};
+  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn, MetricType type,
+             bool recurrent)
+      : metric_id_(metric_id),
+        recurrent_(recurrent),
+        value_fn_(value_fn),
+        type_(type){};
 
-  inline void record(const ::Wasm::Common::RequestInfo& request_info) {
+  inline void record(::Wasm::Common::RequestInfo& request_info) {
     const uint64_t val = value_fn_(request_info);
     // Optimization: do not record 0 COUNTER values
     if (type_ == MetricType::Counter && val == 0) {
@@ -130,7 +143,8 @@ class SimpleStat {
     recordMetric(metric_id_, val);
   };
 
-  uint32_t metric_id_;
+  const uint32_t metric_id_;
+  const bool recurrent_;
 
  private:
   ValueExtractorFn value_fn_;
@@ -142,8 +156,10 @@ struct MetricFactory {
   std::string name;
   MetricType type;
   ValueExtractorFn extractor;
-  bool is_tcp;
+  uint32_t protocols;
   size_t count_labels;
+  // True for metrics supporting reporting mid-stream.
+  bool recurrent;
 };
 
 // StatGen creates a SimpleStat based on resolved metric_id.
@@ -155,7 +171,8 @@ class StatGen {
                    const std::vector<size_t>& indexes,
                    const std::string& field_separator,
                    const std::string& value_separator)
-      : is_tcp_(metric_factory.is_tcp),
+      : recurrent_(metric_factory.recurrent),
+        protocols_(metric_factory.protocols),
         indexes_(indexes),
         extractor_(metric_factory.extractor),
         metric_(metric_factory.type,
@@ -168,7 +185,9 @@ class StatGen {
 
   StatGen() = delete;
   inline std::string_view name() const { return metric_.name; };
-  inline bool is_tcp_metric() const { return is_tcp_; }
+  inline bool matchesProtocol(::Wasm::Common::Protocol protocol) const {
+    return (protocols_ & static_cast<uint32_t>(protocol)) != 0;
+  }
 
   // Resolve metric based on provided dimension values by
   // combining the tags with the indexed dimensions and resolving
@@ -188,11 +207,6 @@ class StatGen {
     n.reserve(s);
     n.append(metric_.prefix);
     for (size_t i = 0; i < metric_.tags.size(); i++) {
-      // Don't add response_code and grpc_response_status labels for TCP.
-      if ((metric_.tags[i].name == "response_code" ||
-           metric_.tags[i].name == "grpc_response_status") &&
-          is_tcp_)
-        continue;
       n.append(metric_.tags[i].name);
       n.append(metric_.value_separator);
       n.append(instance[indexes_[i]]);
@@ -200,13 +214,15 @@ class StatGen {
     }
     n.append(metric_.name);
     auto metric_id = metric_.resolveFullName(n);
-    return SimpleStat(metric_id, extractor_, metric_.type);
+    return SimpleStat(metric_id, extractor_, metric_.type, recurrent_);
   };
 
+  const bool recurrent_;
+
  private:
-  bool is_tcp_;
-  std::vector<size_t> indexes_;
-  ValueExtractorFn extractor_;
+  const uint32_t protocols_;
+  const std::vector<size_t> indexes_;
+  const ValueExtractorFn extractor_;
   Metric metric_;
 };
 
@@ -223,6 +239,13 @@ class PluginRootContext : public RootContext {
     cache_hits_ = cache_count.resolve("stats_filter", "hit");
     cache_misses_ = cache_count.resolve("stats_filter", "miss");
     empty_node_info_ = ::Wasm::Common::extractEmptyNodeFlatBuffer();
+    if (outbound_) {
+      peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
+      peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
+    } else {
+      peer_metadata_id_key_ = ::Wasm::Common::kDownstreamMetadataIdKey;
+      peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
+    }
   }
 
   ~PluginRootContext() = default;
@@ -231,15 +254,11 @@ class PluginRootContext : public RootContext {
   bool configure(size_t);
   bool onDone() override;
   void onTick() override;
-  // Report will return false when peer metadata exchange is not found for TCP,
-  // so that we wait to report metrics till we find peer metadata or get
-  // information that it's not available.
-  bool report(::Wasm::Common::RequestInfo& request_info, bool is_tcp);
+  void report(::Wasm::Common::RequestInfo& request_info, bool end_stream);
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
-  void addToTCPRequestQueue(
-      uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info);
-  void deleteFromTCPRequestQueue(uint32_t id);
-  bool initialized() const { return initialized_; };
+  void addToRequestQueue(uint32_t context_id,
+                         ::Wasm::Common::RequestInfo* request_info);
+  void deleteFromRequestQueue(uint32_t context_id);
 
  protected:
   const std::vector<MetricTag>& defaultTags();
@@ -271,9 +290,9 @@ class PluginRootContext : public RootContext {
   // Int expressions evaluated to metric values
   std::vector<uint32_t> int_expressions_;
 
+  const bool outbound_;
   std::string_view peer_metadata_id_key_;
   std::string_view peer_metadata_key_;
-  bool outbound_;
   bool use_host_header_fallback_;
 
   int64_t cache_hits_accumulator_ = 0;
@@ -285,8 +304,7 @@ class PluginRootContext : public RootContext {
   std::unordered_map<IstioDimensions, std::vector<SimpleStat>,
                      HashIstioDimensions>
       metrics_;
-  Map<uint32_t, std::shared_ptr<::Wasm::Common::RequestInfo>>
-      tcp_request_queue_;
+  Map<uint32_t, ::Wasm::Common::RequestInfo*> request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
   bool initialized_ = false;
@@ -307,45 +325,53 @@ class PluginRootContextInbound : public PluginRootContext {
 // Per-stream context.
 class PluginContext : public Context {
  public:
-  explicit PluginContext(uint32_t id, RootContext* root)
-      : Context(id, root), is_tcp_(false) {
-    request_info_ = std::make_shared<::Wasm::Common::RequestInfo>();
-  }
+  explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
+  // Called for both HTTP and TCP streams, as a final data callback.
   void onLog() override {
-    if (!rootContext()->initialized()) {
-      return;
+    rootContext()->deleteFromRequestQueue(id());
+    if (request_info_.request_protocol == ::Wasm::Common::Protocol::TCP) {
+      request_info_.tcp_connections_closed++;
     }
-    if (is_tcp_) {
-      cleanupTCPOnClose();
-    }
-    rootContext()->report(*request_info_, is_tcp_);
+    rootContext()->report(request_info_, true);
   };
 
-  FilterStatus onNewConnection() override {
-    if (!rootContext()->initialized()) {
-      return FilterStatus::Continue;
+  // HTTP streams start with headers.
+  FilterHeadersStatus onRequestHeaders(uint32_t, bool) override {
+    ::Wasm::Common::populateRequestProtocol(&request_info_);
+    // Save host value for recurrent reporting.
+    // Beware that url_host and any other request headers are only available in
+    // this callback and onLog(), certainly not in onTick().
+    if (rootContext()->useHostHeaderFallback()) {
+      getValue({"request", "host"}, &request_info_.url_host);
     }
-    is_tcp_ = true;
-    request_info_->tcp_connections_opened++;
-    rootContext()->addToTCPRequestQueue(id(), request_info_);
+    return FilterHeadersStatus::Continue;
+  }
+
+  // Metadata should be available (if any) at the time of adding to the queue.
+  // Since HTTP metadata exchange uses headers in both directions, this is a
+  // safe place to register for both inbound and outbound streams.
+  FilterHeadersStatus onResponseHeaders(uint32_t, bool) override {
+    rootContext()->addToRequestQueue(id(), &request_info_);
+    return FilterHeadersStatus::Continue;
+  }
+
+  // TCP streams start with new connections.
+  FilterStatus onNewConnection() override {
+    request_info_.request_protocol = ::Wasm::Common::Protocol::TCP;
+    request_info_.tcp_connections_opened++;
+    rootContext()->addToRequestQueue(id(), &request_info_);
     return FilterStatus::Continue;
   }
 
   // Called on onData call, so counting the data that is received.
   FilterStatus onDownstreamData(size_t size, bool) override {
-    if (!rootContext()->initialized()) {
-      return FilterStatus::Continue;
-    }
-    request_info_->tcp_received_bytes += size;
+    request_info_.tcp_received_bytes += size;
     return FilterStatus::Continue;
   }
   // Called on onWrite call, so counting the data that is sent.
   FilterStatus onUpstreamData(size_t size, bool) override {
-    if (!rootContext()->initialized()) {
-      return FilterStatus::Continue;
-    }
-    request_info_->tcp_sent_bytes += size;
+    request_info_.tcp_sent_bytes += size;
     return FilterStatus::Continue;
   }
 
@@ -354,13 +380,7 @@ class PluginContext : public Context {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
 
-  void cleanupTCPOnClose() {
-    rootContext()->deleteFromTCPRequestQueue(id());
-    request_info_->tcp_connections_closed++;
-  }
-
-  bool is_tcp_;
-  std::shared_ptr<::Wasm::Common::RequestInfo> request_info_;
+  ::Wasm::Common::RequestInfo request_info_;
 };
 
 #ifdef NULL_PLUGIN
