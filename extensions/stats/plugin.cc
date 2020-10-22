@@ -47,6 +47,7 @@ using ::Wasm::Common::JsonArrayIterate;
 using ::Wasm::Common::JsonGetField;
 using ::Wasm::Common::JsonObjectIterate;
 using ::Wasm::Common::JsonValueAs;
+using ::Wasm::Common::Protocol;
 
 namespace {
 
@@ -148,7 +149,8 @@ void map_request(IstioDimensions& instance,
   instance[destination_principal] = request.destination_principal;
   instance[destination_service] = request.destination_service_host;
   instance[destination_service_name] = request.destination_service_name;
-  instance[request_protocol] = request.request_protocol;
+  instance[request_protocol] =
+      ::Wasm::Common::ProtocolString(request.request_protocol);
   instance[response_code] = std::to_string(request.response_code);
   instance[response_flags] = request.response_flag;
   instance[connection_security_policy] = absl::AsciiStrToLower(std::string(
@@ -162,17 +164,11 @@ void map(IstioDimensions& instance, bool outbound,
   map_peer(instance, outbound, peer_node);
   map_request(instance, request);
   map_unknown_if_empty(instance);
-  if (request.request_protocol == "grpc") {
+  if (request.request_protocol == Protocol::GRPC) {
     instance[grpc_response_status] = std::to_string(request.grpc_status);
   } else {
     instance[grpc_response_status] = "";
   }
-}
-
-void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
-  request_info.tcp_connections_opened = 0;
-  request_info.tcp_sent_bytes = 0;
-  request_info.tcp_received_bytes = 0;
 }
 
 }  // namespace
@@ -190,60 +186,89 @@ const std::vector<MetricTag>& PluginRootContext::defaultTags() {
 const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
   static const std::vector<MetricFactory> default_metrics = {
       // HTTP, HTTP/2, and GRPC metrics
-      MetricFactory{
-          "requests_total", MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
-          false, count_standard_labels},
-      MetricFactory{
-          "request_duration_milliseconds", MetricType::Histogram,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.duration /* in nanoseconds */ / 1000000;
-          },
-          false, count_standard_labels},
+      MetricFactory{"requests_total", MetricType::Counter,
+                    [](::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
+                    static_cast<uint32_t>(Protocol::HTTP) |
+                        static_cast<uint32_t>(Protocol::GRPC),
+                    count_standard_labels, /* recurrent */ false},
+      MetricFactory{"request_duration_milliseconds", MetricType::Histogram,
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      return request_info.duration /* in nanoseconds */ /
+                             1000000;
+                    },
+                    static_cast<uint32_t>(Protocol::HTTP) |
+                        static_cast<uint32_t>(Protocol::GRPC),
+                    count_standard_labels, /* recurrent */ false},
       MetricFactory{"request_bytes", MetricType::Histogram,
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.request_size; },
-                    false, count_standard_labels},
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      return request_info.request_size;
+                    },
+                    static_cast<uint32_t>(Protocol::HTTP) |
+                        static_cast<uint32_t>(Protocol::GRPC),
+                    count_standard_labels, /* recurrent */ false},
       MetricFactory{"response_bytes", MetricType::Histogram,
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.response_size; },
-                    false, count_standard_labels},
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      return request_info.response_size;
+                    },
+                    static_cast<uint32_t>(Protocol::HTTP) |
+                        static_cast<uint32_t>(Protocol::GRPC),
+                    count_standard_labels, /* recurrent */ false},
+
       // GRPC streaming metrics.
       // These metrics are dimensioned by peer labels as a minimum.
       // TODO: consider adding connection security policy
-      MetricFactory{
-          "request_messages_total", MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.request_message_count;
-          },
-          false, count_peer_labels},
-      MetricFactory{
-          "response_messages_total", MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.response_message_count;
-          },
-          false, count_peer_labels},
+      MetricFactory{"request_messages_total", MetricType::Counter,
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      uint64_t out = request_info.request_message_count -
+                                     request_info.last_request_message_count;
+                      request_info.last_request_message_count =
+                          request_info.request_message_count;
+                      return out;
+                    },
+                    static_cast<uint32_t>(Protocol::GRPC), count_peer_labels,
+                    /* recurrent */ true},
+      MetricFactory{"response_messages_total", MetricType::Counter,
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      uint64_t out = request_info.response_message_count -
+                                     request_info.last_response_message_count;
+                      request_info.last_response_message_count =
+                          request_info.response_message_count;
+                      return out;
+                    },
+                    static_cast<uint32_t>(Protocol::GRPC), count_peer_labels,
+                    /* recurrent */ true},
+
       // TCP metrics.
       MetricFactory{"tcp_sent_bytes_total", MetricType::Counter,
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.tcp_sent_bytes; },
-                    true, count_standard_labels},
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      uint64_t out = 0;
+                      std::swap(out, request_info.tcp_sent_bytes);
+                      return out;
+                    },
+                    static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
+                    /* recurrent */ true},
       MetricFactory{"tcp_received_bytes_total", MetricType::Counter,
-                    [](const ::Wasm::Common::RequestInfo& request_info)
-                        -> uint64_t { return request_info.tcp_received_bytes; },
-                    true, count_standard_labels},
-      MetricFactory{
-          "tcp_connections_opened_total", MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_opened;
-          },
-          true, count_standard_labels},
-      MetricFactory{
-          "tcp_connections_closed_total", MetricType::Counter,
-          [](const ::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-            return request_info.tcp_connections_closed;
-          },
-          true, count_standard_labels},
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      uint64_t out = 0;
+                      std::swap(out, request_info.tcp_received_bytes);
+                      return out;
+                    },
+                    static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
+                    /* recurrent */ true},
+      MetricFactory{"tcp_connections_opened_total", MetricType::Counter,
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      uint8_t out = 0;
+                      std::swap(out, request_info.tcp_connections_opened);
+                      return out;
+                    },
+                    static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
+                    /* recurrent */ true},
+      MetricFactory{"tcp_connections_closed_total", MetricType::Counter,
+                    [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
+                      return request_info.tcp_connections_closed;
+                    },
+                    static_cast<uint32_t>(Protocol::TCP), count_tcp_labels,
+                    /* recurrent */ false},
   };
   return default_metrics;
 }
@@ -287,9 +312,8 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         }
         auto& factory = factories[name];
         factory.name = name;
-        factory.extractor =
-            [token, name,
-             value](const ::Wasm::Common::RequestInfo&) -> uint64_t {
+        factory.extractor = [token, name,
+                             value](::Wasm::Common::RequestInfo&) -> uint64_t {
           int64_t result = 0;
           if (!evaluateExpression(token.value(), &result)) {
             LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", value,
@@ -298,6 +322,9 @@ bool PluginRootContext::initializeDimensions(const json& j) {
           return result;
         };
         factory.type = MetricType::Counter;
+        factory.recurrent = false;
+        factory.protocols = static_cast<uint32_t>(Protocol::HTTP) |
+                            static_cast<uint32_t>(Protocol::GRPC);
         auto type =
             JsonGetField<std::string_view>(definition, "type").value_or("");
         if (type == "GAUGE") {
@@ -447,14 +474,6 @@ bool PluginRootContext::configure(size_t configuration_size) {
   }
 
   auto j = result.value();
-  if (outbound_) {
-    peer_metadata_id_key_ = ::Wasm::Common::kUpstreamMetadataIdKey;
-    peer_metadata_key_ = ::Wasm::Common::kUpstreamMetadataKey;
-  } else {
-    peer_metadata_id_key_ = ::Wasm::Common::kDownstreamMetadataIdKey;
-    peer_metadata_key_ = ::Wasm::Common::kDownstreamMetadataKey;
-  }
-
   use_host_header_fallback_ =
       !JsonGetField<bool>(j, "disable_host_header_fallback").value_or(false);
 
@@ -462,6 +481,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
     return false;
   }
 
+  // TODO: rename to reporting_duration
   uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
   auto tcp_reporting_duration_field =
       JsonGetField<std::string>(j, "tcp_reporting_duration");
@@ -526,10 +546,10 @@ bool PluginRootContext::onDone() {
 }
 
 void PluginRootContext::onTick() {
-  if (tcp_request_queue_.size() < 1) {
+  if (request_queue_.empty()) {
     return;
   }
-  for (auto const& item : tcp_request_queue_) {
+  for (auto const& item : request_queue_) {
     // requestinfo is null, so continue.
     if (item.second == nullptr) {
       continue;
@@ -539,39 +559,43 @@ void PluginRootContext::onTick() {
       continue;
     }
     context->setEffectiveContext();
-    if (report(*item.second, true)) {
-      // Clear existing data in TCP metrics, so that we don't double count the
-      // metrics.
-      clearTcpMetrics(*item.second);
-    }
+    report(*item.second, false);
   }
 }
 
-bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
-                               bool is_tcp) {
+void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
+                               bool end_stream) {
+  // HTTP peer metadata should be done by the time report is called for a
+  // request info. TCP metadata might still be awaiting.
+  // Upstream host should be selected for metadata fallback.
   Wasm::Common::PeerNodeInfo peer_node_info(peer_metadata_id_key_,
                                             peer_metadata_key_);
-
-  if (is_tcp) {
+  if (request_info.request_protocol == Protocol::TCP) {
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report any
-    // metric.
-    // We keep waiting if response flags is zero, as that implies, there has
-    // been no error in connection.
-    uint64_t response_flags = 0;
-    getValue({"response", "flags"}, &response_flags);
-    if (peer_node_info.maybeWaiting() && response_flags == 0) {
-      return false;
+    // metric, until the end.
+    if (peer_node_info.maybeWaiting() && !end_stream) {
+      return;
     }
-    if (!request_info.is_populated) {
-      ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info);
-    }
+    ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info);
   } else {
-    ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(),
-                                            &request_info);
+    // Populate HTTP request info fully only at the end of the stream because
+    // onTick context has no access to request/response headers but can read
+    // from filter state.
+    if (end_stream) {
+      ::Wasm::Common::populateHTTPRequestInfo(
+          outbound_, useHostHeaderFallback(), &request_info);
+    } else {
+      ::Wasm::Common::populateRequestInfo(outbound_, useHostHeaderFallback(),
+                                          &request_info);
+      if (request_info.request_protocol == Protocol::GRPC) {
+        ::Wasm::Common::populateGRPCInfo(&request_info);
+      }
+    }
   }
 
   map(istio_dimensions_, outbound_, peer_node_info.get(), request_info);
+
   for (size_t i = 0; i < expressions_.size(); i++) {
     if (!evaluateExpression(expressions_[i].token,
                             &istio_dimensions_.at(count_standard_labels + i))) {
@@ -584,7 +608,9 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   auto stats_it = metrics_.find(istio_dimensions_);
   if (stats_it != metrics_.end()) {
     for (auto& stat : stats_it->second) {
-      stat.record(request_info);
+      if (end_stream || stat.recurrent_) {
+        stat.record(request_info);
+      }
       LOG_DEBUG(
           absl::StrCat("metricKey cache hit ", ", stat=", stat.metric_id_));
     }
@@ -593,33 +619,35 @@ bool PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
       incrementMetric(cache_hits_, cache_hits_accumulator_);
       cache_hits_accumulator_ = 0;
     }
-    return true;
+    return;
   }
 
   std::vector<SimpleStat> stats;
   for (auto& statgen : stats_) {
-    if (statgen.is_tcp_metric() != is_tcp) {
+    if (!statgen.matchesProtocol(request_info.request_protocol)) {
       continue;
     }
     auto stat = statgen.resolve(istio_dimensions_);
     LOG_DEBUG(absl::StrCat("metricKey cache miss ", statgen.name(), " ",
-                           ", stat=", stat.metric_id_));
-    stat.record(request_info);
+                           ", stat=", stat.metric_id_,
+                           ", recurrent=", stat.recurrent_));
+    if (end_stream || stat.recurrent_) {
+      stat.record(request_info);
+    }
     stats.push_back(stat);
   }
 
   incrementMetric(cache_misses_, 1);
   metrics_.try_emplace(istio_dimensions_, stats);
-  return true;
 }
 
-void PluginRootContext::addToTCPRequestQueue(
-    uint32_t id, std::shared_ptr<::Wasm::Common::RequestInfo> request_info) {
-  tcp_request_queue_[id] = request_info;
+void PluginRootContext::addToRequestQueue(
+    uint32_t context_id, ::Wasm::Common::RequestInfo* request_info) {
+  request_queue_[context_id] = request_info;
 }
 
-void PluginRootContext::deleteFromTCPRequestQueue(uint32_t id) {
-  tcp_request_queue_.erase(id);
+void PluginRootContext::deleteFromRequestQueue(uint32_t context_id) {
+  request_queue_.erase(context_id);
 }
 
 #ifdef NULL_PLUGIN

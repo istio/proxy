@@ -314,7 +314,8 @@ void Logger::fillAndFlushLogEntry(
     (*label_map)["service_authentication_policy"] =
         std::string(::Wasm::Common::AuthenticationPolicyString(
             request_info.service_auth_policy));
-    (*label_map)["protocol"] = request_info.request_protocol;
+    (*label_map)["protocol"] =
+        ::Wasm::Common::ProtocolString(request_info.request_protocol);
     (*label_map)["log_sampled"] = request_info.log_sampled ? "true" : "false";
     (*label_map)["connection_id"] = std::to_string(request_info.connection_id);
     if (!request_info.route_name.empty()) {
@@ -465,7 +466,8 @@ void Logger::fillHTTPRequestInLogEntry(
   http_request->set_user_agent(request_info.user_agent);
   http_request->set_remote_ip(request_info.source_address);
   http_request->set_server_ip(request_info.destination_address);
-  http_request->set_protocol(request_info.request_protocol);
+  http_request->set_protocol(
+      ::Wasm::Common::ProtocolString(request_info.request_protocol).data());
   *http_request->mutable_latency() =
       google::protobuf::util::TimeUtil::NanosecondsToDuration(
           request_info.duration);
