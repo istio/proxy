@@ -339,7 +339,9 @@ class PluginContext : public Context {
   // HTTP streams start with headers.
   FilterHeadersStatus onRequestHeaders(uint32_t, bool) override {
     ::Wasm::Common::populateRequestProtocol(&request_info_);
-    // Save host value for recurrent reporting
+    // Save host value for recurrent reporting.
+    // Beware that url_host and any other request headers are only available in this
+    // callback and onLog(), certainly not in onTick().
     if (rootContext()->useHostHeaderFallback()) {
       getValue({"request", "host"}, &request_info_.url_host);
     }
