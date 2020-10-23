@@ -2,7 +2,6 @@ node:
   id: test-client-productpage
   metadata:
     ISTIO_VERSION: "1.4-dev"
-    EXCHANGE_KEYS: "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME"
     NAME: productpage-v11-84975bc778-pxz2w
     NAMESPACE: default
     WORKLOAD_NAME: productpage

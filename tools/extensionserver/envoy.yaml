@@ -72,7 +72,6 @@ node:
   id: test
   cluster: test
   metadata: {
-    "EXCHANGE_KEYS": "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME,CANONICAL_TELEMETRY_SERVICE,MESH_ID,SERVICE_ACCOUNT",
     "INSTANCE_IPS": "10.52.0.34,fe80::a075:11ff:fe5e:f1cd",
     "LABELS": {
         "app": "ratings",
