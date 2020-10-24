@@ -66,7 +66,6 @@ class MetadataExchangeFilterTest : public testing::Test {
     metadata_node_.set_id("test");
     auto node_metadata_map =
         metadata_node_.mutable_metadata()->mutable_fields();
-    (*node_metadata_map)["EXCHANGE_KEYS"].set_string_value("namespace, labels");
     (*node_metadata_map)["namespace"].set_string_value("default");
     (*node_metadata_map)["labels"].set_string_value("{app, details}");
     EXPECT_CALL(read_filter_callbacks_.connection_, streamInfo())

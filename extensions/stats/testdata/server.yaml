@@ -2,7 +2,6 @@ node:
   id: test-server-ratings
   metadata:
     ISTIO_VERSION: "1.4-dev"
-    EXCHANGE_KEYS: "NAME,NAMESPACE,INSTANCE_IPS,LABELS,OWNER,PLATFORM_METADATA,WORKLOAD_NAME"
     NAME: ratings-v22-84975bc778-pxz2w
     NAMESPACE: default
     WORKLOAD_NAME: ratings
