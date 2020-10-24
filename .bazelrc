@@ -20,6 +20,10 @@ build:remote-ci --action_env=PATH=/usr/local/google-cloud-sdk/bin:/usr/sbin:/usr
 # See: https://github.com/envoyproxy/envoy/pull/6519
 build --define path_normalization_by_default=true
 
+# Heap profiler is supported only with gperf tcmalloc, not google tcmalloc.
+# See: https://github.com/istio/istio/issues/28233
+build --define tcmalloc=gperftools
+
 # Build with embedded V8-based WebAssembly runtime.
 build --define wasm=v8
 
