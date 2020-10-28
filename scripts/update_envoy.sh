@@ -36,7 +36,8 @@ ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 # Get ENVOY_SHA256
 URL="https://github.com/${ENVOY_ORG}/${ENVOY_REPO}/archive/${1}.tar.gz"
 GETSHA=$(wget "${URL}" && sha256sum "${1}".tar.gz)
-SHA256=$(echo ${GETSHA} | cut -d " " -f1 | sed "s/'//")
+SHA256=$(echo "${GETSHA}" | cut -d " " -f1 | sed "s/'//")
+rm "${1}".tar.gz
 
 # Update ENVOY_SHA commit date
 sed -i "s/Commit date: .*/Commit date: ${2}/" "${WORKSPACE}"
