@@ -778,6 +778,7 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 		"StatsConfig":                         driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StackdriverFilterCustomClientConfig": driver.LoadTestJSON("testdata/stackdriver/client_config_customized.yaml.tmpl"),
 		"LogsCustomized":                      "true",
+		"UserAgent":                           "chrome",
 	}, envoye2e.ProxyE2ETests)
 
 	sdPort := params.Ports.Max + 1
@@ -800,7 +801,13 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
+			&driver.Repeat{N: 10,
+				Step: &driver.HTTPCall{
+					Port:           params.Ports.ClientPort,
+					Body:           "hello, world!",
+					RequestHeaders: map[string]string{"User-Agent": "chrome"},
+				},
+			},
 			sd.Check(params,
 				nil,
 				[]SDLogEntry{

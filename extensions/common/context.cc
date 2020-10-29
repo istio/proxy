@@ -414,7 +414,7 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   populateExtendedRequestInfo(request_info);
 
   getValue({"request", "referer"}, &request_info->referer);
-  getValue({"request", "user_agent"}, &request_info->user_agent);
+  getValue({"request", "useragent"}, &request_info->user_agent);
   getValue({"request", "id"}, &request_info->request_id);
   std::string trace_sampled;
   if (getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
