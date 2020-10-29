@@ -10,6 +10,8 @@ http_request:
   status: {{ .Vars.SDLogStatusCode }}
   {{- if .Vars.UserAgent }}
   user_agent: "chrome"
+  {{- else }}
+  user_agent: "Go-http-client/1.1"
   {{- end }}
 labels:
   destination_principal: "{{ .Vars.DestinationPrincipal }}"
