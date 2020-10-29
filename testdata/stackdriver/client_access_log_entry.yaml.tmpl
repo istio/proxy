@@ -8,6 +8,9 @@ http_request:
   server_ip: "127.0.0.1:{{ .Ports.ClientPort }}"
   protocol: "http"
   status: {{ .Vars.SDLogStatusCode }}
+  {{- if .Vars.UserAgent }}
+  user_agent: "chrome"
+  {{- end }}
 labels:
   destination_principal: "{{ .Vars.DestinationPrincipal }}"
   destination_service_host: server.default.svc.cluster.local
