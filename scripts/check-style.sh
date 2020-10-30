@@ -18,7 +18,7 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_VERSION_REQUIRED="9.0.0"
+CLANG_VERSION_REQUIRED="10.0.1"
 CLANG_FORMAT=$(command -v clang-format)
 CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
 if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
@@ -29,17 +29,18 @@ if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}
   if [ "$(uname)" == "Darwin" ]; then
     CLANG_BIN="x86_64-darwin-apple.tar.xz"
   elif [[ "$(uname -s)" =~ Linux* ]]; then
-    CLANG_BIN="x86_64-linux-gnu-ubuntu-14.04.tar.xz"
+    CLANG_BIN="x86_64-linux-gnu-ubuntu-16.04.tar.xz"
   else
     echo "Unsupported environment." ; exit 1 ;
   fi
 
-  echo "Downloading clang-format: https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
+  LLVM_URL_PREFIX="https://https://github.com/llvm/llvm-project/releases/download/llvmorg"
+  echo "Downloading clang-format: ${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
   echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
 
   mkdir -p "${CLANG_DIRECTORY}"
   curl --silent --show-error --retry 10 \
-    "https://releases.llvm.org/${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
+    "${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
     | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
   || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
 fi
