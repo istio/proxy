@@ -642,5 +642,4 @@ func TestStackdriverAttributeGen(t *testing.T) {
 	}).Run(params); err != nil {
 		t.Fatal(err)
 	}
-
 }

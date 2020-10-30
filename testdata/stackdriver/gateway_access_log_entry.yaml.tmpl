@@ -4,6 +4,7 @@ http_request:
   server_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
   protocol: "http"
   status: 200
+  user_agent: "Go-http-client/1.1"
 labels:
   destination_principal: ""
   destination_service_host: server.default.svc.cluster.local
