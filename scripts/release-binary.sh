@@ -19,7 +19,7 @@
 set -ex
 
 # Use clang for the release builds.
-export PATH=/usr/lib/llvm-9/bin:$PATH
+export PATH=/usr/lib/llvm-10/bin:$PATH
 export CC=${CC:-clang}
 export CXX=${CXX:-clang++}
 
