@@ -44,8 +44,8 @@ type Envoy struct {
 	Bootstrap string
 
 	// Istio proxy version to download.
-	// This could be either a patch version (x.y.z), or a minor version (x.y).
-	// When minor version is provided, proxy binary will downloaded based on
+	// This could be either a patch version (x.y.z), or a minor version (x.y), or master.
+	// When minor version or master is provided, proxy binary will downloaded based on
 	// the latest proxy SHA that istio minor version branch points to.
 	// DownloadVersion will be ignored if proxy binary already exists at the
 	// default bazel-bin location, or ENVOY_PATH env var is set.
@@ -172,6 +172,8 @@ func downloadEnvoy(ver string) (string, error) {
 	} else if regexp.MustCompile(`[0-9]+\.[0-9]+`).Match([]byte(ver)) {
 		// this is a minor version string
 		proxyDepURL = fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
+	} else if ver == "master" {
+		proxyDepURL = "https://raw.githubusercontent.com/istio/istio/master/istio.deps"
 	} else {
 		return "", fmt.Errorf("envoy version %v is neither minor version nor patch version", ver)
 	}
