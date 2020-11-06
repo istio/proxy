@@ -187,9 +187,10 @@ push_release_centos:
 
 # Used by build container to export the build output from the docker volume cache
 exportcache:
-	mkdir -p /work/out/linux_amd64
-	cp -a /work/bazel-bin/src/envoy/envoy /work/out/linux_amd64
-	cp -a /work/bazel-bin/extensions/*wasm /work/out/linux_amd64
+	@mkdir -p /work/out/linux_amd64
+	@cp -a /work/bazel-bin/src/envoy/envoy /work/out/linux_amd64
+	@chmod +w /work/out/linux_amd64/envoy
+	@cp -a /work/bazel-bin/**/*wasm /work/out/linux_amd64 &> /dev/null || true
 
 .PHONY: build clean test check artifacts extensions-proto
 
