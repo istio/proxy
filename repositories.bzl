@@ -15,7 +15,6 @@
 ################################################################################
 #
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load(":x_tools_imports.bzl", "go_x_tools_imports_repositories")
 
 GOOGLETEST = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0"
 GOOGLETEST_SHA256 = "01508c8f47c99509130f128924f07f3a60be05d039cff571bb11d60bb11a3581"
@@ -265,7 +264,6 @@ py_proto_library(
         )
 
 def istioapi_dependencies():
-    go_x_tools_imports_repositories()
     istioapi_repositories()
 
 def docker_dependencies():
