@@ -106,8 +106,6 @@ cc_library(
 #
 ISTIO_API = "31d048906d97fb7f6b1fa8e250d3fa07456c5acc"
 ISTIO_API_SHA256 = "5bf68ef13f4b9e769b7ca0a9ce83d9da5263eed9b1223c4cbb388a6ad5520e01"
-GOGOPROTO_RELEASE = "1.2.1"
-GOGOPROTO_SHA256 = "99e423905ba8921e86817607a5294ffeedb66fdd4a85efce5eb2848f715fdb3a"
 
 def istioapi_repositories(bind = True):
     BUILD = """
@@ -139,7 +137,6 @@ proto_library(
     visibility = ["//visibility:public"],
     deps = [
         "@com_google_googleapis//google/api:field_behavior_proto",
-        "@com_github_gogo_protobuf//:gogo_proto",
     ],
 )
 
@@ -157,9 +154,6 @@ proto_library(
         ["envoy/config/filter/http/alpn/v2alpha1/*.proto", ],
     ),
     visibility = ["//visibility:public"],
-    deps = [
-        "@com_github_gogo_protobuf//:gogo_proto",
-    ],
 )
 
 cc_proto_library(
@@ -176,9 +170,6 @@ proto_library(
         ["envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1/*.proto", ],
     ),
     visibility = ["//visibility:public"],
-    deps = [
-        "@com_github_gogo_protobuf//:gogo_proto",
-    ],
 )
 
 cc_proto_library(
@@ -190,58 +181,6 @@ cc_proto_library(
 )
 
 """
-    GOGOPROTO_BUILD = """
-load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
-load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
-
-proto_library(
-    name = "gogo_proto",
-    srcs = ["gogoproto/gogo.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
-    visibility = ["//visibility:public"],
-)
-
-go_proto_library(
-    name = "descriptor_go_proto",
-    importpath = "github.com/golang/protobuf/protoc-gen-go/descriptor",
-    proto = "@com_google_protobuf//:descriptor_proto",
-    visibility = ["//visibility:public"],
-)
-
-cc_proto_library(
-    name = "gogo_proto_cc",
-    deps = [":gogo_proto"],
-    visibility = ["//visibility:public"],
-)
-
-go_proto_library(
-    name = "gogo_proto_go",
-    importpath = "gogoproto",
-    proto = ":gogo_proto",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":descriptor_go_proto",
-    ],
-)
-
-py_proto_library(
-    name = "gogo_proto_py",
-    srcs = [
-        "gogoproto/gogo.proto",
-    ],
-    default_runtime = "@com_google_protobuf//:protobuf_python",
-    protoc = "@com_google_protobuf//:protoc",
-    visibility = ["//visibility:public"],
-    deps = ["@com_google_protobuf//:protobuf_python"],
-)
-"""
-    http_archive(
-        name = "com_github_gogo_protobuf",
-        build_file_content = GOGOPROTO_BUILD,
-        strip_prefix = "protobuf-" + GOGOPROTO_RELEASE,
-        url = "https://github.com/gogo/protobuf/archive/v" + GOGOPROTO_RELEASE + ".tar.gz",
-        sha256 = GOGOPROTO_SHA256,
-    )
     http_archive(
         name = "istioapi_git",
         build_file_content = BUILD,
