@@ -45,6 +45,8 @@ func init() {
 			"TestStackdriverTCPMetadataExchange/BaseCase",
 			"TestStackdriverTCPMetadataExchange/NoAlpn",
 			"TestStackdriverAttributeGen",
+			"TestStackdriverCustomAccessLog",
+			"TestStackdriverRbacAccessDenied",
 			"TestStatsPayload/Default/envoy.wasm.runtime.null",
 			"TestStatsPayload/Customized/envoy.wasm.runtime.null",
 			"TestStatsPayload/UseHostHeader/envoy.wasm.runtime.null",

@@ -6,7 +6,7 @@
       rules:
         action: DENY
         policies:
-          "test":
+          ns[foo]-policy[httpbin-deny]-rule[0]:
             permissions:
               - any: true
             principals:

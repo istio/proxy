@@ -34,7 +34,7 @@ if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}
     echo "Unsupported environment." ; exit 1 ;
   fi
 
-  LLVM_URL_PREFIX="https://https://github.com/llvm/llvm-project/releases/download/llvmorg"
+  LLVM_URL_PREFIX="https://github.com/llvm/llvm-project/releases/download/llvmorg"
   echo "Downloading clang-format: ${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
   echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
 

@@ -159,6 +159,8 @@ struct RequestInfo {
   // populateExtendedHTTPRequestInfo.
   std::string source_address;
   std::string destination_address;
+  std::string response_code_details;
+  std::string connection_termination_details;
 
   // Additional fields for access log.
   std::string route_name;
