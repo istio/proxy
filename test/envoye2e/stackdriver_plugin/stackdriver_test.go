@@ -854,7 +854,8 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
-	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" + params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	sd := &Stackdriver{Port: sdPort}
 	intRespCode, _ := strconv.Atoi(respCode)
