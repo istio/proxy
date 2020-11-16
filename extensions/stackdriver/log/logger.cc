@@ -38,7 +38,7 @@ namespace {
 const RE2 rbac_denied_match(
     "rbac_access_denied_matched_policy\\[ns\\[(.*)\\]-policy\\[(.*)\\]-rule\\[("
     ".*)\\]\\]");
-constexpr char kRbacAccessDenied[] = "RbacAccessDenied";
+constexpr char kRbacAccessDenied[] = "AuthzDenied";
 void setSourceCanonicalService(
     const ::Wasm::Common::FlatNode& peer_node_info,
     google::protobuf::Map<std::string, std::string>* label_map) {
