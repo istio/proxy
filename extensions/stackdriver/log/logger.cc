@@ -364,15 +364,9 @@ void Logger::fillAndFlushLogEntry(
       (*label_map)["upstream_transport_failure_reason"] =
           request_info.upstream_transport_failure_reason;
     }
-    if (!request_info.response_code_details.empty() ||
-        !request_info.connection_termination_details.empty()) {
-      const std::string response_details =
-          !request_info.response_code_details.empty()
-              ? request_info.response_code_details
-              : request_info.connection_termination_details;
-
-      if (!fillAuthInfo(response_details, label_map)) {
-        (*label_map)["response_details"] = response_details;
+    if (!request_info.response_details.empty()) {
+      if (!fillAuthInfo(request_info.response_details, label_map)) {
+        (*label_map)["response_details"] = request_info.response_details;
       }
     }
   }
