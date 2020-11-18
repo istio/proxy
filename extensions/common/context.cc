@@ -428,6 +428,11 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   getValue({"request", "url_path"}, &request_info->url_path);
   getValue({"request", "host"}, &request_info->url_host);
   getValue({"request", "scheme"}, &request_info->url_scheme);
+  std::string response_details;
+  getValue({"response", "code_details"}, &response_details);
+  if (!response_details.empty()) {
+    request_info->response_details = response_details;
+  }
 }
 
 void populateExtendedRequestInfo(RequestInfo* request_info) {
@@ -448,6 +453,11 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
       envoy_original_dst_host ? envoy_original_dst_host->toString() : "";
   getValue({"upstream", "transport_failure_reason"},
            &request_info->upstream_transport_failure_reason);
+  std::string response_details;
+  getValue({"connection", "termination_details"}, &response_details);
+  if (!response_details.empty()) {
+    request_info->response_details = response_details;
+  }
 }
 
 void populateTCPRequestInfo(bool outbound, RequestInfo* request_info) {

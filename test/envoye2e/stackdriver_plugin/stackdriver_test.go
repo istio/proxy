@@ -832,3 +832,66 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestStackdriverRbacAccessDenied(t *testing.T) {
+	t.Parallel()
+	respCode := "403"
+	logEntryCount := 5
+
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"DirectResponseCode":          respCode,
+		"SDLogStatusCode":             respCode,
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"RbacAccessDenied":            "true",
+	}, envoye2e.ProxyE2ETests)
+
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	sd := &Stackdriver{Port: sdPort}
+	intRespCode, _ := strconv.Atoi(respCode)
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{
+				params.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{
+				params.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: logEntryCount,
+				Step: &driver.HTTPCall{
+					Port:         params.Ports.ClientPort,
+					ResponseCode: intRespCode,
+				},
+			},
+			sd.Check(params,
+				nil, []SDLogEntry{
+					{
+						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: logEntryCount,
+					},
+				},
+				nil, true,
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -18,6 +18,7 @@
 #include "extensions/stackdriver/common/constants.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/protobuf/util/time_util.h"
+#include "re2/re2.h"
 
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -31,6 +32,13 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Log {
 namespace {
+// Matches Rbac Access denied string.
+// It is of the format:
+// "rbac_access_denied_matched_policy[ns[NAMESPACE]-policy[POLICY]-rule[POLICY_INDEX]]"
+const RE2 rbac_denied_match(
+    "rbac_access_denied_matched_policy\\[ns\\[(.*)\\]-policy\\[(.*)\\]-rule\\[("
+    ".*)\\]\\]");
+constexpr char kRbacAccessDenied[] = "AuthzDenied";
 void setSourceCanonicalService(
     const ::Wasm::Common::FlatNode& peer_node_info,
     google::protobuf::Map<std::string, std::string>* label_map) {
@@ -156,6 +164,21 @@ void fillExtraLabels(
   for (const auto& extra_label : extra_labels) {
     (*label_map)[extra_label.first] = extra_label.second;
   }
+}
+
+bool fillAuthInfo(const std::string& response_details,
+                  google::protobuf::Map<std::string, std::string>* label_map) {
+  std::string policy_name, policy_namespace, policy_rule_index;
+  if (RE2::PartialMatch(response_details, rbac_denied_match, &policy_namespace,
+                        &policy_name, &policy_rule_index)) {
+    (*label_map)["response_details"] = kRbacAccessDenied;
+    (*label_map)["policy_name"] =
+        absl::StrCat(policy_namespace, ".", policy_name);
+    (*label_map)["policy_rule"] = policy_rule_index;
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace
@@ -340,6 +363,11 @@ void Logger::fillAndFlushLogEntry(
     if (!request_info.upstream_transport_failure_reason.empty()) {
       (*label_map)["upstream_transport_failure_reason"] =
           request_info.upstream_transport_failure_reason;
+    }
+    if (!request_info.response_details.empty()) {
+      if (!fillAuthInfo(request_info.response_details, label_map)) {
+        (*label_map)["response_details"] = request_info.response_details;
+      }
     }
   }
 

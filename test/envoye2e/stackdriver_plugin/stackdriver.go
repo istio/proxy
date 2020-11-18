@@ -23,8 +23,10 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
@@ -185,6 +187,10 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 				log.Println("--- but want ---")
 				for want := range s.lwant {
 					log.Println(want)
+				}
+				// Adding more logs for debugging in case of failures.
+				if diff := cmp.Diff(s.sd.ls, s.lwant, protocmp.Transform()); diff != "" {
+					log.Printf("t diff: %v\ngot:\n %v\nwant:\n %v\n", diff, s.sd.ls, s.lwant)
 				}
 				return fmt.Errorf("failed to receive expected logs")
 			}
