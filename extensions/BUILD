@@ -37,6 +37,7 @@ wasm_cc_binary(
         "//extensions/stats:plugin.h",
     ],
     copts = ["-UNULL_PLUGIN"],
+    repository = "@envoy",
     deps = [
         "//extensions/common:node_info_fb_cc",
         "//extensions/common/wasm:json_util",
@@ -61,6 +62,7 @@ wasm_cc_binary(
         "//extensions/metadata_exchange:plugin.h",
     ],
     copts = ["-UNULL_PLUGIN"],
+    repository = "@envoy",
     deps = [
         "//extensions/common:node_info_fb_cc",
         "//extensions/common/wasm:json_util",
@@ -83,6 +85,7 @@ wasm_cc_binary(
         "//extensions/common:util.h",
     ],
     copts = ["-UNULL_PLUGIN"],
+    repository = "@envoy",
     deps = [
         "//extensions/attributegen:config_cc_proto",
         "//extensions/common:node_info_fb_cc",
