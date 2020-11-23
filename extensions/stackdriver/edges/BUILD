@@ -67,7 +67,7 @@ envoy_cc_library(
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/common:metrics",
         "//extensions/stackdriver/common:utils",
-        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_host//:null_lib",
     ],
 )
 
@@ -86,7 +86,7 @@ envoy_cc_library(
         ":mesh_edges_service_client",
         "//extensions/common:context",
         "//extensions/stackdriver/common:constants",
-        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_host//:null_lib",
     ],
 )
 

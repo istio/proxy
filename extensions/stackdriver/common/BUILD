@@ -74,6 +74,6 @@ envoy_cc_library(
         "//extensions/stackdriver/log:__pkg__",
     ],
     deps = [
-        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_host//:null_lib",
     ],
 )

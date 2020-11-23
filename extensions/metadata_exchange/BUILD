@@ -29,7 +29,7 @@ envoy_cc_library(
         "//extensions/common:proto_util",
         "@envoy//source/common/common:base64_lib",
         "@envoy//source/extensions/common/wasm/ext:declare_property_cc_proto",
-        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_host//:null_lib",
     ],
 )
 

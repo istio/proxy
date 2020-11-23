@@ -24,6 +24,6 @@ envoy_cc_library(
         "//extensions/common:context",
         "//extensions/common:istio_dimensions",
         "@envoy//source/common/common:base64_lib",
-        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_host//:null_lib",
     ],
 )

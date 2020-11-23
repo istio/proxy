@@ -42,7 +42,7 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":config_cc_proto",
-        "@proxy_wasm_cpp_host//:lib",
+        "@proxy_wasm_cpp_host//:null_lib",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
@@ -70,6 +70,7 @@ envoy_extension_cc_test(
     deps = [
         ":attributegen_plugin",
         "@envoy//source/extensions/filters/http/wasm:wasm_filter_lib",
+        "@envoy//test/extensions/common/wasm:wasm_runtime",
         "@envoy//test/mocks/grpc:grpc_mocks",
         "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/mocks/network:network_mocks",

@@ -53,6 +53,7 @@ namespace HttpFilters {
 namespace Wasm {
 
 using envoy::config::core::v3::TrafficDirection;
+using Envoy::Extensions::Common::Wasm::PluginHandleSharedPtr;
 using Envoy::Extensions::Common::Wasm::PluginSharedPtr;
 using Envoy::Extensions::Common::Wasm::Wasm;
 using Envoy::Extensions::Common::Wasm::WasmHandleSharedPtr;
@@ -194,23 +195,24 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
           return new TestRoot(wasm, plugin);
         });
     if (wasm_) {
-      wasm_ = getOrCreateThreadLocalWasm(
+      plugin_handle_ = getOrCreateThreadLocalPlugin(
           wasm_, plugin_, dispatcher_,
           [root_context = &root_context_](
               Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
             *root_context = new TestRoot(wasm, plugin);
             return *root_context;
           });
+      wasm_ = plugin_handle_->wasmHandleForTest();
     }
     if (!c.do_not_add_filter) {
-      setupFilter(c.root_id);
+      setupFilter();
     }
   }
 
-  void setupFilter(const std::string root_id = "") {
-    filter_ = std::make_unique<TestFilter>(
-        wasm_->wasm().get(), wasm_->wasm()->getRootContext(root_id)->id(),
-        plugin_);
+  void setupFilter() {
+    auto wasm = wasm_ ? wasm_->wasm().get() : nullptr;
+    int root_context_id = wasm ? wasm->getRootContext(plugin_, false)->id() : 0;
+    filter_ = std::make_unique<TestFilter>(wasm, root_context_id, plugin_);
     filter_->setDecoderFilterCallbacks(decoder_callbacks_);
     filter_->setEncoderFilterCallbacks(encoder_callbacks_);
 
@@ -258,6 +260,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   NiceMock<Init::MockManager> init_manager_;
   WasmHandleSharedPtr wasm_;
   PluginSharedPtr plugin_;
+  PluginHandleSharedPtr plugin_handle_;
   std::unique_ptr<TestFilter> filter_;
   NiceMock<Envoy::Ssl::MockConnectionInfo> ssl_;
   NiceMock<Envoy::Network::MockConnection> connection_;
