@@ -34,7 +34,6 @@ import (
 
 type (
 	Params struct {
-		XDS    int
 		Config XDSServer
 		Ports  *env.Ports
 		Vars   map[string]string
@@ -71,7 +70,6 @@ func NewTestParams(t *testing.T, vars map[string]string, inv *env.TestInventory)
 	return &Params{
 		Vars:  vars,
 		Ports: ports,
-		XDS:   int(ports.XDSPort),
 	}
 }
 

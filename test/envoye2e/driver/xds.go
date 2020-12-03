@@ -47,14 +47,14 @@ type XDSServer struct {
 var _ Step = &XDS{}
 
 func (x *XDS) Run(p *Params) error {
-	log.Printf("XDS server starting on %d\n", p.XDS)
+	log.Printf("XDS server starting on %d\n", p.Ports.XDSPort)
 	x.grpc = grpc.NewServer()
 	p.Config.Extensions = extensionserver.New(context.Background())
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(x.grpc, p.Config.Extensions)
 	p.Config.Cache = cache.NewSnapshotCache(false, cache.IDHash{}, x)
 	xdsServer := server.NewServer(context.Background(), p.Config.Cache, nil)
 	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.XDS))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.XDSPort))
 	if err != nil {
 		return err
 	}
