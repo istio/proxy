@@ -42,7 +42,7 @@ cp -R "${ROOTDIR}/testdata/bootstrap" "${OUT_DIR}"
 cp -R "${ROOTDIR}/testdata/listener" "${OUT_DIR}"
 
 cd "${OUT_DIR}" || exit
-go-bindata --nocompress --nometadata --pkg testdata -o "${ROOTDIR}/testdata/testdata.gen.go" ./...
+go-bindata --nocompress --nometadata --pkg env -o "${ROOTDIR}/test/envoye2e/env/testdata.gen.go" ./...
 
 if [[ "${CHECK}" == "1" ]]; then
     pushd "$ROOTDIR" || exit
