@@ -33,37 +33,60 @@ import (
 )
 
 type (
+	// Params include test context that is shared by all steps.
 	Params struct {
+		// Config is the XDS server state.
 		Config XDSServer
-		Ports  *env.Ports
-		Vars   map[string]string
-		N      int
+
+		// Ports record the port assignment for a test.
+		Ports *env.Ports
+
+		// Vars include the variables which are used to fill in configuration template files.
+		Vars map[string]string
+
+		// N records the index of repetition. It is only valid when using with Repeat step.
+		N int
 	}
+
+	// Step is a unit of execution in the integration test.
 	Step interface {
+		// Run wraps the logic of a test step.
 		Run(*Params) error
+
+		// Cleanup cleans up all the test artifacts created by Run.
 		Cleanup()
 	}
+
+	// Scenario is a collection of Steps. It runs and cleans up all steps sequentially.
 	Scenario struct {
+		// Steps is a collection of steps which be executed sequentially.
 		Steps []Step
 	}
+
 	// Repeat a step either for N number or duration
 	Repeat struct {
 		N        int
 		Duration time.Duration
 		Step     Step
 	}
+
+	// Sleep injects a sleep with the given duration into the test execution.
 	Sleep struct {
 		time.Duration
 	}
+
 	// Fork will copy params to avoid concurrent access
 	Fork struct {
 		Fore Step
 		Back Step
 	}
-	// Lambda captured step
+
+	// StepFunction models Lambda captured step
 	StepFunction func(p *Params) error
 )
 
+// NewTestParams creates a new test params struct which keeps state of a test. vars will be used for template filling.
+// A set of ports will be assigned. If TestInventory is provided, the port assignment will be offsetted based on the index of the test in the inventory.
 func NewTestParams(t *testing.T, vars map[string]string, inv *env.TestInventory) *Params {
 	ind := inv.GetTestIndex(t)
 	ports := env.NewPorts(ind)
@@ -111,6 +134,7 @@ func (s *Sleep) Run(_ *Params) error {
 }
 func (s *Sleep) Cleanup() {}
 
+// Fill a template file with ariable map in Params.
 func (p *Params) Fill(s string) (string, error) {
 	t := template.Must(template.New("params").
 		Option("missingkey=zero").

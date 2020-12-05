@@ -39,6 +39,7 @@ import (
 	"istio.io/proxy/test/envoye2e/env"
 )
 
+// Envoy starts up a Envoy process locally.
 type Envoy struct {
 	// template for the bootstrap
 	Bootstrap string
@@ -60,6 +61,7 @@ type Envoy struct {
 
 var _ Step = &Envoy{}
 
+// Run starts a Envoy process.
 func (e *Envoy) Run(p *Params) error {
 	bootstrap, err := p.Fill(e.Bootstrap)
 	if err != nil {
@@ -128,6 +130,7 @@ func (e *Envoy) Run(p *Params) error {
 	return env.WaitForHTTPServer(url)
 }
 
+// Cleanup stops the Envoy process.
 func (e *Envoy) Cleanup() {
 	log.Printf("stop envoy ...\n")
 	defer os.Remove(e.tmpFile)

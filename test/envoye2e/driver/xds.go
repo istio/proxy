@@ -46,6 +46,7 @@ type XDSServer struct {
 
 var _ Step = &XDS{}
 
+// Run starts up an Envoy XDS server.
 func (x *XDS) Run(p *Params) error {
 	log.Printf("XDS server starting on %d\n", p.Ports.XDSPort)
 	x.grpc = grpc.NewServer()
@@ -65,6 +66,7 @@ func (x *XDS) Run(p *Params) error {
 	return nil
 }
 
+// Cleanup stops the XDS server.
 func (x *XDS) Cleanup() {
 	log.Println("stopping XDS server")
 	x.grpc.GracefulStop()
