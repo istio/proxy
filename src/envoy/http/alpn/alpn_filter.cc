@@ -67,7 +67,8 @@ Http::FilterHeadersStatus AlpnFilter::decodeHeaders(Http::RequestHeaderMap &,
   }
 
   Upstream::ThreadLocalCluster *cluster =
-      config_->clusterManager().get(route_entry->clusterName());
+      config_->clusterManager().getThreadLocalCluster(
+          route_entry->clusterName());
   if (!cluster || !cluster->info()) {
     ENVOY_LOG(debug, "cannot find cluster {}", route_entry->clusterName());
     return Http::FilterHeadersStatus::Continue;

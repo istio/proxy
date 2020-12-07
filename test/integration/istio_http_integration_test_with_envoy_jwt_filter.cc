@@ -213,8 +213,9 @@ class IstioHttpIntegrationTestWithEnvoyJwtFilter
  public:
   void createUpstreams() override {
     HttpProtocolIntegrationTest::createUpstreams();
-    fake_upstreams_.emplace_back(new FakeUpstream(
-        0, FakeHttpConnection::Type::HTTP2, version_, timeSystem()));
+    FakeUpstreamConfig config(timeSystem());
+    config.upstream_protocol_ = FakeHttpConnection::Type::HTTP2;
+    fake_upstreams_.emplace_back(new FakeUpstream(0, version_, config));
     zipkin_upstream_ = fake_upstreams_.back().get();
   }
 
