@@ -29,6 +29,7 @@ const (
 	Any            = "*"
 )
 
+// HTTPCall sends a HTTP request to a localhost port, and then check the response code, and response headers.
 type HTTPCall struct {
 	// Method
 	Method string
