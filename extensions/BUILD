@@ -17,7 +17,7 @@
 
 load(
     "@envoy//bazel/wasm:wasm.bzl",
-    "wasm_cc_binary",
+    "envoy_wasm_cc_binary",
 )
 load(
     "@envoy//bazel:envoy_build_system.bzl",
@@ -26,7 +26,7 @@ load(
 
 envoy_package()
 
-wasm_cc_binary(
+envoy_wasm_cc_binary(
     name = "stats.wasm",
     srcs = [
         "//extensions/common:context.cc",
@@ -42,12 +42,11 @@ wasm_cc_binary(
         "//extensions/common/wasm:json_util",
         "//external:abseil_strings",
         "//external:abseil_time",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
 
-wasm_cc_binary(
+envoy_wasm_cc_binary(
     name = "metadata_exchange.wasm",
     srcs = [
         "//extensions/common:context.cc",
@@ -72,7 +71,7 @@ wasm_cc_binary(
     ],
 )
 
-wasm_cc_binary(
+envoy_wasm_cc_binary(
     name = "attributegen.wasm",
     srcs = [
         "//extensions/attributegen:plugin.cc",

@@ -5,10 +5,6 @@ load(
     "envoy_cc_library",
     "envoy_package",
 )
-load(
-    "@envoy//bazel/wasm:wasm.bzl",
-    "wasm_cc_binary",
-)
 
 envoy_package()
 

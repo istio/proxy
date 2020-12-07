@@ -85,7 +85,8 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
                               {Http::Protocol::Http2, {"qux"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
-  ON_CALL(cluster_manager_, get(_)).WillByDefault(Return(fake_cluster_.get()));
+  ON_CALL(cluster_manager_, getThreadLocalCluster(_))
+      .WillByDefault(Return(fake_cluster_.get()));
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
       .WillByDefault([](absl::optional<Http::Protocol> protocol) {
@@ -121,7 +122,8 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
                               {Http::Protocol::Http2, {"qux"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
-  ON_CALL(cluster_manager_, get(_)).WillByDefault(Return(fake_cluster_.get()));
+  ON_CALL(cluster_manager_, getThreadLocalCluster(_))
+      .WillByDefault(Return(fake_cluster_.get()));
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
       .WillByDefault(
@@ -155,7 +157,8 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
                               {Http::Protocol::Http11, {"baz"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
-  ON_CALL(cluster_manager_, get(_)).WillByDefault(Return(fake_cluster_.get()));
+  ON_CALL(cluster_manager_, getThreadLocalCluster(_))
+      .WillByDefault(Return(fake_cluster_.get()));
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
       .WillByDefault(
