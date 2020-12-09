@@ -170,7 +170,7 @@ void fillExtraLabels(
 bool fillAuthInfo(const std::string& response_details,
                   google::protobuf::Map<std::string, std::string>* label_map) {
   std::string policy_name, policy_namespace, policy_rule_index;
-  if (response_details.find(rbac_denied_match_prefix)) {
+  if (absl::StartsWith(response_details, rbac_denied_match_prefix)) {
     (*label_map)["response_details"] = kRbacAccessDenied;
     if (RE2::PartialMatch(response_details, rbac_denied_match,
                           &policy_namespace, &policy_name,
