@@ -177,7 +177,7 @@ bool fillAuthInfo(const std::string& response_details,
         absl::StrCat(policy_namespace, ".", policy_name);
     (*label_map)["policy_rule"] = policy_rule_index;
     return true;
-  } else if (RE2::PartialMatch(response_details,rbac_denied_match_default)){
+  } else if (RE2::PartialMatch(response_details, rbac_denied_match_default)) {
     (*label_map)["response_details"] = kRbacAccessDenied;
   }
 
