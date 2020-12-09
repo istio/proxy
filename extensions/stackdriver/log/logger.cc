@@ -15,6 +15,7 @@
 
 #include "extensions/stackdriver/log/logger.h"
 
+#include "absl/strings/match.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/protobuf/util/time_util.h"
