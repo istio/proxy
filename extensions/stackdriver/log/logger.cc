@@ -38,7 +38,7 @@ namespace {
 const RE2 rbac_denied_match(
     "rbac_access_denied_matched_policy\\[ns\\[(.*)\\]-policy\\[(.*)\\]-rule\\[("
     ".*)\\]\\]");
-const RE2 rbac_denied_match_default("rbac_access_denied_matched_policy");
+constexpr char rbac_denied_match_prefix[] = "rbac_access_denied_matched_policy";
 constexpr char kRbacAccessDenied[] = "AuthzDenied";
 void setSourceCanonicalService(
     const ::Wasm::Common::FlatNode& peer_node_info,
@@ -170,19 +170,17 @@ void fillExtraLabels(
 bool fillAuthInfo(const std::string& response_details,
                   google::protobuf::Map<std::string, std::string>* label_map) {
   std::string policy_name, policy_namespace, policy_rule_index;
-  if (RE2::PartialMatch(response_details, rbac_denied_match, &policy_namespace,
-                        &policy_name, &policy_rule_index)) {
+  if (response_details.find(rbac_denied_match_prefix)) {
     (*label_map)["response_details"] = kRbacAccessDenied;
-    (*label_map)["policy_name"] =
-        absl::StrCat(policy_namespace, ".", policy_name);
-    (*label_map)["policy_rule"] = policy_rule_index;
+    if (RE2::PartialMatch(response_details, rbac_denied_match,
+                          &policy_namespace, &policy_name,
+                          &policy_rule_index)) {
+      (*label_map)["policy_name"] =
+          absl::StrCat(policy_namespace, ".", policy_name);
+      (*label_map)["policy_rule"] = policy_rule_index;
+    }
     return true;
   }
-  if (RE2::PartialMatch(response_details, rbac_denied_match_default)) {
-    (*label_map)["response_details"] = kRbacAccessDenied;
-    return true;
-  }
-
   return false;
 }
 
