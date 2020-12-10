@@ -542,6 +542,10 @@ std::optional<uint32_t> PluginRootContext::addIntExpression(
 
 bool PluginRootContext::onDone() {
   cleanupExpressions();
+  if (!request_queue_.empty()) {
+    LOG_CRITICAL(absl::StrCat("Request queue is not empty, dropping requests: ",
+                              request_queue_.size()));
+  }
   return true;
 }
 
