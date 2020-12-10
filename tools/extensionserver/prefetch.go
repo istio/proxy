@@ -31,6 +31,10 @@ var timeout = 5 * time.Second
 
 // Prefetch re-uses the cache is sha256 is specified
 func (ext *Extension) Prefetch() error {
+	// skip for null
+	if ext.Runtime == "null" {
+		return nil
+	}
 	// skip if already available
 	if ext.SHA256 != "" {
 		if _, prefetched := prefetch[ext.SHA256]; prefetched {
