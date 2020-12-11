@@ -53,11 +53,11 @@ type MetricServer struct {
 
 // LoggingServer is a fake stackdriver server which implements all of logging v2 service method.
 type LoggingServer struct {
-	delay                 time.Duration
-	listLogEntryResp      logging.ListLogEntriesResponse
-	listAuditLogEntryResp logging.ListLogEntriesResponse
-	RcvLoggingReq         chan *logging.WriteLogEntriesRequest
-	mux                   sync.Mutex
+	delay                        time.Duration
+	listServerAccessLogEntryResp logging.ListLogEntriesResponse
+	listServerAuditLogEntryResp  logging.ListLogEntriesResponse
+	RcvLoggingReq                chan *logging.WriteLogEntriesRequest
+	mux                          sync.Mutex
 }
 
 // MeshEdgesServiceServer is a fake stackdriver server which implements all of mesh edge service method.
@@ -141,7 +141,6 @@ func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
 	log.Printf("receive WriteLogEntriesRequest %v", req.String())
-	isAudit := strings.HasSuffix(req.LogName, "istio-audit-log")
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, entry := range req.Entries {
@@ -150,10 +149,11 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 		for k, v := range req.Labels {
 			tmpEntry.Labels[k] = v
 		}
-		if isAudit {
-			s.listAuditLogEntryResp.Entries = append(s.listAuditLogEntryResp.Entries, tmpEntry)
-		} else {
-			s.listLogEntryResp.Entries = append(s.listLogEntryResp.Entries, tmpEntry)
+		switch logName := req.LogName; {
+		case strings.HasSuffix(logName, "server-accesslog-stackdriver"):
+			s.listServerAccessLogEntryResp.Entries = append(s.listServerAccessLogEntryResp.Entries, tmpEntry)
+		case strings.HasSuffix(logName, "server-istio-audit-log"):
+			s.listServerAuditLogEntryResp.Entries = append(s.listServerAuditLogEntryResp.Entries, tmpEntry)
 		}
 	}
 	s.RcvLoggingReq <- req
@@ -165,7 +165,7 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return &s.listLogEntryResp, nil
+	return &s.listServerAccessLogEntryResp, nil
 }
 
 // ListLogs implements ListLogs method.
@@ -219,24 +219,24 @@ func (s *MetricServer) GetTimeSeries(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// GetLogEntries returns all received log entries in a ListLogEntriesResponse as a marshaled json string.
-func (s *LoggingServer) GetLogEntries(w http.ResponseWriter, req *http.Request) {
+// GetServerLogEntries returns all received log entries in a ListLogEntriesResponse as a marshaled json string.
+func (s *LoggingServer) GetServerLogEntries(w http.ResponseWriter, req *http.Request) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	var m jsonpb.Marshaler
-	if s, err := m.MarshalToString(&s.listLogEntryResp); err != nil {
+	if s, err := m.MarshalToString(&s.listServerAccessLogEntryResp); err != nil {
 		fmt.Fprintln(w, "Fail to marshal received log entries")
 	} else {
 		fmt.Fprintln(w, s)
 	}
 }
 
-// GetAuditLogEntries returns all received audit log entries in a ListLogEntriesResponse as a marshaled json string.
-func (s *LoggingServer) GetAuditLogEntries(w http.ResponseWriter, req *http.Request) {
+// GetServerAuditLogEntries returns all received server audit log entries in a ListLogEntriesResponse as a marshaled json string.
+func (s *LoggingServer) GetServerAuditLogEntries(w http.ResponseWriter, req *http.Request) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	var m jsonpb.Marshaler
-	if s, err := m.MarshalToString(&s.listAuditLogEntryResp); err != nil {
+	if s, err := m.MarshalToString(&s.listServerAuditLogEntryResp); err != nil {
 		fmt.Fprintln(w, "Fail to marshal received log entries")
 	} else {
 		fmt.Fprintln(w, s)
@@ -501,8 +501,8 @@ func RunFakeStackdriver(port uint16) error {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	http.HandleFunc("/timeseries", fsdms.GetTimeSeries)
-	http.HandleFunc("/logentries", fsdls.GetLogEntries)
-	http.HandleFunc("/auditlogentries", fsdls.GetAuditLogEntries)
+	http.HandleFunc("/server-accesslog-stackdriver", fsdls.GetServerLogEntries)
+	http.HandleFunc("/server-istio-audit-log", fsdls.GetServerAuditLogEntries)
 	http.HandleFunc("/trafficassertions", edgesSvc.TrafficAssertions)
 	http.HandleFunc("/traces", traceSvc.Traces)
 
