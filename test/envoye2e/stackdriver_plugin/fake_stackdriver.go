@@ -148,6 +148,8 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 		for k, v := range req.Labels {
 			tmpEntry.Labels[k] = v
 		}
+		// Set per entry log name.
+		tmpEntry.LogName = req.LogName
 		s.listLogEntryResp.Entries = append(s.listLogEntryResp.Entries, tmpEntry)
 	}
 	s.RcvLoggingReq <- req
