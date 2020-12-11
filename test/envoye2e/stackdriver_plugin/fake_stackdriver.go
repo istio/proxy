@@ -143,12 +143,13 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, entry := range req.Entries {
-		// Add the general labels and log name to every log entry in list logentries response.
+		// Add the general labels to every log entry in list logentries response.
 		tmpEntry := proto.Clone(entry).(*logging.LogEntry)
 		for k, v := range req.Labels {
 			tmpEntry.Labels[k] = v
 		}
-		tmpEntry.Labels["log_name"] = req.LogName
+		// Set per entry log name.
+		tmpEntry.LogName = req.LogName
 		s.listLogEntryResp.Entries = append(s.listLogEntryResp.Entries, tmpEntry)
 	}
 	s.RcvLoggingReq <- req
