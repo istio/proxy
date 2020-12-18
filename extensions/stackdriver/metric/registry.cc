@@ -207,6 +207,7 @@ StackdriverOptions getStackdriverOptions(
         ViewDescriptor()                                     \
             .set_name(k##_v##View)                           \
             .set_measure(k##_v##Measure)                     \
+            .set_expiry_duration(absl::Hours(1))             \
             .set_aggregation(Aggregation::Count()) ADD_TAGS; \
     View view(view_descriptor);                              \
     view_descriptor.RegisterForExport();                     \
@@ -218,6 +219,7 @@ StackdriverOptions getStackdriverOptions(
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
             .set_measure(k##_v##Measure)                            \
+            .set_expiry_duration(absl::Hours(1))                    \
             .set_aggregation(Aggregation::Count()) ADD_COMMON_TAGS; \
     View view(view_descriptor);                                     \
     view_descriptor.RegisterForExport();                            \
@@ -229,6 +231,7 @@ StackdriverOptions getStackdriverOptions(
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
             .set_measure(k##_v##Measure)                            \
+            .set_expiry_duration(absl::Hours(1))                    \
             .set_aggregation(Aggregation::Distribution(             \
                 BucketBoundaries::Exponential(20, 1, 2))) ADD_TAGS; \
     View view(view_descriptor);                                     \
@@ -241,6 +244,7 @@ StackdriverOptions getStackdriverOptions(
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
             .set_measure(k##_v##Measure)                            \
+            .set_expiry_duration(absl::Hours(1))                    \
             .set_aggregation(Aggregation::Distribution(             \
                 BucketBoundaries::Exponential(7, 1, 10))) ADD_TAGS; \
     View view(view_descriptor);                                     \
