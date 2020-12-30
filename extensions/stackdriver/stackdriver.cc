@@ -166,7 +166,7 @@ std::string getProjectNumber() {
 
 absl::Duration getMetricExpiryDuration(
     const stackdriver::config::v1alpha1::PluginConfig& config) {
-  if (config.has_metric_expiry_duration()) {
+  if (!config.has_metric_expiry_duration()) {
     return absl::ZeroDuration();
   }
   const auto& duration = config.metric_expiry_duration();

@@ -123,9 +123,8 @@ message PluginConfig {
 
   // Optional. Controls the metric expiry duration. If a metric time series is
   // not updated for the given duration, it will be purged from time series
-  // cache as well as metric reporting. If this is not set, the default metric
-  // expiry is one hour. If this is set to 0, stale time series will never be
-  // purged. This option is useful to avoid unbounded metric label explodes
-  // proxy memory.
+  // cache as well as metric reporting. If this is not set or set to 0, time
+  // series will never be expired. This option is useful to avoid unbounded
+  // metric label explodes proxy memory.
   google.protobuf.Duration metric_expiry_duration = 15;
 }
