@@ -39,7 +39,7 @@ opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
         stub_option);
 
 // registers Opencensus views
-void registerViews();
+void registerViews(absl::Duration);
 
 // Opencensus tag key functions.
 opencensus::tags::TagKey requestOperationKey();

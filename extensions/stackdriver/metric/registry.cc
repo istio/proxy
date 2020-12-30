@@ -202,7 +202,7 @@ StackdriverOptions getStackdriverOptions(
  *  view function macros
  */
 #define REGISTER_COUNT_VIEW(_v)                              \
-  void register##_v##View(absl::Durationexpiry_duration) {   \
+  void register##_v##View(absl::Duration expiry_duration) {  \
     const ViewDescriptor view_descriptor =                   \
         ViewDescriptor()                                     \
             .set_name(k##_v##View)                           \
@@ -214,7 +214,7 @@ StackdriverOptions getStackdriverOptions(
   }
 
 #define REGISTER_TCP_COUNT_VIEW(_v)                                 \
-  void register##_v##View(absl::Durationexpiry_duration) {          \
+  void register##_v##View(absl::Duration expiry_duration) {         \
     const ViewDescriptor view_descriptor =                          \
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
@@ -226,7 +226,7 @@ StackdriverOptions getStackdriverOptions(
   }
 
 #define REGISTER_DISTRIBUTION_VIEW(_v)                              \
-  void register##_v##View(absl::Durationexpiry_duration) {          \
+  void register##_v##View(absl::Duration expiry_duration) {         \
     const ViewDescriptor view_descriptor =                          \
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
@@ -239,7 +239,7 @@ StackdriverOptions getStackdriverOptions(
   }
 
 #define REGISTER_BYTES_DISTRIBUTION_VIEW(_v)                        \
-  void register##_v##View(absl::Durationexpiry_duration) {          \
+  void register##_v##View(absl::Duration expiry_duration) {         \
     const ViewDescriptor view_descriptor =                          \
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
