@@ -15,11 +15,11 @@
 
 #include "extensions/stackdriver/common/utils.h"
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "google/protobuf/util/message_differencer.h"
 #include "extensions/stackdriver/common/constants.h"
+#include "gmock/gmock.h"
 #include "google/protobuf/util/json_util.h"
+#include "google/protobuf/util/message_differencer.h"
+#include "gtest/gtest.h"
 
 namespace Extensions {
 namespace Stackdriver {
@@ -28,31 +28,32 @@ namespace Common {
 using google::protobuf::util::MessageDifferencer;
 
 TEST(UtilsTest, TestEnvoyGrpcInsecure) {
-    GrpcService expected_envoy_grpc_service;
-    std::string envoy_google_grpc_json = R"({
+  GrpcService expected_envoy_grpc_service;
+  std::string envoy_google_grpc_json = R"({
         "google_grpc": {
             "target_uri": "test"
         }
     })";
-    google::protobuf::util::JsonParseOptions options;
-    JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service,
+                      options);
 
-    StackdriverStubOption opt;
-    opt.insecure_endpoint = "test";
-    GrpcService envoy_grpc_service;
-    buildEnvoyGrpcService(opt, &envoy_grpc_service);
+  StackdriverStubOption opt;
+  opt.insecure_endpoint = "test";
+  GrpcService envoy_grpc_service;
+  buildEnvoyGrpcService(opt, &envoy_grpc_service);
 
-    std::string diff;
-    MessageDifferencer differ;
-    differ.ReportDifferencesToString(&diff);
-    if (!differ.Compare(expected_envoy_grpc_service, envoy_grpc_service)) {
-        FAIL() << "unexpected envoy grpc service " << diff << "\n";
-    }
+  std::string diff;
+  MessageDifferencer differ;
+  differ.ReportDifferencesToString(&diff);
+  if (!differ.Compare(expected_envoy_grpc_service, envoy_grpc_service)) {
+    FAIL() << "unexpected envoy grpc service " << diff << "\n";
+  }
 }
 
 TEST(UtilsTest, TestEnvoyGrpcSTS) {
-    GrpcService expected_envoy_grpc_service;
-    std::string envoy_google_grpc_json = R"({
+  GrpcService expected_envoy_grpc_service;
+  std::string envoy_google_grpc_json = R"({
         "google_grpc": {
             "target_uri": "secure",
             "channel_credentials": {
@@ -76,27 +77,28 @@ TEST(UtilsTest, TestEnvoyGrpcSTS) {
             "value": "project"
         }
     })";
-    google::protobuf::util::JsonParseOptions options;
-    JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service,
+                      options);
 
-    StackdriverStubOption opt;
-    opt.secure_endpoint = "secure";
-    opt.sts_port = "1234";
-    opt.project_id = "project";
-    GrpcService envoy_grpc_service;
-    buildEnvoyGrpcService(opt, &envoy_grpc_service);
+  StackdriverStubOption opt;
+  opt.secure_endpoint = "secure";
+  opt.sts_port = "1234";
+  opt.project_id = "project";
+  GrpcService envoy_grpc_service;
+  buildEnvoyGrpcService(opt, &envoy_grpc_service);
 
-    std::string diff;
-    MessageDifferencer differ;
-    differ.ReportDifferencesToString(&diff);
-    if (!differ.Compare(expected_envoy_grpc_service, envoy_grpc_service)) {
-        FAIL() << "unexpected envoy grpc service " << diff << "\n";
-    }
+  std::string diff;
+  MessageDifferencer differ;
+  differ.ReportDifferencesToString(&diff);
+  if (!differ.Compare(expected_envoy_grpc_service, envoy_grpc_service)) {
+    FAIL() << "unexpected envoy grpc service " << diff << "\n";
+  }
 }
 
 TEST(UtilsTest, TestEnvoyGrpcDefaultCredential) {
-    GrpcService expected_envoy_grpc_service;
-    std::string envoy_google_grpc_json = R"({
+  GrpcService expected_envoy_grpc_service;
+  std::string envoy_google_grpc_json = R"({
         "google_grpc": {
             "target_uri": "secure",
             "channel_credentials": {
@@ -104,20 +106,21 @@ TEST(UtilsTest, TestEnvoyGrpcDefaultCredential) {
             }
         }
     })";
-    google::protobuf::util::JsonParseOptions options;
-    JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
+  google::protobuf::util::JsonParseOptions options;
+  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service,
+                      options);
 
-    StackdriverStubOption opt;
-    opt.secure_endpoint = "secure";
-    GrpcService envoy_grpc_service;
-    buildEnvoyGrpcService(opt, &envoy_grpc_service);
+  StackdriverStubOption opt;
+  opt.secure_endpoint = "secure";
+  GrpcService envoy_grpc_service;
+  buildEnvoyGrpcService(opt, &envoy_grpc_service);
 
-    std::string diff;
-    MessageDifferencer differ;
-    differ.ReportDifferencesToString(&diff);
-    if (!differ.Compare(expected_envoy_grpc_service, envoy_grpc_service)) {
-        FAIL() << "unexpected envoy grpc service " << diff << "\n";
-    }
+  std::string diff;
+  MessageDifferencer differ;
+  differ.ReportDifferencesToString(&diff);
+  if (!differ.Compare(expected_envoy_grpc_service, envoy_grpc_service)) {
+    FAIL() << "unexpected envoy grpc service " << diff << "\n";
+  }
 }
 
 }  // namespace Common
