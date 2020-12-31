@@ -169,7 +169,7 @@ absl::Duration getMetricExpiryDuration(
   if (!config.has_metric_expiry_duration()) {
     return absl::ZeroDuration();
   }
-  const auto& duration = config.metric_expiry_duration();
+  auto& duration = config.metric_expiry_duration();
   return absl::Seconds(duration.seconds()) +
          absl::Nanoseconds(duration.nanos());
 }

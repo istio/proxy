@@ -23,12 +23,12 @@ metric:
     request_protocol: http
     response_code: "200"
     service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
-    source_canonical_revision: version-1
-    source_canonical_service_name: productpage-v1
-    source_canonical_service_namespace: default
-    source_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
-    source_workload_name: productpage-v1
-    source_workload_namespace: default
+    source_canonical_revision: latest
+    source_canonical_service_name: unknown
+    source_canonical_service_namespace: unknown
+    source_owner: unknown
+    source_workload_name: unknown
+    source_workload_namespace: unknown
     {{- if .Vars.SourcePrincipal }}
     source_principal: "{{ .Vars.SourcePrincipal }}"
     {{- else }}
