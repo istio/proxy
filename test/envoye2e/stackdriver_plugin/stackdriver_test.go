@@ -939,12 +939,15 @@ func TestStackdriverMetricExpiry(t *testing.T) {
 			),
 			sd.Reset(),
 			&driver.Sleep{Duration: 10 * time.Second},
+			// Send request directly to server, which will create several new time series with unknown source.
+			// This will also trigger the metrics with known source to be purged.
 			&driver.Repeat{N: 10,
 				Step: &driver.HTTPCall{
 					Port: params.Ports.ServerPort,
 					Body: "hello, world!",
 				},
 			},
+			// Should only have unknown source metric.
 			sd.Check(params,
 				[]string{"testdata/stackdriver/server_request_count_source_unknown.yaml.tmpl"},
 				[]SDLogEntry{}, nil, true,

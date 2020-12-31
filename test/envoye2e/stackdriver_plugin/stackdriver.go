@@ -176,7 +176,7 @@ func (r *resetStackdriver) Run(p *driver.Params) error {
 	return nil
 }
 
-func (s *resetStackdriver) Cleanup() {}
+func (r *resetStackdriver) Cleanup() {}
 
 type checkStackdriver struct {
 	sd                    *Stackdriver
