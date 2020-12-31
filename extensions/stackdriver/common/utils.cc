@@ -66,6 +66,8 @@ void buildEnvoyGrpcService(const StackdriverStubOption &stub_option,
                                   ? kSTSSubjectTokenPath
                                   : stub_option.test_token_path);
   auto initial_metadata = grpc_service->add_initial_metadata();
+  // When using p4sa/sts, google backend needs `x-goog-user-project` in initial
+  // metadata to differentiate which project the call should be accounted for.
   initial_metadata->set_key("x-goog-user-project");
   initial_metadata->set_value(stub_option.project_id);
 

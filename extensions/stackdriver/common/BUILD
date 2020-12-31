@@ -20,6 +20,7 @@ licenses(["notice"])
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
+    "envoy_cc_test",
 )
 
 envoy_cc_library(
@@ -57,6 +58,17 @@ envoy_cc_library(
         "//extensions/common:context",
         "@com_google_googleapis//google/monitoring/v3:monitoring_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+    ],
+)
+
+envoy_cc_test(
+    name = "utils_test",
+    size = "small",
+    srcs = ["utils_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":utils",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
 
