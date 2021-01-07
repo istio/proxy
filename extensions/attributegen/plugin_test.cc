@@ -305,7 +305,9 @@ class AttributeGenFilterTest : public WasmHttpFilterTest {
     ASSERT_EQ(fs->hasData<HttpFilters::Wasm::CelState>(attribute), found)
         << absl::StrCat(attribute, "=?", value);
     if (found) {
-      ASSERT_EQ(fs->getDataReadOnly<HttpFilters::Wasm::CelState>(attribute).value(), value)
+      ASSERT_EQ(
+          fs->getDataReadOnly<HttpFilters::Wasm::CelState>(attribute).value(),
+          value)
           << absl::StrCat(attribute, "=?", value);
     }
   }
