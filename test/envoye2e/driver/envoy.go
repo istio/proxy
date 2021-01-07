@@ -88,13 +88,6 @@ func (e *Envoy) Run(p *Params) error {
 	if !ok {
 		debugLevel = "info"
 	}
-	args := []string{
-		"-c", e.tmpFile,
-		"-l", debugLevel,
-		"--concurrency", "1",
-		"--disable-hot-restart",
-		"--drain-time-s", "4", // this affects how long draining listenrs are kept alive
-	}
 	envoyPath := filepath.Join(env.GetDefaultEnvoyBinOrDie(), "envoy")
 	if path, exists := os.LookupEnv("ENVOY_PATH"); exists {
 		envoyPath = path
@@ -104,6 +97,15 @@ func (e *Envoy) Run(p *Params) error {
 			return fmt.Errorf("failed to download Envoy binary %v", err)
 		}
 	}
+	args := []string{
+		// "record", "-e", "cycles:u", "-g", "-k", "mono", "-o", "perf.data", "--", envoyPath,
+		"-c", e.tmpFile,
+		"-l", debugLevel,
+		"--concurrency", "1",
+		"--disable-hot-restart",
+		"--drain-time-s", "4", // this affects how long draining listenrs are kept alive
+	}
+	// cmd := exec.Command("perf", args...)
 	cmd := exec.Command(envoyPath, args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

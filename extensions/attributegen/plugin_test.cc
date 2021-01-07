@@ -57,7 +57,7 @@ using Envoy::Extensions::Common::Wasm::PluginHandleSharedPtr;
 using Envoy::Extensions::Common::Wasm::PluginSharedPtr;
 using Envoy::Extensions::Common::Wasm::Wasm;
 using Envoy::Extensions::Common::Wasm::WasmHandleSharedPtr;
-using Envoy::Extensions::Common::Wasm::WasmState;
+using Envoy::Extensions::Filters::Common::Expr::CelState;
 using GrpcService = envoy::config::core::v3::GrpcService;
 using WasmFilterConfig = envoy::extensions::filters::http::wasm::v3::Wasm;
 
@@ -302,10 +302,10 @@ class AttributeGenFilterTest : public WasmHttpFilterTest {
     auto fs = makeTestRequest(request_headers, response_headers);
     auto attribute = "wasm." + base_attribute;
 
-    ASSERT_EQ(fs->hasData<WasmState>(attribute), found)
+    ASSERT_EQ(fs->hasData<CelState>(attribute), found)
         << absl::StrCat(attribute, "=?", value);
     if (found) {
-      ASSERT_EQ(fs->getDataReadOnly<WasmState>(attribute).value(), value)
+      ASSERT_EQ(fs->getDataReadOnly<CelState>(attribute).value(), value)
           << absl::StrCat(attribute, "=?", value);
     }
   }

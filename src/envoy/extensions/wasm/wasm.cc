@@ -44,10 +44,7 @@ struct ConfigStats {
 
 class IstioWasmVmIntegration : public EnvoyWasmVmIntegration {
  public:
-  IstioWasmVmIntegration(const Stats::ScopeSharedPtr& scope,
-                         absl::string_view runtime,
-                         absl::string_view short_runtime)
-      : EnvoyWasmVmIntegration(scope, runtime, short_runtime) {}
+  IstioWasmVmIntegration() : EnvoyWasmVmIntegration() {}
 };
 
 class IstioWasm : public Wasm {
@@ -91,9 +88,6 @@ class IstioWasmExtension : public EnvoyWasm {
         "istio");
   }
   ~IstioWasmExtension() override = default;
-  std::unique_ptr<EnvoyWasmVmIntegration> createEnvoyWasmVmIntegration(
-      const Stats::ScopeSharedPtr& scope, absl::string_view runtime,
-      absl::string_view short_runtime) override;
   WasmHandleExtensionFactory wasmFactory() override;
   WasmHandleExtensionCloneFactory wasmCloneFactory() override;
   void onEvent(WasmEvent event, const PluginSharedPtr& plugin) override;
@@ -105,14 +99,6 @@ class IstioWasmExtension : public EnvoyWasm {
  private:
   std::map<std::string, std::unique_ptr<ConfigStats>> config_stats_;
 };
-
-std::unique_ptr<EnvoyWasmVmIntegration>
-IstioWasmExtension::createEnvoyWasmVmIntegration(
-    const Stats::ScopeSharedPtr& scope, absl::string_view runtime,
-    absl::string_view short_runtime) {
-  return std::make_unique<IstioWasmVmIntegration>(scope, runtime,
-                                                  short_runtime);
-}
 
 WasmHandleExtensionFactory IstioWasmExtension::wasmFactory() {
   return [](const VmConfig vm_config, const Stats::ScopeSharedPtr& scope,
