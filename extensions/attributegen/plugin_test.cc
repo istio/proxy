@@ -21,7 +21,7 @@
 #include "common/stats/isolated_store_impl.h"
 #include "common/stream_info/stream_info_impl.h"
 #include "envoy/server/lifecycle_notifier.h"
-#include "extensions/common/wasm/wasm_state.h"
+#include "extensions/filters/common/expr/cel_state.h"
 #include "extensions/filters/http/wasm/wasm_filter.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

@@ -17,7 +17,7 @@
 #include "common/stream_info/filter_state_impl.h"
 #include "extensions/common/node_info_generated.h"
 #include "extensions/common/proto_util.h"
-#include "extensions/common/wasm/wasm_state.h"
+#include "extensions/filters/common/expr/cel_state.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
