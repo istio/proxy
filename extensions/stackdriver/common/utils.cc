@@ -45,36 +45,39 @@ void buildEnvoyGrpcService(const StackdriverStubOption &stub_option,
     // for testing.
     grpc_service->mutable_google_grpc()->set_target_uri(
         stub_option.insecure_endpoint);
-  } else {
-    grpc_service->mutable_google_grpc()->set_target_uri(
-        stub_option.secure_endpoint.empty() ? stub_option.default_endpoint
-                                            : stub_option.secure_endpoint);
-    if (stub_option.sts_port.empty()) {
-      // Security token exchange is not enabled. Use default GCE credential.
-      grpc_service->mutable_google_grpc()
-          ->add_call_credentials()
-          ->mutable_google_compute_engine();
-    } else {
-      setSTSCallCredentialOptions(grpc_service->mutable_google_grpc()
-                                      ->add_call_credentials()
-                                      ->mutable_sts_service(),
-                                  stub_option.sts_port,
-                                  stub_option.test_token_path.empty()
-                                      ? kSTSSubjectTokenPath
-                                      : stub_option.test_token_path);
-      auto initial_metadata = grpc_service->add_initial_metadata();
-      initial_metadata->set_key("x-goog-user-project");
-      initial_metadata->set_value(stub_option.project_id);
-    }
-
+    return;
+  }
+  grpc_service->mutable_google_grpc()->set_target_uri(
+      stub_option.secure_endpoint.empty() ? stub_option.default_endpoint
+                                          : stub_option.secure_endpoint);
+  if (stub_option.sts_port.empty()) {
+    // Security token exchange is not enabled. Use default Google credential.
     grpc_service->mutable_google_grpc()
         ->mutable_channel_credentials()
-        ->mutable_ssl_credentials()
-        ->mutable_root_certs()
-        ->set_filename(stub_option.test_root_pem_path.empty()
-                           ? kDefaultRootCertFile
-                           : stub_option.test_root_pem_path);
+        ->mutable_google_default();
+    return;
   }
+
+  setSTSCallCredentialOptions(grpc_service->mutable_google_grpc()
+                                  ->add_call_credentials()
+                                  ->mutable_sts_service(),
+                              stub_option.sts_port,
+                              stub_option.test_token_path.empty()
+                                  ? kSTSSubjectTokenPath
+                                  : stub_option.test_token_path);
+  auto initial_metadata = grpc_service->add_initial_metadata();
+  // When using p4sa/sts, google backend needs `x-goog-user-project` in initial
+  // metadata to differentiate which project the call should be accounted for.
+  initial_metadata->set_key("x-goog-user-project");
+  initial_metadata->set_value(stub_option.project_id);
+
+  grpc_service->mutable_google_grpc()
+      ->mutable_channel_credentials()
+      ->mutable_ssl_credentials()
+      ->mutable_root_certs()
+      ->set_filename(stub_option.test_root_pem_path.empty()
+                         ? kDefaultRootCertFile
+                         : stub_option.test_root_pem_path);
 }
 
 bool isRawGCEInstance(const ::Wasm::Common::FlatNode &node) {
