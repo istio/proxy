@@ -124,7 +124,7 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem());
+                                         test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
@@ -150,7 +150,7 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem());
+                                         test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
@@ -174,7 +174,7 @@ TEST_F(AuthenticationFilterTest, AllPass) {
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem());
+                                         test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
@@ -245,7 +245,7 @@ TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
   StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem());
+                                         test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
