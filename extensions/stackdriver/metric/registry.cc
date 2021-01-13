@@ -202,33 +202,36 @@ StackdriverOptions getStackdriverOptions(
  *  view function macros
  */
 #define REGISTER_COUNT_VIEW(_v)                              \
-  void register##_v##View() {                                \
+  void register##_v##View(absl::Duration expiry_duration) {  \
     const ViewDescriptor view_descriptor =                   \
         ViewDescriptor()                                     \
             .set_name(k##_v##View)                           \
             .set_measure(k##_v##Measure)                     \
+            .set_expiry_duration(expiry_duration)            \
             .set_aggregation(Aggregation::Count()) ADD_TAGS; \
     View view(view_descriptor);                              \
     view_descriptor.RegisterForExport();                     \
   }
 
 #define REGISTER_TCP_COUNT_VIEW(_v)                                 \
-  void register##_v##View() {                                       \
+  void register##_v##View(absl::Duration expiry_duration) {         \
     const ViewDescriptor view_descriptor =                          \
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
             .set_measure(k##_v##Measure)                            \
+            .set_expiry_duration(expiry_duration)                   \
             .set_aggregation(Aggregation::Count()) ADD_COMMON_TAGS; \
     View view(view_descriptor);                                     \
     view_descriptor.RegisterForExport();                            \
   }
 
 #define REGISTER_DISTRIBUTION_VIEW(_v)                              \
-  void register##_v##View() {                                       \
+  void register##_v##View(absl::Duration expiry_duration) {         \
     const ViewDescriptor view_descriptor =                          \
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
             .set_measure(k##_v##Measure)                            \
+            .set_expiry_duration(expiry_duration)                   \
             .set_aggregation(Aggregation::Distribution(             \
                 BucketBoundaries::Exponential(20, 1, 2))) ADD_TAGS; \
     View view(view_descriptor);                                     \
@@ -236,11 +239,12 @@ StackdriverOptions getStackdriverOptions(
   }
 
 #define REGISTER_BYTES_DISTRIBUTION_VIEW(_v)                        \
-  void register##_v##View() {                                       \
+  void register##_v##View(absl::Duration expiry_duration) {         \
     const ViewDescriptor view_descriptor =                          \
         ViewDescriptor()                                            \
             .set_name(k##_v##View)                                  \
             .set_measure(k##_v##Measure)                            \
+            .set_expiry_duration(expiry_duration)                   \
             .set_aggregation(Aggregation::Distribution(             \
                 BucketBoundaries::Exponential(7, 1, 10))) ADD_TAGS; \
     View view(view_descriptor);                                     \
@@ -322,7 +326,7 @@ MEASURE_FUNC(clientConnectionsCloseCount, ClientConnectionsCloseCount, By,
 MEASURE_FUNC(clientReceivedBytesCount, ClientReceivedBytesCount, By, Int64)
 MEASURE_FUNC(clientSentBytesCount, ClientSentBytesCount, By, Int64)
 
-void registerViews() {
+void registerViews(absl::Duration expiry_duration) {
   // Register measure first, which views depend on.
   serverRequestCountMeasure();
   serverRequestBytesMeasure();
@@ -342,22 +346,22 @@ void registerViews() {
   clientSentBytesCountMeasure();
 
   // Register views to export;
-  registerServerRequestCountView();
-  registerServerRequestBytesView();
-  registerServerResponseBytesView();
-  registerServerResponseLatenciesView();
-  registerClientRequestCountView();
-  registerClientRequestBytesView();
-  registerClientResponseBytesView();
-  registerClientRoundtripLatenciesView();
-  registerServerConnectionsOpenCountView();
-  registerServerConnectionsCloseCountView();
-  registerServerReceivedBytesCountView();
-  registerServerSentBytesCountView();
-  registerClientConnectionsOpenCountView();
-  registerClientConnectionsCloseCountView();
-  registerClientReceivedBytesCountView();
-  registerClientSentBytesCountView();
+  registerServerRequestCountView(expiry_duration);
+  registerServerRequestBytesView(expiry_duration);
+  registerServerResponseBytesView(expiry_duration);
+  registerServerResponseLatenciesView(expiry_duration);
+  registerClientRequestCountView(expiry_duration);
+  registerClientRequestBytesView(expiry_duration);
+  registerClientResponseBytesView(expiry_duration);
+  registerClientRoundtripLatenciesView(expiry_duration);
+  registerServerConnectionsOpenCountView(expiry_duration);
+  registerServerConnectionsCloseCountView(expiry_duration);
+  registerServerReceivedBytesCountView(expiry_duration);
+  registerServerSentBytesCountView(expiry_duration);
+  registerClientConnectionsOpenCountView(expiry_duration);
+  registerClientConnectionsCloseCountView(expiry_duration);
+  registerClientReceivedBytesCountView(expiry_duration);
+  registerClientSentBytesCountView(expiry_duration);
 }
 
 /*

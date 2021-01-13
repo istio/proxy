@@ -164,6 +164,16 @@ std::string getProjectNumber() {
   return project_number;
 }
 
+absl::Duration getMetricExpiryDuration(
+    const stackdriver::config::v1alpha1::PluginConfig& config) {
+  if (!config.has_metric_expiry_duration()) {
+    return absl::ZeroDuration();
+  }
+  auto& duration = config.metric_expiry_duration();
+  return absl::Seconds(duration.seconds()) +
+         absl::Nanoseconds(duration.nanos());
+}
+
 void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_connections_opened = 0;
   request_info.tcp_sent_bytes = 0;
@@ -359,7 +369,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
       absl::Seconds(getMonitoringExportInterval()));
 
   // Register opencensus measures and views.
-  registerViews();
+  registerViews(getMetricExpiryDuration(config_));
 
   return true;
 }

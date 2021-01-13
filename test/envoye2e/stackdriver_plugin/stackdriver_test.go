@@ -895,3 +895,65 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestStackdriverMetricExpiry(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+	}, envoye2e.ProxyE2ETests)
+
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") +
+		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	sd := &Stackdriver{Port: sdPort}
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{
+				params.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{
+				params.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ClientPort,
+					Body: "hello, world!",
+				},
+			},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/server_request_count.yaml.tmpl"},
+				[]SDLogEntry{}, nil, true,
+			),
+			sd.Reset(),
+			&driver.Sleep{Duration: 10 * time.Second},
+			// Send request directly to server, which will create several new time series with unknown source.
+			// This will also trigger the metrics with known source to be purged.
+			&driver.Repeat{N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ServerPort,
+					Body: "hello, world!",
+				},
+			},
+			// Should only have unknown source metric.
+			sd.Check(params,
+				[]string{"testdata/stackdriver/server_request_count_source_unknown.yaml.tmpl"},
+				[]SDLogEntry{}, nil, true,
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}

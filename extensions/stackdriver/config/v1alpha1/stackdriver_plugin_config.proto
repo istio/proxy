@@ -120,4 +120,11 @@ message PluginConfig {
   // logs. Conflicts are resolved by the tag name by overriding previously
   // supplied values. Does not apply to audit logs.
   CustomConfig custom_log_config = 14;
+
+  // Optional. Controls the metric expiry duration. If a metric time series is
+  // not updated for the given duration, it will be purged from time series
+  // cache as well as metric reporting. If this is not set or set to 0, time
+  // series will never be expired. This option is useful to avoid unbounded
+  // metric label explodes proxy memory.
+  google.protobuf.Duration metric_expiry_duration = 15;
 }

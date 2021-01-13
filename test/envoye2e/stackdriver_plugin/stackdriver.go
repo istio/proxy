@@ -158,6 +158,26 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 	}
 }
 
+func (sd *Stackdriver) Reset() driver.Step {
+	return &resetStackdriver{sd: sd}
+}
+
+type resetStackdriver struct {
+	sd *Stackdriver
+}
+
+func (r *resetStackdriver) Run(p *driver.Params) error {
+	r.sd.Lock()
+	defer r.sd.Unlock()
+	r.sd.ls = make(map[string]struct{})
+	r.sd.ts = make(map[string]struct{})
+	r.sd.es = make(map[string]struct{})
+	r.sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
+	return nil
+}
+
+func (r *resetStackdriver) Cleanup() {}
+
 type checkStackdriver struct {
 	sd                    *Stackdriver
 	twant                 map[string]struct{}
