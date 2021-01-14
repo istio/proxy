@@ -288,8 +288,9 @@ void MetadataExchangeFilter::updatePeer(
 
   // Filter object captures schema by view, hence the global singleton for the
   // prototype.
-  auto state = std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(
-      MetadataExchangeConfig::nodeInfoPrototype());
+  auto state =
+      std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(
+          MetadataExchangeConfig::nodeInfoPrototype());
   state->setValue(
       absl::string_view(reinterpret_cast<const char*>(fb.data()), fb.size()));
 
@@ -304,12 +305,13 @@ void MetadataExchangeFilter::updatePeer(
 
 void MetadataExchangeFilter::updatePeerId(absl::string_view key,
                                           absl::string_view value) {
-  WasmStatePrototype prototype(
+  CelStatePrototype prototype(
       /* read_only = */ false,
-      ::Envoy::Extensions::Common::Wasm::WasmType::String, absl::string_view(),
-      StreamInfo::FilterState::LifeSpan::Connection);
+      ::Envoy::Extensions::Filters::Common::Expr::CelStateType::String,
+      absl::string_view(), StreamInfo::FilterState::LifeSpan::Connection);
   auto state =
-      std::make_unique<::Envoy::Extensions::Common::Wasm::WasmState>(prototype);
+      std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(
+          prototype);
   state->setValue(value);
   read_callbacks_->connection().streamInfo().filterState()->setData(
       absl::StrCat("wasm.", key), std::move(state),

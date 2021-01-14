@@ -17,7 +17,7 @@
 #include "common/stream_info/filter_state_impl.h"
 #include "extensions/common/node_info_generated.h"
 #include "extensions/common/proto_util.h"
-#include "extensions/common/wasm/wasm_state.h"
+#include "extensions/filters/common/expr/cel_state.h"
 #include "google/protobuf/util/json_util.h"
 
 // WASM_PROLOG
@@ -60,9 +60,10 @@ constexpr std::string_view node_id = "test_pod.test_namespace";
 
 static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
                     std::string_view key, std::string_view value) {
-  Envoy::Extensions::Common::Wasm::WasmStatePrototype prototype;
+  Envoy::Extensions::Filters::Common::Expr::CelStatePrototype prototype;
   auto state_ptr =
-      std::make_unique<Envoy::Extensions::Common::Wasm::WasmState>(prototype);
+      std::make_unique<Envoy::Extensions::Filters::Common::Expr::CelState>(
+          prototype);
   state_ptr->setValue(value);
   filter_state.setData(key, std::move(state_ptr),
                        Envoy::StreamInfo::FilterState::StateType::Mutable);
@@ -71,7 +72,7 @@ static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
 static const std::string& getData(
     Envoy::StreamInfo::FilterStateImpl& filter_state, std::string_view key) {
   return filter_state
-      .getDataReadOnly<Envoy::Extensions::Common::Wasm::WasmState>(key)
+      .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(key)
       .value();
 }
 

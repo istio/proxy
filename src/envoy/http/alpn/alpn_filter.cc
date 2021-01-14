@@ -74,9 +74,9 @@ Http::FilterHeadersStatus AlpnFilter::decodeHeaders(Http::RequestHeaderMap &,
     return Http::FilterHeadersStatus::Continue;
   }
 
-  Http::Protocol protocol = cluster->info()->upstreamHttpProtocol(
+  auto protocols = cluster->info()->upstreamHttpProtocol(
       decoder_callbacks_->streamInfo().protocol());
-  const auto &alpn_override = config_->alpnOverrides(protocol);
+  const auto &alpn_override = config_->alpnOverrides(protocols[0]);
 
   if (!alpn_override.empty()) {
     ENVOY_LOG(debug, "override with {} ALPNs", alpn_override.size());

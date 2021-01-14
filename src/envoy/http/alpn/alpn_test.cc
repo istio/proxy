@@ -89,9 +89,9 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
       .WillByDefault(Return(fake_cluster_.get()));
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
-      .WillByDefault([](absl::optional<Http::Protocol> protocol) {
-        return protocol.value();
-      });
+      .WillByDefault(
+          [](absl::optional<Http::Protocol> protocol)
+              -> std::vector<Http::Protocol> { return {protocol.value()}; });
 
   auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11,
                     Http::Protocol::Http2};
@@ -127,7 +127,9 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
       .WillByDefault(
-          [](absl::optional<Http::Protocol>) { return Http::Protocol::Http2; });
+          [](absl::optional<Http::Protocol>) -> std::vector<Http::Protocol> {
+            return {Http::Protocol::Http2};
+          });
 
   auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11,
                     Http::Protocol::Http2};
@@ -162,7 +164,9 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
       .WillByDefault(
-          [](absl::optional<Http::Protocol>) { return Http::Protocol::Http2; });
+          [](absl::optional<Http::Protocol>) -> std::vector<Http::Protocol> {
+            return {Http::Protocol::Http2};
+          });
 
   auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11,
                     Http::Protocol::Http2};
