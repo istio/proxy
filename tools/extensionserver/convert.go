@@ -56,8 +56,8 @@ func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
 	plugin := &wasm.Wasm{
 		Config: &v3.PluginConfig{
 			RootId: ext.RootID,
-			VmConfig: &v3.PluginConfig_InlineVmConfig{
-				InlineVmConfig: &v3.VmConfig{
+			Vm: &v3.PluginConfig_VmConfig{
+				VmConfig: &v3.VmConfig{
 					VmId:    ext.VMID,
 					Runtime: runtime,
 					Code: &core.AsyncDataSource{
