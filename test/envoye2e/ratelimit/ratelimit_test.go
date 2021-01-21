@@ -23,7 +23,7 @@ import (
 )
 
 // TestHTTPLocalRatelimit validates that envoy can rate limit based on:
-// - source attribute
+// - source attribute, produced by MX extension
 // - request header
 func TestHTTPLocalRatelimit(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
