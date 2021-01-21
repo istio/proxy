@@ -62,7 +62,7 @@ function load_cluster_topology() {
   export CLUSTER_SVC_SUBNETS
   export CLUSTER_NETWORK_ID
 
-  KUBE_CLUSTERS=$(jq '.[] | select(.kind == "Kubernetes" or .kind == null)')
+  KUBE_CLUSTERS=$(jq '.[] | select(.kind == "Kubernetes" or .kind == null)' "${CLUSTER_TOPOLOGY_CONFIG_FILE}")
 
   while read -r value; do
     CLUSTER_NAMES+=("$value")
@@ -81,7 +81,7 @@ function load_cluster_topology() {
   done < <(echo "${KUBE_CLUSTERS}" | jq -r '.network_id // .network')
 
   export NUM_CLUSTERS
-  NUM_CLUSTERS=$(jq 'length' "${CLUSTER_TOPOLOGY_CONFIG_FILE}")
+  NUM_CLUSTERS=$(echo "${KUBE_CLUSTERS}" | jq -s 'length')
 
   echo "${CLUSTER_NAMES[@]}"
   echo "${CLUSTER_POD_SUBNETS[@]}"
