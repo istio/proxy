@@ -3,9 +3,9 @@ module istio.io/proxy
 go 1.15
 
 require (
-	github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354
+	github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403
 	github.com/d4l3k/messagediff v1.2.2-0.20180726183240-b9e99b2f9263
-	github.com/envoyproxy/go-control-plane v0.9.7-0.20200814205829-ae1dbc93dd82
+	github.com/envoyproxy/go-control-plane v0.9.9-0.20210119155807-0a0735cd4c6a
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.2
