@@ -78,7 +78,7 @@ function load_cluster_topology() {
 
   while read -r value; do
     CLUSTER_NETWORK_ID+=("$value")
-  done < <(echo "${KUBE_CLUSTERS}" | jq -r '.[].network_id // .network')
+  done < <(echo "${KUBE_CLUSTERS}" | jq -r '.network_id // .network')
 
   export NUM_CLUSTERS
   NUM_CLUSTERS=$(jq 'length' "${CLUSTER_TOPOLOGY_CONFIG_FILE}")
