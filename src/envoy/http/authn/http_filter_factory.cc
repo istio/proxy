@@ -56,38 +56,12 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     // TODO(incfly): add a test to simulate different config can be handled
     // correctly similar to multiplexing on different port.
     auto filter_config = std::make_shared<FilterConfig>(config_pb);
-    // Print a log to remind user to upgrade to the mTLS setting. This will only
-    // be called when a new config is received by Envoy.
-    warnPermissiveMode(*filter_config);
     return
         [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
           callbacks.addStreamDecoderFilter(
               std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(
                   *filter_config));
         };
-  }
-
-  void warnPermissiveMode(const FilterConfig& filter_config) {
-    for (const auto& method : filter_config.policy().peers()) {
-      switch (method.params_case()) {
-        case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
-          if (method.mtls().mode() == iaapi::MutualTls_Mode_PERMISSIVE) {
-            ENVOY_LOG(
-                warn,
-                "mTLS PERMISSIVE mode is used, connection can be either "
-                "plaintext or TLS, and client cert can be omitted. "
-                "Please consider to upgrade to mTLS STRICT mode for more "
-                "secure "
-                "configuration that only allows TLS connection with client "
-                "cert. "
-                "See https://istio.io/docs/tasks/security/mtls-migration/");
-            return;
-          }
-          break;
-        default:
-          break;
-      }
-    }
   }
 };
 
