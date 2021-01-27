@@ -96,7 +96,12 @@ StackdriverOptions getStackdriverOptions(
   }
   auto channel_creds = grpc::SslCredentials(ssl_creds_options);
 
-  if (!stub_option.sts_port.empty()) {
+  if (!stub_option.insecure_endpoint.empty()) {
+    auto channel = grpc::CreateChannel(stub_option.insecure_endpoint,
+                                       grpc::InsecureChannelCredentials());
+    options.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(channel);
+  } else if (!stub_option.sts_port.empty()) {
     ::grpc::experimental::StsCredentialsOptions sts_options;
     std::string token_path = stub_option.test_token_path.empty()
                                  ? kSTSSubjectTokenPath
@@ -131,11 +136,6 @@ StackdriverOptions getStackdriverOptions(
   } else if (!stub_option.secure_endpoint.empty()) {
     auto channel =
         grpc::CreateChannel(stub_option.secure_endpoint, channel_creds);
-    options.metric_service_stub =
-        google::monitoring::v3::MetricService::NewStub(channel);
-  } else if (!stub_option.insecure_endpoint.empty()) {
-    auto channel = grpc::CreateChannel(stub_option.insecure_endpoint,
-                                       grpc::InsecureChannelCredentials());
     options.metric_service_stub =
         google::monitoring::v3::MetricService::NewStub(channel);
   } else if (!stub_option.monitoring_endpoint.empty()) {
