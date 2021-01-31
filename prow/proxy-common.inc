@@ -47,6 +47,9 @@ fi
 BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-fastbuild/bin"
 export BAZEL_OUT
 
+# Disable RBE execution until we have LARGE_MACHINE instances provisioned for building V8.
+export BAZEL_BUILD_RBE_JOBS=0
+
 # Use GCP service account when available.
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
