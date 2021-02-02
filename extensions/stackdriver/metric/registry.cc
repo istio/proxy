@@ -315,14 +315,12 @@ MEASURE_FUNC(clientRequestCount, ClientRequestCount, 1, Int64)
 MEASURE_FUNC(clientRequestBytes, ClientRequestBytes, By, Int64)
 MEASURE_FUNC(clientResponseBytes, ClientResponseBytes, By, Int64)
 MEASURE_FUNC(clientRoundtripLatencies, ClientRoundtripLatencies, ms, Double)
-MEASURE_FUNC(serverConnectionsOpenCount, ServerConnectionsOpenCount, By, Int64)
-MEASURE_FUNC(serverConnectionsCloseCount, ServerConnectionsCloseCount, By,
-             Int64)
+MEASURE_FUNC(serverConnectionsOpenCount, ServerConnectionsOpenCount, 1, Int64)
+MEASURE_FUNC(serverConnectionsCloseCount, ServerConnectionsCloseCount, 1, Int64)
 MEASURE_FUNC(serverReceivedBytesCount, ServerReceivedBytesCount, By, Int64)
 MEASURE_FUNC(serverSentBytesCount, ServerSentBytesCount, By, Int64)
-MEASURE_FUNC(clientConnectionsOpenCount, ClientConnectionsOpenCount, By, Int64)
-MEASURE_FUNC(clientConnectionsCloseCount, ClientConnectionsCloseCount, By,
-             Int64)
+MEASURE_FUNC(clientConnectionsOpenCount, ClientConnectionsOpenCount, 1, Int64)
+MEASURE_FUNC(clientConnectionsCloseCount, ClientConnectionsCloseCount, 1, Int64)
 MEASURE_FUNC(clientReceivedBytesCount, ClientReceivedBytesCount, By, Int64)
 MEASURE_FUNC(clientSentBytesCount, ClientSentBytesCount, By, Int64)
 
