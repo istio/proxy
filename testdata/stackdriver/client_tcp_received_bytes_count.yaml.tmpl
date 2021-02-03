@@ -1,0 +1,53 @@
+metric:
+  labels:
+    {{- if .Vars.DestinationUnknown }}
+    destination_canonical_revision: latest
+    destination_canonical_service_name: "unknown"
+    destination_canonical_service_namespace: "unknown"
+    destination_owner: "unknown"
+    destination_port: '{{ .Ports.ServerPort }}'
+    destination_service_namespace: "unknown"
+    destination_workload_name: "unknown"
+    destination_workload_namespace: "unknown"
+    {{- else }}
+    destination_canonical_revision: version-1
+    destination_canonical_service_name: ratings
+    destination_canonical_service_namespace: default
+    destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
+    destination_port: '{{ .Ports.ServerPort }}'
+    destination_service_namespace: default
+    destination_workload_name: ratings-v1
+    destination_workload_namespace: default
+    {{- end }}
+    destination_service_name: server
+    {{- if .Vars.DestinationPrincipal }}
+    destination_principal: "{{ .Vars.DestinationPrincipal }}"
+    {{- else }}
+    destination_principal: unknown
+    {{- end }}
+    mesh_uid: proj-123
+    request_protocol: tcp
+    service_authentication_policy: unknown # TODO: upstream TLS indicator is not reported
+    source_canonical_revision: version-1
+    source_canonical_service_name: productpage-v1
+    source_canonical_service_namespace: default
+    source_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
+    {{- if .Vars.SourcePrincipal }}
+    source_principal: "{{ .Vars.SourcePrincipal }}"
+    {{- else }}
+    source_principal: unknown
+    {{- end }}
+    source_workload_name: productpage-v1
+    source_workload_namespace: default
+  type: istio.io/service/client/received_bytes_count
+points:
+- value:
+    int64Value: "60"
+resource:
+  labels:
+    cluster_name: test-cluster
+    location: us-east4-b
+    namespace_name: default
+    pod_name: productpage-v1-84975bc778-pxz2w
+    project_id: test-project
+  type: k8s_pod
