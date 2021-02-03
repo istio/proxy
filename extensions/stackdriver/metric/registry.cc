@@ -229,7 +229,6 @@ StackdriverOptions getStackdriverOptions(
         ViewDescriptor()                                          \
             .set_name(k##_v##View)                                \
             .set_measure(k##_v##Measure)                          \
-            .set_expiry_duration(expiry_duration)                 \
             .set_aggregation(Aggregation::Sum()) ADD_COMMON_TAGS; \
     View view(view_descriptor);                                   \
     view_descriptor.RegisterForExport();                          \
