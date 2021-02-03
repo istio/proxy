@@ -618,7 +618,11 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 						Step: &driver.TCPConnection{},
 					},
 					sd.Check(params,
-						[]string{"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl", "testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
+						[]string{
+							"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl",
+							"testdata/stackdriver/client_tcp_received_bytes_count.yaml.tmpl",
+							"testdata/stackdriver/server_tcp_received_bytes_count.yaml.tmpl",
+							"testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
 						[]SDLogEntry{
 							{
 								LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",

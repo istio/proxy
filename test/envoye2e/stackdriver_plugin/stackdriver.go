@@ -72,7 +72,9 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 				sd.Lock()
 				sd.tsReq = append(sd.tsReq, req)
 				for _, ts := range req.TimeSeries {
-					if strings.HasSuffix(ts.Metric.Type, "request_count") || strings.HasSuffix(ts.Metric.Type, "connection_open_count") {
+					if strings.HasSuffix(ts.Metric.Type, "request_count") ||
+						strings.HasSuffix(ts.Metric.Type, "connection_open_count") ||
+						strings.HasSuffix(ts.Metric.Type, "received_bytes_count") {
 						// clear the timestamps for comparison
 						ts.Points[0].Interval = nil
 						sd.ts[proto.MarshalTextString(ts)] = struct{}{}

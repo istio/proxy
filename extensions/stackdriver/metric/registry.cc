@@ -225,6 +225,18 @@ StackdriverOptions getStackdriverOptions(
     view_descriptor.RegisterForExport();                            \
   }
 
+#define REGISTER_TCP_SUM_VIEW(_v)                                 \
+  void register##_v##View(absl::Duration expiry_duration) {       \
+    const ViewDescriptor view_descriptor =                        \
+        ViewDescriptor()                                          \
+            .set_name(k##_v##View)                                \
+            .set_measure(k##_v##Measure)                          \
+            .set_expiry_duration(expiry_duration)                 \
+            .set_aggregation(Aggregation::Sum()) ADD_COMMON_TAGS; \
+    View view(view_descriptor);                                   \
+    view_descriptor.RegisterForExport();                          \
+  }
+
 #define REGISTER_DISTRIBUTION_VIEW(_v)                              \
   void register##_v##View(absl::Duration expiry_duration) {         \
     const ViewDescriptor view_descriptor =                          \
@@ -289,12 +301,12 @@ REGISTER_BYTES_DISTRIBUTION_VIEW(ClientResponseBytes)
 REGISTER_DISTRIBUTION_VIEW(ClientRoundtripLatencies)
 REGISTER_TCP_COUNT_VIEW(ServerConnectionsOpenCount)
 REGISTER_TCP_COUNT_VIEW(ServerConnectionsCloseCount)
-REGISTER_TCP_COUNT_VIEW(ServerReceivedBytesCount)
-REGISTER_TCP_COUNT_VIEW(ServerSentBytesCount)
+REGISTER_TCP_SUM_VIEW(ServerReceivedBytesCount)
+REGISTER_TCP_SUM_VIEW(ServerSentBytesCount)
 REGISTER_TCP_COUNT_VIEW(ClientConnectionsOpenCount)
 REGISTER_TCP_COUNT_VIEW(ClientConnectionsCloseCount)
-REGISTER_TCP_COUNT_VIEW(ClientReceivedBytesCount)
-REGISTER_TCP_COUNT_VIEW(ClientSentBytesCount)
+REGISTER_TCP_SUM_VIEW(ClientReceivedBytesCount)
+REGISTER_TCP_SUM_VIEW(ClientSentBytesCount)
 
 /*
  * measure function macros
