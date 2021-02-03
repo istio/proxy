@@ -224,7 +224,7 @@ StackdriverOptions getStackdriverOptions(
   }
 
 #define REGISTER_TCP_SUM_VIEW(_v)                                 \
-  void register##_v##View() {       \
+  void register##_v##View() {                                     \
     const ViewDescriptor view_descriptor =                        \
         ViewDescriptor()                                          \
             .set_name(k##_v##View)                                \
