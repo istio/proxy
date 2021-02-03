@@ -1,0 +1,52 @@
+metric:
+  labels:
+    destination_canonical_revision: version-1
+    destination_canonical_service_name: ratings
+    destination_canonical_service_namespace: default
+    destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
+    destination_port: '{{ .Ports.ServerPort }}'
+    {{- if .Vars.DestinationPrincipal }}
+    destination_principal: "{{ .Vars.DestinationPrincipal }}"
+    {{- else }}
+    destination_principal: unknown
+    {{- end }}
+    destination_service_name: server
+    destination_service_namespace: default
+    destination_workload_name: ratings-v1
+    destination_workload_namespace: default
+    mesh_uid: proj-123
+    request_protocol: tcp
+    service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
+    {{- if .Vars.SourceUnknown }}
+    source_canonical_revision: latest
+    source_canonical_service_name: "unknown"
+    source_canonical_service_namespace: "unknown"
+    source_owner: "unknown"
+    source_workload_name: "unknown"
+    source_workload_namespace: "unknown"
+    {{- else }}
+    source_canonical_revision: version-1
+    source_canonical_service_name: productpage-v1
+    source_canonical_service_namespace: default
+    source_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1
+    source_workload_name: productpage-v1
+    source_workload_namespace: default
+    {{- end }}
+    {{- if .Vars.SourcePrincipal }}
+    source_principal: "{{ .Vars.SourcePrincipal }}"
+    {{- else }}
+    source_principal: unknown
+    {{- end }}
+  type: istio.io/service/server/received_bytes_count
+points:
+- value:
+    int64Value: "60"
+resource:
+  labels:
+    cluster_name: test-cluster
+    container_name: server
+    location: us-east4-b
+    namespace_name: default
+    pod_name: ratings-v1-84975bc778-pxz2w
+    project_id: test-project
+  type: k8s_container
