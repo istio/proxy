@@ -224,12 +224,11 @@ StackdriverOptions getStackdriverOptions(
   }
 
 #define REGISTER_TCP_SUM_VIEW(_v)                                 \
-  void register##_v##View(absl::Duration expiry_duration) {       \
+  void register##_v##View() {       \
     const ViewDescriptor view_descriptor =                        \
         ViewDescriptor()                                          \
             .set_name(k##_v##View)                                \
             .set_measure(k##_v##Measure)                          \
-            .set_expiry_duration(expiry_duration)                 \
             .set_aggregation(Aggregation::Sum()) ADD_COMMON_TAGS; \
     View view(view_descriptor);                                   \
     view_descriptor.RegisterForExport();                          \
