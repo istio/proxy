@@ -421,6 +421,7 @@ filter_chains:
             route:
               cluster: server-inbound-cluster
               timeout: 0s
+{{ .Vars.ServerRouteRateLimits | fill | indent 14 }}
 {{ .Vars.ServerTLSContext | indent 2 }}
 {{- end }}
 `)
