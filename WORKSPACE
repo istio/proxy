@@ -39,9 +39,9 @@ bind(
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
 # Commit date: 2021-02-05
-ENVOY_SHA = "1433436f7b299f6e06c756753977fc87fb88069f"
+ENVOY_SHA = "5b0c5f7b21f84b6ab86e5f416bdaf6bb0fbc2a32"
 
-ENVOY_SHA256 = "f120efec11143db565f7ab07e5145906552c03bfdcca78fecdd5a5a275515536"
+ENVOY_SHA256 = "880e538c1b4990e7e23832615dd1fbd54420ebcdb50f4643f90bd7819292239f"
 
 ENVOY_ORG = "istio"
 
