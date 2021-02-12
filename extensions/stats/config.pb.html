@@ -52,7 +52,7 @@ No
 </td>
 </tr>
 <tr id="MetricConfig-tags_to_remove">
-<td><code>tagsToRemove</code></td>
+<td><code>tags_to_remove</code></td>
 <td><code>string[]</code></td>
 <td>
 <p>(Optional) A list of tags to remove.</p>
@@ -142,7 +142,8 @@ No
 <td>
 <p>next id: 7
 The following settings should be rarely used.
-Enable debug for this filter.</p>
+Enable debug for this filter.
+DEPRECATED.</p>
 
 </td>
 <td>
@@ -150,7 +151,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-max_peer_cache_size">
-<td><code>maxPeerCacheSize</code></td>
+<td><code>max_peer_cache_size</code></td>
 <td><code>int32</code></td>
 <td>
 <p>maximum size of the peer metadata cache.
@@ -164,7 +165,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-stat_prefix">
-<td><code>statPrefix</code></td>
+<td><code>stat_prefix</code></td>
 <td><code>string</code></td>
 <td>
 <p>prefix to add to stats emitted by the plugin.
@@ -176,7 +177,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-field_separator">
-<td><code>fieldSeparator</code></td>
+<td><code>field_separator</code></td>
 <td><code>string</code></td>
 <td>
 <p>Stats api squashes dimensions in a single string.
@@ -190,7 +191,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-value_separator">
-<td><code>valueSeparator</code></td>
+<td><code>value_separator</code></td>
 <td><code>string</code></td>
 <td>
 <p>default: &ldquo;==&rdquo;</p>
@@ -201,7 +202,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-disable_host_header_fallback">
-<td><code>disableHostHeaderFallback</code></td>
+<td><code>disable_host_header_fallback</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional: Disable using host header as a fallback if destination service is
@@ -214,7 +215,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-tcp_reporting_duration">
-<td><code>tcpReportingDuration</code></td>
+<td><code>tcp_reporting_duration</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
 <td>
 <p>Optional. Allows configuration of the time between calls out to for TCP
