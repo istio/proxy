@@ -19,7 +19,7 @@ metric:
     destination_workload_name: ratings-v1
     destination_workload_namespace: default
     {{- end }}
-    destination_service_name: server.default.svc.cluster.local
+    destination_service_name: server
     {{- if .Vars.DestinationPrincipal }}
     destination_principal: "{{ .Vars.DestinationPrincipal }}"
     {{- else }}
