@@ -187,8 +187,8 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
     // This is synchronous, even though it happens thru a callback due to null
     // vm.
     Extensions::Common::Wasm::createWasm(
-        proto_config.config().vm_config(), plugin_, scope_, cluster_manager_,
-        init_manager_, dispatcher_, *api, lifecycle_notifier_,
+        proto_config.config().vm_config(), cr_config_, plugin_, scope_,
+        cluster_manager_, init_manager_, dispatcher_, *api, lifecycle_notifier_,
         remote_data_provider_,
         [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; },
         [](Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
@@ -270,6 +270,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   NiceMock<LocalInfo::MockLocalInfo> local_info_;
   NiceMock<Server::MockServerLifecycleNotifier> lifecycle_notifier_;
   envoy::config::core::v3::Metadata listener_metadata_;
+  envoy::extensions::wasm::v3::CapabilityRestrictionConfig cr_config_;
   TestRoot* root_context_ = nullptr;
   Config::DataSource::RemoteAsyncDataProviderPtr remote_data_provider_;
 };
