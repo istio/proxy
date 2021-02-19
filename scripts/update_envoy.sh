@@ -44,6 +44,7 @@ URL="https://github.com/${ENVOY_ORG}/${ENVOY_REPO}/archive/${LATEST_SHA}.tar.gz"
 GETSHA=$(wget "${URL}" && sha256sum "${LATEST_SHA}".tar.gz | awk '{ print $1 }')
 SHAArr=("${GETSHA}")
 SHA256=${SHAArr[0]}
+rm "${LATEST_SHA}".tar.gz
 
 # Update ENVOY_SHA commit date
 sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
