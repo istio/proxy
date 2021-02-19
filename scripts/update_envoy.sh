@@ -25,7 +25,8 @@ set -u
 # Print commands
 set -x
 
-UPDATE_BRANCH=${UPDATE_BRANCH:-"master"}
+# Update to main as envoyproxy/proxy has updated.
+UPDATE_BRANCH=${UPDATE_BRANCH:-"main"}
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
@@ -33,15 +34,20 @@ WORKSPACE=${ROOT}/WORKSPACE
 ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 
+# get latest commit for specified org/repo
+LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "$UPDATE_BRANCH" | awk '{ print $1}')"
+DATE=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/"${ENVOY_ORG}""/""${ENVOY_REPO}"/commits/"${LATEST_SHA}" | jq '.commit.committer.date')
+DATE=$(echo "${DATE/\"/}" | cut -d'T' -f1)
+
 # Get ENVOY_SHA256
-URL="https://github.com/${ENVOY_ORG}/${ENVOY_REPO}/archive/${1}.tar.gz"
-GETSHA=$(wget "${URL}" && sha256sum "${1}".tar.gz)
+URL="https://github.com/${ENVOY_ORG}/${ENVOY_REPO}/archive/${LATEST_SHA}.tar.gz"
+GETSHA=$(wget "${URL}" && sha256sum "${LATEST_SHA}".tar.gz | awk '{ print $1 }')
 SHAArr=("${GETSHA}")
 SHA256=${SHAArr[0]}
 
 # Update ENVOY_SHA commit date
-sed -i "s/Commit date: .*/Commit date: ${2}/" "${WORKSPACE}"
+sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
 
 # Update the dependency in istio/proxy WORKSPACE
-sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$1"'"/' "${WORKSPACE}"
+sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${WORKSPACE}"
 sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${WORKSPACE}"
