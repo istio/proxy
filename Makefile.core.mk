@@ -133,7 +133,7 @@ lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 	@scripts/check-style.sh
 
 protoc = protoc -I common-protos -I extensions
-protoc_gen_docs_plugin := --docs_out=warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
+protoc_gen_docs_plugin := --docs_out=camel_case_fields=false,warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
 
 attributegen_path := extensions/attributegen
 attributegen_protos := $(wildcard $(attributegen_path)/*.proto)
