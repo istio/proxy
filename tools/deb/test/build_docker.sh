@@ -21,6 +21,7 @@
 # It is run in the proxy dir, will create a docker image with proxy deb installed
 
 
+bazel build @com_googlesource_chromium_v8//:build
 bazel build tools/deb:istio-proxy
 
 PROJECT="istio-testing"
