@@ -53,7 +53,7 @@ No
 </thead>
 <tbody>
 <tr id="PluginConfig-max_log_batch_size_in_bytes">
-<td><code>maxLogBatchSizeInBytes</code></td>
+<td><code>max_log_batch_size_in_bytes</code></td>
 <td><code>int32</code></td>
 <td>
 <p>Optional. Allows configuration of the size of the LogWrite request. The
@@ -66,7 +66,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-log_report_duration">
-<td><code>logReportDuration</code></td>
+<td><code>log_report_duration</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
 <td>
 <p>Optional. Allows configuration of the time between calls out to the
@@ -80,7 +80,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-enable_audit_log">
-<td><code>enableAuditLog</code></td>
+<td><code>enable_audit_log</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional. Controls whether to export audit log.</p>
@@ -91,7 +91,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-destination_service_name">
-<td><code>destinationServiceName</code></td>
+<td><code>destination_service_name</code></td>
 <td><code>string</code></td>
 <td>
 <p>Optional. FQDN of destination service that the request routed to, e.g.
@@ -104,7 +104,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-enable_mesh_edges_reporting">
-<td><code>enableMeshEdgesReporting</code></td>
+<td><code>enable_mesh_edges_reporting</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional. Controls whether or not to export mesh edges to a mesh edges
@@ -116,7 +116,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-mesh_edges_reporting_duration">
-<td><code>meshEdgesReportingDuration</code></td>
+<td><code>mesh_edges_reporting_duration</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
 <td>
 <p>Optional. Allows configuration of the time between calls out to the mesh
@@ -133,7 +133,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-max_peer_cache_size">
-<td><code>maxPeerCacheSize</code></td>
+<td><code>max_peer_cache_size</code></td>
 <td><code>int32</code></td>
 <td>
 <p>maximum size of the peer metadata cache.
@@ -146,7 +146,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-disable_host_header_fallback">
-<td><code>disableHostHeaderFallback</code></td>
+<td><code>disable_host_header_fallback</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional: Disable using host header as a fallback if destination service is
@@ -159,7 +159,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-max_edges_batch_size">
-<td><code>maxEdgesBatchSize</code></td>
+<td><code>max_edges_batch_size</code></td>
 <td><code>int32</code></td>
 <td>
 <p>Optional. Allows configuration of the number of traffic assertions to batch
@@ -171,7 +171,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-disable_http_size_metrics">
-<td><code>disableHttpSizeMetrics</code></td>
+<td><code>disable_http_size_metrics</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional. Allows disabling of reporting of the request and response size
@@ -184,7 +184,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-enable_log_compression">
-<td><code>enableLogCompression</code></td>
+<td><code>enable_log_compression</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#boolvalue">BoolValue</a></code></td>
 <td>
 <p>Optional. Allows enabling log compression for stackdriver access logs.</p>
@@ -195,7 +195,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-access_logging">
-<td><code>accessLogging</code></td>
+<td><code>access_logging</code></td>
 <td><code><a href="#PluginConfig-AccessLogging">AccessLogging</a></code></td>
 <td>
 <p>Optional. Controls what type of logs to export..</p>
@@ -206,7 +206,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-custom_log_config">
-<td><code>customLogConfig</code></td>
+<td><code>custom_log_config</code></td>
 <td><code><a href="#CustomConfig">CustomConfig</a></code></td>
 <td>
 <p>(Optional) Collection of tag names and tag expressions to include in the
@@ -218,8 +218,23 @@ supplied values. Does not apply to audit logs.</p>
 No
 </td>
 </tr>
+<tr id="PluginConfig-metric_expiry_duration">
+<td><code>metric_expiry_duration</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>Optional. Controls the metric expiry duration. If a metric time series is
+not updated for the given duration, it will be purged from time series
+cache as well as metric reporting. If this is not set or set to 0, time
+series will never be expired. This option is useful to avoid unbounded
+metric label explodes proxy memory.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
 <tr id="PluginConfig-disable_server_access_logging" class="deprecated ">
-<td><code>disableServerAccessLogging</code></td>
+<td><code>disable_server_access_logging</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional. Controls whether to export server access log.
