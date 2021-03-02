@@ -27,9 +27,7 @@ load(
 envoy_package()
 
 WASM_LINKOPTS = [
-    "--js-library external/proxy_wasm_cpp_sdk/proxy_wasm_intrinsics.js",
-    "-s TOTAL_MEMORY=8MB",
-    "-s TOTAL_STACK=5MB",
+    "-s INITIAL_MEMORY=8MB",
 ]
 
 envoy_wasm_cc_binary(
