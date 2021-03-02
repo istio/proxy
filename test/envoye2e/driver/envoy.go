@@ -233,7 +233,7 @@ func downloadEnvoy(ver string) (string, error) {
 	}
 	defer os.RemoveAll("usr/")
 
-	cpCmd := exec.Command("cp", src, dst)
+	cpCmd := exec.Command("cp", "-n", src, dst)
 	cpCmd.Stderr = os.Stderr
 	cpCmd.Stdout = os.Stdout
 	if err := cpCmd.Run(); err != nil {
