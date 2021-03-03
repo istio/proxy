@@ -28,7 +28,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
 // Custom instance configuration overrides.
-// Provides a way to customize metrics/logs .
+// Provides a way to customize metrics/logs.
 message CustomConfig {
   // (Optional) Collection of tag names and tag expressions to include in the
   // instance. Conflicts are resolved by the tag name by overriding previously
@@ -119,6 +119,9 @@ message PluginConfig {
   // (Optional) Collection of tag names and tag expressions to include in the
   // logs. Conflicts are resolved by the tag name by overriding previously
   // supplied values. Does not apply to audit logs.
+  // See
+  // https://istio.io/latest/docs/tasks/observability/metrics/customize-metrics/#use-expressions-for-values
+  // for more details about the expression language.
   CustomConfig custom_log_config = 14;
 
   // Optional. Controls the metric expiry duration. If a metric time series is
