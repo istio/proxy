@@ -119,7 +119,8 @@ message PluginConfig {
   // (Optional) Collection of tag names and tag expressions to include in the
   // logs. Conflicts are resolved by the tag name by overriding previously
   // supplied values. Does not apply to audit logs.
-  // See https://istio.io/latest/docs/tasks/observability/metrics/customize-metrics/#use-expressions-for-values
+  // See
+  // https://istio.io/latest/docs/tasks/observability/metrics/customize-metrics/#use-expressions-for-values
   // for more details about the expression language.
   CustomConfig custom_log_config = 14;
 
