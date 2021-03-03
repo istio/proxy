@@ -163,33 +163,28 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
                     ? c.name
                     : readfile(params.testdata_dir + "/" + c.name);
 
-    WasmFilterConfig proto_config;
-    proto_config.mutable_config()->mutable_vm_config()->set_vm_id("vm_id");
-    proto_config.mutable_config()->mutable_vm_config()->set_runtime(
-        absl::StrCat("envoy.wasm.runtime.", params.runtime));
-    proto_config.mutable_config()
-        ->mutable_vm_config()
-        ->mutable_code()
-        ->mutable_local()
-        ->set_inline_bytes(code);
-    ProtobufWkt::StringValue plugin_configuration;
-    plugin_configuration.set_value(c.plugin_config);
-    proto_config.mutable_config()->mutable_configuration()->PackFrom(
-        plugin_configuration);
+    envoy::extensions::wasm::v3::PluginConfig plugin_config;
+    *plugin_config.mutable_root_id() = c.root_id;
+    *plugin_config.mutable_name() = c.name;
+    plugin_config.set_fail_open(false);
+    plugin_config.mutable_configuration()->set_value(c.plugin_config);
+    auto vm_config = plugin_config.mutable_vm_config();
+    vm_config->set_vm_id("");
+    vm_config->set_runtime(absl::StrCat("envoy.wasm.runtime.", params.runtime));
+    vm_config->mutable_code()->mutable_local()->set_inline_bytes(code);
+
     Api::ApiPtr api = Api::createApiForTest(stats_store_);
     scope_ = Stats::ScopeSharedPtr(stats_store_.createScope("wasm."));
 
-    auto vm_id = "";
     plugin_ = std::make_shared<Extensions::Common::Wasm::Plugin>(
-        c.name, c.root_id, vm_id, params.runtime, c.plugin_config, false,
-        TrafficDirection::INBOUND, local_info_, &listener_metadata_);
+        plugin_config, TrafficDirection::INBOUND, local_info_,
+        &listener_metadata_);
     // creates a base VM
     // This is synchronous, even though it happens thru a callback due to null
     // vm.
     Extensions::Common::Wasm::createWasm(
-        proto_config.config().vm_config(), cr_config_, plugin_, scope_,
-        cluster_manager_, init_manager_, dispatcher_, *api, lifecycle_notifier_,
-        remote_data_provider_,
+        plugin_, scope_, cluster_manager_, init_manager_, dispatcher_, *api,
+        lifecycle_notifier_, remote_data_provider_,
         [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; },
         [](Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
           return new TestRoot(wasm, plugin);
