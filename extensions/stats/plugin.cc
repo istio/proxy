@@ -57,6 +57,7 @@ void map_node(IstioDimensions& instance, bool is_source,
   if (is_source) {
     instance[source_workload] = GetStringView(node.workload_name());
     instance[source_workload_namespace] = GetStringView(node.namespace_());
+    instance[source_cluster] = GetStringView(node.cluster_id());
 
     auto source_labels = node.labels();
     if (source_labels) {
@@ -90,6 +91,7 @@ void map_node(IstioDimensions& instance, bool is_source,
   } else {
     instance[destination_workload] = GetStringView(node.workload_name());
     instance[destination_workload_namespace] = GetStringView(node.namespace_());
+    instance[destination_cluster] = GetStringView(node.cluster_id());
 
     auto destination_labels = node.labels();
     if (destination_labels) {

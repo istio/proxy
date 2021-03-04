@@ -60,7 +60,7 @@ static_resources:
           metadata:
             filter_metadata:
               istio:
-                workload: ratings-v1;default;ratings;version-1
+                workload: ratings-v1;default;ratings;version-1;server-cluster
           {{- end }}
 {{ .Vars.ClientTLSContext | indent 4 }}
 {{ .Vars.ClientStaticCluster | indent 2 }}

@@ -20,6 +20,8 @@ metric:
     value: productpage
   - name: source_version
     value: v1
+  - name: source_cluster
+    value: client-cluster
   - name: destination_workload
     value: ratings-v1
   - name: destination_workload_namespace
@@ -40,5 +42,7 @@ metric:
     value: server
   - name: destination_service_namespace
     value: default
+  - name: destination_cluster
+    value: server-cluster
   - name: configurable_metric_a
     value: v1

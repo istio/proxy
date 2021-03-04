@@ -65,6 +65,7 @@ const std::string default_stat_prefix = "istio";
   FIELD_FUNC(source_version)                 \
   FIELD_FUNC(source_canonical_service)       \
   FIELD_FUNC(source_canonical_revision)      \
+  FIELD_FUNC(source_cluster)                 \
   FIELD_FUNC(destination_workload)           \
   FIELD_FUNC(destination_workload_namespace) \
   FIELD_FUNC(destination_principal)          \
@@ -75,6 +76,7 @@ const std::string default_stat_prefix = "istio";
   FIELD_FUNC(destination_service_namespace)  \
   FIELD_FUNC(destination_canonical_service)  \
   FIELD_FUNC(destination_canonical_revision) \
+  FIELD_FUNC(destination_cluster)            \
   FIELD_FUNC(request_protocol)               \
   FIELD_FUNC(response_flags)                 \
   FIELD_FUNC(connection_security_policy)     \
@@ -102,7 +104,7 @@ const size_t count_standard_labels =
 
 // Labels related to peer information.
 const size_t count_peer_labels =
-    static_cast<size_t>(StandardLabels::destination_canonical_revision) + 1;
+    static_cast<size_t>(StandardLabels::destination_cluster) + 1;
 
 // Labels related to TCP streams, including peer information.
 const size_t count_tcp_labels =
