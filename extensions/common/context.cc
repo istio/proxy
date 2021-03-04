@@ -297,12 +297,13 @@ bool extractPeerMetadataFromUpstreamHostMetadata(
   }
   std::vector<std::string_view> parts = absl::StrSplit(endpoint_labels, ';');
   // workload label should semicolon separated four parts string:
-  // workload_name;namespace;canonical_service;canonical_revision.
+  // workload_name;namespace;canonical_service;canonical_revision;cluster_id.
   if (parts.size() < 4) {
     return false;
   }
 
-  flatbuffers::Offset<flatbuffers::String> workload_name, namespace_;
+  flatbuffers::Offset<flatbuffers::String> workload_name, namespace_,
+      cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels;
   workload_name = fbb.CreateString(parts[0]);
   namespace_ = fbb.CreateString(parts[1]);
@@ -316,11 +317,19 @@ bool extractPeerMetadataFromUpstreamHostMetadata(
         CreateKeyVal(fbb, fbb.CreateString(kCanonicalServiceRevisionLabelName),
                      fbb.CreateString(parts[3])));
   }
+  if (parts.size() >= 5) {
+    // In case newer proxy runs with old control plane, only extract cluster
+    // name if there are the fifth part.
+    cluster_id = fbb.CreateString(parts[4]);
+  }
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
 
   FlatNodeBuilder node(fbb);
   node.add_workload_name(workload_name);
   node.add_namespace_(namespace_);
+  if (!cluster_id.IsNull()) {
+    node.add_cluster_id(cluster_id);
+  }
   node.add_labels(labels_offset);
   auto data = node.Finish();
   fbb.Finish(data);
