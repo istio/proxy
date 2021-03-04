@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 )
+
 type asset struct {
 	bytes []byte
 	info  os.FileInfo
@@ -112,7 +113,7 @@ static_resources:
           metadata:
             filter_metadata:
               istio:
-                workload: ratings-v1;default;ratings;version-1;test-cluster
+                workload: ratings-v1;default;ratings;version-1;server-cluster
           {{- end }}
 {{ .Vars.ClientTLSContext | indent 4 }}
 {{ .Vars.ClientStaticCluster | indent 2 }}
@@ -561,11 +562,11 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"bootstrap/client.yaml.tmpl": bootstrapClientYamlTmpl,
-	"bootstrap/server.yaml.tmpl": bootstrapServerYamlTmpl,
-	"bootstrap/stats.yaml.tmpl": bootstrapStatsYamlTmpl,
-	"listener/client.yaml.tmpl": listenerClientYamlTmpl,
-	"listener/server.yaml.tmpl": listenerServerYamlTmpl,
+	"bootstrap/client.yaml.tmpl":    bootstrapClientYamlTmpl,
+	"bootstrap/server.yaml.tmpl":    bootstrapServerYamlTmpl,
+	"bootstrap/stats.yaml.tmpl":     bootstrapStatsYamlTmpl,
+	"listener/client.yaml.tmpl":     listenerClientYamlTmpl,
+	"listener/server.yaml.tmpl":     listenerServerYamlTmpl,
 	"listener/tcp_client.yaml.tmpl": listenerTcp_clientYamlTmpl,
 	"listener/tcp_server.yaml.tmpl": listenerTcp_serverYamlTmpl,
 }
@@ -609,15 +610,16 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"bootstrap": &bintree{nil, map[string]*bintree{
 		"client.yaml.tmpl": &bintree{bootstrapClientYamlTmpl, map[string]*bintree{}},
 		"server.yaml.tmpl": &bintree{bootstrapServerYamlTmpl, map[string]*bintree{}},
-		"stats.yaml.tmpl": &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
+		"stats.yaml.tmpl":  &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
 	}},
 	"listener": &bintree{nil, map[string]*bintree{
-		"client.yaml.tmpl": &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl": &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
+		"client.yaml.tmpl":     &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":     &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
 		"tcp_client.yaml.tmpl": &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
 		"tcp_server.yaml.tmpl": &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
 	}},
@@ -669,4 +671,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-
