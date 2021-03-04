@@ -49,14 +49,11 @@ class IstioWasmVmIntegration : public EnvoyWasmVmIntegration {
 
 class IstioWasm : public Wasm {
  public:
-  IstioWasm(absl::string_view runtime, absl::string_view vm_id,
-            absl::string_view vm_configuration, absl::string_view vm_key,
-            proxy_wasm::AllowedCapabilitiesMap allowed_capabilities,
+  IstioWasm(WasmConfig& config, absl::string_view vm_key,
             const Stats::ScopeSharedPtr& scope,
             Upstream::ClusterManager& cluster_manager,
             Event::Dispatcher& dispatcher)
-      : Wasm(runtime, vm_id, vm_configuration, vm_key, allowed_capabilities,
-             scope, cluster_manager, dispatcher) {}
+      : Wasm(config, vm_key, scope, cluster_manager, dispatcher) {}
   IstioWasm(std::shared_ptr<WasmHandle> other, Event::Dispatcher& dispatcher)
       : Wasm(other, dispatcher) {}
   ~IstioWasm() override = default;
@@ -102,23 +99,13 @@ class IstioWasmExtension : public EnvoyWasm {
 };
 
 WasmHandleExtensionFactory IstioWasmExtension::wasmFactory() {
-  return [](const VmConfig vm_config,
-            const CapabilityRestrictionConfig capability_restriction_config,
-            const Stats::ScopeSharedPtr& scope,
+  return [](WasmConfig& config, const Stats::ScopeSharedPtr& scope,
             Upstream::ClusterManager& cluster_manager,
             Event::Dispatcher& dispatcher,
             Server::ServerLifecycleNotifier& lifecycle_notifier,
             absl::string_view vm_key) -> WasmHandleBaseSharedPtr {
-    // TODO(rapilado): make this transformation in Proxy-Wasm C++ Host.
-    proxy_wasm::AllowedCapabilitiesMap allowed_capabilities;
-    for (auto& capability :
-         capability_restriction_config.allowed_capabilities()) {
-      allowed_capabilities[capability.first] = proxy_wasm::SanitizationConfig();
-    }
-    auto wasm = std::make_shared<IstioWasm>(
-        vm_config.runtime(), vm_config.vm_id(),
-        anyToBytes(vm_config.configuration()), vm_key, allowed_capabilities,
-        scope, cluster_manager, dispatcher);
+    auto wasm = std::make_shared<IstioWasm>(config, vm_key, scope,
+                                            cluster_manager, dispatcher);
     wasm->initializeLifecycle(lifecycle_notifier);
     return std::static_pointer_cast<WasmHandleBase>(
         std::make_shared<WasmHandle>(std::move(wasm)));
@@ -187,7 +174,7 @@ void IstioWasmExtension::createStats(const Stats::ScopeSharedPtr& scope,
                                      const PluginSharedPtr& plugin) {
   EnvoyWasm::createStats(scope, plugin);
   std::string istio_version = Envoy::VersionInfo::version();
-  auto node_metadata_fields = plugin->local_info_.node().metadata().fields();
+  auto node_metadata_fields = plugin->localInfo().node().metadata().fields();
   auto istio_version_it = node_metadata_fields.find("ISTIO_VERSION");
   if (istio_version_it != node_metadata_fields.end()) {
     istio_version = istio_version_it->second.string_value();
