@@ -26,6 +26,10 @@ load(
 
 envoy_package()
 
+WASM_LINKOPTS = [
+    "-s INITIAL_MEMORY=8MB",
+]
+
 envoy_wasm_cc_binary(
     name = "stats.wasm",
     srcs = [
@@ -37,6 +41,7 @@ envoy_wasm_cc_binary(
         "//extensions/stats:plugin.h",
     ],
     copts = ["-UNULL_PLUGIN"],
+    linkopts = WASM_LINKOPTS,
     deps = [
         "//extensions/common:node_info_fb_cc",
         "//extensions/common/wasm:json_util",
@@ -60,6 +65,7 @@ envoy_wasm_cc_binary(
         "//extensions/metadata_exchange:plugin.h",
     ],
     copts = ["-UNULL_PLUGIN"],
+    linkopts = WASM_LINKOPTS,
     deps = [
         "//extensions/common:node_info_fb_cc",
         "//extensions/common/wasm:json_util",
@@ -82,6 +88,7 @@ envoy_wasm_cc_binary(
         "//extensions/common:util.h",
     ],
     copts = ["-UNULL_PLUGIN"],
+    linkopts = WASM_LINKOPTS,
     deps = [
         "//extensions/attributegen:config_cc_proto",
         "//extensions/common:node_info_fb_cc",
