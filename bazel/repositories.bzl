@@ -208,7 +208,7 @@ def istioapi_dependencies():
 def docker_dependencies():
     http_archive(
         name = "io_bazel_rules_docker",
-        sha256 = "4521794f0fba2e20f3bf15846ab5e01d5332e587e9ce81629c7f96c793bb7036",
-        strip_prefix = "rules_docker-0.14.4",
-        urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.14.4/rules_docker-v0.14.4.tar.gz"],
+        sha256 = "1698624e878b0607052ae6131aa216d45ebb63871ec497f26c67455b34119c80",
+        strip_prefix = "rules_docker-0.15.0",
+        urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.15.0/rules_docker-v0.15.0.tar.gz"],
     )
