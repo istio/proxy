@@ -1,10 +1,6 @@
 http_request:
   request_method: "GET"
-  {{- if eq .Vars.ServiceAuthenticationPolicy "MUTUAL_TLS" }}
-  request_url: "https://127.0.0.1:{{ .Ports.ClientPort }}/{{ .Vars.RequestPath }}"
-  {{- else }}
   request_url: "http://127.0.0.1:{{ .Ports.ClientPort }}/{{ .Vars.RequestPath }}"
-  {{- end }}
   server_ip: "127.0.0.1:{{ .Ports.ClientPort }}"
   protocol: "http"
   status: {{ .Vars.SDLogStatusCode }}
