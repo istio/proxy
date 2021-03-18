@@ -57,11 +57,7 @@ TEST(UtilsTest, TestEnvoyGrpcSTS) {
         "google_grpc": {
             "target_uri": "secure",
             "channel_credentials": {
-                "ssl_credentials": {
-                    "root_certs": {
-                        "filename": "/etc/ssl/certs/ca-certificates.crt"
-                    }
-                }
+                "ssl_credentials": {}
             },
             "call_credentials": {
                 "sts_service": {
