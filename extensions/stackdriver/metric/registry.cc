@@ -86,13 +86,13 @@ StackdriverOptions getStackdriverOptions(
   }
 
   auto ssl_creds_options = grpc::SslCredentialsOptions();
-  std::ifstream file(stub_option.test_root_pem_path.empty()
-                         ? kDefaultRootCertFile
-                         : stub_option.test_root_pem_path);
-  if (!file.fail()) {
-    std::stringstream file_string;
-    file_string << file.rdbuf();
-    ssl_creds_options.pem_root_certs = file_string.str();
+  if (!stub_option.test_root_pem_path.empty()) {
+    std::ifstream file(stub_option.test_root_pem_path);
+    if (!file.fail()) {
+      std::stringstream file_string;
+      file_string << file.rdbuf();
+      ssl_creds_options.pem_root_certs = file_string.str();
+    }
   }
   auto channel_creds = grpc::SslCredentials(ssl_creds_options);
 
