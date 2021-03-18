@@ -71,13 +71,13 @@ void buildEnvoyGrpcService(const StackdriverStubOption &stub_option,
   initial_metadata->set_key("x-goog-user-project");
   initial_metadata->set_value(stub_option.project_id);
 
-  grpc_service->mutable_google_grpc()
-      ->mutable_channel_credentials()
-      ->mutable_ssl_credentials()
-      ->mutable_root_certs()
-      ->set_filename(stub_option.test_root_pem_path.empty()
-                         ? kDefaultRootCertFile
-                         : stub_option.test_root_pem_path);
+  auto *ssl_creds = grpc_service->mutable_google_grpc()
+                        ->mutable_channel_credentials()
+                        ->mutable_ssl_credentials();
+  if (!stub_option.test_root_pem_path.empty()) {
+    ssl_creds->mutable_root_certs()->set_filename(
+        stub_option.test_root_pem_path);
+  }
 }
 
 bool isRawGCEInstance(const ::Wasm::Common::FlatNode &node) {

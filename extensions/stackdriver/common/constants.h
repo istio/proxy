@@ -96,7 +96,6 @@ constexpr std::string_view kGCECreatedByKey = "gcp_gce_instance_created_by";
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
 constexpr double kNanosecondsPerMillisecond = 1000000.0;
-constexpr char kDefaultRootCertFile[] = "/etc/ssl/certs/ca-certificates.crt";
 
 // Stackdriver root context id.
 constexpr char kOutboundRootContextId[] = "stackdriver_outbound";
