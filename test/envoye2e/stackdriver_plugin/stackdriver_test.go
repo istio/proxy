@@ -849,6 +849,7 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"RbacAccessDenied":            "true",
+		"RbacDryRun":                  "true",
 	}, envoye2e.ProxyE2ETests)
 
 	sdPort := params.Ports.Max + 1
@@ -859,6 +860,7 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
 	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/rbac_dry_run.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	sd := &Stackdriver{Port: sdPort}

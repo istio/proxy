@@ -33,14 +33,30 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Log {
 namespace {
+
+using namespace proxy_wasm::null_plugin;
+
 // Matches Rbac Access denied string.
 // It is of the format:
 // "rbac_access_denied_matched_policy[ns[NAMESPACE]-policy[POLICY]-rule[POLICY_INDEX]]"
 const RE2 rbac_denied_match(
     "rbac_access_denied_matched_policy\\[ns\\[(.*)\\]-policy\\[(.*)\\]-rule\\[("
     ".*)\\]\\]");
+const RE2 authz_name_match(
+    "\\[ns\\[(.*)\\]-policy\\[(.*)\\]-rule\\[(.*)\\]\\]");
 constexpr char rbac_denied_match_prefix[] = "rbac_access_denied_matched_policy";
+constexpr char kRbacAccessAllowed[] = "AuthzAllowed";
 constexpr char kRbacAccessDenied[] = "AuthzDenied";
+constexpr char kRBACHttpFilterName[] = "envoy.filters.http.rbac";
+constexpr char kRBACNetworkFilterName[] = "envoy.filters.network.rbac";
+constexpr char kDryRunDenyShadowEngineResult[] =
+    "istio_dry_run_deny_shadow_engine_result";
+constexpr char kDryRunAllowShadowEngineResult[] =
+    "istio_dry_run_allow_shadow_engine_result";
+constexpr char kDryRunDenyShadowEffectiveId[] =
+    "istio_dry_run_deny_shadow_effective_policy_id";
+constexpr char kDryRunAllowShadowEffectiveId[] =
+    "istio_dry_run_allow_shadow_effective_policy_id";
 void setSourceCanonicalService(
     const ::Wasm::Common::FlatNode& peer_node_info,
     google::protobuf::Map<std::string, std::string>* label_map) {
@@ -166,6 +182,82 @@ void fillExtraLabels(
   for (const auto& extra_label : extra_labels) {
     (*label_map)[extra_label.first] = extra_label.second;
   }
+}
+
+void fillAuthzDryRunInfo(
+    google::protobuf::Map<std::string, std::string>* label_map) {
+  auto md = getProperty({"metadata", "filter_metadata", kRBACHttpFilterName});
+  if (!md.has_value()) {
+    md = getProperty({"metadata", "filter_metadata", kRBACNetworkFilterName});
+    if (!md.has_value()) {
+      LOG_DEBUG("RBAC metadata not found");
+      return;
+    }
+  }
+
+  bool shadow_deny_result = false;
+  bool shadow_allow_result = false;
+  bool has_shadow_metadata = false;
+  std::string shadow_deny_policy = "";
+  std::string shadow_allow_policy = "";
+  for (const auto& [key, val] : md.value()->pairs()) {
+    LOG_DEBUG(absl::StrCat("RBAC metadata found: key=", key, ", value=", val));
+    if (key == kDryRunDenyShadowEngineResult) {
+      shadow_deny_result = (val == "allowed");
+    } else if (key == kDryRunAllowShadowEngineResult) {
+      shadow_allow_result = (val == "allowed");
+    } else if (key == kDryRunDenyShadowEffectiveId) {
+      shadow_deny_policy = val;
+    } else if (key == kDryRunAllowShadowEffectiveId) {
+      shadow_allow_policy = val;
+    } else {
+      continue;
+    }
+    has_shadow_metadata = true;
+  }
+
+  if (!has_shadow_metadata) {
+    LOG_DEBUG("RBAC dry-run metadata not found");
+    return;
+  }
+
+  bool shadow_result = false;
+  std::string shadow_effective_policy = "";
+  if (shadow_deny_result && shadow_allow_result) {
+    // If allowed by both DENY and ALLOW policy, the final shadow_result should
+    // be true (allow) and the shadow_effective_policy should be from the ALLOW
+    // policy.
+    shadow_result = true;
+    shadow_effective_policy = shadow_allow_policy;
+  } else {
+    // If denied by either DENY or ALLOW policy, the final shadow_reulst should
+    // be false (denied).
+    shadow_result = false;
+    if (!shadow_deny_result) {
+      // If denied by DENY policy, the shadow_effective_policy should be from
+      // the DENY policy.
+      shadow_effective_policy = shadow_deny_policy;
+    } else {
+      // If denied by ALLOW policy, the shadow_effective_policy shold be from
+      // the ALLOW policy.
+      shadow_effective_policy = shadow_allow_policy;
+    }
+  }
+
+  (*label_map)["dry_run_result"] =
+      shadow_result ? kRbacAccessAllowed : kRbacAccessDenied;
+  std::string policy_name, policy_namespace, policy_rule_index;
+  if (RE2::PartialMatch(shadow_effective_policy, authz_name_match,
+                        &policy_namespace, &policy_name, &policy_rule_index)) {
+    (*label_map)["dry_run_policy_name"] =
+        absl::StrCat(policy_namespace, ".", policy_name);
+    (*label_map)["dry_run_policy_rule"] = policy_rule_index;
+  }
+  LOG_DEBUG(absl::StrCat(
+      "authorization policy dry-run result: dry_run_result=",
+      (*label_map)["dry_run_policy_result"],
+      ", dry_run_policy_name=", (*label_map)["dry_run_policy_name"],
+      ", dry_run_policy_rule=", (*label_map)["dry_run_policy_rule"]));
 }
 
 bool fillAuthInfo(const std::string& response_details,
@@ -373,6 +465,7 @@ void Logger::fillAndFlushLogEntry(
         (*label_map)["response_details"] = request_info.response_details;
       }
     }
+    fillAuthzDryRunInfo(label_map);
   }
 
   // Insert trace headers, if exist.
