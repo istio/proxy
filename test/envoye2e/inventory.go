@@ -47,6 +47,7 @@ func init() {
 			"TestStackdriverAttributeGen",
 			"TestStackdriverCustomAccessLog",
 			"TestStackdriverRbacAccessDenied",
+			"TestStackdriverRbacTCPDryRun",
 			"TestStackdriverMetricExpiry",
 			"TestStatsPayload/Default/envoy.wasm.runtime.null",
 			"TestStatsPayload/Customized/envoy.wasm.runtime.null",
