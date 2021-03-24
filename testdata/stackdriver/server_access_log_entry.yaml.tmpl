@@ -48,4 +48,9 @@ labels:
   response_details: "via_upstream"
   route_name: server_route
   {{- end }}
+  {{- if .Vars.RbacDryRun }}
+  dry_run_result: "AuthzDenied"
+  dry_run_policy_name: "foo.httpbin-dryrun-deny"
+  dry_run_policy_rule: "0"
+  {{- end }}
 severity: INFO
