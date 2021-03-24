@@ -25,7 +25,6 @@
 #include "extensions/stackdriver/edges/mesh_edges_service_client.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
-#include "re2/re2.h"
 
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
@@ -63,7 +62,6 @@ constexpr int kDefaultTickerMilliseconds = 10000;  // 10s
 
 namespace {
 
-const RE2 authz_name_match("ns\\[(.*)\\]-policy\\[(.*)\\]-rule\\[(.*)\\]");
 constexpr char kRbacAccessAllowed[] = "AuthzAllowed";
 constexpr char kRbacAccessDenied[] = "AuthzDenied";
 constexpr char kRBACHttpFilterName[] = "envoy.filters.http.rbac";
@@ -221,6 +219,35 @@ flatbuffers::DetachedBuffer getLocalNodeMetadata() {
   return ::Wasm::Common::extractNodeFlatBufferFromStruct(node);
 }
 
+bool extractAuthzPolicyName(const std::string& policy,
+                            std::string& out_namespace, std::string& out_name,
+                            std::string& out_rule) {
+  // The policy has format "ns[foo]-policy[httpbin-deny]-rule[0]".
+  if (absl::StartsWith(policy, "ns[") && absl::EndsWith(policy, "]")) {
+    std::string sepPolicy = "]-policy[";
+    std::size_t beginNs = 3;
+    std::size_t endNs = policy.find(sepPolicy, beginNs);
+    if (endNs == std::string::npos) {
+      return false;
+    }
+    std::string sepNs = "]-rule[";
+    std::size_t beginName = endNs + sepPolicy.size();
+    std::size_t endName = policy.find(sepNs, beginName);
+    if (endName == std::string::npos) {
+      return false;
+    }
+    std::size_t beginRule = endName + sepNs.size();
+    std::size_t endRule = policy.size() - 1;
+
+    out_namespace = policy.substr(beginNs, endNs - beginNs);
+    out_name = policy.substr(beginName, endName - beginName);
+    out_rule = policy.substr(beginRule, endRule - beginRule);
+    return true;
+  }
+
+  return false;
+}
+
 void fillAuthzDryRunInfo(
     std::unordered_map<std::string, std::string>& extra_labels) {
   auto md = getProperty({"metadata", "filter_metadata", kRBACHttpFilterName});
@@ -284,12 +311,14 @@ void fillAuthzDryRunInfo(
 
   extra_labels["dry_run_result"] =
       shadow_result ? kRbacAccessAllowed : kRbacAccessDenied;
-  std::string policy_name, policy_namespace, policy_rule_index;
-  if (RE2::PartialMatch(shadow_effective_policy, authz_name_match,
-                        &policy_namespace, &policy_name, &policy_rule_index)) {
+  std::string policy_namespace = "";
+  std::string policy_name = "";
+  std::string policy_rule = "";
+  if (extractAuthzPolicyName(shadow_effective_policy, policy_namespace,
+                             policy_name, policy_rule)) {
     extra_labels["dry_run_policy_name"] =
         absl::StrCat(policy_namespace, ".", policy_name);
-    extra_labels["dry_run_policy_rule"] = policy_rule_index;
+    extra_labels["dry_run_policy_rule"] = policy_rule;
   }
 }
 
