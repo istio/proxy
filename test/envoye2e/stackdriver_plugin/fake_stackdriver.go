@@ -316,6 +316,7 @@ func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.Ba
 			log.Printf("span name not in correct format: %v", span.Name)
 			continue
 		}
+		projectID := match[1]
 		traceID := match[2]
 		spanID, err := getID(match[3])
 		if err != nil {
@@ -330,14 +331,13 @@ func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.Ba
 
 		newTraceSpan := &cloudtracev1.TraceSpan{
 			SpanId:       spanID,
-			Name:         span.Name,
+			Name:         span.DisplayName.GetValue(),
 			ParentSpanId: parentSpanID,
 			StartTime:    span.StartTime,
 			EndTime:      span.EndTime,
 			Labels:       make(map[string]string),
 		}
 		// Add Labels, so that test can query it using filters.
-		newTraceSpan.Labels["span"] = span.DisplayName.GetValue()
 		if span.ParentSpanId == "" {
 			newTraceSpan.Labels["root"] = span.DisplayName.GetValue()
 		}
@@ -350,7 +350,7 @@ func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.Ba
 			existingTrace.Spans = append(existingTrace.Spans, newTraceSpan)
 		} else {
 			s.traceMap[traceID] = &cloudtracev1.Trace{
-				ProjectId: req.Name,
+				ProjectId: projectID,
 				TraceId:   traceID,
 				Spans: []*cloudtracev1.TraceSpan{
 					newTraceSpan,
