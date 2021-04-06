@@ -29,4 +29,4 @@ see the Istio [contribution guidelines](https://github.com/istio/istio/blob/mast
 
 ## Tools
 
-Extension server [quick intro](/tools/extensionserver/README.md).
+Extension server [quick intro](/tools/extensionserver/README.md). 
