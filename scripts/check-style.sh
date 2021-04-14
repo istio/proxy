@@ -18,7 +18,7 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_VERSION_REQUIRED="10.0.1"
+CLANG_VERSION_REQUIRED="11.0.1"
 CLANG_FORMAT=$(command -v clang-format)
 CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
 if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
