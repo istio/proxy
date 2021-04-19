@@ -244,7 +244,7 @@ TEST_P(ExchangedTokenIntegrationTest, ValidExchangeToken) {
   // Send backend response.
   upstream_request_->encodeHeaders(
       Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
 
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("200", response->headers().Status()->value().getStringView());
@@ -259,7 +259,7 @@ TEST_P(ExchangedTokenIntegrationTest, ValidExchangeTokenAtWrongHeader) {
   auto response = codec_client_->makeHeaderOnlyRequest(
       HeadersWithToken("wrong-header", kExchangedToken));
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
@@ -273,7 +273,7 @@ TEST_P(ExchangedTokenIntegrationTest, TokenWithoutOriginalClaims) {
   auto response = codec_client_->makeHeaderOnlyRequest(
       HeadersWithToken(kHeaderForExchangedToken, kTokenWithoutOriginalClaims));
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
@@ -287,7 +287,7 @@ TEST_P(ExchangedTokenIntegrationTest, InvalidExchangeToken) {
   auto response = codec_client_->makeHeaderOnlyRequest(
       HeadersWithToken(kHeaderForExchangedToken, "invalid-token"));
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
