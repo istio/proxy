@@ -311,7 +311,7 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, NoJwt) {
       makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto response = codec_client_->makeHeaderOnlyRequest(BaseRequestHeaders());
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
@@ -322,7 +322,7 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, BadJwt) {
   auto response =
       codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kBadToken));
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
@@ -333,7 +333,7 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, RbacDeny) {
   auto response =
       codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kRbacGoodToken));
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
 
   // Expecting error code 403 for RBAC deny.
@@ -350,7 +350,7 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, GoodJwt) {
   // Send backend response.
   upstream_request_->encodeHeaders(
       Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
 
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("200", response->headers().Status()->value().getStringView());
@@ -366,7 +366,7 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, TracingHeader) {
   // Send backend response.
   upstream_request_->encodeHeaders(
       Http::TestRequestHeaderMapImpl{{":status", "200"}}, true);
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
 
   EXPECT_TRUE(response->complete());
   Http::TestResponseHeaderMapImpl upstream_headers(
