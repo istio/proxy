@@ -103,7 +103,7 @@ TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
   upstream_request_->encodeHeaders(
       Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
@@ -128,7 +128,7 @@ TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
 
   // Request is rejected, there will be no upstream request (thus no
   // waitForNextUpstreamRequest).
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
@@ -147,7 +147,7 @@ TEST_P(AuthenticationFilterIntegrationTest, OriginJwtRequiredHeaderNoJwtFail) {
 
   // Request is rejected, there will be no upstream request (thus no
   // waitForNextUpstreamRequest).
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
@@ -169,7 +169,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
   upstream_request_->encodeHeaders(
       Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
@@ -199,7 +199,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
   upstream_request_->encodeHeaders(
       Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
-  response->waitForEndStream();
+  ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
