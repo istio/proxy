@@ -15,8 +15,8 @@
 # limitations under the License.
 
 
-# Update the Envoy SHA in istio/proxy WORKSPACE with the first argument (aka ENVOY_SHA) and
-# the second argument (aka ENVOY_SHA commit date)
+# Update the Envoy SHA in istio/proxy WORKSPACE with the latest commit of the
+# $UPDATE_BRANCH of the specified ENVOY_ORG/ENVOY_REPO
 
 # Exit immediately for non zero status
 set -e
