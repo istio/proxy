@@ -32,16 +32,19 @@ namespace Upstreams {
 namespace Http {
 namespace Metadata {
 
-class MetadataConnPool : public Extensions::Upstreams::Http::Http::HttpConnPool {
-public:
-  MetadataConnPool(Upstream::ThreadLocalCluster& thread_local_cluster, bool is_connect,
-                   const Router::RouteEntry& route_entry,
+class MetadataConnPool
+    : public Extensions::Upstreams::Http::Http::HttpConnPool {
+ public:
+  MetadataConnPool(Upstream::ThreadLocalCluster& thread_local_cluster,
+                   bool is_connect, const Router::RouteEntry& route_entry,
                    absl::optional<Envoy::Http::Protocol> downstream_protocol,
                    Upstream::LoadBalancerContext* ctx)
-      : HttpConnPool(thread_local_cluster, is_connect, route_entry, downstream_protocol, ctx) {}
+      : HttpConnPool(thread_local_cluster, is_connect, route_entry,
+                     downstream_protocol, ctx) {}
 
   void onPoolReady(Envoy::Http::RequestEncoder& callbacks_encoder,
-                   Upstream::HostDescriptionConstSharedPtr host, const StreamInfo::StreamInfo& info,
+                   Upstream::HostDescriptionConstSharedPtr host,
+                   const StreamInfo::StreamInfo& info,
                    absl::optional<Envoy::Http::Protocol> protocol) override;
 };
 
