@@ -30,8 +30,13 @@ envoy_cc_library(
     hdrs = ["upstream_request.h"],
     repository = "@envoy",
     deps = [
+        "@com_google_absl//absl/types:optional",
         "@envoy//include/envoy/http:codec_interface",
         "@envoy//include/envoy/router:router_interface",
+        "@envoy//include/envoy/stream_info:stream_info_interface",
+        "@envoy//include/envoy/upstream:host_description_interface",
+        "@envoy//include/envoy/upstream:load_balancer_interface",
+        "@envoy//include/envoy/upstream:thread_local_cluster_interface",
         "@envoy//source/extensions/upstreams/http/http:upstream_request_lib",
     ],
 )
