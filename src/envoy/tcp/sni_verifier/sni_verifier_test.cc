@@ -34,6 +34,7 @@ namespace Envoy {
 namespace Tcp {
 namespace SniVerifier {
 
+// Test 1.10 build 
 // Test that a SniVerifier filter config works.
 TEST(SniVerifierTest, ConfigTest) {
   NiceMock<Server::Configuration::MockFactoryContext> context;
