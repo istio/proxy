@@ -39,7 +39,7 @@ if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}
   echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
 
   mkdir -p "${CLANG_DIRECTORY}"
-  curl --silent --show-error --retry 10 \
+  curl -L --silent --show-error --retry 10 \
     "${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
     | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
   || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
