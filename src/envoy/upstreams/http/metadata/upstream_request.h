@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "absl/types/optional.h"
 #include "envoy/http/codec.h"
 #include "envoy/http/protocol.h"
 #include "envoy/router/router.h"
@@ -22,10 +23,7 @@
 #include "envoy/upstream/host_description.h"
 #include "envoy/upstream/load_balancer.h"
 #include "envoy/upstream/thread_local_cluster.h"
-
 #include "extensions/upstreams/http/http/upstream_request.h"
-
-#include "absl/types/optional.h"
 
 namespace Envoy {
 namespace Upstreams {
