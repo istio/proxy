@@ -15,14 +15,36 @@
 
 #pragma once
 
+#include "absl/types/optional.h"
 #include "envoy/http/codec.h"
+#include "envoy/http/protocol.h"
 #include "envoy/router/router.h"
+#include "envoy/stream_info/stream_info.h"
+#include "envoy/upstream/host_description.h"
+#include "envoy/upstream/load_balancer.h"
+#include "envoy/upstream/thread_local_cluster.h"
 #include "extensions/upstreams/http/http/upstream_request.h"
 
 namespace Envoy {
 namespace Upstreams {
 namespace Http {
 namespace Metadata {
+
+class MetadataConnPool
+    : public Extensions::Upstreams::Http::Http::HttpConnPool {
+ public:
+  MetadataConnPool(Upstream::ThreadLocalCluster& thread_local_cluster,
+                   bool is_connect, const Router::RouteEntry& route_entry,
+                   absl::optional<Envoy::Http::Protocol> downstream_protocol,
+                   Upstream::LoadBalancerContext* ctx)
+      : HttpConnPool(thread_local_cluster, is_connect, route_entry,
+                     downstream_protocol, ctx) {}
+
+  void onPoolReady(Envoy::Http::RequestEncoder& callbacks_encoder,
+                   Upstream::HostDescriptionConstSharedPtr host,
+                   const StreamInfo::StreamInfo& info,
+                   absl::optional<Envoy::Http::Protocol> protocol) override;
+};
 
 class MetadataUpstream
     : public Extensions::Upstreams::Http::Http::HttpUpstream {

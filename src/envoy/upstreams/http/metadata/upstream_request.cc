@@ -14,3 +14,35 @@
  */
 
 #include "src/envoy/upstreams/http/metadata/upstream_request.h"
+
+#include <memory>
+#include <utility>
+
+#include "absl/types/optional.h"
+#include "envoy/http/codec.h"
+#include "envoy/http/protocol.h"
+#include "envoy/stream_info/stream_info.h"
+#include "envoy/upstream/host_description.h"
+
+namespace Envoy {
+namespace Upstreams {
+namespace Http {
+namespace Metadata {
+
+void MetadataConnPool::onPoolReady(
+    Envoy::Http::RequestEncoder& request_encoder,
+    Upstream::HostDescriptionConstSharedPtr host,
+    const StreamInfo::StreamInfo& info,
+    absl::optional<Envoy::Http::Protocol> protocol) {
+  conn_pool_stream_handle_ = nullptr;
+  auto upstream = std::make_unique<MetadataUpstream>(
+      callbacks_->upstreamToDownstream(), &request_encoder);
+  callbacks_->onPoolReady(std::move(upstream), host,
+                          request_encoder.getStream().connectionLocalAddress(),
+                          info, protocol);
+}
+
+}  // namespace Metadata
+}  // namespace Http
+}  // namespace Upstreams
+}  // namespace Envoy
