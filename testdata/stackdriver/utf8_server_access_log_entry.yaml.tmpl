@@ -1,0 +1,30 @@
+http_request:
+  request_method: "GET"
+  request_url: "http://127.0.0.1:{{ .Ports.ClientPort }}/{{ .Vars.RequestPath }}"
+  server_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
+  protocol: "http"
+  status: {{ .Vars.SDLogStatusCode }}
+  user_agent: va lue
+  referer: va lue
+labels:
+  destination_principal: "{{ .Vars.DestinationPrincipal }}"
+  destination_service_host: server.default.svc.cluster.local
+  destination_service_name: server
+  response_flag: "-"
+  service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
+  source_principal: "{{ .Vars.SourcePrincipal }}"
+  source_name: productpage-v1-84975bc778-pxz2w
+  source_namespace: default
+  source_workload: productpage-v1
+  source_app: productpage
+  source_canonical_service: productpage-v1
+  source_canonical_revision: version-1
+  source_version: v1
+  protocol: http
+  log_sampled: "false"
+  upstream_cluster: "server-inbound-cluster"
+  response_details: "via_upstream"
+  route_name: server_route
+  x-envoy-original-path: va lue
+  x-envoy-original-dst-host: va lue
+severity: INFO
