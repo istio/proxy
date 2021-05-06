@@ -436,10 +436,11 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   if (getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
       trace_sampled == "1") {
     if (getValue({"request", "headers", "x-b3-traceid"},
-             &request_info->b3_trace_id)) {
+                 &request_info->b3_trace_id)) {
       sanitizeBytes(&request_info->b3_trace_id);
     }
-    if (getValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id)) {
+    if (getValue({"request", "headers", "x-b3-spanid"},
+                 &request_info->b3_span_id)) {
       sanitizeBytes(&request_info->b3_span_id);
     }
     request_info->b3_trace_sampled = true;
@@ -534,8 +535,8 @@ bool getAuditPolicy() {
 }
 
 bool sanitizeBytes(std::string* buf) {
-  char *start = buf->data();
-  const char *const end = start + buf->length();
+  char* start = buf->data();
+  const char* const end = start + buf->length();
   bool modified = false;
   while (start < end) {
     if (flatbuffers::FromUTF8(const_cast<const char**>(&start)) < 0) {
