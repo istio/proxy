@@ -38,6 +38,7 @@ func init() {
 			"TestStackdriverPayload",
 			"TestStackdriverPayloadGateway",
 			"TestStackdriverPayloadWithTLS",
+			"TestStackdriverPayloadUtf8",
 			"TestStackdriverReload",
 			"TestStackdriverVMReload",
 			"TestStackdriverParallel",

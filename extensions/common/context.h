@@ -298,5 +298,10 @@ static inline std::string_view GetStringView(const flatbuffers::String* str) {
   return str ? std::string_view(str->c_str(), str->size()) : std::string_view();
 }
 
+// Sanitizes a possible UTF-8 byte buffer to a UTF-8 string.
+// Invalid byte sequences are replaced by spaces.
+// Returns true if the string was modified.
+bool sanitizeBytes(std::string* buf);
+
 }  // namespace Common
 }  // namespace Wasm
