@@ -39,7 +39,7 @@ class MetadataGenericConnPoolFactory : public Router::GenericConnPoolFactory {
   std::string name() const override {
     return "istio.filters.connection_pools.http.metadata";
   }
-  std::string category() const override { return "istio.upstreams"; }
+  std::string category() const override { return "envoy.upstreams"; }
 
   Router::GenericConnPoolPtr createGenericConnPool(
       Upstream::ThreadLocalCluster& thread_local_cluster, bool is_connect,

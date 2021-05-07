@@ -37,6 +37,7 @@ MetadataGenericConnPoolFactory::createGenericConnPool(
     absl::optional<Envoy::Http::Protocol> downstream_protocol,
     Upstream::LoadBalancerContext* ctx) const {
   if (is_connect) {
+    // TODO(tbarrella)
     return nullptr;
   }
   auto ret = std::make_unique<MetadataConnPool>(
