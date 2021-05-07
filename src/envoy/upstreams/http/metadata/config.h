@@ -32,6 +32,8 @@ namespace Metadata {
 
 /**
  * Config registration for the MetadataConnPool.
+ * This extension is meant to be used to make only HTTP2 requests downstream.
+ * Thus it does not support CONNECT and `is_connect` must be `false`.
  * @see Router::GenericConnPoolFactory
  */
 class MetadataGenericConnPoolFactory : public Router::GenericConnPoolFactory {

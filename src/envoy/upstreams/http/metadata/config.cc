@@ -36,10 +36,7 @@ MetadataGenericConnPoolFactory::createGenericConnPool(
     const Router::RouteEntry& route_entry,
     absl::optional<Envoy::Http::Protocol> downstream_protocol,
     Upstream::LoadBalancerContext* ctx) const {
-  if (is_connect) {
-    // TODO(tbarrella)
-    return nullptr;
-  }
+  ASSERT(!is_connect);
   auto ret = std::make_unique<MetadataConnPool>(
       thread_local_cluster, is_connect, route_entry, downstream_protocol, ctx);
   return ret->valid() ? std::move(ret) : nullptr;
