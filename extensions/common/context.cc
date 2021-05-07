@@ -539,10 +539,13 @@ bool sanitizeBytes(std::string* buf) {
   const char* const end = start + buf->length();
   bool modified = false;
   while (start < end) {
-    if (flatbuffers::FromUTF8(const_cast<const char**>(&start)) < 0) {
+    char* s = start;
+    if (flatbuffers::FromUTF8(const_cast<const char**>(&s)) < 0) {
       *start = ' ';
       start += 1;
       modified = true;
+    } else {
+      start = s;
     }
   }
   return modified;

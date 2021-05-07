@@ -1086,7 +1086,7 @@ func TestStackdriverPayloadUtf8(t *testing.T) {
 
 	sd := &Stackdriver{Port: sdPort}
 
-	bad := "va\xFFlue"
+	bad := "va\xC0lue"
 	get := &driver.HTTPCall{
 		Method: "GET",
 		Port:   params.Ports.ClientPort,
