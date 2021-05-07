@@ -1065,3 +1065,75 @@ func TestStackdriverMetricExpiry(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestStackdriverPayloadUtf8(t *testing.T) {
+	t.Parallel()
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+	}, envoye2e.ProxyE2ETests)
+
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	enableStackDriver(t, params.Vars)
+
+	sd := &Stackdriver{Port: sdPort}
+
+	bad := "va\xC0lue"
+	get := &driver.HTTPCall{
+		Method: "GET",
+		Port:   params.Ports.ClientPort,
+		Body:   "hello, world!",
+		RequestHeaders: map[string]string{
+			"referer":                   bad,
+			"user-agent":                bad,
+			"x-envoy-original-path":     bad,
+			"x-envoy-original-dst-host": bad,
+			"x-request-id":              bad,
+			"x-b3-traceid":              bad,
+			"x-b3-spanid":               bad,
+		},
+	}
+
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 10, Step: get},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
+				[]SDLogEntry{
+					{
+						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/utf8_server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/utf8_client_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 10,
+					},
+				},
+				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+			),
+			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
+				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -19,6 +19,7 @@
 #include "absl/strings/str_split.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
+#include "flatbuffers/util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -422,15 +423,26 @@ std::string_view nodeInfoSchema() {
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
   populateExtendedRequestInfo(request_info);
 
-  getValue({"request", "referer"}, &request_info->referer);
-  getValue({"request", "useragent"}, &request_info->user_agent);
-  getValue({"request", "id"}, &request_info->request_id);
+  if (getValue({"request", "referer"}, &request_info->referer)) {
+    sanitizeBytes(&request_info->referer);
+  }
+  if (getValue({"request", "useragent"}, &request_info->user_agent)) {
+    sanitizeBytes(&request_info->user_agent);
+  }
+  if (getValue({"request", "id"}, &request_info->request_id)) {
+    sanitizeBytes(&request_info->request_id);
+  }
   std::string trace_sampled;
   if (getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
       trace_sampled == "1") {
-    getValue({"request", "headers", "x-b3-traceid"},
-             &request_info->b3_trace_id);
-    getValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id);
+    if (getValue({"request", "headers", "x-b3-traceid"},
+                 &request_info->b3_trace_id)) {
+      sanitizeBytes(&request_info->b3_trace_id);
+    }
+    if (getValue({"request", "headers", "x-b3-spanid"},
+                 &request_info->b3_span_id)) {
+      sanitizeBytes(&request_info->b3_span_id);
+    }
     request_info->b3_trace_sampled = true;
   }
 
@@ -456,10 +468,12 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
       WasmHeaderMapType::RequestHeaders, kEnvoyOriginalPathKey);
   request_info->x_envoy_original_path =
       envoy_original_path ? envoy_original_path->toString() : "";
+  sanitizeBytes(&request_info->x_envoy_original_path);
   auto envoy_original_dst_host = getHeaderMapValue(
       WasmHeaderMapType::RequestHeaders, kEnvoyOriginalDstHostKey);
   request_info->x_envoy_original_dst_host =
       envoy_original_dst_host ? envoy_original_dst_host->toString() : "";
+  sanitizeBytes(&request_info->x_envoy_original_dst_host);
   getValue({"upstream", "transport_failure_reason"},
            &request_info->upstream_transport_failure_reason);
   std::string response_details;
@@ -518,6 +532,23 @@ bool getAuditPolicy() {
   }
 
   return shouldAudit;
+}
+
+bool sanitizeBytes(std::string* buf) {
+  char* start = buf->data();
+  const char* const end = start + buf->length();
+  bool modified = false;
+  while (start < end) {
+    char* s = start;
+    if (flatbuffers::FromUTF8(const_cast<const char**>(&s)) < 0) {
+      *start = ' ';
+      start += 1;
+      modified = true;
+    } else {
+      start = s;
+    }
+  }
+  return modified;
 }
 
 }  // namespace Common
