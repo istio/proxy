@@ -63,7 +63,7 @@ namespace {
 void populateDestinationService(bool use_host_header,
                                 RequestInfo* request_info) {
   request_info->destination_service_host =
-      use_host_header ? request_info->url_host : "unknown";
+      use_host_header ? request_info->url_host : getServiceNameFallback();
 
   // override the cluster name if this is being sent to the
   // blackhole or passthrough cluster
@@ -376,7 +376,6 @@ const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
 }
 
 // Host header is used if use_host_header_fallback==true.
-// Normally it is ok to use host header within the mesh, but not at ingress.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                              RequestInfo* request_info) {
   populateRequestProtocol(request_info);
@@ -549,6 +548,22 @@ bool sanitizeBytes(std::string* buf) {
     }
   }
   return modified;
+}
+
+// Used for `destination_service` fallback. Unlike elsewhere when that fallback
+// to workload name, this falls back to "unknown" when the canonical name label
+// is not found. This preserves the existing behavior for `destination_service`
+// labeling. Using a workload name as a service name could be potentially
+// problematic.
+std::string getServiceNameFallback() {
+  const auto local_node_buffer = extractLocalNodeFlatBuffer();
+  const auto& local_node =
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+  auto labels = local_node.labels();
+  auto canonical_name =
+      labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName.data());
+  auto name = canonical_name ? canonical_name->value() : "unknown";
+  return GetStringView(name);
 }
 
 }  // namespace Common
