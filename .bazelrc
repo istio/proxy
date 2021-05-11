@@ -50,3 +50,6 @@ build --cxxopt -Wformat-security
 
 # Link pthread for flatbuffers
 build --host_linkopt=-pthread
+
+# TODO(lambdai): Revert below centos proxy build mitigation. 
+build --action_env=CXXFLAGS=-Wno-unused-variable
