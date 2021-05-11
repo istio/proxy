@@ -5,7 +5,7 @@ metric:
     value: {{ .Vars.RequestCount }}
   label:
   - name: reporter
-    value: source
+    value: destination
   - name: source_workload
     value: productpage-v1
   - name: source_canonical_service
@@ -39,7 +39,7 @@ metric:
   - name: destination_canonical_revision
     value: version-1
   - name: destination_service_name
-    value: unknown
+    value: ratings
   - name: destination_service_namespace
     value: default
   - name: destination_cluster
@@ -53,8 +53,4 @@ metric:
   - name: response_flags
     value: "-"
   - name: connection_security_policy
-    value: unknown
-  - name: configurable_metric_a
-    value: localhost:server
-  - name: configurable_metric_b
-    value: HTTP/1.1
+    value: none
