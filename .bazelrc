@@ -6,6 +6,9 @@
 # curl -sSL https://raw.githubusercontent.com/envoyproxy/envoy/master/.bazelrc > envoy.bazelrc
 import %workspace%/envoy.bazelrc
 
+# TODO(lambdai): Revert below centos proxy build mitigation. 
+build --action_env=CXXFLAGS=-Wno-unused-variable
+
 # Overrides workspace_status_command
 build --workspace_status_command=tools/bazel_get_workspace_status
 build:remote --remote_timeout=7200
