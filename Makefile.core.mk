@@ -24,8 +24,6 @@ HUB ?=
 TAG ?=
 repo_dir := .
 
-CXXFALG
-
 ifeq "$(origin CC)" "default"
 CC := clang
 endif
