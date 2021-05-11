@@ -557,15 +557,15 @@ bool sanitizeBytes(std::string* buf) {
 // labeling. Using a workload name as a service name could be potentially
 // problematic.
 std::string_view getServiceNameFallback() {
-  const auto local_node_buffer = extractLocalNodeFlatBuffer();
-  const auto& local_node =
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_buffer.data());
-  auto labels = local_node.labels();
-  auto canonical_name =
-      labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName.data());
-  auto name =
-      canonical_name ? GetStringView(canonical_name->value()) : "unknown";
-  return name;
+  flatbuffers::FlatBufferBuilder fbb;
+  auto buf = getProperty({"node", "metadata", "LABELS"});
+  if (buf.has_value()) {
+    for (const auto& [key, val] : buf.value()->pairs())
+      if (key == ::Wasm::Common::kCanonicalServiceLabelName.data()) {
+        return val;
+      }
+  }
+  return "unknown";
 }
 
 }  // namespace Common
