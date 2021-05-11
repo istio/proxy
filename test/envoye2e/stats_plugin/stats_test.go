@@ -67,13 +67,14 @@ var Runtimes = []struct {
 }
 
 var TestCases = []struct {
-	Name              string
-	ClientConfig      string
-	ServerConfig      string
-	ServerClusterName string
-	ClientStats       map[string]driver.StatMatcher
-	ServerStats       map[string]driver.StatMatcher
-	TestParallel      bool
+	Name                string
+	ClientConfig        string
+	ServerConfig        string
+	ServerClusterName   string
+	ClientStats         map[string]driver.StatMatcher
+	ServerStats         map[string]driver.StatMatcher
+	TestParallel        bool
+	ElideServerMetadata bool
 }{
 	{
 		Name:         "Default",
@@ -123,6 +124,7 @@ var TestCases = []struct {
 		ServerStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/server_disable_host_header_fallback.yaml.tmpl"},
 		},
+		ElideServerMetadata: true,
 	},
 }
 
@@ -163,6 +165,7 @@ func TestStatsPayload(t *testing.T) {
 					"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
 					"StatsFilterServerConfig":    driver.LoadTestJSON(testCase.ServerConfig),
 					"ServerClusterName":          testCase.ServerClusterName,
+					"ElideServerMetadata":        fmt.Sprintf("%t", testCase.ElideServerMetadata),
 				}, envoye2e.ProxyE2ETests)
 				params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 				params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -210,7 +213,8 @@ func TestStatsParallel(t *testing.T) {
 				"WasmRuntime":                "envoy.wasm.runtime.null",
 				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 				"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
-				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON(testCase.ServerConfig),
+				"ElideServerMetadata":        fmt.Sprintf("%t", testCase.ElideServerMetadata),
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
