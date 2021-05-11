@@ -62,9 +62,12 @@ namespace {
 //   the same as destination service host.
 void populateDestinationService(bool outbound, bool use_host_header,
                                 RequestInfo* request_info) {
-  auto fallback = outbound ? "unknown" : getServiceNameFallback();
-  request_info->destination_service_host =
-      use_host_header ? request_info->url_host : fallback;
+  if (use_host_header) {
+    request_info->destination_service_host = request_info->url_host;
+  } else {
+    request_info->destination_service_host =
+        outbound ? "unknown" : getServiceNameFallback();
+  }
 
   // override the cluster name if this is being sent to the
   // blackhole or passthrough cluster
@@ -556,13 +559,12 @@ bool sanitizeBytes(std::string* buf) {
 // is not found. This preserves the existing behavior for `destination_service`
 // labeling. Using a workload name as a service name could be potentially
 // problematic.
-std::string_view getServiceNameFallback() {
-  flatbuffers::FlatBufferBuilder fbb;
+std::string getServiceNameFallback() {
   auto buf = getProperty({"node", "metadata", "LABELS"});
   if (buf.has_value()) {
     for (const auto& [key, val] : buf.value()->pairs())
       if (key == ::Wasm::Common::kCanonicalServiceLabelName.data()) {
-        return val;
+        return std::string(val);
       }
   }
   return "unknown";
