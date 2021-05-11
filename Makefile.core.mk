@@ -135,9 +135,9 @@ test_tsan:
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) TSAN=true GO111MODULE=on go test -timeout 30m ./...
 
 test_centos:
-	echo "lambdai: debug before export CXXFLAGS=${CXXFLAGS}" 
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) CXXFLAGS=-Wno-unused-variable && \
 	echo "lambdai: debug after export CXXFLAGS=${CXXFLAGS}" 
+	echo "lambdai: debug in bazel args: CENTOS_BAZEL_TEST_TARGETS=${CENTOS_BUILD_ARGS}" 
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) @com_googlesource_chromium_v8//:build && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	# TODO: re-enable IPv6 tests
