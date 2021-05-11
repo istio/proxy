@@ -60,10 +60,11 @@ namespace {
 // * Otherwise, try fetching cluster metadata for destination service name and
 //   host. If cluster metadata is not available, set destination service name
 //   the same as destination service host.
-void populateDestinationService(bool use_host_header,
+void populateDestinationService(bool outbound, bool use_host_header,
                                 RequestInfo* request_info) {
+  auto fallback = outbound ? "unknown" : getServiceNameFallback();
   request_info->destination_service_host =
-      use_host_header ? request_info->url_host : getServiceNameFallback();
+      use_host_header ? request_info->url_host : fallback;
 
   // override the cluster name if this is being sent to the
   // blackhole or passthrough cluster
@@ -132,7 +133,7 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.
-  populateDestinationService(use_host_header_fallback, request_info);
+  populateDestinationService(outbound, use_host_header_fallback, request_info);
   uint64_t destination_port = 0;
   if (outbound) {
     getValue({"upstream", "port"}, &destination_port);
@@ -555,15 +556,16 @@ bool sanitizeBytes(std::string* buf) {
 // is not found. This preserves the existing behavior for `destination_service`
 // labeling. Using a workload name as a service name could be potentially
 // problematic.
-std::string getServiceNameFallback() {
+std::string_view getServiceNameFallback() {
   const auto local_node_buffer = extractLocalNodeFlatBuffer();
   const auto& local_node =
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_buffer.data());
   auto labels = local_node.labels();
   auto canonical_name =
       labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName.data());
-  auto name = canonical_name ? canonical_name->value() : "unknown";
-  return GetStringView(name);
+  auto name =
+      canonical_name ? GetStringView(canonical_name->value()) : "unknown";
+  return name;
 }
 
 }  // namespace Common
