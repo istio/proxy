@@ -380,7 +380,7 @@ const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                              RequestInfo* request_info) {
   populateRequestProtocol(request_info);
-  getValue({"request", "url_path"}, &request_info->request_url_path);
+  getValue({"request", "url_path"}, &request_info->url_path);
   populateRequestInfo(outbound, use_host_header_fallback, request_info);
 
   int64_t response_code = 0;
@@ -446,7 +446,7 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
     request_info->b3_trace_sampled = true;
   }
 
-  getValue({"request", "url_path"}, &request_info->url_path);
+  getValue({"request", "path"}, &request_info->path);
   getValue({"request", "host"}, &request_info->url_host);
   getValue({"request", "scheme"}, &request_info->url_scheme);
   std::string response_details;
