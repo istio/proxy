@@ -232,7 +232,7 @@ void addHttpSpecificTags(const ::Wasm::Common::RequestInfo& request_info,
                          TagKeyValueList& tag_map) {
   const auto& operation =
       request_info.request_protocol == ::Wasm::Common::Protocol::GRPC
-          ? request_info.request_url_path
+          ? request_info.url_path
           : request_info.request_operation;
   tag_map.emplace_back(Metric::requestOperationKey(), operation);
 

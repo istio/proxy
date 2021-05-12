@@ -491,7 +491,7 @@ void Logger::fillHTTPRequestInLogEntry(
   auto http_request = log_entry->mutable_http_request();
   http_request->set_request_method(request_info.request_operation);
   http_request->set_request_url(request_info.url_scheme + "://" +
-                                request_info.url_host + request_info.url_path);
+                                request_info.url_host + request_info.path);
   http_request->set_request_size(request_info.request_size);
   http_request->set_status(request_info.response_code);
   http_request->set_response_size(request_info.response_size);

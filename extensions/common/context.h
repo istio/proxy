@@ -138,9 +138,6 @@ struct RequestInfo {
   // Operation of the request, i.e. HTTP method or gRPC API method.
   std::string request_operation;
 
-  // The path portion of the URL without the query string.
-  std::string request_url_path;
-
   std::string upstream_transport_failure_reason;
 
   // Service authentication policy (NONE, MUTUAL_TLS)
@@ -178,6 +175,9 @@ struct RequestInfo {
   bool b3_trace_sampled = false;
 
   // HTTP URL related attributes.
+  // The path portion of the URL including the query string.
+  std::string path;
+  // The path portion of the URL without the query string.
   std::string url_path;
   std::string url_host;
   std::string url_scheme;
