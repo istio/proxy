@@ -116,6 +116,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.url_scheme = "http";
   request_info.url_host = "httpbin.org";
   request_info.url_path = "/headers";
+  request_info.path = "/headers?retry=true";
   request_info.request_id = "123";
   request_info.b3_trace_id = "123abc";
   request_info.b3_span_id = "abc123";
@@ -155,7 +156,7 @@ std::string write_audit_request_json = R"({
      {
         "httpRequest":{
            "requestMethod":"GET",
-           "requestUrl":"http://httpbin.org/headers",
+           "requestUrl":"http://httpbin.org/headers?retry=true",
            "userAgent":"chrome",
            "remoteIp":"1.1.1.1",
            "referer":"www.google.com",
@@ -204,7 +205,7 @@ std::string write_log_request_json = R"({
      {
         "httpRequest":{
            "requestMethod":"GET",
-           "requestUrl":"http://httpbin.org/headers",
+           "requestUrl":"http://httpbin.org/headers?retry=true",
            "userAgent":"chrome",
            "remoteIp":"1.1.1.1",
            "referer":"www.google.com",
