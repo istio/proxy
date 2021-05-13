@@ -60,10 +60,14 @@ namespace {
 // * Otherwise, try fetching cluster metadata for destination service name and
 //   host. If cluster metadata is not available, set destination service name
 //   the same as destination service host.
-void populateDestinationService(bool use_host_header,
+void populateDestinationService(bool outbound, bool use_host_header,
                                 RequestInfo* request_info) {
-  request_info->destination_service_host =
-      use_host_header ? request_info->url_host : "unknown";
+  if (use_host_header) {
+    request_info->destination_service_host = request_info->url_host;
+  } else {
+    request_info->destination_service_host =
+        outbound ? "unknown" : getServiceNameFallback();
+  }
 
   // override the cluster name if this is being sent to the
   // blackhole or passthrough cluster
@@ -132,7 +136,7 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.
-  populateDestinationService(use_host_header_fallback, request_info);
+  populateDestinationService(outbound, use_host_header_fallback, request_info);
   uint64_t destination_port = 0;
   if (outbound) {
     getValue({"upstream", "port"}, &destination_port);
@@ -376,7 +380,6 @@ const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
 }
 
 // Host header is used if use_host_header_fallback==true.
-// Normally it is ok to use host header within the mesh, but not at ingress.
 void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
                              RequestInfo* request_info) {
   populateRequestProtocol(request_info);
@@ -549,6 +552,22 @@ bool sanitizeBytes(std::string* buf) {
     }
   }
   return modified;
+}
+
+// Used for `destination_service` fallback. Unlike elsewhere when that fallback
+// to workload name, this falls back to "unknown" when the canonical name label
+// is not found. This preserves the existing behavior for `destination_service`
+// labeling. Using a workload name as a service name could be potentially
+// problematic.
+std::string getServiceNameFallback() {
+  auto buf = getProperty({"node", "metadata", "LABELS"});
+  if (buf.has_value()) {
+    for (const auto& [key, val] : buf.value()->pairs())
+      if (key == ::Wasm::Common::kCanonicalServiceLabelName.data()) {
+        return std::string(val);
+      }
+  }
+  return "unknown";
 }
 
 }  // namespace Common
