@@ -37,7 +37,6 @@ envoy_cc_library(
         "@envoy//include/envoy/router:router_interface",
         "@envoy//include/envoy/upstream:load_balancer_interface",
         "@envoy//include/envoy/upstream:thread_local_cluster_interface",
-        "@envoy//source/common/protobuf",
     ],
 )
 
@@ -47,14 +46,20 @@ envoy_cc_library(
     hdrs = ["upstream_request.h"],
     repository = "@envoy",
     deps = [
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@envoy//include/envoy/http:codec_interface",
+        "@envoy//include/envoy/http:header_map_interface",
         "@envoy//include/envoy/router:router_interface",
         "@envoy//include/envoy/stream_info:stream_info_interface",
         "@envoy//include/envoy/upstream:host_description_interface",
         "@envoy//include/envoy/upstream:load_balancer_interface",
         "@envoy//include/envoy/upstream:thread_local_cluster_interface",
+        "@envoy//source/common/http:header_map_lib",
+        "@envoy//source/common/http:status_lib",
+        "@envoy//source/common/protobuf",
         "@envoy//source/extensions/upstreams/http/http:upstream_request_lib",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
     ],
 )
 
@@ -80,8 +85,10 @@ envoy_cc_test(
     deps = [
         ":upstream_request_lib",
         "@envoy//test/common/http:common_lib",
-        "@envoy//test/mocks/http:stream_encoder_mock",
+        "@envoy//test/mocks/http:http_mocks",
         "@envoy//test/mocks/router:router_mocks",
+        "@envoy//test/mocks/upstream:cluster_info_mocks",
+        "@envoy//test/mocks/upstream:host_mocks",
         "@envoy//test/test_common:utility_lib",
     ],
 )

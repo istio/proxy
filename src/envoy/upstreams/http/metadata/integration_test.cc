@@ -14,6 +14,7 @@
  */
 
 #include "common/http/codec_client.h"
+#include "common/protobuf/protobuf.h"
 #include "envoy/config/bootstrap/v3/bootstrap.pb.h"
 #include "envoy/network/address.h"
 #include "envoy/router/router.h"
@@ -42,6 +43,12 @@ class MetadataIntegrationTest
           cluster->mutable_upstream_config()->set_name(
               "istio.filters.connection_pools.http.metadata");
           cluster->mutable_upstream_config()->mutable_typed_config();
+
+          ProtobufWkt::Struct istio_metadata;
+          (*istio_metadata.mutable_fields())["default_original_port"] =
+              ValueUtil::stringValue("8080");
+          (*cluster->mutable_metadata()->mutable_filter_metadata())["istio"] =
+              istio_metadata;
         });
     HttpIntegrationTest::initialize();
   }
@@ -64,6 +71,13 @@ TEST_P(MetadataIntegrationTest, Basic) {
       default_request_headers_, 0,
       Http::TestResponseHeaderMapImpl{{":status", "200"}}, 0);
   EXPECT_TRUE(upstream_request_->complete());
+
+  {
+    const auto cluster_header_values = upstream_request_->headers().get(
+        Http::LowerCaseString("x-istio-original-port"));
+    ASSERT_EQ(1, cluster_header_values.size());
+    EXPECT_EQ("8080", cluster_header_values[0]->value().getStringView());
+  }
 
   ASSERT_TRUE(response->waitForEndStream());
   ASSERT_TRUE(response->complete());

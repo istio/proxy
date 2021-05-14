@@ -36,7 +36,7 @@ void MetadataConnPool::onPoolReady(
     absl::optional<Envoy::Http::Protocol> protocol) {
   conn_pool_stream_handle_ = nullptr;
   auto upstream = std::make_unique<MetadataUpstream>(
-      callbacks_->upstreamToDownstream(), &request_encoder);
+      callbacks_->upstreamToDownstream(), &request_encoder, host);
   callbacks_->onPoolReady(std::move(upstream), host,
                           request_encoder.getStream().connectionLocalAddress(),
                           info, protocol);
