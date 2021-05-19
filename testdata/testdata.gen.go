@@ -101,6 +101,7 @@ static_resources:
     connect_timeout: 1s
     type: STATIC
     http2_protocol_options: {}
+    {{- if ne .Vars.ElideServerMetadata "true" }}
     metadata:
       filter_metadata:
         istio:
@@ -108,6 +109,7 @@ static_resources:
             - host: server.default.svc.cluster.local
               name: server
               namespace: default
+    {{- end }}
     load_assignment:
       cluster_name: server-outbound-cluster
       endpoints:
@@ -186,6 +188,7 @@ static_resources:
     {{- if eq .Vars.UsingGrpcBackend "true" }}
     http2_protocol_options: {}
     {{- end }}
+    {{- if ne .Vars.ElideServerMetadata "true" }}
     metadata:
       filter_metadata:
         istio:
@@ -193,6 +196,7 @@ static_resources:
             - host: server.default.svc.cluster.local
               name: server
               namespace: default
+    {{- end }}
     load_assignment:
       cluster_name: server-inbound-cluster
       endpoints:
