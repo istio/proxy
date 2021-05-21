@@ -259,8 +259,8 @@ void fillAuthzDryRunInfo(
     }
   }
 
-  bool shadow_deny_result = false;
-  bool shadow_allow_result = false;
+  bool shadow_deny_result = true;
+  bool shadow_allow_result = true;
   bool has_shadow_metadata = false;
   std::string shadow_deny_policy = "";
   std::string shadow_allow_policy = "";
@@ -285,7 +285,6 @@ void fillAuthzDryRunInfo(
     return;
   }
 
-  LOG_DEBUG("RBAC dry-run result found");
   bool shadow_result = false;
   std::string shadow_effective_policy = "";
   if (shadow_deny_result && shadow_allow_result) {
@@ -294,6 +293,7 @@ void fillAuthzDryRunInfo(
     // policy.
     shadow_result = true;
     shadow_effective_policy = shadow_allow_policy;
+    LOG_DEBUG("RBAC dry-run result: allowed");
   } else {
     // If denied by either DENY or ALLOW policy, the final shadow_reulst should
     // be false (denied).
@@ -302,10 +302,12 @@ void fillAuthzDryRunInfo(
       // If denied by DENY policy, the shadow_effective_policy should be from
       // the DENY policy.
       shadow_effective_policy = shadow_deny_policy;
+      LOG_DEBUG("RBAC dry-run result: denied by DENY policy");
     } else {
       // If denied by ALLOW policy, the shadow_effective_policy shold be from
       // the ALLOW policy.
       shadow_effective_policy = shadow_allow_policy;
+      LOG_DEBUG("RBAC dry-run result: denied by ALLOW policy");
     }
   }
 
@@ -319,6 +321,8 @@ void fillAuthzDryRunInfo(
     extra_labels["dry_run_policy_name"] =
         absl::StrCat(policy_namespace, ".", policy_name);
     extra_labels["dry_run_policy_rule"] = policy_rule;
+    LOG_DEBUG(absl::StrCat("RBAC dry-run matched policy: ns=", policy_namespace,
+                           ", name=", policy_name, ", rule=", policy_rule));
   }
 }
 
