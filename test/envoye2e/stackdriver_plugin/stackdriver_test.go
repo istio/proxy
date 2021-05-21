@@ -844,22 +844,22 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 
 	rbacCases := []struct {
 		name             string
-		rbacDryRunKey    string
+		rbacDryRunResult string
 		rbacDryRunFilter string
 	}{
 		{
 			name:             "ActionBoth",
-			rbacDryRunKey:    "RbacDryRunDenied",
+			rbacDryRunResult: "Denied",
 			rbacDryRunFilter: "testdata/filters/rbac_dry_run_action_both.yaml.tmpl",
 		},
 		{
 			name:             "ActionDeny",
-			rbacDryRunKey:    "RbacDryRunDenied",
+			rbacDryRunResult: "Denied",
 			rbacDryRunFilter: "testdata/filters/rbac_dry_run_action_deny.yaml.tmpl",
 		},
 		{
 			name:             "ActionAllow",
-			rbacDryRunKey:    "RbacDryRunAllowed",
+			rbacDryRunResult: "Allowed",
 			rbacDryRunFilter: "testdata/filters/rbac_dry_run_action_allow.yaml.tmpl",
 		},
 	}
@@ -872,7 +872,7 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 				"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 				"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 				"RbacAccessDenied":            "true",
-				tc.rbacDryRunKey:              "true",
+				"RbacDryRunResult":            tc.rbacDryRunResult,
 			}, envoye2e.ProxyE2ETests)
 
 			sdPort := params.Ports.Max + 1
