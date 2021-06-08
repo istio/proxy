@@ -27,7 +27,6 @@
 #include "src/istio/utils/attribute_names.h"
 #include "test/integration/http_protocol_integration.h"
 
-using ::google::protobuf::util::error::Code;
 using ::testing::Contains;
 using ::testing::Not;
 
