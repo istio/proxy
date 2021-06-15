@@ -83,6 +83,11 @@ dynamic_resources:
   lds_config:
     ads: {}
     resource_api_version: V3
+layered_runtime:
+  layers:
+  - name: static
+    static_layer:
+      envoy.reloadable_features.new_tcp_connection_pool: false
 static_resources:
   clusters:
   - connect_timeout: 1s
@@ -168,6 +173,11 @@ dynamic_resources:
   lds_config:
     ads: {}
     resource_api_version: V3
+layered_runtime:
+  layers:
+  - name: static
+    static_layer:
+      envoy.reloadable_features.new_tcp_connection_pool: false
 static_resources:
   clusters:
   - connect_timeout: 1s
