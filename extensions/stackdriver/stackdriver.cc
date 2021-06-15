@@ -351,7 +351,8 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
-  const auto status = JsonStringToMessage(configuration, &config_, json_options);
+  const auto status =
+      JsonStringToMessage(configuration, &config_, json_options);
   if (!status.ok()) {
     logWarn("Cannot parse Stackdriver plugin configuration JSON string " +
             configuration + ", " + status.message().ToString());
