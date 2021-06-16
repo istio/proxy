@@ -14,9 +14,9 @@
  */
 #include "extensions/common/wasm/wasm.h"
 
+#include "server/admin/prometheus_stats.h"
 #include "source/common/stats/utility.h"
 #include "source/common/version/version.h"
-#include "server/admin/prometheus_stats.h"
 #include "src/envoy/extensions/wasm/context.h"
 
 namespace Envoy {
