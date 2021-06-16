@@ -76,8 +76,7 @@ func TestStackdriverPayload(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -359,9 +358,7 @@ func TestStackdriverGCEInstances(t *testing.T) {
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/gce_client_request_count.yaml.tmpl", "testdata/stackdriver/gce_server_request_count.yaml.tmpl"},
-				nil,
-
-				[]string{"testdata/stackdriver/gce_traffic_assertion.yaml.tmpl"}, true,
+				nil, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -760,8 +757,7 @@ func TestStackdriverAttributeGen(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -825,8 +821,7 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -1151,8 +1146,7 @@ func TestStackdriverPayloadUtf8(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/utf8_client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},

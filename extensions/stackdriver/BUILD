@@ -37,8 +37,6 @@ envoy_cc_library(
         "//extensions/common:proto_util",
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",
-        "//extensions/stackdriver/edges:edge_reporter",
-        "//extensions/stackdriver/edges:mesh_edges_service_client",
         "//extensions/stackdriver/log:exporter",
         "//extensions/stackdriver/log:logger",
         "//extensions/stackdriver/metric",

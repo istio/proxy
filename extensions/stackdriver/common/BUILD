@@ -31,7 +31,6 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/edges:__pkg__",
         "//extensions/stackdriver/log:__pkg__",
         "//extensions/stackdriver/metric:__pkg__",
     ],
@@ -49,7 +48,6 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = [
         "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/edges:__pkg__",
         "//extensions/stackdriver/log:__pkg__",
         "//extensions/stackdriver/metric:__pkg__",
     ],
@@ -82,7 +80,6 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     visibility = [
-        "//extensions/stackdriver/edges:__pkg__",
         "//extensions/stackdriver/log:__pkg__",
     ],
     deps = [

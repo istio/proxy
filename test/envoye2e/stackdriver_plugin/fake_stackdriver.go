@@ -40,7 +40,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"istio.io/proxy/test/envoye2e/driver"
-	edgespb "istio.io/proxy/test/envoye2e/stackdriver_plugin/edges"
 )
 
 // MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
@@ -57,14 +56,6 @@ type LoggingServer struct {
 	listLogEntryResp logging.ListLogEntriesResponse
 	RcvLoggingReq    chan *logging.WriteLogEntriesRequest
 	mux              sync.Mutex
-}
-
-// MeshEdgesServiceServer is a fake stackdriver server which implements all of mesh edge service method.
-type MeshEdgesServiceServer struct {
-	sync.Mutex
-	batch                   edgespb.ReportTrafficAssertionsRequest
-	delay                   time.Duration
-	RcvTrafficAssertionsReq chan *edgespb.ReportTrafficAssertionsRequest
 }
 
 // TracesServer is a fake stackdriver server which implements all of cloudtrace v1 service method.
@@ -174,33 +165,6 @@ func (s *LoggingServer) ListMonitoredResourceDescriptors(
 	context.Context, *logging.ListMonitoredResourceDescriptorsRequest) (
 	*logging.ListMonitoredResourceDescriptorsResponse, error) {
 	return &logging.ListMonitoredResourceDescriptorsResponse{}, nil
-}
-
-// ReportTrafficAssertions is defined by the Mesh Edges Service.
-func (e *MeshEdgesServiceServer) ReportTrafficAssertions(
-	ctx context.Context, req *edgespb.ReportTrafficAssertionsRequest) (
-	*edgespb.ReportTrafficAssertionsResponse, error) {
-	log.Printf("receive ReportTrafficAssertionsRequest %v", req.String())
-	// for now, don't worry about mesh_uid and/or parent info in the request.
-	// that can be added later if we want to test multi-project/multi-mesh
-	// handling.
-	e.Lock()
-	e.batch.TrafficAssertions = append(e.batch.TrafficAssertions, req.TrafficAssertions...)
-	e.Unlock()
-	e.RcvTrafficAssertionsReq <- req
-	time.Sleep(e.delay)
-	return &edgespb.ReportTrafficAssertionsResponse{}, nil
-}
-
-// TrafficAssertions returns the batch of TrafficAssertions reported to the server in the form
-// of a JSON-serialized string of a ReportTrafficAssertionsRequest proto.
-func (e *MeshEdgesServiceServer) TrafficAssertions(w http.ResponseWriter, r *http.Request) {
-	e.Lock()
-	var m jsonpb.Marshaler
-	if err := m.Marshal(w, &e.batch); err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-	e.Unlock()
 }
 
 // GetTimeSeries returns all received time series in a ListTimeSeriesResponse as a marshaled json string
@@ -373,7 +337,7 @@ func (s *TracesServer) CreateSpan(ctx context.Context, req *cloudtracev2.Span) (
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
 func NewFakeStackdriver(port uint16, delay time.Duration,
-	enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *MeshEdgesServiceServer, *TracesServer, *grpc.Server) {
+	enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *TracesServer, *grpc.Server) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 
 	var options []grpc.ServerOption
@@ -413,10 +377,6 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 		delay:         delay,
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
 	}
-	edgesSvc := &MeshEdgesServiceServer{
-		delay:                   delay,
-		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 2),
-	}
 	traceSvc := &TracesServer{
 		delay:        delay,
 		RcvTracesReq: make(chan *cloudtracev2.BatchWriteSpansRequest, 2),
@@ -424,7 +384,6 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
 	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
-	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
 	cloudtracev1.RegisterTraceServiceServer(grpcServer, traceSvc)
 	cloudtracev2.RegisterTraceServiceServer(grpcServer, traceSvc)
 
@@ -438,7 +397,7 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 			log.Fatalf("fake stackdriver server terminated abnormally: %v", err)
 		}
 	}()
-	return fsdms, fsdls, edgesSvc, traceSvc, grpcServer
+	return fsdms, fsdls, traceSvc, grpcServer
 }
 
 func RunFakeStackdriver(port uint16) error {
@@ -448,9 +407,6 @@ func RunFakeStackdriver(port uint16) error {
 	}
 	fsdls := &LoggingServer{
 		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 100),
-	}
-	edgesSvc := &MeshEdgesServiceServer{
-		RcvTrafficAssertionsReq: make(chan *edgespb.ReportTrafficAssertionsRequest, 100),
 	}
 	traceSvc := &TracesServer{
 		RcvTracesReq: make(chan *cloudtracev2.BatchWriteSpansRequest, 100),
@@ -466,8 +422,6 @@ func RunFakeStackdriver(port uint16) error {
 				log.Printf("metric req received")
 			case <-fsdls.RcvLoggingReq:
 				log.Printf("log req received")
-			case <-edgesSvc.RcvTrafficAssertionsReq:
-				log.Printf("traffic assertion req received")
 			case <-traceSvc.RcvTracesReq:
 				log.Printf("trace req received")
 			}
@@ -476,7 +430,6 @@ func RunFakeStackdriver(port uint16) error {
 
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
 	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
-	edgespb.RegisterMeshEdgesServiceServer(grpcServer, edgesSvc)
 	cloudtracev1.RegisterTraceServiceServer(grpcServer, traceSvc)
 	cloudtracev2.RegisterTraceServiceServer(grpcServer, traceSvc)
 
@@ -486,7 +439,6 @@ func RunFakeStackdriver(port uint16) error {
 	}
 	http.HandleFunc("/timeseries", fsdms.GetTimeSeries)
 	http.HandleFunc("/logentries", fsdls.GetLogEntries)
-	http.HandleFunc("/trafficassertions", edgesSvc.TrafficAssertions)
 	http.HandleFunc("/traces", traceSvc.Traces)
 
 	go func() {

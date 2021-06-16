@@ -30,7 +30,6 @@ import (
 
 	"istio.io/proxy/test/envoye2e/driver"
 	"istio.io/proxy/test/envoye2e/env"
-	edgespb "istio.io/proxy/test/envoye2e/stackdriver_plugin/edges"
 )
 
 const ResponseLatencyMetricName = "istio.io/service/server/response_latencies"
@@ -45,7 +44,6 @@ type Stackdriver struct {
 	tsReq []*monitoring.CreateTimeSeriesRequest
 	ts    map[string]struct{}
 	ls    map[string]struct{}
-	es    map[string]struct{}
 }
 
 type SDLogEntry struct {
@@ -60,9 +58,8 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]struct{})
-	sd.es = make(map[string]struct{})
 	sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
-	metrics, logging, edge, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
+	metrics, logging, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
 		for {
@@ -106,11 +103,6 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 				sd.Lock()
 				sd.ls[proto.MarshalTextString(req)] = struct{}{}
 				sd.Unlock()
-			case req := <-edge.RcvTrafficAssertionsReq:
-				req.Timestamp = nil
-				sd.Lock()
-				sd.es[proto.MarshalTextString(req)] = struct{}{}
-				sd.Unlock()
 			case <-sd.done:
 				return
 			}
@@ -124,7 +116,7 @@ func (sd *Stackdriver) Cleanup() {
 	close(sd.done)
 }
 
-func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, edgeFiles []string, verifyLatency bool) driver.Step {
+func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, verifyLatency bool) driver.Step {
 	// check as sets of strings by marshaling to proto
 	twant := make(map[string]struct{})
 	for _, t := range tsFiles {
@@ -145,17 +137,10 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 		}
 		lwant[proto.MarshalTextString(pb)] = struct{}{}
 	}
-	ewant := make(map[string]struct{})
-	for _, e := range edgeFiles {
-		pb := &edgespb.ReportTrafficAssertionsRequest{}
-		p.LoadTestProto(e, pb)
-		ewant[proto.MarshalTextString(pb)] = struct{}{}
-	}
 	return &checkStackdriver{
 		sd:                    sd,
 		twant:                 twant,
 		lwant:                 lwant,
-		ewant:                 ewant,
 		verifyResponseLatency: verifyLatency,
 	}
 }
@@ -173,7 +158,6 @@ func (r *resetStackdriver) Run(p *driver.Params) error {
 	defer r.sd.Unlock()
 	r.sd.ls = make(map[string]struct{})
 	r.sd.ts = make(map[string]struct{})
-	r.sd.es = make(map[string]struct{})
 	r.sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
 	return nil
 }
@@ -184,14 +168,12 @@ type checkStackdriver struct {
 	sd                    *Stackdriver
 	twant                 map[string]struct{}
 	lwant                 map[string]struct{}
-	ewant                 map[string]struct{}
 	verifyResponseLatency bool
 }
 
 func (s *checkStackdriver) Run(p *driver.Params) error {
 	foundAllLogs := false
 	foundAllMetrics := false
-	foundAllEdge := false
 	verfiedLatency := false
 	for i := 0; i < 30; i++ {
 		s.sd.Lock()
@@ -236,25 +218,6 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 			}
 		}
 
-		if len(s.ewant) == 0 {
-			foundAllEdge = true
-		} else {
-			foundAllEdge = reflect.DeepEqual(s.sd.es, s.ewant)
-		}
-		if !foundAllEdge {
-			log.Printf("got edges %d, want %d\n", len(s.sd.es), len(s.ewant))
-			if len(s.sd.es) >= len(s.ewant) {
-				for got := range s.sd.es {
-					log.Println(got)
-				}
-				log.Println("--- but want ---")
-				for want := range s.ewant {
-					log.Println(want)
-				}
-				return fmt.Errorf("failed to receive expected edges")
-			}
-		}
-
 		if !s.verifyResponseLatency {
 			verfiedLatency = true
 		} else {
@@ -270,14 +233,14 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 		}
 		s.sd.Unlock()
 
-		if foundAllLogs && foundAllMetrics && foundAllEdge && verfiedLatency {
+		if foundAllLogs && foundAllMetrics && verfiedLatency {
 			return nil
 		}
 
 		log.Println("sleeping till next check")
 		time.Sleep(1 * time.Second)
 	}
-	return fmt.Errorf("found all metrics %v, all logs %v, all edge %v, verified latency %v", foundAllMetrics, foundAllLogs, foundAllEdge, verfiedLatency)
+	return fmt.Errorf("found all metrics %v, all logs %v, verified latency %v", foundAllMetrics, foundAllLogs, verfiedLatency)
 }
 
 func (s *checkStackdriver) Cleanup() {}
