@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "common/common/logger.h"
-#include "common/protobuf/protobuf.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "google/protobuf/struct.pb.h"
+#include "source/common/common/logger.h"
+#include "source/common/protobuf/protobuf.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace Envoy {

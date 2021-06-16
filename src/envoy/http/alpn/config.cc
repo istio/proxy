@@ -15,7 +15,7 @@
 
 #include "src/envoy/http/alpn/config.h"
 
-#include "common/protobuf/message_validator_impl.h"
+#include "source/common/protobuf/message_validator_impl.h"
 #include "src/envoy/http/alpn/alpn_filter.h"
 #include "src/envoy/utils/filter_names.h"
 

@@ -15,12 +15,12 @@
 
 #include "src/envoy/http/authn/http_filter.h"
 
-#include "common/common/base64.h"
-#include "common/http/header_map_impl.h"
-#include "common/stream_info/stream_info_impl.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "source/common/common/base64.h"
+#include "source/common/http/header_map_impl.h"
+#include "source/common/stream_info/stream_info_impl.h"
 #include "src/envoy/http/authn/authenticator_base.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "src/envoy/utils/authn.h"

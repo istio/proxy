@@ -16,7 +16,7 @@
 #pragma once
 
 #include "envoy/config/filter/http/alpn/v2alpha1/config.pb.h"
-#include "extensions/filters/http/common/pass_through_filter.h"
+#include "source/extensions/filters/http/common/pass_through_filter.h"
 
 namespace Envoy {
 namespace Http {

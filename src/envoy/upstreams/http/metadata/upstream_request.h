@@ -23,7 +23,7 @@
 #include "envoy/upstream/host_description.h"
 #include "envoy/upstream/load_balancer.h"
 #include "envoy/upstream/thread_local_cluster.h"
-#include "extensions/upstreams/http/http/upstream_request.h"
+#include "source/extensions/upstreams/http/http/upstream_request.h"
 
 namespace Envoy {
 namespace Upstreams {

@@ -18,12 +18,12 @@
 #include <memory>
 
 #include "absl/types/optional.h"
-#include "common/protobuf/protobuf.h"
 #include "envoy/http/protocol.h"
 #include "envoy/registry/registry.h"
 #include "envoy/router/router.h"
 #include "envoy/upstream/load_balancer.h"
 #include "envoy/upstream/thread_local_cluster.h"
+#include "source/common/protobuf/protobuf.h"
 
 namespace Envoy {
 namespace Upstreams {

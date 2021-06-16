@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "common/common/base64.h"
 #include "include/proxy-wasm/null_plugin.h"
+#include "source/common/common/base64.h"
 
 namespace proxy_wasm {
 namespace null_plugin {

@@ -18,13 +18,13 @@
 
 #include "src/envoy/tcp/sni_verifier/sni_verifier.h"
 
-#include "common/common/assert.h"
 #include "envoy/buffer/buffer.h"
 #include "envoy/common/exception.h"
 #include "envoy/network/connection.h"
 #include "envoy/stats/scope.h"
 #include "openssl/err.h"
 #include "openssl/ssl.h"
+#include "source/common/common/assert.h"
 
 namespace Envoy {
 namespace Tcp {

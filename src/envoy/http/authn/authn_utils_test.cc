@@ -14,8 +14,8 @@
  */
 #include "src/envoy/http/authn/authn_utils.h"
 
-#include "common/common/base64.h"
-#include "common/common/utility.h"
+#include "source/common/common/base64.h"
+#include "source/common/common/utility.h"
 #include "src/envoy/http/authn/test_utils.h"
 #include "test/test_common/utility.h"
 

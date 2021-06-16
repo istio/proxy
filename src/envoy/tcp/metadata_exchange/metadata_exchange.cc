@@ -21,10 +21,10 @@
 #include "absl/base/internal/endian.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "common/buffer/buffer_impl.h"
-#include "common/protobuf/utility.h"
 #include "envoy/network/connection.h"
 #include "envoy/stats/scope.h"
+#include "source/common/buffer/buffer_impl.h"
+#include "source/common/protobuf/utility.h"
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange_initial_header.h"
 
 namespace Envoy {

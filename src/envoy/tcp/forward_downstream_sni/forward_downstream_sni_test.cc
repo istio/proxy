@@ -15,9 +15,9 @@
 
 #include "src/envoy/tcp/forward_downstream_sni/forward_downstream_sni.h"
 
-#include "common/network/upstream_server_name.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "source/common/network/upstream_server_name.h"
 #include "src/envoy/tcp/forward_downstream_sni/config.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/server/mocks.h"

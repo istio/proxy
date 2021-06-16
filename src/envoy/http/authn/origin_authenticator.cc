@@ -17,8 +17,8 @@
 
 #include "absl/strings/match.h"
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/http/headers.h"
-#include "common/http/utility.h"
+#include "source/common/http/headers.h"
+#include "source/common/http/utility.h"
 #include "src/envoy/http/authn/authn_utils.h"
 
 using istio::authn::Payload;

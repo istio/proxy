@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "common/http/codec_client.h"
 #include "envoy/config/bootstrap/v3/bootstrap.pb.h"
 #include "envoy/network/address.h"
 #include "envoy/router/router.h"
 #include "gtest/gtest.h"
+#include "source/common/http/codec_client.h"
 #include "src/envoy/upstreams/http/metadata/config.h"
 #include "test/integration/http_integration.h"
 #include "test/test_common/environment.h"

@@ -17,7 +17,6 @@
 
 #include <string>
 
-#include "common/protobuf/protobuf.h"
 #include "envoy/local_info/local_info.h"
 #include "envoy/network/filter.h"
 #include "envoy/runtime/runtime.h"
@@ -27,7 +26,8 @@
 #include "extensions/common/context.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/proto_util.h"
-#include "extensions/filters/common/expr/cel_state.h"
+#include "source/common/protobuf/protobuf.h"
+#include "source/extensions/filters/common/expr/cel_state.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {

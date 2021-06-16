@@ -15,8 +15,8 @@
 
 #include "src/envoy/tcp/forward_downstream_sni/forward_downstream_sni.h"
 
-#include "common/network/upstream_server_name.h"
 #include "envoy/network/connection.h"
+#include "source/common/network/upstream_server_name.h"
 
 namespace Envoy {
 namespace Tcp {

@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "extensions/filters/network/common/factory_base.h"
+#include "source/extensions/filters/network/common/factory_base.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
 
 namespace Envoy {
