@@ -14,7 +14,7 @@
  */
 
 #include "benchmark/benchmark.h"
-#include "common/stream_info/filter_state_impl.h"
+#include "source/common/stream_info/filter_state_impl.h"
 #include "extensions/common/node_info_generated.h"
 #include "extensions/common/proto_util.h"
 #include "extensions/filters/common/expr/cel_state.h"

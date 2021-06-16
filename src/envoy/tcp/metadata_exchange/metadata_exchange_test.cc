@@ -15,8 +15,8 @@
 
 #include "src/envoy/tcp/metadata_exchange/metadata_exchange.h"
 
-#include "common/buffer/buffer_impl.h"
-#include "common/protobuf/protobuf.h"
+#include "source/common/buffer/buffer_impl.h"
+#include "source/common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"

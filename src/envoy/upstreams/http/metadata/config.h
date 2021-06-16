@@ -18,7 +18,7 @@
 #include <memory>
 
 #include "absl/types/optional.h"
-#include "common/protobuf/protobuf.h"
+#include "source/common/protobuf/protobuf.h"
 #include "envoy/http/protocol.h"
 #include "envoy/registry/registry.h"
 #include "envoy/router/router.h"

@@ -15,8 +15,8 @@
 
 #include "src/envoy/http/authn/authenticator_base.h"
 
-#include "common/common/assert.h"
-#include "common/config/metadata.h"
+#include "source/common/common/assert.h"
+#include "source/common/config/metadata.h"
 #include "src/envoy/http/authn/authn_utils.h"
 #include "src/envoy/utils/filter_names.h"
 #include "src/envoy/utils/utils.h"

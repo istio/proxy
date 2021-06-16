@@ -15,7 +15,7 @@
 
 #include "src/envoy/http/authn/peer_authenticator.h"
 
-#include "common/http/utility.h"
+#include "source/common/http/utility.h"
 #include "src/envoy/utils/utils.h"
 
 using istio::authn::Payload;

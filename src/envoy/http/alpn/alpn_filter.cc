@@ -15,7 +15,7 @@
 
 #include "src/envoy/http/alpn/alpn_filter.h"
 
-#include "common/network/application_protocol.h"
+#include "source/common/network/application_protocol.h"
 #include "envoy/upstream/cluster_manager.h"
 
 namespace Envoy {

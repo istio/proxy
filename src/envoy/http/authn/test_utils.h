@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "common/protobuf/protobuf.h"
+#include "source/common/protobuf/protobuf.h"
 #include "gmock/gmock.h"
 #include "src/istio/authn/context.pb.h"
 

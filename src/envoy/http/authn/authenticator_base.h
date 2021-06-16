@@ -16,7 +16,7 @@
 #pragma once
 
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/common/logger.h"
+#include "source/common/common/logger.h"
 #include "src/envoy/http/authn/filter_context.h"
 #include "src/istio/authn/context.pb.h"
 

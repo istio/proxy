@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "common/common/base64.h"
+#include "source/common/common/base64.h"
 #include "extensions/access_log_policy/plugin.h"
 
 namespace proxy_wasm {

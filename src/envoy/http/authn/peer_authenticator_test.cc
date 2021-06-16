@@ -16,7 +16,7 @@
 #include "src/envoy/http/authn/peer_authenticator.h"
 
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/protobuf/protobuf.h"
+#include "source/common/protobuf/protobuf.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

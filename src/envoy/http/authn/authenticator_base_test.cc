@@ -15,8 +15,8 @@
 
 #include "src/envoy/http/authn/authenticator_base.h"
 
-#include "common/common/base64.h"
-#include "common/protobuf/protobuf.h"
+#include "source/common/common/base64.h"
+#include "source/common/protobuf/protobuf.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "gmock/gmock.h"

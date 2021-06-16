@@ -33,10 +33,10 @@ envoy_cc_library(
     deps = [
         ":upstream_request_lib",
         "@com_google_absl//absl/types:optional",
-        "@envoy//include/envoy/registry",
-        "@envoy//include/envoy/router:router_interface",
-        "@envoy//include/envoy/upstream:load_balancer_interface",
-        "@envoy//include/envoy/upstream:thread_local_cluster_interface",
+        "@envoy//envoy/registry",
+        "@envoy//envoy/router:router_interface",
+        "@envoy//envoy/upstream:load_balancer_interface",
+        "@envoy//envoy/upstream:thread_local_cluster_interface",
         "@envoy//source/common/protobuf",
     ],
 )
@@ -48,12 +48,12 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         "@com_google_absl//absl/types:optional",
-        "@envoy//include/envoy/http:codec_interface",
-        "@envoy//include/envoy/router:router_interface",
-        "@envoy//include/envoy/stream_info:stream_info_interface",
-        "@envoy//include/envoy/upstream:host_description_interface",
-        "@envoy//include/envoy/upstream:load_balancer_interface",
-        "@envoy//include/envoy/upstream:thread_local_cluster_interface",
+        "@envoy//envoy/http:codec_interface",
+        "@envoy//envoy/router:router_interface",
+        "@envoy//envoy/stream_info:stream_info_interface",
+        "@envoy//envoy/upstream:host_description_interface",
+        "@envoy//envoy/upstream:load_balancer_interface",
+        "@envoy//envoy/upstream:thread_local_cluster_interface",
         "@envoy//source/extensions/upstreams/http/http:upstream_request_lib",
     ],
 )
@@ -64,7 +64,7 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":config",
-        "@envoy//include/envoy/network:address_interface",
+        "@envoy//envoy/network:address_interface",
         "@envoy//source/common/http:codec_client_lib",
         "@envoy//test/integration:http_integration_lib",
         "@envoy//test/test_common:environment_lib",

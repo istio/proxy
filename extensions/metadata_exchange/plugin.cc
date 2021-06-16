@@ -28,7 +28,7 @@
 
 #else
 
-#include "common/common/base64.h"
+#include "source/common/common/base64.h"
 #include "source/extensions/common/wasm/ext/declare_property.pb.h"
 
 namespace proxy_wasm {

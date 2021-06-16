@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "common/http/codec_client.h"
+#include "source/common/http/codec_client.h"
 #include "envoy/config/bootstrap/v3/bootstrap.pb.h"
 #include "envoy/network/address.h"
 #include "envoy/router/router.h"

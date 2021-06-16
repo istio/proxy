@@ -17,7 +17,7 @@
 
 #include <regex>
 
-#include "common/common/logger.h"
+#include "source/common/common/logger.h"
 #include "envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1/config.pb.h"
 #include "envoy/network/filter.h"
 

@@ -18,7 +18,7 @@
 #include <climits>
 #include <string>
 
-#include "common/buffer/buffer_impl.h"
+#include "source/common/buffer/buffer_impl.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/envoy/tcp/sni_verifier/config.h"

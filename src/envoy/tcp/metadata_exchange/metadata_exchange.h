@@ -17,7 +17,7 @@
 
 #include <string>
 
-#include "common/protobuf/protobuf.h"
+#include "source/common/protobuf/protobuf.h"
 #include "envoy/local_info/local_info.h"
 #include "envoy/network/filter.h"
 #include "envoy/runtime/runtime.h"

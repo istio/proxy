@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "common/common/logger.h"
+#include "source/common/common/logger.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "envoy/http/filter.h"
 #include "src/envoy/http/authn/authenticator_base.h"
