@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "extensions/common/wasm/wasm.h"
+#include "source/extensions/common/wasm/wasm.h"
 
-#include "common/stats/utility.h"
-#include "common/version/version.h"
-#include "server/admin/prometheus_stats.h"
+#include "source/common/stats/utility.h"
+#include "source/common/version/version.h"
+#include "source/server/admin/prometheus_stats.h"
 #include "src/envoy/extensions/wasm/context.h"
 
 namespace Envoy {

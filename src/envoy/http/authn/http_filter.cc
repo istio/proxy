@@ -16,8 +16,8 @@
 #include "src/envoy/http/authn/http_filter.h"
 
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/http/utility.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
+#include "source/common/http/utility.h"
 #include "src/envoy/http/authn/origin_authenticator.h"
 #include "src/envoy/http/authn/peer_authenticator.h"
 #include "src/envoy/utils/authn.h"

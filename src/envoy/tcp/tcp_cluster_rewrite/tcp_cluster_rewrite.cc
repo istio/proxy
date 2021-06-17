@@ -15,9 +15,9 @@
 
 #include "src/envoy/tcp/tcp_cluster_rewrite/tcp_cluster_rewrite.h"
 
-#include "common/common/assert.h"
-#include "common/tcp_proxy/tcp_proxy.h"
 #include "envoy/network/connection.h"
+#include "source/common/common/assert.h"
+#include "source/common/tcp_proxy/tcp_proxy.h"
 
 using namespace ::istio::envoy::config::filter::network::tcp_cluster_rewrite;
 

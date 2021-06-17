@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include "common/network/application_protocol.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "source/common/network/application_protocol.h"
 #include "src/envoy/http/alpn/alpn_filter.h"
 #include "test/mocks/http/mocks.h"
 #include "test/mocks/upstream/mocks.h"

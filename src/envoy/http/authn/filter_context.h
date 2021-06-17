@@ -16,12 +16,12 @@
 #pragma once
 
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/common/logger.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/filter/http/authn/v2alpha1/config.pb.h"
 #include "envoy/http/filter.h"
 #include "envoy/network/connection.h"
-#include "extensions/filters/http/well_known_names.h"
+#include "source/common/common/logger.h"
+#include "source/extensions/filters/http/well_known_names.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace Envoy {

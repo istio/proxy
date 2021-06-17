@@ -16,9 +16,9 @@
 #pragma once
 
 #include "authentication/v1alpha1/policy.pb.h"
-#include "common/common/logger.h"
-#include "common/common/utility.h"
 #include "envoy/http/header_map.h"
+#include "source/common/common/logger.h"
+#include "source/common/common/utility.h"
 #include "src/istio/authn/context.pb.h"
 
 namespace iaapi = istio::authentication::v1alpha1;

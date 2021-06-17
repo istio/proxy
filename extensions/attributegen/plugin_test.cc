@@ -16,15 +16,15 @@
 #include <set>
 #include <unordered_map>
 
-#include "common/buffer/buffer_impl.h"
-#include "common/http/message_impl.h"
-#include "common/stats/isolated_store_impl.h"
-#include "common/stream_info/stream_info_impl.h"
 #include "envoy/server/lifecycle_notifier.h"
-#include "extensions/filters/common/expr/cel_state.h"
-#include "extensions/filters/http/wasm/wasm_filter.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "source/common/buffer/buffer_impl.h"
+#include "source/common/http/message_impl.h"
+#include "source/common/stats/isolated_store_impl.h"
+#include "source/common/stream_info/stream_info_impl.h"
+#include "source/extensions/filters/common/expr/cel_state.h"
+#include "source/extensions/filters/http/wasm/wasm_filter.h"
 #include "test/mocks/grpc/mocks.h"
 #include "test/mocks/http/mocks.h"
 #include "test/mocks/network/mocks.h"

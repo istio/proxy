@@ -15,7 +15,7 @@
 
 #include "src/envoy/utils/authn.h"
 
-#include "common/common/base64.h"
+#include "source/common/common/base64.h"
 #include "src/envoy/utils/filter_names.h"
 #include "src/istio/authn/context.pb.h"
 #include "src/istio/utils/attribute_names.h"

@@ -15,9 +15,9 @@
 
 #include "src/envoy/tcp/tcp_cluster_rewrite/tcp_cluster_rewrite.h"
 
-#include "common/tcp_proxy/tcp_proxy.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "source/common/tcp_proxy/tcp_proxy.h"
 #include "src/envoy/tcp/tcp_cluster_rewrite/config.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/server/mocks.h"

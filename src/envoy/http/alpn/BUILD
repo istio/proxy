@@ -31,7 +31,7 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         "//external:alpn_filter_config_cc_proto",
-        "@envoy//include/envoy/http:filter_interface",
+        "@envoy//envoy/http:filter_interface",
         "@envoy//source/common/network:application_protocol_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
     ],
@@ -46,7 +46,7 @@ envoy_cc_library(
     deps = [
         ":alpn_filter",
         "//src/envoy/utils:filter_names_lib",
-        "@envoy//include/envoy/registry",
+        "@envoy//envoy/registry",
         "@envoy//source/exe:envoy_common_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
     ],
