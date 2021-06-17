@@ -303,5 +303,7 @@ static inline std::string_view GetStringView(const flatbuffers::String* str) {
 // Returns true if the string was modified.
 bool sanitizeBytes(std::string* buf);
 
+std::string getServiceNameFallback();
+
 }  // namespace Common
 }  // namespace Wasm

@@ -67,16 +67,19 @@ var Runtimes = []struct {
 }
 
 var TestCases = []struct {
-	Name              string
-	ClientConfig      string
-	ServerClusterName string
-	ClientStats       map[string]driver.StatMatcher
-	ServerStats       map[string]driver.StatMatcher
-	TestParallel      bool
+	Name                string
+	ClientConfig        string
+	ServerConfig        string
+	ServerClusterName   string
+	ClientStats         map[string]driver.StatMatcher
+	ServerStats         map[string]driver.StatMatcher
+	TestParallel        bool
+	ElideServerMetadata bool
 }{
 	{
 		Name:         "Default",
 		ClientConfig: "testdata/stats/client_config.yaml",
+		ServerConfig: "testdata/stats/server_config.yaml",
 		ClientStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total.yaml.tmpl"},
 		},
@@ -89,6 +92,7 @@ var TestCases = []struct {
 	{
 		Name:         "Customized",
 		ClientConfig: "testdata/stats/client_config_customized.yaml.tmpl",
+		ServerConfig: "testdata/stats/server_config.yaml",
 		ClientStats: map[string]driver.StatMatcher{
 			"istio_custom":         &driver.ExactStat{"testdata/metric/client_custom_metric.yaml.tmpl"},
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total_customized.yaml.tmpl"},
@@ -102,6 +106,7 @@ var TestCases = []struct {
 	{
 		Name:              "UseHostHeader",
 		ClientConfig:      "testdata/stats/client_config.yaml",
+		ServerConfig:      "testdata/stats/server_config.yaml",
 		ServerClusterName: "host_header",
 		ClientStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/host_header_fallback.yaml.tmpl"},
@@ -111,11 +116,15 @@ var TestCases = []struct {
 	{
 		Name:              "DisableHostHeader",
 		ClientConfig:      "testdata/stats/client_config_disable_header_fallback.yaml",
+		ServerConfig:      "testdata/stats/server_config_disable_header_fallback.yaml",
 		ServerClusterName: "host_header",
 		ClientStats: map[string]driver.StatMatcher{
-			"istio_requests_total": &driver.ExactStat{"testdata/metric/disable_host_header_fallback.yaml.tmpl"},
+			"istio_requests_total": &driver.ExactStat{"testdata/metric/client_disable_host_header_fallback.yaml.tmpl"},
 		},
-		ServerStats: map[string]driver.StatMatcher{},
+		ServerStats: map[string]driver.StatMatcher{
+			"istio_requests_total": &driver.ExactStat{"testdata/metric/server_disable_host_header_fallback.yaml.tmpl"},
+		},
+		ElideServerMetadata: true,
 	},
 }
 
@@ -154,8 +163,9 @@ func TestStatsPayload(t *testing.T) {
 					"WasmRuntime":                runtime.WasmRuntime,
 					"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 					"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
-					"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+					"StatsFilterServerConfig":    driver.LoadTestJSON(testCase.ServerConfig),
 					"ServerClusterName":          testCase.ServerClusterName,
+					"ElideServerMetadata":        fmt.Sprintf("%t", testCase.ElideServerMetadata),
 				}, envoye2e.ProxyE2ETests)
 				params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 				params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -203,7 +213,8 @@ func TestStatsParallel(t *testing.T) {
 				"WasmRuntime":                "envoy.wasm.runtime.null",
 				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 				"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
-				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON(testCase.ServerConfig),
+				"ElideServerMetadata":        fmt.Sprintf("%t", testCase.ElideServerMetadata),
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
