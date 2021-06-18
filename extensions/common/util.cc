@@ -15,7 +15,7 @@
 
 #include <string>
 
-#include "extensions/common/context.h"
+#include "extensions/common/util.h"
 
 namespace Wasm {
 namespace Common {
