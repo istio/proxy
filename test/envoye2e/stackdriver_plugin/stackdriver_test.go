@@ -76,8 +76,7 @@ func TestStackdriverPayload(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -133,8 +132,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_gateway_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 1,
 					},
-				},
-				nil, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_gateway_callout_metric.yaml.tmpl"},
@@ -192,8 +190,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				nil, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -251,8 +248,7 @@ func TestStackdriverReload(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				nil, true,
+				}, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -316,8 +312,7 @@ func TestStackdriverVMReload(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				nil, true,
+				}, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -359,9 +354,7 @@ func TestStackdriverGCEInstances(t *testing.T) {
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/gce_client_request_count.yaml.tmpl", "testdata/stackdriver/gce_server_request_count.yaml.tmpl"},
-				nil,
-
-				[]string{"testdata/stackdriver/gce_traffic_assertion.yaml.tmpl"}, true,
+				nil, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -537,7 +530,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 					},
 					sd.Check(params,
 						nil, getSdLogEntries(tt.justSendErrorClientLog == "true" && tt.respCode == "200", tt.logEntryCount),
-						nil, true,
+						true,
 					),
 				},
 			}).Run(params); err != nil {
@@ -636,8 +629,7 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl"},
 								LogEntryCount: 10,
 							},
-						},
-						nil, false,
+						}, false,
 					),
 				},
 			}).Run(params); err != nil {
@@ -704,8 +696,7 @@ func TestStackdriverAuditLog(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/server_audit_log_entry.yaml.tmpl"},
 						LogEntryCount: logEntryCount,
 					},
-				},
-				nil, true,
+				}, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -760,8 +751,7 @@ func TestStackdriverAttributeGen(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -825,8 +815,7 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
@@ -916,8 +905,7 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 								LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
 								LogEntryCount: logEntryCount,
 							},
-						},
-						nil, true,
+						}, true,
 					),
 				},
 			}).Run(params); err != nil {
@@ -1018,8 +1006,7 @@ func TestStackdriverRbacTCPDryRun(t *testing.T) {
 									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl"},
 								LogEntryCount: 10,
 							},
-						},
-						nil, false,
+						}, false,
 					),
 				},
 			}).Run(params); err != nil {
@@ -1068,7 +1055,7 @@ func TestStackdriverMetricExpiry(t *testing.T) {
 			},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/server_request_count.yaml.tmpl"},
-				[]SDLogEntry{}, nil, true,
+				[]SDLogEntry{}, true,
 			),
 			sd.Reset(),
 			&driver.Sleep{Duration: 10 * time.Second},
@@ -1083,7 +1070,7 @@ func TestStackdriverMetricExpiry(t *testing.T) {
 			// Should only have unknown source metric.
 			sd.Check(params,
 				[]string{"testdata/stackdriver/server_request_count_source_unknown.yaml.tmpl"},
-				[]SDLogEntry{}, nil, true,
+				[]SDLogEntry{}, true,
 			),
 		},
 	}).Run(params); err != nil {
@@ -1151,8 +1138,7 @@ func TestStackdriverPayloadUtf8(t *testing.T) {
 						LogEntryFile:  []string{"testdata/stackdriver/utf8_client_access_log_entry.yaml.tmpl"},
 						LogEntryCount: 10,
 					},
-				},
-				[]string{"testdata/stackdriver/traffic_assertion.yaml.tmpl"}, true,
+				}, true,
 			),
 			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
 				"envoy_type_logging_success_true_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},

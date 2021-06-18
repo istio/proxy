@@ -183,5 +183,3 @@ gopkg.in/yaml.v2 v2.2.8 h1:obN1ZagJSUGI0Ek/LBmuj4SNLPfIny3KsKFopxRdj10=
 gopkg.in/yaml.v2 v2.2.8/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
-istio.io/proxy/test/envoye2e/stackdriver_plugin/edges v0.0.0-20200916170758-74d763048fa1 h1:d103WEV315GHLchL1LxAwYbzREROUgUKiVfh1BfipQw=
-istio.io/proxy/test/envoye2e/stackdriver_plugin/edges v0.0.0-20200916170758-74d763048fa1/go.mod h1:DJ8fOsm6uGcamIj5fnZPcX596Zk3gAGk8FUB4q6XZ9U=

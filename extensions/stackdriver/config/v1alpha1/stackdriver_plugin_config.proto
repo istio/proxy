@@ -80,7 +80,9 @@ message PluginConfig {
 
   // Optional. Controls whether or not to export mesh edges to a mesh edges
   // service. This is disabled by default.
-  bool enable_mesh_edges_reporting = 3;
+  // Deprecated -- Mesh edge reporting is no longer supported and this setting
+  // is no-op.
+  bool enable_mesh_edges_reporting = 3 [deprecated = true];
 
   // Optional. Allows configuration of the time between calls out to the mesh
   // edges service to report *NEW* edges. The minimum configurable duration is
@@ -89,7 +91,10 @@ message PluginConfig {
   // reported and the local cache is cleared.
   // The default duration is `1m`. Any value greater than `10m` will result in
   // reporting every `10m`.
-  google.protobuf.Duration mesh_edges_reporting_duration = 4;
+  // Deprecated -- Mesh edge reporting is no longer supported and this setting
+  // is no-op.
+  google.protobuf.Duration mesh_edges_reporting_duration = 4
+      [deprecated = true];
 
   // maximum size of the peer metadata cache.
   // A long lived proxy that connects with many transient peers can build up a

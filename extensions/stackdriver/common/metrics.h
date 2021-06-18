@@ -31,7 +31,7 @@ namespace Common {
 
 // newExportCallMetric create a fully resolved metric based on the given type
 // and a boolean which indicates whether the call succeeds or not. Current type
-// could only be logging or edge.
+// could only be logging.
 uint32_t newExportCallMetric(const std::string& type, bool success);
 
 }  // namespace Common

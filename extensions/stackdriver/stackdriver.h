@@ -18,7 +18,6 @@
 #include "extensions/common/context.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
-#include "extensions/stackdriver/edges/edge_reporter.h"
 #include "extensions/stackdriver/log/logger.h"
 #include "extensions/stackdriver/metric/record.h"
 
@@ -39,11 +38,7 @@ namespace null_plugin {
 #endif
 
 namespace Stackdriver {
-
-constexpr long int kDefaultEdgeNewReportDurationNanoseconds =
-    60000000000;  // 1m
-constexpr long int kDefaultEdgeEpochReportDurationNanoseconds =
-    600000000000;                                                        // 10m
+// 10m
 constexpr long int kDefaultTcpLogEntryTimeoutNanoseconds = 60000000000;  // 1m
 constexpr long int kDefaultLogExportNanoseconds = 10000000000;           // 10s
 
@@ -122,9 +117,6 @@ class StackdriverRootContext : public RootContext {
   // Indicates whether the request should be logged based on audit policy
   bool shouldAuditThisRequest();
 
-  // Indicates whether or not to report edges to Stackdriver.
-  bool enableEdgeReporting();
-
   // Indicates whether or not to report TCP Logs.
   bool enableTCPServerAccessLog();
 
@@ -148,19 +140,6 @@ class StackdriverRootContext : public RootContext {
 
   // Logger records and exports log entries to Stackdriver backend.
   std::unique_ptr<::Extensions::Stackdriver::Log::Logger> logger_;
-
-  std::unique_ptr<::Extensions::Stackdriver::Edges::EdgeReporter>
-      edge_reporter_;
-
-  long int last_edge_epoch_report_call_nanos_ = 0;
-
-  long int last_edge_new_report_call_nanos_ = 0;
-
-  long int edge_new_report_duration_nanos_ =
-      kDefaultEdgeNewReportDurationNanoseconds;
-
-  long int edge_epoch_report_duration_nanos_ =
-      kDefaultEdgeEpochReportDurationNanoseconds;
 
   long int tcp_log_entry_timeout_ = kDefaultTcpLogEntryTimeoutNanoseconds;
 
