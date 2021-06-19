@@ -19,6 +19,7 @@
 
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN

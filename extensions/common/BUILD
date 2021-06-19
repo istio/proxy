@@ -55,9 +55,11 @@ envoy_cc_library(
     name = "proto_util",
     srcs = [
         "proto_util.cc",
+        "util.cc",
     ],
     hdrs = [
         "proto_util.h",
+        "util.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],

@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include "extensions/common/proto_util.h"
+#include "extensions/common/util.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
 #include "google/protobuf/util/time_util.h"
