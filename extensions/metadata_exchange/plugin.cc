@@ -132,8 +132,13 @@ bool PluginRootContext::updatePeer(std::string_view key,
     }
   }
 
-  auto bytes =
-      Base64::decodeWithoutPadding(Wasm::Common::toAbslStringView(peer_header));
+#ifndef NULL_PLUGIN
+  auto peer_header_view = peer_header;
+#else
+  auto peer_header_view = Wasm::Common::toAbslStringView(peer_header);
+#endif
+
+  auto bytes = Base64::decodeWithoutPadding(peer_header_view);
   google::protobuf::Struct metadata;
   if (!metadata.ParseFromString(bytes)) {
     return false;
