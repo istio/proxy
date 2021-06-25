@@ -126,20 +126,20 @@ envoy_cc_test(
     ],
 )
 
-# envoy_cc_benchmark_binary(
-#     name = "proto_util_speed_test",
-#     srcs = ["proto_util_speed_test.cc"],
-#     external_deps = [
-#         "benchmark",
-#     ],
-#     repository = "@envoy",
-#     deps = [
-#         ":node_info_fb_cc",
-#         ":proto_util",
-#         "@envoy//source/common/stream_info:filter_state_lib",
-#         "@envoy//source/extensions/common/wasm:wasm_lib",
-#     ],
-# )
+envoy_cc_benchmark_binary(
+    name = "proto_util_speed_test",
+    srcs = ["proto_util_speed_test.cc"],
+    external_deps = [
+        "benchmark",
+    ],
+    repository = "@envoy",
+    deps = [
+        ":node_info_fb_cc",
+        ":proto_util",
+        "@envoy//source/common/stream_info:filter_state_lib",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
+)
 
 flatbuffer_library_public(
     name = "node_info_fbs",
