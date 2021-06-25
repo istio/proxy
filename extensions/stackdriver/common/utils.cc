@@ -107,7 +107,6 @@ std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode &node) {
   }
 
   if (name.size() > 0 && project && location) {
-    return "";
     return absl::StrCat(
         "//compute.googleapis.com/projects/",
         ::Wasm::Common::toAbslStringView(project->value()->string_view()),
