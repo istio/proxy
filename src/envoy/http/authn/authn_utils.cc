@@ -47,7 +47,7 @@ void process(const Wasm::Common::JsonObject& json_obj,
 
     // 1. Try to parse as string.
     auto value_string =
-        Wasm::Common::JsonGetField<absl::string_view>(json_obj, key);
+        Wasm::Common::JsonGetField<std::string_view>(json_obj, key);
     if (value_string.detail() == Wasm::Common::JsonParserResultDetail::OK) {
       const auto list =
           absl::StrSplit(value_string.value().data(), ' ', absl::SkipEmpty());
@@ -60,9 +60,8 @@ void process(const Wasm::Common::JsonObject& json_obj,
       continue;
     }
     // 2. If not a string, try to parse as list of string.
-    auto value_list =
-        Wasm::Common::JsonGetField<std::vector<absl::string_view>>(json_obj,
-                                                                   key);
+    auto value_list = Wasm::Common::JsonGetField<std::vector<std::string_view>>(
+        json_obj, key);
     if (value_list.detail() == Wasm::Common::JsonParserResultDetail::OK) {
       for (const auto& s : value_list.value()) {
         (*claims.mutable_fields())[key]
