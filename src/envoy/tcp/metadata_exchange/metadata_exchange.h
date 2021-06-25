@@ -26,6 +26,7 @@
 #include "extensions/common/context.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/proto_util.h"
+#include "source/common/common/stl_helpers.h"
 #include "source/common/protobuf/protobuf.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "src/envoy/tcp/metadata_exchange/config/metadata_exchange.pb.h"
@@ -86,7 +87,7 @@ class MetadataExchangeConfig {
     static const CelStatePrototype* const prototype = new CelStatePrototype(
         true,
         ::Envoy::Extensions::Filters::Common::Expr::CelStateType::FlatBuffers,
-        ::Wasm::Common::nodeInfoSchema(),
+        toAbslStringView(::Wasm::Common::nodeInfoSchema()),
         StreamInfo::FilterState::LifeSpan::Connection);
     return *prototype;
   }

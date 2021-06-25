@@ -26,6 +26,7 @@ namespace Common {
 using JsonObject = ::nlohmann::json;
 
 enum JsonParserResultDetail {
+  UNKNOWN,
   OK,
   OUT_OF_RANGE,
   TYPE_ERROR,
@@ -38,6 +39,7 @@ template <typename T>
 std::pair<std::optional<T>, JsonParserResultDetail> JsonValueAs(
     const JsonObject&) {
   static_assert(true, "Unsupported Type");
+  return std::make_pair(std::nullopt, JsonParserResultDetail::UNKNOWN);
 }
 
 template <>

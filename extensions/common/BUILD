@@ -36,17 +36,16 @@ envoy_cc_library(
     name = "context",
     srcs = [
         "context.cc",
-        "util.cc",
     ],
     hdrs = [
         "context.h",
         "istio_dimensions.h",
-        "util.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
+        ":util",
         "@proxy_wasm_cpp_host//:null_lib",
     ],
 )
@@ -55,17 +54,31 @@ envoy_cc_library(
     name = "proto_util",
     srcs = [
         "proto_util.cc",
-        "util.cc",
     ],
     hdrs = [
         "proto_util.h",
-        "util.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
+        ":util",
         "@com_google_protobuf//:protobuf",
+        "@proxy_wasm_cpp_host//:null_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "util",
+    srcs = [
+        "util.cc",
+    ],
+    hdrs = [
+        "util.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
         "@proxy_wasm_cpp_host//:null_lib",
     ],
 )
@@ -113,20 +126,20 @@ envoy_cc_test(
     ],
 )
 
-envoy_cc_benchmark_binary(
-    name = "proto_util_speed_test",
-    srcs = ["proto_util_speed_test.cc"],
-    external_deps = [
-        "benchmark",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":node_info_fb_cc",
-        ":proto_util",
-        "@envoy//source/common/stream_info:filter_state_lib",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
-    ],
-)
+# envoy_cc_benchmark_binary(
+#     name = "proto_util_speed_test",
+#     srcs = ["proto_util_speed_test.cc"],
+#     external_deps = [
+#         "benchmark",
+#     ],
+#     repository = "@envoy",
+#     deps = [
+#         ":node_info_fb_cc",
+#         ":proto_util",
+#         "@envoy//source/common/stream_info:filter_state_lib",
+#         "@envoy//source/extensions/common/wasm:wasm_lib",
+#     ],
+# )
 
 flatbuffer_library_public(
     name = "node_info_fbs",

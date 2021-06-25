@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include <string>
-
 #include "extensions/common/util.h"
+
+#include <string>
 
 namespace Wasm {
 namespace Common {
