@@ -52,3 +52,4 @@ build --host_linkopt=-pthread
 build --action_env=CXXFLAGS=-Wno-unused-variable
 build:libc++ --action_env=CXXFLAGS=-stdlib="libc++ -Wno-unused-variable"
 build:rbe-toolchain-clang-libc++ --action_env=CXXFLAGS="-stdlib=libc++ -Wno-unused-variable"
+build --cxxopt -Wno-range-loop-analysis

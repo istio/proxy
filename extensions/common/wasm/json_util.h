@@ -39,7 +39,6 @@ template <typename T>
 std::pair<std::optional<T>, JsonParserResultDetail> JsonValueAs(
     const JsonObject&) {
   static_assert(true, "Unsupported Type");
-  return std::make_pair(std::nullopt, JsonParserResultDetail::UNKNOWN);
 }
 
 template <>

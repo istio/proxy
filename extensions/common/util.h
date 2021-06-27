@@ -23,7 +23,7 @@ namespace Wasm {
 namespace Common {
 
 // None response flag.
-const std::string NONE = "-";
+const char NONE[] = "-";
 
 // Parses an integer response flag into a readable short string.
 const std::string parseResponseFlag(uint64_t response_flag);
