@@ -95,7 +95,7 @@ void appendString(std::string& result, const absl::string_view& append) {
 
 }  // namespace
 
-std::string parseResponseFlag(uint64_t response_flag) {
+const std::string parseResponseFlag(uint64_t response_flag) {
   std::string result;
 
   if (response_flag & FailedLocalHealthCheck) {
