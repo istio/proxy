@@ -126,7 +126,6 @@ struct RequestInfo {
   uint32_t grpc_status = 2;
 
   // Response flag giving additional information - NR, UAEX etc.
-  // TODO populate
   std::string response_flag;
 
   // Host name of destination service.
