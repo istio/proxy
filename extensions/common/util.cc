@@ -15,6 +15,7 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
 #include "extensions/common/context.h"
 
 namespace Wasm {
@@ -25,26 +26,34 @@ namespace {
 // This replicates the flag lists in envoyproxy/envoy, because the property
 // access API does not support returning response flags as a short string since
 // it is not owned by any object and always generated on demand:
-// https://github.com/envoyproxy/envoy/blob/v1.12.0/source/common/stream_info/utility.cc#L8
-const std::string DOWNSTREAM_CONNECTION_TERMINATION = "DC";
-const std::string FAILED_LOCAL_HEALTH_CHECK = "LH";
-const std::string NO_HEALTHY_UPSTREAM = "UH";
-const std::string UPSTREAM_REQUEST_TIMEOUT = "UT";
-const std::string LOCAL_RESET = "LR";
-const std::string UPSTREAM_REMOTE_RESET = "UR";
-const std::string UPSTREAM_CONNECTION_FAILURE = "UF";
-const std::string UPSTREAM_CONNECTION_TERMINATION = "UC";
-const std::string UPSTREAM_OVERFLOW = "UO";
-const std::string UPSTREAM_RETRY_LIMIT_EXCEEDED = "URX";
-const std::string NO_ROUTE_FOUND = "NR";
-const std::string DELAY_INJECTED = "DI";
-const std::string FAULT_INJECTED = "FI";
-const std::string RATE_LIMITED = "RL";
-const std::string UNAUTHORIZED_EXTERNAL_SERVICE = "UAEX";
-const std::string RATELIMIT_SERVICE_ERROR = "RLSE";
-const std::string STREAM_IDLE_TIMEOUT = "SI";
-const std::string INVALID_ENVOY_REQUEST_HEADERS = "IH";
-const std::string DOWNSTREAM_PROTOCOL_ERROR = "DPE";
+// https://github.com/envoyproxy/envoy/blob/v1.18.3/source/common/stream_info/utility.h#L21
+constexpr static absl::string_view DOWNSTREAM_CONNECTION_TERMINATION = "DC";
+constexpr static absl::string_view FAILED_LOCAL_HEALTH_CHECK = "LH";
+constexpr static absl::string_view NO_HEALTHY_UPSTREAM = "UH";
+constexpr static absl::string_view UPSTREAM_REQUEST_TIMEOUT = "UT";
+constexpr static absl::string_view LOCAL_RESET = "LR";
+constexpr static absl::string_view UPSTREAM_REMOTE_RESET = "UR";
+constexpr static absl::string_view UPSTREAM_CONNECTION_FAILURE = "UF";
+constexpr static absl::string_view UPSTREAM_CONNECTION_TERMINATION = "UC";
+constexpr static absl::string_view UPSTREAM_OVERFLOW = "UO";
+constexpr static absl::string_view UPSTREAM_RETRY_LIMIT_EXCEEDED = "URX";
+constexpr static absl::string_view NO_ROUTE_FOUND = "NR";
+constexpr static absl::string_view DELAY_INJECTED = "DI";
+constexpr static absl::string_view FAULT_INJECTED = "FI";
+constexpr static absl::string_view RATE_LIMITED = "RL";
+constexpr static absl::string_view UNAUTHORIZED_EXTERNAL_SERVICE = "UAEX";
+constexpr static absl::string_view RATELIMIT_SERVICE_ERROR = "RLSE";
+constexpr static absl::string_view STREAM_IDLE_TIMEOUT = "SI";
+constexpr static absl::string_view INVALID_ENVOY_REQUEST_HEADERS = "IH";
+constexpr static absl::string_view DOWNSTREAM_PROTOCOL_ERROR = "DPE";
+constexpr static absl::string_view UPSTREAM_MAX_STREAM_DURATION_REACHED =
+    "UMSDR";
+constexpr static absl::string_view RESPONSE_FROM_CACHE_FILTER = "RFCF";
+constexpr static absl::string_view NO_FILTER_CONFIG_FOUND = "NFCF";
+constexpr static absl::string_view DURATION_TIMEOUT = "DT";
+constexpr static absl::string_view UPSTREAM_PROTOCOL_ERROR = "UPE";
+constexpr static absl::string_view NO_CLUSTER_FOUND = "NC";
+constexpr static absl::string_view OVERLOAD_MANAGER = "OM";
 
 enum ResponseFlag {
   FailedLocalHealthCheck = 0x1,
@@ -66,14 +75,21 @@ enum ResponseFlag {
   StreamIdleTimeout = 0x10000,
   InvalidEnvoyRequestHeaders = 0x20000,
   DownstreamProtocolError = 0x40000,
-  LastFlag = DownstreamProtocolError
+  UpstreamMaxStreamDurationReached = 0x80000,
+  ResponseFromCacheFilter = 0x100000,
+  NoFilterConfigFound = 0x200000,
+  DurationTimeout = 0x400000,
+  UpstreamProtocolError = 0x800000,
+  NoClusterFound = 0x1000000,
+  OverloadManager = 0x2000000,
+  LastFlag = OverloadManager,
 };
 
-void appendString(std::string& result, const std::string& append) {
+void appendString(std::string& result, const absl::string_view& append) {
   if (result.empty()) {
     result = append;
   } else {
-    result += "," + append;
+    absl::StrAppend(&result, ",", append);
   }
 }
 
@@ -156,6 +172,34 @@ const std::string parseResponseFlag(uint64_t response_flag) {
 
   if (response_flag & DownstreamProtocolError) {
     appendString(result, DOWNSTREAM_PROTOCOL_ERROR);
+  }
+
+  if (response_flag & UpstreamMaxStreamDurationReached) {
+    appendString(result, UPSTREAM_MAX_STREAM_DURATION_REACHED);
+  }
+
+  if (response_flag & ResponseFromCacheFilter) {
+    appendString(result, RESPONSE_FROM_CACHE_FILTER);
+  }
+
+  if (response_flag & NoFilterConfigFound) {
+    appendString(result, NO_FILTER_CONFIG_FOUND);
+  }
+
+  if (response_flag & DurationTimeout) {
+    appendString(result, DURATION_TIMEOUT);
+  }
+
+  if (response_flag & UpstreamProtocolError) {
+    appendString(result, UPSTREAM_PROTOCOL_ERROR);
+  }
+
+  if (response_flag & NoClusterFound) {
+    appendString(result, NO_CLUSTER_FOUND);
+  }
+
+  if (response_flag & OverloadManager) {
+    appendString(result, OVERLOAD_MANAGER);
   }
 
   if (response_flag >= (LastFlag << 1)) {
