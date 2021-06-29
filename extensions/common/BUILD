@@ -36,17 +36,16 @@ envoy_cc_library(
     name = "context",
     srcs = [
         "context.cc",
-        "util.cc",
     ],
     hdrs = [
         "context.h",
         "istio_dimensions.h",
-        "util.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
+        ":util",
         "@proxy_wasm_cpp_host//:null_lib",
     ],
 )
@@ -63,7 +62,23 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
+        ":util",
         "@com_google_protobuf//:protobuf",
+        "@proxy_wasm_cpp_host//:null_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "util",
+    srcs = [
+        "util.cc",
+    ],
+    hdrs = [
+        "util.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
         "@proxy_wasm_cpp_host//:null_lib",
     ],
 )

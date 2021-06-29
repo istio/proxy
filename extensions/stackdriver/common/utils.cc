@@ -15,6 +15,7 @@
 
 #include "extensions/stackdriver/common/utils.h"
 
+#include "extensions/common/util.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "grpcpp/grpcpp.h"
 
@@ -106,9 +107,12 @@ std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode &node) {
   }
 
   if (name.size() > 0 && project && location) {
-    return absl::StrCat("//compute.googleapis.com/projects/",
-                        project->value()->string_view(), "/zones/",
-                        location->value()->string_view(), "/instances/", name);
+    return absl::StrCat(
+        "//compute.googleapis.com/projects/",
+        ::Wasm::Common::toAbslStringView(project->value()->string_view()),
+        "/zones/",
+        ::Wasm::Common::toAbslStringView(location->value()->string_view()),
+        "/instances/", ::Wasm::Common::toAbslStringView(name));
   }
 
   return "";
@@ -131,8 +135,9 @@ std::string getOwner(const ::Wasm::Common::FlatNode &node) {
     }
     auto created_by = platform_metadata->LookupByKey(kGCECreatedByKey.data());
     if (created_by) {
-      return absl::StrCat("//compute.googleapis.com/",
-                          created_by->value()->string_view());
+      return absl::StrCat(
+          "//compute.googleapis.com/",
+          ::Wasm::Common::toAbslStringView(created_by->value()->string_view()));
     }
 
     return getGCEInstanceUID(node);

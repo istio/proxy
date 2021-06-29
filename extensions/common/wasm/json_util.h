@@ -26,6 +26,7 @@ namespace Common {
 using JsonObject = ::nlohmann::json;
 
 enum JsonParserResultDetail {
+  UNKNOWN,
   OK,
   OUT_OF_RANGE,
   TYPE_ERROR,

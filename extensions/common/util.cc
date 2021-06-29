@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-#include <string>
+#include "extensions/common/util.h"
 
 #include "absl/strings/str_cat.h"
-#include "extensions/common/context.h"
 
 namespace Wasm {
 namespace Common {
@@ -87,7 +86,7 @@ enum ResponseFlag {
 
 void appendString(std::string& result, const absl::string_view& append) {
   if (result.empty()) {
-    result = append;
+    result = std::string(append);
   } else {
     absl::StrAppend(&result, ",", append);
   }

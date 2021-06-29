@@ -19,6 +19,7 @@
 
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "extensions/common/util.h"
 
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
@@ -70,10 +71,10 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
                          fbb.CreateString(platform_it.second.string_value())));
       }
     } else if (it.first == "APP_CONTAINERS") {
-      std::vector<std::string_view> containers =
+      std::vector<absl::string_view> containers =
           absl::StrSplit(it.second.string_value(), ',');
       for (const auto& container : containers) {
-        app_containers.push_back(fbb.CreateString(container));
+        app_containers.push_back(fbb.CreateString(toStdStringView(container)));
       }
     }
   }

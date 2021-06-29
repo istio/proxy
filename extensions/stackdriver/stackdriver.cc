@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include "extensions/common/proto_util.h"
+#include "extensions/common/util.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "extensions/stackdriver/metric/registry.h"
 #include "google/protobuf/util/time_util.h"
@@ -263,7 +264,9 @@ void fillAuthzDryRunInfo(
   std::string shadow_deny_policy = "";
   std::string shadow_allow_policy = "";
   for (const auto& [key, val] : md.value()->pairs()) {
-    LOG_DEBUG(absl::StrCat("RBAC metadata found: key=", key, ", value=", val));
+    LOG_DEBUG(absl::StrCat(
+        "RBAC metadata found: key=", Wasm::Common::toAbslStringView(key),
+        ", value=", Wasm::Common::toAbslStringView(val)));
     if (key == kDryRunDenyShadowEngineResult) {
       shadow_deny_result = (val == "allowed");
     } else if (key == kDryRunAllowShadowEngineResult) {

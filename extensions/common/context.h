@@ -92,9 +92,6 @@ std::string_view AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 std::string_view TCPConnectionStateString(TCPConnectionState state);
 std::string_view ProtocolString(Protocol protocol);
 
-// None response flag.
-const std::string NONE = "-";
-
 // RequestInfo represents the information collected from filter stream
 // callbacks. This is used to fill metrics and logs.
 struct RequestInfo {

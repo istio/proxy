@@ -275,9 +275,10 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
       value_struct.fields().find(ExchangeMetadataHeaderId);
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_id_it->second;
-    updatePeerId(config_->filter_direction_ == FilterDirection::Downstream
-                     ? ::Wasm::Common::kDownstreamMetadataIdKey
-                     : ::Wasm::Common::kUpstreamMetadataIdKey,
+    updatePeerId(toAbslStringView(config_->filter_direction_ ==
+                                          FilterDirection::Downstream
+                                      ? ::Wasm::Common::kDownstreamMetadataIdKey
+                                      : ::Wasm::Common::kUpstreamMetadataIdKey),
                  val.string_value());
   }
 }
@@ -298,7 +299,7 @@ void MetadataExchangeFilter::updatePeer(
                  ? ::Wasm::Common::kDownstreamMetadataKey
                  : ::Wasm::Common::kUpstreamMetadataKey;
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      absl::StrCat("wasm.", key), std::move(state),
+      absl::StrCat("wasm.", toAbslStringView(key)), std::move(state),
       StreamInfo::FilterState::StateType::Mutable,
       StreamInfo::FilterState::LifeSpan::Connection);
 }
@@ -335,7 +336,7 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
   auto key = config_->filter_direction_ == FilterDirection::Downstream
                  ? ::Wasm::Common::kDownstreamMetadataIdKey
                  : ::Wasm::Common::kUpstreamMetadataIdKey;
-  updatePeerId(key, ::Wasm::Common::kMetadataNotFoundValue);
+  updatePeerId(toAbslStringView(key), ::Wasm::Common::kMetadataNotFoundValue);
 }
 
 }  // namespace MetadataExchange

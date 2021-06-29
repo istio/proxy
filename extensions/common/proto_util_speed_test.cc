@@ -16,6 +16,7 @@
 #include "benchmark/benchmark.h"
 #include "extensions/common/node_info_generated.h"
 #include "extensions/common/proto_util.h"
+#include "extensions/common/util.h"
 #include "google/protobuf/util/json_util.h"
 #include "source/common/stream_info/filter_state_impl.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
@@ -64,15 +65,16 @@ static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
   auto state_ptr =
       std::make_unique<Envoy::Extensions::Filters::Common::Expr::CelState>(
           prototype);
-  state_ptr->setValue(value);
-  filter_state.setData(key, std::move(state_ptr),
+  state_ptr->setValue(toAbslStringView(value));
+  filter_state.setData(toAbslStringView(key), std::move(state_ptr),
                        Envoy::StreamInfo::FilterState::StateType::Mutable);
 }
 
 static const std::string& getData(
     Envoy::StreamInfo::FilterStateImpl& filter_state, std::string_view key) {
   return filter_state
-      .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(key)
+      .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+          toAbslStringView(key))
       .value();
 }
 

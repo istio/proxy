@@ -19,6 +19,7 @@
 #include "absl/strings/str_split.h"
 #include "extensions/common/context.h"
 #include "extensions/common/proto_util.h"
+#include "extensions/common/util.h"
 #include "extensions/common/wasm/json_util.h"
 
 #ifndef NULL_PLUGIN
@@ -103,8 +104,9 @@ bool PluginRootContext::configure(size_t configuration_size) {
   // Parse configuration JSON string.
   auto result = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!result.has_value()) {
-    LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
-                          configuration_data->view()));
+    LOG_WARN(absl::StrCat(
+        "cannot parse plugin configuration JSON string: ",
+        ::Wasm::Common::toAbslStringView(configuration_data->view())));
     return false;
   }
 
@@ -130,7 +132,13 @@ bool PluginRootContext::updatePeer(std::string_view key,
     }
   }
 
-  auto bytes = Base64::decodeWithoutPadding(peer_header);
+#ifndef NULL_PLUGIN
+  auto peer_header_view = peer_header;
+#else
+  auto peer_header_view = Wasm::Common::toAbslStringView(peer_header);
+#endif
+
+  auto bytes = Base64::decodeWithoutPadding(peer_header_view);
   google::protobuf::Struct metadata;
   if (!metadata.ParseFromString(bytes)) {
     return false;
