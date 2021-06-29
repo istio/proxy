@@ -37,6 +37,7 @@ envoy_cc_binary(
         "//src/envoy/tcp/metadata_exchange:config_lib",
         "//src/envoy/tcp/sni_verifier:config_lib",
         "//src/envoy/tcp/tcp_cluster_rewrite:config_lib",
+        "//src/envoy/http/hbone:per_host_upstream_config", # per_host_upstream_config
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )
