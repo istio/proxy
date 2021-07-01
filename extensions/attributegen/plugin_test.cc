@@ -64,7 +64,7 @@ using WasmFilterConfig = envoy::extensions::filters::http::wasm::v3::Wasm;
 class TestFilter : public Envoy::Extensions::Common::Wasm::Context {
  public:
   TestFilter(Wasm* wasm, uint32_t root_context_id,
-             Envoy::Extensions::Common::Wasm::PluginSharedPtr plugin)
+             Envoy::Extensions::Common::Wasm::PluginHandleSharedPtr plugin)
       : Envoy::Extensions::Common::Wasm::Context(wasm, root_context_id,
                                                  plugin) {}
   void log(const Http::RequestHeaderMap* request_headers,
@@ -197,7 +197,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
             *root_context = new TestRoot(wasm, plugin);
             return *root_context;
           });
-      wasm_ = plugin_handle_->wasmHandleForTest();
+      wasm_ = plugin_handle_->wasmHandle();
     }
     if (!c.do_not_add_filter) {
       setupFilter();
