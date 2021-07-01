@@ -207,7 +207,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   void setupFilter() {
     auto wasm = wasm_ ? wasm_->wasm().get() : nullptr;
     int root_context_id = wasm ? wasm->getRootContext(plugin_, false)->id() : 0;
-    filter_ = std::make_unique<TestFilter>(wasm, root_context_id, plugin_);
+    filter_ = std::make_unique<TestFilter>(wasm, root_context_id, plugin_handle_);
     filter_->setDecoderFilterCallbacks(decoder_callbacks_);
     filter_->setEncoderFilterCallbacks(encoder_callbacks_);
 
