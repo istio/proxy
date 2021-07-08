@@ -27,8 +27,8 @@ class IstioContext : public Context {
   IstioContext(Wasm* wasm, const PluginSharedPtr& plugin)
       : Context(wasm, plugin) {}
   IstioContext(Wasm* wasm, uint32_t root_context_id,
-               const PluginSharedPtr& plugin)
-      : Context(wasm, root_context_id, plugin) {}
+          PluginHandleSharedPtr plugin_handle): Context(
+              wasm, root_context_id, plugin_handle) {}
   ~IstioContext() = default;
 };
 }  // namespace Istio
