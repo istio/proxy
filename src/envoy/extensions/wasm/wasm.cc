@@ -17,7 +17,6 @@
 #include "source/common/stats/utility.h"
 #include "source/common/version/version.h"
 #include "source/server/admin/prometheus_stats.h"
-#include "src/envoy/extensions/wasm/context.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -42,43 +41,6 @@ struct ConfigStats {
 
 }  // namespace
 
-class IstioWasmVmIntegration : public EnvoyWasmVmIntegration {
- public:
-  IstioWasmVmIntegration() : EnvoyWasmVmIntegration() {}
-};
-
-class IstioWasm : public Wasm {
- public:
-  IstioWasm(WasmConfig& config, absl::string_view vm_key,
-            const Stats::ScopeSharedPtr& scope,
-            Upstream::ClusterManager& cluster_manager,
-            Event::Dispatcher& dispatcher)
-      : Wasm(config, vm_key, scope, cluster_manager, dispatcher) {}
-  IstioWasm(std::shared_ptr<WasmHandle> other, Event::Dispatcher& dispatcher)
-      : Wasm(other, dispatcher) {}
-  ~IstioWasm() override = default;
-
-  proxy_wasm::ContextBase* createContext(
-      const std::shared_ptr<PluginBase>& plugin) override {
-    if (create_context_for_testing_) {
-      return create_context_for_testing_(
-          this, std::static_pointer_cast<Plugin>(plugin));
-    }
-    return new IstioContext(this, std::static_pointer_cast<Plugin>(plugin));
-  }
-  proxy_wasm::ContextBase* createRootContext(
-      const std::shared_ptr<PluginBase>& plugin) override {
-    if (create_root_context_for_testing_) {
-      return create_root_context_for_testing_(
-          this, std::static_pointer_cast<Plugin>(plugin));
-    }
-    return new IstioContext(this, std::static_pointer_cast<Plugin>(plugin));
-  }
-  proxy_wasm::ContextBase* createVmContext() override {
-    return new IstioContext(this);
-  }
-};
-
 class IstioWasmExtension : public EnvoyWasm {
  public:
   IstioWasmExtension() {
@@ -86,8 +48,6 @@ class IstioWasmExtension : public EnvoyWasm {
         "istio");
   }
   ~IstioWasmExtension() override = default;
-  WasmHandleExtensionFactory wasmFactory() override;
-  WasmHandleExtensionCloneFactory wasmCloneFactory() override;
   void onEvent(WasmEvent event, const PluginSharedPtr& plugin) override;
   void onRemoteCacheEntriesChanged(int remote_cache_entries) override;
   void createStats(const Stats::ScopeSharedPtr& scope,
@@ -97,31 +57,6 @@ class IstioWasmExtension : public EnvoyWasm {
  private:
   std::map<std::string, std::unique_ptr<ConfigStats>> config_stats_;
 };
-
-WasmHandleExtensionFactory IstioWasmExtension::wasmFactory() {
-  return [](WasmConfig& config, const Stats::ScopeSharedPtr& scope,
-            Upstream::ClusterManager& cluster_manager,
-            Event::Dispatcher& dispatcher,
-            Server::ServerLifecycleNotifier& lifecycle_notifier,
-            absl::string_view vm_key) -> WasmHandleBaseSharedPtr {
-    auto wasm = std::make_shared<IstioWasm>(config, vm_key, scope,
-                                            cluster_manager, dispatcher);
-    wasm->initializeLifecycle(lifecycle_notifier);
-    return std::static_pointer_cast<WasmHandleBase>(
-        std::make_shared<WasmHandle>(std::move(wasm)));
-  };
-}
-
-WasmHandleExtensionCloneFactory IstioWasmExtension::wasmCloneFactory() {
-  return [](const WasmHandleSharedPtr& base_wasm, Event::Dispatcher& dispatcher,
-            CreateContextFn create_root_context_for_testing)
-             -> WasmHandleBaseSharedPtr {
-    auto wasm = std::make_shared<IstioWasm>(base_wasm, dispatcher);
-    wasm->setCreateContextForTesting(nullptr, create_root_context_for_testing);
-    return std::static_pointer_cast<WasmHandleBase>(
-        std::make_shared<WasmHandle>(std::move(wasm)));
-  };
-}
 
 static std::string statsKey(const PluginSharedPtr& plugin) {
   auto sep = std::string("\t");

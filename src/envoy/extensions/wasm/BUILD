@@ -25,9 +25,6 @@ envoy_cc_library(
     srcs = [
         "wasm.cc",
     ],
-    hdrs = [
-        "context.h",
-    ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
