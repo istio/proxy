@@ -65,7 +65,7 @@ envoy_extension_cc_test(
     data = [
         "//extensions/attributegen/testdata",
     ],
-    extension_name = "envoy.filters.http.wasm",
+    extension_names = ["envoy.filters.http.wasm"],
     repository = "@envoy",
     deps = [
         ":attributegen_plugin",

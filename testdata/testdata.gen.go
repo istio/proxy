@@ -83,7 +83,6 @@ dynamic_resources:
   lds_config:
     ads: {}
     resource_api_version: V3
-
 static_resources:
   clusters:
   - connect_timeout: 1s
