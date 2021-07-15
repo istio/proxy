@@ -71,5 +71,6 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":logger",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
