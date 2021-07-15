@@ -60,6 +60,5 @@ envoy_cc_test(
     deps = [
         ":stats_plugin",
         "//external:abseil_hash_testing",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
