@@ -100,6 +100,7 @@ envoy_cc_test(
     deps = [
         ":node_info_fb_cc",
         ":proto_util",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
 
@@ -110,6 +111,7 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":context",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
 
@@ -135,6 +137,7 @@ envoy_cc_benchmark_binary(
         ":node_info_fb_cc",
         ":proto_util",
         "@envoy//source/common/stream_info:filter_state_lib",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
 
@@ -169,4 +172,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
+    deps = [
+        "@envoy//source/extensions/common/wasm:wasm_lib",
+    ],
 )

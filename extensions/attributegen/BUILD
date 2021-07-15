@@ -81,5 +81,6 @@ envoy_extension_cc_test(
         "@envoy//test/mocks/upstream:upstream_mocks",
         "@envoy//test/test_common:environment_lib",
         "@envoy//test/test_common:utility_lib",
+        "@envoy//test/test_common:wasm_lib",
     ],
 )

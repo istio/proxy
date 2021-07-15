@@ -1,4 +1,4 @@
-# Copyright 2019 Istio Authors. All Rights Reserved.
+# Copyright 2020 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,51 +15,22 @@
 ################################################################################
 #
 
-licenses(["notice"])  # Apache 2
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
-    "envoy_cc_test",
-    "envoy_package",
 )
 
-envoy_package()
-
 envoy_cc_library(
-    name = "stats_plugin",
+    name = "wasm_lib",
     srcs = [
-        "plugin.cc",
-    ],
-    hdrs = [
-        "plugin.h",
+        "wasm.cc",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "//extensions/common:context",
-        "//extensions/common:json_util",
-        "@proxy_wasm_cpp_host//:null_lib",
-        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
-    ],
-)
-
-proto_library(
-    name = "config_proto",
-    srcs = ["config.proto"],
-    deps = [
-        "@com_google_protobuf//:duration_proto",
-    ],
-)
-
-envoy_cc_test(
-    name = "plugin_test",
-    size = "small",
-    srcs = ["plugin_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":stats_plugin",
-        "//external:abseil_hash_testing",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
+        "@envoy//source/common/stats:stats_lib",
+        "@envoy//source/common/version:version_lib",
+        "@envoy//source/extensions/common/wasm:wasm_hdr",
+        "@envoy//source/server/admin:prometheus_stats_lib",
     ],
 )
