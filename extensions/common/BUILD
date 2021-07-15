@@ -100,6 +100,7 @@ envoy_cc_test(
     deps = [
         ":node_info_fb_cc",
         ":proto_util",
+        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
 
