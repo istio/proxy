@@ -135,7 +135,6 @@ envoy_cc_benchmark_binary(
         ":node_info_fb_cc",
         ":proto_util",
         "@envoy//source/common/stream_info:filter_state_lib",
-        "@envoy//source/extensions/filters/common/expr:cel_state_lib",
     ],
 )
 

@@ -69,7 +69,6 @@ envoy_extension_cc_test(
     repository = "@envoy",
     deps = [
         ":attributegen_plugin",
-        "@envoy//source/extensions/filters/common/expr:cel_state_lib",
         "@envoy//source/extensions/filters/http/wasm:wasm_filter_lib",
         "@envoy//test/extensions/common/wasm:wasm_runtime",
         "@envoy//test/mocks/grpc:grpc_mocks",
