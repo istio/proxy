@@ -188,6 +188,9 @@ class StackdriverContext : public Context {
 
   // Called on onData call, so counting the data that is received.
   FilterStatus onDownstreamData(size_t size, bool) override {
+    if (!downstream_first_.has_value() && is_tcp_ &&  size > 0) {
+      downstream_first_ = true;
+    }
     if (!is_initialized_) {
       return FilterStatus::Continue;
     }
@@ -198,6 +201,9 @@ class StackdriverContext : public Context {
   }
   // Called on onWrite call, so counting the data that is sent.
   FilterStatus onUpstreamData(size_t size, bool) override {
+    if (!downstream_first_.has_value() && is_tcp_ && size > 0) {
+      downstream_first_ = false;
+    }
     if (!is_initialized_) {
       return FilterStatus::Continue;
     }
@@ -215,6 +221,7 @@ class StackdriverContext : public Context {
   bool is_tcp_;
   uint32_t context_id_;
   const bool is_initialized_;
+  absl::optional<bool> downstream_data_first_{};
 };
 
 class StackdriverOutboundRootContext : public StackdriverRootContext {
