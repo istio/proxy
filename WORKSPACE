@@ -38,10 +38,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2021-07-20
-ENVOY_SHA = "a1c5a5076e97e6cd3d4b725b6eeb645513c72092"
+# Commit date: 2021-07-21
+ENVOY_SHA = "463eda2f3895fbb24c1fcd085a15d00d12a94079"
 
-ENVOY_SHA256 = "701e84da636a998e75e5cb6b8707e7f579f539841749145d235f846d09ea168a"
+ENVOY_SHA256 = "1f33e10b87403acaffa05706aa391bb7114d7395dff9c9bc81962d38885172a2"
 
 ENVOY_ORG = "envoyproxy"
 
