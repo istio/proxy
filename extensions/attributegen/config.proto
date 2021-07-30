@@ -171,7 +171,7 @@ message Match {
   // The condition is a [CEL
   // expression](https://github.com/google/cel-spec/blob/master/doc/langdef.md)
   // that may use [builtin attributes]
-  // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition).
+  // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#attributes).
   //
   // Example:
   //
