@@ -19,7 +19,7 @@
 # This script verifies the LastFlag response flag in istio/proxy matches the one in envoyproxy/envoy 
 # and fails with a non-zero exit code if they differ.
 
-set -x
+# set -x
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
@@ -27,28 +27,28 @@ PATH_LASTFLAG_SPEC_DOWNSTREAM="${ROOT}/extensions/common/util.cc"
 PATH_LASTFLAG_SPEC_UPSTREAM="stream_info.h"
 ENVOY_PATH_LASTFLAG_SPEC="envoy/stream_info/stream_info.h"
 
-ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
-ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_ORG="$(ggrep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_REPO="$(ggrep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "main" | awk '{ print $1}')"
+
+trap 'rm -rf ${PATH_LASTFLAG_SPEC_UPSTREAM}' EXIT
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_LATEST_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}" > "${PATH_LASTFLAG_SPEC_UPSTREAM}"
 
 # Extract the LastFlag specification from both sources and trim all white spaces.
 
-if grep -q "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"
+if ggrep -q "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"
 then
-    DOWNSTREAM_LASTFLAG=$(grep -m1 "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"|tr -d '[:space:]')
+    DOWNSTREAM_LASTFLAG=$(ggrep -m1 "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"|tr -d '[:space:]')
 else
     echo "istio/proxy: LastFlag not specified in ${PATH_LASTFLAG_SPEC_DOWNSTREAM}"
-    rm "${PATH_LASTFLAG_SPEC_UPSTREAM}"
     exit 1
 fi
 
-if grep -q "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}
+if ggrep -q "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}
 then
-    UPSTREAM_LASTFLAG=$(grep -m1 "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}|tr -d '[:space:]')
+    UPSTREAM_LASTFLAG=$(ggrep -m1 "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}|tr -d '[:space:]')
 else
     echo "envoyproxy/envoy: LastFlag not specified in https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_LATEST_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}"
-    rm "${PATH_LASTFLAG_SPEC_UPSTREAM}"
     exit 1
 fi
 
@@ -67,8 +67,5 @@ fi
 if [[ "$DOWNSTREAM_LASTFLAG" != "$UPSTREAM_LASTFLAG" ]]
 then
     echo "The LastFlag specification for downstream and upstream differs. Downstream is ${DOWNSTREAM_LASTFLAG}. Upstream is ${UPSTREAM_LASTFLAG}."
-    rm "${PATH_LASTFLAG_SPEC_UPSTREAM}"
     exit 1
 fi
-
-rm "${PATH_LASTFLAG_SPEC_UPSTREAM}"
