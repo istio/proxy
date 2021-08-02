@@ -19,7 +19,7 @@
 # This script verifies the LastFlag response flag in istio/proxy matches the one in envoyproxy/envoy 
 # and fails with a non-zero exit code if they differ.
 
-# set -x
+set -x
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
