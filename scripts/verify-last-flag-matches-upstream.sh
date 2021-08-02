@@ -27,8 +27,8 @@ PATH_LASTFLAG_SPEC_DOWNSTREAM="${ROOT}/extensions/common/util.cc"
 PATH_LASTFLAG_SPEC_UPSTREAM="stream_info.h"
 ENVOY_PATH_LASTFLAG_SPEC="envoy/stream_info/stream_info.h"
 
-ENVOY_ORG="$(ggrep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
-ENVOY_REPO="$(ggrep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "main" | awk '{ print $1}')"
 
 trap 'rm -rf ${PATH_LASTFLAG_SPEC_UPSTREAM}' EXIT
@@ -36,17 +36,17 @@ curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_
 
 # Extract the LastFlag specification from both sources and trim all white spaces.
 
-if ggrep -q "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"
+if grep -q "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"
 then
-    DOWNSTREAM_LASTFLAG=$(ggrep -m1 "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"|tr -d '[:space:]')
+    DOWNSTREAM_LASTFLAG=$(grep -m1 "^\s*LastFlag\s*=.*$" "${PATH_LASTFLAG_SPEC_DOWNSTREAM}"|tr -d '[:space:]')
 else
     echo "istio/proxy: LastFlag not specified in ${PATH_LASTFLAG_SPEC_DOWNSTREAM}"
     exit 1
 fi
 
-if ggrep -q "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}
+if grep -q "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}
 then
-    UPSTREAM_LASTFLAG=$(ggrep -m1 "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}|tr -d '[:space:]')
+    UPSTREAM_LASTFLAG=$(grep -m1 "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}|tr -d '[:space:]')
 else
     echo "envoyproxy/envoy: LastFlag not specified in https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_LATEST_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}"
     exit 1
