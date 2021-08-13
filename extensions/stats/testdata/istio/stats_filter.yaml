@@ -23,7 +23,7 @@ spec:
               configuration: |
                 {
                   "debug": "false",
-                  "stat_prefix": "istio",
+                  "stat_prefix": "istio"
                 }
               vm_config:
                 runtime: envoy.wasm.runtime.null
@@ -48,7 +48,7 @@ spec:
               configuration: |
                 {
                   "debug": "false",
-                  "stat_prefix": "istio",
+                  "stat_prefix": "istio"
                 }
               vm_config:
                 runtime: envoy.wasm.runtime.null
