@@ -450,9 +450,11 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
                {MetricTag{"component", MetricTag::TagType::String},
                 MetricTag{"tag", MetricTag::TagType::String}});
-  build.record(
-      1, "proxy",
-      absl::StrCat(flatbuffers::GetString(local_node.istio_version()), ";"));
+  std::string istio_version =
+      flatbuffers::GetString(local_node.istio_version());
+  istio_version = (istio_version == "") ? absl::StrCat(unknown, ";")
+                                        : absl::StrCat(istio_version, ";");
+  build.record(1, "proxy", istio_version);
   return true;
 }
 
