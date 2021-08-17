@@ -24,7 +24,7 @@ syntax = "proto3";
 // clang-format on
 
 // AttributeGen plugin uses [builtin attributes]
-// (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter#condition)
+// (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes)
 // as inputs and produces new attributes that can be used by downstream plugins.
 //
 // The following is an example of a configuration that produces one attribute
@@ -115,7 +115,7 @@ syntax = "proto3";
 // {{</tab>}}
 // {{</tabset>}}
 //
-// If multiple AttributeGene configurations produce the same attribute, the
+// If multiple AttributeGen configurations produce the same attribute, the
 // result of the last configuration will be visible to downstream filters.
 package istio.attributegen;
 
