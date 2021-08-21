@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -51,6 +52,11 @@ type Envoy struct {
 	// DownloadVersion will be ignored if proxy binary already exists at the
 	// default bazel-bin location, or ENVOY_PATH env var is set.
 	DownloadVersion string
+
+	// standard error for the Envoy process (defaults to os.Stderr).
+	Stderr io.Writer
+	// standard out for the Envoy process (defaults to os.Stdout).
+	Stdout io.Writer
 
 	tmpFile   string
 	cmd       *exec.Cmd
@@ -104,9 +110,17 @@ func (e *Envoy) Run(p *Params) error {
 			return fmt.Errorf("failed to download Envoy binary %v", err)
 		}
 	}
+	stderr := io.Writer(os.Stderr)
+	if e.Stderr != nil {
+		stderr = e.Stderr
+	}
+	stdout := io.Writer(os.Stdout)
+	if e.Stdout != nil {
+		stdout = e.Stdout
+	}
 	cmd := exec.Command(envoyPath, args...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
+	cmd.Stderr = stderr
+	cmd.Stdout = stdout
 	cmd.Dir = BazelWorkspace()
 
 	log.Printf("envoy cmd %v", cmd.Args)
