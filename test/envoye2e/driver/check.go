@@ -47,6 +47,8 @@ type HTTPCall struct {
 	ResponseHeaders map[string]string
 	// Timeout (must be set to avoid the default)
 	Timeout time.Duration
+	// DisableRedirect prevents the client from following redirects and returns the original response.
+	DisableRedirect bool
 }
 
 func Get(port uint16, body string) Step {
@@ -73,6 +75,11 @@ func (g *HTTPCall) Run(_ *Params) error {
 	log.Printf("HTTP request:\n%s", string(dump))
 
 	client := &http.Client{Timeout: g.Timeout}
+	if g.DisableRedirect {
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
