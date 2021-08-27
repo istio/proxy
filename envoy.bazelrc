@@ -77,7 +77,7 @@ build:asan --copt -fno-optimize-sibling-calls
 build:clang-asan --config=asan
 build:clang-asan --linkopt -fuse-ld=lld
 build:clang-asan --linkopt --rtlib=compiler-rt
-build:clang-asan --linkopt --unwindlib=libgc
+build:clang-asan --linkopt --unwindlib=libgcc
 
 # macOS ASAN/UBSAN
 build:macos --cxxopt=-std=c++17
