@@ -86,6 +86,9 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(
     decoder_callbacks_->streamInfo().setDynamicMetadata(
         Utils::IstioFilterName::kAuthentication, data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
+    // Clear the route cache after saving the dynamic metadata for routing
+    // based on JWT claims.
+    decoder_callbacks_->clearRouteCache();
   }
   state_ = State::COMPLETE;
   return FilterHeadersStatus::Continue;
