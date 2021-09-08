@@ -104,8 +104,8 @@ cc_library(
 # 1) find the ISTIO_API SHA you want in git
 # 2) wget https://github.com/istio/api/archive/$ISTIO_API_SHA.tar.gz && sha256sum $ISTIO_API_SHA.tar.gz
 #
-ISTIO_API = "31d048906d97fb7f6b1fa8e250d3fa07456c5acc"
-ISTIO_API_SHA256 = "5bf68ef13f4b9e769b7ca0a9ce83d9da5263eed9b1223c4cbb388a6ad5520e01"
+ISTIO_API = "75bb24b620144218d26b92afedbb428e4d84e506"
+ISTIO_API_SHA256 = "c72602c38f7ab10e430618e4ce82fee143f4446d468863ba153ea897bdff2298"
 
 def istioapi_repositories(bind = True):
     BUILD = """
