@@ -34,7 +34,7 @@ uint32_t newExportCallMetric(const std::string& type, bool success) {
   // base VM and thread local VM would cause host side thread local VM root
   // context missing metric definition. This is not going to be a problem with
   // real Wasm VM due to memory isolation.
-  Metric export_call(MetricType::Counter, "export_call",
+  Metric export_call(MetricType::Counter, "envoy_export_call",
                      {MetricTag{"wasm_filter", MetricTag::TagType::String},
                       MetricTag{"type", MetricTag::TagType::String},
                       MetricTag{"success", MetricTag::TagType::Bool}});
