@@ -17,7 +17,7 @@
 workspace(name = "io_istio_proxy")
 
 # http_archive is not a native function since bazel 0.19
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//bazel:repositories.bzl",
     "docker_dependencies",
@@ -38,10 +38,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2021-09-11
-ENVOY_SHA = "a22cfc378f9fd8017440fd9239e2c0e778a3b5e1"
+# Commit date: 2021-09-13
+ENVOY_SHA = "0bbf23cb5b4cda358b8e5f5da9e91dd03ac27382"
 
-ENVOY_SHA256 = "222e846a763b1ddd7c8a4cedcf61b1792f4526960f253a5090eb5ae24396b74a"
+ENVOY_SHA256 = "133e0f71745d198ae3d0f869d867b3d77649dbbb87f22412a5f80103281feadf"
 
 ENVOY_ORG = "envoyproxy"
 
