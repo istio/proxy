@@ -15,7 +15,6 @@
 package driver
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -40,13 +39,14 @@ type StatMatcher interface {
 var _ Step = &Stats{}
 
 func (s *Stats) Run(p *Params) error {
+	var metrics map[string]*dto.MetricFamily
 	for i := 0; i < 15; i++ {
 		_, body, err := env.HTTPGet(fmt.Sprintf("http://127.0.0.1:%d/stats/prometheus", s.AdminPort))
 		if err != nil {
 			return err
 		}
 		reader := strings.NewReader(body)
-		metrics, err := (&expfmt.TextParser{}).TextToMetricFamilies(reader)
+		metrics, err = (&expfmt.TextParser{}).TextToMetricFamilies(reader)
 		if err != nil {
 			return err
 		}
@@ -66,10 +66,9 @@ func (s *Stats) Run(p *Params) error {
 		if count == len(s.Matchers) {
 			return nil
 		}
-		log.Printf("failed to match all metrics: want %#v", s.Matchers)
 		time.Sleep(1 * time.Second)
 	}
-	return errors.New("failed to match all stats")
+	return fmt.Errorf("failed to match all metrics: want %v, but got %v", s.Matchers, metrics)
 }
 
 func (s *Stats) Cleanup() {}
