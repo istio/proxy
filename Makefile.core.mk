@@ -69,25 +69,33 @@ CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE
 # TODO can we do some sort of regex?
 CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm
 
+define prerun_v8_build
+	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) ${1} @com_googlesource_chromium_v8//:build
+endef
+
+# Prerun @com_googlesource_chromium_v8//:build if and only if BAZEL_TARGETS depends on v8.
+define prerun_v8_build_if_required
+	$(if $(findstring com_googlesource_chromium_v8,$(shell bazel query "deps($(BAZEL_TARGETS))")),$(call prerun_v8_build,${1}))
+endef
+
 build:
-	#TODO(lambdai): Prerun v8//:build if and only if BAZEL_TARGETS depends on v8.
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_DEV)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) $(BAZEL_TARGETS)
 
 build_envoy:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_REL)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //src/envoy:envoy
 
 build_envoy_tsan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_TSAN)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
 
 build_envoy_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_ASAN)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 
 build_wasm:
@@ -115,28 +123,28 @@ gen-check:
 
 test:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_DEV)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) -- $(BAZEL_TEST_TARGETS)
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test -timeout 30m ./...
 
 test_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_ASAN)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TEST_TARGETS)
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) ASAN=true GO111MODULE=on go test -timeout 30m ./...
 
 test_tsan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_TSAN)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) -- $(BAZEL_TEST_TARGETS)
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) TSAN=true GO111MODULE=on go test -timeout 30m ./...
 
 test_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) @com_googlesource_chromium_v8//:build && \
+	$(call prerun_v8_build_if_required,$(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	# TODO: re-enable IPv6 tests
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) --test_filter="-*IPv6*" -- $(CENTOS_BAZEL_TEST_TARGETS)
