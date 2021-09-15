@@ -69,12 +69,11 @@ CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE
 # TODO can we do some sort of regex?
 CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm
 
-# Prerun @com_googlesource_chromium_v8//:build if and only if BAZEL_TARGETS depends on v8.
 define prerun_v8_build
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) ${1} @com_googlesource_chromium_v8//:build
 endef
 
-# When @com_googlesource_chromium_v8 is found in BAZEL_TARGETS dependencies, run prerun_v8_build.
+# Prerun @com_googlesource_chromium_v8//:build if and only if BAZEL_TARGETS depends on v8.
 define prerun_v8_build_if_required
 	$(if $(findstring com_googlesource_chromium_v8,$(shell bazel query "deps($(BAZEL_TARGETS))")),$(call prerun_v8_build,${1}))
 endef
