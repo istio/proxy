@@ -131,7 +131,7 @@ test:
 
 test_asan:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_DEV)) && \
+	$(call prerun_v8_build_if_required,$(BAZEL_CONFIG_ASAN)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TEST_TARGETS)
 	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) ASAN=true GO111MODULE=on go test -timeout 30m ./...
@@ -145,7 +145,7 @@ test_tsan:
 
 test_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	$(call prerun_v8_build_if_required,$(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_TSAN)) && \
+	$(call prerun_v8_build_if_required,$(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV)) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
 	# TODO: re-enable IPv6 tests
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) --test_filter="-*IPv6*" -- $(CENTOS_BAZEL_TEST_TARGETS)
