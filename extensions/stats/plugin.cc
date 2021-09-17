@@ -358,6 +358,14 @@ bool PluginRootContext::initializeDimensions(const json& j) {
           if (!name.empty() && name != factory_it.first) {
             continue;
           }
+
+          bool skip_reporting =
+              JsonGetField<bool>(metric, "skip_reporting").value_or(false);
+          if (skip_reporting) {
+            factories.erase(factory_it.first);
+            continue;
+          }
+
           auto& indexes = metric_indexes[factory_it.first];
 
           // Process tag deletions.
