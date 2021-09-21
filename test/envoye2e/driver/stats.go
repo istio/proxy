@@ -59,11 +59,22 @@ func (s *Stats) Run(p *Params) error {
 			if err := matcher.Matches(p, metric); err == nil {
 				log.Printf("matched metric %q", metric.GetName())
 				count++
-			} else {
-				log.Printf("metric %q did not match: %v\n", metric.GetName(), err)
+				continue
+			} else if _, ok := matcher.(*MissingStat); ok && err != nil {
+				return fmt.Errorf("found metric that should have been missing: %s", metric.GetName())
 			}
+			log.Printf("metric %q did not match: %v\n", metric.GetName(), err)
 		}
 		if count == len(s.Matchers) {
+			return nil
+		}
+		missingCount := 0
+		for _, m := range s.Matchers {
+			if _, ok := m.(*MissingStat); ok {
+				missingCount++
+			}
+		}
+		if count+missingCount == len(s.Matchers) {
 			return nil
 		}
 		time.Sleep(1 * time.Second)
@@ -113,3 +124,16 @@ func (me *PartialStat) Matches(params *Params, that *dto.MetricFamily) error {
 }
 
 var _ StatMatcher = &PartialStat{}
+
+type MissingStat struct {
+	Metric string
+}
+
+func (m *MissingStat) Matches(_ *Params, that *dto.MetricFamily) error {
+	log.Printf("names: %s", *that.Name)
+
+	if strings.EqualFold(m.Metric, *that.Name) {
+		return fmt.Errorf("found metric that should be missing: %s", m.Metric)
+	}
+	return nil
+}

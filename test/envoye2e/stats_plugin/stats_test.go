@@ -94,8 +94,9 @@ var TestCases = []struct {
 		ClientConfig: "testdata/stats/client_config_customized.yaml.tmpl",
 		ServerConfig: "testdata/stats/server_config.yaml",
 		ClientStats: map[string]driver.StatMatcher{
-			"istio_custom":         &driver.ExactStat{"testdata/metric/client_custom_metric.yaml.tmpl"},
-			"istio_requests_total": &driver.ExactStat{"testdata/metric/client_request_total_customized.yaml.tmpl"},
+			"istio_custom":                        &driver.ExactStat{"testdata/metric/client_custom_metric.yaml.tmpl"},
+			"istio_requests_total":                &driver.ExactStat{"testdata/metric/client_request_total_customized.yaml.tmpl"},
+			"istio_request_duration_milliseconds": &driver.MissingStat{"istio_request_duration_milliseconds"},
 		},
 		ServerStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{"testdata/metric/server_request_total.yaml.tmpl"},

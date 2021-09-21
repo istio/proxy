@@ -15,6 +15,8 @@
 
 #include "extensions/stats/plugin.h"
 
+#include <iterator>
+
 #include "absl/strings/ascii.h"
 #include "absl/time/time.h"
 #include "extensions/common/util.h"
@@ -354,11 +356,20 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         std::sort(tags.begin(), tags.end());
 
         auto name = JsonGetField<std::string>(metric, "name").value_or("");
-        for (const auto& factory_it : factories) {
-          if (!name.empty() && name != factory_it.first) {
+        for (auto factory_it = factories.begin();
+             factory_it != factories.end();) { /*do not advance iterator here*/
+          if (!name.empty() && name != factory_it->first) {
+            std::advance(factory_it, 1);
             continue;
           }
-          auto& indexes = metric_indexes[factory_it.first];
+
+          bool drop = JsonGetField<bool>(metric, "drop").value_or(false);
+          if (drop) {
+            factory_it = factories.erase(factory_it);
+            continue;
+          }
+
+          auto& indexes = metric_indexes[factory_it->first];
 
           // Process tag deletions.
           if (!JsonArrayIterate(
@@ -398,11 +409,12 @@ bool PluginRootContext::initializeDimensions(const json& j) {
             if (it != indexes.end()) {
               it->second = value;
             } else {
-              metric_tags[factory_it.first].push_back(
+              metric_tags[factory_it->first].push_back(
                   {tag, MetricTag::TagType::String});
               indexes[tag] = value;
             }
           }
+          std::advance(factory_it, 1);
         }
         return true;
       })) {

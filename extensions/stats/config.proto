@@ -45,6 +45,10 @@ message MetricConfig {
 
   // NOT IMPLEMENTED. (Optional) Conditional enabling the override.
   string match = 4;
+
+  // (Optional) If this is set to true, the metric(s) selected by this
+  // configuration will not be generated or reported.
+  bool drop = 5;
 }
 
 enum MetricType {

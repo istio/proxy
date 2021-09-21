@@ -7,6 +7,8 @@ definitions:
   value: "1"
   type: COUNTER
 metrics:
+  - name: request_duration_milliseconds
+    drop: true
   - name: custom
     dimensions:
       reporter: "'proxy'"
