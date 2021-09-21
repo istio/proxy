@@ -356,7 +356,6 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         std::sort(tags.begin(), tags.end());
 
         auto name = JsonGetField<std::string>(metric, "name").value_or("");
-        // for (const auto& factory_it : factories) {
         for (auto factory_it = factories.begin();
              factory_it != factories.end();) { /*do not advance iterator here*/
           if (!name.empty() && name != factory_it->first) {
