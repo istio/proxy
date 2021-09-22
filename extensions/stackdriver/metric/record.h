@@ -27,14 +27,18 @@ namespace Metric {
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
             const ::Wasm::Common::RequestInfo& request_info,
-            bool record_http_size_metrics);
+            bool record_http_size_metrics,
+            std::unordered_map<
+                std::string, std::vector<std::pair<std::string, std::string>>>);
 
 // Record TCP metrics based on local node info and request info.
 // Reporter kind deceides the type of metrics to record.
-void recordTCP(bool is_outbound,
-               const ::Wasm::Common::FlatNode& local_node_info,
-               const ::Wasm::Common::FlatNode& peer_node_info,
-               const ::Wasm::Common::RequestInfo& request_info);
+void recordTCP(
+    bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    const ::Wasm::Common::RequestInfo& request_info,
+    std::unordered_map<std::string,
+                       std::vector<std::pair<std::string, std::string>>>);
 
 }  // namespace Metric
 }  // namespace Stackdriver

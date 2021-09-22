@@ -244,29 +244,70 @@ void addHttpSpecificTags(const ::Wasm::Common::RequestInfo& request_info,
                        std::to_string(response_code));
 }
 
+TagKeyValueList getMetricTagMap(
+    TagKeyValueList input_map,
+    std::vector<std::pair<std::string, std::string>> overrides) {
+  std::cout << "overrides: " << overrides.size() << "\n";
+
+  if (overrides.size() == 0) {
+    return input_map;
+  }
+
+  TagKeyValueList out;
+  for (auto in : input_map) {
+    auto it = std::find_if(overrides.begin(), overrides.end(),
+                           [&in](const auto& override) {
+                             return override.first == in.first.name();
+                           });
+    if (it != overrides.end()) {
+      auto tag_key = opencensus::tags::TagKey::Register(it->first);
+      out.emplace_back(tag_key, it->second);
+    } else {
+      out.emplace_back(in.first, in.second);
+    }
+  }
+
+  return out;
+}
+
 }  // namespace
 
 void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
             const ::Wasm::Common::FlatNode& peer_node_info,
             const ::Wasm::Common::RequestInfo& request_info,
-            bool record_http_size_metrics) {
+            bool record_http_size_metrics,
+            std::unordered_map<std::string,
+                               std::vector<std::pair<std::string, std::string>>>
+                overrides) {
   double latency_ms = request_info.duration /* in nanoseconds */ / 1000000.0;
   if (is_outbound) {
     TagKeyValueList tagMap =
         getOutboundTagMap(local_node_info, peer_node_info, request_info);
     addHttpSpecificTags(request_info, tagMap);
+
     if (record_http_size_metrics) {
       opencensus::stats::Record(
-          {{clientRequestCountMeasure(), 1},
-           {clientRoundtripLatenciesMeasure(), latency_ms},
-           {clientRequestBytesMeasure(), request_info.request_size},
-           {clientResponseBytesMeasure(), request_info.response_size}},
-          tagMap);
+          {{clientRequestCountMeasure(), 1}},
+          getMetricTagMap(tagMap, overrides[Common::kClientRequestCountView]));
+      opencensus::stats::Record(
+          {{clientRoundtripLatenciesMeasure(), latency_ms}},
+          getMetricTagMap(tagMap,
+                          overrides[Common::kClientRoundtripLatenciesView]));
+      opencensus::stats::Record(
+          {{clientRequestBytesMeasure(), request_info.request_size}},
+          getMetricTagMap(tagMap, overrides[Common::kClientRequestBytesView]));
+      opencensus::stats::Record(
+          {{clientResponseBytesMeasure(), request_info.response_size}},
+          getMetricTagMap(tagMap, overrides[Common::kClientResponseBytesView]));
+
     } else {
       opencensus::stats::Record(
-          {{clientRequestCountMeasure(), 1},
-           {clientRoundtripLatenciesMeasure(), latency_ms}},
-          tagMap);
+          {{clientRequestCountMeasure(), 1}},
+          getMetricTagMap(tagMap, overrides[Common::kClientRequestCountView]));
+      opencensus::stats::Record(
+          {{clientRoundtripLatenciesMeasure(), latency_ms}},
+          getMetricTagMap(tagMap,
+                          overrides[Common::kClientRoundtripLatenciesView]));
     }
 
     return;
@@ -277,33 +318,56 @@ void record(bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
   addHttpSpecificTags(request_info, tagMap);
   if (record_http_size_metrics) {
     opencensus::stats::Record(
-        {{serverRequestCountMeasure(), 1},
-         {serverResponseLatenciesMeasure(), latency_ms},
-         {serverRequestBytesMeasure(), request_info.request_size},
-         {serverResponseBytesMeasure(), request_info.response_size}},
-        tagMap);
+        {{serverRequestCountMeasure(), 1}},
+        getMetricTagMap(tagMap, overrides[Common::kServerRequestCountView]));
+    opencensus::stats::Record(
+        {{serverResponseLatenciesMeasure(), latency_ms}},
+        getMetricTagMap(tagMap,
+                        overrides[Common::kServerResponseLatenciesView]));
+    opencensus::stats::Record(
+        {{serverRequestBytesMeasure(), request_info.request_size}},
+        getMetricTagMap(tagMap, overrides[Common::kServerRequestBytesView]));
+    opencensus::stats::Record(
+        {{serverResponseBytesMeasure(), request_info.response_size}},
+        getMetricTagMap(tagMap, overrides[Common::kServerResponseBytesView]));
   } else {
-    opencensus::stats::Record({{serverRequestCountMeasure(), 1},
-                               {serverResponseLatenciesMeasure(), latency_ms}},
-                              tagMap);
+    opencensus::stats::Record(
+        {{serverRequestCountMeasure(), 1}},
+        getMetricTagMap(tagMap, overrides[Common::kServerRequestCountView]));
+    opencensus::stats::Record(
+        {{serverResponseLatenciesMeasure(), latency_ms}},
+        getMetricTagMap(tagMap,
+                        overrides[Common::kServerResponseLatenciesView]));
   }
 }
 
-void recordTCP(bool is_outbound,
-               const ::Wasm::Common::FlatNode& local_node_info,
-               const ::Wasm::Common::FlatNode& peer_node_info,
-               const ::Wasm::Common::RequestInfo& request_info) {
+void recordTCP(
+    bool is_outbound, const ::Wasm::Common::FlatNode& local_node_info,
+    const ::Wasm::Common::FlatNode& peer_node_info,
+    const ::Wasm::Common::RequestInfo& request_info,
+    std::unordered_map<std::string,
+                       std::vector<std::pair<std::string, std::string>>>
+        overrides) {
   if (is_outbound) {
     TagKeyValueList tagMap =
         getOutboundTagMap(local_node_info, peer_node_info, request_info);
     opencensus::stats::Record(
         {{clientConnectionsOpenCountMeasure(),
-          request_info.tcp_connections_opened},
-         {clientConnectionsCloseCountMeasure(),
-          request_info.tcp_connections_closed},
-         {clientReceivedBytesCountMeasure(), request_info.tcp_received_bytes},
-         {clientSentBytesCountMeasure(), request_info.tcp_sent_bytes}},
-        tagMap);
+          request_info.tcp_connections_opened}},
+        getMetricTagMap(tagMap,
+                        overrides[Common::kClientConnectionsOpenCountView]));
+    opencensus::stats::Record(
+        {{clientConnectionsCloseCountMeasure(),
+          request_info.tcp_connections_closed}},
+        getMetricTagMap(tagMap,
+                        overrides[Common::kClientConnectionsCloseCountView]));
+    opencensus::stats::Record(
+        {{clientReceivedBytesCountMeasure(), request_info.tcp_received_bytes}},
+        getMetricTagMap(tagMap,
+                        overrides[Common::kClientReceivedBytesCountView]));
+    opencensus::stats::Record(
+        {{clientSentBytesCountMeasure(), request_info.tcp_sent_bytes}},
+        getMetricTagMap(tagMap, overrides[Common::kClientSentBytesCountView]));
 
     return;
   }
@@ -312,12 +376,21 @@ void recordTCP(bool is_outbound,
       getInboundTagMap(local_node_info, peer_node_info, request_info);
   opencensus::stats::Record(
       {{serverConnectionsOpenCountMeasure(),
-        request_info.tcp_connections_opened},
-       {serverConnectionsCloseCountMeasure(),
-        request_info.tcp_connections_closed},
-       {serverReceivedBytesCountMeasure(), request_info.tcp_received_bytes},
-       {serverSentBytesCountMeasure(), request_info.tcp_sent_bytes}},
-      tagMap);
+        request_info.tcp_connections_opened}},
+      getMetricTagMap(tagMap,
+                      overrides[Common::kServerConnectionsOpenCountView]));
+  opencensus::stats::Record(
+      {{serverConnectionsCloseCountMeasure(),
+        request_info.tcp_connections_closed}},
+      getMetricTagMap(tagMap,
+                      overrides[Common::kServerConnectionsCloseCountView]));
+  opencensus::stats::Record(
+      {{serverReceivedBytesCountMeasure(), request_info.tcp_received_bytes}},
+      getMetricTagMap(tagMap,
+                      overrides[Common::kServerReceivedBytesCountView]));
+  opencensus::stats::Record(
+      {{serverSentBytesCountMeasure(), request_info.tcp_sent_bytes}},
+      getMetricTagMap(tagMap, overrides[Common::kServerSentBytesCountView]));
 }
 
 }  // namespace Metric

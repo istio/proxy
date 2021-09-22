@@ -186,6 +186,30 @@ absl::Duration getMetricExpiryDuration(
          absl::Nanoseconds(duration.nanos());
 }
 
+std::vector<std::string_view> getDroppedMetrics(
+    const stackdriver::config::v1alpha1::PluginConfig& config) {
+  std::vector<std::string_view> dropped_metrics;
+  for (const auto& override : config.metrics_overrides()) {
+    if (override.second.drop()) {
+      dropped_metrics.push_back(override.first);
+    }
+  }
+  return dropped_metrics;
+}
+
+std::vector<std::tuple<std::string, std::string, std::string>>
+getMetricsTagOverrides(
+    const stackdriver::config::v1alpha1::PluginConfig& config) {
+  std::vector<std::tuple<std::string, std::string, std::string>> overrides;
+  for (const auto& override : config.metrics_overrides()) {
+    for (const auto& tag : override.second.tag_overrides()) {
+      overrides.push_back(
+          std::make_tuple(override.first, tag.first, tag.second));
+    }
+  }
+  return overrides;
+}
+
 void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_connections_opened = 0;
   request_info.tcp_sent_bytes = 0;
@@ -432,6 +456,20 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
     tcp_log_entry_timeout_ = getTcpLogEntryTimeoutNanoseconds();
   }
 
+  // Extract metric tags expressions
+  cleanupMetricsExpressions();
+  for (const auto& override : getMetricsTagOverrides(config_)) {
+    uint32_t token;
+    auto metric = std::get<0>(override);
+    auto tag = std::get<1>(override);
+    auto expression = std::get<2>(override);
+    if (createExpression(expression, &token) != WasmResult::Ok) {
+      LOG_TRACE(absl::StrCat("Could not create expression for ", expression));
+      continue;
+    }
+    metrics_expressions_.push_back({token, metric, tag, expression});
+  }
+
   // Register OC Stackdriver exporter and views to be exported.
   // Note exporter and views are global singleton so they should only be
   // registered once.
@@ -449,7 +487,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
       absl::Seconds(getMonitoringExportInterval()));
 
   // Register opencensus measures and views.
-  registerViews(getMetricExpiryDuration(config_));
+  registerViews(getMetricExpiryDuration(config_), getDroppedMetrics(config_));
 
   return true;
 }
@@ -515,9 +553,15 @@ void StackdriverRootContext::record() {
   ::Wasm::Common::RequestInfo request_info;
   ::Wasm::Common::populateHTTPRequestInfo(outbound, useHostHeaderFallback(),
                                           &request_info);
+  std::unordered_map<std::string,
+                     std::vector<std::pair<std::string, std::string>>>
+      overrides;
+  evaluateMetricsExpressions(overrides);
+  std::cout << "overrides for client/request_count: "
+            << overrides["client/request_count"].size() << "\n";
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node_info.get(), request_info,
-      !config_.disable_http_size_metrics());
+      !config_.disable_http_size_metrics(), overrides);
   bool extended_info_populated = false;
   if ((enableAllAccessLog() ||
        (enableAccessLogOnError() &&
@@ -577,8 +621,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     ::Wasm::Common::populateTCPRequestInfo(outbound, &request_info);
   }
   // Record TCP Metrics.
+  std::unordered_map<std::string,
+                     std::vector<std::pair<std::string, std::string>>>
+      overrides;
+  evaluateMetricsExpressions(overrides);
   ::Extensions::Stackdriver::Metric::recordTCP(
-      outbound, local_node, peer_node_info.get(), request_info);
+      outbound, local_node, peer_node_info.get(), request_info, overrides);
   bool extended_info_populated = false;
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
@@ -732,11 +780,36 @@ void StackdriverRootContext::evaluateExpressions(
   }
 }
 
+void StackdriverRootContext::evaluateMetricsExpressions(
+    std::unordered_map<std::string,
+                       std::vector<std::pair<std::string, std::string>>>&
+        overrides) {
+  for (const auto& expression : metrics_expressions_) {
+    std::cout << "adding expression: " << expression.tag
+              << ", for metric: " << expression.metric << "\n";
+    std::string value;
+    if (!evaluateExpression(expression.token, &value)) {
+      LOG_WARN(absl::StrCat("Could not evaluate expression: ",
+                            expression.expression));
+      continue;
+    }
+    overrides[expression.metric].emplace_back(
+        std::make_pair(expression.tag, value));
+  }
+}
+
 void StackdriverRootContext::cleanupExpressions() {
   for (const auto& expression : expressions_) {
     exprDelete(expression.token);
   }
   expressions_.clear();
+}
+
+void StackdriverRootContext::cleanupMetricsExpressions() {
+  for (const auto& expression : metrics_expressions_) {
+    exprDelete(expression.token);
+  }
+  metrics_expressions_.clear();
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.

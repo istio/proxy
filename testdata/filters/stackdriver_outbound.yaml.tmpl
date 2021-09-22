@@ -18,9 +18,9 @@
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
             {{- if .Vars.JustSendErrorClientLog }}
-            {"access_logging": "ERRORS_ONLY", "enable_audit_log": true}
+            {"access_logging": "ERRORS_ONLY", "enable_audit_log": true, "metrics_overrides": {"client/request_bytes":{"drop": true}, "client/request_count":{"tag_overrides":{"request_operation":"'override'"}}}}
             {{- else if .Vars.StackdriverFilterCustomClientConfig }}
             {{ .Vars.StackdriverFilterCustomClientConfig | fill }}
             {{- else }}
-            {"access_logging": "FULL", "enable_audit_log": true}
+            {"access_logging": "FULL", "enable_audit_log": true, "metrics_overrides": {"client/request_bytes":{"drop": true}, "client/request_count":{"tag_overrides":{"request_operation":"'override'"}}}}
             {{- end }}

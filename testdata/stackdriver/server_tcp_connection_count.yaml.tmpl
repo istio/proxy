@@ -14,7 +14,7 @@ metric:
     destination_service_namespace: default
     destination_workload_name: ratings-v1
     destination_workload_namespace: default
-    mesh_uid: proj-123
+    mesh_uid: override
     request_protocol: tcp
     service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
     {{- if .Vars.SourceUnknown }}
