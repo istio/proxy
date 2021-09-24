@@ -204,7 +204,7 @@ bool isAllowedOverride(std::string metric, std::string tag) {
   }
 
   if (absl::StrContains(metric, "connection_") ||
-      absl::StrContains(metric, "bytes_count_")) {
+      absl::StrContains(metric, "bytes_count")) {
     // short-circuit for TCP metrics
     return false;
   }
