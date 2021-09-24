@@ -247,8 +247,6 @@ void addHttpSpecificTags(const ::Wasm::Common::RequestInfo& request_info,
 TagKeyValueList getMetricTagMap(
     TagKeyValueList input_map,
     std::vector<std::pair<std::string, std::string>> overrides) {
-  std::cout << "overrides: " << overrides.size() << "\n";
-
   if (overrides.size() == 0) {
     return input_map;
   }
@@ -265,6 +263,20 @@ TagKeyValueList getMetricTagMap(
     } else {
       out.emplace_back(in.first, in.second);
     }
+  }
+
+  auto it = std::find_if(
+      overrides.begin(), overrides.end(),
+      [](const auto& override) { return override.first == "api_version"; });
+  if (it != overrides.end()) {
+    out.emplace_back(apiVersionKey(), it->second);
+  }
+
+  it = std::find_if(
+      overrides.begin(), overrides.end(),
+      [](const auto& override) { return override.first == "api_name"; });
+  if (it != overrides.end()) {
+    out.emplace_back(apiNameKey(), it->second);
   }
 
   return out;

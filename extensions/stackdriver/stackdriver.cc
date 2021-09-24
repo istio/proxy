@@ -186,9 +186,9 @@ absl::Duration getMetricExpiryDuration(
          absl::Nanoseconds(duration.nanos());
 }
 
-std::vector<std::string_view> getDroppedMetrics(
+std::vector<std::string> getDroppedMetrics(
     const stackdriver::config::v1alpha1::PluginConfig& config) {
-  std::vector<std::string_view> dropped_metrics;
+  std::vector<std::string> dropped_metrics;
   for (const auto& override : config.metrics_overrides()) {
     if (override.second.drop()) {
       dropped_metrics.push_back(override.first);
@@ -197,17 +197,20 @@ std::vector<std::string_view> getDroppedMetrics(
   return dropped_metrics;
 }
 
-std::vector<std::tuple<std::string, std::string, std::string>>
-getMetricsTagOverrides(
-    const stackdriver::config::v1alpha1::PluginConfig& config) {
-  std::vector<std::tuple<std::string, std::string, std::string>> overrides;
-  for (const auto& override : config.metrics_overrides()) {
-    for (const auto& tag : override.second.tag_overrides()) {
-      overrides.push_back(
-          std::make_tuple(override.first, tag.first, tag.second));
-    }
+bool isAllowedOverride(std::string metric, std::string tag) {
+  auto it = std::find(kDefinedLabels.begin(), kDefinedLabels.end(), tag);
+  if (it != kDefinedLabels.end()) {
+    return true;
   }
-  return overrides;
+
+  if (absl::StrContains(metric, "connection_") ||
+      absl::StrContains(metric, "bytes_count_")) {
+    // short-circuit for TCP metrics
+    return false;
+  }
+
+  it = std::find(kHttpDefinedLabels.begin(), kHttpDefinedLabels.end(), tag);
+  return it != kHttpDefinedLabels.end();
 }
 
 void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
@@ -458,16 +461,21 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
 
   // Extract metric tags expressions
   cleanupMetricsExpressions();
-  for (const auto& override : getMetricsTagOverrides(config_)) {
-    uint32_t token;
-    auto metric = std::get<0>(override);
-    auto tag = std::get<1>(override);
-    auto expression = std::get<2>(override);
-    if (createExpression(expression, &token) != WasmResult::Ok) {
-      LOG_TRACE(absl::StrCat("Could not create expression for ", expression));
-      continue;
+  for (const auto& override : config_.metrics_overrides()) {
+    for (const auto& tag : override.second.tag_overrides()) {
+      if (!isAllowedOverride(override.first, tag.first)) {
+        LOG_WARN(absl::StrCat("cannot use tag in metrics: ", tag.first,
+                              "; ignoring override."));
+        continue;
+      }
+      uint32_t token;
+      if (createExpression(tag.second, &token) != WasmResult::Ok) {
+        LOG_TRACE(absl::StrCat("Could not create expression for ", tag.second));
+        continue;
+      }
+      metrics_expressions_.push_back(
+          {token, override.first, tag.first, tag.second});
     }
-    metrics_expressions_.push_back({token, metric, tag, expression});
   }
 
   // Register OC Stackdriver exporter and views to be exported.
@@ -487,7 +495,9 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
       absl::Seconds(getMonitoringExportInterval()));
 
   // Register opencensus measures and views.
-  registerViews(getMetricExpiryDuration(config_), getDroppedMetrics(config_));
+  auto dropped = getDroppedMetrics(config_);
+  dropViews(dropped);
+  registerViews(getMetricExpiryDuration(config_), dropped);
 
   return true;
 }
@@ -557,8 +567,6 @@ void StackdriverRootContext::record() {
                      std::vector<std::pair<std::string, std::string>>>
       overrides;
   evaluateMetricsExpressions(overrides);
-  std::cout << "overrides for client/request_count: "
-            << overrides["client/request_count"].size() << "\n";
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node_info.get(), request_info,
       !config_.disable_http_size_metrics(), overrides);
@@ -785,16 +793,13 @@ void StackdriverRootContext::evaluateMetricsExpressions(
                        std::vector<std::pair<std::string, std::string>>>&
         overrides) {
   for (const auto& expression : metrics_expressions_) {
-    std::cout << "adding expression: " << expression.tag
-              << ", for metric: " << expression.metric << "\n";
     std::string value;
     if (!evaluateExpression(expression.token, &value)) {
       LOG_WARN(absl::StrCat("Could not evaluate expression: ",
                             expression.expression));
       continue;
     }
-    overrides[expression.metric].emplace_back(
-        std::make_pair(expression.tag, value));
+    overrides[expression.metric].emplace_back(expression.tag, value);
   }
 }
 
