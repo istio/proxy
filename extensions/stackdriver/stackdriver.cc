@@ -198,9 +198,10 @@ std::vector<std::string> getDroppedMetrics(
 }
 
 bool isAllowedOverride(std::string metric, std::string tag) {
-  auto it = std::find(kDefinedLabels.begin(), kDefinedLabels.end(), tag);
-  if (it != kDefinedLabels.end()) {
-    return true;
+  for (const auto& label : kDefinedLabels) {
+    if (label == tag) {
+      return true;
+    }
   }
 
   if (absl::StrContains(metric, "connection_") ||
@@ -209,8 +210,12 @@ bool isAllowedOverride(std::string metric, std::string tag) {
     return false;
   }
 
-  it = std::find(kHttpDefinedLabels.begin(), kHttpDefinedLabels.end(), tag);
-  return it != kHttpDefinedLabels.end();
+  for (const auto& label : kHttpDefinedLabels) {
+    if (label == tag) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
@@ -563,9 +568,7 @@ void StackdriverRootContext::record() {
   ::Wasm::Common::RequestInfo request_info;
   ::Wasm::Common::populateHTTPRequestInfo(outbound, useHostHeaderFallback(),
                                           &request_info);
-  std::unordered_map<std::string,
-                     std::vector<std::pair<std::string, std::string>>>
-      overrides;
+  override_map overrides;
   evaluateMetricsExpressions(overrides);
   ::Extensions::Stackdriver::Metric::record(
       outbound, local_node, peer_node_info.get(), request_info,
@@ -629,9 +632,7 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     ::Wasm::Common::populateTCPRequestInfo(outbound, &request_info);
   }
   // Record TCP Metrics.
-  std::unordered_map<std::string,
-                     std::vector<std::pair<std::string, std::string>>>
-      overrides;
+  override_map overrides;
   evaluateMetricsExpressions(overrides);
   ::Extensions::Stackdriver::Metric::recordTCP(
       outbound, local_node, peer_node_info.get(), request_info, overrides);
@@ -789,9 +790,7 @@ void StackdriverRootContext::evaluateExpressions(
 }
 
 void StackdriverRootContext::evaluateMetricsExpressions(
-    std::unordered_map<std::string,
-                       std::vector<std::pair<std::string, std::string>>>&
-        overrides) {
+    override_map& overrides) {
   for (const auto& expression : metrics_expressions_) {
     std::string value;
     if (!evaluateExpression(expression.token, &value)) {
