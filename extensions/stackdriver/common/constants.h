@@ -69,7 +69,7 @@ constexpr char kClientConnectionsCloseCountView[] =
 constexpr char kClientReceivedBytesCountView[] = "client/received_bytes_count";
 constexpr char kClientSentBytesCountView[] = "client/sent_bytes_count";
 
-constexpr std::array kDefinedLabels = {
+constexpr std::string_view kDefinedLabels[] = {
     "request_protocol",
     "service_authentication_policy",
     "mesh_uid",
@@ -92,7 +92,7 @@ constexpr std::array kDefinedLabels = {
     "destination_canonical_revision",
 };
 
-constexpr std::array kHttpDefinedLabels = {
+constexpr std::string_view kHttpDefinedLabels[] = {
     "request_operation",
     "response_code",
     "api_version",

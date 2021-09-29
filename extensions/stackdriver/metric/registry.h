@@ -39,10 +39,10 @@ opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
         stub_option);
 
 // registers Opencensus views
-void registerViews(absl::Duration, std::vector<std::string>);
+void registerViews(absl::Duration, const std::vector<std::string>&);
 
 // drops existing OC views
-void dropViews(std::vector<std::string>);
+void dropViews(const std::vector<std::string>&);
 
 // Opencensus tag key functions.
 opencensus::tags::TagKey requestOperationKey();

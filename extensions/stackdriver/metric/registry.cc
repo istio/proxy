@@ -370,7 +370,7 @@ MEASURE_FUNC(clientReceivedBytesCount, ClientReceivedBytesCount, By, Int64)
 MEASURE_FUNC(clientSentBytesCount, ClientSentBytesCount, By, Int64)
 
 void registerViews(absl::Duration expiry_duration,
-                   std::vector<std::string> dropped_metrics) {
+                   const std::vector<std::string>& dropped_metrics) {
   // Register measure first, which views depend on.
   serverRequestCountMeasure();
   serverRequestBytesMeasure();
@@ -408,8 +408,8 @@ void registerViews(absl::Duration expiry_duration,
   registerClientSentBytesCountView(expiry_duration, dropped_metrics);
 }
 
-void dropViews(std::vector<std::string> dropped_metrics) {
-  for (auto metric : dropped_metrics) {
+void dropViews(const std::vector<std::string>& dropped_metrics) {
+  for (const auto& metric : dropped_metrics) {
     opencensus::stats::StatsExporter::RemoveView(metric);
   }
 }
