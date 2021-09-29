@@ -114,6 +114,7 @@ message PluginConfig {
   // metrics for HTTP traffic. Defaults to false (request and response size
   // metrics are enabled).
   // Deprecated -- use `metrics_overrides` instead.
+  // if `metrics_overrides` is used, this value will be ignored.
   bool disable_http_size_metrics = 8 [deprecated = true];
 
   // Optional. Allows enabling log compression for stackdriver access logs.
