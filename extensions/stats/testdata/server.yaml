@@ -120,7 +120,7 @@ static_resources:
                     local: { inline_string: "envoy.wasm.stats" }
                 configuration: |
                   { "debug": "false", max_peer_cache_size: 20 }
-          - name: envoy.router
+          - name: envoy.filters.http.router
             config: {}
           access_log:
           - name: envoy.file_access_log
@@ -168,7 +168,7 @@ static_resources:
                 function envoy_on_request(request_handle)
                  trivial_httpbin(request_handle)
                 end
-          - name: envoy.router
+          - name: envoy.filters.http.router
             config: {}
           access_log:
           - name: envoy.file_access_log

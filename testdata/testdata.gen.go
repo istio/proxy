@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 )
+
 type asset struct {
 	bytes []byte
 	info  os.FileInfo
@@ -365,7 +366,7 @@ filter_chains:
       stat_prefix: client
       http_filters:
 {{ .Vars.ClientHTTPFilters | fill | indent 6 }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: client
         virtual_hosts:
@@ -417,7 +418,7 @@ filter_chains:
       stat_prefix: server
       http_filters:
 {{ .Vars.ServerHTTPFilters | fill | indent 6 }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:
