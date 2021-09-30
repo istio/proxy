@@ -253,7 +253,7 @@ TagKeyValueList getMetricTagMap(
 
   TagKeyValueList out;
   for (const auto& [tag_key, value_list] : input_map) {
-    auto name = tag_key.name();
+    const auto& name = tag_key.name();
     auto it = std::find_if(
         tag_overrides.begin(), tag_overrides.end(),
         [&name](const auto& override) { return override.first == name; });
@@ -282,8 +282,9 @@ TagKeyValueList getMetricTagMap(
   return out;
 }
 
-bool hasOverridesMatching(const override_map& overrides, std::string metric) {
-  if (overrides.size() == 0) {
+bool hasOverridesMatching(const override_map& overrides,
+                          const std::string& metric) {
+  if (overrides.empty()) {
     return false;
   }
   auto it = std::find_if(overrides.begin(), overrides.end(),
