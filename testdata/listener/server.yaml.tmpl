@@ -16,7 +16,7 @@ filter_chains:
       stat_prefix: server
       http_filters:
 {{ .Vars.ServerHTTPFilters | fill | indent 6 }}
-      - name: envoy.router
+      - name: envoy.filters.http.router
       route_config:
         name: server
         virtual_hosts:

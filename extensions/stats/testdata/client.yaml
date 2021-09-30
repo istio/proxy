@@ -120,7 +120,7 @@ static_resources:
                     local: { inline_string: "envoy.wasm.stats" }
                 configuration: |
                   { "debug": "false", max_peer_cache_size: 20, field_separator: ";.;" }
-          - name: envoy.router
+          - name: envoy.filters.http.router
             config: {}
           access_log:
           - name: envoy.file_access_log
