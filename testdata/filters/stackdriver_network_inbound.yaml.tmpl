@@ -17,4 +17,4 @@
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
-            {}
+            {"metrics_overrides": {"server/request_bytes":{"drop": true}, "server/connection_open_count":{"tag_overrides":{"mesh_uid":"'override'"}}}}

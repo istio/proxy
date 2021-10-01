@@ -124,8 +124,15 @@ class StackdriverRootContext : public RootContext {
   void evaluateExpressions(
       std::unordered_map<std::string, std::string>& extra_labels);
 
+  // Evaluate Expressions in metrics_expressions_ vector.
+  void evaluateMetricsExpressions(
+      ::Extensions::Stackdriver::Metric::override_map& overrides);
+
   // Cleanup expressions in expressions_ vector.
   void cleanupExpressions();
+
+  // Cleanup expressions in metrics_expressions_ vector.
+  void cleanupMetricsExpressions();
 
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
@@ -161,6 +168,15 @@ class StackdriverRootContext : public RootContext {
     std::string expression;
   };
   std::vector<struct expressionInfo> expressions_;
+
+  // Stores expressions for evaluation for metrics.
+  struct metricsExpressionInfo {
+    uint32_t token;
+    std::string metric;
+    ::opencensus::tags::TagKey tag;
+    std::string expression;
+  };
+  std::vector<struct metricsExpressionInfo> metrics_expressions_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

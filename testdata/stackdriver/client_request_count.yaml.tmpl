@@ -1,5 +1,7 @@
 metric:
   labels:
+    api_name:
+    api_version:
     destination_canonical_revision: version-1
     destination_canonical_service_name: ratings
     destination_canonical_service_namespace: default
@@ -15,7 +17,7 @@ metric:
     destination_workload_name: ratings-v1
     destination_workload_namespace: default
     mesh_uid: proj-123
-    request_operation: GET
+    request_operation: override
     request_protocol: http
     response_code: "200"
     service_authentication_policy: unknown # TODO: upstream TLS indicator is not reported

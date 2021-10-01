@@ -201,72 +201,105 @@ StackdriverOptions getStackdriverOptions(
 /*
  *  view function macros
  */
-#define REGISTER_COUNT_VIEW(_v)                              \
-  void register##_v##View(absl::Duration expiry_duration) {  \
-    const ViewDescriptor view_descriptor =                   \
-        ViewDescriptor()                                     \
-            .set_name(k##_v##View)                           \
-            .set_measure(k##_v##Measure)                     \
-            .set_expiry_duration(expiry_duration)            \
-            .set_aggregation(Aggregation::Count()) ADD_TAGS; \
-    View view(view_descriptor);                              \
-    view_descriptor.RegisterForExport();                     \
+#define REGISTER_COUNT_VIEW(_v)                                           \
+  void register##_v##View(absl::Duration expiry_duration,                 \
+                          std::vector<std::string> dropped_metrics) {     \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
+                          k##_v##View);                                   \
+    if (iter != dropped_metrics.end()) {                                  \
+      return;                                                             \
+    }                                                                     \
+    const ViewDescriptor view_descriptor =                                \
+        ViewDescriptor()                                                  \
+            .set_name(k##_v##View)                                        \
+            .set_measure(k##_v##Measure)                                  \
+            .set_expiry_duration(expiry_duration)                         \
+            .set_aggregation(Aggregation::Count()) ADD_TAGS;              \
+    View view(view_descriptor);                                           \
+    view_descriptor.RegisterForExport();                                  \
   }
 
-#define REGISTER_TCP_COUNT_VIEW(_v)                                 \
-  void register##_v##View(absl::Duration expiry_duration) {         \
-    const ViewDescriptor view_descriptor =                          \
-        ViewDescriptor()                                            \
-            .set_name(k##_v##View)                                  \
-            .set_measure(k##_v##Measure)                            \
-            .set_expiry_duration(expiry_duration)                   \
-            .set_aggregation(Aggregation::Count()) ADD_COMMON_TAGS; \
-    View view(view_descriptor);                                     \
-    view_descriptor.RegisterForExport();                            \
+#define REGISTER_TCP_COUNT_VIEW(_v)                                       \
+  void register##_v##View(absl::Duration expiry_duration,                 \
+                          std::vector<std::string> dropped_metrics) {     \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
+                          k##_v##View);                                   \
+    if (iter != dropped_metrics.end()) {                                  \
+      return;                                                             \
+    }                                                                     \
+    const ViewDescriptor view_descriptor =                                \
+        ViewDescriptor()                                                  \
+            .set_name(k##_v##View)                                        \
+            .set_measure(k##_v##Measure)                                  \
+            .set_expiry_duration(expiry_duration)                         \
+            .set_aggregation(Aggregation::Count()) ADD_COMMON_TAGS;       \
+    View view(view_descriptor);                                           \
+    view_descriptor.RegisterForExport();                                  \
   }
 
-#define REGISTER_TCP_SUM_VIEW(_v)                                 \
-  void register##_v##View(absl::Duration expiry_duration) {       \
-    const ViewDescriptor view_descriptor =                        \
-        ViewDescriptor()                                          \
-            .set_name(k##_v##View)                                \
-            .set_measure(k##_v##Measure)                          \
-            .set_expiry_duration(expiry_duration)                 \
-            .set_aggregation(Aggregation::Sum()) ADD_COMMON_TAGS; \
-    View view(view_descriptor);                                   \
-    view_descriptor.RegisterForExport();                          \
+#define REGISTER_TCP_SUM_VIEW(_v)                                         \
+  void register##_v##View(absl::Duration expiry_duration,                 \
+                          std::vector<std::string> dropped_metrics) {     \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
+                          k##_v##View);                                   \
+    if (iter != dropped_metrics.end()) {                                  \
+      return;                                                             \
+    }                                                                     \
+    const ViewDescriptor view_descriptor =                                \
+        ViewDescriptor()                                                  \
+            .set_name(k##_v##View)                                        \
+            .set_measure(k##_v##Measure)                                  \
+            .set_expiry_duration(expiry_duration)                         \
+            .set_aggregation(Aggregation::Sum()) ADD_COMMON_TAGS;         \
+    View view(view_descriptor);                                           \
+    view_descriptor.RegisterForExport();                                  \
   }
 
-#define REGISTER_DISTRIBUTION_VIEW(_v)                              \
-  void register##_v##View(absl::Duration expiry_duration) {         \
-    const ViewDescriptor view_descriptor =                          \
-        ViewDescriptor()                                            \
-            .set_name(k##_v##View)                                  \
-            .set_measure(k##_v##Measure)                            \
-            .set_expiry_duration(expiry_duration)                   \
-            .set_aggregation(Aggregation::Distribution(             \
-                BucketBoundaries::Exponential(20, 1, 2))) ADD_TAGS; \
-    View view(view_descriptor);                                     \
-    view_descriptor.RegisterForExport();                            \
+#define REGISTER_DISTRIBUTION_VIEW(_v)                                    \
+  void register##_v##View(absl::Duration expiry_duration,                 \
+                          std::vector<std::string> dropped_metrics) {     \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
+                          k##_v##View);                                   \
+    if (iter != dropped_metrics.end()) {                                  \
+      return;                                                             \
+    }                                                                     \
+    const ViewDescriptor view_descriptor =                                \
+        ViewDescriptor()                                                  \
+            .set_name(k##_v##View)                                        \
+            .set_measure(k##_v##Measure)                                  \
+            .set_expiry_duration(expiry_duration)                         \
+            .set_aggregation(Aggregation::Distribution(                   \
+                BucketBoundaries::Exponential(20, 1, 2))) ADD_TAGS;       \
+    View view(view_descriptor);                                           \
+    view_descriptor.RegisterForExport();                                  \
   }
 
-#define REGISTER_BYTES_DISTRIBUTION_VIEW(_v)                        \
-  void register##_v##View(absl::Duration expiry_duration) {         \
-    const ViewDescriptor view_descriptor =                          \
-        ViewDescriptor()                                            \
-            .set_name(k##_v##View)                                  \
-            .set_measure(k##_v##Measure)                            \
-            .set_expiry_duration(expiry_duration)                   \
-            .set_aggregation(Aggregation::Distribution(             \
-                BucketBoundaries::Exponential(7, 1, 10))) ADD_TAGS; \
-    View view(view_descriptor);                                     \
-    view_descriptor.RegisterForExport();                            \
+#define REGISTER_BYTES_DISTRIBUTION_VIEW(_v)                              \
+  void register##_v##View(absl::Duration expiry_duration,                 \
+                          std::vector<std::string> dropped_metrics) {     \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
+                          k##_v##View);                                   \
+    if (iter != dropped_metrics.end()) {                                  \
+      return;                                                             \
+    }                                                                     \
+    const ViewDescriptor view_descriptor =                                \
+        ViewDescriptor()                                                  \
+            .set_name(k##_v##View)                                        \
+            .set_measure(k##_v##Measure)                                  \
+            .set_expiry_duration(expiry_duration)                         \
+            .set_aggregation(Aggregation::Distribution(                   \
+                BucketBoundaries::Exponential(7, 1, 10))) ADD_TAGS;       \
+    View view(view_descriptor);                                           \
+    view_descriptor.RegisterForExport();                                  \
   }
 
 #define ADD_TAGS ADD_COMMON_TAGS ADD_HTTP_GRPC_TAGS
 
-#define ADD_HTTP_GRPC_TAGS \
-  .add_column(requestOperationKey()).add_column(responseCodeKey())
+#define ADD_HTTP_GRPC_TAGS           \
+  .add_column(requestOperationKey()) \
+      .add_column(responseCodeKey()) \
+      .add_column(apiVersionKey())   \
+      .add_column(apiNameKey())
 
 #define ADD_COMMON_TAGS                                      \
   .add_column(requestProtocolKey())                          \
@@ -336,7 +369,8 @@ MEASURE_FUNC(clientConnectionsCloseCount, ClientConnectionsCloseCount, 1, Int64)
 MEASURE_FUNC(clientReceivedBytesCount, ClientReceivedBytesCount, By, Int64)
 MEASURE_FUNC(clientSentBytesCount, ClientSentBytesCount, By, Int64)
 
-void registerViews(absl::Duration expiry_duration) {
+void registerViews(absl::Duration expiry_duration,
+                   const std::vector<std::string>& dropped_metrics) {
   // Register measure first, which views depend on.
   serverRequestCountMeasure();
   serverRequestBytesMeasure();
@@ -356,22 +390,28 @@ void registerViews(absl::Duration expiry_duration) {
   clientSentBytesCountMeasure();
 
   // Register views to export;
-  registerServerRequestCountView(expiry_duration);
-  registerServerRequestBytesView(expiry_duration);
-  registerServerResponseBytesView(expiry_duration);
-  registerServerResponseLatenciesView(expiry_duration);
-  registerClientRequestCountView(expiry_duration);
-  registerClientRequestBytesView(expiry_duration);
-  registerClientResponseBytesView(expiry_duration);
-  registerClientRoundtripLatenciesView(expiry_duration);
-  registerServerConnectionsOpenCountView(expiry_duration);
-  registerServerConnectionsCloseCountView(expiry_duration);
-  registerServerReceivedBytesCountView(expiry_duration);
-  registerServerSentBytesCountView(expiry_duration);
-  registerClientConnectionsOpenCountView(expiry_duration);
-  registerClientConnectionsCloseCountView(expiry_duration);
-  registerClientReceivedBytesCountView(expiry_duration);
-  registerClientSentBytesCountView(expiry_duration);
+  registerServerRequestCountView(expiry_duration, dropped_metrics);
+  registerServerRequestBytesView(expiry_duration, dropped_metrics);
+  registerServerResponseBytesView(expiry_duration, dropped_metrics);
+  registerServerResponseLatenciesView(expiry_duration, dropped_metrics);
+  registerClientRequestCountView(expiry_duration, dropped_metrics);
+  registerClientRequestBytesView(expiry_duration, dropped_metrics);
+  registerClientResponseBytesView(expiry_duration, dropped_metrics);
+  registerClientRoundtripLatenciesView(expiry_duration, dropped_metrics);
+  registerServerConnectionsOpenCountView(expiry_duration, dropped_metrics);
+  registerServerConnectionsCloseCountView(expiry_duration, dropped_metrics);
+  registerServerReceivedBytesCountView(expiry_duration, dropped_metrics);
+  registerServerSentBytesCountView(expiry_duration, dropped_metrics);
+  registerClientConnectionsOpenCountView(expiry_duration, dropped_metrics);
+  registerClientConnectionsCloseCountView(expiry_duration, dropped_metrics);
+  registerClientReceivedBytesCountView(expiry_duration, dropped_metrics);
+  registerClientSentBytesCountView(expiry_duration, dropped_metrics);
+}
+
+void dropViews(const std::vector<std::string>& dropped_metrics) {
+  for (const auto& metric : dropped_metrics) {
+    opencensus::stats::StatsExporter::RemoveView(metric);
+  }
 }
 
 /*
@@ -410,6 +450,8 @@ TAG_KEY_FUNC(destination_canonical_service_namespace,
              destinationCanonicalServiceNamespace)
 TAG_KEY_FUNC(source_canonical_revision, sourceCanonicalRevision)
 TAG_KEY_FUNC(destination_canonical_revision, destinationCanonicalRevision)
+TAG_KEY_FUNC(api_name, apiName)
+TAG_KEY_FUNC(api_version, apiVersion)
 
 }  // namespace Metric
 }  // namespace Stackdriver

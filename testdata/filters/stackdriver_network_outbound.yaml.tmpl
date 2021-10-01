@@ -17,4 +17,4 @@
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
-            {"access_logging": "FULL"}
+            {"access_logging": "FULL", "metrics_overrides": {"client/request_bytes":{"drop": true}, "client/request_count":{"tag_overrides":{"request_operation":"'override'"}}}}

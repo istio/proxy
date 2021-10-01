@@ -69,6 +69,36 @@ constexpr char kClientConnectionsCloseCountView[] =
 constexpr char kClientReceivedBytesCountView[] = "client/received_bytes_count";
 constexpr char kClientSentBytesCountView[] = "client/sent_bytes_count";
 
+constexpr std::string_view kDefinedLabels[] = {
+    "request_protocol",
+    "service_authentication_policy",
+    "mesh_uid",
+    "destination_service_name",
+    "destination_service_namespace",
+    "destination_port",
+    "source_principal",
+    "source_workload_name",
+    "source_workload_namespace",
+    "source_owner",
+    "destination_principal",
+    "destination_workload_name",
+    "destination_workload_namespace",
+    "destination_owner",
+    "source_canonical_service_name",
+    "destination_canonical_service_name",
+    "source_canonical_service_namespace",
+    "destination_canonical_service_namespace",
+    "source_canonical_revision",
+    "destination_canonical_revision",
+};
+
+constexpr std::string_view kHttpDefinedLabels[] = {
+    "request_operation",
+    "response_code",
+    "api_version",
+    "api_name",
+};
+
 // Prefix for Istio metrics.
 constexpr char kIstioMetricPrefix[] = "istio.io/service/";
 

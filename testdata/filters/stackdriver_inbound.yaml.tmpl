@@ -17,4 +17,4 @@
         configuration:
           "@type": "type.googleapis.com/google.protobuf.StringValue"
           value: |
-            {"enable_audit_log": true, "metric_expiry_duration": "10s"}
+            {"enable_audit_log": true, "metric_expiry_duration": "10s", "metrics_overrides": {"server/request_count":{"tag_overrides":{"api_version":"'v12'"}}, "server/request_bytes":{"drop": true}, "server/connection_open_count":{"tag_overrides":{"mesh_uid":"'override'", "foo":"'ignored'"}}}}

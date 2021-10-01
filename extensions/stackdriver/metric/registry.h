@@ -39,7 +39,10 @@ opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
         stub_option);
 
 // registers Opencensus views
-void registerViews(absl::Duration);
+void registerViews(absl::Duration, const std::vector<std::string>&);
+
+// drops existing OC views
+void dropViews(const std::vector<std::string>&);
 
 // Opencensus tag key functions.
 opencensus::tags::TagKey requestOperationKey();
@@ -64,6 +67,8 @@ opencensus::tags::TagKey sourceCanonicalServiceNameKey();
 opencensus::tags::TagKey sourceCanonicalServiceNamespaceKey();
 opencensus::tags::TagKey destinationCanonicalRevisionKey();
 opencensus::tags::TagKey sourceCanonicalRevisionKey();
+opencensus::tags::TagKey apiNameKey();
+opencensus::tags::TagKey apiVersionKey();
 
 // Opencensus measure functions.
 opencensus::stats::MeasureInt64 serverRequestCountMeasure();

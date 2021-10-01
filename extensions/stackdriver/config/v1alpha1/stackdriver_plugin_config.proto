@@ -28,7 +28,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
 // Custom instance configuration overrides.
-// Provides a way to customize metrics/logs.
+// Provides a way to customize logs.
 message CustomConfig {
   // (Optional) Collection of tag names and tag expressions to include in the
   // instance. Conflicts are resolved by the tag name by overriding previously
@@ -41,7 +41,7 @@ message CustomConfig {
   repeated string tags_to_remove = 2;
 }
 
-// next id: 15
+// next id: 17
 message PluginConfig {
   // Types of Access logs to export. Does not affect audit logging.
   enum AccessLogging {
@@ -113,7 +113,9 @@ message PluginConfig {
   // Optional. Allows disabling of reporting of the request and response size
   // metrics for HTTP traffic. Defaults to false (request and response size
   // metrics are enabled).
-  bool disable_http_size_metrics = 8;
+  // Deprecated -- use `metrics_overrides` instead.
+  // if `metrics_overrides` is used, this value will be ignored.
+  bool disable_http_size_metrics = 8 [deprecated = true];
 
   // Optional. Allows enabling log compression for stackdriver access logs.
   google.protobuf.BoolValue enable_log_compression = 9;
@@ -135,4 +137,21 @@ message PluginConfig {
   // series will never be expired. This option is useful to avoid unbounded
   // metric label explodes proxy memory.
   google.protobuf.Duration metric_expiry_duration = 15;
+
+  // Optional. Allows altering metrics behavior.
+  // Metric names for specifying overloads drop the `istio.io/service` prefix.
+  // Examples: `server/request_count`, `client/roundtrip_latencies`
+  map<string, MetricsOverride> metrics_overrides = 16;
+}
+
+// Provides behavior modifications for Cloud Monitoring metrics.
+message MetricsOverride {
+  // Optional. If true, no data for the associated metric will be collected or
+  // exported.
+  bool drop = 1;
+
+  // Optional. Maps tag names to value expressions that will be used at
+  // reporting time. If the tag name does not match a well-known tag for the
+  // istio Cloud Monitoring metrics, the configuration will have no effect.
+  map<string, string> tag_overrides = 2;
 }

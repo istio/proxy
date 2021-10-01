@@ -217,6 +217,10 @@ func TestStackdriverReload(t *testing.T) {
 	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/access_log_policy.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_outbound.yaml.tmpl")
 	enableStackDriver(t, params.Vars)
 
 	sd := &Stackdriver{Port: sdPort}
