@@ -17,16 +17,16 @@
 
 #include "extensions/common/context.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
+#include "opencensus/stats/tag_key.h"
 
 namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-typedef std::unordered_map<std::string,
-                           std::vector<std::pair<std::string, std::string>>>
-    override_map;
-typedef std::unordered_map<
-    std::string, std::vector<std::pair<std::string, std::string>>>::value_type
+typedef std::vector<std::pair<opencensus::tags::TagKey, std::string>>
+    TagKeyValueList;
+typedef std::unordered_map<std::string, TagKeyValueList> override_map;
+typedef std::unordered_map<std::string, TagKeyValueList>::value_type
     override_map_value_type;
 
 // Record metrics based on local node info and request info.

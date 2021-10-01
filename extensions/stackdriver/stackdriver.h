@@ -124,12 +124,9 @@ class StackdriverRootContext : public RootContext {
   void evaluateExpressions(
       std::unordered_map<std::string, std::string>& extra_labels);
 
-  // Evaluate Expressions in metrics_expressions_ vector, storing in
-  // tag_overrides.
+  // Evaluate Expressions in metrics_expressions_ vector.
   void evaluateMetricsExpressions(
-      std::unordered_map<std::string,
-                         std::vector<std::pair<std::string, std::string>>>&
-          tag_overrides);
+      ::Extensions::Stackdriver::Metric::override_map& overrides);
 
   // Cleanup expressions in expressions_ vector.
   void cleanupExpressions();
@@ -176,7 +173,7 @@ class StackdriverRootContext : public RootContext {
   struct metricsExpressionInfo {
     uint32_t token;
     std::string metric;
-    std::string tag;
+    ::opencensus::tags::TagKey tag;
     std::string expression;
   };
   std::vector<struct metricsExpressionInfo> metrics_expressions_;

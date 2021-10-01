@@ -478,8 +478,9 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
         LOG_TRACE(absl::StrCat("Could not create expression for ", tag.second));
         continue;
       }
+      const auto& tag_key = ::opencensus::tags::TagKey::Register(tag.first);
       metrics_expressions_.push_back(
-          {token, override.first, tag.first, tag.second});
+          {token, override.first, tag_key, tag.second});
     }
   }
 

@@ -25,9 +25,6 @@ namespace Extensions {
 namespace Stackdriver {
 namespace Metric {
 
-using TagKeyValueList =
-    std::vector<std::pair<opencensus::tags::TagKey, std::string>>;
-
 namespace {
 
 using Common::unknownIfEmpty;
@@ -244,9 +241,8 @@ void addHttpSpecificTags(const ::Wasm::Common::RequestInfo& request_info,
                        std::to_string(response_code));
 }
 
-TagKeyValueList getMetricTagMap(
-    const TagKeyValueList& input_map,
-    const std::vector<std::pair<std::string, std::string>>& tag_overrides) {
+TagKeyValueList getMetricTagMap(const TagKeyValueList& input_map,
+                                const TagKeyValueList& tag_overrides) {
   if (tag_overrides.empty()) {
     return input_map;
   }
@@ -254,27 +250,28 @@ TagKeyValueList getMetricTagMap(
   TagKeyValueList out;
   for (const auto& [tag_key, value_list] : input_map) {
     const auto& name = tag_key.name();
-    auto it = std::find_if(
-        tag_overrides.begin(), tag_overrides.end(),
-        [&name](const auto& override) { return override.first == name; });
+    auto it = std::find_if(tag_overrides.begin(), tag_overrides.end(),
+                           [&name](const auto& override) {
+                             return override.first.name() == name;
+                           });
     if (it != tag_overrides.end()) {
-      auto key = opencensus::tags::TagKey::Register(it->first);
-      out.emplace_back(key, it->second);
+      out.emplace_back(tag_key, it->second);
     } else {
       out.emplace_back(tag_key, value_list);
     }
   }
 
-  auto it = std::find_if(
-      tag_overrides.begin(), tag_overrides.end(),
-      [](const auto& override) { return override.first == "api_version"; });
+  auto it = std::find_if(tag_overrides.begin(), tag_overrides.end(),
+                         [](const auto& override) {
+                           return override.first.name() == "api_version";
+                         });
   if (it != tag_overrides.end()) {
     out.emplace_back(apiVersionKey(), it->second);
   }
 
   it = std::find_if(
       tag_overrides.begin(), tag_overrides.end(),
-      [](const auto& override) { return override.first == "api_name"; });
+      [](const auto& override) { return override.first.name() == "api_name"; });
   if (it != tag_overrides.end()) {
     out.emplace_back(apiNameKey(), it->second);
   }
