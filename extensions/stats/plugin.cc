@@ -44,7 +44,7 @@ namespace Stats {
 const uint32_t kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
 
 using ::nlohmann::json;
-using ::Wasm::Common::GetStringView;
+using ::Wasm::Common::GetFromFbStringView;
 using ::Wasm::Common::JsonArrayIterate;
 using ::Wasm::Common::JsonGetField;
 using ::Wasm::Common::JsonObjectIterate;
@@ -57,30 +57,31 @@ void map_node(IstioDimensions& instance, bool is_source,
               const ::Wasm::Common::FlatNode& node) {
   // Ensure all properties are set (and cleared when necessary).
   if (is_source) {
-    instance[source_workload] = GetStringView(node.workload_name());
-    instance[source_workload_namespace] = GetStringView(node.namespace_());
-    instance[source_cluster] = GetStringView(node.cluster_id());
+    instance[source_workload] = GetFromFbStringView(node.workload_name());
+    instance[source_workload_namespace] =
+        GetFromFbStringView(node.namespace_());
+    instance[source_cluster] = GetFromFbStringView(node.cluster_id());
 
     auto source_labels = node.labels();
     if (source_labels) {
       auto app_iter = source_labels->LookupByKey("app");
       auto app = app_iter ? app_iter->value() : nullptr;
-      instance[source_app] = GetStringView(app);
+      instance[source_app] = GetFromFbStringView(app);
 
       auto version_iter = source_labels->LookupByKey("version");
       auto version = version_iter ? version_iter->value() : nullptr;
-      instance[source_version] = GetStringView(version);
+      instance[source_version] = GetFromFbStringView(version);
 
       auto canonical_name = source_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceLabelName.data());
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
-      instance[source_canonical_service] = GetStringView(name);
+      instance[source_canonical_service] = GetFromFbStringView(name);
 
       auto rev = source_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
-        instance[source_canonical_revision] = GetStringView(rev->value());
+        instance[source_canonical_revision] = GetFromFbStringView(rev->value());
       } else {
         instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
       }
@@ -91,30 +92,32 @@ void map_node(IstioDimensions& instance, bool is_source,
       instance[source_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
   } else {
-    instance[destination_workload] = GetStringView(node.workload_name());
-    instance[destination_workload_namespace] = GetStringView(node.namespace_());
-    instance[destination_cluster] = GetStringView(node.cluster_id());
+    instance[destination_workload] = GetFromFbStringView(node.workload_name());
+    instance[destination_workload_namespace] =
+        GetFromFbStringView(node.namespace_());
+    instance[destination_cluster] = GetFromFbStringView(node.cluster_id());
 
     auto destination_labels = node.labels();
     if (destination_labels) {
       auto app_iter = destination_labels->LookupByKey("app");
       auto app = app_iter ? app_iter->value() : nullptr;
-      instance[destination_app] = GetStringView(app);
+      instance[destination_app] = GetFromFbStringView(app);
 
       auto version_iter = destination_labels->LookupByKey("version");
       auto version = version_iter ? version_iter->value() : nullptr;
-      instance[destination_version] = GetStringView(version);
+      instance[destination_version] = GetFromFbStringView(version);
 
       auto canonical_name = destination_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceLabelName.data());
       auto name =
           canonical_name ? canonical_name->value() : node.workload_name();
-      instance[destination_canonical_service] = GetStringView(name);
+      instance[destination_canonical_service] = GetFromFbStringView(name);
 
       auto rev = destination_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
-        instance[destination_canonical_revision] = GetStringView(rev->value());
+        instance[destination_canonical_revision] =
+            GetFromFbStringView(rev->value());
       } else {
         instance[destination_canonical_revision] =
             ::Wasm::Common::kLatest.data();
@@ -126,7 +129,8 @@ void map_node(IstioDimensions& instance, bool is_source,
       instance[destination_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
 
-    instance[destination_service_namespace] = GetStringView(node.namespace_());
+    instance[destination_service_namespace] =
+        GetFromFbStringView(node.namespace_());
   }
 }
 
