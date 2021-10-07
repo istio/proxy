@@ -290,7 +290,8 @@ bool populateGRPCInfo(RequestInfo* request_info);
 bool getAuditPolicy();
 
 // Returns a string view stored in a flatbuffers string.
-static inline std::string_view GetStringView(const flatbuffers::String* str) {
+static inline std::string_view GetFromFbStringView(
+    const flatbuffers::String* str) {
   return str ? std::string_view(str->c_str(), str->size()) : std::string_view();
 }
 
