@@ -90,6 +90,8 @@ constexpr std::string_view kDefinedLabels[] = {
     "destination_canonical_service_namespace",
     "source_canonical_revision",
     "destination_canonical_revision",
+    "source_cluster_name",
+    "destination_cluster_name",
 };
 
 constexpr std::string_view kHttpDefinedLabels[] = {

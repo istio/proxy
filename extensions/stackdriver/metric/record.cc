@@ -130,7 +130,11 @@ TagKeyValueList getOutboundTagMap(
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
       {sourceCanonicalRevisionKey(),
-       unknownIfEmpty(getLocalCanonicalRev(local_node_info))}};
+       unknownIfEmpty(getLocalCanonicalRev(local_node_info))},
+      {sourceClusterNameKey(),
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.cluster_id()))},
+      {destinationClusterNameKey(),
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.cluster_id()))}};
   return outboundMap;
 }
 
@@ -178,7 +182,11 @@ TagKeyValueList getInboundTagMap(
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
       {sourceCanonicalRevisionKey(),
-       unknownIfEmpty(getPeerCanonicalRev(peer_node_info))}};
+       unknownIfEmpty(getPeerCanonicalRev(peer_node_info))},
+      {sourceClusterNameKey(),
+       unknownIfEmpty(flatbuffers::GetString(peer_node_info.cluster_id()))},
+      {destinationClusterNameKey(),
+       unknownIfEmpty(flatbuffers::GetString(local_node_info.cluster_id()))}};
   return inboundMap;
 }
 

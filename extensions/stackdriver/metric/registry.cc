@@ -308,10 +308,12 @@ StackdriverOptions getStackdriverOptions(
       .add_column(destinationServiceNameKey())               \
       .add_column(destinationServiceNamespaceKey())          \
       .add_column(destinationPortKey())                      \
+      .add_column(sourceClusterNameKey())                    \
       .add_column(sourcePrincipalKey())                      \
       .add_column(sourceWorkloadNameKey())                   \
       .add_column(sourceWorkloadNamespaceKey())              \
       .add_column(sourceOwnerKey())                          \
+      .add_column(destinationClusterNameKey())               \
       .add_column(destinationPrincipalKey())                 \
       .add_column(destinationWorkloadNameKey())              \
       .add_column(destinationWorkloadNamespaceKey())         \
@@ -432,11 +434,12 @@ TAG_KEY_FUNC(mesh_uid, meshUID)
 TAG_KEY_FUNC(destination_service_name, destinationServiceName)
 TAG_KEY_FUNC(destination_service_namespace, destinationServiceNamespace)
 TAG_KEY_FUNC(destination_port, destinationPort)
-TAG_KEY_FUNC(response_code, desponseCode)
+TAG_KEY_FUNC(source_cluster_name, sourceClusterName)
 TAG_KEY_FUNC(source_principal, sourcePrincipal)
 TAG_KEY_FUNC(source_workload_name, sourceWorkloadName)
 TAG_KEY_FUNC(source_workload_namespace, sourceWorkloadNamespace)
 TAG_KEY_FUNC(source_owner, sourceOwner)
+TAG_KEY_FUNC(destination_cluster_name, destinationClusterName)
 TAG_KEY_FUNC(destination_principal, destinationPrincipal)
 TAG_KEY_FUNC(destination_workload_name, destinationWorkloadName)
 TAG_KEY_FUNC(destination_workload_namespace, destinationWorkloadNamespace)
