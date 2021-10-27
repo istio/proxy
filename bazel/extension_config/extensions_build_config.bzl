@@ -371,6 +371,6 @@ EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_D
 
 # These can be changed to ["//visibility:public"], for  downstream builds which
 # need to directly reference Envoy extensions.
-EXTENSION_CONFIG_VISIBILITY = ["//:extension_config"]
-EXTENSION_PACKAGE_VISIBILITY = ["//:extension_library"]
-CONTRIB_EXTENSION_PACKAGE_VISIBILITY = ["//:contrib_library"]
+EXTENSION_CONFIG_VISIBILITY = ["//visibility:public"]
+EXTENSION_PACKAGE_VISIBILITY = ["//visibility:public"]
+CONTRIB_EXTENSION_PACKAGE_VISIBILITY = ["//visibility:public"]
