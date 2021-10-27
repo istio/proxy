@@ -38,10 +38,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2021-10-22
-ENVOY_SHA = "72c4d59aa39f0e0c7152b5fc15ac0af9d1cb1715"
+# Commit date: 2021-10-26
+ENVOY_SHA = "629ac3f987286427a1c467ff684ba9d68921a3d7"
 
-ENVOY_SHA256 = "9725cb5c934ec73e8f0ae9d9aa7c4268f6f0516b46e1b399bdd5bd7f9aec4189"
+ENVOY_SHA256 = "4d22dbe5a7c230398cd712bfa21e6a7cd7ac7e3ac77e72a03e6c8225dc5fd9c9"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -57,6 +57,12 @@ http_archive(
 )
 
 load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
+
+local_repository(
+    name = "envoy_build_config",
+    # Relative paths are also supported.
+    path = "bazel/extension_config",
+)
 
 envoy_api_binding()
 
