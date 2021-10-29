@@ -58,6 +58,12 @@ http_archive(
 
 load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
 
+local_repository(
+    name = "envoy_build_config",
+    # Relative paths are also supported.
+    path = "bazel/extension_config",
+)
+
 envoy_api_binding()
 
 load("@envoy//bazel:api_repositories.bzl", "envoy_api_dependencies")
