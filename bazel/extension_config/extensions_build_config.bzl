@@ -361,12 +361,12 @@ ISTIO_DISABLED_EXTENSIONS = [
     "envoy.transport_sockets.tcp_stats",
 ]
 
-ISTIO_ENABLED_CONTRIBE_EXTENSIONS = [ 
+ISTIO_ENABLED_CONTRIB_EXTENSIONS = [ 
     "envoy.filters.network.mysql_proxy",
 ]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] + 
-                  [(k,v) for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in ISTIO_ENABLED_CONTRIBE_EXTENSIONS])
+                  [(k,v) for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in ISTIO_ENABLED_CONTRIB_EXTENSIONS])
 
 
 # These can be changed to ["//visibility:public"], for  downstream builds which
