@@ -350,8 +350,18 @@ ISTIO_DISABLED_EXTENSIONS = [
     "envoy.transport_sockets.tcp_stats",
 ]
 
+# on istio 1.12 we enable all contrib extension for 0 migration pain.
 ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
+    "envoy.filters.http.squash",
+    "envoy.filters.http.sxg",
+    "envoy.filters.network.kafka_broker",
+    "envoy.filters.network.kafka_mesh",
     "envoy.filters.network.mysql_proxy",
+    "envoy.filters.network.postgres_proxy",
+    "envoy.filters.network.rocketmq_proxy",
+    "envoy.filters.network.sip_proxy",
+    "envoy.filters.sip.router",
+    "envoy.tls.key_providers.cryptomb",
 ]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
