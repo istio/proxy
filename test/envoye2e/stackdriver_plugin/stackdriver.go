@@ -208,12 +208,29 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 		if !foundAllMetrics {
 			log.Printf("got metrics %d, want %d\n", len(s.sd.ts), len(s.twant))
 			if len(s.sd.ts) >= len(s.twant) {
-				for got := range s.sd.ts {
-					log.Println(got)
+				want := map[string]proto.Message{}
+				got := map[string]proto.Message{}
+				for k := range s.twant {
+					pb := &monitoring.TimeSeries{}
+					if err := proto.UnmarshalText(k, pb); err != nil {
+						log.Printf("error unmarshalling proto: %v", err)
+					}
+					want[pb.Metric.Type] = pb
 				}
-				log.Println("--- but want ---")
-				for want := range s.twant {
-					log.Println(want)
+
+				for k := range s.sd.ts {
+					pb := &monitoring.TimeSeries{}
+					if err := proto.UnmarshalText(k, pb); err != nil {
+						log.Printf("error unmarshalling proto: %v", err)
+					}
+					got[pb.Metric.Type] = pb
+				}
+
+				for k, v := range got {
+					log.Printf("got: %s", k)
+					if diff := cmp.Diff(want[k], v, protocmp.Transform()); diff != "" {
+						log.Printf("found diff for %q (-want +got): %s\n", k, diff)
+					}
 				}
 				return fmt.Errorf("failed to receive expected metrics")
 			}

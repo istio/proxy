@@ -14,6 +14,7 @@ metric:
     destination_canonical_revision: version-1
     destination_canonical_service_name: ratings
     destination_canonical_service_namespace: default
+    destination_cluster_name: server-cluster
     destination_owner: kubernetes://apis/apps/v1/namespaces/default/deployments/ratings-v1
     destination_port: '{{ .Ports.ServerPort }}'
     destination_service_namespace: default
