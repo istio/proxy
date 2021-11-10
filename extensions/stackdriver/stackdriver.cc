@@ -469,13 +469,15 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   for (const auto& override : config_.metrics_overrides()) {
     for (const auto& tag : override.second.tag_overrides()) {
       if (!isAllowedOverride(override.first, tag.first)) {
-        LOG_WARN(absl::StrCat("cannot use tag in metrics: ", tag.first,
-                              "; ignoring override."));
+        LOG_WARN(absl::StrCat("cannot use tag \"", tag.first, "\" in metric \"",
+                              override.first, "\"; ignoring override"));
         continue;
       }
       uint32_t token;
       if (createExpression(tag.second, &token) != WasmResult::Ok) {
-        LOG_TRACE(absl::StrCat("Could not create expression for ", tag.second));
+        LOG_WARN(absl::StrCat("Could not create expression: \"", tag.second,
+                              "\" for tag \"", tag.first, "\" on metric \"",
+                              override.first, "\"; ignoring override"));
         continue;
       }
       const auto& tag_key = ::opencensus::tags::TagKey::Register(tag.first);
