@@ -24,10 +24,10 @@ import (
 	"text/template"
 	"time"
 
-	"sigs.k8s.io/yaml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	yamlv2 "gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"istio.io/proxy/test/envoye2e/env"
 )
