@@ -24,7 +24,7 @@ import (
 	"reflect"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // Config for the extension server

@@ -24,7 +24,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	yamlv2 "gopkg.in/yaml.v2"

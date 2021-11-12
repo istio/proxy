@@ -20,8 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/proto"
+	"sigs.k8s.io/yaml"
 )
 
 // Loads resources in the test data directory
