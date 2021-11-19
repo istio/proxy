@@ -23,9 +23,12 @@ WD=$(cd "$WD" || exit 1 ; pwd)
 # shellcheck disable=SC1090
 source "${WD}/proxy-common.inc"
 
-if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, configuring Docker..." >&2
-  gcloud auth configure-docker
+if [[ $(command -v gcloud) ]]; then
+  gcloud auth configure-docker -q
+elif [[ $(command -v docker-credential-gcr) ]]; then
+  docker-credential-gcr configure-docker
+else
+  echo "No credential helpers found, push to docker may not function properly"
 fi
 
 GIT_SHA="$(git rev-parse --verify HEAD)"
