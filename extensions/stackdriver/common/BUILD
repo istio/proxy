@@ -34,6 +34,9 @@ envoy_cc_library(
         "//extensions/stackdriver/log:__pkg__",
         "//extensions/stackdriver/metric:__pkg__",
     ],
+    deps = [
+        "@com_google_absl//absl/strings",
+    ],
 )
 
 envoy_cc_library(
