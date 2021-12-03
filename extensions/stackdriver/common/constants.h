@@ -14,8 +14,7 @@
  */
 
 #include <string>
-
-#include "absl/strings/string_view.h"
+#include <string_view>
 
 namespace Extensions {
 namespace Stackdriver {
@@ -73,7 +72,7 @@ constexpr char kClientConnectionsCloseCountView[] =
 constexpr char kClientReceivedBytesCountView[] = "client/received_bytes_count";
 constexpr char kClientSentBytesCountView[] = "client/sent_bytes_count";
 
-constexpr absl::string_view kDefinedLabels[] = {
+constexpr std::string_view kDefinedLabels[] = {
     "request_protocol",
     "service_authentication_policy",
     "mesh_uid",
@@ -96,7 +95,7 @@ constexpr absl::string_view kDefinedLabels[] = {
     "destination_canonical_revision",
 };
 
-constexpr absl::string_view kHttpDefinedLabels[] = {
+constexpr std::string_view kHttpDefinedLabels[] = {
     "request_operation",
     "response_code",
     "api_version",
@@ -123,9 +122,9 @@ constexpr char kZoneLabel[] = "zone";
 constexpr char kGCPLocationKey[] = "gcp_location";
 constexpr char kGCPClusterNameKey[] = "gcp_gke_cluster_name";
 constexpr char kGCPProjectKey[] = "gcp_project";
-constexpr absl::string_view kGCPProjectNumberKey = "gcp_project_number";
+constexpr std::string_view kGCPProjectNumberKey = "gcp_project_number";
 constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
-constexpr absl::string_view kGCECreatedByKey = "gcp_gce_instance_created_by";
+constexpr std::string_view kGCECreatedByKey = "gcp_gce_instance_created_by";
 
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
