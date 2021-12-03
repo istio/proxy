@@ -17,6 +17,8 @@
 
 licenses(["notice"])
 
+package(default_visibility = ["//extensions/stackdriver:__subpackages__"])
+
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
@@ -29,11 +31,6 @@ envoy_cc_library(
         "constants.h",
     ],
     repository = "@envoy",
-    visibility = [
-        "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/log:__pkg__",
-        "//extensions/stackdriver/metric:__pkg__",
-    ],
 )
 
 envoy_cc_library(
@@ -46,11 +43,6 @@ envoy_cc_library(
     ],
     external_deps = ["grpc"],
     repository = "@envoy",
-    visibility = [
-        "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/log:__pkg__",
-        "//extensions/stackdriver/metric:__pkg__",
-    ],
     deps = [
         ":constants",
         "//extensions/common:context",
@@ -79,9 +71,6 @@ envoy_cc_library(
         "metrics.h",
     ],
     repository = "@envoy",
-    visibility = [
-        "//extensions/stackdriver/log:__pkg__",
-    ],
     deps = [
         "@proxy_wasm_cpp_host//:null_lib",
     ],
