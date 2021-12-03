@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#include <string>
+#include <string_view>
+
 namespace Extensions {
 namespace Stackdriver {
 namespace Common {
