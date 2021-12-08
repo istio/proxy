@@ -120,8 +120,14 @@ message PluginConfig {
   // Optional. Allows enabling log compression for stackdriver access logs.
   google.protobuf.BoolValue enable_log_compression = 9;
 
-  // Optional. Controls what type of logs to export..
+  // Optional. Controls what type of logs to export.
   AccessLogging access_logging = 10;
+
+  // CEL expression for filtering access logging. If the expression evaluates
+  // to true, an access log entry will be generated. Otherwise, no access log
+  // entry will be generated.
+  // NOTE: Audit logs ignore configured filters.
+  string access_logging_filter_expression = 17;
 
   // (Optional) Collection of tag names and tag expressions to include in the
   // logs. Conflicts are resolved by the tag name by overriding previously
