@@ -58,6 +58,9 @@ type Envoy struct {
 	// standard out for the Envoy process (defaults to os.Stdout).
 	Stdout io.Writer
 
+	// Value used to set the --concurrency flag when starting envoy.
+	Concurrency uint32
+
 	tmpFile   string
 	cmd       *exec.Cmd
 	adminPort uint32
@@ -94,10 +97,14 @@ func (e *Envoy) Run(p *Params) error {
 	if !ok {
 		debugLevel = "info"
 	}
+	concurrency := "1"
+	if(e.Concurrency > 1) {
+	    concurrency = fmt.Sprint(e.Concurrency)
+	}
 	args := []string{
 		"-c", e.tmpFile,
 		"-l", debugLevel,
-		"--concurrency", "1",
+		"--concurrency", concurrency,
 		"--disable-hot-restart",
 		"--drain-time-s", "4", // this affects how long draining listenrs are kept alive
 	}
