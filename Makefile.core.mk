@@ -139,7 +139,7 @@ test_asan: test
 test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
 test_tsan: test
 
-test_centos: BAZEL_BUILD_ARGS := $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT)
+test_centos: BAZEL_BUILD_ARGS := $(CENTOS_BUILD_ARGS) $(BAZEL_BUILD_ARGS)
 test_centos: E2E_TEST_TARGETS =
 test_centos: BAZEL_TEST_TARGETS = $(CENTOS_BAZEL_TEST_TARGETS)
 # TODO: re-enable IPv6 tests
