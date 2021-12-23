@@ -136,7 +136,7 @@ test: prerun_v8_build
 test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
 test_asan: test
 
-test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
+test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
 test_tsan: test
 
 test_centos: BAZEL_BUILD_ARGS := $(CENTOS_BUILD_ARGS) $(BAZEL_BUILD_ARGS)
