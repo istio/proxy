@@ -95,11 +95,6 @@ build_envoy_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
 build_envoy_asan: BAZEL_TARGETS = //src/envoy:envoy
 build_envoy_asan: build
 
-build_envoy_centos: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_REL)
-build_envoy_centos: BAZEL_TARGETS = //src/envoy:envoy
-build_envoy_centos: BAZEL_BUILD_ARGS := $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)
-build_envoy_centos: build
-
 build_wasm:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:stats.wasm
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:metadata_exchange.wasm
