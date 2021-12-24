@@ -125,13 +125,15 @@ test: prerun_v8_build
 	  export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TEST_ARGS) -- $(BAZEL_TEST_TARGETS); \
 	fi
 	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
-	  env ENVOY_PATH=$(TEST_ENVOY_PATH) GO111MODULE=on go test -timeout 30m $(E2E_TEST_TARGETS); \
+	  env ENVOY_PATH=$(TEST_ENVOY_PATH) $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_TARGETS); \
 	fi
 
 test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
+test_asan: E2E_TEST_ENVS = ASAN=true
 test_asan: test
 
 test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
+test_tsan: E2E_TEST_ENVS = TSAN=true
 test_tsan: test
 
 test_centos: BAZEL_BUILD_ARGS := $(CENTOS_BUILD_ARGS) $(BAZEL_BUILD_ARGS)
