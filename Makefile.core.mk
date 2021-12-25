@@ -20,6 +20,7 @@ BAZEL_BUILD_ARGS ?=
 BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/...
+E2E_TEST_TARGETS ?= $$(go list ./...)
 HUB ?=
 TAG ?=
 repo_dir := .
@@ -60,9 +61,11 @@ BAZEL_CONFIG_REL  = --config=release
 BAZEL_CONFIG_ASAN = --config=macos-asan
 BAZEL_CONFIG_TSAN = # no working config
 endif
+BAZEL_CONFIG_CURRENT ?= $(BAZEL_CONFIG_DEV)
 
-BAZEL_OUTPUT_PATH ?= $(shell bazel info $(BAZEL_BUILD_ARGS) output_path)
-BAZEL_ENVOY_PATH ?= $(BAZEL_OUTPUT_PATH)/k8-fastbuild/bin/src/envoy/envoy
+BAZEL_BIN_PATH ?= $(shell bazel info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)
+TEST_ENVOY_PATH ?= $(BAZEL_BIN_PATH)/src/envoy/envoy
+TEST_ENVOY_TARGET ?= //src/envoy:envoy
 
 CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
 # WASM is not build on CentOS, skip it
@@ -73,28 +76,24 @@ CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... -
 prerun_v8_build:
 	@if bazel query "deps($(BAZEL_TARGETS))" | grep -q com_googlesource_chromium_v8; then\
 		export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-		bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) ${V8_BUILD_CONFIG} @com_googlesource_chromium_v8//:build;\
+		bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) @com_googlesource_chromium_v8//:build;\
 	fi
 
-build: V8_BUILD_CONFIG=$(BAZEL_CONFIG_DEV)
 build: prerun_v8_build
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) $(BAZEL_TARGETS)
+	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TARGETS)
 
-build_envoy: V8_BUILD_CONFIG=$(BAZEL_CONFIG_REL)
-build_envoy: prerun_v8_build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //src/envoy:envoy
+build_envoy: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_REL)
+build_envoy: BAZEL_TARGETS = //src/envoy:envoy
+build_envoy: build
 
-build_envoy_tsan: V8_BUILD_CONFIG=$(BAZEL_CONFIG_TSAN)
-build_envoy_tsan: prerun_v8_build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
+build_envoy_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
+build_envoy_tsan: BAZEL_TARGETS = //src/envoy:envoy
+build_envoy_tsan: build
 
-build_envoy_asan: V8_BUILD_CONFIG=$(BAZEL_CONFIG_ASAN)
-build_envoy_asan: prerun_v8_build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
+build_envoy_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
+build_envoy_asan: BAZEL_TARGETS = //src/envoy:envoy
+build_envoy_asan: build
 
 build_wasm:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:stats.wasm
@@ -119,33 +118,31 @@ gen:
 gen-check:
 	@scripts/gen-testdata.sh -c
 
-test: V8_BUILD_CONFIG=$(BAZEL_CONFIG_DEV)
 test: prerun_v8_build
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_DEV) -- $(BAZEL_TEST_TARGETS)
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) GO111MODULE=on go test -timeout 30m ./...
+	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(TEST_ENVOY_TARGET)
+	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
+	  export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TEST_ARGS) -- $(BAZEL_TEST_TARGETS); \
+	fi
+	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
+	  env ENVOY_PATH=$(TEST_ENVOY_PATH) $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_TARGETS); \
+	fi
 
-test_asan: V8_BUILD_CONFIG=$(BAZEL_CONFIG_ASAN)
-test_asan: prerun_v8_build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_ASAN) -- $(BAZEL_TEST_TARGETS)
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) ASAN=true GO111MODULE=on go test -timeout 30m ./...
+test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
+test_asan: E2E_TEST_ENVS = ASAN=true
+test_asan: test
 
-test_tsan: V8_BUILD_CONFIG=$(BAZEL_CONFIG_TSAN)
-test_tsan: prerun_v8_build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) //src/envoy:envoy
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_TSAN) -- $(BAZEL_TEST_TARGETS)
-	env ENVOY_PATH=$(BAZEL_ENVOY_PATH) TSAN=true GO111MODULE=on go test -timeout 30m ./...
+test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
+test_tsan: E2E_TEST_ENVS = TSAN=true
+test_tsan: test
 
-test_centos: V8_BUILD_CONFIG=$(BAZEL_CONFIG_DEV)
-test_centos: prerun_v8_build
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) //src/envoy:envoy
-	# TODO: re-enable IPv6 tests
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS) $(BAZEL_CONFIG_DEV) --test_filter="-*IPv6*" -- $(CENTOS_BAZEL_TEST_TARGETS)
+test_centos: BAZEL_BUILD_ARGS := $(CENTOS_BUILD_ARGS) $(BAZEL_BUILD_ARGS)
+test_centos: E2E_TEST_TARGETS =
+test_centos: BAZEL_TEST_TARGETS = $(CENTOS_BAZEL_TEST_TARGETS)
+# TODO: re-enable IPv6 tests
+test_centos: BAZEL_TEST_ARGS = --test_filter="-*IPv6*"
+test_centos: test
+
 
 check:
 	@echo >&2 "Please use \"make lint\" instead."
@@ -203,7 +200,7 @@ test_release:
 test_release_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c
 
-push_release: build
+push_release:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p
 
 push_release_centos:
