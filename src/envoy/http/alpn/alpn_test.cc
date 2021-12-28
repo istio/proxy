@@ -64,7 +64,7 @@ class AlpnFilterTest : public testing::Test {
       case Http::Protocol::Http2:
         return FilterConfig::Protocol::FilterConfig_Protocol_HTTP2;
       default:
-        NOT_IMPLEMENTED_GCOVR_EXCL_LINE;
+        PANIC("not implemented");
     }
   }
 

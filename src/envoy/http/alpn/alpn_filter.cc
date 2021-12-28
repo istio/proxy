@@ -52,8 +52,7 @@ Http::Protocol AlpnFilterConfig::getHttpProtocol(
         Protocol::FilterConfig_Protocol_HTTP2:
       return Http::Protocol::Http2;
     default:
-      // will not reach here.
-      NOT_IMPLEMENTED_GCOVR_EXCL_LINE;
+      PANIC("not implemented");
   }
 }
 
