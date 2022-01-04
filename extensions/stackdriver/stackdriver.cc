@@ -370,6 +370,11 @@ bool StackdriverRootContext::onConfigure(size_t size) {
 
 bool StackdriverRootContext::initializeLogFilter() {
   uint32_t token = 0;
+  if (config_.access_logging_filter_expression() == "") {
+    log_filter_token_ = token;
+    return true;
+  }
+
   if (createExpression(config_.access_logging_filter_expression(), &token) !=
       WasmResult::Ok) {
     LOG_TRACE(absl::StrCat("cannot create an filter expression: " +
