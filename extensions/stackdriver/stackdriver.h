@@ -97,6 +97,10 @@ class StackdriverRootContext : public RootContext {
     // This caches evaluated extra access log labels.
     std::unordered_map<std::string, std::string> extra_log_labels;
     bool expressions_evaluated;
+
+    // cache filter expression value
+    bool log_connection;
+    bool log_filter_evaluated;
   };
 
   // Indicates whether to export any kind of access log or not.
@@ -128,11 +132,21 @@ class StackdriverRootContext : public RootContext {
   void evaluateMetricsExpressions(
       ::Extensions::Stackdriver::Metric::override_map& overrides);
 
+  // Evaluates a logging filter. If the returned value is `false`, no log
+  // entry will be added for the request/connection.
+  bool evaluateLogFilter();
+
+  // Initializes a configured logging filter.
+  bool initializeLogFilter();
+
   // Cleanup expressions in expressions_ vector.
   void cleanupExpressions();
 
   // Cleanup expressions in metrics_expressions_ vector.
   void cleanupMetricsExpressions();
+
+  // Cleanup any access logging filter expression.
+  void cleanupLogFilter();
 
   // Config for Stackdriver plugin.
   stackdriver::config::v1alpha1::PluginConfig config_;
@@ -177,6 +191,10 @@ class StackdriverRootContext : public RootContext {
     std::string expression;
   };
   std::vector<struct metricsExpressionInfo> metrics_expressions_;
+
+  // Stores the reference token for a configured access logging filter
+  // expression.
+  uint32_t log_filter_token_;
 };
 
 // StackdriverContext is per stream context. It has the same lifetime as

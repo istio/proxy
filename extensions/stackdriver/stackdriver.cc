@@ -368,6 +368,23 @@ bool StackdriverRootContext::onConfigure(size_t size) {
   return true;
 }
 
+bool StackdriverRootContext::initializeLogFilter() {
+  uint32_t token = 0;
+  if (config_.access_logging_filter_expression() == "") {
+    log_filter_token_ = token;
+    return true;
+  }
+
+  if (createExpression(config_.access_logging_filter_expression(), &token) !=
+      WasmResult::Ok) {
+    LOG_TRACE(absl::StrCat("cannot create an filter expression: " +
+                           config_.access_logging_filter_expression()));
+    return false;
+  }
+  log_filter_token_ = token;
+  return true;
+}
+
 bool StackdriverRootContext::configure(size_t configuration_size) {
   // onStart is called prior to onConfigure
   int proxy_tick_ms = getProxyTickerIntervalMilliseconds();
@@ -434,6 +451,11 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   if (enableAccessLog()) {
     std::unordered_map<std::string, std::string> extra_labels;
     cleanupExpressions();
+    cleanupLogFilter();
+    if (!initializeLogFilter()) {
+      LOG_WARN("Could not build filter expression for logging.");
+    }
+
     if (config_.has_custom_log_config()) {
       for (const auto& dimension : config_.custom_log_config().dimensions()) {
         uint32_t token;
@@ -558,6 +580,8 @@ bool StackdriverRootContext::onDone() {
   }
   tcp_request_queue_.clear();
   cleanupExpressions();
+  cleanupMetricsExpressions();
+  cleanupLogFilter();
   return done;
 }
 
@@ -581,7 +605,7 @@ void StackdriverRootContext::record() {
        (enableAccessLogOnError() &&
         (request_info.response_code >= 400 ||
          request_info.response_flag != ::Wasm::Common::NONE))) &&
-      shouldLogThisRequest(request_info)) {
+      shouldLogThisRequest(request_info) && evaluateLogFilter()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     std::unordered_map<std::string, std::string> extra_labels;
     evaluateExpressions(extra_labels);
@@ -591,6 +615,8 @@ void StackdriverRootContext::record() {
                          outbound, false /* audit */);
   }
 
+  // TODO(dougreid): should Audits override log filters? I believe so. At this
+  // time, we won't apply logging filters to audit logs.
   if (enableAuditLog() && shouldAuditThisRequest()) {
     if (!extended_info_populated) {
       ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
@@ -642,7 +668,12 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   bool extended_info_populated = false;
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
-  if (enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) {
+  if (!record_info.log_filter_evaluated) {
+    record_info.log_connection = evaluateLogFilter();
+    record_info.log_filter_evaluated = true;
+  }
+  if ((enableAllAccessLog() || (enableAccessLogOnError() && !no_error)) &&
+      record_info.log_connection) {
     ::Wasm::Common::populateExtendedRequestInfo(&request_info);
     extended_info_populated = true;
     if (!record_info.expressions_evaluated) {
@@ -669,6 +700,7 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
         getCurrentTimeNanoseconds(), outbound, false /* audit */);
   }
 
+  // TODO(dougreid): confirm that audit should override filtering.
   if (enableAuditLog() && shouldAuditThisRequest()) {
     if (!extended_info_populated) {
       ::Wasm::Common::populateExtendedRequestInfo(&request_info);
@@ -716,6 +748,19 @@ inline bool StackdriverRootContext::enableAllAccessLog() {
   return (!config_.disable_server_access_logging() && !isOutbound()) ||
          config_.access_logging() ==
              stackdriver::config::v1alpha1::PluginConfig::FULL;
+}
+
+inline bool StackdriverRootContext::evaluateLogFilter() {
+  if (config_.access_logging_filter_expression() == "") {
+    return true;
+  }
+  bool value;
+  if (!evaluateExpression(log_filter_token_, &value)) {
+    LOG_TRACE(absl::StrCat("Could not evaluate expression: ",
+                           config_.access_logging_filter_expression()));
+    return true;
+  }
+  return value;
 }
 
 inline bool StackdriverRootContext::enableAccessLogOnError() {
@@ -817,6 +862,11 @@ void StackdriverRootContext::cleanupMetricsExpressions() {
     exprDelete(expression.token);
   }
   metrics_expressions_.clear();
+}
+
+void StackdriverRootContext::cleanupLogFilter() {
+  exprDelete(log_filter_token_);
+  log_filter_token_ = 0;
 }
 
 // TODO(bianpengyuan) Add final export once root context supports onDone.

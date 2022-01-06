@@ -830,6 +830,74 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 	}
 }
 
+func TestStackdriverAccessLogFilter(t *testing.T) {
+	t.Parallel()
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+		"UserAgent":                   "chrome",
+	}, envoye2e.ProxyE2ETests)
+
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_inbound_logs_filter.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stackdriver_outbound_logs_filter.yaml.tmpl")
+
+	sd := &Stackdriver{Port: sdPort}
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 1,
+				Step: &driver.HTTPCall{
+					Port:           params.Ports.ClientPort,
+					Body:           "hello, world!",
+					RequestHeaders: map[string]string{"User-Agent": "chrome"},
+				},
+			},
+			&driver.Repeat{N: 1,
+				Step: &driver.HTTPCall{
+					Port:           params.Ports.ClientPort,
+					Body:           "hello, world!",
+					RequestHeaders: map[string]string{"User-Agent": "safari", "x-filter": "filter"},
+				},
+			},
+			sd.Check(params,
+				nil,
+				[]SDLogEntry{
+					{
+						LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 1,
+					},
+					{
+						LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
+						LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
+						LogEntryCount: 1,
+					},
+				}, true,
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStackdriverRbacAccessDenied(t *testing.T) {
 	t.Parallel()
 	respCode := "403"
