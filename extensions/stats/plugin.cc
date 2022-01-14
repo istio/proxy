@@ -590,6 +590,11 @@ void PluginRootContext::onTick() {
 
 void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
                                bool end_stream) {
+  if (!initialized_) {
+    LOG_TRACE("stats plugin not initialized properly (wrong json config?)");
+    return;
+  }
+
   // HTTP peer metadata should be done by the time report is called for a
   // request info. TCP metadata might still be awaiting.
   // Upstream host should be selected for metadata fallback.
