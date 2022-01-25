@@ -82,7 +82,7 @@ enum ResponseFlag {
   UpstreamProtocolError = 0x800000,
   NoClusterFound = 0x1000000,
   OverloadManager = 0x2000000,
-  DnsResolutionFailed = 0x4000000
+  DnsResolutionFailed = 0x4000000,
   LastFlag = DnsResolutionFailed,
 };
 
