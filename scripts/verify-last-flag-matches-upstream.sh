@@ -16,7 +16,7 @@
 #
 ################################################################################
 
-# This script verifies the LastFlag response flag in istio/proxy matches the one in envoyproxy/envoy 
+# This script verifies the LastFlag response flag in istio/proxy matches the one in envoyproxy/envoy
 # and fails with a non-zero exit code if they differ.
 
 set -x
@@ -29,7 +29,7 @@ ENVOY_PATH_LASTFLAG_SPEC="envoy/stream_info/stream_info.h"
 
 ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
-ENVOY_LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "main" | awk '{ print $1}')"
+ENVOY_LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "release/v1.21" | awk '{ print $1}')"
 
 trap 'rm -rf ${PATH_LASTFLAG_SPEC_UPSTREAM}' EXIT
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_LATEST_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}" > "${PATH_LASTFLAG_SPEC_UPSTREAM}"
