@@ -29,10 +29,10 @@ ENVOY_PATH_LASTFLAG_SPEC="envoy/stream_info/stream_info.h"
 
 ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
-ENVOY_LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "main" | awk '{ print $1}')"
+ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
 
 trap 'rm -rf ${PATH_LASTFLAG_SPEC_UPSTREAM}' EXIT
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_LATEST_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}" > "${PATH_LASTFLAG_SPEC_UPSTREAM}"
+curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}" > "${PATH_LASTFLAG_SPEC_UPSTREAM}"
 
 # Extract the LastFlag specification from both sources and trim all white spaces.
 
@@ -48,7 +48,7 @@ if grep -q "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}
 then
     UPSTREAM_LASTFLAG=$(grep -m1 "^\s*LastFlag\s*=.*$" ${PATH_LASTFLAG_SPEC_UPSTREAM}|tr -d '[:space:]')
 else
-    echo "envoyproxy/envoy: LastFlag not specified in https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_LATEST_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}"
+    echo "envoyproxy/envoy: LastFlag not specified in https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_SHA}/${ENVOY_PATH_LASTFLAG_SPEC}"
     exit 1
 fi
 
