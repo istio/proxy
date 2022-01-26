@@ -39,14 +39,12 @@ const (
 		"scope=https://www.googleapis.com/auth/cloud-platform"
 )
 
-var (
-	ExpectedTokenResponse = fmt.Sprintf(`{
+var ExpectedTokenResponse = fmt.Sprintf(`{
  "access_token": "%s",
  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
  "token_type": "Bearer",
  "expires_in": 180
 }`, ExpectedBearer)
-)
 
 var _ driver.Step = &SecureTokenService{}
 

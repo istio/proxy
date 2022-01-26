@@ -54,12 +54,14 @@ func TestBasicTCPFlow(t *testing.T) {
 				AdminPort: params.Ports.ServerAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"envoy_tcp_downstream_cx_total": &driver.PartialStat{Metric: "testdata/metric/basic_flow_server_tcp_connection.yaml.tmpl"},
-				}},
+				},
+			},
 			&driver.Stats{
 				AdminPort: params.Ports.ClientAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"envoy_tcp_downstream_cx_total": &driver.PartialStat{Metric: "testdata/metric/basic_flow_client_tcp_connection.yaml.tmpl"},
-				}},
+				},
+			},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -108,7 +110,8 @@ func TestBasicHTTPGateway(t *testing.T) {
 	if err := (&driver.Scenario{
 		[]driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "server", Version: "0",
+			&driver.Update{
+				Node: "server", Version: "0",
 				Clusters: []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
 				Listeners: []string{
 					driver.LoadTestData("testdata/listener/client.yaml.tmpl"),

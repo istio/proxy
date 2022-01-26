@@ -50,16 +50,20 @@ func New(ctx context.Context) *ExtensionServer {
 func (es *ExtensionServer) StreamExtensionConfigs(stream extensionservice.ExtensionConfigDiscoveryService_StreamExtensionConfigsServer) error {
 	return es.Server.StreamHandler(stream, APIType)
 }
+
 func (es *ExtensionServer) DeltaExtensionConfigs(_ extensionservice.ExtensionConfigDiscoveryService_DeltaExtensionConfigsServer) error {
 	return status.Errorf(codes.Unimplemented, "not implemented")
 }
+
 func (es *ExtensionServer) FetchExtensionConfigs(ctx context.Context, req *discovery.DiscoveryRequest) (*discovery.DiscoveryResponse, error) {
 	req.TypeUrl = APIType
 	return es.Server.Fetch(ctx, req)
 }
+
 func (es *ExtensionServer) Update(config *core.TypedExtensionConfig) error {
 	return es.cache.UpdateResource(config.Name, config)
 }
+
 func (es *ExtensionServer) Delete(name string) error {
 	return es.cache.DeleteResource(name)
 }
