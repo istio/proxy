@@ -110,12 +110,14 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
-			&driver.Update{Node: "server", Version: "0",
+			&driver.Update{
+				Node: "server", Version: "0",
 				Clusters: []string{driver.LoadTestData("testdata/cluster/server.yaml.tmpl")},
 				Listeners: []string{
 					driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
 					driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
-				}},
+				},
+			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.Repeat{N: 1, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
@@ -390,9 +392,11 @@ func TestStackdriverParallel(t *testing.T) {
 			sd,
 			&SecureTokenService{Port: stsPort},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{
-				driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{
-				driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+				driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
@@ -451,7 +455,7 @@ func getSdLogEntries(noClientLogs bool, logEntryCount int) []SDLogEntry {
 
 func TestStackdriverAccessLog(t *testing.T) {
 	t.Parallel()
-	var TestCases = []struct {
+	TestCases := []struct {
 		name                   string
 		logWindowDuration      string
 		sleepDuration          time.Duration
@@ -546,7 +550,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 
 func TestStackdriverTCPMetadataExchange(t *testing.T) {
 	t.Parallel()
-	var TestCases = []struct {
+	TestCases := []struct {
 		name               string
 		alpnProtocol       string
 		sourceUnknown      string
@@ -619,18 +623,23 @@ func TestStackdriverTCPMetadataExchange(t *testing.T) {
 							"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl",
 							"testdata/stackdriver/client_tcp_received_bytes_count.yaml.tmpl",
 							"testdata/stackdriver/server_tcp_received_bytes_count.yaml.tmpl",
-							"testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
+							"testdata/stackdriver/server_tcp_connection_count.yaml.tmpl",
+						},
 						[]SDLogEntry{
 							{
 								LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",
-								LogEntryFile: []string{"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
-									"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryFile: []string{
+									"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl",
+								},
 								LogEntryCount: 10,
 							},
 							{
 								LogBaseFile: "testdata/stackdriver/client_access_log.yaml.tmpl",
-								LogEntryFile: []string{"testdata/stackdriver/client_tcp_access_log_entry_on_open.yaml.tmpl",
-									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryFile: []string{
+									"testdata/stackdriver/client_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl",
+								},
 								LogEntryCount: 10,
 							},
 						}, false,
@@ -799,7 +808,8 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{N: 10,
+			&driver.Repeat{
+				N: 10,
 				Step: &driver.HTTPCall{
 					Port:           params.Ports.ClientPort,
 					Body:           "hello, world!",
@@ -863,14 +873,16 @@ func TestStackdriverAccessLogFilter(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
-			&driver.Repeat{N: 1,
+			&driver.Repeat{
+				N: 1,
 				Step: &driver.HTTPCall{
 					Port:           params.Ports.ClientPort,
 					Body:           "hello, world!",
 					RequestHeaders: map[string]string{"User-Agent": "chrome"},
 				},
 			},
-			&driver.Repeat{N: 1,
+			&driver.Repeat{
+				N: 1,
 				Step: &driver.HTTPCall{
 					Port:           params.Ports.ClientPort,
 					Body:           "hello, world!",
@@ -989,7 +1001,7 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 
 func TestStackdriverRbacTCPDryRun(t *testing.T) {
 	t.Parallel()
-	var TestCases = []struct {
+	TestCases := []struct {
 		name               string
 		alpnProtocol       string
 		sourceUnknown      string
@@ -1064,18 +1076,23 @@ func TestStackdriverRbacTCPDryRun(t *testing.T) {
 							"testdata/stackdriver/client_tcp_connection_count.yaml.tmpl",
 							"testdata/stackdriver/client_tcp_received_bytes_count.yaml.tmpl",
 							"testdata/stackdriver/server_tcp_received_bytes_count.yaml.tmpl",
-							"testdata/stackdriver/server_tcp_connection_count.yaml.tmpl"},
+							"testdata/stackdriver/server_tcp_connection_count.yaml.tmpl",
+						},
 						[]SDLogEntry{
 							{
 								LogBaseFile: "testdata/stackdriver/server_access_log.yaml.tmpl",
-								LogEntryFile: []string{"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
-									"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryFile: []string{
+									"testdata/stackdriver/server_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/server_tcp_access_log_entry.yaml.tmpl",
+								},
 								LogEntryCount: 10,
 							},
 							{
 								LogBaseFile: "testdata/stackdriver/client_access_log.yaml.tmpl",
-								LogEntryFile: []string{"testdata/stackdriver/client_tcp_access_log_entry_on_open.yaml.tmpl",
-									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl"},
+								LogEntryFile: []string{
+									"testdata/stackdriver/client_tcp_access_log_entry_on_open.yaml.tmpl",
+									"testdata/stackdriver/client_tcp_access_log_entry.yaml.tmpl",
+								},
 								LogEntryCount: 10,
 							},
 						}, false,
@@ -1119,7 +1136,8 @@ func TestStackdriverMetricExpiry(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
-			&driver.Repeat{N: 10,
+			&driver.Repeat{
+				N: 10,
 				Step: &driver.HTTPCall{
 					Port: params.Ports.ClientPort,
 					Body: "hello, world!",
@@ -1133,7 +1151,8 @@ func TestStackdriverMetricExpiry(t *testing.T) {
 			&driver.Sleep{Duration: 10 * time.Second},
 			// Send request directly to server, which will create several new time series with unknown source.
 			// This will also trigger the metrics with known source to be purged.
-			&driver.Repeat{N: 10,
+			&driver.Repeat{
+				N: 10,
 				Step: &driver.HTTPCall{
 					Port: params.Ports.ServerPort,
 					Body: "hello, world!",

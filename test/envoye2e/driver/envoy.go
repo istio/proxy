@@ -98,8 +98,8 @@ func (e *Envoy) Run(p *Params) error {
 		debugLevel = "info"
 	}
 	concurrency := "1"
-	if(e.Concurrency > 1) {
-	    concurrency = fmt.Sprint(e.Concurrency)
+	if e.Concurrency > 1 {
+		concurrency = fmt.Sprint(e.Concurrency)
 	}
 	args := []string{
 		"-c", e.tmpFile,
@@ -190,10 +190,10 @@ func getAdminPort(bootstrap string) (uint32, error) {
 // downloads env based on the given branch name. Return location of downloaded envoy.
 func downloadEnvoy(ver string) (string, error) {
 	var proxyDepURL string
-	if regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+`).Match([]byte(ver)) {
+	if regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+`).MatchString(ver) {
 		// this is a patch version string
 		proxyDepURL = fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/%v/istio.deps", ver)
-	} else if regexp.MustCompile(`[0-9]+\.[0-9]+`).Match([]byte(ver)) {
+	} else if regexp.MustCompile(`[0-9]+\.[0-9]+`).MatchString(ver) {
 		// this is a minor version string
 		proxyDepURL = fmt.Sprintf("https://raw.githubusercontent.com/istio/istio/release-%v/istio.deps", ver)
 	} else if ver == "master" {
@@ -236,7 +236,7 @@ func downloadEnvoy(ver string) (string, error) {
 	_ = os.RemoveAll(dir)
 
 	// make temp directory to put downloaded envoy binary.
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 
