@@ -72,8 +72,6 @@ BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
 BAZEL_BINARY="${BAZEL_OUT}/tools/deb/istio-proxy"
 
 # shellcheck disable=SC2086
-bazel build ${BAZEL_BUILD_ARGS} --config=release @com_googlesource_chromium_v8//:build
-# shellcheck disable=SC2086
 bazel build ${BAZEL_BUILD_ARGS} --config=release ${BAZEL_TARGET}
 
 if [[ -n "${GCS_PATH}" ]]; then
