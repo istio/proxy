@@ -151,10 +151,6 @@ do
   echo "Building ${config} proxy"
   BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.tar.gz"
   SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.sha256"
-  # All cores are used by com_googlesource_chromium_v8:build within. 
-  # Prebuild this target to avoid stacking this ram intensive task with others.
-  # shellcheck disable=SC2086
-  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} @com_googlesource_chromium_v8//:build
   # shellcheck disable=SC2086
   bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //src/envoy:envoy_tar
   BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"

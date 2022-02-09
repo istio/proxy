@@ -72,14 +72,7 @@ CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE
 # TODO can we do some sort of regex?
 CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm
 
-# Prerun @com_googlesource_chromium_v8//:build if and only if BAZEL_TARGETS depends on v8.
-prerun_v8_build:
-	@if bazel query "deps($(BAZEL_TARGETS))" | grep -q com_googlesource_chromium_v8; then\
-		export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-		bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) @com_googlesource_chromium_v8//:build;\
-	fi
-
-build: prerun_v8_build
+build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TARGETS)
 
@@ -118,7 +111,7 @@ gen:
 gen-check:
 	@scripts/gen-testdata.sh -c
 
-test: prerun_v8_build
+test:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(TEST_ENVOY_TARGET)
 	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
