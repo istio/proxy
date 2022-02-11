@@ -71,15 +71,19 @@ func (x *XDS) Cleanup() {
 	log.Println("stopping XDS server")
 	x.grpc.GracefulStop()
 }
+
 func (x *XDS) Debugf(format string, args ...interface{}) {
 	log.Printf("xds debug: "+format, args...)
 }
+
 func (x *XDS) Infof(format string, args ...interface{}) {
 	log.Printf("xds: "+format, args...)
 }
+
 func (x *XDS) Errorf(format string, args ...interface{}) {
 	log.Printf("xds error: "+format, args...)
 }
+
 func (x *XDS) Warnf(format string, args ...interface{}) {
 	log.Printf("xds warn: "+format, args...)
 }

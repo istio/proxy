@@ -178,12 +178,14 @@ func TestStatsPayload(t *testing.T) {
 							Node:      "client",
 							Version:   "0",
 							Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
-							Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+							Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")},
+						},
 						&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 						&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 						&driver.Sleep{1 * time.Second},
-						&driver.Repeat{N: 10,
+						&driver.Repeat{
+							N: 10,
 							Step: &driver.HTTPCall{
 								Port: params.Ports.ClientPort,
 								Body: "hello, world!",
@@ -312,12 +314,14 @@ func TestStatsGrpc(t *testing.T) {
 				AdminPort: params.Ports.ServerAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
-				}},
+				},
+			},
 			&driver.Stats{
 				AdminPort: params.Ports.ClientAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total.yaml.tmpl"},
-				}},
+				},
+			},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -364,13 +368,15 @@ func TestStatsGrpcStream(t *testing.T) {
 				Matchers: map[string]driver.StatMatcher{
 					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/server_request_messages.yaml.tmpl"},
 					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/server_response_messages.yaml.tmpl"},
-				}},
+				},
+			},
 			&driver.Stats{
 				AdminPort: params.Ports.ClientAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/client_request_messages.yaml.tmpl"},
 					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/client_response_messages.yaml.tmpl"},
-				}},
+				},
+			},
 			// Send and close
 			bidi.Send([]uint32{10, 1, 1, 1, 1}),
 			bidi.Close(),
@@ -384,13 +390,15 @@ func TestStatsGrpcStream(t *testing.T) {
 				Matchers: map[string]driver.StatMatcher{
 					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/server_request_messages.yaml.tmpl"},
 					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/server_response_messages.yaml.tmpl"},
-				}},
+				},
+			},
 			&driver.Stats{
 				AdminPort: params.Ports.ClientAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"istio_request_messages_total":  &driver.ExactStat{Metric: "testdata/metric/client_request_messages.yaml.tmpl"},
 					"istio_response_messages_total": &driver.ExactStat{Metric: "testdata/metric/client_response_messages.yaml.tmpl"},
-				}},
+				},
+			},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
@@ -426,7 +434,8 @@ func TestAttributeGen(t *testing.T) {
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 					&driver.Sleep{Duration: 1 * time.Second},
-					&driver.Repeat{N: 10,
+					&driver.Repeat{
+						N: 10,
 						Step: &driver.HTTPCall{
 							Port: params.Ports.ClientPort,
 							Body: "hello, world!",
@@ -462,14 +471,16 @@ func TestStatsParserRegression(t *testing.T) {
 				Node:      "client",
 				Version:   "0",
 				Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
-				Listeners: []string{listener0}},
+				Listeners: []string{listener0},
+			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{1 * time.Second},
 			&driver.Update{
 				Node:      "client",
 				Version:   "1",
 				Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
-				Listeners: []string{listener1}},
+				Listeners: []string{listener1},
+			},
 			&driver.Sleep{1 * time.Second},
 		},
 	}).Run(params); err != nil {
@@ -496,10 +507,9 @@ func TestStats403Failure(t *testing.T) {
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			enableStats(t, params.Vars)
-			params.Vars["ServerHTTPFilters"] =
-				driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
-					params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
-					driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+				params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
+				driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 			if err := (&driver.Scenario{
 				[]driver.Step{
 					&driver.XDS{},
@@ -508,7 +518,8 @@ func TestStats403Failure(t *testing.T) {
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 					&driver.Sleep{Duration: 1 * time.Second},
-					&driver.Repeat{N: 10,
+					&driver.Repeat{
+						N: 10,
 						Step: &driver.HTTPCall{
 							Port:         params.Ports.ClientPort,
 							Body:         "RBAC: access denied",
@@ -545,14 +556,14 @@ func TestStatsECDS(t *testing.T) {
 			params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/extension_config_inbound.yaml.tmpl")
 			params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/extension_config_outbound.yaml.tmpl")
 
-			updateExtensions :=
-				&driver.UpdateExtensions{Extensions: []string{
+			updateExtensions := &driver.UpdateExtensions{
+				Extensions: []string{
 					driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl"),
 				},
-				}
+			}
 			if err := (&driver.Scenario{
 				[]driver.Step{
 					&driver.XDS{},
@@ -560,13 +571,15 @@ func TestStatsECDS(t *testing.T) {
 						Node:      "client",
 						Version:   "0",
 						Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
-						Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+						Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")},
+					},
 					&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 					updateExtensions,
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 					&driver.Sleep{1 * time.Second},
-					&driver.Repeat{N: 10,
+					&driver.Repeat{
+						N: 10,
 						Step: &driver.HTTPCall{
 							Port: params.Ports.ClientPort,
 							Body: "hello, world!",
@@ -607,7 +620,8 @@ func TestStatsEndpointLabels(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
-			&driver.Repeat{N: 10,
+			&driver.Repeat{
+				N: 10,
 				Step: &driver.HTTPCall{
 					Port:         params.Ports.ClientPort,
 					ResponseCode: 200,
@@ -617,7 +631,8 @@ func TestStatsEndpointLabels(t *testing.T) {
 				AdminPort: params.Ports.ClientAdmin,
 				Matchers: map[string]driver.StatMatcher{
 					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total_endpoint_labels.yaml.tmpl"},
-				}},
+				},
+			},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
