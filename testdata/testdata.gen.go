@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 )
-
 type asset struct {
 	bytes []byte
 	info  os.FileInfo
@@ -625,16 +624,16 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"bootstrap": {nil, map[string]*bintree{
-		"client.yaml.tmpl": {bootstrapClientYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl": {bootstrapServerYamlTmpl, map[string]*bintree{}},
-		"stats.yaml.tmpl":  {bootstrapStatsYamlTmpl, map[string]*bintree{}},
+	"bootstrap": &bintree{nil, map[string]*bintree{
+		"client.yaml.tmpl": &bintree{bootstrapClientYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl": &bintree{bootstrapServerYamlTmpl, map[string]*bintree{}},
+		"stats.yaml.tmpl":  &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
 	}},
-	"listener": {nil, map[string]*bintree{
-		"client.yaml.tmpl":     {listenerClientYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl":     {listenerServerYamlTmpl, map[string]*bintree{}},
-		"tcp_client.yaml.tmpl": {listenerTcp_clientYamlTmpl, map[string]*bintree{}},
-		"tcp_server.yaml.tmpl": {listenerTcp_serverYamlTmpl, map[string]*bintree{}},
+	"listener": &bintree{nil, map[string]*bintree{
+		"client.yaml.tmpl":     &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":     &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
+		"tcp_client.yaml.tmpl": &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
+		"tcp_server.yaml.tmpl": &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
 	}},
 }}
 
@@ -648,7 +647,7 @@ func RestoreAsset(dir, name string) error {
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0o755))
+	err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
 	if err != nil {
 		return err
 	}
