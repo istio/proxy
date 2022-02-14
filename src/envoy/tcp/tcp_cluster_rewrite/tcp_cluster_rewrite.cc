@@ -49,7 +49,7 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
             .filterState()
             ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
                 TcpProxy::PerConnectionCluster::key())
-            .value();
+            ->value();
     ENVOY_CONN_LOG(trace,
                    "tcp_cluster_rewrite: new connection with server name {}",
                    read_callbacks_->connection(), cluster_name);

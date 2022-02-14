@@ -75,7 +75,7 @@ static const std::string& getData(
   return filter_state
       .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
           toAbslStringView(key))
-      .value();
+      ->value();
 }
 
 static void BM_ReadFlatBuffer(benchmark::State& state) {
