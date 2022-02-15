@@ -82,7 +82,7 @@ TEST(ForwardDownstreamSni, SetUpstreamServerNameOnlyIfSniIsPresent) {
     auto forward_requested_server_name =
         stream_info.filterState()->getDataReadOnly<UpstreamServerName>(
             UpstreamServerName::key());
-    EXPECT_EQ(forward_requested_server_name.value(), "www.example.com");
+    EXPECT_EQ(forward_requested_server_name->value(), "www.example.com");
   }
 }
 

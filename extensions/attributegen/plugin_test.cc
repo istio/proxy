@@ -303,7 +303,7 @@ class AttributeGenFilterTest : public WasmHttpFilterTest {
         << absl::StrCat(attribute, "=?", value);
     if (found) {
       ASSERT_EQ(
-          fs->getDataReadOnly<HttpFilters::Wasm::CelState>(attribute).value(),
+          fs->getDataReadOnly<HttpFilters::Wasm::CelState>(attribute)->value(),
           value)
           << absl::StrCat(attribute, "=?", value);
     }

@@ -108,7 +108,7 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
     auto alpn_override = filter_state
                              ->getDataReadOnly<Network::ApplicationProtocols>(
                                  Network::ApplicationProtocols::key())
-                             .value();
+                             ->value();
 
     EXPECT_EQ(alpn_override, alpn.at(p));
   }
@@ -146,7 +146,7 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
     auto alpn_override = filter_state
                              ->getDataReadOnly<Network::ApplicationProtocols>(
                                  Network::ApplicationProtocols::key())
-                             .value();
+                             ->value();
 
     EXPECT_EQ(alpn_override, alpn.at(Http::Protocol::Http2));
   }

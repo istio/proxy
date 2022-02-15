@@ -75,7 +75,7 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
         stream_info_.filterState()
             ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
                 TcpProxy::PerConnectionCluster::key());
-    EXPECT_EQ(per_connection_cluster.value(), "hello.ns1.svc.cluster.local");
+    EXPECT_EQ(per_connection_cluster->value(), "hello.ns1.svc.cluster.local");
   }
 
   // with simple rewrite
@@ -100,7 +100,7 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
         stream_info_.filterState()
             ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
                 TcpProxy::PerConnectionCluster::key());
-    EXPECT_EQ(per_connection_cluster.value(), "hello.ns1.svc.cluster.local");
+    EXPECT_EQ(per_connection_cluster->value(), "hello.ns1.svc.cluster.local");
   }
 
   // with regex rewrite
@@ -125,7 +125,7 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
         stream_info_.filterState()
             ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
                 TcpProxy::PerConnectionCluster::key());
-    EXPECT_EQ(per_connection_cluster.value(), "another.svc.cluster.local");
+    EXPECT_EQ(per_connection_cluster->value(), "another.svc.cluster.local");
   }
 }
 
