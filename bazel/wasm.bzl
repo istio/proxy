@@ -16,6 +16,11 @@
 #
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_image",
+    "container_push",
+)
 
 def wasm_dependencies():
     FLAT_BUFFERS_SHA = "a83caf5910644ba1c421c002ef68e42f21c15f9f"
@@ -33,4 +38,18 @@ def wasm_dependencies():
         urls = [
             "https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp",
         ],
+    )
+
+def declare_wasm_image_targets(name, wasm_file, docker_registry, tag):
+    container_image(
+        name = "wasm_image_" + name,
+        files = [":" + name + ".wasm"],
+    )
+    container_push(
+        name = "push_wasm_image_" + name,
+        format = "OCI",
+        image = ":wasm_image_" + name,
+        registry = "gcr.io",
+        repository = docker_registry + "/" + name,
+        tag = tag,
     )
