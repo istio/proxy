@@ -47,7 +47,7 @@ fi
 BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-fastbuild/bin"
 export BAZEL_OUT
 
-# Disable RBE execution until we have LARGE_MACHINE instances provisioned for building V8.
+# Disable RBE execution because the tool chain used by RBE is too new.
 export BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-0}"
 
 BAZEL_BUILD_RBE_INSTANCE="${BAZEL_BUILD_RBE_INSTANCE-projects/istio-testing/instances/default_instance}"
@@ -55,7 +55,7 @@ BAZEL_BUILD_RBE_CACHE="${BAZEL_BUILD_RBE_CACHE-grpcs://remotebuildexecution.goog
 
 METADATA_SERVER_URL="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/"
 METADATA_QUERY_HEADER="Metadata-Flavor: Google"
-WORKLOAD_IDENTITY_SUFFIX="svc.id.goog"
+WORKLOAD_IDENTITY="istio-prow-build.svc.id.goog"
 # Use GCP service account when available.
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
@@ -72,7 +72,7 @@ if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
       export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
     fi
   fi
-elif curl -H "${METADATA_QUERY_HEADER}" "${METADATA_SERVER_URL}" | grep "${WORKLOAD_IDENTITY_SUFFIX}"; then
+elif gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep "${WORKLOAD_IDENTITY}"; then
   echo "Detected GKE workload identity" >&2
 
   BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
