@@ -54,8 +54,7 @@ BAZEL_BUILD_RBE_INSTANCE="${BAZEL_BUILD_RBE_INSTANCE-projects/istio-testing/inst
 BAZEL_BUILD_RBE_CACHE="${BAZEL_BUILD_RBE_CACHE-grpcs://remotebuildexecution.googleapis.com}"
 
 METADATA_SERVER_URL="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/"
-METADATA_QUERY_HEADER="Metadata-Flavor: Google"
-WORKLOAD_IDENTITY="istio-prow-build.svc.id.goog"
+WORKLOAD_IDENTITY="istio-prow-test-job@istio-testing.iam.gserviceaccount.com"
 # Use GCP service account when available.
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
