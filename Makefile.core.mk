@@ -70,7 +70,10 @@ TEST_ENVOY_TARGET ?= //src/envoy:envoy
 CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
 # WASM is not build on CentOS, skip it
 # TODO can we do some sort of regex?
-CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm
+CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... \
+                             -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm \
+                             -extensions:push_wasm_image_attributegen -extensions:push_wasm_image_metadata_exchange -extensions:push_wasm_image_stats \
+                             -extensions:wasm_image_attributegen -extensions:wasm_image_metadata_exchange -extensions:wasm_image_stats
 
 build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \

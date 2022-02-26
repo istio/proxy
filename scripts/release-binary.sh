@@ -59,8 +59,8 @@ function usage() {
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
         Cannot be used together with -d option.
     -c  Build for CentOS releases. This will disable the Ubuntu Xenial check.
-    -p  Push envoy docker image.
-        Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY env var."
+    -p  Push envoy docker image and wasm oci image.
+        Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY and WASM_REPOSITORY env var."
   exit 1
 }
 
@@ -211,6 +211,14 @@ trap 'rm -rf ${TMP_WASM}' EXIT
 make build_wasm
 if [ -n "${DST}" ]; then
   for extension in "${extensions[@]}"; do
+    if [ "${PUSH_DOCKER_IMAGE}" -eq 1 ]; then
+      if [[ "${config}" == "release" ]]; then
+        # Push the Wasm image if config is release
+        echo "Pushing Wasm OCI image for ${extension}"
+        # shellcheck disable=SC2086
+        bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //extensions:push_wasm_image_${extension}
+      fi
+    fi
     # Rename the plugin file and generate sha256 for it
     WASM_NAME="${extension}-${SHA}.wasm"
     WASM_COMPILED_NAME="${extension}-${SHA}.compiled.wasm"
