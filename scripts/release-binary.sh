@@ -212,12 +212,9 @@ make build_wasm
 if [ -n "${DST}" ]; then
   for extension in "${extensions[@]}"; do
     if [ "${PUSH_DOCKER_IMAGE}" -eq 1 ]; then
-      if [[ "${config}" == "release" ]]; then
-        # Push the Wasm image if config is release
-        echo "Pushing Wasm OCI image for ${extension}"
-        # shellcheck disable=SC2086
-        bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //extensions:push_wasm_image_${extension}
-      fi
+      echo "Pushing Wasm OCI image for ${extension}"
+      # shellcheck disable=SC2086
+      bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //extensions:push_wasm_image_${extension}
     fi
     # Rename the plugin file and generate sha256 for it
     WASM_NAME="${extension}-${SHA}.wasm"
