@@ -37,5 +37,6 @@ GCS_BUILD_BUCKET="${GCS_BUILD_BUCKET:-istio-build}"
 GCS_ARTIFACTS_BUCKET="${GCS_ARTIFACTS_BUCKET:-istio-artifacts}"
 
 echo 'Create and push artifacts'
+git -c log.showsignature=false show // work-aroud for go 1.18rc1 issues
 make push_release RELEASE_GCS_PATH="gs://${GCS_BUILD_BUCKET}/proxy"
 make artifacts ARTIFACTS_GCS_PATH="gs://${GCS_ARTIFACTS_BUCKET}/proxy/${GIT_SHA}/artifacts/debs"
