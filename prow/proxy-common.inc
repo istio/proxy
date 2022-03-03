@@ -85,3 +85,5 @@ elif gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep "$
     fi
   fi
 fi
+
+git -c log.showsignature=false show // work-aroud for go 1.18rc1 issues
