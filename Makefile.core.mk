@@ -141,7 +141,19 @@ check:
 	@echo >&2 "Please use \"make lint\" instead."
 	@false
 
-lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
+a1:
+	echo a1
+
+a2:
+	echo a2
+
+a3:
+	echo a3
+
+a4:
+	echo a4
+
+lint: a1 lint-copyright-banner a2 format-go a3 lint-go a4 tidy-go lint-scripts
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 	@scripts/verify-last-flag-matches-upstream.sh
