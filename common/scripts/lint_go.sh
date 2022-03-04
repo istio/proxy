@@ -22,7 +22,7 @@
 # limitations under the License.
 
 if [[ "${ARTIFACTS}" != "" ]]; then
-  golangci-lint run -v -c ./common/config/.golangci.yml --out-format colored-line-number,junit-xml:"${ARTIFACTS}"/junit-lint.xml
+  strace golangci-lint run -v -c ./common/config/.golangci.yml --out-format colored-line-number,junit-xml:"${ARTIFACTS}"/junit-lint.xml
 else
-  golangci-lint run -v -c ./common/config/.golangci.yml
+  strace golangci-lint run -v -c ./common/config/.golangci.yml
 fi
