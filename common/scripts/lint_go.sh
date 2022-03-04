@@ -20,7 +20,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+set -x
 if [[ "${ARTIFACTS}" != "" ]]; then
   strace golangci-lint run -v -c ./common/config/.golangci.yml --out-format colored-line-number,junit-xml:"${ARTIFACTS}"/junit-lint.xml
 else
