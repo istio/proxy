@@ -225,8 +225,22 @@ void Logger::initializeLogEntryRequest(
           ? platform_metadata->LookupByKey(Common::kGCPClusterNameKey)
           : nullptr;
   if (!cluster_iter) {
-    // if there is no cluster name, then this is a gce_instance
-    resource_type = Common::kGCEInstanceMonitoredResource;
+    // if there is no cluster name, then this is not a kubernetes resource
+
+    const auto instance_iter =
+        platform_metadata
+            ? platform_metadata->LookupByKey(Common::kGCPGCEInstanceIDKey)
+            : nullptr;
+    const auto creator_iter =
+        platform_metadata
+            ? platform_metadata->LookupByKey(Common::kGCECreatedByKey.data())
+            : nullptr;
+
+    if (!instance_iter && !creator_iter) {
+      resource_type = Common::kGCEInstanceMonitoredResource;
+    } else {
+      resource_type = Common::kGenericNode;
+    }
   }
 
   setMonitoredResource(local_node_info, resource_type, log_entries_request);

@@ -225,6 +225,7 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
       workload_name, istio_version, mesh_id, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
+  std::vector<flatbuffers::Offset<flatbuffers::String>> ip_addrs;
   std::string value;
   if (getValue({"node", "metadata", "NAME"}, &value)) {
     name = fbb.CreateString(value);
@@ -271,11 +272,18 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
       app_containers.push_back(fbb.CreateString(toStdStringView(container)));
     }
   }
+  if (getValue({"node", "metadata", "INSTANCE_IPS"}, &value)) {
+    std::vector<absl::string_view> ips = absl::StrSplit(value, ',');
+    for (const auto& ip : ips) {
+      ip_addrs.push_back(fbb.CreateString(toStdStringView(ip)));
+    }
+  }
 
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
   auto platform_metadata_offset =
       fbb.CreateVectorOfSortedTables(&platform_metadata);
   auto app_containers_offset = fbb.CreateVector(app_containers);
+  auto ip_addrs_offset = fbb.CreateVector(ip_addrs);
   FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
@@ -287,6 +295,7 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   node.add_labels(labels_offset);
   node.add_platform_metadata(platform_metadata_offset);
   node.add_app_containers(app_containers_offset);
+  node.add_instance_ips(ip_addrs_offset);
   auto data = node.Finish();
   fbb.Finish(data);
   return fbb.Release();

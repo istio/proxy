@@ -43,6 +43,8 @@ table FlatNode {
   app_containers:[string];
   // Identifier for the cluster to which this workload belongs (for k8s workloads).
   cluster_id:string;
+  // instance ip addresses
+  instance_ips:[string];
 }
 
 root_type FlatNode;

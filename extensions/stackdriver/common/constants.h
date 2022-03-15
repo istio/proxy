@@ -109,6 +109,7 @@ constexpr char kIstioMetricPrefix[] = "istio.io/service/";
 constexpr char kPodMonitoredResource[] = "k8s_pod";
 constexpr char kContainerMonitoredResource[] = "k8s_container";
 constexpr char kGCEInstanceMonitoredResource[] = "gce_instance";
+constexpr char kGenericNode[] = "generic_node";
 constexpr char kProjectIDLabel[] = "project_id";
 constexpr char kLocationLabel[] = "location";
 constexpr char kClusterNameLabel[] = "cluster_name";
@@ -117,6 +118,8 @@ constexpr char kPodNameLabel[] = "pod_name";
 constexpr char kContainerNameLabel[] = "container_name";
 constexpr char kGCEInstanceIDLabel[] = "instance_id";
 constexpr char kZoneLabel[] = "zone";
+constexpr char kNamespaceLabel[] = "namespace";  // used for generic_node
+constexpr char kNodeIDLabel[] = "node_id";       // used for generic_node
 
 // GCP node metadata key
 constexpr char kGCPLocationKey[] = "gcp_location";

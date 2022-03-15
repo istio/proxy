@@ -1,0 +1,45 @@
+metric:
+  labels:
+    api_name:
+    api_version: v12
+    destination_canonical_revision: version-1
+    destination_canonical_service_name: ratings
+    destination_canonical_service_namespace: default
+    destination_owner: "kubernetes://apis/networking.istio.io/v1alpha3/namespace/default/workloadgroups/ratings-v1"
+    destination_port: '{{ .Ports.ServerPort }}'
+    {{- if .Vars.DestinationPrincipal }}
+    destination_principal: "{{ .Vars.DestinationPrincipal }}"
+    {{- else }}
+    destination_principal: unknown
+    {{- end }}
+    destination_service_name: server
+    destination_service_namespace: default
+    destination_workload_name: ratings-v1
+    destination_workload_namespace: default
+    mesh_uid: proj-123
+    request_operation: GET
+    request_protocol: http
+    response_code: "200"
+    service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
+    source_canonical_revision: version-1
+    source_canonical_service_name: productpage-v1
+    source_canonical_service_namespace: default
+    source_owner: "kubernetes://apis/networking.istio.io/v1alpha3/namespace/default/workloadgroups/productpage-v1"
+    {{- if .Vars.SourcePrincipal }}
+    source_principal: "{{ .Vars.SourcePrincipal }}"
+    {{- else }}
+    source_principal: unknown
+    {{- end }}
+    source_workload_name: productpage-v1
+    source_workload_namespace: default
+  type: istio.io/service/server/request_count
+points:
+- value:
+    int64Value: "10"
+resource:
+  labels:
+    location: us-east4-b
+    namespace: default
+    node_id: "10.52.0.34,fe80::a075:11ff:fe5e:f1cd"
+    project_id: test-project
+  type: generic_node

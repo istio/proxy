@@ -15,6 +15,7 @@
 
 #include "extensions/stackdriver/common/utils.h"
 
+#include "absl/strings/str_join.h"
 #include "extensions/common/util.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "grpcpp/grpcpp.h"
@@ -33,6 +34,23 @@ const std::string getContainerName(
   }
 
   return kIstioProxyContainerName;
+}
+
+const std::string getNodeID(
+    const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>
+        *ip_addrs) {
+  if (!ip_addrs || ip_addrs->size() == 0) {
+    return "istio-proxy";
+  }
+
+  std::string node_id;
+  auto it = ip_addrs->begin();
+  node_id = flatbuffers::GetString(*it);
+  ++it;
+  for (; it != ip_addrs->end(); ++it) {
+    node_id = absl::StrCat(node_id, ",", flatbuffers::GetString(*it));
+  }
+  return node_id;
 }
 
 }  // namespace
@@ -162,6 +180,21 @@ void getMonitoredResource(const std::string &monitored_resource_type,
       (*monitored_resource->mutable_labels())[kProjectIDLabel] =
           flatbuffers::GetString(project_key->value());
     }
+  }
+
+  if (monitored_resource_type == kGenericNode) {
+    // need location, namespace, node_id
+    auto location_label = platform_metadata->LookupByKey(kGCPLocationKey);
+    if (location_label) {
+      (*monitored_resource->mutable_labels())[kLocationLabel] =
+          flatbuffers::GetString(location_label->value());
+    }
+    (*monitored_resource->mutable_labels())[kNamespaceLabel] =
+        flatbuffers::GetString(local_node_info.namespace_());
+
+    auto node_id = getNodeID(local_node_info.instance_ips());
+    (*monitored_resource->mutable_labels())[kNodeIDLabel] = node_id;
+    return;
   }
 
   if (monitored_resource_type == kGCEInstanceMonitoredResource) {

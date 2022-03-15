@@ -147,11 +147,21 @@ StackdriverOptions getStackdriverOptions(
 
   std::string server_type = kContainerMonitoredResource;
   std::string client_type = kPodMonitoredResource;
-  if (!platform_metadata ||
-      !platform_metadata->LookupByKey(kGCPClusterNameKey)) {
-    // if there is no cluster name, then this is a gce_instance
-    server_type = kGCEInstanceMonitoredResource;
-    client_type = kGCEInstanceMonitoredResource;
+  if (!platform_metadata) {
+    server_type = kGenericNode;
+    client_type = kGenericNode;
+  } else if (!platform_metadata->LookupByKey(kGCPClusterNameKey)) {
+    // if there is no cluster name key, assume it is not on kubernetes
+    if (platform_metadata->LookupByKey(kGCPGCEInstanceIDKey) ||
+        platform_metadata->LookupByKey(kGCECreatedByKey.data())) {
+      // if there is instance ID or createdBy key, assume it is a GCE_INSTANCE
+      server_type = kGCEInstanceMonitoredResource;
+      client_type = kGCEInstanceMonitoredResource;
+    } else {
+      // absent GCE key info, use Generic Node
+      server_type = kGenericNode;
+      client_type = kGenericNode;
+    }
   }
 
   // Get server and client monitored resource.
