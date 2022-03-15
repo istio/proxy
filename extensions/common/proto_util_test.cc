@@ -52,7 +52,29 @@ constexpr std::string_view node_metadata_json = R"###(
       "gcp_cluster_name":"test_cluster",
       "gcp_project":"test_project"
    },
-   "APP_CONTAINERS": "hello,test"
+   "APP_CONTAINERS": "hello,test",
+   "INSTANCE_IPS": "10.10.10.1,10.10.10.2,10.10.10.3"
+}
+)###";
+
+constexpr std::string_view node_metadata_json_with_missing_lists = R"###(
+{
+   "NAME":"test_pod",
+   "NAMESPACE":"test_namespace",
+   "OWNER":"test_owner",
+   "WORKLOAD_NAME":"test_workload",
+   "ISTIO_VERSION":"1.8",
+   "MESH_ID":"istio-mesh",
+   "CLUSTER_ID":"test-cluster",
+   "LABELS":{
+      "app":"test",
+      "version":"v1"
+    },
+   "PLATFORM_METADATA":{
+      "gcp_cluster_location":"test_location",
+      "gcp_cluster_name":"test_cluster",
+      "gcp_project":"test_project"
+   },
 }
 )###";
 
@@ -74,6 +96,30 @@ TEST(ProtoUtilTest, extractNodeMetadata) {
   EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(),
             "test_project");
   EXPECT_EQ(peer->app_containers()->size(), 2);
+  EXPECT_EQ(peer->instance_ips()->size(), 3);
+  EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
+}
+
+// Test all possible metadata field.
+TEST(ProtoUtilTest, extractNodeMetadataWithMissingLists) {
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  EXPECT_TRUE(
+      JsonStringToMessage(std::string(node_metadata_json_with_missing_lists),
+                          &metadata_struct, json_parse_options)
+          .ok());
+  auto out = extractNodeFlatBufferFromStruct(metadata_struct);
+  auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
+  EXPECT_EQ(peer->name()->string_view(), "test_pod");
+  EXPECT_EQ(peer->namespace_()->string_view(), "test_namespace");
+  EXPECT_EQ(peer->owner()->string_view(), "test_owner");
+  EXPECT_EQ(peer->workload_name()->string_view(), "test_workload");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->key()->string_view(),
+            "gcp_project");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(),
+            "test_project");
+  EXPECT_EQ(peer->app_containers(), nullptr);
+  EXPECT_EQ(peer->instance_ips(), nullptr);
   EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
 }
 

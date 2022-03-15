@@ -117,8 +117,12 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
   node.add_cluster_id(cluster_id);
   node.add_labels(labels_offset);
   node.add_platform_metadata(platform_metadata_offset);
-  node.add_app_containers(app_containers_offset);
-  node.add_instance_ips(ip_addrs_offset);
+  if (app_containers.size() > 0) {
+    node.add_app_containers(app_containers_offset);
+  }
+  if (ip_addrs.size() > 0) {
+    node.add_instance_ips(ip_addrs_offset);
+  }
   auto data = node.Finish();
   fbb.Finish(data);
   return fbb.Release();
