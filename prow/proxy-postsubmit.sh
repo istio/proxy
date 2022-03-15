@@ -20,7 +20,7 @@ WD=$(cd "$WD" || exit 1 ; pwd)
 ########################################
 # Postsubmit script triggered by Prow. #
 ########################################
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 source "${WD}/proxy-common.inc"
 
 if [[ $(command -v gcloud) ]]; then

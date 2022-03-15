@@ -24,7 +24,7 @@ WD=$(cd "$WD" || exit 1 ; pwd)
 # Do not use RBE execution with Ubuntu toolchain, but still use RBE cache.
 export BAZEL_BUILD_RBE_JOBS=0
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 source "${WD}/proxy-common.inc"
 
 echo "$(uname -s)-$(uname -m)"

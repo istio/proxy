@@ -23,7 +23,6 @@
 #   -p gs://istio-release/release/0.2.1/deb
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS}"
 BAZEL_TARGET='//tools/deb:istio-proxy'
 BAZEL_BINARY="${ROOT}/bazel-bin/tools/deb/istio-proxy"
 ISTIO_VERSION=''
