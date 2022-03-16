@@ -36,21 +36,19 @@ const std::string getContainerName(
   return kIstioProxyContainerName;
 }
 
-const std::string getNodeID(
+std::string getNodeID(
     const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>
         *ip_addrs) {
   if (!ip_addrs || ip_addrs->size() == 0) {
     return "istio-proxy";
   }
-
-  std::string node_id;
-  auto it = ip_addrs->begin();
-  node_id = flatbuffers::GetString(*it);
-  ++it;
-  for (; it != ip_addrs->end(); ++it) {
-    node_id = absl::StrCat(node_id, ",", flatbuffers::GetString(*it));
+  std::vector<std::string> ips;
+  ips.reserve(ip_addrs->size());
+  for (auto it = ip_addrs->begin(); it != ip_addrs->end(); ++it) {
+    ips.push_back(flatbuffers::GetString(*it));
   }
-  return node_id;
+
+  return absl::StrJoin(ips, ",");
 }
 
 }  // namespace
