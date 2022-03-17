@@ -43,6 +43,7 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
       workload_name, istio_version, mesh_id, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
+  std::vector<flatbuffers::Offset<flatbuffers::String>> ip_addrs;
   for (const auto& it : metadata.fields()) {
     if (it.first == "NAME") {
       name = fbb.CreateString(it.second.string_value());
@@ -76,6 +77,12 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
       for (const auto& container : containers) {
         app_containers.push_back(fbb.CreateString(toStdStringView(container)));
       }
+    } else if (it.first == "INSTANCE_IPS") {
+      std::vector<absl::string_view> ip_addresses =
+          absl::StrSplit(it.second.string_value(), ',');
+      for (const auto& ip : ip_addresses) {
+        ip_addrs.push_back(fbb.CreateString(toStdStringView(ip)));
+      }
     }
   }
   // finish pre-order construction
@@ -94,6 +101,12 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
   if (app_containers.size() > 0) {
     app_containers_offset = fbb.CreateVector(app_containers);
   }
+  flatbuffers::Offset<
+      flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>>
+      ip_addrs_offset;
+  if (ip_addrs.size() > 0) {
+    ip_addrs_offset = fbb.CreateVector(ip_addrs);
+  }
   FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
@@ -104,7 +117,12 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
   node.add_cluster_id(cluster_id);
   node.add_labels(labels_offset);
   node.add_platform_metadata(platform_metadata_offset);
-  node.add_app_containers(app_containers_offset);
+  if (app_containers.size() > 0) {
+    node.add_app_containers(app_containers_offset);
+  }
+  if (ip_addrs.size() > 0) {
+    node.add_instance_ips(ip_addrs_offset);
+  }
   auto data = node.Finish();
   fbb.Finish(data);
   return fbb.Release();
@@ -161,6 +179,14 @@ void extractStructFromNodeFlatBuffer(const FlatNode& node,
     }
     (*metadata->mutable_fields())["APP_CONTAINERS"].set_string_value(
         absl::StrJoin(containers, ","));
+  }
+  if (node.instance_ips()) {
+    std::vector<std::string> ip_addrs;
+    for (const auto ip : *node.instance_ips()) {
+      ip_addrs.push_back(flatbuffers::GetString(ip));
+    }
+    (*metadata->mutable_fields())["INSTANCE_IPS"].set_string_value(
+        absl::StrJoin(ip_addrs, ","));
   }
 }
 

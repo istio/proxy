@@ -775,6 +775,49 @@ func TestStackdriverAttributeGen(t *testing.T) {
 	}
 }
 
+func TestStackdriverGenericNode(t *testing.T) {
+	t.Parallel()
+	params := driver.NewTestParams(t, map[string]string{
+		"ServiceAuthenticationPolicy": "NONE",
+		"SDLogStatusCode":             "200",
+		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
+		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
+	}, envoye2e.ProxyE2ETests)
+
+	sdPort := params.Ports.Max + 1
+	stsPort := params.Ports.Max + 2
+	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
+	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/generic_client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/generic_server_node_metadata.json.tmpl")
+	enableStackDriver(t, params.Vars)
+
+	sd := &Stackdriver{Port: sdPort}
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			sd,
+			&SecureTokenService{Port: stsPort},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{
+				driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+			}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
+			sd.Check(params,
+				[]string{"testdata/stackdriver/generic_client_request_count.yaml.tmpl", "testdata/stackdriver/generic_server_request_count.yaml.tmpl"},
+				nil, true,
+			),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStackdriverCustomAccessLog(t *testing.T) {
 	t.Parallel()
 	params := driver.NewTestParams(t, map[string]string{
