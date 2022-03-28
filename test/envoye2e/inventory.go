@@ -60,6 +60,7 @@ func init() {
 			"TestStatsPayload/Customized/envoy.wasm.runtime.v8",
 			"TestStatsPayload/UseHostHeader/envoy.wasm.runtime.v8",
 			"TestStatsPayload/DisableHostHeader/envoy.wasm.runtime.v8",
+			"TestStackdriverGenericNode",
 			"TestStatsEndpointLabels",
 			"TestStatsParallel",
 			"TestStatsGrpc",
