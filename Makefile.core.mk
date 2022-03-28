@@ -73,7 +73,8 @@ CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE
 CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... \
                              -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm \
                              -extensions:push_wasm_image_attributegen -extensions:push_wasm_image_metadata_exchange -extensions:push_wasm_image_stats \
-                             -extensions:wasm_image_attributegen -extensions:wasm_image_metadata_exchange -extensions:wasm_image_stats
+                             -extensions:wasm_image_attributegen -extensions:wasm_image_metadata_exchange -extensions:wasm_image_stats \
+                             -extensions:copy_original_file_attributegen -extensions:copy_original_file_metadata_exchange -extensions:copy_original_file_stats
 
 build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \

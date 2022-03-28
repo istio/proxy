@@ -104,23 +104,23 @@ envoy_wasm_cc_binary(
 declare_wasm_image_targets(
     name = "stats",
     docker_registry = "{WASM_REPOSITORY}",
-    tag = "{BUILD_SCM_REVISION}",
     pkg = "//extensions",
+    tag = "{BUILD_SCM_REVISION}",
     wasm_file = ":stats.wasm",
 )
 
 declare_wasm_image_targets(
     name = "metadata_exchange",
     docker_registry = "{WASM_REPOSITORY}",
-    tag = "{BUILD_SCM_REVISION}",
     pkg = "//extensions",
+    tag = "{BUILD_SCM_REVISION}",
     wasm_file = ":metadata_exchange.wasm",
 )
 
 declare_wasm_image_targets(
     name = "attributegen",
     docker_registry = "{WASM_REPOSITORY}",
-    tag = "{BUILD_SCM_REVISION}",
     pkg = "//extensions",
+    tag = "{BUILD_SCM_REVISION}",
     wasm_file = ":attributegen.wasm",
 )
