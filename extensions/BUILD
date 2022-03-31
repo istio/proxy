@@ -73,7 +73,6 @@ envoy_wasm_cc_binary(
         "//extensions/metadata_exchange:declare_property_proto_cc",
         "//external:abseil_strings",
         "//external:abseil_time",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
@@ -96,7 +95,6 @@ envoy_wasm_cc_binary(
         "//extensions/common/wasm:json_util",
         "//external:abseil_strings",
         "//external:abseil_time",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
 )
