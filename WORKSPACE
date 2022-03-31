@@ -38,10 +38,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2022-03-28
-ENVOY_SHA = "80c7e5bb242a1033dd3ea0441082bf67464e49a4"
+Commit date: 2022-03-30
+ENVOY_SHA = "f9d936ec65e42308f72b48e52ed5b810effc40e5"
 
-ENVOY_SHA256 = "83cb7a23d2f6f5ce19db2623168349e33f29a9dba6dfc4ca137a663b0fabc8bd"
+ENVOY_SHA256 = "dd082aaa77811e439f92215c82d9ccb90199c496f97fbc8c9e14f7fc44bf551f"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -85,6 +85,10 @@ install_deps()
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
 envoy_dependency_imports()
+
+load("@emsdk//:emscripten_deps.bzl", "emscripten_deps")
+
+emscripten_deps()
 
 # Bazel @rules_pkg
 
