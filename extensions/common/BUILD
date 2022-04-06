@@ -29,6 +29,11 @@ load(
     "DEFAULT_FLATC_ARGS",
     "flatbuffer_library_public",
 )
+load(
+    "@envoy//test/extensions:extensions_build_system.bzl",
+    "envoy_extension_cc_benchmark_binary",
+    "envoy_extension_cc_test",
+)
 
 envoy_package()
 
@@ -92,15 +97,15 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
 )
 
-envoy_cc_test(
+envoy_extension_cc_test(
     name = "proto_util_test",
     size = "small",
     srcs = ["proto_util_test.cc"],
+    extension_names = ["envoy.wasm.runtime.null"],
     repository = "@envoy",
     deps = [
         ":node_info_fb_cc",
         ":proto_util",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
     ],
 )
 
@@ -110,8 +115,7 @@ envoy_cc_test(
     srcs = ["util_test.cc"],
     repository = "@envoy",
     deps = [
-        ":context",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
+        ":util",
     ],
 )
 
@@ -126,9 +130,10 @@ envoy_cc_test(
     ],
 )
 
-envoy_cc_benchmark_binary(
+envoy_extension_cc_benchmark_binary(
     name = "proto_util_speed_test",
     srcs = ["proto_util_speed_test.cc"],
+    extension_names = ["envoy.wasm.runtime.null"],
     external_deps = [
         "benchmark",
     ],
@@ -137,7 +142,7 @@ envoy_cc_benchmark_binary(
         ":node_info_fb_cc",
         ":proto_util",
         "@envoy//source/common/stream_info:filter_state_lib",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
+        "@envoy//source/extensions/filters/common/expr:cel_state_lib",
     ],
 )
 
@@ -172,7 +177,4 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
-    deps = [
-        "@envoy//source/extensions/common/wasm:wasm_lib",
-    ],
 )

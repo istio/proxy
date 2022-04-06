@@ -22,6 +22,10 @@ load(
     "envoy_cc_library",
     "envoy_cc_test",
 )
+load(
+    "@envoy//test/extensions:extensions_build_system.bzl",
+    "envoy_extension_cc_test",
+)
 
 envoy_cc_library(
     name = "logger",
@@ -64,13 +68,14 @@ envoy_cc_library(
     ],
 )
 
-envoy_cc_test(
+envoy_extension_cc_test(
     name = "logger_test",
     size = "small",
     srcs = ["logger_test.cc"],
+    extension_names = ["envoy.filters.http.wasm"],
     repository = "@envoy",
     deps = [
         ":logger",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
+        "@envoy//test/test_common:wasm_lib",
     ],
 )

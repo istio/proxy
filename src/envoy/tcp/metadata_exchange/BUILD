@@ -70,7 +70,7 @@ envoy_cc_library(
         "//src/envoy/tcp/metadata_exchange/config:metadata_exchange_cc_proto",
         "//src/envoy/utils:utils_lib",
         "@envoy//envoy/registry",
-        "@envoy//source/extensions/filters/network/common:factory_base_lib",
+        "@envoy//envoy/server:filter_config_interface",
     ],
 )
 
