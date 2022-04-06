@@ -25,6 +25,20 @@ load(
     "istioapi_dependencies",
 )
 
+# Wasm-specific override to forward the abseil version. This should be removed
+# when Envoy catches up in its abseil dependency.
+# 3/24/2022
+ABSEIL_SHA = "eb3db08cb3a4faf2aa09a2ba4a30b442457f36cf"
+
+http_archive(
+    name = "com_google_absl",
+    patch_args = ["-p1"],
+    patches = ["@envoy//bazel:abseil.patch"],
+    sha256 = "090806afe584cff0e3d78ff6db497bc8fabf1cb08be664331e0fb5de5c0bcfeb",
+    strip_prefix = "abseil-cpp-" + ABSEIL_SHA,
+    url = "https://github.com/abseil/abseil-cpp/archive/" + ABSEIL_SHA + ".tar.gz",
+)
+
 googletest_repositories()
 
 istioapi_dependencies()
