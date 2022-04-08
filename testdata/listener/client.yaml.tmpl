@@ -17,6 +17,8 @@ filter_chains:
       http_filters:
 {{ .Vars.ClientHTTPFilters | fill | indent 6 }}
       - name: envoy.filters.http.router
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
       route_config:
         name: client
         virtual_hosts:

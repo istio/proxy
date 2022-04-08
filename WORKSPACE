@@ -25,20 +25,6 @@ load(
     "istioapi_dependencies",
 )
 
-# Wasm-specific override to forward the abseil version. This should be removed
-# when Envoy catches up in its abseil dependency.
-# 3/24/2022
-ABSEIL_SHA = "eb3db08cb3a4faf2aa09a2ba4a30b442457f36cf"
-
-http_archive(
-    name = "com_google_absl",
-    patch_args = ["-p1"],
-    patches = ["@envoy//bazel:abseil.patch"],
-    sha256 = "090806afe584cff0e3d78ff6db497bc8fabf1cb08be664331e0fb5de5c0bcfeb",
-    strip_prefix = "abseil-cpp-" + ABSEIL_SHA,
-    url = "https://github.com/abseil/abseil-cpp/archive/" + ABSEIL_SHA + ".tar.gz",
-)
-
 googletest_repositories()
 
 istioapi_dependencies()
@@ -52,10 +38,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2022-04-05
-ENVOY_SHA = "e07746c5100da110754bcf83940a254025e65e54"
+# Commit date: 2022-04-08
+ENVOY_SHA = "6c12be8a24ae4ceabb72e21f2e612344595e15f5"
 
-ENVOY_SHA256 = "7ee3e34bc8e62f75d27600fe0270fe354ced2a3b15292884b56d9f307657f8d7"
+ENVOY_SHA256 = "3756aa46e405b6edb9f37665b15e2628883015a585cbc27bcc23cf39c1f54246"
 
 ENVOY_ORG = "envoyproxy"
 
