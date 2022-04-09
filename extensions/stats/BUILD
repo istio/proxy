@@ -23,6 +23,10 @@ load(
     "envoy_cc_test",
     "envoy_package",
 )
+load(
+    "@envoy//test/extensions:extensions_build_system.bzl",
+    "envoy_extension_cc_test",
+)
 
 envoy_package()
 
@@ -52,14 +56,15 @@ proto_library(
     ],
 )
 
-envoy_cc_test(
+envoy_extension_cc_test(
     name = "plugin_test",
     size = "small",
     srcs = ["plugin_test.cc"],
+    extension_names = ["envoy.filters.http.wasm"],
     repository = "@envoy",
     deps = [
         ":stats_plugin",
         "//external:abseil_hash_testing",
-        "@envoy//source/extensions/common/wasm:wasm_lib",
+        "@envoy//test/test_common:wasm_lib",
     ],
 )
