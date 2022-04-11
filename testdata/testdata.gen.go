@@ -239,6 +239,8 @@ static_resources:
                     inline_string: "hello, world!"
           http_filters:
           - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 {{- end }}
 `)
 
@@ -366,6 +368,8 @@ filter_chains:
       http_filters:
 {{ .Vars.ClientHTTPFilters | fill | indent 6 }}
       - name: envoy.filters.http.router
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
       route_config:
         name: client
         virtual_hosts:
@@ -418,6 +422,8 @@ filter_chains:
       http_filters:
 {{ .Vars.ServerHTTPFilters | fill | indent 6 }}
       - name: envoy.filters.http.router
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
       route_config:
         name: server
         virtual_hosts:
@@ -457,7 +463,11 @@ address:
     port_value: {{ .Ports.ClientPort }}
 listener_filters:
 - name: "envoy.filters.listener.tls_inspector"
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
 - name: "envoy.filters.listener.http_inspector"
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.listener.http_inspector.v3.HttpInspector
 filter_chains:
 - filters:
 {{ .Vars.ClientNetworkFilters | fill | indent 2 }}
@@ -493,7 +503,11 @@ address:
     port_value: {{ .Ports.ServerPort }}
 listener_filters:
 - name: "envoy.filters.listener.tls_inspector"
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
 - name: "envoy.filters.listener.http_inspector"
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.listener.http_inspector.v3.HttpInspector
 filter_chains:
 - filters:
 {{ .Vars.ServerNetworkFilters | fill | indent 2 }}
