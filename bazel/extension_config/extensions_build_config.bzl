@@ -324,6 +324,10 @@ ENVOY_EXTENSIONS = {
 
     # apple DNS resolver extension is only needed in MacOS build plus one want to use apple library for DNS resolving.
     "envoy.network.dns_resolver.apple":                "//source/extensions/network/dns_resolver/apple:config",
+  
+    # Sidecarless
+    "envoy.transport_sockets.internal_upstream":       "//source/extensions/transport_sockets/internal_upstream:config",
+    "envoy.bootstrap.internal_listener":               "//source/extensions/bootstrap/internal_listener:config",
 }
 
 ENVOY_CONTRIB_EXTENSIONS = {
