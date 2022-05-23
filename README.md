@@ -30,3 +30,5 @@ see the Istio [contribution guidelines](https://github.com/istio/istio/blob/mast
 ## Tools
 
 Extension server [quick intro](/tools/extensionserver/README.md).
+
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/istio/proxy.git)
