@@ -78,6 +78,10 @@ load("@envoy//bazel:repositories_extra.bzl", "envoy_dependencies_extra")
 
 envoy_dependencies_extra()
 
+load("@envoy//bazel:python_dependencies.bzl", "envoy_python_dependencies")
+
+envoy_python_dependencies()
+
 load("@base_pip3//:requirements.bzl", "install_deps")
 
 install_deps()
