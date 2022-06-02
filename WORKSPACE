@@ -34,16 +34,16 @@ bind(
     actual = "//external:ssl",
 )
 
-# 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
+# 1. Determine SHA256 `wget https://github.com/istio/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2022-05-26
-ENVOY_SHA = "053a7db98ab90aaeb409a2338f2ff73a0ee7f961"
+# Commit date: 2022-06-02
+ENVOY_SHA = "613c2dfa0ea0f385425c7595aea7528cba338761"
 
-ENVOY_SHA256 = "cc45db2b752aa532b0eebbda8d3e59513976a5ba683d3ebec273298d9133ca6f"
+ENVOY_SHA256 = "48e1bb08adf8fcd97baaec0a806424f7256c68c9811a396afa0e3600877bcf73"
 
-ENVOY_ORG = "envoyproxy"
+ENVOY_ORG = "istio"
 
 ENVOY_REPO = "envoy"
 
