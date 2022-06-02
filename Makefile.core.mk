@@ -121,6 +121,7 @@ test:
 	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
 	  export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TEST_ARGS) -- $(BAZEL_TEST_TARGETS); \
 	fi
+	export UBSAN_OPTIONS=print_stacktrace=1
 	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
 	  env ENVOY_PATH=$(TEST_ENVOY_PATH) $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_TARGETS); \
 	fi
