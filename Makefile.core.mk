@@ -71,7 +71,7 @@ CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... -
 
 # Prerun @com_googlesource_chromium_v8//:build if and only if BAZEL_TARGETS depends on v8.
 prerun_v8_build:
-	@if bazel query "deps($(BAZEL_TARGETS))" | grep -q com_googlesource_chromium_v8; then\
+	@if bazel $(BAZEL_BUILD_ARGS) query "deps($(BAZEL_TARGETS))" | grep -q com_googlesource_chromium_v8; then\
 		export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
 		bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) ${V8_BUILD_CONFIG} @com_googlesource_chromium_v8//:build;\
 	fi
@@ -154,7 +154,6 @@ check:
 lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
-	@scripts/verify-last-flag-matches-upstream.sh
 
 protoc = protoc -I common-protos -I extensions
 protoc_gen_docs_plugin := --docs_out=camel_case_fields=false,warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
