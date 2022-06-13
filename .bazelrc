@@ -44,11 +44,14 @@ build:debug -c dbg
 build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
+# TODO: fix in source/extensions/stat_sinks/hystrix/hystrix.cc
+build --cxxopt -Wno-range-loop-construct
 
 # Link pthread for flatbuffers
 build --host_linkopt=-pthread
 
 # TODO(lambdai): Revert below centos proxy build mitigation.
-build --action_env=CXXFLAGS=-Wno-unused-variable
-build:libc++ --action_env=CXXFLAGS=-stdlib="libc++ -Wno-unused-variable"
-build:rbe-toolchain-clang-libc++ --action_env=CXXFLAGS="-stdlib=libc++ -Wno-unused-variable"
+# TODO(lambdai): kill -Wno-deprecated-copy after wee8 upgrade.
+build --action_env=CXXFLAGS="-Wno-unused-variable -Wno-deprecated-copy -Wbuiltin-assume-aligned-alignmenti -Wno-shorten-64-to-32"
+build:libc++ --action_env=CXXFLAGS=-stdlib="libc++ -Wno-unused-variable -Wno-deprecated-copy -Wbuiltin-assume-aligned-alignmenti -Wno-shorten-64-to-32"
+build:rbe-toolchain-clang-libc++ --action_env=CXXFLAGS="-stdlib=libc++ -Wno-unused-variable -Wno-deprecated-copy -Wbuiltin-assume-aligned-alignmenti -Wno-shorten-64-to-32"
