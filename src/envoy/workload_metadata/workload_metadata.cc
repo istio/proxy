@@ -102,11 +102,11 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
   return Network::FilterStatus::Continue;
 }
 
-Network::FilterStatus onData(Network::ListenerFilterBuffer& buffer) {
+Network::FilterStatus onData(Network::ListenerFilterBuffer&) {
     return Network::FilterStatus::Continue;
 }
 
-size_t maxReadBytes() const {
+size_t maxReadBytes() {
   return 0;
 }
 
