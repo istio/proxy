@@ -79,7 +79,6 @@ class Filter : public Network::ListenerFilter,
 
  private:
   ConfigSharedPtr config_;
-
 };
 
 }  // namespace WorkloadMetadata

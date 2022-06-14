@@ -103,12 +103,10 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
 }
 
 Network::FilterStatus Filter::onData(Network::ListenerFilterBuffer&) {
-    return Network::FilterStatus::Continue;
+  return Network::FilterStatus::Continue;
 }
 
-size_t Filter::maxReadBytes() const {
-  return 0;
-}
+size_t Filter::maxReadBytes() const { return 0; }
 
 }  // namespace WorkloadMetadata
 }  // namespace Envoy
