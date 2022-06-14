@@ -73,8 +73,13 @@ class Filter : public Network::ListenerFilter,
   // Network::ListenerFilter
   Network::FilterStatus onAccept(Network::ListenerFilterCallbacks& cb) override;
 
+  Network::FilterStatus onData(Network::ListenerFilterBuffer&) override;
+
+  size_t maxReadBytes() const override;
+
  private:
   ConfigSharedPtr config_;
+
 };
 
 }  // namespace WorkloadMetadata
