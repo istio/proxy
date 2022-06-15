@@ -39,11 +39,11 @@ bind(
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
 # Commit date: 2022-04-20
-ENVOY_SHA = "0b71fd54c7dd30ec192d1ec6381ecff33aee2c7d"
+ENVOY_SHA = "d7c8051769bec83b0d81cd25671eb57aeeb9e8ac"
 
-ENVOY_SHA256 = "0fe15a1bb2b458571a9aab2a5b9be00e2533d7cdad7458d8c1f7df269ed60771"
+ENVOY_SHA256 = "9db3760999cab64bf5614052bfd904215aa9847b20d7a20a9a6ae1523cab4c28"
 
-ENVOY_ORG = "howardjohn"
+ENVOY_ORG = "stevenctl"
 
 ENVOY_REPO = "envoy"
 
@@ -78,9 +78,9 @@ load("@envoy//bazel:repositories_extra.bzl", "envoy_dependencies_extra")
 
 envoy_dependencies_extra()
 
-load("@base_pip3//:requirements.bzl", "install_deps")
+load("@envoy//bazel:python_dependencies.bzl", "envoy_python_dependencies")
 
-install_deps()
+envoy_python_dependencies()
 
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
