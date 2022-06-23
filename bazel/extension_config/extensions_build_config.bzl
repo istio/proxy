@@ -81,7 +81,6 @@ ENVOY_EXTENSIONS = {
     "envoy.filters.http.csrf":                          "//source/extensions/filters/http/csrf:config",
     "envoy.filters.http.decompressor":                  "//source/extensions/filters/http/decompressor:config",
     "envoy.filters.http.dynamic_forward_proxy":         "//source/extensions/filters/http/dynamic_forward_proxy:config",
-    "envoy.filters.http.dynamo":                        "//source/extensions/filters/http/dynamo:config",
     "envoy.filters.http.ext_authz":                     "//source/extensions/filters/http/ext_authz:config",
     "envoy.filters.http.ext_proc":                      "//source/extensions/filters/http/ext_proc:config",
     "envoy.filters.http.fault":                         "//source/extensions/filters/http/fault:config",
@@ -127,7 +126,6 @@ ENVOY_EXTENSIONS = {
     # Network filters
     #
 
-    "envoy.filters.network.client_ssl_auth":                      "//source/extensions/filters/network/client_ssl_auth:config",
     "envoy.filters.network.connection_limit":                     "//source/extensions/filters/network/connection_limit:config",
     "envoy.filters.network.direct_response":                      "//source/extensions/filters/network/direct_response:config",
     "envoy.filters.network.dubbo_proxy":                          "//source/extensions/filters/network/dubbo_proxy:config",
@@ -331,6 +329,7 @@ ENVOY_CONTRIB_EXTENSIONS = {
     # HTTP filters
     #
 
+    "envoy.filters.http.dynamo":                                "//contrib/dynamo/filters/http/dynamo:config",
     "envoy.filters.http.squash":                                "//contrib/squash/filters/http/source:config",
     "envoy.filters.http.sxg":                                   "//contrib/sxg/filters/http/source:config",
 
@@ -338,6 +337,7 @@ ENVOY_CONTRIB_EXTENSIONS = {
     # Network filters
     #
 
+    "envoy.filters.network.client_ssl_auth":                    "//contrib/client_ssl_auth/filters/network/source:config",
     "envoy.filters.network.kafka_broker":                       "//contrib/kafka/filters/network/source:kafka_broker_config_lib",
     "envoy.filters.network.kafka_mesh":                         "//contrib/kafka/filters/network/source/mesh:config_lib",
     "envoy.filters.network.mysql_proxy":                        "//contrib/mysql_proxy/filters/network/source:config",
@@ -365,19 +365,19 @@ ENVOY_CONTRIB_EXTENSIONS = {
 }
 
 
-ISTIO_DISABLED_EXTENSIONS = [ 
+ISTIO_DISABLED_EXTENSIONS = [
     # ISTIO disable tcp_stats by default because this plugin must be built and running on kernel >= 4.6
     "envoy.transport_sockets.tcp_stats",
 ]
 
-ISTIO_ENABLED_CONTRIB_EXTENSIONS = [ 
+ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.network.mysql_proxy",
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
     "envoy.tls.key_providers.cryptomb",
 ]
 
-EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] + 
+EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
                   [(k,v) for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in ISTIO_ENABLED_CONTRIB_EXTENSIONS])
 
 
