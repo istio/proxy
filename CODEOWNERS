@@ -1,4 +1,4 @@
-*                                   @istio/wg-networking-maintainers-data-plane
+*                                   @istio/wg-policies-and-telemetry-maintainers
 /extensions/                        @istio/wg-policies-and-telemetry-maintainers
 /src/envoy/tcp/metadata_exchange/   @istio/wg-policies-and-telemetry-maintainers
 /src/istio/                         @istio/wg-policies-and-telemetry-maintainers
