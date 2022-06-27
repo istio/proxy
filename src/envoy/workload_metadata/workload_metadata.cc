@@ -99,6 +99,11 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
                        metadata, StreamInfo::FilterState::StateType::ReadOnly,
                        StreamInfo::FilterState::LifeSpan::Connection);
 
+  ProtobufWkt::Struct dynamic_meta;
+  auto& mutable_fields = *dynamic_meta.mutable_fields();
+  mutable_fields[DynamicMetadataKeysSingleton::get().FilterNamespace].set_string_value(metadata->baggage());
+
+  cb.setDynamicMetadata(DynamicMetadataKeysSingleton::get().FilterNamespace, dynamic_meta);
   return Network::FilterStatus::Continue;
 }
 
