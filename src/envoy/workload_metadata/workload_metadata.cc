@@ -101,7 +101,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
 
   ProtobufWkt::Struct dynamic_meta;
   auto& mutable_fields = *dynamic_meta.mutable_fields();
-  mutable_fields[DynamicMetadataKeysSingleton::get().FilterNamespace].set_string_value(metadata->baggage());
+  mutable_fields[DynamicMetadataKeysSingleton::get().FilterNamespace].set_string_value(std::string(metadata->baggage()));
 
   cb.setDynamicMetadata(DynamicMetadataKeysSingleton::get().FilterNamespace, dynamic_meta);
   return Network::FilterStatus::Continue;
