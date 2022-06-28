@@ -42,14 +42,16 @@ struct WorkloadMetadataStats {
   ALL_WORKLOAD_METADATA_STATS(GENERATE_COUNTER_STRUCT)
 };
 
+/**
+ * Definition of keys in the dynamic metadata to store baggage in
+ */
 class DynamicMetadataKeys {
-public:
-    const std::string FilterNamespace{"envoy.filters.listener.workload_metadata"};
-    const std::string Baggage{"baggage"};
+    public:
+     const std::string FilterNamespace{"envoy.filters.listener.workload_metadata"};
+     const std::string Baggage{"baggage"};
 };
 
 using DynamicMetadataKeysSingleton = ConstSingleton<DynamicMetadataKeys>;
-
 
 /**
  * Global configuration for Workload Metadata listener filter.
