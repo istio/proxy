@@ -16,31 +16,42 @@
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_extension",
     "envoy_cc_library",
-    "envoy_cc_test",
+    "envoy_extension_package",
 )
 
 licenses(["notice"])  # Apache 2
 
+envoy_extension_package()
+
 envoy_cc_library(
-    name = "metadata_object_lib",
-    srcs = ["metadata_object.cc"],
-    hdrs = ["metadata_object.h"],
+    name = "baggage_handler_filter_lib",
+    srcs = ["baggage_handler.cc"],
+    hdrs = ["baggage_handler.h"],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "@envoy//envoy/network:filter_interface",
-        "@envoy//envoy/ssl:connection_interface",
-        "@envoy//source/exe:envoy_common_lib",
+        "//extensions/common:context",
+        "//src/envoy/common:metadata_object_lib",
+        "//src/envoy/http/baggage_handler/config:baggage_handler_cc_proto",
+        "@envoy//envoy/server:filter_config_interface",
+        "@envoy//source/common/http:header_utility_lib",
+        "@envoy//source/common/http:utility_lib",
     ],
 )
 
-envoy_cc_test(
-    name = "metadata_object_test",
-    srcs = ["metadata_object_test.cc"],
+envoy_cc_extension(
+    name = "config",
+    srcs = ["config.cc"],
+    hdrs = ["config.h"],
     repository = "@envoy",
+    visibility = ["//visibility:public"],
     deps = [
-        ":metadata_object_lib",
-        "@envoy//test/mocks/ssl:ssl_mocks",
+        ":baggage_handler_filter_lib",
+        "//src/envoy/http/baggage_handler/config:baggage_handler_cc_proto",
+        "@envoy//envoy/registry",
+        "@envoy//envoy/server:filter_config_interface",
+        "@envoy//source/exe:envoy_common_lib",
     ],
 )

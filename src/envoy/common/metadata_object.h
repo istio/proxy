@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 #include "envoy/common/hashable.h"
+#include "envoy/ssl/connection.h"
 #include "envoy/stream_info/filter_state.h"
 
 namespace Envoy {
@@ -54,6 +56,54 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
         ip_addresses_(ip_addresses),
         containers_(containers),
         baggage_(getBaggage()) {}
+
+  static WorkloadMetadataObject fromBaggage(
+      const std::string& baggage_header_value) {
+    // TODO: check for well-formed-ness of the baggage string
+
+    std::string instance;
+    std::string workload;
+    std::string ns;
+    std::string cs;
+    std::string rev;
+    WorkloadType wlType;
+
+    std::vector<absl::string_view> properties =
+        absl::StrSplit(baggage_header_value, ',');
+    for (absl::string_view property : properties) {
+      std::pair<absl::string_view, const std::string> parts =
+          absl::StrSplit(property, "=");
+      if (parts.first == "k8s.namespace.name") {
+        ns = parts.second;
+      } else if (parts.first == "service.name") {
+        cs = parts.second;
+      } else if (parts.first == "service.version") {
+        rev = parts.second;
+      } else if (parts.first == "k8s.pod.name") {
+        wlType = WorkloadType::KUBERNETES_POD;
+        instance = parts.second;
+        workload = parts.second;
+      } else if (parts.first == "k8s.deployment.name") {
+        wlType = WorkloadType::KUBERNETES_DEPLOYMENT;
+        workload = parts.second;
+      } else if (parts.first == "k8s.job.name") {
+        wlType = WorkloadType::KUBERNETES_JOB;
+        instance = parts.second;
+        workload = parts.second;
+      } else if (parts.first == "k8s.cronjob.name") {
+        wlType = WorkloadType::KUBERNETES_CRONJOB;
+        workload = parts.second;
+      }
+    }
+    return WorkloadMetadataObject(instance, ns, workload, cs, rev, wlType, {},
+                                  {});
+  }
+
+  void setSsl(const Ssl::ConnectionInfoConstSharedPtr& ssl_conn_info) {
+    ssl_conn_info_ = ssl_conn_info;
+  };
+
+  Ssl::ConnectionInfoConstSharedPtr ssl() const { return ssl_conn_info_; }
 
   absl::string_view instanceName() const { return instance_name_; }
   absl::string_view namespaceName() const { return namespace_; }
@@ -103,6 +153,8 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const std::vector<std::string> ip_addresses_;
   const std::vector<std::string> containers_;
   const std::string baggage_;
+
+  Ssl::ConnectionInfoConstSharedPtr ssl_conn_info_;
 };
 
 }  // namespace Common
