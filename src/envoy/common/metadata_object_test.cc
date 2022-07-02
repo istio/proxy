@@ -77,67 +77,73 @@ TEST_F(WorkloadMetadataObjectTest, Baggage) {
                    "foo-service,service.version=v1alpha3"));
 }
 
-TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
-  WorkloadMetadataObject gotDeploy =
-      WorkloadMetadataObject::fromBaggage(absl::StrCat(
-          "k8s.namespace.name=default,k8s.deployment.name=foo,service.name=",
-          "foo-service,service.version=v1alpha3"));
-
-  EXPECT_EQ(gotDeploy.canonicalName(), "foo-service");
-  EXPECT_EQ(gotDeploy.canonicalRevision(), "v1alpha3");
-  EXPECT_EQ(gotDeploy.workloadType(), WorkloadType::KUBERNETES_DEPLOYMENT);
-  EXPECT_EQ(gotDeploy.workloadName(), "foo");
-  EXPECT_EQ(gotDeploy.namespaceName(), "default");
-
-  WorkloadMetadataObject gotPod =
-      WorkloadMetadataObject::fromBaggage(absl::StrCat(
-          "k8s.namespace.name=test,k8s.pod.name=foo-pod-435,service.name=",
-          "foo-service,service.version=v1beta2"));
-
-  EXPECT_EQ(gotPod.canonicalName(), "foo-service");
-  EXPECT_EQ(gotPod.canonicalRevision(), "v1beta2");
-  EXPECT_EQ(gotPod.workloadType(), WorkloadType::KUBERNETES_POD);
-  EXPECT_EQ(gotPod.workloadName(), "foo-pod-435");
-  EXPECT_EQ(gotPod.instanceName(), "foo-pod-435");
-  EXPECT_EQ(gotPod.namespaceName(), "test");
-
-  WorkloadMetadataObject gotJob =
-      WorkloadMetadataObject::fromBaggage(absl::StrCat(
-          "k8s.namespace.name=test,k8s.job.name=foo-job-435,service.name=",
-          "foo-service,service.version=v1beta4"));
-
-  EXPECT_EQ(gotJob.canonicalName(), "foo-service");
-  EXPECT_EQ(gotJob.canonicalRevision(), "v1beta4");
-  EXPECT_EQ(gotJob.workloadType(), WorkloadType::KUBERNETES_JOB);
-  EXPECT_EQ(gotJob.workloadName(), "foo-job-435");
-  EXPECT_EQ(gotJob.instanceName(), "foo-job-435");
-  EXPECT_EQ(gotJob.namespaceName(), "test");
-
-  WorkloadMetadataObject gotCron =
-      WorkloadMetadataObject::fromBaggage(absl::StrCat(
-          "k8s.namespace.name=test,k8s.cronjob.name=foo-cronjob,service.name=",
-          "foo-service,service.version=v1beta4"));
-
-  EXPECT_EQ(gotCron.canonicalName(), "foo-service");
-  EXPECT_EQ(gotCron.canonicalRevision(), "v1beta4");
-  EXPECT_EQ(gotCron.workloadType(), WorkloadType::KUBERNETES_CRONJOB);
-  EXPECT_EQ(gotCron.workloadName(), "foo-cronjob");
-  EXPECT_EQ(gotCron.namespaceName(), "test");
-}
-
 using ::testing::NiceMock;
 
-TEST_F(WorkloadMetadataObjectTest, SslConnectionInfo) {
+TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
   const std::string ver = "v1.2";
   auto connection_info = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
   ON_CALL(*connection_info, tlsVersion())
       .WillByDefault(testing::ReturnRef(ver));
 
-  WorkloadMetadataObject obj;
+  auto gotDeploy = WorkloadMetadataObject::fromBaggage(absl::StrCat(
+      "k8s.namespace.name=default,k8s.deployment.name=foo,service.name=",
+      "foo-service,service.version=v1alpha3"));
 
-  obj.setSsl(connection_info);
+  EXPECT_EQ(gotDeploy->canonicalName(), "foo-service");
+  EXPECT_EQ(gotDeploy->canonicalRevision(), "v1alpha3");
+  EXPECT_EQ(gotDeploy->workloadType(), WorkloadType::KUBERNETES_DEPLOYMENT);
+  EXPECT_EQ(gotDeploy->workloadName(), "foo");
+  EXPECT_EQ(gotDeploy->namespaceName(), "default");
+  EXPECT_EQ(gotDeploy->ssl(), nullptr);
 
-  EXPECT_EQ(obj.ssl()->tlsVersion(), ver);
+  auto gotPod = WorkloadMetadataObject::fromBaggage(absl::StrCat(
+      "k8s.namespace.name=test,k8s.pod.name=foo-pod-435,service.name=",
+      "foo-service,service.version=v1beta2"));
+
+  EXPECT_EQ(gotPod->canonicalName(), "foo-service");
+  EXPECT_EQ(gotPod->canonicalRevision(), "v1beta2");
+  EXPECT_EQ(gotPod->workloadType(), WorkloadType::KUBERNETES_POD);
+  EXPECT_EQ(gotPod->workloadName(), "foo-pod-435");
+  EXPECT_EQ(gotPod->instanceName(), "foo-pod-435");
+  EXPECT_EQ(gotPod->namespaceName(), "test");
+  EXPECT_EQ(gotPod->ssl(), nullptr);
+
+  auto gotJob = WorkloadMetadataObject::fromBaggage(absl::StrCat(
+      "k8s.namespace.name=test,k8s.job.name=foo-job-435,service.name=",
+      "foo-service,service.version=v1beta4"));
+
+  EXPECT_EQ(gotJob->canonicalName(), "foo-service");
+  EXPECT_EQ(gotJob->canonicalRevision(), "v1beta4");
+  EXPECT_EQ(gotJob->workloadType(), WorkloadType::KUBERNETES_JOB);
+  EXPECT_EQ(gotJob->workloadName(), "foo-job-435");
+  EXPECT_EQ(gotJob->instanceName(), "foo-job-435");
+  EXPECT_EQ(gotJob->namespaceName(), "test");
+  EXPECT_EQ(gotJob->ssl(), nullptr);
+
+  auto gotCron = WorkloadMetadataObject::fromBaggage(absl::StrCat(
+      "k8s.namespace.name=test,k8s.cronjob.name=foo-cronjob,service.name=",
+      "foo-service,service.version=v1beta4"));
+
+  EXPECT_EQ(gotCron->canonicalName(), "foo-service");
+  EXPECT_EQ(gotCron->canonicalRevision(), "v1beta4");
+  EXPECT_EQ(gotCron->workloadType(), WorkloadType::KUBERNETES_CRONJOB);
+  EXPECT_EQ(gotCron->workloadName(), "foo-cronjob");
+  EXPECT_EQ(gotCron->namespaceName(), "test");
+  EXPECT_EQ(gotCron->ssl(), nullptr);
+
+  auto gotDeployWithSsl = WorkloadMetadataObject::fromBaggage(
+      absl::StrCat(
+          "k8s.namespace.name=default,k8s.deployment.name=foo,service.name=",
+          "foo-service,service.version=v1alpha3"),
+      connection_info);
+
+  EXPECT_EQ(gotDeployWithSsl->canonicalName(), "foo-service");
+  EXPECT_EQ(gotDeployWithSsl->canonicalRevision(), "v1alpha3");
+  EXPECT_EQ(gotDeployWithSsl->workloadType(),
+            WorkloadType::KUBERNETES_DEPLOYMENT);
+  EXPECT_EQ(gotDeployWithSsl->workloadName(), "foo");
+  EXPECT_EQ(gotDeployWithSsl->namespaceName(), "default");
+  EXPECT_EQ(gotDeployWithSsl->ssl()->tlsVersion(), ver);
 }
 
 }  // namespace Common

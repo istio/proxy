@@ -18,6 +18,7 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_extension",
     "envoy_cc_library",
+    "envoy_cc_test",
     "envoy_extension_package",
 )
 
@@ -53,5 +54,19 @@ envoy_cc_extension(
         "@envoy//envoy/registry",
         "@envoy//envoy/server:filter_config_interface",
         "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "baggage_handler_test",
+    srcs = ["baggage_handler_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":baggage_handler_filter_lib",
+        "//src/envoy/http/baggage_handler/config:baggage_handler_cc_proto",
+        "@envoy//source/common/network:socket_option_lib",
+        "@envoy//test/mocks:common_lib",
+        "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/server:server_mocks",
     ],
 )

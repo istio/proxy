@@ -23,12 +23,9 @@ namespace Envoy {
 namespace Http {
 namespace BaggageHandler {
 
-Config::Config(const istio::telemetry::baggagehandler::v1::Config& proto_config)
-    : filter_state_key_(proto_config.filter_state_key()) {}
-
 // Extract the value of the header.
-absl::optional<std::string> extract(Http::HeaderMap& map,
-                                    absl::string_view key) {
+absl::optional<absl::string_view> extract(Http::HeaderMap& map,
+                                          absl::string_view key) {
   const auto header_value =
       Http::HeaderUtility::getAllOfHeaderAsString(map, LowerCaseString(key));
   if (!header_value.result().has_value()) {
@@ -41,22 +38,19 @@ absl::optional<std::string> extract(Http::HeaderMap& map,
 
 Http::FilterHeadersStatus BaggageHandlerFilter::decodeHeaders(
     Http::RequestHeaderMap& headers, bool) {
-  absl::optional<std::string> value_optional = extract(headers, "baggage");
+  absl::optional<absl::string_view> value_optional =
+      extract(headers, "baggage");
 
   if (value_optional) {
-    auto baggage_value = value_optional.value();
-
-    Common::WorkloadMetadataObject sourceMeta =
-        Common::WorkloadMetadataObject::fromBaggage(baggage_value);
-
-    sourceMeta.setSsl(decoder_callbacks_->connection()->ssl());
+    auto source_meta = Common::WorkloadMetadataObject::fromBaggage(
+        value_optional.value(), decoder_callbacks_->connection()->ssl());
 
     auto filter_state = decoder_callbacks_->streamInfo().filterState();
-    filter_state->setData(
-        config_->filterStateKey(),
-        std::make_shared<Common::WorkloadMetadataObject>(sourceMeta),
-        StreamInfo::FilterState::StateType::ReadOnly,
-        StreamInfo::FilterState::LifeSpan::Connection);
+
+    filter_state->setData(std::string{Wasm::Common::kDownstreamMetadataKey},
+                          source_meta,
+                          StreamInfo::FilterState::StateType::ReadOnly,
+                          StreamInfo::FilterState::LifeSpan::Request);
   } else {
     ENVOY_LOG(debug, "no baggage header found.");
   }

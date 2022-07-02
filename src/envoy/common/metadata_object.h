@@ -39,14 +39,13 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 
   WorkloadMetadataObject() : workload_type_(WorkloadType::KUBERNETES_POD) {}
 
-  WorkloadMetadataObject(const std::string& instance_name,
-                         const std::string& namespace_name,
-                         const std::string& workload_name,
-                         const std::string& canonical_name,
-                         const std::string& canonical_revision,
-                         const WorkloadType workload_type,
-                         const std::vector<std::string>& ip_addresses,
-                         const std::vector<std::string>& containers)
+  WorkloadMetadataObject(
+      const std::string& instance_name, const std::string& namespace_name,
+      const std::string& workload_name, const std::string& canonical_name,
+      const std::string& canonical_revision, const WorkloadType workload_type,
+      const std::vector<std::string>& ip_addresses,
+      const std::vector<std::string>& containers,
+      const Ssl::ConnectionInfoConstSharedPtr& ssl_conn_info = nullptr)
       : instance_name_(instance_name),
         namespace_(namespace_name),
         workload_name_(workload_name),
@@ -55,10 +54,12 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
         workload_type_(workload_type),
         ip_addresses_(ip_addresses),
         containers_(containers),
-        baggage_(getBaggage()) {}
+        baggage_(getBaggage()),
+        ssl_conn_info_(ssl_conn_info) {}
 
-  static WorkloadMetadataObject fromBaggage(
-      const std::string& baggage_header_value) {
+  static std::shared_ptr<WorkloadMetadataObject> fromBaggage(
+      const absl::string_view baggage_header_value,
+      const Ssl::ConnectionInfoConstSharedPtr& ssl_conn_info = nullptr) {
     // TODO: check for well-formed-ness of the baggage string
 
     std::string instance;
@@ -95,15 +96,9 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
         workload = parts.second;
       }
     }
-    return WorkloadMetadataObject(instance, ns, workload, cs, rev, wlType, {},
-                                  {});
+    return std::make_shared<WorkloadMetadataObject>(WorkloadMetadataObject(
+        instance, ns, workload, cs, rev, wlType, {}, {}, ssl_conn_info));
   }
-
-  void setSsl(const Ssl::ConnectionInfoConstSharedPtr& ssl_conn_info) {
-    ssl_conn_info_ = ssl_conn_info;
-  };
-
-  Ssl::ConnectionInfoConstSharedPtr ssl() const { return ssl_conn_info_; }
 
   absl::string_view instanceName() const { return instance_name_; }
   absl::string_view namespaceName() const { return namespace_; }
@@ -114,6 +109,7 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const std::vector<std::string>& ipAddresses() const { return ip_addresses_; }
   const std::vector<std::string>& containers() const { return containers_; }
   absl::string_view baggage() const { return baggage_; }
+  Ssl::ConnectionInfoConstSharedPtr ssl() const { return ssl_conn_info_; }
 
   absl::optional<uint64_t> hash() const override;
 
@@ -154,7 +150,7 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const std::vector<std::string> containers_;
   const std::string baggage_;
 
-  Ssl::ConnectionInfoConstSharedPtr ssl_conn_info_;
+  const Ssl::ConnectionInfoConstSharedPtr ssl_conn_info_;
 };
 
 }  // namespace Common

@@ -25,17 +25,7 @@ namespace BaggageHandler {
 
 class Config {
  public:
-  Config(const istio::telemetry::baggagehandler::v1::Config& proto_config);
-
-  std::string filterStateKey() const {
-    if (!filter_state_key_.empty()) {
-      return filter_state_key_;
-    }
-    return std::string{::Wasm::Common::kDownstreamMetadataKey};
-  }
-
- private:
-  const std::string filter_state_key_;
+  Config(const istio::telemetry::baggagehandler::v1::Config&){};
 };
 
 using ConfigSharedPtr = std::shared_ptr<Config>;

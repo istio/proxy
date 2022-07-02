@@ -19,8 +19,4 @@ package istio.telemetry.baggagehandler.v1;
 option go_package = "istio.io/istio/pkg/baggagehandler/proto/istio_telemetry_baggagehandler_v1";
 
 // Configuration for the baggage handler filter.
-message Config {
-  // Optional. Allows selection of the key for filter state objects.
-  // If empty, defaults to `downstream_peer`.
-  string filter_state_key = 1;
-}
+message Config {}
