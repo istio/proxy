@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "absl/strings/str_join.h"
 #include "extensions/attributegen/config.pb.h"
 #include "google/protobuf/util/json_util.h"

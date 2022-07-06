@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "extensions/common/wasm/nlohmann_json.hpp"
 
 /**
