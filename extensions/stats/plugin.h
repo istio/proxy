@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <optional>
 #include <unordered_map>
 
 #include "absl/strings/str_join.h"
