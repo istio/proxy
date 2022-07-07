@@ -64,10 +64,10 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 
     std::string instance;
     std::string workload;
-    std::string ns;
-    std::string cs;
-    std::string rev;
-    WorkloadType wlType;
+    std::string namespace_name;
+    std::string canonical_name;
+    std::string canonical_revision;
+    WorkloadType workload_type;
 
     std::vector<absl::string_view> properties =
         absl::StrSplit(baggage_header_value, ',');
@@ -75,29 +75,30 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
       std::pair<absl::string_view, const std::string> parts =
           absl::StrSplit(property, "=");
       if (parts.first == "k8s.namespace.name") {
-        ns = parts.second;
+        namespace_name = parts.second;
       } else if (parts.first == "service.name") {
-        cs = parts.second;
+        canonical_name = parts.second;
       } else if (parts.first == "service.version") {
-        rev = parts.second;
+        canonical_revision = parts.second;
       } else if (parts.first == "k8s.pod.name") {
-        wlType = WorkloadType::KUBERNETES_POD;
+        workload_type = WorkloadType::KUBERNETES_POD;
         instance = parts.second;
         workload = parts.second;
       } else if (parts.first == "k8s.deployment.name") {
-        wlType = WorkloadType::KUBERNETES_DEPLOYMENT;
+        workload_type = WorkloadType::KUBERNETES_DEPLOYMENT;
         workload = parts.second;
       } else if (parts.first == "k8s.job.name") {
-        wlType = WorkloadType::KUBERNETES_JOB;
+        workload_type = WorkloadType::KUBERNETES_JOB;
         instance = parts.second;
         workload = parts.second;
       } else if (parts.first == "k8s.cronjob.name") {
-        wlType = WorkloadType::KUBERNETES_CRONJOB;
+        workload_type = WorkloadType::KUBERNETES_CRONJOB;
         workload = parts.second;
       }
     }
     return std::make_shared<WorkloadMetadataObject>(WorkloadMetadataObject(
-        instance, ns, workload, cs, rev, wlType, {}, {}, ssl_conn_info));
+        instance, namespace_name, workload, canonical_name, canonical_revision,
+        workload_type, {}, {}, ssl_conn_info));
   }
 
   absl::string_view instanceName() const { return instance_name_; }

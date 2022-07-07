@@ -38,7 +38,7 @@ BaggageHandlerConfigFactory::createEmptyConfigProto() {
 }
 
 std::string BaggageHandlerConfigFactory::name() const {
-  return "envoy.filters.http.baggage_handler";
+  return "istio.filters.http.baggage_handler";
 }
 
 Http::FilterFactoryCb BaggageHandlerConfigFactory::createFilterFactory(

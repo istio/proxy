@@ -23,36 +23,24 @@ namespace Envoy {
 namespace Http {
 namespace BaggageHandler {
 
-// Extract the value of the header.
-absl::optional<absl::string_view> extract(Http::HeaderMap& map,
-                                          absl::string_view key) {
-  const auto header_value =
-      Http::HeaderUtility::getAllOfHeaderAsString(map, LowerCaseString(key));
-  if (!header_value.result().has_value()) {
-    return absl::nullopt;
-  }
-  absl::optional<std::string> value =
-      std::string(header_value.result().value());
-  return value;
-}
-
 Http::FilterHeadersStatus BaggageHandlerFilter::decodeHeaders(
     Http::RequestHeaderMap& headers, bool) {
-  absl::optional<absl::string_view> value_optional =
-      extract(headers, "baggage");
+  const auto header_value = Http::HeaderUtility::getAllOfHeaderAsString(
+                                headers, LowerCaseString("baggage"))
+                                .result();
 
-  if (value_optional) {
+  if (header_value.has_value()) {
     auto source_meta = Common::WorkloadMetadataObject::fromBaggage(
-        value_optional.value(), decoder_callbacks_->connection()->ssl());
+        header_value.value(), decoder_callbacks_->connection()->ssl());
 
     auto filter_state = decoder_callbacks_->streamInfo().filterState();
 
-    filter_state->setData(std::string{Wasm::Common::kDownstreamMetadataKey},
-                          source_meta,
-                          StreamInfo::FilterState::StateType::ReadOnly,
-                          StreamInfo::FilterState::LifeSpan::Request);
+    filter_state->setData(
+        Common::WorkloadMetadataObject::kSourceMetadataObjectKey, source_meta,
+        StreamInfo::FilterState::StateType::ReadOnly,
+        StreamInfo::FilterState::LifeSpan::Request);
   } else {
-    ENVOY_LOG(debug, "no baggage header found.");
+    ENVOY_LOG(trace, "no baggage header found.");
   }
   return Http::FilterHeadersStatus::Continue;
 }

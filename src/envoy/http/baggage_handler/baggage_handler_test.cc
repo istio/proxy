@@ -76,10 +76,11 @@ TEST_F(BaggageHandlerFilterTest, BasicBaggageTest) {
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_->decodeHeaders(incoming_headers, false));
 
-  EXPECT_TRUE(filter_state_->hasDataWithName("downstream_peer"));
+  EXPECT_TRUE(filter_state_->hasDataWithName(
+      Common::WorkloadMetadataObject::kSourceMetadataObjectKey));
   auto found =
       filter_state_->getDataReadOnly<Envoy::Common::WorkloadMetadataObject>(
-          "downstream_peer");
+          Common::WorkloadMetadataObject::kSourceMetadataObjectKey);
 
   EXPECT_EQ(found->canonicalName(), "foo-service");
 
