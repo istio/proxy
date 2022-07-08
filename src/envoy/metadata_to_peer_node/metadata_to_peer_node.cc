@@ -29,7 +29,7 @@ namespace Envoy {
 namespace MetadataToPeerNode {
 
 namespace {
-flatbuffers::DetachedBuffer convert(const WorkloadMetadataObject* obj) {
+const flatbuffers::DetachedBuffer convert(const WorkloadMetadataObject* obj) {
   flatbuffers::FlatBufferBuilder fbb;
 
   flatbuffers::Offset<flatbuffers::String> name, namespace_, workload_name;
@@ -67,7 +67,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
           WorkloadMetadataObject::kSourceMetadataObjectKey);
 
   if (meta_obj == nullptr) {
-    ENVOY_LOG(info, "metadata to peer: no metadata object found");
+    ENVOY_LOG(trace, "metadata to peer: no metadata object found");
     return Network::FilterStatus::Continue;
   }
 
@@ -78,7 +78,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
       absl::StrCat("wasm.",
                    toAbslStringView(Wasm::Common::kDownstreamMetadataIdKey)),
       std::move(peer_id_state), StreamInfo::FilterState::StateType::ReadOnly,
-      StreamInfo::FilterState::LifeSpan::Request);
+      StreamInfo::FilterState::LifeSpan::Connection);
 
   const auto fb = convert(meta_obj);
   auto peer_state = std::make_unique<CelState>(Config::nodeInfoPrototype());
@@ -88,7 +88,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
       absl::StrCat("wasm.",
                    toAbslStringView(Wasm::Common::kDownstreamMetadataKey)),
       std::move(peer_state), StreamInfo::FilterState::StateType::ReadOnly,
-      StreamInfo::FilterState::LifeSpan::Request);
+      StreamInfo::FilterState::LifeSpan::Connection);
 
   // set SSL connection info
   cb.socket().connectionInfoProvider().setSslConnection(meta_obj->ssl());
