@@ -502,6 +502,13 @@ bool PluginRootContext::configure(size_t configuration_size) {
     return false;
   }
 
+  auto mode = JsonGetField<std::string_view>(j, "metadata_mode").value_or("");
+  if (mode == "AMBIENT_PEP_SERVER_MODE") {
+    metadata_mode_ = MetadataMode::ServerPep;
+  } else {
+    metadata_mode_ = MetadataMode::Default;
+  }
+
   // TODO: rename to reporting_duration
   uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
   auto tcp_reporting_duration_field =
@@ -622,6 +629,21 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
         ::Wasm::Common::populateGRPCInfo(&request_info);
       }
     }
+  }
+
+  if (metadata_mode_ == MetadataMode::ServerPep) {
+    // in PEP Server mode, we must remap the "local" node info per request
+    // as the proxy is no longer serving a single workload
+    auto detached = Wasm::Common::extractEmptyNodeFlatBuffer();
+
+    flatbuffers::FlatBufferBuilder fbb;
+    if (Wasm::Common::extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
+      detached = fbb.Release();
+    }
+
+    const auto& node =
+        *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(detached.data());
+    map_node(istio_dimensions_, false, node);
   }
 
   map(istio_dimensions_, outbound_, peer_node_info.get(), request_info);

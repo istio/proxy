@@ -69,7 +69,6 @@ message MetricDefinition {
 }
 
 message PluginConfig {
-  // next id: 7
   // The following settings should be rarely used.
   // Enable debug for this filter.
   // DEPRECATED.
@@ -106,4 +105,29 @@ message PluginConfig {
 
   // Metric definitions.
   repeated MetricDefinition definitions = 9;
+
+  enum MetadataMode {
+    // Default mode instructs the stats filter to pull local node information
+    // from the Envoy node metadata alone. This will be combined with peer
+    // metadata from Envoy filter state to build Istio service metrics.
+    DEFAULT_MODE = 0;
+
+    // Server PEP mode instructs the stats filter to join local node information
+    // from the Envoy node metadata with information from destination host
+    // metadata provided by the control plane. This will be combined with peer
+    // metadata from Envoy filter state to build Istio service metrics.
+    AMBIENT_PEP_SERVER_MODE = 1;
+
+    // Potential other modes:
+    // - AMBIENT_PEP_CLIENT_MODE
+    // - AMBIENT_UPROXY_CLIENT_MODE
+
+    // next id: 2
+  }
+
+  // This will control how the stats filter discovers metadata for the workloads
+  // involved in a request / connection.
+  MetadataMode metadata_mode = 10;
+
+  // next id: 11
 }
