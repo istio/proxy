@@ -112,10 +112,10 @@ message PluginConfig {
     // metadata from Envoy filter state to build Istio service metrics.
     DEFAULT_MODE = 0;
 
-    // Server PEP mode instructs the stats filter to join local node information
-    // from the Envoy node metadata with information from destination host
-    // metadata provided by the control plane. This will be combined with peer
-    // metadata from Envoy filter state to build Istio service metrics.
+    // Server PEP mode instructs the stats filter to use destination host
+    // metadata provided by the control plane (via EDS) instead of static Envoy
+    // node metadata. This will be combined with peer metadata from Envoy filter
+    // state to build Istio service metrics.
     AMBIENT_PEP_SERVER_MODE = 1;
 
     // Potential other modes:
