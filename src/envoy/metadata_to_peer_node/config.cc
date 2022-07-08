@@ -37,14 +37,13 @@ class MetadataToPeerNodeConfigFactory
   Network::ListenerFilterFactoryCb createListenerFilterFactoryFromProto(
       const Protobuf::Message& message,
       const Network::ListenerFilterMatcherSharedPtr& listener_filter_matcher,
-      Server::Configuration::ListenerFactoryContext& context) override {
+      Server::Configuration::ListenerFactoryContext&) override {
     // downcast it to the workload metadata config
     const auto& typed_config =
         dynamic_cast<const istio::telemetry::metadatatopeernode::v1::Config&>(
             message);
 
-    ConfigSharedPtr config =
-        std::make_shared<Config>(context.scope(), typed_config);
+    ConfigSharedPtr config = std::make_shared<Config>(typed_config);
     return [listener_filter_matcher,
             config](Network::ListenerFilterManager& filter_manager) -> void {
       filter_manager.addAcceptFilter(listener_filter_matcher,
