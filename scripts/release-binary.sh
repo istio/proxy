@@ -23,6 +23,11 @@ export PATH=/usr/lib/llvm-10/bin:$PATH
 export CC=${CC:-clang}
 export CXX=${CXX:-clang++}
 
+# ARCH_SUFFIX allows optionally appending a -{ARCH} suffix to published binaries.
+# For backwards compatibility, Istio skips this for amd64.
+# Note: user provides "arm64"; we expand to "-arm64" for simple usage in script.
+export ARCH_SUFFIX="${ARCH_SUFFIX+-${ARCH_SUFFIX}}"
+
 # Add --config=libc++ if wasn't passed already.
 if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
@@ -73,6 +78,13 @@ while getopts d:ipc arg ; do
     *) usage;;
   esac
 done
+
+if [[ "${BUILD_ENVOY_BINARY_ONLY}" != 1 && "${ARCH_SUFFIX}" != "" ]]; then
+  # This is not a fundamental limitation; however, the support for the other release types
+  # has not been updated to support this.
+  echo "ARCH_SUFFIX currently requires BUILD_ENVOY_BINARY_ONLY"
+  exit 1
+fi
 
 echo "Destination bucket: $DST"
 
@@ -183,8 +195,8 @@ do
 
   if [ -n "${PACKAGE_BASE_NAME}" ]; then
     echo "Building ${config} debian package"
-    BINARY_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.deb"
-    SHA256_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}.sha256"
+    BINARY_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}${ARCH_SUFFIX}.deb"
+    SHA256_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}${ARCH_SUFFIX}.sha256"
     # shellcheck disable=SC2086
     bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //tools/deb:istio-proxy
     BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
