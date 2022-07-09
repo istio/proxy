@@ -38,7 +38,8 @@ Http::FilterHeadersStatus BaggageHandlerFilter::decodeHeaders(
     filter_state->setData(
         Common::WorkloadMetadataObject::kSourceMetadataObjectKey, source_meta,
         StreamInfo::FilterState::StateType::ReadOnly,
-        StreamInfo::FilterState::LifeSpan::Request);
+        StreamInfo::FilterState::LifeSpan::Request,
+        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
   } else {
     ENVOY_LOG(trace, "no baggage header found.");
   }
