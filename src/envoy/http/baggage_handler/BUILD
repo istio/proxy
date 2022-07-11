@@ -43,7 +43,7 @@ envoy_cc_library(
 )
 
 envoy_cc_extension(
-    name = "config",
+    name = "config_lib",
     srcs = ["config.cc"],
     hdrs = ["config.h"],
     repository = "@envoy",
