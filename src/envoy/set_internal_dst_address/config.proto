@@ -16,4 +16,4 @@ syntax = "proto3";
 
 package istio.set_internal_dst_address.v1;
 
-message Config{};
+message Config {};

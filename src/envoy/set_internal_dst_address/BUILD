@@ -34,9 +34,9 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":config_cc_proto",
+        "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/registry",
         "@envoy//envoy/server:filter_config_interface",
-        "@envoy//envoy/network:filter_interface",
         "@envoy//source/common/network:utility_lib",
     ],
 )

@@ -23,14 +23,16 @@ class Filter : public Envoy::Network::ListenerFilter,
                public Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
  public:
   // Network::ListenerFilter
-  Envoy::Network::FilterStatus onAccept(Envoy::Network::ListenerFilterCallbacks& cb) override;
+  Envoy::Network::FilterStatus onAccept(
+      Envoy::Network::ListenerFilterCallbacks& cb) override;
 
-  Envoy::Network::FilterStatus onData(Envoy::Network::ListenerFilterBuffer&) override {
+  Envoy::Network::FilterStatus onData(
+      Envoy::Network::ListenerFilterBuffer&) override {
     return Envoy::Network::FilterStatus::Continue;
   }
 
   size_t maxReadBytes() const override { return 0; }
 };
 
-}  // namespace WorkloadMetadata
+}  // namespace SetInternalDstAddress
 }  // namespace Istio
