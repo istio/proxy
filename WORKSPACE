@@ -38,12 +38,12 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2022-07-06
-ENVOY_SHA = "ea6ba69dccffbbcda1c5cfe79240c1e700964803"
+# Commit date: 2022-07-11
+ENVOY_SHA = "cb78092e9219da3fd77e49aa1273435696c72921"
 
-ENVOY_SHA256 = "f4e1c524a7efc8e48cf7974bf56a4ddd972ada1b4a0387080e7cc3170ef611b5"
+ENVOY_SHA256 = "3720b0a7c19149fd710706b69cf01efd92ade359814f688a6dff3e381209724e"
 
-ENVOY_ORG = "stevenctl"
+ENVOY_ORG = "envoyproxy"
 
 ENVOY_REPO = "envoy"
 
@@ -81,6 +81,10 @@ envoy_dependencies_extra()
 load("@envoy//bazel:python_dependencies.bzl", "envoy_python_dependencies")
 
 envoy_python_dependencies()
+
+load("@base_pip3//:requirements.bzl", "install_deps")
+
+install_deps()
 
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 

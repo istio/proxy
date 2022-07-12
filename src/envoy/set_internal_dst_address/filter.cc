@@ -34,9 +34,8 @@ Envoy::Network::FilterStatus Filter::onAccept(
           Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
               address_it->second.string_value(), /*v6only=*/false);
       if (local_address) {
-        ENVOY_LOG_MISC(trace, "Set as original dst {}",
+        ENVOY_LOG_MISC(trace, "Restore internal original dst address: {}",
                        local_address->asString());
-        socket.connectionInfoProvider().setLocalAddress(local_address);
         socket.connectionInfoProvider().restoreLocalAddress(local_address);
       } else {
         ENVOY_LOG_MISC(trace, "Failed to parse address: {}",
