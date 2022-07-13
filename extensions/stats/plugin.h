@@ -229,8 +229,8 @@ class StatGen {
 };
 
 enum class MetadataMode : uint8_t {
-  Default = 0,
-  ServerPep = 1,
+  kSidecar = 0,
+  kAmbientPep = 1,
 };
 
 // PluginRootContext is the root context for all streams processed by the

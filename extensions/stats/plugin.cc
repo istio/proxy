@@ -503,10 +503,10 @@ bool PluginRootContext::configure(size_t configuration_size) {
   }
 
   auto mode = JsonGetField<std::string_view>(j, "metadata_mode").value_or("");
-  if (mode == "AMBIENT_PEP_SERVER_MODE") {
-    metadata_mode_ = MetadataMode::ServerPep;
+  if (mode == "AMBIENT_PEP_METADATA_MODE") {
+    metadata_mode_ = MetadataMode::kAmbientPep;
   } else {
-    metadata_mode_ = MetadataMode::Default;
+    metadata_mode_ = MetadataMode::kSidecar;
   }
 
   // TODO: rename to reporting_duration
@@ -631,7 +631,8 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     }
   }
 
-  if (metadata_mode_ == MetadataMode::ServerPep) {
+  // handle server-side (inbound) PEPs specially
+  if (metadata_mode_ == MetadataMode::kAmbientPep && !outbound_) {
     // in PEP Server mode, we must remap the "local" node info per request
     // as the proxy is no longer serving a single workload
     auto detached = Wasm::Common::extractEmptyNodeFlatBuffer();
