@@ -62,7 +62,6 @@ function usage() {
     -d  The bucket name to store proxy binary (optional).
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
-        Cannot be used together with -d option.
     -c  Build for CentOS releases. This will disable the Ubuntu Xenial check.
     -p  Push envoy docker image and wasm oci image.
         Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY and WASM_REPOSITORY env var."
