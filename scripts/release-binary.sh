@@ -115,6 +115,11 @@ if [ -n "${DST}" ]; then
     || echo 'Building a new binary.'
 fi
 
+ARCH_NAME="k8"
+case "$(uname -m)" in
+  aarch64) ARCH_NAME="aarch64";;
+esac
+
 # BAZEL_OUT: Symlinks don't work, use full path as a temporary workaround.
 # See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
@@ -127,14 +132,14 @@ do
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-alpha"
       PACKAGE_BASE_NAME="istio-proxy"
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "release-symbol")
       CONFIG_PARAMS="--config=release-symbol"
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-symbol"
       PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "asan")
       # NOTE: libc++ is dynamically linked in this build.
@@ -143,14 +148,14 @@ do
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
       PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "debug")
       CONFIG_PARAMS="--config=debug"
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-debug"
       PACKAGE_BASE_NAME="istio-proxy-debug"
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-dbg/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-dbg/bin"
       ;;
   esac
 
@@ -232,9 +237,9 @@ if [ -n "${DST}" ]; then
     SHA256_PATH="${WASM_PATH}.sha256"
     SHA256_COMPILED_PATH="${WASM_COMPILED_PATH}.sha256"
     # shellcheck disable=SC2086
-    BAZEL_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.wasm
+    BAZEL_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin/extensions/${extension}.wasm
     # shellcheck disable=SC2086
-    BAZEL_COMPILED_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.compiled.wasm
+    BAZEL_COMPILED_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin/extensions/${extension}.compiled.wasm
     cp "${BAZEL_TARGET}" "${WASM_PATH}"
     cp "${BAZEL_COMPILED_TARGET}" "${WASM_COMPILED_PATH}"
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
