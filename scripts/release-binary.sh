@@ -102,9 +102,6 @@ if [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 0 ]; then
 elif [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 1 ]; then
   # Make sure the release binaries are built on CentOS 7
   [[ $(</etc/centos-release tr -dc '0-9.'|cut -d \. -f1) == "7" ]] || { echo "Must run on CentOS 7, got $(cat /centos-release)"; exit 1; }
-elif [ -n "${DST}" ]; then
-  echo "The -i option is not allowed together with -d option."
-  exit 1
 fi
 
 # The proxy binary name.
