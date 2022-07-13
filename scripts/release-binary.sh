@@ -62,7 +62,6 @@ function usage() {
     -d  The bucket name to store proxy binary (optional).
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
-        Cannot be used together with -d option.
     -c  Build for CentOS releases. This will disable the Ubuntu Xenial check.
     -p  Push envoy docker image and wasm oci image.
         Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY and WASM_REPOSITORY env var."
@@ -102,9 +101,6 @@ if [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 0 ]; then
 elif [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 1 ]; then
   # Make sure the release binaries are built on CentOS 7
   [[ $(</etc/centos-release tr -dc '0-9.'|cut -d \. -f1) == "7" ]] || { echo "Must run on CentOS 7, got $(cat /centos-release)"; exit 1; }
-elif [ -n "${DST}" ]; then
-  echo "The -i option is not allowed together with -d option."
-  exit 1
 fi
 
 # The proxy binary name.
