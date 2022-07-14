@@ -162,8 +162,8 @@ do
   export BUILD_CONFIG=${config}
 
   echo "Building ${config} proxy"
-  BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.tar.gz"
-  SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.sha256"
+  BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.tar.gz"
+  SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.sha256"
   # shellcheck disable=SC2086
   bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //src/envoy:envoy_tar
   BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
