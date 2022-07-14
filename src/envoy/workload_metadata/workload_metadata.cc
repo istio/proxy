@@ -23,10 +23,11 @@ using namespace Envoy::Common;
 namespace Envoy {
 namespace WorkloadMetadata {
 
-Config::Config(Stats::Scope& scope,
+Config::Config(Stats::Scope& scope, const std::string& cluster_name,
                const v1::WorkloadMetadataResources& proto_config)
     : stats_{ALL_WORKLOAD_METADATA_STATS(
-          POOL_COUNTER_PREFIX(scope, "workload_metadata."))} {
+          POOL_COUNTER_PREFIX(scope, "workload_metadata."))},
+      cluster_name_(cluster_name) {
   // TODO: update config counter
   for (const auto& resource : proto_config.workload_metadata_resources()) {
     WorkloadType workload_type;
@@ -53,7 +54,7 @@ Config::Config(Stats::Scope& scope,
     std::copy(resource.containers().begin(), resource.containers().end(),
               std::back_inserter(containers));
     WorkloadMetadataObject workload(
-        resource.instance_name(), resource.namespace_name(),
+        resource.instance_name(), cluster_name_, resource.namespace_name(),
         resource.workload_name(), resource.canonical_name(),
         resource.canonical_revision(), workload_type, ips, containers);
 
@@ -87,13 +88,14 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
   // TODO: handle not found differently???
   auto metadata = config_->metadata(remote_ip);
   if (!metadata) {
-    ENVOY_LOG(info, "workload metadata: no metadata found for {}", remote_ip);
+    ENVOY_LOG(trace, "workload metadata: no metadata found for {}", remote_ip);
     return Network::FilterStatus::Continue;
   }
 
-  ENVOY_LOG(info, "workload metadata: found metadata for {}",
+  ENVOY_LOG(trace, "workload metadata: found metadata for {}",
             metadata->workloadName());
 
+  // TODO: remove? as of 7/2022 only the dynamic metadata is used.
   StreamInfo::FilterState& filter_state = cb.filterState();
   filter_state.setData(WorkloadMetadataObject::kSourceMetadataObjectKey,
                        metadata, StreamInfo::FilterState::StateType::ReadOnly,

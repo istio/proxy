@@ -58,7 +58,7 @@ using DynamicMetadataKeysSingleton = ConstSingleton<DynamicMetadataKeys>;
  */
 class Config : public Logger::Loggable<Logger::Id::filter> {
  public:
-  Config(Stats::Scope& scope,
+  Config(Stats::Scope& scope, const std::string& cluster_name,
          const v1::WorkloadMetadataResources& proto_config);
 
   const WorkloadMetadataStats& stats() const { return stats_; }
@@ -67,6 +67,7 @@ class Config : public Logger::Loggable<Logger::Id::filter> {
 
  private:
   WorkloadMetadataStats stats_;
+  const std::string cluster_name_;
   absl::flat_hash_map<std::string, std::shared_ptr<WorkloadMetadataObject>>
       workloads_by_ips_;
 };

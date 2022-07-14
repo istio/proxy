@@ -40,13 +40,15 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   WorkloadMetadataObject() : workload_type_(WorkloadType::KUBERNETES_POD) {}
 
   WorkloadMetadataObject(
-      const std::string& instance_name, const std::string& namespace_name,
-      const std::string& workload_name, const std::string& canonical_name,
-      const std::string& canonical_revision, const WorkloadType workload_type,
+      const std::string& instance_name, const std::string& cluster_name,
+      const std::string& namespace_name, const std::string& workload_name,
+      const std::string& canonical_name, const std::string& canonical_revision,
+      const WorkloadType workload_type,
       const std::vector<std::string>& ip_addresses,
       const std::vector<std::string>& containers,
       const Ssl::ConnectionInfoConstSharedPtr& ssl_conn_info = nullptr)
       : instance_name_(instance_name),
+        cluster_(cluster_name),
         namespace_(namespace_name),
         workload_name_(workload_name),
         canonical_name_(canonical_name),
@@ -63,6 +65,7 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
     // TODO: check for well-formed-ness of the baggage string
 
     std::string instance;
+    std::string cluster;
     std::string workload;
     std::string namespace_name;
     std::string canonical_name;
@@ -76,6 +79,8 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
           absl::StrSplit(property, "=");
       if (parts.first == "k8s.namespace.name") {
         namespace_name = parts.second;
+      } else if (parts.first == "k8s.cluster.name") {
+        cluster = parts.second;
       } else if (parts.first == "service.name") {
         canonical_name = parts.second;
       } else if (parts.first == "service.version") {
@@ -97,11 +102,12 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
       }
     }
     return std::make_shared<WorkloadMetadataObject>(WorkloadMetadataObject(
-        instance, namespace_name, workload, canonical_name, canonical_revision,
-        workload_type, {}, {}, ssl_conn_info));
+        instance, cluster, namespace_name, workload, canonical_name,
+        canonical_revision, workload_type, {}, {}, ssl_conn_info));
   }
 
   absl::string_view instanceName() const { return instance_name_; }
+  absl::string_view clusterName() const { return cluster_; }
   absl::string_view namespaceName() const { return namespace_; }
   absl::string_view workloadName() const { return workload_name_; }
   absl::string_view canonicalName() const { return canonical_name_; }
@@ -117,7 +123,8 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
  private:
   // TODO: cloud.account.id and k8s.cluster.name
   static constexpr absl::string_view kBaggageFormat =
-      "k8s.namespace.name=%s,k8s.%s.name=%s,service.name=%s,service.version=%s";
+      "k8s.cluster.name=%s,k8s.namespace.name=%s,k8s.%s.name=%s,service.name=%"
+      "s,service.version=%s";
 
   const std::string getBaggage() {
     absl::string_view wlType = "pod";
@@ -137,11 +144,13 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
       default:
         wlType = "pod";
     }
-    return absl::StrFormat(kBaggageFormat, namespace_, wlType, workload_name_,
-                           canonical_name_, canonical_revision_);
+    return absl::StrFormat(kBaggageFormat, cluster_, namespace_, wlType,
+                           workload_name_, canonical_name_,
+                           canonical_revision_);
   }
 
   const std::string instance_name_;
+  const std::string cluster_;
   const std::string namespace_;
   const std::string workload_name_;
   const std::string canonical_name_;

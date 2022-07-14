@@ -32,11 +32,13 @@ namespace {
 const flatbuffers::DetachedBuffer convert(const WorkloadMetadataObject* obj) {
   flatbuffers::FlatBufferBuilder fbb;
 
-  flatbuffers::Offset<flatbuffers::String> name, namespace_, workload_name;
+  flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_,
+      workload_name;
   std::vector<flatbuffers::Offset<Wasm::Common::KeyVal>> labels;
 
   name = fbb.CreateString(obj->instanceName().data());
   namespace_ = fbb.CreateString(obj->namespaceName().data());
+  cluster = fbb.CreateString(obj->clusterName().data());
   workload_name = fbb.CreateString(obj->workloadName().data());
   labels.push_back(Wasm::Common::CreateKeyVal(
       fbb, fbb.CreateString("service.istio.io/canonical-name"),
@@ -48,6 +50,7 @@ const flatbuffers::DetachedBuffer convert(const WorkloadMetadataObject* obj) {
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
   Wasm::Common::FlatNodeBuilder node(fbb);
   node.add_name(name);
+  node.add_cluster_id(cluster);
   node.add_namespace_(namespace_);
   node.add_workload_name(workload_name);
   node.add_labels(labels_offset);
