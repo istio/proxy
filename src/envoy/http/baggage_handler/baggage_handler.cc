@@ -15,6 +15,7 @@
 
 #include "src/envoy/http/baggage_handler/baggage_handler.h"
 
+#include "absl/strings/str_cat.h"
 #include "source/common/http/header_utility.h"
 #include "src/envoy/common/metadata_object.h"
 #include "src/envoy/http/baggage_handler/config/baggage_handler.pb.h"
@@ -40,6 +41,11 @@ Http::FilterHeadersStatus BaggageHandlerFilter::decodeHeaders(
         StreamInfo::FilterState::StateType::ReadOnly,
         StreamInfo::FilterState::LifeSpan::Request,
         StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
+
+    ENVOY_LOG(
+        trace,
+        absl::StrCat("baggage header found. filter state set: ",
+                     Common::WorkloadMetadataObject::kSourceMetadataObjectKey));
   } else {
     ENVOY_LOG(trace, "no baggage header found.");
   }

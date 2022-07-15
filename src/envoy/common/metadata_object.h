@@ -114,6 +114,10 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 
   absl::optional<uint64_t> hash() const override;
 
+  absl::optional<std::string> serializeAsString() const override {
+    return std::string{baggage_};
+  }
+
  private:
   // TODO: cloud.account.id and k8s.cluster.name
   static constexpr absl::string_view kBaggageFormat =
