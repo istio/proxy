@@ -91,8 +91,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
                        StreamInfo::FilterState::StateType::ReadOnly,
                        StreamInfo::FilterState::LifeSpan::Connection);
 
-  // TODO: set SSL connection info
-  // cb.socket().connectionInfoProvider().setSslConnection(meta_obj->ssl());
+  cb.socket().connectionInfoProvider().setSslConnection(meta_obj->ssl());
 
   ENVOY_LOG(
       trace,
