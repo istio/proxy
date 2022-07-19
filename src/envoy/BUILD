@@ -32,6 +32,8 @@ envoy_cc_binary(
         "//extensions/stats:stats_plugin",
         "//src/envoy/http/alpn:config_lib",
         "//src/envoy/http/authn:filter_lib",
+        "//src/envoy/http/baggage_handler:config_lib",
+        "//src/envoy/metadata_to_peer_node:config_lib",
         "//src/envoy/set_internal_dst_address:filter_lib",
         "//src/envoy/tcp/forward_downstream_sni:config_lib",
         "//src/envoy/tcp/metadata_exchange:config_lib",

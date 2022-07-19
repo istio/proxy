@@ -58,7 +58,7 @@ const flatbuffers::DetachedBuffer convert(const WorkloadMetadataObject* obj) {
 }  // namespace
 
 Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
-  ENVOY_LOG(debug, "metadata to peer: new connection accepted");
+  ENVOY_LOG(trace, "metadata to peer: new connection accepted");
 
   StreamInfo::FilterState& filter_state = cb.filterState();
 
@@ -84,14 +84,20 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
   auto peer_state = std::make_unique<CelState>(Config::nodeInfoPrototype());
   peer_state->setValue(
       absl::string_view(reinterpret_cast<const char*>(fb.data()), fb.size()));
-  filter_state.setData(
-      absl::StrCat("wasm.",
-                   toAbslStringView(Wasm::Common::kDownstreamMetadataKey)),
-      std::move(peer_state), StreamInfo::FilterState::StateType::ReadOnly,
-      StreamInfo::FilterState::LifeSpan::Connection);
 
-  // set SSL connection info
-  cb.socket().connectionInfoProvider().setSslConnection(meta_obj->ssl());
+  auto key = absl::StrCat(
+      "wasm.", toAbslStringView(Wasm::Common::kDownstreamMetadataKey));
+  filter_state.setData(key, std::move(peer_state),
+                       StreamInfo::FilterState::StateType::ReadOnly,
+                       StreamInfo::FilterState::LifeSpan::Connection);
+
+  // TODO: set SSL connection info
+  // cb.socket().connectionInfoProvider().setSslConnection(meta_obj->ssl());
+
+  ENVOY_LOG(
+      trace,
+      absl::StrCat(
+          "metadata to peer: peer node set to filter state with key = ", key));
 
   return Network::FilterStatus::Continue;
 }
