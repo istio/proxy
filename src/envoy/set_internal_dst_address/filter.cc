@@ -16,35 +16,66 @@
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
+#include "source/common/network/filter_state_dst_address.h"
 #include "source/common/network/utility.h"
 #include "src/envoy/set_internal_dst_address/config.pb.h"
 
 namespace Istio {
 namespace SetInternalDstAddress {
 
+constexpr std::string_view MetadataKey = "tunnel";
+constexpr std::string_view DestinationAddressField = "destination";
+constexpr std::string_view TunnelAddressField = "address";
+
 Envoy::Network::FilterStatus Filter::onAccept(
     Envoy::Network::ListenerFilterCallbacks& cb) {
   auto& socket = cb.socket();
-  auto iter = cb.dynamicMetadata().filter_metadata().find("tunnel");
+  auto iter = cb.dynamicMetadata().filter_metadata().find(MetadataKey);
   if (iter != cb.dynamicMetadata().filter_metadata().end()) {
-    auto address_it = iter->second.fields().find("tunnel_address");
+    auto address_it = iter->second.fields().find(DestinationAddressField);
     if (address_it != iter->second.fields().end() &&
         address_it->second.has_string_value()) {
       auto local_address =
           Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
               address_it->second.string_value(), /*v6only=*/false);
       if (local_address) {
-        ENVOY_LOG_MISC(trace, "Restore internal original dst address: {}",
+        ENVOY_LOG_MISC(trace, "Restore local address: {}",
                        local_address->asString());
         socket.connectionInfoProvider().restoreLocalAddress(local_address);
       } else {
-        ENVOY_LOG_MISC(trace, "Failed to parse address: {}",
+        ENVOY_LOG_MISC(trace, "Failed to parse {} address: {}",
+                       DestinationAddressField,
                        address_it->second.string_value());
       }
-      return Envoy::Network::FilterStatus::Continue;
+    } else {
+      ENVOY_LOG_MISC(trace, "Missing metadata field '{}'",
+                     DestinationAddressField);
     }
+    address_it = iter->second.fields().find(TunnelAddressField);
+    if (address_it != iter->second.fields().end() &&
+        address_it->second.has_string_value()) {
+      auto tunnel_address =
+          Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
+              address_it->second.string_value(), /*v6only=*/false);
+      if (tunnel_address) {
+        ENVOY_LOG_MISC(trace, "Restore ORIGINAL_DST address: {}",
+                       tunnel_address->asString());
+        // Should never throw as the stream info is initialized as empty.
+        cb.filterState().setData(
+            Envoy::Network::DestinationAddress::key(),
+            std::make_shared<Envoy::Network::DestinationAddress>(
+                tunnel_address),
+            Envoy::StreamInfo::FilterState::StateType::ReadOnly);
+      } else {
+        ENVOY_LOG_MISC(trace, "Failed to parse {} address: {}",
+                       TunnelAddressField, address_it->second.string_value());
+      }
+    } else {
+      ENVOY_LOG_MISC(trace, "Missing metadata field '{}'", TunnelAddressField);
+    }
+  } else {
+    ENVOY_LOG_MISC(trace, "Cannot find dynamic metadata '{}'", MetadataKey);
   }
-  ENVOY_LOG_MISC(trace, "Cannot find original address metadata");
   return Envoy::Network::FilterStatus::Continue;
 }
 

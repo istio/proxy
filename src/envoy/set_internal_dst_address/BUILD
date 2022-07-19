@@ -37,6 +37,7 @@ envoy_cc_library(
         "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/registry",
         "@envoy//envoy/server:filter_config_interface",
+        "@envoy//source/common/network:filter_state_dst_address_lib",
         "@envoy//source/common/network:utility_lib",
     ],
 )

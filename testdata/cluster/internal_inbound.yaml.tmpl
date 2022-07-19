@@ -1,0 +1,9 @@
+name: internal_inbound
+load_assignment:
+  cluster_name: internal_inbound
+  endpoints:
+  - lb_endpoints:
+    - endpoint:
+        address:
+          envoy_internal_address:
+            server_listener_name: {{ .Vars.ServerInternalAddress }}
