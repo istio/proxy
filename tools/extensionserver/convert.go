@@ -20,8 +20,8 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	wasm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/wasm/v3"
 	v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/wasm/v3"
-	ptypes "github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/wrappers"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // Convert to an envoy config.
@@ -32,7 +32,7 @@ func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	configuration, err := ptypes.MarshalAny(&wrappers.StringValue{Value: string(json)})
+	configuration, err := anypb.New(&wrappers.StringValue{Value: string(json)})
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func Convert(ext *Extension) (*core.TypedExtensionConfig, error) {
 		},
 	}
 
-	typed, err := ptypes.MarshalAny(plugin)
+	typed, err := anypb.New(plugin)
 	if err != nil {
 		return nil, err
 	}
