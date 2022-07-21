@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	pstruct "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/proto"
 
 	"istio.io/proxy/test/envoye2e"
 	"istio.io/proxy/test/envoye2e/driver"
