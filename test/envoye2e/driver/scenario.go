@@ -25,7 +25,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	// nolint: staticcheck
+	legacyproto "github.com/golang/protobuf/proto"
 	yamlv2 "gopkg.in/yaml.v2"
 	"sigs.k8s.io/yaml"
 
@@ -202,7 +203,7 @@ func (s *Scenario) Run(p *Params) error {
 
 func (s *Scenario) Cleanup() {}
 
-func ReadYAML(input string, pb proto.Message) error {
+func ReadYAML(input string, pb legacyproto.Message) error {
 	var jsonObj interface{}
 	err := yamlv2.Unmarshal([]byte(input), &jsonObj)
 	if err != nil {
@@ -230,7 +231,7 @@ func ReadYAML(input string, pb proto.Message) error {
 	return m.Unmarshal(reader, pb)
 }
 
-func (p *Params) FillYAML(input string, pb proto.Message) error {
+func (p *Params) FillYAML(input string, pb legacyproto.Message) error {
 	out, err := p.Fill(input)
 	if err != nil {
 		return err

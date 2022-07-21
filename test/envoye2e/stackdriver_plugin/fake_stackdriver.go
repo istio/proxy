@@ -27,7 +27,6 @@ import (
 	"time"
 
 	jsonpb "github.com/golang/protobuf/jsonpb"
-	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
@@ -38,6 +37,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	proto "google.golang.org/protobuf/proto"
 
 	"istio.io/proxy/test/envoye2e/driver"
 )
@@ -70,28 +70,32 @@ type TracesServer struct {
 // ListMonitoredResourceDescriptors implements ListMonitoredResourceDescriptors method.
 func (s *MetricServer) ListMonitoredResourceDescriptors(
 	context.Context, *monitoringpb.ListMonitoredResourceDescriptorsRequest) (
-	*monitoringpb.ListMonitoredResourceDescriptorsResponse, error) {
+	*monitoringpb.ListMonitoredResourceDescriptorsResponse, error,
+) {
 	return &monitoringpb.ListMonitoredResourceDescriptorsResponse{}, nil
 }
 
 // GetMonitoredResourceDescriptor implements GetMonitoredResourceDescriptor method.
 func (s *MetricServer) GetMonitoredResourceDescriptor(
 	context.Context, *monitoringpb.GetMonitoredResourceDescriptorRequest) (
-	*monitoredres.MonitoredResourceDescriptor, error) {
+	*monitoredres.MonitoredResourceDescriptor, error,
+) {
 	return &monitoredres.MonitoredResourceDescriptor{}, nil
 }
 
 // ListMetricDescriptors implements ListMetricDescriptors method.
 func (s *MetricServer) ListMetricDescriptors(
 	context.Context, *monitoringpb.ListMetricDescriptorsRequest) (
-	*monitoringpb.ListMetricDescriptorsResponse, error) {
+	*monitoringpb.ListMetricDescriptorsResponse, error,
+) {
 	return &monitoringpb.ListMetricDescriptorsResponse{}, nil
 }
 
 // GetMetricDescriptor implements GetMetricDescriptor method.
 func (s *MetricServer) GetMetricDescriptor(
 	context.Context, *monitoringpb.GetMetricDescriptorRequest) (
-	*metric.MetricDescriptor, error) {
+	*metric.MetricDescriptor, error,
+) {
 	return &metric.MetricDescriptor{}, nil
 }
 
@@ -163,7 +167,8 @@ func (s *LoggingServer) ListLogs(context.Context, *logging.ListLogsRequest) (*lo
 // ListMonitoredResourceDescriptors immplements ListMonitoredResourceDescriptors method.
 func (s *LoggingServer) ListMonitoredResourceDescriptors(
 	context.Context, *logging.ListMonitoredResourceDescriptorsRequest) (
-	*logging.ListMonitoredResourceDescriptorsResponse, error) {
+	*logging.ListMonitoredResourceDescriptorsResponse, error,
+) {
 	return &logging.ListMonitoredResourceDescriptorsResponse{}, nil
 }
 
@@ -337,7 +342,8 @@ func (s *TracesServer) CreateSpan(ctx context.Context, req *cloudtracev2.Span) (
 
 // NewFakeStackdriver creates a new fake Stackdriver server.
 func NewFakeStackdriver(port uint16, delay time.Duration,
-	enableTLS bool, bearer string) (*MetricServer, *LoggingServer, *TracesServer, *grpc.Server) {
+	enableTLS bool, bearer string,
+) (*MetricServer, *LoggingServer, *TracesServer, *grpc.Server) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 
 	var options []grpc.ServerOption
@@ -353,7 +359,8 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 	if bearer != "" {
 		options = append(options, grpc.UnaryInterceptor(
 			func(ctx context.Context, req interface{},
-				_ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+				_ *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
+			) (interface{}, error) {
 				md, ok := metadata.FromIncomingContext(ctx)
 				if !ok {
 					return nil, fmt.Errorf("missing metadata, want %q and x-goog-user-project", bearer)
