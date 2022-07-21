@@ -3,10 +3,16 @@
 {{- else }}
 name: server
 traffic_direction: INBOUND
+{{- if ne .Vars.ServerInternalAddress "" }}
+address:
+  envoy_internal_address:
+    server_listener_name: {{ .Vars.ServerInternalAddress }}
+{{- else }}
 address:
   socket_address:
     address: 127.0.0.1
     port_value: {{ .Ports.ServerPort }}
+{{- end }}
 filter_chains:
 - filters:
   - name: http

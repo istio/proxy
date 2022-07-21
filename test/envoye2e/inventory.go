@@ -29,6 +29,7 @@ func init() {
 			"TestBasicHTTPwithTLS",
 			"TestBasicHTTPGateway",
 			"TestBasicTCPFlow",
+			"TestBasicCONNECT",
 			"TestHTTPExchange",
 			"TestStackdriverAccessLog/StackdriverAndAccessLogPlugin",
 			"TestStackdriverAccessLog/RequestGetsLoggedAgain",

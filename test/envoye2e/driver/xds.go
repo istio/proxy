@@ -123,10 +123,10 @@ func (u *Update) Run(p *Params) error {
 		listeners = append(listeners, out)
 	}
 
-	snap := cache.Snapshot{}
+	snap := &cache.Snapshot{}
 	snap.Resources[types.Cluster] = cache.NewResources(version, clusters)
 	snap.Resources[types.Listener] = cache.NewResources(version, listeners)
-	return p.Config.Cache.SetSnapshot(u.Node, snap)
+	return p.Config.Cache.SetSnapshot(context.Background(), u.Node, snap)
 }
 
 func (u *Update) Cleanup() {}

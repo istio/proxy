@@ -126,3 +126,39 @@ func TestBasicHTTPGateway(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestBasicCONNECT(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
+	params.Vars["ServerClusterName"] = "internal_outbound"
+	params.Vars["ServerInternalAddress"] = "internal_inbound"
+	if err := (&driver.Scenario{
+		[]driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "client", Version: "0",
+				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
+				},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
+				},
+			},
+			&driver.Update{Node: "server", Version: "0",
+				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
+				},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+				},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{1 * time.Second},
+			driver.Get(params.Ports.ClientPort, "hello, world!"),
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
