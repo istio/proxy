@@ -18,6 +18,7 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_extension",
     "envoy_cc_library",
+    "envoy_cc_test",
     "envoy_extension_package",
 )
 
@@ -37,6 +38,18 @@ envoy_cc_library(
         "//src/envoy/internal_ssl_forwarder/config:internal_ssl_forwarder_cc_proto",
         "@envoy//envoy/network:filter_interface",
         "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "internal_ssl_forwarder_test",
+    srcs = ["internal_ssl_forwarder_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":internal_ssl_forwarder_lib",
+        "@envoy//test/mocks:common_lib",
+        "@envoy//test/mocks/ssl:ssl_mocks",
+        "@envoy//test/mocks/network:network_mocks",
     ],
 )
 
