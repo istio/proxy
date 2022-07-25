@@ -62,9 +62,10 @@ class MetadataToPeerNodeFilterTest : public testing::Test {
 
 TEST_F(MetadataToPeerNodeFilterTest, SetPeerInfoTest) {
   initializeFilter();
-  auto baggage = absl::StrCat(
-      "k8s.namespace.name=default,k8s.deployment.name=foo,service.name=",
-      "foo-service,service.version=v1alpha3");
+  auto baggage =
+      absl::StrCat("k8s.cluster.name=foo-cluster,k8s.namespace.name=default,",
+                   "k8s.deployment.name=foo-deploy,service.name=foo-service,",
+                   "service.version=v1alpha3");
   auto obj = WorkloadMetadataObject::fromBaggage(baggage);
 
   filter_state_->setData(WorkloadMetadataObject::kSourceMetadataObjectKey, obj,
@@ -80,10 +81,62 @@ TEST_F(MetadataToPeerNodeFilterTest, SetPeerInfoTest) {
   auto id = filter_state_->getDataReadOnly<CelState>(peer_id_key);
   EXPECT_EQ("connect_peer", id->value());
 
-  EXPECT_TRUE(filter_state_->hasDataWithName(absl::StrCat(
-      "wasm.", toAbslStringView(Wasm::Common::kDownstreamMetadataKey))));
+  auto peer_fbb_key = absl::StrCat(
+      "wasm.", toAbslStringView(Wasm::Common::kDownstreamMetadataKey));
+  EXPECT_TRUE(filter_state_->hasDataWithName(peer_fbb_key));
 
-  // TODO: validate FBB for the baggage
+  auto peer_fbb_cel = filter_state_->getDataReadOnly<CelState>(peer_fbb_key);
+  absl::string_view fbb_value = peer_fbb_cel->value();
+
+  auto& peer = *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      reinterpret_cast<const uint8_t*>(fbb_value.data()));
+
+  EXPECT_EQ(peer.namespace_()->string_view(), "default");
+  EXPECT_EQ(peer.workload_name()->string_view(), "foo-deploy");
+  EXPECT_EQ(peer.cluster_id()->string_view(), "foo-cluster");
+
+  auto peer_labels = peer.labels();
+  auto canonical_name = peer_labels->LookupByKey(
+      ::Wasm::Common::kCanonicalServiceLabelName.data());
+  auto canonical_rev = peer_labels->LookupByKey(
+      ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
+  EXPECT_EQ(canonical_name->value()->string_view(), "foo-service");
+  EXPECT_EQ(canonical_rev->value()->string_view(), "v1alpha3");
+}
+
+TEST_F(MetadataToPeerNodeFilterTest, SetPeerInfoNoClusterTest) {
+  initializeFilter();
+  auto baggage =
+      absl::StrCat("k8s.namespace.name=default,k8s.deployment.name=foo-deploy,",
+                   "service.name=foo-service,service.version=v1alpha3");
+  auto obj = WorkloadMetadataObject::fromBaggage(baggage);
+
+  filter_state_->setData(WorkloadMetadataObject::kSourceMetadataObjectKey, obj,
+                         StreamInfo::FilterState::StateType::ReadOnly,
+                         StreamInfo::FilterState::LifeSpan::Request);
+
+  EXPECT_EQ(filter_->onAccept(callbacks_), Network::FilterStatus::Continue);
+
+  auto peer_id_key = absl::StrCat(
+      "wasm.", toAbslStringView(Wasm::Common::kDownstreamMetadataIdKey));
+  EXPECT_TRUE(filter_state_->hasDataWithName(peer_id_key));
+
+  auto id = filter_state_->getDataReadOnly<CelState>(peer_id_key);
+  EXPECT_EQ("connect_peer", id->value());
+
+  auto peer_fbb_key = absl::StrCat(
+      "wasm.", toAbslStringView(Wasm::Common::kDownstreamMetadataKey));
+  EXPECT_TRUE(filter_state_->hasDataWithName(peer_fbb_key));
+
+  auto peer_fbb_cel = filter_state_->getDataReadOnly<CelState>(peer_fbb_key);
+  absl::string_view fbb_value = peer_fbb_cel->value();
+
+  auto& peer = *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      reinterpret_cast<const uint8_t*>(fbb_value.data()));
+
+  EXPECT_EQ(peer.namespace_()->string_view(), "default");
+  EXPECT_EQ(peer.workload_name()->string_view(), "foo-deploy");
+  EXPECT_EQ(peer.cluster_id()->string_view(), "");
 }
 
 }  // namespace MetadataToPeerNode

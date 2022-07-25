@@ -48,7 +48,7 @@ class FilterTest : public testing::Test {
     resource->add_containers("app");
     resource->add_containers("storage");
 
-    Config config(store_, resources);
+    Config config(store_, "my-cluster", resources);
     return std::make_unique<Filter>(std::make_shared<Config>(config));
   }
 

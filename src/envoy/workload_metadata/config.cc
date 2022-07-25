@@ -25,7 +25,11 @@ namespace WorkloadMetadata {
 namespace {
 constexpr absl::string_view kFactoryName =
     "envoy.filters.listener.workload_metadata";
-}
+
+constexpr char kClusterID[] = "CLUSTER_ID";
+// TODO: should this just be blank?
+constexpr char kDefaultClusterID[] = "Kubernetes";
+}  // namespace
 /**
  * Config registration for the workload metadata filter. @see
  * NamedNetworkFilterConfigFactory.
@@ -39,12 +43,19 @@ class WorkloadMetadataConfigFactory
       const Network::ListenerFilterMatcherSharedPtr& listener_filter_matcher,
       Server::Configuration::ListenerFactoryContext& context) override {
     // downcast it to the workload metadata config
+
+    auto node = context.localInfo().node();
+    auto node_meta = node.metadata();
+    auto cluster_name = node_meta.fields().contains(kClusterID)
+                            ? node_meta.fields().at(kClusterID).string_value()
+                            : kDefaultClusterID;
+
     const auto& typed_config =
         dynamic_cast<const istio::telemetry::workloadmetadata::v1::
                          WorkloadMetadataResources&>(message);
 
     ConfigSharedPtr config =
-        std::make_shared<Config>(context.scope(), typed_config);
+        std::make_shared<Config>(context.scope(), cluster_name, typed_config);
     return [listener_filter_matcher,
             config](Network::ListenerFilterManager& filter_manager) -> void {
       filter_manager.addAcceptFilter(listener_filter_matcher,
