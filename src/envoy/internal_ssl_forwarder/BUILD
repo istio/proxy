@@ -48,8 +48,8 @@ envoy_cc_test(
     deps = [
         ":internal_ssl_forwarder_lib",
         "@envoy//test/mocks:common_lib",
-        "@envoy//test/mocks/ssl:ssl_mocks",
         "@envoy//test/mocks/network:network_mocks",
+        "@envoy//test/mocks/ssl:ssl_mocks",
     ],
 )
 
