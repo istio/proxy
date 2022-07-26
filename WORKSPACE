@@ -39,9 +39,9 @@ bind(
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
 # Commit date: 2022-07-25
-ENVOY_SHA = "f4d7d788dade099f52633d40c336101f08e3c690"
+ENVOY_SHA = "ede9c77d6321ac43ed79a507d7b74942ab40146a"
 
-ENVOY_SHA256 = "27e0d711343df2bc4f0e4cb91a01803b43f8c383f45bb4cd376feef5f181d216"
+ENVOY_SHA256 = ""
 
 ENVOY_ORG = "stevenctl"
 
