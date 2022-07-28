@@ -349,7 +349,6 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
     if (getValue({peer_metadata_key}, &peer_node_)) {
       return;
     }
-    return;
   }
 
   // Sentinel value is preserved as ID to implement maybeWaiting.
