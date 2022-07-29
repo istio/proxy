@@ -33,6 +33,7 @@ envoy_cc_binary(
         "//src/envoy/http/alpn:config_lib",
         "//src/envoy/http/authn:filter_lib",
         "//src/envoy/http/baggage_handler:config_lib",
+        "//src/envoy/internal_ssl_forwarder:config_lib",
         "//src/envoy/metadata_to_peer_node:config_lib",
         "//src/envoy/set_internal_dst_address:filter_lib",
         "//src/envoy/tcp/forward_downstream_sni:config_lib",
