@@ -198,8 +198,8 @@ test_release:
 ifeq "$(shell uname -m)" "x86_64"
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 else
-	# Only x86 has support for legacy GLIBC, otherwise pass -c to skip the check
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -c
+	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i
 endif
 
 test_release_centos:
@@ -211,8 +211,8 @@ push_release:
 ifeq "$(shell uname -m)" "x86_64"
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
 else
-	# Only x86 has support for legacy GLIBC, otherwise pass -c to skip the check
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -c -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
 endif
 
 push_release_centos:
