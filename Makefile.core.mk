@@ -195,7 +195,12 @@ artifacts:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/push-debian.sh -p "$(ARTIFACTS_GCS_PATH)" -o "$(ARTIFACTS_DIR)"
 
 test_release:
+ifeq "$(shell uname -m)" "x86_64"
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
+else
+	# Only x86 has support for legacy GLIBC, otherwise pass -c to skip the check
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -c
+endif
 
 test_release_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c
@@ -203,7 +208,12 @@ test_release_centos:
 PUSH_RELEASE_FLAGS ?= -p
 
 push_release:
+ifeq "$(shell uname -m)" "x86_64"
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+else
+	# Only x86 has support for legacy GLIBC, otherwise pass -c to skip the check
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -c -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+endif
 
 push_release_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c -d "$(RELEASE_GCS_PATH)"
