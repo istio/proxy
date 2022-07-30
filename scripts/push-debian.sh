@@ -34,6 +34,11 @@ if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]];
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
 fi
 
+# ARCH_SUFFIX allows optionally appending a -{ARCH} suffix to published binaries.
+# For backwards compatibility, Istio skips this for amd64.
+# Note: user provides "arm64"; we expand to "-arm64" for simple usage in script.
+export ARCH_SUFFIX="${ARCH_SUFFIX+-${ARCH_SUFFIX}}"
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -63,21 +68,27 @@ fi
 
 [[ -z "${GCS_PATH}" ]] && [[ -z "${OUTPUT_DIR}" ]] && usage
 
+
+ARCH_NAME="k8"
+case "$(uname -m)" in
+  aarch64) ARCH_NAME="aarch64";;
+esac
+
 # Symlinks don't work, use full path as a temporary workaround.
 # See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
 # shellcheck disable=SC2086
-BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
 BAZEL_BINARY="${BAZEL_OUT}/tools/deb/istio-proxy"
 
 # shellcheck disable=SC2086
 bazel build ${BAZEL_BUILD_ARGS} --config=release ${BAZEL_TARGET}
 
 if [[ -n "${GCS_PATH}" ]]; then
-  gsutil -m cp -r "${BAZEL_BINARY}.deb" "${GCS_PATH}"/
+  gsutil -m cp -r "${BAZEL_BINARY}.deb" "${GCS_PATH}/${BAZEL_BINARY}${ARCH_SUFFIX}.deb"
 fi
 
 if [[ -n "${OUTPUT_DIR}" ]]; then
   mkdir -p "${OUTPUT_DIR}/"
-  cp -f "${BAZEL_BINARY}.deb" "${OUTPUT_DIR}/"
+  cp -f "${BAZEL_BINARY}.deb" "${OUTPUT_DIR}/${BAZEL_BINARY}${ARCH_SUFFIX}.deb"
 fi
