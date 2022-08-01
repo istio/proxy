@@ -188,12 +188,6 @@ $(accesslog_policy_docs): $(accesslog_policy_protos)
 
 extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
-deb:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
-
-artifacts:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/push-debian.sh -p "$(ARTIFACTS_GCS_PATH)" -o "$(ARTIFACTS_DIR)"
-
 test_release:
 ifeq "$(shell uname -m)" "x86_64"
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
@@ -225,6 +219,6 @@ exportcache:
 	@chmod +w /work/out/$(TARGET_OS)_$(TARGET_ARCH)/envoy
 	@cp -a /work/bazel-bin/**/*wasm /work/out/$(TARGET_OS)_$(TARGET_ARCH) &> /dev/null || true
 
-.PHONY: build clean test check artifacts extensions-proto
+.PHONY: build clean test check extensions-proto
 
 include common/Makefile.common.mk
