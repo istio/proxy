@@ -31,8 +31,6 @@ else
   echo "No credential helpers found, push to docker may not function properly"
 fi
 
-GIT_SHA="$(git rev-parse --verify HEAD)"
-
 GCS_BUILD_BUCKET="${GCS_BUILD_BUCKET:-istio-build}"
 
 echo 'Create and push artifacts'

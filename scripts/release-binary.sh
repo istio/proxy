@@ -149,7 +149,6 @@ do
     "debug")
       CONFIG_PARAMS="--config=debug"
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-debug"
-      PACKAGE_BASE_NAME="istio-proxy-debug"
       # shellcheck disable=SC2086
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-dbg/bin"
       ;;

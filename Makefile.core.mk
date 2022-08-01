@@ -19,7 +19,7 @@ BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
 BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
-BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/...
+BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
 E2E_TEST_FLAGS ?=
 HUB ?=
@@ -71,7 +71,7 @@ TEST_ENVOY_TARGET ?= //src/envoy:envoy
 CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
 # WASM is not build on CentOS, skip it
 # TODO can we do some sort of regex?
-CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... \
+CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} \
                              -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm \
                              -extensions:push_wasm_image_attributegen -extensions:push_wasm_image_metadata_exchange -extensions:push_wasm_image_stats \
                              -extensions:wasm_image_attributegen -extensions:wasm_image_metadata_exchange -extensions:wasm_image_stats \
