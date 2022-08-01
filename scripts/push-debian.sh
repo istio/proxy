@@ -85,10 +85,10 @@ BAZEL_BINARY="${BAZEL_OUT}/tools/deb/istio-proxy"
 bazel build ${BAZEL_BUILD_ARGS} --config=release ${BAZEL_TARGET}
 
 if [[ -n "${GCS_PATH}" ]]; then
-  gsutil -m cp -r "${BAZEL_BINARY}.deb" "${GCS_PATH}/${BAZEL_BINARY}${ARCH_SUFFIX}.deb"
+  gsutil -m cp -r "${BAZEL_BINARY}.deb" "${GCS_PATH}/istio-proxy${ARCH_SUFFIX}.deb"
 fi
 
 if [[ -n "${OUTPUT_DIR}" ]]; then
   mkdir -p "${OUTPUT_DIR}/"
-  cp -f "${BAZEL_BINARY}.deb" "${OUTPUT_DIR}/${BAZEL_BINARY}${ARCH_SUFFIX}.deb"
+  cp -f "${BAZEL_BINARY}.deb" "${OUTPUT_DIR}/istio-proxy${ARCH_SUFFIX}.deb"
 fi
