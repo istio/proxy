@@ -60,19 +60,19 @@ func TestTCPMetadataExchange(t *testing.T) {
 				N:    10,
 				Step: &driver.TCPConnection{},
 			},
-			&driver.Stats{params.Ports.ClientAdmin, map[string]driver.StatMatcher{
-				"istio_tcp_connections_closed_total": &driver.ExactStat{"testdata/metric/tcp_client_connection_close.yaml.tmpl"},
-				"istio_tcp_connections_opened_total": &driver.ExactStat{"testdata/metric/tcp_client_connection_open.yaml.tmpl"},
-				"istio_tcp_received_bytes_total":     &driver.ExactStat{"testdata/metric/tcp_client_received_bytes.yaml.tmpl"},
-				"istio_tcp_sent_bytes_total":         &driver.ExactStat{"testdata/metric/tcp_client_sent_bytes.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_tcp_connections_closed_total": &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_close.yaml.tmpl"},
+				"istio_tcp_connections_opened_total": &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_open.yaml.tmpl"},
+				"istio_tcp_received_bytes_total":     &driver.ExactStat{Metric: "testdata/metric/tcp_client_received_bytes.yaml.tmpl"},
+				"istio_tcp_sent_bytes_total":         &driver.ExactStat{Metric: "testdata/metric/tcp_client_sent_bytes.yaml.tmpl"},
 			}},
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"istio_tcp_connections_closed_total":          &driver.ExactStat{"testdata/metric/tcp_server_connection_close.yaml.tmpl"},
-				"istio_tcp_connections_opened_total":          &driver.ExactStat{"testdata/metric/tcp_server_connection_open.yaml.tmpl"},
-				"istio_tcp_received_bytes_total":              &driver.ExactStat{"testdata/metric/tcp_server_received_bytes.yaml.tmpl"},
-				"istio_tcp_sent_bytes_total":                  &driver.ExactStat{"testdata/metric/tcp_server_sent_bytes.yaml.tmpl"},
-				"envoy_metadata_exchange_alpn_protocol_found": &driver.ExactStat{"testdata/metric/tcp_server_mx_stats_alpn_found.yaml.tmpl"},
-				"envoy_metadata_exchange_metadata_added":      &driver.ExactStat{"testdata/metric/tcp_server_mx_stats_metadata_added.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_tcp_connections_closed_total":          &driver.ExactStat{Metric: "testdata/metric/tcp_server_connection_close.yaml.tmpl"},
+				"istio_tcp_connections_opened_total":          &driver.ExactStat{Metric: "testdata/metric/tcp_server_connection_open.yaml.tmpl"},
+				"istio_tcp_received_bytes_total":              &driver.ExactStat{Metric: "testdata/metric/tcp_server_received_bytes.yaml.tmpl"},
+				"istio_tcp_sent_bytes_total":                  &driver.ExactStat{Metric: "testdata/metric/tcp_server_sent_bytes.yaml.tmpl"},
+				"envoy_metadata_exchange_alpn_protocol_found": &driver.ExactStat{Metric: "testdata/metric/tcp_server_mx_stats_alpn_found.yaml.tmpl"},
+				"envoy_metadata_exchange_metadata_added":      &driver.ExactStat{Metric: "testdata/metric/tcp_server_mx_stats_metadata_added.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -118,9 +118,9 @@ func TestTCPMetadataExchangeNoAlpn(t *testing.T) {
 				N:    10,
 				Step: &driver.TCPConnection{},
 			},
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"istio_tcp_connections_opened_total":              &driver.ExactStat{"testdata/metric/tcp_server_connection_open_without_mx.yaml.tmpl"},
-				"envoy_metadata_exchange_alpn_protocol_not_found": &driver.ExactStat{"testdata/metric/tcp_server_mx_stats_alpn_not_found.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_tcp_connections_opened_total":              &driver.ExactStat{Metric: "testdata/metric/tcp_server_connection_open_without_mx.yaml.tmpl"},
+				"envoy_metadata_exchange_alpn_protocol_not_found": &driver.ExactStat{Metric: "testdata/metric/tcp_server_mx_stats_alpn_not_found.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {

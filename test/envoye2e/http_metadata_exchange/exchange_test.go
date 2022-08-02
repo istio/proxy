@@ -46,11 +46,11 @@ func TestHTTPExchange(t *testing.T) {
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.HTTPCall{
 				Port: params.Ports.ServerPort,
 				Body: "hello, world!",

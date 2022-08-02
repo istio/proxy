@@ -53,7 +53,7 @@ func TestStackdriverPayload(t *testing.T) {
 	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -61,7 +61,7 @@ func TestStackdriverPayload(t *testing.T) {
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
@@ -78,8 +78,8 @@ func TestStackdriverPayload(t *testing.T) {
 					},
 				}, true,
 			),
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"type_logging_success_true_envoy_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"type_logging_success_true_envoy_export_call": &driver.ExactStat{Metric: "testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -106,7 +106,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -119,7 +119,7 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 				},
 			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 1, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				nil,
@@ -136,8 +136,8 @@ func TestStackdriverPayloadGateway(t *testing.T) {
 					},
 				}, true,
 			),
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"type_logging_success_true_envoy_export_call": &driver.ExactStat{"testdata/metric/stackdriver_gateway_callout_metric.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"type_logging_success_true_envoy_export_call": &driver.ExactStat{Metric: "testdata/metric/stackdriver_gateway_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -169,7 +169,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -177,7 +177,7 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
@@ -194,8 +194,8 @@ func TestStackdriverPayloadWithTLS(t *testing.T) {
 					},
 				}, true,
 			),
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"type_logging_success_true_envoy_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"type_logging_success_true_envoy_export_call": &driver.ExactStat{Metric: "testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -227,7 +227,7 @@ func TestStackdriverReload(t *testing.T) {
 
 	sd := &Stackdriver{Port: sdPort}
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -235,11 +235,11 @@ func TestStackdriverReload(t *testing.T) {
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{2 * time.Second},
+			&driver.Sleep{Duration: 2 * time.Second},
 			&driver.Repeat{N: 5, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			&driver.Update{Node: "client", Version: "1", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "1", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
-			&driver.Sleep{2 * time.Second},
+			&driver.Sleep{Duration: 2 * time.Second},
 			&driver.Repeat{N: 5, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
@@ -284,7 +284,7 @@ func TestStackdriverVMReload(t *testing.T) {
 	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -296,9 +296,9 @@ func TestStackdriverVMReload(t *testing.T) {
 			}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Update{Node: "client", Version: "1", Listeners: []string{
 				driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
 			}},
@@ -344,7 +344,7 @@ func TestStackdriverGCEInstances(t *testing.T) {
 
 	sd := &Stackdriver{Port: sdPort}
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -356,7 +356,7 @@ func TestStackdriverGCEInstances(t *testing.T) {
 			}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/gce_client_request_count.yaml.tmpl", "testdata/stackdriver/gce_server_request_count.yaml.tmpl"},
@@ -387,7 +387,7 @@ func TestStackdriverParallel(t *testing.T) {
 	sd := &Stackdriver{Port: sdPort, Delay: 100 * time.Millisecond}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -399,12 +399,12 @@ func TestStackdriverParallel(t *testing.T) {
 			}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			driver.Get(params.Ports.ClientPort, "hello, world!"),
 			&driver.Fork{
 				Fore: &driver.Scenario{
-					[]driver.Step{
-						&driver.Sleep{1 * time.Second},
+					Steps: []driver.Step{
+						&driver.Sleep{Duration: 1 * time.Second},
 						&driver.Repeat{
 							Duration: 19 * time.Second,
 							Step:     driver.Get(params.Ports.ClientPort, "hello, world!"),
@@ -414,7 +414,7 @@ func TestStackdriverParallel(t *testing.T) {
 				Back: &driver.Repeat{
 					Duration: 20 * time.Second,
 					Step: &driver.Scenario{
-						[]driver.Step{
+						Steps: []driver.Step{
 							&driver.Update{Node: "client", Version: "{{.N}}", Listeners: []string{
 								driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
 							}},
@@ -422,7 +422,7 @@ func TestStackdriverParallel(t *testing.T) {
 								driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
 							}},
 							// may need short delay so we don't eat all the CPU
-							&driver.Sleep{100 * time.Millisecond},
+							&driver.Sleep{Duration: 100 * time.Millisecond},
 						},
 					},
 				},
@@ -741,7 +741,7 @@ func TestStackdriverAttributeGen(t *testing.T) {
 	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -749,7 +749,7 @@ func TestStackdriverAttributeGen(t *testing.T) {
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
@@ -766,8 +766,8 @@ func TestStackdriverAttributeGen(t *testing.T) {
 					},
 				}, true,
 			),
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"type_logging_success_true_envoy_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"type_logging_success_true_envoy_export_call": &driver.ExactStat{Metric: "testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -794,7 +794,7 @@ func TestStackdriverGenericNode(t *testing.T) {
 
 	sd := &Stackdriver{Port: sdPort}
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -806,7 +806,7 @@ func TestStackdriverGenericNode(t *testing.T) {
 			}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/generic_client_request_count.yaml.tmpl", "testdata/stackdriver/generic_server_request_count.yaml.tmpl"},
@@ -842,7 +842,7 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 	sd := &Stackdriver{Port: sdPort}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -850,7 +850,7 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{
 				N: 10,
 				Step: &driver.HTTPCall{
@@ -874,8 +874,8 @@ func TestStackdriverCustomAccessLog(t *testing.T) {
 					},
 				}, true,
 			),
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"type_logging_success_true_envoy_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"type_logging_success_true_envoy_export_call": &driver.ExactStat{Metric: "testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
@@ -915,7 +915,7 @@ func TestStackdriverAccessLogFilter(t *testing.T) {
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{
 				N: 1,
 				Step: &driver.HTTPCall{
@@ -1249,7 +1249,7 @@ func TestStackdriverPayloadUtf8(t *testing.T) {
 	}
 
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			sd,
 			&SecureTokenService{Port: stsPort},
@@ -1257,7 +1257,7 @@ func TestStackdriverPayloadUtf8(t *testing.T) {
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: get},
 			sd.Check(params,
 				[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
@@ -1274,8 +1274,8 @@ func TestStackdriverPayloadUtf8(t *testing.T) {
 					},
 				}, true,
 			),
-			&driver.Stats{params.Ports.ServerAdmin, map[string]driver.StatMatcher{
-				"type_logging_success_true_envoy_export_call": &driver.ExactStat{"testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"type_logging_success_true_envoy_export_call": &driver.ExactStat{Metric: "testdata/metric/stackdriver_callout_metric.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {
