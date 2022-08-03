@@ -47,13 +47,13 @@ rate_limits:
           descriptor_key: app
           text: filter_state['wasm.downstream_peer'].labels['app'].value`
 	if err := (&driver.Scenario{
-		[]driver.Step{
+		Steps: []driver.Step{
 			&driver.XDS{},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Sleep{1 * time.Second},
+			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.HTTPCall{
 				Port: params.Ports.ClientPort,
 				Body: "hello, world!",
