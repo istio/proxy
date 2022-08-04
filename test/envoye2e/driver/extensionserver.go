@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package extensionserver
+package driver
 
 import (
 	"context"
@@ -40,7 +40,7 @@ type ExtensionServer struct {
 
 var _ extensionservice.ExtensionConfigDiscoveryServiceServer = &ExtensionServer{}
 
-func New(ctx context.Context) *ExtensionServer {
+func NewExtensionServer(ctx context.Context) *ExtensionServer {
 	out := &ExtensionServer{}
 	out.cache = cache.NewLinearCache(APIType)
 	out.Server = server.NewServer(ctx, out.cache, out)

@@ -1,6 +1,0 @@
-extensions:
-- name: metadata_exchange
-  path: bazel-bin/extensions/metadata_exchange.wasm
-  vm_id: id
-  configuration:
-    max_peer_cache_size: 60

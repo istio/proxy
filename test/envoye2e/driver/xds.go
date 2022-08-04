@@ -29,8 +29,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
-
-	"istio.io/proxy/tools/extensionserver"
 )
 
 // XDS creates an xDS server
@@ -40,7 +38,7 @@ type XDS struct {
 
 // XDSServer is a struct holding xDS state.
 type XDSServer struct {
-	Extensions *extensionserver.ExtensionServer
+	Extensions *ExtensionServer
 	Cache      cache.SnapshotCache
 }
 
@@ -50,7 +48,7 @@ var _ Step = &XDS{}
 func (x *XDS) Run(p *Params) error {
 	log.Printf("XDS server starting on %d\n", p.Ports.XDSPort)
 	x.grpc = grpc.NewServer()
-	p.Config.Extensions = extensionserver.New(context.Background())
+	p.Config.Extensions = NewExtensionServer(context.Background())
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(x.grpc, p.Config.Extensions)
 	p.Config.Cache = cache.NewSnapshotCache(false, cache.IDHash{}, x)
 	xdsServer := server.NewServer(context.Background(), p.Config.Cache, nil)
