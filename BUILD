@@ -24,11 +24,3 @@ config_setting(
     },
     visibility = ["//visibility:public"],
 )
-
-genrule(
-    name = "deb_version",
-    srcs = [],
-    outs = ["deb_version.txt"],
-    cmd = "echo $${ISTIO_VERSION:-\"0.3.0-dev\"} > \"$@\"",
-    visibility = ["//visibility:public"],
-)
