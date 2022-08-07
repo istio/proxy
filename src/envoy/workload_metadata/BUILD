@@ -39,8 +39,8 @@ envoy_cc_library(
         "@envoy//envoy/network:listen_socket_interface",
         "@envoy//source/common/network:address_lib",
         "@envoy//source/common/network:utility_lib",
+        "@envoy//source/common/router:string_accessor_lib",
         "@envoy//source/exe:envoy_common_lib",
-        "@envoy//source/common/router:string_accessor_lib"
     ],
 )
 
