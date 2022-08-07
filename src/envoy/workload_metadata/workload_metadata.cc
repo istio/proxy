@@ -18,6 +18,8 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stream_info/filter_state.h"
 
+#include "source/common/router/string_accessor_impl.h"
+
 using namespace Envoy::Common;
 
 namespace Envoy {
@@ -100,6 +102,13 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
   filter_state.setData(WorkloadMetadataObject::kSourceMetadataObjectKey,
                        metadata, StreamInfo::FilterState::StateType::ReadOnly,
                        StreamInfo::FilterState::LifeSpan::Connection);
+
+  // Setting a StringAccessor filter state which can be assigned to custom header with PER_REQUEST_STATE
+  auto accessor = std::make_shared<Envoy::Router::StringAccessorImpl>(metadata->baggage());
+  filter_state.setData(WorkloadMetadataObject::kSourceMetadataAccessorKey,
+                       accessor, StreamInfo::FilterState::StateType::ReadOnly,
+                       StreamInfo::FilterState::LifeSpan::Request,
+                       StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
 
   ProtobufWkt::Struct dynamic_meta;
   auto& mutable_fields = *dynamic_meta.mutable_fields();
