@@ -129,30 +129,35 @@ func TestBasicHTTPGateway(t *testing.T) {
 
 func TestBasicCONNECT(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientTunnelTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerTunnelTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
 	params.Vars["ServerClusterName"] = "internal_outbound"
 	params.Vars["ServerInternalAddress"] = "internal_inbound"
+
+	updateClient := &driver.Update{Node: "client", Version: "{{ .N }}",
+		Clusters: []string{
+			driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
+			driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
+		},
+		Listeners: []string{
+			driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
+		},
+	}
+
+	updateServer := &driver.Update{Node: "server", Version: "{{ .N }}",
+		Clusters: []string{
+			driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
+		},
+		Listeners: []string{
+			driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
+			driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+		},
+	}
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0",
-				Clusters: []string{
-					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
-					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
-				},
-				Listeners: []string{
-					driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
-					driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
-				},
-			},
-			&driver.Update{Node: "server", Version: "0",
-				Clusters: []string{
-					driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
-				},
-				Listeners: []string{
-					driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
-					driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
-				},
-			},
+			updateClient, updateServer,
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},

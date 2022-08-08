@@ -33,3 +33,4 @@ filter_chains:
         allow_connect: true
       upgrade_configs:
       - upgrade_type: CONNECT
+{{ .Vars.ServerTunnelTLSContext | indent 2 }}
