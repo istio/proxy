@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"istio.io/proxy/test/envoye2e/driver"
@@ -75,7 +75,8 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						strings.HasSuffix(ts.Metric.Type, "received_bytes_count") {
 						// clear the timestamps for comparison
 						ts.Points[0].Interval = nil
-						sd.ts[proto.MarshalTextString(ts)] = struct{}{}
+
+						sd.ts[prototext.Format(ts)] = struct{}{}
 					} else {
 						log.Printf("skipping metric type %q\n", ts.Metric.Type)
 					}
@@ -102,7 +103,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 					delete(entry.Labels, "upstream_host")
 				}
 				sd.Lock()
-				sd.ls[proto.MarshalTextString(req)] = struct{}{}
+				sd.ls[prototext.Format(req)] = struct{}{}
 				sd.Unlock()
 			case <-sd.done:
 				return
@@ -123,7 +124,7 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 	for _, t := range tsFiles {
 		pb := &monitoring.TimeSeries{}
 		p.LoadTestProto(t, pb)
-		twant[proto.MarshalTextString(pb)] = struct{}{}
+		twant[prototext.Format(pb)] = struct{}{}
 	}
 	lwant := make(map[string]struct{})
 	for _, l := range lsFiles {
@@ -136,7 +137,7 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 				pb.Entries = append(pb.Entries, e)
 			}
 		}
-		lwant[proto.MarshalTextString(pb)] = struct{}{}
+		lwant[prototext.Format(pb)] = struct{}{}
 	}
 	return &checkStackdriver{
 		sd:                    sd,

@@ -20,7 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	// nolint: staticcheck
+	legacyproto "github.com/golang/protobuf/proto"
 	"sigs.k8s.io/yaml"
 )
 
@@ -80,7 +81,7 @@ func (p *Params) FillTestData(data string) string {
 }
 
 // Loads a test file as YAML into a proto and fills in template variables
-func (p *Params) LoadTestProto(testFileName string, msg proto.Message) proto.Message {
+func (p *Params) LoadTestProto(testFileName string, msg legacyproto.Message) legacyproto.Message {
 	data := LoadTestData(testFileName)
 	if err := p.FillYAML(data, msg); err != nil {
 		panic(err)

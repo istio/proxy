@@ -19,8 +19,9 @@ BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
 BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
-BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/...
+BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
+E2E_TEST_FLAGS ?=
 HUB ?=
 TAG ?=
 repo_dir := .
@@ -70,7 +71,7 @@ TEST_ENVOY_TARGET ?= //src/envoy:envoy
 CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
 # WASM is not build on CentOS, skip it
 # TODO can we do some sort of regex?
-CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} -tools/deb/... -tools/docker/... \
+CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} \
                              -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm \
                              -extensions:push_wasm_image_attributegen -extensions:push_wasm_image_metadata_exchange -extensions:push_wasm_image_stats \
                              -extensions:wasm_image_attributegen -extensions:wasm_image_metadata_exchange -extensions:wasm_image_stats \
@@ -122,14 +123,16 @@ test:
 	  export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TEST_ARGS) -- $(BAZEL_TEST_TARGETS); \
 	fi
 	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
-	  env ENVOY_PATH=$(TEST_ENVOY_PATH) $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_TARGETS); \
+	  env ENVOY_PATH=$(TEST_ENVOY_PATH) $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_FLAGS) $(E2E_TEST_TARGETS); \
 	fi
 
 test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
+test_asan: E2E_TEST_FLAGS = -p=1 -parallel=1
 test_asan: E2E_TEST_ENVS = ASAN=true
 test_asan: test
 
 test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
+test_tsan: E2E_TEST_FLAGS = -p=1 -parallel=1
 test_tsan: E2E_TEST_ENVS = TSAN=true
 test_tsan: test
 
@@ -185,20 +188,26 @@ $(accesslog_policy_docs): $(accesslog_policy_protos)
 
 extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
-deb:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //tools/deb:istio-proxy
-
-artifacts:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/push-debian.sh -p "$(ARTIFACTS_GCS_PATH)" -o "$(ARTIFACTS_DIR)"
-
 test_release:
+ifeq "$(shell uname -m)" "x86_64"
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
+else
+	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i
+endif
 
 test_release_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c
 
+PUSH_RELEASE_FLAGS ?= -p
+
 push_release:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" -p
+ifeq "$(shell uname -m)" "x86_64"
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+else
+	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
+	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+endif
 
 push_release_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c -d "$(RELEASE_GCS_PATH)"
@@ -210,6 +219,6 @@ exportcache:
 	@chmod +w /work/out/$(TARGET_OS)_$(TARGET_ARCH)/envoy
 	@cp -a /work/bazel-bin/**/*wasm /work/out/$(TARGET_OS)_$(TARGET_ARCH) &> /dev/null || true
 
-.PHONY: build clean test check artifacts extensions-proto
+.PHONY: build clean test check extensions-proto
 
 include common/Makefile.common.mk

@@ -28,5 +28,5 @@ func (p *TestInventory) GetTestIndex(t *testing.T) uint16 {
 			return uint16(i)
 		}
 	}
-	return 0
+	panic("Need an entry in the test inventory")
 }
