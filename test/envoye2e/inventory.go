@@ -68,6 +68,7 @@ func init() {
 			"TestStatsECDS/envoy.wasm.runtime.v8",
 			"TestStatsECDS/envoy.wasm.runtime.v8#01",
 			"TestStatsEndpointLabels",
+			"TestStatsServerPEP",
 			"TestStatsGrpc",
 			"TestStatsGrpcStream",
 			"TestStatsParallel/Default",
