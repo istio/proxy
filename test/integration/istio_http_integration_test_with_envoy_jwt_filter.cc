@@ -21,9 +21,9 @@
 #include "envoy/config/trace/v3/zipkin.pb.h"
 #include "fmt/printf.h"
 #include "gmock/gmock.h"
+#include "source/extensions/common/filter_names.h"
+#include "source/extensions/common/trace_headers.h"
 #include "source/extensions/filters/http/well_known_names.h"
-#include "src/envoy/utils/filter_names.h"
-#include "src/envoy/utils/trace_headers.h"
 #include "src/istio/utils/attribute_names.h"
 #include "test/integration/http_protocol_integration.h"
 

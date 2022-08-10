@@ -7,7 +7,7 @@
 import %workspace%/envoy.bazelrc
 
 # Overrides workspace_status_command
-build --workspace_status_command=tools/bazel_get_workspace_status
+build --workspace_status_command=bazel/bazel_get_workspace_status
 build:remote --remote_timeout=7200
 # ========================================
 # Istio specific Bazel build/test options.
