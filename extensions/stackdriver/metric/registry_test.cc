@@ -50,6 +50,19 @@ const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
       fbb.GetBufferPointer());
 }
 
+const ::Wasm::Common::FlatNode& nodeInfoWithNoPlatform(
+    flatbuffers::FlatBufferBuilder& fbb) {
+  auto name = fbb.CreateString("test_pod");
+  auto namespace_ = fbb.CreateString("test_namespace");
+  ::Wasm::Common::FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_namespace_(namespace_);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
+      fbb.GetBufferPointer());
+}
+
 google::api::MonitoredResource serverMonitoredResource() {
   google::api::MonitoredResource monitored_resource;
   monitored_resource.set_type(Common::kContainerMonitoredResource);
@@ -88,6 +101,14 @@ TEST(RegistryTest, getStackdriverOptionsProjectID) {
   ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
   auto options = getStackdriverOptions(node_info, stub_option);
   EXPECT_EQ(options.project_id, "test_project");
+}
+
+TEST(RegistryTest, getStackdriverOptionsNoProjectID) {
+  flatbuffers::FlatBufferBuilder fbb;
+  const auto& node_info = nodeInfoWithNoPlatform(fbb);
+  ::Extensions::Stackdriver::Common::StackdriverStubOption stub_option;
+  auto options = getStackdriverOptions(node_info, stub_option);
+  EXPECT_EQ(options.project_id, "");
 }
 
 TEST(RegistryTest, getStackdriverOptionsMonitoredResource) {
