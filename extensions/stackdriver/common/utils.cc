@@ -182,16 +182,18 @@ void getMonitoredResource(const std::string &monitored_resource_type,
 
   if (monitored_resource_type == kGenericNode) {
     // need location, namespace, node_id
-    auto location_label = platform_metadata->LookupByKey(kGCPLocationKey);
-    if (location_label) {
-      (*monitored_resource->mutable_labels())[kLocationLabel] =
-          flatbuffers::GetString(location_label->value());
-    }
-    (*monitored_resource->mutable_labels())[kNamespaceLabel] =
-        flatbuffers::GetString(local_node_info.namespace_());
+    if (platform_metadata) {
+      auto location_label = platform_metadata->LookupByKey(kGCPLocationKey);
+      if (location_label) {
+        (*monitored_resource->mutable_labels())[kLocationLabel] =
+            flatbuffers::GetString(location_label->value());
+      }
+      (*monitored_resource->mutable_labels())[kNamespaceLabel] =
+          flatbuffers::GetString(local_node_info.namespace_());
 
-    auto node_id = getNodeID(local_node_info.instance_ips());
-    (*monitored_resource->mutable_labels())[kNodeIDLabel] = node_id;
+      auto node_id = getNodeID(local_node_info.instance_ips());
+      (*monitored_resource->mutable_labels())[kNodeIDLabel] = node_id;
+    }
     return;
   }
 
