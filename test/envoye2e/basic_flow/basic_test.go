@@ -138,7 +138,7 @@ func TestBasicCONNECT(t *testing.T) {
 			driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
 		},
 		Listeners: []string{
-			driver.LoadTestData("testdata/listener/tcp_client.yaml.tmpl"),
+			driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
 			driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
 		},
 		Secrets: []string{
@@ -163,11 +163,11 @@ func TestBasicCONNECT(t *testing.T) {
 		Steps: []driver.Step{
 			&driver.XDS{},
 			updateClient, updateServer,
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl"), Concurrency: 4},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
 			driver.Get(params.Ports.ClientPort, "hello, world!"),
-			// Load generator
+			// xDS load generator
 			&driver.Repeat{
 				Duration: time.Second * 20,
 				Step: &driver.Scenario{

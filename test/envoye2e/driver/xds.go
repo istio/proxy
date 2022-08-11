@@ -76,7 +76,7 @@ func (x *XDS) Cleanup() {
 }
 
 func (x *XDS) Debugf(format string, args ...interface{}) {
-	//	log.Printf("xds debug: "+format, args...)
+	// log.Printf("xds debug: "+format, args...)
 }
 
 func (x *XDS) Infof(format string, args ...interface{}) {
