@@ -1,12 +1,14 @@
 {{- if ne .Vars.ServerListeners "" }}
 {{ .Vars.ServerListeners }}
 {{- else }}
+{{- if ne .Vars.ServerInternalAddress "" }}
+name: {{ .Vars.ServerInternalAddress }}
+{{- else }}
 name: server
+{{- end }}
 traffic_direction: INBOUND
 {{- if ne .Vars.ServerInternalAddress "" }}
-address:
-  envoy_internal_address:
-    server_listener_name: {{ .Vars.ServerInternalAddress }}
+internal_listener: {}
 {{- else }}
 address:
   socket_address:

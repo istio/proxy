@@ -48,7 +48,7 @@ CHECK=1
 # Defines the base binary name for artifacts. For example, this will be "envoy-debug".
 BASE_BINARY_NAME="${BASE_BINARY_NAME:-"envoy"}"
 
-# If enabled, we will just build the Envoy binary rather then docker images, deb, wasm, etc
+# If enabled, we will just build the Envoy binary rather than wasm, etc
 BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
 
 # Push envoy docker image.
@@ -62,9 +62,8 @@ function usage() {
     -d  The bucket name to store proxy binary (optional).
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
-        Cannot be used together with -d option.
     -c  Build for CentOS releases. This will disable the Ubuntu Xenial check.
-    -p  Push envoy docker image and wasm oci image.
+    -p  Push wasm oci image.
         Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY and WASM_REPOSITORY env var."
   exit 1
 }
@@ -102,9 +101,6 @@ if [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 0 ]; then
 elif [ "${CHECK}" -eq 1 ] && [ "${BUILD_FOR_CENTOS}" -eq 1 ]; then
   # Make sure the release binaries are built on CentOS 7
   [[ $(</etc/centos-release tr -dc '0-9.'|cut -d \. -f1) == "7" ]] || { echo "Must run on CentOS 7, got $(cat /centos-release)"; exit 1; }
-elif [ -n "${DST}" ]; then
-  echo "The -i option is not allowed together with -d option."
-  exit 1
 fi
 
 # The proxy binary name.
@@ -119,6 +115,11 @@ if [ -n "${DST}" ]; then
     || echo 'Building a new binary.'
 fi
 
+ARCH_NAME="k8"
+case "$(uname -m)" in
+  aarch64) ARCH_NAME="aarch64";;
+esac
+
 # BAZEL_OUT: Symlinks don't work, use full path as a temporary workaround.
 # See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
@@ -129,40 +130,35 @@ do
     "release" )
       CONFIG_PARAMS="--config=release"
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-alpha"
-      PACKAGE_BASE_NAME="istio-proxy"
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "release-symbol")
       CONFIG_PARAMS="--config=release-symbol"
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-symbol"
-      PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "asan")
       # NOTE: libc++ is dynamically linked in this build.
-      PUSH_DOCKER_IMAGE=0
       CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
-      PACKAGE_BASE_NAME=""
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "debug")
       CONFIG_PARAMS="--config=debug"
       BINARY_BASE_NAME="${BASE_BINARY_NAME}-debug"
-      PACKAGE_BASE_NAME="istio-proxy-debug"
       # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-dbg/bin"
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-dbg/bin"
       ;;
   esac
 
   export BUILD_CONFIG=${config}
 
   echo "Building ${config} proxy"
-  BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.tar.gz"
-  SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}.sha256"
+  BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.tar.gz"
+  SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.sha256"
   # shellcheck disable=SC2086
   bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //src/envoy:envoy_tar
   BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
@@ -173,41 +169,6 @@ do
     # Copy it to the bucket.
     echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-  fi
-
-  if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
-    continue
-  fi
-
-  echo "Building ${config} docker image"
-  # shellcheck disable=SC2086
-  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
-    //tools/docker:envoy_distroless \
-    //tools/docker:envoy_ubuntu
-
-  if [ "${PUSH_DOCKER_IMAGE}" -eq 1 ]; then
-    echo "Pushing ${config} docker image"
-    # shellcheck disable=SC2086
-    bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} \
-      //tools/docker:push_envoy_distroless \
-      //tools/docker:push_envoy_ubuntu
-  fi
-
-  if [ -n "${PACKAGE_BASE_NAME}" ]; then
-    echo "Building ${config} debian package"
-    BINARY_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}${ARCH_SUFFIX}.deb"
-    SHA256_NAME="${HOME}/${PACKAGE_BASE_NAME}-${SHA}${ARCH_SUFFIX}.sha256"
-    # shellcheck disable=SC2086
-    bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //tools/deb:istio-proxy
-    BAZEL_TARGET="${BAZEL_OUT}/tools/deb/istio-proxy.deb"
-    cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
-    sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
-
-    if [ -n "${DST}" ]; then
-      # Copy it to the bucket.
-      echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-      gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
-    fi
   fi
 done
 
@@ -236,9 +197,9 @@ if [ -n "${DST}" ]; then
     SHA256_PATH="${WASM_PATH}.sha256"
     SHA256_COMPILED_PATH="${WASM_COMPILED_PATH}.sha256"
     # shellcheck disable=SC2086
-    BAZEL_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.wasm
+    BAZEL_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin/extensions/${extension}.wasm
     # shellcheck disable=SC2086
-    BAZEL_COMPILED_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/k8-opt/bin/extensions/${extension}.compiled.wasm
+    BAZEL_COMPILED_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin/extensions/${extension}.compiled.wasm
     cp "${BAZEL_TARGET}" "${WASM_PATH}"
     cp "${BAZEL_COMPILED_TARGET}" "${WASM_COMPILED_PATH}"
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"

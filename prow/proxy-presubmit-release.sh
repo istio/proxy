@@ -25,4 +25,3 @@ source "${WD}/proxy-common.inc"
 
 echo 'Test building release artifacts'
 make test_release
-make artifacts ARTIFACTS_DIR="${HOME}"
