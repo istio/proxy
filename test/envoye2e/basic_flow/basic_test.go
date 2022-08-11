@@ -167,17 +167,17 @@ func TestBasicCONNECT(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
 			driver.Get(params.Ports.ClientPort, "hello, world!"),
-			// xDS load generator
-			&driver.Repeat{
-				Duration: time.Second * 20,
-				Step: &driver.Scenario{
-					[]driver.Step{
-						&driver.Sleep{100 * time.Millisecond},
-						updateClient, updateServer,
-						// may need short delay so we don't eat all the CPU
-					},
-				},
-			},
+			// xDS load generator:
+			// &driver.Repeat{
+			// 	Duration: time.Second * 20,
+			// 	Step: &driver.Scenario{
+			// 		[]driver.Step{
+			// 			&driver.Sleep{100 * time.Millisecond},
+			// 			updateClient, updateServer,
+			// 			// may need short delay so we don't eat all the CPU
+			// 		},
+			// 	},
+			// },
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
