@@ -20,4 +20,8 @@ filter_chains:
       type_url: envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
       value:
         stat_prefix: outbound_tcp
-        cluster: outbound|9080|tcp|server.default.svc.cluster.local
+        {{- if .Vars.ServerClusterName }}
+        cluster: {{ .Vars.ServerClusterName}}
+        {{- else }}
+        cluster: server-outbound-cluster
+        {{- end }}

@@ -47,6 +47,8 @@ type (
 
 		// N records the index of repetition. It is only valid when using with Repeat step.
 		N int
+
+		RAND int
 	}
 
 	// Step is a unit of execution in the integration test.
@@ -112,6 +114,7 @@ func (r *Repeat) Run(p *Params) error {
 				return err
 			}
 			p.N++
+			p.RAND = p.N % 2
 		}
 	} else {
 		for i := 0; i < r.N; i++ {

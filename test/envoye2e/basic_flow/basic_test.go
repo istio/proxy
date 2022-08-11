@@ -129,8 +129,6 @@ func TestBasicHTTPGateway(t *testing.T) {
 
 func TestBasicCONNECT(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
-	params.Vars["ClientTunnelTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
-	params.Vars["ServerTunnelTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
 	params.Vars["ServerClusterName"] = "internal_outbound"
 	params.Vars["ServerInternalAddress"] = "internal_inbound"
 
@@ -140,8 +138,11 @@ func TestBasicCONNECT(t *testing.T) {
 			driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
 		},
 		Listeners: []string{
-			driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+			driver.LoadTestData("testdata/listener/tcp_client.yaml.tmpl"),
 			driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
+		},
+		Secrets: []string{
+			driver.LoadTestData("testdata/secret/client.yaml.tmpl"),
 		},
 	}
 
@@ -153,15 +154,30 @@ func TestBasicCONNECT(t *testing.T) {
 			driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
 			driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
 		},
+		Secrets: []string{
+			driver.LoadTestData("testdata/secret/server.yaml.tmpl"),
+		},
 	}
+
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
 			updateClient, updateServer,
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl"), Concurrency: 4},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
 			driver.Get(params.Ports.ClientPort, "hello, world!"),
+			// Load generator
+			&driver.Repeat{
+				Duration: time.Second * 20,
+				Step: &driver.Scenario{
+					[]driver.Step{
+						&driver.Sleep{100 * time.Millisecond},
+						updateClient, updateServer,
+						// may need short delay so we don't eat all the CPU
+					},
+				},
+			},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
